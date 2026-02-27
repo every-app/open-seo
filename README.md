@@ -9,6 +9,7 @@ OpenSEO is an SEO tool for _the people_ (non-seo professionals). If tools like S
 - [Why Use This](#why-use-this)
 - [Main SEO Workflows](#main-seo-workflows)
 - [Roadmap](#roadmap)
+- [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
 - [Local Development](#local-development)
@@ -39,6 +40,13 @@ Top priorities:
 - AI content workflows
 
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
+
+## Community
+Join discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
+
+Follow along for updates: 
+- [r/everyapp](https://www.reddit.com/r/everyapp/)
+- On X: https://x.com/bensenescu
 
 ## Pricing / Costs
 
