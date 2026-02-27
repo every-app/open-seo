@@ -83,7 +83,8 @@ npx wrangler login
 npx everyapp gateway deploy
 ```
 
-Follow the link returned by that command to create your gateway account.
+5. Create an Account
+- Follow the link output by the last command to create an account. You will access OpenSEO through this account. 
 
 ### Deploy OpenSEO
 
