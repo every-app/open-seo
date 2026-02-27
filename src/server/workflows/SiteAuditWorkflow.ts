@@ -395,7 +395,7 @@ async function crawlPage(
   try {
     const response = await fetch(url, {
       headers: {
-        "User-Agent": "SuperSEO-Audit/1.0",
+        "User-Agent": "OpenSEO-Audit/1.0",
         Accept: "text/html,application/xhtml+xml",
       },
       redirect: "follow",

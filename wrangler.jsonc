@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "every-super-seo",
+  "name": "every-open-seo",
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
@@ -29,14 +29,14 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "every-super-seo",
+      "database_name": "every-open-seo",
       "database_id": "dc7eb9f1-9a43-4d37-9bc9-1293a9200f13",
       "migrations_dir": "drizzle",
     },
   ],
   "r2_buckets": [
     {
-      "bucket_name": "super-ceo",
+      "bucket_name": "open-seo",
       "binding": "R2",
     },
   ],
