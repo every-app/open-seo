@@ -10,7 +10,6 @@ OpenSEO is an SEO tool for _the people_ (non-seo professionals). If tools like S
 - [Main SEO Workflows](#main-seo-workflows)
 - [Roadmap](#roadmap)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
-- [DataForSEO API Key Setup \[5 minutes\]](#dataforseo-api-key-setup-5-minutes)
 - [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
@@ -52,23 +51,11 @@ There are two separate things:
 
 For cost estimates, see [DataForSEO API Cost Reference](#seo-api-cost-reference).
 
-## DataForSEO API Key Setup [5 minutes]
-
-OpenSEO expects `DATAFORSEO_API_KEY` as a Basic Auth value.
-
-1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access).
-2. Request API credentials by email (`API key by email` or `API password by email`).
-3. Use your DataForSEO login + API password, then base64 encode `login:password`:
-
-```sh
-printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
-```
-
-Set that output as `DATAFORSEO_API_KEY` in your environment/secrets.
-
-Note: even though the env var is named `DATAFORSEO_API_KEY`, this app sends it as HTTP Basic auth, so the value should be the base64 form of `login:password`.
-
 ## Self Hosting (Deploy on Cloudflare) [5-10 minutes]
+
+> [!TIP]
+> If anything in this section is confusing or unfamiliar like running terminal commands, copy this link into ChatGPT or Claude and ask it explain.
+
 
 OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps like OpenSEO in your own Cloudflare account. Cloudflare enables much more powerful functionality than is possible running on your own computer or on a VPS.
 
@@ -79,8 +66,6 @@ This has not been tested on Windows. Please let me know if you run into problems
 ### Prerequisites
 
 If you don't want to make a Cloudflare account yet (its easy!) and just want to test out OpenSEO, skip to the [Run Locally](#seo-api-cost-reference) section.
-
-Note: If you're not comfortable with the terminal or these phrases, ChatGPT or Claude will do a good job coaching you through this.
 
 1. Install [Node.js](https://nodejs.org/) (includes `npx`).
 2. Create a Cloudflare account: [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
@@ -100,21 +85,40 @@ npx everyapp gateway deploy
 
 - Follow the link output by the last command to create an account. You will access OpenSEO through this account.
 
-### Deploy OpenSEO
+### Self Host OpenSEO
+Deploy the app to cloudflare.
 
+1. Clone the repo to your machine
 ```sh
 git clone https://github.com/every-app/open-seo.git
+```
+2. Switch to the directory
+```sh
 cd open-seo
+```
+3. Self host via the Every App CLI
+```sh
 npx everyapp app deploy
 ```
 
-After deploy, set your DataForSEO secret:
+#### DataForSEO API Key Setup [5 minutes]
+OpenSEO use DataForSEO to get the SEO info. You need an API key to connect OpenSEO to the service.
 
+1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access).
+2. Request API credentials by email (`API key by email` or `API password by email`).
+3. Use your DataForSEO login + API password, then base64 encode `login:password`:
+
+```sh
+printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
+```
+
+4. Set this as a secret in Cloudflare. Use the value from the previous step when prompted.
 ```sh
 npx wrangler secret put DATAFORSEO_API_KEY
 ```
 
-When prompted, paste the base64 value of `login:password` (using your DataForSEO login + API password).
+Now you're all set! Go back to the gateway, click on the OpenSEO app, and start getting better at SEO!
+
 
 ## Local Development
 
