@@ -1,8 +1,20 @@
 # OpenSEO
 
-OpenSEO is an SEO tool for *the people* (non-seo professionals). If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
+OpenSEO is an SEO tool for _the people_ (non-seo professionals). If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
 
 ![OpenSEO demo (placeholder)](https://placehold.co/1200x675?text=OpenSEO+Demo+GIF+Coming+Soon)
+
+## Table of Contents
+
+- [Why Use This](#why-use-this)
+- [Main SEO Workflows](#main-seo-workflows)
+- [Roadmap](#roadmap)
+- [Pricing / Costs (Free + API costs)](#pricing--costs)
+- [DataForSEO API Key Setup \[5 minutes\]](#dataforseo-api-key-setup-5-minutes)
+- [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
+- [Local Development](#local-development)
+- [Contributing](#contributing)
+- [SEO API Cost Reference](#seo-api-cost-reference)
 
 ## Why Use This
 
@@ -60,14 +72,15 @@ Note: even though the env var is named `DATAFORSEO_API_KEY`, this app sends it a
 
 OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps like OpenSEO in your own Cloudflare account. Cloudflare enables much more powerful functionality than is possible running on your own computer or on a VPS.
 
-*Windows Users*
+_Windows Users_
 
-This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck. 
+This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck.
 
 ### Prerequisites
+
 If you don't want to make a Cloudflare account yet (its easy!) and just want to test out OpenSEO, skip to the [Run Locally](#seo-api-cost-reference) section.
 
-Note: If you're not comfortable with the terminal or these phrases, ChatGPT or Claude will do a good job coaching you through this. 
+Note: If you're not comfortable with the terminal or these phrases, ChatGPT or Claude will do a good job coaching you through this.
 
 1. Install [Node.js](https://nodejs.org/) (includes `npx`).
 2. Create a Cloudflare account: [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
@@ -84,7 +97,8 @@ npx everyapp gateway deploy
 ```
 
 5. Create an Account
-- Follow the link output by the last command to create an account. You will access OpenSEO through this account. 
+
+- Follow the link output by the last command to create an account. You will access OpenSEO through this account.
 
 ### Deploy OpenSEO
 
@@ -133,7 +147,7 @@ Running locally is the fastest way to test core flows. In the future, local mode
 ### Local Development Workflow (for coding agents)
 
 ```sh
-# This log file make it easier for your coding agent to debug. 
+# This log file make it easier for your coding agent to debug.
 mkdir .logs
 touch .logs/dev-server.log
 # terminal 1: start once and keep running
