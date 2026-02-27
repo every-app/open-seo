@@ -103,8 +103,8 @@ npx everyapp gateway deploy
 ### Deploy OpenSEO
 
 ```sh
-git clone https://github.com/bensenescu/super-seo.git
-cd super-seo
+git clone https://github.com/every-app/open-seo.git
+cd open-seo
 npx everyapp app deploy
 ```
 
