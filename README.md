@@ -1,15 +1,15 @@
 # OpenSEO
 
-OpenSEO is an open source SEO tool for people getting started with SEO, or teams that want something simpler than SEMrush or Ahrefs without paying for another monthly SaaS subscription.
+OpenSEO is an SEO tool for *the people* (non-seo professionals). If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
 
 ![OpenSEO demo (placeholder)](https://placehold.co/1200x675?text=OpenSEO+Demo+GIF+Coming+Soon)
 
 ## Why Use This
 
 - Open source and self-hostable.
-- No OpenSEO subscription.
-- You own your deployment and data.
+- No subscriptions.
 - Focused workflows instead of a giant, complex SEO suite.
+- AI Native - Use your own tools like Claude Code / Cowork for more powerful AI features than what other platforms provide.
 
 ## Main SEO Workflows
 
@@ -17,33 +17,30 @@ OpenSEO is an open source SEO tool for people getting started with SEO, or teams
   - Find topics worth targeting, estimate demand, and prioritize what to write next.
 - Domain insights
   - Understand where your domain is gaining or losing visibility so you can focus on the pages that move revenue.
-- Audits
+- Site Audits
   - Catch technical issues early so your site is easier for search engines to crawl and rank.
+
+## Roadmap
+
+Top priorities:
+
+- Rank tracking
+- AI content workflows
+
+If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
 
 ## Pricing / Costs
 
-OpenSEO is totally free to use. It works by pulling SEO data from DataForSEO, which is a paid third-party service unaffiliated with OpenSEO.
+OpenSEO is totally free to use. It works by using DataForSEO's APIs, which is a paid third-party service unaffiliated with OpenSEO.
 
 There are two separate things:
 
-1. OpenSEO app cost: **$0 subscription**.
-2. DataForSEO API usage: pay-as-you-go based on requests.
+1. OpenSEO app cost: $0, you host it yourself.
+2. DataForSEO API: pay-as-you-go based on usage.
 
-As of February 26, 2026, DataForSEO’s public docs/pricing pages say:
+For cost estimates, see [DataForSEO API Cost Reference](#seo-api-cost-reference).
 
-- New accounts include **$1 free credit** to test the API.
-- The minimum top-up/payment is **$50**.
-
-That means you can try OpenSEO for free with the starter credit, then decide if/when to top up.
-
-For OpenSEO-specific, per-workflow request estimates, see the internal [SEO API Cost Reference](#seo-api-cost-reference).
-
-For current endpoint pricing and cost calculators, check:
-
-- [DataForSEO Pricing](https://dataforseo.com/pricing)
-- [DataForSEO API Documentation](https://docs.dataforseo.com/v3/)
-
-## DataForSEO API Key Setup
+## DataForSEO API Key Setup [5 minutes]
 
 OpenSEO expects `DATAFORSEO_API_KEY` as a Basic Auth value.
 
@@ -59,65 +56,18 @@ Set that output as `DATAFORSEO_API_KEY` in your environment/secrets.
 
 Note: even though the env var is named `DATAFORSEO_API_KEY`, this app sends it as HTTP Basic auth, so the value should be the base64 form of `login:password`.
 
-## Local Development
+## Self Hosting (Deploy on Cloudflare) [5-10 minutes]
+
+OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps like OpenSEO in your own Cloudflare account. Cloudflare enables much more powerful functionality than is possible running on your own computer or on a VPS.
+
+*Windows Users*
+
+This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck. 
 
 ### Prerequisites
+If you don't want to make a Cloudflare account yet (its easy!) and just want to test out OpenSEO, skip to the [Run Locally](#seo-api-cost-reference) section.
 
-- Node.js 20+
-- [pnpm](https://pnpm.io/)
-- A Cloudflare account
-- Every App gateway set up (see [Every App](https://github.com/every-app/every-app))
-- A DataForSEO account/API credentials
-
-### Run Locally (Quick Test)
-
-1. Copy env template:
-
-```sh
-cp .env.example .env.local
-```
-
-2. Install and run:
-
-```sh
-pnpm install
-pnpm dev
-```
-
-App runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
-
-Running locally is the fastest way to test core flows. In the future, local mode will not include some Cloudflare-backed capabilities (for example cron-based rank tracking and infrastructure-powered performance improvements for heavier audits).
-
-### Shared Dev Server Workflow (for coding agents)
-
-```sh
-# terminal 1: start once and keep running
-pnpm dev:agents
-```
-
-- `pnpm dev:agents` mirrors output to `.logs/dev-server.log` (gitignored).
-- The log file is overwritten on each run.
-- If you need a different port, set `PORT` in `.env.local` and restart.
-
-### Database Commands
-
-Generate migration:
-
-```sh
-pnpm run db:generate
-```
-
-Migrate local DB:
-
-```sh
-pnpm run db:migrate:local
-```
-
-## Self Hosting (Deploy on Cloudflare)
-
-OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps in your own Cloudflare account.
-
-### Prerequisites
+Note: If you're not comfortable with the terminal or these phrases, ChatGPT or Claude will do a good job coaching you through this. 
 
 1. Install [Node.js](https://nodejs.org/) (includes `npx`).
 2. Create a Cloudflare account: [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
@@ -151,15 +101,61 @@ npx wrangler secret put DATAFORSEO_API_KEY
 
 When prompted, paste the base64 value of `login:password` (using your DataForSEO login + API password).
 
-## Roadmap
+## Local Development
 
-Top priorities right now:
+### Prerequisites
 
-- Rank tracking
-- AI content workflows
+- Node.js 20+
+- [pnpm](https://pnpm.io/)
+- A DataForSEO account/API credentials
 
-If something important is missing, please join the Discord and request it. We prioritize community demand first.
-Discord: [Join the OpenSEO community](https://discord.gg/c9uGs3cFXr)
+### Run Locally (Quick Test)
+
+1. Copy env template:
+
+```sh
+cp .env.example .env.local
+```
+
+2. Install and run:
+
+```sh
+pnpm install
+# This runs in BYPASS_GATEWAY mode so that you don't need to set up the Every App gateway. This is fine for local use.
+pnpm dev:agents
+```
+
+App runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
+
+Running locally is the fastest way to test core flows. In the future, local mode will not include some Cloudflare-backed capabilities (for example cron-based rank tracking and infrastructure-powered performance improvements for heavier audits).
+
+### Local Development Workflow (for coding agents)
+
+```sh
+# This log file make it easier for your coding agent to debug. 
+mkdir .logs
+touch .logs/dev-server.log
+# terminal 1: start once and keep running
+pnpm dev:agents
+```
+
+- `pnpm dev:agents` mirrors output to `.logs/dev-server.log` (gitignored).
+- The log file is overwritten on each run.
+- If you need a different port, set `PORT` in `.env.local` and restart.
+
+### Database Commands
+
+Generate migration:
+
+```sh
+pnpm run db:generate
+```
+
+Migrate local DB:
+
+```sh
+pnpm run db:migrate:local
+```
 
 ## Contributing
 
@@ -174,6 +170,13 @@ If you want to contribute but are unsure where to start, open an issue and descr
 ## SEO API Cost Reference
 
 Use this section to estimate DataForSEO spend per request type. OpenSEO itself remains free; these are API usage costs only.
+
+As of February 26, 2026, DataForSEO’s public docs/pricing pages say:
+
+- New accounts include **$1 free credit** to test the API.
+- The minimum top-up/payment is **$50**.
+
+That means you can try OpenSEO for free with the starter credit, then decide if/when to top up.
 
 ### Pricing sources
 
