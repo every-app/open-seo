@@ -2,7 +2,7 @@
 
 OpenSEO is an SEO tool for _the people_ (non-seo professionals). If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
 
-![OpenSEO demo (placeholder)](https://placehold.co/1200x675?text=OpenSEO+Demo+GIF+Coming+Soon)
+![OpenSEO demo (placeholder)](https://github.com/user-attachments/assets/6a928771-66ff-486b-b131-a54a3943985f)
 
 ## Table of Contents
 
