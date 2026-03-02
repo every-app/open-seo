@@ -1,6 +1,6 @@
 # OpenSEO
 
-OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
+OpenSEO is an SEO tool for _the people_ (non-seo professionals). If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay by usage alternative that you actually control.
 
 ![OpenSEO demo (placeholder)](https://github.com/user-attachments/assets/6a928771-66ff-486b-b131-a54a3943985f)
 
@@ -42,6 +42,7 @@ Top priorities:
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
 
 ## Community
+Email me: ben@everyapp.dev
 Join discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
 
 Follow along for updates: 
@@ -70,6 +71,11 @@ OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platf
 _Windows Users_
 
 This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck.
+
+### Video Walkthrough
+This video walks through setting up the Gateway and self hosting OpenSEO. If you run into any problems, reference the [Community](#community) section for how to reach out. 
+
+https://github.com/user-attachments/assets/e40d5089-971f-43c9-85ff-1213aea35156
 
 ### Prerequisites
 
