@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "dev:agents": "mkdir -p .logs && BYPASS_GATEWAY_LOCAL_ONLY=true vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev:agents": "mkdir -p .logs && BYPASS_GATEWAY_LOCAL_ONLY=true portless run vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
@@ -68,6 +68,7 @@
     "drizzle-kit": "^0.31.4",
     "knip": "^5.66.4",
     "oxlint": "^1.50.0",
+    "portless": "^0.5.2",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",
     "vite": "^7.1.2",

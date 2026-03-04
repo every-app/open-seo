@@ -172,11 +172,15 @@ cp .env.example .env.local
 pnpm install
 # Initialize local DB schema (required on a fresh machine)
 pnpm run db:migrate:local
-# This runs in BYPASS_GATEWAY mode so that you don't need to set up the Every App gateway. This is fine for local use.
+# This runs in BYPASS_GATEWAY mode so that you don't need to set up the Every App gateway. This is fine for local use and best for local dev / quick testing since you don't need to access the app through the gatway
 pnpm dev:agents
 ```
 
-App runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
+`pnpm dev` runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
+
+`pnpm dev:agents` runs through portless at `http://open-seo.localhost:1355` by default.
+
+When using a git worktree, portless prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
 Running locally is the fastest way to test core flows. In the future, local mode will not include some Cloudflare-backed capabilities (for example cron-based rank tracking and infrastructure-powered performance improvements for heavier audits).
 
@@ -194,7 +198,6 @@ pnpm dev:agents
 
 - `pnpm dev:agents` mirrors output to `.logs/dev-server.log` (gitignored).
 - The log file is overwritten on each run.
-- If you need a different port, set `PORT` in `.env.local` and restart.
 
 ### Database Commands
 
