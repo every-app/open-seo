@@ -8,6 +8,7 @@ interface ViteTypeOptions {
 interface ImportMetaEnv {
   readonly VITE_GATEWAY_URL: string;
   readonly VITE_APP_ID: string;
+  readonly VITE_SHOW_DEVTOOLS?: string;
   // more env variables...
 }
 

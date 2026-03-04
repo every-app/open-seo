@@ -20,11 +20,15 @@
     "db:migrate:prod": "npx everyapp app remote-d1-shell -- drizzle-kit migrate --config=drizzle-prod.config.ts",
     "db:studio:local": "drizzle-kit studio",
     "db:studio:prod": "npx everyapp app remote-d1-shell -- drizzle-kit studio --config=drizzle-prod.config.ts",
+    "docker:check-env": "node ./self-host/scripts/validate-selfhost-env.mjs",
+    "docker:up": "pnpm run docker:check-env && docker compose -f self-host/docker-compose.yml --env-file .env.local up --build",
+    "docker:down": "docker compose -f self-host/docker-compose.yml --env-file .env.local down",
+    "docker:generate-secrets": "node ./self-host/scripts/generate-selfhost-secrets.mjs",
     "knip": "knip",
     "ci": "prettier --check . && knip && tsc --noEmit && oxlint ."
   },
   "dependencies": {
-    "@every-app/sdk": "^0.1.12",
+    "@every-app/sdk": "^0.1.13",
     "@tanstack/query-core": "^5.90.9",
     "@tanstack/query-sync-storage-persister": "^5.90.14",
     "@tanstack/react-form": "^1.25.0",

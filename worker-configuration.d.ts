@@ -12,7 +12,6 @@ declare namespace Cloudflare {
 		VITE_APP_ID: string;
 		VITE_GATEWAY_URL: string;
 		GATEWAY_URL: string;
-		GATEWAY_APP_API_TOKEN: string;
 		EVERY_APP_GATEWAY: Fetcher /* every-app-gateway */;
 		SITE_AUDIT_WORKFLOW: Workflow<Parameters<import("./src/server").SiteAuditWorkflow['run']>[0]['payload']>;
 	}
@@ -22,7 +21,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "VITE_APP_ID" | "VITE_GATEWAY_URL" | "GATEWAY_URL" | "GATEWAY_APP_API_TOKEN">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "VITE_APP_ID" | "VITE_GATEWAY_URL" | "GATEWAY_URL">> {}
 }
 
 // Begin runtime types

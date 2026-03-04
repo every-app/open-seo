@@ -9,6 +9,7 @@ import { devtools } from "@tanstack/devtools-vite";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const port = env.PORT ? Number(env.PORT) : 3001;
+  const showDevtools = env.VITE_SHOW_DEVTOOLS !== "false";
 
   return {
     envPrefix: ["VITE_", "BYPASS_GATEWAY_LOCAL_ONLY"],
@@ -16,12 +17,14 @@ export default defineConfig(({ mode }) => {
       port,
     },
     plugins: [
-      devtools({
-        consolePiping: {
-          enabled: true,
-          levels: ["log", "warn", "error", "info", "debug"],
-        },
-      }),
+      showDevtools
+        ? devtools({
+            consolePiping: {
+              enabled: true,
+              levels: ["log", "warn", "error", "info", "debug"],
+            },
+          })
+        : null,
       cloudflare({ viteEnvironment: { name: "ssr" } }),
       tsConfigPaths(),
       tanstackStart(),

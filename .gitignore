@@ -28,3 +28,4 @@ dist/
 /playwright/.cache/
 .tanstack
 .logs/
+**/.pnpm-store/

@@ -12,6 +12,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
+- [Docker Self Hosting (Gateway + OpenSEO)](#docker-self-hosting-gateway--openseo)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
@@ -42,10 +43,12 @@ Top priorities:
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
 
 ## Community
+
 Email me: ben@everyapp.dev
 Join discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
 
-Follow along for updates: 
+Follow along for updates:
+
 - [r/everyapp](https://www.reddit.com/r/everyapp/)
 - On X: https://x.com/bensenescu
 
@@ -65,7 +68,6 @@ For cost estimates, see [DataForSEO API Cost Reference](#seo-api-cost-reference)
 > [!TIP]
 > If anything in this section is confusing or unfamiliar like running terminal commands, copy this link into ChatGPT or Claude and ask it explain.
 
-
 OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps like OpenSEO in your own Cloudflare account. Cloudflare enables much more powerful functionality than is possible running on your own computer or on a VPS.
 
 _Windows Users_
@@ -73,7 +75,8 @@ _Windows Users_
 This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck.
 
 ### Video Walkthrough
-This video walks through setting up the Gateway and self hosting OpenSEO. If you run into any problems, reference the [Community](#community) section for how to reach out. 
+
+This video walks through setting up the Gateway and self hosting OpenSEO. If you run into any problems, reference the [Community](#community) section for how to reach out.
 
 https://github.com/user-attachments/assets/e40d5089-971f-43c9-85ff-1213aea35156
 
@@ -100,22 +103,29 @@ npx everyapp gateway deploy
 - Follow the link output by the last command to create an account. You will access OpenSEO through this account.
 
 ### Self Host OpenSEO
+
 Deploy the app to cloudflare.
 
 1. Clone the repo to your machine
+
 ```sh
 git clone https://github.com/every-app/open-seo.git
 ```
+
 2. Switch to the directory
+
 ```sh
 cd open-seo
 ```
+
 3. Self host via the Every App CLI
+
 ```sh
 npx everyapp app deploy
 ```
 
 #### DataForSEO API Key Setup [5 minutes]
+
 OpenSEO use DataForSEO to get the SEO info. You need an API key to connect OpenSEO to the service.
 
 1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access).
@@ -127,12 +137,18 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 ```
 
 4. Set this as a secret in Cloudflare. Use the value from the previous step when prompted.
+
 ```sh
 npx wrangler secret put DATAFORSEO_API_KEY
 ```
 
 Now you're all set! Go back to the gateway, click on the OpenSEO app, and start getting better at SEO!
 
+## Docker Self Hosting (Gateway + OpenSEO)
+
+If you want a single Docker Compose command that runs both Every App Gateway and OpenSEO together, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
+
+This runtime uses local dev servers to emulate Cloudflare Worker bindings. It is intended for **local use only** — do not expose ports directly to the public internet. For remote access, use [Tailscale](https://tailscale.com/). For internet-facing deployments, use the Cloudflare deployment path above. See the [security and runtime caveats](./SELF_HOSTING_DOCKER.md#security-and-runtime-caveats) in the Docker guide for details.
 
 ## Local Development
 

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@every-app/sdk':
-        specifier: ^0.1.12
-        version: 0.1.12(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)
+        specifier: ^0.1.13
+        version: 0.1.13(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)
       '@tanstack/query-core':
         specifier: ^5.90.9
         version: 5.90.20
@@ -760,8 +760,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@every-app/sdk@0.1.12':
-    resolution: {integrity: sha512-SmNFEEAskoiPKnqCDZrUKW3XIvHHRDlswbaYCP/2ZVPrK++rJBjlb0erGRxpOBSx70avg9KTDOvGaptfIgZF2g==}
+  '@every-app/sdk@0.1.13':
+    resolution: {integrity: sha512-r8NxAydshZVK2Z3H+SzYHuTGvIPHS+y/M38AgolRW6C87eQHa+VRWlZAtuUIq5P/fIaDpZcYgz43qRfTusvDSg==}
     peerDependencies:
       '@tanstack/react-router': ^1.0.0
       '@tanstack/react-start': ^1.0.0
@@ -3463,7 +3463,7 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@every-app/sdk@0.1.12(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)':
+  '@every-app/sdk@0.1.13(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)':
     dependencies:
       '@tanstack/react-router': 1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-start': 1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))

@@ -184,6 +184,9 @@ function AppLayout() {
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {
+  const showDevtools =
+    import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
+
   return (
     <html>
       <head>
@@ -199,7 +202,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                   position="bottom-right"
                   mobileOffset={{ bottom: 100 }}
                 />
-                {import.meta.env.DEV ? (
+                {showDevtools ? (
                   <TanStackDevtools
                     config={{ position: "bottom-right" }}
                     eventBusConfig={{ connectToServerBus: true }}
