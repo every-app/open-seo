@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "dev:agents": "BYPASS_GATEWAY_LOCAL_ONLY=true vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev:agents": "mkdir -p .logs && BYPASS_GATEWAY_LOCAL_ONLY=true vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",

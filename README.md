@@ -170,6 +170,8 @@ cp .env.example .env.local
 
 ```sh
 pnpm install
+# Initialize local DB schema (required on a fresh machine)
+pnpm run db:migrate:local
 # This runs in BYPASS_GATEWAY mode so that you don't need to set up the Every App gateway. This is fine for local use.
 pnpm dev:agents
 ```
@@ -184,6 +186,8 @@ Running locally is the fastest way to test core flows. In the future, local mode
 # This log file make it easier for your coding agent to debug.
 mkdir .logs
 touch .logs/dev-server.log
+# Run once per fresh local DB
+pnpm run db:migrate:local
 # terminal 1: start once and keep running
 pnpm dev:agents
 ```

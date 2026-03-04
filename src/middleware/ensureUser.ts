@@ -7,22 +7,16 @@ import {
   getAuthConfig,
 } from "@every-app/sdk/tanstack/server";
 import { AppError } from "@/server/lib/errors";
-import { logServerError } from "@/server/lib/logger";
 
 export const ensureUserMiddleware = createMiddleware({
   type: "function",
 }).server(async (c) => {
   const { next } = c;
-
   const authConfig = getAuthConfig();
 
   const session = await authenticateRequest(authConfig);
 
-  if (!session) {
-    throw new AppError("UNAUTHENTICATED");
-  }
-
-  if (!session.email) {
+  if (!session || !session.email) {
     throw new AppError("UNAUTHENTICATED");
   }
 
@@ -34,23 +28,16 @@ export const ensureUserMiddleware = createMiddleware({
   });
 
   if (!user) {
-    try {
-      await db.insert(users).values({
-        id: userId,
-        email: session.email,
-      });
-    } catch (error) {
-      logServerError("auth.ensure-user.create", error, { userId });
-      throw new AppError("INTERNAL_ERROR");
-    }
+    await db.insert(users).values({
+      id: userId,
+      email: session.email,
+    });
   }
-
-  const userEmail = user?.email || session.email;
 
   return next({
     context: {
       userId,
-      userEmail,
+      userEmail: user?.email || session.email,
       session,
     },
   });

@@ -8,7 +8,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   CONFLICT: "This request conflicts with existing data.",
-  INTERNAL_ERROR: "Something went wrong. Please try again.",
+  INTERNAL_ERROR:
+    "An unexpected error occurred. Please check server logs and try again.",
 };
 
 export function getStandardErrorMessage(

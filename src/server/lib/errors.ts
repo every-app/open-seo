@@ -18,7 +18,7 @@ export function asAppError(error: unknown): AppError | null {
   return null;
 }
 
-export function toErrorCode(error: unknown): ErrorCode {
+function toErrorCode(error: unknown): ErrorCode {
   return asAppError(error)?.code ?? "INTERNAL_ERROR";
 }
 

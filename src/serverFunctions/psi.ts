@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
-import { ensureUserMiddleware } from "@/middleware/ensureUser";
-import { useSessionTokenClientMiddleware } from "@every-app/sdk/tanstack";
+import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
+import { AppError } from "@/server/lib/errors";
 import {
   psiAuditSchema,
   psiAuditListSchema,
@@ -33,7 +33,7 @@ async function resolvePsiSource(input: {
     });
 
     if (!row) {
-      throw new Error("Audit not found");
+      throw new AppError("NOT_FOUND");
     }
 
     return {
@@ -52,7 +52,7 @@ async function resolvePsiSource(input: {
   });
 
   if (!site) {
-    throw new Error("Audit not found");
+    throw new AppError("NOT_FOUND");
   }
 
   return {
@@ -65,7 +65,7 @@ async function resolvePsiSource(input: {
 }
 
 export const runPsiAudit = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiAuditSchema.parse(data))
   .handler(async ({ data, context }) => {
     const apiKey = await KeywordResearchRepository.getProjectPsiApiKey(
@@ -74,9 +74,7 @@ export const runPsiAudit = createServerFn({ method: "POST" })
     );
 
     if (!apiKey) {
-      throw new Error(
-        "PSI API key is not set for this project. Save a key first.",
-      );
+      throw new AppError("VALIDATION_ERROR");
     }
 
     const auditId = crypto.randomUUID();
@@ -146,7 +144,7 @@ export const runPsiAudit = createServerFn({ method: "POST" })
   });
 
 export const getProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiProjectSchema.parse(data))
   .handler(async ({ data, context }) => {
     // This PSI key is intentionally treated as low-sensitivity operational config
@@ -159,7 +157,7 @@ export const getProjectPsiApiKey = createServerFn({ method: "POST" })
   });
 
 export const saveProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiProjectKeySchema.parse(data))
   .handler(async ({ data, context }) => {
     // Same tradeoff: persisted for convenience across PSI + Site Audit flows.
@@ -172,7 +170,7 @@ export const saveProjectPsiApiKey = createServerFn({ method: "POST" })
   });
 
 export const clearProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiProjectSchema.parse(data))
   .handler(async ({ data, context }) => {
     await KeywordResearchRepository.clearProjectPsiApiKey(
@@ -183,7 +181,7 @@ export const clearProjectPsiApiKey = createServerFn({ method: "POST" })
   });
 
 export const listProjectPsiAudits = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiAuditListSchema.parse(data))
   .handler(async ({ data, context }) => {
     const rows = await PsiAuditRepository.listAuditResults({
@@ -219,7 +217,7 @@ export const listProjectPsiAudits = createServerFn({ method: "POST" })
   });
 
 export const getProjectPsiAuditRaw = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiAuditDetailsSchema.parse(data))
   .handler(async ({ data, context }) => {
     const row = await PsiAuditRepository.getAuditResult({
@@ -229,11 +227,11 @@ export const getProjectPsiAuditRaw = createServerFn({ method: "POST" })
     });
 
     if (!row) {
-      throw new Error("Audit not found");
+      throw new AppError("NOT_FOUND");
     }
 
     if (!row.r2Key) {
-      throw new Error("Audit payload not available");
+      throw new AppError("NOT_FOUND");
     }
 
     const payloadJson = await getJsonFromR2(row.r2Key);
@@ -247,7 +245,7 @@ export const getProjectPsiAuditRaw = createServerFn({ method: "POST" })
   });
 
 export const getProjectPsiAuditIssues = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiIssueFilterSchema.parse(data))
   .handler(async ({ data, context }) => {
     const row = await PsiAuditRepository.getAuditResult({
@@ -257,11 +255,11 @@ export const getProjectPsiAuditIssues = createServerFn({ method: "POST" })
     });
 
     if (!row) {
-      throw new Error("Audit not found");
+      throw new AppError("NOT_FOUND");
     }
 
     if (!row.r2Key) {
-      throw new Error("Audit payload not available");
+      throw new AppError("NOT_FOUND");
     }
 
     const payloadJson = await getJsonFromR2(row.r2Key);
@@ -277,7 +275,7 @@ export const getProjectPsiAuditIssues = createServerFn({ method: "POST" })
   });
 
 export const exportProjectPsiAudit = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiExportSchema.parse(data))
   .handler(async ({ data, context }) => {
     const row = await PsiAuditRepository.getAuditResult({
@@ -287,11 +285,11 @@ export const exportProjectPsiAudit = createServerFn({ method: "POST" })
     });
 
     if (!row) {
-      throw new Error("Audit not found");
+      throw new AppError("NOT_FOUND");
     }
 
     if (!row.r2Key) {
-      throw new Error("Audit payload not available");
+      throw new AppError("NOT_FOUND");
     }
 
     const payloadJson = await getJsonFromR2(row.r2Key);
@@ -329,7 +327,7 @@ export const exportProjectPsiAudit = createServerFn({ method: "POST" })
   });
 
 export const getPsiIssuesBySource = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiUnifiedIssueSchema.parse(data))
   .handler(async ({ data, context }) => {
     const target = await resolvePsiSource({
@@ -340,7 +338,7 @@ export const getPsiIssuesBySource = createServerFn({ method: "POST" })
     });
 
     if (!target.r2Key) {
-      throw new Error("Audit payload not available");
+      throw new AppError("NOT_FOUND");
     }
 
     const payloadJson = await getJsonFromR2(target.r2Key);
@@ -356,7 +354,7 @@ export const getPsiIssuesBySource = createServerFn({ method: "POST" })
   });
 
 export const exportPsiBySource = createServerFn({ method: "POST" })
-  .middleware([useSessionTokenClientMiddleware, ensureUserMiddleware])
+  .middleware(authenticatedServerFunctionMiddleware)
   .inputValidator((data: unknown) => psiUnifiedExportSchema.parse(data))
   .handler(async ({ data, context }) => {
     const target = await resolvePsiSource({
@@ -367,7 +365,7 @@ export const exportPsiBySource = createServerFn({ method: "POST" })
     });
 
     if (!target.r2Key) {
-      throw new Error("Audit payload not available");
+      throw new AppError("NOT_FOUND");
     }
 
     const payloadJson = await getJsonFromR2(target.r2Key);

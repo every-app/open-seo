@@ -28,7 +28,6 @@ import {
 } from "@/server/lib/kv-cache";
 import { KeywordResearchRepository } from "@/server/repositories/KeywordResearchRepository";
 import { AppError } from "@/server/lib/errors";
-import { logServerError } from "@/server/lib/logger";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,15 +63,12 @@ type EnrichedKeyword = {
 
 type KeywordSource = "related" | "suggestions" | "ideas";
 
-function parseMonthlySearches(
-  payload: string | null,
-  context: { keyword: string; projectId: string },
-): MonthlySearch[] {
+function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   if (!payload) return [];
   try {
     return JSON.parse(payload) as MonthlySearch[];
   } catch (error) {
-    logServerError("keywords.saved.parse-monthly-searches", error, context);
+    console.error("keywords.saved.parse-monthly-searches failed:", error);
     return [];
   }
 }
@@ -302,11 +298,7 @@ async function research(
       }),
     ),
   ).catch((error) => {
-    logServerError("keywords.research.persist-metrics", error, {
-      locationCode: input.locationCode,
-      languageCode: input.languageCode,
-      rowCount: rows.length,
-    });
+    console.error("keywords.research.persist-metrics failed:", error);
   });
 
   return { rows, source, usedFallback };
@@ -428,10 +420,7 @@ async function getSavedKeywords(
       competition: metric?.competition ?? null,
       keywordDifficulty: metric?.keywordDifficulty ?? null,
       intent: metric?.intent ?? null,
-      monthlySearches: parseMonthlySearches(metric?.monthlySearches ?? null, {
-        keyword: row.keyword,
-        projectId: row.projectId,
-      }),
+      monthlySearches: parseMonthlySearches(metric?.monthlySearches ?? null),
       fetchedAt: metric?.fetchedAt ?? null,
     })),
   };

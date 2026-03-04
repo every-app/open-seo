@@ -29,7 +29,10 @@ function IndexRedirect() {
     return (
       <div className="flex items-center justify-center h-full">
         <p className="text-error">
-          {getStandardErrorMessage(error, "Failed to load. Please try again.")}
+          {getStandardErrorMessage(
+            error,
+            "An unexpected error occurred. Please check server logs.",
+          )}
         </p>
       </div>
     );

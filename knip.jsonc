@@ -20,7 +20,6 @@
     "src/server.ts",
     "src/server/lib/audit/progress-kv.ts",
     "src/server/lib/audit/types.ts",
-    "src/server/lib/errors.ts",
     "src/server/services/PsiIssuesService.ts",
     "src/server/workflows/SiteAuditWorkflow.ts",
     "src/serverFunctions/keywords.ts",
@@ -29,7 +28,6 @@
     "src/types/schemas/psi.ts",
   ],
   "ignoreFiles": [
-    "src/server/lib/serverFnErrorBoundary.ts",
     "src/server/services/keyword-research/helpers.ts",
     "src/server/services/keyword-research/projects.ts",
     "src/server/services/keyword-research/research-data.ts",

@@ -7,7 +7,6 @@ import {
 } from "@/server/lib/dataforseo";
 import { sortBy } from "remeda";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
-import { logServerError } from "@/server/lib/logger";
 
 /** Domain overview data is refreshed every 12 hours. */
 const DOMAIN_OVERVIEW_TTL_SECONDS = 12 * 60 * 60;
@@ -111,11 +110,7 @@ async function getOverview(input: {
   if (result.hasData) {
     void setCached(cacheKey, result, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
       (error) => {
-        logServerError("domain.overview.cache-write", error, {
-          domain,
-          locationCode: input.locationCode,
-          languageCode: input.languageCode,
-        });
+        console.error("domain.overview.cache-write failed:", error);
       },
     );
   }

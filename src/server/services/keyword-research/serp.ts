@@ -1,6 +1,6 @@
 import { fetchHistoricalSerpsRaw } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
-import { logServerError } from "@/server/lib/logger";
+
 import type { SerpResultItem } from "@/types/keywords";
 import { normalizeKeyword } from "./helpers";
 
@@ -57,11 +57,7 @@ export async function getSerpAnalysis(input: {
 
   if (items.length > 0) {
     void setCached(cacheKey, result, SERP_CACHE_TTL_SECONDS).catch((error) => {
-      logServerError("keywords.serp.cache-write", error, {
-        keyword,
-        locationCode: input.locationCode,
-        languageCode: input.languageCode,
-      });
+      console.error("keywords.serp.cache-write failed:", error);
     });
   }
 
