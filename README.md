@@ -184,6 +184,20 @@ When using a git worktree, portless prefixes the branch name, for example `http:
 
 Running locally is the fastest way to test core flows. In the future, local mode will not include some Cloudflare-backed capabilities (for example cron-based rank tracking and infrastructure-powered performance improvements for heavier audits).
 
+### Local Development (In Gateway)
+
+If you want auth or any other gateway only features enabled for local dev, you must access through your Gateway and set a devUrl on the app.
+
+See the next section which is a workflow for agents which works much better with worktrees and doens't require the Gateway.
+
+```sh
+# This configures your .env.local, installs dependencies and runs migrations against your local database.
+npx everyapp app setup-local
+
+# terminal 1: start once and keep running
+pnpm dev:agents
+```
+
 ### Local Development Workflow (for coding agents)
 
 ```sh
