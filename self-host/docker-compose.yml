@@ -1,28 +1,4 @@
 services:
-  gateway:
-    build:
-      context: ..
-      dockerfile: self-host/Dockerfile.gateway-selfhost
-      args:
-        GATEWAY_RELEASE_TAG: ${GATEWAY_RELEASE_TAG:-}
-    env_file:
-      - ../.env.local
-    command:
-      [
-        "sh",
-        "-c",
-        "pnpm run db:migrate:local && pnpm exec vite dev --host 0.0.0.0 --port 3000",
-      ]
-    ports:
-      - "127.0.0.1:3000:3000"
-    volumes:
-      - ../.env.local:/app/.env:ro
-      - gateway_wrangler_state:/app/.wrangler/state
-    networks:
-      selfhost:
-        aliases:
-          - every-app-gateway.localhost
-
   open-seo:
     build:
       context: ..
@@ -30,9 +6,10 @@ services:
     working_dir: /app
     environment:
       - PORT=3001
-      - VITE_APP_ID=${VITE_APP_ID}
-      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL}
-      - GATEWAY_URL=${GATEWAY_URL}
+      - BYPASS_GATEWAY_LOCAL_ONLY=true
+      - VITE_APP_ID=${VITE_APP_ID:-open-seo}
+      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:3001}
+      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:3001}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
       - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - VITE_SHOW_DEVTOOLS=false
@@ -42,22 +19,13 @@ services:
         "-c",
         "pnpm run db:migrate:local && pnpm exec vite dev --host 0.0.0.0 --port 3001",
       ]
-    depends_on:
-      - gateway
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
       - ..:/app
       - open_seo_node_modules:/app/node_modules
       - open_seo_pnpm_store:/pnpm/store
-    networks:
-      - selfhost
-
-networks:
-  selfhost:
 
 volumes:
-  gateway_wrangler_state:
-    name: every_app_gateway_wrangler_state
   open_seo_node_modules:
   open_seo_pnpm_store:

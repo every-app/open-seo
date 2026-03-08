@@ -12,7 +12,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
-- [Docker Self Hosting (Gateway + OpenSEO)](#docker-self-hosting-gateway--openseo)
+- [Docker Self Hosting (Standalone OpenSEO)](#docker-self-hosting-standalone-openseo)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
@@ -144,9 +144,9 @@ npx wrangler secret put DATAFORSEO_API_KEY
 
 Now you're all set! Go back to the gateway, click on the OpenSEO app, and start getting better at SEO!
 
-## Docker Self Hosting (Gateway + OpenSEO)
+## Docker Self Hosting (Standalone OpenSEO)
 
-If you want a single Docker Compose command that runs both Every App Gateway and OpenSEO together, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
+If you want a single Docker Compose command that runs OpenSEO locally without Gateway auth, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
 
 This runtime uses local dev servers to emulate Cloudflare Worker bindings. It is intended for **local use only** — do not expose ports directly to the public internet. For remote access, use [Tailscale](https://tailscale.com/). For internet-facing deployments, use the Cloudflare deployment path above. See the [security and runtime caveats](./SELF_HOSTING_DOCKER.md#security-and-runtime-caveats) in the Docker guide for details.
 
