@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@every-app/sdk':
-        specifier: ^0.1.13
-        version: 0.1.13(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)
+        specifier: ^0.1.14
+        version: 0.1.14(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)
       '@tanstack/query-core':
         specifier: ^5.90.9
         version: 5.90.20
@@ -763,8 +763,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@every-app/sdk@0.1.13':
-    resolution: {integrity: sha512-r8NxAydshZVK2Z3H+SzYHuTGvIPHS+y/M38AgolRW6C87eQHa+VRWlZAtuUIq5P/fIaDpZcYgz43qRfTusvDSg==}
+  '@every-app/sdk@0.1.14':
+    resolution: {integrity: sha512-1UIX+lvHswwm+IIvQgWXgdI9g3NiM8rhms0rvPx4W36ZqzugsKmLONYX9/LpK3i9Nv3Fi43VhOc7n3Je0jy9fA==}
     peerDependencies:
       '@tanstack/react-router': ^1.0.0
       '@tanstack/react-start': ^1.0.0
@@ -2760,8 +2760,18 @@ packages:
     peerDependencies:
       seroval: ^1.0
 
+  seroval-plugins@1.5.1:
+    resolution: {integrity: sha512-4FbuZ/TMl02sqv0RTFexu0SP6V+ywaIe5bAWCCEik0fk17BhALgwvUDVF7e3Uvf9pxmwCEJsRPmlkUE6HdzLAw==}
+    engines: {node: '>=10'}
+    peerDependencies:
+      seroval: ^1.0
+
   seroval@1.5.0:
     resolution: {integrity: sha512-OE4cvmJ1uSPrKorFIH9/w/Qwuvi/IMcGbv5RKgcJ/zjA/IohDLU6SVaxFN9FwajbP7nsX0dQqMDes1whk3y+yw==}
+    engines: {node: '>=10'}
+
+  seroval@1.5.1:
+    resolution: {integrity: sha512-OwrZRZAfhHww0WEnKHDY8OM0U/Qs8OTfIDWhUD4BLpNJUfXK4cGmjiagGze086m+mhI+V2nD0gfbHEnJjb9STA==}
     engines: {node: '>=10'}
 
   sharp@0.34.5:
@@ -2805,8 +2815,8 @@ packages:
     engines: {node: '>=20.16.0'}
     hasBin: true
 
-  srvx@0.11.8:
-    resolution: {integrity: sha512-2n9t0YnAXPJjinytvxccNgs7rOA5gmE7Wowt/8Dy2dx2fDC6sBhfBpbrCvjYKALlVukPS/Uq3QwkolKNa7P/2Q==}
+  srvx@0.11.9:
+    resolution: {integrity: sha512-97wWJS6F0KTKAhDlHVmBzMvlBOp5FiNp3XrLoodIgYJpXxgG5tE9rX4Pg7s46n2shI4wtEsMATTS1+rI3/ubzA==}
     engines: {node: '>=20.16.0'}
     hasBin: true
 
@@ -3472,7 +3482,7 @@ snapshots:
   '@esbuild/win32-x64@0.27.3':
     optional: true
 
-  '@every-app/sdk@0.1.13(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)':
+  '@every-app/sdk@0.1.14(@tanstack/react-router@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(jose@6.1.3)(react@19.2.4)':
     dependencies:
       '@tanstack/react-router': 1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       '@tanstack/react-start': 1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
@@ -4917,7 +4927,7 @@ snapshots:
   h3@2.0.1-rc.14:
     dependencies:
       rou3: 0.7.12
-      srvx: 0.11.8
+      srvx: 0.11.9
 
   has-symbols@1.1.0: {}
 
@@ -5336,7 +5346,13 @@ snapshots:
     dependencies:
       seroval: 1.5.0
 
+  seroval-plugins@1.5.1(seroval@1.5.1):
+    dependencies:
+      seroval: 1.5.1
+
   seroval@1.5.0: {}
+
+  seroval@1.5.1: {}
 
   sharp@0.34.5:
     dependencies:
@@ -5376,8 +5392,8 @@ snapshots:
   solid-js@1.9.11:
     dependencies:
       csstype: 3.2.3
-      seroval: 1.5.0
-      seroval-plugins: 1.5.0(seroval@1.5.0)
+      seroval: 1.5.1
+      seroval-plugins: 1.5.1(seroval@1.5.1)
 
   sonner@2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4):
     dependencies:
@@ -5397,7 +5413,7 @@ snapshots:
 
   srvx@0.11.7: {}
 
-  srvx@0.11.8: {}
+  srvx@0.11.9: {}
 
   strip-json-comments@5.0.3: {}
 
