@@ -8,8 +8,6 @@
     "drizzle.config.ts",
     // DB index re-exports schema for convenience
     "src/db/index.ts",
-    // Docker self-host runtime entrypoint scripts
-    "self-host/scripts/*.mjs",
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts"],
   "ignore": [

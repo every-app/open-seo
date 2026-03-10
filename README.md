@@ -12,7 +12,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
-- [Docker Self Hosting (Standalone OpenSEO)](#docker-self-hosting-standalone-openseo)
+- [Docker Self Hosting](#docker-self-hosting)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
@@ -144,14 +144,14 @@ npx wrangler secret put DATAFORSEO_API_KEY
 
 Now you're all set! Go back to the gateway, click on the OpenSEO app, and start getting better at SEO!
 
-## Docker Self Hosting (Standalone OpenSEO)
+## Docker Self Hosting
 
 Quickstart:
 
 1. `cp .env.example .env`
 2. Set `DATAFORSEO_API_KEY` in `.env`
 3. `docker compose up`
-4. Open `http://localhost:3001`
+4. Open `http://localhost:<PORT>` (default `3001`)
 
 For runtime details, caveats, and troubleshooting, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
 

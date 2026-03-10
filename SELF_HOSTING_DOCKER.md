@@ -1,6 +1,6 @@
-# Docker Self-Hosting (Standalone OpenSEO)
+# Docker Self-Hosting
 
-This guide runs OpenSEO as a standalone local service without Every App Gateway.
+This guide runs OpenSEO as a local service without Every App Gateway.
 
 In this mode, OpenSEO runs with `BYPASS_GATEWAY_LOCAL_ONLY=true`, so authentication and Gateway-managed user accounts are disabled.
 
@@ -32,7 +32,7 @@ Required:
 
 Optional:
 
-- `OPENAI_API_KEY`
+- `PORT` (defaults to `3001`)
 - `VITE_APP_ID` (defaults to `open-seo`)
 - `BYPASS_GATEWAY_LOCAL_ONLY=true` (Docker compose already sets this)
 
@@ -44,7 +44,7 @@ docker compose up
 
 URL:
 
-- OpenSEO: `http://localhost:3001`
+- OpenSEO: `http://localhost:<PORT>` (defaults to `3001`)
 
 Boot behavior:
 

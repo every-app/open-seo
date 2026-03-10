@@ -5,22 +5,21 @@ services:
       dockerfile: self-host/Dockerfile.selfhost
     working_dir: /app
     environment:
-      - PORT=3001
+      - PORT=${PORT:-3001}
       - BYPASS_GATEWAY_LOCAL_ONLY=true
       - VITE_APP_ID=${VITE_APP_ID:-open-seo}
-      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:3001}
-      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:3001}
+      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:${PORT:-3001}}
+      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:${PORT:-3001}}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - VITE_SHOW_DEVTOOLS=false
     command:
       [
         "sh",
         "-c",
-        "pnpm run db:migrate:local && pnpm exec vite dev --host 0.0.0.0 --port 3001",
+        "pnpm run db:migrate:local && pnpm exec vite dev --host 0.0.0.0 --port ${PORT:-3001}",
       ]
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
     volumes:
       - .:/app
       - open_seo_node_modules:/app/node_modules
