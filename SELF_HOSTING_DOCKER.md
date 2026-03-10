@@ -39,7 +39,7 @@ Optional:
 ## 2) Start OpenSEO
 
 ```bash
-docker compose up --build
+docker compose up
 ```
 
 URL:
@@ -57,13 +57,19 @@ Boot behavior:
 - OpenSEO env values seem stale: restart OpenSEO:
 
 ```bash
-docker compose up -d --build open-seo
+docker compose up -d open-seo
 ```
 
 - If migrations fail on first run, rebuild and retry:
 
 ```bash
 docker compose down
+docker compose up
+```
+
+If you update dependencies or Docker build config, force a rebuild:
+
+```bash
 docker compose up --build
 ```
 

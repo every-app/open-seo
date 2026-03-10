@@ -20,9 +20,6 @@
     "db:migrate:prod": "npx everyapp app remote-d1-shell -- drizzle-kit migrate --config=drizzle-prod.config.ts",
     "db:studio:local": "drizzle-kit studio",
     "db:studio:prod": "npx everyapp app remote-d1-shell -- drizzle-kit studio --config=drizzle-prod.config.ts",
-    "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down",
-    "docker:generate-secrets": "node ./self-host/scripts/generate-selfhost-secrets.mjs",
     "knip": "knip",
     "ci": "prettier --check . && knip && tsc --noEmit && oxlint ."
   },

@@ -150,7 +150,7 @@ Quickstart:
 
 1. `cp .env.example .env`
 2. Set `DATAFORSEO_API_KEY` in `.env`
-3. `docker compose up --build`
+3. `docker compose up`
 4. Open `http://localhost:3001`
 
 For runtime details, caveats, and troubleshooting, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
