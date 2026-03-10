@@ -1,7 +1,7 @@
 services:
   open-seo:
     build:
-      context: ..
+      context: .
       dockerfile: self-host/Dockerfile.selfhost
     working_dir: /app
     environment:
@@ -22,7 +22,7 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
-      - ..:/app
+      - .:/app
       - open_seo_node_modules:/app/node_modules
       - open_seo_pnpm_store:/pnpm/store
 

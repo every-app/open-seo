@@ -12,7 +12,7 @@ const { privateKey, publicKey } = generateKeyPairSync("rsa", {
 });
 
 console.log(
-  "# Copy these lines into .env.local\n# See SELF_HOSTING_DOCKER.md for setup instructions",
+  "# Copy these lines into .env\n# See SELF_HOSTING_DOCKER.md for setup instructions",
 );
 console.log(`BETTER_AUTH_SECRET=${betterAuthSecret}`);
 console.log(`JWT_PRIVATE_KEY="${escapeForEnv(privateKey)}"`);

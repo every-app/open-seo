@@ -146,9 +146,14 @@ Now you're all set! Go back to the gateway, click on the OpenSEO app, and start 
 
 ## Docker Self Hosting (Standalone OpenSEO)
 
-If you want a single Docker Compose command that runs OpenSEO locally without Gateway auth, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
+Quickstart:
 
-This runtime uses local dev servers to emulate Cloudflare Worker bindings. It is intended for **local use only** — do not expose ports directly to the public internet. For remote access, use [Tailscale](https://tailscale.com/). For internet-facing deployments, use the Cloudflare deployment path above. See the [security and runtime caveats](./SELF_HOSTING_DOCKER.md#security-and-runtime-caveats) in the Docker guide for details.
+1. `cp .env.example .env`
+2. Set `DATAFORSEO_API_KEY` in `.env`
+3. `docker compose up --build`
+4. Open `http://localhost:3001`
+
+For runtime details, caveats, and troubleshooting, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
 
 ## Local Development
 

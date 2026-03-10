@@ -20,9 +20,8 @@
     "db:migrate:prod": "npx everyapp app remote-d1-shell -- drizzle-kit migrate --config=drizzle-prod.config.ts",
     "db:studio:local": "drizzle-kit studio",
     "db:studio:prod": "npx everyapp app remote-d1-shell -- drizzle-kit studio --config=drizzle-prod.config.ts",
-    "docker:check-env": "node ./self-host/scripts/validate-selfhost-env.mjs",
-    "docker:up": "pnpm run docker:check-env && docker compose -f self-host/docker-compose.yml --env-file .env.local up --build",
-    "docker:down": "docker compose -f self-host/docker-compose.yml --env-file .env.local down",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down",
     "docker:generate-secrets": "node ./self-host/scripts/generate-selfhost-secrets.mjs",
     "knip": "knip",
     "ci": "prettier --check . && knip && tsc --noEmit && oxlint ."
