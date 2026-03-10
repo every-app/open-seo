@@ -6,10 +6,7 @@ services:
     working_dir: /app
     environment:
       - PORT=${PORT:-3001}
-      - BYPASS_GATEWAY_LOCAL_ONLY=true
-      - VITE_APP_ID=${VITE_APP_ID:-open-seo}
-      - VITE_GATEWAY_URL=${VITE_GATEWAY_URL:-http://localhost:${PORT:-3001}}
-      - GATEWAY_URL=${GATEWAY_URL:-http://localhost:${PORT:-3001}}
+      - AUTH_MODE=local_noauth
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
       - VITE_SHOW_DEVTOOLS=false
     command:

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "every-open-seo",
+  "name": "open-seo",
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat"],
@@ -14,12 +14,6 @@
       "class_name": "SiteAuditWorkflow",
     },
   ],
-  "services": [
-    {
-      "binding": "EVERY_APP_GATEWAY",
-      "service": "every-app-gateway",
-    },
-  ],
   "kv_namespaces": [
     {
       "binding": "KV",
@@ -29,8 +23,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "every-open-seo",
-      "database_id": "dc7eb9f1-9a43-4d37-9bc9-1293a9200f13",
+      "database_name": "open-seo",
+      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
       "migrations_dir": "drizzle",
     },
   ],

@@ -4,8 +4,8 @@
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
-    "dev:agents": "mkdir -p .logs && BYPASS_GATEWAY_LOCAL_ONLY=true portless run vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev": "AUTH_MODE=local_noauth vite dev",
+    "dev:agents": "mkdir -p .logs && AUTH_MODE=local_noauth portless run vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint .",
     "lint:fix": "oxlint . --fix",
@@ -16,12 +16,26 @@
     "format:check": "prettier --check .",
     "format:write": "prettier . --write",
     "db:generate": "drizzle-kit generate",
-    "db:migrate:local": "drizzle-kit migrate",
-    "db:migrate:prod": "npx everyapp app remote-d1-shell -- drizzle-kit migrate --config=drizzle-prod.config.ts",
-    "db:studio:local": "drizzle-kit studio",
-    "db:studio:prod": "npx everyapp app remote-d1-shell -- drizzle-kit studio --config=drizzle-prod.config.ts",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
     "knip": "knip",
     "ci": "prettier --check . && knip && tsc --noEmit && oxlint ."
+  },
+  "cloudflare": {
+    "bindings": {
+      "AUTH_MODE": {
+        "description": "Set to `cloudflare_access` for secured deployments behind Cloudflare Access, or `local_noauth` for trusted local self-host mode only."
+      },
+      "TEAM_DOMAIN": {
+        "description": "Cloudflare Access team domain (for example `https://your-team.cloudflareaccess.com`) used to validate `cf-access-jwt-assertion` JWTs."
+      },
+      "POLICY_AUD": {
+        "description": "Cloudflare Access Application Audience (AUD) tag for this Worker route/domain."
+      },
+      "DATAFORSEO_API_KEY": {
+        "description": "Base64-encoded `login:password` for DataForSEO API access."
+      }
+    }
   },
   "dependencies": {
     "@every-app/sdk": "^0.1.13",

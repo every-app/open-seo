@@ -1,5 +1,5 @@
 {
-  "ignoreBinaries": ["everyapp"],
+  "ignoreBinaries": [],
   "entry": [
     // Detect Tanstack Start Routes
     "src/router.tsx",

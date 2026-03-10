@@ -1,8 +1,8 @@
 # Docker Self-Hosting
 
-This guide runs OpenSEO as a local service without Every App Gateway.
+This guide runs OpenSEO as a local service.
 
-In this mode, OpenSEO runs with `BYPASS_GATEWAY_LOCAL_ONLY=true`, so authentication and Gateway-managed user accounts are disabled.
+In this mode, OpenSEO runs with `AUTH_MODE=local_noauth`, so request authentication is disabled and a local admin user (`admin@localhost`) is injected automatically.
 
 ## Prerequisites
 
@@ -13,8 +13,8 @@ In this mode, OpenSEO runs with `BYPASS_GATEWAY_LOCAL_ONLY=true`, so authenticat
 This stack is local-first and uses dev runtimes to emulate Cloudflare Worker bindings.
 
 - Do not expose these ports directly to the public internet.
-- There is no built-in Gateway auth in this mode.
-- If you expose it beyond localhost, put it behind the same authentication layer you use for your other self-hosted services (or use the [Cloudflare deployment path](./README.md#self-hosting-deploy-on-cloudflare-5-10-minutes)).
+- There is no built-in auth check in this mode.
+- If you expose it beyond localhost, put it behind the same authentication layer you use for your other self-hosted services (or use the [Cloudflare deployment path](./README.md#cloudflare-deployment--access-setup)).
 
 ## 1) Configure env values
 
@@ -33,8 +33,7 @@ Required:
 Optional:
 
 - `PORT` (defaults to `3001`)
-- `VITE_APP_ID` (defaults to `open-seo`)
-- `BYPASS_GATEWAY_LOCAL_ONLY=true` (Docker compose already sets this)
+- `AUTH_MODE=local_noauth` (Docker compose already sets this)
 
 ## 2) Start OpenSEO
 

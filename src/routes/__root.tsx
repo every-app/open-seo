@@ -19,7 +19,6 @@ import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
 import { Toaster } from "sonner";
 import { Sidebar } from "@/client/components/Sidebar";
-import { EmbeddedAppProvider } from "@every-app/sdk/tanstack";
 import { queryClient } from "@/client/tanstack-db";
 import { projectNavItems } from "@/client/navigation/items";
 
@@ -61,7 +60,6 @@ export const Route = createRootRoute({
         sizes: "16x16",
         href: "/favicon-16x16.png",
       },
-      { rel: "manifest", href: "/site.webmanifest", color: "#fffff" },
       { rel: "icon", href: "/favicon.ico" },
     ],
     scripts: [],
@@ -95,20 +93,14 @@ function AppLayout() {
           >
             <Menu className="h-6 w-6" />
           </button>
-          <span className="font-semibold text-base-content ml-1">
-            Every App
-          </span>
+          <span className="font-semibold text-base-content ml-1">OpenSEO</span>
         </div>
 
-        {/* Desktop: EveryApp brand + nav links (left) */}
+        {/* Desktop: app brand + nav links (left) */}
         <div className="hidden md:flex items-center gap-1">
-          <a
-            href={import.meta.env.VITE_GATEWAY_URL}
-            target="_top"
-            className="text-lg font-semibold text-base-content hover:text-primary transition-colors px-2"
-          >
-            Every App
-          </a>
+          <span className="text-lg font-semibold text-base-content px-2">
+            OpenSEO
+          </span>
           {projectId &&
             projectNavItems.map((item) => {
               const Icon = item.icon;
@@ -195,28 +187,23 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <body>
         <ClientOnly>
           <QueryClientProvider client={queryClient}>
-            <EmbeddedAppProvider appId={import.meta.env.VITE_APP_ID}>
-              <>
-                {children}
-                <Toaster
-                  position="bottom-right"
-                  mobileOffset={{ bottom: 100 }}
+            <>
+              {children}
+              <Toaster position="bottom-right" mobileOffset={{ bottom: 100 }} />
+              {showDevtools ? (
+                <TanStackDevtools
+                  config={{ position: "bottom-right" }}
+                  eventBusConfig={{ connectToServerBus: true }}
+                  plugins={[
+                    {
+                      name: "TanStack Router",
+                      render: <TanStackRouterDevtoolsPanel />,
+                      defaultOpen: true,
+                    },
+                  ]}
                 />
-                {showDevtools ? (
-                  <TanStackDevtools
-                    config={{ position: "bottom-right" }}
-                    eventBusConfig={{ connectToServerBus: true }}
-                    plugins={[
-                      {
-                        name: "TanStack Router",
-                        render: <TanStackRouterDevtoolsPanel />,
-                        defaultOpen: true,
-                      },
-                    ]}
-                  />
-                ) : null}
-              </>
-            </EmbeddedAppProvider>
+              ) : null}
+            </>
           </QueryClientProvider>
         </ClientOnly>
         <Scripts />

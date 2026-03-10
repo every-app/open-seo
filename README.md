@@ -4,6 +4,8 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 
 ![OpenSEO demo (placeholder)](https://github.com/user-attachments/assets/6a928771-66ff-486b-b131-a54a3943985f)
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/every-app/open-seo)
+
 ## Table of Contents
 
 - [Why Use This](#why-use-this)
@@ -12,7 +14,9 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [DataForSEO API Key Setup](#dataforseo-api-key-setup)
-- [Docker Self Hosting](#docker-self-hosting)
+- [Self-hosting](#self-hosting)
+  - [Cloudflare Deployment + Access Setup](#cloudflare-deployment--access-setup)
+  - [Docker Self Hosting](#docker-self-hosting)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
@@ -80,6 +84,73 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 - Docker self-hosting: `.env`
 - Local development: `.env.local`
 
+## Self-hosting
+
+OpenSEO supports two self-hosting paths:
+
+- Cloudflare for hosting on the internet (Recommended).
+- Docker for your homelab or local use.
+
+Use this quick guide:
+
+- Choose Cloudflare when:
+  - You've never used Docker before.
+  - You want a more SaaS like experience.
+  - You want to use it from multiple devices or with teammates.
+  - You want support for more powerful features in the future like sharing public links to reports or site audits rendering your websites javascript.
+- Choose Docker when:
+  - You already have Docker installed and want to get setup most quickly.
+  - You have a homelab setup.
+  - You only want to use OpenSEO locally on one device.
+
+## Cloudflare Deployment + Access Setup
+
+You can use the Deploy button at the top of this README or run with Wrangler directly.
+
+### 1) Deploy the Worker
+
+Clicking this button will open a page to deploy OpenSEO in your Cloudflare account.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/every-app/open-seo)
+
+### 2) Set required environment variables
+
+OpenSEO needs these vars in production:
+
+- `DATAFORSEO_API_KEY`: base64-encoded `login:password` from DataForSEO.
+- `AUTH_MODE=cloudflare_access`
+- `TEAM_DOMAIN`: your Access team domain (for example `https://your-team.cloudflareaccess.com`).
+- `POLICY_AUD`: Access Application Audience tag for your OpenSEO app.
+
+You can set plain vars and secrets with Wrangler:
+
+```sh
+pnpm exec wrangler secret put DATAFORSEO_API_KEY
+pnpm exec wrangler secret put POLICY_AUD
+pnpm exec wrangler secret put TEAM_DOMAIN
+pnpm exec wrangler secret put AUTH_MODE
+```
+
+You can also set these in Cloudflare Dashboard under Worker Settings.
+
+### 3) Configure Cloudflare Access
+
+In Cloudflare Zero Trust:
+
+1. Create an Access application for your OpenSEO route/domain.
+2. Add policy rules for the identities/groups allowed to access OpenSEO.
+3. Ensure requests to your Worker include `cf-access-jwt-assertion`.
+4. Copy values into OpenSEO config:
+   - Access team domain -> `TEAM_DOMAIN`
+   - Access app AUD tag -> `POLICY_AUD`
+
+### 4) Validate setup
+
+- Visit your OpenSEO URL.
+- You should be prompted by Cloudflare Access if not signed in.
+- After sign-in, the app should load normally.
+- If config is missing, OpenSEO shows an in-app setup error that links back to this section.
+
 ## Docker Self Hosting
 
 Quickstart:
@@ -113,11 +184,11 @@ cp .env.example .env.local
 pnpm install
 # Initialize local DB schema (required on a fresh machine)
 pnpm run db:migrate:local
-# This runs in BYPASS_GATEWAY mode for local use and quick testing.
+# This runs in local_noauth mode for local use and quick testing.
 pnpm dev:agents
 ```
 
-`pnpm dev` runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
+`pnpm dev` runs on `http://localhost:3001` by default (or `PORT` from `.env.local`) in `AUTH_MODE=local_noauth`.
 
 `pnpm dev:agents` runs through [portless](https://github.com/vercel-labs/portless) at `http://open-seo.localhost:1355` by default.
 
@@ -139,6 +210,17 @@ pnpm dev:agents
 
 - `pnpm dev:agents` mirrors output to `.logs/dev-server.log` (gitignored).
 - The log file is overwritten on each run.
+
+### Auth modes
+
+- `AUTH_MODE=cloudflare_access` (default): validates Cloudflare Access JWTs (`cf-access-jwt-assertion`) using `TEAM_DOMAIN` + `POLICY_AUD`.
+- `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects `admin@localhost`.
+- `AUTH_MODE=hosted`: reserved for upcoming multi-tenant auth flow (not yet implemented).
+
+Local scripts (`pnpm dev` and `pnpm dev:agents`) set `AUTH_MODE=local_noauth` automatically.
+Use `AUTH_MODE=cloudflare_access pnpm dev` when you specifically want to test Access validation locally.
+
+For Cloudflare deployments, ensure Cloudflare Access is enabled on your Worker route/domain and provide `TEAM_DOMAIN` + `POLICY_AUD` in environment variables.
 
 ### Database Commands
 

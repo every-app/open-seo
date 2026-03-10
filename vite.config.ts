@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
   const showDevtools = env.VITE_SHOW_DEVTOOLS !== "false";
 
   return {
-    envPrefix: ["VITE_", "BYPASS_GATEWAY_LOCAL_ONLY"],
+    envPrefix: ["VITE_"],
     server: {
       port,
     },

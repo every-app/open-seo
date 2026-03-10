@@ -1,7 +1,6 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useCurrentUser } from "@every-app/sdk/tanstack";
 import { getProject } from "@/serverFunctions/keywords";
 
 export const Route = createFileRoute("/p/$projectId")({
@@ -12,7 +11,6 @@ function ProjectLayout() {
   const params = Route.useParams();
   const { projectId } = params;
   const navigate = useNavigate();
-  const user = useCurrentUser();
 
   const {
     data: project,
@@ -21,14 +19,13 @@ function ProjectLayout() {
   } = useQuery({
     queryKey: ["project", projectId],
     queryFn: () => getProject({ data: { projectId } }),
-    enabled: user !== null,
   });
 
   useEffect(() => {
-    if (user !== null && !isLoading && (isError || !project)) {
+    if (!isLoading && (isError || !project)) {
       void navigate({ to: "/" });
     }
-  }, [isLoading, isError, project, navigate, user]);
+  }, [isLoading, isError, project, navigate]);
 
   if (isLoading) {
     return (

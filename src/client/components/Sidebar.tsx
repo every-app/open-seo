@@ -21,13 +21,7 @@ export function Sidebar({
     return (
       <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">
         <div className="px-4 py-4 border-b border-base-300 flex items-center justify-between">
-          <a
-            href={import.meta.env.VITE_GATEWAY_URL}
-            target="_top"
-            className="font-semibold text-base-content hover:text-primary transition-colors"
-          >
-            Every App
-          </a>
+          <span className="font-semibold text-base-content">OpenSEO</span>
           {onClose && (
             <button
               onClick={onClose}
@@ -49,13 +43,7 @@ export function Sidebar({
     <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">
       {/* Header */}
       <div className="px-4 py-4 border-b border-base-300 flex items-center justify-between">
-        <a
-          href={import.meta.env.VITE_GATEWAY_URL}
-          target="_top"
-          className="font-semibold text-base-content hover:text-primary transition-colors"
-        >
-          Every App
-        </a>
+        <span className="font-semibold text-base-content">OpenSEO</span>
         {onClose && (
           <button
             onClick={onClose}
