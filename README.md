@@ -119,9 +119,9 @@ pnpm dev:agents
 
 `pnpm dev` runs on `http://localhost:3001` by default (or `PORT` from `.env.local`).
 
-`pnpm dev:agents` runs through portless at `http://open-seo.localhost:1355` by default.
+`pnpm dev:agents` runs through [portless](https://github.com/vercel-labs/portless) at `http://open-seo.localhost:1355` by default.
 
-When using a git worktree, portless prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
+When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
 Running locally is the fastest way to test core flows.
 
