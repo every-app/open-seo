@@ -11,7 +11,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [Roadmap](#roadmap)
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
-- [Self Hosting (Deploy on Cloudflare) \[5-10 minutes\]](#self-hosting-deploy-on-cloudflare-5-10-minutes)
+- [DataForSEO API Key Setup](#dataforseo-api-key-setup)
 - [Docker Self Hosting](#docker-self-hosting)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
@@ -63,68 +63,7 @@ There are two separate things:
 
 For cost estimates, see [DataForSEO API Cost Reference](#seo-api-cost-reference).
 
-## Self Hosting (Deploy on Cloudflare) [5-10 minutes]
-
-> [!TIP]
-> If anything in this section is confusing or unfamiliar like running terminal commands, copy this link into ChatGPT or Claude and ask it explain.
-
-OpenSEO is built on [Every App](https://github.com/every-app/every-app), a platform for easily self-hosting open source apps like OpenSEO in your own Cloudflare account. Cloudflare enables much more powerful functionality than is possible running on your own computer or on a VPS.
-
-_Windows Users_
-
-This has not been tested on Windows. Please let me know if you run into problems. Using WSL will likely work better. Also, try using [fly.io Sprites](https://sprites.dev/) to get a linux sandbox for free if you get totally stuck.
-
-### Video Walkthrough
-
-This video walks through setting up the Gateway and self hosting OpenSEO. If you run into any problems, reference the [Community](#community) section for how to reach out.
-
-https://github.com/user-attachments/assets/e40d5089-971f-43c9-85ff-1213aea35156
-
-### Prerequisites
-
-If you don't want to make a Cloudflare account yet (its easy!) and just want to test out OpenSEO, skip to the [Run Locally](#seo-api-cost-reference) section.
-
-1. Install [Node.js](https://nodejs.org/) (includes `npx`).
-2. Create a Cloudflare account: [dash.cloudflare.com/sign-up](https://dash.cloudflare.com/sign-up)
-3. Authenticate Wrangler:
-
-```sh
-npx wrangler login
-```
-
-4. Deploy the Every App Gateway (one-time per account):
-
-```sh
-npx everyapp gateway deploy
-```
-
-5. Create an Account
-
-- Follow the link output by the last command to create an account. You will access OpenSEO through this account.
-
-### Self Host OpenSEO
-
-Deploy the app to cloudflare.
-
-1. Clone the repo to your machine
-
-```sh
-git clone https://github.com/every-app/open-seo.git
-```
-
-2. Switch to the directory
-
-```sh
-cd open-seo
-```
-
-3. Self host via the Every App CLI
-
-```sh
-npx everyapp app deploy
-```
-
-#### DataForSEO API Key Setup [5 minutes]
+## DataForSEO API Key Setup
 
 OpenSEO use DataForSEO to get the SEO info. You need an API key to connect OpenSEO to the service.
 
@@ -136,13 +75,10 @@ OpenSEO use DataForSEO to get the SEO info. You need an API key to connect OpenS
 printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 ```
 
-4. Set this as a secret in Cloudflare. Use the value from the previous step when prompted.
+4. Set this as `DATAFORSEO_API_KEY` in your environment file:
 
-```sh
-npx wrangler secret put DATAFORSEO_API_KEY
-```
-
-Now you're all set! Go back to the gateway, click on the OpenSEO app, and start getting better at SEO!
+- Docker self-hosting: `.env`
+- Local development: `.env.local`
 
 ## Docker Self Hosting
 
@@ -177,7 +113,7 @@ cp .env.example .env.local
 pnpm install
 # Initialize local DB schema (required on a fresh machine)
 pnpm run db:migrate:local
-# This runs in BYPASS_GATEWAY mode so that you don't need to set up the Every App gateway. This is fine for local use and best for local dev / quick testing since you don't need to access the app through the gatway
+# This runs in BYPASS_GATEWAY mode for local use and quick testing.
 pnpm dev:agents
 ```
 
@@ -187,21 +123,7 @@ pnpm dev:agents
 
 When using a git worktree, portless prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
 
-Running locally is the fastest way to test core flows. In the future, local mode will not include some Cloudflare-backed capabilities (for example cron-based rank tracking and infrastructure-powered performance improvements for heavier audits).
-
-### Local Development (In Gateway)
-
-If you want auth or any other gateway only features enabled for local dev, you must access through your Gateway and set a devUrl on the app.
-
-See the next section which is a workflow for agents which works much better with worktrees and doens't require the Gateway.
-
-```sh
-# This configures your .env.local, installs dependencies and runs migrations against your local database.
-npx everyapp app setup-local
-
-# terminal 1: start once and keep running
-pnpm dev:agents
-```
+Running locally is the fastest way to test core flows.
 
 ### Local Development Workflow (for coding agents)
 
