@@ -148,12 +148,13 @@ pnpm run db:migrate:local
 Configure .env.local:
 
 1. `cp .env.example .env.local`
-2. Add `AUTH_MODE=local_noauth` so that it doesn't expect Cloudflare Access
-3. Add `DATAFORSEO_API_KEY=yourkey`
+2. Add `DATAFORSEO_API_KEY` as a base64-encoded `login:password` value:
+
+   `printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64`
 
 Run Locally:
 
-```
+```sh
 # Option 1
 pnpm run dev
 

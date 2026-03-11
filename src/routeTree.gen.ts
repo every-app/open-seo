@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HelpDataforseoApiKeyRouteImport } from './routes/help/dataforseo-api-key'
 import { Route as PProjectIdRouteRouteImport } from './routes/p/$projectId/route'
 import { Route as PProjectIdIndexRouteImport } from './routes/p/$projectId/index'
 import { Route as PProjectIdSavedRouteImport } from './routes/p/$projectId/saved'
@@ -24,6 +25,11 @@ import { Route as PProjectIdAuditIssuesResultIdRouteImport } from './routes/p/$p
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HelpDataforseoApiKeyRoute = HelpDataforseoApiKeyRouteImport.update({
+  id: '/help/dataforseo-api-key',
+  path: '/help/dataforseo-api-key',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PProjectIdRouteRoute = PProjectIdRouteRouteImport.update({
@@ -82,6 +88,7 @@ const PProjectIdAuditIssuesResultIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
+  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
   '/p/$projectId/domain': typeof PProjectIdDomainRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/domain': typeof PProjectIdDomainRoute
   '/p/$projectId/keywords': typeof PProjectIdKeywordsRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
+  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
   '/p/$projectId/domain': typeof PProjectIdDomainRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/p/$projectId'
+    | '/help/dataforseo-api-key'
     | '/p/$projectId/ai'
     | '/p/$projectId/audit'
     | '/p/$projectId/domain'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/help/dataforseo-api-key'
     | '/p/$projectId/ai'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
@@ -146,6 +157,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/p/$projectId'
+    | '/help/dataforseo-api-key'
     | '/p/$projectId/ai'
     | '/p/$projectId/audit'
     | '/p/$projectId/domain'
@@ -160,6 +172,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PProjectIdRouteRoute: typeof PProjectIdRouteRouteWithChildren
+  HelpDataforseoApiKeyRoute: typeof HelpDataforseoApiKeyRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -169,6 +182,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/help/dataforseo-api-key': {
+      id: '/help/dataforseo-api-key'
+      path: '/help/dataforseo-api-key'
+      fullPath: '/help/dataforseo-api-key'
+      preLoaderRoute: typeof HelpDataforseoApiKeyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/p/$projectId': {
@@ -285,6 +305,7 @@ const PProjectIdRouteRouteWithChildren = PProjectIdRouteRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PProjectIdRouteRoute: PProjectIdRouteRouteWithChildren,
+  HelpDataforseoApiKeyRoute: HelpDataforseoApiKeyRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
