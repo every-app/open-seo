@@ -139,11 +139,19 @@ Reference these docs while deploying since the Cloudflare UI doesn't indicate wh
 ### Local Development Workflow
 
 ```sh
-cp .env.example .env.local
 pnpm install
+
 # Run once per fresh local DB
 pnpm run db:migrate:local
+```
 
+Configure .env.local:
+1. `cp .env.example .env.local`
+2. Add `AUTH_MODE=local_noauth` so that it doesn't expect Cloudflare Access
+3. Add `DATAFORSEO_API_KEY=yourkey`
+
+Run Locally:
+```
 # Option 1
 pnpm run dev
 
