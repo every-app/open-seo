@@ -19,7 +19,7 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
     "knip": "knip",
-    "ci": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
+    "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
   "cloudflare": {
     "bindings": {
