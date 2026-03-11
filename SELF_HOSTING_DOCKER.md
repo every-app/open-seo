@@ -1,86 +1,48 @@
 # Docker Self-Hosting
 
-This guide runs OpenSEO as a local service.
+Run OpenSEO locally with Docker.
 
-In this mode, OpenSEO runs with `AUTH_MODE=local_noauth`, so request authentication is disabled and a local admin user (`admin@localhost`) is injected automatically.
+In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`).
 
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
 
-## Security and runtime caveats
-
-This stack is local-first and uses dev runtimes to emulate Cloudflare Worker bindings.
-
-- Do not expose these ports directly to the public internet.
-- There is no built-in auth check in this mode.
-- If you expose it beyond localhost, put it behind the same authentication layer you use for your other self-hosted services (or use the [Cloudflare deployment path](./README.md#cloudflare-deployment--access-setup)).
-
-## 1) Configure env values
-
-From the repository root:
+## Quickstart
 
 ```bash
 cp .env.example .env
-```
-
-Set values as needed in `.env`.
-
-Required:
-
-- `DATAFORSEO_API_KEY`
-
-Optional:
-
-- `PORT` (defaults to `3001`)
-- `AUTH_MODE=local_noauth` (Docker compose already sets this)
-
-## 2) Start OpenSEO
-
-```bash
 docker compose up
 ```
 
-URL:
+Set `DATAFORSEO_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
 
-- OpenSEO: `http://localhost:<PORT>` (defaults to `3001`)
+Optional env values:
 
-Boot behavior:
+- `PORT` (defaults to `3001`)
+- `AUTH_MODE=local_noauth` (already set in compose)
 
-- Uses dependencies installed during image build.
-- Applies local D1 migrations on start.
-- Starts local dev runtime (Vite).
+## Common commands
 
-## Troubleshooting
-
-- OpenSEO env values seem stale: restart OpenSEO:
+- Restart service after env changes:
 
 ```bash
 docker compose up -d open-seo
 ```
 
-- If migrations fail on first run, rebuild and retry:
-
-```bash
-docker compose down
-docker compose up
-```
-
-If you update dependencies or Docker build config, force a rebuild:
+- Rebuild image (after dependency or Docker config changes):
 
 ```bash
 docker compose up --build
 ```
 
-## Stop and cleanup
-
-Stop stack:
+- Stop:
 
 ```bash
 docker compose down
 ```
 
-Stop and remove Docker volumes:
+- Stop and remove volumes:
 
 ```bash
 docker compose down -v
