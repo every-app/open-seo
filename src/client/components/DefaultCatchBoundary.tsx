@@ -26,7 +26,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
         <AuthConfigErrorCard
           message={message}
           onRetry={() => {
-            router.invalidate();
+            void router.invalidate();
           }}
         />
       </div>
@@ -39,7 +39,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
       <div className="flex gap-2 items-center flex-wrap">
         <button
           onClick={() => {
-            router.invalidate();
+            void router.invalidate();
           }}
           className="btn btn-neutral btn-sm uppercase"
         >

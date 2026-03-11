@@ -7,6 +7,7 @@ import {
 } from "@/server/lib/dataforseo";
 import { sortBy } from "remeda";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
+import { z } from "zod";
 
 /** Domain overview data is refreshed every 12 hours. */
 const DOMAIN_OVERVIEW_TTL_SECONDS = 12 * 60 * 60;
@@ -38,6 +39,37 @@ type DomainOverviewResult = {
   fetchedAt: string;
 };
 
+const domainKeywordSchema = z.object({
+  keyword: z.string(),
+  position: z.number().nullable(),
+  searchVolume: z.number().nullable(),
+  traffic: z.number().nullable(),
+  cpc: z.number().nullable(),
+  url: z.string().nullable(),
+  relativeUrl: z.string().nullable(),
+  keywordDifficulty: z.number().nullable(),
+});
+
+const domainPageSchema = z.object({
+  page: z.string(),
+  relativePath: z.string().nullable(),
+  organicTraffic: z.number().nullable(),
+  keywords: z.number().nullable(),
+  backlinks: z.number().nullable(),
+});
+
+const domainOverviewSchema = z.object({
+  domain: z.string(),
+  organicTraffic: z.number().nullable(),
+  organicKeywords: z.number().nullable(),
+  backlinks: z.number().nullable(),
+  referringDomains: z.number().nullable(),
+  hasData: z.boolean(),
+  keywords: z.array(domainKeywordSchema),
+  pages: z.array(domainPageSchema),
+  fetchedAt: z.string(),
+});
+
 async function getOverview(input: {
   domain: string;
   includeSubdomains: boolean;
@@ -54,9 +86,10 @@ async function getOverview(input: {
     languageCode: input.languageCode,
   });
 
-  const cached = await getCached<DomainOverviewResult>(cacheKey);
-  if (cached && cached.hasData) {
-    return cached;
+  const cachedRaw = await getCached(cacheKey);
+  const cached = domainOverviewSchema.safeParse(cachedRaw);
+  if (cached.success && cached.data.hasData) {
+    return cached.data;
   }
 
   // --- Fetch fresh from DataForSEO ---
@@ -205,7 +238,7 @@ function derivePages(
       relativePath: page.relativePath,
       organicTraffic: page.traffic,
       keywords: page.keywords,
-      backlinks: null as number | null,
+      backlinks: null,
     }));
 }
 

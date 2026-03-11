@@ -86,12 +86,14 @@ function DomainOverviewPage() {
   const [overviewError, setOverviewError] = useState<string | null>(null);
   const [pendingSearch, setPendingSearch] = useState(searchText);
 
+  const defaultControlValues: DomainControlsValues = {
+    domain: domainInput,
+    subdomains: includeSubdomains,
+    sort: sortMode,
+  };
+
   const controlsForm = useForm({
-    defaultValues: {
-      domain: domainInput,
-      subdomains: includeSubdomains,
-      sort: sortMode,
-    } as DomainControlsValues,
+    defaultValues: defaultControlValues,
   });
 
   const {
@@ -490,8 +492,7 @@ function DomainOverviewPage() {
                     className="select select-bordered lg:col-span-2"
                     value={field.state.value}
                     onChange={(e) => {
-                      const next = e.target
-                        .value as DomainControlsValues["sort"];
+                      const next = toSortMode(e.target.value) ?? "rank";
                       field.handleChange(next);
                       applySort(next, getDefaultSortOrder(next));
                     }}

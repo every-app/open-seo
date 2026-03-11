@@ -1,4 +1,5 @@
 import { sortBy } from "remeda";
+import { z } from "zod";
 
 const PSI_CATEGORIES = [
   "performance",
@@ -41,6 +42,50 @@ type LighthouseCategory = {
     id?: string;
   }>;
 };
+
+const lighthouseAuditSchema = z.object({
+  title: z.string().optional(),
+  description: z.string().optional(),
+  score: z.number().nullable().optional(),
+  scoreDisplayMode: z.string().optional(),
+  displayValue: z.string().optional(),
+  details: z
+    .object({
+      overallSavingsMs: z.number().optional(),
+      overallSavingsBytes: z.number().optional(),
+      items: z.array(z.record(z.string(), z.unknown())).optional(),
+    })
+    .optional(),
+});
+
+const lighthouseCategorySchema = z.object({
+  auditRefs: z
+    .array(
+      z.object({
+        id: z.string().optional(),
+      }),
+    )
+    .optional(),
+});
+
+const psiPayloadSchema = z.object({
+  lighthouseResult: z
+    .object({
+      audits: z
+        .record(z.string(), lighthouseAuditSchema)
+        .optional()
+        .default({}),
+      categories: z
+        .record(z.string(), lighthouseCategorySchema)
+        .optional()
+        .default({}),
+    })
+    .optional()
+    .default({
+      audits: {},
+      categories: {},
+    }),
+});
 
 function normalizeScore(score: number | null | undefined): number | null {
   if (score == null || Number.isNaN(score)) return null;
@@ -104,25 +149,22 @@ function parseIssues(
   payloadJson: string,
   categoryFilter?: PsiIssueCategory,
 ): PsiIssue[] {
-  let payload: Record<string, unknown>;
+  let payload: unknown;
   try {
-    payload = JSON.parse(payloadJson) as Record<string, unknown>;
+    payload = JSON.parse(payloadJson);
   } catch {
     throw new Error("Invalid Lighthouse payload JSON");
   }
 
-  const lighthouseResult = (payload.lighthouseResult ?? {}) as Record<
-    string,
-    unknown
-  >;
-  const audits = (lighthouseResult.audits ?? {}) as Record<
-    string,
-    LighthouseAudit
-  >;
-  const categories = (lighthouseResult.categories ?? {}) as Record<
-    string,
-    LighthouseCategory
-  >;
+  const parsedPayload = psiPayloadSchema.safeParse(payload);
+  if (!parsedPayload.success) {
+    throw new Error("Invalid Lighthouse payload JSON");
+  }
+
+  const audits: Record<string, LighthouseAudit> =
+    parsedPayload.data.lighthouseResult.audits;
+  const categories: Record<string, LighthouseCategory> =
+    parsedPayload.data.lighthouseResult.categories;
 
   const issues: PsiIssue[] = [];
 
@@ -158,7 +200,7 @@ function parseIssues(
           : null;
 
       const items = Array.isArray(audit.details?.items)
-        ? audit.details!.items!.slice(0, 10).map(compactItem)
+        ? audit.details.items.slice(0, 10).map(compactItem)
         : [];
 
       issues.push({

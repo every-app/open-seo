@@ -1,5 +1,5 @@
 {
-  "ignoreBinaries": [],
+  "ignoreBinaries": ["portless"],
   "entry": [
     // Detect Tanstack Start Routes
     "src/router.tsx",
@@ -40,5 +40,6 @@
     "daisyui",
     "@tanstack/query-sync-storage-persister",
     "@tanstack/react-query-persist-client",
+    "portless",
   ],
 }

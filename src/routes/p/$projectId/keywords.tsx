@@ -77,6 +77,10 @@ const RESULT_LIMITS = [150, 300, 500] as const;
 type ResultLimit = (typeof RESULT_LIMITS)[number];
 type KeywordSource = "related" | "suggestions" | "ideas";
 
+function isResultLimit(value: number): value is ResultLimit {
+  return value === 150 || value === 300 || value === 500;
+}
+
 type KeywordControlsValues = {
   keyword: string;
   locationCode: number;
@@ -200,12 +204,14 @@ function KeywordResearchPage() {
   const [selectedKeyword, setSelectedKeyword] =
     useState<KeywordResearchRow | null>(null);
 
+  const defaultControlValues: KeywordControlsValues = {
+    keyword: keywordInput,
+    locationCode,
+    resultLimit,
+  };
+
   const controlsForm = useForm({
-    defaultValues: {
-      keyword: keywordInput,
-      locationCode,
-      resultLimit,
-    } as KeywordControlsValues,
+    defaultValues: defaultControlValues,
   });
   const [pendingInclude, setPendingInclude] = useState(includeText);
   const [pendingExclude, setPendingExclude] = useState(excludeText);
@@ -713,9 +719,10 @@ function KeywordResearchPage() {
               <select
                 className="select select-bordered select-sm w-auto"
                 value={field.state.value}
-                onChange={(e) =>
-                  field.handleChange(Number(e.target.value) as ResultLimit)
-                }
+                onChange={(e) => {
+                  const next = Number(e.target.value);
+                  field.handleChange(isResultLimit(next) ? next : 150);
+                }}
               >
                 {RESULT_LIMITS.map((limit) => (
                   <option key={limit} value={limit}>

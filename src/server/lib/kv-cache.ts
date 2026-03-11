@@ -27,12 +27,12 @@ export function buildCacheKey(
 /**
  * Get a cached JSON value from KV. Returns null on miss.
  */
-export async function getCached<T>(key: string): Promise<T | null> {
+export async function getCached(key: string): Promise<unknown> {
   const value = await env.KV.get(key, "text");
   if (value === null) return null;
 
   try {
-    return JSON.parse(value) as T;
+    return JSON.parse(value);
   } catch {
     return null;
   }

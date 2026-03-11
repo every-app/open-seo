@@ -79,18 +79,21 @@ function isProbablySitemapXml(
 
 function getSitemapLocations(input: unknown): string[] {
   if (!input) return [];
-  const entries: Array<{ loc?: string }> = Array.isArray(input)
-    ? (input as Array<{ loc?: string }>)
-    : ([input] as Array<{ loc?: string }>);
+  const entries = Array.isArray(input) ? input : [input];
   return entries
-    .map((entry) => entry.loc)
+    .map((entry) => {
+      if (entry && typeof entry === "object" && "loc" in entry) {
+        const loc = entry.loc;
+        return typeof loc === "string" ? loc : null;
+      }
+      return null;
+    })
     .filter((loc): loc is string => typeof loc === "string");
 }
 
 function isTimeoutError(error: unknown): boolean {
   if (!error || typeof error !== "object") return false;
-  const maybe = error as { name?: string };
-  return maybe.name === "TimeoutError";
+  return "name" in error && error.name === "TimeoutError";
 }
 
 async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{

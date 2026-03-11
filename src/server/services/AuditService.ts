@@ -9,6 +9,25 @@ import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { AppError } from "@/server/lib/errors";
 import type { AuditConfig, PsiStrategy } from "@/server/lib/audit/types";
 import { KeywordResearchRepository } from "@/server/repositories/KeywordResearchRepository";
+import { z } from "zod";
+
+const auditConfigSchema = z.object({
+  maxPages: z.number().int().min(10).max(10_000),
+  psiStrategy: z.enum(["auto", "all", "manual", "none"]),
+  psiApiKey: z.string().optional(),
+});
+
+function parseAuditConfig(configRaw: string | null): AuditConfig | null {
+  if (!configRaw) return null;
+  try {
+    const parsed = JSON.parse(configRaw);
+    const result = auditConfigSchema.safeParse(parsed);
+    if (!result.success) return null;
+    return result.data;
+  } catch {
+    return null;
+  }
+}
 
 async function startAudit(input: {
   userId: string;
@@ -103,7 +122,10 @@ async function getResults(auditId: string, userId: string) {
 
   if (!audit) throw new AppError("NOT_FOUND");
 
-  const parsedConfig = JSON.parse(audit.config) as AuditConfig;
+  const parsedConfig = parseAuditConfig(audit.config);
+  if (!parsedConfig) {
+    throw new AppError("INTERNAL_ERROR", "Invalid audit configuration");
+  }
   const { psiApiKey: _psiApiKey, ...safeConfig } = parsedConfig;
 
   return {
@@ -137,13 +159,8 @@ async function getHistory(projectId: string, userId: string) {
   );
 
   const didRunPsi = (configRaw: string | null) => {
-    if (!configRaw) return false;
-    try {
-      const parsed = JSON.parse(configRaw) as Partial<AuditConfig>;
-      return parsed.psiStrategy != null && parsed.psiStrategy !== "none";
-    } catch {
-      return false;
-    }
+    const parsed = parseAuditConfig(configRaw);
+    return parsed?.psiStrategy != null && parsed.psiStrategy !== "none";
   };
 
   return auditList.map((a) => ({

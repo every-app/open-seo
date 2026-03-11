@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 const PSI_ENDPOINT =
   "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 const PSI_CATEGORIES = [
@@ -40,6 +42,48 @@ type LighthouseAudit = {
   numericValue?: number;
 };
 
+const lighthouseAuditSchema = z.object({
+  score: z.number().nullable().optional(),
+  displayValue: z.string().optional(),
+  numericValue: z.number().optional(),
+});
+
+const psiResponseSchema = z
+  .object({
+    lighthouseResult: z
+      .object({
+        finalDisplayedUrl: z.string().optional(),
+        lighthouseVersion: z.string().optional(),
+        categories: z
+          .record(
+            z.string(),
+            z.object({ score: z.number().nullable().optional() }),
+          )
+          .optional()
+          .default({}),
+        audits: z
+          .record(z.string(), lighthouseAuditSchema)
+          .optional()
+          .default({}),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+const psiErrorSchema = z
+  .object({
+    error: z
+      .object({
+        message: z.string().optional(),
+      })
+      .optional(),
+  })
+  .passthrough();
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object";
+}
+
 function normalizeInputUrl(input: string): string {
   const trimmed = input.trim();
   if (!trimmed) {
@@ -76,15 +120,9 @@ function asMetric(audit: LighthouseAudit | undefined): PsiAuditMetric {
 }
 
 function extractErrorMessage(payload: unknown): string | null {
-  if (!payload || typeof payload !== "object") return null;
-
-  const asRecord = payload as Record<string, unknown>;
-  const error = asRecord.error;
-
-  if (!error || typeof error !== "object") return null;
-
-  const message = (error as Record<string, unknown>).message;
-  return typeof message === "string" ? message : null;
+  const parsed = psiErrorSchema.safeParse(payload);
+  if (!parsed.success) return null;
+  return parsed.data.error?.message ?? null;
 }
 
 async function runAudit(input: {
@@ -110,43 +148,29 @@ async function runAudit(input: {
   params.append("key", apiKey);
 
   const response = await fetch(`${PSI_ENDPOINT}?${params.toString()}`);
-  const payload = (await response.json().catch(() => null)) as Record<
-    string,
-    unknown
-  > | null;
+  const payload: unknown = await response.json().catch(() => null);
 
   if (!response.ok) {
     const message = extractErrorMessage(payload);
     throw new Error(message ?? `PSI request failed (${response.status})`);
   }
 
-  const lighthouseResult = (payload?.lighthouseResult ?? null) as Record<
-    string,
-    unknown
-  > | null;
-
-  if (!lighthouseResult) {
+  const parsedPayload = psiResponseSchema.safeParse(payload);
+  if (!parsedPayload.success || !parsedPayload.data.lighthouseResult) {
     throw new Error("PSI returned an invalid response");
   }
 
-  const categories = (lighthouseResult.categories ?? {}) as Record<
-    string,
-    { score?: number | null }
-  >;
-  const audits = (lighthouseResult.audits ?? {}) as Record<
-    string,
-    LighthouseAudit
-  >;
+  const lighthouseResult = parsedPayload.data.lighthouseResult;
+
+  const categories = lighthouseResult.categories ?? {};
+  const audits: Record<string, LighthouseAudit> = lighthouseResult.audits ?? {};
 
   return {
     requestedUrl: normalizedUrl,
-    finalUrl:
-      (lighthouseResult.finalDisplayedUrl as string | undefined) ??
-      normalizedUrl,
+    finalUrl: lighthouseResult.finalDisplayedUrl ?? normalizedUrl,
     strategy: input.strategy,
     fetchedAt: new Date().toISOString(),
-    lighthouseVersion:
-      (lighthouseResult.lighthouseVersion as string | undefined) ?? null,
+    lighthouseVersion: lighthouseResult.lighthouseVersion ?? null,
     scores: {
       performance: asScore(categories.performance?.score),
       accessibility: asScore(categories.accessibility?.score),
@@ -161,7 +185,7 @@ async function runAudit(input: {
       speedIndex: asMetric(audits["speed-index"]),
       timeToInteractive: asMetric(audits.interactive),
     },
-    rawPayload: payload ?? {},
+    rawPayload: isRecord(payload) ? payload : {},
   };
 }
 

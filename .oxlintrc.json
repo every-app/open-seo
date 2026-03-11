@@ -12,6 +12,11 @@
     "unicorn/no-array-sort": "error",
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",
+    "typescript/no-unsafe-type-assertion": "error",
+    "typescript/no-unnecessary-type-assertion": [
+      "error",
+      { "checkLiteralConstAssertions": false }
+    ],
     "eslint/no-constant-binary-expression": "error",
     "eslint/no-self-assign": "error",
     "eslint/no-unreachable-loop": "error",

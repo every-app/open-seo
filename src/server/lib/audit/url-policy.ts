@@ -153,7 +153,7 @@ async function resolveAddressRecords(
 
   if (!response.ok) return [];
 
-  const body = (await response.json()) as DnsJsonResponse;
+  const body: DnsJsonResponse = await response.json();
   if (body.Status !== 0 || !Array.isArray(body.Answer)) return [];
 
   const expectedType = type === "A" ? 1 : 28;

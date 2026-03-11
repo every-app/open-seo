@@ -50,7 +50,10 @@ export function analyzeHtml(
 
   const headingOrder: number[] = [];
   $("h1, h2, h3, h4, h5, h6").each((_, el) => {
-    const tag = (el as unknown as { tagName?: string }).tagName?.toLowerCase();
+    const tag =
+      "tagName" in el && typeof el.tagName === "string"
+        ? el.tagName.toLowerCase()
+        : null;
     if (tag) {
       const level = parseInt(tag.charAt(1), 10);
       if (!isNaN(level)) headingOrder.push(level);

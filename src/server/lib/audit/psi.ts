@@ -45,7 +45,7 @@ export async function fetchPsiResult(
         throw new Error(`PSI API ${response.status}: ${text.slice(0, 200)}`);
       }
 
-      const data = (await response.json()) as PsiApiResponse;
+      const data: PsiApiResponse = await response.json();
 
       return parsePsiResponse(data, url, pageId, strategy);
     } catch (error) {

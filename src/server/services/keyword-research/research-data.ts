@@ -27,17 +27,18 @@ export async function fetchResearchRows(
   const seen = new Set<string>();
 
   for (const item of items) {
-    const keyword = item.keyword_data?.keyword;
+    const keywordData = item.keyword_data;
+    const keyword = keywordData.keyword;
     if (!keyword) continue;
 
     const normalizedKeyword = normalizeKeyword(keyword);
     if (seen.has(normalizedKeyword)) continue;
     seen.add(normalizedKeyword);
 
-    const keywordInfo = item.keyword_data
-      ?.keyword_info_normalized_with_clickstream?.search_volume
-      ? item.keyword_data.keyword_info_normalized_with_clickstream
-      : item.keyword_data?.keyword_info;
+    const keywordInfo = keywordData.keyword_info_normalized_with_clickstream
+      ?.search_volume
+      ? keywordData.keyword_info_normalized_with_clickstream
+      : keywordData.keyword_info;
 
     rows.push({
       keyword: normalizedKeyword,
@@ -47,13 +48,11 @@ export async function fetchResearchRows(
         month: entry.month,
         searchVolume: entry.search_volume ?? 0,
       })),
-      cpc: item.keyword_data?.keyword_info?.cpc ?? null,
-      competition: item.keyword_data?.keyword_info?.competition ?? null,
+      cpc: keywordData.keyword_info?.cpc ?? null,
+      competition: keywordData.keyword_info?.competition ?? null,
       keywordDifficulty:
-        item.keyword_data?.keyword_properties?.keyword_difficulty ?? null,
-      intent: normalizeIntent(
-        item.keyword_data?.search_intent_info?.main_intent,
-      ),
+        keywordData.keyword_properties?.keyword_difficulty ?? null,
+      intent: normalizeIntent(keywordData.search_intent_info?.main_intent),
     });
   }
 

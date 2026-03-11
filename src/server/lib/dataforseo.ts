@@ -8,6 +8,7 @@ import {
   DataforseoLabsGoogleHistoricalSerpsLiveRequestInfo,
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
+import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 
 // ---------------------------------------------------------------------------
@@ -16,12 +17,12 @@ import { AppError } from "@/server/lib/errors";
 
 function createAuthenticatedFetch() {
   return (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    const headers = new Headers(init?.headers);
+    headers.set("Authorization", `Basic ${env.DATAFORSEO_API_KEY}`);
+
     const newInit: RequestInit = {
       ...init,
-      headers: {
-        ...init?.headers,
-        Authorization: `Basic ${env.DATAFORSEO_API_KEY}`,
-      },
+      headers,
     };
     return fetch(url, newInit);
   };
@@ -73,35 +74,213 @@ function assertOk<T extends { status_code?: number; status_message?: string }>(
   return task;
 }
 
+type DataforseoTaskResult = { items?: unknown[] };
+
+type DataforseoTask = {
+  status_code?: number;
+  status_message?: string;
+  result?: DataforseoTaskResult[];
+};
+
+function getTaskItems(task: DataforseoTask): unknown[] {
+  return task.result?.[0]?.items ?? [];
+}
+
+const monthlySearchSchema = z
+  .object({
+    year: z.number().int(),
+    month: z.number().int().min(1).max(12),
+    search_volume: z.number().nullable(),
+  })
+  .passthrough();
+
+const keywordInfoSchema = z
+  .object({
+    search_volume: z.number().nullable().optional(),
+    cpc: z.number().nullable().optional(),
+    competition: z.number().nullable().optional(),
+    monthly_searches: z.array(monthlySearchSchema).nullable().optional(),
+  })
+  .passthrough();
+
+const keywordInfoWithClickstreamSchema = z
+  .object({
+    search_volume: z.number().nullable().optional(),
+    monthly_searches: z.array(monthlySearchSchema).nullable().optional(),
+  })
+  .passthrough();
+
+const searchIntentInfoSchema = z
+  .object({
+    main_intent: z.string().nullable().optional(),
+  })
+  .passthrough();
+
+const keywordPropertiesSchema = z
+  .object({
+    keyword_difficulty: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const relatedKeywordItemSchema = z
+  .object({
+    keyword_data: z
+      .object({
+        keyword: z.string().optional(),
+        keyword_info: keywordInfoSchema.optional(),
+        keyword_info_normalized_with_clickstream:
+          keywordInfoWithClickstreamSchema.optional(),
+        search_intent_info: searchIntentInfoSchema.nullable().optional(),
+        keyword_properties: keywordPropertiesSchema.nullable().optional(),
+      })
+      .passthrough(),
+  })
+  .passthrough();
+
+const labsKeywordDataItemSchema = z
+  .object({
+    keyword: z.string(),
+    keyword_info: keywordInfoSchema.optional(),
+    keyword_info_normalized_with_clickstream:
+      keywordInfoWithClickstreamSchema.optional(),
+    search_intent_info: searchIntentInfoSchema.nullable().optional(),
+    keyword_properties: keywordPropertiesSchema.nullable().optional(),
+  })
+  .passthrough();
+
+const domainMetricsValueSchema = z
+  .object({
+    etv: z.number().nullable().optional(),
+    count: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const domainMetricsItemSchema = z
+  .object({
+    metrics: z.record(
+      z.string(),
+      domainMetricsValueSchema.nullable().optional(),
+    ),
+  })
+  .passthrough();
+
+const rankedKeywordInfoSchema = z
+  .object({
+    search_volume: z.number().nullable().optional(),
+    cpc: z.number().nullable().optional(),
+    keyword_difficulty: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const rankedKeywordDataSchema = z
+  .object({
+    keyword: z.string().nullable().optional(),
+    keyword_info: rankedKeywordInfoSchema.nullable().optional(),
+    keyword_properties: keywordPropertiesSchema.nullable().optional(),
+  })
+  .passthrough();
+
+const rankedSerpItemSchema = z
+  .object({
+    url: z.string().nullable().optional(),
+    relative_url: z.string().nullable().optional(),
+    rank_absolute: z.number().nullable().optional(),
+    etv: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const rankedSerpElementSchema = z
+  .object({
+    serp_item: rankedSerpItemSchema.nullable().optional(),
+    url: z.string().nullable().optional(),
+    relative_url: z.string().nullable().optional(),
+    rank_absolute: z.number().nullable().optional(),
+    etv: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const domainRankedKeywordItemSchema = z
+  .object({
+    keyword_data: rankedKeywordDataSchema.nullable().optional(),
+    ranked_serp_element: rankedSerpElementSchema.nullable().optional(),
+    keyword: z.string().nullable().optional(),
+    rank_absolute: z.number().nullable().optional(),
+    etv: z.number().nullable().optional(),
+    keyword_difficulty: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const serpSnapshotItemSchema = z
+  .object({
+    type: z.string(),
+    rank_group: z.number().nullable().optional(),
+    rank_absolute: z.number().nullable().optional(),
+    domain: z.string().nullable().optional(),
+    title: z.string().nullable().optional(),
+    url: z.string().nullable().optional(),
+    description: z.string().nullable().optional(),
+    breadcrumb: z.string().nullable().optional(),
+    etv: z.number().nullable().optional(),
+    estimated_paid_traffic_cost: z.number().nullable().optional(),
+    backlinks_info: z
+      .object({
+        referring_domains: z.number().nullable().optional(),
+        backlinks: z.number().nullable().optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+    rank_changes: z
+      .object({
+        previous_rank_absolute: z.number().nullable().optional(),
+        is_new: z.boolean().nullable().optional(),
+        is_up: z.boolean().nullable().optional(),
+        is_down: z.boolean().nullable().optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+const serpSnapshotSchema = z
+  .object({
+    se_results_count: z.number().nullable().optional(),
+    items_count: z.number().nullable().optional(),
+    items: z.array(serpSnapshotItemSchema),
+  })
+  .passthrough();
+
+type RelatedKeywordItem = z.infer<typeof relatedKeywordItemSchema>;
+export type LabsKeywordDataItem = z.infer<typeof labsKeywordDataItemSchema>;
+type DomainMetricsItem = z.infer<typeof domainMetricsItemSchema>;
+export type DomainRankedKeywordItem = z.infer<
+  typeof domainRankedKeywordItemSchema
+>;
+type SerpSnapshot = z.infer<typeof serpSnapshotSchema>;
+
+function parseTaskItems<T extends z.ZodType>(
+  endpointName: string,
+  task: DataforseoTask,
+  itemSchema: T,
+): z.infer<T>[] {
+  const parsed = z.array(itemSchema).safeParse(getTaskItems(task));
+  if (!parsed.success) {
+    console.error(
+      `dataforseo.${endpointName}.invalid-payload`,
+      parsed.error.issues.slice(0, 5),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${endpointName} returned an invalid response shape`,
+    );
+  }
+  return parsed.data;
+}
+
 // ---------------------------------------------------------------------------
 // DataForSEO Labs API wrappers
 // ---------------------------------------------------------------------------
-
-type RelatedKeywordItem = {
-  keyword_data?: {
-    keyword?: string;
-    keyword_info?: {
-      search_volume?: number | null;
-      cpc?: number | null;
-      competition?: number | null;
-      monthly_searches?: Array<{
-        year: number;
-        month: number;
-        search_volume: number | null;
-      }> | null;
-    };
-    keyword_info_normalized_with_clickstream?: {
-      search_volume?: number | null;
-      monthly_searches?: Array<{
-        year: number;
-        month: number;
-        search_volume: number | null;
-      }> | null;
-    };
-    search_intent_info?: { main_intent?: string | null } | null;
-    keyword_properties?: { keyword_difficulty?: number | null } | null;
-  };
-};
 
 export async function fetchRelatedKeywordsRaw(
   keyword: string,
@@ -122,36 +301,13 @@ export async function fetchRelatedKeywordsRaw(
   });
 
   const response = await api.googleRelatedKeywordsLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as RelatedKeywordItem[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-related-keywords-live",
+    task,
+    relatedKeywordItemSchema,
+  );
 }
-
-export type LabsKeywordDataItem = {
-  keyword?: string;
-  keyword_info?: {
-    search_volume?: number | null;
-    cpc?: number | null;
-    competition?: number | null;
-    monthly_searches?: Array<{
-      year: number;
-      month: number;
-      search_volume: number | null;
-    }> | null;
-  };
-  keyword_info_normalized_with_clickstream?: {
-    search_volume?: number | null;
-    monthly_searches?: Array<{
-      year: number;
-      month: number;
-      search_volume: number | null;
-    }> | null;
-  };
-  search_intent_info?: { main_intent?: string | null } | null;
-  keyword_properties?: { keyword_difficulty?: number | null } | null;
-};
 
 export async function fetchKeywordSuggestionsRaw(
   keyword: string,
@@ -173,11 +329,12 @@ export async function fetchKeywordSuggestionsRaw(
   });
 
   const response = await api.googleKeywordSuggestionsLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as LabsKeywordDataItem[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-keyword-suggestions-live",
+    task,
+    labsKeywordDataItemSchema,
+  );
 }
 
 export async function fetchKeywordIdeasRaw(
@@ -199,23 +356,17 @@ export async function fetchKeywordIdeasRaw(
   });
 
   const response = await api.googleKeywordIdeasLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as LabsKeywordDataItem[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-keyword-ideas-live",
+    task,
+    labsKeywordDataItemSchema,
+  );
 }
 
 // ---------------------------------------------------------------------------
 // Domain API wrappers
 // ---------------------------------------------------------------------------
-
-type DomainMetricsItem = {
-  metrics?: Record<
-    string,
-    { etv?: number | null; count?: number | null } | undefined
-  >;
-};
 
 export async function fetchDomainRankOverviewRaw(
   target: string,
@@ -231,42 +382,13 @@ export async function fetchDomainRankOverviewRaw(
   });
 
   const response = await api.googleDomainRankOverviewLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as DomainMetricsItem[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-domain-rank-overview-live",
+    task,
+    domainMetricsItemSchema,
+  );
 }
-
-export type DomainRankedKeywordItem = {
-  keyword_data?: {
-    keyword?: string | null;
-    keyword_info?: {
-      search_volume?: number | null;
-      cpc?: number | null;
-      keyword_difficulty?: number | null;
-    } | null;
-    keyword_properties?: {
-      keyword_difficulty?: number | null;
-    } | null;
-  } | null;
-  ranked_serp_element?: {
-    serp_item?: {
-      url?: string | null;
-      relative_url?: string | null;
-      rank_absolute?: number | null;
-      etv?: number | null;
-    } | null;
-    url?: string | null;
-    relative_url?: string | null;
-    rank_absolute?: number | null;
-    etv?: number | null;
-  } | null;
-  keyword?: string | null;
-  rank_absolute?: number | null;
-  etv?: number | null;
-  keyword_difficulty?: number | null;
-};
 
 export async function fetchRankedKeywordsRaw(
   target: string,
@@ -285,45 +407,17 @@ export async function fetchRankedKeywordsRaw(
   });
 
   const response = await api.googleRankedKeywordsLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as DomainRankedKeywordItem[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-ranked-keywords-live",
+    task,
+    domainRankedKeywordItemSchema,
+  );
 }
 
 // ---------------------------------------------------------------------------
 // SERP Analysis API wrapper
 // ---------------------------------------------------------------------------
-
-type SerpSnapshotItem = {
-  type?: string;
-  rank_group?: number | null;
-  rank_absolute?: number | null;
-  domain?: string | null;
-  title?: string | null;
-  url?: string | null;
-  description?: string | null;
-  breadcrumb?: string | null;
-  etv?: number | null;
-  estimated_paid_traffic_cost?: number | null;
-  backlinks_info?: {
-    referring_domains?: number | null;
-    backlinks?: number | null;
-  } | null;
-  rank_changes?: {
-    previous_rank_absolute?: number | null;
-    is_new?: boolean | null;
-    is_up?: boolean | null;
-    is_down?: boolean | null;
-  } | null;
-};
-
-type SerpSnapshot = {
-  se_results_count?: number | null;
-  items_count?: number | null;
-  items?: SerpSnapshotItem[];
-};
 
 export async function fetchHistoricalSerpsRaw(
   keyword: string,
@@ -338,11 +432,12 @@ export async function fetchHistoricalSerpsRaw(
   });
 
   const response = await api.googleHistoricalSerpsLive([req]);
-  const task = assertOk(response);
-
-  const result = (task as { result?: Array<{ items?: unknown[] }> })
-    .result?.[0];
-  return (result?.items ?? []) as SerpSnapshot[];
+  const task = assertOk<DataforseoTask>(response);
+  return parseTaskItems(
+    "google-historical-serps-live",
+    task,
+    serpSnapshotSchema,
+  );
 }
 
 // ---------------------------------------------------------------------------

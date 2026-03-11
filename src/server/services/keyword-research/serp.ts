@@ -3,8 +3,27 @@ import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
 
 import type { SerpResultItem } from "@/types/keywords";
 import { normalizeKeyword } from "./helpers";
+import { z } from "zod";
 
 const SERP_CACHE_TTL_SECONDS = 12 * 60 * 60;
+
+const serpResultItemSchema = z.object({
+  rank: z.number().int(),
+  title: z.string(),
+  url: z.string(),
+  domain: z.string(),
+  description: z.string(),
+  etv: z.number().nullable(),
+  estimatedPaidTrafficCost: z.number().nullable(),
+  referringDomains: z.number().nullable(),
+  backlinks: z.number().nullable(),
+  isNew: z.boolean(),
+  rankChange: z.number().nullable(),
+});
+
+const serpCacheSchema = z.object({
+  items: z.array(serpResultItemSchema),
+});
 
 export async function getSerpAnalysis(input: {
   keyword: string;
@@ -19,9 +38,10 @@ export async function getSerpAnalysis(input: {
     languageCode: input.languageCode,
   });
 
-  const cached = await getCached<{ items: SerpResultItem[] }>(cacheKey);
-  if (cached && cached.items.length > 0) {
-    return cached;
+  const cachedRaw = await getCached(cacheKey);
+  const cached = serpCacheSchema.safeParse(cachedRaw);
+  if (cached.success && cached.data.items.length > 0) {
+    return cached.data;
   }
 
   const snapshots = await fetchHistoricalSerpsRaw(

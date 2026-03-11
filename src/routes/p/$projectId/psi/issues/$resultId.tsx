@@ -91,7 +91,7 @@ function PsiIssuesPage() {
   });
 
   const visibleIssues = (issuesQuery.data?.issues ?? []) as PsiIssue[];
-  const allIssues = (summaryQuery.data?.issues ?? visibleIssues) as PsiIssue[];
+  const allIssues = summaryQuery.data?.issues ?? visibleIssues;
 
   const categoryCounts = categoryTabs.reduce<Record<CategoryTab, number>>(
     (acc, tab) => {

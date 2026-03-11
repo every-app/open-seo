@@ -7,8 +7,8 @@
     "dev": "AUTH_MODE=local_noauth vite dev",
     "dev:agents": "mkdir -p .logs && AUTH_MODE=local_noauth portless run vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
-    "lint": "oxlint .",
-    "lint:fix": "oxlint . --fix",
+    "lint": "oxlint . --type-aware",
+    "lint:fix": "oxlint . --type-aware --fix",
     "preview": "npm run build && vite preview --port 3001",
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy",
     "cf-typegen": "wrangler types",
@@ -19,7 +19,7 @@
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
     "db:migrate:prod": "wrangler d1 migrations apply DB --remote",
     "knip": "knip",
-    "ci": "prettier --check . && knip && tsc --noEmit && oxlint ."
+    "ci": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
   "cloudflare": {
     "bindings": {
@@ -78,6 +78,7 @@
     "drizzle-kit": "^0.31.4",
     "knip": "^5.66.4",
     "oxlint": "^1.50.0",
+    "oxlint-tsgolint": "^0.15.0",
     "portless": "^0.5.2",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",

@@ -120,15 +120,24 @@ function LaunchView({
   projectId: string;
   onAuditStarted: (auditId: string) => void;
 }) {
+  type LaunchFormValues = {
+    url: string;
+    maxPagesInput: string;
+    runPsi: boolean;
+    psiMode: "auto" | "all";
+  };
+
+  const defaultLaunchValues: LaunchFormValues = {
+    url: "",
+    maxPagesInput: "50",
+    runPsi: false,
+    psiMode: "auto",
+  };
+
   const minPages = 10;
   const maxPagesLimit = 10_000;
   const launchForm = useForm({
-    defaultValues: {
-      url: "",
-      maxPagesInput: "50",
-      runPsi: false,
-      psiMode: "auto" as "auto" | "all",
-    },
+    defaultValues: defaultLaunchValues,
   });
   const settingsForm = useForm({
     defaultValues: {
@@ -416,11 +425,11 @@ function LaunchView({
                                 <select
                                   className="select select-bordered select-xs"
                                   value={field.state.value}
-                                  onChange={(e) =>
+                                  onChange={(e) => {
                                     field.handleChange(
-                                      e.target.value as "auto" | "all",
-                                    )
-                                  }
+                                      e.target.value === "all" ? "all" : "auto",
+                                    );
+                                  }}
                                 >
                                   <option value="auto">
                                     Auto sample (recommended)

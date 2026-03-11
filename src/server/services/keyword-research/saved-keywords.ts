@@ -7,11 +7,20 @@ import type {
 } from "@/types/schemas/keywords";
 import type { MonthlySearch, SavedKeywordRow } from "@/types/keywords";
 import { normalizeKeyword } from "./helpers";
+import { z } from "zod";
+
+const monthlySearchSchema = z.object({
+  year: z.number().int().positive(),
+  month: z.number().int().min(1).max(12),
+  searchVolume: z.number().int().nonnegative(),
+});
 
 function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   if (!payload) return [];
   try {
-    return JSON.parse(payload) as MonthlySearch[];
+    const parsed = JSON.parse(payload);
+    const result = z.array(monthlySearchSchema).safeParse(parsed);
+    return result.success ? result.data : [];
   } catch (error) {
     console.error("keywords.saved.parse-monthly-searches failed:", error);
     return [];

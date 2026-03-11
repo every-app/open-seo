@@ -28,6 +28,7 @@ import {
 } from "@/server/lib/kv-cache";
 import { KeywordResearchRepository } from "@/server/repositories/KeywordResearchRepository";
 import { AppError } from "@/server/lib/errors";
+import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -63,10 +64,58 @@ type EnrichedKeyword = {
 
 type KeywordSource = "related" | "suggestions" | "ideas";
 
+const monthlySearchSchema = z.object({
+  year: z.number().int().positive(),
+  month: z.number().int().min(1).max(12),
+  searchVolume: z.number().int().nonnegative(),
+});
+
+const cachedKeywordRowSchema = z.object({
+  keyword: z.string(),
+  searchVolume: z.number().nullable(),
+  trend: z.array(monthlySearchSchema),
+  cpc: z.number().nullable(),
+  competition: z.number().nullable(),
+  keywordDifficulty: z.number().nullable(),
+  intent: z.enum([
+    "informational",
+    "commercial",
+    "transactional",
+    "navigational",
+    "unknown",
+  ]),
+});
+
+const cachedResultSchema = z.object({
+  rows: z.array(cachedKeywordRowSchema),
+  source: z.enum(["related", "suggestions", "ideas"]).optional(),
+  usedFallback: z.boolean().optional(),
+});
+
+const serpResultItemSchema = z.object({
+  rank: z.number().int(),
+  title: z.string(),
+  url: z.string(),
+  domain: z.string(),
+  description: z.string(),
+  etv: z.number().nullable(),
+  estimatedPaidTrafficCost: z.number().nullable(),
+  referringDomains: z.number().nullable(),
+  backlinks: z.number().nullable(),
+  isNew: z.boolean(),
+  rankChange: z.number().nullable(),
+});
+
+const serpCacheSchema = z.object({
+  items: z.array(serpResultItemSchema),
+});
+
 function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   if (!payload) return [];
   try {
-    return JSON.parse(payload) as MonthlySearch[];
+    const parsed = JSON.parse(payload);
+    const result = z.array(monthlySearchSchema).safeParse(parsed);
+    return result.success ? result.data : [];
   } catch (error) {
     console.error("keywords.saved.parse-monthly-searches failed:", error);
     return [];
@@ -93,7 +142,8 @@ async function fetchRelatedKeywordsWithData(
   const seen = new Set<string>();
 
   for (const item of items) {
-    const kw = item.keyword_data?.keyword;
+    const keywordData = item.keyword_data;
+    const kw = keywordData.keyword;
     if (!kw) continue;
 
     const normalizedKw = normalizeKeyword(kw);
@@ -101,10 +151,10 @@ async function fetchRelatedKeywordsWithData(
     seen.add(normalizedKw);
 
     // Use clickstream-normalized volume if available, otherwise fall back to regular
-    const keywordInfo = item.keyword_data
-      ?.keyword_info_normalized_with_clickstream?.search_volume
-      ? item.keyword_data?.keyword_info_normalized_with_clickstream
-      : item.keyword_data?.keyword_info;
+    const keywordInfo = keywordData.keyword_info_normalized_with_clickstream
+      ?.search_volume
+      ? keywordData.keyword_info_normalized_with_clickstream
+      : keywordData.keyword_info;
 
     rows.push({
       keyword: normalizedKw,
@@ -114,13 +164,11 @@ async function fetchRelatedKeywordsWithData(
         month: m.month,
         searchVolume: m.search_volume ?? 0,
       })),
-      cpc: item.keyword_data?.keyword_info?.cpc ?? null,
-      competition: item.keyword_data?.keyword_info?.competition ?? null,
+      cpc: keywordData.keyword_info?.cpc ?? null,
+      competition: keywordData.keyword_info?.competition ?? null,
       keywordDifficulty:
-        item.keyword_data?.keyword_properties?.keyword_difficulty ?? null,
-      intent: normalizeIntent(
-        item.keyword_data?.search_intent_info?.main_intent,
-      ),
+        keywordData.keyword_properties?.keyword_difficulty ?? null,
+      intent: normalizeIntent(keywordData.search_intent_info?.main_intent),
     });
   }
 
@@ -246,12 +294,9 @@ async function research(
     depth: 3, // bump when depth changes to bust stale cache
   });
 
-  type CachedResult = {
-    rows: EnrichedKeyword[];
-    source?: KeywordSource;
-    usedFallback?: boolean;
-  };
-  const cached = await getCached<CachedResult>(cacheKey);
+  const cachedRaw = await getCached(cacheKey);
+  const cachedResult = cachedResultSchema.safeParse(cachedRaw);
+  const cached = cachedResult.success ? cachedResult.data : null;
 
   // Only serve cached results that actually have metric data.  Previous
   // failed fetches may have cached rows with all-zero volume/cpc/competition.
@@ -505,9 +550,10 @@ async function getSerpAnalysis(input: {
     languageCode: input.languageCode,
   });
 
-  const cached = await getCached<{ items: SerpResultItem[] }>(cacheKey);
-  if (cached && cached.items.length > 0) {
-    return cached;
+  const cachedRaw = await getCached(cacheKey);
+  const cachedResult = serpCacheSchema.safeParse(cachedRaw);
+  if (cachedResult.success && cachedResult.data.items.length > 0) {
+    return cachedResult.data;
   }
 
   const snapshots = await fetchHistoricalSerpsRaw(
