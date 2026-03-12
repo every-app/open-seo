@@ -81,6 +81,7 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 4. Set this as `DATAFORSEO_API_KEY` in your environment file:
 
 - Docker self-hosting: `.env`
+- Cloudflare: Set it in the workers UI
 - Local development: `.env.local`
 
 ## Self-hosting
@@ -113,8 +114,20 @@ Quickstart:
 
 1. `cp .env.example .env`
 2. Set `DATAFORSEO_API_KEY` in `.env`
-3. `docker compose up`
+3. `docker compose up -d`
 4. Open `http://localhost:<PORT>` (default `3001`)
+
+Docker Compose passes `.env` values into the container, and the Docker self-host flow enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings.
+
+By default, `compose.yaml` pulls the published image from GHCR:
+
+- `ghcr.io/every-app/open-seo:latest`
+
+Use a pinned version tag in `.env` if preferred:
+
+```sh
+OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
+```
 
 For more info, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
 
