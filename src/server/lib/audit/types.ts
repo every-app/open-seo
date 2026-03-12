@@ -4,8 +4,6 @@
 
 export type PsiStrategy = "auto" | "all" | "manual" | "none";
 
-export type AuditStatus = "running" | "completed" | "failed";
-
 export interface AuditConfig {
   maxPages: number;
   psiStrategy: PsiStrategy;

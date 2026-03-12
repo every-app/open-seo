@@ -1,6 +1,7 @@
 {
   "entry": [
     // Detect Tanstack Start Routes
+    "src/server.ts",
     "src/router.tsx",
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
@@ -9,26 +10,12 @@
     "src/db/index.ts",
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
-  "ignore": [
-    "drizzle-prod.config.ts",
-    "src/client/features/keywords/utils.ts",
-    "src/client/hooks/useSearchHistory.ts",
-    "src/server.ts",
-    "src/server/lib/audit/progress-kv.ts",
-    "src/server/lib/audit/types.ts",
-    "src/server/workflows/SiteAuditWorkflow.ts",
-    "src/serverFunctions/keywords.ts",
-    "src/serverFunctions/psi.ts",
-    "src/types/schemas/audit.ts",
-    "src/types/schemas/psi.ts",
-  ],
+  "ignore": ["drizzle-prod.config.ts"],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,
   "ignoreDependencies": [
     // Tailwindcss used via @tailwindcss/vite plugin
     "tailwindcss",
     "daisyui",
-    "@tanstack/query-sync-storage-persister",
-    "@tanstack/react-query-persist-client",
   ],
 }

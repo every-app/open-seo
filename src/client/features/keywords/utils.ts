@@ -24,14 +24,6 @@ export function getLanguageCode(locationCode: number): string {
   return LOCATION_LANGUAGE[locationCode] ?? "en";
 }
 
-export function competitionLabel(score: number | null): string {
-  if (score == null) return "N/A";
-  const pct = Math.round(score * 100);
-  if (pct <= 33) return "low";
-  if (pct <= 66) return "medium";
-  return "high";
-}
-
 export function scoreTierClass(value: number | null): string {
   if (value == null) return "score-tier-na";
   if (value <= 20) return "score-tier-1";

@@ -3,8 +3,6 @@ import { z } from "zod";
 import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
 import {
   researchKeywordsSchema,
-  createProjectSchema,
-  deleteProjectSchema,
   saveKeywordsSchema,
   getSavedKeywordsSchema,
   removeSavedKeywordSchema,
@@ -17,26 +15,6 @@ export const researchKeywords = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => researchKeywordsSchema.parse(data))
   .handler(async ({ data, context }) =>
     KeywordResearchService.research(context.userId, data),
-  );
-
-export const listProjects = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .handler(async ({ context }) =>
-    KeywordResearchService.listProjects(context.userId),
-  );
-
-export const createProject = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .inputValidator((data: unknown) => createProjectSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.createProject(context.userId, data),
-  );
-
-export const deleteProject = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .inputValidator((data: unknown) => deleteProjectSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.deleteProject(context.userId, data),
   );
 
 export const saveKeywords = createServerFn({ method: "POST" })

@@ -16,7 +16,7 @@ const TTL_SECONDS = 30 * 60; // 30 minutes
 const MAX_ENTRIES = 300;
 const jsonUnknownCodec = jsonCodec(z.unknown());
 
-export interface CrawledUrlEntry {
+interface CrawledUrlEntry {
   url: string;
   statusCode: number;
   title: string;

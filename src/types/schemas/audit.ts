@@ -13,37 +13,25 @@ export const startAuditSchema = z.object({
   psiApiKey: z.string().optional(),
 });
 
-export type StartAuditInput = z.infer<typeof startAuditSchema>;
-
 export const getAuditStatusSchema = z.object({
   auditId: z.string().min(1),
 });
-
-export type GetAuditStatusInput = z.infer<typeof getAuditStatusSchema>;
 
 export const getAuditResultsSchema = z.object({
   auditId: z.string().min(1),
 });
 
-export type GetAuditResultsInput = z.infer<typeof getAuditResultsSchema>;
-
 export const getAuditHistorySchema = z.object({
   projectId: z.string().min(1),
 });
-
-export type GetAuditHistoryInput = z.infer<typeof getAuditHistorySchema>;
 
 export const deleteAuditSchema = z.object({
   auditId: z.string().min(1),
 });
 
-export type DeleteAuditInput = z.infer<typeof deleteAuditSchema>;
-
 export const getCrawlProgressSchema = z.object({
   auditId: z.string().min(1),
 });
-
-export type GetCrawlProgressInput = z.infer<typeof getCrawlProgressSchema>;
 
 // ─── URL search params schema for /p/$projectId/audit ────────────────────────
 
@@ -53,5 +41,3 @@ export const auditSearchSchema = z.object({
   auditId: z.string().optional().catch(undefined),
   tab: z.enum(auditTabs).catch("pages").default("pages"),
 });
-
-export type AuditSearchParams = z.infer<typeof auditSearchSchema>;

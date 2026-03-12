@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { jsonCodec } from "@/shared/json";
 
-export interface SearchHistoryItem {
+interface SearchHistoryItem {
   keyword: string;
   locationCode: number;
   locationName: string;

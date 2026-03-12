@@ -41,10 +41,8 @@
   "dependencies": {
     "@every-app/sdk": "^0.1.14",
     "@tanstack/query-core": "^5.90.9",
-    "@tanstack/query-sync-storage-persister": "^5.90.14",
     "@tanstack/react-form": "^1.25.0",
     "@tanstack/react-query": "^5.90.9",
-    "@tanstack/react-query-persist-client": "^5.90.14",
     "@tanstack/react-router": "^1.136.3",
     "@tanstack/react-router-devtools": "^1.136.3",
     "@tanstack/react-start": "^1.136.3",
