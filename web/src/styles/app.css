@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+
+@theme {
+  --color-brand: #1a1a1a;
+  --color-brand-muted: #6b7280;
+  --color-brand-accent: #2563eb;
+  --color-surface: #fafafa;
+  --color-surface-raised: #ffffff;
+  --color-border-subtle: #e5e7eb;
+}

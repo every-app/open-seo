@@ -9,6 +9,7 @@
     "node_modules",
     "dist",
     ".output",
+    "web",
     "src/routeTree.gen.ts",
     "worker-configuration.d.ts"
   ],

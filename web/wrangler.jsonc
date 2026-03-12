@@ -1,0 +1,28 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "open-rank-landing",
+	"compatibility_date": "2026-02-19",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"main": "@tanstack/react-start/server-entry",
+	"assets": {
+		"directory": "./dist/client",
+		"html_handling": "drop-trailing-slash",
+	},
+	"workers_dev": true,
+	"preview_urls": true,
+	"routes": [
+		{
+			"pattern": "openrank.io",
+			"custom_domain": true,
+		},
+	],
+	"env": {
+		"preview": {
+			"name": "open-rank-landing-preview",
+			"workers_dev": true,
+			"preview_urls": true,
+		},
+	},
+}

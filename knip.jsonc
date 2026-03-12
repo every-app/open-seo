@@ -1,5 +1,4 @@
 {
-  "ignoreBinaries": ["portless"],
   "entry": [
     // Detect Tanstack Start Routes
     "src/router.tsx",
@@ -9,28 +8,19 @@
     // DB index re-exports schema for convenience
     "src/db/index.ts",
   ],
-  "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts"],
+  "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
   "ignore": [
     "drizzle-prod.config.ts",
     "src/client/features/keywords/utils.ts",
-    "src/client/hooks/useDomainSearchHistory.ts",
     "src/client/hooks/useSearchHistory.ts",
     "src/server.ts",
     "src/server/lib/audit/progress-kv.ts",
     "src/server/lib/audit/types.ts",
-    "src/server/services/PsiIssuesService.ts",
     "src/server/workflows/SiteAuditWorkflow.ts",
     "src/serverFunctions/keywords.ts",
     "src/serverFunctions/psi.ts",
     "src/types/schemas/audit.ts",
     "src/types/schemas/psi.ts",
-  ],
-  "ignoreFiles": [
-    "src/server/services/keyword-research/helpers.ts",
-    "src/server/services/keyword-research/projects.ts",
-    "src/server/services/keyword-research/research-data.ts",
-    "src/server/services/keyword-research/saved-keywords.ts",
-    "src/server/services/keyword-research/serp.ts",
   ],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,
@@ -40,6 +30,5 @@
     "daisyui",
     "@tanstack/query-sync-storage-persister",
     "@tanstack/react-query-persist-client",
-    "portless",
   ],
 }
