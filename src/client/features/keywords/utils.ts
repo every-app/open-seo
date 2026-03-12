@@ -54,9 +54,3 @@ export function formatNumber(value: number | null | undefined): string {
   if (value == null) return "-";
   return new Intl.NumberFormat().format(value);
 }
-
-export function csvEscape(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  const text = String(value).replace(/"/g, '""');
-  return `"${text}"`;
-}

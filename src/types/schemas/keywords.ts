@@ -1,13 +1,17 @@
 import { z } from "zod";
 
 export const researchKeywordsSchema = z.object({
+  projectId: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1).max(200),
   locationCode: z.number().int().positive().default(2840),
   languageCode: z.string().min(2).max(8).default("en"),
   resultLimit: z
     .union([z.literal(150), z.literal(300), z.literal(500)])
     .default(150),
-  mode: z.literal("related").optional().default("related"),
+  mode: z
+    .enum(["auto", "related", "suggestions", "ideas"])
+    .optional()
+    .default("auto"),
 });
 
 export const createProjectSchema = z.object({
@@ -97,11 +101,13 @@ const keywordSortFields = [
 ] as const;
 
 const sortDirs = ["asc", "desc"] as const;
+const keywordModes = ["auto", "related", "suggestions", "ideas"] as const;
 
 export const keywordsSearchSchema = z.object({
   q: z.string().optional(),
   loc: z.coerce.number().int().positive().optional(),
   kLimit: z.union([z.literal(150), z.literal(300), z.literal(500)]).optional(),
+  mode: z.enum(keywordModes).optional(),
   sort: z.enum(keywordSortFields).optional(),
   order: z.enum(sortDirs).optional(),
   minVol: z.string().optional(),

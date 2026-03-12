@@ -67,6 +67,9 @@ export const keywordMetrics = sqliteTable(
   "keyword_metrics",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
     keyword: text("keyword").notNull(),
     locationCode: integer("location_code").notNull(),
     languageCode: text("language_code").notNull().default("en"),
@@ -81,12 +84,14 @@ export const keywordMetrics = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
-    uniqueIndex("keyword_metrics_unique_keyword_location_language").on(
+    uniqueIndex("keyword_metrics_unique_project_keyword_location_language").on(
+      table.projectId,
       table.keyword,
       table.locationCode,
       table.languageCode,
     ),
     index("keyword_metrics_lookup_idx").on(
+      table.projectId,
       table.keyword,
       table.locationCode,
       table.languageCode,

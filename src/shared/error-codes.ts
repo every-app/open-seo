@@ -1,4 +1,6 @@
-export const ERROR_CODES = [
+import { z } from "zod";
+
+const ERROR_CODES = [
   "UNAUTHENTICATED",
   "AUTH_CONFIG_MISSING",
   "FORBIDDEN",
@@ -10,8 +12,10 @@ export const ERROR_CODES = [
   "INTERNAL_ERROR",
 ] as const;
 
-export type ErrorCode = (typeof ERROR_CODES)[number];
+export const errorCodeSchema = z.enum(ERROR_CODES);
+
+export type ErrorCode = z.infer<typeof errorCodeSchema>;
 
 export function isErrorCode(value: string): value is ErrorCode {
-  return (ERROR_CODES as readonly string[]).includes(value);
+  return errorCodeSchema.safeParse(value).success;
 }

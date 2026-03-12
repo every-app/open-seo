@@ -8,7 +8,7 @@ import {
   deleteAuditSchema,
   getCrawlProgressSchema,
 } from "@/types/schemas/audit";
-import { AuditService } from "@/server/services/AuditService";
+import { AuditService } from "@/server/features/audit/services/AuditService";
 
 export const startAudit = createServerFn({ method: "POST" })
   .middleware(authenticatedServerFunctionMiddleware)

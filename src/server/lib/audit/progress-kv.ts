@@ -8,10 +8,13 @@
  * the audit is running. Once finalized, we explicitly delete it.
  */
 import { env } from "cloudflare:workers";
+import { z } from "zod";
+import { jsonCodec } from "@/shared/json";
 
 const KV_PREFIX = "audit-progress:";
 const TTL_SECONDS = 30 * 60; // 30 minutes
 const MAX_ENTRIES = 300;
+const jsonUnknownCodec = jsonCodec(z.unknown());
 
 export interface CrawledUrlEntry {
   url: string;
@@ -19,6 +22,29 @@ export interface CrawledUrlEntry {
   title: string;
   /** Unix timestamp ms when this page was crawled */
   crawledAt: number;
+}
+
+function isCrawledUrlEntry(value: unknown): value is CrawledUrlEntry {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as {
+    url?: unknown;
+    statusCode?: unknown;
+    title?: unknown;
+    crawledAt?: unknown;
+  };
+  return (
+    typeof candidate.url === "string" &&
+    typeof candidate.statusCode === "number" &&
+    typeof candidate.title === "string" &&
+    typeof candidate.crawledAt === "number"
+  );
+}
+
+function parseCrawledEntries(json: string | null): CrawledUrlEntry[] {
+  if (!json) return [];
+  const parsed = jsonUnknownCodec.safeParse(json);
+  if (!parsed.success || !Array.isArray(parsed.data)) return [];
+  return parsed.data.filter(isCrawledUrlEntry);
 }
 
 function key(auditId: string): string {
@@ -48,7 +74,7 @@ async function pushCrawledUrls(
 
   const k = key(auditId);
   const existing = await env.KV.get(k, "text");
-  const entries: CrawledUrlEntry[] = existing ? JSON.parse(existing) : [];
+  const entries = parseCrawledEntries(existing);
   const merged = [...nextEntries, ...entries].slice(0, MAX_ENTRIES);
 
   await env.KV.put(k, JSON.stringify(merged), {
@@ -62,8 +88,7 @@ async function pushCrawledUrls(
  */
 async function getCrawledUrls(auditId: string): Promise<CrawledUrlEntry[]> {
   const data = await env.KV.get(key(auditId), "text");
-  if (!data) return [];
-  return JSON.parse(data);
+  return parseCrawledEntries(data);
 }
 
 /**

@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
 import { domainOverviewSchema } from "@/types/schemas/domain";
-import { DomainService } from "@/server/services/DomainService";
+import { DomainService } from "@/server/features/domain/services/DomainService";
 
 export const getDomainOverview = createServerFn({ method: "POST" })
   .middleware(authenticatedServerFunctionMiddleware)

@@ -15,6 +15,13 @@
       "when": 1772127913577,
       "tag": "0001_round_unus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1773261363719,
+      "tag": "0002_fair_toad_men",
+      "breakpoints": true
     }
   ]
 }

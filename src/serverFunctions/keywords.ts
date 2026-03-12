@@ -10,7 +10,7 @@ import {
   removeSavedKeywordSchema,
   serpAnalysisSchema,
 } from "@/types/schemas/keywords";
-import { KeywordResearchService } from "@/server/services/KeywordResearchService";
+import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 
 export const researchKeywords = createServerFn({ method: "POST" })
   .middleware(authenticatedServerFunctionMiddleware)

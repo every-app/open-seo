@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
+import { jsonCodec } from "@/shared/json";
 
 type DomainSortMode = "rank" | "traffic" | "volume";
 type DomainTab = "keywords" | "pages";
@@ -16,34 +18,28 @@ type AddDomainSearchInput = Omit<DomainSearchHistoryItem, "timestamp">;
 
 const MAX_HISTORY = 20;
 
+const domainSearchHistoryItemSchema = z.object({
+  domain: z.string(),
+  subdomains: z.boolean(),
+  sort: z.enum(["rank", "traffic", "volume"]),
+  tab: z.enum(["keywords", "pages"]),
+  search: z.string().optional(),
+  timestamp: z.number(),
+});
+
+const domainSearchHistorySchema = z.array(domainSearchHistoryItemSchema);
+const domainSearchHistoryCodec = jsonCodec(domainSearchHistorySchema);
+
 function storageKey(projectId: string) {
   return `domain-search-history:${projectId}`;
 }
 
 function loadHistory(projectId: string): DomainSearchHistoryItem[] {
-  try {
-    const raw = localStorage.getItem(storageKey(projectId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+  const raw = localStorage.getItem(storageKey(projectId));
+  if (!raw) return [];
 
-    return parsed
-      .filter(
-        (item): item is DomainSearchHistoryItem =>
-          item &&
-          typeof item.domain === "string" &&
-          typeof item.subdomains === "boolean" &&
-          (item.sort === "rank" ||
-            item.sort === "traffic" ||
-            item.sort === "volume") &&
-          (item.tab === "keywords" || item.tab === "pages") &&
-          (item.search === undefined || typeof item.search === "string") &&
-          typeof item.timestamp === "number",
-      )
-      .slice(0, MAX_HISTORY);
-  } catch {
-    return [];
-  }
+  const parsed = domainSearchHistoryCodec.safeParse(raw);
+  return parsed.success ? parsed.data.slice(0, MAX_HISTORY) : [];
 }
 
 function saveHistory(projectId: string, items: DomainSearchHistoryItem[]) {

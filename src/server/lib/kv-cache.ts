@@ -1,5 +1,7 @@
 import { env } from "cloudflare:workers";
 import { sortBy } from "remeda";
+import { z } from "zod";
+import { jsonCodec } from "@/shared/json";
 
 /**
  * Cache TTL constants in seconds.
@@ -8,6 +10,8 @@ export const CACHE_TTL = {
   /** Related keyword research results */
   researchResult: 86400,
 } as const;
+
+const jsonUnknownCodec = jsonCodec(z.unknown());
 
 /**
  * Build a deterministic cache key from an endpoint slug and input params.
@@ -30,12 +34,8 @@ export function buildCacheKey(
 export async function getCached(key: string): Promise<unknown> {
   const value = await env.KV.get(key, "text");
   if (value === null) return null;
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
+  const parsed = jsonUnknownCodec.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**

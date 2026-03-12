@@ -1,4 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
+import { jsonCodec } from "@/shared/json";
 
 export interface SearchHistoryItem {
   keyword: string;
@@ -9,30 +11,26 @@ export interface SearchHistoryItem {
 
 const MAX_HISTORY = 20;
 
+const searchHistoryItemSchema = z.object({
+  keyword: z.string(),
+  locationCode: z.number(),
+  locationName: z.string(),
+  timestamp: z.number(),
+});
+
+const searchHistorySchema = z.array(searchHistoryItemSchema);
+const searchHistoryCodec = jsonCodec(searchHistorySchema);
+
 function storageKey(projectId: string) {
   return `search-history:${projectId}`;
 }
 
 function loadHistory(projectId: string): SearchHistoryItem[] {
-  try {
-    const raw = localStorage.getItem(storageKey(projectId));
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
+  const raw = localStorage.getItem(storageKey(projectId));
+  if (!raw) return [];
 
-    return parsed
-      .filter(
-        (item): item is SearchHistoryItem =>
-          item &&
-          typeof item.keyword === "string" &&
-          typeof item.locationCode === "number" &&
-          typeof item.locationName === "string" &&
-          typeof item.timestamp === "number",
-      )
-      .slice(0, MAX_HISTORY);
-  } catch {
-    return [];
-  }
+  const parsed = searchHistoryCodec.safeParse(raw);
+  return parsed.success ? parsed.data.slice(0, MAX_HISTORY) : [];
 }
 
 function saveHistory(projectId: string, items: SearchHistoryItem[]) {
