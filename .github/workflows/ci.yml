@@ -37,6 +37,9 @@ jobs:
       - name: Run CI checks
         run: pnpm run ci:check
 
+      - name: Run tests
+        run: pnpm run test:ci
+
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
 
