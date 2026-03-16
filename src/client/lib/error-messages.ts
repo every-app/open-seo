@@ -6,6 +6,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
   FORBIDDEN: "You do not have access to this resource.",
   NOT_FOUND: "The requested resource was not found.",
+  AUDIT_CAPACITY_REACHED:
+    "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
   VALIDATION_ERROR: "Please check your input and try again.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",

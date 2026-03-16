@@ -9,6 +9,11 @@ import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { AppError } from "@/server/lib/errors";
 import type { AuditConfig, PsiStrategy } from "@/server/lib/audit/types";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
+import {
+  clampAuditMaxPages,
+  getEstimatedAuditCapacity,
+  MAX_USER_AUDIT_USAGE,
+} from "@/server/features/audit/services/audit-capacity";
 import { jsonCodec } from "@/shared/json";
 import { z } from "zod";
 
@@ -34,6 +39,9 @@ async function startAudit(input: {
   psiStrategy?: PsiStrategy;
   psiApiKey?: string;
 }) {
+  const maxPages = clampAuditMaxPages(input.maxPages);
+  const psiStrategy = input.psiStrategy ?? "auto";
+
   const hasProjectAccess = await AuditRepository.isProjectOwnedByUser(
     input.projectId,
     input.userId,
@@ -42,9 +50,22 @@ async function startAudit(input: {
     throw new AppError("FORBIDDEN");
   }
 
+  const reservation = getEstimatedAuditCapacity({
+    maxPages,
+    psiStrategy,
+  });
+
+  const currentUsage = await AuditRepository.getAuditCapacityUsageForUser(
+    input.userId,
+  );
+
+  if (currentUsage + reservation.total > MAX_USER_AUDIT_USAGE) {
+    throw new AppError("AUDIT_CAPACITY_REACHED");
+  }
+
   const auditId = crypto.randomUUID();
 
-  const shouldRunPsi = (input.psiStrategy ?? "auto") !== "none";
+  const shouldRunPsi = psiStrategy !== "none";
   let resolvedPsiApiKey = input.psiApiKey?.trim();
 
   if (shouldRunPsi && !resolvedPsiApiKey) {
@@ -60,34 +81,46 @@ async function startAudit(input: {
   }
 
   const config: AuditConfig = {
-    maxPages: Math.min(Math.max(input.maxPages ?? 50, 10), 10_000),
-    psiStrategy: input.psiStrategy ?? "auto",
+    maxPages,
+    psiStrategy,
     // PSI key is used for Google quota/abuse control (non-billing).
     psiApiKey: resolvedPsiApiKey,
   };
 
   const startUrl = await normalizeAndValidateStartUrl(input.startUrl);
 
-  // Trigger the Cloudflare Workflow
-  const instance = await env.SITE_AUDIT_WORKFLOW.create({
-    id: auditId,
-    params: {
-      auditId,
-      projectId: input.projectId,
-      startUrl,
-      config,
-    },
-  });
-
-  // Create the audit row in D1
   await AuditRepository.createAudit({
     id: auditId,
     projectId: input.projectId,
     userId: input.userId,
     startUrl,
-    workflowInstanceId: instance.id,
+    workflowInstanceId: auditId,
     config,
+    pagesTotal: reservation.pagesTotal,
+    psiTotal: reservation.psiTotal,
   });
+
+  // Trigger the Cloudflare Workflow
+  try {
+    await env.SITE_AUDIT_WORKFLOW.create({
+      id: auditId,
+      params: {
+        auditId,
+        projectId: input.projectId,
+        startUrl,
+        config,
+      },
+    });
+  } catch (error) {
+    try {
+      const instance = await env.SITE_AUDIT_WORKFLOW.get(auditId);
+      await instance.terminate();
+    } catch {
+      // The workflow may never have been created, or may already be gone.
+    }
+    await AuditRepository.deleteAuditForUser(auditId, input.userId);
+    throw error;
+  }
 
   return { auditId };
 }
@@ -184,6 +217,24 @@ async function remove(auditId: string, userId: string) {
   const audit = await AuditRepository.getAuditForUser(auditId, userId);
   if (!audit) {
     throw new AppError("NOT_FOUND");
+  }
+  if (audit.status === "running") {
+    if (!audit.workflowInstanceId) {
+      throw new AppError(
+        "CONFLICT",
+        "Cannot delete a running audit without workflow context.",
+      );
+    }
+
+    try {
+      const instance = await env.SITE_AUDIT_WORKFLOW.get(
+        audit.workflowInstanceId,
+      );
+      await instance.terminate();
+    } catch (error) {
+      console.error(`Failed to terminate audit workflow ${audit.id}:`, error);
+      throw new AppError("CONFLICT", "Unable to stop the running audit.");
+    }
   }
   await AuditRepository.deleteAuditForUser(auditId, userId);
 }

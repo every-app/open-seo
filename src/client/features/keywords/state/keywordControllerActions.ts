@@ -1,5 +1,6 @@
 import { type FormEvent } from "react";
 import { toast } from "sonner";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type {
@@ -48,6 +49,7 @@ type SearchActionParams = {
   setSearchParams: (
     updates: Record<string, string | number | boolean | undefined>,
   ) => void;
+  setPreferredLocationCode: (locationCode: number) => void;
 };
 
 type SaveExportActionParams = {
@@ -96,6 +98,7 @@ export function useSearchActions(params: SearchActionParams) {
     setSerpPage,
     setSearchInputError,
     setSearchParams,
+    setPreferredLocationCode,
   } = params;
 
   const onSearch = (
@@ -120,9 +123,14 @@ export function useSearchActions(params: SearchActionParams) {
     }
 
     setSearchInputError(null);
+    setPreferredLocationCode(activeLocation);
     setSearchParams({
       q: inputKeyword,
-      loc: activeLocation === 2840 ? undefined : activeLocation,
+      loc:
+        input.hasExplicitLocationCode ||
+        activeLocation !== DEFAULT_LOCATION_CODE
+          ? activeLocation
+          : undefined,
       kLimit: activeResultLimit === 150 ? undefined : activeResultLimit,
       mode: activeMode === "auto" ? undefined : activeMode,
     });

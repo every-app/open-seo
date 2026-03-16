@@ -18,6 +18,7 @@ import {
   useSettingsForm,
   type LaunchState,
 } from "@/client/features/audit/launch/types";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 export function useLaunchController({
   projectId,
@@ -116,8 +117,7 @@ export function useLaunchController({
         onError: (error) => {
           setState((prev) => ({
             ...prev,
-            startError:
-              error instanceof Error ? error.message : "Failed to start audit",
+            startError: getStandardErrorMessage(error, "Failed to start audit"),
           }));
         },
       },

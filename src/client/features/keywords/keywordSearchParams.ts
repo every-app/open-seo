@@ -28,7 +28,7 @@ export function normalizeLegacyKeywordSearch(search: KeywordSearchParams): {
   const normalized: KeywordSearchParams = {
     ...search,
     q: search.q === "" ? undefined : search.q,
-    loc: search.loc === 2840 ? undefined : search.loc,
+    loc: search.loc,
     kLimit: search.kLimit === 150 ? undefined : search.kLimit,
     mode: search.mode === "auto" ? undefined : search.mode,
     sort: search.sort === "searchVolume" ? undefined : search.sort,

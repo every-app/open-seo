@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { KeywordResearchPage } from "@/client/features/keywords/page/KeywordResearchPage";
 import {
   isResultLimit,
@@ -27,20 +28,23 @@ export const Route = createFileRoute("/p/$projectId/keywords")({
 
 function KeywordResearchPageRoute() {
   const { projectId } = Route.useParams();
+  const search = Route.useSearch();
   const {
     q: keywordInput = "",
-    loc: locationCode = 2840,
+    loc: rawLocationCode,
     kLimit: resultLimit = 150,
     mode: keywordMode = "auto",
     sort: sortField = "searchVolume",
     order: sortDir = "desc",
-  } = Route.useSearch();
+  } = search;
+  const locationCode = rawLocationCode ?? DEFAULT_LOCATION_CODE;
 
   return (
     <KeywordResearchPage
       projectId={projectId}
       keywordInput={keywordInput}
       locationCode={locationCode}
+      hasExplicitLocationCode={search.loc != null}
       resultLimit={isResultLimit(resultLimit) ? resultLimit : 150}
       keywordMode={normalizeKeywordMode(keywordMode)}
       sortField={normalizeSortField(sortField)}

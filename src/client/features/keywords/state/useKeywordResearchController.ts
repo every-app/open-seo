@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useKeywordControlsForm } from "@/client/features/keywords/hooks/useKeywordControlsForm";
 import { useKeywordFiltering } from "@/client/features/keywords/hooks/useKeywordFiltering";
+import { usePreferredKeywordLocation } from "@/client/features/keywords/hooks/usePreferredKeywordLocation";
 import { useLocalKeywordFilters } from "@/client/features/keywords/hooks/useLocalKeywordFilters";
 import { useKeywordResearchData } from "@/client/features/keywords/hooks/useKeywordResearchData";
 import { useKeywordSelection } from "@/client/features/keywords/hooks/useKeywordSelection";
@@ -25,6 +26,7 @@ export type KeywordResearchControllerInput = {
   projectId: string;
   keywordInput: string;
   locationCode: number;
+  hasExplicitLocationCode: boolean;
   resultLimit: ResultLimit;
   keywordMode: KeywordMode;
   sortField: SortField;
@@ -47,6 +49,7 @@ export function useKeywordResearchController(
     setSerpPage: state.setSerpPage,
     setSearchInputError: state.setSearchInputError,
     setSearchParams: state.setSearchParams,
+    setPreferredLocationCode: state.setPreferredLocationCode,
   });
 
   const { handleSaveKeywords, confirmSave, exportCsv } =
@@ -122,11 +125,14 @@ export function useKeywordResearchController(
 }
 
 function useKeywordControllerState(input: KeywordResearchControllerInput) {
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedKeyword, setSelectedKeyword] =
-    useState<KeywordResearchRow | null>(null);
+  const uiState = useKeywordUiState();
+  const { locationCode, setPreferredLocationCode } =
+    useResolvedKeywordLocation(input);
 
-  const controlsForm = useKeywordControlsForm(input);
+  const controlsForm = useKeywordControlsForm({
+    ...input,
+    locationCode,
+  });
   const {
     filtersForm,
     values: filterValues,
@@ -144,7 +150,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     activeSerpKeyword,
     serpLoading,
     serpError,
-  } = useKeywordSerpAnalysis(input.locationCode);
+  } = useKeywordSerpAnalysis(locationCode);
 
   const {
     history,
@@ -168,9 +174,6 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     beginSearch,
     runSearch,
   } = useKeywordResearchData(addSearch);
-  const [searchInputError, setSearchInputError] = useState<string | null>(null);
-  const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"keywords" | "serp">("keywords");
   const setSearchParams = useKeywordSearchParams();
   const saveMutation = useKeywordSaveMutation(input.projectId);
 
@@ -185,14 +188,14 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     useKeywordOverviewState({
       rows,
       searchedKeyword,
-      selectedKeyword,
+      selectedKeyword: uiState.selectedKeyword,
       hasSearched,
       isLoading,
       lastSearchError,
       keywordMode: input.keywordMode,
     });
 
-  return {
+  return buildKeywordControllerState({
     activeFilterCount,
     activeSerpKeyword,
     beginSearch,
@@ -210,7 +213,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     lastSearchKeyword,
     lastSearchLocationCode,
     lastUsedFallback,
-    mobileTab,
+    mobileTab: uiState.mobileTab,
     overviewKeyword,
     removeHistoryItem,
     researchError,
@@ -218,11 +221,12 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     resetFilters,
     rows,
     searchedKeyword,
-    searchInputError,
-    selectedKeyword,
+    searchInputError: uiState.searchInputError,
+    selectedKeyword: uiState.selectedKeyword,
     selectedRows,
     saveMutation,
-    setSelectedKeyword,
+    setPreferredLocationCode,
+    setSelectedKeyword: uiState.setSelectedKeyword,
     setSearchParams,
     setSerpKeyword,
     serpError,
@@ -230,17 +234,50 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     serpPage,
     serpQuery,
     serpResults,
-    setMobileTab,
-    setSearchInputError,
+    setMobileTab: uiState.setMobileTab,
+    setSearchInputError: uiState.setSearchInputError,
     setSerpPage,
-    setShowFilters,
-    setShowSaveDialog,
+    setShowFilters: uiState.setShowFilters,
+    setShowSaveDialog: uiState.setShowSaveDialog,
     showApproximateMatchNotice,
-    showFilters,
-    showSaveDialog,
+    showFilters: uiState.showFilters,
+    showSaveDialog: uiState.showSaveDialog,
     toggleAllRows,
     toggleRowSelection,
     SERP_PAGE_SIZE,
+  });
+}
+
+function useResolvedKeywordLocation(input: KeywordResearchControllerInput) {
+  const { preferredLocationCode, setPreferredLocationCode } =
+    usePreferredKeywordLocation();
+  const locationCode =
+    !input.hasExplicitLocationCode && input.keywordInput === ""
+      ? preferredLocationCode
+      : input.locationCode;
+
+  return { locationCode, setPreferredLocationCode };
+}
+
+function useKeywordUiState() {
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedKeyword, setSelectedKeyword] =
+    useState<KeywordResearchRow | null>(null);
+  const [searchInputError, setSearchInputError] = useState<string | null>(null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"keywords" | "serp">("keywords");
+
+  return {
+    mobileTab,
+    searchInputError,
+    selectedKeyword,
+    setMobileTab,
+    setSearchInputError,
+    setSelectedKeyword,
+    setShowFilters,
+    setShowSaveDialog,
+    showFilters,
+    showSaveDialog,
   };
 }
 
@@ -277,5 +314,11 @@ function useKeywordSaveMutation(projectId: string) {
 }
 
 function buildControllerOutput<T extends Record<string, unknown>>(state: T): T {
+  return state;
+}
+
+function buildKeywordControllerState<T extends Record<string, unknown>>(
+  state: T,
+): T {
   return state;
 }

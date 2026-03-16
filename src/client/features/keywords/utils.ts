@@ -1,28 +1,4 @@
-export const LOCATIONS: Record<number, string> = {
-  2840: "US",
-  2826: "UK",
-  2276: "DE",
-  2250: "FR",
-  2036: "AU",
-  2124: "CA",
-  2356: "IN",
-  2076: "BR",
-};
-
-const LOCATION_LANGUAGE: Record<number, string> = {
-  2840: "en",
-  2826: "en",
-  2276: "de",
-  2250: "fr",
-  2036: "en",
-  2124: "en",
-  2356: "en",
-  2076: "pt",
-};
-
-export function getLanguageCode(locationCode: number): string {
-  return LOCATION_LANGUAGE[locationCode] ?? "en";
-}
+export { LOCATIONS, getLanguageCode } from "./locations";
 
 export function scoreTierClass(value: number | null): string {
   if (value == null) return "score-tier-na";

@@ -4,7 +4,7 @@
  */
 import { db } from "@/db";
 import { audits, auditPages, auditPsiResults, projects } from "@/db/schema";
-import { and, eq, desc } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { PsiResult, AuditConfig } from "@/server/lib/audit/types";
 
 // ─── Create ──────────────────────────────────────────────────────────────────
@@ -16,6 +16,8 @@ async function createAudit(data: {
   startUrl: string;
   workflowInstanceId: string;
   config: AuditConfig;
+  pagesTotal: number;
+  psiTotal: number;
 }) {
   await db.insert(audits).values({
     id: data.id,
@@ -25,6 +27,9 @@ async function createAudit(data: {
     workflowInstanceId: data.workflowInstanceId,
     config: JSON.stringify(data.config),
     status: "running",
+    pagesTotal: data.pagesTotal,
+    psiTotal: data.psiTotal,
+    currentPhase: "discovery",
   });
 }
 
@@ -251,6 +256,18 @@ async function getAuditsByProjectForUser(projectId: string, userId: string) {
   });
 }
 
+async function getAuditCapacityUsageForUser(userId: string) {
+  const rows = await db.query.audits.findMany({
+    where: eq(audits.userId, userId),
+    columns: {
+      pagesTotal: true,
+      psiTotal: true,
+    },
+  });
+
+  return rows.reduce((total, row) => total + row.pagesTotal + row.psiTotal, 0);
+}
+
 async function getAuditResultsForUser(auditId: string, userId: string) {
   const audit = await getAuditForUser(auditId, userId);
   if (!audit) {
@@ -335,6 +352,7 @@ export const AuditRepository = {
   isProjectOwnedByUser,
   getAuditForUser,
   getAuditsByProjectForUser,
+  getAuditCapacityUsageForUser,
   getAuditResultsForUser,
   getPsiResultById,
   deleteAuditForUser,

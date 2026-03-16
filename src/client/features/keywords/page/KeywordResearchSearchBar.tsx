@@ -4,22 +4,12 @@ import {
   normalizeKeywordMode,
 } from "@/client/features/keywords/keywordSearchParams";
 import { RESULT_LIMITS } from "@/client/features/keywords/keywordResearchTypes";
+import { LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
   controller: KeywordResearchControllerState;
 };
-
-const LOCATION_OPTIONS = [
-  { code: 2840, label: "United States" },
-  { code: 2826, label: "United Kingdom" },
-  { code: 2276, label: "Germany" },
-  { code: 2250, label: "France" },
-  { code: 2036, label: "Australia" },
-  { code: 2124, label: "Canada" },
-  { code: 2356, label: "India" },
-  { code: 2076, label: "Brazil" },
-];
 
 export function KeywordResearchSearchBar({ controller }: Props) {
   const { controlsForm, handleSearchSubmit, isLoading, searchInputError } =

@@ -1,4 +1,5 @@
 import { useForm } from "@tanstack/react-form";
+import { useEffect } from "react";
 import type {
   KeywordMode,
   ResultLimit,
@@ -12,7 +13,7 @@ type UseKeywordControlsFormInput = {
 };
 
 export function useKeywordControlsForm(input: UseKeywordControlsFormInput) {
-  return useForm({
+  const form = useForm({
     defaultValues: {
       keyword: input.keywordInput,
       locationCode: input.locationCode,
@@ -20,4 +21,19 @@ export function useKeywordControlsForm(input: UseKeywordControlsFormInput) {
       mode: input.keywordMode,
     },
   });
+
+  useEffect(() => {
+    form.setFieldValue("keyword", input.keywordInput);
+    form.setFieldValue("locationCode", input.locationCode);
+    form.setFieldValue("resultLimit", input.resultLimit);
+    form.setFieldValue("mode", input.keywordMode);
+  }, [
+    form,
+    input.keywordInput,
+    input.keywordMode,
+    input.locationCode,
+    input.resultLimit,
+  ]);
+
+  return form;
 }
