@@ -9,7 +9,7 @@ const __dirname = dirname(__filename);
 
 const DIST_DIR = join(__dirname, "../dist/client");
 
-const DEFAULT_SITE_URL = "https://openrank.io";
+const DEFAULT_SITE_URL = "https://openseo.so";
 const SITE_URL = (process.env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
 
 const STATIC_PATHS = new Set(["/", "/privacy"]);

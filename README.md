@@ -91,21 +91,16 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 
 OpenSEO supports two self-hosting paths:
 
-- Docker for your homelab or local use.
+- Docker for your homelab or local use (Recommended).
 - Cloudflare for use across multiple devices or for your team.
 
-If you already have Docker installed (or are willing to install it), that is the quickest way to test OpenSEO.
+_Docker_
 
-Use this quick guide:
+Docker is recommended for getting started. It's super easy to get up and running once you install Docker.
 
-- Choose Docker when:
-  - You already have Docker installed and want to get set up quickly.
-  - You have a homelab setup.
-  - You only want to use OpenSEO locally on one device.
-- Choose Cloudflare when:
-  - You want a more SaaS like experience.
-  - You want to use it from multiple devices or with teammates.
-  - You want support for more powerful future features, such as sharing public links to reports or running site audits that render your website's JavaScript.
+_Cloudflare_
+
+If you love OpenSEO and want to use it across multiple devices or with your team, you can host it on Cloudflare which we'll be a SaaS-like experience. Also, this will have automatic database backups and other nice convenience features. It's just a bit more effort to get started if you're unfamiliar with Cloudflare.
 
 ## Docker Self Hosting
 
@@ -119,8 +114,6 @@ Quickstart:
 2. Set `DATAFORSEO_API_KEY` in `.env`
 3. `docker compose up -d`
 4. Open `http://localhost:<PORT>` (default `3001`)
-
-Docker Compose passes `.env` values into the container, and the Docker self-host flow enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings.
 
 By default, `compose.yaml` pulls the published image from GHCR:
 

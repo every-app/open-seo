@@ -1,4 +1,4 @@
 # https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Disallow:
-Sitemap: https://openrank.io/sitemap.xml
+Sitemap: https://openseo.so/sitemap.xml

@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toCanonicalUrl } from "@/lib/seo";
 
-const homeTitle = "OpenRank - Own Your SEO";
+const homeTitle = "OpenSEO - Own Your SEO";
 const homeDescription =
   "Own your SEO. Pay only for what you use. No subscriptions. Open source alternative to Semrush and Ahrefs.";
 
@@ -107,7 +107,7 @@ function Home() {
       <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
         {/* Nav */}
         <nav className="flex items-center justify-between mb-20">
-          <span className="text-sm font-semibold">OpenRank</span>
+          <span className="text-sm font-semibold">OpenSEO</span>
           <a
             href="https://github.com/every-app/open-seo"
             target="_blank"
@@ -133,9 +133,10 @@ function Home() {
         <ul className="mt-5 space-y-3">
           {[
             "Keyword Research",
-            "Competitor Domain Insights",
+            "Backlink Analysis",
+            "Competitor Insights",
             "Site Audits",
-            "Backlinks, Rank Tracking and more (Coming soon)",
+            "Rank Tracking and more (Coming soon)",
           ].map((item) => (
             <li key={item} className="flex gap-2.5 text-sm text-neutral-800">
               <span className="text-neutral-500 mt-[2px]">&mdash;</span>
@@ -219,13 +220,13 @@ function Home() {
             loop
             playsInline
             preload="none"
-            aria-label="OpenRank product demo"
+            aria-label="OpenSEO product demo"
           >
             <source src="/demo.webm" type="video/webm" />
             <source src="/demo.mp4" type="video/mp4" />
             <img
               src="/demo-poster.webp"
-              alt="OpenRank product demo"
+              alt="OpenSEO product demo"
               width={1280}
               height={808}
               className="w-full rounded-md border border-neutral-200"
@@ -234,7 +235,7 @@ function Home() {
             />
           </video>
           <p className="text-[11px] text-neutral-600 mt-2">
-            Keyword research in OpenRank
+            Keyword research in OpenSEO
           </p>
         </div>
 

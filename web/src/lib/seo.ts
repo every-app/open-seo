@@ -1,4 +1,4 @@
-const DEFAULT_SITE_URL = "https://openrank.io";
+const DEFAULT_SITE_URL = "https://openseo.so";
 
 export const SITE_URL = (
   process.env.SITE_URL ??

@@ -225,11 +225,11 @@ function InlineMailingListLink() {
   return (
     <a
       className="underline underline-offset-2 hover:text-base-content/70"
-      href="https://openrank.io"
+      href="https://openseo.so"
       target="_blank"
       rel="noreferrer"
     >
-      join the openrank.io mailing list
+      join the OpenSEO mailing list
     </a>
   );
 }

@@ -4,13 +4,12 @@ import { baseOptions } from "@/lib/layout.shared";
 import { getBlogPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 
-const blogIndexDescription =
-  "Updates and guides from OpenRank.";
+const blogIndexDescription = "Updates and guides from OpenSEO.";
 
 export const Route = createFileRoute("/blogs/")({
   head: () =>
     buildPageSeo({
-      title: "OpenRank Blog",
+      title: "OpenSEO Blog",
       description: blogIndexDescription,
       path: "/blogs",
     }),

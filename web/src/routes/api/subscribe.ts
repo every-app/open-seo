@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/subscribe")({
               },
               body: JSON.stringify({
                 email: parsed.data.email,
-                source: "openrank-waitlist",
+                source: "openseo-waitlist",
               }),
             },
           );
