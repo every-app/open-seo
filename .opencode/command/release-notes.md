@@ -8,6 +8,7 @@ Draft user-facing release notes for this repository.
 Rules:
 
 - Check `package.json` first. If the branch has not already bumped the version, update the `version` field before drafting release notes.
+- Prefer a patch version bump for now, since the project is still in rapid early development. Only choose a minor or major bump when the existing version change in `package.json` already does so or the user explicitly asks for it.
 - Treat an existing version change in `package.json` as the source of truth and do not overwrite it.
 - Use the generated notes as the source of truth; do not invent features or fixes.
 - Keep the tone concise and user-facing.
