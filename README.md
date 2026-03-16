@@ -142,7 +142,7 @@ Use a pinned version tag in `.env` if preferred:
 OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
 ```
 
-For more info, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
+For more info, see [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
 
 ## Cloudflare Self-Hosting
 
@@ -150,7 +150,7 @@ For more info, see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md).
 
 Clicking this button opens a page to deploy OpenSEO in your Cloudflare account. If you do not have an account yet, it will take you to account creation first (OpenSEO works great on the free plan).
 
-Reference these docs while deploying since the Cloudflare UI doesn't indicate what steps you need to take: [`SELF_HOSTING_CLOUDFLARE.md`](./SELF_HOSTING_CLOUDFLARE.md).
+Reference these docs while deploying since the Cloudflare UI doesn't indicate what steps you need to take: [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/every-app/open-seo)
 
