@@ -39,6 +39,18 @@ The generator:
 - groups the remaining changes into short user-facing sections
 - can create a draft GitHub release when `--draft` is provided
 
+Store finalized notes in `release-notes/` as versioned Markdown files such as `release-notes/v0.0.2.md`.
+
+Recommended release flow:
+
+```sh
+pnpm -s release:notes
+# edit and save the final copy in release-notes/v0.0.2.md
+gh release create v0.0.2 --target main --title v0.0.2 --notes-file release-notes/v0.0.2.md
+```
+
+For now, prefer patch releases while the project is still in rapid early development unless there is a clear reason to cut a minor or major release.
+
 ## OpenCode slash command
 
 For convenience inside OpenCode, use:
