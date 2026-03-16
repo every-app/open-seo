@@ -123,6 +123,19 @@ By default, `compose.yaml` pulls the published image from GHCR:
 
 - `ghcr.io/every-app/open-seo:latest`
 
+To update to the newest published image, pull first and then restart:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+Or use a single command:
+
+```sh
+docker compose up -d --pull always
+```
+
 Use a pinned version tag in `.env` if preferred:
 
 ```sh
