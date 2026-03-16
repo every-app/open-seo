@@ -47,7 +47,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
           }}
         />
       </head>
-      <body className="flex flex-col min-h-screen bg-white">
+      <body className="flex flex-col min-h-screen bg-fd-background text-fd-foreground">
         <RootProvider>{children}</RootProvider>
         <Scripts />
       </body>

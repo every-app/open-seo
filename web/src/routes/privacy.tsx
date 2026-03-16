@@ -14,14 +14,14 @@ export const Route = createFileRoute("/privacy")({
 
 function Privacy() {
   return (
-    <div>
-      <header className="px-6 py-4 border-b border-zinc-200">
-        <Link to="/" className="font-semibold text-zinc-900 hover:opacity-80">
+    <div className="bg-fd-background text-fd-foreground min-h-screen">
+      <header className="px-6 py-4 border-b border-fd-border">
+        <Link to="/" className="font-semibold text-fd-foreground hover:opacity-80">
           OpenRank
         </Link>
       </header>
 
-      <article className="max-w-3xl mx-auto px-6 py-12 md:py-24 prose prose-gray text-zinc-900 prose-headings:text-zinc-900 prose-p:text-zinc-700 prose-a:text-zinc-900">
+      <article className="max-w-3xl mx-auto px-6 py-12 md:py-24 prose prose-neutral dark:prose-invert text-fd-foreground prose-headings:text-fd-foreground prose-p:text-fd-muted-foreground prose-a:text-fd-foreground">
         <h1>Privacy Policy</h1>
         <p className="text-fd-muted-foreground">Last updated: March 2026</p>
 
