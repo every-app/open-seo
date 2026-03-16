@@ -32,6 +32,8 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
   - Find topics worth targeting, estimate demand, and prioritize what to write next.
 - Domain insights
   - Understand where your domain is gaining or losing visibility so you can focus on the pages that move revenue.
+- Backlinks
+  - See who links to your site, which pages attract links, and where links are newly won or lost.
 - Site Audits
   - Catch technical issues early so your site is easier for search engines to crawl and rank.
 
@@ -39,7 +41,6 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 
 Top priorities:
 
-- Backlinks
 - Rank tracking
 - AI content workflows
 
@@ -69,6 +70,8 @@ For cost estimates, see [DataForSEO API Cost Reference](#seo-api-cost-reference)
 ## DataForSEO API Key Setup
 
 OpenSEO uses DataForSEO to fetch SEO data. You need an API key to connect OpenSEO to the service.
+
+Backlinks requires one more step beyond the API key: you also need DataForSEO Backlinks enabled on your account (trial or paid subscription), then confirm access from the Backlinks page in OpenSEO.
 
 1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access).
 2. Request API credentials by email (`API key by email` or `API password by email`).
@@ -246,6 +249,7 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 ### Pricing sources
 
 - DataForSEO Labs pricing: https://dataforseo.com/pricing/dataforseo-labs/dataforseo-google-api
+- DataForSEO Backlinks pricing: https://dataforseo.com/pricing/backlinks/backlinks
 - Google PageSpeed Insights API docs: https://developers.google.com/speed/docs/insights/v5/get-started
 
 ### 1) Site audit
@@ -268,8 +272,18 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 - General formula if needed:
   - `0.0201 + (0.0001 x ranked_keywords_returned)` USD
 
+### 4) Backlinks search
+
+- Backlinks search costs about `$0.08` for a domain or `$0.04` for a page.
+- Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.
+- Exact cost can vary slightly based on returned rows and DataForSEO pricing.
+
 ### Planning examples
 
 - 100 keyword research requests at the default 150 results: `$3.50`
 - 100 keyword research requests at 500 results each: `$7.00`
 - 100 domain overviews (200 ranked keywords each): `$4.01`
+- 100 backlinks domain searches at current defaults before opening extra tabs: about `$8.38`
+- 100 backlinks page searches at current defaults before opening extra tabs: about `$4.30`
+- 100 fully explored backlinks domain searches: about `$12.98`
+- 100 fully explored backlinks page searches: about `$8.61`

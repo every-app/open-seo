@@ -1,0 +1,315 @@
+import { AppError } from "@/server/lib/errors";
+import type { BacklinksApiCallCost } from "@/server/features/backlinks/services/backlinksCost";
+import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
+import {
+  backlinksItemSchema,
+  backlinksSummaryItemSchema,
+  domainPageSummaryItemSchema,
+  newLostTimeseriesItemSchema,
+  parseFirstResult,
+  parseItems,
+  referringDomainItemSchema,
+  responseSchema,
+  timeseriesSummaryItemSchema,
+} from "@/server/lib/dataforseoBacklinksSupport";
+import { classifyBacklinksErrorWithAccountState } from "@/server/lib/dataforseoBacklinksAccount";
+export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
+
+const API_BASE = "https://api.dataforseo.com";
+
+export type BacklinksRequest = BacklinksLookupInput & {
+  target: string;
+};
+
+type BacklinksListRequest = BacklinksRequest & {
+  limit?: number;
+};
+
+type BacklinksTimeseriesRequest = BacklinksRequest & {
+  dateFrom: string;
+  dateTo: string;
+};
+
+type DataforseoTaskResponse = {
+  results: unknown[];
+  billing: Omit<BacklinksApiCallCost, "rowsReturned">;
+};
+
+export type BacklinksApiResponse<T> = {
+  data: T;
+  billing: BacklinksApiCallCost;
+};
+
+async function createAuthenticatedFetch() {
+  const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
+
+  return (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    const headers = new Headers(init?.headers);
+    headers.set("Authorization", `Basic ${apiKey}`);
+
+    return fetch(url, {
+      ...init,
+      headers,
+    });
+  };
+}
+
+async function postBacklinks(path: string, payload: unknown) {
+  const authenticatedFetch = await createAuthenticatedFetch();
+  const response = await authenticatedFetch(`${API_BASE}${path}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const rawText = await response.text();
+  if (!response.ok) {
+    const classifiedError = await classifyBacklinksErrorWithAccountState(
+      response.status,
+      rawText,
+      path,
+    );
+    if (classifiedError) throw classifiedError;
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO HTTP ${response.status} on ${path}`,
+    );
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(rawText);
+  } catch {
+    const classifiedError = await classifyBacklinksErrorWithAccountState(
+      response.status,
+      rawText,
+      path,
+    );
+    if (classifiedError) throw classifiedError;
+    console.error(
+      `dataforseo.${path}.non-json-response`,
+      rawText.slice(0, 800),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${path} returned a non-JSON response`,
+    );
+  }
+
+  const parsed = responseSchema.safeParse(raw);
+  if (!parsed.success) {
+    const classifiedError = await classifyBacklinksErrorWithAccountState(
+      response.status,
+      rawText,
+      path,
+    );
+    if (classifiedError) throw classifiedError;
+    console.error(
+      `dataforseo.${path}.invalid-top-level-shape`,
+      rawText.slice(0, 800),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${path} returned an invalid response shape`,
+    );
+  }
+
+  const responseData = parsed.data;
+  if (responseData.status_code !== 20000) {
+    const classifiedError = await classifyBacklinksErrorWithAccountState(
+      responseData.status_code,
+      `${responseData.status_message ?? ""} ${rawText}`,
+      path,
+    );
+    if (classifiedError) throw classifiedError;
+    throw new AppError(
+      "INTERNAL_ERROR",
+      responseData.status_message || "DataForSEO request failed",
+    );
+  }
+
+  const task = responseData.tasks?.[0];
+  if (!task) {
+    throw new AppError("INTERNAL_ERROR", "DataForSEO response missing task");
+  }
+
+  if (task.status_code !== 20000) {
+    const classifiedError = await classifyBacklinksErrorWithAccountState(
+      task.status_code,
+      `${task.status_message ?? ""} ${rawText}`,
+      path,
+    );
+    if (classifiedError) throw classifiedError;
+    throw new AppError(
+      "INTERNAL_ERROR",
+      task.status_message || "DataForSEO task failed",
+    );
+  }
+
+  return {
+    results: task.result ?? [],
+    billing: {
+      endpoint: path,
+      path: task.path ?? [],
+      costUsd: task.cost ?? responseData.cost ?? 0,
+      resultCount: task.result_count ?? null,
+    },
+  } satisfies DataforseoTaskResponse;
+}
+
+function buildCommonPayload(input: BacklinksRequest) {
+  return {
+    target: input.target,
+    include_subdomains: input.includeSubdomains,
+    include_indirect_links: input.includeIndirectLinks,
+    exclude_internal_backlinks: input.excludeInternalBacklinks,
+    backlinks_status_type: input.status,
+    rank_scale: "one_hundred",
+  };
+}
+
+export async function fetchBacklinksSummaryRaw(input: BacklinksRequest) {
+  const response = await postBacklinks("/v3/backlinks/summary/live", [
+    buildCommonPayload(input),
+  ]);
+  const data = parseFirstResult(
+    "backlinks-summary-live",
+    response.results,
+    backlinksSummaryItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data ? 1 : 0,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}
+
+export async function fetchBacklinksRowsRaw(input: BacklinksListRequest) {
+  const response = await postBacklinks("/v3/backlinks/backlinks/live", [
+    {
+      ...buildCommonPayload(input),
+      limit: input.limit ?? 100,
+      order_by: ["rank,desc"],
+    },
+  ]);
+  const data = parseItems(
+    "backlinks-live",
+    response.results,
+    backlinksItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data.length,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}
+
+export async function fetchReferringDomainsRaw(input: BacklinksListRequest) {
+  const response = await postBacklinks("/v3/backlinks/referring_domains/live", [
+    {
+      ...buildCommonPayload(input),
+      limit: input.limit ?? 100,
+      order_by: ["backlinks,desc"],
+    },
+  ]);
+  const data = parseItems(
+    "referring-domains-live",
+    response.results,
+    referringDomainItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data.length,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}
+
+export async function fetchDomainPagesSummaryRaw(input: BacklinksListRequest) {
+  const response = await postBacklinks(
+    "/v3/backlinks/domain_pages_summary/live",
+    [
+      {
+        ...buildCommonPayload(input),
+        limit: input.limit ?? 100,
+        order_by: ["backlinks,desc"],
+      },
+    ],
+  );
+  const data = parseItems(
+    "domain-pages-summary-live",
+    response.results,
+    domainPageSummaryItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data.length,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}
+
+export async function fetchTimeseriesSummaryRaw(
+  input: BacklinksTimeseriesRequest,
+) {
+  const response = await postBacklinks(
+    "/v3/backlinks/timeseries_summary/live",
+    [
+      {
+        ...buildCommonPayload(input),
+        date_from: input.dateFrom,
+        date_to: input.dateTo,
+        group_range: "month",
+      },
+    ],
+  );
+  const data = parseItems(
+    "timeseries-summary-live",
+    response.results,
+    timeseriesSummaryItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data.length,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}
+
+export async function fetchNewLostTimeseriesRaw(
+  input: BacklinksTimeseriesRequest,
+) {
+  const response = await postBacklinks(
+    "/v3/backlinks/timeseries_new_lost_summary/live",
+    [
+      {
+        ...buildCommonPayload(input),
+        date_from: input.dateFrom,
+        date_to: input.dateTo,
+        group_range: "month",
+      },
+    ],
+  );
+  const data = parseItems(
+    "timeseries-new-lost-summary-live",
+    response.results,
+    newLostTimeseriesItemSchema,
+  );
+  return {
+    data,
+    billing: {
+      ...response.billing,
+      rowsReturned: data.length,
+    },
+  } satisfies BacklinksApiResponse<typeof data>;
+}

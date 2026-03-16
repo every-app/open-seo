@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "AUTH_MODE=local_noauth vite dev",
     "dev:agents": "mkdir -p .logs && AUTH_MODE=local_noauth portless run vite dev 2>&1 | tee .logs/dev-server.log",
+    "dev:agents:force": "mkdir -p .logs && AUTH_MODE=local_noauth portless --force run vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint . --type-aware",
     "lint:fix": "oxlint . --type-aware --fix",
@@ -24,6 +25,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ci": "vitest run --reporter=dot",
+    "billing:backlinks": "tsx scripts/backlinks-cost-profile.ts",
     "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
   "cloudflare": {
@@ -87,6 +89,7 @@
     "oxlint-tsgolint": "^0.15.0",
     "portless": "^0.5.2",
     "prettier": "^3.6.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite": "^7.1.2",
     "vite-tsconfig-paths": "^5.1.4",

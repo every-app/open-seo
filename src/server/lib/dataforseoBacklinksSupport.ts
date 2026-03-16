@@ -1,0 +1,262 @@
+import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
+
+const taskSchema = z
+  .object({
+    status_code: z.number().optional(),
+    status_message: z.string().optional(),
+    cost: z.number().nullable().optional(),
+    result_count: z.number().nullable().optional(),
+    path: z.array(z.string()).optional(),
+    result: z.array(z.unknown()).nullable().optional(),
+  })
+  .passthrough();
+
+export const responseSchema = z
+  .object({
+    status_code: z.number().optional(),
+    status_message: z.string().optional(),
+    cost: z.number().nullable().optional(),
+    tasks: z.array(taskSchema).optional(),
+  })
+  .passthrough();
+
+export const backlinksSummaryItemSchema = z
+  .object({
+    target: z.string().optional(),
+    rank: z.number().nullable().optional(),
+    backlinks: z.number().nullable().optional(),
+    referring_pages: z.number().nullable().optional(),
+    referring_domains: z.number().nullable().optional(),
+    broken_backlinks: z.number().nullable().optional(),
+    broken_pages: z.number().nullable().optional(),
+    new_backlinks: z.number().nullable().optional(),
+    lost_backlinks: z.number().nullable().optional(),
+    new_reffering_domains: z.number().nullable().optional(),
+    lost_reffering_domains: z.number().nullable().optional(),
+    new_referring_domains: z.number().nullable().optional(),
+    lost_referring_domains: z.number().nullable().optional(),
+    backlinks_spam_score: z.number().nullable().optional(),
+    info: z
+      .object({
+        target_spam_score: z.number().nullable().optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+export const backlinksItemSchema = z
+  .object({
+    domain_from: z.string().nullable().optional(),
+    url_from: z.string().nullable().optional(),
+    url_to: z.string().nullable().optional(),
+    anchor: z.string().nullable().optional(),
+    item_type: z.string().nullable().optional(),
+    dofollow: z.boolean().nullable().optional(),
+    rank: z.number().nullable().optional(),
+    domain_from_rank: z.number().nullable().optional(),
+    page_from_rank: z.number().nullable().optional(),
+    backlinks_spam_score: z.number().nullable().optional(),
+    backlink_spam_score: z.number().nullable().optional(),
+    first_seen: z.string().nullable().optional(),
+    last_visited: z.string().nullable().optional(),
+    lost_date: z.string().nullable().optional(),
+    is_new: z.boolean().nullable().optional(),
+    is_lost: z.boolean().nullable().optional(),
+    is_broken: z.boolean().nullable().optional(),
+    links_count: z.number().nullable().optional(),
+    rel_attributes: z.array(z.string()).nullable().optional(),
+    attributes: z.array(z.string()).nullable().optional(),
+  })
+  .passthrough();
+
+export const referringDomainItemSchema = z
+  .object({
+    domain: z.string().nullable().optional(),
+    backlinks: z.number().nullable().optional(),
+    referring_pages: z.number().nullable().optional(),
+    rank: z.number().nullable().optional(),
+    first_seen: z.string().nullable().optional(),
+    broken_backlinks: z.number().nullable().optional(),
+    broken_pages: z.number().nullable().optional(),
+    backlinks_spam_score: z.number().nullable().optional(),
+    target_spam_score: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+export const domainPageSummaryItemSchema = z
+  .object({
+    page: z.string().nullable().optional(),
+    url: z.string().nullable().optional(),
+    backlinks: z.number().nullable().optional(),
+    referring_domains: z.number().nullable().optional(),
+    rank: z.number().nullable().optional(),
+    broken_backlinks: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+export const timeseriesSummaryItemSchema = z
+  .object({
+    date: z.string().nullable().optional(),
+    rank: z.number().nullable().optional(),
+    backlinks: z.number().nullable().optional(),
+    referring_domains: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+export const newLostTimeseriesItemSchema = z
+  .object({
+    date: z.string().nullable().optional(),
+    new_backlinks: z.number().nullable().optional(),
+    lost_backlinks: z.number().nullable().optional(),
+    new_reffering_domains: z.number().nullable().optional(),
+    lost_reffering_domains: z.number().nullable().optional(),
+    new_referring_domains: z.number().nullable().optional(),
+    lost_referring_domains: z.number().nullable().optional(),
+  })
+  .passthrough();
+
+const resultItemsSchema = z.object({
+  items: z.array(z.unknown()).optional(),
+});
+
+export function classifyBacklinksError(
+  status: number | undefined,
+  details: string,
+  path: string,
+): AppError | null {
+  const text = details.toLowerCase();
+  const looksLikeBacklinksAccessIssue =
+    path.includes("/backlinks/") &&
+    (text.includes("backlinks") ||
+      text.includes("subscription") ||
+      text.includes("access") ||
+      text.includes("plan") ||
+      text.includes("balance") ||
+      text.includes("payment") ||
+      text.includes("billing") ||
+      text.includes("available") ||
+      text.includes("enabled") ||
+      status === 402 ||
+      status === 403);
+
+  if (!looksLikeBacklinksAccessIssue) return null;
+
+  if (status === 40204) {
+    return new AppError(
+      "BACKLINKS_NOT_ENABLED",
+      "Backlinks is not enabled for the connected DataForSEO account",
+    );
+  }
+
+  if (status === 40200 || status === 40210 || status === 402) {
+    return new AppError(
+      "BACKLINKS_BILLING_ISSUE",
+      "The connected DataForSEO account has a billing or balance issue",
+    );
+  }
+
+  const unavailableSignals = [
+    "not available",
+    "not enabled",
+    "not allowed",
+    "access denied",
+    "forbidden",
+    "insufficient",
+    "subscription",
+    "upgrade",
+    "plan",
+    "activate your subscription",
+    "plans and subscriptions",
+  ];
+  const billingSignals = [
+    "payment required",
+    "billing",
+    "balance",
+    "insufficient funds",
+    "balance is too low",
+    "problem billing",
+    "recharged",
+  ];
+
+  if (billingSignals.some((signal) => text.includes(signal))) {
+    return new AppError(
+      "BACKLINKS_BILLING_ISSUE",
+      "The connected DataForSEO account has a billing or balance issue",
+    );
+  }
+
+  if (unavailableSignals.some((signal) => text.includes(signal))) {
+    return new AppError(
+      "BACKLINKS_NOT_ENABLED",
+      "Backlinks is not enabled for the connected DataForSEO account",
+    );
+  }
+
+  if (status === 403) {
+    return new AppError(
+      "BACKLINKS_NOT_ENABLED",
+      "Backlinks is not enabled for the connected DataForSEO account",
+    );
+  }
+
+  return null;
+}
+
+export function parseItems<T extends z.ZodTypeAny>(
+  endpointName: string,
+  results: unknown[],
+  itemSchema: T,
+): Array<z.infer<T>> {
+  const firstResult = results[0] ?? null;
+  if (firstResult == null) {
+    console.warn(`dataforseo.${endpointName}.empty-result`);
+    throw new AppError("VALIDATION_ERROR", "Backlinks target is invalid");
+  }
+
+  const parsedItemsHolder = resultItemsSchema.safeParse(firstResult);
+  const items = parsedItemsHolder.success
+    ? (parsedItemsHolder.data.items ?? [])
+    : [];
+  const parsed = z.array(itemSchema).safeParse(items);
+  if (!parsed.success) {
+    console.error(
+      `dataforseo.${endpointName}.invalid-items`,
+      parsed.error.issues.slice(0, 5),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${endpointName} returned an invalid response shape`,
+    );
+  }
+
+  return parsed.data;
+}
+
+export function parseFirstResult<T extends z.ZodTypeAny>(
+  endpointName: string,
+  results: unknown[],
+  resultSchema: T,
+): z.infer<T> {
+  const firstResult = results[0] ?? null;
+  if (firstResult == null) {
+    console.warn(`dataforseo.${endpointName}.empty-result`);
+    throw new AppError("VALIDATION_ERROR", "Backlinks target is invalid");
+  }
+
+  const parsed = resultSchema.safeParse(firstResult);
+  if (!parsed.success) {
+    console.error(
+      `dataforseo.${endpointName}.invalid-result`,
+      parsed.error.issues.slice(0, 5),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${endpointName} returned an invalid response shape`,
+    );
+  }
+
+  return parsed.data;
+}

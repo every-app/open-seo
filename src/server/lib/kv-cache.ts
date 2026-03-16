@@ -1,7 +1,7 @@
-import { env } from "cloudflare:workers";
 import { sortBy } from "remeda";
 import { z } from "zod";
 import { jsonCodec } from "@/shared/json";
+import { getWorkersBinding } from "@/server/lib/runtime-env";
 
 /**
  * Cache TTL constants in seconds.
@@ -32,7 +32,8 @@ export function buildCacheKey(
  * Get a cached JSON value from KV. Returns null on miss.
  */
 export async function getCached(key: string): Promise<unknown> {
-  const value = await env.KV.get(key, "text");
+  const kv = await getKvNamespace();
+  const value = await kv.get(key, "text");
   if (value === null) return null;
   const parsed = jsonUnknownCodec.safeParse(value);
   return parsed.success ? parsed.data : null;
@@ -46,9 +47,30 @@ export async function setCached<T>(
   data: T,
   ttlSeconds: number,
 ): Promise<void> {
-  await env.KV.put(key, JSON.stringify(data), {
+  const kv = await getKvNamespace();
+  await kv.put(key, JSON.stringify(data), {
     expirationTtl: ttlSeconds,
   });
+}
+
+async function getKvNamespace(): Promise<KVNamespace> {
+  const binding = await getWorkersBinding("KV");
+  if (isKvNamespace(binding)) {
+    return binding;
+  }
+
+  throw new Error("KV binding is not configured correctly");
+}
+
+function isKvNamespace(value: unknown): value is KVNamespace {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "get" in value &&
+    typeof value.get === "function" &&
+    "put" in value &&
+    typeof value.put === "function"
+  );
 }
 
 /**

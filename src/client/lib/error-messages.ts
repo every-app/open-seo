@@ -10,6 +10,10 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
   VALIDATION_ERROR: "Please check your input and try again.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
+  BACKLINKS_NOT_ENABLED:
+    "Backlinks is not enabled for the connected DataForSEO account yet.",
+  BACKLINKS_BILLING_ISSUE:
+    "The connected DataForSEO account has a billing or balance issue.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   CONFLICT: "This request conflicts with existing data.",
   INTERNAL_ERROR:

@@ -1,4 +1,11 @@
-import { Bookmark, Bot, ClipboardCheck, Globe, Search } from "lucide-react";
+import {
+  Bookmark,
+  Bot,
+  ClipboardCheck,
+  Globe,
+  Link2,
+  Search,
+} from "lucide-react";
 
 export const projectNavItems = [
   {
@@ -18,6 +25,12 @@ export const projectNavItems = [
     label: "Domain Overview",
     icon: Globe,
     matchSegment: "/domain",
+  },
+  {
+    to: "/p/$projectId/backlinks" as const,
+    label: "Backlinks",
+    icon: Link2,
+    matchSegment: "/backlinks",
   },
   {
     to: "/p/$projectId/audit" as const,
