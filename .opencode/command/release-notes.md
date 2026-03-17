@@ -26,6 +26,7 @@ Rules:
 After reviewing the generated notes:
 
 - confirm the `package.json` version matches the intended release tag when one is provided
+- sanity-check that the notes only cover changes since the previous release
 - tighten wording only when it improves clarity
 - preserve the existing section structure unless there is a strong reason to merge sections
 - suggest saving the finalized notes to `release-notes/v<version>.md` when a version is known

@@ -3,10 +3,10 @@
 // @ts-check
 
 import { execFileSync } from "node:child_process";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { writeFileSync } from "node:fs";
 
 const argv = process.argv.slice(2);
 const normalizedArgv = argv[0] === "--" ? argv.slice(1) : argv;
@@ -52,6 +52,107 @@ function getLatestSemverTag() {
   return tags.find((tag) =>
     /^v?\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/.test(tag),
   );
+}
+
+/** @typedef {{ major: number, minor: number, patch: number }} Semver */
+/** @typedef {{ tag: string, version: Semver, source: "tag" | "release-notes" }} VersionCandidate */
+
+/** @param {string} value */
+function parseSemver(value) {
+  const match = value.match(/^v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.-]+)?$/);
+  if (!match) return null;
+
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+/** @param {Semver} left @param {Semver} right */
+function compareSemver(left, right) {
+  if (left.major !== right.major) return left.major - right.major;
+  if (left.minor !== right.minor) return left.minor - right.minor;
+  return left.patch - right.patch;
+}
+
+/** @param {unknown} value @returns {value is Record<string, unknown>} */
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object";
+}
+
+function getPackageVersion() {
+  /** @type {unknown} */
+  const packageJson = JSON.parse(readFileSync("package.json", "utf8"));
+  if (!isRecord(packageJson)) return null;
+  const version = packageJson.version;
+  return typeof version === "string" ? version : null;
+}
+
+function getReleaseNoteVersions() {
+  try {
+    return readdirSync("release-notes").flatMap((name) => {
+      const version = name.match(
+        /^v(\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?)\.md$/,
+      )?.[1];
+      return version ? [version] : [];
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** @param {string[]} versionValues @param {VersionCandidate["source"]} source */
+function collectVersionCandidates(versionValues, source) {
+  return versionValues.flatMap((value) => {
+    const version = parseSemver(value);
+    if (!version) return [];
+    return [{ tag: source === "tag" ? value : `v${value}`, version, source }];
+  });
+}
+
+function getDefaultFromTag() {
+  /** @type {string | null} */
+  const currentVersion = getPackageVersion();
+  const parsedCurrentVersion = currentVersion
+    ? parseSemver(currentVersion)
+    : null;
+  if (!parsedCurrentVersion) return getLatestSemverTag();
+
+  const tagCandidates = collectVersionCandidates(
+    git(["tag", "--sort=-version:refname"])
+      .split("\n")
+      .map((tag) => tag.trim())
+      .filter(Boolean),
+    "tag",
+  );
+
+  const releaseNoteCandidates = collectVersionCandidates(
+    getReleaseNoteVersions(),
+    "release-notes",
+  );
+
+  const candidates = [...tagCandidates, ...releaseNoteCandidates]
+    .filter((entry) => compareSemver(entry.version, parsedCurrentVersion) < 0)
+    .reduce((sorted, entry) => {
+      const insertAt = sorted.findIndex(
+        (candidate) => compareSemver(entry.version, candidate.version) > 0,
+      );
+      if (insertAt === -1) {
+        sorted.push(entry);
+      } else {
+        sorted.splice(insertAt, 0, entry);
+      }
+      return sorted;
+    }, /** @type {VersionCandidate[]} */ ([]));
+
+  const bestVersion = candidates[0]?.tag;
+  if (!bestVersion) return getLatestSemverTag();
+
+  const matchingTag = tagCandidates.find((entry) => entry.tag === bestVersion);
+  if (matchingTag) return matchingTag.tag;
+
+  return getLatestSemverTag();
 }
 
 function getOriginRepo() {
@@ -164,7 +265,7 @@ function buildNotes({ from, to, repo }) {
   return lines.join("\n").trim();
 }
 
-const from = values.from ?? getLatestSemverTag();
+const from = values.from ?? getDefaultFromTag();
 const to = values.to;
 const repo = values.repo ?? getOriginRepo();
 const notes = buildNotes({ from, to, repo });
