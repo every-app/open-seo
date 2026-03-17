@@ -30,4 +30,5 @@ After reviewing the generated notes:
 - tighten wording only when it improves clarity
 - preserve the existing section structure unless there is a strong reason to merge sections
 - suggest saving the finalized notes to `release-notes/v<version>.md` when a version is known
+- suggest the commands to update local `main` from the target remote before tagging, for example `git checkout main` and `git pull <remote> main`
 - suggest a `gh release create` command if the user wants to publish next
