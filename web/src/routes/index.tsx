@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { toCanonicalUrl } from "@/lib/seo";
 
-const homeTitle = "OpenSEO - Own Your SEO";
+const homeTitle = "OpenSEO - Open Source SEO Platform";
 const homeDescription =
-  "Own your SEO. Pay only for what you use. No subscriptions. Open source alternative to Semrush and Ahrefs.";
+  "Own your SEO. OpenSEO helps teams manage keyword research, backlink analysis, competitor monitoring, and site audits without expensive monthly SEO software subscriptions.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
