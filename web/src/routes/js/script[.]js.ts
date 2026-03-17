@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
 const PLAUSIBLE_SCRIPT_URL =
-  "https://plausible.io/js/pa-DllmchvGzcNdY2jEy1-Hc.js";
+  "https://plausible.io/js/pa-f6y3kIQsae-ldmIxlnaPu.js";
 
 export const Route = createFileRoute("/js/script.js")({
   server: {
