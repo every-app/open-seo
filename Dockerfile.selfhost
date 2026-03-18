@@ -15,4 +15,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD ["sh", "-c", "pnpm run db:migrate:local && pnpm exec vite dev --host 0.0.0.0 --port ${PORT:-3001}"]
+CMD ["sh", "-c", "pnpm run db:migrate:local && pnpm run build && pnpm exec vite preview --host 0.0.0.0 --port ${PORT:-3001}"]
