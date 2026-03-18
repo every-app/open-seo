@@ -6,6 +6,7 @@ services:
       # Required for local Docker self-hosting: exposes Compose env vars to cloudflare:workers bindings.
       - CLOUDFLARE_INCLUDE_PROCESS_ENV=true
       - PORT=${PORT:-3001}
+      - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
       - VITE_SHOW_DEVTOOLS=false

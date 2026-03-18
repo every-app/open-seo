@@ -2,7 +2,7 @@
 
 Run OpenSEO locally with Docker.
 
-In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`).
+In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network.
 
 The default `compose.yaml` uses the published GHCR image:
 
@@ -26,8 +26,17 @@ Docker Compose passes `.env` values into the container, and `compose.yaml` enabl
 Optional env values:
 
 - `PORT` (defaults to `3001`)
+- `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+
+If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
+
+```bash
+ALLOWED_HOST=yourdomain.com docker compose up -d
+```
+
+You can also persist it in `.env`.
 
 ## Pin to a specific image tag
 
