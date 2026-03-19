@@ -24,15 +24,7 @@ function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   return result.success ? result.data : [];
 }
 
-export async function saveKeywords(userId: string, input: SaveKeywordsInput) {
-  const project = await KeywordResearchRepository.getProject(
-    input.projectId,
-    userId,
-  );
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-
+export async function saveKeywords(input: SaveKeywordsInput) {
   const normalizedKeywords = [
     ...new Set(
       input.keywords.map(normalizeKeyword).filter((kw) => kw.length > 0),
@@ -89,17 +81,8 @@ export async function saveKeywords(userId: string, input: SaveKeywordsInput) {
 }
 
 export async function getSavedKeywords(
-  userId: string,
   input: GetSavedKeywordsInput,
 ): Promise<{ rows: SavedKeywordRow[] }> {
-  const project = await KeywordResearchRepository.getProject(
-    input.projectId,
-    userId,
-  );
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-
   const rows = await KeywordResearchRepository.listSavedKeywordsByProject(
     input.projectId,
   );
@@ -124,7 +107,7 @@ export async function getSavedKeywords(
 }
 
 export async function removeSavedKeyword(
-  userId: string,
+  projectId: string,
   input: RemoveSavedKeywordInput,
 ) {
   const savedKw = await KeywordResearchRepository.getSavedKeywordById(
@@ -134,14 +117,13 @@ export async function removeSavedKeyword(
     throw new AppError("NOT_FOUND");
   }
 
-  const project = await KeywordResearchRepository.getProject(
-    savedKw.projectId,
-    userId,
-  );
-  if (!project) {
+  if (savedKw.projectId !== projectId) {
     throw new AppError("FORBIDDEN");
   }
 
-  await KeywordResearchRepository.removeSavedKeyword(input.savedKeywordId);
+  await KeywordResearchRepository.removeSavedKeyword(
+    input.savedKeywordId,
+    projectId,
+  );
   return { success: true };
 }

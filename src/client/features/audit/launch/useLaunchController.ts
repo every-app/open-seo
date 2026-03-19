@@ -179,7 +179,8 @@ function useLaunchMutations({
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (auditId: string) => deleteAudit({ data: { auditId } }),
+    mutationFn: (auditId: string) =>
+      deleteAudit({ data: { projectId, auditId } }),
     onSuccess: () => {
       void historyRefetch();
       toast.success("Audit deleted");

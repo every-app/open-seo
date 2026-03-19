@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const allowedHosts = env.ALLOWED_HOST ? [env.ALLOWED_HOST] : undefined;
 
   return {
-    envPrefix: ["VITE_"],
+    envPrefix: ["VITE_", "AUTH_MODE"],
     server: {
       port,
     },

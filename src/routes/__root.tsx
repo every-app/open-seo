@@ -2,9 +2,11 @@
 import {
   ClientOnly,
   HeadContent,
+  Outlet,
   Scripts,
   createRootRoute,
   useLocation,
+  useMatches,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
@@ -75,6 +77,18 @@ export const Route = createRootRoute({
 });
 
 function AppLayout() {
+  const isAuthLayout = useMatches({
+    select: (matches) => matches.some((match) => match.routeId === "/_auth"),
+  });
+
+  if (isAuthLayout) {
+    return <Outlet />;
+  }
+
+  return <AppShellLayout />;
+}
+
+function AppShellLayout() {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
@@ -85,7 +99,6 @@ function AppLayout() {
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     useState(false);
 
-  // Extract projectId from the current path
   const projectIdMatch = location.pathname.match(/^\/p\/([^/]+)/);
   const projectId = projectIdMatch?.[1] ?? null;
 
@@ -152,7 +165,6 @@ function AppLayout() {
       />
 
       <SeoApiStatusBanners
-        helpPath={DATAFORSEO_HELP_PATH}
         shouldShowSeoApiWarning={shouldShowSeoApiWarning}
         seoApiKeyStatusError={seoApiKeyStatusError}
       />
@@ -166,7 +178,6 @@ function AppLayout() {
 
       <MissingSeoSetupModal
         ref={setupModalRef}
-        helpPath={DATAFORSEO_HELP_PATH}
         isOpen={shouldShowMissingSeoApiKeyModal}
         onClose={() => setShowMissingSeoApiKeyModal(false)}
       />

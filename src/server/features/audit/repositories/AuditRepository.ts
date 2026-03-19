@@ -3,7 +3,7 @@
  * All D1 interactions for audits, audit_pages, and audit_psi_results.
  */
 import { db } from "@/db";
-import { audits, auditPages, auditPsiResults, projects } from "@/db/schema";
+import { audits, auditPages, auditPsiResults } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
 import type { PsiResult, AuditConfig } from "@/server/lib/audit/types";
 
@@ -12,7 +12,7 @@ import type { PsiResult, AuditConfig } from "@/server/lib/audit/types";
 async function createAudit(data: {
   id: string;
   projectId: string;
-  userId: string;
+  startedByUserId: string;
   startUrl: string;
   workflowInstanceId: string;
   config: AuditConfig;
@@ -22,7 +22,7 @@ async function createAudit(data: {
   await db.insert(audits).values({
     id: data.id,
     projectId: data.projectId,
-    userId: data.userId,
+    startedByUserId: data.startedByUserId,
     startUrl: data.startUrl,
     workflowInstanceId: data.workflowInstanceId,
     config: JSON.stringify(data.config),
@@ -236,40 +236,24 @@ async function batchWriteResults(
 
 // ─── Read ────────────────────────────────────────────────────────────────────
 
-async function isProjectOwnedByUser(projectId: string, userId: string) {
-  const project = await db.query.projects.findFirst({
-    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
-  });
-  return Boolean(project);
-}
-
-async function getAuditForUser(auditId: string, userId: string) {
+async function getAuditForProject(auditId: string, projectId: string) {
   return db.query.audits.findFirst({
-    where: and(eq(audits.id, auditId), eq(audits.userId, userId)),
+    where: and(eq(audits.id, auditId), eq(audits.projectId, projectId)),
   });
 }
 
-async function getAuditsByProjectForUser(projectId: string, userId: string) {
-  return db.query.audits.findMany({
-    where: and(eq(audits.projectId, projectId), eq(audits.userId, userId)),
-    orderBy: [desc(audits.startedAt)],
-  });
+async function getAuditsByProject(projectId: string) {
+  const rows = await db
+    .select({ audit: audits })
+    .from(audits)
+    .where(eq(audits.projectId, projectId))
+    .orderBy(desc(audits.startedAt));
+
+  return rows.map(({ audit }) => audit);
 }
 
-async function getAuditCapacityUsageForUser(userId: string) {
-  const rows = await db.query.audits.findMany({
-    where: eq(audits.userId, userId),
-    columns: {
-      pagesTotal: true,
-      psiTotal: true,
-    },
-  });
-
-  return rows.reduce((total, row) => total + row.pagesTotal + row.psiTotal, 0);
-}
-
-async function getAuditResultsForUser(auditId: string, userId: string) {
-  const audit = await getAuditForUser(auditId, userId);
+async function getAuditResultsForProject(auditId: string, projectId: string) {
+  const audit = await getAuditForProject(auditId, projectId);
   if (!audit) {
     return { audit: null, pages: [], psi: [] };
   }
@@ -286,22 +270,22 @@ async function getAuditResultsForUser(auditId: string, userId: string) {
   return { audit, pages, psi };
 }
 
+async function getAuditCapacityUsageForUser(userId: string) {
+  const rows = await db.query.audits.findMany({
+    where: eq(audits.startedByUserId, userId),
+    columns: {
+      pagesTotal: true,
+      psiTotal: true,
+    },
+  });
+
+  return rows.reduce((total, row) => total + row.pagesTotal + row.psiTotal, 0);
+}
+
 async function getPsiResultById(input: {
   psiResultId: string;
   projectId: string;
-  userId: string;
 }) {
-  const project = await db.query.projects.findFirst({
-    where: and(
-      eq(projects.id, input.projectId),
-      eq(projects.userId, input.userId),
-    ),
-  });
-
-  if (!project) {
-    throw new Error("Project not found");
-  }
-
   const psi = await db.query.auditPsiResults.findFirst({
     where: eq(auditPsiResults.id, input.psiResultId),
   });
@@ -312,7 +296,6 @@ async function getPsiResultById(input: {
     where: and(
       eq(audits.id, psi.auditId),
       eq(audits.projectId, input.projectId),
-      eq(audits.userId, input.userId),
     ),
   });
 
@@ -333,11 +316,10 @@ async function getPsiResultById(input: {
 
 // ─── Delete ──────────────────────────────────────────────────────────────────
 
-async function deleteAuditForUser(auditId: string, userId: string) {
-  // Cascading deletes handle child tables
+async function deleteAuditForProject(auditId: string, projectId: string) {
   await db
     .delete(audits)
-    .where(and(eq(audits.id, auditId), eq(audits.userId, userId)));
+    .where(and(eq(audits.id, auditId), eq(audits.projectId, projectId)));
 }
 
 // ─── Export ──────────────────────────────────────────────────────────────────
@@ -349,11 +331,10 @@ export const AuditRepository = {
   failAudit,
   getAuditForWorkflow,
   batchWriteResults,
-  isProjectOwnedByUser,
-  getAuditForUser,
-  getAuditsByProjectForUser,
+  getAuditForProject,
+  getAuditsByProject,
+  getAuditResultsForProject,
   getAuditCapacityUsageForUser,
-  getAuditResultsForUser,
   getPsiResultById,
-  deleteAuditForUser,
+  deleteAuditForProject,
 } as const;

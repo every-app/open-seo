@@ -211,7 +211,7 @@ pnpm run db:migrate:local
 
 - `AUTH_MODE=cloudflare_access` (default): validates Cloudflare Access JWTs (`cf-access-jwt-assertion`) using `TEAM_DOMAIN` + `POLICY_AUD`.
 - `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects `admin@localhost`.
-- `AUTH_MODE=hosted`: reserved for upcoming multi-tenant auth flow (not yet implemented).
+- `AUTH_MODE=hosted`: Better Auth-backed email/password mode. Requires Better Auth schema generation plus `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
 
 Local scripts (`pnpm dev` and `pnpm dev:agents`) set `AUTH_MODE=local_noauth` automatically.
 Use `AUTH_MODE=cloudflare_access pnpm dev` when you specifically want to test Access validation locally.

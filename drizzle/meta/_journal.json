@@ -22,6 +22,20 @@
       "when": 1773261363719,
       "tag": "0002_fair_toad_men",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1773853209809,
+      "tag": "0003_light_sage",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1773935379368,
+      "tag": "0004_faithful_sunset_bain",
+      "breakpoints": true
     }
   ]
 }

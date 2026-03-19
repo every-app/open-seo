@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { getWorkersBinding } from "@/server/lib/runtime-env";
+import {
+  getWorkersBinding,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 
 const BACKLINKS_ACCESS_STATUS_KEY = "settings:backlinks-access:v2:global";
 
@@ -17,6 +20,12 @@ const BACKLINKS_NOT_ENABLED_MESSAGE =
   "Backlinks access check failed - it's still not enabled for your DataForSEO account. Enable it in DataForSEO, then try again.";
 
 export async function getBacklinksAccessStatus(): Promise<BacklinksAccessStatus> {
+  if (await isHostedServerAuthMode()) {
+    // Hosted mode treats backlinks as platform-managed, so we intentionally
+    // skip self-service verification and surface backlinks as available.
+    return getHostedBacklinksAccessStatus();
+  }
+
   const kv = await getKvNamespace();
   const raw = await kv.get(BACKLINKS_ACCESS_STATUS_KEY, "text");
   if (!raw) {
@@ -39,6 +48,10 @@ export async function getBacklinksAccessStatus(): Promise<BacklinksAccessStatus>
 export async function setBacklinksAccessStatus(
   status: BacklinksAccessStatus,
 ): Promise<void> {
+  if (await isHostedServerAuthMode()) {
+    return;
+  }
+
   const kv = await getKvNamespace();
   await kv.put(BACKLINKS_ACCESS_STATUS_KEY, JSON.stringify(status));
 }
@@ -71,6 +84,16 @@ export function buildBacklinksDisabledAccessStatus(
 function getDefaultBacklinksAccessStatus(): BacklinksAccessStatus {
   return {
     enabled: false,
+    verifiedAt: null,
+    lastCheckedAt: null,
+    lastErrorCode: null,
+    lastErrorMessage: null,
+  };
+}
+
+function getHostedBacklinksAccessStatus(): BacklinksAccessStatus {
+  return {
+    enabled: true,
     verifiedAt: null,
     lastCheckedAt: null,
     lastErrorCode: null,

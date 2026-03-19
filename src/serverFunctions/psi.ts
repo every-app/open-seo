@@ -1,67 +1,66 @@
 import { createServerFn } from "@tanstack/react-start";
 import { PsiAuditService } from "@/server/features/psi/services/PsiAuditService";
-import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
-  psiUnifiedIssueSchema,
-  psiUnifiedExportSchema,
+  psiAuditIssueSchema,
+  psiAuditExportSchema,
   psiProjectKeySchema,
   psiProjectSchema,
 } from "@/types/schemas/psi";
 
-export const getProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const getProjectPsiApiKey = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => psiProjectSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    PsiAuditService.getProjectPsiApiKey({
-      projectId: data.projectId,
-      userId: context.userId,
-    }),
-  );
+  .handler(async ({ context }) => {
+    return PsiAuditService.getProjectPsiApiKey({
+      projectId: context.project.id,
+    });
+  });
 
-export const saveProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const saveProjectPsiApiKey = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => psiProjectKeySchema.parse(data))
-  .handler(async ({ data, context }) =>
-    PsiAuditService.saveProjectPsiApiKey({
-      projectId: data.projectId,
-      userId: context.userId,
+  .handler(async ({ data, context }) => {
+    return PsiAuditService.saveProjectPsiApiKey({
+      projectId: context.project.id,
       apiKey: data.apiKey,
-    }),
-  );
+    });
+  });
 
-export const clearProjectPsiApiKey = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const clearProjectPsiApiKey = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => psiProjectSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    PsiAuditService.clearProjectPsiApiKey({
-      projectId: data.projectId,
-      userId: context.userId,
-    }),
-  );
+  .handler(async ({ context }) => {
+    return PsiAuditService.clearProjectPsiApiKey({
+      projectId: context.project.id,
+    });
+  });
 
-export const getPsiIssuesBySource = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .inputValidator((data: unknown) => psiUnifiedIssueSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    PsiAuditService.getPsiIssuesBySource({
-      projectId: data.projectId,
-      userId: context.userId,
-      source: data.source,
+export const getAuditPsiIssues = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => psiAuditIssueSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return PsiAuditService.getAuditPsiIssues({
+      projectId: context.project.id,
       resultId: data.resultId,
       category: data.category,
-    }),
-  );
+    });
+  });
 
-export const exportPsiBySource = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .inputValidator((data: unknown) => psiUnifiedExportSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    PsiAuditService.exportPsiBySource({
-      projectId: data.projectId,
-      userId: context.userId,
-      source: data.source,
+export const exportAuditPsi = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => psiAuditExportSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return PsiAuditService.exportAuditPsi({
+      projectId: context.project.id,
       resultId: data.resultId,
       mode: data.mode,
       category: data.category,
-    }),
-  );
+    });
+  });

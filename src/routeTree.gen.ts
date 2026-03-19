@@ -9,8 +9,11 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as HelpDataforseoApiKeyRouteImport } from './routes/help/dataforseo-api-key'
+import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
+import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as PProjectIdRouteRouteImport } from './routes/p/$projectId/route'
 import { Route as PProjectIdIndexRouteImport } from './routes/p/$projectId/index'
 import { Route as PProjectIdSavedRouteImport } from './routes/p/$projectId/saved'
@@ -19,10 +22,14 @@ import { Route as PProjectIdDomainRouteImport } from './routes/p/$projectId/doma
 import { Route as PProjectIdBacklinksRouteImport } from './routes/p/$projectId/backlinks'
 import { Route as PProjectIdAuditRouteImport } from './routes/p/$projectId/audit'
 import { Route as PProjectIdAiRouteImport } from './routes/p/$projectId/ai'
+import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as PProjectIdAuditIndexRouteImport } from './routes/p/$projectId/audit/index'
-import { Route as PProjectIdPsiIssuesResultIdRouteImport } from './routes/p/$projectId/psi/issues/$resultId'
 import { Route as PProjectIdAuditIssuesResultIdRouteImport } from './routes/p/$projectId/audit/issues/$resultId'
 
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -32,6 +39,16 @@ const HelpDataforseoApiKeyRoute = HelpDataforseoApiKeyRouteImport.update({
   id: '/help/dataforseo-api-key',
   path: '/help/dataforseo-api-key',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => AuthRoute,
 } as any)
 const PProjectIdRouteRoute = PProjectIdRouteRouteImport.update({
   id: '/p/$projectId',
@@ -73,17 +90,16 @@ const PProjectIdAiRoute = PProjectIdAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => PProjectIdRouteRoute,
 } as any)
+const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
+  id: '/api/auth/$',
+  path: '/api/auth/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PProjectIdAuditIndexRoute = PProjectIdAuditIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => PProjectIdAuditRoute,
 } as any)
-const PProjectIdPsiIssuesResultIdRoute =
-  PProjectIdPsiIssuesResultIdRouteImport.update({
-    id: '/psi/issues/$resultId',
-    path: '/psi/issues/$resultId',
-    getParentRoute: () => PProjectIdRouteRoute,
-  } as any)
 const PProjectIdAuditIssuesResultIdRoute =
   PProjectIdAuditIssuesResultIdRouteImport.update({
     id: '/issues/$resultId',
@@ -94,7 +110,10 @@ const PProjectIdAuditIssuesResultIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
+  '/sign-in': typeof AuthSignInRoute
+  '/sign-up': typeof AuthSignUpRoute
   '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
@@ -104,11 +123,13 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/': typeof PProjectIdIndexRoute
   '/p/$projectId/audit/': typeof PProjectIdAuditIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
-  '/p/$projectId/psi/issues/$resultId': typeof PProjectIdPsiIssuesResultIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/sign-in': typeof AuthSignInRoute
+  '/sign-up': typeof AuthSignUpRoute
   '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
   '/p/$projectId/domain': typeof PProjectIdDomainRoute
@@ -117,13 +138,16 @@ export interface FileRoutesByTo {
   '/p/$projectId': typeof PProjectIdIndexRoute
   '/p/$projectId/audit': typeof PProjectIdAuditIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
-  '/p/$projectId/psi/issues/$resultId': typeof PProjectIdPsiIssuesResultIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_auth': typeof AuthRouteWithChildren
   '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
+  '/_auth/sign-in': typeof AuthSignInRoute
+  '/_auth/sign-up': typeof AuthSignUpRoute
   '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/api/auth/$': typeof ApiAuthSplatRoute
   '/p/$projectId/ai': typeof PProjectIdAiRoute
   '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
@@ -133,14 +157,16 @@ export interface FileRoutesById {
   '/p/$projectId/': typeof PProjectIdIndexRoute
   '/p/$projectId/audit/': typeof PProjectIdAuditIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
-  '/p/$projectId/psi/issues/$resultId': typeof PProjectIdPsiIssuesResultIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/p/$projectId'
+    | '/sign-in'
+    | '/sign-up'
     | '/help/dataforseo-api-key'
+    | '/api/auth/$'
     | '/p/$projectId/ai'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
@@ -150,11 +176,13 @@ export interface FileRouteTypes {
     | '/p/$projectId/'
     | '/p/$projectId/audit/'
     | '/p/$projectId/audit/issues/$resultId'
-    | '/p/$projectId/psi/issues/$resultId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/sign-in'
+    | '/sign-up'
     | '/help/dataforseo-api-key'
+    | '/api/auth/$'
     | '/p/$projectId/ai'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/domain'
@@ -163,12 +191,15 @@ export interface FileRouteTypes {
     | '/p/$projectId'
     | '/p/$projectId/audit'
     | '/p/$projectId/audit/issues/$resultId'
-    | '/p/$projectId/psi/issues/$resultId'
   id:
     | '__root__'
     | '/'
+    | '/_auth'
     | '/p/$projectId'
+    | '/_auth/sign-in'
+    | '/_auth/sign-up'
     | '/help/dataforseo-api-key'
+    | '/api/auth/$'
     | '/p/$projectId/ai'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
@@ -178,17 +209,25 @@ export interface FileRouteTypes {
     | '/p/$projectId/'
     | '/p/$projectId/audit/'
     | '/p/$projectId/audit/issues/$resultId'
-    | '/p/$projectId/psi/issues/$resultId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthRoute: typeof AuthRouteWithChildren
   PProjectIdRouteRoute: typeof PProjectIdRouteRouteWithChildren
   HelpDataforseoApiKeyRoute: typeof HelpDataforseoApiKeyRoute
+  ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -202,6 +241,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/help/dataforseo-api-key'
       preLoaderRoute: typeof HelpDataforseoApiKeyRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_auth/sign-up': {
+      id: '/_auth/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof AuthSignUpRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/sign-in': {
+      id: '/_auth/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof AuthSignInRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/p/$projectId': {
       id: '/p/$projectId'
@@ -259,19 +312,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PProjectIdAiRouteImport
       parentRoute: typeof PProjectIdRouteRoute
     }
+    '/api/auth/$': {
+      id: '/api/auth/$'
+      path: '/api/auth/$'
+      fullPath: '/api/auth/$'
+      preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/p/$projectId/audit/': {
       id: '/p/$projectId/audit/'
       path: '/'
       fullPath: '/p/$projectId/audit/'
       preLoaderRoute: typeof PProjectIdAuditIndexRouteImport
       parentRoute: typeof PProjectIdAuditRoute
-    }
-    '/p/$projectId/psi/issues/$resultId': {
-      id: '/p/$projectId/psi/issues/$resultId'
-      path: '/psi/issues/$resultId'
-      fullPath: '/p/$projectId/psi/issues/$resultId'
-      preLoaderRoute: typeof PProjectIdPsiIssuesResultIdRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
     }
     '/p/$projectId/audit/issues/$resultId': {
       id: '/p/$projectId/audit/issues/$resultId'
@@ -282,6 +335,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface AuthRouteChildren {
+  AuthSignInRoute: typeof AuthSignInRoute
+  AuthSignUpRoute: typeof AuthSignUpRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthSignInRoute: AuthSignInRoute,
+  AuthSignUpRoute: AuthSignUpRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface PProjectIdAuditRouteChildren {
   PProjectIdAuditIndexRoute: typeof PProjectIdAuditIndexRoute
@@ -305,7 +370,6 @@ interface PProjectIdRouteRouteChildren {
   PProjectIdKeywordsRoute: typeof PProjectIdKeywordsRoute
   PProjectIdSavedRoute: typeof PProjectIdSavedRoute
   PProjectIdIndexRoute: typeof PProjectIdIndexRoute
-  PProjectIdPsiIssuesResultIdRoute: typeof PProjectIdPsiIssuesResultIdRoute
 }
 
 const PProjectIdRouteRouteChildren: PProjectIdRouteRouteChildren = {
@@ -316,7 +380,6 @@ const PProjectIdRouteRouteChildren: PProjectIdRouteRouteChildren = {
   PProjectIdKeywordsRoute: PProjectIdKeywordsRoute,
   PProjectIdSavedRoute: PProjectIdSavedRoute,
   PProjectIdIndexRoute: PProjectIdIndexRoute,
-  PProjectIdPsiIssuesResultIdRoute: PProjectIdPsiIssuesResultIdRoute,
 }
 
 const PProjectIdRouteRouteWithChildren = PProjectIdRouteRoute._addFileChildren(
@@ -325,18 +388,21 @@ const PProjectIdRouteRouteWithChildren = PProjectIdRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthRoute: AuthRouteWithChildren,
   PProjectIdRouteRoute: PProjectIdRouteRouteWithChildren,
   HelpDataforseoApiKeyRoute: HelpDataforseoApiKeyRoute,
+  ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
 
 import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
+import type { startInstance } from './start.ts'
 declare module '@tanstack/react-start' {
   interface Register {
     ssr: true
     router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
   }
 }

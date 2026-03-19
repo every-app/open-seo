@@ -1,6 +1,6 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { exportPsiBySource, getPsiIssuesBySource } from "@/serverFunctions/psi";
+import { exportAuditPsi, getAuditPsiIssues } from "@/serverFunctions/psi";
 import type { CategoryTab, ExportPayload, PsiIssue } from "./types";
 import {
   categoryLabel,
@@ -18,7 +18,6 @@ import { categoryTabs } from "./types";
 type PsiIssuesScreenProps = {
   projectId: string;
   resultId: string;
-  source: string;
   category: CategoryTab;
   backLabel: string;
   onBack: () => void;
@@ -26,23 +25,15 @@ type PsiIssuesScreenProps = {
 };
 
 export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
-  const {
-    projectId,
-    resultId,
-    source,
-    category,
-    backLabel,
-    onBack,
-    onCategoryChange,
-  } = props;
+  const { projectId, resultId, category, backLabel, onBack, onCategoryChange } =
+    props;
 
   const issuesQuery = useQuery({
-    queryKey: ["psiIssuesBySource", projectId, source, resultId, category],
+    queryKey: ["auditPsiIssues", projectId, resultId, category],
     queryFn: () =>
-      getPsiIssuesBySource({
+      getAuditPsiIssues({
         data: {
           projectId,
-          source,
           resultId,
           category: category === "all" ? undefined : category,
         },
@@ -50,12 +41,11 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
   });
 
   const summaryQuery = useQuery({
-    queryKey: ["psiIssuesSummary", projectId, source, resultId],
+    queryKey: ["auditPsiIssuesSummary", projectId, resultId],
     queryFn: () =>
-      getPsiIssuesBySource({
+      getAuditPsiIssues({
         data: {
           projectId,
-          source,
           resultId,
         },
       }),
@@ -63,10 +53,9 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
 
   const exportMutation = useMutation({
     mutationFn: (data: ExportPayload) =>
-      exportPsiBySource({
+      exportAuditPsi({
         data: {
           projectId,
-          source,
           resultId,
           ...data,
         },

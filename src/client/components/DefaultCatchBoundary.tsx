@@ -5,6 +5,7 @@ import {
   getStandardErrorMessage,
 } from "@/client/lib/error-messages";
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
+import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 
 export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   const router = useRouter();
@@ -19,11 +20,25 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   );
   const errorCode = getErrorCode(error);
   const showAuthConfigHelp = errorCode === "AUTH_CONFIG_MISSING";
+  const showSignInHelp = errorCode === "UNAUTHENTICATED";
 
   if (showAuthConfigHelp) {
     return (
       <div className="min-w-0 flex-1 p-4 flex items-center justify-center">
         <AuthConfigErrorCard
+          message={message}
+          onRetry={() => {
+            void router.invalidate();
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (showSignInHelp) {
+    return (
+      <div className="min-w-0 flex-1 p-4 flex items-center justify-center">
+        <UnauthenticatedErrorCard
           message={message}
           onRetry={() => {
             void router.invalidate();

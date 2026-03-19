@@ -3,18 +3,17 @@ import {
   buildBacklinksDisabledAccessStatus,
   setBacklinksAccessStatus,
 } from "@/server/features/backlinks/backlinksAccess";
-import { assertBacklinksProjectAccess } from "@/server/features/backlinks/backlinksProjectAccess";
-import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
 import { AppError } from "@/server/lib/errors";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 import { backlinksOverviewInputSchema } from "@/types/schemas/backlinks";
 
-export const getBacklinksOverview = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const getBacklinksOverview = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksOverviewInputSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await assertBacklinksProjectAccess(context.userId, data.projectId);
-
+  .handler(async ({ data }) => {
     try {
       return await BacklinksService.getOverview({
         target: data.target,
@@ -36,12 +35,12 @@ export const getBacklinksOverview = createServerFn({ method: "POST" })
     }
   });
 
-export const getBacklinksReferringDomains = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const getBacklinksReferringDomains = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksOverviewInputSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await assertBacklinksProjectAccess(context.userId, data.projectId);
-
+  .handler(async ({ data }) => {
     try {
       return await BacklinksService.getReferringDomains({
         target: data.target,
@@ -57,12 +56,12 @@ export const getBacklinksReferringDomains = createServerFn({ method: "POST" })
     }
   });
 
-export const getBacklinksTopPages = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const getBacklinksTopPages = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksOverviewInputSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await assertBacklinksProjectAccess(context.userId, data.projectId);
-
+  .handler(async ({ data }) => {
     try {
       return await BacklinksService.getTopPages({
         target: data.target,

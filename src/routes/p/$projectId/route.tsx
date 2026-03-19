@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getProject } from "@/serverFunctions/keywords";
+import { getProjectAccess } from "@/serverFunctions/projects";
 
 export const Route = createFileRoute("/p/$projectId")({
   component: ProjectLayout,
@@ -18,7 +18,7 @@ function ProjectLayout() {
     isError,
   } = useQuery({
     queryKey: ["project", projectId],
-    queryFn: () => getProject({ data: { projectId } }),
+    queryFn: () => getProjectAccess({ data: { projectId } }),
   });
 
   useEffect(() => {

@@ -5,9 +5,16 @@ import {
   ChevronsUpDown,
   ExternalLink,
   Menu,
+  User,
 } from "lucide-react";
 import { Sidebar } from "@/client/components/Sidebar";
-import { projectNavItems } from "@/client/navigation/items";
+import {
+  dataforseoHelpLinkOptions,
+  getProjectNavItems,
+} from "@/client/navigation/items";
+import { getCurrentAuthRedirect } from "@/lib/auth-redirect";
+import { authClient, useSession } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export function TopNav({
   drawerOpen,
@@ -20,6 +27,9 @@ export function TopNav({
   pathname: string;
   onOpenDrawer: () => void;
 }) {
+  const isHostedMode = isHostedClientAuthMode();
+  const projectNavItems = projectId ? getProjectNavItems(projectId) : [];
+
   return (
     <div className="navbar bg-base-100 border-b border-base-300 shrink-0 gap-2">
       <div className="flex-none flex items-center md:hidden">
@@ -41,13 +51,12 @@ export function TopNav({
         </span>
         {projectId
           ? projectNavItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = pathname.includes(item.matchSegment);
+              const { icon: Icon, matchSegment, ...linkProps } = item;
+              const isActive = pathname.includes(matchSegment);
               return (
                 <Link
-                  key={item.to}
-                  to={item.to}
-                  params={{ projectId }}
+                  key={linkProps.to}
+                  {...linkProps}
                   className={`btn btn-sm gap-2 ${
                     isActive
                       ? "bg-primary/10 text-primary font-medium border-transparent"
@@ -64,27 +73,103 @@ export function TopNav({
 
       <div className="flex-1" />
 
-      <div className="flex-none hidden md:flex">
-        <div
-          className="tooltip tooltip-left before:whitespace-nowrap"
-          data-tip="Multiple projects coming soon"
-        >
-          <button className="btn btn-ghost btn-sm font-medium text-sm gap-1 cursor-default">
-            <span className="truncate">Default</span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/40" />
-          </button>
+      <div className="flex-none hidden md:flex items-center gap-2">
+        <div className="flex items-center rounded-full border border-base-300 bg-base-100/70 px-1 py-1 shadow-sm">
+          <div
+            className="tooltip tooltip-left before:whitespace-nowrap"
+            data-tip="Multiple projects coming soon"
+          >
+            <button
+              type="button"
+              className="flex h-10 items-center gap-2 rounded-full px-3 text-left transition-colors hover:bg-base-200/80 cursor-default"
+              aria-label="Current project"
+            >
+              <span className="max-w-28 truncate text-sm font-medium text-base-content">
+                Default
+              </span>
+              <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/35" />
+            </button>
+          </div>
+
+          {isHostedMode ? (
+            <>
+              <div className="mx-1 h-6 w-px bg-base-300" />
+              <HostedSessionActions />
+            </>
+          ) : null}
         </div>
+      </div>
+
+      {isHostedMode ? <HostedSessionActions mobileOnly /> : null}
+    </div>
+  );
+}
+
+function HostedSessionActions({
+  mobileOnly = false,
+}: {
+  mobileOnly?: boolean;
+}) {
+  const { data: session } = useSession();
+
+  if (!session?.user?.email) {
+    return null;
+  }
+
+  const handleSignOut = () => {
+    const redirectTo = getCurrentAuthRedirect(window.location);
+    void authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.assign(
+            redirectTo === "/"
+              ? "/sign-in"
+              : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`,
+          );
+        },
+      },
+    });
+  };
+
+  return (
+    <div className={mobileOnly ? "flex-none md:hidden ml-2" : "flex-none"}>
+      <div className="dropdown dropdown-end">
+        <button
+          type="button"
+          tabIndex={0}
+          className={`btn btn-ghost btn-circle ${mobileOnly ? "" : "hover:bg-base-200/80"}`}
+          aria-label="Open account menu"
+        >
+          <User className="h-5 w-5" />
+        </button>
+        <ul
+          tabIndex={0}
+          className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+        >
+          <li className="menu-title max-w-full">
+            <span className="truncate text-base-content">
+              {session.user.email}
+            </span>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="text-error"
+              onClick={handleSignOut}
+            >
+              Sign out
+            </button>
+          </li>
+        </ul>
       </div>
     </div>
   );
 }
 
 export function SeoApiStatusBanners({
-  helpPath,
   shouldShowSeoApiWarning,
   seoApiKeyStatusError,
 }: {
-  helpPath: string;
   shouldShowSeoApiWarning: boolean;
   seoApiKeyStatusError: boolean;
 }) {
@@ -98,7 +183,10 @@ export function SeoApiStatusBanners({
               <span className="text-sm">
                 Setup needed: add your DataForSEO API key to use OpenSEO
                 features. See the quick steps on the{" "}
-                <Link to={helpPath} className="link link-primary font-medium">
+                <Link
+                  {...dataforseoHelpLinkOptions}
+                  className="link link-primary font-medium"
+                >
                   help page
                 </Link>
                 .
@@ -116,7 +204,10 @@ export function SeoApiStatusBanners({
               <span className="text-sm">
                 We could not verify your DataForSEO setup. If features are not
                 working, check the setup steps on the{" "}
-                <Link to={helpPath} className="link link-primary font-medium">
+                <Link
+                  {...dataforseoHelpLinkOptions}
+                  className="link link-primary font-medium"
+                >
                   help page
                 </Link>
                 .
@@ -177,11 +268,10 @@ export function AppContent({
 export const MissingSeoSetupModal = React.forwardRef<
   HTMLDivElement,
   {
-    helpPath: string;
     isOpen: boolean;
     onClose: () => void;
   }
->(({ helpPath, isOpen, onClose }, ref) => {
+>(({ isOpen, onClose }, ref) => {
   if (!isOpen) return null;
 
   return (
@@ -219,7 +309,11 @@ export const MissingSeoSetupModal = React.forwardRef<
           <button type="button" className="btn btn-ghost" onClick={onClose}>
             Dismiss
           </button>
-          <Link to={helpPath} className="btn btn-primary" onClick={onClose}>
+          <Link
+            {...dataforseoHelpLinkOptions}
+            className="btn btn-primary"
+            onClick={onClose}
+          >
             Open setup guide
             <ExternalLink className="size-4" />
           </Link>

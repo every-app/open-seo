@@ -1,6 +1,4 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
-import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
 import {
   researchKeywordsSchema,
   saveKeywordsSchema,
@@ -9,53 +7,51 @@ import {
   serpAnalysisSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import {
+  requireAuthenticatedContext,
+  requireProjectContext,
+} from "@/serverFunctions/middleware";
 
 export const researchKeywords = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => researchKeywordsSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.research(context.userId, data),
-  );
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.research({
+      ...data,
+      projectId: context.project.id,
+    });
+  });
 
 export const saveKeywords = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => saveKeywordsSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.saveKeywords(context.userId, data),
-  );
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.saveKeywords({
+      ...data,
+      projectId: context.project.id,
+    });
+  });
 
 export const getSavedKeywords = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => getSavedKeywordsSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.getSavedKeywords(context.userId, data),
-  );
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.getSavedKeywords({
+      ...data,
+      projectId: context.project.id,
+    });
+  });
 
-export const removeSavedKeyword = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const removeSavedKeyword = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => removeSavedKeywordSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.removeSavedKeyword(context.userId, data),
-  );
-
-export const getOrCreateDefaultProject = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .handler(async ({ context }) =>
-    KeywordResearchService.getOrCreateDefaultProject(context.userId),
-  );
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.removeSavedKeyword(context.project.id, data);
+  });
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+  .middleware(requireAuthenticatedContext)
   .inputValidator((data: unknown) => serpAnalysisSchema.parse(data))
   .handler(async ({ data }) => KeywordResearchService.getSerpAnalysis(data));
-
-const getProjectSchema = z.object({
-  projectId: z.string().min(1),
-});
-
-export const getProject = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
-  .inputValidator((data: unknown) => getProjectSchema.parse(data))
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.getProject(context.userId, data.projectId),
-  );

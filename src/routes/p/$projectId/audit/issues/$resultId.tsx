@@ -9,14 +9,13 @@ export const Route = createFileRoute("/p/$projectId/audit/issues/$resultId")({
 
 function AuditIssuesPage() {
   const { projectId, resultId } = Route.useParams();
-  const { source, category } = Route.useSearch();
+  const { category } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
   return (
     <PsiIssuesScreen
       projectId={projectId}
       resultId={resultId}
-      source={source}
       category={category}
       backLabel="Site Audit"
       onBack={() =>

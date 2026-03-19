@@ -1,31 +1,36 @@
 import { createServerFn } from "@tanstack/react-start";
-import { authenticatedServerFunctionMiddleware } from "@/serverFunctions/middleware";
 import {
   buildBacklinksDisabledAccessStatus,
   buildVerifiedBacklinksAccessStatus,
   getBacklinksAccessStatus,
   setBacklinksAccessStatus,
 } from "@/server/features/backlinks/backlinksAccess";
-import { assertBacklinksProjectAccess } from "@/server/features/backlinks/backlinksProjectAccess";
 import { AppError } from "@/server/lib/errors";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 import { fetchBacklinksSummaryRaw } from "@/server/lib/dataforseoBacklinks";
 import { backlinksProjectSchema } from "@/types/schemas/backlinks";
 
 const BACKLINKS_ACCESS_CHECK_COOLDOWN_MS = 15 * 60 * 1000;
 
-export const getBacklinksAccessSetupStatus = createServerFn({ method: "GET" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const getBacklinksAccessSetupStatus = createServerFn({
+  method: "GET",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksProjectSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await assertBacklinksProjectAccess(context.userId, data.projectId);
-    return getBacklinksAccessStatus();
-  });
+  .handler(async () => getBacklinksAccessStatus());
 
-export const testBacklinksAccess = createServerFn({ method: "POST" })
-  .middleware(authenticatedServerFunctionMiddleware)
+export const testBacklinksAccess = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksProjectSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    await assertBacklinksProjectAccess(context.userId, data.projectId);
+  .handler(async () => {
+    if (await isHostedServerAuthMode()) {
+      // Hosted deployments do not run the manual DataForSEO access test here;
+      // backlinks access is treated as platform-managed in this mode.
+      return getBacklinksAccessStatus();
+    }
 
     const cachedStatus = await getBacklinksAccessStatus();
     if (isRecentVerifiedBacklinksAccessCheck(cachedStatus)) {

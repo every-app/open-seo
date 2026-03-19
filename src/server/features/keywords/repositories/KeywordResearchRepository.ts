@@ -1,7 +1,6 @@
 import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
-import { keywordMetrics, projects, savedKeywords } from "@/db/schema";
-import { AppError } from "@/server/lib/errors";
+import { keywordMetrics, savedKeywords } from "@/db/schema";
 
 async function upsertKeywordMetric(params: {
   projectId: string;
@@ -51,77 +50,6 @@ async function upsertKeywordMetric(params: {
     });
 }
 
-async function listProjects(userId: string) {
-  return db.query.projects.findMany({
-    where: eq(projects.userId, userId),
-    orderBy: desc(projects.createdAt),
-  });
-}
-
-async function getProject(projectId: string, userId: string) {
-  return db.query.projects.findFirst({
-    where: and(eq(projects.id, projectId), eq(projects.userId, userId)),
-  });
-}
-
-async function getProjectPsiApiKey(projectId: string, userId: string) {
-  const project = await getProject(projectId, userId);
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-  return project.pagespeedApiKey ?? null;
-}
-
-async function setProjectPsiApiKey(
-  projectId: string,
-  userId: string,
-  apiKey: string,
-) {
-  const project = await getProject(projectId, userId);
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-
-  await db
-    .update(projects)
-    .set({ pagespeedApiKey: apiKey })
-    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
-}
-
-async function clearProjectPsiApiKey(projectId: string, userId: string) {
-  const project = await getProject(projectId, userId);
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-
-  await db
-    .update(projects)
-    .set({ pagespeedApiKey: null })
-    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
-}
-
-async function createProject(userId: string, name: string, domain?: string) {
-  const id = crypto.randomUUID();
-  await db.insert(projects).values({
-    id,
-    userId,
-    name,
-    domain,
-  });
-  return id;
-}
-
-async function deleteProject(projectId: string, userId: string) {
-  const project = await getProject(projectId, userId);
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-  // savedKeywords cascade-delete via FK
-  await db
-    .delete(projects)
-    .where(and(eq(projects.id, projectId), eq(projects.userId, userId)));
-}
-
 async function countSavedKeywords(projectId: string) {
   const [result] = await db
     .select({ value: count() })
@@ -169,8 +97,15 @@ async function listSavedKeywordsByProject(projectId: string) {
     .orderBy(desc(savedKeywords.createdAt));
 }
 
-async function removeSavedKeyword(savedKeywordId: string) {
-  await db.delete(savedKeywords).where(eq(savedKeywords.id, savedKeywordId));
+async function removeSavedKeyword(savedKeywordId: string, projectId: string) {
+  await db
+    .delete(savedKeywords)
+    .where(
+      and(
+        eq(savedKeywords.id, savedKeywordId),
+        eq(savedKeywords.projectId, projectId),
+      ),
+    );
 }
 
 async function getSavedKeywordById(savedKeywordId: string) {
@@ -181,13 +116,6 @@ async function getSavedKeywordById(savedKeywordId: string) {
 
 export const KeywordResearchRepository = {
   upsertKeywordMetric,
-  listProjects,
-  getProject,
-  getProjectPsiApiKey,
-  setProjectPsiApiKey,
-  clearProjectPsiApiKey,
-  createProject,
-  deleteProject,
   countSavedKeywords,
   saveKeywordsToProject,
   listSavedKeywordsByProject,

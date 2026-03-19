@@ -6,8 +6,9 @@ import {
   Link2,
   Search,
 } from "lucide-react";
+import { linkOptions } from "@tanstack/react-router";
 
-export const projectNavItems = [
+const projectNavItems = [
   {
     to: "/p/$projectId/keywords" as const,
     label: "Keyword Research",
@@ -45,3 +46,17 @@ export const projectNavItems = [
     matchSegment: "/ai",
   },
 ] as const;
+
+export function getProjectNavItems(projectId: string) {
+  return linkOptions(
+    projectNavItems.map((item) => ({
+      ...item,
+      params: { projectId },
+      search: {},
+    })),
+  );
+}
+
+export const dataforseoHelpLinkOptions = linkOptions({
+  to: "/help/dataforseo-api-key",
+});

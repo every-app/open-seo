@@ -75,8 +75,8 @@ function AuditDetail({
   onBack: () => void;
 }) {
   const statusQuery = useQuery({
-    queryKey: ["audit-status", auditId],
-    queryFn: () => getAuditStatus({ data: { auditId } }),
+    queryKey: ["audit-status", projectId, auditId],
+    queryFn: () => getAuditStatus({ data: { projectId, auditId } }),
     refetchInterval: (query) => {
       const data = query.state.data;
       return data?.status === "running" ? 3000 : false;
@@ -88,8 +88,8 @@ function AuditDetail({
   const isRunning = statusQuery.data?.status === "running";
 
   const resultsQuery = useQuery({
-    queryKey: ["audit-results", auditId],
-    queryFn: () => getAuditResults({ data: { auditId } }),
+    queryKey: ["audit-results", projectId, auditId],
+    queryFn: () => getAuditResults({ data: { projectId, auditId } }),
     enabled: isComplete,
   });
 
@@ -97,6 +97,22 @@ function AuditDetail({
     return (
       <div className="flex items-center justify-center py-20">
         <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
+
+  if (statusQuery.isError) {
+    return (
+      <div className="px-4 py-6 md:px-6">
+        <div className="mx-auto max-w-3xl space-y-4">
+          <div className="alert alert-error">
+            <AlertCircle className="size-5" />
+            <span>We could not load this audit. It may have been deleted.</span>
+          </div>
+          <button className="btn btn-ghost btn-sm" onClick={onBack}>
+            &larr; Back to audits
+          </button>
+        </div>
       </div>
     );
   }
@@ -127,7 +143,11 @@ function AuditDetail({
         </div>
 
         {isRunning && status && (
-          <ProgressCard auditId={auditId} status={status} />
+          <ProgressCard
+            projectId={projectId}
+            auditId={auditId}
+            status={status}
+          />
         )}
 
         {showSupportCta && (
@@ -170,9 +190,11 @@ function AuditDetail({
 }
 
 function ProgressCard({
+  projectId,
   auditId,
   status,
 }: {
+  projectId: string;
   auditId: string;
   status: {
     pagesCrawled: number;
@@ -204,8 +226,8 @@ function ProgressCard({
   const progress = isPsiPhase ? psiProgress : crawlProgress;
 
   const crawlProgressQuery = useQuery({
-    queryKey: ["audit-crawl-progress", auditId],
-    queryFn: () => getCrawlProgress({ data: { auditId } }),
+    queryKey: ["audit-crawl-progress", projectId, auditId],
+    queryFn: () => getCrawlProgress({ data: { projectId, auditId } }),
     refetchInterval: 1500,
   });
 

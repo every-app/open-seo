@@ -8,7 +8,7 @@ import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 import { AppError } from "@/server/lib/errors";
 import type { AuditConfig, PsiStrategy } from "@/server/lib/audit/types";
-import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
+import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import {
   clampAuditMaxPages,
   getEstimatedAuditCapacity,
@@ -32,7 +32,7 @@ function parseAuditConfig(configRaw: string | null): AuditConfig | null {
 }
 
 async function startAudit(input: {
-  userId: string;
+  actorUserId: string;
   projectId: string;
   startUrl: string;
   maxPages?: number;
@@ -42,21 +42,13 @@ async function startAudit(input: {
   const maxPages = clampAuditMaxPages(input.maxPages);
   const psiStrategy = input.psiStrategy ?? "auto";
 
-  const hasProjectAccess = await AuditRepository.isProjectOwnedByUser(
-    input.projectId,
-    input.userId,
-  );
-  if (!hasProjectAccess) {
-    throw new AppError("FORBIDDEN");
-  }
-
   const reservation = getEstimatedAuditCapacity({
     maxPages,
     psiStrategy,
   });
 
   const currentUsage = await AuditRepository.getAuditCapacityUsageForUser(
-    input.userId,
+    input.actorUserId,
   );
 
   if (currentUsage + reservation.total > MAX_USER_AUDIT_USAGE) {
@@ -70,10 +62,8 @@ async function startAudit(input: {
 
   if (shouldRunPsi && !resolvedPsiApiKey) {
     resolvedPsiApiKey =
-      (await KeywordResearchRepository.getProjectPsiApiKey(
-        input.projectId,
-        input.userId,
-      )) ?? undefined;
+      (await ProjectRepository.getProjectPsiApiKey(input.projectId)) ??
+      undefined;
   }
 
   if (shouldRunPsi && !resolvedPsiApiKey) {
@@ -92,7 +82,7 @@ async function startAudit(input: {
   await AuditRepository.createAudit({
     id: auditId,
     projectId: input.projectId,
-    userId: input.userId,
+    startedByUserId: input.actorUserId,
     startUrl,
     workflowInstanceId: auditId,
     config,
@@ -118,15 +108,15 @@ async function startAudit(input: {
     } catch {
       // The workflow may never have been created, or may already be gone.
     }
-    await AuditRepository.deleteAuditForUser(auditId, input.userId);
+    await AuditRepository.deleteAuditForProject(auditId, input.projectId);
     throw error;
   }
 
   return { auditId };
 }
 
-async function getStatus(auditId: string, userId: string) {
-  const audit = await AuditRepository.getAuditForUser(auditId, userId);
+async function getStatus(auditId: string, projectId: string) {
+  const audit = await AuditRepository.getAuditForProject(auditId, projectId);
   if (!audit) throw new AppError("NOT_FOUND");
 
   return {
@@ -144,10 +134,10 @@ async function getStatus(auditId: string, userId: string) {
   };
 }
 
-async function getResults(auditId: string, userId: string) {
-  const { audit, pages, psi } = await AuditRepository.getAuditResultsForUser(
+async function getResults(auditId: string, projectId: string) {
+  const { audit, pages, psi } = await AuditRepository.getAuditResultsForProject(
     auditId,
-    userId,
+    projectId,
   );
 
   if (!audit) throw new AppError("NOT_FOUND");
@@ -174,19 +164,8 @@ async function getResults(auditId: string, userId: string) {
   };
 }
 
-async function getHistory(projectId: string, userId: string) {
-  const hasProjectAccess = await AuditRepository.isProjectOwnedByUser(
-    projectId,
-    userId,
-  );
-  if (!hasProjectAccess) {
-    throw new AppError("FORBIDDEN");
-  }
-
-  const auditList = await AuditRepository.getAuditsByProjectForUser(
-    projectId,
-    userId,
-  );
+async function getHistory(projectId: string) {
+  const auditList = await AuditRepository.getAuditsByProject(projectId);
 
   const didRunPsi = (configRaw: string | null) => {
     const parsed = parseAuditConfig(configRaw);
@@ -205,16 +184,16 @@ async function getHistory(projectId: string, userId: string) {
   }));
 }
 
-async function getCrawlProgress(auditId: string, userId: string) {
-  const audit = await AuditRepository.getAuditForUser(auditId, userId);
+async function getCrawlProgress(auditId: string, projectId: string) {
+  const audit = await AuditRepository.getAuditForProject(auditId, projectId);
   if (!audit) {
     throw new AppError("NOT_FOUND");
   }
   return AuditProgressKV.getCrawledUrls(auditId);
 }
 
-async function remove(auditId: string, userId: string) {
-  const audit = await AuditRepository.getAuditForUser(auditId, userId);
+async function remove(auditId: string, projectId: string) {
+  const audit = await AuditRepository.getAuditForProject(auditId, projectId);
   if (!audit) {
     throw new AppError("NOT_FOUND");
   }
@@ -236,7 +215,7 @@ async function remove(auditId: string, userId: string) {
       throw new AppError("CONFLICT", "Unable to stop the running audit.");
     }
   }
-  await AuditRepository.deleteAuditForUser(auditId, userId);
+  await AuditRepository.deleteAuditForProject(auditId, projectId);
 }
 
 export const AuditService = {

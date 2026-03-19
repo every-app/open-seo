@@ -1,8 +1,11 @@
 {
   "entry": [
     // Detect Tanstack Start Routes
+    "cli-auth.ts",
+    "src/start.ts",
     "src/server.ts",
     "src/router.tsx",
+    "src/routes/**/*.ts",
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
@@ -11,7 +14,6 @@
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
   "ignore": ["drizzle-prod.config.ts"],
-  "ignoreBinaries": ["tsx"],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,
   "ignoreDependencies": [

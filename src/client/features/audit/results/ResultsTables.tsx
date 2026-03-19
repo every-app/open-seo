@@ -161,7 +161,7 @@ function PerformanceRow({
         {result.r2Key ? (
           <a
             className="btn btn-primary btn-xs"
-            href={`/p/${projectId}/audit/issues/${result.id}?source=site&category=performance`}
+            href={`/p/${projectId}/audit/issues/${result.id}?category=performance`}
           >
             View issues
           </a>

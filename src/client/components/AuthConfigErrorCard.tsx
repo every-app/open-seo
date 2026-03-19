@@ -17,7 +17,7 @@ export function AuthConfigErrorCard({
       <div className="card-body gap-4">
         <h2 className="card-title gap-2">
           <ShieldAlert className="size-5 text-error" />
-          Cloudflare Access setup required
+          Authentication setup required
         </h2>
 
         <div className="alert alert-error">
@@ -25,10 +25,12 @@ export function AuthConfigErrorCard({
         </div>
 
         <p className="text-sm text-base-content/70">
-          This deployment is missing required Access settings for
-          <code className="mx-1">AUTH_MODE=cloudflare_access</code>. Configure{" "}
+          Check the auth environment variables for your selected
+          <code className="mx-1">AUTH_MODE</code>. Cloudflare Access requires
           <code className="mx-1">TEAM_DOMAIN</code> and
-          <code className="ml-1">POLICY_AUD</code>, then retry.
+          <code className="mx-1">POLICY_AUD</code>. Hosted mode requires
+          <code className="mx-1">BETTER_AUTH_SECRET</code> and
+          <code className="ml-1">BETTER_AUTH_URL</code>.
         </p>
 
         <div className="card-actions justify-end">

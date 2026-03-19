@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { getOrCreateDefaultProject } from "@/serverFunctions/keywords";
+import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
 import {
   getErrorCode,
   getStandardErrorMessage,
 } from "@/client/lib/error-messages";
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
+import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 
 export const Route = createFileRoute("/")({
   component: IndexRedirect,
@@ -40,6 +41,19 @@ function IndexRedirect() {
               error,
               "An unexpected error occurred. Please check server logs.",
             )}
+            onRetry={() => {
+              mutate();
+            }}
+          />
+        </div>
+      );
+    }
+
+    if (errorCode === "UNAUTHENTICATED") {
+      return (
+        <div className="flex items-center justify-center h-full p-4">
+          <UnauthenticatedErrorCard
+            message="Please sign in to access your OpenSEO workspace."
             onRetry={() => {
               mutate();
             }}

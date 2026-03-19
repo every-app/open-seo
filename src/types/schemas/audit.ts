@@ -14,10 +14,12 @@ export const startAuditSchema = z.object({
 });
 
 export const getAuditStatusSchema = z.object({
+  projectId: z.string().min(1),
   auditId: z.string().min(1),
 });
 
 export const getAuditResultsSchema = z.object({
+  projectId: z.string().min(1),
   auditId: z.string().min(1),
 });
 
@@ -26,10 +28,12 @@ export const getAuditHistorySchema = z.object({
 });
 
 export const deleteAuditSchema = z.object({
+  projectId: z.string().min(1),
   auditId: z.string().min(1),
 });
 
 export const getCrawlProgressSchema = z.object({
+  projectId: z.string().min(1),
   auditId: z.string().min(1),
 });
 

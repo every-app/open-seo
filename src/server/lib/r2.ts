@@ -1,22 +1,5 @@
 import { env } from "cloudflare:workers";
 
-export async function putJsonToR2(
-  key: string,
-  payload: Record<string, unknown>,
-): Promise<{ key: string; sizeBytes: number }> {
-  const body = JSON.stringify(payload);
-  await env.R2.put(key, body, {
-    httpMetadata: {
-      contentType: "application/json",
-    },
-  });
-
-  return {
-    key,
-    sizeBytes: Buffer.byteLength(body),
-  };
-}
-
 export async function getJsonFromR2(key: string): Promise<string> {
   const object = await env.R2.get(key);
   if (!object) {

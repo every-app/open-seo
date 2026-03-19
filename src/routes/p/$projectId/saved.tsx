@@ -28,7 +28,7 @@ function SavedKeywordsPage() {
 
   const removeMutation = useMutation({
     mutationFn: (savedKeywordId: string) =>
-      removeSavedKeyword({ data: { savedKeywordId } }),
+      removeSavedKeyword({ data: { projectId, savedKeywordId } }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ["savedKeywords", projectId],

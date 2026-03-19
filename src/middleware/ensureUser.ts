@@ -1,167 +1,65 @@
 import { createMiddleware } from "@tanstack/react-start";
-import { db } from "@/db";
-import { users } from "@/db/schema";
-import { eq } from "drizzle-orm";
-import { AppError } from "@/server/lib/errors";
-import { env } from "cloudflare:workers";
-import { createRemoteJWKSet, jwtVerify } from "jose";
 import { getRequest } from "@tanstack/react-start/server";
+import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
+import { resolveCloudflareAccessContext } from "@/middleware/ensure-user/cloudflareAccess";
+import { resolveLocalNoAuthContext } from "@/middleware/ensure-user/delegated";
+import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
+import type {
+  EnsuredProject,
+  EnsuredUserContext,
+} from "@/middleware/ensure-user/types";
+import { AppError } from "@/server/lib/errors";
+import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
+import { env } from "cloudflare:workers";
 
-type AuthMode = "cloudflare_access" | "local_noauth";
-
-const LOCAL_ADMIN_USER_ID = "local-admin";
-const LOCAL_ADMIN_EMAIL = "admin@localhost";
-
-const jwksByTeamDomain = new Map<
-  string,
-  ReturnType<typeof createRemoteJWKSet>
->();
-
-function getAuthMode(): AuthMode {
-  const value = env.AUTH_MODE;
-
-  if (value === "local_noauth" || value === "cloudflare_access") {
-    return value;
+function extractProjectId(data: unknown) {
+  if (!data || typeof data !== "object" || !("projectId" in data)) {
+    return null;
   }
 
-  if (value === "hosted") {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      "AUTH_MODE=hosted is not implemented yet",
-    );
-  }
-
-  return "cloudflare_access";
-}
-
-function getJwks(teamDomain: string) {
-  const existing = jwksByTeamDomain.get(teamDomain);
-  if (existing) return existing;
-
-  const jwks = createRemoteJWKSet(
-    new URL(`${teamDomain}/cdn-cgi/access/certs`),
-  );
-  jwksByTeamDomain.set(teamDomain, jwks);
-  return jwks;
-}
-
-function normalizeTeamDomain(teamDomain: string) {
-  return teamDomain.trim().replace(/\/+$/, "");
-}
-
-function getValidatedTeamDomain(teamDomain: string) {
-  const normalized = normalizeTeamDomain(teamDomain);
-
-  try {
-    const parsed = new URL(normalized);
-
-    if (parsed.protocol !== "https:") {
-      throw new Error("TEAM_DOMAIN must use https");
-    }
-
-    return parsed.origin;
-  } catch {
-    throw new AppError(
-      "AUTH_CONFIG_MISSING",
-      "TEAM_DOMAIN must be a full https URL like https://your-team.cloudflareaccess.com",
-    );
-  }
-}
-
-async function ensureUserRecord(userId: string, userEmail: string) {
-  const existingUser = await db.query.users.findFirst({
-    where: eq(users.id, userId),
-  });
-
-  if (!existingUser) {
-    await db.insert(users).values({
-      id: userId,
-      email: userEmail,
-    });
-
-    return userEmail;
-  }
-
-  if (existingUser.email !== userEmail) {
-    await db
-      .update(users)
-      .set({ email: userEmail })
-      .where(eq(users.id, userId));
-    return userEmail;
-  }
-
-  return existingUser.email;
+  const projectId = (data as { projectId?: unknown }).projectId;
+  return typeof projectId === "string" && projectId.length > 0
+    ? projectId
+    : null;
 }
 
 export const ensureUserMiddleware = createMiddleware({
   type: "function",
-}).server(async ({ next }) => {
-  const authMode = getAuthMode();
+}).server(async ({ next, data }) => {
+  const authMode = getAuthMode(env.AUTH_MODE);
+  const headers = getRequest().headers;
+  let context: EnsuredUserContext;
 
   if (authMode === "local_noauth") {
-    const userEmail = await ensureUserRecord(
-      LOCAL_ADMIN_USER_ID,
-      LOCAL_ADMIN_EMAIL,
+    context = await resolveLocalNoAuthContext();
+  } else if (isHostedAuthMode(authMode)) {
+    context = await resolveHostedContext(headers);
+  } else {
+    context = await resolveCloudflareAccessContext(headers);
+  }
+
+  const projectId = extractProjectId(data);
+
+  let project: EnsuredProject | undefined;
+
+  if (projectId) {
+    // ADR 0001 intentionally keeps project authorization here so every
+    // project-scoped server function gets the same request-scoped org+project
+    // check before handlers run. Function-level middleware narrows the type.
+    project = await ProjectRepository.getProjectForOrganization(
+      projectId,
+      context.organizationId,
     );
 
-    return next({
-      context: {
-        userId: LOCAL_ADMIN_USER_ID,
-        userEmail,
-      },
-    });
-  }
-
-  const request = getRequest();
-
-  const teamDomain = env.TEAM_DOMAIN
-    ? getValidatedTeamDomain(env.TEAM_DOMAIN)
-    : null;
-  const policyAud = env.POLICY_AUD?.trim() || null;
-
-  if (!teamDomain || !policyAud) {
-    throw new AppError(
-      "AUTH_CONFIG_MISSING",
-      "Missing Cloudflare Access configuration",
-    );
-  }
-
-  const token = request.headers.get("cf-access-jwt-assertion");
-
-  if (!token) {
-    throw new AppError("UNAUTHENTICATED");
-  }
-
-  let userId: string;
-  let userEmail: string;
-
-  try {
-    const JWKS = getJwks(teamDomain);
-    const { payload } = await jwtVerify(token, JWKS, {
-      issuer: teamDomain,
-      audience: policyAud,
-    });
-
-    userId = typeof payload.sub === "string" ? payload.sub : "";
-    userEmail = typeof payload.email === "string" ? payload.email : "";
-
-    if (!userId || !userEmail) {
-      throw new AppError("UNAUTHENTICATED");
+    if (!project) {
+      throw new AppError("NOT_FOUND");
     }
-  } catch (error) {
-    if (error instanceof AppError) {
-      throw error;
-    }
-
-    throw new AppError("UNAUTHENTICATED");
   }
-
-  const ensuredEmail = await ensureUserRecord(userId, userEmail);
 
   return next({
     context: {
-      userId,
-      userEmail: ensuredEmail,
+      ...context,
+      project,
     },
   });
 });

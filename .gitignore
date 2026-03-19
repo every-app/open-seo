@@ -29,3 +29,6 @@ dist/
 .tanstack
 .logs/
 **/.pnpm-store/
+
+# Localflare generated files
+.localflare/

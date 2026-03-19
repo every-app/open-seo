@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronsUpDown, X } from "lucide-react";
-import { projectNavItems } from "@/client/navigation/items";
+import { getProjectNavItems } from "@/client/navigation/items";
 
 interface SidebarProps {
   currentPath: string;
@@ -39,6 +39,8 @@ export function Sidebar({
     );
   }
 
+  const projectNavItems = getProjectNavItems(projectId);
+
   return (
     <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">
       {/* Header */}
@@ -71,14 +73,13 @@ export function Sidebar({
       {/* Navigation */}
       <nav className="flex-1 py-4 pl-3 overflow-y-auto">
         {projectNavItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = currentPath.includes(item.matchSegment);
+          const { icon: Icon, matchSegment, ...linkProps } = item;
+          const isActive = currentPath.includes(matchSegment);
 
           return (
             <Link
-              key={item.to}
-              to={item.to}
-              params={{ projectId }}
+              key={linkProps.to}
+              {...linkProps}
               onClick={onNavigate}
               className={`relative flex items-center gap-3 pl-4 pr-4 py-2 text-sm transition-colors ${
                 isActive

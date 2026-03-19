@@ -14,15 +14,6 @@ export const researchKeywordsSchema = z.object({
     .default("auto"),
 });
 
-export const createProjectSchema = z.object({
-  name: z.string().min(1, "Project name is required").max(120),
-  domain: z.string().max(255).optional(),
-});
-
-export const deleteProjectSchema = z.object({
-  projectId: z.string().min(1),
-});
-
 export const saveKeywordsSchema = z.object({
   projectId: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1).max(200),
@@ -68,6 +59,7 @@ export const saveKeywordsSchema = z.object({
 });
 
 export const removeSavedKeywordSchema = z.object({
+  projectId: z.string().min(1),
   savedKeywordId: z.string().min(1),
 });
 
@@ -76,8 +68,6 @@ export const getSavedKeywordsSchema = z.object({
 });
 
 export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;
-export type CreateProjectInput = z.infer<typeof createProjectSchema>;
-export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
 export type SaveKeywordsInput = z.infer<typeof saveKeywordsSchema>;
 export type RemoveSavedKeywordInput = z.infer<typeof removeSavedKeywordSchema>;
 export const serpAnalysisSchema = z.object({

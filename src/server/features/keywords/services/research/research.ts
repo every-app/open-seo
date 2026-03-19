@@ -223,17 +223,8 @@ function persistRows(input: ResearchKeywordsInput, rows: EnrichedKeyword[]) {
 }
 
 export async function research(
-  userId: string,
   input: ResearchKeywordsInput,
 ): Promise<ResearchResult> {
-  const project = await KeywordResearchRepository.getProject(
-    input.projectId,
-    userId,
-  );
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
-
   const uniqueKeywords = [
     ...new Set(input.keywords.map(normalizeKeyword)),
   ].filter((keyword) => keyword.length > 0);

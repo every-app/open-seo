@@ -1,3 +1,5 @@
+import { isHostedAuthMode } from "@/lib/auth-mode";
+
 let workersEnvPromise: Promise<Record<string, unknown> | null> | null = null;
 
 async function getEnvValue(name: string): Promise<string | undefined> {
@@ -18,6 +20,10 @@ export async function getRequiredEnvValue(name: string): Promise<string> {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
+}
+
+export async function isHostedServerAuthMode(): Promise<boolean> {
+  return isHostedAuthMode(await getEnvValue("AUTH_MODE"));
 }
 
 export async function getWorkersBinding(name: string): Promise<unknown> {
