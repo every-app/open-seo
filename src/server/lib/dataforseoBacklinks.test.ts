@@ -24,6 +24,24 @@ describe("normalizeBacklinksTarget", () => {
     });
   });
 
+  it("trims trailing slashes from non-root page URLs", () => {
+    expect(
+      normalizeBacklinksTarget("https://github.com/every-app/open-seo/"),
+    ).toEqual({
+      apiTarget: "https://github.com/every-app/open-seo",
+      displayTarget: "https://github.com/every-app/open-seo",
+      scope: "page",
+    });
+  });
+
+  it("keeps trailing slashes for root page URLs", () => {
+    expect(normalizeBacklinksTarget("https://example.com/")).toEqual({
+      apiTarget: "https://example.com/",
+      displayTarget: "https://example.com/",
+      scope: "page",
+    });
+  });
+
   it("treats bare hostnames as domain lookups", () => {
     expect(normalizeBacklinksTarget("Example.com")).toEqual({
       apiTarget: "example.com",

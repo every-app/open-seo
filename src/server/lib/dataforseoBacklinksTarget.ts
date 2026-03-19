@@ -11,6 +11,17 @@ type NormalizeBacklinksTargetOptions = {
   scope?: BacklinksLookupInput["scope"];
 };
 
+function normalizePageTargetUrl(url: URL, hostname: string): string {
+  const normalizedUrl = new URL(url.toString());
+  normalizedUrl.hostname = hostname;
+
+  if (normalizedUrl.pathname.length > 1) {
+    normalizedUrl.pathname = normalizedUrl.pathname.replace(/\/+$/, "");
+  }
+
+  return normalizedUrl.toString();
+}
+
 export function normalizeBacklinksTarget(
   input: string,
   options: NormalizeBacklinksTargetOptions = {},
@@ -63,23 +74,26 @@ export function normalizeBacklinksTarget(
 
   if (requestedScope === "page") {
     const normalizedUrl = new URL(parsed.toString());
-    normalizedUrl.hostname = exactHostname;
     if (!hasExplicitProtocol && !hasMeaningfulPath) {
       normalizedUrl.pathname = "/";
     }
+
+    const normalizedTarget = normalizePageTargetUrl(
+      normalizedUrl,
+      exactHostname,
+    );
     return {
-      apiTarget: normalizedUrl.toString(),
-      displayTarget: normalizedUrl.toString(),
+      apiTarget: normalizedTarget,
+      displayTarget: normalizedTarget,
       scope: "page",
     };
   }
 
   if (hasExplicitProtocol || hasMeaningfulPath) {
-    const normalizedUrl = new URL(parsed.toString());
-    normalizedUrl.hostname = exactHostname;
+    const normalizedTarget = normalizePageTargetUrl(parsed, exactHostname);
     return {
-      apiTarget: normalizedUrl.toString(),
-      displayTarget: normalizedUrl.toString(),
+      apiTarget: normalizedTarget,
+      displayTarget: normalizedTarget,
       scope: "page",
     };
   }
