@@ -10,7 +10,7 @@ import { Trash2, Download, Search, Loader2, AlertCircle } from "lucide-react";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
-export const Route = createFileRoute("/p/$projectId/saved")({
+export const Route = createFileRoute("/_project/p/$projectId/saved")({
   component: SavedKeywordsPage,
 });
 

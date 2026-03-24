@@ -10,7 +10,7 @@ import {
 } from "@/client/features/keywords/keywordSearchParams";
 import { keywordsSearchSchema } from "@/types/schemas/keywords";
 
-export const Route = createFileRoute("/p/$projectId/keywords")({
+export const Route = createFileRoute("/_project/p/$projectId/keywords")({
   validateSearch: keywordsSearchSchema,
   beforeLoad: ({ params, search }) => {
     const { normalized, changed } = normalizeLegacyKeywordSearch(search);

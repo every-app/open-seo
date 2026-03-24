@@ -3,10 +3,10 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   AuthPageCard,
   authRedirectSearchSchema,
-  getAuthLinkSearch,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
 import { authClient } from "@/lib/auth-client";
+import { getSignInSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 
 const signInSchema = z.object({
@@ -96,7 +96,7 @@ function SignInPage() {
             Need an account?{" "}
             <Link
               to="/sign-up"
-              search={getAuthLinkSearch(redirectTo)}
+              search={getSignInSearch(redirectTo)}
               className="link link-primary"
             >
               Create account

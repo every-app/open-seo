@@ -1,30 +1,132 @@
 import * as React from "react";
-import { Link, Outlet } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
+import { ChevronsUpDown, Menu, User } from "lucide-react";
+import { getProjectNavItems } from "@/client/navigation/items";
 import {
-  AlertTriangle,
-  ChevronsUpDown,
-  ExternalLink,
-  Menu,
-  User,
-} from "lucide-react";
-import { Sidebar } from "@/client/components/Sidebar";
-import {
-  dataforseoHelpLinkOptions,
-  getProjectNavItems,
-} from "@/client/navigation/items";
-import { getCurrentAuthRedirect } from "@/lib/auth-redirect";
+  AppContent,
+  MissingSeoSetupModal,
+  SeoApiStatusBanners,
+} from "@/client/layout/AppShellParts";
+import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 
-export function TopNav({
+const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
+
+export function AuthenticatedAppLayout({
+  children,
+  projectId,
+}: {
+  children: React.ReactNode;
+  projectId?: string;
+}) {
+  const location = useLocation();
+  const [drawerOpen, setDrawerOpen] = React.useState(false);
+  const setupModalRef = React.useRef<HTMLDivElement | null>(null);
+  const [isSeoApiKeyConfigured, setIsSeoApiKeyConfigured] = React.useState<
+    boolean | null
+  >(null);
+  const [seoApiKeyStatusError, setSeoApiKeyStatusError] = React.useState(false);
+  const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
+    React.useState(false);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const checkSeoApiKeyStatus = async () => {
+      try {
+        const result = await getSeoApiKeyStatus();
+        if (cancelled) return;
+
+        setSeoApiKeyStatusError(false);
+        setIsSeoApiKeyConfigured(result.configured);
+        if (!result.configured) {
+          setShowMissingSeoApiKeyModal(true);
+        }
+      } catch {
+        if (cancelled) return;
+        setSeoApiKeyStatusError(true);
+        setIsSeoApiKeyConfigured(null);
+        setShowMissingSeoApiKeyModal(false);
+      }
+    };
+
+    void checkSeoApiKeyStatus();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const shouldShowMissingSeoApiKeyModal =
+    showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
+
+  const shouldShowSeoApiWarning =
+    !seoApiKeyStatusError &&
+    isSeoApiKeyConfigured === false &&
+    !shouldShowMissingSeoApiKeyModal;
+
+  React.useEffect(() => {
+    if (!shouldShowMissingSeoApiKeyModal) return;
+
+    setupModalRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowMissingSeoApiKeyModal(false);
+      }
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [shouldShowMissingSeoApiKeyModal]);
+
+  React.useEffect(() => {
+    if (!projectId) {
+      setDrawerOpen(false);
+    }
+  }, [projectId]);
+
+  return (
+    <div className="flex h-[100dvh] flex-col bg-base-200">
+      <TopNav
+        drawerOpen={drawerOpen}
+        projectId={projectId ?? null}
+        onOpenDrawer={() => setDrawerOpen(true)}
+      />
+
+      <SeoApiStatusBanners
+        shouldShowSeoApiWarning={shouldShowSeoApiWarning}
+        seoApiKeyStatusError={seoApiKeyStatusError}
+      />
+
+      <AppContent
+        drawerOpen={drawerOpen}
+        projectId={projectId ?? null}
+        onCloseDrawer={() => setDrawerOpen(false)}
+      >
+        {children}
+      </AppContent>
+
+      <MissingSeoSetupModal
+        ref={setupModalRef}
+        isOpen={shouldShowMissingSeoApiKeyModal}
+        onClose={() => setShowMissingSeoApiKeyModal(false)}
+      />
+    </div>
+  );
+}
+
+function TopNav({
   drawerOpen,
   projectId,
-  pathname,
   onOpenDrawer,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
-  pathname: string;
   onOpenDrawer: () => void;
 }) {
   const isHostedMode = isHostedClientAuthMode();
@@ -33,15 +135,17 @@ export function TopNav({
   return (
     <div className="navbar bg-base-100 border-b border-base-300 shrink-0 gap-2">
       <div className="flex-none flex items-center md:hidden">
-        <button
-          type="button"
-          className="btn btn-square btn-ghost"
-          aria-label="Toggle sidebar"
-          aria-expanded={drawerOpen}
-          onClick={onOpenDrawer}
-        >
-          <Menu className="h-6 w-6" />
-        </button>
+        {projectId ? (
+          <button
+            type="button"
+            className="btn btn-square btn-ghost"
+            aria-label="Toggle sidebar"
+            aria-expanded={drawerOpen}
+            onClick={onOpenDrawer}
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+        ) : null}
         <span className="font-semibold text-base-content ml-1">OpenSEO</span>
       </div>
 
@@ -51,17 +155,17 @@ export function TopNav({
         </span>
         {projectId
           ? projectNavItems.map((item) => {
-              const { icon: Icon, matchSegment, ...linkProps } = item;
-              const isActive = pathname.includes(matchSegment);
+              const { icon: Icon, ...linkProps } = item;
               return (
                 <Link
                   key={linkProps.to}
                   {...linkProps}
-                  className={`btn btn-sm gap-2 ${
-                    isActive
-                      ? "bg-primary/10 text-primary font-medium border-transparent"
-                      : "btn-ghost text-base-content/60 hover:text-base-content"
-                  }`}
+                  activeOptions={{ exact: false, includeSearch: false }}
+                  className="btn btn-sm gap-2 btn-ghost text-base-content/60 hover:text-base-content"
+                  activeProps={{
+                    className:
+                      "bg-primary/10 text-primary font-medium border-transparent hover:text-primary",
+                  }}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -117,15 +221,11 @@ function HostedSessionActions({
   }
 
   const handleSignOut = () => {
-    const redirectTo = getCurrentAuthRedirect(window.location);
+    const signInHref = getSignInHrefForLocation(window.location);
     void authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
-          window.location.assign(
-            redirectTo === "/"
-              ? "/sign-in"
-              : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`,
-          );
+          window.location.assign(signInHref);
         },
       },
     });
@@ -165,162 +265,3 @@ function HostedSessionActions({
     </div>
   );
 }
-
-export function SeoApiStatusBanners({
-  shouldShowSeoApiWarning,
-  seoApiKeyStatusError,
-}: {
-  shouldShowSeoApiWarning: boolean;
-  seoApiKeyStatusError: boolean;
-}) {
-  return (
-    <>
-      {shouldShowSeoApiWarning ? (
-        <div className="shrink-0 px-4 py-2.5 md:px-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="alert alert-warning">
-              <AlertTriangle className="size-4 shrink-0" />
-              <span className="text-sm">
-                Setup needed: add your DataForSEO API key to use OpenSEO
-                features. See the quick steps on the{" "}
-                <Link
-                  {...dataforseoHelpLinkOptions}
-                  className="link link-primary font-medium"
-                >
-                  help page
-                </Link>
-                .
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {seoApiKeyStatusError ? (
-        <div className="shrink-0 px-4 py-2.5 md:px-6">
-          <div className="mx-auto max-w-7xl">
-            <div className="alert alert-info">
-              <AlertTriangle className="size-4 shrink-0" />
-              <span className="text-sm">
-                We could not verify your DataForSEO setup. If features are not
-                working, check the setup steps on the{" "}
-                <Link
-                  {...dataforseoHelpLinkOptions}
-                  className="link link-primary font-medium"
-                >
-                  help page
-                </Link>
-                .
-              </span>
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </>
-  );
-}
-
-export function AppContent({
-  drawerOpen,
-  pathname,
-  projectId,
-  onCloseDrawer,
-}: {
-  drawerOpen: boolean;
-  pathname: string;
-  projectId: string | null;
-  onCloseDrawer: () => void;
-}) {
-  return (
-    <>
-      <div className="flex-1 min-h-0 md:hidden">
-        <div className="h-full overflow-auto">
-          <Outlet />
-        </div>
-
-        {drawerOpen ? (
-          <div className="fixed inset-0 z-50">
-            <button
-              type="button"
-              aria-label="Close sidebar"
-              className="absolute inset-0 bg-black/45"
-              onClick={onCloseDrawer}
-            />
-            <div className="absolute left-0 top-0 h-full">
-              <Sidebar
-                currentPath={pathname}
-                projectId={projectId}
-                onNavigate={onCloseDrawer}
-                onClose={onCloseDrawer}
-              />
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <div className="hidden md:block flex-1 min-h-0 overflow-auto">
-        <Outlet />
-      </div>
-    </>
-  );
-}
-
-export const MissingSeoSetupModal = React.forwardRef<
-  HTMLDivElement,
-  {
-    isOpen: boolean;
-    onClose: () => void;
-  }
->(({ isOpen, onClose }, ref) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="dataforseo-setup-title"
-        aria-describedby="dataforseo-setup-description"
-        tabIndex={-1}
-        className="w-full max-w-lg rounded-xl border border-base-300 bg-base-100 p-5 shadow-2xl"
-      >
-        <div className="flex items-start gap-3">
-          <div className="rounded-full bg-warning/20 p-2 text-warning">
-            <AlertTriangle className="size-5" />
-          </div>
-          <div className="space-y-2">
-            <h2
-              id="dataforseo-setup-title"
-              className="text-lg font-semibold text-base-content"
-            >
-              One quick setup step
-            </h2>
-            <p
-              id="dataforseo-setup-description"
-              className="text-sm text-base-content/75"
-            >
-              Add your DataForSEO API key to start using OpenSEO.
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-          <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Dismiss
-          </button>
-          <Link
-            {...dataforseoHelpLinkOptions}
-            className="btn btn-primary"
-            onClick={onClose}
-          >
-            Open setup guide
-            <ExternalLink className="size-4" />
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-MissingSeoSetupModal.displayName = "MissingSeoSetupModal";

@@ -6,7 +6,7 @@ const SUPPORT_EMAIL = "ben@everyapp.com";
 const DATAFORSEO_MCP_DOCS_URL =
   "https://dataforseo.com/help-center/setting-up-the-official-dataforseo-mcp-server-simple-guide";
 
-export const Route = createFileRoute("/p/$projectId/ai")({
+export const Route = createFileRoute("/_project/p/$projectId/ai")({
   component: AiPage,
 });
 

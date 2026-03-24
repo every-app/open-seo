@@ -7,7 +7,7 @@ import {
 } from "@/client/features/domain/utils";
 import { domainSearchSchema } from "@/types/schemas/domain";
 
-export const Route = createFileRoute("/p/$projectId/domain")({
+export const Route = createFileRoute("/_project/p/$projectId/domain")({
   validateSearch: domainSearchSchema,
   component: DomainOverviewRoute,
 });

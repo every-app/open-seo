@@ -9,7 +9,7 @@ import {
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
 });
 

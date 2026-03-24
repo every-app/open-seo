@@ -5,28 +5,16 @@ import {
   Outlet,
   Scripts,
   createRootRoute,
-  useLocation,
-  useMatches,
 } from "@tanstack/react-router";
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
-import { useState } from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
 import { Toaster } from "sonner";
 import { queryClient } from "@/client/tanstack-db";
-import { getSeoApiKeyStatus } from "@/serverFunctions/config";
-import {
-  AppContent,
-  MissingSeoSetupModal,
-  SeoApiStatusBanners,
-  TopNav,
-} from "@/client/layout/AppShell";
-
-const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -77,112 +65,7 @@ export const Route = createRootRoute({
 });
 
 function AppLayout() {
-  const isAuthLayout = useMatches({
-    select: (matches) => matches.some((match) => match.routeId === "/_auth"),
-  });
-
-  if (isAuthLayout) {
-    return <Outlet />;
-  }
-
-  return <AppShellLayout />;
-}
-
-function AppShellLayout() {
-  const location = useLocation();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const setupModalRef = React.useRef<HTMLDivElement | null>(null);
-  const [isSeoApiKeyConfigured, setIsSeoApiKeyConfigured] = useState<
-    boolean | null
-  >(null);
-  const [seoApiKeyStatusError, setSeoApiKeyStatusError] = useState(false);
-  const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
-    useState(false);
-
-  const projectIdMatch = location.pathname.match(/^\/p\/([^/]+)/);
-  const projectId = projectIdMatch?.[1] ?? null;
-
-  React.useEffect(() => {
-    let cancelled = false;
-
-    const checkSeoApiKeyStatus = async () => {
-      try {
-        const result = await getSeoApiKeyStatus();
-        if (cancelled) return;
-
-        setSeoApiKeyStatusError(false);
-        setIsSeoApiKeyConfigured(result.configured);
-        if (!result.configured) {
-          setShowMissingSeoApiKeyModal(true);
-        }
-      } catch {
-        if (cancelled) return;
-        setSeoApiKeyStatusError(true);
-        setIsSeoApiKeyConfigured(null);
-        setShowMissingSeoApiKeyModal(false);
-      }
-    };
-
-    void checkSeoApiKeyStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  const shouldShowMissingSeoApiKeyModal =
-    showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
-
-  const shouldShowSeoApiWarning =
-    !seoApiKeyStatusError &&
-    isSeoApiKeyConfigured === false &&
-    !shouldShowMissingSeoApiKeyModal;
-
-  React.useEffect(() => {
-    if (!shouldShowMissingSeoApiKeyModal) return;
-
-    setupModalRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowMissingSeoApiKeyModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [shouldShowMissingSeoApiKeyModal]);
-
-  return (
-    <div className="flex flex-col h-[100dvh] bg-base-200">
-      <TopNav
-        drawerOpen={drawerOpen}
-        projectId={projectId}
-        pathname={location.pathname}
-        onOpenDrawer={() => setDrawerOpen(true)}
-      />
-
-      <SeoApiStatusBanners
-        shouldShowSeoApiWarning={shouldShowSeoApiWarning}
-        seoApiKeyStatusError={seoApiKeyStatusError}
-      />
-
-      <AppContent
-        drawerOpen={drawerOpen}
-        pathname={location.pathname}
-        projectId={projectId}
-        onCloseDrawer={() => setDrawerOpen(false)}
-      />
-
-      <MissingSeoSetupModal
-        ref={setupModalRef}
-        isOpen={shouldShowMissingSeoApiKeyModal}
-        onClose={() => setShowMissingSeoApiKeyModal(false)}
-      />
-    </div>
-  );
+  return <Outlet />;
 }
 
 function RootDocument({ children }: { children: React.ReactNode }) {

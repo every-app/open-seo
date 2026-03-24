@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PsiIssuesScreen } from "@/client/features/psi/issues/PsiIssuesScreen";
 import { psiIssuesSearchSchema } from "@/types/schemas/psi";
 
-export const Route = createFileRoute("/p/$projectId/audit/issues/$resultId")({
+export const Route = createFileRoute(
+  "/_project/p/$projectId/audit/issues/$resultId",
+)({
   validateSearch: psiIssuesSearchSchema,
   component: AuditIssuesPage,
 });

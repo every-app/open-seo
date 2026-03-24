@@ -3,7 +3,7 @@ import { BacklinksPage } from "@/client/features/backlinks/BacklinksPage";
 import { inferBacklinksSearchScopeFromTarget } from "@/client/features/backlinks/backlinksSearchScope";
 import { backlinksSearchSchema } from "@/types/schemas/backlinks";
 
-export const Route = createFileRoute("/p/$projectId/backlinks")({
+export const Route = createFileRoute("/_project/p/$projectId/backlinks")({
   validateSearch: backlinksSearchSchema,
   component: BacklinksRoute,
 });

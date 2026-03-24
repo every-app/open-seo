@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 const DATAFORSEO_API_ACCESS_URL = "https://app.dataforseo.com/api-access";
 
-export const Route = createFileRoute("/help/dataforseo-api-key")({
+export const Route = createFileRoute("/_app/help/dataforseo-api-key")({
   component: DataforseoApiKeyHelpPage,
 });
 

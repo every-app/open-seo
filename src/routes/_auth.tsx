@@ -1,10 +1,34 @@
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { authRedirectSearchSchema } from "@/client/features/auth/AuthPage";
+import { useSession } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 
 export const Route = createFileRoute("/_auth")({
-  component: AuthLayout,
+  validateSearch: authRedirectSearchSchema,
+  component: AuthPageLayout,
 });
 
-function AuthLayout() {
+function AuthPageLayout() {
+  const search = Route.useSearch();
+  const navigate = useNavigate();
+  const { data: session, isPending } = useSession();
+  const isHostedMode = isHostedClientAuthMode();
+  const redirectTo = normalizeAuthRedirect(search.redirect);
+
+  useEffect(() => {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    void navigate({ href: redirectTo, replace: true });
+  }, [navigate, redirectTo, session?.user?.id]);
+
+  if (isHostedMode && (isPending || session?.user?.id)) {
+    return null;
+  }
+
   return (
     <div className="min-h-[100dvh] bg-base-200">
       <div className="min-h-[100dvh] flex items-center justify-center p-4">

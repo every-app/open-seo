@@ -3,11 +3,11 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   AuthPageCard,
   authRedirectSearchSchema,
-  getAuthLinkSearch,
   getFieldError,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
 import { authClient } from "@/lib/auth-client";
+import { getSignInSearch } from "@/lib/auth-redirect";
 import {
   HOSTED_PASSWORD_MAX_LENGTH,
   HOSTED_PASSWORD_MIN_LENGTH,
@@ -130,7 +130,7 @@ function SignUpPage() {
             Already have an account?{" "}
             <Link
               to="/sign-in"
-              search={getAuthLinkSearch(redirectTo)}
+              search={getSignInSearch(redirectTo)}
               className="link link-primary"
             >
               Sign in

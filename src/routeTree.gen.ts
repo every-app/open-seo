@@ -10,35 +10,40 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/_auth'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as HelpDataforseoApiKeyRouteImport } from './routes/help/dataforseo-api-key'
+import { Route as ProjectRouteRouteImport } from './routes/_project/route'
+import { Route as AppRouteRouteImport } from './routes/_app/route'
+import { Route as AppIndexRouteImport } from './routes/_app/index'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
-import { Route as PProjectIdRouteRouteImport } from './routes/p/$projectId/route'
-import { Route as PProjectIdIndexRouteImport } from './routes/p/$projectId/index'
-import { Route as PProjectIdSavedRouteImport } from './routes/p/$projectId/saved'
-import { Route as PProjectIdKeywordsRouteImport } from './routes/p/$projectId/keywords'
-import { Route as PProjectIdDomainRouteImport } from './routes/p/$projectId/domain'
-import { Route as PProjectIdBacklinksRouteImport } from './routes/p/$projectId/backlinks'
-import { Route as PProjectIdAuditRouteImport } from './routes/p/$projectId/audit'
-import { Route as PProjectIdAiRouteImport } from './routes/p/$projectId/ai'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as PProjectIdAuditIndexRouteImport } from './routes/p/$projectId/audit/index'
-import { Route as PProjectIdAuditIssuesResultIdRouteImport } from './routes/p/$projectId/audit/issues/$resultId'
+import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
+import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
+import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
+import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
+import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
+import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
+import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
+import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
+import { Route as ProjectPProjectIdAiRouteImport } from './routes/_project/p/$projectId/ai'
+import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
+import { Route as ProjectPProjectIdAuditIssuesResultIdRouteImport } from './routes/_project/p/$projectId/audit/issues/$resultId'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const ProjectRouteRoute = ProjectRouteRouteImport.update({
+  id: '/_project',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HelpDataforseoApiKeyRoute = HelpDataforseoApiKeyRouteImport.update({
-  id: '/help/dataforseo-api-key',
-  path: '/help/dataforseo-api-key',
+const AppRouteRoute = AppRouteRouteImport.update({
+  id: '/_app',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AuthSignUpRoute = AuthSignUpRouteImport.update({
   id: '/sign-up',
@@ -50,121 +55,131 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
 } as any)
-const PProjectIdRouteRoute = PProjectIdRouteRouteImport.update({
-  id: '/p/$projectId',
-  path: '/p/$projectId',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PProjectIdIndexRoute = PProjectIdIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdSavedRoute = PProjectIdSavedRouteImport.update({
-  id: '/saved',
-  path: '/saved',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdKeywordsRoute = PProjectIdKeywordsRouteImport.update({
-  id: '/keywords',
-  path: '/keywords',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdDomainRoute = PProjectIdDomainRouteImport.update({
-  id: '/domain',
-  path: '/domain',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdBacklinksRoute = PProjectIdBacklinksRouteImport.update({
-  id: '/backlinks',
-  path: '/backlinks',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdAuditRoute = PProjectIdAuditRouteImport.update({
-  id: '/audit',
-  path: '/audit',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
-const PProjectIdAiRoute = PProjectIdAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => PProjectIdRouteRoute,
-} as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   id: '/api/auth/$',
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PProjectIdAuditIndexRoute = PProjectIdAuditIndexRouteImport.update({
+const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
+  id: '/help/dataforseo-api-key',
+  path: '/help/dataforseo-api-key',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const ProjectPProjectIdRouteRoute = ProjectPProjectIdRouteRouteImport.update({
+  id: '/p/$projectId',
+  path: '/p/$projectId',
+  getParentRoute: () => ProjectRouteRoute,
+} as any)
+const ProjectPProjectIdIndexRoute = ProjectPProjectIdIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => PProjectIdAuditRoute,
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
-const PProjectIdAuditIssuesResultIdRoute =
-  PProjectIdAuditIssuesResultIdRouteImport.update({
+const ProjectPProjectIdSavedRoute = ProjectPProjectIdSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ProjectPProjectIdKeywordsRoute =
+  ProjectPProjectIdKeywordsRouteImport.update({
+    id: '/keywords',
+    path: '/keywords',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
+const ProjectPProjectIdDomainRoute = ProjectPProjectIdDomainRouteImport.update({
+  id: '/domain',
+  path: '/domain',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ProjectPProjectIdBacklinksRoute =
+  ProjectPProjectIdBacklinksRouteImport.update({
+    id: '/backlinks',
+    path: '/backlinks',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
+const ProjectPProjectIdAuditRoute = ProjectPProjectIdAuditRouteImport.update({
+  id: '/audit',
+  path: '/audit',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ProjectPProjectIdAiRoute = ProjectPProjectIdAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ProjectPProjectIdAuditIndexRoute =
+  ProjectPProjectIdAuditIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProjectPProjectIdAuditRoute,
+  } as any)
+const ProjectPProjectIdAuditIssuesResultIdRoute =
+  ProjectPProjectIdAuditIssuesResultIdRouteImport.update({
     id: '/issues/$resultId',
     path: '/issues/$resultId',
-    getParentRoute: () => PProjectIdAuditRoute,
+    getParentRoute: () => ProjectPProjectIdAuditRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
+  '/': typeof AppIndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
-  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
+  '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/p/$projectId/ai': typeof PProjectIdAiRoute
-  '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
-  '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
-  '/p/$projectId/domain': typeof PProjectIdDomainRoute
-  '/p/$projectId/keywords': typeof PProjectIdKeywordsRoute
-  '/p/$projectId/saved': typeof PProjectIdSavedRoute
-  '/p/$projectId/': typeof PProjectIdIndexRoute
-  '/p/$projectId/audit/': typeof PProjectIdAuditIndexRoute
-  '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
+  '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
+  '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
+  '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
+  '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
+  '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
+  '/': typeof AppIndexRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
-  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/p/$projectId/ai': typeof PProjectIdAiRoute
-  '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
-  '/p/$projectId/domain': typeof PProjectIdDomainRoute
-  '/p/$projectId/keywords': typeof PProjectIdKeywordsRoute
-  '/p/$projectId/saved': typeof PProjectIdSavedRoute
-  '/p/$projectId': typeof PProjectIdIndexRoute
-  '/p/$projectId/audit': typeof PProjectIdAuditIndexRoute
-  '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
+  '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
+  '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/p/$projectId': typeof ProjectPProjectIdIndexRoute
+  '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
+  '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
+  '/_app': typeof AppRouteRouteWithChildren
+  '/_project': typeof ProjectRouteRouteWithChildren
   '/_auth': typeof AuthRouteWithChildren
-  '/p/$projectId': typeof PProjectIdRouteRouteWithChildren
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
-  '/help/dataforseo-api-key': typeof HelpDataforseoApiKeyRoute
+  '/_app/': typeof AppIndexRoute
+  '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
+  '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
-  '/p/$projectId/ai': typeof PProjectIdAiRoute
-  '/p/$projectId/audit': typeof PProjectIdAuditRouteWithChildren
-  '/p/$projectId/backlinks': typeof PProjectIdBacklinksRoute
-  '/p/$projectId/domain': typeof PProjectIdDomainRoute
-  '/p/$projectId/keywords': typeof PProjectIdKeywordsRoute
-  '/p/$projectId/saved': typeof PProjectIdSavedRoute
-  '/p/$projectId/': typeof PProjectIdIndexRoute
-  '/p/$projectId/audit/': typeof PProjectIdAuditIndexRoute
-  '/p/$projectId/audit/issues/$resultId': typeof PProjectIdAuditIssuesResultIdRoute
+  '/_project/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
+  '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
+  '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
+  '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
+  '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
+  '/_project/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/p/$projectId'
     | '/sign-in'
     | '/sign-up'
+    | '/p/$projectId'
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/p/$projectId/ai'
@@ -193,29 +208,30 @@ export interface FileRouteTypes {
     | '/p/$projectId/audit/issues/$resultId'
   id:
     | '__root__'
-    | '/'
+    | '/_app'
+    | '/_project'
     | '/_auth'
-    | '/p/$projectId'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
-    | '/help/dataforseo-api-key'
+    | '/_app/'
+    | '/_project/p/$projectId'
+    | '/_app/help/dataforseo-api-key'
     | '/api/auth/$'
-    | '/p/$projectId/ai'
-    | '/p/$projectId/audit'
-    | '/p/$projectId/backlinks'
-    | '/p/$projectId/domain'
-    | '/p/$projectId/keywords'
-    | '/p/$projectId/saved'
-    | '/p/$projectId/'
-    | '/p/$projectId/audit/'
-    | '/p/$projectId/audit/issues/$resultId'
+    | '/_project/p/$projectId/ai'
+    | '/_project/p/$projectId/audit'
+    | '/_project/p/$projectId/backlinks'
+    | '/_project/p/$projectId/domain'
+    | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/saved'
+    | '/_project/p/$projectId/'
+    | '/_project/p/$projectId/audit/'
+    | '/_project/p/$projectId/audit/issues/$resultId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
+  AppRouteRoute: typeof AppRouteRouteWithChildren
+  ProjectRouteRoute: typeof ProjectRouteRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
-  PProjectIdRouteRoute: typeof PProjectIdRouteRouteWithChildren
-  HelpDataforseoApiKeyRoute: typeof HelpDataforseoApiKeyRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -228,19 +244,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/_project': {
+      id: '/_project'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof ProjectRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/help/dataforseo-api-key': {
-      id: '/help/dataforseo-api-key'
-      path: '/help/dataforseo-api-key'
-      fullPath: '/help/dataforseo-api-key'
-      preLoaderRoute: typeof HelpDataforseoApiKeyRouteImport
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_app/': {
+      id: '/_app/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_auth/sign-up': {
       id: '/_auth/sign-up'
@@ -256,62 +279,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
     }
-    '/p/$projectId': {
-      id: '/p/$projectId'
-      path: '/p/$projectId'
-      fullPath: '/p/$projectId'
-      preLoaderRoute: typeof PProjectIdRouteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/p/$projectId/': {
-      id: '/p/$projectId/'
-      path: '/'
-      fullPath: '/p/$projectId/'
-      preLoaderRoute: typeof PProjectIdIndexRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/saved': {
-      id: '/p/$projectId/saved'
-      path: '/saved'
-      fullPath: '/p/$projectId/saved'
-      preLoaderRoute: typeof PProjectIdSavedRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/keywords': {
-      id: '/p/$projectId/keywords'
-      path: '/keywords'
-      fullPath: '/p/$projectId/keywords'
-      preLoaderRoute: typeof PProjectIdKeywordsRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/domain': {
-      id: '/p/$projectId/domain'
-      path: '/domain'
-      fullPath: '/p/$projectId/domain'
-      preLoaderRoute: typeof PProjectIdDomainRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/backlinks': {
-      id: '/p/$projectId/backlinks'
-      path: '/backlinks'
-      fullPath: '/p/$projectId/backlinks'
-      preLoaderRoute: typeof PProjectIdBacklinksRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/audit': {
-      id: '/p/$projectId/audit'
-      path: '/audit'
-      fullPath: '/p/$projectId/audit'
-      preLoaderRoute: typeof PProjectIdAuditRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
-    '/p/$projectId/ai': {
-      id: '/p/$projectId/ai'
-      path: '/ai'
-      fullPath: '/p/$projectId/ai'
-      preLoaderRoute: typeof PProjectIdAiRouteImport
-      parentRoute: typeof PProjectIdRouteRoute
-    }
     '/api/auth/$': {
       id: '/api/auth/$'
       path: '/api/auth/$'
@@ -319,22 +286,154 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/p/$projectId/audit/': {
-      id: '/p/$projectId/audit/'
+    '/_app/help/dataforseo-api-key': {
+      id: '/_app/help/dataforseo-api-key'
+      path: '/help/dataforseo-api-key'
+      fullPath: '/help/dataforseo-api-key'
+      preLoaderRoute: typeof AppHelpDataforseoApiKeyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_project/p/$projectId': {
+      id: '/_project/p/$projectId'
+      path: '/p/$projectId'
+      fullPath: '/p/$projectId'
+      preLoaderRoute: typeof ProjectPProjectIdRouteRouteImport
+      parentRoute: typeof ProjectRouteRoute
+    }
+    '/_project/p/$projectId/': {
+      id: '/_project/p/$projectId/'
+      path: '/'
+      fullPath: '/p/$projectId/'
+      preLoaderRoute: typeof ProjectPProjectIdIndexRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/saved': {
+      id: '/_project/p/$projectId/saved'
+      path: '/saved'
+      fullPath: '/p/$projectId/saved'
+      preLoaderRoute: typeof ProjectPProjectIdSavedRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/keywords': {
+      id: '/_project/p/$projectId/keywords'
+      path: '/keywords'
+      fullPath: '/p/$projectId/keywords'
+      preLoaderRoute: typeof ProjectPProjectIdKeywordsRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/domain': {
+      id: '/_project/p/$projectId/domain'
+      path: '/domain'
+      fullPath: '/p/$projectId/domain'
+      preLoaderRoute: typeof ProjectPProjectIdDomainRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/backlinks': {
+      id: '/_project/p/$projectId/backlinks'
+      path: '/backlinks'
+      fullPath: '/p/$projectId/backlinks'
+      preLoaderRoute: typeof ProjectPProjectIdBacklinksRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/audit': {
+      id: '/_project/p/$projectId/audit'
+      path: '/audit'
+      fullPath: '/p/$projectId/audit'
+      preLoaderRoute: typeof ProjectPProjectIdAuditRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/ai': {
+      id: '/_project/p/$projectId/ai'
+      path: '/ai'
+      fullPath: '/p/$projectId/ai'
+      preLoaderRoute: typeof ProjectPProjectIdAiRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/audit/': {
+      id: '/_project/p/$projectId/audit/'
       path: '/'
       fullPath: '/p/$projectId/audit/'
-      preLoaderRoute: typeof PProjectIdAuditIndexRouteImport
-      parentRoute: typeof PProjectIdAuditRoute
+      preLoaderRoute: typeof ProjectPProjectIdAuditIndexRouteImport
+      parentRoute: typeof ProjectPProjectIdAuditRoute
     }
-    '/p/$projectId/audit/issues/$resultId': {
-      id: '/p/$projectId/audit/issues/$resultId'
+    '/_project/p/$projectId/audit/issues/$resultId': {
+      id: '/_project/p/$projectId/audit/issues/$resultId'
       path: '/issues/$resultId'
       fullPath: '/p/$projectId/audit/issues/$resultId'
-      preLoaderRoute: typeof PProjectIdAuditIssuesResultIdRouteImport
-      parentRoute: typeof PProjectIdAuditRoute
+      preLoaderRoute: typeof ProjectPProjectIdAuditIssuesResultIdRouteImport
+      parentRoute: typeof ProjectPProjectIdAuditRoute
     }
   }
 }
+
+interface AppRouteRouteChildren {
+  AppIndexRoute: typeof AppIndexRoute
+  AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
+}
+
+const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppIndexRoute: AppIndexRoute,
+  AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,
+}
+
+const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
+  AppRouteRouteChildren,
+)
+
+interface ProjectPProjectIdAuditRouteChildren {
+  ProjectPProjectIdAuditIndexRoute: typeof ProjectPProjectIdAuditIndexRoute
+  ProjectPProjectIdAuditIssuesResultIdRoute: typeof ProjectPProjectIdAuditIssuesResultIdRoute
+}
+
+const ProjectPProjectIdAuditRouteChildren: ProjectPProjectIdAuditRouteChildren =
+  {
+    ProjectPProjectIdAuditIndexRoute: ProjectPProjectIdAuditIndexRoute,
+    ProjectPProjectIdAuditIssuesResultIdRoute:
+      ProjectPProjectIdAuditIssuesResultIdRoute,
+  }
+
+const ProjectPProjectIdAuditRouteWithChildren =
+  ProjectPProjectIdAuditRoute._addFileChildren(
+    ProjectPProjectIdAuditRouteChildren,
+  )
+
+interface ProjectPProjectIdRouteRouteChildren {
+  ProjectPProjectIdAiRoute: typeof ProjectPProjectIdAiRoute
+  ProjectPProjectIdAuditRoute: typeof ProjectPProjectIdAuditRouteWithChildren
+  ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
+  ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
+  ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdSavedRoute: typeof ProjectPProjectIdSavedRoute
+  ProjectPProjectIdIndexRoute: typeof ProjectPProjectIdIndexRoute
+}
+
+const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
+  {
+    ProjectPProjectIdAiRoute: ProjectPProjectIdAiRoute,
+    ProjectPProjectIdAuditRoute: ProjectPProjectIdAuditRouteWithChildren,
+    ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
+    ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
+    ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdSavedRoute: ProjectPProjectIdSavedRoute,
+    ProjectPProjectIdIndexRoute: ProjectPProjectIdIndexRoute,
+  }
+
+const ProjectPProjectIdRouteRouteWithChildren =
+  ProjectPProjectIdRouteRoute._addFileChildren(
+    ProjectPProjectIdRouteRouteChildren,
+  )
+
+interface ProjectRouteRouteChildren {
+  ProjectPProjectIdRouteRoute: typeof ProjectPProjectIdRouteRouteWithChildren
+}
+
+const ProjectRouteRouteChildren: ProjectRouteRouteChildren = {
+  ProjectPProjectIdRouteRoute: ProjectPProjectIdRouteRouteWithChildren,
+}
+
+const ProjectRouteRouteWithChildren = ProjectRouteRoute._addFileChildren(
+  ProjectRouteRouteChildren,
+)
 
 interface AuthRouteChildren {
   AuthSignInRoute: typeof AuthSignInRoute
@@ -348,49 +447,10 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
-interface PProjectIdAuditRouteChildren {
-  PProjectIdAuditIndexRoute: typeof PProjectIdAuditIndexRoute
-  PProjectIdAuditIssuesResultIdRoute: typeof PProjectIdAuditIssuesResultIdRoute
-}
-
-const PProjectIdAuditRouteChildren: PProjectIdAuditRouteChildren = {
-  PProjectIdAuditIndexRoute: PProjectIdAuditIndexRoute,
-  PProjectIdAuditIssuesResultIdRoute: PProjectIdAuditIssuesResultIdRoute,
-}
-
-const PProjectIdAuditRouteWithChildren = PProjectIdAuditRoute._addFileChildren(
-  PProjectIdAuditRouteChildren,
-)
-
-interface PProjectIdRouteRouteChildren {
-  PProjectIdAiRoute: typeof PProjectIdAiRoute
-  PProjectIdAuditRoute: typeof PProjectIdAuditRouteWithChildren
-  PProjectIdBacklinksRoute: typeof PProjectIdBacklinksRoute
-  PProjectIdDomainRoute: typeof PProjectIdDomainRoute
-  PProjectIdKeywordsRoute: typeof PProjectIdKeywordsRoute
-  PProjectIdSavedRoute: typeof PProjectIdSavedRoute
-  PProjectIdIndexRoute: typeof PProjectIdIndexRoute
-}
-
-const PProjectIdRouteRouteChildren: PProjectIdRouteRouteChildren = {
-  PProjectIdAiRoute: PProjectIdAiRoute,
-  PProjectIdAuditRoute: PProjectIdAuditRouteWithChildren,
-  PProjectIdBacklinksRoute: PProjectIdBacklinksRoute,
-  PProjectIdDomainRoute: PProjectIdDomainRoute,
-  PProjectIdKeywordsRoute: PProjectIdKeywordsRoute,
-  PProjectIdSavedRoute: PProjectIdSavedRoute,
-  PProjectIdIndexRoute: PProjectIdIndexRoute,
-}
-
-const PProjectIdRouteRouteWithChildren = PProjectIdRouteRoute._addFileChildren(
-  PProjectIdRouteRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
+  AppRouteRoute: AppRouteRouteWithChildren,
+  ProjectRouteRoute: ProjectRouteRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
-  PProjectIdRouteRoute: PProjectIdRouteRouteWithChildren,
-  HelpDataforseoApiKeyRoute: HelpDataforseoApiKeyRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

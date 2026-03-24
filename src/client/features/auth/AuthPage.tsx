@@ -1,5 +1,3 @@
-import { useEffect } from "react";
-import { useNavigate } from "@tanstack/react-router";
 import { z } from "zod";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { useSession } from "@/lib/auth-client";
@@ -10,28 +8,15 @@ export const authRedirectSearchSchema = z.object({
 });
 
 export function useAuthPageState(redirect: string | undefined) {
-  const navigate = useNavigate();
   const redirectTo = normalizeAuthRedirect(redirect);
-  const { data: session, isPending: isSessionPending } = useSession();
+  const { isPending: isSessionPending } = useSession();
   const isHostedMode = isHostedClientAuthMode();
-
-  useEffect(() => {
-    if (!session?.user?.id) {
-      return;
-    }
-
-    void navigate({ href: redirectTo });
-  }, [navigate, redirectTo, session?.user?.id]);
 
   return {
     redirectTo,
     isHostedMode,
     isSessionPending,
   };
-}
-
-export function getAuthLinkSearch(redirectTo: string) {
-  return redirectTo === "/" ? {} : { redirect: redirectTo };
 }
 
 export function getFieldError(errors: unknown[]) {

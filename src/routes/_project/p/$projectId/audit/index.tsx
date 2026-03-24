@@ -19,8 +19,8 @@ import {
   SUPPORT_URL,
 } from "@/client/features/audit/shared";
 
-export const Route = createFileRoute<"/p/$projectId/audit/">(
-  "/p/$projectId/audit/",
+export const Route = createFileRoute<"/_project/p/$projectId/audit/">(
+  "/_project/p/$projectId/audit/",
 )({
   validateSearch: auditSearchSchema,
   component: SiteAuditPage,

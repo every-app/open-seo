@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { getCurrentAuthRedirect } from "@/lib/auth-redirect";
+import { getSignInHref, getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 type UnauthenticatedErrorCardProps = {
@@ -7,22 +7,15 @@ type UnauthenticatedErrorCardProps = {
   onRetry?: () => void;
 };
 
-function getSignInHref(redirectTo: string) {
-  return redirectTo === "/"
-    ? "/sign-in"
-    : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`;
-}
-
 export function UnauthenticatedErrorCard({
   message,
   onRetry,
 }: UnauthenticatedErrorCardProps) {
-  const redirectTo =
-    typeof window === "undefined"
-      ? "/"
-      : getCurrentAuthRedirect(window.location);
   const isHostedMode = isHostedClientAuthMode();
-  const signInHref = getSignInHref(redirectTo);
+  const signInHref =
+    typeof window === "undefined"
+      ? getSignInHref("/")
+      : getSignInHrefForLocation(window.location);
 
   useEffect(() => {
     if (typeof window === "undefined" || !isHostedMode) {

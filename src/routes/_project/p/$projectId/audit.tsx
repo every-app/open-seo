@@ -1,6 +1,6 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 
-export const Route = createFileRoute("/p/$projectId/audit")({
+export const Route = createFileRoute("/_project/p/$projectId/audit")({
   component: SiteAuditLayout,
 });
 
