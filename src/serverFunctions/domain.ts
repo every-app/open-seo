@@ -6,4 +6,9 @@ import { DomainService } from "@/server/features/domain/services/DomainService";
 export const getDomainOverview = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .inputValidator((data: unknown) => domainOverviewSchema.parse(data))
-  .handler(async ({ data }) => DomainService.getOverview(data));
+  .handler(async ({ data, context }) =>
+    DomainService.getOverview(data, {
+      organizationId: context.organizationId,
+      userEmail: context.userEmail,
+    }),
+  );

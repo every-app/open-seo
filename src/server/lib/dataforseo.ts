@@ -8,6 +8,7 @@ import {
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
 import { getDomain } from "tldts";
+import type { DataforseoApiResponse } from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
 import {
   dataforseoResponseSchema,
@@ -23,6 +24,7 @@ import {
   type LabsKeywordDataItem,
   type RelatedKeywordItem,
   type SerpLiveItem,
+  successfulDataforseoTaskSchema,
 } from "@/server/lib/dataforseoSchemas";
 export type {
   DomainRankedKeywordItem,
@@ -84,13 +86,22 @@ async function postDataforseo(
  * Validate that the top-level response and first task both succeeded.
  * Throws a descriptive error on failure. Returns the first task.
  */
-function assertOk<T extends { status_code?: number; status_message?: string }>(
+type DataforseoTaskLike = {
+  status_code?: number;
+  status_message?: string;
+  path?: string[];
+  cost?: number;
+  result_count?: number | null;
+  result?: DataforseoTask["result"];
+};
+
+function assertOk<T extends DataforseoTaskLike>(
   response: {
     status_code?: number;
     status_message?: string;
     tasks?: T[];
   } | null,
-): T {
+): DataforseoTask {
   if (!response) {
     throw new AppError(
       "INTERNAL_ERROR",
@@ -113,7 +124,24 @@ function assertOk<T extends { status_code?: number; status_message?: string }>(
       task.status_message || "DataForSEO task failed",
     );
   }
-  return task;
+
+  const parsedTask = successfulDataforseoTaskSchema.safeParse(task);
+  if (!parsedTask.success) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "DataForSEO task missing billing metadata",
+    );
+  }
+
+  return parsedTask.data;
+}
+
+function buildTaskBilling(task: DataforseoTask) {
+  return {
+    path: task.path,
+    costUsd: task.cost,
+    resultCount: task.result_count,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -126,7 +154,7 @@ export async function fetchRelatedKeywordsRaw(
   languageCode: string,
   limit: number,
   depth: number = 3,
-): Promise<RelatedKeywordItem[]> {
+): Promise<DataforseoApiResponse<RelatedKeywordItem[]>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleRelatedKeywordsLiveRequestInfo({
     keyword,
@@ -138,13 +166,15 @@ export async function fetchRelatedKeywordsRaw(
     include_serp_info: false,
   });
 
+  const endpoint = "google-related-keywords-live";
   const response = await api.googleRelatedKeywordsLive([req]);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-related-keywords-live",
-    task,
-    relatedKeywordItemSchema,
-  );
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, relatedKeywordItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 export async function fetchKeywordSuggestionsRaw(
@@ -152,7 +182,7 @@ export async function fetchKeywordSuggestionsRaw(
   locationCode: number,
   languageCode: string,
   limit: number,
-): Promise<LabsKeywordDataItem[]> {
+): Promise<DataforseoApiResponse<LabsKeywordDataItem[]>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleKeywordSuggestionsLiveRequestInfo({
     keyword,
@@ -166,13 +196,15 @@ export async function fetchKeywordSuggestionsRaw(
     exact_match: false,
   });
 
+  const endpoint = "google-keyword-suggestions-live";
   const response = await api.googleKeywordSuggestionsLive([req]);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-keyword-suggestions-live",
-    task,
-    labsKeywordDataItemSchema,
-  );
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, labsKeywordDataItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 export async function fetchKeywordIdeasRaw(
@@ -180,7 +212,7 @@ export async function fetchKeywordIdeasRaw(
   locationCode: number,
   languageCode: string,
   limit: number,
-): Promise<LabsKeywordDataItem[]> {
+): Promise<DataforseoApiResponse<LabsKeywordDataItem[]>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleKeywordIdeasLiveRequestInfo({
     keywords: [keyword],
@@ -193,13 +225,15 @@ export async function fetchKeywordIdeasRaw(
     closely_variants: false,
   });
 
+  const endpoint = "google-keyword-ideas-live";
   const response = await api.googleKeywordIdeasLive([req]);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-keyword-ideas-live",
-    task,
-    labsKeywordDataItemSchema,
-  );
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, labsKeywordDataItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -210,7 +244,7 @@ export async function fetchDomainRankOverviewRaw(
   target: string,
   locationCode: number,
   languageCode: string,
-): Promise<DomainMetricsItem[]> {
+): Promise<DataforseoApiResponse<DomainMetricsItem[]>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleDomainRankOverviewLiveRequestInfo({
     target,
@@ -219,13 +253,15 @@ export async function fetchDomainRankOverviewRaw(
     limit: 1,
   });
 
+  const endpoint = "google-domain-rank-overview-live";
   const response = await api.googleDomainRankOverviewLive([req]);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-domain-rank-overview-live",
-    task,
-    domainMetricsItemSchema,
-  );
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, domainMetricsItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 export async function fetchRankedKeywordsRaw(
@@ -234,7 +270,7 @@ export async function fetchRankedKeywordsRaw(
   languageCode: string,
   limit: number,
   orderBy?: string[],
-): Promise<DomainRankedKeywordItem[]> {
+): Promise<DataforseoApiResponse<DomainRankedKeywordItem[]>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleRankedKeywordsLiveRequestInfo({
     target,
@@ -244,13 +280,15 @@ export async function fetchRankedKeywordsRaw(
     order_by: orderBy,
   });
 
+  const endpoint = "google-ranked-keywords-live";
   const response = await api.googleRankedKeywordsLive([req]);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-ranked-keywords-live",
-    task,
-    domainRankedKeywordItemSchema,
-  );
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, domainRankedKeywordItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -261,7 +299,7 @@ export async function fetchLiveSerpItemsRaw(
   keyword: string,
   locationCode: number,
   languageCode: string,
-): Promise<SerpLiveItem[]> {
+): Promise<DataforseoApiResponse<SerpLiveItem[]>> {
   const responseRaw = await postDataforseo(
     "/v3/serp/google/organic/live/advanced",
     [
@@ -276,12 +314,14 @@ export async function fetchLiveSerpItemsRaw(
     ],
   );
   const response = dataforseoResponseSchema.parse(responseRaw);
-  const task = assertOk<DataforseoTask>(response);
-  return parseTaskItems(
-    "google-organic-live-advanced",
-    task,
-    serpSnapshotItemSchema,
-  );
+  const endpoint = "google-organic-live-advanced";
+  const task = assertOk(response);
+  const data = parseTaskItems(endpoint, task, serpSnapshotItemSchema);
+
+  return {
+    data,
+    billing: buildTaskBilling(task),
+  };
 }
 
 // ---------------------------------------------------------------------------

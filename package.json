@@ -53,6 +53,7 @@
     "@tanstack/react-router": "^1.136.3",
     "@tanstack/react-router-devtools": "^1.136.3",
     "@tanstack/react-start": "^1.136.3",
+    "autumn-js": "^1.1.2",
     "better-auth": "^1.5.5",
     "cheerio": "^1.2.0",
     "cloudflare": "^5.2.0",

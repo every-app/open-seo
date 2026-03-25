@@ -6,9 +6,9 @@ import {
   setBacklinksAccessStatus,
 } from "@/server/features/backlinks/backlinksAccess";
 import { AppError } from "@/server/lib/errors";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
-import { fetchBacklinksSummaryRaw } from "@/server/lib/dataforseoBacklinks";
 import { backlinksProjectSchema } from "@/types/schemas/backlinks";
 
 const BACKLINKS_ACCESS_CHECK_COOLDOWN_MS = 15 * 60 * 1000;
@@ -25,7 +25,7 @@ export const testBacklinksAccess = createServerFn({
 })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => backlinksProjectSchema.parse(data))
-  .handler(async () => {
+  .handler(async ({ context }) => {
     if (await isHostedServerAuthMode()) {
       // Hosted deployments do not run the manual DataForSEO access test here;
       // backlinks access is treated as platform-managed in this mode.
@@ -38,9 +38,13 @@ export const testBacklinksAccess = createServerFn({
     }
 
     const checkedAt = new Date().toISOString();
+    const dataforseo = createDataforseoClient({
+      organizationId: context.organizationId,
+      userEmail: context.userEmail,
+    });
 
     try {
-      await fetchBacklinksSummaryRaw({
+      await dataforseo.backlinks.summary({
         target: "dataforseo.com",
         includeSubdomains: true,
         includeIndirectLinks: true,

@@ -3,6 +3,7 @@ import { AppError } from "@/server/lib/errors";
 import { errorHandlingMiddleware } from "@/middleware/errorHandling";
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
 import { ensureUserMiddleware } from "@/middleware/ensureUser";
+import { requireHostedPaidSubscription } from "@/server/billing/subscription";
 
 type AuthenticatedServerFunctionContext = EnsuredUserContext;
 
@@ -42,6 +43,17 @@ export const globalServerFunctionMiddleware = [
 ] as const;
 
 export const requireAuthenticatedContext = [
+  createMiddleware({ type: "function" }).server(async ({ next, context }) => {
+    const authenticatedContext = getAuthenticatedContext(context);
+    await requireHostedPaidSubscription(authenticatedContext);
+
+    return next({
+      context: authenticatedContext,
+    });
+  }),
+] as const;
+
+export const requireEnsuredUserContext = [
   createMiddleware({ type: "function" }).server(({ next, context }) =>
     next({
       context: getAuthenticatedContext(context),
@@ -50,8 +62,10 @@ export const requireAuthenticatedContext = [
 ] as const;
 
 export const requireProjectContext = [
-  createMiddleware({ type: "function" }).server(({ next, context }) => {
+  createMiddleware({ type: "function" }).server(async ({ next, context }) => {
     const authenticatedContext = getAuthenticatedContext(context);
+
+    await requireHostedPaidSubscription(authenticatedContext);
 
     if (!authenticatedContext.project) {
       throw new AppError(

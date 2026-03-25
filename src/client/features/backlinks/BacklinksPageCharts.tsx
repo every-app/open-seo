@@ -1,9 +1,9 @@
+import { useEffect, useRef, useState } from "react";
 import {
   CartesianGrid,
   Legend,
   Line,
   LineChart,
-  ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
@@ -20,14 +20,22 @@ export function BacklinksTrendChart({
 }: {
   data: BacklinksOverviewData["trends"];
 }) {
+  const { containerRef, chartWidth } = useChartWidth();
+
   if (data.length === 0) {
     return <EmptyChartState />;
   }
 
   return (
-    <div className="h-56">
-      <ResponsiveContainer width="100%" height="100%">
+    <div
+      ref={containerRef}
+      className="h-56 min-w-0"
+      aria-label="Backlink trend chart"
+    >
+      {chartWidth > 0 ? (
         <LineChart
+          width={chartWidth}
+          height={224}
           data={data}
           margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
         >
@@ -64,7 +72,7 @@ export function BacklinksTrendChart({
             name="Referring domains"
           />
         </LineChart>
-      </ResponsiveContainer>
+      ) : null}
     </div>
   );
 }
@@ -74,14 +82,22 @@ export function BacklinksNewLostChart({
 }: {
   data: BacklinksOverviewData["newLostTrends"];
 }) {
+  const { containerRef, chartWidth } = useChartWidth();
+
   if (data.length === 0) {
     return <EmptyChartState />;
   }
 
   return (
-    <div className="h-56">
-      <ResponsiveContainer width="100%" height="100%">
+    <div
+      ref={containerRef}
+      className="h-56 min-w-0"
+      aria-label="New and lost backlinks chart"
+    >
+      {chartWidth > 0 ? (
         <LineChart
+          width={chartWidth}
+          height={224}
           data={data}
           margin={{ left: 8, right: 8, top: 8, bottom: 0 }}
         >
@@ -118,9 +134,36 @@ export function BacklinksNewLostChart({
             name="Lost backlinks"
           />
         </LineChart>
-      </ResponsiveContainer>
+      ) : null}
     </div>
   );
+}
+
+function useChartWidth() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [chartWidth, setChartWidth] = useState(0);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+
+    const updateWidth = () => {
+      setChartWidth(container.clientWidth);
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return { containerRef, chartWidth };
 }
 
 function EmptyChartState() {

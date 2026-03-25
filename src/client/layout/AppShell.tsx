@@ -1,15 +1,16 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronsUpDown, Menu, User } from "lucide-react";
-import { getProjectNavItems } from "@/client/navigation/items";
+import { ChevronsUpDown, CreditCard, Menu, User } from "lucide-react";
 import {
   AppContent,
   MissingSeoSetupModal,
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
+import { getProjectNavItems } from "@/client/navigation/items";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
@@ -32,6 +33,13 @@ export function AuthenticatedAppLayout({
     React.useState(false);
 
   React.useEffect(() => {
+    if (location.pathname === BILLING_ROUTE) {
+      setSeoApiKeyStatusError(false);
+      setIsSeoApiKeyConfigured(null);
+      setShowMissingSeoApiKeyModal(false);
+      return;
+    }
+
     let cancelled = false;
 
     const checkSeoApiKeyStatus = async () => {
@@ -57,7 +65,7 @@ export function AuthenticatedAppLayout({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [location.pathname]);
 
   const shouldShowMissingSeoApiKeyModal =
     showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
@@ -95,6 +103,7 @@ export function AuthenticatedAppLayout({
       <TopNav
         drawerOpen={drawerOpen}
         projectId={projectId ?? null}
+        pathname={location.pathname}
         onOpenDrawer={() => setDrawerOpen(true)}
       />
 
@@ -123,18 +132,19 @@ export function AuthenticatedAppLayout({
 function TopNav({
   drawerOpen,
   projectId,
+  pathname,
   onOpenDrawer,
 }: {
   drawerOpen: boolean;
   projectId: string | null;
+  pathname: string;
   onOpenDrawer: () => void;
 }) {
-  const isHostedMode = isHostedClientAuthMode();
   const projectNavItems = projectId ? getProjectNavItems(projectId) : [];
 
   return (
-    <div className="navbar bg-base-100 border-b border-base-300 shrink-0 gap-2">
-      <div className="flex-none flex items-center md:hidden">
+    <div className="navbar shrink-0 gap-2 border-b border-base-300 bg-base-100">
+      <div className="flex flex-none items-center md:hidden">
         {projectId ? (
           <button
             type="button"
@@ -146,26 +156,27 @@ function TopNav({
             <Menu className="h-6 w-6" />
           </button>
         ) : null}
-        <span className="font-semibold text-base-content ml-1">OpenSEO</span>
+        <span className="ml-1 font-semibold text-base-content">OpenSEO</span>
       </div>
 
-      <div className="hidden md:flex items-center gap-1">
-        <span className="text-lg font-semibold text-base-content px-2">
+      <div className="hidden items-center gap-1 md:flex">
+        <span className="px-2 text-lg font-semibold text-base-content">
           OpenSEO
         </span>
         {projectId
           ? projectNavItems.map((item) => {
-              const { icon: Icon, ...linkProps } = item;
+              const { icon: Icon, matchSegment, ...linkProps } = item;
+              const isActive = pathname.includes(matchSegment);
+
               return (
                 <Link
                   key={linkProps.to}
                   {...linkProps}
-                  activeOptions={{ exact: false, includeSearch: false }}
-                  className="btn btn-sm gap-2 btn-ghost text-base-content/60 hover:text-base-content"
-                  activeProps={{
-                    className:
-                      "bg-primary/10 text-primary font-medium border-transparent hover:text-primary",
-                  }}
+                  className={`btn btn-sm gap-2 ${
+                    isActive
+                      ? "border-transparent bg-primary/10 font-medium text-primary"
+                      : "btn-ghost text-base-content/60 hover:text-base-content"
+                  }`}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}
@@ -177,7 +188,7 @@ function TopNav({
 
       <div className="flex-1" />
 
-      <div className="flex-none hidden md:flex items-center gap-2">
+      <div className="hidden flex-none items-center gap-2 md:flex">
         <div className="flex items-center rounded-full border border-base-300 bg-base-100/70 px-1 py-1 shadow-sm">
           <div
             className="tooltip tooltip-left before:whitespace-nowrap"
@@ -185,7 +196,7 @@ function TopNav({
           >
             <button
               type="button"
-              className="flex h-10 items-center gap-2 rounded-full px-3 text-left transition-colors hover:bg-base-200/80 cursor-default"
+              className="flex h-10 cursor-default items-center gap-2 rounded-full px-3 text-left transition-colors hover:bg-base-200/80"
               aria-label="Current project"
             >
               <span className="max-w-28 truncate text-sm font-medium text-base-content">
@@ -195,16 +206,11 @@ function TopNav({
             </button>
           </div>
 
-          {isHostedMode ? (
-            <>
-              <div className="mx-1 h-6 w-px bg-base-300" />
-              <HostedSessionActions />
-            </>
-          ) : null}
+          <HostedSessionActions />
         </div>
       </div>
 
-      {isHostedMode ? <HostedSessionActions mobileOnly /> : null}
+      <HostedSessionActions mobileOnly />
     </div>
   );
 }
@@ -215,8 +221,9 @@ function HostedSessionActions({
   mobileOnly?: boolean;
 }) {
   const { data: session } = useSession();
+  const isHostedMode = isHostedClientAuthMode();
 
-  if (!session?.user?.email) {
+  if (!isHostedMode || !session?.user?.email) {
     return null;
   }
 
@@ -231,8 +238,8 @@ function HostedSessionActions({
     });
   };
 
-  return (
-    <div className={mobileOnly ? "flex-none md:hidden ml-2" : "flex-none"}>
+  const menu = (
+    <div className={mobileOnly ? "ml-2 flex-none md:hidden" : "flex-none"}>
       <div className="dropdown dropdown-end">
         <button
           type="button"
@@ -252,6 +259,12 @@ function HostedSessionActions({
             </span>
           </li>
           <li>
+            <a href={BILLING_ROUTE} className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Billing
+            </a>
+          </li>
+          <li>
             <button
               type="button"
               className="text-error"
@@ -263,5 +276,16 @@ function HostedSessionActions({
         </ul>
       </div>
     </div>
+  );
+
+  if (mobileOnly) {
+    return menu;
+  }
+
+  return (
+    <>
+      <div className="mx-1 h-6 w-px bg-base-300" />
+      {menu}
+    </>
   );
 }

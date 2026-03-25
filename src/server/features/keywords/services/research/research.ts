@@ -1,4 +1,5 @@
 import { AppError } from "@/server/lib/errors";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   CACHE_TTL,
   buildCacheKey,
@@ -90,19 +91,24 @@ async function fetchRowsFromSource(
   source: KeywordSource,
   input: ResearchKeywordsInput,
   seedKeyword: string,
+  billingCustomer: BillingCustomerContext,
 ): Promise<EnrichedKeyword[]> {
-  return fetchResearchRowsBySource({
-    source,
-    seedKeyword,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    resultLimit: input.resultLimit,
-  });
+  return fetchResearchRowsBySource(
+    {
+      source,
+      seedKeyword,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      resultLimit: input.resultLimit,
+    },
+    billingCustomer,
+  );
 }
 
 async function fetchAutoRows(
   input: ResearchKeywordsInput,
   seedKeyword: string,
+  billingCustomer: BillingCustomerContext,
 ): Promise<ResearchResult> {
   const attempts: SourceAttempt[] = [];
   let lastSource: KeywordSource = "related";
@@ -110,7 +116,12 @@ async function fetchAutoRows(
   const seenKeywords = new Set<string>();
 
   for (const source of AUTO_KEYWORD_SOURCES) {
-    const rows = await fetchRowsFromSource(source, input, seedKeyword);
+    const rows = await fetchRowsFromSource(
+      source,
+      input,
+      seedKeyword,
+      billingCustomer,
+    );
     for (const row of rows) {
       if (accumulatedRows.length >= input.resultLimit) break;
       if (seenKeywords.has(row.keyword)) continue;
@@ -158,8 +169,14 @@ async function fetchManualRows(
   mode: Exclude<KeywordMode, "auto">,
   input: ResearchKeywordsInput,
   seedKeyword: string,
+  billingCustomer: BillingCustomerContext,
 ): Promise<ResearchResult> {
-  const rows = await fetchRowsFromSource(mode, input, seedKeyword);
+  const rows = await fetchRowsFromSource(
+    mode,
+    input,
+    seedKeyword,
+    billingCustomer,
+  );
   const attempt: SourceAttempt = {
     source: mode,
     rowCount: rows.length,
@@ -188,9 +205,11 @@ function buildResearchCacheKey(
   input: ResearchKeywordsInput,
   normalizedKeywords: string[],
   mode: KeywordMode,
+  billingCustomer: BillingCustomerContext,
 ): string {
   return buildCacheKey("kw:research", {
     cacheVersion: CACHE_VERSION,
+    organizationId: billingCustomer.organizationId,
     projectId: input.projectId,
     keywords: normalizedKeywords,
     locationCode: input.locationCode,
@@ -224,6 +243,7 @@ function persistRows(input: ResearchKeywordsInput, rows: EnrichedKeyword[]) {
 
 export async function research(
   input: ResearchKeywordsInput,
+  billingCustomer: BillingCustomerContext,
 ): Promise<ResearchResult> {
   const uniqueKeywords = [
     ...new Set(input.keywords.map(normalizeKeyword)),
@@ -235,7 +255,12 @@ export async function research(
 
   const seedKeyword = uniqueKeywords[0];
   const mode = getMode(input);
-  const cacheKey = buildResearchCacheKey(input, uniqueKeywords, mode);
+  const cacheKey = buildResearchCacheKey(
+    input,
+    uniqueKeywords,
+    mode,
+    billingCustomer,
+  );
 
   const cachedRaw = await getCached(cacheKey);
   const cachedResult = cachedResultSchema.safeParse(cachedRaw);
@@ -249,8 +274,8 @@ export async function research(
 
   const result =
     mode === "auto"
-      ? await fetchAutoRows(input, seedKeyword)
-      : await fetchManualRows(mode, input, seedKeyword);
+      ? await fetchAutoRows(input, seedKeyword, billingCustomer)
+      : await fetchManualRows(mode, input, seedKeyword, billingCustomer);
 
   await setCached(cacheKey, result, CACHE_TTL.researchResult);
   persistRows(input, result.rows);

@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { createBacklinksService } from "@/server/features/backlinks/services/BacklinksService";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
 
 loadLocalEnv();
@@ -33,43 +34,37 @@ async function main() {
   }
 
   const input = buildInput(args);
+  const billingCustomer = buildBillingCustomer(args);
   const repeat = parsePositiveInteger(args.repeat, 1);
   const includeTabs = parseBoolean(args.includeTabs, true);
   const runs = [];
 
   for (let index = 0; index < repeat; index += 1) {
-    const overview = await service.profileOverview(input);
+    const overview = await service.profileOverview(input, billingCustomer);
     const domains = includeTabs
-      ? await service.profileReferringDomains(input)
+      ? await service.profileReferringDomains(input, billingCustomer)
       : null;
-    const pages = includeTabs ? await service.profileTopPages(input) : null;
+    const pages = includeTabs
+      ? await service.profileTopPages(input, billingCustomer)
+      : null;
 
     runs.push({
       run: index + 1,
       overview: {
-        fromCache: overview.billing.fromCache,
-        totalCostUsd: overview.billing.totalCostUsd,
-        calls: overview.billing.calls,
+        backlinksRows: overview.overview.backlinks.length,
+        trendRows: overview.overview.trends.length,
+        newLostRows: overview.overview.newLostTrends.length,
       },
       domainsTab: domains
         ? {
-            fromCache: domains.billing.fromCache,
-            totalCostUsd: domains.billing.totalCostUsd,
-            calls: domains.billing.calls,
+            rows: domains.rows.length,
           }
         : null,
       pagesTab: pages
         ? {
-            fromCache: pages.billing.fromCache,
-            totalCostUsd: pages.billing.totalCostUsd,
-            calls: pages.billing.calls,
+            rows: pages.rows.length,
           }
         : null,
-      fullyExploredCostUsd: roundUsd(
-        overview.billing.totalCostUsd +
-          (domains?.billing.totalCostUsd ?? 0) +
-          (pages?.billing.totalCostUsd ?? 0),
-      ),
     });
   }
 
@@ -102,6 +97,19 @@ function buildInput(cliArgs: Record<string, string>): BacklinksLookupInput {
     includeIndirectLinks: parseBoolean(cliArgs.indirect, true),
     excludeInternalBacklinks: parseBoolean(cliArgs.excludeInternal, true),
     status: parseStatus(cliArgs.status),
+  };
+}
+
+function buildBillingCustomer(
+  cliArgs: Record<string, string>,
+): BillingCustomerContext {
+  return {
+    organizationId:
+      cliArgs.organizationId ?? process.env.BILLING_ORGANIZATION_ID ?? "local",
+    userEmail:
+      cliArgs.userEmail ??
+      process.env.BILLING_USER_EMAIL ??
+      "local@example.com",
   };
 }
 
@@ -172,10 +180,6 @@ function loadLocalEnv() {
       process.env[key] = rawValue.replace(/^['"]|['"]$/g, "");
     }
   }
-}
-
-function roundUsd(value: number) {
-  return Math.round(value * 100000) / 100000;
 }
 
 function printUsageAndExit(message: string): never {

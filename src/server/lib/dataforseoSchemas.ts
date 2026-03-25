@@ -1,18 +1,13 @@
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 
-type DataforseoTaskResult = { items?: unknown[] };
-
-export type DataforseoTask = {
-  status_code?: number;
-  status_message?: string;
-  result?: DataforseoTaskResult[];
-};
-
 const dataforseoTaskSchema = z
   .object({
     status_code: z.number().optional(),
     status_message: z.string().optional(),
+    path: z.array(z.string()),
+    cost: z.number(),
+    result_count: z.number().nullable(),
     result: z
       .array(
         z
@@ -24,6 +19,9 @@ const dataforseoTaskSchema = z
       .optional(),
   })
   .passthrough();
+
+export type DataforseoTask = z.infer<typeof dataforseoTaskSchema>;
+export const successfulDataforseoTaskSchema = dataforseoTaskSchema;
 
 export const dataforseoResponseSchema = z
   .object({

@@ -1,13 +1,13 @@
 import {
   normalizeDomainInput,
   toRelativePath,
-  fetchDomainRankOverviewRaw,
-  fetchRankedKeywordsRaw,
   type DomainRankedKeywordItem,
 } from "@/server/lib/dataforseo";
 import { sortBy } from "remeda";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
 import { z } from "zod";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 
 /** Domain overview data is refreshed every 12 hours. */
 const DOMAIN_OVERVIEW_TTL_SECONDS = 12 * 60 * 60;
@@ -70,16 +70,20 @@ const domainOverviewSchema = z.object({
   fetchedAt: z.string(),
 });
 
-async function getOverview(input: {
-  domain: string;
-  includeSubdomains: boolean;
-  locationCode: number;
-  languageCode: string;
-}): Promise<DomainOverviewResult> {
+async function getOverview(
+  input: {
+    domain: string;
+    includeSubdomains: boolean;
+    locationCode: number;
+    languageCode: string;
+  },
+  billingCustomer: BillingCustomerContext,
+): Promise<DomainOverviewResult> {
   const domain = normalizeDomainInput(input.domain, input.includeSubdomains);
 
   // --- KV cache check ---
   const cacheKey = buildCacheKey("domain:overview", {
+    organizationId: billingCustomer.organizationId,
     domain,
     includeSubdomains: input.includeSubdomains,
     locationCode: input.locationCode,
@@ -94,16 +98,21 @@ async function getOverview(input: {
 
   // --- Fetch fresh from DataForSEO ---
   const nowIso = new Date().toISOString();
+  const dataforseo = createDataforseoClient(billingCustomer);
 
   const [metricsResponse, rankedKeywordsResponse] = await Promise.all([
-    fetchDomainRankOverviewRaw(domain, input.locationCode, input.languageCode),
-    fetchRankedKeywordsRaw(
-      domain,
-      input.locationCode,
-      input.languageCode,
-      200,
-      ["keyword_data.keyword_info.search_volume,desc"],
-    ),
+    dataforseo.domain.rankOverview({
+      target: domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+    }),
+    dataforseo.domain.rankedKeywords({
+      target: domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      limit: 200,
+      orderBy: ["keyword_data.keyword_info.search_volume,desc"],
+    }),
   ]);
 
   const metrics = metricsResponse[0];

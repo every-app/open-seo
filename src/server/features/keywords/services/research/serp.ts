@@ -1,10 +1,9 @@
-import {
-  fetchLiveSerpItemsRaw,
-  type SerpLiveItem,
-} from "@/server/lib/dataforseo";
+import { type SerpLiveItem } from "@/server/lib/dataforseoClient";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
 import type { SerpResultItem } from "@/types/keywords";
 import { z } from "zod";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { normalizeKeyword } from "./helpers";
 
 const SERP_CACHE_TTL_SECONDS = 12 * 60 * 60;
@@ -55,14 +54,18 @@ function mapOrganicSerpItems(items: SerpLiveItem[]): SerpResultItem[] {
     }));
 }
 
-async function getSerpLiveAnalysis(input: {
-  keyword: string;
-  locationCode: number;
-  languageCode: string;
-}): Promise<SerpAnalysisResult> {
+async function getSerpLiveAnalysis(
+  input: {
+    keyword: string;
+    locationCode: number;
+    languageCode: string;
+  },
+  billingCustomer: BillingCustomerContext,
+): Promise<SerpAnalysisResult> {
   const keyword = normalizeKeyword(input.keyword);
 
   const cacheKey = buildCacheKey("serp:analysis", {
+    organizationId: billingCustomer.organizationId,
     keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
@@ -74,11 +77,11 @@ async function getSerpLiveAnalysis(input: {
     return cached.data;
   }
 
-  const liveItems = await fetchLiveSerpItemsRaw(
+  const liveItems = await createDataforseoClient(billingCustomer).serp.live({
     keyword,
-    input.locationCode,
-    input.languageCode,
-  );
+    locationCode: input.locationCode,
+    languageCode: input.languageCode,
+  });
 
   const items = mapOrganicSerpItems(liveItems);
   const result: SerpAnalysisResult = { requestedKeyword: keyword, items };

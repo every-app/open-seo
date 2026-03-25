@@ -6,7 +6,7 @@ import {
   profileTopPagesRows,
   type BacklinksCache,
 } from "@/server/features/backlinks/services/backlinksServiceData";
-import type { BacklinksOverviewResult } from "@/server/features/backlinks/services/backlinksOverviewSchema";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
 
 const defaultCache: BacklinksCache = {
@@ -16,61 +16,51 @@ const defaultCache: BacklinksCache = {
 
 function createBacklinksService(cache: BacklinksCache = defaultCache) {
   return {
-    async getOverview(
+    async profileOverview(
       input: BacklinksLookupInput,
-    ): Promise<BacklinksOverviewResult> {
-      const profile = await profileBacklinksOverview(
-        cache,
-        buildOverviewCacheKey(input),
-        input,
-      );
-      return profile.overview;
-    },
-    async profileOverview(input: BacklinksLookupInput) {
+      billingCustomer: BillingCustomerContext,
+    ) {
       return profileBacklinksOverview(
         cache,
-        buildOverviewCacheKey(input),
+        buildOverviewCacheKey(input, billingCustomer),
         input,
+        billingCustomer,
       );
     },
-    async getReferringDomains(input: BacklinksLookupInput) {
-      const profile = await profileReferringDomainsRows(
-        cache,
-        buildTabCacheKey("backlinks:referring-domains", input),
-        input,
-      );
-      return profile.rows;
-    },
-    async profileReferringDomains(input: BacklinksLookupInput) {
+    async profileReferringDomains(
+      input: BacklinksLookupInput,
+      billingCustomer: BillingCustomerContext,
+    ) {
       return profileReferringDomainsRows(
         cache,
-        buildTabCacheKey("backlinks:referring-domains", input),
+        buildTabCacheKey("backlinks:referring-domains", input, billingCustomer),
         input,
+        billingCustomer,
       );
     },
-    async getTopPages(input: BacklinksLookupInput) {
-      const profile = await profileTopPagesRows(
-        cache,
-        buildTabCacheKey("backlinks:top-pages", input),
-        input,
-      );
-      return profile.rows;
-    },
-    async profileTopPages(input: BacklinksLookupInput) {
+    async profileTopPages(
+      input: BacklinksLookupInput,
+      billingCustomer: BillingCustomerContext,
+    ) {
       return profileTopPagesRows(
         cache,
-        buildTabCacheKey("backlinks:top-pages", input),
+        buildTabCacheKey("backlinks:top-pages", input, billingCustomer),
         input,
+        billingCustomer,
       );
     },
   } as const;
 }
 
-function buildOverviewCacheKey(input: BacklinksLookupInput) {
+function buildOverviewCacheKey(
+  input: BacklinksLookupInput,
+  billingCustomer: BillingCustomerContext,
+) {
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
   return buildCacheKey("backlinks:overview", {
+    organizationId: billingCustomer.organizationId,
     target: normalizedTarget.apiTarget,
     scope: normalizedTarget.scope,
     includeSubdomains: input.includeSubdomains,
@@ -80,11 +70,16 @@ function buildOverviewCacheKey(input: BacklinksLookupInput) {
   });
 }
 
-function buildTabCacheKey(prefix: string, input: BacklinksLookupInput) {
+function buildTabCacheKey(
+  prefix: string,
+  input: BacklinksLookupInput,
+  billingCustomer: BillingCustomerContext,
+) {
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
   return buildCacheKey(prefix, {
+    organizationId: billingCustomer.organizationId,
     target: normalizedTarget.apiTarget,
     scope: normalizedTarget.scope,
     includeSubdomains: input.includeSubdomains,

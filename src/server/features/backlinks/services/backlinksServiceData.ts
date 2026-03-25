@@ -1,27 +1,22 @@
 import { z } from "zod";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
-  type BacklinksApiResponse,
   type BacklinksRequest,
-  fetchBacklinksRowsRaw,
-  fetchBacklinksSummaryRaw,
-  fetchDomainPagesSummaryRaw,
-  fetchNewLostTimeseriesRaw,
-  fetchReferringDomainsRaw,
-  fetchTimeseriesSummaryRaw,
+  type fetchBacklinksRowsRaw,
+  type fetchBacklinksSummaryRaw,
+  type fetchDomainPagesSummaryRaw,
+  type fetchNewLostTimeseriesRaw,
+  type fetchReferringDomainsRaw,
+  type fetchTimeseriesSummaryRaw,
   normalizeBacklinksTarget,
 } from "@/server/lib/dataforseoBacklinks";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import {
   backlinksOverviewSchema,
   referringDomainRowSchema,
   topPageRowSchema,
   type BacklinksOverviewResult,
 } from "@/server/features/backlinks/services/backlinksOverviewSchema";
-import {
-  backlinksCostSummarySchema,
-  summarizeBacklinksCosts,
-  type BacklinksApiCallCost,
-  type BacklinksCostSummary,
-} from "@/server/features/backlinks/services/backlinksCost";
 import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
 
 const BACKLINKS_OVERVIEW_TTL_SECONDS = 6 * 60 * 60;
@@ -34,33 +29,25 @@ export type BacklinksCache = {
 
 type BacklinksOverviewProfile = {
   overview: BacklinksOverviewResult;
-  billing: BacklinksCostSummary;
 };
 
 type ReferringDomainsProfile = {
   rows: BacklinksOverviewResult["referringDomains"];
-  billing: BacklinksCostSummary;
 };
 
 type TopPagesProfile = {
   rows: BacklinksOverviewResult["topPages"];
-  billing: BacklinksCostSummary;
 };
 
 const backlinksOverviewCacheSchema = z.object({
   overview: backlinksOverviewSchema,
-  billing: backlinksCostSummarySchema,
 });
 
 const referringDomainsCacheSchema = z.object({
   rows: z.array(referringDomainRowSchema),
-  billing: backlinksCostSummarySchema,
 });
 
-const topPagesCacheSchema = z.object({
-  rows: z.array(topPageRowSchema),
-  billing: backlinksCostSummarySchema,
-});
+const topPagesCacheSchema = z.object({ rows: z.array(topPageRowSchema) });
 
 type BacklinksDateRange = {
   dateFrom: string;
@@ -71,15 +58,17 @@ export async function profileBacklinksOverview(
   cache: BacklinksCache,
   cacheKey: string,
   input: BacklinksLookupInput,
+  billingCustomer: BillingCustomerContext,
 ): Promise<BacklinksOverviewProfile> {
   const cachedRaw = await cache.get(cacheKey);
   const cached = backlinksOverviewCacheSchema.safeParse(cachedRaw);
   if (cached.success) {
     return {
       overview: cached.data.overview,
-      billing: withCacheFlag(cached.data.billing),
     };
   }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
 
   const now = new Date();
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
@@ -89,14 +78,14 @@ export async function profileBacklinksOverview(
   const dateRange = buildBacklinksDateRange(now);
 
   const [summary, backlinks, trends, newLostTrends] = await Promise.all([
-    fetchBacklinksSummaryRaw(request),
-    fetchBacklinksRowsRaw({ ...request, limit: 100 }),
+    dataforseo.backlinks.summary(request),
+    dataforseo.backlinks.rows({ ...request, limit: 100 }),
     normalizedTarget.scope === "domain"
-      ? fetchTimeseriesSummaryRaw({ ...request, ...dateRange })
-      : Promise.resolve(emptyResponse([])),
+      ? dataforseo.backlinks.timeseriesSummary({ ...request, ...dateRange })
+      : Promise.resolve([]),
     normalizedTarget.scope === "domain"
-      ? fetchNewLostTimeseriesRaw({ ...request, ...dateRange })
-      : Promise.resolve(emptyResponse([])),
+      ? dataforseo.backlinks.newLostTimeseries({ ...request, ...dateRange })
+      : Promise.resolve([]),
   ]);
 
   const overview = buildOverviewResult({
@@ -108,88 +97,76 @@ export async function profileBacklinksOverview(
     trends,
     newLostTrends,
   });
-  const billing = summarizeBacklinksCosts(
-    collectCostCalls([
-      summary.billing,
-      backlinks.billing,
-      trends.billing,
-      newLostTrends.billing,
-    ]),
-    false,
-  );
-
   await cacheValue(
     cache,
     cacheKey,
-    { overview, billing },
+    { overview },
     BACKLINKS_OVERVIEW_TTL_SECONDS,
   );
 
-  return { overview, billing };
+  return { overview };
 }
 
 export async function profileReferringDomainsRows(
   cache: BacklinksCache,
   cacheKey: string,
   input: BacklinksLookupInput,
+  billingCustomer: BillingCustomerContext,
 ): Promise<ReferringDomainsProfile> {
   const cachedRaw = await cache.get(cacheKey);
   const cached = referringDomainsCacheSchema.safeParse(cachedRaw);
   if (cached.success) {
     return {
       rows: cached.data.rows,
-      billing: withCacheFlag(cached.data.billing),
     };
   }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
 
   const request = buildBacklinksRequest(
     input,
     normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
   );
-  const response = await fetchReferringDomainsRaw({ ...request, limit: 100 });
-  const rows = mapReferringDomainsRows(response.data);
-  const billing = summarizeBacklinksCosts([response.billing], false);
+  const response = await dataforseo.backlinks.referringDomains({
+    ...request,
+    limit: 100,
+  });
+  const rows = mapReferringDomainsRows(response);
 
-  await cacheValue(
-    cache,
-    cacheKey,
-    { rows, billing },
-    BACKLINKS_TAB_TTL_SECONDS,
-  );
+  await cacheValue(cache, cacheKey, { rows }, BACKLINKS_TAB_TTL_SECONDS);
 
-  return { rows, billing };
+  return { rows };
 }
 
 export async function profileTopPagesRows(
   cache: BacklinksCache,
   cacheKey: string,
   input: BacklinksLookupInput,
+  billingCustomer: BillingCustomerContext,
 ): Promise<TopPagesProfile> {
   const cachedRaw = await cache.get(cacheKey);
   const cached = topPagesCacheSchema.safeParse(cachedRaw);
   if (cached.success) {
     return {
       rows: cached.data.rows,
-      billing: withCacheFlag(cached.data.billing),
     };
   }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
 
   const request = buildBacklinksRequest(
     input,
     normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
   );
-  const response = await fetchDomainPagesSummaryRaw({ ...request, limit: 100 });
-  const rows = mapTopPagesRows(response.data);
-  const billing = summarizeBacklinksCosts([response.billing], false);
+  const response = await dataforseo.backlinks.domainPages({
+    ...request,
+    limit: 100,
+  });
+  const rows = mapTopPagesRows(response);
 
-  await cacheValue(
-    cache,
-    cacheKey,
-    { rows, billing },
-    BACKLINKS_TAB_TTL_SECONDS,
-  );
+  await cacheValue(cache, cacheKey, { rows }, BACKLINKS_TAB_TTL_SECONDS);
 
-  return { rows, billing };
+  return { rows };
 }
 
 function buildBacklinksRequest(
@@ -225,10 +202,10 @@ function buildOverviewResult(args: {
   input: BacklinksLookupInput;
   normalizedTarget: ReturnType<typeof normalizeBacklinksTarget>;
   now: Date;
-  summary: Awaited<ReturnType<typeof fetchBacklinksSummaryRaw>>;
-  backlinks: Awaited<ReturnType<typeof fetchBacklinksRowsRaw>>;
-  trends: Awaited<ReturnType<typeof fetchTimeseriesSummaryRaw>>;
-  newLostTrends: Awaited<ReturnType<typeof fetchNewLostTimeseriesRaw>>;
+  summary: Awaited<ReturnType<typeof fetchBacklinksSummaryRaw>>["data"];
+  backlinks: Awaited<ReturnType<typeof fetchBacklinksRowsRaw>>["data"];
+  trends: Awaited<ReturnType<typeof fetchTimeseriesSummaryRaw>>["data"];
+  newLostTrends: Awaited<ReturnType<typeof fetchNewLostTimeseriesRaw>>["data"];
 }): BacklinksOverviewResult {
   return {
     target: args.normalizedTarget.apiTarget,
@@ -239,29 +216,29 @@ function buildOverviewResult(args: {
     excludeInternalBacklinks: args.input.excludeInternalBacklinks,
     status: args.input.status,
     summary: {
-      rank: args.summary.data.rank ?? null,
-      backlinks: args.summary.data.backlinks ?? null,
-      referringPages: args.summary.data.referring_pages ?? null,
-      referringDomains: args.summary.data.referring_domains ?? null,
-      brokenBacklinks: args.summary.data.broken_backlinks ?? null,
-      brokenPages: args.summary.data.broken_pages ?? null,
-      backlinksSpamScore: args.summary.data.backlinks_spam_score ?? null,
-      targetSpamScore: args.summary.data.info?.target_spam_score ?? null,
-      newBacklinks: args.summary.data.new_backlinks ?? null,
-      lostBacklinks: args.summary.data.lost_backlinks ?? null,
+      rank: args.summary.rank ?? null,
+      backlinks: args.summary.backlinks ?? null,
+      referringPages: args.summary.referring_pages ?? null,
+      referringDomains: args.summary.referring_domains ?? null,
+      brokenBacklinks: args.summary.broken_backlinks ?? null,
+      brokenPages: args.summary.broken_pages ?? null,
+      backlinksSpamScore: args.summary.backlinks_spam_score ?? null,
+      targetSpamScore: args.summary.info?.target_spam_score ?? null,
+      newBacklinks: args.summary.new_backlinks ?? null,
+      lostBacklinks: args.summary.lost_backlinks ?? null,
       newReferringDomains:
-        args.summary.data.new_referring_domains ??
-        args.summary.data.new_reffering_domains ??
+        args.summary.new_referring_domains ??
+        args.summary.new_reffering_domains ??
         null,
       lostReferringDomains:
-        args.summary.data.lost_referring_domains ??
-        args.summary.data.lost_reffering_domains ??
+        args.summary.lost_referring_domains ??
+        args.summary.lost_reffering_domains ??
         null,
     },
-    backlinks: mapBacklinksRows(args.backlinks.data),
+    backlinks: mapBacklinksRows(args.backlinks),
     referringDomains: [],
     topPages: [],
-    trends: args.trends.data
+    trends: args.trends
       .filter((item) => Boolean(item.date))
       .map((item) => ({
         date: item.date ?? "",
@@ -269,7 +246,7 @@ function buildOverviewResult(args: {
         referringDomains: item.referring_domains ?? null,
         rank: item.rank ?? null,
       })),
-    newLostTrends: args.newLostTrends.data
+    newLostTrends: args.newLostTrends
       .filter((item) => Boolean(item.date))
       .map((item) => ({
         date: item.date ?? "",
@@ -334,14 +311,6 @@ function mapTopPagesRows(
   }));
 }
 
-function collectCostCalls(calls: BacklinksApiCallCost[]) {
-  return calls.filter((call) => call.costUsd > 0 || call.rowsReturned > 0);
-}
-
-function withCacheFlag(summary: BacklinksCostSummary): BacklinksCostSummary {
-  return { ...summary, fromCache: true };
-}
-
 async function cacheValue(
   cache: BacklinksCache,
   key: string,
@@ -351,17 +320,4 @@ async function cacheValue(
   await cache.set(key, data, ttlSeconds).catch((error: unknown) => {
     console.error("backlinks.cache-write failed:", error);
   });
-}
-
-function emptyResponse<T>(data: T): BacklinksApiResponse<T> {
-  return {
-    data,
-    billing: {
-      endpoint: "",
-      path: [],
-      costUsd: 0,
-      resultCount: null,
-      rowsReturned: 0,
-    },
-  };
 }

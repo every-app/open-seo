@@ -1,9 +1,6 @@
-import {
-  fetchKeywordIdeasRaw,
-  fetchKeywordSuggestionsRaw,
-  fetchRelatedKeywordsRaw,
-  type LabsKeywordDataItem,
-} from "@/server/lib/dataforseo";
+import { type LabsKeywordDataItem } from "@/server/lib/dataforseoClient";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import {
   normalizeIntent,
   normalizeKeyword,
@@ -56,14 +53,15 @@ function mapKeywordDataItems(items: LabsKeywordDataItem[]): EnrichedKeyword[] {
 
 async function fetchRelatedRows(
   params: Omit<FetchResearchRowsParams, "source">,
+  dataforseo: ReturnType<typeof createDataforseoClient>,
 ) {
-  const items = await fetchRelatedKeywordsRaw(
-    params.seedKeyword,
-    params.locationCode,
-    params.languageCode,
-    params.resultLimit,
-    3,
-  );
+  const items = await dataforseo.keywords.related({
+    keyword: params.seedKeyword,
+    locationCode: params.locationCode,
+    languageCode: params.languageCode,
+    limit: params.resultLimit,
+    depth: 3,
+  });
 
   const rows: EnrichedKeyword[] = [];
   const seen = new Set<string>();
@@ -103,28 +101,31 @@ async function fetchRelatedRows(
 
 export async function fetchResearchRowsBySource(
   params: FetchResearchRowsParams,
+  billingCustomer: BillingCustomerContext,
 ): Promise<EnrichedKeyword[]> {
+  const dataforseo = createDataforseoClient(billingCustomer);
+
   if (params.source === "related") {
-    return fetchRelatedRows(params);
+    return fetchRelatedRows(params, dataforseo);
   }
 
   if (params.source === "suggestions") {
     return mapKeywordDataItems(
-      await fetchKeywordSuggestionsRaw(
-        params.seedKeyword,
-        params.locationCode,
-        params.languageCode,
-        params.resultLimit,
-      ),
+      await dataforseo.keywords.suggestions({
+        keyword: params.seedKeyword,
+        locationCode: params.locationCode,
+        languageCode: params.languageCode,
+        limit: params.resultLimit,
+      }),
     );
   }
 
   return mapKeywordDataItems(
-    await fetchKeywordIdeasRaw(
-      params.seedKeyword,
-      params.locationCode,
-      params.languageCode,
-      params.resultLimit,
-    ),
+    await dataforseo.keywords.ideas({
+      keyword: params.seedKeyword,
+      locationCode: params.locationCode,
+      languageCode: params.languageCode,
+      limit: params.resultLimit,
+    }),
   );
 }

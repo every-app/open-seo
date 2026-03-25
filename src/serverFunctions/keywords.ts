@@ -16,10 +16,16 @@ export const researchKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => researchKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
-    return KeywordResearchService.research({
-      ...data,
-      projectId: context.project.id,
-    });
+    return KeywordResearchService.research(
+      {
+        ...data,
+        projectId: context.project.id,
+      },
+      {
+        organizationId: context.organizationId,
+        userEmail: context.userEmail,
+      },
+    );
   });
 
 export const saveKeywords = createServerFn({ method: "POST" })
@@ -54,4 +60,9 @@ export const removeSavedKeyword = createServerFn({
 export const getSerpAnalysis = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .inputValidator((data: unknown) => serpAnalysisSchema.parse(data))
-  .handler(async ({ data }) => KeywordResearchService.getSerpAnalysis(data));
+  .handler(async ({ data, context }) =>
+    KeywordResearchService.getSerpAnalysis(data, {
+      organizationId: context.organizationId,
+      userEmail: context.userEmail,
+    }),
+  );

@@ -1,5 +1,8 @@
 import { AppError } from "@/server/lib/errors";
-import type { BacklinksApiCallCost } from "@/server/features/backlinks/services/backlinksCost";
+import type {
+  DataforseoApiCallCost,
+  DataforseoApiResponse,
+} from "@/server/lib/dataforseoCost";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
 import {
@@ -22,23 +25,18 @@ export type BacklinksRequest = BacklinksLookupInput & {
   target: string;
 };
 
-type BacklinksListRequest = BacklinksRequest & {
+export type BacklinksListRequest = BacklinksRequest & {
   limit?: number;
 };
 
-type BacklinksTimeseriesRequest = BacklinksRequest & {
+export type BacklinksTimeseriesRequest = BacklinksRequest & {
   dateFrom: string;
   dateTo: string;
 };
 
 type DataforseoTaskResponse = {
   results: unknown[];
-  billing: Omit<BacklinksApiCallCost, "rowsReturned">;
-};
-
-export type BacklinksApiResponse<T> = {
-  data: T;
-  billing: BacklinksApiCallCost;
+  billing: DataforseoApiCallCost;
 };
 
 async function createAuthenticatedFetch() {
@@ -152,7 +150,6 @@ async function postBacklinks(path: string, payload: unknown) {
   return {
     results: task.result ?? [],
     billing: {
-      endpoint: path,
       path: task.path ?? [],
       costUsd: task.cost ?? responseData.cost ?? 0,
       resultCount: task.result_count ?? null,
@@ -182,11 +179,8 @@ export async function fetchBacklinksSummaryRaw(input: BacklinksRequest) {
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data ? 1 : 0,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }
 
 export async function fetchBacklinksRowsRaw(input: BacklinksListRequest) {
@@ -204,11 +198,8 @@ export async function fetchBacklinksRowsRaw(input: BacklinksListRequest) {
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data.length,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }
 
 export async function fetchReferringDomainsRaw(input: BacklinksListRequest) {
@@ -226,11 +217,8 @@ export async function fetchReferringDomainsRaw(input: BacklinksListRequest) {
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data.length,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }
 
 export async function fetchDomainPagesSummaryRaw(input: BacklinksListRequest) {
@@ -251,11 +239,8 @@ export async function fetchDomainPagesSummaryRaw(input: BacklinksListRequest) {
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data.length,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }
 
 export async function fetchTimeseriesSummaryRaw(
@@ -279,11 +264,8 @@ export async function fetchTimeseriesSummaryRaw(
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data.length,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }
 
 export async function fetchNewLostTimeseriesRaw(
@@ -307,9 +289,6 @@ export async function fetchNewLostTimeseriesRaw(
   );
   return {
     data,
-    billing: {
-      ...response.billing,
-      rowsReturned: data.length,
-    },
-  } satisfies BacklinksApiResponse<typeof data>;
+    billing: response.billing,
+  } satisfies DataforseoApiResponse<typeof data>;
 }

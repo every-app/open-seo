@@ -1,0 +1,16 @@
+export const BILLING_ROUTE = "/billing";
+
+export const AUTUMN_PAID_PLAN_ID = "base-plan";
+export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";
+export const AUTUMN_SEO_DATA_BALANCE_FEATURE_ID = "usage_credits";
+export const AUTUMN_SEO_DATA_USAGE_FEATURE_ID = "seo_data_usage";
+export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;
+export const MINIMUM_SEO_DATA_BALANCE_USD = 0.15;
+
+export function roundUsdForBilling(value: number) {
+  return Math.round(value * 100000) / 100000;
+}
+
+export function autumnSeoDataCreditsToUsd(credits: number) {
+  return credits / AUTUMN_SEO_DATA_CREDITS_PER_USD;
+}
