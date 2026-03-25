@@ -1,6 +1,5 @@
 import { AuditHistorySection } from "@/client/features/audit/launch/AuditHistorySection";
 import { LaunchFormCard } from "@/client/features/audit/launch/LaunchFormCard";
-import { SettingsModal } from "@/client/features/audit/launch/SettingsModal";
 import { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
 
 export function LaunchView({
@@ -19,25 +18,13 @@ export function LaunchView({
 
         <LaunchFormCard
           launchForm={controller.launchForm}
-          settingsForm={controller.settingsForm}
           state={controller.state}
           setState={controller.setState}
           isPending={controller.startMutation.isPending}
           onSubmit={controller.handleSubmit}
-          onOpenSettings={controller.openSettings}
-          onRunPsiToggle={controller.onRunPsiToggle}
+          onRunLighthouseToggle={controller.onRunLighthouseToggle}
           commitMaxPagesInput={controller.commitMaxPagesInput}
         />
-
-        {controller.state.isSettingsOpen && (
-          <SettingsModal
-            settingsForm={controller.settingsForm}
-            state={controller.state}
-            setState={controller.setState}
-            onClear={controller.clearPsiKey}
-            onSave={controller.saveSettings}
-          />
-        )}
 
         <AuditHistorySection
           history={controller.historyQuery.data ?? []}

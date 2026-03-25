@@ -1,19 +1,23 @@
 import type { WorkflowStep } from "cloudflare:workers";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { discoverUrls, fetchRobotsTxt } from "@/server/lib/audit/discovery";
-import { selectPsiSample } from "@/server/lib/audit/psi";
+import {
+  fetchAndStoreLighthouseResult,
+  selectLighthouseSample,
+} from "@/server/lib/audit/lighthouse";
 import { getOrigin } from "@/server/lib/audit/url-utils";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
-import type { AuditConfig, PsiResult } from "@/server/lib/audit/types";
-import {
-  fetchPsiAndUploadToR2,
-  type StepPageResult,
-} from "@/server/workflows/site-audit-workflow-helpers";
+import type {
+  AuditConfig,
+  LighthouseResult,
+  StepPageResult,
+} from "@/server/lib/audit/types";
 import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
 
-const PSI_URL_CONCURRENCY = 6;
+const LIGHTHOUSE_URL_BATCH_SIZE = 10;
 
-function countPsiBatchResults(results: PsiResult[]): {
+function countLighthouseBatchResults(results: LighthouseResult[]): {
   completed: number;
   failed: number;
 } {
@@ -32,6 +36,7 @@ function countPsiBatchResults(results: PsiResult[]): {
 type AuditPhasesParams = {
   auditId: string;
   workflowInstanceId: string;
+  billingCustomer: BillingCustomerContext;
   projectId: string;
   startUrl: string;
   config: AuditConfig;
@@ -41,7 +46,14 @@ export async function runAuditPhases(
   step: WorkflowStep,
   params: AuditPhasesParams,
 ) {
-  const { auditId, workflowInstanceId, projectId, startUrl, config } = params;
+  const {
+    auditId,
+    workflowInstanceId,
+    billingCustomer,
+    projectId,
+    startUrl,
+    config,
+  } = params;
   const origin = getOrigin(startUrl);
   const maxPages = config.maxPages;
 
@@ -62,15 +74,22 @@ export async function runAuditPhases(
     robots,
     sitemapUrls: discovery.sitemapUrls,
   });
-  const psiResults = await runPsiPhase(step, {
+  const lighthouseResults = await runLighthousePhase(step, {
     auditId,
     workflowInstanceId,
+    billingCustomer,
     projectId,
     startUrl,
     config,
     allPages,
   });
-  await finalizeAudit(step, auditId, workflowInstanceId, allPages, psiResults);
+  await finalizeAudit(
+    step,
+    auditId,
+    workflowInstanceId,
+    allPages,
+    lighthouseResults,
+  );
 }
 
 async function runDiscoveryPhase(
@@ -90,115 +109,134 @@ async function runDiscoveryPhase(
   });
 }
 
-type PsiPhaseParams = {
+type LighthousePhaseParams = {
   auditId: string;
   workflowInstanceId: string;
+  billingCustomer: BillingCustomerContext;
   projectId: string;
   startUrl: string;
   config: AuditConfig;
   allPages: StepPageResult[];
 };
 
-async function runPsiPhase(
+async function runLighthousePhase(
   step: WorkflowStep,
-  params: PsiPhaseParams,
-): Promise<PsiResult[]> {
-  const { auditId, workflowInstanceId, projectId, startUrl, config, allPages } =
-    params;
-  if (config.psiStrategy === "none" || !config.psiApiKey) return [];
+  params: LighthousePhaseParams,
+): Promise<LighthouseResult[]> {
+  const {
+    auditId,
+    workflowInstanceId,
+    billingCustomer,
+    projectId,
+    startUrl,
+    config,
+    allPages,
+  } = params;
+  if (config.lighthouseStrategy === "none") return [];
 
-  const psiSample = await selectPsiUrls({
+  const lighthouseWork = await selectLighthousePages({
     step,
     auditId,
     workflowInstanceId,
     allPages,
     startUrl,
-    strategy: config.psiStrategy,
-  });
-  const psiWork = psiSample.flatMap((psiUrl) => {
-    const page = allPages.find((candidate) => candidate.url === psiUrl);
-    if (!page) return [];
-    return [{ url: psiUrl, pageId: page.id }];
+    strategy: config.lighthouseStrategy,
   });
 
-  const psiResults: PsiResult[] = [];
-  let psiCompleted = 0;
-  let psiFailed = 0;
-  let psiBatchIndex = 0;
+  const lighthouseResults: LighthouseResult[] = [];
+  let completedChecks = 0;
+  let failedChecks = 0;
+  let lighthouseBatchIndex = 0;
 
-  for (let i = 0; i < psiWork.length; i += PSI_URL_CONCURRENCY) {
-    const batch = psiWork.slice(i, i + PSI_URL_CONCURRENCY);
-    psiBatchIndex += 1;
-    const psiBatchResults = await runPsiBatch({
+  for (let i = 0; i < lighthouseWork.length; i += LIGHTHOUSE_URL_BATCH_SIZE) {
+    const batch = lighthouseWork.slice(i, i + LIGHTHOUSE_URL_BATCH_SIZE);
+    lighthouseBatchIndex += 1;
+    const lighthouseBatchResults = await runLighthouseBatch({
       step,
-      psiBatchIndex,
+      lighthouseBatchIndex,
       batch,
-      psiApiKey: config.psiApiKey,
+      billingCustomer,
       projectId,
       auditId,
     });
 
-    psiResults.push(...psiBatchResults);
-    const counts = countPsiBatchResults(psiBatchResults);
-    psiFailed += counts.failed;
-    psiCompleted += counts.completed;
-    await step.do(`psi-progress-batch-${psiBatchIndex}`, async () => {
-      await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
-        psiCompleted,
-        psiFailed,
-      });
-    });
+    lighthouseResults.push(...lighthouseBatchResults);
+    const counts = countLighthouseBatchResults(lighthouseBatchResults);
+    failedChecks += counts.failed;
+    completedChecks += counts.completed;
+    await step.do(
+      `lighthouse-progress-batch-${lighthouseBatchIndex}`,
+      async () => {
+        await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
+          lighthouseCompleted: completedChecks,
+          lighthouseFailed: failedChecks,
+        });
+      },
+    );
   }
 
-  return psiResults;
+  return lighthouseResults;
 }
 
-async function selectPsiUrls(params: {
+async function selectLighthousePages(params: {
   step: WorkflowStep;
   auditId: string;
   workflowInstanceId: string;
   allPages: StepPageResult[];
   startUrl: string;
-  strategy: AuditConfig["psiStrategy"];
+  strategy: AuditConfig["lighthouseStrategy"];
 }) {
   const { step, auditId, workflowInstanceId, allPages, startUrl, strategy } =
     params;
-  return step.do("select-psi-sample", async () => {
-    const pagesForSample = allPages.map((page) => ({
-      id: page.id,
-      url: page.url,
-      statusCode: page.statusCode,
-    }));
-    const sample = selectPsiSample(pagesForSample, startUrl, strategy);
+  return step.do("select-lighthouse-sample", async () => {
+    const sample = selectLighthouseSample(allPages, startUrl, strategy);
+    const selectedUrls = new Set(sample);
 
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
-      currentPhase: "psi",
-      psiTotal: sample.length * 2,
-      psiCompleted: 0,
-      psiFailed: 0,
+      currentPhase: "lighthouse",
+      lighthouseTotal: sample.length * 2,
+      lighthouseCompleted: 0,
+      lighthouseFailed: 0,
     });
-    return sample;
+    return allPages.flatMap((page) =>
+      selectedUrls.has(page.url) ? [{ url: page.url, pageId: page.id }] : [],
+    );
   });
 }
 
-async function runPsiBatch(params: {
+async function runLighthouseBatch(params: {
   step: WorkflowStep;
-  psiBatchIndex: number;
+  lighthouseBatchIndex: number;
   batch: Array<{ url: string; pageId: string }>;
-  psiApiKey: string;
+  billingCustomer: BillingCustomerContext;
   projectId: string;
   auditId: string;
 }) {
-  const { step, psiBatchIndex, batch, psiApiKey, projectId, auditId } = params;
-  return step.do(`psi-batch-${psiBatchIndex}`, async () => {
+  const {
+    step,
+    lighthouseBatchIndex,
+    batch,
+    billingCustomer,
+    projectId,
+    auditId,
+  } = params;
+  return step.do(`lighthouse-batch-${lighthouseBatchIndex}`, async () => {
     const perUrlResults = await Promise.all(
       batch.map(async ({ url, pageId }) => {
         const [mobileResult, desktopResult] = await Promise.all([
-          fetchPsiAndUploadToR2(url, pageId, "mobile", psiApiKey, {
+          fetchAndStoreLighthouseResult({
+            url,
+            pageId,
+            strategy: "mobile",
+            billingCustomer,
             projectId,
             auditId,
           }),
-          fetchPsiAndUploadToR2(url, pageId, "desktop", psiApiKey, {
+          fetchAndStoreLighthouseResult({
+            url,
+            pageId,
+            strategy: "desktop",
+            billingCustomer,
             projectId,
             auditId,
           }),
@@ -216,13 +254,17 @@ async function finalizeAudit(
   auditId: string,
   workflowInstanceId: string,
   allPages: StepPageResult[],
-  psiResults: PsiResult[],
+  lighthouseResults: LighthouseResult[],
 ) {
   await step.do("finalize", async () => {
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
       currentPhase: "finalizing",
     });
-    await AuditRepository.batchWriteResults(auditId, allPages, psiResults);
+    await AuditRepository.batchWriteResults(
+      auditId,
+      allPages,
+      lighthouseResults,
+    );
     await AuditRepository.completeAudit(auditId, workflowInstanceId, {
       pagesCrawled: allPages.length,
       pagesTotal: allPages.length,

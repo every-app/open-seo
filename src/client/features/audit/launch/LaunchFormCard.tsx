@@ -1,48 +1,33 @@
 import type { FormEvent } from "react";
-import { Loader2, Settings } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   MAX_PAGES_LIMIT,
   MIN_PAGES,
   type LaunchFormApi,
   type LaunchState,
-  type SettingsFormApi,
 } from "@/client/features/audit/launch/types";
 
 export function LaunchFormCard({
   launchForm,
-  settingsForm,
   state,
   setState,
   isPending,
   onSubmit,
-  onOpenSettings,
-  onRunPsiToggle,
+  onRunLighthouseToggle,
   commitMaxPagesInput,
 }: {
   launchForm: LaunchFormApi;
-  settingsForm: SettingsFormApi;
   state: LaunchState;
   setState: React.Dispatch<React.SetStateAction<LaunchState>>;
   isPending: boolean;
   onSubmit: (event: FormEvent) => void;
-  onOpenSettings: () => void;
-  onRunPsiToggle: (checked: boolean) => void;
+  onRunLighthouseToggle: (checked: boolean) => void;
   commitMaxPagesInput: () => number;
 }) {
   return (
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="card-title text-base">Start New Audit</h2>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={onOpenSettings}
-          >
-            <Settings className="size-4" />
-            Settings
-          </button>
-        </div>
+        <h2 className="card-title text-base">Start New Audit</h2>
 
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
@@ -85,10 +70,9 @@ export function LaunchFormCard({
               launchForm={launchForm}
               commitMaxPagesInput={commitMaxPagesInput}
             />
-            <PsiOptions
+            <LighthouseOptions
               launchForm={launchForm}
-              settingsForm={settingsForm}
-              onRunPsiToggle={onRunPsiToggle}
+              onRunLighthouseToggle={onRunLighthouseToggle}
             />
           </div>
         </form>
@@ -138,42 +122,42 @@ function LaunchOptions({
   );
 }
 
-function PsiOptions({
+function LighthouseOptions({
   launchForm,
-  settingsForm,
-  onRunPsiToggle,
+  onRunLighthouseToggle,
 }: {
   launchForm: LaunchFormApi;
-  settingsForm: SettingsFormApi;
-  onRunPsiToggle: (checked: boolean) => void;
+  onRunLighthouseToggle: (checked: boolean) => void;
 }) {
   return (
     <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
       <label className="label cursor-pointer justify-start gap-2 p-0">
-        <launchForm.Field name="runPsi">
+        <launchForm.Field name="runLighthouse">
           {(field) => (
             <input
               type="checkbox"
               className="toggle toggle-sm toggle-primary"
               checked={Boolean(field.state.value)}
-              onChange={(event) => onRunPsiToggle(event.target.checked)}
+              onChange={(event) => onRunLighthouseToggle(event.target.checked)}
             />
           )}
         </launchForm.Field>
         <span
           className="text-sm font-medium text-base-content/80"
-          title="Run Google PageSpeed Insights checks during this audit"
+          title="Run Lighthouse checks through DataForSEO during this audit"
         >
-          Include PSI checks
+          Include Lighthouse checks
         </span>
       </label>
 
-      <launchForm.Subscribe selector={(snapshot) => snapshot.values.runPsi}>
-        {(runPsi) =>
-          runPsi ? (
+      <launchForm.Subscribe
+        selector={(snapshot) => snapshot.values.runLighthouse}
+      >
+        {(runLighthouse) =>
+          runLighthouse ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-base-content/60">PSI mode</span>
-              <launchForm.Field name="psiMode">
+              <span className="text-xs text-base-content/60">Audit scope</span>
+              <launchForm.Field name="lighthouseMode">
                 {(field) => (
                   <select
                     className="select select-bordered select-xs"
@@ -189,17 +173,9 @@ function PsiOptions({
                   </select>
                 )}
               </launchForm.Field>
-              <settingsForm.Subscribe
-                selector={(snapshot) => snapshot.values.psiApiKey}
-              >
-                {(psiApiKey) => (
-                  <span
-                    className={`text-xs ${psiApiKey.trim() ? "text-success/80" : "text-warning"}`}
-                  >
-                    {psiApiKey.trim() ? "PSI key saved" : "PSI key required"}
-                  </span>
-                )}
-              </settingsForm.Subscribe>
+              <span className="text-xs text-base-content/50">
+                Powered by DataForSEO Lighthouse
+              </span>
             </div>
           ) : null
         }
@@ -213,11 +189,6 @@ function LaunchErrors({ state }: { state: LaunchState }) {
     <div className="space-y-2">
       {state.urlError ? (
         <p className="text-sm text-error">{state.urlError}</p>
-      ) : null}
-      {state.psiRequirementError ? (
-        <div className="alert alert-warning py-2">
-          <span className="text-sm">{state.psiRequirementError}</span>
-        </div>
       ) : null}
       {state.startError ? (
         <div className="alert alert-error py-2">

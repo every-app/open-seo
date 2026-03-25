@@ -1,9 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
-import {
-  requireAuthenticatedContext,
-  requireProjectContext,
-} from "@/serverFunctions/middleware";
+import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { z } from "zod";
 
 export const getOrCreateDefaultProject = createServerFn({ method: "POST" })
@@ -13,13 +10,13 @@ export const getOrCreateDefaultProject = createServerFn({ method: "POST" })
   );
 
 export const getProjectAccess = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
+  .middleware(requireAuthenticatedContext)
   .inputValidator((data: unknown) =>
     z.object({ projectId: z.string().min(1) }).parse(data),
   )
-  .handler(async ({ context }) => {
+  .handler(async ({ data, context }) => {
     return ProjectService.getProjectForOrganization(
       context.organizationId,
-      context.project.id,
+      data.projectId,
     );
   });

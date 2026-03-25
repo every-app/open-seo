@@ -199,9 +199,9 @@ function ProgressCard({
   status: {
     pagesCrawled: number;
     pagesTotal: number;
-    psiTotal: number;
-    psiCompleted: number;
-    psiFailed: number;
+    lighthouseTotal: number;
+    lighthouseCompleted: number;
+    lighthouseFailed: number;
     currentPhase: string | null;
   };
 }) {
@@ -209,21 +209,23 @@ function ProgressCard({
     status.pagesTotal > 0
       ? Math.round((status.pagesCrawled / status.pagesTotal) * 100)
       : 0;
-  const psiDone = status.psiCompleted + status.psiFailed;
-  const psiProgress =
-    status.psiTotal > 0 ? Math.round((psiDone / status.psiTotal) * 100) : 0;
-  const isPsiPhase = status.currentPhase === "psi";
+  const lighthouseDone = status.lighthouseCompleted + status.lighthouseFailed;
+  const lighthouseProgress =
+    status.lighthouseTotal > 0
+      ? Math.round((lighthouseDone / status.lighthouseTotal) * 100)
+      : 0;
+  const isLighthousePhase = status.currentPhase === "lighthouse";
   const phaseLabel =
     status.currentPhase === "discovery"
       ? "Discovery"
       : status.currentPhase === "crawling"
         ? "Crawling"
-        : status.currentPhase === "psi"
-          ? "PSI"
+        : status.currentPhase === "lighthouse"
+          ? "Lighthouse"
           : status.currentPhase === "finalizing"
             ? "Finalizing"
             : (status.currentPhase ?? "Running");
-  const progress = isPsiPhase ? psiProgress : crawlProgress;
+  const progress = isLighthousePhase ? lighthouseProgress : crawlProgress;
 
   const crawlProgressQuery = useQuery({
     queryKey: ["audit-crawl-progress", projectId, auditId],
@@ -240,7 +242,9 @@ function ProgressCard({
           <div className="flex items-center justify-between">
             <h2 className="font-medium flex items-center gap-2">
               <Loader2 className="size-4 animate-spin text-primary" />
-              {isPsiPhase ? "Running PSI checks" : "Crawling pages"}
+              {isLighthousePhase
+                ? "Running Lighthouse checks"
+                : "Crawling pages"}
             </h2>
             <span className="badge badge-ghost badge-sm">{phaseLabel}</span>
           </div>
@@ -252,10 +256,12 @@ function ProgressCard({
           />
 
           <div className="flex items-center justify-between text-sm">
-            {isPsiPhase ? (
+            {isLighthousePhase ? (
               <span>
-                {psiDone} / {status.psiTotal} checks
-                {status.psiFailed > 0 ? ` (${status.psiFailed} failed)` : ""}
+                {lighthouseDone} / {status.lighthouseTotal} checks
+                {status.lighthouseFailed > 0
+                  ? ` (${status.lighthouseFailed} failed)`
+                  : ""}
               </span>
             ) : (
               <span>

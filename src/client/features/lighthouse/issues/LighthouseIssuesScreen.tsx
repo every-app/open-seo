@@ -1,7 +1,11 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { AlertCircle, TriangleAlert } from "lucide-react";
 import { toast } from "sonner";
-import { exportAuditPsi, getAuditPsiIssues } from "@/serverFunctions/psi";
-import type { CategoryTab, ExportPayload, PsiIssue } from "./types";
+import {
+  exportAuditLighthouseIssues,
+  getAuditLighthouseIssues,
+} from "@/serverFunctions/lighthouse";
+import type { CategoryTab, ExportPayload, LighthouseIssue } from "./types";
 import {
   categoryLabel,
   categorySlug,
@@ -9,13 +13,13 @@ import {
   issuesToCsv,
 } from "./utils";
 import {
-  PsiIssueList,
-  PsiIssuesHeader,
-  PsiIssuesToolbar,
-} from "./PsiIssuesParts";
+  LighthouseIssueList,
+  LighthouseIssuesHeader,
+  LighthouseIssuesToolbar,
+} from "./LighthouseIssuesParts";
 import { categoryTabs } from "./types";
 
-type PsiIssuesScreenProps = {
+type LighthouseIssuesScreenProps = {
   projectId: string;
   resultId: string;
   category: CategoryTab;
@@ -24,26 +28,14 @@ type PsiIssuesScreenProps = {
   onCategoryChange: (next: CategoryTab) => void;
 };
 
-export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
+export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
   const { projectId, resultId, category, backLabel, onBack, onCategoryChange } =
     props;
 
   const issuesQuery = useQuery({
-    queryKey: ["auditPsiIssues", projectId, resultId, category],
+    queryKey: ["auditLighthouseIssues", projectId, resultId],
     queryFn: () =>
-      getAuditPsiIssues({
-        data: {
-          projectId,
-          resultId,
-          category: category === "all" ? undefined : category,
-        },
-      }),
-  });
-
-  const summaryQuery = useQuery({
-    queryKey: ["auditPsiIssuesSummary", projectId, resultId],
-    queryFn: () =>
-      getAuditPsiIssues({
+      getAuditLighthouseIssues({
         data: {
           projectId,
           resultId,
@@ -52,8 +44,10 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
   });
 
   const exportMutation = useMutation({
-    mutationFn: (data: ExportPayload) =>
-      exportAuditPsi({
+    mutationFn: (
+      data: ExportPayload,
+    ): Promise<{ filename: string; content: string }> =>
+      exportAuditLighthouseIssues({
         data: {
           projectId,
           resultId,
@@ -71,27 +65,56 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
     selectedCategoryLabel,
     severityCounts,
     visibleIssues,
-  } = usePsiIssuesActions({
+  } = useLighthouseIssuesActions({
     category,
     exportMutation,
-    issues: (issuesQuery.data?.issues ?? []) as PsiIssue[],
-    summaryIssues: summaryQuery.data?.issues,
+    allIssues: issuesQuery.data?.issues ?? [],
   });
+
+  const issuesErrorMessage =
+    issuesQuery.error instanceof Error
+      ? issuesQuery.error.message
+      : "Failed to load Lighthouse issues.";
+  const showsLegacyPayloadNotice =
+    issuesQuery.data != null && !issuesQuery.data.hasIssueDetails;
+  const emptyMessage = showsLegacyPayloadNotice
+    ? "This audit was saved without issue-level Lighthouse details. Re-run the audit to populate this screen."
+    : undefined;
 
   return (
     <div className="px-4 py-3 md:px-6 md:py-4 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto max-w-5xl space-y-4">
-        <PsiIssuesHeader
+        <LighthouseIssuesHeader
           backLabel={backLabel}
           onBack={onBack}
           scannedAt={issuesQuery.data?.createdAt}
           finalUrl={issuesQuery.data?.finalUrl}
+          scores={issuesQuery.data?.scores}
+          metrics={issuesQuery.data?.metrics}
           severityCounts={severityCounts}
         />
 
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-4">
-            <PsiIssuesToolbar
+            {issuesQuery.isError ? (
+              <div className="alert alert-error">
+                <AlertCircle className="size-4" />
+                <span>{issuesErrorMessage}</span>
+              </div>
+            ) : null}
+
+            {showsLegacyPayloadNotice ? (
+              <div className="alert alert-warning">
+                <TriangleAlert className="size-4" />
+                <span>
+                  This Lighthouse run was stored before issue details were
+                  preserved. Re-run the audit to see category counts and issue
+                  cards.
+                </span>
+              </div>
+            ) : null}
+
+            <LighthouseIssuesToolbar
               category={category}
               categoryCounts={categoryCounts}
               selectedCategoryLabel={selectedCategoryLabel}
@@ -107,9 +130,10 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
               }}
               onExportCsv={runExportCsv}
             />
-            <PsiIssueList
+            <LighthouseIssueList
               issues={visibleIssues}
               isLoading={issuesQuery.isLoading}
+              emptyMessage={emptyMessage}
             />
           </div>
         </div>
@@ -118,23 +142,23 @@ export function PsiIssuesScreen(props: PsiIssuesScreenProps) {
   );
 }
 
-function usePsiIssuesActions({
+function useLighthouseIssuesActions({
+  allIssues,
   category,
   exportMutation,
-  issues,
-  summaryIssues,
 }: {
+  allIssues: LighthouseIssue[];
   category: CategoryTab;
   exportMutation: {
     mutateAsync: (
       data: ExportPayload,
     ) => Promise<{ filename: string; content: string }>;
   };
-  issues: PsiIssue[];
-  summaryIssues: PsiIssue[] | undefined;
 }) {
-  const visibleIssues = issues;
-  const allIssues = summaryIssues ?? visibleIssues;
+  const visibleIssues =
+    category === "all"
+      ? allIssues
+      : allIssues.filter((issue) => issue.category === category);
   const selectedCategoryLabel = categoryLabel(category);
   const categoryCounts = getCategoryCounts(allIssues);
   const severityCounts = getSeverityCounts(visibleIssues);
@@ -151,8 +175,11 @@ function usePsiIssuesActions({
     }
   };
 
-  const runExportCsv = (rows: PsiIssue[], variant: "all" | "current") => {
-    const filename = `psi-${variant}-${categorySlug(category)}-issues.csv`;
+  const runExportCsv = (
+    rows: LighthouseIssue[],
+    variant: "all" | "current",
+  ) => {
+    const filename = `lighthouse-${variant}-${categorySlug(category)}-issues.csv`;
     downloadTextFile(filename, issuesToCsv(rows), "text/csv");
     toast.success("CSV download started");
   };
@@ -181,7 +208,9 @@ function usePsiIssuesActions({
   };
 }
 
-function getCategoryCounts(allIssues: PsiIssue[]): Record<CategoryTab, number> {
+function getCategoryCounts(
+  allIssues: LighthouseIssue[],
+): Record<CategoryTab, number> {
   return categoryTabs.reduce<Record<CategoryTab, number>>(
     (acc, tab) => {
       if (tab === "all") {
@@ -201,7 +230,7 @@ function getCategoryCounts(allIssues: PsiIssue[]): Record<CategoryTab, number> {
   );
 }
 
-function getSeverityCounts(issues: PsiIssue[]) {
+function getSeverityCounts(issues: LighthouseIssue[]) {
   return {
     critical: issues.filter((issue) => issue.severity === "critical").length,
     warning: issues.filter((issue) => issue.severity === "warning").length,

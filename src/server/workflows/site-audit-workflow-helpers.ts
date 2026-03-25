@@ -1,64 +1,6 @@
 import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
-import { fetchPsiResult } from "@/server/lib/audit/psi";
+import type { StepPageResult } from "@/server/lib/audit/types";
 import { isSameOrigin, normalizeUrl } from "@/server/lib/audit/url-utils";
-import type { PsiResult } from "@/server/lib/audit/types";
-import { putTextToR2 } from "@/server/lib/r2";
-
-export interface StepPageResult {
-  id: string;
-  url: string;
-  statusCode: number;
-  redirectUrl: string | null;
-  title: string;
-  metaDescription: string;
-  canonicalUrl: string | null;
-  robotsMeta: string | null;
-  ogTitle: string | null;
-  ogDescription: string | null;
-  ogImage: string | null;
-  h1Count: number;
-  h2Count: number;
-  h3Count: number;
-  h4Count: number;
-  h5Count: number;
-  h6Count: number;
-  headingOrder: number[];
-  wordCount: number;
-  imagesTotal: number;
-  imagesMissingAlt: number;
-  images: Array<{ src: string | null; alt: string | null }>;
-  internalLinks: string[];
-  externalLinks: string[];
-  hasStructuredData: boolean;
-  hreflangTags: string[];
-  isIndexable: boolean;
-  responseTimeMs: number;
-}
-
-type PsiUploadContext = {
-  projectId: string;
-  auditId: string;
-};
-
-export async function fetchPsiAndUploadToR2(
-  url: string,
-  pageId: string,
-  strategy: "mobile" | "desktop",
-  apiKey: string,
-  context: PsiUploadContext,
-): Promise<PsiResult> {
-  const result = await fetchPsiResult(url, pageId, strategy, apiKey);
-
-  if (result.rawPayloadJson) {
-    const key = `site-audit/${context.projectId}/${context.auditId}/${pageId}-${strategy}.json`;
-    const uploaded = await putTextToR2(key, result.rawPayloadJson);
-    result.r2Key = uploaded.key;
-    result.payloadSizeBytes = uploaded.sizeBytes;
-    result.rawPayloadJson = null;
-  }
-
-  return result;
-}
 
 export async function crawlPage(
   url: string,

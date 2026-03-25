@@ -1,4 +1,4 @@
-import type { PsiStrategy } from "@/server/lib/audit/types";
+import type { LighthouseStrategy } from "@/server/lib/audit/types";
 
 export const MAX_USER_AUDIT_USAGE = 100_000;
 
@@ -8,28 +8,28 @@ export function clampAuditMaxPages(maxPages?: number) {
 
 export function getEstimatedAuditCapacity(input: {
   maxPages?: number;
-  psiStrategy?: PsiStrategy;
+  lighthouseStrategy?: LighthouseStrategy;
 }) {
   const pagesTotal = clampAuditMaxPages(input.maxPages);
-  const psiStrategy = input.psiStrategy ?? "auto";
+  const lighthouseStrategy = input.lighthouseStrategy ?? "auto";
 
-  let psiTotal = 0;
-  switch (psiStrategy) {
+  let lighthouseChecks = 0;
+  switch (lighthouseStrategy) {
     case "all":
-      psiTotal = pagesTotal * 2;
+      lighthouseChecks = pagesTotal * 2;
       break;
     case "auto":
-      psiTotal = 20;
+      lighthouseChecks = 20;
       break;
     case "manual":
     case "none":
-      psiTotal = 0;
+      lighthouseChecks = 0;
       break;
   }
 
   return {
     pagesTotal,
-    psiTotal,
-    total: pagesTotal + psiTotal,
+    lighthouseTotal: lighthouseChecks,
+    total: pagesTotal + lighthouseChecks,
   };
 }

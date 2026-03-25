@@ -9,12 +9,14 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
 
 interface AuditParams {
   auditId: string;
+  billingCustomer: BillingCustomerContext;
   projectId: string;
   startUrl: string;
   config: AuditConfig;
@@ -22,7 +24,8 @@ interface AuditParams {
 
 export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
   async run(event: WorkflowEvent<AuditParams>, step: WorkflowStep) {
-    const { auditId, projectId, startUrl, config } = event.payload;
+    const { auditId, billingCustomer, projectId, startUrl, config } =
+      event.payload;
 
     const audit = await AuditRepository.getAuditForWorkflow(
       auditId,
@@ -41,6 +44,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       await runAuditPhases(step, {
         auditId,
         workflowInstanceId: event.instanceId,
+        billingCustomer,
         projectId,
         startUrl,
         config,

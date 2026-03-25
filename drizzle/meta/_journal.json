@@ -36,6 +36,20 @@
       "when": 1773935379368,
       "tag": "0004_faithful_sunset_bain",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1773965298920,
+      "tag": "0005_low_red_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1774320825595,
+      "tag": "0006_magical_alex_wilder",
+      "breakpoints": true
     }
   ]
 }

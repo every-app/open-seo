@@ -6,11 +6,10 @@ export const startAuditSchema = z.object({
   projectId: z.string().min(1),
   startUrl: z.string().min(1, "URL is required").max(2048),
   maxPages: z.number().int().min(10).max(10_000).optional().default(50),
-  psiStrategy: z
+  lighthouseStrategy: z
     .enum(["auto", "all", "manual", "none"])
     .optional()
     .default("auto"),
-  psiApiKey: z.string().optional(),
 });
 
 export const getAuditStatusSchema = z.object({

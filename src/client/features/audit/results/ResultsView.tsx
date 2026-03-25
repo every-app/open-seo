@@ -7,6 +7,7 @@ import {
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import {
   ExportDropdown,
+  isLighthouseFailure,
   PagesTable,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
@@ -24,32 +25,32 @@ export function ResultsView({
   tab: string;
   setSearchParams: SearchSetter;
 }) {
-  const { audit, pages, psi } = data;
-  const hasPerformanceTab = psi.length > 0;
+  const { audit, pages, lighthouse } = data;
+  const hasPerformanceTab = lighthouse.length > 0;
   const activeTab = hasPerformanceTab ? tab : "pages";
-  const stats = useResultStats(pages, psi);
+  const stats = useResultStats(pages, lighthouse);
 
   return (
     <>
       <StatsGrid
         pagesCrawled={audit.pagesCrawled}
         totalPages={pages.length}
-        totalPsi={psi.length}
+        totalLighthouse={lighthouse.length}
         averageResponseMs={stats.averageResponseMs}
-        psiSummary={stats.psiSummary}
+        lighthouseSummary={stats.lighthouseSummary}
       />
 
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body gap-3">
           <ResultsHeader
             pageCount={pages.length}
-            psiCount={psi.length}
+            lighthouseCount={lighthouse.length}
             hasPerformanceTab={hasPerformanceTab}
             activeTab={activeTab}
             setSearchParams={setSearchParams}
             onExport={(format) => {
               if (activeTab === "performance") {
-                exportPerformance(psi, pages, format);
+                exportPerformance(lighthouse, pages, format);
                 return;
               }
               exportPages(pages, format);
@@ -57,8 +58,13 @@ export function ResultsView({
           />
 
           {activeTab === "pages" && <PagesTable pages={pages} />}
-          {activeTab === "performance" && psi.length > 0 && (
-            <PerformanceTable projectId={projectId} psi={psi} pages={pages} />
+          {activeTab === "performance" && lighthouse.length > 0 && (
+            <PerformanceTable
+              auditId={audit.id}
+              projectId={projectId}
+              lighthouse={lighthouse}
+              pages={pages}
+            />
           )}
         </div>
       </div>
@@ -68,28 +74,34 @@ export function ResultsView({
 
 function useResultStats(
   pages: AuditResultsData["pages"],
-  psi: AuditResultsData["psi"],
+  lighthouse: AuditResultsData["lighthouse"],
 ) {
   const averageResponseMs = useMemo(() => {
     if (pages.length === 0) return 0;
     const total = pages.reduce(
-      (sum, page) => sum + (page.responseTimeMs ?? 0),
+      (sum: number, page: AuditResultsData["pages"][number]) =>
+        sum + (page.responseTimeMs ?? 0),
       0,
     );
     return Math.round(total / pages.length);
   }, [pages]);
 
-  const psiSummary = useMemo(() => {
-    const failed = psi.filter((row) => !!row.errorMessage).length;
-    const successful = psi.filter((row) => !row.errorMessage);
+  const lighthouseSummary = useMemo(() => {
+    const failed = lighthouse.filter(
+      (row: AuditResultsData["lighthouse"][number]) => isLighthouseFailure(row),
+    ).length;
+    const successful = lighthouse.filter(
+      (row: AuditResultsData["lighthouse"][number]) =>
+        !isLighthouseFailure(row),
+    );
     const averageScore = (
       key: "performanceScore" | "seoScore" | "accessibilityScore",
     ) => {
       const values = successful
-        .map((row) => row[key])
-        .filter((value): value is number => value != null);
+        .map((row: AuditResultsData["lighthouse"][number]) => row[key])
+        .filter((value: number | null): value is number => value != null);
       if (values.length === 0) return null;
-      const total = values.reduce((sum, value) => sum + value, 0);
+      const total = values.reduce((sum: number, value) => sum + value, 0);
       return Math.round(total / values.length);
     };
 
@@ -99,21 +111,21 @@ function useResultStats(
       avgSeo: averageScore("seoScore"),
       avgAccessibility: averageScore("accessibilityScore"),
     };
-  }, [psi]);
+  }, [lighthouse]);
 
-  return { averageResponseMs, psiSummary };
+  return { averageResponseMs, lighthouseSummary };
 }
 
 function ResultsHeader({
   pageCount,
-  psiCount,
+  lighthouseCount,
   hasPerformanceTab,
   activeTab,
   setSearchParams,
   onExport,
 }: {
   pageCount: number;
-  psiCount: number;
+  lighthouseCount: number;
   hasPerformanceTab: boolean;
   activeTab: string;
   setSearchParams: SearchSetter;
@@ -135,7 +147,7 @@ function ResultsHeader({
             className={`tab ${activeTab === "performance" ? "tab-active" : ""}`}
             onClick={() => setSearchParams({ tab: "performance" })}
           >
-            Performance ({psiCount})
+            Performance ({lighthouseCount})
           </button>
         </div>
       ) : (
@@ -150,15 +162,15 @@ function ResultsHeader({
 function StatsGrid({
   pagesCrawled,
   totalPages,
-  totalPsi,
+  totalLighthouse,
   averageResponseMs,
-  psiSummary,
+  lighthouseSummary,
 }: {
   pagesCrawled: number;
   totalPages: number;
-  totalPsi: number;
+  totalLighthouse: number;
   averageResponseMs: number;
-  psiSummary: {
+  lighthouseSummary: {
     failed: number;
     avgPerformance: number | null;
     avgSeo: number | null;
@@ -169,37 +181,43 @@ function StatsGrid({
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <StatCard label="Pages Crawled" value={String(pagesCrawled)} />
       <StatCard label="Total URLs" value={String(totalPages)} />
-      <StatCard label="PSI Tests" value={String(totalPsi)} />
+      <StatCard label="Lighthouse Tests" value={String(totalLighthouse)} />
       <StatCard label="Avg Response" value={`${averageResponseMs}ms`} />
-      {totalPsi > 0 && (
+      {totalLighthouse > 0 && (
         <>
           <StatCard
-            label="Avg PSI Perf"
+            label="Avg Lighthouse Perf"
             value={
-              psiSummary.avgPerformance == null
+              lighthouseSummary.avgPerformance == null
                 ? "-"
-                : String(psiSummary.avgPerformance)
+                : String(lighthouseSummary.avgPerformance)
             }
-            className={scoreClass(psiSummary.avgPerformance)}
+            className={scoreClass(lighthouseSummary.avgPerformance)}
           />
           <StatCard
-            label="Avg PSI SEO"
-            value={psiSummary.avgSeo == null ? "-" : String(psiSummary.avgSeo)}
-            className={scoreClass(psiSummary.avgSeo)}
-          />
-          <StatCard
-            label="Avg PSI A11y"
+            label="Avg Lighthouse SEO"
             value={
-              psiSummary.avgAccessibility == null
+              lighthouseSummary.avgSeo == null
                 ? "-"
-                : String(psiSummary.avgAccessibility)
+                : String(lighthouseSummary.avgSeo)
             }
-            className={scoreClass(psiSummary.avgAccessibility)}
+            className={scoreClass(lighthouseSummary.avgSeo)}
           />
           <StatCard
-            label="PSI Failures"
-            value={String(psiSummary.failed)}
-            className={psiSummary.failed > 0 ? "text-error" : "text-success"}
+            label="Avg Lighthouse A11y"
+            value={
+              lighthouseSummary.avgAccessibility == null
+                ? "-"
+                : String(lighthouseSummary.avgAccessibility)
+            }
+            className={scoreClass(lighthouseSummary.avgAccessibility)}
+          />
+          <StatCard
+            label="Lighthouse Failures"
+            value={String(lighthouseSummary.failed)}
+            className={
+              lighthouseSummary.failed > 0 ? "text-error" : "text-success"
+            }
           />
         </>
       )}

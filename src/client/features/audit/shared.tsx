@@ -70,7 +70,7 @@ export function HttpStatusBadge({ code }: { code: number | null }) {
   return <span className="badge badge-error badge-sm">{code}</span>;
 }
 
-export function PsiScoreBadge({ score }: { score: number | null }) {
+export function LighthouseScoreBadge({ score }: { score: number | null }) {
   if (score == null) {
     return <span className="text-xs text-base-content/40">-</span>;
   }

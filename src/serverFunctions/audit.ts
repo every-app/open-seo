@@ -1,14 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
+import { AuditService } from "@/server/features/audit/services/AuditService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
-  startAuditSchema,
-  getAuditStatusSchema,
-  getAuditResultsSchema,
-  getAuditHistorySchema,
   deleteAuditSchema,
+  getAuditHistorySchema,
+  getAuditResultsSchema,
+  getAuditStatusSchema,
   getCrawlProgressSchema,
+  startAuditSchema,
 } from "@/types/schemas/audit";
-import { AuditService } from "@/server/features/audit/services/AuditService";
 
 export const startAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -16,11 +16,14 @@ export const startAudit = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     return AuditService.startAudit({
       actorUserId: context.userId,
+      billingCustomer: {
+        organizationId: context.organizationId,
+        userEmail: context.userEmail,
+      },
       projectId: context.project.id,
       startUrl: data.startUrl,
       maxPages: data.maxPages,
-      psiStrategy: data.psiStrategy,
-      psiApiKey: data.psiApiKey,
+      lighthouseStrategy: data.lighthouseStrategy,
     });
   });
 
@@ -38,9 +41,7 @@ export const getAuditResults = createServerFn({ method: "POST" })
     return AuditService.getResults(data.auditId, context.project.id);
   });
 
-export const getAuditHistory = createServerFn({
-  method: "POST",
-})
+export const getAuditHistory = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => getAuditHistorySchema.parse(data))
   .handler(async ({ context }) => {

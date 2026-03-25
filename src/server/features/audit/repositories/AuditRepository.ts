@@ -1,13 +1,30 @@
 /**
  * Data access layer for site audit tables.
- * All D1 interactions for audits, audit_pages, and audit_psi_results.
+ * All D1 interactions for audits, audit_pages, and stored Lighthouse results.
  */
-import { db } from "@/db";
-import { audits, auditPages, auditPsiResults } from "@/db/schema";
 import { and, desc, eq } from "drizzle-orm";
-import type { PsiResult, AuditConfig } from "@/server/lib/audit/types";
+import { db } from "@/db";
+import { audits, auditLighthouseResults, auditPages } from "@/db/schema";
+import type {
+  AuditConfig,
+  LighthouseResult,
+  StepPageResult,
+} from "@/server/lib/audit/types";
 
-// ─── Create ──────────────────────────────────────────────────────────────────
+const DB_BATCH_SIZE = 100;
+type BatchStatement = Parameters<typeof db.batch>[0][number];
+
+async function executeInBatches<T>(
+  items: T[],
+  buildStatement: (item: T) => BatchStatement,
+) {
+  for (let i = 0; i < items.length; i += DB_BATCH_SIZE) {
+    const chunk = items.slice(i, i + DB_BATCH_SIZE).map(buildStatement);
+    const [first, ...rest] = chunk;
+    if (!first) continue;
+    await db.batch([first, ...rest]);
+  }
+}
 
 async function createAudit(data: {
   id: string;
@@ -17,7 +34,7 @@ async function createAudit(data: {
   workflowInstanceId: string;
   config: AuditConfig;
   pagesTotal: number;
-  psiTotal: number;
+  lighthouseTotal: number;
 }) {
   await db.insert(audits).values({
     id: data.id,
@@ -28,12 +45,10 @@ async function createAudit(data: {
     config: JSON.stringify(data.config),
     status: "running",
     pagesTotal: data.pagesTotal,
-    psiTotal: data.psiTotal,
+    lighthouseTotal: data.lighthouseTotal,
     currentPhase: "discovery",
   });
 }
-
-// ─── Update ──────────────────────────────────────────────────────────────────
 
 async function updateAuditProgress(
   auditId: string,
@@ -41,9 +56,9 @@ async function updateAuditProgress(
   data: {
     pagesCrawled?: number;
     pagesTotal?: number;
-    psiTotal?: number;
-    psiCompleted?: number;
-    psiFailed?: number;
+    lighthouseTotal?: number;
+    lighthouseCompleted?: number;
+    lighthouseFailed?: number;
     currentPhase?: string;
   },
 ) {
@@ -110,131 +125,69 @@ async function getAuditForWorkflow(
   });
 }
 
-// ─── Batch write results (finalize step) ─────────────────────────────────────
-
-/**
- * Use db.batch() to send individual INSERT statements in a single round-trip.
- * D1's batch API supports up to 100 *statements* per call — each statement
- * has its own bind params, so there's no per-statement param limit issue.
- */
 async function batchWriteResults(
   auditId: string,
-  pages: Array<{
-    id: string;
-    url: string;
-    statusCode: number;
-    redirectUrl: string | null;
-    title: string;
-    metaDescription: string;
-    canonicalUrl: string | null;
-    robotsMeta: string | null;
-    ogTitle: string | null;
-    ogDescription: string | null;
-    ogImage: string | null;
-    h1Count: number;
-    h2Count: number;
-    h3Count: number;
-    h4Count: number;
-    h5Count: number;
-    h6Count: number;
-    headingOrder: number[];
-    wordCount: number;
-    imagesTotal: number;
-    imagesMissingAlt: number;
-    images: Array<{ src: string | null; alt: string | null }>;
-    internalLinks: string[];
-    externalLinks: string[];
-    hasStructuredData: boolean;
-    hreflangTags: string[];
-    isIndexable: boolean;
-    responseTimeMs: number;
-  }>,
-  psiResults: PsiResult[],
+  pages: StepPageResult[],
+  lighthouseResults: LighthouseResult[],
 ) {
-  const BATCH_SIZE = 100; // D1 max statements per batch() call
-
-  // ── Pages ──────────────────────────────────────────────────────────
-  const pageStatements = pages.map((p) =>
+  await executeInBatches(pages, (page) =>
     db.insert(auditPages).values({
-      id: p.id,
+      id: page.id,
       auditId,
-      url: p.url,
-      statusCode: p.statusCode,
-      redirectUrl: p.redirectUrl,
-      // Metadata
-      title: p.title,
-      metaDescription: p.metaDescription,
-      canonicalUrl: p.canonicalUrl,
-      robotsMeta: p.robotsMeta,
-      // Open Graph
-      ogTitle: p.ogTitle,
-      ogDescription: p.ogDescription,
-      ogImage: p.ogImage,
-      // Headings
-      h1Count: p.h1Count,
-      h2Count: p.h2Count,
-      h3Count: p.h3Count,
-      h4Count: p.h4Count,
-      h5Count: p.h5Count,
-      h6Count: p.h6Count,
-      headingOrderJson: JSON.stringify(p.headingOrder),
-      // Content
-      wordCount: p.wordCount,
-      // Images
-      imagesTotal: p.imagesTotal,
-      imagesMissingAlt: p.imagesMissingAlt,
-      imagesJson: JSON.stringify(p.images),
-      // Links
-      internalLinkCount: p.internalLinks.length,
-      externalLinkCount: p.externalLinks.length,
-      // Structured data
-      hasStructuredData: p.hasStructuredData,
-      // Hreflang
-      hreflangTagsJson: JSON.stringify(p.hreflangTags),
-      // Indexability
-      isIndexable: p.isIndexable,
-      // Performance
-      responseTimeMs: p.responseTimeMs,
+      url: page.url,
+      statusCode: page.statusCode,
+      redirectUrl: page.redirectUrl,
+      title: page.title,
+      metaDescription: page.metaDescription,
+      canonicalUrl: page.canonicalUrl,
+      robotsMeta: page.robotsMeta,
+      ogTitle: page.ogTitle,
+      ogDescription: page.ogDescription,
+      ogImage: page.ogImage,
+      h1Count: page.h1Count,
+      h2Count: page.h2Count,
+      h3Count: page.h3Count,
+      h4Count: page.h4Count,
+      h5Count: page.h5Count,
+      h6Count: page.h6Count,
+      headingOrderJson: JSON.stringify(page.headingOrder),
+      wordCount: page.wordCount,
+      imagesTotal: page.imagesTotal,
+      imagesMissingAlt: page.imagesMissingAlt,
+      imagesJson: JSON.stringify(page.images),
+      internalLinkCount: page.internalLinks.length,
+      externalLinkCount: page.externalLinks.length,
+      hasStructuredData: page.hasStructuredData,
+      hreflangTagsJson: JSON.stringify(page.hreflangTags),
+      isIndexable: page.isIndexable,
+      responseTimeMs: page.responseTimeMs,
     }),
   );
 
-  for (let i = 0; i < pageStatements.length; i += BATCH_SIZE) {
-    const chunk = pageStatements.slice(i, i + BATCH_SIZE);
-    const [first, ...rest] = chunk;
-    await db.batch([first, ...rest]);
+  if (lighthouseResults.length === 0) {
+    return;
   }
 
-  // ── PSI results ────────────────────────────────────────────────────
-  if (psiResults.length > 0) {
-    const psiStatements = psiResults.map((r) =>
-      db.insert(auditPsiResults).values({
-        id: crypto.randomUUID(),
-        auditId,
-        pageId: r.pageId,
-        strategy: r.strategy,
-        performanceScore: r.performanceScore,
-        accessibilityScore: r.accessibilityScore,
-        bestPracticesScore: r.bestPracticesScore,
-        seoScore: r.seoScore,
-        lcpMs: r.lcpMs,
-        cls: r.cls,
-        inpMs: r.inpMs,
-        ttfbMs: r.ttfbMs,
-        errorMessage: r.errorMessage ?? null,
-        r2Key: r.r2Key ?? null,
-        payloadSizeBytes: r.payloadSizeBytes ?? null,
-      }),
-    );
-
-    for (let i = 0; i < psiStatements.length; i += BATCH_SIZE) {
-      const chunk = psiStatements.slice(i, i + BATCH_SIZE);
-      const [first, ...rest] = chunk;
-      await db.batch([first, ...rest]);
-    }
-  }
+  await executeInBatches(lighthouseResults, (result) =>
+    db.insert(auditLighthouseResults).values({
+      id: crypto.randomUUID(),
+      auditId,
+      pageId: result.pageId,
+      strategy: result.strategy,
+      performanceScore: result.performanceScore,
+      accessibilityScore: result.accessibilityScore,
+      bestPracticesScore: result.bestPracticesScore,
+      seoScore: result.seoScore,
+      lcpMs: result.lcpMs,
+      cls: result.cls,
+      inpMs: result.inpMs,
+      ttfbMs: result.ttfbMs,
+      errorMessage: result.errorMessage ?? null,
+      r2Key: result.r2Key ?? null,
+      payloadSizeBytes: result.payloadSizeBytes ?? null,
+    }),
+  );
 }
-
-// ─── Read ────────────────────────────────────────────────────────────────────
 
 async function getAuditForProject(auditId: string, projectId: string) {
   return db.query.audits.findFirst({
@@ -252,77 +205,79 @@ async function getAuditsByProject(projectId: string) {
   return rows.map(({ audit }) => audit);
 }
 
-async function getAuditResultsForProject(auditId: string, projectId: string) {
-  const audit = await getAuditForProject(auditId, projectId);
-  if (!audit) {
-    return { audit: null, pages: [], psi: [] };
-  }
-
-  const [pages, psi] = await Promise.all([
-    db.query.auditPages.findMany({
-      where: eq(auditPages.auditId, auditId),
-    }),
-    db.query.auditPsiResults.findMany({
-      where: eq(auditPsiResults.auditId, auditId),
-    }),
-  ]);
-
-  return { audit, pages, psi };
-}
-
 async function getAuditCapacityUsageForUser(userId: string) {
   const rows = await db.query.audits.findMany({
     where: eq(audits.startedByUserId, userId),
     columns: {
       pagesTotal: true,
-      psiTotal: true,
+      lighthouseTotal: true,
     },
   });
 
-  return rows.reduce((total, row) => total + row.pagesTotal + row.psiTotal, 0);
+  return rows.reduce(
+    (total, row) => total + row.pagesTotal + row.lighthouseTotal,
+    0,
+  );
 }
 
-async function getPsiResultById(input: {
-  psiResultId: string;
-  projectId: string;
-}) {
-  const psi = await db.query.auditPsiResults.findFirst({
-    where: eq(auditPsiResults.id, input.psiResultId),
-  });
-
-  if (!psi) return null;
-
-  const parentAudit = await db.query.audits.findFirst({
-    where: and(
-      eq(audits.id, psi.auditId),
-      eq(audits.projectId, input.projectId),
-    ),
-  });
-
-  if (!parentAudit) {
-    throw new Error("Audit not found");
+async function getAuditResultsForProject(auditId: string, projectId: string) {
+  const audit = await getAuditForProject(auditId, projectId);
+  if (!audit) {
+    return { audit: null, pages: [], lighthouse: [] };
   }
 
-  const page = await db.query.auditPages.findFirst({
-    where: eq(auditPages.id, psi.pageId),
+  const [pages, lighthouse] = await Promise.all([
+    db.query.auditPages.findMany({
+      where: eq(auditPages.auditId, auditId),
+    }),
+    db.query.auditLighthouseResults.findMany({
+      where: eq(auditLighthouseResults.auditId, auditId),
+    }),
+  ]);
+
+  return { audit, pages, lighthouse };
+}
+
+async function getLighthouseResultById(input: {
+  lighthouseResultId: string;
+  projectId: string;
+}) {
+  const lighthouse = await db.query.auditLighthouseResults.findFirst({
+    where: eq(auditLighthouseResults.id, input.lighthouseResultId),
   });
 
+  if (!lighthouse) {
+    return null;
+  }
+
+  const [parentAudit, page] = await Promise.all([
+    db.query.audits.findFirst({
+      where: and(
+        eq(audits.id, lighthouse.auditId),
+        eq(audits.projectId, input.projectId),
+      ),
+    }),
+    db.query.auditPages.findFirst({
+      where: eq(auditPages.id, lighthouse.pageId),
+    }),
+  ]);
+
+  if (!parentAudit) {
+    return null;
+  }
+
   return {
-    psi,
+    lighthouse,
     page,
     audit: parentAudit,
   };
 }
-
-// ─── Delete ──────────────────────────────────────────────────────────────────
 
 async function deleteAuditForProject(auditId: string, projectId: string) {
   await db
     .delete(audits)
     .where(and(eq(audits.id, auditId), eq(audits.projectId, projectId)));
 }
-
-// ─── Export ──────────────────────────────────────────────────────────────────
 
 export const AuditRepository = {
   createAudit,
@@ -333,8 +288,8 @@ export const AuditRepository = {
   batchWriteResults,
   getAuditForProject,
   getAuditsByProject,
-  getAuditResultsForProject,
   getAuditCapacityUsageForUser,
-  getPsiResultById,
+  getAuditResultsForProject,
+  getLighthouseResultById,
   deleteAuditForProject,
 } as const;

@@ -13,41 +13,46 @@ describe("audit capacity helpers", () => {
     expect(clampAuditMaxPages(20_000)).toBe(10_000);
   });
 
-  it("estimates capacity for each psi strategy", () => {
+  it("estimates capacity for each lighthouse strategy", () => {
     expect(
-      getEstimatedAuditCapacity({ maxPages: 100, psiStrategy: "none" }),
+      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "none" }),
     ).toEqual({
       pagesTotal: 100,
-      psiTotal: 0,
+      lighthouseTotal: 0,
       total: 100,
     });
     expect(
-      getEstimatedAuditCapacity({ maxPages: 100, psiStrategy: "manual" }),
+      getEstimatedAuditCapacity({
+        maxPages: 100,
+        lighthouseStrategy: "manual",
+      }),
     ).toEqual({
       pagesTotal: 100,
-      psiTotal: 0,
+      lighthouseTotal: 0,
       total: 100,
     });
     expect(
-      getEstimatedAuditCapacity({ maxPages: 100, psiStrategy: "auto" }),
+      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "auto" }),
     ).toEqual({
       pagesTotal: 100,
-      psiTotal: 20,
+      lighthouseTotal: 20,
       total: 120,
     });
     expect(
-      getEstimatedAuditCapacity({ maxPages: 100, psiStrategy: "all" }),
+      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "all" }),
     ).toEqual({
       pagesTotal: 100,
-      psiTotal: 200,
+      lighthouseTotal: 200,
       total: 300,
     });
   });
 
   it("stays within the global capacity limit for the maximum auto audit", () => {
     expect(
-      getEstimatedAuditCapacity({ maxPages: 10_000, psiStrategy: "auto" })
-        .total,
+      getEstimatedAuditCapacity({
+        maxPages: 10_000,
+        lighthouseStrategy: "auto",
+      }).total,
     ).toBeLessThan(MAX_USER_AUDIT_USAGE);
   });
 });

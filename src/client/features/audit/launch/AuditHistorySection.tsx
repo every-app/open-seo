@@ -38,7 +38,7 @@ export function AuditHistorySection({
                 <th>URL</th>
                 <th>Status</th>
                 <th>Pages</th>
-                <th>PSI</th>
+                <th>Lighthouse</th>
                 <th></th>
               </tr>
             </thead>
@@ -54,7 +54,7 @@ export function AuditHistorySection({
                   </td>
                   <td>{audit.pagesTotal || audit.pagesCrawled}</td>
                   <td>
-                    {audit.ranPsi ? (
+                    {audit.ranLighthouse ? (
                       <span className="badge badge-ghost badge-xs">Yes</span>
                     ) : null}
                   </td>

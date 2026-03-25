@@ -27,9 +27,6 @@ export const projects = sqliteTable("projects", {
     .references(() => organization.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
   domain: text("domain"),
-  // PSI keys are used for Google API abuse-control, not direct billing.
-  // We still keep handling explicit to make the tradeoff obvious.
-  pagespeedApiKey: text("pagespeed_api_key"),
   createdAt: text("created_at")
     .notNull()
     .default(sql`(current_timestamp)`),
@@ -123,14 +120,14 @@ export const audits = sqliteTable(
       .notNull()
       .default("running"),
     workflowInstanceId: text("workflow_instance_id"),
-    // JSON config: { maxPages, psiStrategy, psiApiKey? }
+    // JSON config: { maxPages, lighthouseStrategy }
     config: text("config").notNull().default("{}"),
     // Progress & summary
     pagesCrawled: integer("pages_crawled").notNull().default(0),
     pagesTotal: integer("pages_total").notNull().default(0),
-    psiTotal: integer("psi_total").notNull().default(0),
-    psiCompleted: integer("psi_completed").notNull().default(0),
-    psiFailed: integer("psi_failed").notNull().default(0),
+    lighthouseTotal: integer("lighthouse_total").notNull().default(0),
+    lighthouseCompleted: integer("lighthouse_completed").notNull().default(0),
+    lighthouseFailed: integer("lighthouse_failed").notNull().default(0),
     currentPhase: text("current_phase").default("discovery"),
     startedAt: text("started_at")
       .notNull()
@@ -196,10 +193,9 @@ export const auditPages = sqliteTable(
   (table) => [index("audit_pages_audit_id_idx").on(table.auditId)],
 );
 
-// PSI summaries captured as part of a site audit run.
-// These belong to audit pages and are the only PSI result records we keep.
-export const auditPsiResults = sqliteTable(
-  "audit_psi_results",
+// One row per Lighthouse test (mobile + desktop per page).
+export const auditLighthouseResults = sqliteTable(
+  "audit_lighthouse_results",
   {
     id: text("id").primaryKey(),
     auditId: text("audit_id")
@@ -221,5 +217,5 @@ export const auditPsiResults = sqliteTable(
     r2Key: text("r2_key"),
     payloadSizeBytes: integer("payload_size_bytes"),
   },
-  (table) => [index("audit_psi_results_audit_id_idx").on(table.auditId)],
+  (table) => [index("audit_lighthouse_results_audit_id_idx").on(table.auditId)],
 );

@@ -1,12 +1,10 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import type { RobotsResult } from "@/server/lib/audit/discovery";
+import type { StepPageResult } from "@/server/lib/audit/types";
 import { isSameOrigin, normalizeUrl } from "@/server/lib/audit/url-utils";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
-import {
-  crawlPage,
-  type StepPageResult,
-} from "@/server/workflows/site-audit-workflow-helpers";
+import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
 
 const CRAWL_CONCURRENCY = 25;
 

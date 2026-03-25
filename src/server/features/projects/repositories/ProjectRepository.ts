@@ -28,28 +28,6 @@ async function getProjectById(projectId: string) {
   });
 }
 
-async function getProjectPsiApiKey(projectId: string) {
-  const project = await db.query.projects.findFirst({
-    where: eq(projects.id, projectId),
-    columns: { pagespeedApiKey: true },
-  });
-  return project?.pagespeedApiKey ?? null;
-}
-
-async function setProjectPsiApiKey(projectId: string, apiKey: string) {
-  await db
-    .update(projects)
-    .set({ pagespeedApiKey: apiKey })
-    .where(eq(projects.id, projectId));
-}
-
-async function clearProjectPsiApiKey(projectId: string) {
-  await db
-    .update(projects)
-    .set({ pagespeedApiKey: null })
-    .where(eq(projects.id, projectId));
-}
-
 async function createProject(
   organizationId: string,
   name: string,
@@ -85,9 +63,6 @@ export const ProjectRepository = {
   listProjects,
   getProjectForOrganization,
   getProjectById,
-  getProjectPsiApiKey,
-  setProjectPsiApiKey,
-  clearProjectPsiApiKey,
   createProject,
   deleteProject,
 } as const;

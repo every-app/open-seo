@@ -1,50 +1,33 @@
-/**
- * Business logic layer for site audits.
- * Orchestrates between the workflow trigger, repository, and data formatting.
- */
 import { env } from "cloudflare:workers";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
-import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
-import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
-import { AppError } from "@/server/lib/errors";
-import type { AuditConfig, PsiStrategy } from "@/server/lib/audit/types";
-import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import {
+  MAX_USER_AUDIT_USAGE,
   clampAuditMaxPages,
   getEstimatedAuditCapacity,
-  MAX_USER_AUDIT_USAGE,
 } from "@/server/features/audit/services/audit-capacity";
-import { jsonCodec } from "@/shared/json";
-import { z } from "zod";
-
-const auditConfigSchema = z.object({
-  maxPages: z.number().int().min(10).max(10_000),
-  psiStrategy: z.enum(["auto", "all", "manual", "none"]),
-  psiApiKey: z.string().optional(),
-});
-
-const auditConfigCodec = jsonCodec(auditConfigSchema);
-
-function parseAuditConfig(configRaw: string | null): AuditConfig | null {
-  if (!configRaw) return null;
-  const result = auditConfigCodec.safeParse(configRaw);
-  return result.success ? result.data : null;
-}
+import { AppError } from "@/server/lib/errors";
+import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
+import {
+  parseAuditConfig,
+  type AuditConfig,
+  type LighthouseStrategy,
+} from "@/server/lib/audit/types";
+import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 
 async function startAudit(input: {
   actorUserId: string;
+  billingCustomer: BillingCustomerContext;
   projectId: string;
   startUrl: string;
   maxPages?: number;
-  psiStrategy?: PsiStrategy;
-  psiApiKey?: string;
+  lighthouseStrategy?: LighthouseStrategy;
 }) {
   const maxPages = clampAuditMaxPages(input.maxPages);
-  const psiStrategy = input.psiStrategy ?? "auto";
-
+  const lighthouseStrategy = input.lighthouseStrategy ?? "auto";
   const reservation = getEstimatedAuditCapacity({
     maxPages,
-    psiStrategy,
+    lighthouseStrategy,
   });
 
   const currentUsage = await AuditRepository.getAuditCapacityUsageForUser(
@@ -56,27 +39,7 @@ async function startAudit(input: {
   }
 
   const auditId = crypto.randomUUID();
-
-  const shouldRunPsi = psiStrategy !== "none";
-  let resolvedPsiApiKey = input.psiApiKey?.trim();
-
-  if (shouldRunPsi && !resolvedPsiApiKey) {
-    resolvedPsiApiKey =
-      (await ProjectRepository.getProjectPsiApiKey(input.projectId)) ??
-      undefined;
-  }
-
-  if (shouldRunPsi && !resolvedPsiApiKey) {
-    throw new Error("PSI API key is not set for this project.");
-  }
-
-  const config: AuditConfig = {
-    maxPages,
-    psiStrategy,
-    // PSI key is used for Google quota/abuse control (non-billing).
-    psiApiKey: resolvedPsiApiKey,
-  };
-
+  const config: AuditConfig = { maxPages, lighthouseStrategy };
   const startUrl = await normalizeAndValidateStartUrl(input.startUrl);
 
   await AuditRepository.createAudit({
@@ -87,15 +50,15 @@ async function startAudit(input: {
     workflowInstanceId: auditId,
     config,
     pagesTotal: reservation.pagesTotal,
-    psiTotal: reservation.psiTotal,
+    lighthouseTotal: reservation.lighthouseTotal,
   });
 
-  // Trigger the Cloudflare Workflow
   try {
     await env.SITE_AUDIT_WORKFLOW.create({
       id: auditId,
       params: {
         auditId,
+        billingCustomer: input.billingCustomer,
         projectId: input.projectId,
         startUrl,
         config,
@@ -108,6 +71,7 @@ async function startAudit(input: {
     } catch {
       // The workflow may never have been created, or may already be gone.
     }
+
     await AuditRepository.deleteAuditForProject(auditId, input.projectId);
     throw error;
   }
@@ -125,9 +89,9 @@ async function getStatus(auditId: string, projectId: string) {
     status: audit.status,
     pagesCrawled: audit.pagesCrawled,
     pagesTotal: audit.pagesTotal,
-    psiTotal: audit.psiTotal,
-    psiCompleted: audit.psiCompleted,
-    psiFailed: audit.psiFailed,
+    lighthouseTotal: audit.lighthouseTotal,
+    lighthouseCompleted: audit.lighthouseCompleted,
+    lighthouseFailed: audit.lighthouseFailed,
     currentPhase: audit.currentPhase,
     startedAt: audit.startedAt,
     completedAt: audit.completedAt,
@@ -135,10 +99,8 @@ async function getStatus(auditId: string, projectId: string) {
 }
 
 async function getResults(auditId: string, projectId: string) {
-  const { audit, pages, psi } = await AuditRepository.getAuditResultsForProject(
-    auditId,
-    projectId,
-  );
+  const { audit, pages, lighthouse } =
+    await AuditRepository.getAuditResultsForProject(auditId, projectId);
 
   if (!audit) throw new AppError("NOT_FOUND");
 
@@ -146,7 +108,6 @@ async function getResults(auditId: string, projectId: string) {
   if (!parsedConfig) {
     throw new AppError("INTERNAL_ERROR", "Invalid audit configuration");
   }
-  const { psiApiKey: _psiApiKey, ...safeConfig } = parsedConfig;
 
   return {
     audit: {
@@ -157,31 +118,31 @@ async function getResults(auditId: string, projectId: string) {
       pagesTotal: audit.pagesTotal,
       startedAt: audit.startedAt,
       completedAt: audit.completedAt,
-      config: safeConfig,
+      config: parsedConfig,
     },
     pages,
-    psi,
+    lighthouse,
   };
 }
 
 async function getHistory(projectId: string) {
   const auditList = await AuditRepository.getAuditsByProject(projectId);
 
-  const didRunPsi = (configRaw: string | null) => {
-    const parsed = parseAuditConfig(configRaw);
-    return parsed?.psiStrategy != null && parsed.psiStrategy !== "none";
-  };
+  return auditList.map((audit) => {
+    const parsedConfig = parseAuditConfig(audit.config);
+    const ranLighthouse = parsedConfig?.lighthouseStrategy !== "none";
 
-  return auditList.map((a) => ({
-    id: a.id,
-    startUrl: a.startUrl,
-    status: a.status,
-    pagesCrawled: a.pagesCrawled,
-    pagesTotal: a.pagesTotal,
-    ranPsi: didRunPsi(a.config),
-    startedAt: a.startedAt,
-    completedAt: a.completedAt,
-  }));
+    return {
+      id: audit.id,
+      startUrl: audit.startUrl,
+      status: audit.status,
+      pagesCrawled: audit.pagesCrawled,
+      pagesTotal: audit.pagesTotal,
+      ranLighthouse,
+      startedAt: audit.startedAt,
+      completedAt: audit.completedAt,
+    };
+  });
 }
 
 async function getCrawlProgress(auditId: string, projectId: string) {
@@ -189,6 +150,7 @@ async function getCrawlProgress(auditId: string, projectId: string) {
   if (!audit) {
     throw new AppError("NOT_FOUND");
   }
+
   return AuditProgressKV.getCrawledUrls(auditId);
 }
 
@@ -197,6 +159,7 @@ async function remove(auditId: string, projectId: string) {
   if (!audit) {
     throw new AppError("NOT_FOUND");
   }
+
   if (audit.status === "running") {
     if (!audit.workflowInstanceId) {
       throw new AppError(
@@ -215,6 +178,7 @@ async function remove(auditId: string, projectId: string) {
       throw new AppError("CONFLICT", "Unable to stop the running audit.");
     }
   }
+
   await AuditRepository.deleteAuditForProject(auditId, projectId);
 }
 

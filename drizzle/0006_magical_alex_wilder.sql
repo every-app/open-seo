@@ -1,0 +1,1 @@
+ALTER TABLE `projects` DROP COLUMN `pagespeed_api_key`;

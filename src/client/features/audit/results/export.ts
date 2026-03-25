@@ -15,7 +15,7 @@ export function exportPages(
   pages: AuditResultsData["pages"],
   format: "csv" | "json",
 ) {
-  const rows = pages.map((page) => ({
+  const rows = pages.map((page: AuditResultsData["pages"][number]) => ({
     url: page.url,
     statusCode: page.statusCode,
     title: page.title ?? "",
@@ -45,7 +45,7 @@ export function exportPages(
     "Missing Alt",
     "Response Time (ms)",
   ];
-  const lines = rows.map((row) => [
+  const lines = rows.map((row: (typeof rows)[number]) => [
     row.url,
     row.statusCode,
     row.title,
@@ -60,24 +60,29 @@ export function exportPages(
 }
 
 export function exportPerformance(
-  psi: AuditResultsData["psi"],
+  lighthouse: AuditResultsData["lighthouse"],
   pages: AuditResultsData["pages"],
   format: "csv" | "json",
 ) {
-  const rows = psi.map((result) => {
-    const page = pages.find((candidate) => candidate.id === result.pageId);
-    return {
-      url: page?.url ?? "",
-      strategy: result.strategy,
-      performance: result.performanceScore,
-      accessibility: result.accessibilityScore,
-      seo: result.seoScore,
-      lcpMs: result.lcpMs,
-      cls: result.cls,
-      inpMs: result.inpMs,
-      ttfbMs: result.ttfbMs,
-    };
-  });
+  const rows = lighthouse.map(
+    (result: AuditResultsData["lighthouse"][number]) => {
+      const page = pages.find(
+        (candidate: AuditResultsData["pages"][number]) =>
+          candidate.id === result.pageId,
+      );
+      return {
+        url: page?.url ?? "",
+        strategy: result.strategy,
+        performance: result.performanceScore,
+        accessibility: result.accessibilityScore,
+        seo: result.seoScore,
+        lcpMs: result.lcpMs,
+        cls: result.cls,
+        inpMs: result.inpMs,
+        ttfbMs: result.ttfbMs,
+      };
+    },
+  );
 
   if (format === "json") {
     downloadFile(
@@ -99,7 +104,7 @@ export function exportPerformance(
     "INP (ms)",
     "TTFB (ms)",
   ];
-  const lines = rows.map((row) => [
+  const lines = rows.map((row: (typeof rows)[number]) => [
     row.url,
     row.strategy,
     row.performance,

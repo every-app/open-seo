@@ -6,26 +6,33 @@ import {
   Info,
   TriangleAlert,
 } from "lucide-react";
-import type { CategoryTab, ExportPayload, PsiIssue } from "./types";
-import {
-  categoryLabel,
-  renderInlineMarkdown,
-  severityBadgeClass,
-  severityIcon,
-} from "./utils";
+import type {
+  CategoryTab,
+  ExportPayload,
+  LighthouseIssue,
+  LighthouseMetrics,
+  LighthouseScores,
+} from "./types";
+import { LighthouseIssueRow } from "./LighthouseIssueRow";
+import { LighthouseIssuesSummary } from "./LighthouseIssuesSummary";
+import { categoryLabel } from "./utils";
 import { categoryTabs } from "./types";
 
-export function PsiIssuesHeader({
+export function LighthouseIssuesHeader({
   backLabel,
   onBack,
   scannedAt,
   finalUrl,
+  scores,
+  metrics,
   severityCounts,
 }: {
   backLabel: string;
   onBack: () => void;
   scannedAt?: string;
   finalUrl?: string;
+  scores?: LighthouseScores | null;
+  metrics?: LighthouseMetrics | null;
   severityCounts: { critical: number; warning: number; info: number };
 }) {
   return (
@@ -44,11 +51,12 @@ export function PsiIssuesHeader({
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body py-5 gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">PSI Issues</h1>
+            <h1 className="text-2xl font-semibold">Lighthouse Issues</h1>
             <p className="text-sm text-base-content/70 break-all">
               {finalUrl ?? "Loading URL..."}
             </p>
           </div>
+          <LighthouseIssuesSummary scores={scores} metrics={metrics} />
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="badge border border-error/30 bg-error/10 text-error/80 gap-1">
               <FileWarning className="size-3" />
@@ -69,7 +77,7 @@ export function PsiIssuesHeader({
   );
 }
 
-export function PsiIssuesToolbar({
+export function LighthouseIssuesToolbar({
   category,
   categoryCounts,
   selectedCategoryLabel,
@@ -85,12 +93,12 @@ export function PsiIssuesToolbar({
   categoryCounts: Record<CategoryTab, number>;
   selectedCategoryLabel: string;
   isBusy: boolean;
-  visibleIssues: PsiIssue[];
-  allIssues: PsiIssue[];
+  visibleIssues: LighthouseIssue[];
+  allIssues: LighthouseIssue[];
   onCategoryChange: (next: CategoryTab) => void;
   onCopy: (data: ExportPayload, toastMessage: string) => void;
   onExport: (data: ExportPayload) => void;
-  onExportCsv: (issues: PsiIssue[], variant: "all" | "current") => void;
+  onExportCsv: (issues: LighthouseIssue[], variant: "all" | "current") => void;
 }) {
   const exportCurrentCategory: ExportPayload =
     category === "all" ? { mode: "issues" } : { mode: "category", category };
@@ -161,14 +169,14 @@ function ExportMenu({
   onExportCsv,
   visibleIssues,
 }: {
-  allIssues: PsiIssue[];
+  allIssues: LighthouseIssue[];
   categoryLabelLower: string;
   exportCurrentCategory: ExportPayload;
   isBusy: boolean;
   onCopy: (data: ExportPayload, toastMessage: string) => void;
   onExport: (data: ExportPayload) => void;
-  onExportCsv: (issues: PsiIssue[], variant: "all" | "current") => void;
-  visibleIssues: PsiIssue[];
+  onExportCsv: (issues: LighthouseIssue[], variant: "all" | "current") => void;
+  visibleIssues: LighthouseIssue[];
 }) {
   return (
     <div className="dropdown dropdown-end">
@@ -201,21 +209,23 @@ function ExportMenu({
         <li>
           <button
             disabled={isBusy}
-            onClick={() => onCopy({ mode: "issues" }, "Copied all issues")}
+            onClick={() =>
+              onCopy({ mode: "issues" }, "Copied all actionable issues")
+            }
           >
             <Copy className="size-4" />
-            Copy all issues
+            Copy all actionable issues
           </button>
         </li>
         <li>
           <button
             disabled={isBusy}
             onClick={() =>
-              onCopy({ mode: "full" }, "Copied full Lighthouse report")
+              onCopy({ mode: "full" }, "Copied saved Lighthouse payload")
             }
           >
             <Copy className="size-4" />
-            Copy full Lighthouse report
+            Copy saved Lighthouse payload
           </button>
         </li>
         <li className="menu-title">
@@ -234,12 +244,12 @@ function ExportMenu({
             disabled={isBusy}
             onClick={() => onExport({ mode: "issues" })}
           >
-            Download all issues
+            Download all actionable issues
           </button>
         </li>
         <li>
           <button disabled={isBusy} onClick={() => onExport({ mode: "full" })}>
-            Download full Lighthouse report
+            Download saved Lighthouse payload
           </button>
         </li>
         <li className="menu-title">
@@ -258,7 +268,7 @@ function ExportMenu({
             disabled={!allIssues.length}
             onClick={() => onExportCsv(allIssues, "all")}
           >
-            Download all issues
+            Download all actionable issues
           </button>
         </li>
       </ul>
@@ -266,12 +276,14 @@ function ExportMenu({
   );
 }
 
-export function PsiIssueList({
+export function LighthouseIssueList({
   issues,
   isLoading,
+  emptyMessage,
 }: {
-  issues: PsiIssue[];
+  issues: LighthouseIssue[];
   isLoading: boolean;
+  emptyMessage?: string;
 }) {
   if (isLoading) {
     return <p className="text-sm text-base-content/60">Loading issues...</p>;
@@ -279,84 +291,40 @@ export function PsiIssueList({
   if (!issues.length) {
     return (
       <p className="text-sm text-base-content/60">
-        No unresolved issues for this category.
+        {emptyMessage ?? "No actionable issues for this category."}
       </p>
     );
   }
   return (
-    <div className="space-y-3">
-      {issues.map((issue) => (
-        <PsiIssueCard
-          key={`${issue.category}-${issue.auditKey}`}
-          issue={issue}
-        />
-      ))}
-    </div>
-  );
-}
-
-function PsiIssueCard({ issue }: { issue: PsiIssue }) {
-  return (
-    <div className="card bg-base-200/30 border border-base-300">
-      <div className="card-body p-5 gap-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="badge badge-outline">{issue.category}</span>
-            <span
-              className={`badge border ${severityBadgeClass(issue.severity)} gap-1`}
-            >
-              {severityIcon(issue.severity)}
-              {issue.severity}
-            </span>
-            {issue.score != null ? (
-              <div
-                className="tooltip tooltip-top"
-                data-tip="Lighthouse score from 0-100 for this audit. Lower means larger opportunity for improvement."
-              >
-                <span className="badge badge-ghost cursor-help">
-                  Score {issue.score}
-                </span>
-              </div>
-            ) : null}
-          </div>
-
-          {issue.impactMs != null || issue.impactBytes != null ? (
-            <span className="text-xs text-base-content/60">
-              Impact {issue.impactMs ?? 0}ms / {issue.impactBytes ?? 0} bytes
-            </span>
-          ) : null}
-        </div>
-
-        <p className="font-semibold leading-tight">{issue.title}</p>
-
-        {issue.displayValue ? (
-          <p className="text-sm text-base-content/70">{issue.displayValue}</p>
-        ) : null}
-
-        {issue.description ? (
-          <div className="text-sm text-base-content/80 leading-relaxed">
-            {renderInlineMarkdown(issue.description)}
-          </div>
-        ) : null}
-
-        {issue.items.length > 0 ? (
-          <details className="text-sm bg-base-100 rounded-box border border-base-300/80 px-3 py-2">
-            <summary className="cursor-pointer font-medium text-base-content/75">
-              Affected items ({issue.items.length})
-            </summary>
-            <div className="mt-2 space-y-2">
-              {issue.items.map((item) => (
-                <pre
-                  key={`${issue.auditKey}-${item}`}
-                  className="bg-base-200/60 p-2 rounded-box overflow-x-auto text-xs"
-                >
-                  {item}
-                </pre>
-              ))}
-            </div>
-          </details>
-        ) : null}
-      </div>
-    </div>
+    <table className="table table-sm w-full table-fixed">
+      <colgroup>
+        <col className="w-8" />
+        <col className="w-24" />
+        <col />
+        <col className="w-28 hidden sm:table-column" />
+        <col className="w-28 hidden md:table-column" />
+        <col className="w-14" />
+      </colgroup>
+      <thead>
+        <tr className="text-xs text-base-content/50 uppercase tracking-wide border-b border-base-300">
+          <th />
+          <th className="font-medium">Severity</th>
+          <th className="font-medium">Issue</th>
+          <th className="font-medium hidden sm:table-cell">Category</th>
+          <th className="font-medium hidden md:table-cell text-right">
+            Impact
+          </th>
+          <th className="font-medium text-right">Score</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-base-300/60">
+        {issues.map((issue, issueIndex) => (
+          <LighthouseIssueRow
+            key={`${issue.category}-${issue.auditKey}-${issueIndex}`}
+            issue={issue}
+          />
+        ))}
+      </tbody>
+    </table>
   );
 }

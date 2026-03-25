@@ -2,9 +2,34 @@ import { ChevronDown, Download, ExternalLink } from "lucide-react";
 import {
   extractPathname,
   HttpStatusBadge,
-  PsiScoreBadge,
+  LighthouseScoreBadge,
 } from "@/client/features/audit/shared";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
+
+type LighthouseFailureFields = {
+  errorMessage: string | null;
+  performanceScore: number | null;
+  accessibilityScore: number | null;
+  bestPracticesScore: number | null;
+  seoScore: number | null;
+};
+
+function hasMissingLighthouseScores(row: LighthouseFailureFields) {
+  return (
+    row.performanceScore == null &&
+    row.accessibilityScore == null &&
+    row.bestPracticesScore == null &&
+    row.seoScore == null
+  );
+}
+
+export function isLighthouseFailure(row: LighthouseFailureFields) {
+  return !!row.errorMessage || hasMissingLighthouseScores(row);
+}
+
+function getLighthouseFailureMessage(row: LighthouseFailureFields) {
+  return row.errorMessage ?? "Lighthouse returned no category scores";
+}
 
 export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
   return (
@@ -22,7 +47,7 @@ export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
           </tr>
         </thead>
         <tbody>
-          {pages.map((page) => (
+          {pages.map((page: AuditResultsData["pages"][number]) => (
             <tr key={page.id}>
               <td className="max-w-[200px] truncate">
                 <a
@@ -66,12 +91,14 @@ export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
 }
 
 export function PerformanceTable({
+  auditId,
   projectId,
-  psi,
+  lighthouse,
   pages,
 }: {
+  auditId: string;
   projectId: string;
-  psi: AuditResultsData["psi"];
+  lighthouse: AuditResultsData["lighthouse"];
   pages: AuditResultsData["pages"];
 }) {
   return (
@@ -93,12 +120,16 @@ export function PerformanceTable({
           </tr>
         </thead>
         <tbody>
-          {psi.map((result) => (
+          {lighthouse.map((result: AuditResultsData["lighthouse"][number]) => (
             <PerformanceRow
               key={result.id}
+              auditId={auditId}
               projectId={projectId}
               result={result}
-              page={pages.find((candidate) => candidate.id === result.pageId)}
+              page={pages.find(
+                (candidate: AuditResultsData["pages"][number]) =>
+                  candidate.id === result.pageId,
+              )}
             />
           ))}
         </tbody>
@@ -108,15 +139,18 @@ export function PerformanceTable({
 }
 
 function PerformanceRow({
+  auditId,
   projectId,
   result,
   page,
 }: {
+  auditId: string;
   projectId: string;
-  result: AuditResultsData["psi"][number];
+  result: AuditResultsData["lighthouse"][number];
   page: AuditResultsData["pages"][number] | undefined;
 }) {
-  const isFailed = !!result.errorMessage;
+  const isFailed = isLighthouseFailure(result);
+  const failureMessage = getLighthouseFailureMessage(result);
 
   return (
     <tr>
@@ -128,7 +162,7 @@ function PerformanceRow({
         {isFailed ? (
           <span
             className="badge badge-error badge-outline text-xs"
-            title={result.errorMessage ?? "PSI check failed"}
+            title={failureMessage}
           >
             failed
           </span>
@@ -137,13 +171,13 @@ function PerformanceRow({
         )}
       </td>
       <td>
-        <PsiScoreBadge score={result.performanceScore} />
+        <LighthouseScoreBadge score={result.performanceScore} />
       </td>
       <td>
-        <PsiScoreBadge score={result.accessibilityScore} />
+        <LighthouseScoreBadge score={result.accessibilityScore} />
       </td>
       <td>
-        <PsiScoreBadge score={result.seoScore} />
+        <LighthouseScoreBadge score={result.seoScore} />
       </td>
       <td className="text-xs">
         {result.lcpMs ? `${(result.lcpMs / 1000).toFixed(1)}s` : "-"}
@@ -158,10 +192,10 @@ function PerformanceRow({
         {result.ttfbMs ? `${Math.round(result.ttfbMs)}ms` : "-"}
       </td>
       <td>
-        {result.r2Key ? (
+        {result.r2Key && !isFailed ? (
           <a
             className="btn btn-primary btn-xs"
-            href={`/p/${projectId}/audit/issues/${result.id}?category=performance`}
+            href={`/p/${projectId}/audit/issues/${result.id}?auditId=${auditId}&category=performance`}
           >
             View issues
           </a>

@@ -1,21 +1,21 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PsiIssuesScreen } from "@/client/features/psi/issues/PsiIssuesScreen";
-import { psiIssuesSearchSchema } from "@/types/schemas/psi";
+import { LighthouseIssuesScreen } from "@/client/features/lighthouse/issues/LighthouseIssuesScreen";
+import { lighthouseIssuesSearchSchema } from "@/types/schemas/lighthouse";
 
 export const Route = createFileRoute(
   "/_project/p/$projectId/audit/issues/$resultId",
 )({
-  validateSearch: psiIssuesSearchSchema,
+  validateSearch: lighthouseIssuesSearchSchema,
   component: AuditIssuesPage,
 });
 
 function AuditIssuesPage() {
   const { projectId, resultId } = Route.useParams();
-  const { category } = Route.useSearch();
+  const { auditId, category } = Route.useSearch();
   const navigate = useNavigate({ from: Route.fullPath });
 
   return (
-    <PsiIssuesScreen
+    <LighthouseIssuesScreen
       projectId={projectId}
       resultId={resultId}
       category={category}
@@ -24,6 +24,7 @@ function AuditIssuesPage() {
         void navigate({
           to: "/p/$projectId/audit",
           params: { projectId },
+          search: auditId ? { auditId } : undefined,
         })
       }
       onCategoryChange={(next) =>

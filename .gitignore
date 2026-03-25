@@ -32,3 +32,6 @@ dist/
 
 # Localflare generated files
 .localflare/
+
+# Local Claude config
+.claude/

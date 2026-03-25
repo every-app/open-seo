@@ -18,6 +18,9 @@ import {
   type LabsKeywordDataItem,
   type SerpLiveItem,
 } from "@/server/lib/dataforseo";
+import { fetchDataforseoLighthouseResultRaw } from "@/server/lib/dataforseoLighthouse";
+import type { LighthouseStrategy } from "@/server/lib/dataforseoLighthousePayload";
+import type { StoredLighthousePayload } from "@/server/lib/lighthouseStoredPayload";
 import {
   fetchBacklinksRowsRaw,
   fetchBacklinksSummaryRaw,
@@ -163,6 +166,13 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
             input.locationCode,
             input.languageCode,
           ),
+        );
+      },
+    },
+    lighthouse: {
+      live(input: { url: string; strategy: LighthouseStrategy }) {
+        return meterDataforseoCall<StoredLighthousePayload>(customer, () =>
+          fetchDataforseoLighthouseResultRaw(input),
         );
       },
     },
