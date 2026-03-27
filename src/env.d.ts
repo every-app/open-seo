@@ -8,6 +8,8 @@ declare namespace Cloudflare {
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
+    POSTHOG_PUBLIC_KEY?: string;
+    POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
 
@@ -18,6 +20,8 @@ declare namespace Cloudflare {
 
 interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+  readonly POSTHOG_PUBLIC_KEY?: string;
+  readonly POSTHOG_HOST?: string;
 }
 
 interface ImportMeta {

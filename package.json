@@ -64,6 +64,8 @@
     "jose": "^6.0.12",
     "lucide-react": "^0.542.0",
     "papaparse": "^5.5.3",
+    "posthog-js": "^1.363.5",
+    "posthog-node": "^5.28.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^3.7.0",

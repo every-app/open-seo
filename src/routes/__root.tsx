@@ -11,8 +11,10 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
+import { initPostHog } from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { Toaster } from "sonner";
 import { queryClient } from "@/client/tanstack-db";
 
@@ -68,6 +70,20 @@ function AppLayout() {
   return <Outlet />;
 }
 
+function PostHogBootstrap() {
+  const isHostedMode = isHostedClientAuthMode();
+
+  React.useEffect(() => {
+    if (!isHostedMode) {
+      return;
+    }
+
+    initPostHog();
+  }, [isHostedMode]);
+
+  return null;
+}
+
 function RootDocument({ children }: { children: React.ReactNode }) {
   const showDevtools =
     import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
@@ -81,6 +97,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <ClientOnly>
           <QueryClientProvider client={queryClient}>
             <>
+              <PostHogBootstrap />
               {children}
               <Toaster position="bottom-right" mobileOffset={{ bottom: 100 }} />
               {showDevtools ? (
