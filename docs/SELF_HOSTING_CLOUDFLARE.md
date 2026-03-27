@@ -32,7 +32,19 @@ In the Cloudflare dashboard:
    - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
    - `DATAFORSEO_API_KEY`
 
-### 3) Validate setup
+### 3) Optional: add an R2 lifecycle rule
+
+DataForSEO API responses are cached in R2 under the `dataforseo-cache/` prefix. This step is optional, but recommended to automatically clean up expired cache objects:
+
+```bash
+npx wrangler r2 bucket lifecycle add open-seo dataforseo-cache-expiry dataforseo-cache/ --expire-days 7
+```
+
+If you changed the R2 bucket name during deploy, replace `open-seo` with your bucket name.
+
+Without a lifecycle rule, cached objects under `dataforseo-cache/` will accumulate indefinitely and increase storage costs over time.
+
+### 4) Validate setup
 
 1. Open your Worker URL again.
 2. Sign in with Cloudflare Access.

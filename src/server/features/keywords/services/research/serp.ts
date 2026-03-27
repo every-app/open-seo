@@ -1,5 +1,5 @@
 import { type SerpLiveItem } from "@/server/lib/dataforseoClient";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
+import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { SerpResultItem } from "@/types/keywords";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
@@ -64,7 +64,7 @@ async function getSerpLiveAnalysis(
 ): Promise<SerpAnalysisResult> {
   const keyword = normalizeKeyword(input.keyword);
 
-  const cacheKey = buildCacheKey("serp:analysis", {
+  const cacheKey = await buildCacheKey("serp:analysis", {
     organizationId: billingCustomer.organizationId,
     keyword,
     locationCode: input.locationCode,

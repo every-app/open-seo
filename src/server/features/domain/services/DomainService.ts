@@ -4,7 +4,7 @@ import {
   type DomainRankedKeywordItem,
 } from "@/server/lib/dataforseo";
 import { sortBy } from "remeda";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
+import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
@@ -81,8 +81,7 @@ async function getOverview(
 ): Promise<DomainOverviewResult> {
   const domain = normalizeDomainInput(input.domain, input.includeSubdomains);
 
-  // --- KV cache check ---
-  const cacheKey = buildCacheKey("domain:overview", {
+  const cacheKey = await buildCacheKey("domain:overview", {
     organizationId: billingCustomer.organizationId,
     domain,
     includeSubdomains: input.includeSubdomains,
@@ -148,7 +147,6 @@ async function getOverview(
     fetchedAt: nowIso,
   };
 
-  // Persist to KV (fire-and-forget; don't block response)
   if (result.hasData) {
     void setCached(cacheKey, result, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
       (error) => {

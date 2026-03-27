@@ -7,6 +7,15 @@ const domainPagesMock = vi.fn();
 const timeseriesSummaryMock = vi.fn();
 const newLostTimeseriesMock = vi.fn();
 
+vi.mock("@/server/lib/r2-cache", () => ({
+  buildCacheKey: vi.fn(
+    async (prefix: string, params: Record<string, unknown>) =>
+      `${prefix}:${JSON.stringify(params)}`,
+  ),
+  getCached: vi.fn(async () => null),
+  setCached: vi.fn(async () => undefined),
+}));
+
 vi.mock("@/server/lib/dataforseoBacklinks", () => ({
   normalizeBacklinksTarget: vi.fn(),
 }));

@@ -1,4 +1,4 @@
-import { buildCacheKey, getCached, setCached } from "@/server/lib/kv-cache";
+import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinks";
 import {
   profileBacklinksOverview,
@@ -20,20 +20,23 @@ function createBacklinksService(cache: BacklinksCache = defaultCache) {
       input: BacklinksLookupInput,
       billingCustomer: BillingCustomerContext,
     ) {
-      return profileBacklinksOverview(
-        cache,
-        buildOverviewCacheKey(input, billingCustomer),
-        input,
-        billingCustomer,
-      );
+      const cacheKey = await buildOverviewCacheKey(input, billingCustomer);
+
+      return profileBacklinksOverview(cache, cacheKey, input, billingCustomer);
     },
     async profileReferringDomains(
       input: BacklinksLookupInput,
       billingCustomer: BillingCustomerContext,
     ) {
+      const cacheKey = await buildTabCacheKey(
+        "backlinks:referring-domains",
+        input,
+        billingCustomer,
+      );
+
       return profileReferringDomainsRows(
         cache,
-        buildTabCacheKey("backlinks:referring-domains", input, billingCustomer),
+        cacheKey,
         input,
         billingCustomer,
       );
@@ -42,20 +45,21 @@ function createBacklinksService(cache: BacklinksCache = defaultCache) {
       input: BacklinksLookupInput,
       billingCustomer: BillingCustomerContext,
     ) {
-      return profileTopPagesRows(
-        cache,
-        buildTabCacheKey("backlinks:top-pages", input, billingCustomer),
+      const cacheKey = await buildTabCacheKey(
+        "backlinks:top-pages",
         input,
         billingCustomer,
       );
+
+      return profileTopPagesRows(cache, cacheKey, input, billingCustomer);
     },
   } as const;
 }
 
-function buildOverviewCacheKey(
+async function buildOverviewCacheKey(
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
-) {
+): Promise<string> {
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
@@ -70,11 +74,11 @@ function buildOverviewCacheKey(
   });
 }
 
-function buildTabCacheKey(
+async function buildTabCacheKey(
   prefix: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
-) {
+): Promise<string> {
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });

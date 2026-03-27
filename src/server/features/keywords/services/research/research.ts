@@ -5,7 +5,7 @@ import {
   buildCacheKey,
   getCached,
   setCached,
-} from "@/server/lib/kv-cache";
+} from "@/server/lib/r2-cache";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { ResearchKeywordsInput } from "@/types/schemas/keywords";
@@ -201,12 +201,12 @@ function isUsableCachedResult(cached: CachedResult): boolean {
   return true;
 }
 
-function buildResearchCacheKey(
+async function buildResearchCacheKey(
   input: ResearchKeywordsInput,
   normalizedKeywords: string[],
   mode: KeywordMode,
   billingCustomer: BillingCustomerContext,
-): string {
+): Promise<string> {
   return buildCacheKey("kw:research", {
     cacheVersion: CACHE_VERSION,
     organizationId: billingCustomer.organizationId,
@@ -255,7 +255,7 @@ export async function research(
 
   const seedKeyword = uniqueKeywords[0];
   const mode = getMode(input);
-  const cacheKey = buildResearchCacheKey(
+  const cacheKey = await buildResearchCacheKey(
     input,
     uniqueKeywords,
     mode,
