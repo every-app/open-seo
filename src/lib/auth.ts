@@ -1,4 +1,4 @@
-import { env } from "cloudflare:workers";
+import { env, waitUntil } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -6,6 +6,10 @@ import { db } from "@/db";
 import { z } from "zod";
 import { baseAuthConfig } from "@/lib/auth-config";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
+import {
+  sendHostedPasswordResetEmail,
+  sendHostedVerificationEmail,
+} from "@/server/email/loops";
 
 const hostedBaseUrlSchema = z
   .string()
@@ -25,6 +29,35 @@ function createAuth() {
     baseURL: baseUrl,
     secret: getHostedSecret(),
     ...baseAuthConfig,
+    advanced: {
+      backgroundTasks: {
+        handler: (promise) => {
+          waitUntil(promise);
+        },
+      },
+    },
+    emailAndPassword: {
+      ...baseAuthConfig.emailAndPassword,
+      requireEmailVerification: true,
+      resetPasswordTokenExpiresIn: 60 * 60,
+      revokeSessionsOnPasswordReset: true,
+      sendResetPassword: async ({ user, url }) => {
+        await sendHostedPasswordResetEmail({
+          email: user.email,
+          resetUrl: url,
+        });
+      },
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      autoSignInAfterVerification: true,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendHostedVerificationEmail({
+          email: user.email,
+          confirmationUrl: url,
+        });
+      },
+    },
     trustedOrigins: getTrustedOrigins(baseUrl),
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -95,11 +128,24 @@ function getHostedSecret() {
   return secret;
 }
 
+function hasHostedAuthEmailConfig() {
+  const loopsVars = [
+    "LOOPS_API_KEY",
+    "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID",
+    "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID",
+  ];
+
+  return loopsVars.every((name) => {
+    const value: unknown = Reflect.get(env, name);
+    return typeof value === "string" && value.trim() !== "";
+  });
+}
+
 export function hasHostedAuthConfig() {
   try {
     getHostedBaseUrl();
     getHostedSecret();
-    return true;
+    return hasHostedAuthEmailConfig();
   } catch {
     return false;
   }

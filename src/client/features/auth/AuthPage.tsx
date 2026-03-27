@@ -20,7 +20,19 @@ export function useAuthPageState(redirect: string | undefined) {
 }
 
 export function getFieldError(errors: unknown[]) {
-  return typeof errors[0] === "string" ? errors[0] : null;
+  const first = errors[0];
+  if (typeof first === "string") return first;
+  if (first && typeof first === "object" && "message" in first)
+    return String((first as { message: unknown }).message);
+  return null;
+}
+
+export function getFormError(error: unknown): string | null {
+  if (!error) return null;
+  if (typeof error === "string") return error;
+  if (typeof error === "object" && "form" in error)
+    return String((error as { form: unknown }).form);
+  return null;
 }
 
 export function AuthPageCard({
@@ -45,6 +57,16 @@ export function AuthPageCard({
         {children}
 
         {footer}
+      </div>
+    </div>
+  );
+}
+
+export function AuthPageShell({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-[100dvh] bg-base-200">
+      <div className="min-h-[100dvh] flex items-center justify-center p-4">
+        {children}
       </div>
     </div>
   );

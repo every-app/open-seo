@@ -1,6 +1,9 @@
 import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { authRedirectSearchSchema } from "@/client/features/auth/AuthPage";
+import {
+  AuthPageShell,
+  authRedirectSearchSchema,
+} from "@/client/features/auth/AuthPage";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
@@ -30,10 +33,8 @@ function AuthPageLayout() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-base-200">
-      <div className="min-h-[100dvh] flex items-center justify-center p-4">
-        <Outlet />
-      </div>
-    </div>
+    <AuthPageShell>
+      <Outlet />
+    </AuthPageShell>
   );
 }

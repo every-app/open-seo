@@ -1,9 +1,10 @@
 import { useForm } from "@tanstack/react-form";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   AuthPageCard,
   authRedirectSearchSchema,
   getFieldError,
+  getFormError,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
 import { authClient } from "@/lib/auth-client";
@@ -16,7 +17,7 @@ import { z } from "zod";
 
 const signUpSchema = z
   .object({
-    name: z.string().trim().optional(),
+    name: z.string().trim(),
     email: z.string().trim().email("Enter a valid email address."),
     password: z
       .string()
@@ -35,13 +36,6 @@ const signUpSchema = z
     path: ["confirmPassword"],
   });
 
-type SignUpValues = {
-  name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-};
-
 export const Route = createFileRoute("/_auth/sign-up")({
   validateSearch: authRedirectSearchSchema,
   component: SignUpPage,
@@ -50,36 +44,12 @@ export const Route = createFileRoute("/_auth/sign-up")({
 function getHelperText(isHostedMode: boolean) {
   return isHostedMode
     ? "Create your OpenSEO account."
-    : "Account creation is only available when AUTH_MODE=hosted.";
-}
-
-function getSignUpValidationErrors(value: SignUpValues) {
-  const parsed = signUpSchema.safeParse(value);
-
-  if (parsed.success) {
-    return null;
-  }
-
-  return {
-    form:
-      parsed.error.issues[0]?.message || "Please check your account details.",
-    fields: parsed.error.issues.reduce<Record<string, string>>(
-      (errors, issue) => {
-        const path = issue.path.join(".");
-
-        if (path && !errors[path]) {
-          errors[path] = issue.message;
-        }
-
-        return errors;
-      },
-      {},
-    ),
-  };
+    : "Account creation isn't available right now.";
 }
 
 function SignUpPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const { redirectTo, isHostedMode, isSessionPending } = useAuthPageState(
     search.redirect,
   );
@@ -93,7 +63,7 @@ function SignUpPage() {
       confirmPassword: "",
     },
     validators: {
-      onSubmit: ({ value }) => getSignUpValidationErrors(value),
+      onSubmit: signUpSchema,
     },
     onSubmit: async ({ formApi, value }) => {
       try {
@@ -104,17 +74,34 @@ function SignUpPage() {
           name: resolvedName,
           email,
           password: value.password,
-          callbackURL: redirectTo,
+          callbackURL: (() => {
+            const url = new URL("/verify-email", window.location.origin);
+            if (redirectTo !== "/")
+              url.searchParams.set("redirect", redirectTo);
+            return url.toString();
+          })(),
         });
 
         if (result.error) {
           formApi.setErrorMap({
-            onSubmit: result.error.message || "Unable to create account.",
+            onSubmit: {
+              form: result.error.message || "We couldn't create your account.",
+              fields: {},
+            },
           });
+          return;
         }
+
+        void navigate({
+          to: "/verify-email",
+          search: { email, ...getSignInSearch(redirectTo) },
+        });
       } catch {
         formApi.setErrorMap({
-          onSubmit: "Unable to create account right now. Please try again.",
+          onSubmit: {
+            form: "We couldn't create your account right now. Please try again.",
+            fields: {},
+          },
         });
       }
     },
@@ -265,19 +252,22 @@ function SignUpPage() {
             isSubmitting: state.isSubmitting,
           })}
         >
-          {({ submitError, isSubmitting }) => (
-            <>
-              {submitError ? (
-                <p className="text-sm text-error">{submitError}</p>
-              ) : null}
-              <button
-                className="btn btn-primary w-full"
-                disabled={!isHostedMode || isSessionPending || isSubmitting}
-              >
-                {isSubmitting ? "Creating account..." : "Create account"}
-              </button>
-            </>
-          )}
+          {({ submitError, isSubmitting }) => {
+            const errorMessage = getFormError(submitError);
+            return (
+              <>
+                {errorMessage ? (
+                  <p className="text-sm text-error">{errorMessage}</p>
+                ) : null}
+                <button
+                  className="btn btn-primary w-full"
+                  disabled={!isHostedMode || isSessionPending || isSubmitting}
+                >
+                  {isSubmitting ? "Creating account..." : "Create account"}
+                </button>
+              </>
+            );
+          }}
         </form.Subscribe>
       </form>
     </AuthPageCard>
