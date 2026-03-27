@@ -1,26 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { toCanonicalUrl } from "@/lib/seo";
+import { buildPageSeo } from "@/lib/seo";
 
 const homeTitle = "OpenSEO - Open Source SEO Platform";
 const homeDescription =
   "Own your SEO. OpenSEO helps teams manage keyword research, backlink analysis, competitor monitoring, and site audits without expensive monthly SEO software subscriptions.";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: homeTitle },
-      { name: "description", content: homeDescription },
-      { property: "og:type", content: "website" },
-      { property: "og:title", content: homeTitle },
-      { property: "og:description", content: homeDescription },
-      { property: "og:url", content: toCanonicalUrl("/") },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: homeTitle },
-      { name: "twitter:description", content: homeDescription },
-    ],
-    links: [{ rel: "canonical", href: toCanonicalUrl("/") }],
-  }),
+  head: () =>
+    buildPageSeo({
+      title: homeTitle,
+      description: homeDescription,
+      path: "/",
+      imageAlt: "OpenSEO keyword research dashboard preview",
+    }),
   component: Home,
 });
 
