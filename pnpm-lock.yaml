@@ -30,8 +30,8 @@ importers:
         specifier: ^1.136.3
         version: 1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
       autumn-js:
-        specifier: ^1.1.2
-        version: 1.1.2(better-auth@1.5.5(@cloudflare/workers-types@4.20260302.0)(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20260302.0)(@libsql/client@0.15.15)(kysely@0.28.12))(mongodb@7.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@3.2.4(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(better-call@1.3.2(zod@4.3.6))(react@19.2.4)
+        specifier: ^1.1.7
+        version: 1.1.7(better-auth@1.5.5(@cloudflare/workers-types@4.20260302.0)(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20260302.0)(@libsql/client@0.15.15)(kysely@0.28.12))(mongodb@7.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@3.2.4(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(better-call@1.3.2(zod@4.3.6))(react@19.2.4)
       better-auth:
         specifier: ^1.5.5
         version: 1.5.5(@cloudflare/workers-types@4.20260302.0)(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20260302.0)(@libsql/client@0.15.15)(kysely@0.28.12))(mongodb@7.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@3.2.4(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0))
@@ -2044,8 +2044,8 @@ packages:
   asynckit@0.4.0:
     resolution: {integrity: sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q==}
 
-  autumn-js@1.1.2:
-    resolution: {integrity: sha512-glSAvGJ6G8cJKLH6enonQ0WverZUMnGirv6hYzMBZViFqAiU6IDrEbbD0Xl7LGUN/pUjd9JgVwrmxeu3cnLO0g==}
+  autumn-js@1.1.7:
+    resolution: {integrity: sha512-wd7dbaVY1ZORIS2nSIvcuroD6wfbW3qZhiKB/1zN2r851116iVILuaV83cC6GRMKs6b93dFOjpuMmnUtlRYj3A==}
     peerDependencies:
       better-auth: ^1.3.17
       better-call: ^1.0.12
@@ -5066,7 +5066,7 @@ snapshots:
 
   asynckit@0.4.0: {}
 
-  autumn-js@1.1.2(better-auth@1.5.5(@cloudflare/workers-types@4.20260302.0)(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20260302.0)(@libsql/client@0.15.15)(kysely@0.28.12))(mongodb@7.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@3.2.4(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(better-call@1.3.2(zod@4.3.6))(react@19.2.4):
+  autumn-js@1.1.7(better-auth@1.5.5(@cloudflare/workers-types@4.20260302.0)(@tanstack/react-start@1.162.4(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vite@7.3.1(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(drizzle-kit@0.31.9)(drizzle-orm@0.44.7(@cloudflare/workers-types@4.20260302.0)(@libsql/client@0.15.15)(kysely@0.28.12))(mongodb@7.1.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@3.2.4(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)))(better-call@1.3.2(zod@4.3.6))(react@19.2.4):
     dependencies:
       query-string: 9.3.1
       rou3: 0.6.3

@@ -1,7 +1,11 @@
 import { CreditCard } from "lucide-react";
 import type { ReactNode } from "react";
 
-export function BillingHeader({ hasPaidPlan }: { hasPaidPlan: boolean }) {
+export function BillingHeader(args: {
+  hasManagedServiceAccess: boolean;
+  basePlanName: string;
+  includedCreditsLabel: string;
+}) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2 text-sm text-base-content/60">
@@ -9,49 +13,55 @@ export function BillingHeader({ hasPaidPlan }: { hasPaidPlan: boolean }) {
         Hosted billing
       </div>
       <h1 className="text-3xl font-semibold">
-        {hasPaidPlan ? "Billing" : "Choose a plan"}
+        {args.hasManagedServiceAccess ? "Billing" : "Choose a plan"}
       </h1>
       <p className="max-w-2xl text-base-content/70">
-        {hasPaidPlan
-          ? "OpenSEO hosted usage is metered against your shared backlinks balance. Your monthly plan covers the first $5, and extra top-ups carry forward."
-          : "You need a paid plan to use OpenSEO's managed service. The base plan costs $5/month and includes $5 of usage credits. If you use all of those credits, you can buy more at any time."}
+        {args.hasManagedServiceAccess
+          ? `OpenSEO hosted usage is metered against your shared backlinks balance. ${args.basePlanName} includes ${args.includedCreditsLabel} of usage credits each cycle, and extra top-ups carry forward.`
+          : `You need an active ${args.basePlanName} subscription to use OpenSEO's managed service. It includes ${args.includedCreditsLabel} of usage credits each cycle, and you can buy more at any time.`}
       </p>
     </div>
   );
 }
 
-export function SubscriptionIntro({ hasPaidPlan }: { hasPaidPlan: boolean }) {
+export function SubscriptionIntro(args: {
+  hasManagedServiceAccess: boolean;
+  basePlanName: string;
+}) {
   return (
     <div>
       <h2 className="text-xl font-semibold">
-        {hasPaidPlan ? "Subscription" : "Managed service access"}
+        {args.hasManagedServiceAccess
+          ? "Subscription"
+          : "Managed service access"}
       </h2>
       <p className="text-sm text-base-content/65">
-        {hasPaidPlan
+        {args.hasManagedServiceAccess
           ? "Hosted workspaces need an active paid plan before project pages and DataForSEO-backed features are available."
-          : "Start the base plan to unlock OpenSEO's managed service and your included monthly usage credits."}
+          : `Start ${args.basePlanName} to unlock OpenSEO's managed service and your included monthly usage credits.`}
       </p>
     </div>
   );
 }
 
-export function SubscriptionStatusCard({
-  hasPaidPlan,
-}: {
-  hasPaidPlan: boolean;
+export function SubscriptionStatusCard(args: {
+  hasManagedServiceAccess: boolean;
+  basePlanName: string;
+  basePlanPrice: string;
+  includedCreditsLabel: string;
 }) {
   return (
     <div className="rounded-2xl border border-base-300 bg-base-200/50 p-4">
       <div className="text-sm text-base-content/60">
-        {hasPaidPlan ? "Current status" : "Base plan"}
+        {args.hasManagedServiceAccess ? "Current status" : args.basePlanName}
       </div>
       <div className="mt-1 text-2xl font-semibold">
-        {hasPaidPlan ? "Active" : "$5/month"}
+        {args.hasManagedServiceAccess ? "Active" : args.basePlanPrice}
       </div>
       <div className="mt-2 text-sm text-base-content/70">
-        {hasPaidPlan
+        {args.hasManagedServiceAccess
           ? "Your organization can use hosted OpenSEO features."
-          : "Includes $5 of usage credits every month."}
+          : `Includes ${args.includedCreditsLabel} of usage credits every cycle.`}
       </div>
     </div>
   );
@@ -59,7 +69,8 @@ export function SubscriptionStatusCard({
 
 export function BillingAlerts(args: {
   actionError: string | null;
-  hasPaidPlan: boolean;
+  hasManagedServiceAccess: boolean;
+  basePlanName: string;
 }) {
   return (
     <>
@@ -69,11 +80,11 @@ export function BillingAlerts(args: {
         </div>
       ) : null}
 
-      {!args.hasPaidPlan ? (
+      {!args.hasManagedServiceAccess ? (
         <div className="alert alert-warning">
           <span>
-            Subscribe to the base plan first. After that, you can manage your
-            plan and buy more credits here.
+            Subscribe to {args.basePlanName} first. After that, you can manage
+            your plan and buy more credits here.
           </span>
         </div>
       ) : null}

@@ -1,5 +1,5 @@
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
-import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
+import { AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID } from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -14,7 +14,6 @@ export async function getOrCreateOrganizationCustomer(
 ) {
   const customer = await autumn.customers.getOrCreate({
     customerId: context.organizationId,
-    name: context.organizationId,
   });
 
   if (!customer.id) {
@@ -27,23 +26,16 @@ export async function getOrCreateOrganizationCustomer(
   };
 }
 
-export function hasActivePaidPlan(customer: {
-  subscriptions: Array<{
-    planId: string;
-    status: string;
-    pastDue: boolean;
-    canceledAt: number | null;
-  }>;
-}) {
-  return customer.subscriptions.some(
-    (subscription) =>
-      subscription.planId === AUTUMN_PAID_PLAN_ID &&
-      subscription.status === "active" &&
-      !subscription.pastDue,
-  );
+export async function customerHasManagedServiceAccess(customerId: string) {
+  const result = await autumn.check({
+    customerId,
+    featureId: AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID,
+  });
+
+  return result.allowed;
 }
 
-export async function requireHostedPaidSubscription(
+export async function requireManagedServiceAccess(
   context: BillingCustomerContext,
 ) {
   if (!(await isHostedServerAuthMode())) {
@@ -51,7 +43,7 @@ export async function requireHostedPaidSubscription(
   }
 
   const customer = await getOrCreateOrganizationCustomer(context);
-  if (!hasActivePaidPlan(customer)) {
+  if (!(await customerHasManagedServiceAccess(customer.id))) {
     throw new AppError("PAYMENT_REQUIRED");
   }
 }

@@ -2,6 +2,8 @@ export const BILLING_ROUTE = "/billing";
 
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
 export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";
+export const AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID =
+  "managed_service_access";
 export const AUTUMN_SEO_DATA_BALANCE_FEATURE_ID = "usage_credits";
 export const AUTUMN_SEO_DATA_USAGE_FEATURE_ID = "seo_data_usage";
 export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;
