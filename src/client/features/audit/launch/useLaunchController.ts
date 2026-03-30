@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useForm } from "@tanstack/react-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -7,12 +7,35 @@ import {
   startAudit,
 } from "@/serverFunctions/audit";
 import {
+  DEFAULT_LAUNCH_FORM_VALUES,
   MAX_PAGES_LIMIT,
   MIN_PAGES,
-  useLaunchForm,
-  type LaunchState,
+  type LaunchFormValues,
 } from "@/client/features/audit/launch/types";
+import {
+  createFormValidationErrors,
+  shouldValidateFieldOnChange,
+} from "@/client/lib/forms";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+
+function getLaunchValidationErrors(
+  value: LaunchFormValues,
+  shouldValidateUntouchedField: boolean,
+) {
+  if (value.url.trim()) {
+    return null;
+  }
+
+  if (!shouldValidateUntouchedField) {
+    return null;
+  }
+
+  return createFormValidationErrors({
+    fields: {
+      url: "Please enter a URL.",
+    },
+  });
+}
 
 export function useLaunchController({
   projectId,
@@ -21,12 +44,6 @@ export function useLaunchController({
   projectId: string;
   onAuditStarted: (auditId: string) => void;
 }) {
-  const launchForm = useLaunchForm();
-  const [state, setState] = useState<LaunchState>({
-    urlError: null,
-    startError: null,
-  });
-
   const historyQuery = useQuery({
     queryKey: ["audit-history", projectId],
     queryFn: () => getAuditHistory({ data: { projectId } }),
@@ -36,74 +53,54 @@ export function useLaunchController({
     historyRefetch: historyQuery.refetch,
   });
 
-  const applyMaxPages = (value: number) => {
-    const safeValue = Number.isFinite(value)
-      ? Math.max(MIN_PAGES, Math.min(MAX_PAGES_LIMIT, Math.round(value)))
-      : MIN_PAGES;
-    launchForm.setFieldValue("maxPagesInput", String(safeValue));
-    return safeValue;
-  };
+  const launchForm = useForm({
+    defaultValues: DEFAULT_LAUNCH_FORM_VALUES,
+    validators: {
+      onChange: ({ formApi, value }) =>
+        getLaunchValidationErrors(
+          value,
+          shouldValidateFieldOnChange(formApi, "url"),
+        ),
+      onSubmit: ({ value }) => getLaunchValidationErrors(value, true),
+    },
+    onSubmit: async ({ formApi, value }) => {
+      const effectiveMaxPages = commitMaxPagesInput(launchForm);
+      formApi.setErrorMap({ onSubmit: undefined });
 
-  const commitMaxPagesInput = () => {
-    const maxPagesInput = launchForm.state.values.maxPagesInput;
-    if (!maxPagesInput) return applyMaxPages(MIN_PAGES);
-    return applyMaxPages(Number.parseInt(maxPagesInput, 10));
-  };
+      if (effectiveMaxPages > 500) {
+        const confirmed = window.confirm(
+          `You are about to crawl ${effectiveMaxPages.toLocaleString()} pages. This is okay, but it may take a while. Continue?`,
+        );
+        if (!confirmed) {
+          return;
+        }
+      }
 
-  const handleStart = () => {
-    const launchValues = launchForm.state.values;
-    const effectiveMaxPages = commitMaxPagesInput();
-    setState((prev) => ({ ...prev, startError: null }));
-
-    if (!launchValues.url.trim()) {
-      return setState((prev) => ({ ...prev, urlError: "Please enter a URL." }));
-    }
-
-    if (effectiveMaxPages > 500) {
-      const confirmed = window.confirm(
-        `You are about to crawl ${effectiveMaxPages.toLocaleString()} pages. This is okay, but it may take a while. Continue?`,
-      );
-      if (!confirmed) return;
-    }
-
-    startMutation.mutate(
-      {
-        projectId,
-        startUrl: launchValues.url,
-        maxPages: effectiveMaxPages,
-        lighthouseStrategy: launchValues.runLighthouse
-          ? launchValues.lighthouseMode
-          : "none",
-      },
-      {
-        onSuccess: (result) => {
-          setState({ urlError: null, startError: null });
-          toast.success("Audit started!");
-          onAuditStarted(result.auditId);
-        },
-        onError: (error) => {
-          setState((prev) => ({
-            ...prev,
-            startError: getStandardErrorMessage(error, "Failed to start audit"),
-          }));
-        },
-      },
-    );
-  };
+      try {
+        const result = await startMutation.mutateAsync({
+          projectId,
+          startUrl: value.url,
+          maxPages: effectiveMaxPages,
+          lighthouseStrategy: value.runLighthouse
+            ? value.lighthouseMode
+            : "none",
+        });
+        toast.success("Audit started!");
+        onAuditStarted(result.auditId);
+      } catch (error) {
+        formApi.setErrorMap({
+          onSubmit: createFormValidationErrors({
+            form: getStandardErrorMessage(error, "Failed to start audit"),
+          }),
+        });
+      }
+    },
+  });
 
   return {
     launchForm,
-    state,
-    setState,
     historyQuery,
-    startMutation,
-    commitMaxPagesInput,
-    handleSubmit: (event: FormEvent) => {
-      event.preventDefault();
-      handleStart();
-    },
-    onRunLighthouseToggle: (checked: boolean) =>
-      handleRunLighthouseToggle(checked, launchForm),
+    commitMaxPagesInput: () => commitMaxPagesInput(launchForm),
     deleteAudit: (auditId: string) => deleteMutation.mutate(auditId),
   };
 }
@@ -136,9 +133,24 @@ function useLaunchMutations({
   return { startMutation, deleteMutation };
 }
 
-function handleRunLighthouseToggle(
-  checked: boolean,
-  launchForm: ReturnType<typeof useLaunchForm>,
+function applyMaxPages(
+  launchForm: {
+    setFieldValue: (field: "maxPagesInput", value: string) => void;
+  },
+  value: number,
 ) {
-  launchForm.setFieldValue("runLighthouse", checked);
+  const safeValue = Number.isFinite(value)
+    ? Math.max(MIN_PAGES, Math.min(MAX_PAGES_LIMIT, Math.round(value)))
+    : MIN_PAGES;
+  launchForm.setFieldValue("maxPagesInput", String(safeValue));
+  return safeValue;
+}
+
+function commitMaxPagesInput(launchForm: {
+  state: { values: { maxPagesInput: string } };
+  setFieldValue: (field: "maxPagesInput", value: string) => void;
+}) {
+  const maxPagesInput = launchForm.state.values.maxPagesInput;
+  if (!maxPagesInput) return applyMaxPages(launchForm, MIN_PAGES);
+  return applyMaxPages(launchForm, Number.parseInt(maxPagesInput, 10));
 }

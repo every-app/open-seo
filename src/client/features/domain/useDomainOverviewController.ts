@@ -1,16 +1,21 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { type QueryClient } from "@tanstack/react-query";
 import { useForm } from "@tanstack/react-form";
+import { type QueryClient } from "@tanstack/react-query";
 import {
   useDomainSearchHistory,
   type DomainSearchHistoryItem,
 } from "@/client/hooks/useDomainSearchHistory";
 import {
   getDefaultSortOrder,
+  normalizeDomainTarget,
   resolveSortOrder,
   toSortOrderSearchParam,
   toSortSearchParam,
 } from "@/client/features/domain/utils";
+import {
+  createFormValidationErrors,
+  shouldValidateFieldOnChange,
+} from "@/client/lib/forms";
 import type {
   DomainControlsValues,
   DomainOverviewData,
@@ -37,8 +42,60 @@ type Params = {
   searchState: SearchState;
 };
 
-function useDomainControlsForm(defaultValues: DomainControlsValues) {
-  return useForm({ defaultValues });
+type DomainControlsFormApi = {
+  state: {
+    values: DomainControlsValues;
+  };
+  handleSubmit: () => Promise<unknown>;
+  reset: (values: DomainControlsValues) => void;
+  setFieldValue: (
+    field: keyof DomainControlsValues,
+    value: string | boolean,
+  ) => void;
+};
+
+function getDomainSearchValidationErrors(value: DomainControlsValues) {
+  if (!value.domain.trim()) {
+    return createFormValidationErrors({
+      fields: {
+        domain: "Please enter a domain",
+      },
+    });
+  }
+
+  if (!normalizeDomainTarget(value.domain)) {
+    return createFormValidationErrors({
+      fields: {
+        domain: "Please enter a valid URL or domain (e.g. browserbase.com)",
+      },
+    });
+  }
+
+  return null;
+}
+
+function getDomainSearchChangeValidationErrors(
+  value: DomainControlsValues,
+  shouldValidateUntouchedField: boolean,
+  shouldValidateFormat: boolean,
+) {
+  if (!value.domain.trim()) {
+    if (!shouldValidateUntouchedField) {
+      return null;
+    }
+
+    return createFormValidationErrors({
+      fields: {
+        domain: "Please enter a domain",
+      },
+    });
+  }
+
+  if (!shouldValidateFormat) {
+    return null;
+  }
+
+  return getDomainSearchValidationErrors(value);
 }
 
 export function useDomainOverviewController({
@@ -47,18 +104,11 @@ export function useDomainOverviewController({
   navigate,
   searchState,
 }: Params) {
-  const [domainError, setDomainError] = useState<string | null>(null);
-  const [overviewError, setOverviewError] = useState<string | null>(null);
   const [pendingSearch, setPendingSearch] = useState(searchState.search);
   const [overview, setOverview] = useState<DomainOverviewData | null>(null);
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set(),
   );
-  const controlsForm = useDomainControlsForm({
-    domain: searchState.domain,
-    subdomains: searchState.subdomains,
-    sort: searchState.sort,
-  });
   const { history, isLoaded, addSearch, clearHistory, removeHistoryItem } =
     useDomainSearchHistory(projectId);
 
@@ -76,11 +126,41 @@ export function useDomainOverviewController({
     [navigate],
   );
 
-  useSyncRouteState({ controlsForm, searchState, setPendingSearch, navigate });
-  const domainMutation = useDomainLookupMutation({
-    setOverview,
-    setOverviewError,
+  const controlsForm = useForm({
+    defaultValues: {
+      domain: searchState.domain,
+      subdomains: searchState.subdomains,
+      sort: searchState.sort,
+    },
+    validators: {
+      onChange: ({ formApi, value }) =>
+        getDomainSearchChangeValidationErrors(
+          value,
+          shouldValidateFieldOnChange(formApi, "domain"),
+          formApi.state.submissionAttempts > 0,
+        ),
+      onSubmit: ({ value }) => getDomainSearchValidationErrors(value),
+    },
+    onSubmit: async ({ formApi, value }) => {
+      const submitError = await runSearch({
+        domain: value.domain,
+        subdomains: value.subdomains,
+        sort: value.sort,
+        order: currentSortOrder,
+        tab: searchState.tab,
+        search: searchState.search,
+      });
+
+      formApi.setErrorMap({
+        onSubmit: submitError
+          ? createFormValidationErrors({ form: submitError })
+          : undefined,
+      });
+    },
   });
+
+  useSyncRouteState({ controlsForm, searchState, setPendingSearch, navigate });
+  const domainMutation = useDomainLookupMutation();
   const saveMutation = useSaveKeywordsMutation({ projectId, queryClient });
   const dataState = useOverviewDataState({
     overview,
@@ -94,29 +174,32 @@ export function useDomainOverviewController({
     setSearchParams({ search: pendingSearch.trim() || undefined });
   }, [pendingSearch, setSearchParams]);
 
-  const handlers = useDomainControllerHandlers({
+  const runSearch = useSearchRunner({
+    controlsForm,
+    setPendingSearch,
+    setSearchParams,
+    domainMutation,
     addSearch,
+    setOverview: (value) => setOverview(value),
+    setSelectedKeywords,
+    currentState: searchState,
+    currentSortOrder,
+  });
+
+  const handlers = useDomainControllerHandlers({
     controlsForm,
     currentSortOrder,
     currentState: searchState,
     dataState,
-    domainMutation: domainMutation.mutate,
     projectId,
+    runSearch,
     saveMutation,
     selectedKeywords,
-    setDomainError,
-    setOverview,
-    setOverviewError,
-    setPendingSearch,
     setSearchParams,
-    setSelectedKeywords,
   });
 
   return {
     controlsForm,
-    domainError,
-    setDomainError,
-    overviewError,
     isLoading: domainMutation.isPending,
     overview,
     history,
@@ -134,39 +217,27 @@ export function useDomainOverviewController({
 }
 
 function useDomainControllerHandlers({
-  addSearch,
   controlsForm,
   currentSortOrder,
   currentState,
   dataState,
-  domainMutation,
   projectId,
+  runSearch,
   saveMutation,
   selectedKeywords,
-  setDomainError,
-  setOverview,
-  setOverviewError,
-  setPendingSearch,
   setSearchParams,
-  setSelectedKeywords,
 }: {
-  addSearch: (item: Omit<DomainSearchHistoryItem, "timestamp">) => void;
-  controlsForm: ReturnType<typeof useDomainControlsForm>;
+  controlsForm: DomainControlsFormApi;
   currentSortOrder: SortOrder;
   currentState: SearchState;
   dataState: ReturnType<typeof useOverviewDataState>;
-  domainMutation: ReturnType<typeof useDomainLookupMutation>["mutate"];
   projectId: string;
+  runSearch: ReturnType<typeof useSearchRunner>;
   saveMutation: ReturnType<typeof useSaveKeywordsMutation>;
   selectedKeywords: Set<string>;
-  setDomainError: (value: string | null) => void;
-  setOverview: (value: DomainOverviewData | null) => void;
-  setOverviewError: (value: string | null) => void;
-  setPendingSearch: (value: string) => void;
   setSearchParams: (
     updates: Record<string, string | number | boolean | undefined>,
   ) => void;
-  setSelectedKeywords: (value: Set<string>) => void;
 }) {
   const applySort = useCallback(
     (nextSort: DomainSortMode, nextOrder: SortOrder) => {
@@ -200,22 +271,13 @@ function useDomainControllerHandlers({
       projectId,
     });
 
-  const runSearch = useSearchRunner({
-    controlsForm,
-    setDomainError,
-    setOverviewError,
-    setPendingSearch,
-    setSearchParams,
-    domainMutation,
-    addSearch,
-    setOverview: (value) => setOverview(value),
-    setSelectedKeywords,
-    currentState,
-    currentSortOrder,
-  });
-
   const handleHistorySelect = (item: DomainSearchHistoryItem) => {
-    runSearch({
+    controlsForm.reset({
+      domain: item.domain,
+      subdomains: item.subdomains,
+      sort: item.sort,
+    });
+    void runSearch({
       domain: item.domain,
       subdomains: item.subdomains,
       sort: item.sort,
@@ -227,7 +289,7 @@ function useDomainControllerHandlers({
 
   const handleSearchSubmit = (event: FormEvent) => {
     event.preventDefault();
-    runSearch();
+    void controlsForm.handleSubmit();
   };
 
   return {

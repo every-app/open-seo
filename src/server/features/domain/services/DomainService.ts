@@ -1,13 +1,10 @@
-import {
-  normalizeDomainInput,
-  toRelativePath,
-  type DomainRankedKeywordItem,
-} from "@/server/lib/dataforseo";
+import { type DomainRankedKeywordItem } from "@/server/lib/dataforseo";
 import { sortBy } from "remeda";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
+import { normalizeDomainInput, toRelativePath } from "@/server/lib/domainUtils";
 
 /** Domain overview data is refreshed every 12 hours. */
 const DOMAIN_OVERVIEW_TTL_SECONDS = 12 * 60 * 60;

@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import { getFieldError } from "@/client/lib/forms";
 import {
   isResultLimit,
   normalizeKeywordMode,
@@ -12,8 +13,7 @@ type Props = {
 };
 
 export function KeywordResearchSearchBar({ controller }: Props) {
-  const { controlsForm, handleSearchSubmit, isLoading, searchInputError } =
-    controller;
+  const { controlsForm, handleSearchSubmit, isLoading } = controller;
 
   return (
     <div className="shrink-0 px-4 md:px-6 pt-4 pb-2 max-w-8xl mx-auto w-full">
@@ -21,24 +21,25 @@ export function KeywordResearchSearchBar({ controller }: Props) {
         className="bg-base-100 border border-base-300 rounded-xl px-4 py-3 flex flex-wrap items-center gap-2"
         onSubmit={handleSearchSubmit}
       >
-        <label
-          className={`input input-bordered input-sm flex items-center gap-2 flex-1 min-w-0 max-w-md ${searchInputError ? "input-error" : ""}`}
-        >
-          <Search className="size-3.5 shrink-0 text-base-content/50" />
-          <controlsForm.Field name="keyword">
-            {(field) => (
-              <input
-                className="grow min-w-0"
-                placeholder="Enter Keyword"
-                value={field.state.value}
-                onChange={(event) => {
-                  field.handleChange(event.target.value);
-                  if (searchInputError) controller.setSearchInputError(null);
-                }}
-              />
-            )}
-          </controlsForm.Field>
-        </label>
+        <controlsForm.Field name="keyword">
+          {(field) => {
+            const keywordError = getFieldError(field.state.meta.errors);
+
+            return (
+              <label
+                className={`input input-bordered input-sm flex items-center gap-2 flex-1 min-w-0 max-w-md ${keywordError ? "input-error" : ""}`}
+              >
+                <Search className="size-3.5 shrink-0 text-base-content/50" />
+                <input
+                  className="grow min-w-0"
+                  placeholder="Enter Keyword"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                />
+              </label>
+            );
+          }}
+        </controlsForm.Field>
 
         <controlsForm.Field name="locationCode">
           {(field) => (
@@ -102,9 +103,15 @@ export function KeywordResearchSearchBar({ controller }: Props) {
           {isLoading ? "Searching..." : "Search"}
         </button>
       </form>
-      {searchInputError ? (
-        <p className="mt-2 text-sm text-error">{searchInputError}</p>
-      ) : null}
+      <controlsForm.Field name="keyword">
+        {(field) => {
+          const keywordError = getFieldError(field.state.meta.errors);
+
+          return keywordError ? (
+            <p className="mt-2 text-sm text-error">{keywordError}</p>
+          ) : null;
+        }}
+      </controlsForm.Field>
     </div>
   );
 }

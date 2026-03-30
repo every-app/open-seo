@@ -18,11 +18,6 @@ export function LaunchView({
 
         <LaunchFormCard
           launchForm={controller.launchForm}
-          state={controller.state}
-          setState={controller.setState}
-          isPending={controller.startMutation.isPending}
-          onSubmit={controller.handleSubmit}
-          onRunLighthouseToggle={controller.onRunLighthouseToggle}
           commitMaxPagesInput={controller.commitMaxPagesInput}
         />
 

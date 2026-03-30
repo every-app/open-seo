@@ -7,7 +7,6 @@ import {
   DataforseoLabsGoogleRankedKeywordsLiveRequestInfo,
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
-import { getDomain } from "tldts";
 import type { DataforseoApiResponse } from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -50,6 +49,7 @@ function createAuthenticatedFetch() {
 }
 
 const API_BASE = "https://api.dataforseo.com";
+const MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH = 1600;
 
 function getLabsApi() {
   return new DataforseoLabsApi(API_BASE, { fetch: createAuthenticatedFetch() });
@@ -68,14 +68,23 @@ async function postDataforseo(
     body: JSON.stringify(payload),
   });
 
+  const rawText = await response.text();
+
   if (!response.ok) {
     throw new AppError(
       "INTERNAL_ERROR",
-      `DataForSEO HTTP ${response.status} on ${path}`,
+      `DataForSEO HTTP ${response.status} on ${path}. Response: ${formatDataforseoErrorPayload(rawText)}`,
     );
   }
 
-  return await response.json();
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO ${path} returned a non-JSON response. Response: ${formatDataforseoErrorPayload(rawText)}`,
+    );
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -87,13 +96,48 @@ async function postDataforseo(
  * Throws a descriptive error on failure. Returns the first task.
  */
 type DataforseoTaskLike = {
+  id?: string;
   status_code?: number;
   status_message?: string;
   path?: string[];
   cost?: number;
   result_count?: number | null;
+  data?: unknown;
   result?: DataforseoTask["result"];
 };
+
+function formatDataforseoErrorPayload(value: unknown): string {
+  const text =
+    typeof value === "string"
+      ? value
+      : (() => {
+          try {
+            return JSON.stringify(value);
+          } catch {
+            return String(value);
+          }
+        })();
+
+  return text.length > MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH
+    ? `${text.slice(0, MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH)}... [truncated]`
+    : text;
+}
+
+function getTaskDebugPayload(task: DataforseoTaskLike) {
+  return {
+    id: task.id ?? null,
+    status_code: task.status_code ?? null,
+    status_message: task.status_message ?? null,
+    path: task.path ?? null,
+    cost: task.cost ?? null,
+    result_count: task.result_count ?? null,
+    data: task.data ?? null,
+    result_length: Array.isArray(task.result) ? task.result.length : null,
+    result_preview: Array.isArray(task.result)
+      ? (task.result[0] ?? null)
+      : null,
+  };
+}
 
 function assertOk<T extends DataforseoTaskLike>(
   response: {
@@ -127,9 +171,22 @@ function assertOk<T extends DataforseoTaskLike>(
 
   const parsedTask = successfulDataforseoTaskSchema.safeParse(task);
   if (!parsedTask.success) {
+    const issueSummary = parsedTask.error.issues
+      .slice(0, 5)
+      .map((issue) => {
+        const path = issue.path.length > 0 ? issue.path.join(".") : "task";
+        return `${path}: ${issue.message}`;
+      })
+      .join("; ");
+    const responseSummary = formatDataforseoErrorPayload({
+      status_code: response.status_code ?? null,
+      status_message: response.status_message ?? null,
+      task: getTaskDebugPayload(task),
+    });
+
     throw new AppError(
       "INTERNAL_ERROR",
-      "DataForSEO task missing billing metadata",
+      `DataForSEO task missing billing metadata (${issueSummary}). Response: ${responseSummary}`,
     );
   }
 
@@ -322,50 +379,4 @@ export async function fetchLiveSerpItemsRaw(
     data,
     billing: buildTaskBilling(task),
   };
-}
-
-// ---------------------------------------------------------------------------
-// Domain utility functions (unchanged)
-// ---------------------------------------------------------------------------
-
-export function toRelativePath(url: string | null | undefined): string | null {
-  if (!url) return null;
-
-  try {
-    const parsed = new URL(url);
-    return `${parsed.pathname}${parsed.search}` || "/";
-  } catch {
-    return null;
-  }
-}
-
-export function normalizeDomainInput(
-  input: string,
-  includeSubdomains: boolean,
-): string {
-  const trimmed = input.trim().toLowerCase();
-  if (!trimmed) {
-    throw new AppError("VALIDATION_ERROR", "Domain is required");
-  }
-
-  const withProtocol = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(trimmed)
-    ? trimmed
-    : `https://${trimmed}`;
-
-  let host: string;
-  try {
-    host = new URL(withProtocol).hostname.toLowerCase().replace(/^www\./, "");
-  } catch {
-    throw new AppError("VALIDATION_ERROR", "Domain is invalid");
-  }
-
-  if (!host) {
-    throw new AppError("VALIDATION_ERROR", "Domain is invalid");
-  }
-
-  if (includeSubdomains) {
-    return host;
-  }
-
-  return getDomain(host) ?? host;
 }

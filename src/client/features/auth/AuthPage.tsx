@@ -2,6 +2,10 @@ import { z } from "zod";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  getFieldError as getSharedFieldError,
+  getFormError as getSharedFormError,
+} from "@/client/lib/forms";
 
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -19,20 +23,12 @@ export function useAuthPageState(redirect: string | undefined) {
   };
 }
 
-export function getFieldError(errors: unknown[]) {
-  const first = errors[0];
-  if (typeof first === "string") return first;
-  if (first && typeof first === "object" && "message" in first)
-    return String((first as { message: unknown }).message);
-  return null;
+export function getFieldError(errors: readonly unknown[]) {
+  return getSharedFieldError(errors);
 }
 
-export function getFormError(error: unknown): string | null {
-  if (!error) return null;
-  if (typeof error === "string") return error;
-  if (typeof error === "object" && "form" in error)
-    return String((error as { form: unknown }).form);
-  return null;
+export function getFormError(error: unknown) {
+  return getSharedFormError(error);
 }
 
 export function AuthPageCard({

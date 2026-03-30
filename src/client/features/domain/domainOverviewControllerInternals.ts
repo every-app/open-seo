@@ -45,6 +45,11 @@ type DomainControlsFormAccess = {
       sort: DomainSortMode;
     };
   };
+  reset: (values: {
+    domain: string;
+    subdomains: boolean;
+    sort: DomainSortMode;
+  }) => void;
   setFieldValue: (
     field: "domain" | "subdomains" | "sort",
     updater: string | boolean,
@@ -152,10 +157,11 @@ export function useOverviewDataState({
       setSelectedKeywords((prev) => {
         if (
           visibleKeywords.length > 0 &&
-          visibleKeywords.every((k) => prev.has(k))
+          visibleKeywords.every((keyword) => prev.has(keyword))
         ) {
           return new Set();
         }
+
         return new Set(visibleKeywords);
       });
     },
@@ -174,9 +180,11 @@ export function useSyncRouteState({
   navigate: DomainNavigate;
 }) {
   useEffect(() => {
-    controlsForm.setFieldValue("domain", searchState.domain);
-    controlsForm.setFieldValue("subdomains", searchState.subdomains);
-    controlsForm.setFieldValue("sort", searchState.sort);
+    controlsForm.reset({
+      domain: searchState.domain,
+      subdomains: searchState.subdomains,
+      sort: searchState.sort,
+    });
     setPendingSearch(searchState.search);
   }, [controlsForm, searchState, setPendingSearch]);
 
@@ -217,13 +225,7 @@ export function useSyncRouteState({
   }, [navigate]);
 }
 
-export function useDomainLookupMutation({
-  setOverview,
-  setOverviewError,
-}: {
-  setOverview: (value: DomainOverviewData) => void;
-  setOverviewError: (value: string | null) => void;
-}) {
+export function useDomainLookupMutation() {
   return useMutation({
     mutationFn: (data: {
       domain: string;
@@ -231,20 +233,11 @@ export function useDomainLookupMutation({
       locationCode: number;
       languageCode: string;
     }) => getDomainOverview({ data }),
-    onError: (error) => {
-      setOverviewError(getStandardErrorMessage(error, "Lookup failed."));
-    },
-    onSuccess: (response) => {
-      setOverview(response);
-      if (!response.hasData) toast.info("Not enough data for this domain");
-    },
   });
 }
 
 export function useSearchRunner({
   controlsForm,
-  setDomainError,
-  setOverviewError,
   setPendingSearch,
   setSearchParams,
   domainMutation,
@@ -255,20 +248,18 @@ export function useSearchRunner({
   currentSortOrder,
 }: {
   controlsForm: ControlsFormLike;
-  setDomainError: (value: string | null) => void;
-  setOverviewError: (value: string | null) => void;
   setPendingSearch: (value: string) => void;
   setSearchParams: (
     updates: Record<string, string | boolean | undefined>,
   ) => void;
-  domainMutation: ReturnType<typeof useDomainLookupMutation>["mutate"];
+  domainMutation: ReturnType<typeof useDomainLookupMutation>;
   addSearch: (item: Omit<DomainSearchHistoryItem, "timestamp">) => void;
   setOverview: (value: DomainOverviewData) => void;
-  setSelectedKeywords: (value: Set<string>) => void;
+  setSelectedKeywords: Dispatch<SetStateAction<Set<string>>>;
   currentState: SearchState;
   currentSortOrder: SortOrder;
 }) {
-  return (params?: Partial<SearchState>) => {
+  return async (params?: Partial<SearchState>) => {
     const values = controlsForm.state.values;
     const rawTarget = params?.domain ?? values.domain;
     const activeSubdomains = params?.subdomains ?? values.subdomains;
@@ -276,22 +267,12 @@ export function useSearchRunner({
     const activeOrder = params?.order ?? currentSortOrder;
     const activeTab = params?.tab ?? currentState.tab;
     const activeSearch = params?.search ?? currentState.search;
-
-    if (!rawTarget.trim()) {
-      setDomainError("Please enter a domain");
-      return;
-    }
-
     const target = normalizeDomainTarget(rawTarget);
+
     if (!target) {
-      setDomainError(
-        "Please enter a valid URL or domain (e.g. browserbase.com)",
-      );
       return;
     }
 
-    setDomainError(null);
-    setOverviewError(null);
     setPendingSearch(activeSearch);
     controlsForm.setFieldValue("domain", target);
     controlsForm.setFieldValue("subdomains", activeSubdomains);
@@ -306,29 +287,30 @@ export function useSearchRunner({
       search: activeSearch.trim() || undefined,
     });
 
-    domainMutation(
-      {
+    try {
+      const response = await domainMutation.mutateAsync({
         domain: target,
         includeSubdomains: activeSubdomains,
         locationCode: 2840,
         languageCode: "en",
-      },
-      {
-        onSuccess: (response) => {
-          setOverview(response);
-          setSelectedKeywords(new Set());
-          addSearch({
-            domain: target,
-            subdomains: activeSubdomains,
-            sort: activeSort,
-            tab: activeTab,
-            search: activeSearch.trim() || undefined,
-          });
-        },
-        onError: (error) => {
-          setOverviewError(getStandardErrorMessage(error, "Lookup failed."));
-        },
-      },
-    );
+      });
+
+      setOverview(response);
+      setSelectedKeywords(new Set());
+      addSearch({
+        domain: target,
+        subdomains: activeSubdomains,
+        sort: activeSort,
+        tab: activeTab,
+        search: activeSearch.trim() || undefined,
+      });
+
+      if (!response.hasData) {
+        toast.info("Not enough data for this domain");
+      }
+      return null;
+    } catch (error) {
+      return getStandardErrorMessage(error, "Lookup failed.");
+    }
   };
 }

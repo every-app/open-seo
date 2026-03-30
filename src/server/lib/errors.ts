@@ -23,5 +23,6 @@ function toErrorCode(error: unknown): ErrorCode {
 }
 
 export function toClientError(error: unknown): Error {
-  return new Error(toErrorCode(error));
+  const appError = asAppError(error);
+  return new Error(appError?.code ?? toErrorCode(error));
 }

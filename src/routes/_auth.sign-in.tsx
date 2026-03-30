@@ -85,7 +85,7 @@ function SignInPage() {
       } catch {
         formApi.setErrorMap({
           onSubmit: {
-            form: "We couldn't sign you in right now. Please try again.",
+            form: "Unable to sign in right now. Please try again.",
             fields: {},
           },
         });

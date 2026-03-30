@@ -28,6 +28,7 @@ export function getStandardErrorMessage(
 ): string {
   if (!(error instanceof Error)) return fallback;
   if (isErrorCode(error.message)) return STANDARD_MESSAGES[error.message];
+  if (error.message) return error.message;
   return fallback;
 }
 

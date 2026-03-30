@@ -1,29 +1,17 @@
-import type { FormEvent } from "react";
 import { Loader2 } from "lucide-react";
 import {
   MAX_PAGES_LIMIT,
   MIN_PAGES,
-  type LaunchFormApi,
-  type LaunchState,
 } from "@/client/features/audit/launch/types";
+import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
+import { getFieldError, getFormError } from "@/client/lib/forms";
 
-export function LaunchFormCard({
-  launchForm,
-  state,
-  setState,
-  isPending,
-  onSubmit,
-  onRunLighthouseToggle,
-  commitMaxPagesInput,
-}: {
-  launchForm: LaunchFormApi;
-  state: LaunchState;
-  setState: React.Dispatch<React.SetStateAction<LaunchState>>;
-  isPending: boolean;
-  onSubmit: (event: FormEvent) => void;
-  onRunLighthouseToggle: (checked: boolean) => void;
+type Props = {
+  launchForm: ReturnType<typeof useLaunchController>["launchForm"];
   commitMaxPagesInput: () => number;
-}) {
+};
+
+export function LaunchFormCard({ commitMaxPagesInput, launchForm }: Props) {
   return (
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-4">
@@ -31,65 +19,68 @@ export function LaunchFormCard({
 
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
-          onSubmit={onSubmit}
+          onSubmit={(event) => {
+            event.preventDefault();
+            void launchForm.handleSubmit();
+          }}
         >
-          <label
-            className={`input input-bordered w-full lg:col-span-9 ${state.urlError ? "input-error" : ""}`}
-          >
-            <launchForm.Field name="url">
-              {(field) => (
-                <input
-                  placeholder="https://example.com"
-                  value={field.state.value}
-                  onChange={(event) => {
-                    field.handleChange(event.target.value);
-                    if (state.urlError)
-                      setState((prev) => ({ ...prev, urlError: null }));
-                  }}
-                />
-              )}
-            </launchForm.Field>
-          </label>
+          <launchForm.Field name="url">
+            {(field) => {
+              const urlError = getFieldError(field.state.meta.errors);
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm w-full lg:col-span-3"
-            disabled={isPending}
-          >
-            {isPending ? (
-              <>
-                <Loader2 className="size-4 animate-spin" /> Starting...
-              </>
-            ) : (
-              "Start Audit"
+              return (
+                <label
+                  className={`input input-bordered w-full lg:col-span-9 ${urlError ? "input-error" : ""}`}
+                >
+                  <input
+                    placeholder="https://example.com"
+                    value={field.state.value}
+                    onChange={(event) => {
+                      field.handleChange(event.target.value);
+                      if (launchForm.state.errorMap.onSubmit) {
+                        launchForm.setErrorMap({ onSubmit: undefined });
+                      }
+                    }}
+                  />
+                </label>
+              );
+            }}
+          </launchForm.Field>
+
+          <launchForm.Subscribe selector={(state) => state.isSubmitting}>
+            {(isSubmitting) => (
+              <button
+                type="submit"
+                className="btn btn-primary btn-sm w-full lg:col-span-3"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" /> Starting...
+                  </>
+                ) : (
+                  "Start Audit"
+                )}
+              </button>
             )}
-          </button>
+          </launchForm.Subscribe>
 
           <div className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 lg:col-span-12 lg:items-start">
             <LaunchOptions
               launchForm={launchForm}
               commitMaxPagesInput={commitMaxPagesInput}
             />
-            <LighthouseOptions
-              launchForm={launchForm}
-              onRunLighthouseToggle={onRunLighthouseToggle}
-            />
+            <LighthouseOptions launchForm={launchForm} />
           </div>
         </form>
 
-        <LaunchErrors state={state} />
+        <LaunchErrors launchForm={launchForm} />
       </div>
     </div>
   );
 }
 
-function LaunchOptions({
-  launchForm,
-  commitMaxPagesInput,
-}: {
-  launchForm: LaunchFormApi;
-  commitMaxPagesInput: () => number;
-}) {
+function LaunchOptions({ launchForm, commitMaxPagesInput }: Props) {
   return (
     <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
       <label className="text-xs font-medium uppercase tracking-wide text-base-content/60">
@@ -109,6 +100,9 @@ function LaunchOptions({
                 const next = event.target.value;
                 if (!/^\d*$/.test(next)) return;
                 field.handleChange(next);
+                if (launchForm.state.errorMap.onSubmit) {
+                  launchForm.setErrorMap({ onSubmit: undefined });
+                }
               }}
               onBlur={commitMaxPagesInput}
             />
@@ -122,13 +116,7 @@ function LaunchOptions({
   );
 }
 
-function LighthouseOptions({
-  launchForm,
-  onRunLighthouseToggle,
-}: {
-  launchForm: LaunchFormApi;
-  onRunLighthouseToggle: (checked: boolean) => void;
-}) {
+function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
   return (
     <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
       <label className="label cursor-pointer justify-start gap-2 p-0">
@@ -138,7 +126,7 @@ function LighthouseOptions({
               type="checkbox"
               className="toggle toggle-sm toggle-primary"
               checked={Boolean(field.state.value)}
-              onChange={(event) => onRunLighthouseToggle(event.target.checked)}
+              onChange={(event) => field.handleChange(event.target.checked)}
             />
           )}
         </launchForm.Field>
@@ -184,17 +172,30 @@ function LighthouseOptions({
   );
 }
 
-function LaunchErrors({ state }: { state: LaunchState }) {
+function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
   return (
     <div className="space-y-2">
-      {state.urlError ? (
-        <p className="text-sm text-error">{state.urlError}</p>
-      ) : null}
-      {state.startError ? (
-        <div className="alert alert-error py-2">
-          <span className="text-sm">{state.startError}</span>
-        </div>
-      ) : null}
+      <launchForm.Field name="url">
+        {(field) => {
+          const urlError = getFieldError(field.state.meta.errors);
+
+          return urlError ? (
+            <p className="text-sm text-error">{urlError}</p>
+          ) : null;
+        }}
+      </launchForm.Field>
+
+      <launchForm.Subscribe selector={(state) => state.errorMap.onSubmit}>
+        {(submitError) => {
+          const errorMessage = getFormError(submitError);
+
+          return errorMessage ? (
+            <div className="alert alert-error py-2">
+              <span className="text-sm">{errorMessage}</span>
+            </div>
+          ) : null;
+        }}
+      </launchForm.Subscribe>
     </div>
   );
 }

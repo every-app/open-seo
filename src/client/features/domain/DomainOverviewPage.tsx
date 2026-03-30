@@ -57,16 +57,11 @@ export function DomainOverviewPage({
 
         <DomainSearchCard
           controlsForm={state.controlsForm}
-          domainError={state.domainError}
-          overviewError={state.overviewError}
           isLoading={state.isLoading}
           onSubmit={state.handleSearchSubmit}
           onSortChange={(sort) =>
             state.applySort(sort, getDefaultSortOrder(sort))
           }
-          onDomainInput={() => {
-            if (state.domainError) state.setDomainError(null);
-          }}
         />
 
         {state.isLoading ? (

@@ -44,7 +44,7 @@ export const Route = createFileRoute("/_auth/sign-up")({
 function getHelperText(isHostedMode: boolean) {
   return isHostedMode
     ? "Create your OpenSEO account."
-    : "Account creation isn't available right now.";
+    : "Account creation is only available when AUTH_MODE=hosted.";
 }
 
 function SignUpPage() {
@@ -85,7 +85,7 @@ function SignUpPage() {
         if (result.error) {
           formApi.setErrorMap({
             onSubmit: {
-              form: result.error.message || "We couldn't create your account.",
+              form: result.error.message || "Unable to create account.",
               fields: {},
             },
           });
@@ -99,7 +99,7 @@ function SignUpPage() {
       } catch {
         formApi.setErrorMap({
           onSubmit: {
-            form: "We couldn't create your account right now. Please try again.",
+            form: "Unable to create account right now. Please try again.",
             fields: {},
           },
         });
