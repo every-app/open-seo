@@ -2,7 +2,7 @@
   "name": "open-seo",
   "private": true,
   "sideEffects": false,
-  "version": "0.0.3",
+  "version": "0.0.4",
   "type": "module",
   "scripts": {
     "dev": "AUTH_MODE=local_noauth vite dev",
