@@ -38,32 +38,37 @@ export function AuthPageCard({
   footer,
 }: {
   title: string;
-  helperText: string;
+  helperText?: string;
   children: React.ReactNode;
   footer?: React.ReactNode;
 }) {
   return (
-    <div className="card w-full max-w-md bg-base-100 shadow-xl border border-base-300">
-      <div className="card-body gap-4">
+    <div className="w-full max-w-xs space-y-6">
+      <div className="text-center space-y-3">
+        <img
+          src="/transparent-logo.png"
+          alt="OpenSEO"
+          className="mx-auto size-10 rounded-lg"
+        />
         <div>
-          <h1 className="text-2xl font-semibold">{title}</h1>
-          <p className="text-sm text-base-content/70 mt-1">{helperText}</p>
+          <h1 className="text-xl font-semibold">{title}</h1>
+          {helperText ? (
+            <p className="text-sm text-base-content/60 mt-1">{helperText}</p>
+          ) : null}
         </div>
-
-        {children}
-
-        {footer}
       </div>
+
+      {children}
+
+      {footer ? <div className="text-center">{footer}</div> : null}
     </div>
   );
 }
 
 export function AuthPageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-base-200">
-      <div className="min-h-[100dvh] flex items-center justify-center p-4">
-        {children}
-      </div>
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-base-100">
+      {children}
     </div>
   );
 }

@@ -41,19 +41,12 @@ export const Route = createFileRoute("/_auth/sign-up")({
   component: SignUpPage,
 });
 
-function getHelperText(isHostedMode: boolean) {
-  return isHostedMode
-    ? "Create your OpenSEO account."
-    : "Account creation is only available when AUTH_MODE=hosted.";
-}
-
 function SignUpPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { redirectTo, isHostedMode, isSessionPending } = useAuthPageState(
     search.redirect,
   );
-  const helperText = getHelperText(isHostedMode);
 
   const form = useForm({
     defaultValues: {
@@ -109,16 +102,15 @@ function SignUpPage() {
 
   return (
     <AuthPageCard
-      title="Create account"
-      helperText={helperText}
+      title="Create your account"
       footer={
         isHostedMode ? (
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-base-content/50">
             Already have an account?{" "}
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="link link-primary"
+              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
             >
               Sign in
             </Link>
@@ -133,118 +125,104 @@ function SignUpPage() {
           void form.handleSubmit();
         }}
       >
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">Name</span>
-          <form.Field name="name">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="name">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="text"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="Jane Doe (optional)"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="name"
-                    disabled={!isHostedMode || isSessionPending}
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
+            return (
+              <div>
+                <input
+                  type="text"
+                  className="input input-bordered w-full"
+                  placeholder="Name (optional)..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="name"
+                  disabled={!isHostedMode || isSessionPending}
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">Email</span>
-          <form.Field name="email">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="email">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="email"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="you@example.com"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="email"
-                    disabled={!isHostedMode || isSessionPending}
-                    required
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
+            return (
+              <div>
+                <input
+                  type="email"
+                  className="input input-bordered w-full"
+                  placeholder="Email address..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="email"
+                  disabled={!isHostedMode || isSessionPending}
+                  required
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">Password</span>
-          <form.Field name="password">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="password">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="password"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="Create a password"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="new-password"
-                    disabled={!isHostedMode || isSessionPending}
-                    required
-                    minLength={HOSTED_PASSWORD_MIN_LENGTH}
-                    maxLength={HOSTED_PASSWORD_MAX_LENGTH}
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
+            return (
+              <div>
+                <input
+                  type="password"
+                  className="input input-bordered w-full"
+                  placeholder="Password..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={!isHostedMode || isSessionPending}
+                  required
+                  minLength={HOSTED_PASSWORD_MIN_LENGTH}
+                  maxLength={HOSTED_PASSWORD_MAX_LENGTH}
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">
-            Confirm password
-          </span>
-          <form.Field name="confirmPassword">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="confirmPassword">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="password"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="Confirm your password"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="new-password"
-                    disabled={!isHostedMode || isSessionPending}
-                    required
-                    minLength={HOSTED_PASSWORD_MIN_LENGTH}
-                    maxLength={HOSTED_PASSWORD_MAX_LENGTH}
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
+            return (
+              <div>
+                <input
+                  type="password"
+                  className="input input-bordered w-full"
+                  placeholder="Confirm password..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="new-password"
+                  disabled={!isHostedMode || isSessionPending}
+                  required
+                  minLength={HOSTED_PASSWORD_MIN_LENGTH}
+                  maxLength={HOSTED_PASSWORD_MAX_LENGTH}
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
         <form.Subscribe
           selector={(state) => ({
@@ -260,7 +238,7 @@ function SignUpPage() {
                   <p className="text-sm text-error">{errorMessage}</p>
                 ) : null}
                 <button
-                  className="btn btn-primary w-full"
+                  className="btn btn-soft w-full"
                   disabled={!isHostedMode || isSessionPending || isSubmitting}
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { UseCustomerResult } from "autumn-js/react";
 import { ExternalLink, LoaderCircle } from "lucide-react";
 import { useState } from "react";

@@ -6,7 +6,6 @@ export const AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID =
   "managed_service_access";
 export const AUTUMN_SEO_DATA_BALANCE_FEATURE_ID = "usage_credits";
 export const AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID = "topup_credits";
-export const AUTUMN_SEO_DATA_USAGE_FEATURE_ID = "seo_data_usage";
 export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;
 export const MINIMUM_SEO_DATA_BALANCE_USD = 0.15;
 

@@ -23,20 +23,11 @@ export const Route = createFileRoute("/_auth/sign-in")({
   component: SignInPage,
 });
 
-function getHelperText(isHostedMode: boolean) {
-  if (!isHostedMode) {
-    return "Sign-in isn't available right now.";
-  }
-
-  return "Sign in to your OpenSEO account.";
-}
-
 function SignInPage() {
   const search = Route.useSearch();
   const { redirectTo, isHostedMode, isSessionPending } = useAuthPageState(
     search.redirect,
   );
-  const helperText = getHelperText(isHostedMode);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null,
   );
@@ -127,19 +118,24 @@ function SignInPage() {
   return (
     <AuthPageCard
       title="Sign in"
-      helperText={helperText}
       footer={
         isHostedMode ? (
-          <p className="text-sm text-base-content/70">
-            Need an account?{" "}
+          <div className="flex justify-between text-sm text-base-content/50">
+            <Link
+              to="/forgot-password"
+              search={getSignInSearch(redirectTo)}
+              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+            >
+              Forgot password?
+            </Link>
             <Link
               to="/sign-up"
               search={getSignInSearch(redirectTo)}
-              className="link link-primary"
+              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
             >
               Create account
             </Link>
-          </p>
+          </div>
         ) : null
       }
     >
@@ -150,69 +146,53 @@ function SignInPage() {
           void form.handleSubmit();
         }}
       >
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">Email</span>
-          <form.Field name="email">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="email">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="email"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="you@example.com"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="email"
-                    disabled={!isHostedMode || isSessionPending}
-                    required
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
+            return (
+              <div>
+                <input
+                  type="email"
+                  className="input input-bordered w-full"
+                  placeholder="Email address..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="email"
+                  disabled={!isHostedMode || isSessionPending}
+                  required
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
-        <label className="form-control block">
-          <span className="label-text text-sm font-medium">Password</span>
-          <form.Field name="password">
-            {(field) => {
-              const error = getFieldError(field.state.meta.errors);
+        <form.Field name="password">
+          {(field) => {
+            const error = getFieldError(field.state.meta.errors);
 
-              return (
-                <>
-                  <input
-                    type="password"
-                    className="input input-bordered w-full mt-1"
-                    placeholder="Enter your password"
-                    value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
-                    autoComplete="current-password"
-                    disabled={!isHostedMode || isSessionPending}
-                    required
-                  />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </>
-              );
-            }}
-          </form.Field>
-        </label>
-
-        <div className="text-right">
-          <Link
-            to="/forgot-password"
-            search={getSignInSearch(redirectTo)}
-            className="link link-hover text-sm"
-          >
-            Forgot password?
-          </Link>
-        </div>
+            return (
+              <div>
+                <input
+                  type="password"
+                  className="input input-bordered w-full"
+                  placeholder="Password..."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  autoComplete="current-password"
+                  disabled={!isHostedMode || isSessionPending}
+                  required
+                />
+                {error ? (
+                  <p className="mt-1 text-sm text-error">{error}</p>
+                ) : null}
+              </div>
+            );
+          }}
+        </form.Field>
 
         {verificationEmail ? (
           <div className="alert alert-warning items-start">
@@ -251,7 +231,7 @@ function SignInPage() {
                   <p className="text-sm text-error">{errorMessage}</p>
                 ) : null}
                 <button
-                  className="btn btn-primary w-full"
+                  className="btn btn-soft w-full"
                   disabled={!isHostedMode || isSessionPending || isSubmitting}
                 >
                   {isSubmitting ? "Signing in..." : "Sign in"}

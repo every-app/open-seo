@@ -173,14 +173,13 @@ function ResetPasswordPage() {
               title={pageCopy.title}
               helperText={pageCopy.helperText}
               footer={
-                <p className="text-sm text-base-content/70">
-                  Back to{" "}
+                <p className="text-sm">
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="link link-primary"
+                    className="text-base-content/50 hover:text-base-content transition-colors"
                   >
-                    sign in
+                    Sign in
                   </Link>
                 </p>
               }
@@ -192,7 +191,7 @@ function ResetPasswordPage() {
                       ? "/sign-in"
                       : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
                   }
-                  className="btn btn-primary w-full"
+                  className="btn btn-soft w-full"
                 >
                   Continue to sign in
                 </a>
@@ -200,7 +199,7 @@ function ResetPasswordPage() {
                 <Link
                   to="/forgot-password"
                   search={getSignInSearch(redirectTo)}
-                  className="btn btn-primary w-full"
+                  className="btn btn-soft w-full"
                 >
                   Request a new reset link
                 </Link>
@@ -212,75 +211,65 @@ function ResetPasswordPage() {
                     void form.handleSubmit();
                   }}
                 >
-                  <label className="form-control block">
-                    <span className="label-text text-sm font-medium">
-                      New password
-                    </span>
-                    <form.Field name="password">
-                      {(field) => {
-                        const error = getFieldError(field.state.meta.errors);
+                  <form.Field name="password">
+                    {(field) => {
+                      const error = getFieldError(field.state.meta.errors);
 
-                        return (
-                          <>
-                            <input
-                              type="password"
-                              className="input input-bordered w-full mt-1"
-                              placeholder="Create a new password"
-                              value={field.state.value}
-                              onChange={(event) =>
-                                field.handleChange(event.target.value)
-                              }
-                              autoComplete="new-password"
-                              minLength={HOSTED_PASSWORD_MIN_LENGTH}
-                              maxLength={HOSTED_PASSWORD_MAX_LENGTH}
-                              required
-                            />
-                            {error ? (
-                              <p className="mt-1 text-sm text-error">{error}</p>
-                            ) : null}
-                          </>
-                        );
-                      }}
-                    </form.Field>
-                  </label>
+                      return (
+                        <div>
+                          <input
+                            type="password"
+                            className="input input-bordered w-full"
+                            placeholder="New password..."
+                            value={field.state.value}
+                            onChange={(event) =>
+                              field.handleChange(event.target.value)
+                            }
+                            autoComplete="new-password"
+                            minLength={HOSTED_PASSWORD_MIN_LENGTH}
+                            maxLength={HOSTED_PASSWORD_MAX_LENGTH}
+                            required
+                          />
+                          {error ? (
+                            <p className="mt-1 text-sm text-error">{error}</p>
+                          ) : null}
+                        </div>
+                      );
+                    }}
+                  </form.Field>
 
-                  <label className="form-control block">
-                    <span className="label-text text-sm font-medium">
-                      Confirm password
-                    </span>
-                    <form.Field name="confirmPassword">
-                      {(field) => {
-                        const error = getFieldError(field.state.meta.errors);
+                  <form.Field name="confirmPassword">
+                    {(field) => {
+                      const error = getFieldError(field.state.meta.errors);
 
-                        return (
-                          <>
-                            <input
-                              type="password"
-                              className="input input-bordered w-full mt-1"
-                              placeholder="Confirm your new password"
-                              value={field.state.value}
-                              onChange={(event) =>
-                                field.handleChange(event.target.value)
-                              }
-                              autoComplete="new-password"
-                              minLength={HOSTED_PASSWORD_MIN_LENGTH}
-                              maxLength={HOSTED_PASSWORD_MAX_LENGTH}
-                              required
-                            />
-                            {error ? (
-                              <p className="mt-1 text-sm text-error">{error}</p>
-                            ) : null}
-                          </>
-                        );
-                      }}
-                    </form.Field>
-                  </label>
+                      return (
+                        <div>
+                          <input
+                            type="password"
+                            className="input input-bordered w-full"
+                            placeholder="Confirm new password..."
+                            value={field.state.value}
+                            onChange={(event) =>
+                              field.handleChange(event.target.value)
+                            }
+                            autoComplete="new-password"
+                            minLength={HOSTED_PASSWORD_MIN_LENGTH}
+                            maxLength={HOSTED_PASSWORD_MAX_LENGTH}
+                            required
+                          />
+                          {error ? (
+                            <p className="mt-1 text-sm text-error">{error}</p>
+                          ) : null}
+                        </div>
+                      );
+                    }}
+                  </form.Field>
 
                   {errorMessage ? (
                     <p className="text-sm text-error">{errorMessage}</p>
                   ) : null}
                   <button
-                    className="btn btn-primary w-full"
+                    className="btn btn-soft w-full"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Updating password..." : "Update password"}

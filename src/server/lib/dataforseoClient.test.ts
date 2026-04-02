@@ -4,10 +4,17 @@ import {
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
 
+interface TrackCallArg {
+  customerId: string;
+  featureId: string;
+  value: number;
+  properties?: { balanceFeatureId: string };
+}
+
 const { checkMock, trackMock, getOrCreateMock, isHostedServerAuthModeMock } =
   vi.hoisted(() => ({
     checkMock: vi.fn(),
-    trackMock: vi.fn(),
+    trackMock: vi.fn<(arg: TrackCallArg) => void>(),
     getOrCreateMock: vi.fn(),
     isHostedServerAuthModeMock: vi.fn(),
   }));
@@ -218,23 +225,17 @@ describe("meterDataforseoCall with split balances", () => {
     await client.backlinks.summary(backlinksInput);
 
     const monthlyCall = trackMock.mock.calls.find(
-      (call: unknown[]) =>
-        (call[0] as { featureId: string }).featureId ===
-        AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+      ([arg]) => arg.featureId === AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
     );
     const topupCall = trackMock.mock.calls.find(
-      (call: unknown[]) =>
-        (call[0] as { featureId: string }).featureId ===
-        AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+      ([arg]) => arg.featureId === AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
     );
 
-    expect(
-      (monthlyCall?.[0] as { properties: { balanceFeatureId: string } })
-        .properties.balanceFeatureId,
-    ).toBe(AUTUMN_SEO_DATA_BALANCE_FEATURE_ID);
-    expect(
-      (topupCall?.[0] as { properties: { balanceFeatureId: string } })
-        .properties.balanceFeatureId,
-    ).toBe(AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID);
+    expect(monthlyCall![0].properties?.balanceFeatureId).toBe(
+      AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+    );
+    expect(topupCall![0].properties?.balanceFeatureId).toBe(
+      AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+    );
   });
 });

@@ -151,14 +151,13 @@ function VerifyEmailPage() {
         title={pageCopy.title}
         helperText={pageCopy.helperText}
         footer={
-          <p className="text-sm text-base-content/70">
-            Need to sign in instead?{" "}
+          <p className="text-sm">
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="link link-primary"
+              className="text-base-content/50 hover:text-base-content transition-colors"
             >
-              Open sign in
+              Sign in
             </Link>
           </p>
         }
@@ -171,7 +170,7 @@ function VerifyEmailPage() {
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="btn btn-primary w-full"
+              className="btn btn-soft w-full"
             >
               Back to sign in
             </Link>
@@ -186,7 +185,7 @@ function VerifyEmailPage() {
             </div>
             <button
               type="button"
-              className="btn btn-outline w-full"
+              className="btn btn-soft w-full"
               onClick={() => void handleResend()}
               disabled={isResending}
             >
@@ -205,7 +204,7 @@ function VerifyEmailPage() {
           <Link
             to="/sign-in"
             search={getSignInSearch(redirectTo)}
-            className="btn btn-primary w-full"
+            className="btn btn-soft w-full"
           >
             Sign in to continue
           </Link>

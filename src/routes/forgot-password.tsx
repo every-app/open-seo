@@ -87,12 +87,11 @@ function ForgotPasswordPage() {
                     : "Password reset isn't available right now."
               }
               footer={
-                <p className="text-sm text-base-content/70">
-                  Remembered it?{" "}
+                <p className="text-sm">
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="link link-primary"
+                    className="text-base-content/50 hover:text-base-content transition-colors"
                   >
                     Back to sign in
                   </Link>
@@ -114,42 +113,37 @@ function ForgotPasswordPage() {
                     void form.handleSubmit();
                   }}
                 >
-                  <label className="form-control block">
-                    <span className="label-text text-sm font-medium">
-                      Email
-                    </span>
-                    <form.Field name="email">
-                      {(field) => {
-                        const error = getFieldError(field.state.meta.errors);
+                  <form.Field name="email">
+                    {(field) => {
+                      const error = getFieldError(field.state.meta.errors);
 
-                        return (
-                          <>
-                            <input
-                              type="email"
-                              className="input input-bordered w-full mt-1"
-                              placeholder="you@example.com"
-                              value={field.state.value}
-                              onChange={(event) =>
-                                field.handleChange(event.target.value)
-                              }
-                              autoComplete="email"
-                              disabled={!isHostedMode}
-                              required
-                            />
-                            {error ? (
-                              <p className="mt-1 text-sm text-error">{error}</p>
-                            ) : null}
-                          </>
-                        );
-                      }}
-                    </form.Field>
-                  </label>
+                      return (
+                        <div>
+                          <input
+                            type="email"
+                            className="input input-bordered w-full"
+                            placeholder="Email address..."
+                            value={field.state.value}
+                            onChange={(event) =>
+                              field.handleChange(event.target.value)
+                            }
+                            autoComplete="email"
+                            disabled={!isHostedMode}
+                            required
+                          />
+                          {error ? (
+                            <p className="mt-1 text-sm text-error">{error}</p>
+                          ) : null}
+                        </div>
+                      );
+                    }}
+                  </form.Field>
 
                   {errorMessage ? (
                     <p className="text-sm text-error">{errorMessage}</p>
                   ) : null}
                   <button
-                    className="btn btn-primary w-full"
+                    className="btn btn-soft w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
                     {isSubmitting ? "Sending reset link..." : "Send reset link"}
