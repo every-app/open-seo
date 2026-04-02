@@ -17,8 +17,8 @@ export function BillingHeader(args: {
       </h1>
       <p className="max-w-2xl text-base-content/70">
         {args.hasManagedServiceAccess
-          ? `OpenSEO hosted usage is metered against your shared backlinks balance. ${args.basePlanName} includes ${args.includedCreditsLabel} of usage credits each cycle, and extra top-ups carry forward.`
-          : `You need an active ${args.basePlanName} subscription to use OpenSEO's managed service. It includes ${args.includedCreditsLabel} of usage credits each cycle, and you can buy more at any time.`}
+          ? `${args.basePlanName} includes ${args.includedCreditsLabel} of usage credits each month. Monthly credits are used first; purchased top-ups never expire.`
+          : `You need an active ${args.basePlanName} subscription to use OpenSEO's managed service. It includes ${args.includedCreditsLabel} of usage credits each month, and you can buy more at any time.`}
       </p>
     </div>
   );
@@ -38,7 +38,7 @@ export function SubscriptionIntro(args: {
       <p className="text-sm text-base-content/65">
         {args.hasManagedServiceAccess
           ? "Hosted workspaces need an active paid plan before project pages and DataForSEO-backed features are available."
-          : `Start ${args.basePlanName} to unlock OpenSEO's managed service and your included monthly usage credits.`}
+          : `Start ${args.basePlanName} to unlock OpenSEO's managed service and your included monthly credits.`}
       </p>
     </div>
   );

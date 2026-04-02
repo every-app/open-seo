@@ -43,6 +43,15 @@ export function formatPlanPrice(
   return `${formatUsd(amount, amount % 1 === 0 ? 0 : 2)}/${intervalToLabel(interval)}`;
 }
 
+export function formatResetDate(timestampMs: number | null): string | null {
+  if (timestampMs == null) return null;
+
+  const date = new Date(timestampMs);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return `Resets ${date.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+}
+
 function formatUsd(value: number, minimumFractionDigits = 2) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",

@@ -1,0 +1,240 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+  AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+} from "@/shared/billing";
+
+const { checkMock, trackMock, getOrCreateMock, isHostedServerAuthModeMock } =
+  vi.hoisted(() => ({
+    checkMock: vi.fn(),
+    trackMock: vi.fn(),
+    getOrCreateMock: vi.fn(),
+    isHostedServerAuthModeMock: vi.fn(),
+  }));
+
+vi.mock("@/server/billing/autumn", () => ({
+  autumn: {
+    check: checkMock,
+    track: trackMock,
+  },
+}));
+
+vi.mock("@/server/billing/subscription", () => ({
+  getOrCreateOrganizationCustomer: getOrCreateMock,
+}));
+
+vi.mock("@/server/lib/runtime-env", () => ({
+  isHostedServerAuthMode: isHostedServerAuthModeMock,
+}));
+
+vi.mock("@/server/lib/dataforseo", () => ({
+  fetchKeywordIdeasRaw: vi.fn(),
+  fetchKeywordSuggestionsRaw: vi.fn(),
+  fetchRelatedKeywordsRaw: vi.fn(),
+  fetchDomainRankOverviewRaw: vi.fn(),
+  fetchRankedKeywordsRaw: vi.fn(),
+  fetchLiveSerpItemsRaw: vi.fn(),
+}));
+
+vi.mock("@/server/lib/dataforseoLighthouse", () => ({
+  fetchDataforseoLighthouseResultRaw: vi.fn(),
+}));
+
+vi.mock("@/server/lib/dataforseoBacklinks", () => ({
+  fetchBacklinksRowsRaw: vi.fn(),
+  fetchBacklinksSummaryRaw: vi.fn(),
+  fetchDomainPagesSummaryRaw: vi.fn(),
+  fetchNewLostTimeseriesRaw: vi.fn(),
+  fetchReferringDomainsRaw: vi.fn(),
+  fetchTimeseriesSummaryRaw: vi.fn(),
+}));
+
+import { createDataforseoClient } from "./dataforseoClient";
+import { fetchBacklinksSummaryRaw } from "./dataforseoBacklinks";
+
+const billingCustomer = {
+  organizationId: "org_123",
+  userEmail: "alice@example.com",
+};
+
+const backlinksInput = {
+  target: "example.com",
+  includeSubdomains: true,
+  includeIndirectLinks: true,
+  excludeInternalBacklinks: true,
+  status: "live" as const,
+};
+
+function setupHostedMode() {
+  isHostedServerAuthModeMock.mockResolvedValue(true);
+  getOrCreateMock.mockResolvedValue({ id: "org_123" });
+}
+
+function mockBalances(monthly: number, topup: number) {
+  checkMock.mockImplementation(async (args: { featureId: string }) => {
+    if (args.featureId === AUTUMN_SEO_DATA_BALANCE_FEATURE_ID) {
+      return { allowed: true, balance: { remaining: monthly } };
+    }
+    if (args.featureId === AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID) {
+      return { allowed: true, balance: { remaining: topup } };
+    }
+    return { allowed: false, balance: null };
+  });
+}
+
+function mockDataforseoResult(costUsd: number) {
+  vi.mocked(fetchBacklinksSummaryRaw).mockResolvedValue({
+    data: { rank: 42 },
+    billing: { costUsd, path: ["backlinks", "summary"], resultCount: 1 },
+  });
+}
+
+describe("meterDataforseoCall with split balances", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("skips billing in non-hosted mode", async () => {
+    isHostedServerAuthModeMock.mockResolvedValue(false);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    const result = await client.backlinks.summary(backlinksInput);
+
+    expect(result).toEqual({ rank: 42 });
+    expect(checkMock).not.toHaveBeenCalled();
+    expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it("checks both monthly and topup balances in parallel", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    expect(checkMock).toHaveBeenCalledTimes(2);
+    expect(checkMock).toHaveBeenCalledWith({
+      customerId: "org_123",
+      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+    });
+    expect(checkMock).toHaveBeenCalledWith({
+      customerId: "org_123",
+      featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+    });
+  });
+
+  it("deducts entirely from monthly when monthly has enough", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: 50,
+      }),
+    );
+  });
+
+  it("deducts entirely from topup when monthly is empty", async () => {
+    setupHostedMode();
+    mockBalances(0, 5000);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+        value: 50,
+      }),
+    );
+  });
+
+  it("splits deduction across monthly and topup when monthly is partially sufficient", async () => {
+    setupHostedMode();
+    mockBalances(30, 5000);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    expect(trackMock).toHaveBeenCalledTimes(2);
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: 30,
+      }),
+    );
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+        value: 20,
+      }),
+    );
+  });
+
+  it("throws PAYMENT_REQUIRED when combined balance is below minimum", async () => {
+    setupHostedMode();
+    // minimum is 150 credits (0.15 USD * 1000); 50 + 50 = 100 < 150
+    mockBalances(50, 50);
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(
+      client.backlinks.summary(backlinksInput),
+    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
+
+    expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it("throws PAYMENT_REQUIRED when both balances are zero", async () => {
+    setupHostedMode();
+    mockBalances(0, 0);
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(
+      client.backlinks.summary(backlinksInput),
+    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
+  });
+
+  it("includes balanceFeatureId in track properties", async () => {
+    setupHostedMode();
+    mockBalances(30, 5000);
+    mockDataforseoResult(0.05);
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    const monthlyCall = trackMock.mock.calls.find(
+      (call: unknown[]) =>
+        (call[0] as { featureId: string }).featureId ===
+        AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+    );
+    const topupCall = trackMock.mock.calls.find(
+      (call: unknown[]) =>
+        (call[0] as { featureId: string }).featureId ===
+        AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+    );
+
+    expect(
+      (monthlyCall?.[0] as { properties: { balanceFeatureId: string } })
+        .properties.balanceFeatureId,
+    ).toBe(AUTUMN_SEO_DATA_BALANCE_FEATURE_ID);
+    expect(
+      (topupCall?.[0] as { properties: { balanceFeatureId: string } })
+        .properties.balanceFeatureId,
+    ).toBe(AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID);
+  });
+});

@@ -14,10 +14,12 @@ import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
+  AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
 import {
   formatCreditAmount,
   formatPlanPrice,
+  formatResetDate,
   getIncludedFeatureQuantity,
   parseTopUpAmount,
 } from "@/client/features/billing/HostedBillingContentUtils";
@@ -55,8 +57,10 @@ export function HostedBillingContent({
   const customer = customerQuery.data;
   const basePlan =
     plans.find((plan) => plan.id === AUTUMN_PAID_PLAN_ID) ?? null;
-  const balance =
+  const monthlyBalance =
     customer?.balances?.[AUTUMN_SEO_DATA_BALANCE_FEATURE_ID] ?? null;
+  const topupBalance =
+    customer?.balances?.[AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID] ?? null;
   const hasManagedServiceAccess = Boolean(
     customer?.flags?.[AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID],
   );
@@ -136,7 +140,8 @@ export function HostedBillingContent({
         />
 
         <SeoDataCreditsSection
-          balance={balance}
+          monthlyBalance={monthlyBalance}
+          topupBalance={topupBalance}
           basePlanName={basePlanName}
           hasManagedServiceAccess={hasManagedServiceAccess}
           isTopUpPending={pendingAction === "top-up"}
@@ -153,7 +158,7 @@ export function HostedBillingContent({
                   successUrl: window.location.href,
                   featureQuantities: [
                     {
-                      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+                      featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
                       quantity: Math.round(
                         parsedTopUpAmount * AUTUMN_SEO_DATA_CREDITS_PER_USD,
                       ),
@@ -236,12 +241,16 @@ function SubscriptionSection(args: {
   );
 }
 
+type CreditBalance = {
+  granted: number;
+  remaining: number;
+  usage: number;
+  nextResetAt?: number | null;
+} | null;
+
 function SeoDataCreditsSection(args: {
-  balance: {
-    granted: number;
-    remaining: number;
-    usage: number;
-  } | null;
+  monthlyBalance: CreditBalance;
+  topupBalance: CreditBalance;
   basePlanName: string;
   hasManagedServiceAccess: boolean;
   isTopUpPending: boolean;
@@ -250,6 +259,9 @@ function SeoDataCreditsSection(args: {
   onTopUp: () => void;
   onTopUpAmountChange: (value: string) => void;
 }) {
+  const totalRemaining =
+    (args.monthlyBalance?.remaining ?? 0) + (args.topupBalance?.remaining ?? 0);
+
   return (
     <section className="card border border-base-300 bg-base-100 shadow-sm">
       <div className="card-body gap-4">
@@ -258,22 +270,36 @@ function SeoDataCreditsSection(args: {
             SEO data credits
           </h2>
           <p className="mt-1 text-sm text-base-content/70">
-            Buy extra usage credits for DataForSEO-powered features like
-            backlinks.
+            Monthly credits are used first. Purchased top-ups never expire.
           </p>
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-200/60 p-4">
           <div className="flex items-baseline justify-between gap-3">
-            <span className="text-sm text-base-content/70">Remaining</span>
+            <span className="text-sm text-base-content/70">
+              Total remaining
+            </span>
             <span className="text-2xl font-semibold text-base-content">
-              {formatCreditAmount(args.balance?.remaining ?? 0)}
+              {formatCreditAmount(totalRemaining)}
             </span>
           </div>
-          <div className="mt-3 grid gap-2 text-sm text-base-content/70 sm:grid-cols-2">
-            <CreditStat label="Granted" value={args.balance?.granted ?? 0} />
-            <CreditStat label="Used" value={args.balance?.usage ?? 0} />
-          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <CreditPoolCard
+            title="Monthly included"
+            badge={formatResetDate(args.monthlyBalance?.nextResetAt ?? null)}
+            remaining={args.monthlyBalance?.remaining ?? 0}
+            granted={args.monthlyBalance?.granted ?? 0}
+            usage={args.monthlyBalance?.usage ?? 0}
+          />
+          <CreditPoolCard
+            title="Purchased top-ups"
+            badge="Never expires"
+            remaining={args.topupBalance?.remaining ?? 0}
+            granted={args.topupBalance?.granted ?? 0}
+            usage={args.topupBalance?.usage ?? 0}
+          />
         </div>
 
         <label className="form-control gap-2">
@@ -314,22 +340,49 @@ function SeoDataCreditsSection(args: {
 
         <p className="text-xs leading-relaxed text-base-content/60">
           Credit purchases use our hosted checkout flow and apply to your
-          organization balance.
+          organization's top-up balance.
         </p>
       </div>
     </section>
   );
 }
 
-function CreditStat({ label, value }: { label: string; value: number }) {
+function CreditPoolCard(args: {
+  title: string;
+  badge: string | null;
+  remaining: number;
+  granted: number;
+  usage: number;
+}) {
   return (
-    <div className="rounded-md bg-base-100 px-3 py-2">
-      <span className="block text-xs uppercase tracking-wide text-base-content/50">
-        {label}
-      </span>
-      <span className="font-medium text-base-content">
-        {formatCreditAmount(value)}
-      </span>
+    <div className="rounded-box border border-base-300 bg-base-200/40 p-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-sm font-medium text-base-content">
+          {args.title}
+        </span>
+        {args.badge ? (
+          <span className="badge badge-sm badge-ghost text-base-content/60">
+            {args.badge}
+          </span>
+        ) : null}
+      </div>
+      <div className="mt-2 text-xl font-semibold text-base-content">
+        {formatCreditAmount(args.remaining)}
+      </div>
+      <div className="mt-2 grid grid-cols-2 gap-2 text-xs text-base-content/60">
+        <div>
+          <span className="block uppercase tracking-wide">Granted</span>
+          <span className="font-medium text-base-content/80">
+            {formatCreditAmount(args.granted)}
+          </span>
+        </div>
+        <div>
+          <span className="block uppercase tracking-wide">Used</span>
+          <span className="font-medium text-base-content/80">
+            {formatCreditAmount(args.usage)}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
