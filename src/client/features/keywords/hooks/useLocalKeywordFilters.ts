@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { useForm } from "@tanstack/react-form";
+import { useForm, useStore } from "@tanstack/react-form";
 import {
   EMPTY_FILTERS,
   type KeywordFilterValues,
@@ -10,7 +10,8 @@ export function useLocalKeywordFilters() {
     defaultValues: EMPTY_FILTERS,
   });
 
-  const values = filtersForm.state.values;
+  const values = useStore(filtersForm.store, (s) => s.values);
+
   const resetFilters = useCallback(() => {
     const keys: Array<keyof KeywordFilterValues> = [
       "include",
