@@ -19,7 +19,7 @@ export const getBlogPost = createServerFn({ method: "GET" })
 export const getBlogPosts = createServerFn({ method: "GET" }).handler(
   async () => {
     const pages = blogSource.getPages();
-    return pages.map((page) => ({
+    return pages.map((page: (typeof pages)[number]) => ({
       title: page.data.title,
       description: page.data.description,
       url: page.url,

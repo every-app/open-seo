@@ -1,6 +1,6 @@
 import { loader } from "fumadocs-core/source";
-// Keep this deep import for now: the public "fumadocs-mdx/runtime/vite" entry
-// resolves to the browser runtime in our SSR build, which breaks sourceAsync.
+// Keep this server runtime import explicit. In this app's SSR build, the
+// public Vite runtime entry resolves to the browser variant for sourceAsync.
 import { fromConfig } from "../../node_modules/fumadocs-mdx/dist/runtime/vite/server.js";
 import { blog } from "../../source.generated";
 import type * as Config from "../../source.config";
@@ -11,5 +11,3 @@ export const blogSource = loader({
   source: await serverCreate.sourceAsync(blog, {} as Record<string, never>),
   baseUrl: "/blogs",
 });
-
-export { blog };

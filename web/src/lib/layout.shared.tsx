@@ -5,6 +5,9 @@ export function baseOptions(): BaseLayoutProps {
     nav: {
       title: <span className="font-semibold">OpenSEO</span>,
     },
+    searchToggle: {
+      enabled: false,
+    },
     links: [
       {
         text: "GitHub",

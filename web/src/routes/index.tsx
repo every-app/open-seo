@@ -1,5 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { SiteFooter } from "@/components/site-footer";
 import { buildPageSeo } from "@/lib/seo";
 
 const homeTitle = "OpenSEO - Open Source SEO Platform";
@@ -61,28 +62,6 @@ function useWaitlist() {
   };
 
   return { email, setEmail, status, errorMessage, handleSubmit };
-}
-
-function FooterLinks({ className }: { className?: string }) {
-  return (
-    <div className={`flex items-center gap-6 ${className || ""}`}>
-      <a
-        href="https://github.com/every-app/open-seo"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        GitHub
-      </a>
-      <a
-        href="https://discord.gg/c9uGs3cFXr"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        Discord
-      </a>
-      <Link to="/privacy">Privacy</Link>
-    </div>
-  );
 }
 
 // ─── Page ────────────────────────────────────────────────────────────
@@ -234,7 +213,7 @@ function Home() {
 
         {/* Footer */}
         <div className="mt-8 pt-8 border-t border-neutral-200">
-          <FooterLinks className="text-xs text-neutral-600 [&_a]:hover:text-neutral-900 [&_a]:transition-colors" />
+          <SiteFooter className="text-xs text-neutral-600 [&_a]:hover:text-neutral-900 [&_a]:transition-colors" />
         </div>
       </div>
     </main>

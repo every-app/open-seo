@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as IndexRouteImport } from './routes/index'
@@ -18,6 +19,11 @@ import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 
+const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
+  id: '/terms-and-conditions',
+  path: '/terms-and-conditions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/pricing': typeof PricingRoute
   '/privacy': typeof PrivacyRoute
+  '/terms-and-conditions': typeof TermsAndConditionsRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/privacy'
+    | '/terms-and-conditions'
     | '/api/event'
     | '/api/subscribe'
     | '/blogs/$'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/privacy'
+    | '/terms-and-conditions'
     | '/api/event'
     | '/api/subscribe'
     | '/blogs/$'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/pricing'
     | '/privacy'
+    | '/terms-and-conditions'
     | '/api/event'
     | '/api/subscribe'
     | '/blogs/$'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   PricingRoute: typeof PricingRoute
   PrivacyRoute: typeof PrivacyRoute
+  TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiEventRoute: typeof ApiEventRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   BlogsSplatRoute: typeof BlogsSplatRoute
@@ -136,6 +149,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/terms-and-conditions': {
+      id: '/terms-and-conditions'
+      path: '/terms-and-conditions'
+      fullPath: '/terms-and-conditions'
+      preLoaderRoute: typeof TermsAndConditionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/privacy': {
       id: '/privacy'
       path: '/privacy'
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   PricingRoute: PricingRoute,
   PrivacyRoute: PrivacyRoute,
+  TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiEventRoute: ApiEventRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   BlogsSplatRoute: BlogsSplatRoute,
