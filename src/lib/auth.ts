@@ -1,4 +1,4 @@
-import { env, waitUntil } from "cloudflare:workers";
+import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -29,13 +29,6 @@ function createAuth() {
     baseURL: baseUrl,
     secret: getHostedSecret(),
     ...baseAuthConfig,
-    advanced: {
-      backgroundTasks: {
-        handler: (promise) => {
-          waitUntil(promise);
-        },
-      },
-    },
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,
       requireEmailVerification: true,

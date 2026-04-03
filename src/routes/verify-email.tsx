@@ -67,8 +67,8 @@ function getVerifyEmailPageCopy({
 
   if (isWaiting && email) {
     return {
-      title: "Check your email",
-      helperText: `We sent a confirmation link to ${email}. Open it to confirm your email.`,
+      title: "Verify your email",
+      helperText: `Click the link we sent to ${email} to verify your email.`,
     };
   }
 
@@ -161,7 +161,7 @@ function VerifyEmailPage() {
               search={getSignInSearch(redirectTo)}
               className="text-base-content/50 hover:text-base-content transition-colors"
             >
-              Sign in
+              Back to sign in
             </Link>
           </p>
         }
@@ -181,19 +181,13 @@ function VerifyEmailPage() {
           </div>
         ) : isWaiting ? (
           <div className="space-y-4">
-            <div className="alert alert-success">
-              <span>
-                After you click the link in your email, this page will finish up
-                automatically.
-              </span>
-            </div>
             <button
               type="button"
               className="btn btn-soft w-full"
               onClick={() => void handleResend()}
               disabled={isResending}
             >
-              {isResending ? "Sending email..." : "Send another email"}
+              {isResending ? "Sending email..." : "Resend email"}
             </button>
           </div>
         ) : isPending ? (
