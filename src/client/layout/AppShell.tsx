@@ -156,13 +156,15 @@ function TopNav({
             <Menu className="h-6 w-6" />
           </button>
         ) : null}
-        <span className="ml-1 font-semibold text-base-content">OpenSEO</span>
+        <Link to="/" className="ml-1 font-semibold text-base-content">
+          OpenSEO
+        </Link>
       </div>
 
       <div className="hidden items-center gap-1 md:flex">
-        <span className="px-2 text-lg font-semibold text-base-content">
+        <Link to="/" className="px-2 text-lg font-semibold text-base-content">
           OpenSEO
-        </span>
+        </Link>
         {projectId
           ? projectNavItems.map((item) => {
               const { icon: Icon, matchSegment, ...linkProps } = item;

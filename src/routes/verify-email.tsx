@@ -1,4 +1,4 @@
-import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -94,7 +94,6 @@ function getVerifyEmailPageCopy({
 
 function VerifyEmailPage() {
   const search = Route.useSearch();
-  const navigate = useNavigate();
   const redirectTo = normalizeAuthRedirect(search.redirect);
   const isHostedMode = isHostedClientAuthMode();
   const { data: session, isPending } = useSession();
@@ -117,8 +116,13 @@ function VerifyEmailPage() {
       return;
     }
 
-    void navigate({ href: redirectTo, replace: true });
-  }, [isVerified, navigate, redirectTo]);
+    // Full page reload instead of client-side navigation: the auth→app
+    // transition needs a clean server-side load so that all server function
+    // handlers are freshly registered (client-side nav during Vite HMR can
+    // hit the server before updated handlers are ready, causing
+    // "action is not a function" errors).
+    window.location.replace(redirectTo);
+  }, [isVerified, redirectTo]);
 
   async function handleResend() {
     if (!email) return;

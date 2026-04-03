@@ -8,7 +8,7 @@ import {
 } from "@/client/lib/error-messages";
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
-import { BILLING_ROUTE } from "@/shared/billing";
+import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
@@ -36,7 +36,7 @@ function IndexRedirect() {
       return;
     }
 
-    void navigate({ href: BILLING_ROUTE });
+    void navigate({ href: SUBSCRIBE_ROUTE });
   }, [error, navigate]);
 
   if (isError) {

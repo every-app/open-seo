@@ -1,4 +1,5 @@
 export const BILLING_ROUTE = "/billing";
+export const SUBSCRIBE_ROUTE = "/subscribe";
 
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
 export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";

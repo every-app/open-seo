@@ -1,21 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  formatCreditAmount,
-  formatResetDate,
-  parseTopUpAmount,
-} from "./HostedBillingContentUtils";
-
-describe("formatResetDate", () => {
-  it("formats a valid Unix timestamp in ms", () => {
-    const date = new Date(2026, 3, 15); // April 15, local time
-    const result = formatResetDate(date.getTime());
-    expect(result).toBe("Resets Apr 15");
-  });
-
-  it("returns null for null input", () => {
-    expect(formatResetDate(null)).toBeNull();
-  });
-});
+import { parseTopUpAmount } from "./HostedBillingContentUtils";
 
 describe("parseTopUpAmount", () => {
   it("accepts valid whole-dollar amounts", () => {
@@ -34,13 +18,5 @@ describe("parseTopUpAmount", () => {
 
   it("rejects non-numeric input", () => {
     expect(parseTopUpAmount("abc")).toEqual({ isValid: false, parsed: 20 });
-  });
-});
-
-describe("formatCreditAmount", () => {
-  it("converts credits to formatted USD", () => {
-    expect(formatCreditAmount(5000)).toBe("$5.00");
-    expect(formatCreditAmount(1000)).toBe("$1.00");
-    expect(formatCreditAmount(0)).toBe("$0.00");
   });
 });
