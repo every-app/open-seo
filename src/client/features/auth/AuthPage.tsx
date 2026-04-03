@@ -67,7 +67,7 @@ export function AuthPageCard({
 
 export function AuthPageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-base-100">
+    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-base-200">
       {children}
     </div>
   );
