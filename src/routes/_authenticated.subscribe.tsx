@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AutumnProvider, useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
-import { useSession } from "@/lib/auth-client";
+import { User } from "lucide-react";
+import { authClient, useSession } from "@/lib/auth-client";
+import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import {
@@ -111,6 +113,7 @@ function SubscribePageContent() {
 
   return (
     <div className="w-full max-w-xs space-y-6">
+      <SubscribePageAccountMenu email={session?.user?.email} />
       <div className="text-center space-y-3">
         <img
           src="/transparent-logo.png"
@@ -157,6 +160,57 @@ function SubscribePageContent() {
       <p className="text-center text-xs text-base-content/50">
         Cancel anytime — no commitment. Powered by Stripe.
       </p>
+    </div>
+  );
+}
+
+function SubscribePageAccountMenu({
+  email,
+}: {
+  email: string | undefined;
+}) {
+  if (!email) return null;
+
+  const handleSignOut = () => {
+    const signInHref = getSignInHrefForLocation(window.location);
+    void authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.assign(signInHref);
+        },
+      },
+    });
+  };
+
+  return (
+    <div className="fixed top-4 right-4">
+      <div className="dropdown dropdown-end">
+        <button
+          type="button"
+          tabIndex={0}
+          className="btn btn-ghost btn-circle"
+          aria-label="Open account menu"
+        >
+          <User className="h-5 w-5" />
+        </button>
+        <ul
+          tabIndex={0}
+          className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+        >
+          <li className="menu-title max-w-full">
+            <span className="truncate text-base-content">{email}</span>
+          </li>
+          <li>
+            <button
+              type="button"
+              className="text-error"
+              onClick={handleSignOut}
+            >
+              Sign out
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   );
 }
