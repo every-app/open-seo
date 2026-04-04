@@ -57,10 +57,6 @@ export const backlinksOverviewSchema = z.object({
   target: z.string(),
   displayTarget: z.string(),
   scope: z.enum(["domain", "page"]),
-  includeSubdomains: z.boolean(),
-  includeIndirectLinks: z.boolean(),
-  excludeInternalBacklinks: z.boolean(),
-  status: z.enum(["live", "lost", "all"]),
   summary: z.object({
     rank: z.number().nullable(),
     backlinks: z.number().nullable(),

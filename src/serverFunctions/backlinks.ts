@@ -18,10 +18,6 @@ export const getBacklinksOverview = createServerFn({
       const input = {
         target: data.target,
         scope: data.scope,
-        includeSubdomains: data.includeSubdomains,
-        includeIndirectLinks: data.includeIndirectLinks,
-        excludeInternalBacklinks: data.excludeInternalBacklinks,
-        status: data.status,
       };
       const profile = await BacklinksService.profileOverview(input, {
         organizationId: context.organizationId,
@@ -50,10 +46,6 @@ export const getBacklinksReferringDomains = createServerFn({
       const input = {
         target: data.target,
         scope: data.scope,
-        includeSubdomains: data.includeSubdomains,
-        includeIndirectLinks: data.includeIndirectLinks,
-        excludeInternalBacklinks: data.excludeInternalBacklinks,
-        status: data.status,
       };
       const profile = await BacklinksService.profileReferringDomains(input, {
         organizationId: context.organizationId,
@@ -76,10 +68,6 @@ export const getBacklinksTopPages = createServerFn({
       const input = {
         target: data.target,
         scope: data.scope,
-        includeSubdomains: data.includeSubdomains,
-        includeIndirectLinks: data.includeIndirectLinks,
-        excludeInternalBacklinks: data.excludeInternalBacklinks,
-        status: data.status,
       };
       const profile = await BacklinksService.profileTopPages(input, {
         organizationId: context.organizationId,

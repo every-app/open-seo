@@ -4,24 +4,22 @@ import type {
   DataforseoApiResponse,
 } from "@/server/lib/dataforseoCost";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
-import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
 import {
+  backlinksHistoryItemSchema,
   backlinksItemSchema,
   backlinksSummaryItemSchema,
   domainPageSummaryItemSchema,
-  newLostTimeseriesItemSchema,
   parseFirstResult,
   parseItems,
   referringDomainItemSchema,
   responseSchema,
-  timeseriesSummaryItemSchema,
 } from "@/server/lib/dataforseoBacklinksSupport";
 import { classifyBacklinksErrorWithAccountState } from "@/server/lib/dataforseoBacklinksAccount";
 export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
 const API_BASE = "https://api.dataforseo.com";
 
-export type BacklinksRequest = BacklinksLookupInput & {
+export type BacklinksRequest = {
   target: string;
 };
 
@@ -29,7 +27,8 @@ export type BacklinksListRequest = BacklinksRequest & {
   limit?: number;
 };
 
-export type BacklinksTimeseriesRequest = BacklinksRequest & {
+export type BacklinksTimeseriesRequest = {
+  target: string;
   dateFrom: string;
   dateTo: string;
 };
@@ -160,10 +159,10 @@ async function postBacklinks(path: string, payload: unknown) {
 function buildCommonPayload(input: BacklinksRequest) {
   return {
     target: input.target,
-    include_subdomains: input.includeSubdomains,
-    include_indirect_links: input.includeIndirectLinks,
-    exclude_internal_backlinks: input.excludeInternalBacklinks,
-    backlinks_status_type: input.status,
+    include_subdomains: true,
+    include_indirect_links: true,
+    exclude_internal_backlinks: true,
+    backlinks_status_type: "live",
     rank_scale: "one_hundred",
   };
 }
@@ -243,49 +242,21 @@ export async function fetchDomainPagesSummaryRaw(input: BacklinksListRequest) {
   } satisfies DataforseoApiResponse<typeof data>;
 }
 
-export async function fetchTimeseriesSummaryRaw(
+export async function fetchBacklinksHistoryRaw(
   input: BacklinksTimeseriesRequest,
 ) {
-  const response = await postBacklinks(
-    "/v3/backlinks/timeseries_summary/live",
-    [
-      {
-        ...buildCommonPayload(input),
-        date_from: input.dateFrom,
-        date_to: input.dateTo,
-        group_range: "month",
-      },
-    ],
-  );
+  const response = await postBacklinks("/v3/backlinks/history/live", [
+    {
+      target: input.target,
+      date_from: input.dateFrom,
+      date_to: input.dateTo,
+      rank_scale: "one_hundred",
+    },
+  ]);
   const data = parseItems(
-    "timeseries-summary-live",
+    "backlinks-history-live",
     response.results,
-    timeseriesSummaryItemSchema,
-  );
-  return {
-    data,
-    billing: response.billing,
-  } satisfies DataforseoApiResponse<typeof data>;
-}
-
-export async function fetchNewLostTimeseriesRaw(
-  input: BacklinksTimeseriesRequest,
-) {
-  const response = await postBacklinks(
-    "/v3/backlinks/timeseries_new_lost_summary/live",
-    [
-      {
-        ...buildCommonPayload(input),
-        date_from: input.dateFrom,
-        date_to: input.dateTo,
-        group_range: "month",
-      },
-    ],
-  );
-  const data = parseItems(
-    "timeseries-new-lost-summary-live",
-    response.results,
-    newLostTimeseriesItemSchema,
+    backlinksHistoryItemSchema,
   );
   return {
     data,

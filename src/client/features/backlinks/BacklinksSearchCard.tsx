@@ -9,10 +9,7 @@ import {
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 import { resolveBacklinksSearchScope } from "./backlinksSearchScope";
 
-type SearchDraft = Pick<
-  BacklinksSearchState,
-  "target" | "scope" | "subdomains" | "indirect" | "excludeInternal" | "status"
->;
+type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 
 function getBacklinksValidationErrors(
   value: SearchDraft,
@@ -44,7 +41,6 @@ export function BacklinksSearchCard({
   isFetching: boolean;
   onSubmit: (values: SearchDraft) => void;
 }) {
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [userSelectedScope, setUserSelectedScope] = useState(false);
   const form = useForm({
     defaultValues: initialValues,
@@ -93,7 +89,7 @@ export function BacklinksSearchCard({
 
                   return (
                     <label
-                      className={`input input-bordered lg:col-span-8 flex items-center gap-2 ${targetError ? "input-error" : ""}`}
+                      className={`input input-bordered lg:col-span-10 flex items-center gap-2 ${targetError ? "input-error" : ""}`}
                     >
                       <Search className="size-4 text-base-content/60" />
                       <input
@@ -117,28 +113,6 @@ export function BacklinksSearchCard({
                     </label>
                   );
                 }}
-              </form.Field>
-
-              <form.Field name="status">
-                {(field) => (
-                  <select
-                    className="select select-bordered lg:col-span-2"
-                    value={field.state.value}
-                    onChange={(event) =>
-                      field.handleChange(
-                        event.target.value === "lost"
-                          ? "lost"
-                          : event.target.value === "all"
-                            ? "all"
-                            : "live",
-                      )
-                    }
-                  >
-                    <option value="live">Live links</option>
-                    <option value="lost">Lost links</option>
-                    <option value="all">All links</option>
-                  </select>
-                )}
               </form.Field>
 
               <form.Subscribe selector={(state) => state.isSubmitting}>
@@ -193,70 +167,6 @@ export function BacklinksSearchCard({
               </form.Field>
             </div>
           </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <form.Field name="subdomains">
-              {(field) => (
-                <label className="label cursor-pointer gap-2 py-0">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-sm"
-                    checked={field.state.value}
-                    onChange={(event) =>
-                      field.handleChange(event.target.checked)
-                    }
-                  />
-                  <span className="label-text">Include subdomains</span>
-                </label>
-              )}
-            </form.Field>
-
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => setShowAdvanced((current) => !current)}
-            >
-              {showAdvanced ? "Hide advanced" : "Show advanced"}
-            </button>
-          </div>
-
-          {showAdvanced ? (
-            <div className="grid grid-cols-1 gap-3 rounded-xl border border-base-300 bg-base-200/40 p-4 text-sm md:grid-cols-2">
-              <form.Field name="indirect">
-                {(field) => (
-                  <label className="label cursor-pointer justify-start gap-3 py-0">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={field.state.value}
-                      onChange={(event) =>
-                        field.handleChange(event.target.checked)
-                      }
-                    />
-                    <span className="label-text">Include indirect links</span>
-                  </label>
-                )}
-              </form.Field>
-
-              <form.Field name="excludeInternal">
-                {(field) => (
-                  <label className="label cursor-pointer justify-start gap-3 py-0">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={field.state.value}
-                      onChange={(event) =>
-                        field.handleChange(event.target.checked)
-                      }
-                    />
-                    <span className="label-text">
-                      Exclude internal backlinks
-                    </span>
-                  </label>
-                )}
-              </form.Field>
-            </div>
-          ) : null}
         </form>
 
         {errorMessage ? (

@@ -3,17 +3,15 @@ import { backlinksSearchSchema } from "@/types/schemas/backlinks";
 import { domainSearchSchema } from "@/types/schemas/domain";
 
 describe("search param boolean parsing", () => {
-  it("parses explicit false values for backlinks search params", () => {
+  it("parses backlinks search params with target and tab", () => {
     const parsed = backlinksSearchSchema.parse({
-      subdomains: "false",
-      indirect: "false",
-      excludeInternal: "false",
+      target: "example.com",
+      tab: "domains",
     });
 
     expect(parsed).toEqual({
-      subdomains: false,
-      indirect: false,
-      excludeInternal: false,
+      target: "example.com",
+      tab: "domains",
     });
   });
 

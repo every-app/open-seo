@@ -97,18 +97,12 @@ export const domainPageSummaryItemSchema = z
   })
   .passthrough();
 
-export const timeseriesSummaryItemSchema = z
+export const backlinksHistoryItemSchema = z
   .object({
     date: z.string().nullable().optional(),
     rank: z.number().nullable().optional(),
     backlinks: z.number().nullable().optional(),
     referring_domains: z.number().nullable().optional(),
-  })
-  .passthrough();
-
-export const newLostTimeseriesItemSchema = z
-  .object({
-    date: z.string().nullable().optional(),
     new_backlinks: z.number().nullable().optional(),
     lost_backlinks: z.number().nullable().optional(),
     new_reffering_domains: z.number().nullable().optional(),

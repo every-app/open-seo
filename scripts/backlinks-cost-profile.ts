@@ -2,7 +2,10 @@ import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { createBacklinksService } from "@/server/features/backlinks/services/BacklinksService";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
+import type {
+  BacklinksLookupInput,
+  BacklinksTargetScope,
+} from "@/types/schemas/backlinks";
 
 loadLocalEnv();
 
@@ -84,6 +87,7 @@ async function main() {
 
 function buildInput(cliArgs: Record<string, string>): BacklinksLookupInput {
   const target = cliArgs.target;
+  const scope = parseScope(cliArgs.scope);
   if (!target) {
     printUsageAndExit("Missing target.");
   }
@@ -93,10 +97,7 @@ function buildInput(cliArgs: Record<string, string>): BacklinksLookupInput {
 
   return {
     target,
-    includeSubdomains: parseBoolean(cliArgs.subdomains, true),
-    includeIndirectLinks: parseBoolean(cliArgs.indirect, true),
-    excludeInternalBacklinks: parseBoolean(cliArgs.excludeInternal, true),
-    status: parseStatus(cliArgs.status),
+    scope,
   };
 }
 
@@ -147,13 +148,12 @@ function parseBoolean(value: string | undefined, fallback: boolean) {
   return value === "true";
 }
 
-function parseStatus(
+function parseScope(
   value: string | undefined,
-): BacklinksLookupInput["status"] {
-  if (value === "live" || value === "lost" || value === "all") {
-    return value;
-  }
-  return "live";
+): BacklinksTargetScope | undefined {
+  if (!value) return undefined;
+  if (value === "domain" || value === "page") return value;
+  printUsageAndExit(`Invalid scope: ${value}. Expected domain or page.`);
 }
 
 function parsePositiveInteger(value: string | undefined, fallback: number) {
@@ -185,7 +185,7 @@ function loadLocalEnv() {
 function printUsageAndExit(message: string): never {
   console.error(message);
   console.error(
-    "Usage: pnpm billing:backlinks --target=example.com --confirmLive=true [--status=live|lost|all] [--subdomains=true|false] [--indirect=true|false] [--excludeInternal=true|false] [--repeat=1] [--includeTabs=true|false] [--allowCi=true]",
+    "Usage: pnpm billing:backlinks --target=example.com --confirmLive=true [--scope=domain|page] [--repeat=1] [--includeTabs=true|false] [--allowCi=true]",
   );
   process.exit(1);
 }

@@ -267,7 +267,7 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 
 ### 4) Backlinks search
 
-- Backlinks search costs about `$0.08` for a domain or `$0.04` for a page.
+- Backlinks search costs about `$0.06` for a domain or `$0.04` for a page.
 - Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.
 - Exact cost can vary slightly based on returned rows and DataForSEO pricing.
 
@@ -276,7 +276,7 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 - 100 keyword research requests at the default 150 results: `$3.50`
 - 100 keyword research requests at 500 results each: `$7.00`
 - 100 domain overviews (200 ranked keywords each): `$4.01`
-- 100 backlinks domain searches at current defaults before opening extra tabs: about `$8.38`
+- 100 backlinks domain searches at current defaults before opening extra tabs: about `$6.34`
 - 100 backlinks page searches at current defaults before opening extra tabs: about `$4.30`
-- 100 fully explored backlinks domain searches: about `$12.98`
+- 100 fully explored backlinks domain searches: about `$10.94`
 - 100 fully explored backlinks page searches: about `$8.61`

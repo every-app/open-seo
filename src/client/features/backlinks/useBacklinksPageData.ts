@@ -60,19 +60,8 @@ export function useBacklinksPageData({
     () => ({
       target: searchState.target,
       scope: searchState.scope,
-      subdomains: searchState.subdomains,
-      indirect: searchState.indirect,
-      excludeInternal: searchState.excludeInternal,
-      status: searchState.status,
     }),
-    [
-      searchState.excludeInternal,
-      searchState.indirect,
-      searchState.scope,
-      searchState.status,
-      searchState.subdomains,
-      searchState.target,
-    ],
+    [searchState.scope, searchState.target],
   );
 
   const testAccessMutation = useMutation({
@@ -86,10 +75,6 @@ export function useBacklinksPageData({
     projectId,
     searchState.scope,
     searchState.target,
-    searchState.subdomains,
-    searchState.indirect,
-    searchState.excludeInternal,
-    searchState.status,
   ] as const;
 
   const overviewQuery = useQuery({
@@ -166,25 +151,13 @@ export function useBacklinksPageData({
 
 export function navigateToBacklinksSearch(
   navigate: BacklinksPageProps["navigate"],
-  values: Pick<
-    BacklinksSearchState,
-    | "target"
-    | "scope"
-    | "subdomains"
-    | "indirect"
-    | "excludeInternal"
-    | "status"
-  >,
+  values: Pick<BacklinksSearchState, "target" | "scope">,
 ) {
   navigate({
     search: (prev) => ({
       ...prev,
       target: values.target,
       scope: getPersistedBacklinksSearchScope(values.target, values.scope),
-      subdomains: values.subdomains ? undefined : false,
-      indirect: values.indirect ? undefined : false,
-      excludeInternal: values.excludeInternal ? undefined : false,
-      status: values.status === "live" ? undefined : values.status,
       tab: undefined,
     }),
     replace: true,
@@ -212,10 +185,6 @@ function buildBacklinksRequestInput(
     projectId,
     target: searchState.target,
     scope: searchState.scope,
-    includeSubdomains: searchState.subdomains,
-    includeIndirectLinks: searchState.indirect,
-    excludeInternalBacklinks: searchState.excludeInternal,
-    status: searchState.status,
   };
 }
 

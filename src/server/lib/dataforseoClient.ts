@@ -22,12 +22,11 @@ import { fetchDataforseoLighthouseResultRaw } from "@/server/lib/dataforseoLight
 import type { LighthouseStrategy } from "@/server/lib/dataforseoLighthousePayload";
 import type { StoredLighthousePayload } from "@/server/lib/lighthouseStoredPayload";
 import {
+  fetchBacklinksHistoryRaw,
   fetchBacklinksRowsRaw,
   fetchBacklinksSummaryRaw,
   fetchDomainPagesSummaryRaw,
-  fetchNewLostTimeseriesRaw,
   fetchReferringDomainsRaw,
-  fetchTimeseriesSummaryRaw,
   type BacklinksListRequest,
   type BacklinksRequest,
   type BacklinksTimeseriesRequest,
@@ -62,14 +61,9 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
           fetchDomainPagesSummaryRaw(input),
         );
       },
-      timeseriesSummary(input: BacklinksTimeseriesRequest) {
+      history(input: BacklinksTimeseriesRequest) {
         return meterDataforseoCall(customer, () =>
-          fetchTimeseriesSummaryRaw(input),
-        );
-      },
-      newLostTimeseries(input: BacklinksTimeseriesRequest) {
-        return meterDataforseoCall(customer, () =>
-          fetchNewLostTimeseriesRaw(input),
+          fetchBacklinksHistoryRaw(input),
         );
       },
     },

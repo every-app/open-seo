@@ -1,5 +1,4 @@
 import type {
-  BacklinksStatus,
   BacklinksTab,
   BacklinksTargetScope,
 } from "@/types/schemas/backlinks";
@@ -26,10 +25,6 @@ export type BacklinksTopPagesData = Awaited<
 export type BacklinksSearchState = {
   target: string;
   scope: BacklinksTargetScope;
-  subdomains: boolean;
-  indirect: boolean;
-  excludeInternal: boolean;
-  status: BacklinksStatus;
   tab: BacklinksTab;
 };
 

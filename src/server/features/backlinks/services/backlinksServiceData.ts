@@ -2,12 +2,11 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   type BacklinksRequest,
+  type fetchBacklinksHistoryRaw,
   type fetchBacklinksRowsRaw,
   type fetchBacklinksSummaryRaw,
   type fetchDomainPagesSummaryRaw,
-  type fetchNewLostTimeseriesRaw,
   type fetchReferringDomainsRaw,
-  type fetchTimeseriesSummaryRaw,
   normalizeBacklinksTarget,
 } from "@/server/lib/dataforseoBacklinks";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
@@ -74,28 +73,26 @@ export async function profileBacklinksOverview(
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
-  const request = buildBacklinksRequest(input, normalizedTarget.apiTarget);
+  const request = buildBacklinksRequest(normalizedTarget.apiTarget);
   const dateRange = buildBacklinksDateRange(now);
 
-  const [summary, backlinks, trends, newLostTrends] = await Promise.all([
+  const [summary, backlinks, history] = await Promise.all([
     dataforseo.backlinks.summary(request),
     dataforseo.backlinks.rows({ ...request, limit: 100 }),
     normalizedTarget.scope === "domain"
-      ? dataforseo.backlinks.timeseriesSummary({ ...request, ...dateRange })
-      : Promise.resolve([]),
-    normalizedTarget.scope === "domain"
-      ? dataforseo.backlinks.newLostTimeseries({ ...request, ...dateRange })
+      ? dataforseo.backlinks.history({
+          target: normalizedTarget.apiTarget,
+          ...dateRange,
+        })
       : Promise.resolve([]),
   ]);
 
   const overview = buildOverviewResult({
-    input,
     normalizedTarget,
     now,
     summary,
     backlinks,
-    trends,
-    newLostTrends,
+    history,
   });
   await cacheValue(
     cache,
@@ -124,7 +121,6 @@ export async function profileReferringDomainsRows(
   const dataforseo = createDataforseoClient(billingCustomer);
 
   const request = buildBacklinksRequest(
-    input,
     normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
   );
   const response = await dataforseo.backlinks.referringDomains({
@@ -155,7 +151,6 @@ export async function profileTopPagesRows(
   const dataforseo = createDataforseoClient(billingCustomer);
 
   const request = buildBacklinksRequest(
-    input,
     normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
   );
   const response = await dataforseo.backlinks.domainPages({
@@ -169,17 +164,8 @@ export async function profileTopPagesRows(
   return { rows };
 }
 
-function buildBacklinksRequest(
-  input: BacklinksLookupInput,
-  target: string,
-): BacklinksRequest {
-  return {
-    target,
-    includeSubdomains: input.includeSubdomains,
-    includeIndirectLinks: input.includeIndirectLinks,
-    excludeInternalBacklinks: input.excludeInternalBacklinks,
-    status: input.status,
-  };
+function buildBacklinksRequest(target: string): BacklinksRequest {
+  return { target };
 }
 
 function buildBacklinksDateRange(now: Date): BacklinksDateRange {
@@ -199,22 +185,37 @@ function buildBacklinksDateRange(now: Date): BacklinksDateRange {
 }
 
 function buildOverviewResult(args: {
-  input: BacklinksLookupInput;
   normalizedTarget: ReturnType<typeof normalizeBacklinksTarget>;
   now: Date;
   summary: Awaited<ReturnType<typeof fetchBacklinksSummaryRaw>>["data"];
   backlinks: Awaited<ReturnType<typeof fetchBacklinksRowsRaw>>["data"];
-  trends: Awaited<ReturnType<typeof fetchTimeseriesSummaryRaw>>["data"];
-  newLostTrends: Awaited<ReturnType<typeof fetchNewLostTimeseriesRaw>>["data"];
+  history: Awaited<ReturnType<typeof fetchBacklinksHistoryRaw>>["data"];
 }): BacklinksOverviewResult {
+  const historyRows = args.history
+    .map((item) => ({
+      date: normalizeHistoryDate(item.date),
+      backlinks: item.backlinks ?? null,
+      referringDomains: item.referring_domains ?? null,
+      rank: item.rank ?? null,
+      newBacklinks: item.new_backlinks ?? null,
+      lostBacklinks: item.lost_backlinks ?? null,
+      newReferringDomains:
+        item.new_referring_domains ?? item.new_reffering_domains ?? null,
+      lostReferringDomains:
+        item.lost_referring_domains ?? item.lost_reffering_domains ?? null,
+    }))
+    .filter(
+      (
+        item,
+      ): item is typeof item & {
+        date: string;
+      } => item.date !== null,
+    );
+
   return {
     target: args.normalizedTarget.apiTarget,
     displayTarget: args.normalizedTarget.displayTarget,
     scope: args.normalizedTarget.scope,
-    includeSubdomains: args.input.includeSubdomains,
-    includeIndirectLinks: args.input.includeIndirectLinks,
-    excludeInternalBacklinks: args.input.excludeInternalBacklinks,
-    status: args.input.status,
     summary: {
       rank: args.summary.rank ?? null,
       backlinks: args.summary.backlinks ?? null,
@@ -238,27 +239,25 @@ function buildOverviewResult(args: {
     backlinks: mapBacklinksRows(args.backlinks),
     referringDomains: [],
     topPages: [],
-    trends: args.trends
-      .filter((item) => Boolean(item.date))
-      .map((item) => ({
-        date: item.date ?? "",
-        backlinks: item.backlinks ?? null,
-        referringDomains: item.referring_domains ?? null,
-        rank: item.rank ?? null,
-      })),
-    newLostTrends: args.newLostTrends
-      .filter((item) => Boolean(item.date))
-      .map((item) => ({
-        date: item.date ?? "",
-        newBacklinks: item.new_backlinks ?? null,
-        lostBacklinks: item.lost_backlinks ?? null,
-        newReferringDomains:
-          item.new_referring_domains ?? item.new_reffering_domains ?? null,
-        lostReferringDomains:
-          item.lost_referring_domains ?? item.lost_reffering_domains ?? null,
-      })),
+    trends: historyRows.map((item) => ({
+      date: item.date,
+      backlinks: item.backlinks,
+      referringDomains: item.referringDomains,
+      rank: item.rank,
+    })),
+    newLostTrends: historyRows.map((item) => ({
+      date: item.date,
+      newBacklinks: item.newBacklinks,
+      lostBacklinks: item.lostBacklinks,
+      newReferringDomains: item.newReferringDomains,
+      lostReferringDomains: item.lostReferringDomains,
+    })),
     fetchedAt: args.now.toISOString(),
   };
+}
+
+function normalizeHistoryDate(value: string | null | undefined) {
+  return value ? value.slice(0, 10) : null;
 }
 
 function mapBacklinksRows(

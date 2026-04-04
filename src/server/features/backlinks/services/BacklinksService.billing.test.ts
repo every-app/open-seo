@@ -4,8 +4,7 @@ const backlinksSummaryMock = vi.fn();
 const backlinksRowsMock = vi.fn();
 const referringDomainsMock = vi.fn();
 const domainPagesMock = vi.fn();
-const timeseriesSummaryMock = vi.fn();
-const newLostTimeseriesMock = vi.fn();
+const backlinksHistoryMock = vi.fn();
 
 vi.mock("@/server/lib/r2-cache", () => ({
   buildCacheKey: vi.fn(
@@ -27,8 +26,7 @@ vi.mock("@/server/lib/dataforseoClient", () => ({
       rows: backlinksRowsMock,
       referringDomains: referringDomainsMock,
       domainPages: domainPagesMock,
-      timeseriesSummary: timeseriesSummaryMock,
-      newLostTimeseries: newLostTimeseriesMock,
+      history: backlinksHistoryMock,
     },
   })),
 }));
@@ -98,17 +96,12 @@ it("profiles only the initial overview calls and reuses cache on repeat", async 
       rel_attributes: ["noopener"],
     },
   ]);
-  timeseriesSummaryMock.mockResolvedValue([
+  backlinksHistoryMock.mockResolvedValue([
     {
       date: "2026-02-01",
       backlinks: 1100,
       referring_domains: 300,
       rank: 40,
-    },
-  ]);
-  newLostTimeseriesMock.mockResolvedValue([
-    {
-      date: "2026-02-01",
       new_backlinks: 20,
       lost_backlinks: 5,
       new_referring_domains: 3,
@@ -117,23 +110,11 @@ it("profiles only the initial overview calls and reuses cache on repeat", async 
   ]);
 
   const first = await service.profileOverview(
-    {
-      target: "example.com",
-      includeSubdomains: true,
-      includeIndirectLinks: true,
-      excludeInternalBacklinks: true,
-      status: "live",
-    },
+    { target: "example.com" },
     billingCustomer,
   );
   const second = await service.profileOverview(
-    {
-      target: "example.com",
-      includeSubdomains: true,
-      includeIndirectLinks: true,
-      excludeInternalBacklinks: true,
-      status: "live",
-    },
+    { target: "example.com" },
     billingCustomer,
   );
 
@@ -142,6 +123,7 @@ it("profiles only the initial overview calls and reuses cache on repeat", async 
   expect(referringDomainsMock).not.toHaveBeenCalled();
   expect(domainPagesMock).not.toHaveBeenCalled();
   expect(backlinksSummaryMock).toHaveBeenCalledOnce();
+  expect(backlinksHistoryMock).toHaveBeenCalledOnce();
   expect(second).toEqual(first);
 });
 
@@ -175,23 +157,11 @@ it("profiles referring domains and top pages separately", async () => {
   ]);
 
   const domains = await service.profileReferringDomains(
-    {
-      target: "https://example.com/foo",
-      includeSubdomains: true,
-      includeIndirectLinks: true,
-      excludeInternalBacklinks: true,
-      status: "live",
-    },
+    { target: "https://example.com/foo" },
     billingCustomer,
   );
   const pages = await service.profileTopPages(
-    {
-      target: "https://example.com/foo",
-      includeSubdomains: true,
-      includeIndirectLinks: true,
-      excludeInternalBacklinks: true,
-      status: "live",
-    },
+    { target: "https://example.com/foo" },
     billingCustomer,
   );
 
@@ -221,13 +191,7 @@ it("does not fall back to target spam score for referring domains", async () => 
   ]);
 
   const domains = await service.profileReferringDomains(
-    {
-      target: "example.com",
-      includeSubdomains: true,
-      includeIndirectLinks: true,
-      excludeInternalBacklinks: true,
-      status: "live",
-    },
+    { target: "example.com" },
     billingCustomer,
   );
 
@@ -256,16 +220,9 @@ it("keeps cache entries isolated per organization", async () => {
     lost_referring_domains: 2,
   });
   backlinksRowsMock.mockResolvedValue([]);
-  timeseriesSummaryMock.mockResolvedValue([]);
-  newLostTimeseriesMock.mockResolvedValue([]);
+  backlinksHistoryMock.mockResolvedValue([]);
 
-  const input = {
-    target: "example.com",
-    includeSubdomains: true,
-    includeIndirectLinks: true,
-    excludeInternalBacklinks: true,
-    status: "live" as const,
-  };
+  const input = { target: "example.com" };
 
   await service.profileOverview(input, billingCustomer);
   await service.profileOverview(input, {

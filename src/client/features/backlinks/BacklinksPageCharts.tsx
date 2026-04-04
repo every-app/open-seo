@@ -49,13 +49,20 @@ export function BacklinksTrendChart({
             tickFormatter={formatChartTick}
             minTickGap={24}
           />
-          <YAxis />
+          <YAxis yAxisId="left" tickFormatter={formatAxisValue} width={60} />
+          <YAxis
+            yAxisId="right"
+            orientation="right"
+            tickFormatter={formatAxisValue}
+            width={60}
+          />
           <Tooltip
             formatter={formatTooltipValue}
             labelFormatter={formatChartLabel}
           />
           <Legend />
           <Line
+            yAxisId="left"
             type="monotone"
             dataKey="backlinks"
             stroke="#2563eb"
@@ -64,6 +71,7 @@ export function BacklinksTrendChart({
             name="Backlinks"
           />
           <Line
+            yAxisId="right"
             type="monotone"
             dataKey="referringDomains"
             stroke="#14b8a6"
@@ -111,7 +119,7 @@ export function BacklinksNewLostChart({
             tickFormatter={formatChartTick}
             minTickGap={24}
           />
-          <YAxis />
+          <YAxis tickFormatter={formatAxisValue} width={60} />
           <Tooltip
             formatter={formatTooltipValue}
             labelFormatter={formatChartLabel}
@@ -119,19 +127,19 @@ export function BacklinksNewLostChart({
           <Legend />
           <Line
             type="monotone"
+            dataKey="lostBacklinks"
+            stroke="#ef4444"
+            strokeWidth={2}
+            dot={false}
+            name="Lost backlinks"
+          />
+          <Line
+            type="monotone"
             dataKey="newBacklinks"
             stroke="#16a34a"
             strokeWidth={2}
             dot={false}
             name="New backlinks"
-          />
-          <Line
-            type="monotone"
-            dataKey="lostBacklinks"
-            stroke="#dc2626"
-            strokeWidth={2}
-            dot={false}
-            name="Lost backlinks"
           />
         </LineChart>
       ) : null}
@@ -172,6 +180,13 @@ function EmptyChartState() {
       Not enough historical data yet.
     </div>
   );
+}
+
+function formatAxisValue(value: unknown) {
+  if (typeof value !== "number") return "";
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`;
+  return String(value);
 }
 
 function formatChartTick(value: unknown) {

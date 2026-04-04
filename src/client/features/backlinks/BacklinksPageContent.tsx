@@ -129,7 +129,7 @@ function BacklinksContent({
 
   useEffect(() => {
     setFilterText("");
-  }, [searchState.target, searchState.status, searchState.tab]);
+  }, [searchState.target, searchState.tab]);
 
   const mergedData = useMemo(
     () => mergeTabData(data, referringDomains, topPages),

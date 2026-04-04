@@ -11,15 +11,7 @@ export const Route = createFileRoute("/_project/p/$projectId/backlinks")({
 function BacklinksRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
-  const {
-    target = "",
-    scope: rawScope,
-    subdomains = true,
-    indirect = true,
-    excludeInternal = true,
-    status = "live",
-    tab = "backlinks",
-  } = Route.useSearch();
+  const { target = "", scope: rawScope, tab = "backlinks" } = Route.useSearch();
   const scope = rawScope ?? inferBacklinksSearchScopeFromTarget(target);
 
   return (
@@ -29,10 +21,6 @@ function BacklinksRoute() {
       searchState={{
         target,
         scope,
-        subdomains,
-        indirect,
-        excludeInternal,
-        status,
         tab,
       }}
     />

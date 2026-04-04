@@ -135,10 +135,6 @@ describe("fetchBacklinksSummaryRaw", () => {
     await expect(
       fetchBacklinksSummaryRaw({
         target: "example.com",
-        includeSubdomains: true,
-        includeIndirectLinks: true,
-        excludeInternalBacklinks: true,
-        status: "live",
       }),
     ).rejects.toMatchObject({ code: "BACKLINKS_NOT_ENABLED" });
 
@@ -171,10 +167,6 @@ describe("fetchBacklinksSummaryRaw", () => {
     await expect(
       fetchBacklinksSummaryRaw({
         target: "not-a-real-input.example",
-        includeSubdomains: true,
-        includeIndirectLinks: true,
-        excludeInternalBacklinks: true,
-        status: "live",
       }),
     ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
   });

@@ -46,10 +46,6 @@ export const testBacklinksAccess = createServerFn({
     try {
       await dataforseo.backlinks.summary({
         target: "dataforseo.com",
-        includeSubdomains: true,
-        includeIndirectLinks: true,
-        excludeInternalBacklinks: true,
-        status: "live",
       });
 
       const status = buildVerifiedBacklinksAccessStatus(checkedAt);

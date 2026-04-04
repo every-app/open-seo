@@ -67,10 +67,6 @@ async function buildOverviewCacheKey(
     organizationId: billingCustomer.organizationId,
     target: normalizedTarget.apiTarget,
     scope: normalizedTarget.scope,
-    includeSubdomains: input.includeSubdomains,
-    includeIndirectLinks: input.includeIndirectLinks,
-    excludeInternalBacklinks: input.excludeInternalBacklinks,
-    status: input.status,
   });
 }
 
@@ -86,10 +82,6 @@ async function buildTabCacheKey(
     organizationId: billingCustomer.organizationId,
     target: normalizedTarget.apiTarget,
     scope: normalizedTarget.scope,
-    includeSubdomains: input.includeSubdomains,
-    includeIndirectLinks: input.includeIndirectLinks,
-    excludeInternalBacklinks: input.excludeInternalBacklinks,
-    status: input.status,
   });
 }
 

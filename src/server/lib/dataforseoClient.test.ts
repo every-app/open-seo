@@ -48,12 +48,11 @@ vi.mock("@/server/lib/dataforseoLighthouse", () => ({
 }));
 
 vi.mock("@/server/lib/dataforseoBacklinks", () => ({
+  fetchBacklinksHistoryRaw: vi.fn(),
   fetchBacklinksRowsRaw: vi.fn(),
   fetchBacklinksSummaryRaw: vi.fn(),
   fetchDomainPagesSummaryRaw: vi.fn(),
-  fetchNewLostTimeseriesRaw: vi.fn(),
   fetchReferringDomainsRaw: vi.fn(),
-  fetchTimeseriesSummaryRaw: vi.fn(),
 }));
 
 import { createDataforseoClient } from "./dataforseoClient";
@@ -66,10 +65,6 @@ const billingCustomer = {
 
 const backlinksInput = {
   target: "example.com",
-  includeSubdomains: true,
-  includeIndirectLinks: true,
-  excludeInternalBacklinks: true,
-  status: "live" as const,
 };
 
 function setupHostedMode() {
