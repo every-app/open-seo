@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AutumnProvider, useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
+import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { authClient, useSession } from "@/lib/auth-client";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -164,11 +165,7 @@ function SubscribePageContent() {
   );
 }
 
-function SubscribePageAccountMenu({
-  email,
-}: {
-  email: string | undefined;
-}) {
+function SubscribePageAccountMenu({ email }: { email: string | undefined }) {
   if (!email) return null;
 
   const handleSignOut = () => {
@@ -200,6 +197,7 @@ function SubscribePageAccountMenu({
           <li className="menu-title max-w-full">
             <span className="truncate text-base-content">{email}</span>
           </li>
+          <ThemePreferenceMenuItems />
           <li>
             <button
               type="button"

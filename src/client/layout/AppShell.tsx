@@ -6,6 +6,7 @@ import {
   MissingSeoSetupModal,
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
+import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { getProjectNavItems } from "@/client/navigation/items";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { authClient, useSession } from "@/lib/auth-client";
@@ -208,26 +209,19 @@ function TopNav({
             </button>
           </div>
 
-          <HostedSessionActions />
+          <AccountMenu />
         </div>
       </div>
 
-      <HostedSessionActions mobileOnly />
+      <AccountMenu mobileOnly />
     </div>
   );
 }
 
-function HostedSessionActions({
-  mobileOnly = false,
-}: {
-  mobileOnly?: boolean;
-}) {
+function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
-
-  if (!isHostedMode || !session?.user?.email) {
-    return null;
-  }
+  const email = session?.user?.email;
 
   const handleSignOut = () => {
     const signInHref = getSignInHrefForLocation(window.location);
@@ -255,26 +249,31 @@ function HostedSessionActions({
           tabIndex={0}
           className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
         >
-          <li className="menu-title max-w-full">
-            <span className="truncate text-base-content">
-              {session.user.email}
-            </span>
-          </li>
-          <li>
-            <a href={BILLING_ROUTE} className="flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Billing
-            </a>
-          </li>
-          <li>
-            <button
-              type="button"
-              className="text-error"
-              onClick={handleSignOut}
-            >
-              Sign out
-            </button>
-          </li>
+          {email ? (
+            <li className="menu-title max-w-full">
+              <span className="truncate text-base-content">{email}</span>
+            </li>
+          ) : null}
+          <ThemePreferenceMenuItems />
+          {isHostedMode ? (
+            <li>
+              <a href={BILLING_ROUTE} className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4" />
+                Billing
+              </a>
+            </li>
+          ) : null}
+          {isHostedMode && email ? (
+            <li>
+              <button
+                type="button"
+                className="text-error"
+                onClick={handleSignOut}
+              >
+                Sign out
+              </button>
+            </li>
+          ) : null}
         </ul>
       </div>
     </div>

@@ -11,6 +11,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
+import { themePreferenceInitScript } from "@/client/lib/theme";
 import { initPostHog } from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
@@ -93,8 +94,11 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
 
   return (
-    <html>
+    <html suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{ __html: themePreferenceInitScript }}
+        />
         <HeadContent />
       </head>
       <body>

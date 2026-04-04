@@ -22,7 +22,7 @@
 
 /* Light theme */
 @plugin "daisyui/theme" {
-  name: "todo";
+  name: "openseo";
   default: true;
   prefersdark: false;
   color-scheme: light;
@@ -58,7 +58,7 @@
 
 /* Dark theme - auto-activates via prefers-color-scheme */
 @plugin "daisyui/theme" {
-  name: "todo-dark";
+  name: "openseo-dark";
   prefersdark: true;
   color-scheme: dark;
   --color-base-100: oklch(18% 0 0);
@@ -198,59 +198,57 @@ select {
   background-color: #dc2626;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --trend-grid-color: oklch(78% 0.01 255 / 0.22);
-    --trend-axis-color: oklch(84% 0.01 255 / 0.62);
-    --trend-fill-start-opacity: 0.24;
-    --trend-fill-end-opacity: 0.03;
-    --trend-tooltip-bg: oklch(21% 0.01 255 / 0.95);
-    --trend-tooltip-border: oklch(40% 0.01 255 / 0.65);
-    --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
-  }
+html[data-theme="openseo-dark"] {
+  --trend-grid-color: oklch(78% 0.01 255 / 0.22);
+  --trend-axis-color: oklch(84% 0.01 255 / 0.62);
+  --trend-fill-start-opacity: 0.24;
+  --trend-fill-end-opacity: 0.03;
+  --trend-tooltip-bg: oklch(21% 0.01 255 / 0.95);
+  --trend-tooltip-border: oklch(40% 0.01 255 / 0.65);
+  --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
+}
 
-  .score-badge {
-    color: oklch(96% 0.01 95);
-    filter: saturate(1.26) brightness(1.14);
-  }
+html[data-theme="openseo-dark"] .score-badge {
+  color: oklch(96% 0.01 95);
+  filter: saturate(1.26) brightness(1.14);
+}
 
-  .score-tier-1 {
-    background-color: oklch(58% 0.12 148);
-  }
+html[data-theme="openseo-dark"] .score-tier-1 {
+  background-color: oklch(58% 0.12 148);
+}
 
-  .score-tier-2 {
-    background-color: oklch(60% 0.115 132);
-  }
+html[data-theme="openseo-dark"] .score-tier-2 {
+  background-color: oklch(60% 0.115 132);
+}
 
-  .score-tier-3 {
-    background-color: oklch(66% 0.11 92);
-  }
+html[data-theme="openseo-dark"] .score-tier-3 {
+  background-color: oklch(66% 0.11 92);
+}
 
-  .score-tier-4 {
-    background-color: oklch(64% 0.12 56);
-  }
+html[data-theme="openseo-dark"] .score-tier-4 {
+  background-color: oklch(64% 0.12 56);
+}
 
-  .score-tier-5 {
-    background-color: oklch(62% 0.12 36);
-  }
+html[data-theme="openseo-dark"] .score-tier-5 {
+  background-color: oklch(62% 0.12 36);
+}
 
-  .score-tier-6 {
-    background-color: oklch(58% 0.11 30);
-  }
+html[data-theme="openseo-dark"] .score-tier-6 {
+  background-color: oklch(58% 0.11 30);
+}
 
-  .alert-warning {
-    @apply border-warning/60 bg-warning/20;
-  }
+html[data-theme="openseo-dark"] .alert-warning {
+  @apply border-warning/60 bg-warning/20;
+}
 
-  .alert-info {
-    @apply border-info/60 bg-info/20;
-  }
+html[data-theme="openseo-dark"] .alert-info {
+  @apply border-info/60 bg-info/20;
+}
 
-  .alert-success {
-    @apply border-success/60 bg-success/20;
-  }
+html[data-theme="openseo-dark"] .alert-success {
+  @apply border-success/60 bg-success/20;
+}
 
-  .alert-error {
-    @apply border-error/60 bg-error/20;
-  }
+html[data-theme="openseo-dark"] .alert-error {
+  @apply border-error/60 bg-error/20;
 }
