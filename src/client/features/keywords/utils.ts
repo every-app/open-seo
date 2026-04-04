@@ -1,16 +1,12 @@
 export { LOCATIONS, getLanguageCode } from "./locations";
 
-export function scoreTierClass(
-  value: number | null,
-  higherIsBetter?: boolean,
-): string {
+export function scoreTierClass(value: number | null): string {
   if (value == null) return "score-tier-na";
-  const v = higherIsBetter ? 100 - value : value;
-  if (v <= 20) return "score-tier-1";
-  if (v <= 35) return "score-tier-2";
-  if (v <= 50) return "score-tier-3";
-  if (v <= 65) return "score-tier-4";
-  if (v <= 80) return "score-tier-5";
+  if (value <= 20) return "score-tier-1";
+  if (value <= 35) return "score-tier-2";
+  if (value <= 50) return "score-tier-3";
+  if (value <= 65) return "score-tier-4";
+  if (value <= 80) return "score-tier-5";
   return "score-tier-6";
 }
 
