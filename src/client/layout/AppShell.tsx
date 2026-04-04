@@ -254,7 +254,6 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
               <span className="truncate text-base-content">{email}</span>
             </li>
           ) : null}
-          <ThemePreferenceMenuItems />
           {isHostedMode ? (
             <li>
               <a href={BILLING_ROUTE} className="flex items-center gap-2">
@@ -274,6 +273,7 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
               </button>
             </li>
           ) : null}
+          <ThemePreferenceMenuItems />
         </ul>
       </div>
     </div>
