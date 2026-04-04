@@ -132,9 +132,9 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
         </launchForm.Field>
         <span
           className="text-sm font-medium text-base-content/80"
-          title="Run Lighthouse checks through DataForSEO during this audit"
+          title="Lighthouse measures the performance of your pages and identifies issues."
         >
-          Include Lighthouse checks
+          Include Lighthouse
         </span>
       </label>
 
@@ -143,27 +143,11 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
       >
         {(runLighthouse) =>
           runLighthouse ? (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-base-content/60">Audit scope</span>
-              <launchForm.Field name="lighthouseMode">
-                {(field) => (
-                  <select
-                    className="select select-bordered select-xs"
-                    value={field.state.value}
-                    onChange={(event) =>
-                      field.handleChange(
-                        event.target.value === "all" ? "all" : "auto",
-                      )
-                    }
-                  >
-                    <option value="auto">Auto sample (recommended)</option>
-                    <option value="all">All crawled pages</option>
-                  </select>
-                )}
-              </launchForm.Field>
-              <span className="text-xs text-base-content/50">
-                Powered by DataForSEO Lighthouse
-              </span>
+            <div className="space-y-1">
+              <p className="text-xs text-base-content/60">
+                We choose a sample of 20 pages to audit, removing pages from
+                duplicate templates.
+              </p>
             </div>
           ) : null
         }

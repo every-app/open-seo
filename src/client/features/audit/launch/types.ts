@@ -5,12 +5,10 @@ export type LaunchFormValues = {
   url: string;
   maxPagesInput: string;
   runLighthouse: boolean;
-  lighthouseMode: "auto" | "all";
 };
 
 export const DEFAULT_LAUNCH_FORM_VALUES: LaunchFormValues = {
   url: "",
   maxPagesInput: "50",
   runLighthouse: false,
-  lighthouseMode: "auto",
 };
