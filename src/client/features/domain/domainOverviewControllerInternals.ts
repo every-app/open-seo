@@ -225,14 +225,20 @@ export function useSyncRouteState({
   }, [navigate]);
 }
 
-export function useDomainLookupMutation() {
+export function useDomainLookupMutation(projectId: string) {
   return useMutation({
     mutationFn: (data: {
       domain: string;
       includeSubdomains: boolean;
       locationCode: number;
       languageCode: string;
-    }) => getDomainOverview({ data }),
+    }) =>
+      getDomainOverview({
+        data: {
+          ...data,
+          projectId,
+        },
+      }),
   });
 }
 

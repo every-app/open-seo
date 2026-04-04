@@ -69,6 +69,7 @@ const domainOverviewSchema = z.object({
 
 async function getOverview(
   input: {
+    projectId: string;
     domain: string;
     includeSubdomains: boolean;
     locationCode: number;
@@ -80,6 +81,7 @@ async function getOverview(
 
   const cacheKey = await buildCacheKey("domain:overview", {
     organizationId: billingCustomer.organizationId,
+    projectId: input.projectId,
     domain,
     includeSubdomains: input.includeSubdomains,
     locationCode: input.locationCode,

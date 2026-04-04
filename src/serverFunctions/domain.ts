@@ -1,14 +1,20 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 import { domainOverviewSchema } from "@/types/schemas/domain";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 
 export const getDomainOverview = createServerFn({ method: "POST" })
-  .middleware(requireAuthenticatedContext)
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => domainOverviewSchema.parse(data))
   .handler(async ({ data, context }) =>
-    DomainService.getOverview(data, {
-      organizationId: context.organizationId,
-      userEmail: context.userEmail,
-    }),
+    DomainService.getOverview(
+      {
+        ...data,
+        projectId: context.project.id,
+      },
+      {
+        organizationId: context.organizationId,
+        userEmail: context.userEmail,
+      },
+    ),
   );

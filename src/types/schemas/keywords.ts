@@ -71,6 +71,7 @@ export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;
 export type SaveKeywordsInput = z.infer<typeof saveKeywordsSchema>;
 export type RemoveSavedKeywordInput = z.infer<typeof removeSavedKeywordSchema>;
 export const serpAnalysisSchema = z.object({
+  projectId: z.string().min(1),
   keyword: z.string().min(1),
   locationCode: z.number().int().positive().default(2840),
   languageCode: z.string().min(2).max(8).default("en"),

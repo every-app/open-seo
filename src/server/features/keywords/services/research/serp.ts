@@ -56,6 +56,7 @@ function mapOrganicSerpItems(items: SerpLiveItem[]): SerpResultItem[] {
 
 async function getSerpLiveAnalysis(
   input: {
+    projectId: string;
     keyword: string;
     locationCode: number;
     languageCode: string;
@@ -66,6 +67,7 @@ async function getSerpLiveAnalysis(
 
   const cacheKey = await buildCacheKey("serp:analysis", {
     organizationId: billingCustomer.organizationId,
+    projectId: input.projectId,
     keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,

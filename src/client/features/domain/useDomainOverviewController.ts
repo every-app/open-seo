@@ -160,7 +160,7 @@ export function useDomainOverviewController({
   });
 
   useSyncRouteState({ controlsForm, searchState, setPendingSearch, navigate });
-  const domainMutation = useDomainLookupMutation();
+  const domainMutation = useDomainLookupMutation(projectId);
   const saveMutation = useSaveKeywordsMutation({ projectId, queryClient });
   const dataState = useOverviewDataState({
     overview,

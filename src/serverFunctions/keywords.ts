@@ -7,10 +7,7 @@ import {
   serpAnalysisSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
-import {
-  requireAuthenticatedContext,
-  requireProjectContext,
-} from "@/serverFunctions/middleware";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 
 export const researchKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -58,11 +55,17 @@ export const removeSavedKeyword = createServerFn({
   });
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })
-  .middleware(requireAuthenticatedContext)
+  .middleware(requireProjectContext)
   .inputValidator((data: unknown) => serpAnalysisSchema.parse(data))
   .handler(async ({ data, context }) =>
-    KeywordResearchService.getSerpAnalysis(data, {
-      organizationId: context.organizationId,
-      userEmail: context.userEmail,
-    }),
+    KeywordResearchService.getSerpAnalysis(
+      {
+        ...data,
+        projectId: context.project.id,
+      },
+      {
+        organizationId: context.organizationId,
+        userEmail: context.userEmail,
+      },
+    ),
   );

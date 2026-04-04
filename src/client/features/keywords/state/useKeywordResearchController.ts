@@ -165,7 +165,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     activeSerpKeyword,
     serpLoading,
     serpError,
-  } = useKeywordSerpAnalysis(locationCode);
+  } = useKeywordSerpAnalysis(input.projectId, locationCode);
 
   const {
     history,

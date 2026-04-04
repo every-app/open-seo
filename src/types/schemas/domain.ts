@@ -5,6 +5,7 @@ const booleanSearchParamSchema = z
   .transform((value) => value === true || value === "true");
 
 export const domainOverviewSchema = z.object({
+  projectId: z.string().min(1),
   domain: z.string().min(1, "Domain is required").max(255),
   includeSubdomains: z.boolean().default(true),
   locationCode: z.number().int().positive().default(2840),
