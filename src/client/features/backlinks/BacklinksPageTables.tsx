@@ -10,6 +10,7 @@ import {
   BacklinksSourceLink,
 } from "./BacklinksPageLinks";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
+import { scoreTierClass } from "../keywords/utils";
 import {
   DEFAULT_BACKLINKS_SORT,
   DEFAULT_REFERRING_DOMAINS_SORT,
@@ -78,7 +79,9 @@ export function ReferringDomainsTable({
               <td className="font-medium break-all">{row.domain ?? "-"}</td>
               <td>{formatNumber(row.backlinks)}</td>
               <td>{formatNumber(row.referringPages)}</td>
-              <td>{formatNumber(row.rank)}</td>
+              <td>
+                <RankBadge value={row.rank} />
+              </td>
               <td>{formatDecimal(row.spamScore)}</td>
               <td>{formatCompactDate(row.firstSeen)}</td>
               <td>
@@ -129,7 +132,9 @@ export function TopPagesTable({
               </td>
               <td>{formatNumber(row.backlinks)}</td>
               <td>{formatNumber(row.referringDomains)}</td>
-              <td>{formatNumber(row.rank)}</td>
+              <td>
+                <RankBadge value={row.rank} />
+              </td>
               <td>{formatNumber(row.brokenBacklinks)}</td>
             </tr>
           ))}
@@ -178,19 +183,18 @@ function BacklinksTableRow({
         </div>
       </td>
       <td>{hasNotableFlags ? <BacklinkFlags row={row} /> : null}</td>
-      <td className="text-right tabular-nums text-sm">
-        <span
-          title={
-            row.spamScore != null
-              ? `Spam score: ${formatDecimal(row.spamScore)}`
-              : undefined
-          }
-        >
-          {formatNumber(row.rank)}
-        </span>
+      <td
+        className="text-center"
+        title={
+          row.spamScore != null
+            ? `Spam score: ${formatDecimal(row.spamScore)}`
+            : undefined
+        }
+      >
+        <RankBadge value={row.rank} />
       </td>
-      <td className="text-right tabular-nums text-sm">
-        {formatNumber(row.domainFromRank)}
+      <td className="text-center">
+        <RankBadge value={row.domainFromRank} />
       </td>
       <td className="whitespace-nowrap text-sm">
         <div>{formatCompactDate(row.firstSeen)}</div>
@@ -201,6 +205,18 @@ function BacklinksTableRow({
         ) : null}
       </td>
     </tr>
+  );
+}
+
+function RankBadge({ value }: { value: number | null }) {
+  if (value == null) return <span>-</span>;
+  const tierClass = scoreTierClass(value, /* higherIsBetter */ true);
+  return (
+    <span
+      className={`score-badge ${tierClass} inline-flex items-center justify-center rounded-full size-6 text-[10px] font-semibold`}
+    >
+      {value}
+    </span>
   );
 }
 
