@@ -22,6 +22,9 @@ export const Route = createRootRoute({
   head: () => ({
     meta: [
       {
+        title: "OpenSEO",
+      },
+      {
         charSet: "utf-8",
       },
       {
