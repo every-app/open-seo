@@ -1,16 +1,9 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
+import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { asAppError, toClientError } from "@/server/lib/errors";
 import { captureServerError } from "@/server/lib/posthog";
-
-function shouldCaptureServerError(code: string | null | undefined) {
-  return (
-    code !== "UNAUTHENTICATED" &&
-    code !== "NOT_FOUND" &&
-    code !== "VALIDATION_ERROR"
-  );
-}
 
 export const errorHandlingMiddleware = createMiddleware({
   type: "function",
@@ -26,7 +19,7 @@ export const errorHandlingMiddleware = createMiddleware({
 
     const appError = asAppError(error);
 
-    if (shouldCaptureServerError(appError?.code)) {
+    if (shouldCaptureAppErrorCode(appError?.code)) {
       const request = getRequest();
       const url = new URL(request.url);
 

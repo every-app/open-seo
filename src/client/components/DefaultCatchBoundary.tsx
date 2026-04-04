@@ -1,6 +1,7 @@
 import { Link, rootRouteId, useMatch, useRouter } from "@tanstack/react-router";
 import type { ErrorComponentProps } from "@tanstack/react-router";
 import * as React from "react";
+import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import {
   getErrorCode,
   getStandardErrorMessage,
@@ -8,16 +9,6 @@ import {
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { captureClientError } from "@/client/lib/posthog";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
-
-function shouldCaptureBoundaryError(
-  errorCode: ReturnType<typeof getErrorCode>,
-) {
-  return (
-    errorCode !== "UNAUTHENTICATED" &&
-    errorCode !== "NOT_FOUND" &&
-    errorCode !== "VALIDATION_ERROR"
-  );
-}
 
 export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   const router = useRouter();
@@ -34,7 +25,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   const errorCode = getErrorCode(error);
 
   React.useEffect(() => {
-    if (!shouldCaptureBoundaryError(errorCode)) {
+    if (!shouldCaptureAppErrorCode(errorCode)) {
       return;
     }
 
