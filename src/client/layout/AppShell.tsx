@@ -1,6 +1,12 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
-import { ChevronsUpDown, CreditCard, Menu, User } from "lucide-react";
+import {
+  ChevronsUpDown,
+  CircleHelp,
+  CreditCard,
+  Menu,
+  User,
+} from "lucide-react";
 import {
   AppContent,
   MissingSeoSetupModal,
@@ -15,6 +21,7 @@ import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
+const SUPPORT_PATH = "/support";
 
 export function AuthenticatedAppLayout({
   children,
@@ -142,6 +149,7 @@ function TopNav({
   onOpenDrawer: () => void;
 }) {
   const projectNavItems = projectId ? getProjectNavItems(projectId) : [];
+  const isSupportActive = pathname === SUPPORT_PATH;
 
   return (
     <div className="navbar shrink-0 gap-2 border-b border-base-300 bg-base-100">
@@ -192,6 +200,19 @@ function TopNav({
       <div className="flex-1" />
 
       <div className="hidden flex-none items-center gap-2 md:flex">
+        <div className="tooltip tooltip-bottom" data-tip="Help & Community">
+          <Link
+            to={SUPPORT_PATH}
+            className={`btn btn-ghost btn-circle btn-sm ${
+              isSupportActive
+                ? "bg-primary/10 text-primary"
+                : "text-base-content/60 hover:text-base-content"
+            }`}
+          >
+            <CircleHelp className="h-4 w-4" />
+          </Link>
+        </div>
+
         <div className="flex items-center rounded-full border border-base-300 bg-base-100/70 px-1 py-1 shadow-sm">
           <div
             className="tooltip tooltip-left before:whitespace-nowrap"
@@ -252,6 +273,14 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
           {email ? (
             <li className="menu-title max-w-full">
               <span className="truncate text-base-content">{email}</span>
+            </li>
+          ) : null}
+          {mobileOnly ? (
+            <li>
+              <Link to={SUPPORT_PATH} className="flex items-center gap-2">
+                <CircleHelp className="h-4 w-4" />
+                Help & Community
+              </Link>
             </li>
           ) : null}
           {isHostedMode ? (
