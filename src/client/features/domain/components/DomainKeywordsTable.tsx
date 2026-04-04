@@ -1,4 +1,3 @@
-import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
 import { formatFloat, formatNumber } from "@/client/features/domain/utils";
@@ -78,13 +77,22 @@ export function DomainKeywordsTable({
               />
             </th>
             <th>
-              <HeaderHelpLabel label="CPC" helpText="Cost per click in USD." />
+              <SortableHeader
+                label="CPC"
+                helpText="Cost per click in USD."
+                isActive={sortMode === "cpc"}
+                order={currentSortOrder}
+                onClick={() => onSortClick("cpc")}
+              />
             </th>
             <th>URL</th>
             <th>
-              <HeaderHelpLabel
+              <SortableHeader
                 label="Score"
                 helpText="Keyword difficulty score."
+                isActive={sortMode === "score"}
+                order={currentSortOrder}
+                onClick={() => onSortClick("score")}
               />
             </th>
           </tr>

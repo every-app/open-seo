@@ -16,10 +16,40 @@ export type PageRow = {
   keywords: number | null;
 };
 
+export type DomainFilterValues = {
+  include: string;
+  exclude: string;
+  minTraffic: string;
+  maxTraffic: string;
+  minVol: string;
+  maxVol: string;
+  minCpc: string;
+  maxCpc: string;
+  minKd: string;
+  maxKd: string;
+  minRank: string;
+  maxRank: string;
+};
+
+export const EMPTY_DOMAIN_FILTERS: DomainFilterValues = {
+  include: "",
+  exclude: "",
+  minTraffic: "",
+  maxTraffic: "",
+  minVol: "",
+  maxVol: "",
+  minCpc: "",
+  maxCpc: "",
+  minKd: "",
+  maxKd: "",
+  minRank: "",
+  maxRank: "",
+};
+
 export type DomainControlsValues = {
   domain: string;
   subdomains: boolean;
-  sort: "rank" | "traffic" | "volume";
+  sort: "rank" | "traffic" | "volume" | "score" | "cpc";
 };
 
 export type DomainSortMode = DomainControlsValues["sort"];

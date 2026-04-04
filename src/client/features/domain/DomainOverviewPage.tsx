@@ -114,8 +114,18 @@ export function DomainOverviewPage({
               visibleKeywords={state.visibleKeywords}
               filteredKeywords={state.filteredKeywords}
               filteredPages={state.filteredPages}
+              showFilters={state.showFilters}
+              setShowFilters={state.setShowFilters}
+              filtersForm={state.filtersForm}
+              activeFilterCount={state.activeFilterCount}
+              resetFilters={state.resetFilters}
               onTabChange={(tab) => {
-                if (tab === "pages" && searchState.sort === "rank") {
+                if (
+                  tab === "pages" &&
+                  (searchState.sort === "rank" ||
+                    searchState.sort === "score" ||
+                    searchState.sort === "cpc")
+                ) {
                   state.applySort("traffic", getDefaultSortOrder("traffic"));
                 }
                 state.setSearchParams({ tab });

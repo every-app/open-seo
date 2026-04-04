@@ -16,7 +16,7 @@ export const domainOverviewSchema = z.object({
 /*  URL search params schema for /p/$projectId/domain                  */
 /* ------------------------------------------------------------------ */
 
-const domainSortModes = ["rank", "traffic", "volume"] as const;
+const domainSortModes = ["rank", "traffic", "volume", "score", "cpc"] as const;
 const domainSortOrders = ["asc", "desc"] as const;
 const domainTabs = ["keywords", "pages"] as const;
 

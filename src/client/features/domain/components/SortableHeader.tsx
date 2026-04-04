@@ -1,14 +1,22 @@
 import { ArrowDown, ArrowUp } from "lucide-react";
+import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import type { SortOrder } from "@/client/features/domain/types";
 
 type Props = {
   label: string;
+  helpText?: string;
   isActive: boolean;
   order: SortOrder;
   onClick: () => void;
 };
 
-export function SortableHeader({ label, isActive, order, onClick }: Props) {
+export function SortableHeader({
+  label,
+  helpText,
+  isActive,
+  order,
+  onClick,
+}: Props) {
   return (
     <button
       type="button"
@@ -17,7 +25,11 @@ export function SortableHeader({ label, isActive, order, onClick }: Props) {
       aria-label={`Sort by ${label}`}
       aria-pressed={isActive}
     >
-      <span>{label}</span>
+      {helpText ? (
+        <HeaderHelpLabel label={label} helpText={helpText} />
+      ) : (
+        <span>{label}</span>
+      )}
       {isActive ? (
         order === "asc" ? (
           <ArrowUp className="size-3" />

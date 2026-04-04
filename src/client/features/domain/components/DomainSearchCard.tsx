@@ -62,6 +62,8 @@ export function DomainSearchCard({
                 <option value="rank">By Rank</option>
                 <option value="traffic">By Traffic</option>
                 <option value="volume">By Volume</option>
+                <option value="score">By Score</option>
+                <option value="cpc">By CPC</option>
               </select>
             )}
           </controlsForm.Field>

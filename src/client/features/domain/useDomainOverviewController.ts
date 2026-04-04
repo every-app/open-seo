@@ -24,6 +24,7 @@ import type {
 } from "@/client/features/domain/types";
 import { saveSelectedKeywords } from "@/client/features/domain/domainActions";
 import { useSaveKeywordsMutation } from "@/client/features/domain/mutations";
+import { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
 import {
   useDomainLookupMutation,
   useOverviewDataState,
@@ -109,6 +110,8 @@ export function useDomainOverviewController({
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set(),
   );
+  const [showFilters, setShowFilters] = useState(false);
+  const domainFilters = useDomainFilters();
   const { history, isLoaded, addSearch, clearHistory, removeHistoryItem } =
     useDomainSearchHistory(projectId);
 
@@ -165,6 +168,7 @@ export function useDomainOverviewController({
   const dataState = useOverviewDataState({
     overview,
     pendingSearch,
+    filters: domainFilters.values,
     sortMode: searchState.sort,
     currentSortOrder,
     setSelectedKeywords,
@@ -211,6 +215,10 @@ export function useDomainOverviewController({
     selectedKeywords,
     currentSortOrder,
     setSearchParams,
+    showFilters,
+    setShowFilters,
+    filtersForm: domainFilters.filtersForm,
+    resetFilters: domainFilters.resetFilters,
     ...handlers,
     ...dataState,
   };

@@ -5,6 +5,7 @@ import { sortBy } from "remeda";
 import { toast } from "sonner";
 import { getDomainOverview } from "@/serverFunctions/domain";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { filterAndSortKeywords } from "@/client/features/domain/domainFiltering";
 import {
   getDefaultSortOrder,
   normalizeDomainTarget,
@@ -17,6 +18,7 @@ import {
 } from "@/client/features/domain/utils";
 import type {
   DomainActiveTab,
+  DomainFilterValues,
   DomainOverviewData,
   DomainSortMode,
   SortOrder,
@@ -62,45 +64,29 @@ type ControlsFormLike = DomainControlsFormAccess;
 export function useOverviewDataState({
   overview,
   pendingSearch,
+  filters,
   sortMode,
   currentSortOrder,
   setSelectedKeywords,
 }: {
   overview: DomainOverviewData | null;
   pendingSearch: string;
+  filters: DomainFilterValues;
   sortMode: DomainSortMode;
   currentSortOrder: SortOrder;
   setSelectedKeywords: Dispatch<SetStateAction<Set<string>>>;
 }) {
-  const filteredKeywords = useMemo(() => {
-    const source = overview?.keywords ?? [];
-    const filtered = !pendingSearch
-      ? source
-      : source.filter((row) => {
-          const haystack =
-            `${row.keyword} ${row.relativeUrl ?? ""}`.toLowerCase();
-          return haystack.includes(pendingSearch.toLowerCase().trim());
-        });
-
-    if (sortMode === "traffic") {
-      return sortBy(filtered, [
-        (row) => sortableNullableNumber(row.traffic, currentSortOrder),
+  const filteredKeywords = useMemo(
+    () =>
+      filterAndSortKeywords({
+        keywords: overview?.keywords ?? [],
+        pendingSearch,
+        filters,
+        sortMode,
         currentSortOrder,
-      ]);
-    }
-
-    if (sortMode === "volume") {
-      return sortBy(filtered, [
-        (row) => sortableNullableNumber(row.searchVolume, currentSortOrder),
-        currentSortOrder,
-      ]);
-    }
-
-    return sortBy(filtered, [
-      (row) => sortableNullableNumber(row.position, currentSortOrder),
-      currentSortOrder,
-    ]);
-  }, [currentSortOrder, overview?.keywords, pendingSearch, sortMode]);
+      }),
+    [currentSortOrder, filters, overview?.keywords, pendingSearch, sortMode],
+  );
 
   const filteredPages = useMemo(() => {
     const source = overview?.pages ?? [];
@@ -141,10 +127,16 @@ export function useOverviewDataState({
     });
   }, [setSelectedKeywords, visibleKeywords]);
 
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter((value) => value.trim() !== "").length,
+    [filters],
+  );
+
   return {
     filteredKeywords,
     filteredPages,
     visibleKeywords,
+    activeFilterCount,
     toggleKeywordSelection: (keyword: string) => {
       setSelectedKeywords((prev) => {
         const next = new Set(prev);

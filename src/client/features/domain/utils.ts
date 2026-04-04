@@ -7,7 +7,13 @@ import type {
 import { buildCsv, downloadCsv as downloadCsvFile } from "@/client/lib/csv";
 
 export function toSortMode(value: string | null): DomainSortMode | undefined {
-  if (value === "rank" || value === "traffic" || value === "volume") {
+  if (
+    value === "rank" ||
+    value === "traffic" ||
+    value === "volume" ||
+    value === "score" ||
+    value === "cpc"
+  ) {
     return value;
   }
   return undefined;
@@ -50,11 +56,9 @@ export function sortableNullableNumber(
   return order === "asc" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
 }
 
-export function toPageSortMode(
-  sortMode: DomainSortMode,
-): Exclude<DomainSortMode, "rank"> {
-  if (sortMode === "rank") return "traffic";
-  return sortMode;
+export function toPageSortMode(sortMode: DomainSortMode): "traffic" | "volume" {
+  if (sortMode === "volume") return "volume";
+  return "traffic";
 }
 
 export function normalizeDomainTarget(input: string): string | null {

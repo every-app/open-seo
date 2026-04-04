@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { z } from "zod";
 import { jsonCodec } from "@/shared/json";
 
-type DomainSortMode = "rank" | "traffic" | "volume";
+type DomainSortMode = "rank" | "traffic" | "volume" | "score" | "cpc";
 type DomainTab = "keywords" | "pages";
 
 export interface DomainSearchHistoryItem {
