@@ -1,5 +1,4 @@
 import { Clock, Globe, History, Search, X } from "lucide-react";
-import { reverse } from "remeda";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
@@ -18,17 +17,10 @@ export function KeywordResearchEmptyState({ controller }: Props) {
 }
 
 function NoResultsState({ controller }: Props) {
-  const {
-    controlsForm,
-    lastResultSource,
-    lastSearchKeyword,
-    lastSearchLocationCode,
-    lastUsedFallback,
-    onSearch,
-  } = controller;
+  const { lastSearchKeyword, lastSearchLocationCode } = controller;
 
   return (
-    <div className="flex-1 flex items-center justify-center px-4 md:px-6 py-6">
+    <div className="flex-1 flex items-start justify-center px-4 md:px-6 py-6">
       <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4">
         <Globe className="size-10 mx-auto text-base-content/40" />
         <div className="space-y-2">
@@ -46,54 +38,6 @@ function NoResultsState({ controller }: Props) {
             </span>
             .
           </p>
-        </div>
-
-        <div className="rounded-xl bg-base-200/70 px-4 py-3 text-left text-sm text-base-content/70 space-y-1">
-          <p>
-            Source checked:{" "}
-            <span className="font-medium">{lastResultSource}</span>
-            {lastUsedFallback ? (
-              <span> (with fallback chain: related - suggestions - ideas)</span>
-            ) : null}
-          </p>
-          <p>Try a broader phrase, swap word order, or change location.</p>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <button
-            className="btn btn-sm btn-outline"
-            onClick={() => {
-              const words = lastSearchKeyword.split(/\s+/).filter(Boolean);
-              const reversedKeyword = reverse(words).join(" ");
-              if (!reversedKeyword || reversedKeyword === lastSearchKeyword) {
-                return;
-              }
-              controlsForm.setFieldValue("keyword", reversedKeyword);
-              onSearch({
-                keyword: reversedKeyword,
-                locationCode: lastSearchLocationCode,
-              });
-            }}
-            disabled={lastSearchKeyword.trim().split(/\s+/).length < 2}
-          >
-            Try reversed phrase
-          </button>
-          <button
-            className="btn btn-sm btn-ghost"
-            onClick={() => {
-              const firstWord = lastSearchKeyword
-                .split(/\s+/)
-                .filter(Boolean)[0];
-              if (!firstWord) return;
-              controlsForm.setFieldValue("keyword", firstWord);
-              onSearch({
-                keyword: firstWord,
-                locationCode: lastSearchLocationCode,
-              });
-            }}
-          >
-            Try broader seed
-          </button>
         </div>
       </div>
     </div>

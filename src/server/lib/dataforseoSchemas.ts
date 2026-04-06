@@ -12,7 +12,7 @@ const dataforseoTaskSchema = z
       .array(
         z
           .object({
-            items: z.array(z.unknown()).optional(),
+            items: z.array(z.unknown()).nullable().optional(),
           })
           .passthrough(),
       )
