@@ -14,8 +14,8 @@ export function normalizeKeyword(input: string): string {
   return input.trim().toLowerCase();
 }
 
-export function normalizeIntent(raw: unknown): KeywordIntent {
-  if (typeof raw !== "string") return "unknown";
+export function normalizeIntent(raw: string | null | undefined): KeywordIntent {
+  if (!raw) return "unknown";
   const value = raw.toLowerCase();
   if (value.includes("inform")) return "informational";
   if (value.includes("commerc")) return "commercial";

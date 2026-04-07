@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 
+const taskResultSchema = z
+  .object({
+    items: z.array(z.unknown()).nullable().optional(),
+  })
+  .passthrough();
+
+export type BacklinksTaskResult = z.infer<typeof taskResultSchema>;
+
 const taskSchema = z
   .object({
     status_code: z.number().optional(),
@@ -8,7 +16,7 @@ const taskSchema = z
     cost: z.number().nullable().optional(),
     result_count: z.number().nullable().optional(),
     path: z.array(z.string()).optional(),
-    result: z.array(z.unknown()).nullable().optional(),
+    result: z.array(taskResultSchema.nullable()).nullable().optional(),
   })
   .passthrough();
 
@@ -112,10 +120,6 @@ export const backlinksHistoryItemSchema = z
   })
   .passthrough();
 
-const resultItemsSchema = z.object({
-  items: z.array(z.unknown()).optional(),
-});
-
 export function classifyBacklinksError(
   status: number | undefined,
   details: string,
@@ -201,7 +205,7 @@ export function classifyBacklinksError(
 
 export function parseItems<T extends z.ZodTypeAny>(
   endpointName: string,
-  results: unknown[],
+  results: BacklinksTaskResult[],
   itemSchema: T,
 ): Array<z.infer<T>> {
   const firstResult = results[0] ?? null;
@@ -210,11 +214,7 @@ export function parseItems<T extends z.ZodTypeAny>(
     throw new AppError("VALIDATION_ERROR", "Backlinks target is invalid");
   }
 
-  const parsedItemsHolder = resultItemsSchema.safeParse(firstResult);
-  const items = parsedItemsHolder.success
-    ? (parsedItemsHolder.data.items ?? [])
-    : [];
-  const parsed = z.array(itemSchema).safeParse(items);
+  const parsed = z.array(itemSchema).safeParse(firstResult.items ?? []);
   if (!parsed.success) {
     console.error(
       `dataforseo.${endpointName}.invalid-items`,
@@ -231,7 +231,7 @@ export function parseItems<T extends z.ZodTypeAny>(
 
 export function parseFirstResult<T extends z.ZodTypeAny>(
   endpointName: string,
-  results: unknown[],
+  results: BacklinksTaskResult[],
   resultSchema: T,
 ): z.infer<T> {
   const firstResult = results[0] ?? null;

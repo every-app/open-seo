@@ -16,6 +16,7 @@ const dataforseoTaskSchema = z
           })
           .passthrough(),
       )
+      .nullable()
       .optional(),
   })
   .passthrough();
@@ -30,10 +31,6 @@ export const dataforseoResponseSchema = z
     tasks: z.array(dataforseoTaskSchema).optional(),
   })
   .passthrough();
-
-function getTaskItems(task: DataforseoTask): unknown[] {
-  return task.result?.[0]?.items ?? [];
-}
 
 const monthlySearchSchema = z
   .object({
@@ -205,7 +202,7 @@ export function parseTaskItems<T extends z.ZodType>(
   task: DataforseoTask,
   itemSchema: T,
 ): z.infer<T>[] {
-  const parsed = z.array(itemSchema).safeParse(getTaskItems(task));
+  const parsed = z.array(itemSchema).safeParse(task.result?.[0]?.items ?? []);
   if (!parsed.success) {
     console.error(
       `dataforseo.${endpointName}.invalid-payload`,

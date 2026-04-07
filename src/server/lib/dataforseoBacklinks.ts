@@ -5,6 +5,7 @@ import type {
 } from "@/server/lib/dataforseoCost";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import {
+  type BacklinksTaskResult,
   backlinksHistoryItemSchema,
   backlinksItemSchema,
   backlinksSummaryItemSchema,
@@ -34,7 +35,7 @@ export type BacklinksTimeseriesRequest = {
 };
 
 type DataforseoTaskResponse = {
-  results: unknown[];
+  results: BacklinksTaskResult[];
   billing: DataforseoApiCallCost;
 };
 
@@ -147,7 +148,9 @@ async function postBacklinks(path: string, payload: unknown) {
   }
 
   return {
-    results: task.result ?? [],
+    results: (task.result ?? []).filter(
+      (r): r is BacklinksTaskResult => r != null,
+    ),
     billing: {
       path: task.path ?? [],
       costUsd: task.cost ?? responseData.cost ?? 0,
