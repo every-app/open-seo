@@ -2,6 +2,7 @@
 **/public
 pnpm-lock.yaml
 routeTree.gen.ts
+.opencode/package.json
 
 dist/
 drizzle/

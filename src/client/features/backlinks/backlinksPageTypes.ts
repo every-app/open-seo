@@ -38,3 +38,21 @@ export type BacklinksPageProps = {
   searchState: BacklinksSearchState;
   navigate: BacklinksNavigate;
 };
+
+export type BacklinksRow = BacklinksOverviewData["backlinks"][number];
+
+export type GroupedBacklinkDomain = {
+  domain: string;
+  domainAuthority: number | null;
+  spamScore: number | null;
+  firstSeen: string | null;
+  backlinkCount: number;
+  targetCount: number;
+  lostCount: number;
+  brokenCount: number;
+  nofollowCount: number;
+  /** Child rows for TanStack Table's getSubRows — each wraps a BacklinksRow */
+  subRows: GroupedBacklinkDomain[];
+  /** Set on child rows only — the original backlink data */
+  _backlink?: BacklinksRow;
+};

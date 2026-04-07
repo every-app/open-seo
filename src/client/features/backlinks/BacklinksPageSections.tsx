@@ -4,11 +4,9 @@ import {
   BacklinksNewLostChart,
   BacklinksTrendChart,
 } from "./BacklinksPageCharts";
-import {
-  BacklinksTable,
-  ReferringDomainsTable,
-  TopPagesTable,
-} from "./BacklinksPageTables";
+import { BacklinksTable } from "./BacklinksTable";
+import { ReferringDomainsTable } from "./ReferringDomainsTable";
+import { TopPagesTable } from "./TopPagesTable";
 import type {
   BacklinksOverviewData,
   BacklinksSearchState,

@@ -2,82 +2,10 @@ import { ArrowDown, ArrowUp } from "lucide-react";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import {
   getNextSort,
-  type BacklinksTableSort,
   type ReferringDomainsTableSort,
   type SortDirection,
   type TopPagesTableSort,
 } from "./backlinksTableSorting";
-
-export function BacklinksTableHeader({
-  sort,
-  onSortChange,
-}: {
-  sort: BacklinksTableSort;
-  onSortChange: (sort: BacklinksTableSort) => void;
-}) {
-  return (
-    <thead>
-      <tr>
-        <SortableHeaderCell
-          label="Source"
-          helpText="Page or domain linking to you"
-          field="source"
-          defaultDirection="asc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-        <SortableHeaderCell
-          label="Target"
-          helpText="Destination on your site"
-          field="target"
-          defaultDirection="asc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-        <SortableHeaderCell
-          label="Anchor"
-          helpText="Text or format of the link"
-          field="anchor"
-          defaultDirection="asc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-        <th>
-          <HeaderHelpLabel
-            label="Flags"
-            helpText="Special backlink attributes, such as lost, broken, nofollow, or multiple links from the same source."
-          />
-        </th>
-        <SortableHeaderCell
-          align="right"
-          label="Link"
-          helpText="Authority of the linking page"
-          field="linkAuthority"
-          defaultDirection="desc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-        <SortableHeaderCell
-          align="right"
-          label="DA"
-          helpText="Authority of the linking domain"
-          field="domainAuthority"
-          defaultDirection="desc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-        <SortableHeaderCell
-          label="First Seen"
-          helpText="When this link was first discovered by the crawler"
-          field="firstSeen"
-          defaultDirection="desc"
-          sort={sort}
-          onSortChange={onSortChange}
-        />
-      </tr>
-    </thead>
-  );
-}
 
 export function ReferringDomainsTableHeader({
   sort,

@@ -2,14 +2,6 @@ import type { BacklinksOverviewData } from "./backlinksPageTypes";
 
 export type SortDirection = "asc" | "desc";
 
-export type BacklinksTableSortField =
-  | "source"
-  | "target"
-  | "anchor"
-  | "linkAuthority"
-  | "domainAuthority"
-  | "firstSeen";
-
 export type ReferringDomainsTableSortField =
   | "domain"
   | "backlinks"
@@ -31,15 +23,9 @@ export type TableSort<TField extends string> = {
   direction: SortDirection;
 };
 
-export type BacklinksTableSort = TableSort<BacklinksTableSortField>;
 export type ReferringDomainsTableSort =
   TableSort<ReferringDomainsTableSortField>;
 export type TopPagesTableSort = TableSort<TopPagesTableSortField>;
-
-export const DEFAULT_BACKLINKS_SORT: BacklinksTableSort = {
-  field: "firstSeen",
-  direction: "desc",
-};
 
 export const DEFAULT_REFERRING_DOMAINS_SORT: ReferringDomainsTableSort = {
   field: "backlinks",
@@ -64,42 +50,6 @@ export function getNextSort<TField extends string>(
     field,
     direction: current.direction === "asc" ? "desc" : "asc",
   };
-}
-
-export function sortBacklinkRows(
-  rows: BacklinksOverviewData["backlinks"],
-  sort: BacklinksTableSort,
-) {
-  return rows.toSorted((left, right) => {
-    switch (sort.field) {
-      case "source":
-        return compareStrings(
-          left.domainFrom?.replace(/^www\./, "") ?? left.urlFrom,
-          right.domainFrom?.replace(/^www\./, "") ?? right.urlFrom,
-          sort.direction,
-        );
-      case "target":
-        return compareStrings(left.urlTo, right.urlTo, sort.direction);
-      case "anchor":
-        return compareStrings(
-          left.anchor ?? left.itemType,
-          right.anchor ?? right.itemType,
-          sort.direction,
-        );
-      case "linkAuthority":
-        return compareNumbers(left.rank, right.rank, sort.direction);
-      case "domainAuthority":
-        return compareNumbers(
-          left.domainFromRank,
-          right.domainFromRank,
-          sort.direction,
-        );
-      case "firstSeen":
-        return compareDates(left.firstSeen, right.firstSeen, sort.direction);
-      default:
-        return 0;
-    }
-  });
 }
 
 export function sortReferringDomainRows(
