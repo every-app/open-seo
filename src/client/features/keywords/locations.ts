@@ -47,6 +47,7 @@ export const LOCATION_OPTIONS = [
     languageCode: "en",
   },
   { code: 2682, label: "Saudi Arabia", shortLabel: "SA", languageCode: "ar" },
+  { code: 2050, label: "Bangladesh", shortLabel: "BD", languageCode: "bn" },
 ] as const;
 
 const LOCATION_CODES = new Set<number>(
