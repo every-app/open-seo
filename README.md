@@ -53,8 +53,8 @@ Join Discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
 
 Follow along for updates:
 
-- [r/everyapp](https://www.reddit.com/r/everyapp/)
-- On X: https://x.com/bensenescu
+- Sign up for the mailing list on our website: [openseo.so](https://openseo.so)
+- Follow on X: https://x.com/bensenescu
 
 ## Pricing / Costs
 
