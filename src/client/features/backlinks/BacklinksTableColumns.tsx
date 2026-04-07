@@ -295,6 +295,33 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
     sortingFn: "basic",
   },
   {
+    id: "spamScore",
+    accessorKey: "spamScore",
+    header: ({ column }) => (
+      <SortableHeader
+        column={column}
+        label="Spam"
+        helpText="Estimated spam risk for the linking domain or backlink. Higher scores are more likely to be manipulative or low quality."
+        align="right"
+      />
+    ),
+    size: 70,
+    minSize: 50,
+    cell: ({ row }) => {
+      const value =
+        row.depth > 0
+          ? row.original._backlink?.spamScore
+          : row.original.spamScore;
+
+      return (
+        <div className="text-right tabular-nums text-sm">
+          {value != null && value > 0 ? Math.round(value) : null}
+        </div>
+      );
+    },
+    sortingFn: "basic",
+  },
+  {
     id: "firstSeen",
     accessorKey: "firstSeen",
     header: ({ column }) => (

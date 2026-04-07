@@ -1,7 +1,6 @@
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
 
 export type SortDirection = "asc" | "desc";
-
 export type ReferringDomainsTableSortField =
   | "domain"
   | "backlinks"
@@ -51,7 +50,6 @@ export function getNextSort<TField extends string>(
     direction: current.direction === "asc" ? "desc" : "asc",
   };
 }
-
 export function sortReferringDomainRows(
   rows: BacklinksOverviewData["referringDomains"],
   sort: ReferringDomainsTableSort,

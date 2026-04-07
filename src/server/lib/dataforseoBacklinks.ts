@@ -1,4 +1,8 @@
 import { AppError } from "@/server/lib/errors";
+import {
+  normalizeBacklinksSpamFilterOptions,
+  type BacklinksSpamFilterOptions,
+} from "@/types/schemas/backlinks";
 import type {
   DataforseoApiCallCost,
   DataforseoApiResponse,
@@ -24,9 +28,10 @@ export type BacklinksRequest = {
   target: string;
 };
 
-export type BacklinksListRequest = BacklinksRequest & {
-  limit?: number;
-};
+export type BacklinksListRequest = BacklinksRequest &
+  BacklinksSpamFilterOptions & {
+    limit?: number;
+  };
 
 export type BacklinksTimeseriesRequest = {
   target: string;
@@ -186,11 +191,16 @@ export async function fetchBacklinksSummaryRaw(input: BacklinksRequest) {
 }
 
 export async function fetchBacklinksRowsRaw(input: BacklinksListRequest) {
+  const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
+  const filters = spamFilterOptions.hideSpam
+    ? [["backlink_spam_score", "<=", spamFilterOptions.spamThreshold]]
+    : undefined;
   const response = await postBacklinks("/v3/backlinks/backlinks/live", [
     {
       ...buildCommonPayload(input),
       limit: input.limit ?? 100,
       order_by: ["rank,desc"],
+      ...(filters ? { filters } : {}),
     },
   ]);
   const data = parseItems(
@@ -205,11 +215,16 @@ export async function fetchBacklinksRowsRaw(input: BacklinksListRequest) {
 }
 
 export async function fetchReferringDomainsRaw(input: BacklinksListRequest) {
+  const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
+  const filters = spamFilterOptions.hideSpam
+    ? [["backlinks_spam_score", "<=", spamFilterOptions.spamThreshold]]
+    : undefined;
   const response = await postBacklinks("/v3/backlinks/referring_domains/live", [
     {
       ...buildCommonPayload(input),
       limit: input.limit ?? 100,
       order_by: ["backlinks,desc"],
+      ...(filters ? { filters } : {}),
     },
   ]);
   const data = parseItems(

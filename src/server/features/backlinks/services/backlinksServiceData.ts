@@ -11,6 +11,10 @@ import {
 } from "@/server/lib/dataforseoBacklinks";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import {
+  normalizeBacklinksSpamFilterOptions,
+  type BacklinksSpamFilterOptions,
+} from "@/types/schemas/backlinks";
+import {
   backlinksOverviewSchema,
   referringDomainRowSchema,
   topPageRowSchema,
@@ -58,6 +62,7 @@ export async function profileBacklinksOverview(
   cacheKey: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
+  options?: BacklinksSpamFilterOptions,
 ): Promise<BacklinksOverviewProfile> {
   const cachedRaw = await cache.get(cacheKey);
   const cached = backlinksOverviewCacheSchema.safeParse(cachedRaw);
@@ -73,12 +78,16 @@ export async function profileBacklinksOverview(
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
-  const request = buildBacklinksRequest(normalizedTarget.apiTarget);
+  const request = buildBacklinksListRequest(
+    normalizedTarget.apiTarget,
+    100,
+    options,
+  );
   const dateRange = buildBacklinksDateRange(now);
 
   const [summary, backlinks, history] = await Promise.all([
-    dataforseo.backlinks.summary(request),
-    dataforseo.backlinks.rows({ ...request, limit: 100 }),
+    dataforseo.backlinks.summary({ target: request.target }),
+    dataforseo.backlinks.rows(request),
     normalizedTarget.scope === "domain"
       ? dataforseo.backlinks.history({
           target: normalizedTarget.apiTarget,
@@ -109,6 +118,7 @@ export async function profileReferringDomainsRows(
   cacheKey: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
+  options?: BacklinksSpamFilterOptions,
 ): Promise<ReferringDomainsProfile> {
   const cachedRaw = await cache.get(cacheKey);
   const cached = referringDomainsCacheSchema.safeParse(cachedRaw);
@@ -120,13 +130,12 @@ export async function profileReferringDomainsRows(
 
   const dataforseo = createDataforseoClient(billingCustomer);
 
-  const request = buildBacklinksRequest(
+  const request = buildBacklinksListRequest(
     normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
+    100,
+    options,
   );
-  const response = await dataforseo.backlinks.referringDomains({
-    ...request,
-    limit: 100,
-  });
+  const response = await dataforseo.backlinks.referringDomains(request);
   const rows = mapReferringDomainsRows(response);
 
   await cacheValue(cache, cacheKey, { rows }, BACKLINKS_TAB_TTL_SECONDS);
@@ -166,6 +175,18 @@ export async function profileTopPagesRows(
 
 function buildBacklinksRequest(target: string): BacklinksRequest {
   return { target };
+}
+
+function buildBacklinksListRequest(
+  target: string,
+  limit: number,
+  options?: BacklinksSpamFilterOptions,
+) {
+  return {
+    ...buildBacklinksRequest(target),
+    limit,
+    ...normalizeBacklinksSpamFilterOptions(options),
+  };
 }
 
 function buildBacklinksDateRange(now: Date): BacklinksDateRange {

@@ -52,10 +52,7 @@ export function useBacklinksPageData({
       )
     : null;
   const backlinksEnabled = accessStatus?.enabled ?? false;
-  const requestInput = useMemo(
-    () => buildBacklinksRequestInput(projectId, searchState),
-    [projectId, searchState],
-  );
+  const requestInput = buildBacklinksRequestInput(projectId, searchState);
   const searchCardInitialValues = useMemo(
     () => ({
       target: searchState.target,
@@ -71,20 +68,19 @@ export function useBacklinksPageData({
     },
   });
 
-  const queryKeyParts = [
+  const baseQueryKeyParts = [
     projectId,
     searchState.scope,
     searchState.target,
   ] as const;
-
   const overviewQuery = useQuery({
-    queryKey: ["backlinksOverview", ...queryKeyParts],
+    queryKey: ["backlinksOverview", ...baseQueryKeyParts],
     enabled: backlinksEnabled && Boolean(searchState.target),
     queryFn: () => getBacklinksOverview({ data: requestInput }),
   });
 
   const referringDomainsQuery = useQuery({
-    queryKey: ["backlinksReferringDomains", ...queryKeyParts],
+    queryKey: ["backlinksReferringDomains", ...baseQueryKeyParts],
     enabled:
       backlinksEnabled &&
       Boolean(searchState.target) &&
@@ -93,7 +89,7 @@ export function useBacklinksPageData({
   });
 
   const topPagesQuery = useQuery({
-    queryKey: ["backlinksTopPages", ...queryKeyParts],
+    queryKey: ["backlinksTopPages", ...baseQueryKeyParts],
     enabled:
       backlinksEnabled &&
       Boolean(searchState.target) &&

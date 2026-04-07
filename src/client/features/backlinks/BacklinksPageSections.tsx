@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { Search } from "lucide-react";
 import {
@@ -49,10 +50,14 @@ export function BacklinksResultsCard({
   activeTab,
   filteredData,
   filterText,
+  hideSpam,
+  spamThreshold,
   isTabLoading,
   tabErrorMessage,
   onFilterTextChange,
   onSetActiveTab,
+  onSetHideSpam,
+  onSetSpamThreshold,
 }: {
   activeTab: BacklinksSearchState["tab"];
   filteredData: {
@@ -61,10 +66,14 @@ export function BacklinksResultsCard({
     topPages: BacklinksOverviewData["topPages"];
   };
   filterText: string;
+  hideSpam: boolean;
+  spamThreshold: number;
   isTabLoading: boolean;
   tabErrorMessage: string | null;
   onFilterTextChange: (value: string) => void;
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
+  onSetHideSpam: (hideSpam: boolean) => void;
+  onSetSpamThreshold: (threshold: number) => void;
 }) {
   return (
     <div className="card bg-base-100 border border-base-300">
@@ -72,8 +81,12 @@ export function BacklinksResultsCard({
         <ResultsHeader
           activeTab={activeTab}
           filterText={filterText}
+          hideSpam={hideSpam}
+          spamThreshold={spamThreshold}
           onFilterTextChange={onFilterTextChange}
           onSetActiveTab={onSetActiveTab}
+          onSetHideSpam={onSetHideSpam}
+          onSetSpamThreshold={onSetSpamThreshold}
         />
         {tabErrorMessage ? (
           <div className="alert alert-error">
@@ -122,14 +135,38 @@ function OverviewGrid({
 function ResultsHeader({
   activeTab,
   filterText,
+  hideSpam,
+  spamThreshold,
   onFilterTextChange,
   onSetActiveTab,
+  onSetHideSpam,
+  onSetSpamThreshold,
 }: {
   activeTab: BacklinksSearchState["tab"];
   filterText: string;
+  hideSpam: boolean;
+  spamThreshold: number;
   onFilterTextChange: (value: string) => void;
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
+  onSetHideSpam: (hideSpam: boolean) => void;
+  onSetSpamThreshold: (threshold: number) => void;
 }) {
+  const [draftSpamThreshold, setDraftSpamThreshold] = useState(
+    String(spamThreshold),
+  );
+
+  useEffect(() => {
+    setDraftSpamThreshold(String(spamThreshold));
+  }, [spamThreshold]);
+
+  function commitSpamThreshold() {
+    onSetSpamThreshold(
+      draftSpamThreshold.trim() === ""
+        ? spamThreshold
+        : Number(draftSpamThreshold),
+    );
+  }
+
   return (
     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
       <div className="space-y-2">
@@ -157,14 +194,49 @@ function ResultsHeader({
         </p>
       </div>
 
-      <label className="input input-bordered input-sm flex w-full max-w-xs items-center gap-2">
-        <Search className="size-4 text-base-content/60" />
-        <input
-          placeholder="Filter current tab"
-          value={filterText}
-          onChange={(event) => onFilterTextChange(event.target.value)}
-        />
-      </label>
+      <div className="flex flex-col items-end gap-2">
+        <label className="input input-bordered input-sm flex w-full max-w-xs items-center gap-2">
+          <Search className="size-4 text-base-content/60" />
+          <input
+            placeholder="Filter current tab"
+            value={filterText}
+            onChange={(event) => onFilterTextChange(event.target.value)}
+          />
+        </label>
+        {activeTab === "backlinks" ? (
+          <div className="flex items-center gap-3 text-sm">
+            <label className="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                className="checkbox checkbox-xs"
+                checked={hideSpam}
+                onChange={(event) => onSetHideSpam(event.target.checked)}
+              />
+              <span className="text-base-content/70">Hide spam</span>
+            </label>
+            <label className="flex items-center gap-2 text-base-content/70">
+              <span>Max spam</span>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={draftSpamThreshold}
+                disabled={!hideSpam}
+                className="input input-bordered input-xs w-20"
+                onBlur={commitSpamThreshold}
+                onChange={(event) => setDraftSpamThreshold(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    commitSpamThreshold();
+                    event.currentTarget.blur();
+                  }
+                }}
+              />
+            </label>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

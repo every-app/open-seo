@@ -6,7 +6,6 @@ import {
   type SortDirection,
   type TopPagesTableSort,
 } from "./backlinksTableSorting";
-
 export function ReferringDomainsTableHeader({
   sort,
   onSortChange,

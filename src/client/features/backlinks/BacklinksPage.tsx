@@ -6,6 +6,7 @@ import {
   navigateToBacklinksTab,
   useBacklinksPageData,
 } from "./useBacklinksPageData";
+import { useBacklinksSpamPreferences } from "./useBacklinksSpamPreferences";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 export function BacklinksPage({
@@ -13,6 +14,8 @@ export function BacklinksPage({
   searchState,
   navigate,
 }: BacklinksPageProps) {
+  const { hideSpam, setHideSpam, setSpamThreshold, spamThreshold } =
+    useBacklinksSpamPreferences();
   const {
     accessStatus,
     accessStatusErrorMessage,
@@ -26,7 +29,10 @@ export function BacklinksPage({
     searchCardInitialValues,
     testAccessMutation,
     topPagesQuery,
-  } = useBacklinksPageData({ projectId, searchState });
+  } = useBacklinksPageData({
+    projectId,
+    searchState,
+  });
 
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
@@ -81,10 +87,14 @@ export function BacklinksPage({
           }
           testIsPending={testAccessMutation.isPending}
           topPages={topPagesQuery.data}
+          hideSpam={hideSpam}
+          spamThreshold={spamThreshold}
           onRetryAccess={() => void accessStatusQuery.refetch()}
           onSetActiveTab={(tab) => navigateToBacklinksTab(navigate, tab)}
           onRetryOverview={() => void overviewQuery.refetch()}
           onTestAccess={() => testAccessMutation.mutate()}
+          onSetHideSpam={setHideSpam}
+          onSetSpamThreshold={setSpamThreshold}
         />
       </div>
     </div>

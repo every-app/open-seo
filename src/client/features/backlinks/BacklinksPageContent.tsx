@@ -25,11 +25,13 @@ type BacklinksBodyProps = {
   backlinksDisabledByError: boolean;
   backlinksEnabled: boolean;
   isAccessStatusLoading: boolean;
+  hideSpam: boolean;
   overviewData: BacklinksOverviewData | undefined;
   overviewError: string | null;
   overviewLoading: boolean;
   referringDomains: BacklinksReferringDomainsData | undefined;
   searchState: BacklinksSearchState;
+  spamThreshold: number;
   tabErrorMessage: string | null;
   tabLoading: boolean;
   testError: string | null;
@@ -39,6 +41,8 @@ type BacklinksBodyProps = {
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   onRetryOverview: () => void;
   onTestAccess: () => void;
+  onSetHideSpam: (hideSpam: boolean) => void;
+  onSetSpamThreshold: (threshold: number) => void;
 };
 
 export function BacklinksBody({
@@ -47,11 +51,13 @@ export function BacklinksBody({
   backlinksDisabledByError,
   backlinksEnabled,
   isAccessStatusLoading,
+  hideSpam,
   overviewData,
   overviewError,
   overviewLoading,
   referringDomains,
   searchState,
+  spamThreshold,
   tabErrorMessage,
   tabLoading,
   testError,
@@ -61,7 +67,36 @@ export function BacklinksBody({
   onSetActiveTab,
   onRetryOverview,
   onTestAccess,
+  onSetHideSpam,
+  onSetSpamThreshold,
 }: BacklinksBodyProps) {
+  const [filterText, setFilterText] = useState("");
+
+  useEffect(() => {
+    setFilterText("");
+  }, [searchState.target, searchState.tab]);
+
+  const mergedData = useMemo(
+    () => mergeTabData(overviewData, referringDomains, topPages),
+    [overviewData, referringDomains, topPages],
+  );
+  const normalizedFilter = filterText.trim().toLowerCase();
+  const filteredData = useMemo(
+    () =>
+      filterOverviewData(
+        mergedData,
+        normalizedFilter,
+        searchState.tab,
+        hideSpam,
+        spamThreshold,
+      ),
+    [hideSpam, mergedData, normalizedFilter, searchState.tab, spamThreshold],
+  );
+  const summaryStats = useMemo(
+    () => buildSummaryStats(mergedData),
+    [mergedData],
+  );
+
   if (isAccessStatusLoading) {
     return <BacklinksAccessLoadingState />;
   }
@@ -86,76 +121,20 @@ export function BacklinksBody({
     );
   }
 
-  return (
-    <BacklinksContent
-      data={overviewData}
-      errorMessage={overviewError}
-      isLoading={overviewLoading}
-      referringDomains={referringDomains}
-      searchState={searchState}
-      tabErrorMessage={tabErrorMessage}
-      tabLoading={tabLoading}
-      topPages={topPages}
-      onSetActiveTab={onSetActiveTab}
-      onRetry={onRetryOverview}
-    />
-  );
-}
-
-function BacklinksContent({
-  data,
-  errorMessage,
-  isLoading,
-  referringDomains,
-  searchState,
-  tabErrorMessage,
-  tabLoading,
-  topPages,
-  onSetActiveTab,
-  onRetry,
-}: {
-  data: BacklinksOverviewData | undefined;
-  errorMessage: string | null;
-  isLoading: boolean;
-  referringDomains: BacklinksReferringDomainsData | undefined;
-  searchState: BacklinksSearchState;
-  tabErrorMessage: string | null;
-  tabLoading: boolean;
-  topPages: BacklinksTopPagesData | undefined;
-  onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
-  onRetry: () => void;
-}) {
-  const [filterText, setFilterText] = useState("");
-
-  useEffect(() => {
-    setFilterText("");
-  }, [searchState.target, searchState.tab]);
-
-  const mergedData = useMemo(
-    () => mergeTabData(data, referringDomains, topPages),
-    [data, referringDomains, topPages],
-  );
-  const normalizedFilter = filterText.trim().toLowerCase();
-  const filteredData = useMemo(
-    () => filterOverviewData(mergedData, normalizedFilter),
-    [mergedData, normalizedFilter],
-  );
-  const summaryStats = useMemo(
-    () => buildSummaryStats(mergedData),
-    [mergedData],
-  );
-
   if (!searchState.target) {
     return <BacklinksEmptyState />;
   }
 
-  if (isLoading) {
+  if (overviewLoading) {
     return <BacklinksLoadingState />;
   }
 
   if (!mergedData) {
     return (
-      <BacklinksErrorState errorMessage={errorMessage} onRetry={onRetry} />
+      <BacklinksErrorState
+        errorMessage={overviewError}
+        onRetry={onRetryOverview}
+      />
     );
   }
 
@@ -166,12 +145,16 @@ function BacklinksContent({
         activeTab={searchState.tab}
         filteredData={filteredData}
         filterText={filterText}
+        hideSpam={hideSpam}
+        spamThreshold={spamThreshold}
         isTabLoading={searchState.tab !== "backlinks" && tabLoading}
         tabErrorMessage={
           searchState.tab !== "backlinks" ? tabErrorMessage : null
         }
         onFilterTextChange={setFilterText}
         onSetActiveTab={onSetActiveTab}
+        onSetHideSpam={onSetHideSpam}
+        onSetSpamThreshold={onSetSpamThreshold}
       />
     </>
   );
@@ -196,13 +179,23 @@ function mergeTabData(
 function filterOverviewData(
   data: BacklinksOverviewData | undefined,
   normalizedFilter: string,
+  activeTab: BacklinksSearchState["tab"],
+  hideSpam: boolean,
+  spamThreshold: number,
 ) {
   if (!data) {
     return { backlinks: [], referringDomains: [], topPages: [] };
   }
 
+  const backlinksRows =
+    activeTab === "backlinks" && hideSpam
+      ? data.backlinks.filter(
+          (row) => row.spamScore == null || row.spamScore <= spamThreshold,
+        )
+      : data.backlinks;
+
   return {
-    backlinks: data.backlinks.filter((row) => {
+    backlinks: backlinksRows.filter((row) => {
       if (!normalizedFilter) return true;
       return [row.domainFrom, row.urlFrom, row.urlTo, row.anchor, row.itemType]
         .filter((value): value is string => Boolean(value))
