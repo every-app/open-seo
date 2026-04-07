@@ -66,18 +66,20 @@ async function saveKeywordsToProject(params: {
 }) {
   if (params.keywords.length === 0) return;
 
-  await db
-    .insert(savedKeywords)
-    .values(
-      params.keywords.map((keyword) => ({
+  const [first, ...rest] = params.keywords.map((keyword) =>
+    db
+      .insert(savedKeywords)
+      .values({
         id: crypto.randomUUID(),
         projectId: params.projectId,
         keyword,
         locationCode: params.locationCode,
         languageCode: params.languageCode,
-      })),
-    )
-    .onConflictDoNothing();
+      })
+      .onConflictDoNothing(),
+  );
+
+  await db.batch([first, ...rest]);
 }
 
 async function listSavedKeywordsByProject(projectId: string) {

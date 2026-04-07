@@ -16,7 +16,7 @@ export const researchKeywordsSchema = z.object({
 
 export const saveKeywordsSchema = z.object({
   projectId: z.string().min(1),
-  keywords: z.array(z.string().min(1)).min(1).max(200),
+  keywords: z.array(z.string().min(1)).min(1).max(500),
   locationCode: z.number().int().positive().default(2840),
   languageCode: z.string().min(2).max(8).default("en"),
   metrics: z
@@ -54,7 +54,7 @@ export const saveKeywordsSchema = z.object({
           .optional(),
       }),
     )
-    .max(200)
+    .max(500)
     .optional(),
 });
 
