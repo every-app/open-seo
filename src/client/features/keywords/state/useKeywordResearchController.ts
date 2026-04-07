@@ -78,6 +78,7 @@ export function useKeywordResearchController(
   const { handleSaveKeywords, confirmSave, exportCsv } =
     useSaveAndExportActions({
       selectedRows: state.selectedRows,
+      rows: state.rows,
       filteredRows: state.filteredRows,
       input,
       saveKeywordsMutate: state.saveMutation.mutate,

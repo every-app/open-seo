@@ -4,20 +4,17 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getLanguageCode } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
+import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
 
 type SaveExportActionParams = {
   selectedRows: Set<string>;
+  rows: KeywordResearchRow[];
   filteredRows: KeywordResearchRow[];
   input: KeywordResearchControllerInput;
   saveKeywordsMutate: (
-    variables: {
-      projectId: string;
-      keywords: string[];
-      locationCode: number;
-      languageCode: string;
-    },
+    variables: SaveKeywordsInput,
     options: {
       onSuccess: () => void;
       onError: (error: unknown) => void;
@@ -51,6 +48,7 @@ export function getNextSortParams(
 export function useSaveAndExportActions(params: SaveExportActionParams) {
   const {
     selectedRows,
+    rows,
     filteredRows,
     input,
     saveKeywordsMutate,
@@ -66,12 +64,25 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
   };
 
   const confirmSave = () => {
+    const metrics = rows
+      .filter((row) => selectedRows.has(row.keyword))
+      .map((row) => ({
+        keyword: row.keyword,
+        searchVolume: row.searchVolume,
+        cpc: row.cpc,
+        competition: row.competition,
+        keywordDifficulty: row.keywordDifficulty,
+        intent: row.intent,
+        monthlySearches: row.trend,
+      }));
+
     saveKeywordsMutate(
       {
         projectId: input.projectId,
         keywords: [...selectedRows],
         locationCode: input.locationCode,
         languageCode: getLanguageCode(input.locationCode),
+        metrics,
       },
       {
         onSuccess: () => {

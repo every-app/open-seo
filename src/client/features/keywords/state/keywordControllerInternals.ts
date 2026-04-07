@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { usePreferredKeywordLocation } from "@/client/features/keywords/hooks/usePreferredKeywordLocation";
 import { saveKeywords } from "@/serverFunctions/keywords";
+import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
 
@@ -53,12 +54,7 @@ export function useKeywordSaveMutation(projectId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: {
-      projectId: string;
-      keywords: string[];
-      locationCode: number;
-      languageCode: string;
-    }) => saveKeywords({ data }),
+    mutationFn: (data: SaveKeywordsInput) => saveKeywords({ data }),
     onSuccess: () => {
       void queryClient.invalidateQueries({
         queryKey: ["savedKeywords", projectId],
