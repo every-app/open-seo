@@ -29,6 +29,9 @@ function SubscribePageContent() {
   const { data: session } = useSession();
   const [isAttaching, setIsAttaching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const checkoutCompleted =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("checkout") === "success";
 
   const customerQuery = useCustomer({
     queryOptions: {
@@ -48,9 +51,12 @@ function SubscribePageContent() {
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
+      if (checkoutCompleted) {
+        captureClientEvent("billing:checkout_success");
+      }
       void navigate({ to: "/", replace: true });
     }
-  }, [navigate, subscribeRouteState]);
+  }, [checkoutCompleted, navigate, subscribeRouteState]);
 
   if (
     subscribeRouteState === "loading" ||
@@ -100,7 +106,7 @@ function SubscribePageContent() {
       await customerQuery.attach({
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
-        successUrl: window.location.origin,
+        successUrl: `${window.location.origin}${window.location.pathname}?checkout=success`,
       });
     } catch (err) {
       setError(
