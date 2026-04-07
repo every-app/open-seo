@@ -1,19 +1,8 @@
 import { getAuth, hasHostedAuthConfig } from "@/lib/auth";
+import { getActiveOrganizationId } from "@/lib/auth-session";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { AppError } from "@/server/lib/errors";
 import type { EnsuredUserContext } from "./types";
-
-function getActiveOrganizationId(session: { session: unknown }) {
-  if (!session.session || typeof session.session !== "object") {
-    return null;
-  }
-
-  const { activeOrganizationId } = session.session as {
-    activeOrganizationId?: unknown;
-  };
-
-  return typeof activeOrganizationId === "string" ? activeOrganizationId : null;
-}
 
 async function requireHostedSession(headers: Headers) {
   if (!hasHostedAuthConfig()) {

@@ -1,5 +1,6 @@
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import type { DomainOverviewData } from "@/client/features/domain/types";
 
 type SaveMutation = (payload: {
@@ -54,6 +55,10 @@ export function saveSelectedKeywords({
     },
     {
       onSuccess: () => {
+        captureClientEvent("keyword:save", {
+          source_feature: "domain_overview",
+          keyword_count: selectedKeywords.size,
+        });
         toast.success(`Saved ${selectedKeywords.size} keywords`);
       },
       onError: (error: unknown) => {

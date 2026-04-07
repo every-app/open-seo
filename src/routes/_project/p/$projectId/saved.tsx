@@ -9,6 +9,7 @@ import {
 import { Trash2, Download, Search, Loader2, AlertCircle } from "lucide-react";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 
 export const Route = createFileRoute("/_project/p/$projectId/saved")({
   component: SavedKeywordsPage,
@@ -33,6 +34,7 @@ function SavedKeywordsPage() {
       void queryClient.invalidateQueries({
         queryKey: ["savedKeywords", projectId],
       });
+      captureClientEvent("saved_keywords:remove");
       toast.success("Keyword removed");
     },
     onError: (error) => {
@@ -78,6 +80,10 @@ function SavedKeywordsPage() {
     ]);
     const csv = buildCsv(headers, csvRows);
     downloadCsv("saved-keywords.csv", csv);
+    captureClientEvent("data:export", {
+      source_feature: "saved_keywords",
+      result_count: savedKeywords.length,
+    });
   };
 
   return (

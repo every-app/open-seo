@@ -5,6 +5,7 @@ import { sortBy } from "remeda";
 import { toast } from "sonner";
 import { getDomainOverview } from "@/serverFunctions/domain";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { filterAndSortKeywords } from "@/client/features/domain/domainFiltering";
 import {
   getDefaultSortOrder,
@@ -291,6 +292,12 @@ export function useSearchRunner({
         includeSubdomains: activeSubdomains,
         locationCode: 2840,
         languageCode: "en",
+      });
+
+      captureClientEvent("domain_overview:search_complete", {
+        sort_mode: activeSort,
+        include_subdomains: activeSubdomains,
+        result_count: response.keywords.length,
       });
 
       setOverview(response);

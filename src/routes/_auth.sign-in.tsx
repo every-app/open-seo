@@ -9,6 +9,7 @@ import {
   getFormError,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { getSignInSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
@@ -25,9 +26,7 @@ export const Route = createFileRoute("/_auth/sign-in")({
 
 function SignInPage() {
   const search = Route.useSearch();
-  const { redirectTo, isHostedMode, isSessionPending } = useAuthPageState(
-    search.redirect,
-  );
+  const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null,
   );
@@ -44,6 +43,9 @@ function SignInPage() {
     onSubmit: async ({ formApi, value }) => {
       try {
         const email = value.email.trim();
+        captureClientEvent("auth:sign_in_submit", {
+          redirect_to: redirectTo,
+        });
         setVerificationEmail(null);
 
         const result = await authClient.signIn.email({
@@ -53,10 +55,16 @@ function SignInPage() {
         });
 
         if (!result.error) {
+          captureClientEvent("auth:sign_in_success", {
+            redirect_to: redirectTo,
+          });
           return;
         }
 
         if (result.error.status === 403) {
+          captureClientEvent("auth:sign_in_block_unverified", {
+            redirect_to: redirectTo,
+          });
           setVerificationEmail(email);
           formApi.setErrorMap({
             onSubmit: {
@@ -105,6 +113,7 @@ function SignInPage() {
         return;
       }
 
+      captureClientEvent("auth:verification_resend");
       toast.success("A new email is on the way.");
     } catch {
       toast.error(
@@ -159,7 +168,7 @@ function SignInPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="email"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                   required
                 />
                 {error ? (
@@ -183,7 +192,7 @@ function SignInPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="current-password"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                   required
                 />
                 {error ? (
@@ -232,7 +241,7 @@ function SignInPage() {
                 ) : null}
                 <button
                   className="btn btn-soft w-full"
-                  disabled={!isHostedMode || isSessionPending || isSubmitting}
+                  disabled={!isHostedMode || isSubmitting}
                 >
                   {isSubmitting ? "Signing in..." : "Sign in"}
                 </button>

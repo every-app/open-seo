@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS, getLanguageCode } from "@/client/features/keywords/utils";
 import { researchKeywords } from "@/serverFunctions/keywords";
 import type {
@@ -75,10 +76,18 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
       },
       {
         onSuccess: (result) => {
+          const resultCount = result.rows.length;
+
           setResearchError(null);
           setRows(result.rows);
           setLastResultSource(result.source);
           setLastUsedFallback(result.usedFallback);
+
+          captureClientEvent("keyword_research:search_complete", {
+            location_code: input.locationCode,
+            search_mode: input.mode,
+            result_count: resultCount,
+          });
 
           if (seedKeyword) {
             addSearch(

@@ -6,10 +6,15 @@ import {
   AuthPageShell,
   authRedirectSearchSchema,
 } from "@/client/features/auth/AuthPage";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
+
+const verificationIssueSchema = z
+  .enum(["invalid_token", "token_expired", "user_not_found", "unknown"])
+  .catch("unknown");
 
 const verifyEmailSearchSchema = authRedirectSearchSchema.extend({
   error: z.string().optional(),
@@ -98,6 +103,9 @@ function VerifyEmailPage() {
   const isHostedMode = isHostedClientAuthMode();
   const { data: session, isPending } = useSession();
   const errorMessage = getVerificationErrorMessage(search.error);
+  const verificationIssueType = search.error
+    ? verificationIssueSchema.parse(search.error)
+    : null;
   const email = search.email;
   const isWaiting = !errorMessage && !session?.user?.emailVerified && !!email;
   const [isResending, setIsResending] = useState(false);
@@ -116,6 +124,10 @@ function VerifyEmailPage() {
       return;
     }
 
+    captureClientEvent("auth:verification_success", {
+      redirect_to: redirectTo,
+    });
+
     // Full page reload instead of client-side navigation: the auth→app
     // transition needs a clean server-side load so that all server function
     // handlers are freshly registered (client-side nav during Vite HMR can
@@ -123,6 +135,16 @@ function VerifyEmailPage() {
     // "action is not a function" errors).
     window.location.replace(redirectTo);
   }, [isVerified, redirectTo]);
+
+  useEffect(() => {
+    if (!verificationIssueType) {
+      return;
+    }
+
+    captureClientEvent("auth:verification_issue", {
+      issue_type: verificationIssueType,
+    });
+  }, [verificationIssueType]);
 
   async function handleResend() {
     if (!email) return;
@@ -139,6 +161,7 @@ function VerifyEmailPage() {
         toast.error(result.error.message || "We couldn't send another email.");
         return;
       }
+      captureClientEvent("auth:verification_resend");
       toast.success("A new email is on the way.");
     } catch {
       toast.error(

@@ -5,6 +5,7 @@ import { useLocalKeywordFilters } from "@/client/features/keywords/hooks/useLoca
 import { useKeywordResearchData } from "@/client/features/keywords/hooks/useKeywordResearchData";
 import { useKeywordSelection } from "@/client/features/keywords/hooks/useKeywordSelection";
 import { useKeywordSerpAnalysis } from "@/client/features/keywords/hooks/useKeywordSerpAnalysis";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { useSearchHistory } from "@/client/hooks/useSearchHistory";
 import {
   type KeywordMode,
@@ -88,6 +89,7 @@ export function useKeywordResearchController(
   };
 
   const handleRowClick = (row: KeywordResearchRow) => {
+    captureClientEvent("keyword_research:serp_open");
     state.setSelectedKeyword(row);
     state.setSerpKeyword(row.keyword);
     state.setSerpPage(0);

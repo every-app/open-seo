@@ -52,6 +52,7 @@ describe("subscription billing", () => {
     await expect(
       requireManagedServiceAccess({
         organizationId: "org_123",
+        userId: "user_123",
         userEmail: "alice@example.com",
       }),
     ).resolves.toBeUndefined();
@@ -68,6 +69,7 @@ describe("subscription billing", () => {
     await expect(
       requireManagedServiceAccess({
         organizationId: "org_123",
+        userId: "user_123",
         userEmail: "alice@example.com",
       }),
     ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
@@ -78,6 +80,7 @@ describe("subscription billing", () => {
 
     await getOrCreateOrganizationCustomer({
       organizationId: "org_123",
+      userId: "user_123",
       userEmail: "alice@example.com",
     });
 

@@ -12,12 +12,18 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { themePreferenceInitScript } from "@/client/lib/theme";
-import { initPostHog } from "@/client/lib/posthog";
+import {
+  identifyAnalyticsUser,
+  initPostHog,
+  resetAnalyticsUser,
+} from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
+import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { Toaster } from "sonner";
 import { queryClient } from "@/client/tanstack-db";
+import { getActiveOrganizationId } from "@/lib/auth-session";
 
 export const Route = createRootRoute({
   head: () => ({
@@ -77,14 +83,26 @@ function AppLayout() {
 
 function PostHogBootstrap() {
   const isHostedMode = isHostedClientAuthMode();
+  const { data: session, isPending: isSessionPending } = useSession();
+  const userId = session?.user?.id ?? null;
+  const organizationId = getActiveOrganizationId(session);
+  const previousUserIdRef = React.useRef<string | null>(null);
 
   React.useEffect(() => {
-    if (!isHostedMode) {
+    if (!isHostedMode || isSessionPending) {
       return;
     }
 
     initPostHog();
-  }, [isHostedMode]);
+
+    if (userId) {
+      identifyAnalyticsUser({ userId, organizationId });
+      previousUserIdRef.current = userId;
+    } else if (previousUserIdRef.current) {
+      previousUserIdRef.current = null;
+      resetAnalyticsUser();
+    }
+  }, [isHostedMode, isSessionPending, organizationId, userId]);
 
   return null;
 }

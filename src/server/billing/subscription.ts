@@ -6,8 +6,10 @@ import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 export type BillingCustomerContext = Pick<
   EnsuredUserContext,
-  "organizationId" | "userEmail"
->;
+  "organizationId" | "userEmail" | "userId"
+> & {
+  projectId?: string;
+};
 
 export async function getOrCreateOrganizationCustomer(
   context: BillingCustomerContext,

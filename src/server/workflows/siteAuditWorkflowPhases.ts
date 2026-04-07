@@ -13,6 +13,7 @@ import type {
   LighthouseResult,
   StepPageResult,
 } from "@/server/lib/audit/types";
+import { captureServerEvent } from "@/server/lib/posthog";
 import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
 
 const LIGHTHOUSE_URL_BATCH_SIZE = 10;
@@ -83,13 +84,16 @@ export async function runAuditPhases(
     config,
     allPages,
   });
-  await finalizeAudit(
+  await finalizeAudit({
     step,
     auditId,
     workflowInstanceId,
+    billingCustomer,
+    projectId,
+    config,
     allPages,
     lighthouseResults,
-  );
+  });
 }
 
 async function runDiscoveryPhase(
@@ -249,13 +253,27 @@ async function runLighthouseBatch(params: {
   });
 }
 
-async function finalizeAudit(
-  step: WorkflowStep,
-  auditId: string,
-  workflowInstanceId: string,
-  allPages: StepPageResult[],
-  lighthouseResults: LighthouseResult[],
-) {
+async function finalizeAudit(args: {
+  step: WorkflowStep;
+  auditId: string;
+  workflowInstanceId: string;
+  billingCustomer: BillingCustomerContext;
+  projectId: string;
+  config: AuditConfig;
+  allPages: StepPageResult[];
+  lighthouseResults: LighthouseResult[];
+}) {
+  const {
+    step,
+    auditId,
+    workflowInstanceId,
+    billingCustomer,
+    projectId,
+    config,
+    allPages,
+    lighthouseResults,
+  } = args;
+
   await step.do("finalize", async () => {
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
       currentPhase: "finalizing",
@@ -268,6 +286,18 @@ async function finalizeAudit(
     await AuditRepository.completeAudit(auditId, workflowInstanceId, {
       pagesCrawled: allPages.length,
       pagesTotal: allPages.length,
+    });
+    await captureServerEvent({
+      distinctId: billingCustomer.userId,
+      event: "site_audit:complete",
+      organizationId: billingCustomer.organizationId,
+      properties: {
+        project_id: projectId,
+        status: "completed",
+        pages_crawled: allPages.length,
+        pages_total: allPages.length,
+        run_lighthouse: config.lighthouseStrategy !== "none",
+      },
     });
     await AuditProgressKV.clear(auditId);
   });

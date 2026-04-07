@@ -19,6 +19,10 @@ const { checkMock, trackMock, getOrCreateMock, isHostedServerAuthModeMock } =
     isHostedServerAuthModeMock: vi.fn(),
   }));
 
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: vi.fn(),
+}));
+
 vi.mock("@/server/billing/autumn", () => ({
   autumn: {
     check: checkMock,
@@ -32,6 +36,10 @@ vi.mock("@/server/billing/subscription", () => ({
 
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: isHostedServerAuthModeMock,
+}));
+
+vi.mock("@/server/lib/posthog", () => ({
+  captureServerEvent: vi.fn(),
 }));
 
 vi.mock("@/server/lib/dataforseo", () => ({
@@ -55,11 +63,15 @@ vi.mock("@/server/lib/dataforseoBacklinks", () => ({
   fetchReferringDomainsRaw: vi.fn(),
 }));
 
-import { createDataforseoClient } from "./dataforseoClient";
+import {
+  createDataforseoClient,
+  mapDataforseoPathToCreditFeature,
+} from "./dataforseoClient";
 import { fetchBacklinksSummaryRaw } from "./dataforseoBacklinks";
 
 const billingCustomer = {
   organizationId: "org_123",
+  userId: "user_123",
   userEmail: "alice@example.com",
 };
 
@@ -232,5 +244,88 @@ describe("meterDataforseoCall with split balances", () => {
     expect(topupCall![0].properties?.balanceFeatureId).toBe(
       AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
     );
+  });
+});
+
+describe("mapDataforseoPathToCreditFeature", () => {
+  it("maps real keyword research paths", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "related_keywords",
+        "live",
+      ]),
+    ).toBe("keyword_research");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "keyword_suggestions",
+        "live",
+      ]),
+    ).toBe("keyword_research");
+  });
+
+  it("maps real serp paths", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "serp",
+        "google",
+        "organic",
+        "live",
+        "regular",
+      ]),
+    ).toBe("keyword_research");
+  });
+
+  it("maps real domain paths", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "domain_rank_overview",
+        "live",
+      ]),
+    ).toBe("domain_overview");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "ranked_keywords",
+        "live",
+      ]),
+    ).toBe("domain_overview");
+  });
+
+  it("maps real backlinks paths", () => {
+    expect(
+      mapDataforseoPathToCreditFeature(["v3", "backlinks", "summary", "live"]),
+    ).toBe("backlinks");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "backlinks",
+        "referring_domains",
+        "live",
+      ]),
+    ).toBe("backlinks");
+  });
+
+  it("maps real lighthouse/on_page paths to site_audit", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "on_page",
+        "lighthouse",
+        "live",
+        "json",
+      ]),
+    ).toBe("site_audit");
   });
 });

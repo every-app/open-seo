@@ -105,12 +105,9 @@ function buildBillingCustomer(
   cliArgs: Record<string, string>,
 ): BillingCustomerContext {
   return {
-    organizationId:
-      cliArgs.organizationId ?? process.env.BILLING_ORGANIZATION_ID ?? "local",
-    userEmail:
-      cliArgs.userEmail ??
-      process.env.BILLING_USER_EMAIL ??
-      "local@example.com",
+    organizationId: cliArgs.organizationId ?? "local",
+    userId: cliArgs.userId ?? "local-user",
+    userEmail: cliArgs.userEmail ?? "local@example.com",
   };
 }
 

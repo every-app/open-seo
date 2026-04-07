@@ -10,11 +10,8 @@ export const getDomainOverview = createServerFn({ method: "POST" })
     DomainService.getOverview(
       {
         ...data,
-        projectId: context.project.id,
+        projectId: context.projectId,
       },
-      {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      },
+      context,
     ),
   );

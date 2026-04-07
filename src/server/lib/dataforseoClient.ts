@@ -36,7 +36,43 @@ import {
   type DataforseoApiCallCost,
 } from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
+import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+
+type CreditFeature =
+  | "keyword_research"
+  | "domain_overview"
+  | "backlinks"
+  | "site_audit";
+
+/**
+ * Maps a DataForSEO API response path (e.g. ["v3", "dataforseo_labs", "google", "related_keywords", "live"])
+ * to a product feature for analytics. path[1] is the API module; for dataforseo_labs,
+ * path[3] distinguishes keyword vs domain endpoints.
+ */
+export function mapDataforseoPathToCreditFeature(
+  path: string[],
+): CreditFeature {
+  const module = path[1];
+
+  switch (module) {
+    case "on_page":
+      return "site_audit";
+    case "backlinks":
+      return "backlinks";
+    case "serp":
+      return "keyword_research";
+    case "dataforseo_labs": {
+      const endpoint = path[3] ?? "";
+      if (endpoint.startsWith("domain_") || endpoint === "ranked_keywords") {
+        return "domain_overview";
+      }
+      return "keyword_research";
+    }
+    default:
+      return "site_audit";
+  }
+}
 
 export function createDataforseoClient(customer: BillingCustomerContext) {
   return {
@@ -194,6 +230,7 @@ async function meterDataforseoCall<T>(
   const result = await execute();
 
   await trackDataforseoCost({
+    customer,
     customerId: billingCustomer.id,
     billing: result.billing,
     monthlyRemaining,
@@ -233,6 +270,7 @@ async function assertSeoDataBalanceAvailable(args: {
 }
 
 async function trackDataforseoCost(args: {
+  customer: BillingCustomerContext;
   customerId: string;
   billing: DataforseoApiCallCost;
   monthlyRemaining: number;
@@ -274,6 +312,22 @@ async function trackDataforseoCost(args: {
       properties: {
         ...properties,
         balanceFeatureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+      },
+    });
+  }
+
+  if (totalCostCredits > 0) {
+    await captureServerEvent({
+      distinctId: args.customer.userId,
+      event: "usage:credits_consume",
+      organizationId: args.customer.organizationId,
+      properties: {
+        project_id: args.customer.projectId,
+        credit_feature: mapDataforseoPathToCreditFeature(args.billing.path),
+        monthly_credits: monthlyDeduct,
+        topup_credits: topupDeduct,
+        total_credits: totalCostCredits,
+        cost_usd: totalCostUsd,
       },
     });
   }

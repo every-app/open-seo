@@ -12,6 +12,7 @@ import {
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import type { AuditConfig } from "@/server/lib/audit/types";
+import { captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
 
 interface AuditParams {
@@ -53,6 +54,24 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       console.error(`Audit ${auditId} failed:`, error);
       await step.do("mark-failed", async () => {
         await AuditRepository.failAudit(auditId, event.instanceId);
+
+        const latestAudit = await AuditRepository.getAuditForWorkflow(
+          auditId,
+          event.instanceId,
+        );
+
+        await captureServerEvent({
+          distinctId: billingCustomer.userId,
+          event: "site_audit:complete",
+          organizationId: billingCustomer.organizationId,
+          properties: {
+            project_id: projectId,
+            status: "failed",
+            pages_crawled: latestAudit?.pagesCrawled,
+            pages_total: latestAudit?.pagesTotal,
+            run_lighthouse: config.lighthouseStrategy !== "none",
+          },
+        });
       });
       throw error;
     }

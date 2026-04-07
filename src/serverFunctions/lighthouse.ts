@@ -48,7 +48,7 @@ export const getAuditLighthouseIssues = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => lighthouseAuditIssueSchema.parse(data))
   .handler(async ({ data, context }) => {
     const lighthouse = await getAuditLighthouseData({
-      projectId: context.project.id,
+      projectId: context.projectId,
       resultId: data.resultId,
     });
 
@@ -71,7 +71,7 @@ export const exportAuditLighthouseIssues = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => lighthouseAuditExportSchema.parse(data))
   .handler(async ({ data, context }) => {
     const lighthouse = await getAuditLighthouseData({
-      projectId: context.project.id,
+      projectId: context.projectId,
       resultId: data.resultId,
     });
 

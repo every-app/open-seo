@@ -7,6 +7,7 @@ import {
   getFormError,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { getSignInSearch } from "@/lib/auth-redirect";
 import {
@@ -44,9 +45,7 @@ export const Route = createFileRoute("/_auth/sign-up")({
 function SignUpPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const { redirectTo, isHostedMode, isSessionPending } = useAuthPageState(
-    search.redirect,
-  );
+  const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
 
   const form = useForm({
     defaultValues: {
@@ -61,6 +60,9 @@ function SignUpPage() {
     onSubmit: async ({ formApi, value }) => {
       try {
         const email = value.email.trim();
+        captureClientEvent("auth:sign_up_submit", {
+          redirect_to: redirectTo,
+        });
         const resolvedName =
           value.name.trim() || email.split("@")[0] || "OpenSEO User";
         const result = await authClient.signUp.email({
@@ -85,6 +87,9 @@ function SignUpPage() {
           return;
         }
 
+        captureClientEvent("auth:sign_up_success", {
+          redirect_to: redirectTo,
+        });
         void navigate({
           to: "/verify-email",
           search: { email, ...getSignInSearch(redirectTo) },
@@ -162,7 +167,7 @@ function SignUpPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="name"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                 />
                 {error ? (
                   <p className="mt-1 text-sm text-error">{error}</p>
@@ -185,7 +190,7 @@ function SignUpPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="email"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                   required
                 />
                 {error ? (
@@ -209,7 +214,7 @@ function SignUpPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="new-password"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                   required
                   minLength={HOSTED_PASSWORD_MIN_LENGTH}
                   maxLength={HOSTED_PASSWORD_MAX_LENGTH}
@@ -235,7 +240,7 @@ function SignUpPage() {
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   autoComplete="new-password"
-                  disabled={!isHostedMode || isSessionPending}
+                  disabled={!isHostedMode}
                   required
                   minLength={HOSTED_PASSWORD_MIN_LENGTH}
                   maxLength={HOSTED_PASSWORD_MAX_LENGTH}
@@ -263,7 +268,7 @@ function SignUpPage() {
                 ) : null}
                 <button
                   className="btn btn-soft w-full"
-                  disabled={!isHostedMode || isSessionPending || isSubmitting}
+                  disabled={!isHostedMode || isSubmitting}
                 >
                   {isSubmitting ? "Creating account..." : "Create account"}
                 </button>

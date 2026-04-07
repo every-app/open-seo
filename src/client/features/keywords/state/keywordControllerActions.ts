@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { getLanguageCode } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
@@ -74,6 +75,10 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
       },
       {
         onSuccess: () => {
+          captureClientEvent("keyword:save", {
+            source_feature: "keyword_research",
+            keyword_count: selectedRows.size,
+          });
           toast.success(`Saved ${selectedRows.size} keywords`);
           setShowSaveDialog(false);
         },
@@ -111,6 +116,10 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
     ]);
     const csv = buildCsv(headers, csvRows);
     downloadCsv("keyword-research.csv", csv);
+    captureClientEvent("data:export", {
+      source_feature: "keyword_research",
+      result_count: source.length,
+    });
   };
 
   return { handleSaveKeywords, confirmSave, exportCsv };

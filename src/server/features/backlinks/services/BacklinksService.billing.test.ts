@@ -36,6 +36,7 @@ import { createBacklinksService } from "./BacklinksService";
 
 const billingCustomer = {
   organizationId: "org_123",
+  userId: "user_123",
   userEmail: "team@example.com",
 };
 
@@ -227,6 +228,7 @@ it("keeps cache entries isolated per organization", async () => {
   await service.profileOverview(input, billingCustomer);
   await service.profileOverview(input, {
     organizationId: "org_456",
+    userId: "user_456",
     userEmail: "other@example.com",
   });
 

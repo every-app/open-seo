@@ -14,8 +14,7 @@ import {
 } from "@/client/layout/AppShellParts";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { getProjectNavItems } from "@/client/navigation/items";
-import { getSignInHrefForLocation } from "@/lib/auth-redirect";
-import { authClient, useSession } from "@/lib/auth-client";
+import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
@@ -244,16 +243,7 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
   const isHostedMode = isHostedClientAuthMode();
   const email = session?.user?.email;
 
-  const handleSignOut = () => {
-    const signInHref = getSignInHrefForLocation(window.location);
-    void authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          window.location.assign(signInHref);
-        },
-      },
-    });
-  };
+  const handleSignOut = () => signOutAndRedirect();
 
   const menu = (
     <div className={mobileOnly ? "ml-2 flex-none md:hidden" : "flex-none"}>

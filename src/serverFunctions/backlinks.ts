@@ -19,10 +19,7 @@ export const getBacklinksOverview = createServerFn({
         target: data.target,
         scope: data.scope,
       };
-      const profile = await BacklinksService.profileOverview(input, {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      });
+      const profile = await BacklinksService.profileOverview(input, context);
       return profile.overview;
     } catch (error) {
       if (error instanceof AppError && error.code === "BACKLINKS_NOT_ENABLED") {
@@ -47,10 +44,10 @@ export const getBacklinksReferringDomains = createServerFn({
         target: data.target,
         scope: data.scope,
       };
-      const profile = await BacklinksService.profileReferringDomains(input, {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      });
+      const profile = await BacklinksService.profileReferringDomains(
+        input,
+        context,
+      );
       return profile.rows;
     } catch (error) {
       await updateBacklinksAccessStatusOnError(error);
@@ -69,10 +66,7 @@ export const getBacklinksTopPages = createServerFn({
         target: data.target,
         scope: data.scope,
       };
-      const profile = await BacklinksService.profileTopPages(input, {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      });
+      const profile = await BacklinksService.profileTopPages(input, context);
       return profile.rows;
     } catch (error) {
       await updateBacklinksAccessStatusOnError(error);

@@ -18,6 +18,7 @@ import {
   keywordsToCsv,
   pagesToCsv,
 } from "@/client/features/domain/utils";
+import { captureClientEvent } from "@/client/lib/posthog";
 import type {
   DomainActiveTab,
   DomainOverviewData,
@@ -87,6 +88,13 @@ export function DomainResultsCard({
         ? keywordsToCsv(filteredKeywords)
         : pagesToCsv(filteredPages);
     downloadCsv(rows, `${overview.domain}-${activeTab}.${extension}`);
+
+    if (extension === "csv") {
+      captureClientEvent("data:export", {
+        source_feature: "domain_overview",
+        result_count: currentRows.length,
+      });
+    }
   };
 
   const isKeywordsTab = activeTab === "keywords";

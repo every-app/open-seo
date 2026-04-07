@@ -22,17 +22,33 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
     .then((module) => {
       const client = module.default;
       const apiKey = import.meta.env.POSTHOG_PUBLIC_KEY?.trim();
+      const host = import.meta.env.POSTHOG_HOST?.trim();
 
-      if (!apiKey) {
+      if (!apiKey || !host) {
         return null;
       }
 
       if (!browserPostHogInitialized) {
         client.init(apiKey, {
-          api_host:
-            import.meta.env.POSTHOG_HOST?.trim() || "https://us.i.posthog.com",
+          api_host: host,
           defaults: "2026-01-30",
           capture_exceptions: true,
+          capture_pageview: "history_change",
+          sanitize_properties(properties, event) {
+            if (event === "$pageview" || event === "$pageleave") {
+              const url: unknown = properties["$current_url"];
+              if (typeof url === "string") {
+                try {
+                  const parsed = new URL(url);
+                  parsed.searchParams.delete("email");
+                  properties["$current_url"] = parsed.toString();
+                } catch {
+                  // leave as-is if URL parsing fails
+                }
+              }
+            }
+            return properties;
+          },
         });
         browserPostHogInitialized = true;
       }
@@ -51,22 +67,48 @@ export function initPostHog() {
   void getBrowserPostHogClient();
 }
 
+function withPostHogClient(fn: (client: BrowserPostHogClient) => void) {
+  void getBrowserPostHogClient().then((client) => {
+    if (!client) return;
+    try {
+      fn(client);
+    } catch (e) {
+      console.error("posthog operation failed", e);
+    }
+  });
+}
+
+export function captureClientEvent(
+  event: string,
+  properties?: Record<string, unknown>,
+) {
+  withPostHogClient((client) => client.capture(event, properties));
+}
+
+export function identifyAnalyticsUser(args: {
+  userId: string;
+  organizationId: string | null;
+}) {
+  withPostHogClient((client) => {
+    client.identify(args.userId);
+    if (args.organizationId) {
+      client.group("organization", args.organizationId);
+    }
+  });
+}
+
+export function resetAnalyticsUser() {
+  withPostHogClient((client) => client.reset());
+}
+
 export function captureClientError(
   error: unknown,
   properties: Record<string, string | null | undefined> = {},
 ) {
-  void getBrowserPostHogClient().then((client) => {
-    if (!client) {
-      return;
-    }
-
-    try {
-      client.captureException(error, {
-        source: "client",
-        ...properties,
-      });
-    } catch (e) {
-      console.error("posthog capture failed", e);
-    }
-  });
+  withPostHogClient((client) =>
+    client.captureException(error, {
+      source: "client",
+      ...properties,
+    }),
+  );
 }

@@ -54,14 +54,16 @@ export function BacklinksSearchCard({
     },
     onSubmit: ({ value }) => {
       const target = value.target.trim();
+      const scope = resolveBacklinksSearchScope({
+        target,
+        selectedScope: value.scope,
+        userSelectedScope,
+      });
+
       onSubmit({
         ...value,
         target,
-        scope: resolveBacklinksSearchScope({
-          target,
-          selectedScope: value.scope,
-          userSelectedScope,
-        }),
+        scope,
       });
     },
   });

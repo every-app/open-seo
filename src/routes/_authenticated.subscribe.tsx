@@ -3,8 +3,8 @@ import { AutumnProvider, useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
-import { authClient, useSession } from "@/lib/auth-client";
-import { getSignInHrefForLocation } from "@/lib/auth-redirect";
+import { captureClientEvent } from "@/client/lib/posthog";
+import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import {
@@ -96,6 +96,7 @@ function SubscribePageContent() {
     setIsAttaching(true);
 
     try {
+      captureClientEvent("billing:checkout_start");
       await customerQuery.attach({
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
@@ -168,16 +169,7 @@ function SubscribePageContent() {
 function SubscribePageAccountMenu({ email }: { email: string | undefined }) {
   if (!email) return null;
 
-  const handleSignOut = () => {
-    const signInHref = getSignInHrefForLocation(window.location);
-    void authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          window.location.assign(signInHref);
-        },
-      },
-    });
-  };
+  const handleSignOut = () => signOutAndRedirect();
 
   return (
     <div className="fixed top-4 right-4">

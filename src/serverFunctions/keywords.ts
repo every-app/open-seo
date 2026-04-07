@@ -16,12 +16,9 @@ export const researchKeywords = createServerFn({ method: "POST" })
     return KeywordResearchService.research(
       {
         ...data,
-        projectId: context.project.id,
+        projectId: context.projectId,
       },
-      {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      },
+      context,
     );
   });
 
@@ -31,7 +28,7 @@ export const saveKeywords = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     return KeywordResearchService.saveKeywords({
       ...data,
-      projectId: context.project.id,
+      projectId: context.projectId,
     });
   });
 
@@ -41,7 +38,7 @@ export const getSavedKeywords = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     return KeywordResearchService.getSavedKeywords({
       ...data,
-      projectId: context.project.id,
+      projectId: context.projectId,
     });
   });
 
@@ -51,7 +48,7 @@ export const removeSavedKeyword = createServerFn({
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => removeSavedKeywordSchema.parse(data))
   .handler(async ({ data, context }) => {
-    return KeywordResearchService.removeSavedKeyword(context.project.id, data);
+    return KeywordResearchService.removeSavedKeyword(context.projectId, data);
   });
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })
@@ -61,11 +58,8 @@ export const getSerpAnalysis = createServerFn({ method: "POST" })
     KeywordResearchService.getSerpAnalysis(
       {
         ...data,
-        projectId: context.project.id,
+        projectId: context.projectId,
       },
-      {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-      },
+      context,
     ),
   );

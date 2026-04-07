@@ -38,10 +38,7 @@ export const testBacklinksAccess = createServerFn({
     }
 
     const checkedAt = new Date().toISOString();
-    const dataforseo = createDataforseoClient({
-      organizationId: context.organizationId,
-      userEmail: context.userEmail,
-    });
+    const dataforseo = createDataforseoClient(context);
 
     try {
       await dataforseo.backlinks.summary({
