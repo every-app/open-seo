@@ -16,6 +16,7 @@ export async function getOrCreateOrganizationCustomer(
 ) {
   const customer = await autumn.customers.getOrCreate({
     customerId: context.organizationId,
+    email: context.userEmail,
   });
 
   if (!customer.id) {

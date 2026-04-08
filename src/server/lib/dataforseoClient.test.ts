@@ -1,7 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+  AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+  SEO_DATA_COST_MARKUP,
 } from "@/shared/billing";
 
 interface TrackCallArg {
@@ -139,10 +141,15 @@ describe("meterDataforseoCall with split balances", () => {
     });
   });
 
+  const RAW_COST = 0.05;
+  const EXPECTED_CREDITS = Math.ceil(
+    RAW_COST * SEO_DATA_COST_MARKUP * AUTUMN_SEO_DATA_CREDITS_PER_USD,
+  );
+
   it("deducts entirely from monthly when monthly has enough", async () => {
     setupHostedMode();
     mockBalances(5000, 3000);
-    mockDataforseoResult(0.05);
+    mockDataforseoResult(RAW_COST);
 
     const client = createDataforseoClient(billingCustomer);
     await client.backlinks.summary(backlinksInput);
@@ -152,7 +159,7 @@ describe("meterDataforseoCall with split balances", () => {
       expect.objectContaining({
         customerId: "org_123",
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-        value: 50,
+        value: EXPECTED_CREDITS,
       }),
     );
   });
@@ -160,7 +167,7 @@ describe("meterDataforseoCall with split balances", () => {
   it("deducts entirely from topup when monthly is empty", async () => {
     setupHostedMode();
     mockBalances(0, 5000);
-    mockDataforseoResult(0.05);
+    mockDataforseoResult(RAW_COST);
 
     const client = createDataforseoClient(billingCustomer);
     await client.backlinks.summary(backlinksInput);
@@ -170,15 +177,16 @@ describe("meterDataforseoCall with split balances", () => {
       expect.objectContaining({
         customerId: "org_123",
         featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-        value: 50,
+        value: EXPECTED_CREDITS,
       }),
     );
   });
 
   it("splits deduction across monthly and topup when monthly is partially sufficient", async () => {
     setupHostedMode();
-    mockBalances(30, 5000);
-    mockDataforseoResult(0.05);
+    const monthlyAvailable = 30;
+    mockBalances(monthlyAvailable, 5000);
+    mockDataforseoResult(RAW_COST);
 
     const client = createDataforseoClient(billingCustomer);
     await client.backlinks.summary(backlinksInput);
@@ -188,39 +196,29 @@ describe("meterDataforseoCall with split balances", () => {
       expect.objectContaining({
         customerId: "org_123",
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-        value: 30,
+        value: monthlyAvailable,
       }),
     );
     expect(trackMock).toHaveBeenCalledWith(
       expect.objectContaining({
         customerId: "org_123",
         featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-        value: 20,
+        value: EXPECTED_CREDITS - monthlyAvailable,
       }),
     );
   });
 
-  it("throws PAYMENT_REQUIRED when combined balance is below minimum", async () => {
-    setupHostedMode();
-    // minimum is 150 credits (0.15 USD * 1000); 50 + 50 = 100 < 150
-    mockBalances(50, 50);
-
-    const client = createDataforseoClient(billingCustomer);
-    await expect(
-      client.backlinks.summary(backlinksInput),
-    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
-
-    expect(trackMock).not.toHaveBeenCalled();
-  });
-
-  it("throws PAYMENT_REQUIRED when both balances are zero", async () => {
+  it("throws INSUFFICIENT_CREDITS when both balances are exactly zero", async () => {
     setupHostedMode();
     mockBalances(0, 0);
+    mockDataforseoResult(0.05);
 
     const client = createDataforseoClient(billingCustomer);
     await expect(
       client.backlinks.summary(backlinksInput),
-    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
+    ).rejects.toMatchObject({ code: "INSUFFICIENT_CREDITS" });
+
+    expect(trackMock).not.toHaveBeenCalled();
   });
 
   it("includes balanceFeatureId in track properties", async () => {

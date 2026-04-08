@@ -1,9 +1,10 @@
+import type { PlanStatus } from "@/client/features/billing/plan-detection";
+
 export function getBillingRouteState(args: {
   hasSession: boolean;
   isSessionPending: boolean;
   isCustomerLoading: boolean;
   isCustomerError: boolean;
-  hasManagedServiceAccess: boolean;
 }) {
   if (args.isSessionPending || !args.hasSession || args.isCustomerLoading) {
     return "loading" as const;
@@ -13,10 +14,6 @@ export function getBillingRouteState(args: {
     return "error" as const;
   }
 
-  if (!args.hasManagedServiceAccess) {
-    return "redirectToSubscribe" as const;
-  }
-
   return "ready" as const;
 }
 
@@ -24,7 +21,7 @@ export function getSubscribeRouteState(args: {
   hasSession: boolean;
   isCustomerLoading: boolean;
   isCustomerError: boolean;
-  hasManagedServiceAccess: boolean;
+  planStatus: PlanStatus;
 }) {
   if (!args.hasSession || args.isCustomerLoading) {
     return "loading" as const;
@@ -34,9 +31,9 @@ export function getSubscribeRouteState(args: {
     return "error" as const;
   }
 
-  if (args.hasManagedServiceAccess) {
+  if (args.planStatus === "paid") {
     return "redirectToApp" as const;
   }
 
-  return "ready" as const;
+  return "showWelcome" as const;
 }

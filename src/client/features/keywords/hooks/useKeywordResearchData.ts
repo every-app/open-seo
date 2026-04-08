@@ -130,6 +130,7 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     lastSearchKeyword,
     lastSearchLocationCode,
     researchError,
+    researchMutationError: researchMutation.error,
     searchedKeyword,
     isLoading: researchMutation.isPending,
     beginSearch,

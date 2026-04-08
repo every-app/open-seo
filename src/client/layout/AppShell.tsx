@@ -25,9 +25,11 @@ const SUPPORT_PATH = "/support";
 export function AuthenticatedAppLayout({
   children,
   projectId,
+  banner,
 }: {
   children: React.ReactNode;
   projectId?: string;
+  banner?: React.ReactNode;
 }) {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
@@ -118,6 +120,8 @@ export function AuthenticatedAppLayout({
         shouldShowSeoApiWarning={shouldShowSeoApiWarning}
         seoApiKeyStatusError={seoApiKeyStatusError}
       />
+
+      {banner}
 
       <AppContent
         drawerOpen={drawerOpen}

@@ -24,6 +24,7 @@ const hostedBaseUrlSchema = z
 
 function createAuth() {
   const baseUrl = getHostedBaseUrl();
+  const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
 
   const auth = betterAuth({
     baseURL: baseUrl,
@@ -31,7 +32,7 @@ function createAuth() {
     ...baseAuthConfig,
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,
-      requireEmailVerification: true,
+      requireEmailVerification: !bypassEmail,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
@@ -41,16 +42,18 @@ function createAuth() {
         });
       },
     },
-    emailVerification: {
-      sendOnSignUp: true,
-      autoSignInAfterVerification: true,
-      sendVerificationEmail: async ({ user, url }) => {
-        await sendHostedVerificationEmail({
-          email: user.email,
-          confirmationUrl: url,
-        });
-      },
-    },
+    emailVerification: bypassEmail
+      ? undefined
+      : {
+          sendOnSignUp: true,
+          autoSignInAfterVerification: true,
+          sendVerificationEmail: async ({ user, url }) => {
+            await sendHostedVerificationEmail({
+              email: user.email,
+              confirmationUrl: url,
+            });
+          },
+        },
     trustedOrigins: getTrustedOrigins(baseUrl),
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -138,7 +141,10 @@ export function hasHostedAuthConfig() {
   try {
     getHostedBaseUrl();
     getHostedSecret();
-    return hasHostedAuthEmailConfig();
+    return (
+      Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
+      hasHostedAuthEmailConfig()
+    );
   } catch {
     return false;
   }

@@ -86,6 +86,7 @@ describe("subscription billing", () => {
 
     expect(getOrCreateMock).toHaveBeenCalledWith({
       customerId: "org_123",
+      email: "alice@example.com",
     });
   });
 });

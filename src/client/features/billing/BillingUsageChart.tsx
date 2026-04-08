@@ -47,7 +47,7 @@ export function BillingUsageChart() {
   const totalSpend = chartData.reduce((sum, d) => sum + d.credits, 0);
 
   return (
-    <div className="rounded-lg border border-base-300 p-4 space-y-3">
+    <div className="rounded-lg border border-base-300 bg-base-100 p-4 space-y-3">
       <div className="flex items-baseline justify-between gap-4">
         <span className="font-semibold">Usage</span>
         <span className="text-xs text-base-content/50">Last 30 days</span>
@@ -69,7 +69,7 @@ export function BillingUsageChart() {
             width={chartWidth}
             height={128}
             data={chartData}
-            margin={{ top: 4, right: 0, bottom: 0, left: -20 }}
+            margin={{ top: 4, right: 0, bottom: 0, left: 0 }}
           >
             <CartesianGrid
               strokeDasharray="3 3"

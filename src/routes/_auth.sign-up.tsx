@@ -71,8 +71,7 @@ function SignUpPage() {
           password: value.password,
           callbackURL: (() => {
             const url = new URL("/verify-email", window.location.origin);
-            if (redirectTo !== "/")
-              url.searchParams.set("redirect", redirectTo);
+            url.searchParams.set("redirect", "/subscribe");
             return url.toString();
           })(),
         });

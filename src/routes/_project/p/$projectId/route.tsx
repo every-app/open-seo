@@ -1,6 +1,8 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   getCurrentAuthRedirectFromHref,
   getSignInSearch,
@@ -33,7 +35,10 @@ function ProjectLayout() {
   const { projectId } = Route.useParams();
 
   return (
-    <AuthenticatedAppLayout projectId={projectId}>
+    <AuthenticatedAppLayout
+      projectId={projectId}
+      banner={isHostedClientAuthMode() ? <FreePlanBanner /> : undefined}
+    >
       <Outlet />
     </AuthenticatedAppLayout>
   );

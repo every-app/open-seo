@@ -1,4 +1,7 @@
+import { Link } from "@tanstack/react-router";
 import { AlertCircle, ArrowLeft } from "lucide-react";
+import { getErrorCode } from "@/client/lib/error-messages";
+import { BILLING_ROUTE } from "@/shared/billing";
 import { useKeywordResearchController } from "@/client/features/keywords/state/useKeywordResearchController";
 import type { KeywordResearchControllerInput } from "@/client/features/keywords/state/useKeywordResearchController";
 import { KeywordResearchEmptyState } from "./KeywordResearchEmptyState";
@@ -64,6 +67,9 @@ function KeywordResearchContent({
   }
 
   if (controller.researchError) {
+    const isCreditsError =
+      getErrorCode(controller.researchMutationError) === "INSUFFICIENT_CREDITS";
+
     return (
       <div className="space-y-4 pt-1">
         {recentSearchesButton}
@@ -73,12 +79,18 @@ function KeywordResearchContent({
               <AlertCircle className="mt-0.5 size-4 shrink-0" />
               <p className="text-sm">{controller.researchError}</p>
             </div>
-            <button
-              className="btn btn-sm"
-              onClick={() => controller.onSearch()}
-            >
-              Try again
-            </button>
+            {isCreditsError ? (
+              <Link to={BILLING_ROUTE} className="btn btn-sm">
+                Go to Billing
+              </Link>
+            ) : (
+              <button
+                className="btn btn-sm"
+                onClick={() => controller.onSearch()}
+              >
+                Try again
+              </button>
+            )}
           </div>
         </div>
       </div>

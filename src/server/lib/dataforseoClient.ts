@@ -2,7 +2,7 @@ import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-  MINIMUM_SEO_DATA_BALANCE_USD,
+  SEO_DATA_COST_MARKUP,
   roundUsdForBilling,
 } from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
@@ -222,10 +222,9 @@ async function meterDataforseoCall<T>(
 
   const billingCustomer = await getOrCreateOrganizationCustomer(customer);
 
-  const { monthlyRemaining } = await assertSeoDataBalanceAvailable({
-    customerId: billingCustomer.id,
-    minimumBalanceUsd: MINIMUM_SEO_DATA_BALANCE_USD,
-  });
+  const { monthlyRemaining } = await assertSeoDataBalanceAvailable(
+    billingCustomer.id,
+  );
 
   const result = await execute();
 
@@ -239,22 +238,14 @@ async function meterDataforseoCall<T>(
   return result.data;
 }
 
-async function assertSeoDataBalanceAvailable(args: {
-  customerId: string;
-  minimumBalanceUsd: number;
-}) {
-  const minimumCredits = Math.ceil(
-    roundUsdForBilling(args.minimumBalanceUsd) *
-      AUTUMN_SEO_DATA_CREDITS_PER_USD,
-  );
-
+async function assertSeoDataBalanceAvailable(customerId: string) {
   const [monthlyCheck, topupCheck] = await Promise.all([
     autumn.check({
-      customerId: args.customerId,
+      customerId,
       featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
     }),
     autumn.check({
-      customerId: args.customerId,
+      customerId,
       featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
     }),
   ]);
@@ -262,8 +253,8 @@ async function assertSeoDataBalanceAvailable(args: {
   const monthlyRemaining = monthlyCheck.balance?.remaining ?? 0;
   const topupRemaining = topupCheck.balance?.remaining ?? 0;
 
-  if (monthlyRemaining + topupRemaining < minimumCredits) {
-    throw new AppError("PAYMENT_REQUIRED");
+  if (monthlyRemaining + topupRemaining <= 0) {
+    throw new AppError("INSUFFICIENT_CREDITS");
   }
 
   return { monthlyRemaining };
@@ -275,7 +266,9 @@ async function trackDataforseoCost(args: {
   billing: DataforseoApiCallCost;
   monthlyRemaining: number;
 }) {
-  const totalCostUsd = roundUsdForBilling(args.billing.costUsd);
+  const totalCostUsd = roundUsdForBilling(
+    args.billing.costUsd * SEO_DATA_COST_MARKUP,
+  );
   const totalCostCredits = Math.ceil(
     totalCostUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD,
   );

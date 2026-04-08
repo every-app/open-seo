@@ -2,26 +2,24 @@ import { describe, expect, it } from "vitest";
 import { getBillingRouteState, getSubscribeRouteState } from "./route-state";
 
 describe("getBillingRouteState", () => {
-  it("redirects unpaid customers after a successful customer lookup", () => {
+  it("shows ready after successful customer lookup", () => {
     expect(
       getBillingRouteState({
         hasSession: true,
         isSessionPending: false,
         isCustomerLoading: false,
         isCustomerError: false,
-        hasManagedServiceAccess: false,
       }),
-    ).toBe("redirectToSubscribe");
+    ).toBe("ready");
   });
 
-  it("shows an error state instead of redirecting on billing lookup failures", () => {
+  it("shows an error state on billing lookup failures", () => {
     expect(
       getBillingRouteState({
         hasSession: true,
         isSessionPending: false,
         isCustomerLoading: false,
         isCustomerError: true,
-        hasManagedServiceAccess: false,
       }),
     ).toBe("error");
   });
@@ -33,7 +31,6 @@ describe("getBillingRouteState", () => {
         isSessionPending: true,
         isCustomerLoading: false,
         isCustomerError: false,
-        hasManagedServiceAccess: false,
       }),
     ).toBe("loading");
 
@@ -43,20 +40,19 @@ describe("getBillingRouteState", () => {
         isSessionPending: false,
         isCustomerLoading: true,
         isCustomerError: false,
-        hasManagedServiceAccess: false,
       }),
     ).toBe("loading");
   });
 });
 
 describe("getSubscribeRouteState", () => {
-  it("shows an error state instead of a subscribe CTA on billing lookup failures", () => {
+  it("shows an error state on billing lookup failures", () => {
     expect(
       getSubscribeRouteState({
         hasSession: true,
         isCustomerLoading: false,
         isCustomerError: true,
-        hasManagedServiceAccess: false,
+        planStatus: "free",
       }),
     ).toBe("error");
   });
@@ -67,8 +63,19 @@ describe("getSubscribeRouteState", () => {
         hasSession: true,
         isCustomerLoading: false,
         isCustomerError: false,
-        hasManagedServiceAccess: true,
+        planStatus: "paid",
       }),
     ).toBe("redirectToApp");
+  });
+
+  it("shows welcome page for free plan users", () => {
+    expect(
+      getSubscribeRouteState({
+        hasSession: true,
+        isCustomerLoading: false,
+        isCustomerError: false,
+        planStatus: "free",
+      }),
+    ).toBe("showWelcome");
   });
 });
