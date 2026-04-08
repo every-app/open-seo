@@ -42,7 +42,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 Top priorities:
 
 - Rank tracking
-- AI content workflows
+- AI SEO like LLM Citations
 
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
 
