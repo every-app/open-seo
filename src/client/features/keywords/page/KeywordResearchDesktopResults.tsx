@@ -103,8 +103,15 @@ function DesktopKeywordPanel({ controller }: Props) {
 }
 
 function DesktopTableCard({ controller }: Props) {
-  const { activeFilterCount, filteredRows, selectedRows, showFilters } =
+  const { activeFilterCount, filteredRows, rows, selectedRows, showFilters } =
     controller;
+
+  const keywordCountLabel =
+    selectedRows.size > 0
+      ? `${selectedRows.size} of ${filteredRows.length} selected`
+      : activeFilterCount > 0
+        ? `Showing ${filteredRows.length} of ${rows.length} keywords`
+        : `Showing ${filteredRows.length} keywords`;
 
   return (
     <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
@@ -123,9 +130,7 @@ function DesktopTableCard({ controller }: Props) {
           ) : null}
         </button>
         <span className="text-sm text-base-content/60">
-          {selectedRows.size > 0
-            ? `${selectedRows.size} of ${filteredRows.length} selected`
-            : `${filteredRows.length} keywords`}
+          {keywordCountLabel}
         </span>
         <div className="flex-1" />
         <button

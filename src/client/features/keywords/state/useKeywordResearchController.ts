@@ -160,7 +160,6 @@ export function useKeywordResearchController(
 }
 
 function useKeywordControllerState(input: KeywordResearchControllerInput) {
-  const uiState = useKeywordUiState();
   const { locationCode, setPreferredLocationCode } =
     useResolvedKeywordLocation(input);
   const {
@@ -168,6 +167,9 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     values: filterValues,
     resetFilters,
   } = useLocalKeywordFilters();
+  const uiState = useKeywordUiState(
+    Object.values(filterValues).some((v) => v.trim() !== ""),
+  );
   const { selectedRows, clearSelection, toggleRowSelection, toggleAllRows } =
     useKeywordSelection();
   const {

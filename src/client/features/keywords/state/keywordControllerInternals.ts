@@ -20,8 +20,8 @@ export function useResolvedKeywordLocation(
   return { locationCode, setPreferredLocationCode };
 }
 
-export function useKeywordUiState() {
-  const [showFilters, setShowFilters] = useState(false);
+export function useKeywordUiState(initialShowFilters: boolean) {
+  const [showFilters, setShowFilters] = useState(initialShowFilters);
   const [selectedKeyword, setSelectedKeyword] =
     useState<KeywordResearchRow | null>(null);
   const [showSaveDialog, setShowSaveDialog] = useState(false);

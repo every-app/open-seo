@@ -58,8 +58,15 @@ export function KeywordResearchMobileResults({ controller }: Props) {
 }
 
 function MobileKeywordCards({ controller }: Props) {
-  const { activeFilterCount, filteredRows, selectedRows, showFilters } =
+  const { activeFilterCount, filteredRows, rows, selectedRows, showFilters } =
     controller;
+
+  const keywordCountLabel =
+    selectedRows.size > 0
+      ? `${selectedRows.size} selected`
+      : activeFilterCount > 0
+        ? `Showing ${filteredRows.length} of ${rows.length}`
+        : `Showing ${filteredRows.length} keywords`;
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -88,9 +95,7 @@ function MobileKeywordCards({ controller }: Props) {
           ) : null}
         </button>
         <span className="text-xs text-base-content/60">
-          {selectedRows.size > 0
-            ? `${selectedRows.size} selected`
-            : `${filteredRows.length} keywords`}
+          {keywordCountLabel}
         </span>
         <div className="flex-1" />
         <button
