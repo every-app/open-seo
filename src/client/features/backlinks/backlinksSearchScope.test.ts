@@ -16,10 +16,16 @@ describe("inferBacklinksSearchScopeFromTarget", () => {
     );
   });
 
-  it("treats explicit urls as page lookups", () => {
+  it("treats root urls with explicit protocol as domain lookups", () => {
     expect(inferBacklinksSearchScopeFromTarget("https://example.com/")).toBe(
-      "page",
+      "domain",
     );
+  });
+
+  it("treats explicit urls with a path as page lookups", () => {
+    expect(
+      inferBacklinksSearchScopeFromTarget("https://example.com/pricing"),
+    ).toBe("page");
   });
 
   it("uses inferred scope until the user overrides it", () => {

@@ -14,7 +14,7 @@ export function inferBacklinksSearchScopeFromTarget(
     const parsed = new URL(
       hasExplicitProtocol ? trimmed : `https://${trimmed}`,
     );
-    return hasExplicitProtocol || parsed.pathname !== "/" ? "page" : "domain";
+    return parsed.pathname !== "/" ? "page" : "domain";
   } catch {
     return "domain";
   }
