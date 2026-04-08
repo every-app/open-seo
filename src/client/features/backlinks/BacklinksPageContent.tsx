@@ -155,6 +155,7 @@ export function BacklinksBody({
         onSetActiveTab={onSetActiveTab}
         onSetHideSpam={onSetHideSpam}
         onSetSpamThreshold={onSetSpamThreshold}
+        exportTarget={mergedData.displayTarget || searchState.target}
       />
     </>
   );
