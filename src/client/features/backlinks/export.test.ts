@@ -90,4 +90,39 @@ describe("buildBacklinksTabCsvFile", () => {
     );
     expect(file.content).toContain('"https://docs.example.com/start"');
   });
+  it("sanitizes formula-like cell values to prevent CSV injection", () => {
+    const file = buildBacklinksTabCsvFile({
+      tab: "backlinks",
+      target: "example.com",
+      rows: {
+        backlinks: [
+          {
+            domainFrom: "=cmd|' /C calc'!A0",
+            urlFrom: "+https://evil.example/source",
+            urlTo: "@https://evil.example/target",
+            anchor: "\tformula",
+            itemType: "organic",
+            isDofollow: true,
+            relAttributes: [],
+            rank: 1,
+            domainFromRank: 1,
+            pageFromRank: 1,
+            spamScore: 0,
+            firstSeen: "2025-01-01",
+            lastSeen: "2025-01-01",
+            isLost: false,
+            isBroken: false,
+            linksCount: 1,
+          },
+        ],
+        referringDomains: [],
+        topPages: [],
+      },
+    });
+
+    expect(file.content).toContain("\"'=cmd|' /C calc'!A0\"");
+    expect(file.content).toContain('"\'+https://evil.example/source"');
+    expect(file.content).toContain('"\'@https://evil.example/target"');
+    expect(file.content).toContain('"\'\tformula"');
+  });
 });

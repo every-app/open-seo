@@ -3,7 +3,9 @@ import Papa from "papaparse";
 type CsvValue = string | number | boolean | null | undefined;
 
 export function buildCsv(headers: string[], rows: CsvValue[][]): string {
-  const normalizedRows = rows.map((row) => row.map((value) => value ?? ""));
+  const normalizedRows = rows.map((row) =>
+    row.map((value) => sanitizeCsvValue(value ?? "")),
+  );
 
   return Papa.unparse(
     {
@@ -15,6 +17,23 @@ export function buildCsv(headers: string[], rows: CsvValue[][]): string {
       newline: "\n",
     },
   );
+}
+
+// Prevent CSV injection (formula injection) by prefixing dangerous characters
+// with a single quote. See OWASP guidance:
+// https://owasp.org/www-community/attacks/CSV_Injection
+function sanitizeCsvValue(
+  value: string | number | boolean,
+): string | number | boolean {
+  if (typeof value !== "string" || value.length === 0) {
+    return value;
+  }
+
+  if (["=", "+", "-", "@", "\t", "\r", "\n"].includes(value[0])) {
+    return `'${value}`;
+  }
+
+  return value;
 }
 
 export function downloadCsv(filename: string, content: string): void {
