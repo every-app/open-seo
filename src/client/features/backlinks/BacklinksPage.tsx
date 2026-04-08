@@ -7,8 +7,8 @@ import {
   navigateToBacklinksTab,
   useBacklinksPageData,
 } from "./useBacklinksPageData";
+import { useBacklinksFilters } from "./useBacklinksFilters";
 import { useBacklinksSearchHistory } from "@/client/hooks/useBacklinksSearchHistory";
-import { useBacklinksSpamPreferences } from "./useBacklinksSpamPreferences";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 export function BacklinksPage({
@@ -16,8 +16,7 @@ export function BacklinksPage({
   searchState,
   navigate,
 }: BacklinksPageProps) {
-  const { hideSpam, setHideSpam, setSpamThreshold, spamThreshold } =
-    useBacklinksSpamPreferences();
+  const filters = useBacklinksFilters();
   const {
     accessStatus,
     accessStatusErrorMessage,
@@ -95,6 +94,7 @@ export function BacklinksPage({
           overviewLoading={overviewQuery.isLoading}
           referringDomains={referringDomainsQuery.data}
           searchState={searchState}
+          filters={filters}
           tabErrorMessage={activeTabErrorMessage}
           tabLoading={
             (searchState.tab === "domains" &&
@@ -111,8 +111,6 @@ export function BacklinksPage({
           }
           testIsPending={testAccessMutation.isPending}
           topPages={topPagesQuery.data}
-          hideSpam={hideSpam}
-          spamThreshold={spamThreshold}
           onRemoveHistoryItem={removeHistoryItem}
           onRetryAccess={() => void accessStatusQuery.refetch()}
           onSelectHistoryItem={handleHistorySelect}
@@ -120,8 +118,6 @@ export function BacklinksPage({
           onSetActiveTab={(tab) => navigateToBacklinksTab(navigate, tab)}
           onRetryOverview={() => void overviewQuery.refetch()}
           onTestAccess={() => testAccessMutation.mutate()}
-          onSetHideSpam={setHideSpam}
-          onSetSpamThreshold={setSpamThreshold}
         />
       </div>
     </div>

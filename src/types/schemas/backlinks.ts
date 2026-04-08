@@ -2,9 +2,9 @@ import { z } from "zod";
 
 export const backlinksTabSchema = z.enum(["backlinks", "domains", "pages"]);
 export const backlinksTargetScopeSchema = z.enum(["domain", "page"]);
-export const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
+const DEFAULT_BACKLINKS_SPAM_THRESHOLD = 40;
 
-export function normalizeBacklinksSpamThreshold(value: number) {
+function normalizeBacklinksSpamThreshold(value: number) {
   if (!Number.isFinite(value)) {
     return DEFAULT_BACKLINKS_SPAM_THRESHOLD;
   }

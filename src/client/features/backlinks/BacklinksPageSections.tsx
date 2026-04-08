@@ -1,10 +1,10 @@
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, SlidersHorizontal } from "lucide-react";
 import {
   BacklinksNewLostChart,
   BacklinksTrendChart,
 } from "./BacklinksPageCharts";
-import { ResultsHeader } from "./BacklinksResultsHeader";
+import { BacklinksFilterPanel } from "./BacklinksFilterPanel";
 import { BacklinksTable } from "./BacklinksTable";
 import { ReferringDomainsTable } from "./ReferringDomainsTable";
 import { TopPagesTable } from "./TopPagesTable";
@@ -12,7 +12,12 @@ import type {
   BacklinksOverviewData,
   BacklinksSearchState,
 } from "./backlinksPageTypes";
-import { formatRelativeTimestamp } from "./backlinksPageUtils";
+import {
+  TAB_DESCRIPTIONS,
+  formatRelativeTimestamp,
+} from "./backlinksPageUtils";
+import { exportBacklinksTabCsv } from "./export";
+import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 export function BacklinksOverviewPanels({
   data,
@@ -58,15 +63,10 @@ export function BacklinksOverviewPanels({
 export function BacklinksResultsCard({
   activeTab,
   filteredData,
-  filterText,
-  hideSpam,
-  spamThreshold,
+  filters,
   isTabLoading,
   tabErrorMessage,
-  onFilterTextChange,
   onSetActiveTab,
-  onSetHideSpam,
-  onSetSpamThreshold,
   exportTarget,
 }: {
   activeTab: BacklinksSearchState["tab"];
@@ -75,34 +75,84 @@ export function BacklinksResultsCard({
     referringDomains: BacklinksOverviewData["referringDomains"];
     topPages: BacklinksOverviewData["topPages"];
   };
-  filterText: string;
-  hideSpam: boolean;
-  spamThreshold: number;
+  filters: BacklinksFiltersState;
   isTabLoading: boolean;
   tabErrorMessage: string | null;
-  onFilterTextChange: (value: string) => void;
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
-  onSetHideSpam: (hideSpam: boolean) => void;
-  onSetSpamThreshold: (threshold: number) => void;
   exportTarget: string;
 }) {
+  const currentFilterCount = filters[activeTab].activeFilterCount;
+
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-3">
-        <ResultsHeader
-          activeTab={activeTab}
-          filterText={filterText}
-          hideSpam={hideSpam}
-          spamThreshold={spamThreshold}
-          onFilterTextChange={onFilterTextChange}
-          onSetActiveTab={onSetActiveTab}
-          onSetHideSpam={onSetHideSpam}
-          onSetSpamThreshold={onSetSpamThreshold}
-          filteredData={filteredData}
-          exportTarget={exportTarget}
-        />
+    <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
+        <div className="space-y-2">
+          <div role="tablist" className="tabs tabs-box w-fit">
+            <TabButton
+              activeTab={activeTab}
+              tab="backlinks"
+              onClick={onSetActiveTab}
+            >
+              Backlinks
+            </TabButton>
+            <TabButton
+              activeTab={activeTab}
+              tab="domains"
+              onClick={onSetActiveTab}
+            >
+              Referring Domains
+            </TabButton>
+            <TabButton
+              activeTab={activeTab}
+              tab="pages"
+              onClick={onSetActiveTab}
+            >
+              Top Pages
+            </TabButton>
+          </div>
+          <p className="max-w-xl text-sm text-base-content/60">
+            {TAB_DESCRIPTIONS[activeTab]}
+          </p>
+        </div>
+
+        <button
+          className="btn btn-sm btn-ghost justify-start lg:justify-center"
+          onClick={() =>
+            exportBacklinksTabCsv({
+              tab: activeTab,
+              target: exportTarget,
+              rows: filteredData,
+            })
+          }
+        >
+          <Download className="size-4" />
+          Export CSV
+        </button>
+      </div>
+
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
+        <button
+          className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
+          onClick={() => filters.setShowFilters((current) => !current)}
+          title="Toggle table filters"
+        >
+          <SlidersHorizontal className="size-3.5" />
+          Filters
+          {currentFilterCount > 0 ? (
+            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+              {currentFilterCount}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      {filters.showFilters ? (
+        <BacklinksFilterPanel activeTab={activeTab} filters={filters} />
+      ) : null}
+
+      <div className="p-4">
         {tabErrorMessage ? (
-          <div className="alert alert-error">
+          <div className="alert alert-error mb-3">
             <span>{tabErrorMessage}</span>
           </div>
         ) : null}
@@ -213,6 +263,28 @@ function TrendCard({
         {children}
       </div>
     </div>
+  );
+}
+
+function TabButton({
+  activeTab,
+  children,
+  onClick,
+  tab,
+}: {
+  activeTab: BacklinksSearchState["tab"];
+  children: string;
+  onClick: (tab: BacklinksSearchState["tab"]) => void;
+  tab: BacklinksSearchState["tab"];
+}) {
+  return (
+    <button
+      role="tab"
+      className={`tab ${activeTab === tab ? "tab-active" : ""}`}
+      onClick={() => onClick(tab)}
+    >
+      {children}
+    </button>
   );
 }
 

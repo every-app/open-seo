@@ -195,6 +195,11 @@ function buildBacklinksRequestInput(
     projectId,
     target: searchState.target,
     scope: searchState.scope,
+    // Server-side spam filtering (hideSpam/spamThreshold) is available but
+    // intentionally disabled. All filtering — including spam score — is applied
+    // client-side so users get immediate feedback without re-fetching. This
+    // trades slightly larger API responses for simpler code and flexibility.
+    hideSpam: false,
   };
 }
 

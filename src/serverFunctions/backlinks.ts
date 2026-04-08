@@ -19,7 +19,15 @@ export const getBacklinksOverview = createServerFn({
         target: data.target,
         scope: data.scope,
       };
-      const profile = await BacklinksService.profileOverview(input, context);
+      const spamOptions = {
+        hideSpam: data.hideSpam,
+        spamThreshold: data.spamThreshold,
+      };
+      const profile = await BacklinksService.profileOverview(
+        input,
+        context,
+        spamOptions,
+      );
       return profile.overview;
     } catch (error) {
       if (error instanceof AppError && error.code === "BACKLINKS_NOT_ENABLED") {

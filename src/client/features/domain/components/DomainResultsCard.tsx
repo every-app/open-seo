@@ -162,40 +162,44 @@ export function DomainResultsCard({
         </div>
       </div>
 
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
-        <button
-          className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
-          onClick={() => setShowFilters((prev) => !prev)}
-          title="Toggle filters"
-        >
-          <SlidersHorizontal className="size-3.5" />
-          Filters
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
+      {isKeywordsTab ? (
+        <>
+          <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
+            <button
+              className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
+              onClick={() => setShowFilters((prev) => !prev)}
+              title="Toggle filters"
+            >
+              <SlidersHorizontal className="size-3.5" />
+              Filters
+              {activeFilterCount > 0 ? (
+                <span className="badge badge-xs badge-primary border-0 text-primary-content">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </button>
+            <span className="text-sm text-base-content/60">
+              {filteredKeywords.length} keywords
             </span>
-          ) : null}
-        </button>
-        <span className="text-sm text-base-content/60">
-          {filteredKeywords.length} keywords
-        </span>
-        <div className="flex-1" />
-        <label className="input input-bordered input-sm w-full max-w-xs flex items-center gap-2">
-          <Search className="size-4 text-base-content/60" />
-          <input
-            placeholder="Search in results"
-            value={pendingSearch}
-            onChange={(event) => onSearchChange(event.target.value)}
-          />
-        </label>
-      </div>
+            <div className="flex-1" />
+            <label className="input input-bordered input-sm w-full max-w-xs flex items-center gap-2">
+              <Search className="size-4 text-base-content/60" />
+              <input
+                placeholder="Search in results"
+                value={pendingSearch}
+                onChange={(event) => onSearchChange(event.target.value)}
+              />
+            </label>
+          </div>
 
-      {showFilters ? (
-        <DomainFilterPanel
-          filtersForm={filtersForm}
-          activeFilterCount={activeFilterCount}
-          resetFilters={resetFilters}
-        />
+          {showFilters ? (
+            <DomainFilterPanel
+              filtersForm={filtersForm}
+              activeFilterCount={activeFilterCount}
+              resetFilters={resetFilters}
+            />
+          ) : null}
+        </>
       ) : null}
 
       <div className="p-4">

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   BacklinksOverviewPanels,
   BacklinksResultsCard,
@@ -19,6 +19,12 @@ import type {
   BacklinksTopPagesData,
 } from "./backlinksPageTypes";
 import { buildSummaryStats } from "./backlinksPageUtils";
+import {
+  filterBacklinkRows,
+  filterReferringDomainRows,
+  filterTopPageRows,
+} from "./backlinksFiltering";
+import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 type BacklinksBodyProps = {
   accessStatus: BacklinksAccessStatusData | undefined;
@@ -28,13 +34,12 @@ type BacklinksBodyProps = {
   history: BacklinksSearchHistoryItem[];
   historyLoaded: boolean;
   isAccessStatusLoading: boolean;
-  hideSpam: boolean;
   overviewData: BacklinksOverviewData | undefined;
   overviewError: string | null;
   overviewLoading: boolean;
   referringDomains: BacklinksReferringDomainsData | undefined;
   searchState: BacklinksSearchState;
-  spamThreshold: number;
+  filters: BacklinksFiltersState;
   tabErrorMessage: string | null;
   tabLoading: boolean;
   testError: string | null;
@@ -47,8 +52,6 @@ type BacklinksBodyProps = {
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   onRetryOverview: () => void;
   onTestAccess: () => void;
-  onSetHideSpam: (hideSpam: boolean) => void;
-  onSetSpamThreshold: (threshold: number) => void;
 };
 
 export function BacklinksBody({
@@ -59,13 +62,12 @@ export function BacklinksBody({
   history,
   historyLoaded,
   isAccessStatusLoading,
-  hideSpam,
   overviewData,
   overviewError,
   overviewLoading,
   referringDomains,
   searchState,
-  spamThreshold,
+  filters,
   tabErrorMessage,
   tabLoading,
   testError,
@@ -78,31 +80,32 @@ export function BacklinksBody({
   onSetActiveTab,
   onRetryOverview,
   onTestAccess,
-  onSetHideSpam,
-  onSetSpamThreshold,
 }: BacklinksBodyProps) {
-  const [filterText, setFilterText] = useState("");
-
-  useEffect(() => {
-    setFilterText("");
-  }, [searchState.target, searchState.tab]);
-
   const mergedData = useMemo(
     () => mergeTabData(overviewData, referringDomains, topPages),
     [overviewData, referringDomains, topPages],
   );
-  const normalizedFilter = filterText.trim().toLowerCase();
-  const filteredData = useMemo(
-    () =>
-      filterOverviewData(
-        mergedData,
-        normalizedFilter,
-        searchState.tab,
-        hideSpam,
-        spamThreshold,
+  const filteredData = useMemo(() => {
+    if (!mergedData) {
+      return { backlinks: [], referringDomains: [], topPages: [] };
+    }
+    return {
+      backlinks: filterBacklinkRows(
+        mergedData.backlinks,
+        filters.backlinks.values,
       ),
-    [hideSpam, mergedData, normalizedFilter, searchState.tab, spamThreshold],
-  );
+      referringDomains: filterReferringDomainRows(
+        mergedData.referringDomains,
+        filters.domains.values,
+      ),
+      topPages: filterTopPageRows(mergedData.topPages, filters.pages.values),
+    };
+  }, [
+    mergedData,
+    filters.backlinks.values,
+    filters.domains.values,
+    filters.pages.values,
+  ]);
   const summaryStats = useMemo(
     () => buildSummaryStats(mergedData),
     [mergedData],
@@ -166,17 +169,12 @@ export function BacklinksBody({
       <BacklinksResultsCard
         activeTab={searchState.tab}
         filteredData={filteredData}
-        filterText={filterText}
-        hideSpam={hideSpam}
-        spamThreshold={spamThreshold}
+        filters={filters}
         isTabLoading={searchState.tab !== "backlinks" && tabLoading}
         tabErrorMessage={
           searchState.tab !== "backlinks" ? tabErrorMessage : null
         }
-        onFilterTextChange={setFilterText}
         onSetActiveTab={onSetActiveTab}
-        onSetHideSpam={onSetHideSpam}
-        onSetSpamThreshold={onSetSpamThreshold}
         exportTarget={mergedData.displayTarget || searchState.target}
       />
     </>
@@ -196,41 +194,5 @@ function mergeTabData(
     ...data,
     referringDomains: referringDomains ?? data.referringDomains,
     topPages: topPages ?? data.topPages,
-  };
-}
-
-function filterOverviewData(
-  data: BacklinksOverviewData | undefined,
-  normalizedFilter: string,
-  activeTab: BacklinksSearchState["tab"],
-  hideSpam: boolean,
-  spamThreshold: number,
-) {
-  if (!data) {
-    return { backlinks: [], referringDomains: [], topPages: [] };
-  }
-
-  const backlinksRows =
-    activeTab === "backlinks" && hideSpam
-      ? data.backlinks.filter(
-          (row) => row.spamScore == null || row.spamScore <= spamThreshold,
-        )
-      : data.backlinks;
-
-  return {
-    backlinks: backlinksRows.filter((row) => {
-      if (!normalizedFilter) return true;
-      return [row.domainFrom, row.urlFrom, row.urlTo, row.anchor, row.itemType]
-        .filter((value): value is string => Boolean(value))
-        .some((value) => value.toLowerCase().includes(normalizedFilter));
-    }),
-    referringDomains: data.referringDomains.filter((row) => {
-      if (!normalizedFilter) return true;
-      return row.domain?.toLowerCase().includes(normalizedFilter) ?? false;
-    }),
-    topPages: data.topPages.filter((row) => {
-      if (!normalizedFilter) return true;
-      return row.page?.toLowerCase().includes(normalizedFilter) ?? false;
-    }),
   };
 }
