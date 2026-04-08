@@ -8,7 +8,7 @@ type Props = {
 
 export function KeywordResearchResults({ controller }: Props) {
   return (
-    <div className="flex-1 flex flex-col overflow-hidden w-full px-4 md:px-6 pb-4 max-w-8xl mx-auto">
+    <div className="flex-1 flex flex-col overflow-hidden w-full pt-1">
       <KeywordResearchDesktopResults controller={controller} />
       <KeywordResearchMobileResults controller={controller} />
     </div>

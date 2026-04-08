@@ -1,4 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
 import { DomainHistorySection } from "@/client/features/domain/components/DomainHistorySection";
 import { DomainResultsCard } from "@/client/features/domain/components/DomainResultsCard";
@@ -29,12 +30,14 @@ type Props = {
     search: (prev: Record<string, unknown>) => Record<string, unknown>;
     replace: boolean;
   }) => void;
+  onShowRecentSearches: () => void;
 };
 
 export function DomainOverviewPage({
   projectId,
   searchState,
   navigate,
+  onShowRecentSearches,
 }: Props) {
   const queryClient = useQueryClient();
   const state = useDomainOverviewController({
@@ -43,6 +46,10 @@ export function DomainOverviewPage({
     navigate,
     searchState,
   });
+  const handleShowRecentSearches = () => {
+    state.resetView();
+    onShowRecentSearches();
+  };
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -69,15 +76,24 @@ export function DomainOverviewPage({
         ) : state.overview === null ? (
           <div className="space-y-4 pt-1">
             <DomainHistorySection
-              historyLoaded={state.historyLoaded}
               history={state.history}
-              onClearHistory={state.clearHistory}
+              historyLoaded={state.historyLoaded}
               onRemoveHistoryItem={state.removeHistoryItem}
               onSelectHistoryItem={state.handleHistorySelect}
             />
           </div>
         ) : (
           <>
+            <div>
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+                onClick={handleShowRecentSearches}
+              >
+                <ArrowLeft className="size-4" />
+                Recent searches
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <StatCard
                 label="Estimated Organic Traffic"

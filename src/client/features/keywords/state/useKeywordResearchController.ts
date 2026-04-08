@@ -96,10 +96,21 @@ export function useKeywordResearchController(
     state.setSerpPage(0);
   };
 
+  const resetView = useCallback(() => {
+    state.resetResearch();
+    state.clearSelection();
+    state.resetFilters();
+    state.setSelectedKeyword(null);
+    state.setSerpKeyword(null);
+    state.setSerpPage(0);
+    state.setMobileTab("keywords");
+    state.setShowFilters(false);
+    state.setShowSaveDialog(false);
+  }, [state]);
+
   return {
     activeFilterCount: state.activeFilterCount,
     activeSerpKeyword: state.activeSerpKeyword,
-    clearHistory: state.clearHistory,
     confirmSave,
     controlsForm: state.controlsForm,
     exportCsv,
@@ -122,6 +133,7 @@ export function useKeywordResearchController(
     overviewKeyword: state.overviewKeyword,
     removeHistoryItem: state.removeHistoryItem,
     researchError: state.researchError,
+    resetView,
     resetFilters: state.resetFilters,
     rows: state.rows,
     searchedKeyword: state.searchedKeyword,
@@ -174,7 +186,6 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     history,
     isLoaded: historyLoaded,
     addSearch,
-    clearHistory,
     removeHistoryItem,
   } = useSearchHistory(input.projectId);
 
@@ -190,6 +201,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     searchedKeyword,
     isLoading,
     beginSearch,
+    resetResearch,
     runSearch,
   } = useKeywordResearchData(addSearch);
   const setSearchParams = useKeywordSearchParams();
@@ -268,7 +280,6 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     activeSerpKeyword,
     beginSearch,
     clearSelection,
-    clearHistory,
     controlsForm,
     filteredRows,
     filtersForm,
@@ -284,6 +295,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     mobileTab: uiState.mobileTab,
     overviewKeyword,
     removeHistoryItem,
+    resetResearch,
     researchError,
     runSearch,
     resetFilters,

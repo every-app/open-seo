@@ -160,6 +160,20 @@ export function navigateToBacklinksSearch(
   });
 }
 
+export function navigateToBacklinksHistory(
+  navigate: BacklinksPageProps["navigate"],
+) {
+  navigate({
+    search: (prev) => ({
+      ...prev,
+      target: undefined,
+      scope: undefined,
+      tab: undefined,
+    }),
+    replace: true,
+  });
+}
+
 export function navigateToBacklinksTab(
   navigate: BacklinksPageProps["navigate"],
   tab: BacklinksSearchState["tab"],

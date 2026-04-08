@@ -1,6 +1,6 @@
 export function KeywordResearchLoadingState() {
   return (
-    <div className="flex-1 w-full px-4 md:px-6 pb-4 max-w-8xl mx-auto">
+    <div className="flex-1 w-full pt-1">
       <div className="hidden md:flex h-full gap-4 mt-2">
         <div className="flex-1 flex flex-col min-w-0 gap-2">
           <div className="rounded-xl border border-base-300 bg-base-100 p-4">

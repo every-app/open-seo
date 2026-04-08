@@ -1,15 +1,14 @@
-import { Clock, History, X } from "lucide-react";
-import { Globe } from "lucide-react";
-import type { DomainHistoryItem } from "@/client/features/domain/types";
+import { Clock, History, Link2, X } from "lucide-react";
+import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
 
 type Props = {
-  history: DomainHistoryItem[];
+  history: BacklinksSearchHistoryItem[];
   historyLoaded: boolean;
   onRemoveHistoryItem: (timestamp: number) => void;
-  onSelectHistoryItem: (item: DomainHistoryItem) => void;
+  onSelectHistoryItem: (item: BacklinksSearchHistoryItem) => void;
 };
 
-export function DomainHistorySection({
+export function BacklinksHistorySection({
   history,
   historyLoaded,
   onRemoveHistoryItem,
@@ -22,9 +21,9 @@ export function DomainHistorySection({
   if (history.length === 0) {
     return (
       <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/55 space-y-2">
-        <Globe className="size-9 mx-auto opacity-35" />
+        <Link2 className="size-9 mx-auto opacity-35" />
         <p className="text-base font-medium text-base-content/80">
-          Enter a domain to get started
+          Enter a domain or URL to get started
         </p>
       </section>
     );
@@ -55,11 +54,10 @@ export function DomainHistorySection({
               <Clock className="size-4 text-base-content/40 shrink-0" />
               <div className="min-w-0">
                 <p className="font-medium text-base-content truncate">
-                  {item.domain}
+                  {item.target}
                 </p>
                 <p className="text-sm text-base-content/60 truncate">
-                  {item.subdomains ? "Include subdomains" : "Root domain only"}
-                  {item.search?.trim() ? ` - ${item.search}` : ""}
+                  {item.scope === "domain" ? "Site-wide" : "Exact page"}
                 </p>
               </div>
             </button>

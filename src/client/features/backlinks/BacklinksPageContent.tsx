@@ -5,11 +5,12 @@ import {
 } from "./BacklinksPageSections";
 import {
   BacklinksAccessLoadingState,
-  BacklinksEmptyState,
   BacklinksErrorState,
   BacklinksLoadingState,
   BacklinksSetupGate,
 } from "./BacklinksPageStates";
+import { BacklinksHistorySection } from "./BacklinksHistorySection";
+import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
 import type {
   BacklinksAccessStatusData,
   BacklinksOverviewData,
@@ -24,6 +25,8 @@ type BacklinksBodyProps = {
   accessStatusError: string | null;
   backlinksDisabledByError: boolean;
   backlinksEnabled: boolean;
+  history: BacklinksSearchHistoryItem[];
+  historyLoaded: boolean;
   isAccessStatusLoading: boolean;
   hideSpam: boolean;
   overviewData: BacklinksOverviewData | undefined;
@@ -37,7 +40,10 @@ type BacklinksBodyProps = {
   testError: string | null;
   testIsPending: boolean;
   topPages: BacklinksTopPagesData | undefined;
+  onRemoveHistoryItem: (timestamp: number) => void;
   onRetryAccess: () => void;
+  onSelectHistoryItem: (item: BacklinksSearchHistoryItem) => void;
+  onShowHistory: () => void;
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   onRetryOverview: () => void;
   onTestAccess: () => void;
@@ -50,6 +56,8 @@ export function BacklinksBody({
   accessStatusError,
   backlinksDisabledByError,
   backlinksEnabled,
+  history,
+  historyLoaded,
   isAccessStatusLoading,
   hideSpam,
   overviewData,
@@ -63,7 +71,10 @@ export function BacklinksBody({
   testError,
   testIsPending,
   topPages,
+  onRemoveHistoryItem,
   onRetryAccess,
+  onSelectHistoryItem,
+  onShowHistory,
   onSetActiveTab,
   onRetryOverview,
   onTestAccess,
@@ -122,7 +133,14 @@ export function BacklinksBody({
   }
 
   if (!searchState.target) {
-    return <BacklinksEmptyState />;
+    return (
+      <BacklinksHistorySection
+        history={history}
+        historyLoaded={historyLoaded}
+        onRemoveHistoryItem={onRemoveHistoryItem}
+        onSelectHistoryItem={onSelectHistoryItem}
+      />
+    );
   }
 
   if (overviewLoading) {
@@ -140,7 +158,11 @@ export function BacklinksBody({
 
   return (
     <>
-      <BacklinksOverviewPanels data={mergedData} summaryStats={summaryStats} />
+      <BacklinksOverviewPanels
+        data={mergedData}
+        onShowHistory={onShowHistory}
+        summaryStats={summaryStats}
+      />
       <BacklinksResultsCard
         activeTab={searchState.tab}
         filteredData={filteredData}

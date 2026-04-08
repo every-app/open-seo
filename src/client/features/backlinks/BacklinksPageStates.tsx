@@ -1,11 +1,4 @@
-import {
-  Link2,
-  ShieldAlert,
-  Sparkles,
-  TrendingUp,
-  Wrench,
-  type LucideIcon,
-} from "lucide-react";
+import { ShieldAlert, Wrench } from "lucide-react";
 import type { BacklinksAccessStatusData } from "./backlinksPageTypes";
 import { formatRelativeTimestamp } from "./backlinksPageUtils";
 
@@ -73,41 +66,6 @@ export function BacklinksSetupGate({
         </div>
 
         <BacklinksSetupFeedback status={status} testError={testError} />
-      </div>
-    </section>
-  );
-}
-
-export function BacklinksEmptyState() {
-  return (
-    <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-8 text-center space-y-3">
-      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <Link2 className="size-6" />
-      </div>
-      <div className="space-y-2">
-        <p className="text-lg font-medium">Start with a domain or page URL</p>
-        <p className="mx-auto max-w-2xl text-sm text-base-content/65">
-          Keep backlink research simple: see who links to you, check what pages
-          attract links, and spot recent wins or losses without getting buried
-          in enterprise SEO dashboards.
-        </p>
-      </div>
-      <div className="grid gap-3 pt-2 text-left md:grid-cols-3">
-        <BeginnerCard
-          icon={TrendingUp}
-          title="Check link health"
-          body="Use the overview to see backlink totals, referring domains, and broken links worth fixing."
-        />
-        <BeginnerCard
-          icon={Sparkles}
-          title="Review real links"
-          body="Start with the backlinks tab to see the pages linking to you and the strongest sources first."
-        />
-        <BeginnerCard
-          icon={ShieldAlert}
-          title="Find easy actions"
-          body="Look for broken targets, recently lost links, and your most-linked pages to decide what to do next."
-        />
       </div>
     </section>
   );
@@ -199,24 +157,6 @@ function BacklinksSetupFeedback({
           <span>{testError}</span>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function BeginnerCard({
-  icon: Icon,
-  title,
-  body,
-}: {
-  icon: LucideIcon;
-  title: string;
-  body: string;
-}) {
-  return (
-    <div className="rounded-xl border border-base-300 bg-base-100 p-4 space-y-2">
-      <Icon className="size-4 text-primary" />
-      <p className="font-medium">{title}</p>
-      <p className="text-sm text-base-content/65">{body}</p>
     </div>
   );
 }

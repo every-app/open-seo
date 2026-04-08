@@ -49,6 +49,18 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     setLastSearchLocationCode(locationCode);
   };
 
+  const resetResearch = () => {
+    setRows([]);
+    setHasSearched(false);
+    setLastSearchError(false);
+    setLastResultSource("related");
+    setLastUsedFallback(false);
+    setLastSearchKeyword("");
+    setLastSearchLocationCode(2840);
+    setResearchError(null);
+    setSearchedKeyword("");
+  };
+
   const runSearch = (
     input: {
       projectId: string;
@@ -120,8 +132,8 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     researchError,
     searchedKeyword,
     isLoading: researchMutation.isPending,
-    setRows,
     beginSearch,
+    resetResearch,
     runSearch,
   };
 }

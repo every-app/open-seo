@@ -20,8 +20,8 @@ function NoResultsState({ controller }: Props) {
   const { lastSearchKeyword, lastSearchLocationCode } = controller;
 
   return (
-    <div className="flex-1 flex items-start justify-center px-4 md:px-6 py-6">
-      <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4">
+    <div className="pt-1">
+      <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4 mx-auto">
         <Globe className="size-10 mx-auto text-base-content/40" />
         <div className="space-y-2">
           <p className="text-lg font-semibold text-base-content">
@@ -45,97 +45,82 @@ function NoResultsState({ controller }: Props) {
 }
 
 function SearchHistoryState({ controller }: Props) {
-  const {
-    clearHistory,
-    controlsForm,
-    history,
-    historyLoaded,
-    onSearch,
-    removeHistoryItem,
-  } = controller;
+  const { history, historyLoaded, onSearch, removeHistoryItem } = controller;
+
+  if (!historyLoaded) {
+    return null;
+  }
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-6 pb-6">
-      <div className="mx-auto w-full max-w-5xl space-y-6 pt-3 md:pt-5">
-        {historyLoaded && history.length > 0 ? (
-          <section className="rounded-2xl border border-base-300 bg-base-100 p-5 md:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <History className="size-4 text-base-content/45" />
-                <span className="text-sm text-base-content/60">
-                  {history.length} recent search
-                  {history.length !== 1 ? "es" : ""}
-                </span>
-              </div>
-              <button
-                className="btn btn-ghost btn-xs text-error"
-                onClick={clearHistory}
-              >
-                Clear all
-              </button>
+    <div className="space-y-4 pt-1">
+      {history.length > 0 ? (
+        <section className="rounded-2xl border border-base-300 bg-base-100 p-5 md:p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <History className="size-4 text-base-content/45" />
+              <span className="text-sm text-base-content/60">
+                {history.length} recent search
+                {history.length !== 1 ? "es" : ""}
+              </span>
             </div>
-            <div className="grid gap-2">
-              {history.map((item) => (
-                <div
-                  key={item.timestamp}
-                  className="flex items-center justify-between p-3 rounded-lg border border-base-300 bg-base-100 hover:bg-base-200 transition-colors text-left group cursor-pointer"
-                  onClick={() => {
-                    controlsForm.setFieldValue("keyword", item.keyword);
-                    controlsForm.setFieldValue(
-                      "locationCode",
-                      item.locationCode,
-                    );
+          </div>
+          <div className="grid gap-2">
+            {history.map((item) => (
+              <div
+                key={item.timestamp}
+                className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
+              >
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
+                  onClick={() =>
                     onSearch({
                       keyword: item.keyword,
                       locationCode: item.locationCode,
-                    });
-                  }}
+                    })
+                  }
                 >
-                  <div className="flex items-center gap-3">
-                    <Clock className="size-4 text-base-content/40" />
-                    <div>
-                      <p className="font-medium text-base-content">
-                        {item.keyword}
-                      </p>
-                      <p className="text-sm text-base-content/60">
-                        {item.locationName}
-                      </p>
-                    </div>
+                  <Clock className="size-4 shrink-0 text-base-content/40" />
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-base-content">
+                      {item.keyword}
+                    </p>
+                    <p className="truncate text-sm text-base-content/60">
+                      {item.locationName}
+                    </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-base-content/40">
-                      {new Date(item.timestamp).toLocaleDateString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-                    <button
-                      className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        removeHistoryItem(item.timestamp);
-                      }}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </div>
+                </button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <span className="text-xs text-base-content/40">
+                    {new Date(item.timestamp).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
+                    onClick={() => removeHistoryItem(item.timestamp)}
+                  >
+                    <X className="size-3" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </section>
-        ) : (
-          <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/50 space-y-3">
-            <Search className="size-10 mx-auto opacity-40" />
-            <p className="text-lg font-medium text-base-content/80">
-              Enter a keyword to get started
-            </p>
-            <p className="text-sm max-w-md mx-auto">
-              Search for any keyword to see volume, difficulty, CPC, and related
-              keyword ideas.
-            </p>
-          </section>
-        )}
-      </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/50 space-y-3">
+          <Search className="size-10 mx-auto opacity-40" />
+          <p className="text-lg font-medium text-base-content/80">
+            Enter a keyword to get started
+          </p>
+          <p className="text-sm max-w-md mx-auto">
+            Search for any keyword to see volume, difficulty, CPC, and related
+            keyword ideas.
+          </p>
+        </section>
+      )}
     </div>
   );
 }

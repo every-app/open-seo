@@ -33,6 +33,20 @@ function DomainOverviewRoute() {
   return (
     <DomainOverviewPage
       projectId={projectId}
+      onShowRecentSearches={() => {
+        void navigate({
+          search: (prev) => ({
+            ...prev,
+            domain: undefined,
+            subdomains: undefined,
+            sort: undefined,
+            order: undefined,
+            tab: undefined,
+            search: undefined,
+          }),
+          replace: true,
+        });
+      }}
       navigate={navigate}
       searchState={{
         domain,

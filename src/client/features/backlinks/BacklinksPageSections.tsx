@@ -1,4 +1,5 @@
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
+import { ArrowLeft } from "lucide-react";
 import {
   BacklinksNewLostChart,
   BacklinksTrendChart,
@@ -15,13 +16,25 @@ import { formatRelativeTimestamp } from "./backlinksPageUtils";
 
 export function BacklinksOverviewPanels({
   data,
+  onShowHistory,
   summaryStats,
 }: {
   data: BacklinksOverviewData;
+  onShowHistory: () => void;
   summaryStats: Array<{ label: string; value: string; description: string }>;
 }) {
   return (
     <>
+      <div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+          onClick={onShowHistory}
+        >
+          <ArrowLeft className="size-4" />
+          Recent searches
+        </button>
+      </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/65">
         <span className="badge badge-outline">{data.scope}</span>
         <span>Target: {data.displayTarget}</span>

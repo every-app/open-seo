@@ -1,7 +1,8 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { KeywordResearchPage } from "@/client/features/keywords/page/KeywordResearchPage";
 import {
+  clearKeywordSearchParams,
   isResultLimit,
   normalizeKeywordMode,
   normalizeLegacyKeywordSearch,
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/_project/p/$projectId/keywords")({
 
 function KeywordResearchPageRoute() {
   const { projectId } = Route.useParams();
+  const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
   const {
     q: keywordInput = "",
@@ -41,6 +43,12 @@ function KeywordResearchPageRoute() {
 
   return (
     <KeywordResearchPage
+      onShowRecentSearches={() => {
+        void navigate({
+          search: clearKeywordSearchParams,
+          replace: true,
+        });
+      }}
       projectId={projectId}
       keywordInput={keywordInput}
       locationCode={locationCode}

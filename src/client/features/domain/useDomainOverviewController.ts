@@ -112,8 +112,12 @@ export function useDomainOverviewController({
   );
   const [showFilters, setShowFilters] = useState(false);
   const domainFilters = useDomainFilters();
-  const { history, isLoaded, addSearch, clearHistory, removeHistoryItem } =
-    useDomainSearchHistory(projectId);
+  const {
+    history,
+    isLoaded: historyLoaded,
+    addSearch,
+    removeHistoryItem,
+  } = useDomainSearchHistory(projectId);
 
   const currentSortOrder = resolveSortOrder(
     searchState.sort,
@@ -202,13 +206,20 @@ export function useDomainOverviewController({
     setSearchParams,
   });
 
+  const resetView = useCallback(() => {
+    setOverview(null);
+    setPendingSearch("");
+    setSelectedKeywords(new Set());
+    setShowFilters(false);
+    domainFilters.resetFilters();
+  }, [domainFilters]);
+
   return {
     controlsForm,
     isLoading: domainMutation.isPending,
     overview,
     history,
-    historyLoaded: isLoaded,
-    clearHistory,
+    historyLoaded,
     removeHistoryItem,
     pendingSearch,
     setPendingSearch,
@@ -218,6 +229,7 @@ export function useDomainOverviewController({
     showFilters,
     setShowFilters,
     filtersForm: domainFilters.filtersForm,
+    resetView,
     resetFilters: domainFilters.resetFilters,
     ...handlers,
     ...dataState,

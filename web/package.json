@@ -18,9 +18,9 @@
     "deploy:preview": "npm run build && wrangler deploy --env preview"
   },
   "dependencies": {
-    "@tanstack/react-router": "^1.161.3",
-    "@tanstack/react-router-devtools": "^1.161.3",
-    "@tanstack/react-start": "^1.161.3",
+    "@tanstack/react-router": "^1.168.10",
+    "@tanstack/react-router-devtools": "^1.166.11",
+    "@tanstack/react-start": "^1.167.16",
     "fumadocs-core": "^15.5.1",
     "fumadocs-mdx": "^11.6.5",
     "fumadocs-ui": "^15.5.1",

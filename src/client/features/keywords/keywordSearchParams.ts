@@ -21,6 +21,26 @@ type KeywordSearchParams = {
   exclude?: string;
 };
 
+export function clearKeywordSearchParams(search: KeywordSearchParams) {
+  return {
+    ...search,
+    q: undefined,
+    loc: undefined,
+    kLimit: undefined,
+    mode: undefined,
+    sort: undefined,
+    order: undefined,
+    minVol: undefined,
+    maxVol: undefined,
+    minCpc: undefined,
+    maxCpc: undefined,
+    minKd: undefined,
+    maxKd: undefined,
+    include: undefined,
+    exclude: undefined,
+  } satisfies KeywordSearchParams;
+}
+
 export function normalizeLegacyKeywordSearch(search: KeywordSearchParams): {
   normalized: KeywordSearchParams;
   changed: boolean;
