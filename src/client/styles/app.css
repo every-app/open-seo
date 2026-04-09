@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "./view-transitions.css";
 
 @theme {
   --container-8xl: 88rem;
