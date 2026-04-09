@@ -7,9 +7,9 @@ export type BacklinksTabFilterValues = {
   maxLinkAuthority: string;
   minSpamScore: string;
   maxSpamScore: string;
-  linkType: "" | "dofollow" | "nofollow";
-  hideLost: "" | "true";
-  hideBroken: "" | "true";
+  linkType: string;
+  hideLost: string;
+  hideBroken: string;
 };
 
 export type ReferringDomainsFilterValues = {

@@ -12,72 +12,79 @@ import { countActiveFilters } from "./backlinksFiltering";
 
 const STORAGE_KEY_PREFIX = "backlinks-filters:";
 
+type FilterValues = Record<string, string>;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
-function loadFromStorage<T extends Record<string, string>>(
-  tab: string,
-  fallback: T,
-): T {
+function loadFromStorage<T extends FilterValues>(tab: string, fallback: T): T {
+  const fallbackClone = { ...fallback };
+
   try {
     const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${tab}`);
-    if (!raw) return fallback;
+    if (!raw) return fallbackClone;
+
     const parsed: unknown = JSON.parse(raw);
-    if (!isRecord(parsed)) return fallback;
-    const result = { ...fallback };
-    for (const key of Object.keys(fallback)) {
-      const val = parsed[key];
-      if (typeof val === "string") {
-        (result as Record<string, string>)[key] = val;
+    if (!isRecord(parsed)) return fallbackClone;
+
+    const result = { ...fallbackClone };
+    for (const key in fallback) {
+      const value = parsed[key];
+      if (typeof value === "string") {
+        Object.assign(result, { [key]: value });
       }
     }
+
     return result;
   } catch {
-    return fallback;
+    return fallbackClone;
   }
 }
 
-function saveToStorage(tab: string, values: Record<string, string>) {
+function saveToStorage(tab: string, values: FilterValues) {
   try {
     localStorage.setItem(`${STORAGE_KEY_PREFIX}${tab}`, JSON.stringify(values));
   } catch {
-    // storage full — silently ignore
+    // storage full - silently ignore
   }
 }
 
-function useTabFilterForm<T extends Record<string, string>>(
-  tab: string,
-  emptyValues: T,
-) {
-  const form = useForm({ defaultValues: loadFromStorage(tab, emptyValues) });
-  const values = useStore(form.store, (s) => s.values);
+function useTabFilters<T extends FilterValues>(tab: string, emptyValues: T) {
+  const [defaultValues] = useState<T>(() =>
+    loadFromStorage(tab, { ...emptyValues }),
+  );
+  const form = useForm({ defaultValues });
+  const values = useStore(form.store, (state) => state.values);
 
   useEffect(() => {
     saveToStorage(tab, values);
   }, [tab, values]);
 
   const reset = useCallback(() => {
-    form.reset(emptyValues);
-  }, [form, emptyValues]);
+    form.reset({ ...emptyValues }, { keepDefaultValues: true });
+  }, [emptyValues, form]);
 
-  const activeFilterCount = countActiveFilters(values);
-
-  return { form, values, reset, activeFilterCount };
+  return {
+    form,
+    values,
+    reset,
+    activeFilterCount: countActiveFilters(values),
+  };
 }
 
 export function useBacklinksFilters() {
   const [showFilters, setShowFilters] = useState(false);
 
-  const backlinks = useTabFilterForm<BacklinksTabFilterValues>(
+  const backlinks = useTabFilters<BacklinksTabFilterValues>(
     "backlinks",
     EMPTY_BACKLINKS_FILTERS,
   );
-  const domains = useTabFilterForm<ReferringDomainsFilterValues>(
+  const domains = useTabFilters<ReferringDomainsFilterValues>(
     "domains",
     EMPTY_REFERRING_DOMAINS_FILTERS,
   );
-  const pages = useTabFilterForm<TopPagesFilterValues>(
+  const pages = useTabFilters<TopPagesFilterValues>(
     "pages",
     EMPTY_TOP_PAGES_FILTERS,
   );

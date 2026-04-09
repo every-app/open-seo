@@ -324,6 +324,7 @@ export function BacklinksFilterPanel({
           ) : null}
         </div>
         <button
+          type="button"
           className="btn btn-xs btn-ghost gap-1"
           onClick={current.reset}
           disabled={current.activeFilterCount === 0}
