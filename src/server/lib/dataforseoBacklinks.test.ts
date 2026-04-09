@@ -10,6 +10,8 @@ vi.mock("@/server/lib/dataforseoBacklinksAccount", () => ({
 }));
 
 import {
+  fetchBacklinksHistoryRaw,
+  fetchBacklinksRowsRaw,
   fetchBacklinksSummaryRaw,
   normalizeBacklinksTarget,
 } from "@/server/lib/dataforseoBacklinks";
@@ -145,7 +147,7 @@ describe("fetchBacklinksSummaryRaw", () => {
     );
   });
 
-  it("treats null summary results as validation errors", async () => {
+  it("treats null summary results as a valid zero-data response", async () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(
         JSON.stringify({
@@ -168,7 +170,83 @@ describe("fetchBacklinksSummaryRaw", () => {
       fetchBacklinksSummaryRaw({
         target: "not-a-real-input.example",
       }),
-    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    ).resolves.toMatchObject({ data: {} });
+  });
+
+  it("treats empty summary results as a valid zero-data response", async () => {
+    vi.mocked(fetch).mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          status_code: 20000,
+          status_message: "Ok.",
+          tasks: [
+            {
+              status_code: 20000,
+              status_message: "Ok.",
+              result: [],
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
+      ),
+    );
+    vi.mocked(classifyBacklinksErrorWithAccountState).mockResolvedValue(null);
+
+    await expect(
+      fetchBacklinksSummaryRaw({
+        target: "example.com",
+      }),
+    ).resolves.toMatchObject({ data: {} });
+  });
+
+  it("treats empty backlinks rows and history results as valid empty arrays", async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status_code: 20000,
+            status_message: "Ok.",
+            tasks: [
+              {
+                status_code: 20000,
+                status_message: "Ok.",
+                result: [],
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            status_code: 20000,
+            status_message: "Ok.",
+            tasks: [
+              {
+                status_code: 20000,
+                status_message: "Ok.",
+                result: [],
+              },
+            ],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } },
+        ),
+      );
+    vi.mocked(classifyBacklinksErrorWithAccountState).mockResolvedValue(null);
+
+    await expect(
+      fetchBacklinksRowsRaw({
+        target: "example.com",
+      }),
+    ).resolves.toMatchObject({ data: [] });
+    await expect(
+      fetchBacklinksHistoryRaw({
+        target: "example.com",
+        dateFrom: "2025-01-01",
+        dateTo: "2025-12-31",
+      }),
+    ).resolves.toMatchObject({ data: [] });
   });
 });
 

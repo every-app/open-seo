@@ -14,7 +14,6 @@ import {
   backlinksItemSchema,
   backlinksSummaryItemSchema,
   domainPageSummaryItemSchema,
-  parseFirstResult,
   parseItems,
   referringDomainItemSchema,
   responseSchema,
@@ -179,11 +178,21 @@ export async function fetchBacklinksSummaryRaw(input: BacklinksRequest) {
   const response = await postBacklinks("/v3/backlinks/summary/live", [
     buildCommonPayload(input),
   ]);
-  const data = parseFirstResult(
-    "backlinks-summary-live",
-    response.results,
-    backlinksSummaryItemSchema,
-  );
+  const firstResult = response.results[0];
+  const parsed = firstResult
+    ? backlinksSummaryItemSchema.safeParse(firstResult)
+    : null;
+  if (parsed && !parsed.success) {
+    console.error(
+      "dataforseo.backlinks-summary-live.invalid-result",
+      parsed.error.issues.slice(0, 5),
+    );
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "DataForSEO backlinks-summary-live returned an invalid response shape",
+    );
+  }
+  const data = parsed?.data ?? {};
   return {
     data,
     billing: response.billing,

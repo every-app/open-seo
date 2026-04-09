@@ -210,40 +210,13 @@ export function parseItems<T extends z.ZodTypeAny>(
 ): Array<z.infer<T>> {
   const firstResult = results[0] ?? null;
   if (firstResult == null) {
-    console.warn(`dataforseo.${endpointName}.empty-result`);
-    throw new AppError("VALIDATION_ERROR", "Backlinks target is invalid");
+    return [];
   }
 
   const parsed = z.array(itemSchema).safeParse(firstResult.items ?? []);
   if (!parsed.success) {
     console.error(
       `dataforseo.${endpointName}.invalid-items`,
-      parsed.error.issues.slice(0, 5),
-    );
-    throw new AppError(
-      "INTERNAL_ERROR",
-      `DataForSEO ${endpointName} returned an invalid response shape`,
-    );
-  }
-
-  return parsed.data;
-}
-
-export function parseFirstResult<T extends z.ZodTypeAny>(
-  endpointName: string,
-  results: BacklinksTaskResult[],
-  resultSchema: T,
-): z.infer<T> {
-  const firstResult = results[0] ?? null;
-  if (firstResult == null) {
-    console.warn(`dataforseo.${endpointName}.empty-result`);
-    throw new AppError("VALIDATION_ERROR", "Backlinks target is invalid");
-  }
-
-  const parsed = resultSchema.safeParse(firstResult);
-  if (!parsed.success) {
-    console.error(
-      `dataforseo.${endpointName}.invalid-result`,
       parsed.error.issues.slice(0, 5),
     );
     throw new AppError(
