@@ -12,7 +12,7 @@ const DIST_DIR = join(__dirname, "../dist/client");
 const DEFAULT_SITE_URL = "https://openseo.so";
 const SITE_URL = (process.env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
 
-const STATIC_PATHS = new Set(["/", "/privacy", "/terms-and-conditions"]);
+const STATIC_PATHS = new Set(["/", "/pricing", "/privacy", "/terms-and-conditions"]);
 
 function toCanonicalUrl(path) {
   if (path === "/") {
