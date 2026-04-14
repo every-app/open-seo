@@ -30,6 +30,8 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 
 - Keyword research
   - Find topics worth targeting, estimate demand, and prioritize what to write next.
+- Rank tracking
+  - Monitor keyword positions across desktop and mobile over time, with SERP feature detection.
 - Domain insights
   - Understand where your domain is gaining or losing visibility so you can focus on the pages that move revenue.
 - Backlinks
@@ -41,8 +43,9 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 
 Top priorities:
 
-- Rank tracking
-- AI SEO like LLM Citations
+- AI SEO, GEO, LLM Visibility
+- MCP for Claude
+- Making the best agentic workflows for SEO
 
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
 
@@ -241,15 +244,25 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 
 ### Pricing sources
 
+- DataForSEO SERP API pricing: https://dataforseo.com/apis/serp-api/pricing
 - DataForSEO Labs pricing: https://dataforseo.com/pricing/dataforseo-labs/dataforseo-google-api
 - DataForSEO Backlinks pricing: https://dataforseo.com/pricing/backlinks/backlinks
 - DataForSEO Lighthouse API docs: https://docs.dataforseo.com/v3/on_page/lighthouse/overview/
 
-### 1) Site audit
+### 1) Rank tracking
 
-- No paid API calls in the current implementation.
+- Uses the SERP Task API with `depth: 100` + `stop_crawl_on_match` (stops early when your domain is found).
+- Cost per keyword per device: `$0.0006` (ranks top 10) to `$0.00465` (not ranking).
+- Typical cost per keyword (both devices): `~$0.002` assuming most keywords rank in the top 20.
+- Planning examples:
+  - 100 keywords, both devices, weekly: `~$0.80/month`
+  - 500 keywords, both devices, weekly: `~$4.00/month`
 
-### 2) Keyword research (`related` mode)
+### 2) Site audit
+
+- $0.01 per 20 pages audited with Lighthouse
+
+### 3) Keyword research (`related` mode)
 
 - Current billed cost pattern (from account usage logs):
   - `0.02 + (0.0001 x returned_keywords)` USD
@@ -259,13 +272,13 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
   - 300 results = `$0.05`
   - 500 results = `$0.07`
 
-### 3) Domain overview
+### 4) Domain overview
 
 - Standard domain overview request (with top 200 ranked keywords): `$0.0401` per domain.
 - General formula if needed:
   - `0.0201 + (0.0001 x ranked_keywords_returned)` USD
 
-### 4) Backlinks search
+### 5) Backlinks search
 
 - Backlinks search costs about `$0.06` for a domain or `$0.04` for a page.
 - Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.

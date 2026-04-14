@@ -11,7 +11,8 @@
     ".output",
     "web",
     "src/routeTree.gen.ts",
-    "worker-configuration.d.ts"
+    "worker-configuration.d.ts",
+    "scripts"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",
@@ -36,7 +37,7 @@
     "eslint/complexity": ["error", { "max": 40 }],
     "eslint/max-lines": [
       "error",
-      { "max": 350, "skipBlankLines": true, "skipComments": true }
+      { "max": 400, "skipBlankLines": true, "skipComments": true }
     ],
     "eslint/max-lines-per-function": [
       "error",

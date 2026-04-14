@@ -28,6 +28,7 @@ import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
+import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
@@ -127,6 +128,12 @@ const ProjectPProjectIdSavedRoute = ProjectPProjectIdSavedRouteImport.update({
   path: '/saved',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
+const ProjectPProjectIdRankTrackingRoute =
+  ProjectPProjectIdRankTrackingRouteImport.update({
+    id: '/rank-tracking',
+    path: '/rank-tracking',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -186,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -208,6 +216,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
@@ -237,6 +246,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRoute
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -263,6 +273,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/backlinks'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/rank-tracking'
     | '/p/$projectId/saved'
     | '/p/$projectId/'
     | '/p/$projectId/audit/'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/backlinks'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/rank-tracking'
     | '/p/$projectId/saved'
     | '/p/$projectId'
     | '/p/$projectId/audit'
@@ -313,6 +325,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/saved'
     | '/_project/p/$projectId/'
     | '/_project/p/$projectId/audit/'
@@ -466,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdSavedRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/rank-tracking': {
+      id: '/_project/p/$projectId/rank-tracking'
+      path: '/rank-tracking'
+      fullPath: '/p/$projectId/rank-tracking'
+      preLoaderRoute: typeof ProjectPProjectIdRankTrackingRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/keywords': {
       id: '/_project/p/$projectId/keywords'
       path: '/keywords'
@@ -559,6 +579,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRoute
   ProjectPProjectIdSavedRoute: typeof ProjectPProjectIdSavedRoute
   ProjectPProjectIdIndexRoute: typeof ProjectPProjectIdIndexRoute
 }
@@ -570,6 +591,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdRankTrackingRoute: ProjectPProjectIdRankTrackingRoute,
     ProjectPProjectIdSavedRoute: ProjectPProjectIdSavedRoute,
     ProjectPProjectIdIndexRoute: ProjectPProjectIdIndexRoute,
   }

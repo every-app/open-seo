@@ -101,6 +101,153 @@ export const keywordMetrics = sqliteTable(
 );
 
 // ============================================================================
+// Rank Tracking tables
+// ============================================================================
+
+// One configuration per project+domain — defines what domain to track and how
+export const rankTrackingConfigs = sqliteTable(
+  "rank_tracking_configs",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull(),
+    locationCode: integer("location_code").notNull().default(2840),
+    languageCode: text("language_code").notNull().default("en"),
+    devices: text("devices", {
+      enum: ["both", "desktop", "mobile"],
+    })
+      .notNull()
+      .default("both"),
+    scheduleInterval: text("schedule_interval", {
+      enum: ["daily", "weekly", "manual"],
+    })
+      .notNull()
+      .default("weekly"),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    lastCheckedAt: text("last_checked_at"),
+    nextCheckAt: text("next_check_at"),
+    lastSkipReason: text("last_skip_reason"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("rank_tracking_configs_project_domain_location_idx").on(
+      table.projectId,
+      table.domain,
+      table.locationCode,
+    ),
+  ],
+);
+
+// Keywords tracked per domain config
+export const rankTrackingKeywords = sqliteTable(
+  "rank_tracking_keywords",
+  {
+    id: text("id").primaryKey(),
+    configId: text("config_id")
+      .notNull()
+      .references(() => rankTrackingConfigs.id, { onDelete: "cascade" }),
+    keyword: text("keyword").notNull(),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("rank_tracking_keywords_config_keyword_idx").on(
+      table.configId,
+      table.keyword,
+    ),
+  ],
+);
+
+// One row per check execution (manual or scheduled)
+export const rankCheckRuns = sqliteTable(
+  "rank_check_runs",
+  {
+    id: text("id").primaryKey(),
+    configId: text("config_id")
+      .notNull()
+      .references(() => rankTrackingConfigs.id, { onDelete: "cascade" }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    status: text("status", {
+      enum: ["pending", "running", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    keywordsTotal: integer("keywords_total").notNull().default(0),
+    keywordsChecked: integer("keywords_checked").notNull().default(0),
+    isSubsetRun: integer("is_subset_run", { mode: "boolean" })
+      .notNull()
+      .default(false),
+    errorMessage: text("error_message"),
+    startedAt: text("started_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    completedAt: text("completed_at"),
+  },
+  (table) => [
+    index("rank_check_runs_config_idx").on(table.configId, table.startedAt),
+    index("rank_check_runs_project_idx").on(table.projectId, table.startedAt),
+  ],
+);
+
+// One active lock per rank tracking config to prevent overlapping runs
+export const rankCheckLocks = sqliteTable(
+  "rank_check_locks",
+  {
+    configId: text("config_id")
+      .primaryKey()
+      .references(() => rankTrackingConfigs.id, { onDelete: "cascade" }),
+    runId: text("run_id").notNull(),
+    acquiredAt: text("acquired_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [index("rank_check_locks_run_idx").on(table.runId)],
+);
+
+// One row per keyword per device per check run
+export const rankSnapshots = sqliteTable(
+  "rank_snapshots",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    runId: text("run_id")
+      .notNull()
+      .references(() => rankCheckRuns.id, { onDelete: "cascade" }),
+    // No FK to rankTrackingKeywords — intentional. Historical snapshots are
+    // preserved after a keyword is removed from tracking so users can still
+    // see past position data for deleted keywords.
+    trackingKeywordId: text("tracking_keyword_id").notNull(),
+    keyword: text("keyword").notNull(),
+    device: text("device", { enum: ["desktop", "mobile"] }).notNull(),
+    position: integer("position"), // null = not found in top 20
+    url: text("url"),
+    serpFeatures: text("serp_features"), // JSON array of feature type strings
+    checkedAt: text("checked_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("rank_snapshots_run_idx").on(table.runId),
+    index("rank_snapshots_keyword_device_idx").on(
+      table.trackingKeywordId,
+      table.device,
+      table.checkedAt,
+    ),
+    uniqueIndex("rank_snapshots_run_keyword_device_idx").on(
+      table.runId,
+      table.trackingKeywordId,
+      table.device,
+    ),
+  ],
+);
+
+// ============================================================================
 // Site Audit tables
 // ============================================================================
 

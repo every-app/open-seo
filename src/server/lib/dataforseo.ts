@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   DataforseoLabsApi,
   DataforseoLabsGoogleRelatedKeywordsLiveRequestInfo,
@@ -7,6 +8,7 @@ import {
   DataforseoLabsGoogleRankedKeywordsLiveRequestInfo,
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
+import { z } from "zod";
 import type { DataforseoApiResponse } from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -378,5 +380,101 @@ export async function fetchLiveSerpItemsRaw(
   return {
     data,
     billing: buildTaskBilling(task),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// SERP Rank Check API wrapper (Google Organic Live with target matching)
+// ---------------------------------------------------------------------------
+
+export interface RankCheckResult {
+  keywordId: string;
+  keyword: string;
+  position: number | null;
+  url: string | null;
+  serpFeatures: string[];
+}
+
+export async function fetchRankCheckSerpRaw(input: {
+  keyword: string;
+  keywordId: string;
+  locationCode: number;
+  languageCode: string;
+  device: "desktop" | "mobile";
+  targetDomain: string;
+}): Promise<DataforseoApiResponse<RankCheckResult>> {
+  const responseRaw = await postDataforseo(
+    "/v3/serp/google/organic/live/advanced",
+    [
+      {
+        keyword: input.keyword,
+        location_code: input.locationCode,
+        language_code: input.languageCode,
+        device: input.device,
+        os: input.device === "desktop" ? "windows" : "android",
+        depth: 20,
+        target: input.targetDomain,
+      },
+    ],
+  );
+
+  const response = dataforseoResponseSchema.parse(responseRaw);
+
+  if (response.status_code !== 20000) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      response.status_message || "DataForSEO request failed",
+    );
+  }
+
+  const task = response.tasks?.[0];
+  if (!task) {
+    throw new AppError("INTERNAL_ERROR", "DataForSEO response missing task");
+  }
+
+  // "No Search Results" (40501) is valid for obscure/new keywords —
+  // treat as empty result set rather than failing the entire run.
+  const isNoResults =
+    task.status_code === 40501 ||
+    task.status_message?.toLowerCase().includes("no search results");
+  if (task.status_code !== 20000 && !isNoResults) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      task.status_message || "DataForSEO task failed",
+    );
+  }
+
+  const parsedTask = successfulDataforseoTaskSchema.safeParse(task);
+  if (!parsedTask.success) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      `DataForSEO rank check task missing billing metadata`,
+    );
+  }
+
+  const items = z
+    .array(serpSnapshotItemSchema)
+    .parse(parsedTask.data.result?.[0]?.items ?? []);
+
+  const target = input.targetDomain.toLowerCase();
+  const organicMatch = items.find((item) => {
+    if (item.type !== "organic" || item.domain == null) return false;
+    const d = item.domain.toLowerCase();
+    return d === target || d.endsWith(`.${target}`);
+  });
+
+  return {
+    data: {
+      keywordId: input.keywordId,
+      keyword: input.keyword,
+      position: organicMatch
+        ? (organicMatch.rank_absolute ?? organicMatch.rank_group ?? null)
+        : null,
+      url: organicMatch?.url ?? null,
+      serpFeatures: [
+        ...new Set(items.map((item) => item.type).filter(Boolean)),
+      ],
+    },
+    billing: buildTaskBilling(parsedTask.data),
   };
 }

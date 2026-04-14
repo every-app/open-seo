@@ -5,6 +5,7 @@ import {
   Globe,
   Link2,
   Search,
+  TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 
@@ -20,6 +21,12 @@ const projectNavItems = [
     label: "Saved Keywords",
     icon: Bookmark,
     matchSegment: "/saved",
+  },
+  {
+    to: "/p/$projectId/rank-tracking" as const,
+    label: "Rank Tracking",
+    icon: TrendingUp,
+    matchSegment: "/rank-tracking",
   },
   {
     to: "/p/$projectId/domain" as const,

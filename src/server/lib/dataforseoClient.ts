@@ -15,6 +15,7 @@ import {
   fetchDomainRankOverviewRaw,
   fetchRankedKeywordsRaw,
   fetchLiveSerpItemsRaw,
+  fetchRankCheckSerpRaw,
   type LabsKeywordDataItem,
   type SerpLiveItem,
 } from "@/server/lib/dataforseo";
@@ -43,7 +44,8 @@ type CreditFeature =
   | "keyword_research"
   | "domain_overview"
   | "backlinks"
-  | "site_audit";
+  | "site_audit"
+  | "rank_tracking";
 
 /**
  * Maps a DataForSEO API response path (e.g. ["v3", "dataforseo_labs", "google", "related_keywords", "live"])
@@ -198,6 +200,20 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
           ),
         );
       },
+      rankCheck(input: {
+        keyword: string;
+        keywordId: string;
+        locationCode: number;
+        languageCode: string;
+        device: "desktop" | "mobile";
+        targetDomain: string;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () => fetchRankCheckSerpRaw(input),
+          "rank_tracking",
+        );
+      },
     },
     lighthouse: {
       live(input: { url: string; strategy: LighthouseStrategy }) {
@@ -212,6 +228,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
 async function meterDataforseoCall<T>(
   customer: BillingCustomerContext,
   execute: () => Promise<DataforseoApiResponse<T>>,
+  creditFeature?: CreditFeature,
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
@@ -233,6 +250,7 @@ async function meterDataforseoCall<T>(
     customerId: billingCustomer.id,
     billing: result.billing,
     monthlyRemaining,
+    creditFeature,
   });
 
   return result.data;
@@ -265,6 +283,7 @@ async function trackDataforseoCost(args: {
   customerId: string;
   billing: DataforseoApiCallCost;
   monthlyRemaining: number;
+  creditFeature?: CreditFeature;
 }) {
   const totalCostUsd = roundUsdForBilling(
     args.billing.costUsd * SEO_DATA_COST_MARKUP,
@@ -316,7 +335,9 @@ async function trackDataforseoCost(args: {
       organizationId: args.customer.organizationId,
       properties: {
         project_id: args.customer.projectId,
-        credit_feature: mapDataforseoPathToCreditFeature(args.billing.path),
+        credit_feature:
+          args.creditFeature ??
+          mapDataforseoPathToCreditFeature(args.billing.path),
         monthly_credits: monthlyDeduct,
         topup_credits: topupDeduct,
         total_credits: totalCostCredits,

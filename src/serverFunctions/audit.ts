@@ -18,11 +18,7 @@ export const startAudit = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
-      billingCustomer: {
-        organizationId: context.organizationId,
-        userEmail: context.userEmail,
-        userId: context.userId,
-      },
+      billingCustomer: context,
       projectId: context.projectId,
       startUrl: data.startUrl,
       maxPages: data.maxPages,

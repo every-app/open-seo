@@ -23,7 +23,15 @@
       "binding": "SITE_AUDIT_WORKFLOW",
       "class_name": "SiteAuditWorkflow",
     },
+    {
+      "name": "rank-check-workflow",
+      "binding": "RANK_CHECK_WORKFLOW",
+      "class_name": "RankCheckWorkflow",
+    },
   ],
+  "triggers": {
+    "crons": ["*/15 * * * *"],
+  },
   "kv_namespaces": [
     {
       "binding": "KV",
