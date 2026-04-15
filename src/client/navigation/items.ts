@@ -54,7 +54,7 @@ const projectNavItems = [
   },
 ] as const;
 
-export function getProjectNavItems(projectId: string) {
+function getProjectNavItems(projectId: string) {
   return linkOptions(
     projectNavItems.map((item) => ({
       ...item,
@@ -62,6 +62,40 @@ export function getProjectNavItems(projectId: string) {
       search: {},
     })),
   );
+}
+
+export function getProjectNavGroups(projectId: string) {
+  const all = getProjectNavItems(projectId);
+  const bySegment = (seg: string) => all.find((i) => i.matchSegment === seg)!;
+
+  return [
+    {
+      type: "group" as const,
+      label: "Keywords",
+      icon: Search,
+      matchSegments: ["/keywords", "/saved", "/rank-tracking"],
+      items: [
+        bySegment("/keywords"),
+        bySegment("/saved"),
+        bySegment("/rank-tracking"),
+      ],
+    },
+    {
+      type: "group" as const,
+      label: "Domain",
+      icon: Globe,
+      matchSegments: ["/domain", "/backlinks", "/audit"],
+      items: [
+        bySegment("/domain"),
+        bySegment("/backlinks"),
+        bySegment("/audit"),
+      ],
+    },
+    {
+      type: "standalone" as const,
+      item: bySegment("/ai"),
+    },
+  ];
 }
 
 export const dataforseoHelpLinkOptions = linkOptions({

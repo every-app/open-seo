@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronsUpDown, X } from "lucide-react";
-import { getProjectNavItems } from "@/client/navigation/items";
+import { getProjectNavGroups } from "@/client/navigation/items";
 
 interface SidebarProps {
   projectId: string;
@@ -9,7 +9,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
-  const projectNavItems = getProjectNavItems(projectId);
+  const navGroups = getProjectNavGroups(projectId);
 
   return (
     <div className="sidebar w-64 border-r border-base-300 h-full bg-base-100 flex flex-col">
@@ -41,29 +41,61 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 pl-3 overflow-y-auto">
-        {projectNavItems.map((item) => {
-          const { icon: Icon, ...linkProps } = item;
+      <nav className="flex-1 py-2 pl-3 overflow-y-auto">
+        {navGroups.map((entry) => {
+          if (entry.type === "standalone") {
+            const { icon: Icon, ...linkProps } = entry.item;
+            return (
+              <Link
+                key={linkProps.to}
+                {...linkProps}
+                onClick={onNavigate}
+                activeOptions={{ exact: false, includeSearch: false }}
+                className="relative flex items-center gap-3 px-4 py-2 text-sm text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+                activeProps={{ className: "text-base-content font-medium" }}
+              >
+                {({ isActive }: { isActive: boolean }) => (
+                  <>
+                    {isActive ? (
+                      <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
+                    ) : null}
+                    <Icon className="h-5 w-5" />
+                    {entry.item.label}
+                  </>
+                )}
+              </Link>
+            );
+          }
 
           return (
-            <Link
-              key={linkProps.to}
-              {...linkProps}
-              onClick={onNavigate}
-              activeOptions={{ exact: false, includeSearch: false }}
-              className="relative flex items-center gap-3 px-4 py-2 text-sm text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
-              activeProps={{ className: "text-base-content font-medium" }}
-            >
-              {({ isActive }: { isActive: boolean }) => (
-                <>
-                  {isActive ? (
-                    <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
-                  ) : null}
-                  <Icon className="h-5 w-5" />
-                  {item.label}
-                </>
-              )}
-            </Link>
+            <div key={entry.label} className="mb-2">
+              <div className="px-4 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
+                {entry.label}
+              </div>
+              {entry.items.map((item) => {
+                const { icon: Icon, ...linkProps } = item;
+                return (
+                  <Link
+                    key={linkProps.to}
+                    {...linkProps}
+                    onClick={onNavigate}
+                    activeOptions={{ exact: false, includeSearch: false }}
+                    className="relative flex items-center gap-3 px-4 py-2 text-sm text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+                    activeProps={{ className: "text-base-content font-medium" }}
+                  >
+                    {({ isActive }: { isActive: boolean }) => (
+                      <>
+                        {isActive ? (
+                          <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
+                        ) : null}
+                        <Icon className="h-5 w-5" />
+                        {item.label}
+                      </>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
           );
         })}
       </nav>

@@ -1,6 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import {
+  ChevronDown,
   ChevronsUpDown,
   CircleHelp,
   CreditCard,
@@ -13,7 +14,7 @@ import {
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
-import { getProjectNavItems } from "@/client/navigation/items";
+import { getProjectNavGroups } from "@/client/navigation/items";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -151,7 +152,7 @@ function TopNav({
   pathname: string;
   onOpenDrawer: () => void;
 }) {
-  const projectNavItems = projectId ? getProjectNavItems(projectId) : [];
+  const navGroups = projectId ? getProjectNavGroups(projectId) : [];
   const isSupportActive = pathname === SUPPORT_PATH;
 
   return (
@@ -178,23 +179,78 @@ function TopNav({
           OpenSEO
         </Link>
         {projectId
-          ? projectNavItems.map((item) => {
-              const { icon: Icon, matchSegment, ...linkProps } = item;
-              const isActive = pathname.includes(matchSegment);
+          ? navGroups.map((entry) => {
+              if (entry.type === "standalone") {
+                const { icon: Icon, matchSegment, ...linkProps } = entry.item;
+                const isActive = pathname.includes(matchSegment);
+                return (
+                  <Link
+                    key={linkProps.to}
+                    {...linkProps}
+                    className={`btn btn-sm gap-2 ${
+                      isActive
+                        ? "border-transparent bg-primary/10 font-medium text-primary"
+                        : "btn-ghost text-base-content/60 hover:text-base-content"
+                    }`}
+                  >
+                    <Icon className="h-4 w-4" />
+                    {entry.item.label}
+                  </Link>
+                );
+              }
+
+              const GroupIcon = entry.icon;
+              const isGroupActive = entry.matchSegments.some((seg) =>
+                pathname.includes(seg),
+              );
 
               return (
-                <Link
-                  key={linkProps.to}
-                  {...linkProps}
-                  className={`btn btn-sm gap-2 ${
-                    isActive
-                      ? "border-transparent bg-primary/10 font-medium text-primary"
-                      : "btn-ghost text-base-content/60 hover:text-base-content"
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {item.label}
-                </Link>
+                <div key={entry.label} className="dropdown">
+                  <button
+                    type="button"
+                    tabIndex={0}
+                    className={`btn btn-sm gap-1.5 ${
+                      isGroupActive
+                        ? "border-transparent bg-primary/10 font-medium text-primary"
+                        : "btn-ghost text-base-content/60 hover:text-base-content"
+                    }`}
+                  >
+                    <GroupIcon className="h-4 w-4" />
+                    {entry.label}
+                    <ChevronDown className="h-3 w-3 opacity-50" />
+                  </button>
+                  <ul
+                    tabIndex={0}
+                    className="dropdown-content z-20 menu mt-1 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+                  >
+                    {entry.items.map((item) => {
+                      const { icon: Icon, matchSegment, ...linkProps } = item;
+                      const isActive = pathname.includes(matchSegment);
+                      return (
+                        <li key={linkProps.to}>
+                          <Link
+                            {...linkProps}
+                            className={
+                              isActive
+                                ? "bg-primary/10 font-medium text-primary"
+                                : ""
+                            }
+                            onClick={() => {
+                              if (
+                                document.activeElement instanceof HTMLElement
+                              ) {
+                                document.activeElement.blur();
+                              }
+                            }}
+                          >
+                            <Icon className="h-4 w-4" />
+                            {item.label}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               );
             })
           : null}
