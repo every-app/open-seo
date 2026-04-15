@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "@tanstack/react-router";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { AlertTriangle, Globe, Plus, ChevronRight } from "lucide-react";
 import { getRankTrackingConfigSummaries } from "@/serverFunctions/rank-tracking";
@@ -13,13 +14,12 @@ type ConfigSummary = Awaited<
 
 export function RankTrackingDomainList({
   projectId,
-  onSelectConfig,
   onAddDomain,
 }: {
   projectId: string;
-  onSelectConfig: (configId: string) => void;
   onAddDomain: () => void;
 }) {
+  const navigate = useNavigate();
   const { data: summaries } = useQuery({
     queryKey: ["rankTrackingConfigSummaries", projectId],
     queryFn: () => getRankTrackingConfigSummaries({ data: { projectId } }),
@@ -31,7 +31,7 @@ export function RankTrackingDomainList({
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <h2 className="text-sm font-semibold">Tracked Domains</h2>
           <button
-            className="btn btn-primary btn-sm btn-outline gap-1"
+            className="btn btn-primary btn-sm gap-1"
             onClick={onAddDomain}
           >
             <Plus className="size-3.5" />
@@ -39,13 +39,32 @@ export function RankTrackingDomainList({
           </button>
         </div>
         <div className="divide-y divide-base-300">
-          {(summaries ?? []).map((summary) => (
-            <DomainRow
-              key={summary.id}
-              summary={summary}
-              onClick={() => onSelectConfig(summary.id)}
-            />
-          ))}
+          {(summaries ?? []).length === 0 ? (
+            <div className="px-5 py-10 text-center space-y-2">
+              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
+                <Globe className="size-5 text-base-content/40" />
+              </div>
+              <p className="text-sm font-medium text-base-content/70">
+                No tracked domains yet
+              </p>
+              <p className="text-xs text-base-content/40">
+                Add a domain to start monitoring keyword rankings over time.
+              </p>
+            </div>
+          ) : (
+            (summaries ?? []).map((summary) => (
+              <DomainRow
+                key={summary.id}
+                summary={summary}
+                onClick={() =>
+                  void navigate({
+                    to: "/p/$projectId/rank-tracking/$configId",
+                    params: { projectId, configId: summary.id },
+                  })
+                }
+              />
+            ))
+          )}
         </div>
       </div>
     </div>
