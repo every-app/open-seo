@@ -1,4 +1,3 @@
-import { existsSync, readFileSync } from "node:fs";
 import process from "node:process";
 import { createBacklinksService } from "@/server/features/backlinks/services/BacklinksService";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
@@ -6,6 +5,7 @@ import type {
   BacklinksLookupInput,
   BacklinksTargetScope,
 } from "@/types/schemas/backlinks";
+import { loadLocalEnv, parseArgs } from "./cli-utils";
 
 loadLocalEnv();
 
@@ -111,35 +111,6 @@ function buildBillingCustomer(
   };
 }
 
-function parseArgs(argv: string[]) {
-  const parsed: Record<string, string> = {};
-
-  for (let index = 0; index < argv.length; index += 1) {
-    const token = argv[index];
-    if (!token.startsWith("--")) continue;
-
-    const withoutPrefix = token.slice(2);
-    const separatorIndex = withoutPrefix.indexOf("=");
-    if (separatorIndex >= 0) {
-      parsed[withoutPrefix.slice(0, separatorIndex)] = withoutPrefix.slice(
-        separatorIndex + 1,
-      );
-      continue;
-    }
-
-    const next = argv[index + 1];
-    if (!next || next.startsWith("--")) {
-      parsed[withoutPrefix] = "true";
-      continue;
-    }
-
-    parsed[withoutPrefix] = next;
-    index += 1;
-  }
-
-  return parsed;
-}
-
 function parseBoolean(value: string | undefined, fallback: boolean) {
   if (value == null) return fallback;
   return value === "true";
@@ -157,26 +128,6 @@ function parsePositiveInteger(value: string | undefined, fallback: number) {
   if (!value) return fallback;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function loadLocalEnv() {
-  for (const path of [".env.local", ".env"]) {
-    if (!existsSync(path)) continue;
-    const content = readFileSync(path, "utf8");
-    for (const line of content.split(/\r?\n/u)) {
-      const trimmed = line.trim();
-      if (!trimmed || trimmed.startsWith("#")) continue;
-
-      const separatorIndex = trimmed.indexOf("=");
-      if (separatorIndex < 0) continue;
-
-      const key = trimmed.slice(0, separatorIndex).trim();
-      const rawValue = trimmed.slice(separatorIndex + 1).trim();
-      if (!key || process.env[key]) continue;
-
-      process.env[key] = rawValue.replace(/^['"]|['"]$/g, "");
-    }
-  }
 }
 
 function printUsageAndExit(message: string): never {

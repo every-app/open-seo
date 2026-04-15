@@ -9,8 +9,9 @@
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
-    // DB index re-exports schema for convenience
+    // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
+    "src/db/better-auth-schema.ts",
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
   "ignore": ["drizzle-prod.config.ts"],

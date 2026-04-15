@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,9 +14,12 @@ import {
   SlidersHorizontal,
 } from "lucide-react";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { RankTrackingTable, exportRankTrackingCsv } from "./RankTrackingTable";
-import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import type { ComparePeriod } from "@/types/schemas/rank-tracking";
+import { RankTrackingTable } from "./RankTrackingTable";
+import { exportRankTrackingCsv } from "./RankTrackingTableParts";
+import type {
+  RankTrackingConfig,
+  ComparePeriod,
+} from "@/types/schemas/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { ActionsMenu } from "./ActionsMenu";
@@ -31,7 +34,6 @@ import {
 import { CheckConfirmModal } from "./CheckConfirmModal";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
-import { useRankTableSort } from "./useRankTableSort";
 
 const COMPARE_PERIODS: ReadonlySet<string> = new Set([
   "previous",
@@ -120,18 +122,17 @@ export function RankTrackingDomainDetail({
     setPendingCheck({ count, keywordIds });
   };
 
-  const rows = resultsData?.rows ?? [];
+  const rows = resultsData?.rows;
   const run = resultsData?.run;
   const showDesktop = config.devices !== "mobile";
   const showMobile = config.devices !== "desktop";
-  const filtered = applyFilters(rows, filters);
-  const activeFilterCount = countActiveFilters(filters);
-  const defaultSort =
-    config.devices === "desktop" ? "desktopPosition" : "mobilePosition";
-  const { sorted, sortField, sortDir, handleSort } = useRankTableSort(
-    filtered,
-    defaultSort,
+  const filtered = useMemo(
+    () => applyFilters(rows ?? [], filters),
+    [rows, filters],
   );
+  const activeFilterCount = countActiveFilters(filters);
+  const defaultSortId =
+    config.devices === "desktop" ? "desktopPosition" : "mobilePosition";
 
   return (
     <div className="space-y-3">
@@ -263,24 +264,24 @@ export function RankTrackingDomainDetail({
 
           <ActionsMenu
             onCheckNow={() => {
-              const count = costEstimate?.keywordCount ?? rows.length;
+              const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
               if (count > 0) requestCheck(count);
             }}
             onExport={() =>
               exportRankTrackingCsv(
-                sorted,
+                filtered,
                 showDesktop,
                 showMobile,
                 config.domain,
               )
             }
             onCopyKeywords={() => {
-              const text = sorted.map((r) => r.keyword).join("\n");
+              const text = filtered.map((r) => r.keyword).join("\n");
               void navigator.clipboard.writeText(text);
               toast.success("Keywords copied to clipboard");
             }}
             isRunning={isBusy}
-            hasData={sorted.length > 0}
+            hasData={filtered.length > 0}
           />
         </div>
 
@@ -297,14 +298,12 @@ export function RankTrackingDomainDetail({
         {/* Table */}
         <div className="p-4">
           <RankTrackingTable
-            totalCount={rows.length}
-            sorted={sorted}
+            totalCount={rows?.length ?? 0}
+            rows={filtered}
             resultsLoading={resultsLoading}
             showDesktop={showDesktop}
             showMobile={showMobile}
-            sortField={sortField}
-            sortDir={sortDir}
-            onSort={handleSort}
+            defaultSortId={defaultSortId}
             domain={config.domain}
             configId={config.id}
             projectId={projectId}

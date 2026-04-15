@@ -7,45 +7,6 @@ import type {
   RankTrackingRow,
 } from "@/types/schemas/rank-tracking";
 
-export type SortField = "keyword" | "desktopPosition" | "mobilePosition";
-export type SortDir = "asc" | "desc";
-
-const HEADER_TOOLTIPS: Record<string, string> = {
-  keyword: "The search term being tracked",
-  desktopPosition: "Google ranking details on desktop devices",
-  mobilePosition: "Google ranking details on mobile devices",
-};
-
-export function SortableHeader({
-  label,
-  field,
-  currentField,
-  currentDir,
-  onClick,
-  className = "",
-}: {
-  label: string;
-  field: SortField;
-  currentField: SortField;
-  currentDir: SortDir;
-  onClick: (field: SortField) => void;
-  className?: string;
-}) {
-  const isActive = currentField === field;
-  return (
-    <th
-      className={`cursor-pointer select-none text-xs uppercase tracking-wide text-base-content/60 hover:text-base-content ${className}`}
-      onClick={() => onClick(field)}
-      title={HEADER_TOOLTIPS[field]}
-    >
-      {label}
-      {isActive && (
-        <span className="ml-1">{currentDir === "asc" ? "↑" : "↓"}</span>
-      )}
-    </th>
-  );
-}
-
 function PositionBadge({ position }: { position: number | null }) {
   if (position === null) {
     return <span className="text-base-content/40">-</span>;

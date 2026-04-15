@@ -27,6 +27,7 @@
     "test:watch": "vitest",
     "test:ci": "vitest run --reporter=dot",
     "billing:backlinks": "tsx scripts/backlinks-cost-profile.ts",
+    "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
   "cloudflare": {

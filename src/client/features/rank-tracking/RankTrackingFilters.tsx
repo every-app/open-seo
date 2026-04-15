@@ -139,26 +139,28 @@ export function applyFilters(
   rows: RankTrackingRow[],
   filters: Filters,
 ): RankTrackingRow[] {
+  const includeTerms = filters.include
+    ? filters.include
+        .toLowerCase()
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
+  const excludeTerms = filters.exclude
+    ? filters.exclude
+        .toLowerCase()
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
+
   return rows.filter((row) => {
     const kw = row.keyword.toLowerCase();
 
-    if (filters.include) {
-      const terms = filters.include
-        .toLowerCase()
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      if (terms.length > 0 && !terms.some((t) => kw.includes(t))) return false;
-    }
+    if (includeTerms.length > 0 && !includeTerms.some((t) => kw.includes(t)))
+      return false;
 
-    if (filters.exclude) {
-      const terms = filters.exclude
-        .toLowerCase()
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean);
-      if (terms.some((t) => kw.includes(t))) return false;
-    }
+    if (excludeTerms.some((t) => kw.includes(t))) return false;
 
     if (filters.minDesktopPos || filters.maxDesktopPos) {
       const min = filters.minDesktopPos ? Number(filters.minDesktopPos) : 0;

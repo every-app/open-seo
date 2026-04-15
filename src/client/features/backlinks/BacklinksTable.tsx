@@ -3,10 +3,9 @@ import {
   getCoreRowModel,
   getExpandedRowModel,
   getSortedRowModel,
-  type SortingState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { EmptyTableState } from "./BacklinksPageEmptyTableState";
 import { backlinksColumns } from "./BacklinksTableColumns";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
@@ -17,17 +16,14 @@ export function BacklinksTable({
 }: {
   rows: BacklinksOverviewData["backlinks"];
 }) {
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "firstSeen", desc: true },
-  ]);
-
   const groupedData = useMemo(() => groupBacklinksByDomain(rows), [rows]);
 
   const table = useReactTable({
     data: groupedData,
     columns: backlinksColumns,
-    state: { sorting },
-    onSortingChange: setSorting,
+    initialState: {
+      sorting: [{ id: "firstSeen", desc: true }],
+    },
     getSubRows: (row) => row.subRows,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
