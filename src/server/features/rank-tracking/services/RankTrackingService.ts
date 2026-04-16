@@ -43,7 +43,7 @@ async function createConfig(input: {
     );
   if (existing) {
     throw new AppError(
-      "INTERNAL_ERROR",
+      "VALIDATION_ERROR",
       "This domain + country combination is already being tracked",
     );
   }
@@ -53,7 +53,7 @@ async function createConfig(input: {
   );
   if (allConfigs.length >= MAX_CONFIGS_PER_PROJECT) {
     throw new AppError(
-      "INTERNAL_ERROR",
+      "VALIDATION_ERROR",
       `Maximum ${MAX_CONFIGS_PER_PROJECT} tracked domains per project`,
     );
   }
