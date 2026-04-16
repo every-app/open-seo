@@ -1,7 +1,9 @@
+import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
 import {
   formatFloat,
   formatNumber,
+  resolveDomainPageHref,
   toPageSortMode,
 } from "@/client/features/domain/utils";
 import type {
@@ -11,6 +13,7 @@ import type {
 } from "@/client/features/domain/types";
 
 type Props = {
+  domain: string;
   rows: PageRow[];
   sortMode: DomainSortMode;
   currentSortOrder: SortOrder;
@@ -18,6 +21,7 @@ type Props = {
 };
 
 export function DomainPagesTable({
+  domain,
   rows,
   sortMode,
   currentSortOrder,
@@ -55,15 +59,30 @@ export function DomainPagesTable({
               </td>
             </tr>
           ) : (
-            rows.slice(0, 100).map((row) => (
-              <tr key={row.page}>
-                <td className="max-w-[420px] truncate" title={row.page}>
-                  {row.relativePath ?? row.page}
-                </td>
-                <td>{formatFloat(row.organicTraffic)}</td>
-                <td>{formatNumber(row.keywords)}</td>
-              </tr>
-            ))
+            rows.slice(0, 100).map((row) => {
+              const href = resolveDomainPageHref(
+                row.relativePath ?? row.page,
+                domain,
+              );
+
+              return (
+                <tr key={row.page}>
+                  <td className="max-w-[420px] truncate" title={row.page}>
+                    {href ? (
+                      <SafeExternalLink
+                        url={href}
+                        label={row.relativePath ?? row.page}
+                        className="link link-primary inline-flex items-center gap-1"
+                      />
+                    ) : (
+                      (row.relativePath ?? row.page)
+                    )}
+                  </td>
+                  <td>{formatFloat(row.organicTraffic)}</td>
+                  <td>{formatNumber(row.keywords)}</td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>

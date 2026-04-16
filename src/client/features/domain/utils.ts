@@ -136,3 +136,14 @@ export function pagesToCsv(rows: PageRow[]): string {
 export function downloadCsv(content: string, filename: string) {
   downloadCsvFile(filename, content);
 }
+
+export function resolveDomainPageHref(
+  value: string | null | undefined,
+  domain: string,
+): string | null {
+  if (!value) return null;
+
+  return value.includes("://")
+    ? value
+    : `https://${domain}${value.startsWith("/") ? value : `/${value}`}`;
+}

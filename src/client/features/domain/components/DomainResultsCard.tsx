@@ -205,6 +205,7 @@ export function DomainResultsCard({
       <div className="p-4">
         {isKeywordsTab ? (
           <DomainKeywordsTable
+            domain={overview.domain}
             rows={filteredKeywords}
             selectedKeywords={selectedKeywords}
             visibleKeywords={visibleKeywords}
@@ -216,6 +217,7 @@ export function DomainResultsCard({
           />
         ) : (
           <DomainPagesTable
+            domain={overview.domain}
             rows={filteredPages}
             sortMode={sortMode}
             currentSortOrder={currentSortOrder}

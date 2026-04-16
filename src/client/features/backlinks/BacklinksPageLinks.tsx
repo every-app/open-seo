@@ -1,4 +1,4 @@
-import { ExternalLink } from "lucide-react";
+import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import { extractUrlPath, truncateMiddle } from "./backlinksPageUtils";
 
 export function BacklinksExternalLink({
@@ -10,17 +10,7 @@ export function BacklinksExternalLink({
   label: string;
   className: string;
 }) {
-  const safeUrl = getSafeExternalUrl(url);
-  if (!safeUrl) {
-    return <span className={className}>{label}</span>;
-  }
-
-  return (
-    <a className={className} href={safeUrl} target="_blank" rel="noreferrer">
-      {label}
-      <ExternalLink className="size-3 shrink-0" />
-    </a>
-  );
+  return <SafeExternalLink url={url} label={label} className={className} />;
 }
 
 export function BacklinksSourceLink({
@@ -39,15 +29,4 @@ export function BacklinksSourceLink({
       className={`link link-hover break-all inline-flex items-center gap-1 ${muted ? "text-xs text-base-content/55" : "text-sm"}`}
     />
   );
-}
-
-function getSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-      ? parsed.toString()
-      : null;
-  } catch {
-    return null;
-  }
 }

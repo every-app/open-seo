@@ -1,6 +1,11 @@
+import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
-import { formatFloat, formatNumber } from "@/client/features/domain/utils";
+import {
+  formatFloat,
+  formatNumber,
+  resolveDomainPageHref,
+} from "@/client/features/domain/utils";
 import type {
   DomainSortMode,
   KeywordRow,
@@ -8,6 +13,7 @@ import type {
 } from "@/client/features/domain/types";
 
 type Props = {
+  domain: string;
   rows: KeywordRow[];
   selectedKeywords: Set<string>;
   visibleKeywords: string[];
@@ -19,6 +25,7 @@ type Props = {
 };
 
 export function DomainKeywordsTable({
+  domain,
   rows,
   selectedKeywords,
   visibleKeywords,
@@ -105,33 +112,48 @@ export function DomainKeywordsTable({
               </td>
             </tr>
           ) : (
-            rows.slice(0, 100).map((row) => (
-              <tr key={`${row.keyword}-${row.url ?? ""}`}>
-                <td>
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-xs"
-                    checked={selectedKeywords.has(row.keyword)}
-                    onChange={() => onToggleKeyword(row.keyword)}
-                    aria-label={`Select ${row.keyword}`}
-                  />
-                </td>
-                <td className="font-medium">{row.keyword}</td>
-                <td>{row.position ?? "-"}</td>
-                <td>{formatNumber(row.searchVolume)}</td>
-                <td>{formatFloat(row.traffic)}</td>
-                <td>{row.cpc == null ? "-" : `$${row.cpc.toFixed(2)}`}</td>
-                <td
-                  className="max-w-[260px] truncate"
-                  title={row.url ?? undefined}
-                >
-                  {row.relativeUrl ?? row.url ?? "-"}
-                </td>
-                <td>
-                  <DifficultyBadge value={row.keywordDifficulty} />
-                </td>
-              </tr>
-            ))
+            rows.slice(0, 100).map((row) => {
+              const href = resolveDomainPageHref(
+                row.relativeUrl ?? row.url,
+                domain,
+              );
+
+              return (
+                <tr key={`${row.keyword}-${row.url ?? ""}`}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-xs"
+                      checked={selectedKeywords.has(row.keyword)}
+                      onChange={() => onToggleKeyword(row.keyword)}
+                      aria-label={`Select ${row.keyword}`}
+                    />
+                  </td>
+                  <td className="font-medium">{row.keyword}</td>
+                  <td>{row.position ?? "-"}</td>
+                  <td>{formatNumber(row.searchVolume)}</td>
+                  <td>{formatFloat(row.traffic)}</td>
+                  <td>{row.cpc == null ? "-" : `$${row.cpc.toFixed(2)}`}</td>
+                  <td
+                    className="max-w-[260px] truncate"
+                    title={row.url ?? undefined}
+                  >
+                    {href ? (
+                      <SafeExternalLink
+                        url={href}
+                        label={row.relativeUrl ?? row.url ?? ""}
+                        className="link link-primary inline-flex items-center gap-1"
+                      />
+                    ) : (
+                      "-"
+                    )}
+                  </td>
+                  <td>
+                    <DifficultyBadge value={row.keywordDifficulty} />
+                  </td>
+                </tr>
+              );
+            })
           )}
         </tbody>
       </table>
