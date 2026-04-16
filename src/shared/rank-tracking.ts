@@ -9,8 +9,11 @@ import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 // Cost constants
 // ---------------------------------------------------------------------------
 
-/** Per-SERP cost from DataForSEO Live API */
-const COST_PER_SERP_USD = 0.002;
+/** DataForSEO Live API: cost of first page (10 results) */
+const BASE_PAGE_COST_USD = 0.002;
+
+/** DataForSEO Live API: cost of each additional page (75% of base) */
+const EXTRA_PAGE_COST_USD = 0.0015;
 
 /** How many keywords are checked per batch */
 export const KEYWORDS_PER_BATCH = 10;
@@ -28,13 +31,28 @@ export const MAX_CONFIGS_PER_PROJECT = 20;
 // Cost estimation
 // ---------------------------------------------------------------------------
 
+/** DataForSEO cost for a single SERP request at the given depth. */
+function costPerSerpAtDepth(depth: number): number {
+  const pages = depth / 10;
+  return BASE_PAGE_COST_USD + (pages - 1) * EXTRA_PAGE_COST_USD;
+}
+
+export function depthToPages(depth: number): number {
+  return depth / 10;
+}
+
+export function pagesToDepth(pages: number): number {
+  return pages * 10;
+}
+
 export function estimateRankCheckCredits(
   keywordCount: number,
   devices: RankTrackingConfig["devices"],
+  depth: number,
 ) {
   const totalChecks = keywordCount * devicesCount(devices);
   const costUsd = roundUsdForBilling(
-    totalChecks * COST_PER_SERP_USD * SEO_DATA_COST_MARKUP,
+    totalChecks * costPerSerpAtDepth(depth) * SEO_DATA_COST_MARKUP,
   );
   const costCredits = Math.ceil(costUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD);
   return { costUsd, costCredits };

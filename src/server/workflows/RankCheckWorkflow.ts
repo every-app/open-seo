@@ -37,6 +37,7 @@ interface RankCheckParams {
   locationCode: number;
   languageCode: string;
   devices: "both" | "desktop" | "mobile";
+  serpDepth: number;
   trigger: "manual" | "scheduled";
   keywordIds?: string[];
 }
@@ -46,6 +47,7 @@ async function prepareRankCheckKeywords(input: {
   configId: string;
   billingCustomer: BillingCustomerContext;
   devices: RankCheckParams["devices"];
+  serpDepth: number;
   keywordIds?: string[];
 }) {
   const ownsLock = await runOwnsRankCheckLock(input.configId, input.runId);
@@ -77,6 +79,7 @@ async function prepareRankCheckKeywords(input: {
     const { costCredits } = estimateRankCheckCredits(
       trackingKeywords.length,
       input.devices,
+      input.serpDepth,
     );
     const [monthlyCheck, topupCheck] = await Promise.all([
       autumn.check({
@@ -233,11 +236,33 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       locationCode,
       languageCode,
       devices,
+      serpDepth,
       trigger,
       keywordIds,
     } = event.payload;
 
     const client = createDataforseoClient(billingCustomer);
+
+    // Guard: skip if config was archived after the workflow was triggered
+    const configCheck = await step.do(
+      "check-active",
+      { retries: { limit: 0, delay: "1 second" } },
+      async () => {
+        const cfg = await RankTrackingRepository.getConfigById({
+          configId,
+          projectId,
+        });
+        return { isActive: cfg?.isActive ?? false };
+      },
+    );
+    if (!configCheck.isActive) {
+      await failRunAndReleaseRankCheckLock(
+        configId,
+        runId,
+        "Config has been archived",
+      );
+      return;
+    }
 
     try {
       console.log(
@@ -253,6 +278,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
             configId,
             billingCustomer,
             devices,
+            serpDepth,
             keywordIds,
           }),
       );
@@ -268,6 +294,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           client,
           keywords,
           devices,
+          serpDepth,
           domain,
           locationCode,
           languageCode,

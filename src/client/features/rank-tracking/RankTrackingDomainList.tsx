@@ -1,12 +1,24 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { LOCATIONS } from "@/client/features/keywords/locations";
-import { AlertTriangle, Globe, Plus, ChevronRight } from "lucide-react";
-import { getRankTrackingConfigSummaries } from "@/serverFunctions/rank-tracking";
+import {
+  AlertTriangle,
+  Archive,
+  Globe,
+  Plus,
+  ChevronRight,
+} from "lucide-react";
+import {
+  getRankTrackingConfigSummaries,
+  updateRankTrackingConfig,
+} from "@/serverFunctions/rank-tracking";
 import {
   devicesLabel as getDevicesLabel,
   scheduleLabel as getScheduleLabel,
 } from "@/shared/rank-tracking";
+import { Modal } from "@/client/components/Modal";
 
 type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
@@ -20,9 +32,30 @@ export function RankTrackingDomainList({
   onAddDomain: () => void;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [archiveTarget, setArchiveTarget] = useState<ConfigSummary | null>(
+    null,
+  );
   const { data: summaries } = useQuery({
     queryKey: ["rankTrackingConfigSummaries", projectId],
     queryFn: () => getRankTrackingConfigSummaries({ data: { projectId } }),
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: (configId: string) =>
+      updateRankTrackingConfig({
+        data: { projectId, configId, isActive: false },
+      }),
+    onSuccess: () => {
+      setArchiveTarget(null);
+      void queryClient.invalidateQueries({
+        queryKey: ["rankTrackingConfigSummaries", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["rankTrackingConfigs", projectId],
+      });
+      toast.success("Domain archived");
+    },
   });
 
   return (
@@ -62,11 +95,40 @@ export function RankTrackingDomainList({
                     params: { projectId, configId: summary.id },
                   })
                 }
+                onArchive={() => setArchiveTarget(summary)}
               />
             ))
           )}
         </div>
       </div>
+
+      {archiveTarget && (
+        <Modal>
+          <h3 className="text-lg font-semibold">
+            Archive {archiveTarget.domain}?
+          </h3>
+          <p className="text-sm text-base-content/70">
+            Scheduled checks will stop and this domain will be hidden from the
+            list. Ranking history is preserved.
+          </p>
+          <div className="flex justify-end gap-2">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setArchiveTarget(null)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-error btn-sm gap-1"
+              onClick={() => archiveMutation.mutate(archiveTarget.id)}
+              disabled={archiveMutation.isPending}
+            >
+              <Archive className="size-3.5" />
+              Archive
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -74,22 +136,28 @@ export function RankTrackingDomainList({
 function DomainRow({
   summary,
   onClick,
+  onArchive,
 }: {
   summary: ConfigSummary;
   onClick: () => void;
+  onArchive: () => void;
 }) {
   const dl = getDevicesLabel(summary.devices);
   const sl = getScheduleLabel(summary.scheduleInterval);
 
   return (
-    <button
-      type="button"
-      className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-base-200/50"
+    <div
+      role="button"
+      tabIndex={0}
+      className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-base-200/50 cursor-pointer"
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
-      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-base-200">
-        <Globe className="size-4 text-base-content/60" />
-      </div>
       <div className="min-w-0 flex-1">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
@@ -119,7 +187,18 @@ function DomainRow({
           </div>
         )}
       </div>
+      <button
+        type="button"
+        className="btn btn-ghost btn-xs text-base-content/40 hover:text-error"
+        title="Archive domain"
+        onClick={(e) => {
+          e.stopPropagation();
+          onArchive();
+        }}
+      >
+        <Archive className="size-4" />
+      </button>
       <ChevronRight className="size-4 shrink-0 text-base-content/40" />
-    </button>
+    </div>
   );
 }

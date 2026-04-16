@@ -28,6 +28,7 @@ async function createConfig(input: {
   locationCode?: number;
   languageCode?: string;
   devices?: RankTrackingConfig["devices"];
+  serpDepth: number;
   scheduleInterval?: RankTrackingConfig["scheduleInterval"];
 }) {
   const normalizedDomain = normalizeDomain(input.domain);
@@ -69,7 +70,8 @@ async function createConfig(input: {
     domain: normalizedDomain,
     locationCode: input.locationCode ?? 2840,
     languageCode: input.languageCode ?? "en",
-    devices: input.devices ?? "mobile",
+    devices: input.devices ?? "both",
+    serpDepth: input.serpDepth,
     scheduleInterval,
     nextCheckAt,
   });
@@ -85,6 +87,7 @@ async function updateConfig(
     locationCode?: number;
     languageCode?: string;
     devices?: RankTrackingConfig["devices"];
+    serpDepth?: number;
     scheduleInterval?: RankTrackingConfig["scheduleInterval"];
     isActive?: boolean;
   },
@@ -98,6 +101,7 @@ async function updateConfig(
   if (input.languageCode !== undefined)
     updates.languageCode = input.languageCode;
   if (input.devices !== undefined) updates.devices = input.devices;
+  if (input.serpDepth !== undefined) updates.serpDepth = input.serpDepth;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
 
   if (input.scheduleInterval !== undefined) {
@@ -200,7 +204,7 @@ async function triggerCheck(input: {
       organizationId: input.billingCustomer.organizationId,
       projectId: input.billingCustomer.projectId,
     },
-    keywordsTotal: keywords.length,
+    keywordsTotal: input.keywordIds ? input.keywordIds.length : keywords.length,
     keywordIds: input.keywordIds,
     trigger: "manual",
     workflowStartErrorMessage: "Failed to start rank check workflow",
@@ -239,6 +243,7 @@ async function estimateCost(configId: string, projectId: string) {
   const { costUsd, costCredits } = estimateRankCheckCredits(
     keywordCount,
     config.devices,
+    config.serpDepth,
   );
   return {
     costUsd,
@@ -292,6 +297,7 @@ function formatRun(
     status: run.status,
     keywordsTotal: run.keywordsTotal,
     keywordsChecked: run.keywordsChecked,
+    isSubsetRun: run.isSubsetRun,
     errorMessage: run.errorMessage,
     startedAt: run.startedAt,
     completedAt: run.completedAt,

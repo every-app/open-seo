@@ -9,9 +9,11 @@ import {
   AlertTriangle,
   ArrowLeft,
   Loader2,
+  Monitor,
   Plus,
   Settings,
   SlidersHorizontal,
+  Smartphone,
 } from "lucide-react";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { RankTrackingTable } from "./RankTrackingTable";
@@ -32,11 +34,12 @@ import {
   type Filters,
 } from "./RankTrackingFilters";
 import { CheckConfirmModal } from "./CheckConfirmModal";
+import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
 
 const COMPARE_PERIODS: ReadonlySet<string> = new Set([
-  "previous",
+  "1d",
   "7d",
   "30d",
   "90d",
@@ -60,7 +63,12 @@ export function RankTrackingDomainDetail({
   const [showAddKeywords, setShowAddKeywords] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
-  const [comparePeriod, setComparePeriod] = useState<ComparePeriod>("previous");
+  const [comparePeriod, setComparePeriod] = useState<ComparePeriod>(
+    config.scheduleInterval === "daily" ? "1d" : "7d",
+  );
+  const [activeDevice, setActiveDevice] = useState<"desktop" | "mobile">(
+    config.devices === "mobile" ? "mobile" : "desktop",
+  );
 
   const { data: resultsData, isLoading: resultsLoading } = useQuery({
     queryKey: ["rankTrackingResults", projectId, config.id, comparePeriod],
@@ -85,7 +93,8 @@ export function RankTrackingDomainDetail({
 
   const handleKeywordsAdded = (result: {
     added: number;
-    addedIds?: string[];
+    addedIds: string[];
+    checkTriggered: boolean;
   }) => {
     void queryClient.invalidateQueries({
       queryKey: ["rankTrackingCostEstimate", projectId, config.id],
@@ -93,13 +102,17 @@ export function RankTrackingDomainDetail({
     void queryClient.invalidateQueries({
       queryKey: ["rankTrackingResults", projectId, config.id],
     });
+    void queryClient.invalidateQueries({
+      queryKey: ["rankTrackingLatestRun", projectId, config.id],
+    });
     setShowAddKeywords(false);
     captureClientEvent("rank_tracking:keywords_add");
     toast.success(
       `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
     );
-    if (result.addedIds && result.addedIds.length > 0)
-      requestCheck(result.addedIds.length, result.addedIds);
+    if (!result.checkTriggered && result.added > 0) {
+      toast.info("Use 'Check Now' to check these keywords");
+    }
   };
 
   const isRunning =
@@ -124,15 +137,19 @@ export function RankTrackingDomainDetail({
 
   const rows = resultsData?.rows;
   const run = resultsData?.run;
-  const showDesktop = config.devices !== "mobile";
-  const showMobile = config.devices !== "desktop";
+  const hasBothDevices = config.devices === "both";
+  const showDesktop = hasBothDevices
+    ? activeDevice === "desktop"
+    : config.devices !== "mobile";
+  const showMobile = hasBothDevices
+    ? activeDevice === "mobile"
+    : config.devices !== "desktop";
   const filtered = useMemo(
     () => applyFilters(rows ?? [], filters),
     [rows, filters],
   );
   const activeFilterCount = countActiveFilters(filters);
-  const defaultSortId =
-    config.devices === "desktop" ? "desktopPosition" : "mobilePosition";
+  const defaultSortId = showDesktop ? "desktopPosition" : "mobilePosition";
 
   return (
     <div className="space-y-3">
@@ -143,40 +160,6 @@ export function RankTrackingDomainDetail({
         <ArrowLeft className="size-3" />
         Back to domains
       </button>
-
-      {/* Domain header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-        <div>
-          <h2 className="text-lg font-semibold">{config.domain}</h2>
-          <p className="text-xs text-base-content/60">
-            {LOCATIONS[config.locationCode] ?? "US"} &middot;{" "}
-            {devicesLabel(config.devices)} &middot;{" "}
-            {scheduleLabel(config.scheduleInterval)}
-            {run && (
-              <>
-                {" "}
-                &middot; Last: {new Date(run.startedAt).toLocaleDateString()}
-              </>
-            )}
-            {costEstimate && costEstimate.keywordCount > 0 && (
-              <> &middot; ~${costEstimate.costUsd.toFixed(2)}/check</>
-            )}
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button className="btn btn-outline btn-sm gap-1" onClick={onEdit}>
-            <Settings className="size-3.5" />
-            Configure
-          </button>
-          <button
-            className="btn btn-primary btn-sm gap-1"
-            onClick={() => setShowAddKeywords(!showAddKeywords)}
-          >
-            <Plus className="size-3.5" />
-            Add Keywords
-          </button>
-        </div>
-      </div>
 
       {config.lastSkipReason === "insufficient_credits" && (
         <div className="alert alert-warning text-sm py-2">
@@ -197,19 +180,56 @@ export function RankTrackingDomainDetail({
         </div>
       )}
 
-      {showAddKeywords && (
-        <AddKeywordsPanel
-          configId={config.id}
-          projectId={projectId}
-          onSuccess={handleKeywordsAdded}
-          onCancel={() => setShowAddKeywords(false)}
-        />
-      )}
-
       {/* Results card */}
       <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
+        {/* Domain header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 px-4 pt-4 pb-3">
+          <div>
+            <h2 className="text-lg font-semibold">{config.domain}</h2>
+            <p className="text-xs text-base-content/60">
+              {LOCATIONS[config.locationCode] ?? "US"} &middot;{" "}
+              {devicesLabel(config.devices)} &middot;{" "}
+              {scheduleLabel(config.scheduleInterval)}
+              {run && (
+                <>
+                  {" "}
+                  &middot; Last:{" "}
+                  {new Date(run.lastCheckedAt).toLocaleDateString()}
+                </>
+              )}
+              {costEstimate && costEstimate.keywordCount > 0 && (
+                <> &middot; ~${costEstimate.costUsd.toFixed(2)}/check</>
+              )}
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button className="btn btn-outline btn-sm gap-1" onClick={onEdit}>
+              <Settings className="size-3.5" />
+              Configure
+            </button>
+            <button
+              className="btn btn-primary btn-sm gap-1"
+              onClick={() => setShowAddKeywords(!showAddKeywords)}
+            >
+              <Plus className="size-3.5" />
+              Add Keywords
+            </button>
+          </div>
+        </div>
+
+        {showAddKeywords && (
+          <div className="px-4 pb-3">
+            <AddKeywordsPanel
+              configId={config.id}
+              projectId={projectId}
+              onSuccess={handleKeywordsAdded}
+              onCancel={() => setShowAddKeywords(false)}
+            />
+          </div>
+        )}
+
         {/* Table toolbar */}
-        <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-base-300">
+        <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-y border-base-300">
           <button
             className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
             onClick={() => setShowFilters((c) => !c)}
@@ -223,19 +243,6 @@ export function RankTrackingDomainDetail({
               </span>
             )}
           </button>
-          <select
-            className="select select-bordered select-sm text-xs"
-            value={comparePeriod}
-            onChange={(e) => {
-              if (isComparePeriod(e.target.value))
-                setComparePeriod(e.target.value);
-            }}
-          >
-            <option value="previous">vs previous check</option>
-            <option value="7d">vs 7 days ago</option>
-            <option value="30d">vs 30 days ago</option>
-            <option value="90d">vs 90 days ago</option>
-          </select>
 
           {isRunning && latestRun ? (
             <div className="flex items-center gap-2 text-sm text-base-content/70">
@@ -243,7 +250,7 @@ export function RankTrackingDomainDetail({
               <span>
                 {latestRun.status === "pending"
                   ? "Preparing..."
-                  : "Checking keywords..."}{" "}
+                  : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
                 {latestRun.keywordsChecked}/{latestRun.keywordsTotal || "?"}
               </span>
               {latestRun.keywordsTotal > 0 && (
@@ -261,6 +268,39 @@ export function RankTrackingDomainDetail({
           )}
 
           <div className="flex-1" />
+
+          <select
+            className="select select-bordered select-sm text-xs w-auto"
+            value={comparePeriod}
+            onChange={(e) => {
+              if (isComparePeriod(e.target.value))
+                setComparePeriod(e.target.value);
+            }}
+          >
+            <option value="1d">Since yesterday</option>
+            <option value="7d">Since last week</option>
+            <option value="30d">Since last month</option>
+            <option value="90d">Since 90 days ago</option>
+          </select>
+
+          {hasBothDevices && (
+            <SegmentedToggle
+              items={[
+                {
+                  value: "desktop" as const,
+                  icon: <Monitor className="size-3.5" />,
+                  label: "Desktop",
+                },
+                {
+                  value: "mobile" as const,
+                  icon: <Smartphone className="size-3.5" />,
+                  label: "Mobile",
+                },
+              ]}
+              value={activeDevice}
+              onChange={setActiveDevice}
+            />
+          )}
 
           <ActionsMenu
             onCheckNow={() => {
@@ -298,6 +338,7 @@ export function RankTrackingDomainDetail({
         {/* Table */}
         <div className="p-4">
           <RankTrackingTable
+            key={defaultSortId}
             totalCount={rows?.length ?? 0}
             rows={filtered}
             resultsLoading={resultsLoading}
@@ -315,6 +356,7 @@ export function RankTrackingDomainDetail({
         <CheckConfirmModal
           keywordCount={pendingCheck.count}
           devices={config.devices}
+          serpDepth={config.serpDepth}
           isPending={isPending}
           onRunNow={() =>
             startCheck({

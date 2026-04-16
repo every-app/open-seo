@@ -36,7 +36,7 @@ type RankCheckWorkflowStatus = {
 
 type RankCheckConfigForStart = Pick<
   RankTrackingConfig,
-  "id" | "domain" | "locationCode" | "languageCode" | "devices"
+  "id" | "domain" | "locationCode" | "languageCode" | "devices" | "serpDepth"
 >;
 
 const ACTIVE_WORKFLOW_STATUSES = new Set<RankCheckWorkflowStatus["status"]>([
@@ -122,6 +122,7 @@ export async function beginRankCheckRun(input: {
         locationCode: input.config.locationCode,
         languageCode: input.config.languageCode,
         devices: input.config.devices,
+        serpDepth: input.config.serpDepth,
         trigger: input.trigger,
         keywordIds: input.keywordIds,
       },

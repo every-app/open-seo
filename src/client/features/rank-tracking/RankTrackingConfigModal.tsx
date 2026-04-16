@@ -5,22 +5,29 @@ import {
   createRankTrackingConfig,
   updateRankTrackingConfig,
 } from "@/serverFunctions/rank-tracking";
-import { Loader2, X } from "lucide-react";
+import { Info, Loader2, X } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import {
+  depthToPages,
+  pagesToDepth,
+  estimateRankCheckCredits,
+} from "@/shared/rank-tracking";
+import {
   LOCATION_OPTIONS,
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
 } from "@/client/features/keywords/locations";
+import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 
 type Props = {
   projectId: string;
   existingConfig?: RankTrackingConfig | null;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (createdConfigId?: string) => void;
+  onConfigCreated?: () => void;
 };
 
 export function RankTrackingConfigModal({
@@ -28,18 +35,22 @@ export function RankTrackingConfigModal({
   existingConfig,
   onClose,
   onSaved,
+  onConfigCreated,
 }: Props) {
   const isEdit = !!existingConfig;
+  const [step, setStep] = useState<"config" | "keywords">("config");
   const [domain, setDomain] = useState(existingConfig?.domain ?? "");
   const [devices, setDevices] = useState<"both" | "desktop" | "mobile">(
-    existingConfig?.devices ?? "mobile",
+    existingConfig?.devices ?? "both",
   );
   const [locationCode, setLocationCode] = useState(
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
+  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 20);
   const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
     existingConfig?.scheduleInterval ?? "weekly",
   );
+  const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
   const createMutation = useMutation({
     mutationFn: () =>
@@ -48,15 +59,18 @@ export function RankTrackingConfigModal({
           projectId,
           domain,
           devices,
+          serpDepth,
           locationCode,
           languageCode: getLanguageCode(locationCode),
           scheduleInterval: schedule,
         },
       }),
-    onSuccess: () => {
+    onSuccess: (result) => {
       captureClientEvent("rank_tracking:config_create");
       toast.success("Domain added for rank tracking");
-      onSaved();
+      setCreatedConfigId(result.configId);
+      onConfigCreated?.();
+      setStep("keywords");
     },
     onError: (error) => {
       toast.error(getStandardErrorMessage(error, "Failed to save config"));
@@ -71,6 +85,7 @@ export function RankTrackingConfigModal({
           configId: existingConfig!.id,
           domain,
           devices,
+          serpDepth,
           locationCode,
           languageCode: getLanguageCode(locationCode),
           scheduleInterval: schedule,
@@ -102,8 +117,24 @@ export function RankTrackingConfigModal({
 
   const isPending = createMutation.isPending || updateMutation.isPending;
 
+  if (step === "keywords" && createdConfigId) {
+    return (
+      <Modal maxWidth="max-w-3xl">
+        <KeywordSuggestionStep
+          configId={createdConfigId}
+          projectId={projectId}
+          domain={domain}
+          locationCode={locationCode}
+          languageCode={getLanguageCode(locationCode)}
+          onDone={(id) => onSaved(id)}
+          onClose={() => onSaved(createdConfigId ?? undefined)}
+        />
+      </Modal>
+    );
+  }
+
   return (
-    <Modal>
+    <Modal maxWidth="max-w-lg">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isEdit ? "Edit Domain Config" : "Add Domain"}
@@ -166,6 +197,18 @@ export function RankTrackingConfigModal({
             <option value="desktop">Desktop only</option>
             <option value="mobile">Mobile only</option>
           </select>
+          <div className="mt-1.5 text-xs text-base-content/50">
+            Most Google searches come from mobile, but select this based on your
+            customer.
+          </div>
+          {devices === "both" && (
+            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-info">
+              <Info className="size-3.5 shrink-0 mt-0.5" />
+              <span>
+                Tracking both devices uses 2x credits per keyword check
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="form-control">
@@ -190,12 +233,62 @@ export function RankTrackingConfigModal({
             <option value="weekly">Weekly</option>
             <option value="manual">Manual only</option>
           </select>
+          {schedule === "daily" && (
+            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-warning">
+              <Info className="size-3.5 shrink-0 mt-0.5" />
+              <span>Daily checks use 7x more credits than weekly</span>
+            </div>
+          )}
         </div>
 
-        <p className="text-xs text-base-content/60">
-          After adding a domain, manage tracked keywords from the domain detail
-          view.
-        </p>
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text font-medium">Search Depth</span>
+          </label>
+          <select
+            className="select select-bordered w-full"
+            value={depthToPages(serpDepth)}
+            onChange={(e) => setSerpDepth(pagesToDepth(Number(e.target.value)))}
+          >
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((pages) => (
+              <option key={pages} value={pages}>
+                {pages} {pages === 1 ? "page" : "pages"} (top {pages * 10}{" "}
+                results)
+              </option>
+            ))}
+          </select>
+          <div className="mt-1.5 text-xs text-base-content/50">
+            10 pages is ~8x more expensive than 1 page
+          </div>
+        </div>
+
+        {(() => {
+          const { costUsd: costPerKeyword } = estimateRankCheckCredits(
+            1,
+            devices,
+            serpDepth,
+          );
+          const checksPerMonth = schedule === "daily" ? 30 : 4;
+          return (
+            <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
+              <div>
+                <span className="font-mono font-semibold text-base-content">
+                  ~${costPerKeyword.toFixed(4)}
+                </span>{" "}
+                per keyword per check
+              </div>
+              {schedule !== "manual" && (
+                <div>
+                  50 keywords would cost{" "}
+                  <span className="font-mono font-semibold text-base-content">
+                    ~${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
+                  </span>
+                  /month
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="flex justify-end gap-2 pt-2">
           <button

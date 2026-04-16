@@ -402,7 +402,9 @@ export async function fetchRankCheckSerpRaw(input: {
   languageCode: string;
   device: "desktop" | "mobile";
   targetDomain: string;
+  depth: number;
 }): Promise<DataforseoApiResponse<RankCheckResult>> {
+  const depth = Math.min(100, Math.max(10, input.depth));
   const responseRaw = await postDataforseo(
     "/v3/serp/google/organic/live/advanced",
     [
@@ -412,8 +414,7 @@ export async function fetchRankCheckSerpRaw(input: {
         language_code: input.languageCode,
         device: input.device,
         os: input.device === "desktop" ? "windows" : "android",
-        depth: 20,
-        target: input.targetDomain,
+        depth,
       },
     ],
   );

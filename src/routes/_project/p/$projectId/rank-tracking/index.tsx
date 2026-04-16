@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { RankTrackingDomainList } from "@/client/features/rank-tracking/RankTrackingDomainList";
 import { RankTrackingConfigModal } from "@/client/features/rank-tracking/RankTrackingConfigModal";
@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_project/p/$projectId/rank-tracking/")({
 
 function RankTrackingIndex() {
   const { projectId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [showConfigModal, setShowConfigModal] = useState(false);
 
@@ -34,9 +35,16 @@ function RankTrackingIndex() {
           projectId={projectId}
           existingConfig={null}
           onClose={() => setShowConfigModal(false)}
-          onSaved={() => {
+          onConfigCreated={invalidateConfigs}
+          onSaved={(createdConfigId) => {
             setShowConfigModal(false);
             invalidateConfigs();
+            if (createdConfigId) {
+              void navigate({
+                to: "/p/$projectId/rank-tracking/$configId",
+                params: { projectId, configId: createdConfigId },
+              });
+            }
           }}
         />
       )}

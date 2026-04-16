@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq, gte, inArray, lte, max } from "drizzle-orm";
+import { and, count, desc, eq, inArray, lte, max } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -9,6 +9,11 @@ import {
   rankTrackingKeywords,
   projects,
 } from "@/db/schema";
+import {
+  getLatestSnapshotsForKeywords,
+  getSnapshotsBeforeDate,
+  getEarliestSnapshotsForKeywords,
+} from "./snapshotQueries";
 
 const DB_BATCH_SIZE = 100;
 type BatchStatement = Parameters<typeof db.batch>[0][number];
@@ -33,7 +38,12 @@ async function getConfigsForProject(projectId: string) {
   return db
     .select()
     .from(rankTrackingConfigs)
-    .where(eq(rankTrackingConfigs.projectId, projectId))
+    .where(
+      and(
+        eq(rankTrackingConfigs.projectId, projectId),
+        eq(rankTrackingConfigs.isActive, true),
+      ),
+    )
     .orderBy(rankTrackingConfigs.createdAt);
 }
 
@@ -107,6 +117,7 @@ async function getDueConfigsWithOrganization(nowIso: string) {
       locationCode: rankTrackingConfigs.locationCode,
       languageCode: rankTrackingConfigs.languageCode,
       devices: rankTrackingConfigs.devices,
+      serpDepth: rankTrackingConfigs.serpDepth,
       scheduleInterval: rankTrackingConfigs.scheduleInterval,
       nextCheckAt: rankTrackingConfigs.nextCheckAt,
       organizationId: projects.organizationId,
@@ -213,62 +224,6 @@ async function insertSnapshots(
 
 async function getSnapshotsForRun(runId: string) {
   return db.select().from(rankSnapshots).where(eq(rankSnapshots.runId, runId));
-}
-
-async function getRecentCompletedRuns(configId: string, limit: number) {
-  return db
-    .select()
-    .from(rankCheckRuns)
-    .where(
-      and(
-        eq(rankCheckRuns.configId, configId),
-        eq(rankCheckRuns.status, "completed"),
-        eq(rankCheckRuns.isSubsetRun, false),
-      ),
-    )
-    .orderBy(desc(rankCheckRuns.startedAt))
-    .limit(limit);
-}
-
-async function getClosestCompletedRun(configId: string, targetDate: string) {
-  const [beforeRows, afterRows] = await Promise.all([
-    db
-      .select()
-      .from(rankCheckRuns)
-      .where(
-        and(
-          eq(rankCheckRuns.configId, configId),
-          eq(rankCheckRuns.status, "completed"),
-          eq(rankCheckRuns.isSubsetRun, false),
-          lte(rankCheckRuns.startedAt, targetDate),
-        ),
-      )
-      .orderBy(desc(rankCheckRuns.startedAt))
-      .limit(1),
-    db
-      .select()
-      .from(rankCheckRuns)
-      .where(
-        and(
-          eq(rankCheckRuns.configId, configId),
-          eq(rankCheckRuns.status, "completed"),
-          eq(rankCheckRuns.isSubsetRun, false),
-          gte(rankCheckRuns.startedAt, targetDate),
-        ),
-      )
-      .orderBy(asc(rankCheckRuns.startedAt))
-      .limit(1),
-  ]);
-
-  const before = beforeRows[0] ?? null;
-  const after = afterRows[0] ?? null;
-  if (!before) return after;
-  if (!after) return before;
-
-  const targetMs = new Date(targetDate).getTime();
-  const beforeDiff = Math.abs(targetMs - new Date(before.startedAt).getTime());
-  const afterDiff = Math.abs(new Date(after.startedAt).getTime() - targetMs);
-  return beforeDiff <= afterDiff ? before : after;
 }
 
 // ---------------------------------------------------------------------------
@@ -401,11 +356,12 @@ export const RankTrackingRepository = {
   deleteRunLock,
   insertSnapshots,
   getSnapshotsForRun,
-  getRecentCompletedRuns,
-  getClosestCompletedRun,
   getKeywordsForConfig,
   addKeywordsToConfig,
   removeKeywordsFromConfig,
   getKeywordCountForConfig,
   getConfigSummaries,
+  getLatestSnapshotsForKeywords,
+  getSnapshotsBeforeDate,
+  getEarliestSnapshotsForKeywords,
 };

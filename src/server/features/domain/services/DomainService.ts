@@ -248,6 +248,89 @@ function derivePages(
     }));
 }
 
+async function getSuggestedKeywords(
+  input: {
+    domain: string;
+    locationCode: number;
+    languageCode: string;
+    organizationId: string;
+    projectId: string;
+  },
+  billingCustomer: BillingCustomerContext,
+): Promise<
+  Array<{
+    keyword: string;
+    position: number | null;
+    searchVolume: number | null;
+    traffic: number | null;
+    cpc: number | null;
+    keywordDifficulty: number | null;
+  }>
+> {
+  const domain = input.domain.toLowerCase().trim();
+
+  const cacheKey = await buildCacheKey("domain:keyword-suggestions", {
+    organizationId: billingCustomer.organizationId,
+    projectId: input.projectId,
+    domain,
+    locationCode: input.locationCode,
+    languageCode: input.languageCode,
+  });
+
+  const cachedRaw = await getCached(cacheKey);
+  const cached = z
+    .array(
+      z.object({
+        keyword: z.string(),
+        position: z.number().nullable(),
+        searchVolume: z.number().nullable(),
+        traffic: z.number().nullable(),
+        cpc: z.number().nullable(),
+        keywordDifficulty: z.number().nullable(),
+      }),
+    )
+    .safeParse(cachedRaw);
+  if (cached.success && cached.data.length > 0) {
+    return cached.data;
+  }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
+
+  const rankedItems = await dataforseo.domain.rankedKeywords({
+    target: domain,
+    locationCode: input.locationCode,
+    languageCode: input.languageCode,
+    limit: 100,
+    orderBy: ["keyword_data.keyword_info.search_volume,desc"],
+  });
+
+  const keywords = rankedItems
+    .map((item) => mapKeywordItem(item))
+    .filter(
+      (item): item is NonNullable<ReturnType<typeof mapKeywordItem>> =>
+        item != null,
+    )
+    .map((item) => ({
+      keyword: item.keyword,
+      position: item.position,
+      searchVolume: item.searchVolume,
+      traffic: item.traffic,
+      cpc: item.cpc,
+      keywordDifficulty: item.keywordDifficulty,
+    }));
+
+  if (keywords.length > 0) {
+    void setCached(cacheKey, keywords, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
+      (error) => {
+        console.error("domain.keyword-suggestions.cache-write failed:", error);
+      },
+    );
+  }
+
+  return keywords;
+}
+
 export const DomainService = {
   getOverview,
+  getSuggestedKeywords,
 } as const;

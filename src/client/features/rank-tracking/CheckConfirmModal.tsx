@@ -11,17 +11,23 @@ import {
 export function CheckConfirmModal({
   keywordCount,
   devices,
+  serpDepth,
   isPending,
   onRunNow,
   onCancel,
 }: {
   keywordCount: number;
   devices: RankTrackingConfig["devices"];
+  serpDepth: number;
   isPending: boolean;
   onRunNow: () => void;
   onCancel: () => void;
 }) {
-  const { costUsd } = estimateRankCheckCredits(keywordCount, devices);
+  const { costUsd } = estimateRankCheckCredits(
+    keywordCount,
+    devices,
+    serpDepth,
+  );
   const dc = devicesCount(devices);
   const totalChecks = keywordCount * dc;
   const liveTime =

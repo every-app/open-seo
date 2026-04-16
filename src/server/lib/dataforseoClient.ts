@@ -207,6 +207,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         languageCode: string;
         device: "desktop" | "mobile";
         targetDomain: string;
+        depth: number;
       }) {
         return meterDataforseoCall(
           customer,

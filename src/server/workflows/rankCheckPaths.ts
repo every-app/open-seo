@@ -35,6 +35,7 @@ interface CheckContext {
   client: ReturnType<typeof createDataforseoClient>;
   keywords: KeywordEntry[];
   devices: RankTrackingConfig["devices"];
+  serpDepth: number;
   domain: string;
   locationCode: number;
   languageCode: string;
@@ -74,6 +75,7 @@ export async function runLiveCheck(
                 languageCode: ctx.languageCode,
                 device,
                 targetDomain: ctx.domain,
+                depth: ctx.serpDepth,
               })
               .then((r) => ({ ...r, device })),
           ),
@@ -93,6 +95,7 @@ export async function runLiveCheck(
         await RankTrackingRepository.updateRun(ctx.runId, {
           keywordsChecked: checked,
         });
+
         if (results.length > 0) {
           await RankTrackingRepository.insertSnapshots(
             mapResultsToSnapshotRows(ctx.runId, results),

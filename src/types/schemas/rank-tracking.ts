@@ -1,6 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
 import { rankTrackingConfigs } from "@/db/app.schema";
+import { DOMAIN_REGEX } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
 // DB-derived types
@@ -53,13 +54,11 @@ export const createConfigSchema = z.object({
     .string()
     .min(1)
     .max(253)
-    .regex(
-      /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/,
-      "Invalid domain format",
-    ),
+    .regex(DOMAIN_REGEX, "Invalid domain format"),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
   devices: devicesEnum.optional(),
+  serpDepth: z.number().int().min(10).max(100).multipleOf(10),
   scheduleInterval: scheduleEnum.optional(),
 });
 
@@ -70,14 +69,12 @@ export const updateConfigSchema = z.object({
     .string()
     .min(1)
     .max(253)
-    .regex(
-      /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/,
-      "Invalid domain format",
-    )
+    .regex(DOMAIN_REGEX, "Invalid domain format")
     .optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
   devices: devicesEnum.optional(),
+  serpDepth: z.number().int().min(10).max(100).multipleOf(10).optional(),
   scheduleInterval: scheduleEnum.optional(),
   isActive: z.boolean().optional(),
 });
@@ -88,7 +85,7 @@ export const triggerCheckSchema = z.object({
   keywordIds: z.array(z.string().uuid()).max(2000).optional(),
 });
 
-export const comparePeriodSchema = z.enum(["previous", "7d", "30d", "90d"]);
+export const comparePeriodSchema = z.enum(["1d", "7d", "30d", "90d"]);
 export type ComparePeriod = z.infer<typeof comparePeriodSchema>;
 
 export const getLatestResultsSchema = z.object({

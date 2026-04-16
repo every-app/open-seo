@@ -104,6 +104,7 @@ async function main() {
       locationCode: 2840,
       languageCode: "en",
       devices: "mobile",
+      serpDepth: 20,
       scheduleInterval: "weekly",
       isActive: true,
       lastCheckedAt: now,

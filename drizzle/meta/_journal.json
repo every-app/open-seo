@@ -57,6 +57,13 @@
       "when": 1776208279781,
       "tag": "0007_sour_risque",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1776288697036,
+      "tag": "0008_luxuriant_colossus",
+      "breakpoints": true
     }
   ]
 }

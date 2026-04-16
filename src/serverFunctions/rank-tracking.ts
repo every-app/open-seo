@@ -3,6 +3,7 @@ import { waitUntil } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
+import { asAppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
@@ -41,6 +42,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
       locationCode: data.locationCode,
       languageCode: data.languageCode,
       devices: data.devices,
+      serpDepth: data.serpDepth,
       scheduleInterval: data.scheduleInterval,
     });
 
@@ -70,6 +72,7 @@ export const updateRankTrackingConfig = createServerFn({ method: "POST" })
       locationCode: data.locationCode,
       languageCode: data.languageCode,
       devices: data.devices,
+      serpDepth: data.serpDepth,
       scheduleInterval: data.scheduleInterval,
       isActive: data.isActive,
     });
@@ -134,11 +137,44 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => addKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
-    return RankTrackingService.addKeywords(
+    const result = await RankTrackingService.addKeywords(
       data.configId,
       context.projectId,
       data.keywords,
     );
+
+    let checkTriggered = false;
+    if (result.addedIds.length > 0) {
+      try {
+        const triggerResult = await RankTrackingService.triggerCheck({
+          configId: data.configId,
+          projectId: context.projectId,
+          billingCustomer: context,
+          keywordIds: result.addedIds,
+        });
+        checkTriggered = triggerResult.ok;
+        if (!triggerResult.ok) {
+          console.info(
+            "[rank-tracking] auto-check skipped: %s",
+            triggerResult.reason,
+          );
+        }
+      } catch (err) {
+        const appErr = asAppError(err);
+        if (appErr?.code === "INSUFFICIENT_CREDITS") {
+          console.info(
+            "[rank-tracking] auto-check skipped: insufficient credits",
+          );
+        } else {
+          console.error(
+            "[rank-tracking] auto-check after keyword add failed:",
+            err,
+          );
+        }
+      }
+    }
+
+    return { ...result, checkTriggered };
   });
 
 export const removeTrackingKeywords = createServerFn({ method: "POST" })

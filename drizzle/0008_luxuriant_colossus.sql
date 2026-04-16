@@ -1,0 +1,1 @@
+ALTER TABLE `rank_tracking_configs` ADD `serp_depth` integer NOT NULL;
