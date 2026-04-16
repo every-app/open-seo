@@ -60,7 +60,9 @@ export function buildPageSeo({
       { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: fullTitle },
-      ...(description ? [{ name: "twitter:description", content: description }] : []),
+      ...(description
+        ? [{ name: "twitter:description", content: description }]
+        : []),
       { name: "twitter:image", content: socialImageUrl },
       { name: "twitter:image:alt", content: imageAlt },
     ],

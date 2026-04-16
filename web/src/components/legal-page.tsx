@@ -17,9 +17,7 @@ export function LegalPage({ title, description, children }: LegalPageProps) {
         <header className="mb-8">
           <h1 className="text-4xl font-bold mb-4">{title}</h1>
           {description ? (
-            <p className="text-lg text-fd-muted-foreground">
-              {description}
-            </p>
+            <p className="text-lg text-fd-muted-foreground">{description}</p>
           ) : null}
         </header>
 

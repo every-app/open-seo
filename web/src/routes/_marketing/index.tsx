@@ -36,8 +36,8 @@ function Home() {
           "Keyword Research",
           "Backlink Analysis",
           "Competitor Insights",
-          "Site Audits",
-          "Rank Tracking and more (Coming soon)",
+          "Rank Tracking",
+          "AI Visibility (Coming soon)",
         ].map((item) => (
           <li key={item} className="flex gap-2.5 text-sm text-neutral-800">
             <span className="text-neutral-500 mt-[2px]">&mdash;</span>
@@ -66,7 +66,8 @@ function Home() {
             Self-host via Docker or Cloudflare
           </p>
           <p className="text-sm text-neutral-600 mt-2 leading-relaxed">
-             100% open source (MIT). Bring your own DataForSEO api key. Fork and vibe code custom features for your workflow.
+            100% open source (MIT). Bring your own DataForSEO api key. Fork and
+            vibe code custom features for your workflow.
           </p>
           <a
             href="https://github.com/every-app/open-seo"
@@ -120,7 +121,6 @@ function Home() {
           </p>
         </div>
       </div>
-
     </>
   );
 }

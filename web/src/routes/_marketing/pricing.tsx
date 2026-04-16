@@ -57,9 +57,9 @@ function Pricing() {
               </span>
             </div>
             <p className="mt-2 text-sm text-neutral-600 leading-relaxed">
-              Credits are consumed as you use the app. We use powerful
-              providers for AI and SEO data. We bill based on usage of those
-              APIs and charge a small premium.
+              Credits are consumed as you use the app. We use powerful providers
+              for AI and SEO data. We bill based on usage of those APIs and
+              charge a small premium.
             </p>
             <ul className="mt-3 space-y-2">
               {[
@@ -83,7 +83,10 @@ function Pricing() {
           href="https://app.openseo.so/sign-up"
           className="inline-flex items-center justify-center mt-4 rounded-lg bg-neutral-900 px-5 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 transition-colors"
         >
-          Get Started{" "}<span aria-hidden="true" className="ml-1.5">&rarr;</span>
+          Get Started{" "}
+          <span aria-hidden="true" className="ml-1.5">
+            &rarr;
+          </span>
         </a>
       </section>
 
@@ -117,8 +120,8 @@ function Pricing() {
             </dt>
             <dd className="mt-1 text-sm text-neutral-600 leading-relaxed">
               Credits are consumed by features that query DataForSEO's API —
-              backlinks, keyword volume, competitor data, and site audits.
-              Your projects, settings, and any data already fetched don't cost
+              backlinks, keyword volume, competitor data, and site audits. Your
+              projects, settings, and any data already fetched don't cost
               credits.
             </dd>
           </div>
@@ -127,8 +130,8 @@ function Pricing() {
               Do unused credits roll over?
             </dt>
             <dd className="mt-1 text-sm text-neutral-600 leading-relaxed">
-              Top-up credits roll over indefinitely. The Usage Credits
-              included with your Base Plan reset each billing cycle.
+              Top-up credits roll over indefinitely. The Usage Credits included
+              with your Base Plan reset each billing cycle.
             </dd>
           </div>
           <div>
@@ -143,13 +146,12 @@ function Pricing() {
               Do I need a subscription or just usage credits?
             </dt>
             <dd className="mt-1 text-sm text-neutral-600 leading-relaxed">
-              While top-up Usage Credits roll over and don't expire, you need
-              an active subscription in order to use OpenSEO.
+              While top-up Usage Credits roll over and don't expire, you need an
+              active subscription in order to use OpenSEO.
             </dd>
           </div>
         </dl>
       </section>
-
     </>
   );
 }

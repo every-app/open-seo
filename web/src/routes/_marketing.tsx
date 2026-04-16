@@ -108,14 +108,11 @@ function MarketingFooter() {
           Stay in the loop
         </p>
         <p className="text-sm text-neutral-600 mt-1 leading-relaxed">
-          Product updates, new features, and the occasional
-          behind-the-scenes.
+          Product updates, new features, and the occasional behind-the-scenes.
         </p>
         <div className="mt-3">
           {nl.status === "success" ? (
-            <p className="text-sm text-neutral-900">
-              You&apos;re on the list.
-            </p>
+            <p className="text-sm text-neutral-900">You&apos;re on the list.</p>
           ) : (
             <form onSubmit={nl.handleSubmit} autoComplete="on">
               <div className="flex gap-2">
@@ -140,9 +137,7 @@ function MarketingFooter() {
                 </button>
               </div>
               {nl.status === "error" && (
-                <p className="text-red-600 text-xs mt-2">
-                  {nl.errorMessage}
-                </p>
+                <p className="text-red-600 text-xs mt-2">{nl.errorMessage}</p>
               )}
             </form>
           )}
