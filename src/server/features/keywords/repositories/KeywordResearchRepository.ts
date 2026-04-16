@@ -1,4 +1,4 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray } from "drizzle-orm";
 import { db } from "@/db";
 import { keywordMetrics, savedKeywords } from "@/db/schema";
 
@@ -99,21 +99,29 @@ async function listSavedKeywordsByProject(projectId: string) {
     .orderBy(desc(savedKeywords.createdAt));
 }
 
-async function removeSavedKeyword(savedKeywordId: string, projectId: string) {
-  await db
-    .delete(savedKeywords)
-    .where(
-      and(
-        eq(savedKeywords.id, savedKeywordId),
-        eq(savedKeywords.projectId, projectId),
-      ),
-    );
-}
+// D1 caps bound parameters at 100 per statement; leave headroom for the
+// projectId filter.
+const DELETE_CHUNK_SIZE = 90;
 
-async function getSavedKeywordById(savedKeywordId: string) {
-  return db.query.savedKeywords.findFirst({
-    where: eq(savedKeywords.id, savedKeywordId),
-  });
+async function removeSavedKeywords(
+  savedKeywordIds: string[],
+  projectId: string,
+) {
+  let deletedCount = 0;
+  for (let i = 0; i < savedKeywordIds.length; i += DELETE_CHUNK_SIZE) {
+    const chunk = savedKeywordIds.slice(i, i + DELETE_CHUNK_SIZE);
+    const deleted = await db
+      .delete(savedKeywords)
+      .where(
+        and(
+          inArray(savedKeywords.id, chunk),
+          eq(savedKeywords.projectId, projectId),
+        ),
+      )
+      .returning({ id: savedKeywords.id });
+    deletedCount += deleted.length;
+  }
+  return deletedCount;
 }
 
 export const KeywordResearchRepository = {
@@ -121,6 +129,5 @@ export const KeywordResearchRepository = {
   countSavedKeywords,
   saveKeywordsToProject,
   listSavedKeywordsByProject,
-  removeSavedKeyword,
-  getSavedKeywordById,
+  removeSavedKeywords,
 } as const;

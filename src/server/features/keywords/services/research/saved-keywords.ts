@@ -1,9 +1,8 @@
-import { AppError } from "@/server/lib/errors";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import { jsonCodec } from "@/shared/json";
 import type {
   GetSavedKeywordsInput,
-  RemoveSavedKeywordInput,
+  RemoveSavedKeywordsInput,
   SaveKeywordsInput,
 } from "@/types/schemas/keywords";
 import type { MonthlySearch, SavedKeywordRow } from "@/types/keywords";
@@ -106,24 +105,13 @@ export async function getSavedKeywords(
   };
 }
 
-export async function removeSavedKeyword(
+export async function removeSavedKeywords(
   projectId: string,
-  input: RemoveSavedKeywordInput,
+  input: RemoveSavedKeywordsInput,
 ) {
-  const savedKw = await KeywordResearchRepository.getSavedKeywordById(
-    input.savedKeywordId,
-  );
-  if (!savedKw) {
-    throw new AppError("NOT_FOUND");
-  }
-
-  if (savedKw.projectId !== projectId) {
-    throw new AppError("FORBIDDEN");
-  }
-
-  await KeywordResearchRepository.removeSavedKeyword(
-    input.savedKeywordId,
+  const deletedCount = await KeywordResearchRepository.removeSavedKeywords(
+    input.savedKeywordIds,
     projectId,
   );
-  return { success: true };
+  return { success: true, deletedCount };
 }

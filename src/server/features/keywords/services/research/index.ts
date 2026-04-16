@@ -3,5 +3,5 @@ export { getSerpAnalysis } from "./serp";
 export {
   saveKeywords,
   getSavedKeywords,
-  removeSavedKeyword,
+  removeSavedKeywords,
 } from "./saved-keywords";

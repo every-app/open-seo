@@ -3,7 +3,7 @@ import {
   researchKeywordsSchema,
   saveKeywordsSchema,
   getSavedKeywordsSchema,
-  removeSavedKeywordSchema,
+  removeSavedKeywordsSchema,
   serpAnalysisSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
@@ -42,13 +42,13 @@ export const getSavedKeywords = createServerFn({ method: "POST" })
     });
   });
 
-export const removeSavedKeyword = createServerFn({
+export const removeSavedKeywords = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => removeSavedKeywordSchema.parse(data))
+  .inputValidator((data: unknown) => removeSavedKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
-    return KeywordResearchService.removeSavedKeyword(context.projectId, data);
+    return KeywordResearchService.removeSavedKeywords(context.projectId, data);
   });
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })

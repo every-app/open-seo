@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getSavedKeywords,
-  removeSavedKeyword,
+  removeSavedKeywords,
 } from "@/serverFunctions/keywords";
 import {
   Download,
@@ -48,41 +48,35 @@ function SavedKeywordsPage() {
   const savedKeywords: SavedKeyword[] = savedKeywordsData?.rows ?? [];
 
   const removeMutation = useMutation({
-    mutationFn: (savedKeywordId: string) =>
-      removeSavedKeyword({ data: { projectId, savedKeywordId } }),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({
-        queryKey: ["savedKeywords", projectId],
-      });
-      captureClientEvent("saved_keywords:remove");
-      toast.success("Keyword removed");
-    },
-    onError: (error) => {
-      setRemoveError(getStandardErrorMessage(error, "Remove failed."));
-    },
+    mutationFn: (savedKeywordIds: string[]) =>
+      removeSavedKeywords({ data: { projectId, savedKeywordIds } }),
   });
 
   const handleDeleteSelected = async () => {
+    const ids = [...selected];
+    if (ids.length === 0) return;
+
     setDeleting(true);
     setRemoveError(null);
-    const ids = [...selected];
-    for (const id of ids) {
-      try {
-        await removeMutation.mutateAsync(id);
-      } catch {
-        break;
-      }
+
+    try {
+      await removeMutation.mutateAsync(ids);
+      setSelected(new Set());
+      setShowConfirm(false);
+      captureClientEvent("saved_keywords:bulk_remove", {
+        count: ids.length,
+      });
+      toast.success(
+        `${ids.length} keyword${ids.length !== 1 ? "s" : ""} removed`,
+      );
+    } catch (error) {
+      setRemoveError(getStandardErrorMessage(error, "Remove failed."));
+    } finally {
+      void queryClient.invalidateQueries({
+        queryKey: ["savedKeywords", projectId],
+      });
+      setDeleting(false);
     }
-    setDeleting(false);
-    setSelected(new Set());
-    setShowConfirm(false);
-    void queryClient.invalidateQueries({
-      queryKey: ["savedKeywords", projectId],
-    });
-    captureClientEvent("saved_keywords:bulk_remove");
-    toast.success(
-      `${ids.length} keyword${ids.length !== 1 ? "s" : ""} removed`,
-    );
   };
 
   const handleCopySelected = () => {

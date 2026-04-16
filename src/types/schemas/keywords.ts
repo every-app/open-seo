@@ -58,9 +58,9 @@ export const saveKeywordsSchema = z.object({
     .optional(),
 });
 
-export const removeSavedKeywordSchema = z.object({
+export const removeSavedKeywordsSchema = z.object({
   projectId: z.string().min(1),
-  savedKeywordId: z.string().min(1),
+  savedKeywordIds: z.array(z.string().min(1)).min(1).max(2000),
 });
 
 export const getSavedKeywordsSchema = z.object({
@@ -69,7 +69,9 @@ export const getSavedKeywordsSchema = z.object({
 
 export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;
 export type SaveKeywordsInput = z.infer<typeof saveKeywordsSchema>;
-export type RemoveSavedKeywordInput = z.infer<typeof removeSavedKeywordSchema>;
+export type RemoveSavedKeywordsInput = z.infer<
+  typeof removeSavedKeywordsSchema
+>;
 export const serpAnalysisSchema = z.object({
   projectId: z.string().min(1),
   keyword: z.string().min(1),

@@ -1,7 +1,7 @@
 import {
   getSavedKeywords,
   getSerpAnalysis,
-  removeSavedKeyword,
+  removeSavedKeywords,
   research,
   saveKeywords,
 } from "@/server/features/keywords/services/research";
@@ -11,5 +11,5 @@ export const KeywordResearchService = {
   getSerpAnalysis,
   saveKeywords,
   getSavedKeywords,
-  removeSavedKeyword,
+  removeSavedKeywords,
 } as const;
