@@ -116,7 +116,12 @@ export async function beginRankCheckRun(input: {
       params: {
         runId,
         configId: input.config.id,
-        billingCustomer: input.billingCustomer,
+        billingCustomer: {
+          userId: input.billingCustomer.userId,
+          userEmail: input.billingCustomer.userEmail,
+          organizationId: input.billingCustomer.organizationId,
+          projectId: input.billingCustomer.projectId,
+        },
         projectId: input.projectId,
         domain: input.config.domain,
         locationCode: input.config.locationCode,
