@@ -34,6 +34,9 @@ export interface RankTrackingDeviceResult {
 export interface RankTrackingRow {
   trackingKeywordId: string;
   keyword: string;
+  searchVolume: number | null;
+  keywordDifficulty: number | null;
+  cpc: number | null;
   desktop: RankTrackingDeviceResult;
   mobile: RankTrackingDeviceResult;
 }
@@ -105,4 +108,9 @@ export const removeKeywordsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
   keywordIds: z.array(z.string().uuid()).min(1).max(2000),
+});
+
+export const refreshMetricsSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
 });

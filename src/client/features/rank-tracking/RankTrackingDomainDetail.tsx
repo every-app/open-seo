@@ -40,6 +40,7 @@ import {
 } from "./RankTrackingFilters";
 import { CheckConfirmModal } from "./CheckConfirmModal";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
+import { useMetricsRefresh } from "./useMetricsRefresh";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
 
@@ -171,6 +172,9 @@ function RankTrackingDomainDetailInner({
     projectId,
     onSuccess: () => setPendingCheck(null),
   });
+
+  const { refresh: refreshMetrics, isRefreshing: metricsRefreshing } =
+    useMetricsRefresh(projectId, config.id);
 
   const requestCheck = (count: number, keywordIds?: string[]) => {
     if (count < 50) {
@@ -356,6 +360,8 @@ function RankTrackingDomainDetailInner({
               const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
               if (count > 0) requestCheck(count);
             }}
+            onRefreshMetrics={() => refreshMetrics()}
+            metricsRefreshing={metricsRefreshing}
             onExport={() =>
               exportRankTrackingCsv(
                 filtered,

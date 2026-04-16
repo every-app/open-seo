@@ -1,18 +1,22 @@
 import { useState } from "react";
-import { MoreHorizontal, Play, Download, Copy } from "lucide-react";
+import { MoreHorizontal, Play, Download, Copy, RefreshCw } from "lucide-react";
 
 export function ActionsMenu({
   onCheckNow,
   onExport,
   onCopyKeywords,
+  onRefreshMetrics,
   isRunning,
+  metricsRefreshing,
   hasData,
   checkDisabled,
 }: {
   onCheckNow: () => void;
   onExport: () => void;
   onCopyKeywords: () => void;
+  onRefreshMetrics: () => void;
   isRunning: boolean;
+  metricsRefreshing: boolean;
   hasData: boolean;
   checkDisabled?: boolean;
 }) {
@@ -42,6 +46,19 @@ export function ActionsMenu({
                 {isRunning ? "Running..." : "Check Now"}
               </button>
             )}
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              onClick={() => {
+                onRefreshMetrics();
+                setOpen(false);
+              }}
+              disabled={metricsRefreshing || !hasData}
+            >
+              <RefreshCw
+                className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
+              />
+              {metricsRefreshing ? "Refreshing..." : "Refresh Metrics"}
+            </button>
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
               onClick={() => {

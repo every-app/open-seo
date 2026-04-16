@@ -1,5 +1,6 @@
 import { env } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { AppError } from "@/server/lib/errors";
 import type {
@@ -233,6 +234,73 @@ async function getLatestRun(configId: string, projectId: string) {
 }
 
 // ---------------------------------------------------------------------------
+// Keyword metrics (volume, difficulty, CPC)
+// ---------------------------------------------------------------------------
+
+const KEYWORD_OVERVIEW_BATCH_SIZE = 700;
+
+async function refreshKeywordMetrics(
+  configId: string,
+  projectId: string,
+  billingCustomer: BillingCustomerContext,
+): Promise<{ updated: number }> {
+  const config = await getValidatedConfig(configId, projectId);
+  const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);
+  if (keywords.length === 0) return { updated: 0 };
+
+  const client = createDataforseoClient(billingCustomer);
+  const now = new Date().toISOString();
+  let updated = 0;
+
+  for (let i = 0; i < keywords.length; i += KEYWORD_OVERVIEW_BATCH_SIZE) {
+    const batch = keywords.slice(i, i + KEYWORD_OVERVIEW_BATCH_SIZE);
+    const items = await client.labs.keywordOverview({
+      keywords: batch.map((kw) => kw.keyword),
+      locationCode: config.locationCode,
+      languageCode: config.languageCode,
+    });
+
+    // Build a lookup by lowercase keyword
+    const metricsMap = new Map<
+      string,
+      {
+        searchVolume: number | null;
+        keywordDifficulty: number | null;
+        cpc: number | null;
+      }
+    >();
+    for (const item of items) {
+      metricsMap.set(item.keyword.toLowerCase(), {
+        searchVolume: item.keyword_info?.search_volume ?? null,
+        keywordDifficulty: item.keyword_properties?.keyword_difficulty ?? null,
+        cpc: item.keyword_info?.cpc ?? null,
+      });
+    }
+
+    const updates = batch
+      .map((kw) => {
+        const metrics = metricsMap.get(kw.keyword.toLowerCase());
+        if (!metrics) return null;
+        return {
+          id: kw.id,
+          searchVolume: metrics.searchVolume,
+          keywordDifficulty: metrics.keywordDifficulty,
+          cpc: metrics.cpc,
+          metricsFetchedAt: now,
+        };
+      })
+      .filter((u): u is NonNullable<typeof u> => u !== null);
+
+    if (updates.length > 0) {
+      await RankTrackingRepository.updateKeywordMetrics(updates);
+      updated += updates.length;
+    }
+  }
+
+  return { updated };
+}
+
+// ---------------------------------------------------------------------------
 // Cost estimation
 // ---------------------------------------------------------------------------
 
@@ -314,4 +382,5 @@ export const RankTrackingService = {
   triggerCheck,
   getLatestRun,
   estimateCost,
+  refreshKeywordMetrics,
 };

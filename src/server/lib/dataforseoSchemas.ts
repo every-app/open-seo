@@ -189,6 +189,16 @@ export const serpSnapshotItemSchema = z
   })
   .passthrough();
 
+export const keywordOverviewItemSchema = z
+  .object({
+    keyword: z.string(),
+    keyword_info: keywordInfoSchema.optional(),
+    keyword_properties: keywordPropertiesSchema.nullable().optional(),
+    search_intent_info: searchIntentInfoSchema.nullable().optional(),
+  })
+  .passthrough();
+
+export type KeywordOverviewItem = z.infer<typeof keywordOverviewItemSchema>;
 export type RelatedKeywordItem = z.infer<typeof relatedKeywordItemSchema>;
 export type LabsKeywordDataItem = z.infer<typeof labsKeywordDataItemSchema>;
 export type DomainMetricsItem = z.infer<typeof domainMetricsItemSchema>;

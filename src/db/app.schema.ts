@@ -152,6 +152,10 @@ export const rankTrackingKeywords = sqliteTable(
       .notNull()
       .references(() => rankTrackingConfigs.id, { onDelete: "cascade" }),
     keyword: text("keyword").notNull(),
+    searchVolume: integer("search_volume"),
+    keywordDifficulty: integer("keyword_difficulty"),
+    cpc: real("cpc"),
+    metricsFetchedAt: text("metrics_fetched_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

@@ -127,6 +127,37 @@ export function DeviceUrlCell({
   );
 }
 
+const compactFormatter = new Intl.NumberFormat("en-US", {
+  notation: "compact",
+  maximumFractionDigits: 1,
+});
+
+export function VolumeCell({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-base-content/40">-</span>;
+  return (
+    <span className="font-mono text-sm">{compactFormatter.format(value)}</span>
+  );
+}
+
+export function DifficultyCell({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-base-content/40">-</span>;
+  let badgeClass = "bg-success/20 text-success";
+  if (value > 60) badgeClass = "bg-error/20 text-error";
+  else if (value > 30) badgeClass = "bg-warning/20 text-warning";
+  return (
+    <span
+      className={`font-mono rounded px-1.5 py-0.5 text-xs font-semibold ${badgeClass}`}
+    >
+      {value}
+    </span>
+  );
+}
+
+export function CpcCell({ value }: { value: number | null }) {
+  if (value == null) return <span className="text-base-content/40">-</span>;
+  return <span className="font-mono text-sm">${value.toFixed(2)}</span>;
+}
+
 export function comparePositions(a: number | null, b: number | null): number {
   if (a === null && b === null) return 0;
   if (a === null) return 1; // nulls sort last
@@ -156,6 +187,9 @@ export function exportRankTrackingCsv(
   }
   const headers = [
     "Keyword",
+    "Volume",
+    "KD",
+    "CPC",
     ...(showDesktop
       ? [
           "Desktop Position",
@@ -175,6 +209,9 @@ export function exportRankTrackingCsv(
   ];
   const csvRows = sorted.map((row) => [
     row.keyword,
+    row.searchVolume ?? "",
+    row.keywordDifficulty ?? "",
+    row.cpc != null ? row.cpc.toFixed(2) : "",
     ...(showDesktop
       ? [
           row.desktop.position ?? "Not ranking",

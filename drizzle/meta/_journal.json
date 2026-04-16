@@ -64,6 +64,13 @@
       "when": 1776288697036,
       "tag": "0008_luxuriant_colossus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1776347182067,
+      "tag": "0009_smart_kitty_pryde",
+      "breakpoints": true
     }
   ]
 }

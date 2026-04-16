@@ -18,6 +18,7 @@ import {
   estimateCostSchema,
   addKeywordsSchema,
   removeKeywordsSchema,
+  refreshMetricsSchema,
 } from "@/types/schemas/rank-tracking";
 
 export const getRankTrackingConfigs = createServerFn({ method: "POST" })
@@ -190,6 +191,26 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
       }
     }
 
+    // Fetch keyword metrics (awaited so they're in the DB before client re-fetches)
+    if (result.added > 0) {
+      try {
+        await RankTrackingService.refreshKeywordMetrics(
+          data.configId,
+          context.projectId,
+          context,
+        );
+      } catch (err) {
+        const appErr = asAppError(err);
+        if (appErr?.code === "INSUFFICIENT_CREDITS") {
+          console.info(
+            "[rank-tracking] auto-metrics-refresh skipped: insufficient credits",
+          );
+        } else {
+          console.error("[rank-tracking] auto-metrics-refresh failed:", err);
+        }
+      }
+    }
+
     return { ...result, checkTriggered };
   });
 
@@ -203,4 +224,30 @@ export const removeTrackingKeywords = createServerFn({ method: "POST" })
       data.keywordIds,
     );
     return { removed: data.keywordIds.length };
+  });
+
+export const refreshTrackingKeywordMetrics = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => refreshMetricsSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const result = await RankTrackingService.refreshKeywordMetrics(
+      data.configId,
+      context.projectId,
+      context,
+    );
+
+    waitUntil(
+      captureServerEvent({
+        distinctId: context.userId,
+        event: "rank_tracking:metrics_refresh",
+        organizationId: context.organizationId,
+        properties: {
+          project_id: context.projectId,
+          config_id: data.configId,
+          updated: result.updated,
+        },
+      }),
+    );
+
+    return result;
   });

@@ -10,6 +10,7 @@ import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   fetchKeywordIdeasRaw,
+  fetchKeywordOverviewRaw,
   fetchKeywordSuggestionsRaw,
   fetchRelatedKeywordsRaw,
   fetchDomainRankOverviewRaw,
@@ -183,6 +184,24 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
             input.limit,
             input.orderBy,
           ),
+        );
+      },
+    },
+    labs: {
+      keywordOverview(input: {
+        keywords: string[];
+        locationCode: number;
+        languageCode: string;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () =>
+            fetchKeywordOverviewRaw(
+              input.keywords,
+              input.locationCode,
+              input.languageCode,
+            ),
+          "rank_tracking",
         );
       },
     },

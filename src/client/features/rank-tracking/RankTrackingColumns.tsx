@@ -4,13 +4,19 @@ import type { ColumnDef, SortingFn } from "@tanstack/react-table";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import {
   comparePositions,
+  CpcCell,
   DeviceRankCell,
   DeviceUrlCell,
+  DifficultyCell,
   SerpFeatureTags,
+  VolumeCell,
 } from "./RankTrackingTableParts";
 
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
+  volume: "Estimated monthly search volume from Google",
+  kd: "Keyword difficulty score (0-100) — higher means harder to rank",
+  cpc: "Average cost per click in Google Ads (USD)",
   desktopPosition:
     "Current Google ranking position, showing change from the comparison period",
   mobilePosition:
@@ -52,6 +58,46 @@ export function SortableHeader({
     </button>
   );
 }
+
+const nullsLastNumeric: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
+  const a = rowA.getValue<number | null>(columnId);
+  const b = rowB.getValue<number | null>(columnId);
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+};
+
+const volumeColumn: ColumnDef<RankTrackingRow> = {
+  id: "volume",
+  accessorKey: "searchVolume",
+  header: ({ column }) => (
+    <SortableHeader column={column} label="Volume" id="volume" />
+  ),
+  size: 90,
+  cell: ({ getValue }) => <VolumeCell value={getValue<number | null>()} />,
+  sortingFn: nullsLastNumeric,
+};
+
+const kdColumn: ColumnDef<RankTrackingRow> = {
+  id: "kd",
+  accessorKey: "keywordDifficulty",
+  header: ({ column }) => <SortableHeader column={column} label="KD" id="kd" />,
+  size: 70,
+  cell: ({ getValue }) => <DifficultyCell value={getValue<number | null>()} />,
+  sortingFn: nullsLastNumeric,
+};
+
+const cpcColumn: ColumnDef<RankTrackingRow> = {
+  id: "cpc",
+  accessorKey: "cpc",
+  header: ({ column }) => (
+    <SortableHeader column={column} label="CPC" id="cpc" />
+  ),
+  size: 80,
+  cell: ({ getValue }) => <CpcCell value={getValue<number | null>()} />,
+  sortingFn: nullsLastNumeric,
+};
 
 const positionSort: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
   const device = columnId === "desktopPosition" ? "desktop" : "mobile";
@@ -166,11 +212,16 @@ export function useRankTrackingColumns(
     if (showDesktop) {
       cols.push(makeDeviceColumn("desktop"));
       cols.push(makeUrlColumn("desktop", domain));
-      cols.push(makeSerpColumn("desktop"));
     }
     if (showMobile) {
       cols.push(makeDeviceColumn("mobile"));
       cols.push(makeUrlColumn("mobile", domain));
+    }
+    cols.push(volumeColumn, kdColumn, cpcColumn);
+    if (showDesktop) {
+      cols.push(makeSerpColumn("desktop"));
+    }
+    if (showMobile) {
       cols.push(makeSerpColumn("mobile"));
     }
     return cols;

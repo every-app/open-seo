@@ -332,6 +332,28 @@ async function getConfigSummaries(projectId: string) {
   }));
 }
 
+async function updateKeywordMetrics(
+  updates: Array<{
+    id: string;
+    searchVolume: number | null;
+    keywordDifficulty: number | null;
+    cpc: number | null;
+    metricsFetchedAt: string;
+  }>,
+) {
+  await executeInBatches(updates, (u) =>
+    db
+      .update(rankTrackingKeywords)
+      .set({
+        searchVolume: u.searchVolume,
+        keywordDifficulty: u.keywordDifficulty,
+        cpc: u.cpc,
+        metricsFetchedAt: u.metricsFetchedAt,
+      })
+      .where(eq(rankTrackingKeywords.id, u.id)),
+  );
+}
+
 async function getKeywordCountForConfig(configId: string) {
   const rows = await db
     .select({ value: count() })
@@ -359,6 +381,7 @@ export const RankTrackingRepository = {
   getKeywordsForConfig,
   addKeywordsToConfig,
   removeKeywordsFromConfig,
+  updateKeywordMetrics,
   getKeywordCountForConfig,
   getConfigSummaries,
   getLatestSnapshotsForKeywords,

@@ -15,6 +15,7 @@ import {
   dataforseoResponseSchema,
   domainMetricsItemSchema,
   domainRankedKeywordItemSchema,
+  keywordOverviewItemSchema,
   labsKeywordDataItemSchema,
   parseTaskItems,
   relatedKeywordItemSchema,
@@ -22,6 +23,7 @@ import {
   type DataforseoTask,
   type DomainMetricsItem,
   type DomainRankedKeywordItem,
+  type KeywordOverviewItem,
   type LabsKeywordDataItem,
   type RelatedKeywordItem,
   type SerpLiveItem,
@@ -476,6 +478,70 @@ export async function fetchRankCheckSerpRaw(input: {
         ...new Set(items.map((item) => item.type).filter(Boolean)),
       ],
     },
+    billing: buildTaskBilling(parsedTask.data),
+  };
+}
+
+// ---------------------------------------------------------------------------
+// DataForSEO Labs — Keyword Overview (batch up to 700 keywords)
+// ---------------------------------------------------------------------------
+
+export async function fetchKeywordOverviewRaw(
+  keywords: string[],
+  locationCode: number,
+  languageCode: string,
+): Promise<DataforseoApiResponse<KeywordOverviewItem[]>> {
+  const responseRaw = await postDataforseo(
+    "/v3/dataforseo_labs/google/keyword_overview/live",
+    [
+      {
+        keywords,
+        location_code: locationCode,
+        language_code: languageCode,
+      },
+    ],
+  );
+
+  const response = dataforseoResponseSchema.parse(responseRaw);
+
+  if (response.status_code !== 20000) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      response.status_message || "DataForSEO keyword overview request failed",
+    );
+  }
+
+  const task = response.tasks?.[0];
+  if (!task) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "DataForSEO keyword overview response missing task",
+    );
+  }
+
+  if (task.status_code !== 20000) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      task.status_message || "DataForSEO keyword overview task failed",
+    );
+  }
+
+  const parsedTask = successfulDataforseoTaskSchema.safeParse(task);
+  if (!parsedTask.success) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "DataForSEO keyword overview task missing billing metadata",
+    );
+  }
+
+  const data = parseTaskItems(
+    "google-keyword-overview-live",
+    parsedTask.data,
+    keywordOverviewItemSchema,
+  );
+
+  return {
+    data,
     billing: buildTaskBilling(parsedTask.data),
   };
 }
