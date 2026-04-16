@@ -1,7 +1,35 @@
 import { z } from "zod";
 
-export const DOMAIN_REGEX =
-  /^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?)*\.[a-zA-Z]{2,}$/;
+/**
+ * Extract and validate a bare hostname from user input that may be a full URL.
+ * Strips protocol, www prefix, path, query-string, and hash.
+ */
+export function normalizeDomain(input: string): string {
+  let d = input.trim().toLowerCase();
+  // Ensure URL() can parse the input by adding a protocol if missing
+  if (!/^[a-z]+:\/\//.test(d)) d = `https://${d}`;
+  const { hostname } = new URL(d); // throws on truly invalid input
+  return hostname.replace(/^www\./, "");
+}
+
+/** Zod field: accepts a bare domain or full URL, outputs a clean hostname. */
+export const domainField = z
+  .string()
+  .min(1)
+  .max(253)
+  .transform((val, ctx) => {
+    try {
+      const hostname = normalizeDomain(val);
+      if (!hostname.includes(".")) {
+        ctx.addIssue({ code: "custom", message: "Invalid domain format" });
+        return z.NEVER;
+      }
+      return hostname;
+    } catch {
+      ctx.addIssue({ code: "custom", message: "Invalid domain format" });
+      return z.NEVER;
+    }
+  });
 
 const booleanSearchParamSchema = z
   .union([z.boolean(), z.enum(["true", "false"])])
@@ -25,11 +53,7 @@ const domainTabs = ["keywords", "pages"] as const;
 
 export const domainKeywordSuggestionsSchema = z.object({
   projectId: z.string().uuid(),
-  domain: z
-    .string()
-    .min(1)
-    .max(253)
-    .regex(DOMAIN_REGEX, "Invalid domain format"),
+  domain: domainField,
   locationCode: z.number().int().positive(),
   languageCode: z.string().min(2).max(8),
 });

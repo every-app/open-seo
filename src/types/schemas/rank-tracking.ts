@@ -1,7 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
 import { rankTrackingConfigs } from "@/db/app.schema";
-import { DOMAIN_REGEX } from "@/types/schemas/domain";
+import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
 // DB-derived types
@@ -50,11 +50,7 @@ export const getConfigsSchema = z.object({
 
 export const createConfigSchema = z.object({
   projectId: z.string().uuid(),
-  domain: z
-    .string()
-    .min(1)
-    .max(253)
-    .regex(DOMAIN_REGEX, "Invalid domain format"),
+  domain: domainField,
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
   devices: devicesEnum.optional(),
@@ -65,12 +61,7 @@ export const createConfigSchema = z.object({
 export const updateConfigSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  domain: z
-    .string()
-    .min(1)
-    .max(253)
-    .regex(DOMAIN_REGEX, "Invalid domain format")
-    .optional(),
+  domain: domainField.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
   devices: devicesEnum.optional(),

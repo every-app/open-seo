@@ -10,6 +10,7 @@ import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
+import { normalizeDomain } from "@/types/schemas/domain";
 import {
   depthToPages,
   pagesToDepth,
@@ -155,6 +156,7 @@ export function RankTrackingConfigModal({
             className="input input-bordered w-full"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
+            onBlur={() => setDomain(normalizeDomain(domain))}
           />
         </div>
 
