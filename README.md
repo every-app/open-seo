@@ -2,6 +2,10 @@
 
 OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
 
+Easy to self-host and extend, but we have a managed version too:
+
+[openseo.so](https://openseo.so)
+
 ![OpenSEO demo (placeholder)](https://github.com/user-attachments/assets/6a928771-66ff-486b-b131-a54a3943985f)
 
 ## Table of Contents
@@ -23,8 +27,9 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 
 - Open source and self-hostable.
 - No subscriptions.
-- Focused workflows instead of a giant, complex SEO suite.
-- AI-native: use your own tools like Claude Code / Cowork for more powerful AI features than other platforms provide.
+  - Pay only for what you use.
+- Fork and vibe code your own features.
+- Focused workflows instead of a bloated, complex SEO suite.
 
 ## Main SEO Workflows
 
@@ -47,11 +52,11 @@ Top priorities:
 - MCP for Claude
 - Making the best agentic workflows for SEO
 
-If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@everyapp.dev and request it.
+If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@openseo.so and request it.
 
 ## Community
 
-Email me: ben@everyapp.dev
+Email me: ben@openseo.so
 Join Discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
 
 Follow along for updates:
@@ -251,12 +256,15 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 
 ### 1) Rank tracking
 
-- Uses the SERP Task API with `depth: 100` + `stop_crawl_on_match` (stops early when your domain is found).
-- Cost per keyword per device: `$0.0006` (ranks top 10) to `$0.00465` (not ranking).
-- Typical cost per keyword (both devices): `~$0.002` assuming most keywords rank in the top 20.
-- Planning examples:
-  - 100 keywords, both devices, weekly: `~$0.80/month`
-  - 500 keywords, both devices, weekly: `~$4.00/month`
+There are in-app estimates for this since its dependent on the settings you select.
+
+$2/month example:
+
+- 50 keywords
+- 1 device (Mobile or Desktop)
+- Search 5 pages deep.
+
+Searching ten pages deep costs 8x more than one page. Tracking both devices costs 2x more.
 
 ### 2) Site audit
 
@@ -279,6 +287,9 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
   - `0.0201 + (0.0001 x ranked_keywords_returned)` USD
 
 ### 5) Backlinks search
+
+> [!NOTE]
+> There is a 2 week free trial, but then DataForSEO requires a $100/month commitment for this API. You can access this data for just $10/month through [openseo.so](https://openseo.so). Soon, we'll let you use an OpenSEO API key so that you can call our API from your self hosted instance.
 
 - Backlinks search costs about `$0.06` for a domain or `$0.04` for a page.
 - Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.
