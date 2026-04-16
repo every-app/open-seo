@@ -1,13 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID } from "@/shared/billing";
+import { AUTUMN_PAID_PLAN_FEATURE_ID } from "@/shared/billing";
 
-const { checkMock, getOrCreateMock, isHostedServerAuthModeMock } = vi.hoisted(
-  () => ({
-    checkMock: vi.fn(),
-    getOrCreateMock: vi.fn(),
-    isHostedServerAuthModeMock: vi.fn(),
-  }),
-);
+const { checkMock, getOrCreateMock } = vi.hoisted(() => ({
+  checkMock: vi.fn(),
+  getOrCreateMock: vi.fn(),
+}));
 
 vi.mock("@/server/billing/autumn", () => ({
   autumn: {
@@ -19,13 +16,12 @@ vi.mock("@/server/billing/autumn", () => ({
 }));
 
 vi.mock("@/server/lib/runtime-env", () => ({
-  isHostedServerAuthMode: isHostedServerAuthModeMock,
+  isHostedServerAuthMode: vi.fn(),
 }));
 
 import {
-  customerHasManagedServiceAccess,
+  customerHasPaidPlan,
   getOrCreateOrganizationCustomer,
-  requireManagedServiceAccess,
 } from "./subscription";
 
 describe("subscription billing", () => {
@@ -33,46 +29,21 @@ describe("subscription billing", () => {
     vi.clearAllMocks();
   });
 
-  it("checks the managed service access entitlement", async () => {
+  it("checks the paid plan entitlement", async () => {
     checkMock.mockResolvedValue({ allowed: true });
 
-    await expect(customerHasManagedServiceAccess("org_123")).resolves.toBe(
-      true,
-    );
+    await expect(customerHasPaidPlan("org_123")).resolves.toBe(true);
 
     expect(checkMock).toHaveBeenCalledWith({
       customerId: "org_123",
-      featureId: AUTUMN_MANAGED_SERVICE_ACCESS_FEATURE_ID,
+      featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
     });
   });
 
-  it("skips the managed service check outside hosted mode", async () => {
-    isHostedServerAuthModeMock.mockResolvedValue(false);
-
-    await expect(
-      requireManagedServiceAccess({
-        organizationId: "org_123",
-        userId: "user_123",
-        userEmail: "alice@example.com",
-      }),
-    ).resolves.toBeUndefined();
-
-    expect(getOrCreateMock).not.toHaveBeenCalled();
-    expect(checkMock).not.toHaveBeenCalled();
-  });
-
-  it("throws payment required when the org lacks managed service access", async () => {
-    isHostedServerAuthModeMock.mockResolvedValue(true);
-    getOrCreateMock.mockResolvedValue({ id: "org_123" });
+  it("returns false when org lacks paid plan", async () => {
     checkMock.mockResolvedValue({ allowed: false });
 
-    await expect(
-      requireManagedServiceAccess({
-        organizationId: "org_123",
-        userId: "user_123",
-        userEmail: "alice@example.com",
-      }),
-    ).rejects.toMatchObject({ code: "PAYMENT_REQUIRED" });
+    await expect(customerHasPaidPlan("org_123")).resolves.toBe(false);
   });
 
   it("looks up the billing customer by organization id", async () => {

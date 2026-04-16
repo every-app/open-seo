@@ -7,12 +7,14 @@ export function ActionsMenu({
   onCopyKeywords,
   isRunning,
   hasData,
+  checkDisabled,
 }: {
   onCheckNow: () => void;
   onExport: () => void;
   onCopyKeywords: () => void;
   isRunning: boolean;
   hasData: boolean;
+  checkDisabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -27,17 +29,19 @@ export function ActionsMenu({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full mt-1 z-50 rounded-lg border border-base-300 bg-base-100 shadow-lg py-1 min-w-[160px]">
-            <button
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
-              onClick={() => {
-                onCheckNow();
-                setOpen(false);
-              }}
-              disabled={isRunning}
-            >
-              <Play className="size-3.5" />
-              {isRunning ? "Running..." : "Check Now"}
-            </button>
+            {!checkDisabled && (
+              <button
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+                onClick={() => {
+                  onCheckNow();
+                  setOpen(false);
+                }}
+                disabled={isRunning}
+              >
+                <Play className="size-3.5" />
+                {isRunning ? "Running..." : "Check Now"}
+              </button>
+            )}
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
               onClick={() => {

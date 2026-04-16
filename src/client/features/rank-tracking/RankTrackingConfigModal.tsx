@@ -41,12 +41,12 @@ export function RankTrackingConfigModal({
   const [step, setStep] = useState<"config" | "keywords">("config");
   const [domain, setDomain] = useState(existingConfig?.domain ?? "");
   const [devices, setDevices] = useState<"both" | "desktop" | "mobile">(
-    existingConfig?.devices ?? "both",
+    existingConfig?.devices ?? "mobile",
   );
   const [locationCode, setLocationCode] = useState(
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
-  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 20);
+  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
   const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
     existingConfig?.scheduleInterval ?? "weekly",
   );

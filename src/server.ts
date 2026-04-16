@@ -4,7 +4,7 @@ import {
 } from "@tanstack/react-start/server";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import { customerHasManagedServiceAccess } from "@/server/billing/subscription";
+import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { computeNextCheckAt } from "@/shared/rank-tracking";
 
@@ -29,11 +29,8 @@ export default {
 
     for (const config of dueConfigs) {
       try {
-        // Skip configs whose org no longer has paid access
-        if (
-          isHosted &&
-          !(await customerHasManagedServiceAccess(config.organizationId))
-        ) {
+        // Skip configs whose org doesn't have a paid plan
+        if (isHosted && !(await customerHasPaidPlan(config.organizationId))) {
           console.log(
             `[cron] Skipping config ${config.id} (${config.domain}) — org ${config.organizationId} no longer has access`,
           );

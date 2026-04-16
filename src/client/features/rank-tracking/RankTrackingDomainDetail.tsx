@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { AutumnProvider, useCustomer } from "autumn-js/react";
 import {
   getLatestRankResults,
   estimateRankCheckCost,
@@ -15,6 +17,9 @@ import {
   SlidersHorizontal,
   Smartphone,
 } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
+import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
+import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { RankTrackingTable } from "./RankTrackingTable";
 import { exportRankTrackingCsv } from "./RankTrackingTableParts";
@@ -48,7 +53,41 @@ function isComparePeriod(v: string): v is ComparePeriod {
   return COMPARE_PERIODS.has(v);
 }
 
-export function RankTrackingDomainDetail({
+export function RankTrackingDomainDetail(props: {
+  config: RankTrackingConfig;
+  projectId: string;
+  onBack: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <AutumnProvider>
+      <RankTrackingDomainDetailInner {...props} />
+    </AutumnProvider>
+  );
+}
+
+function FreePlanAlert({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+
+  return (
+    <div className="alert alert-warning text-sm py-2">
+      <AlertTriangle className="size-4" />
+      <span>
+        We only start to track keyword positions once you{" "}
+        <Link
+          to={SUBSCRIBE_ROUTE}
+          search={{ upgrade: true }}
+          className="link font-medium"
+        >
+          upgrade to the paid plan
+        </Link>
+        .
+      </span>
+    </div>
+  );
+}
+
+function RankTrackingDomainDetailInner({
   config,
   projectId,
   onBack,
@@ -59,6 +98,14 @@ export function RankTrackingDomainDetail({
   onBack: () => void;
   onEdit: () => void;
 }) {
+  const { data: session } = useSession();
+  const customerQuery = useCustomer({
+    queryOptions: { enabled: Boolean(session?.user?.id) },
+  });
+  const isFreePlan =
+    !!customerQuery.data &&
+    getCustomerPlanStatus(customerQuery.data) === "free";
+
   const queryClient = useQueryClient();
   const [showAddKeywords, setShowAddKeywords] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -179,6 +226,8 @@ export function RankTrackingDomainDetail({
           </span>
         </div>
       )}
+
+      <FreePlanAlert visible={isFreePlan} />
 
       {/* Results card */}
       <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
@@ -322,6 +371,7 @@ export function RankTrackingDomainDetail({
             }}
             isRunning={isBusy}
             hasData={filtered.length > 0}
+            checkDisabled={isFreePlan}
           />
         </div>
 
