@@ -92,7 +92,9 @@ export async function getEarliestSnapshotsForKeywords(
       ),
     );
 
-  const CHUNK_SIZE = 900;
+  // D1 caps bound parameters at 100 per statement. The query binds N keyword
+  // IDs plus 4 params from the completedRunIds subquery (referenced twice).
+  const CHUNK_SIZE = 90;
   const allResults: Awaited<ReturnType<typeof getSnapshotsForConfig>> = [];
 
   for (let i = 0; i < keywordIds.length; i += CHUNK_SIZE) {
@@ -135,12 +137,7 @@ export async function getEarliestSnapshotsForKeywords(
           eq(rankSnapshots.checkedAt, grouped.targetCheckedAt),
         ),
       )
-      .where(
-        and(
-          inArray(rankSnapshots.runId, completedRunIds),
-          inArray(rankSnapshots.trackingKeywordId, chunk),
-        ),
-      );
+      .where(inArray(rankSnapshots.runId, completedRunIds));
 
     allResults.push(...rows);
   }
