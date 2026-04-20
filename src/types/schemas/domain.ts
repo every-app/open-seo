@@ -65,4 +65,5 @@ export const domainSearchSchema = z.object({
   order: z.enum(domainSortOrders).optional(),
   tab: z.enum(domainTabs).optional(),
   search: z.string().optional(),
+  loc: z.coerce.number().int().positive().optional(),
 });

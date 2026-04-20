@@ -4,12 +4,14 @@ import { getFieldError, getFormError } from "@/client/lib/forms";
 import type { useDomainOverviewController } from "@/client/features/domain/useDomainOverviewController";
 import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
+import { LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 
 type Props = {
   controlsForm: ReturnType<typeof useDomainOverviewController>["controlsForm"];
   isLoading: boolean;
   onSubmit: (event: FormEvent) => void;
   onSortChange: (sort: DomainSortMode) => void;
+  onLocationChange: (locationCode: number) => void;
 };
 
 export function DomainSearchCard({
@@ -17,6 +19,7 @@ export function DomainSearchCard({
   isLoading,
   onSubmit,
   onSortChange,
+  onLocationChange,
 }: Props) {
   return (
     <div className="card bg-base-100 border border-base-300">
@@ -31,7 +34,7 @@ export function DomainSearchCard({
 
               return (
                 <label
-                  className={`input input-bordered lg:col-span-8 flex items-center gap-2 ${domainError ? "input-error" : ""}`}
+                  className={`input input-bordered lg:col-span-6 flex items-center gap-2 ${domainError ? "input-error" : ""}`}
                 >
                   <Search className="size-4 text-base-content/60" />
                   <input
@@ -46,6 +49,26 @@ export function DomainSearchCard({
                 </label>
               );
             }}
+          </controlsForm.Field>
+
+          <controlsForm.Field name="locationCode">
+            {(field) => (
+              <select
+                className="select select-bordered lg:col-span-2"
+                value={field.state.value}
+                onChange={(event) => {
+                  const next = Number(event.target.value);
+                  field.handleChange(next);
+                  onLocationChange(next);
+                }}
+              >
+                {LOCATION_OPTIONS.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </controlsForm.Field>
 
           <controlsForm.Field name="sort">

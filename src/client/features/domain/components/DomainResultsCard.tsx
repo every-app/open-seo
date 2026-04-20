@@ -46,6 +46,7 @@ type Props = {
   onTabChange: (tab: DomainActiveTab) => void;
   onSearchChange: (value: string) => void;
   onSaveKeywords: () => void;
+  canSaveKeywords: boolean;
   onSortClick: (sort: DomainSortMode) => void;
   onToggleKeyword: (keyword: string) => void;
   onToggleAllVisible: () => void;
@@ -69,6 +70,7 @@ export function DomainResultsCard({
   onTabChange,
   onSearchChange,
   onSaveKeywords,
+  canSaveKeywords,
   onSortClick,
   onToggleKeyword,
   onToggleAllVisible,
@@ -124,7 +126,12 @@ export function DomainResultsCard({
             <button
               className="btn btn-sm"
               onClick={onSaveKeywords}
-              disabled={selectedKeywords.size === 0}
+              disabled={selectedKeywords.size === 0 || !canSaveKeywords}
+              title={
+                !canSaveKeywords && selectedKeywords.size > 0
+                  ? "Re-run search to save keywords for the selected location"
+                  : undefined
+              }
             >
               <Save className="size-4" /> Save Keywords
             </button>

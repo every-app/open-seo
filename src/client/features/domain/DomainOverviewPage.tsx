@@ -25,6 +25,7 @@ type Props = {
     order?: SortOrder;
     tab: DomainActiveTab;
     search: string;
+    locationCode: number;
   };
   navigate: (args: {
     search: (prev: Record<string, unknown>) => Record<string, unknown>;
@@ -68,6 +69,9 @@ export function DomainOverviewPage({
           onSubmit={state.handleSearchSubmit}
           onSortChange={(sort) =>
             state.applySort(sort, getDefaultSortOrder(sort))
+          }
+          onLocationChange={(locationCode) =>
+            state.applyLocationChange(locationCode)
           }
         />
 
@@ -148,6 +152,7 @@ export function DomainOverviewPage({
               }}
               onSearchChange={state.setPendingSearch}
               onSaveKeywords={state.handleSaveKeywords}
+              canSaveKeywords={state.canSaveKeywords}
               onSortClick={state.handleSortColumnClick}
               onToggleKeyword={state.toggleKeywordSelection}
               onToggleAllVisible={state.toggleAllVisibleKeywords}

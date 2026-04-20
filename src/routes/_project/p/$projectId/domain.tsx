@@ -5,6 +5,10 @@ import {
   toSortMode,
   toSortOrder,
 } from "@/client/features/domain/utils";
+import {
+  DEFAULT_LOCATION_CODE,
+  isSupportedLocationCode,
+} from "@/client/features/keywords/locations";
 import { domainSearchSchema } from "@/types/schemas/domain";
 
 export const Route = createFileRoute("/_project/p/$projectId/domain")({
@@ -22,6 +26,7 @@ function DomainOverviewRoute() {
     order,
     tab = "keywords",
     search = "",
+    loc,
   } = Route.useSearch();
 
   const normalizedSort = toSortMode(sort) ?? "rank";
@@ -29,6 +34,8 @@ function DomainOverviewRoute() {
     normalizedSort,
     toSortOrder(order ?? null),
   );
+  const normalizedLocationCode =
+    loc != null && isSupportedLocationCode(loc) ? loc : DEFAULT_LOCATION_CODE;
 
   return (
     <DomainOverviewPage
@@ -43,6 +50,7 @@ function DomainOverviewRoute() {
             order: undefined,
             tab: undefined,
             search: undefined,
+            loc: undefined,
           }),
           replace: true,
         });
@@ -55,6 +63,7 @@ function DomainOverviewRoute() {
         order: normalizedOrder,
         tab,
         search,
+        locationCode: normalizedLocationCode,
       }}
     />
   );

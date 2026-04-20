@@ -50,6 +50,7 @@ export type DomainControlsValues = {
   domain: string;
   subdomains: boolean;
   sort: "rank" | "traffic" | "volume" | "score" | "cpc";
+  locationCode: number;
 };
 
 export type DomainSortMode = DomainControlsValues["sort"];
@@ -74,4 +75,5 @@ export type DomainHistoryItem = {
   sort: DomainSortMode;
   tab: DomainActiveTab;
   search?: string;
+  locationCode?: number;
 };

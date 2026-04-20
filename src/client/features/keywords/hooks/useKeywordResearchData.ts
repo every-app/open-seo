@@ -3,6 +3,7 @@ import { useState } from "react";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS, getLanguageCode } from "@/client/features/keywords/utils";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { researchKeywords } from "@/serverFunctions/keywords";
 import type {
   KeywordMode,
@@ -25,7 +26,9 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     useState<KeywordSource>("related");
   const [lastUsedFallback, setLastUsedFallback] = useState(false);
   const [lastSearchKeyword, setLastSearchKeyword] = useState("");
-  const [lastSearchLocationCode, setLastSearchLocationCode] = useState(2840);
+  const [lastSearchLocationCode, setLastSearchLocationCode] = useState(
+    DEFAULT_LOCATION_CODE,
+  );
   const [researchError, setResearchError] = useState<string | null>(null);
   const [searchedKeyword, setSearchedKeyword] = useState("");
 
@@ -56,7 +59,7 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     setLastResultSource("related");
     setLastUsedFallback(false);
     setLastSearchKeyword("");
-    setLastSearchLocationCode(2840);
+    setLastSearchLocationCode(DEFAULT_LOCATION_CODE);
     setResearchError(null);
     setSearchedKeyword("");
   };

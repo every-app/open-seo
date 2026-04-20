@@ -11,6 +11,7 @@ export interface DomainSearchHistoryItem {
   sort: DomainSortMode;
   tab: DomainTab;
   search?: string;
+  locationCode?: number;
   timestamp: number;
 }
 
@@ -24,6 +25,7 @@ const domainSearchHistoryItemSchema = z.object({
   sort: z.enum(["rank", "traffic", "volume", "score", "cpc"]),
   tab: z.enum(["keywords", "pages"]),
   search: z.string().optional(),
+  locationCode: z.number().int().positive().optional(),
   timestamp: z.number(),
 });
 
@@ -43,6 +45,7 @@ function isSameSearch(
     a.subdomains === b.subdomains &&
     a.sort === b.sort &&
     a.tab === b.tab &&
+    a.locationCode === b.locationCode &&
     normalizeSearchText(a.search) === normalizeSearchText(b.search)
   );
 }

@@ -25,6 +25,11 @@ import type {
   SortOrder,
 } from "@/client/features/domain/types";
 import type { DomainSearchHistoryItem } from "@/client/hooks/useDomainSearchHistory";
+import {
+  DEFAULT_LOCATION_CODE,
+  getLanguageCode,
+  isSupportedLocationCode,
+} from "@/client/features/keywords/locations";
 
 export type SearchState = {
   domain: string;
@@ -33,6 +38,7 @@ export type SearchState = {
   order?: SortOrder;
   tab: DomainActiveTab;
   search: string;
+  locationCode: number;
 };
 
 type DomainNavigate = (args: {
@@ -46,16 +52,18 @@ type DomainControlsFormAccess = {
       domain: string;
       subdomains: boolean;
       sort: DomainSortMode;
+      locationCode: number;
     };
   };
   reset: (values: {
     domain: string;
     subdomains: boolean;
     sort: DomainSortMode;
+    locationCode: number;
   }) => void;
   setFieldValue: (
-    field: "domain" | "subdomains" | "sort",
-    updater: string | boolean,
+    field: "domain" | "subdomains" | "sort" | "locationCode",
+    updater: string | boolean | number,
     opts?: UpdateMetaOptions,
   ) => void;
 };
@@ -177,6 +185,7 @@ export function useSyncRouteState({
       domain: searchState.domain,
       subdomains: searchState.subdomains,
       sort: searchState.sort,
+      locationCode: searchState.locationCode,
     });
     setPendingSearch(searchState.search);
   }, [controlsForm, searchState, setPendingSearch]);
@@ -185,6 +194,7 @@ export function useSyncRouteState({
     const raw = new URLSearchParams(window.location.search);
     const rawSort = toSortMode(raw.get("sort"));
     const rawOrder = toSortOrder(raw.get("order"));
+    const rawLoc = raw.get("loc");
     const shouldNormalize =
       raw.get("domain") === "" ||
       raw.get("search") === "" ||
@@ -192,7 +202,8 @@ export function useSyncRouteState({
       raw.get("sort") === "rank" ||
       (rawOrder != null &&
         rawOrder === getDefaultSortOrder(rawSort ?? "rank")) ||
-      raw.get("tab") === "keywords";
+      raw.get("tab") === "keywords" ||
+      rawLoc === String(DEFAULT_LOCATION_CODE);
     if (!shouldNormalize) return;
 
     navigate({
@@ -211,6 +222,10 @@ export function useSyncRouteState({
               ? undefined
               : prev.order,
           tab: prev.tab === "keywords" ? undefined : prev.tab,
+          loc:
+            prev.loc != null && Number(prev.loc) === DEFAULT_LOCATION_CODE
+              ? undefined
+              : prev.loc,
         };
       },
       replace: true,
@@ -249,11 +264,11 @@ export function useSearchRunner({
   controlsForm: ControlsFormLike;
   setPendingSearch: (value: string) => void;
   setSearchParams: (
-    updates: Record<string, string | boolean | undefined>,
+    updates: Record<string, string | number | boolean | undefined>,
   ) => void;
   domainMutation: ReturnType<typeof useDomainLookupMutation>;
   addSearch: (item: Omit<DomainSearchHistoryItem, "timestamp">) => void;
-  setOverview: (value: DomainOverviewData) => void;
+  setOverview: (value: DomainOverviewData, locationCode: number) => void;
   setSelectedKeywords: Dispatch<SetStateAction<Set<string>>>;
   currentState: SearchState;
   currentSortOrder: SortOrder;
@@ -266,6 +281,12 @@ export function useSearchRunner({
     const activeOrder = params?.order ?? currentSortOrder;
     const activeTab = params?.tab ?? currentState.tab;
     const activeSearch = params?.search ?? currentState.search;
+    const rawLocationCode =
+      params?.locationCode ?? values.locationCode ?? currentState.locationCode;
+    const activeLocationCode = isSupportedLocationCode(rawLocationCode)
+      ? rawLocationCode
+      : DEFAULT_LOCATION_CODE;
+    const activeLanguageCode = getLanguageCode(activeLocationCode);
     const target = normalizeDomainTarget(rawTarget);
 
     if (!target) {
@@ -276,6 +297,7 @@ export function useSearchRunner({
     controlsForm.setFieldValue("domain", target);
     controlsForm.setFieldValue("subdomains", activeSubdomains);
     controlsForm.setFieldValue("sort", activeSort);
+    controlsForm.setFieldValue("locationCode", activeLocationCode);
 
     setSearchParams({
       domain: target,
@@ -284,23 +306,28 @@ export function useSearchRunner({
       order: toSortOrderSearchParam(activeSort, activeOrder),
       tab: activeTab === "keywords" ? undefined : activeTab,
       search: activeSearch.trim() || undefined,
+      loc:
+        activeLocationCode === DEFAULT_LOCATION_CODE
+          ? undefined
+          : activeLocationCode,
     });
 
     try {
       const response = await domainMutation.mutateAsync({
         domain: target,
         includeSubdomains: activeSubdomains,
-        locationCode: 2840,
-        languageCode: "en",
+        locationCode: activeLocationCode,
+        languageCode: activeLanguageCode,
       });
 
       captureClientEvent("domain_overview:search_complete", {
         sort_mode: activeSort,
         include_subdomains: activeSubdomains,
         result_count: response.keywords.length,
+        location_code: activeLocationCode,
       });
 
-      setOverview(response);
+      setOverview(response, activeLocationCode);
       setSelectedKeywords(new Set());
       addSearch({
         domain: target,
@@ -308,6 +335,7 @@ export function useSearchRunner({
         sort: activeSort,
         tab: activeTab,
         search: activeSearch.trim() || undefined,
+        locationCode: activeLocationCode,
       });
 
       if (!response.hasData) {

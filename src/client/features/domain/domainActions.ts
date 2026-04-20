@@ -26,11 +26,15 @@ export function saveSelectedKeywords({
   filteredKeywords,
   save,
   projectId,
+  locationCode,
+  languageCode,
 }: {
   selectedKeywords: Set<string>;
   filteredKeywords: DomainOverviewData["keywords"];
   save: (payload: Parameters<SaveMutation>[0], opts?: SaveOptions) => void;
   projectId: string;
+  locationCode: number;
+  languageCode: string;
 }) {
   if (selectedKeywords.size === 0) {
     toast.error("Select at least one keyword first");
@@ -44,8 +48,8 @@ export function saveSelectedKeywords({
     {
       projectId,
       keywords: [...selectedKeywords],
-      locationCode: 2840,
-      languageCode: "en",
+      locationCode,
+      languageCode,
       metrics: selectedRows.map((row) => ({
         keyword: row.keyword,
         searchVolume: row.searchVolume,

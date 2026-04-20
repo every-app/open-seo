@@ -32,6 +32,11 @@ import {
   useSyncRouteState,
   type SearchState,
 } from "@/client/features/domain/domainOverviewControllerInternals";
+import {
+  DEFAULT_LOCATION_CODE,
+  getLanguageCode,
+  isSupportedLocationCode,
+} from "@/client/features/keywords/locations";
 
 type Params = {
   projectId: string;
@@ -51,7 +56,7 @@ type DomainControlsFormApi = {
   reset: (values: DomainControlsValues) => void;
   setFieldValue: (
     field: keyof DomainControlsValues,
-    value: string | boolean,
+    value: string | boolean | number,
   ) => void;
 };
 
@@ -107,6 +112,9 @@ export function useDomainOverviewController({
 }: Params) {
   const [pendingSearch, setPendingSearch] = useState(searchState.search);
   const [overview, setOverview] = useState<DomainOverviewData | null>(null);
+  const [overviewLocationCode, setOverviewLocationCode] = useState<
+    number | null
+  >(null);
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
     new Set(),
   );
@@ -138,6 +146,7 @@ export function useDomainOverviewController({
       domain: searchState.domain,
       subdomains: searchState.subdomains,
       sort: searchState.sort,
+      locationCode: searchState.locationCode,
     },
     validators: {
       onChange: ({ formApi, value }) =>
@@ -156,6 +165,7 @@ export function useDomainOverviewController({
         order: currentSortOrder,
         tab: searchState.tab,
         search: searchState.search,
+        locationCode: value.locationCode,
       });
 
       formApi.setErrorMap({
@@ -188,7 +198,10 @@ export function useDomainOverviewController({
     setSearchParams,
     domainMutation,
     addSearch,
-    setOverview: (value) => setOverview(value),
+    setOverview: (value, locationCode) => {
+      setOverview(value);
+      setOverviewLocationCode(locationCode);
+    },
     setSelectedKeywords,
     currentState: searchState,
     currentSortOrder,
@@ -199,6 +212,7 @@ export function useDomainOverviewController({
     currentSortOrder,
     currentState: searchState,
     dataState,
+    overviewLocationCode,
     projectId,
     runSearch,
     saveMutation,
@@ -206,8 +220,13 @@ export function useDomainOverviewController({
     setSearchParams,
   });
 
+  const canSaveKeywords =
+    overviewLocationCode !== null &&
+    overviewLocationCode === controlsForm.state.values.locationCode;
+
   const resetView = useCallback(() => {
     setOverview(null);
+    setOverviewLocationCode(null);
     setPendingSearch("");
     setSelectedKeywords(new Set());
     setShowFilters(false);
@@ -218,6 +237,7 @@ export function useDomainOverviewController({
     controlsForm,
     isLoading: domainMutation.isPending,
     overview,
+    canSaveKeywords,
     history,
     historyLoaded,
     removeHistoryItem,
@@ -241,6 +261,7 @@ function useDomainControllerHandlers({
   currentSortOrder,
   currentState,
   dataState,
+  overviewLocationCode,
   projectId,
   runSearch,
   saveMutation,
@@ -251,6 +272,7 @@ function useDomainControllerHandlers({
   currentSortOrder: SortOrder;
   currentState: SearchState;
   dataState: ReturnType<typeof useOverviewDataState>;
+  overviewLocationCode: number | null;
   projectId: string;
   runSearch: ReturnType<typeof useSearchRunner>;
   saveMutation: ReturnType<typeof useSaveKeywordsMutation>;
@@ -270,6 +292,20 @@ function useDomainControllerHandlers({
     [controlsForm, setSearchParams],
   );
 
+  const applyLocationChange = useCallback(
+    (nextLocationCode: number) => {
+      if (!isSupportedLocationCode(nextLocationCode)) return;
+      controlsForm.setFieldValue("locationCode", nextLocationCode);
+      setSearchParams({
+        loc:
+          nextLocationCode === DEFAULT_LOCATION_CODE
+            ? undefined
+            : nextLocationCode,
+      });
+    },
+    [controlsForm, setSearchParams],
+  );
+
   const handleSortColumnClick = useCallback(
     (nextSort: DomainSortMode) => {
       const nextOrder =
@@ -283,19 +319,28 @@ function useDomainControllerHandlers({
     [applySort, currentSortOrder, currentState.sort],
   );
 
-  const handleSaveKeywords = () =>
+  const handleSaveKeywords = () => {
+    if (overviewLocationCode === null) return;
     saveSelectedKeywords({
       selectedKeywords,
       filteredKeywords: dataState.filteredKeywords,
       save: saveMutation.mutate,
       projectId,
+      locationCode: overviewLocationCode,
+      languageCode: getLanguageCode(overviewLocationCode),
     });
+  };
 
   const handleHistorySelect = (item: DomainSearchHistoryItem) => {
+    const historyLocation =
+      item.locationCode != null && isSupportedLocationCode(item.locationCode)
+        ? item.locationCode
+        : DEFAULT_LOCATION_CODE;
     controlsForm.reset({
       domain: item.domain,
       subdomains: item.subdomains,
       sort: item.sort,
+      locationCode: historyLocation,
     });
     void runSearch({
       domain: item.domain,
@@ -304,6 +349,7 @@ function useDomainControllerHandlers({
       order: getDefaultSortOrder(item.sort),
       tab: item.tab,
       search: item.search ?? "",
+      locationCode: historyLocation,
     });
   };
 
@@ -314,6 +360,7 @@ function useDomainControllerHandlers({
 
   return {
     applySort,
+    applyLocationChange,
     handleSortColumnClick,
     handleSaveKeywords,
     runSearch,
