@@ -7,9 +7,9 @@ import { z } from "zod";
 
 const pageSchema = frontmatterSchema as any;
 
-export const blog = defineCollections({
+export const guide = defineCollections({
   type: "doc",
-  dir: "content/blog",
+  dir: "content/guides",
   schema: pageSchema.extend({
     author: z.string(),
     date: z.string(),

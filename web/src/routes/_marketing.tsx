@@ -32,6 +32,12 @@ function MarketingLayout() {
           </Link>
           <div className="flex items-center gap-5">
             <Link
+              to="/guides"
+              className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+            >
+              Guides
+            </Link>
+            <Link
               to="/pricing"
               className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
             >

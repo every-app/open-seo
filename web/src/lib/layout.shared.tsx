@@ -10,6 +10,10 @@ export function baseOptions(): BaseLayoutProps {
     },
     links: [
       {
+        text: "Guides",
+        url: "/guides",
+      },
+      {
         text: "GitHub",
         url: "https://github.com/every-app/open-seo",
         external: true,

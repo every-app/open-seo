@@ -1,11 +1,11 @@
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { blogSource } from "@/lib/source";
+import { guideSource } from "@/lib/source";
 
-export const getBlogPost = createServerFn({ method: "GET" })
+export const getGuidePost = createServerFn({ method: "GET" })
   .inputValidator((slugs: string[]) => slugs)
   .handler(async ({ data: slugs }) => {
-    const page = blogSource.getPage(slugs);
+    const page = guideSource.getPage(slugs);
     if (!page) throw notFound();
 
     return {
@@ -16,9 +16,9 @@ export const getBlogPost = createServerFn({ method: "GET" })
     };
   });
 
-export const getBlogPosts = createServerFn({ method: "GET" }).handler(
+export const getGuidePosts = createServerFn({ method: "GET" }).handler(
   async () => {
-    const pages = blogSource.getPages();
+    const pages = guideSource.getPages();
     return pages.map((page: (typeof pages)[number]) => ({
       title: page.data.title,
       description: page.data.description,

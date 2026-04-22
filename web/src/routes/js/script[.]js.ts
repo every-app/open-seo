@@ -7,25 +7,37 @@ export const Route = createFileRoute("/js/script.js")({
   server: {
     handlers: {
       GET: async () => {
-        const upstreamResponse = await fetch(PLAUSIBLE_SCRIPT_URL);
+        try {
+          const upstreamResponse = await fetch(PLAUSIBLE_SCRIPT_URL);
 
-        if (!upstreamResponse.ok) {
-          return new Response("Failed to load analytics script", {
-            status: 502,
-            headers: {
-              "content-type": "text/plain; charset=utf-8",
-            },
+          if (!upstreamResponse.ok) {
+            return buildFallbackScriptResponse();
+          }
+
+          const headers = new Headers(upstreamResponse.headers);
+          headers.set("cache-control", "public, max-age=86400, immutable");
+
+          return new Response(upstreamResponse.body, {
+            status: upstreamResponse.status,
+            headers,
           });
+        } catch {
+          return buildFallbackScriptResponse();
         }
-
-        const headers = new Headers(upstreamResponse.headers);
-        headers.set("cache-control", "public, max-age=86400, immutable");
-
-        return new Response(upstreamResponse.body, {
-          status: upstreamResponse.status,
-          headers,
-        });
       },
     },
   },
 });
+
+function buildFallbackScriptResponse() {
+  return new Response(
+    "window.plausible=window.plausible||function(){(window.plausible.q=window.plausible.q||[]).push(arguments)};",
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/javascript; charset=utf-8",
+        "cache-control": "public, max-age=300",
+      },
+    },
+  );
+}

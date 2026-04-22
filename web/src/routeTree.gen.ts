@@ -12,10 +12,10 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-conditions'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingRouteImport } from './routes/_marketing'
-import { Route as BlogsIndexRouteImport } from './routes/blogs/index'
+import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as JsScriptDotjsRouteImport } from './routes/js/script[.]js'
-import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
+import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
@@ -34,9 +34,9 @@ const MarketingRoute = MarketingRouteImport.update({
   id: '/_marketing',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogsIndexRoute = BlogsIndexRouteImport.update({
-  id: '/blogs/',
-  path: '/blogs/',
+const GuidesIndexRoute = GuidesIndexRouteImport.update({
+  id: '/guides/',
+  path: '/guides/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketingIndexRoute = MarketingIndexRouteImport.update({
@@ -49,9 +49,9 @@ const JsScriptDotjsRoute = JsScriptDotjsRouteImport.update({
   path: '/js/script.js',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BlogsSplatRoute = BlogsSplatRouteImport.update({
-  id: '/blogs/$',
-  path: '/blogs/$',
+const GuidesSplatRoute = GuidesSplatRouteImport.update({
+  id: '/guides/$',
+  path: '/guides/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
@@ -77,9 +77,9 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
-  '/blogs/$': typeof BlogsSplatRoute
+  '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
-  '/blogs/': typeof BlogsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -87,10 +87,10 @@ export interface FileRoutesByTo {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
-  '/blogs/$': typeof BlogsSplatRoute
+  '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/': typeof MarketingIndexRoute
-  '/blogs': typeof BlogsIndexRoute
+  '/guides': typeof GuidesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -100,10 +100,10 @@ export interface FileRoutesById {
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
-  '/blogs/$': typeof BlogsSplatRoute
+  '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
-  '/blogs/': typeof BlogsIndexRoute
+  '/guides/': typeof GuidesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -114,9 +114,9 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
-    | '/blogs/$'
+    | '/guides/$'
     | '/js/script.js'
-    | '/blogs/'
+    | '/guides/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -124,10 +124,10 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
-    | '/blogs/$'
+    | '/guides/$'
     | '/js/script.js'
     | '/'
-    | '/blogs'
+    | '/guides'
   id:
     | '__root__'
     | '/_marketing'
@@ -136,10 +136,10 @@ export interface FileRouteTypes {
     | '/_marketing/pricing'
     | '/api/event'
     | '/api/subscribe'
-    | '/blogs/$'
+    | '/guides/$'
     | '/js/script.js'
     | '/_marketing/'
-    | '/blogs/'
+    | '/guides/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -148,9 +148,9 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiEventRoute: typeof ApiEventRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
-  BlogsSplatRoute: typeof BlogsSplatRoute
+  GuidesSplatRoute: typeof GuidesSplatRoute
   JsScriptDotjsRoute: typeof JsScriptDotjsRoute
-  BlogsIndexRoute: typeof BlogsIndexRoute
+  GuidesIndexRoute: typeof GuidesIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -176,11 +176,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blogs/': {
-      id: '/blogs/'
-      path: '/blogs'
-      fullPath: '/blogs/'
-      preLoaderRoute: typeof BlogsIndexRouteImport
+    '/guides/': {
+      id: '/guides/'
+      path: '/guides'
+      fullPath: '/guides/'
+      preLoaderRoute: typeof GuidesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_marketing/': {
@@ -197,11 +197,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof JsScriptDotjsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/blogs/$': {
-      id: '/blogs/$'
-      path: '/blogs/$'
-      fullPath: '/blogs/$'
-      preLoaderRoute: typeof BlogsSplatRouteImport
+    '/guides/$': {
+      id: '/guides/$'
+      path: '/guides/$'
+      fullPath: '/guides/$'
+      preLoaderRoute: typeof GuidesSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subscribe': {
@@ -248,9 +248,9 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiEventRoute: ApiEventRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
-  BlogsSplatRoute: BlogsSplatRoute,
+  GuidesSplatRoute: GuidesSplatRoute,
   JsScriptDotjsRoute: JsScriptDotjsRoute,
-  BlogsIndexRoute: BlogsIndexRoute,
+  GuidesIndexRoute: GuidesIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

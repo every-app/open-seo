@@ -7,6 +7,7 @@ export function SiteFooter({ className }: { className?: string }) {
         <Link to="/" className="font-semibold">
           OpenSEO
         </Link>
+        <Link to="/guides">Guides</Link>
         <a
           href="https://github.com/every-app/open-seo"
           target="_blank"
