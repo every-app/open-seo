@@ -13,8 +13,8 @@ jobs:
     env:
       POSTHOG_SOURCEMAPS: "true"
       POSTHOG_CLI_HOST: ${{ vars.POSTHOG_CLI_HOST }}
-      POSTHOG_CLI_PROJECT_ID: ${{ vars.POSTHOG_CLI_PROJECT_ID }}
-      POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
+      POSTHOG_CLI_ENV_ID: ${{ vars.POSTHOG_CLI_ENV_ID }}
+      POSTHOG_CLI_TOKEN: ${{ secrets.POSTHOG_CLI_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
