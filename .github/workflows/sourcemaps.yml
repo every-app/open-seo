@@ -1,42 +1,33 @@
 name: Upload sourcemaps
-
 on:
   push:
     branches:
       - main
-
 concurrency:
   group: sourcemaps-${{ github.ref }}
   cancel-in-progress: true
-
 jobs:
   upload:
     if: github.repository != 'every-app/open-seo'
     runs-on: ubuntu-latest
-
     env:
       POSTHOG_SOURCEMAPS: "true"
-      POSTHOG_CLI_HOST: ${{ secrets.POSTHOG_CLI_HOST }}
-      POSTHOG_CLI_PROJECT_ID: ${{ secrets.POSTHOG_CLI_PROJECT_ID }}
+      POSTHOG_CLI_HOST: ${{ vars.POSTHOG_CLI_HOST }}
+      POSTHOG_CLI_PROJECT_ID: ${{ vars.POSTHOG_CLI_PROJECT_ID }}
       POSTHOG_CLI_API_KEY: ${{ secrets.POSTHOG_CLI_API_KEY }}
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: Build and upload sourcemaps
         run: pnpm run sourcemaps:upload
