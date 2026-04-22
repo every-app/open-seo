@@ -4,6 +4,7 @@ package-lock.json
 yarn.lock
 .dev.vars
 dist/
+dist-sourcemaps/
 .wrangler
 /tmp
 

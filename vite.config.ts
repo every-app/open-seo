@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
   const port = env.PORT ? Number(env.PORT) : 3001;
   const showDevtools = env.VITE_SHOW_DEVTOOLS !== "false";
   const allowedHosts = env.ALLOWED_HOST ? [env.ALLOWED_HOST] : undefined;
+  const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
 
   return {
     envPrefix: ["VITE_", "AUTH_MODE", "POSTHOG_PUBLIC_KEY", "POSTHOG_HOST"],
@@ -20,6 +21,10 @@ export default defineConfig(({ mode }) => {
     preview: {
       allowedHosts,
       port,
+    },
+    build: {
+      sourcemap: emitSourcemaps,
+      outDir: emitSourcemaps ? "dist-sourcemaps" : "dist",
     },
     plugins: [
       showDevtools

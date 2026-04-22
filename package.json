@@ -13,6 +13,7 @@
     "lint:fix": "oxlint . --type-aware --fix",
     "preview": "npm run build && vite preview --port 3001",
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy",
+    "sourcemaps:upload": "POSTHOG_SOURCEMAPS=true npm run build && pnpm dlx @posthog/cli sourcemap inject --directory ./dist-sourcemaps && pnpm dlx @posthog/cli sourcemap upload --directory ./dist-sourcemaps",
     "cf-typegen": "wrangler types",
     "types:check": "tsc --noEmit",
     "format:check": "prettier --check .",
