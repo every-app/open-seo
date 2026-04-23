@@ -3,7 +3,7 @@ import { Link } from "@tanstack/react-router";
 export function SiteFooter({ className }: { className?: string }) {
   return (
     <div className={className}>
-      <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <Link to="/" className="font-semibold">
           OpenSEO
         </Link>

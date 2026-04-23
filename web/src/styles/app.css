@@ -10,3 +10,8 @@
   --color-surface-raised: #ffffff;
   --color-border-subtle: #e5e7eb;
 }
+
+html,
+body {
+  overflow-x: clip;
+}

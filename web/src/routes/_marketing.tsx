@@ -23,14 +23,14 @@ function MarketingLayout() {
       }}
     >
       <div className="max-w-3xl mx-auto px-6 py-16 md:py-24">
-        <nav className="flex items-center justify-between mb-20">
+        <nav className="flex items-center justify-between gap-4 mb-20">
           <Link
             to="/"
             className="text-sm font-semibold hover:opacity-80 transition-opacity"
           >
             OpenSEO
           </Link>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-4 sm:gap-5">
             <Link
               to="/guides"
               className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
@@ -47,14 +47,15 @@ function MarketingLayout() {
               href="https://github.com/every-app/open-seo"
               target="_blank"
               rel="noopener noreferrer"
+              aria-label="GitHub"
               className="inline-flex items-center gap-1.5 text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
             >
               <GitHubIcon size={16} />
-              <span>GitHub</span>
+              <span className="hidden sm:inline">GitHub</span>
             </a>
             <a
               href="https://app.openseo.so/sign-in"
-              className="h-8 px-3.5 text-sm font-medium border border-neutral-300 text-neutral-900 rounded-md hover:border-neutral-900 transition-colors inline-flex items-center"
+              className="hidden sm:inline-flex h-8 px-3.5 text-sm font-medium border border-neutral-300 text-neutral-900 rounded-md hover:border-neutral-900 transition-colors items-center"
             >
               Sign in
             </a>
