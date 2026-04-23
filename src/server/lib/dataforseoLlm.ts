@@ -324,15 +324,19 @@ export async function fetchLlmResponseRaw(
   input: LlmResponsesInput,
 ): Promise<DataforseoApiResponse<LlmResponseResult>> {
   const path = `/v3/ai_optimization/${input.modelSlug}/llm_responses/live`;
+  // DataForSEO's Gemini endpoint rejects `web_search_country_iso_code` with a
+  // 40501 "Invalid Field" error. The other three models accept it.
+  const supportsCountry = input.modelSlug !== "gemini";
   const payload = [
     {
       user_prompt: input.userPrompt,
       model_name: input.modelName,
       web_search: input.webSearch ?? true,
       max_output_tokens: clampLimit(input.maxOutputTokens ?? 1024, 256, 4096),
-      ...(input.webSearchCountryCode && {
-        web_search_country_iso_code: input.webSearchCountryCode,
-      }),
+      ...(supportsCountry &&
+        input.webSearchCountryCode && {
+          web_search_country_iso_code: input.webSearchCountryCode,
+        }),
     },
   ];
 

@@ -28,8 +28,13 @@ import {
 /** LLM responses are stable enough for a 7-day cache. */
 const PROMPT_RESPONSE_TTL_SECONDS = 7 * 24 * 60 * 60;
 
-/** Hard cap on response length to keep payloads sane. */
-const PROMPT_RESPONSE_MAX_TOKENS = 1024;
+/**
+ * Hard cap on response length. Set to the DataForSEO per-call maximum because
+ * reasoning models (gpt-5, gemini-2.5-pro) count hidden chain-of-thought
+ * tokens against this budget — at 1024 ChatGPT regularly burns the whole
+ * budget on reasoning and returns a near-empty visible message.
+ */
+const PROMPT_RESPONSE_MAX_TOKENS = 4096;
 
 type DataforseoClient = ReturnType<typeof createDataforseoClient>;
 
@@ -94,7 +99,7 @@ async function runModel(
     webSearch: args.input.webSearch,
     webSearchCountryCode: args.input.webSearchCountryCode ?? null,
     // Bumped when prompt/payload shape changes — busts stale cache entries.
-    systemPromptV: 4,
+    systemPromptV: 5,
   });
 
   const cached = promptExplorerModelResultSchema.safeParse(
