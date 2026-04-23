@@ -17,3 +17,15 @@ export function roundUsdForBilling(value: number) {
 export function autumnSeoDataCreditsToUsd(credits: number) {
   return credits / AUTUMN_SEO_DATA_CREDITS_PER_USD;
 }
+
+/**
+ * Convert a raw DataForSEO USD cost into the USD amount a hosted customer is
+ * actually billed, applying the platform markup. Use this when displaying
+ * cost estimates so the number matches what the user will be charged.
+ *
+ * Self-hosted deployments pay DataForSEO directly at the raw rate and should
+ * show the raw number — gate at the call site with `isHostedClientAuthMode`.
+ */
+export function applyBillingMarkupUsd(rawUsd: number): number {
+  return roundUsdForBilling(rawUsd * SEO_DATA_COST_MARKUP);
+}

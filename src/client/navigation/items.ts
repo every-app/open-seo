@@ -4,7 +4,9 @@ import {
   ClipboardCheck,
   Globe,
   Link2,
+  MessageSquare,
   Search,
+  Sparkles,
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
@@ -47,8 +49,20 @@ const projectNavItems = [
     matchSegment: "/audit",
   },
   {
+    to: "/p/$projectId/brand-lookup" as const,
+    label: "Brand Lookup",
+    icon: Sparkles,
+    matchSegment: "/brand-lookup",
+  },
+  {
+    to: "/p/$projectId/prompt-explorer" as const,
+    label: "Prompt Explorer",
+    icon: MessageSquare,
+    matchSegment: "/prompt-explorer",
+  },
+  {
     to: "/p/$projectId/ai" as const,
-    label: "AI",
+    label: "AI & Agents",
     icon: Bot,
     matchSegment: "/ai",
   },
@@ -90,6 +104,13 @@ export function getProjectNavGroups(projectId: string) {
         bySegment("/backlinks"),
         bySegment("/audit"),
       ],
+    },
+    {
+      type: "group" as const,
+      label: "AI Visibility",
+      icon: Sparkles,
+      matchSegments: ["/brand-lookup", "/prompt-explorer"],
+      items: [bySegment("/brand-lookup"), bySegment("/prompt-explorer")],
     },
     {
       type: "standalone" as const,

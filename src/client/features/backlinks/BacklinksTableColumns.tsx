@@ -1,5 +1,11 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ArrowDown, ArrowUp, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
+import { SortableHeader } from "@/client/components/table/SortableHeader";
+import {
+  dateNullsLast,
+  numericNullsLast,
+  stringNullsLast,
+} from "@/client/components/table/nullSafeSort";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { BacklinksSourceLink } from "./BacklinksPageLinks";
 import type { BacklinksRow, GroupedBacklinkDomain } from "./backlinksPageTypes";
@@ -65,45 +71,6 @@ function DomainFlagBadges({ group }: { group: GroupedBacklinkDomain }) {
   );
 }
 
-function SortableHeader({
-  column,
-  label,
-  helpText,
-  align,
-}: {
-  column: {
-    getIsSorted: () => false | "asc" | "desc";
-    getToggleSortingHandler: () => ((event: unknown) => void) | undefined;
-  };
-  label: string;
-  helpText: string;
-  align?: "left" | "right";
-}) {
-  const sorted = column.getIsSorted();
-  const content = (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 font-medium transition-colors hover:text-base-content"
-      onClick={column.getToggleSortingHandler()}
-      aria-label={`Sort by ${label}`}
-      aria-pressed={!!sorted}
-    >
-      <HeaderHelpLabel label={label} helpText={helpText} />
-      {sorted === "asc" ? (
-        <ArrowUp className="size-3 shrink-0" />
-      ) : sorted === "desc" ? (
-        <ArrowDown className="size-3 shrink-0" />
-      ) : null}
-    </button>
-  );
-
-  if (align === "right") {
-    return <span className="flex w-full justify-end">{content}</span>;
-  }
-
-  return content;
-}
-
 export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
   {
     id: "source",
@@ -148,7 +115,7 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
         </div>
       );
     },
-    sortingFn: "alphanumeric",
+    sortingFn: stringNullsLast,
   },
   {
     id: "target",
@@ -157,7 +124,6 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
     ),
     size: 220,
     minSize: 150,
-    accessorFn: (row) => row.targetCount,
     enableSorting: false,
     cell: ({ row }) => {
       if (row.depth > 0) {
@@ -175,20 +141,15 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
 
       return null;
     },
-    sortingFn: "basic",
   },
   {
     id: "anchor",
-    header: ({ column }) => (
-      <SortableHeader
-        column={column}
-        label="Anchor"
-        helpText="Text or format of the link"
-      />
+    header: () => (
+      <HeaderHelpLabel label="Anchor" helpText="Text or format of the link" />
     ),
     size: 150,
     minSize: 100,
-    accessorFn: (row) => row._backlink?.anchor ?? row.domain,
+    enableSorting: false,
     cell: ({ row }) => {
       if (row.depth > 0) {
         const child = row.original._backlink;
@@ -206,8 +167,6 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
 
       return null;
     },
-    sortingFn: "alphanumeric",
-    enableSorting: false,
   },
   {
     id: "flags",
@@ -236,17 +195,17 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
   },
   {
     id: "linkAuthority",
-    header: ({ column }) => (
-      <SortableHeader
-        column={column}
-        label="Link"
-        helpText="Authority of the linking page"
-        align="right"
-      />
+    header: () => (
+      <span className="flex w-full justify-end">
+        <HeaderHelpLabel
+          label="Link"
+          helpText="Authority of the linking page"
+        />
+      </span>
     ),
     size: 70,
     minSize: 50,
-    accessorFn: (row) => row._backlink?.rank ?? null,
+    enableSorting: false,
     cell: ({ row }) => {
       if (row.depth > 0) {
         const child = row.original._backlink;
@@ -267,8 +226,6 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
 
       return null;
     },
-    sortingFn: "basic",
-    enableSorting: false,
   },
   {
     id: "domainAuthority",
@@ -292,7 +249,8 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
         </div>
       );
     },
-    sortingFn: "basic",
+    sortingFn: numericNullsLast,
+    sortDescFirst: true,
   },
   {
     id: "spamScore",
@@ -319,7 +277,8 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
         </div>
       );
     },
-    sortingFn: "basic",
+    sortingFn: numericNullsLast,
+    sortDescFirst: true,
   },
   {
     id: "firstSeen",
@@ -354,6 +313,7 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
         </div>
       );
     },
-    sortingFn: "datetime",
+    sortingFn: dateNullsLast,
+    sortDescFirst: true,
   },
 ];

@@ -65,6 +65,13 @@ vi.mock("@/server/lib/dataforseoBacklinks", () => ({
   fetchReferringDomainsRaw: vi.fn(),
 }));
 
+vi.mock("@/server/lib/dataforseoLlm", () => ({
+  fetchLlmResponseRaw: vi.fn(),
+  fetchLlmAggregatedMetricsRaw: vi.fn(),
+  fetchLlmMentionsSearchRaw: vi.fn(),
+  fetchLlmTopPagesRaw: vi.fn(),
+}));
+
 import {
   createDataforseoClient,
   mapDataforseoPathToCreditFeature,
@@ -325,5 +332,35 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "json",
       ]),
     ).toBe("site_audit");
+  });
+
+  it("maps real ai_optimization paths to ai_search", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "ai_optimization",
+        "llm_mentions",
+        "search",
+        "live",
+      ]),
+    ).toBe("ai_search");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "ai_optimization",
+        "llm_mentions",
+        "aggregated_metrics",
+        "live",
+      ]),
+    ).toBe("ai_search");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "ai_optimization",
+        "claude",
+        "llm_responses",
+        "live",
+      ]),
+    ).toBe("ai_search");
   });
 });

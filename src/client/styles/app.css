@@ -108,7 +108,9 @@ select {
 
 /* Global input focus styling - use primary color instead of default ring */
 .input:focus,
-.input:focus-visible {
+.input:focus-visible,
+.textarea:focus,
+.textarea:focus-visible {
   outline: none;
   border-color: var(--color-primary);
   background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);

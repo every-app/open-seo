@@ -12,8 +12,10 @@ function passesNumericFilter(
   max: string,
 ): boolean {
   if (value == null) return true;
-  if (min && value < Number(min)) return false;
-  if (max && value > Number(max)) return false;
+  const minN = Number(min);
+  if (min && !Number.isNaN(minN) && value < minN) return false;
+  const maxN = Number(max);
+  if (max && !Number.isNaN(maxN) && value > maxN) return false;
   return true;
 }
 

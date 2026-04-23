@@ -20,6 +20,16 @@ import {
   type LabsKeywordDataItem,
   type SerpLiveItem,
 } from "@/server/lib/dataforseo";
+import {
+  fetchLlmAggregatedMetricsRaw,
+  fetchLlmMentionsSearchRaw,
+  fetchLlmResponseRaw,
+  fetchLlmTopPagesRaw,
+  type LlmAggregatedMetricsInput,
+  type LlmMentionsSearchInput,
+  type LlmResponsesInput,
+  type LlmTopPagesInput,
+} from "@/server/lib/dataforseoLlm";
 import { fetchDataforseoLighthouseResultRaw } from "@/server/lib/dataforseoLighthouse";
 import type { LighthouseStrategy } from "@/server/lib/dataforseoLighthousePayload";
 import type { StoredLighthousePayload } from "@/server/lib/lighthouseStoredPayload";
@@ -46,7 +56,8 @@ type CreditFeature =
   | "domain_overview"
   | "backlinks"
   | "site_audit"
-  | "rank_tracking";
+  | "rank_tracking"
+  | "ai_search";
 
 /**
  * Maps a DataForSEO API response path (e.g. ["v3", "dataforseo_labs", "google", "related_keywords", "live"])
@@ -65,6 +76,8 @@ export function mapDataforseoPathToCreditFeature(
       return "backlinks";
     case "serp":
       return "keyword_research";
+    case "ai_optimization":
+      return "ai_search";
     case "dataforseo_labs": {
       const endpoint = path[3] ?? "";
       if (endpoint.startsWith("domain_") || endpoint === "ranked_keywords") {
@@ -240,6 +253,24 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         return meterDataforseoCall<StoredLighthousePayload>(customer, () =>
           fetchDataforseoLighthouseResultRaw(input),
         );
+      },
+    },
+    aiSearch: {
+      mentionsSearch(input: LlmMentionsSearchInput) {
+        return meterDataforseoCall(customer, () =>
+          fetchLlmMentionsSearchRaw(input),
+        );
+      },
+      aggregatedMetrics(input: LlmAggregatedMetricsInput) {
+        return meterDataforseoCall(customer, () =>
+          fetchLlmAggregatedMetricsRaw(input),
+        );
+      },
+      topPages(input: LlmTopPagesInput) {
+        return meterDataforseoCall(customer, () => fetchLlmTopPagesRaw(input));
+      },
+      llmResponse(input: LlmResponsesInput) {
+        return meterDataforseoCall(customer, () => fetchLlmResponseRaw(input));
       },
     },
   } as const;

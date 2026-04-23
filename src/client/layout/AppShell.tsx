@@ -205,7 +205,7 @@ function TopNav({
               );
 
               return (
-                <div key={entry.label} className="dropdown">
+                <div key={entry.label} className="dropdown dropdown-hover">
                   <button
                     type="button"
                     tabIndex={0}
@@ -221,7 +221,7 @@ function TopNav({
                   </button>
                   <ul
                     tabIndex={0}
-                    className="dropdown-content z-20 menu mt-1 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+                    className="dropdown-content z-20 menu w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
                   >
                     {entry.items.map((item) => {
                       const { icon: Icon, matchSegment, ...linkProps } = item;

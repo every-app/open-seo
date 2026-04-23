@@ -28,6 +28,7 @@
     "test:watch": "vitest",
     "test:ci": "vitest run --reporter=dot",
     "billing:backlinks": "tsx scripts/backlinks-cost-profile.ts",
+    "billing:brand-lookup": "tsx scripts/brand-lookup-cost-profile.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
   },
@@ -71,7 +72,9 @@
     "posthog-node": "^5.28.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-markdown": "^10.1.0",
     "recharts": "^3.7.0",
+    "remark-gfm": "^4.0.1",
     "remeda": "^2.33.6",
     "robots-parser": "^3.0.1",
     "sonner": "^2.0.7",

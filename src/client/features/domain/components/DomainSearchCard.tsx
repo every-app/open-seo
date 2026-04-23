@@ -25,7 +25,7 @@ export function DomainSearchCard({
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-4">
         <form
-          className="grid grid-cols-1 gap-3 lg:grid-cols-12"
+          className="flex flex-col gap-3 lg:flex-row lg:items-center"
           onSubmit={onSubmit}
         >
           <controlsForm.Field name="domain">
@@ -34,10 +34,11 @@ export function DomainSearchCard({
 
               return (
                 <label
-                  className={`input input-bordered lg:col-span-6 flex items-center gap-2 ${domainError ? "input-error" : ""}`}
+                  className={`input input-bordered flex flex-1 items-center gap-2 ${domainError ? "input-error" : ""}`}
                 >
                   <Search className="size-4 text-base-content/60" />
                   <input
+                    className="grow"
                     placeholder="Enter a domain (e.g. coolify.io or example.com/blog)"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -54,7 +55,7 @@ export function DomainSearchCard({
           <controlsForm.Field name="locationCode">
             {(field) => (
               <select
-                className="select select-bordered lg:col-span-2"
+                className="select select-bordered shrink-0"
                 value={field.state.value}
                 onChange={(event) => {
                   const next = Number(event.target.value);
@@ -74,7 +75,7 @@ export function DomainSearchCard({
           <controlsForm.Field name="sort">
             {(field) => (
               <select
-                className="select select-bordered lg:col-span-2"
+                className="select select-bordered shrink-0"
                 value={field.state.value}
                 onChange={(event) => {
                   const next = toSortMode(event.target.value) ?? "rank";
@@ -95,7 +96,7 @@ export function DomainSearchCard({
             {(isSubmitting) => (
               <button
                 type="submit"
-                className="btn btn-primary lg:col-span-2"
+                className="btn btn-primary shrink-0 px-6"
                 disabled={isLoading || isSubmitting}
               >
                 {isLoading || isSubmitting ? "Loading..." : "Search"}
