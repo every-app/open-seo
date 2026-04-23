@@ -48,7 +48,7 @@ export async function getBrandLookup(
     organizationId: billingCustomer.organizationId,
     projectId: input.projectId,
     targetType: detected.type,
-    targetValue: detected.value.toLowerCase(),
+    targetValue: detected.value,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
   });
