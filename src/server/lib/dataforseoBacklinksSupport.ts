@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { createDataforseoAccessClassifier } from "@/server/lib/dataforseoAccessClassification";
 import { AppError } from "@/server/lib/errors";
 
 const taskResultSchema = z
@@ -120,88 +121,15 @@ export const backlinksHistoryItemSchema = z
   })
   .passthrough();
 
-export function classifyBacklinksError(
-  status: number | undefined,
-  details: string,
-  path: string,
-): AppError | null {
-  const text = details.toLowerCase();
-  const looksLikeBacklinksAccessIssue =
-    path.includes("/backlinks/") &&
-    (text.includes("backlinks") ||
-      text.includes("subscription") ||
-      text.includes("access") ||
-      text.includes("plan") ||
-      text.includes("balance") ||
-      text.includes("payment") ||
-      text.includes("billing") ||
-      text.includes("available") ||
-      text.includes("enabled") ||
-      status === 402 ||
-      status === 403);
-
-  if (!looksLikeBacklinksAccessIssue) return null;
-
-  if (status === 40204) {
-    return new AppError(
-      "BACKLINKS_NOT_ENABLED",
-      "Backlinks is not enabled for the connected DataForSEO account",
-    );
-  }
-
-  if (status === 40200 || status === 40210 || status === 402) {
-    return new AppError(
-      "BACKLINKS_BILLING_ISSUE",
-      "The connected DataForSEO account has a billing or balance issue",
-    );
-  }
-
-  const unavailableSignals = [
-    "not available",
-    "not enabled",
-    "not allowed",
-    "access denied",
-    "forbidden",
-    "insufficient",
-    "subscription",
-    "upgrade",
-    "plan",
-    "activate your subscription",
-    "plans and subscriptions",
-  ];
-  const billingSignals = [
-    "payment required",
-    "billing",
-    "balance",
-    "insufficient funds",
-    "balance is too low",
-    "problem billing",
-    "recharged",
-  ];
-
-  if (billingSignals.some((signal) => text.includes(signal))) {
-    return new AppError(
-      "BACKLINKS_BILLING_ISSUE",
-      "The connected DataForSEO account has a billing or balance issue",
-    );
-  }
-
-  if (unavailableSignals.some((signal) => text.includes(signal))) {
-    return new AppError(
-      "BACKLINKS_NOT_ENABLED",
-      "Backlinks is not enabled for the connected DataForSEO account",
-    );
-  }
-
-  if (status === 403) {
-    return new AppError(
-      "BACKLINKS_NOT_ENABLED",
-      "Backlinks is not enabled for the connected DataForSEO account",
-    );
-  }
-
-  return null;
-}
+export const classifyBacklinksError = createDataforseoAccessClassifier({
+  pathPrefix: "/backlinks/",
+  notEnabledCode: "BACKLINKS_NOT_ENABLED",
+  notEnabledMessage:
+    "Backlinks is not enabled for the connected DataForSEO account",
+  billingIssueCode: "BACKLINKS_BILLING_ISSUE",
+  billingIssueMessage:
+    "The connected DataForSEO account has a billing or balance issue",
+});
 
 export function parseItems<T extends z.ZodTypeAny>(
   endpointName: string,

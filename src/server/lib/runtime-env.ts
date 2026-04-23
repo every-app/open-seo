@@ -26,15 +26,6 @@ export async function isHostedServerAuthMode(): Promise<boolean> {
   return isHostedAuthMode(await getEnvValue("AUTH_MODE"));
 }
 
-export async function getWorkersBinding(name: string): Promise<unknown> {
-  const workersEnv = await getWorkersEnv();
-  const binding = workersEnv?.[name];
-  if (!binding) {
-    throw new Error(`Missing required Worker binding: ${name}`);
-  }
-  return binding;
-}
-
 async function getWorkersEnv(): Promise<Record<string, unknown> | null> {
   if (!workersEnvPromise) {
     workersEnvPromise = loadWorkersEnv();

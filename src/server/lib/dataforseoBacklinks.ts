@@ -9,6 +9,7 @@ import type {
 } from "@/server/lib/dataforseoCost";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 import {
+  classifyBacklinksError,
   type BacklinksTaskResult,
   backlinksHistoryItemSchema,
   backlinksItemSchema,
@@ -18,7 +19,6 @@ import {
   referringDomainItemSchema,
   responseSchema,
 } from "@/server/lib/dataforseoBacklinksSupport";
-import { classifyBacklinksErrorWithAccountState } from "@/server/lib/dataforseoBacklinksAccount";
 export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
 const API_BASE = "https://api.dataforseo.com";
@@ -69,7 +69,7 @@ async function postBacklinks(path: string, payload: unknown) {
 
   const rawText = await response.text();
   if (!response.ok) {
-    const classifiedError = await classifyBacklinksErrorWithAccountState(
+    const classifiedError = classifyBacklinksError(
       response.status,
       rawText,
       path,
@@ -85,7 +85,7 @@ async function postBacklinks(path: string, payload: unknown) {
   try {
     raw = JSON.parse(rawText);
   } catch {
-    const classifiedError = await classifyBacklinksErrorWithAccountState(
+    const classifiedError = classifyBacklinksError(
       response.status,
       rawText,
       path,
@@ -103,7 +103,7 @@ async function postBacklinks(path: string, payload: unknown) {
 
   const parsed = responseSchema.safeParse(raw);
   if (!parsed.success) {
-    const classifiedError = await classifyBacklinksErrorWithAccountState(
+    const classifiedError = classifyBacklinksError(
       response.status,
       rawText,
       path,
@@ -121,7 +121,7 @@ async function postBacklinks(path: string, payload: unknown) {
 
   const responseData = parsed.data;
   if (responseData.status_code !== 20000) {
-    const classifiedError = await classifyBacklinksErrorWithAccountState(
+    const classifiedError = classifyBacklinksError(
       responseData.status_code,
       `${responseData.status_message ?? ""} ${rawText}`,
       path,
@@ -139,7 +139,7 @@ async function postBacklinks(path: string, payload: unknown) {
   }
 
   if (task.status_code !== 20000) {
-    const classifiedError = await classifyBacklinksErrorWithAccountState(
+    const classifiedError = classifyBacklinksError(
       task.status_code,
       `${task.status_message ?? ""} ${rawText}`,
       path,

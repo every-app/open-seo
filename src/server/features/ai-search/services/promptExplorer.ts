@@ -276,10 +276,14 @@ function mapErrorToResult(
   model: PromptExplorerModel,
   reason: unknown,
 ): PromptExplorerModelResult {
-  if (reason instanceof AppError && reason.code === "INSUFFICIENT_CREDITS") {
-    // Re-throw INSUFFICIENT_CREDITS so the whole request surfaces it instead
-    // of silently degrading to "Claude failed" — credits exhaustion is global,
-    // not per-model.
+  if (
+    reason instanceof AppError &&
+    (reason.code === "INSUFFICIENT_CREDITS" ||
+      reason.code === "AI_SEARCH_NOT_ENABLED" ||
+      reason.code === "AI_SEARCH_BILLING_ISSUE")
+  ) {
+    // These account-level failures apply to every model, so surface one clear
+    // error instead of silently degrading to per-model failures.
     throw reason;
   }
 

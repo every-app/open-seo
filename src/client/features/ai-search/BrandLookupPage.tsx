@@ -1,6 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,14 +8,21 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { lookupBrand } from "@/serverFunctions/ai-search";
-import { useSession } from "@/lib/auth-client";
-import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
+import {
+  HostedPlanGate,
+  type HostedPlanGateState,
+} from "@/client/features/billing/HostedPlanGate";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { BrandLookupResults } from "@/client/features/ai-search/components/BrandLookupResults";
 import { BrandLookupSearchCard } from "@/client/features/ai-search/components/BrandLookupSearchCard";
 import { BrandLookupHistorySection } from "@/client/features/ai-search/components/BrandLookupHistorySection";
 import { AiSearchLoadingState } from "@/client/features/ai-search/components/AiSearchLoadingState";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
+import {
+  AiSearchAccessLoadingState,
+  AiSearchSetupGate,
+} from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { useBrandLookupSearchHistory } from "@/client/hooks/useBrandLookupSearchHistory";
 import { BRAND_LOOKUP_MAX_INPUT_LENGTH } from "@/types/schemas/ai-search";
 
@@ -46,9 +52,9 @@ const BRAND_LOOKUP_BULLETS = [
 
 export function BrandLookupPage(props: Props) {
   return (
-    <AutumnProvider>
-      <BrandLookupPageInner {...props} />
-    </AutumnProvider>
+    <HostedPlanGate>
+      {(planGate) => <BrandLookupPageInner {...props} planGate={planGate} />}
+    </HostedPlanGate>
   );
 }
 
@@ -56,18 +62,12 @@ function BrandLookupPageInner({
   projectId,
   initialQuery,
   onQueryChange,
-}: Props) {
+  planGate,
+}: Props & { planGate: HostedPlanGateState }) {
   const [query, setQuery] = useState(initialQuery);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const { data: session } = useSession();
-  const customerQuery = useCustomer({
-    queryOptions: { enabled: Boolean(session?.user?.id) },
-  });
-  const planKnown = customerQuery.isSuccess || customerQuery.isError;
-  const isFreePlan =
-    !!customerQuery.data &&
-    getCustomerPlanStatus(customerQuery.data) === "free";
+  const access = useAiSearchAccess(projectId);
 
   const trimmedInitialQuery = initialQuery.trim();
   const hasActiveQuery = trimmedInitialQuery.length > 0;
@@ -83,7 +83,7 @@ function BrandLookupPageInner({
           languageCode: "en",
         },
       }),
-    enabled: hasActiveQuery && !isFreePlan,
+    enabled: hasActiveQuery && !planGate.isFreePlan && access.enabled,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -137,7 +137,7 @@ function BrandLookupPageInner({
       : null;
   const resultData = hasActiveQuery ? lookupQuery.data : undefined;
 
-  if (!planKnown) return null;
+  if (planGate.isLoading) return null;
 
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
@@ -149,7 +149,15 @@ function BrandLookupPageInner({
           </p>
         </div>
 
-        {isFreePlan ? (
+        {access.isLoading ? (
+          <AiSearchAccessLoadingState />
+        ) : !access.enabled ? (
+          <AiSearchSetupGate
+            errorMessage={access.errorMessage ?? access.statusErrorMessage}
+            isRefetching={access.isRefetching}
+            onRetry={access.onRetry}
+          />
+        ) : planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
             feature="Brand Lookup"
             description="See how ChatGPT and Google AI Overview cite any brand or domain — total mentions, the prompts driving them, and the pages cited alongside yours."

@@ -1,73 +1,40 @@
-import { ShieldAlert, Wrench } from "lucide-react";
-import type { BacklinksAccessStatusData } from "./backlinksPageTypes";
-import { formatRelativeTimestamp } from "./backlinksPageUtils";
+import { ShieldAlert } from "lucide-react";
+import {
+  AccessGate,
+  AccessGateLoadingState,
+} from "@/client/features/access-gate/AccessGate";
 
 export function BacklinksAccessLoadingState() {
-  return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
-        <div className="skeleton h-6 w-48" />
-        <div className="skeleton h-4 w-full" />
-        <div className="skeleton h-4 w-4/5" />
-        <div className="skeleton h-10 w-48" />
-      </div>
-    </div>
-  );
+  return <AccessGateLoadingState />;
 }
 
 export function BacklinksSetupGate({
-  status,
-  isTesting,
-  testError,
-  onTest,
+  errorMessage,
+  isRefetching,
+  onRetry,
 }: {
-  status: BacklinksAccessStatusData | undefined;
-  isTesting: boolean;
-  testError: string | null;
-  onTest: () => void;
+  errorMessage: string | null;
+  isRefetching: boolean;
+  onRetry: () => void;
 }) {
   return (
-    <section>
-      <div className="rounded-2xl border border-base-300 bg-base-100 p-6 md:p-7 space-y-5">
-        <div className="flex items-start gap-3">
-          <div className="rounded-xl bg-warning/15 p-2.5 text-warning shrink-0">
-            <Wrench className="size-5" />
-          </div>
-          <div className="max-w-3xl space-y-1.5">
-            <h2 className="text-xl font-semibold">Enable Backlinks</h2>
-            <p className="text-sm text-base-content/68">
-              Backlinks is not enabled for your DataForSEO account yet. Turn it
-              on in DataForSEO, then test access here.
-            </p>
-            <p className="text-xs text-base-content/50">
-              DataForSEO offers a free 14-day trial for Backlinks. Then, it's
-              $100/month. We're gauging interest in building out a lower-cost
-              alternative, <InlineMailingListLink /> if you're interested.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            className="btn btn-primary"
-            onClick={onTest}
-            disabled={isTesting}
-          >
-            {isTesting ? "Confirming..." : "Confirm Backlinks Access"}
-          </button>
-          <a
-            className="btn btn-outline"
-            href="https://app.dataforseo.com/api-access-subscriptions"
-            target="_blank"
-            rel="noreferrer"
-          >
-            Open DataForSEO Backlinks
-          </a>
-        </div>
-
-        <BacklinksSetupFeedback status={status} testError={testError} />
-      </div>
-    </section>
+    <AccessGate
+      title="Enable Backlinks"
+      bodyText="Backlinks are not enabled for your DataForSEO account yet. You can enable them in DataForSEO, or use managed OpenSEO for long-term backlinks access at $10/month."
+      helperText={
+        <>
+          We are also planning a Backlinks API so self-hosted apps can use
+          OpenSEO's backlinks data directly. Until then,{" "}
+          <InlineManagedOpenSeoLink />.
+        </>
+      }
+      buttonLabel="Confirm DataForSEO Access"
+      externalUrl="https://app.dataforseo.com/api-access-subscriptions"
+      externalLabel="Open DataForSEO Backlinks"
+      errorMessage={errorMessage}
+      isRefetching={isRefetching}
+      onRetry={onRetry}
+    />
   );
 }
 
@@ -131,45 +98,15 @@ export function BacklinksErrorState({
   );
 }
 
-function BacklinksSetupFeedback({
-  status,
-  testError,
-}: {
-  status: BacklinksAccessStatusData | undefined;
-  testError: string | null;
-}) {
-  return (
-    <div className="space-y-3">
-      {status?.lastCheckedAt ? (
-        <div className="text-sm text-base-content/60">
-          Last checked {formatRelativeTimestamp(status.lastCheckedAt)}.
-        </div>
-      ) : null}
-      {status?.lastErrorMessage ? (
-        <div className="alert alert-warning">
-          <ShieldAlert className="size-4 shrink-0" />
-          <span>{status.lastErrorMessage}</span>
-        </div>
-      ) : null}
-      {testError ? (
-        <div className="alert alert-error">
-          <ShieldAlert className="size-4 shrink-0" />
-          <span>{testError}</span>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function InlineMailingListLink() {
+function InlineManagedOpenSeoLink() {
   return (
     <a
       className="underline underline-offset-2 hover:text-base-content/70"
-      href="https://openseo.so"
+      href="https://openseo.so/?utm_source=self_hosted_app&utm_medium=access_gate&utm_campaign=backlinks"
       target="_blank"
       rel="noreferrer"
     >
-      join the OpenSEO mailing list
+      use managed OpenSEO
     </a>
   );
 }

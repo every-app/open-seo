@@ -7,13 +7,9 @@ import type {
   getBacklinksReferringDomains,
   getBacklinksTopPages,
 } from "@/serverFunctions/backlinks";
-import type { getBacklinksAccessSetupStatus } from "@/serverFunctions/backlinksAccess";
 
 export type BacklinksOverviewData = Awaited<
   ReturnType<typeof getBacklinksOverview>
->;
-export type BacklinksAccessStatusData = Awaited<
-  ReturnType<typeof getBacklinksAccessSetupStatus>
 >;
 export type BacklinksReferringDomainsData = Awaited<
   ReturnType<typeof getBacklinksReferringDomains>

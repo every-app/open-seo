@@ -12,6 +12,7 @@ import {
   type LlmTopPagesItem,
 } from "@/server/lib/dataforseoLlmSchemas";
 import type { DataforseoApiResponse } from "@/server/lib/dataforseoCost";
+import { createDataforseoAccessClassifier } from "@/server/lib/dataforseoAccessClassification";
 import { AppError } from "@/server/lib/errors";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
 
@@ -50,9 +51,12 @@ async function postLlm(path: string, payload: unknown): Promise<unknown> {
   const rawText = await response.text();
 
   if (!response.ok) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      `DataForSEO HTTP ${response.status} on ${path}. Response: ${truncate(rawText)}`,
+    throw (
+      classifyAiSearchError(response.status, rawText, path) ??
+      new AppError(
+        "INTERNAL_ERROR",
+        `DataForSEO HTTP ${response.status} on ${path}. Response: ${truncate(rawText)}`,
+      )
     );
   }
 
@@ -65,6 +69,16 @@ async function postLlm(path: string, payload: unknown): Promise<unknown> {
     );
   }
 }
+
+const classifyAiSearchError = createDataforseoAccessClassifier({
+  pathPrefix: "/ai_optimization/",
+  notEnabledCode: "AI_SEARCH_NOT_ENABLED",
+  notEnabledMessage:
+    "AI Optimization is not enabled for the connected DataForSEO account",
+  billingIssueCode: "AI_SEARCH_BILLING_ISSUE",
+  billingIssueMessage:
+    "The connected DataForSEO account has a billing or balance issue",
+});
 
 function truncate(text: string): string {
   return text.length > MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH
@@ -86,9 +100,10 @@ function parseEnvelope(path: string, raw: unknown): LlmDataforseoTask {
 
   const data = envelope.data;
   if (data.status_code !== 20000) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      data.status_message || `DataForSEO ${path} request failed`,
+    const message = data.status_message || `DataForSEO ${path} request failed`;
+    throw (
+      classifyAiSearchError(data.status_code, message, path) ??
+      new AppError("INTERNAL_ERROR", message)
     );
   }
 
@@ -101,9 +116,10 @@ function parseEnvelope(path: string, raw: unknown): LlmDataforseoTask {
   }
 
   if (task.status_code !== 20000) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      task.status_message || `DataForSEO ${path} task failed`,
+    const message = task.status_message || `DataForSEO ${path} task failed`;
+    throw (
+      classifyAiSearchError(task.status_code, message, path) ??
+      new AppError("INTERNAL_ERROR", message)
     );
   }
 

@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
 import {
   AlertCircle,
   ArrowLeft,
@@ -9,14 +8,21 @@ import {
   Sparkles,
 } from "lucide-react";
 import { explorePrompt } from "@/serverFunctions/ai-search";
-import { useSession } from "@/lib/auth-client";
-import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
+import {
+  HostedPlanGate,
+  type HostedPlanGateState,
+} from "@/client/features/billing/HostedPlanGate";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { PromptExplorerForm } from "@/client/features/ai-search/components/PromptExplorerForm";
 import { PromptExplorerResults } from "@/client/features/ai-search/components/PromptExplorerResults";
 import { PromptExplorerLoadingState } from "@/client/features/ai-search/components/PromptExplorerLoadingState";
 import { PromptExplorerHistorySection } from "@/client/features/ai-search/components/PromptExplorerHistorySection";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
+import {
+  AiSearchAccessLoadingState,
+  AiSearchSetupGate,
+} from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import {
   usePromptExplorerSearchHistory,
   type PromptExplorerSearchHistoryItem,
@@ -68,24 +74,19 @@ const INITIAL_FORM_STATE: FormState = {
 
 export function PromptExplorerPage(props: Props) {
   return (
-    <AutumnProvider>
-      <PromptExplorerPageInner {...props} />
-    </AutumnProvider>
+    <HostedPlanGate>
+      {(planGate) => <PromptExplorerPageInner {...props} planGate={planGate} />}
+    </HostedPlanGate>
   );
 }
 
-function PromptExplorerPageInner({ projectId }: Props) {
+function PromptExplorerPageInner({
+  projectId,
+  planGate,
+}: Props & { planGate: HostedPlanGateState }) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE);
   const [validationError, setValidationError] = useState<string | null>(null);
-
-  const { data: session } = useSession();
-  const customerQuery = useCustomer({
-    queryOptions: { enabled: Boolean(session?.user?.id) },
-  });
-  const planKnown = customerQuery.isSuccess || customerQuery.isError;
-  const isFreePlan =
-    !!customerQuery.data &&
-    getCustomerPlanStatus(customerQuery.data) === "free";
+  const access = useAiSearchAccess(projectId);
 
   const {
     history,
@@ -177,7 +178,7 @@ function PromptExplorerPageInner({ projectId }: Props) {
     if (validationError) setValidationError(null);
   };
 
-  if (!planKnown) return null;
+  if (planGate.isLoading) return null;
 
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
@@ -190,7 +191,15 @@ function PromptExplorerPageInner({ projectId }: Props) {
           </p>
         </div>
 
-        {isFreePlan ? (
+        {access.isLoading ? (
+          <AiSearchAccessLoadingState />
+        ) : !access.enabled ? (
+          <AiSearchSetupGate
+            errorMessage={access.errorMessage ?? access.statusErrorMessage}
+            isRefetching={access.isRefetching}
+            onRetry={access.onRetry}
+          />
+        ) : planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
             feature="Prompt Explorer"
             description="Ask one prompt across ChatGPT, Claude, Gemini, and Perplexity at the same time and compare their answers — including which sources each model cites."

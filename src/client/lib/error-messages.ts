@@ -18,6 +18,10 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
     "Backlinks is not enabled for the connected DataForSEO account yet.",
   BACKLINKS_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
+  AI_SEARCH_NOT_ENABLED:
+    "AI Optimization is not enabled for the connected DataForSEO account yet.",
+  AI_SEARCH_BILLING_ISSUE:
+    "The connected DataForSEO account has a billing or balance issue.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   CONFLICT: "This request conflicts with existing data.",
   INTERNAL_ERROR:

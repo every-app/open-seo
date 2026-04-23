@@ -12,12 +12,12 @@ import {
 import { BacklinksHistorySection } from "./BacklinksHistorySection";
 import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
 import type {
-  BacklinksAccessStatusData,
   BacklinksOverviewData,
   BacklinksReferringDomainsData,
   BacklinksSearchState,
   BacklinksTopPagesData,
 } from "./backlinksPageTypes";
+import type { UseAccessGateResult } from "@/client/features/access-gate/useAccessGate";
 import { buildSummaryStats } from "./backlinksPageUtils";
 import {
   filterBacklinkRows,
@@ -27,13 +27,10 @@ import {
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 type BacklinksBodyProps = {
-  accessStatus: BacklinksAccessStatusData | undefined;
-  accessStatusError: string | null;
+  accessGate: UseAccessGateResult;
   backlinksDisabledByError: boolean;
-  backlinksEnabled: boolean;
   history: BacklinksSearchHistoryItem[];
   historyLoaded: boolean;
-  isAccessStatusLoading: boolean;
   overviewData: BacklinksOverviewData | undefined;
   overviewError: string | null;
   overviewLoading: boolean;
@@ -42,26 +39,19 @@ type BacklinksBodyProps = {
   filters: BacklinksFiltersState;
   tabErrorMessage: string | null;
   tabLoading: boolean;
-  testError: string | null;
-  testIsPending: boolean;
   topPages: BacklinksTopPagesData | undefined;
   onRemoveHistoryItem: (timestamp: number) => void;
-  onRetryAccess: () => void;
   onSelectHistoryItem: (item: BacklinksSearchHistoryItem) => void;
   onShowHistory: () => void;
   onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   onRetryOverview: () => void;
-  onTestAccess: () => void;
 };
 
 export function BacklinksBody({
-  accessStatus,
-  accessStatusError,
+  accessGate,
   backlinksDisabledByError,
-  backlinksEnabled,
   history,
   historyLoaded,
-  isAccessStatusLoading,
   overviewData,
   overviewError,
   overviewLoading,
@@ -70,16 +60,12 @@ export function BacklinksBody({
   filters,
   tabErrorMessage,
   tabLoading,
-  testError,
-  testIsPending,
   topPages,
   onRemoveHistoryItem,
-  onRetryAccess,
   onSelectHistoryItem,
   onShowHistory,
   onSetActiveTab,
   onRetryOverview,
-  onTestAccess,
 }: BacklinksBodyProps) {
   const mergedData = useMemo(
     () => mergeTabData(overviewData, referringDomains, topPages),
@@ -111,26 +97,25 @@ export function BacklinksBody({
     [mergedData],
   );
 
-  if (isAccessStatusLoading) {
+  if (accessGate.isLoading) {
     return <BacklinksAccessLoadingState />;
   }
 
-  if (accessStatusError) {
+  if (accessGate.statusErrorMessage) {
     return (
       <BacklinksErrorState
-        errorMessage={accessStatusError}
-        onRetry={onRetryAccess}
+        errorMessage={accessGate.statusErrorMessage}
+        onRetry={accessGate.onRetry}
       />
     );
   }
 
-  if (!backlinksEnabled || backlinksDisabledByError) {
+  if (!accessGate.enabled || backlinksDisabledByError) {
     return (
       <BacklinksSetupGate
-        status={accessStatus}
-        isTesting={testIsPending}
-        testError={testError}
-        onTest={onTestAccess}
+        errorMessage={accessGate.errorMessage}
+        isRefetching={accessGate.isRefetching}
+        onRetry={accessGate.onRetry}
       />
     );
   }

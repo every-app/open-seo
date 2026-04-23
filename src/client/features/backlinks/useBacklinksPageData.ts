@@ -1,9 +1,10 @@
 import { useEffect, useMemo } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type {
   BacklinksPageProps,
   BacklinksSearchState,
 } from "./backlinksPageTypes";
+import { useAccessGate } from "@/client/features/access-gate/useAccessGate";
 import {
   getErrorCode,
   getStandardErrorMessage,
@@ -13,10 +14,7 @@ import {
   getBacklinksReferringDomains,
   getBacklinksTopPages,
 } from "@/serverFunctions/backlinks";
-import {
-  getBacklinksAccessSetupStatus,
-  testBacklinksAccess,
-} from "@/serverFunctions/backlinksAccess";
+import { getBacklinksAccessSetupStatus } from "@/serverFunctions/backlinksAccess";
 import { getPersistedBacklinksSearchScope } from "./backlinksSearchScope";
 
 type UseBacklinksPageDataArgs = {
@@ -40,18 +38,13 @@ export function useBacklinksPageData({
   projectId,
   searchState,
 }: UseBacklinksPageDataArgs) {
-  const accessStatusQuery = useQuery({
+  const accessGate = useAccessGate({
     queryKey: ["backlinksAccessStatus", projectId],
     queryFn: () => getBacklinksAccessSetupStatus({ data: { projectId } }),
+    statusErrorFallback: "Could not load Backlinks setup status.",
   });
-  const accessStatus = accessStatusQuery.data;
-  const accessStatusErrorMessage = accessStatusQuery.error
-    ? getStandardErrorMessage(
-        accessStatusQuery.error,
-        "Could not load Backlinks setup status.",
-      )
-    : null;
-  const backlinksEnabled = accessStatus?.enabled ?? false;
+  const backlinksEnabled = accessGate.enabled;
+  const retryAccessGate = accessGate.onRetry;
   const requestInput = buildBacklinksRequestInput(projectId, searchState);
   const searchCardInitialValues = useMemo(
     () => ({
@@ -60,13 +53,6 @@ export function useBacklinksPageData({
     }),
     [searchState.scope, searchState.target],
   );
-
-  const testAccessMutation = useMutation({
-    mutationFn: () => testBacklinksAccess({ data: { projectId } }),
-    onSuccess: async () => {
-      await accessStatusQuery.refetch();
-    },
-  });
 
   const baseQueryKeyParts = [
     projectId,
@@ -118,29 +104,25 @@ export function useBacklinksPageData({
   useEffect(() => {
     if (
       (backlinksDisabledByError || backlinksDisabledByTabError) &&
-      accessStatus?.enabled
+      backlinksEnabled
     ) {
-      void accessStatusQuery.refetch();
+      retryAccessGate();
     }
   }, [
-    accessStatus?.enabled,
-    accessStatusQuery,
     backlinksDisabledByError,
     backlinksDisabledByTabError,
+    backlinksEnabled,
+    retryAccessGate,
   ]);
 
   return {
-    accessStatus,
-    accessStatusErrorMessage,
-    accessStatusQuery,
+    accessGate,
     activeTabErrorMessage,
     backlinksDisabledByError,
-    backlinksEnabled,
     overviewErrorMessage,
     overviewQuery,
     referringDomainsQuery,
     searchCardInitialValues,
-    testAccessMutation,
     topPagesQuery,
   };
 }

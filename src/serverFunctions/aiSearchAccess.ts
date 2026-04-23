@@ -5,30 +5,30 @@ import {
 } from "@/server/lib/dataforseoAccountState";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
-import { backlinksProjectSchema } from "@/types/schemas/backlinks";
+import { aiSearchProjectSchema } from "@/types/schemas/ai-search";
 
-const BACKLINKS_NOT_ENABLED_MESSAGE =
-  "Backlinks is not enabled for the connected DataForSEO account yet. Turn it on in DataForSEO, then confirm here.";
+const AI_SEARCH_NOT_ENABLED_MESSAGE =
+  "AI Optimization is not enabled for the connected DataForSEO account yet. Turn it on in DataForSEO, then confirm here.";
 
-type BacklinksAccessStatus = {
+type AiSearchAccessStatus = {
   enabled: boolean;
   errorMessage: string | null;
 };
 
-export const getBacklinksAccessSetupStatus = createServerFn({ method: "GET" })
+export const getAiSearchAccessSetupStatus = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => backlinksProjectSchema.parse(data))
-  .handler(async (): Promise<BacklinksAccessStatus> => {
+  .inputValidator((data: unknown) => aiSearchProjectSchema.parse(data))
+  .handler(async (): Promise<AiSearchAccessStatus> => {
     if (await isHostedServerAuthMode()) {
       return { enabled: true, errorMessage: null };
     }
 
     const state = await fetchDataforseoAccountState();
     const enabled = hasActiveDataforseoSubscription(
-      state?.backlinksSubscriptionExpiryDate ?? null,
+      state?.llmMentionsSubscriptionExpiryDate ?? null,
     );
     return {
       enabled,
-      errorMessage: enabled ? null : BACKLINKS_NOT_ENABLED_MESSAGE,
+      errorMessage: enabled ? null : AI_SEARCH_NOT_ENABLED_MESSAGE,
     };
   });

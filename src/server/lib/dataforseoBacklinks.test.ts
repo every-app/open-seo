@@ -1,13 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
+import type * as DataforseoBacklinksSupport from "@/server/lib/dataforseoBacklinksSupport";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
 }));
 
-vi.mock("@/server/lib/dataforseoBacklinksAccount", () => ({
-  classifyBacklinksErrorWithAccountState: vi.fn(),
+const { classifyBacklinksError } = vi.hoisted(() => ({
+  classifyBacklinksError: vi.fn(),
 }));
+
+vi.mock("@/server/lib/dataforseoBacklinksSupport", async () => {
+  const actual = await vi.importActual<typeof DataforseoBacklinksSupport>(
+    "@/server/lib/dataforseoBacklinksSupport",
+  );
+  return { ...actual, classifyBacklinksError };
+});
 
 import {
   fetchBacklinksHistoryRaw,
@@ -15,7 +23,6 @@ import {
   fetchBacklinksSummaryRaw,
   normalizeBacklinksTarget,
 } from "@/server/lib/dataforseoBacklinks";
-import { classifyBacklinksErrorWithAccountState } from "@/server/lib/dataforseoBacklinksAccount";
 
 describe("normalizeBacklinksTarget", () => {
   it("treats explicit homepage URLs as page lookups", () => {
@@ -121,18 +128,15 @@ describe("fetchBacklinksSummaryRaw", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
-    vi.mocked(classifyBacklinksErrorWithAccountState).mockImplementation(
-      async (status: number | undefined) => {
-        if (status === 40204) {
-          return new AppError(
-            "BACKLINKS_NOT_ENABLED",
-            "Backlinks is not enabled",
-          );
-        }
-
-        return null;
-      },
-    );
+    classifyBacklinksError.mockImplementation((status: number | undefined) => {
+      if (status === 40204) {
+        return new AppError(
+          "BACKLINKS_NOT_ENABLED",
+          "Backlinks is not enabled",
+        );
+      }
+      return null;
+    });
 
     await expect(
       fetchBacklinksSummaryRaw({
@@ -140,7 +144,7 @@ describe("fetchBacklinksSummaryRaw", () => {
       }),
     ).rejects.toMatchObject({ code: "BACKLINKS_NOT_ENABLED" });
 
-    expect(classifyBacklinksErrorWithAccountState).toHaveBeenCalledWith(
+    expect(classifyBacklinksError).toHaveBeenCalledWith(
       40204,
       expect.stringContaining("Backlinks subscription required"),
       "/v3/backlinks/summary/live",
@@ -164,7 +168,7 @@ describe("fetchBacklinksSummaryRaw", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
-    vi.mocked(classifyBacklinksErrorWithAccountState).mockResolvedValue(null);
+    classifyBacklinksError.mockReturnValue(null);
 
     await expect(
       fetchBacklinksSummaryRaw({
@@ -190,7 +194,7 @@ describe("fetchBacklinksSummaryRaw", () => {
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
-    vi.mocked(classifyBacklinksErrorWithAccountState).mockResolvedValue(null);
+    classifyBacklinksError.mockReturnValue(null);
 
     await expect(
       fetchBacklinksSummaryRaw({
@@ -233,7 +237,7 @@ describe("fetchBacklinksSummaryRaw", () => {
           { status: 200, headers: { "Content-Type": "application/json" } },
         ),
       );
-    vi.mocked(classifyBacklinksErrorWithAccountState).mockResolvedValue(null);
+    classifyBacklinksError.mockReturnValue(null);
 
     await expect(
       fetchBacklinksRowsRaw({

@@ -66,18 +66,7 @@ export async function getBrandLookup(
     ),
   );
 
-  // Credits exhaustion is global, not per-platform — re-throw immediately so
-  // the user gets a single clear "out of credits" error instead of a
-  // half-rendered result.
-  for (const settledResult of settled) {
-    if (
-      settledResult.status === "rejected" &&
-      settledResult.reason instanceof AppError &&
-      settledResult.reason.code === "INSUFFICIENT_CREDITS"
-    ) {
-      throw settledResult.reason;
-    }
-  }
+  rethrowIfBlockingAiSearchError(settled);
 
   const platformBundles: PlatformOutcome[] = settled.map((settledResult, i) => {
     const platform = PLATFORMS[i];
@@ -173,7 +162,7 @@ async function fetchPlatformData(
     }),
   ]);
 
-  rethrowIfCreditsExhausted(aggregated, topPages, mentions);
+  rethrowIfBlockingAiSearchError([aggregated, topPages, mentions]);
 
   // If every sub-call failed we have nothing to render for this platform —
   // reject so the outer `allSucceeded` gate refuses to cache a blank result.
@@ -190,14 +179,16 @@ async function fetchPlatformData(
   };
 }
 
-function rethrowIfCreditsExhausted(
-  ...results: Array<PromiseSettledResult<unknown>>
+function rethrowIfBlockingAiSearchError(
+  results: Array<PromiseSettledResult<unknown>>,
 ): void {
   for (const result of results) {
     if (
       result.status === "rejected" &&
       result.reason instanceof AppError &&
-      result.reason.code === "INSUFFICIENT_CREDITS"
+      (result.reason.code === "INSUFFICIENT_CREDITS" ||
+        result.reason.code === "AI_SEARCH_NOT_ENABLED" ||
+        result.reason.code === "AI_SEARCH_BILLING_ISSUE")
     ) {
       throw result.reason;
     }

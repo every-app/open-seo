@@ -9,7 +9,6 @@ import {
 } from "./useBacklinksPageData";
 import { useBacklinksFilters } from "./useBacklinksFilters";
 import { useBacklinksSearchHistory } from "@/client/hooks/useBacklinksSearchHistory";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 export function BacklinksPage({
   projectId,
@@ -18,17 +17,13 @@ export function BacklinksPage({
 }: BacklinksPageProps) {
   const filters = useBacklinksFilters();
   const {
-    accessStatus,
-    accessStatusErrorMessage,
-    accessStatusQuery,
+    accessGate,
     activeTabErrorMessage,
     backlinksDisabledByError,
-    backlinksEnabled,
     overviewErrorMessage,
     overviewQuery,
     referringDomainsQuery,
     searchCardInitialValues,
-    testAccessMutation,
     topPagesQuery,
   } = useBacklinksPageData({
     projectId,
@@ -63,8 +58,8 @@ export function BacklinksPage({
           </p>
         </div>
 
-        {!accessStatusQuery.isLoading &&
-        backlinksEnabled &&
+        {!accessGate.isLoading &&
+        accessGate.enabled &&
         !backlinksDisabledByError ? (
           <BacklinksSearchCard
             errorMessage={overviewErrorMessage}
@@ -82,13 +77,10 @@ export function BacklinksPage({
         ) : null}
 
         <BacklinksBody
-          accessStatus={accessStatus}
-          accessStatusError={accessStatusErrorMessage}
+          accessGate={accessGate}
           backlinksDisabledByError={backlinksDisabledByError}
-          backlinksEnabled={backlinksEnabled}
           history={history}
           historyLoaded={historyLoaded}
-          isAccessStatusLoading={accessStatusQuery.isLoading}
           overviewData={overviewQuery.data}
           overviewError={overviewErrorMessage}
           overviewLoading={overviewQuery.isLoading}
@@ -101,23 +93,12 @@ export function BacklinksPage({
               referringDomainsQuery.isLoading) ||
             (searchState.tab === "pages" && topPagesQuery.isLoading)
           }
-          testError={
-            testAccessMutation.error
-              ? getStandardErrorMessage(
-                  testAccessMutation.error,
-                  "Could not test Backlinks access.",
-                )
-              : null
-          }
-          testIsPending={testAccessMutation.isPending}
           topPages={topPagesQuery.data}
           onRemoveHistoryItem={removeHistoryItem}
-          onRetryAccess={() => void accessStatusQuery.refetch()}
           onSelectHistoryItem={handleHistorySelect}
           onShowHistory={() => navigateToBacklinksHistory(navigate)}
           onSetActiveTab={(tab) => navigateToBacklinksTab(navigate, tab)}
           onRetryOverview={() => void overviewQuery.refetch()}
-          onTestAccess={() => testAccessMutation.mutate()}
         />
       </div>
     </div>
