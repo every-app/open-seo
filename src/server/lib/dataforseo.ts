@@ -40,7 +40,7 @@ export type {
 // ---------------------------------------------------------------------------
 
 function createAuthenticatedFetch() {
-  return (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+  return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${env.DATAFORSEO_API_KEY}`);
 
@@ -48,7 +48,26 @@ function createAuthenticatedFetch() {
       ...init,
       headers,
     };
-    return fetch(url, newInit);
+    const response = await fetch(url, newInit);
+
+    if (!response.ok) {
+      const rawText = await response.text();
+      const path = formatDataforseoRequestPath(url);
+      const err = new AppError(
+        response.status === 429 ? "RATE_LIMITED" : "INTERNAL_ERROR",
+        `DataForSEO HTTP ${response.status} on ${path}`,
+        {
+          provider: "dataforseo",
+          providerStatus: String(response.status),
+          providerPath: path,
+          responseBody: formatDataforseoErrorPayload(rawText),
+        },
+      );
+      err.name = "DataForSEOHttpError";
+      throw err;
+    }
+
+    return response;
   };
 }
 
@@ -57,6 +76,15 @@ const MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH = 1600;
 
 function getLabsApi() {
   return new DataforseoLabsApi(API_BASE, { fetch: createAuthenticatedFetch() });
+}
+
+function formatDataforseoRequestPath(url: RequestInfo): string {
+  const rawUrl = typeof url === "string" ? url : url.url;
+  try {
+    return new URL(rawUrl).pathname;
+  } catch {
+    return rawUrl;
+  }
 }
 
 async function postDataforseo(
@@ -73,13 +101,6 @@ async function postDataforseo(
   });
 
   const rawText = await response.text();
-
-  if (!response.ok) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      `DataForSEO HTTP ${response.status} on ${path}. Response: ${formatDataforseoErrorPayload(rawText)}`,
-    );
-  }
 
   try {
     return JSON.parse(rawText);

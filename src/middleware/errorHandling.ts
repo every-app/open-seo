@@ -29,6 +29,7 @@ export const errorHandlingMiddleware = createMiddleware({
           errorCode: appError?.code ?? "INTERNAL_ERROR",
           method: request.method,
           path: url.pathname,
+          ...appError?.details,
         }),
       );
     }

@@ -116,6 +116,14 @@ export function RankTrackingConfigModal({
     }
   };
 
+  const handleDomainBlur = () => {
+    try {
+      setDomain(normalizeDomain(domain));
+    } catch {
+      // Keep invalid partial input editable; submit validation will show the error.
+    }
+  };
+
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   if (step === "keywords" && createdConfigId) {
@@ -156,7 +164,7 @@ export function RankTrackingConfigModal({
             className="input input-bordered w-full"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
-            onBlur={() => setDomain(normalizeDomain(domain))}
+            onBlur={handleDomainBlur}
           />
         </div>
 
