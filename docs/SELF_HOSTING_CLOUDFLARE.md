@@ -85,7 +85,9 @@ Why this is needed:
 
 ## Give teammates access to OpenSEO
 
-To let teammates sign in to OpenSEO, update your Cloudflare Access policy.
+Cloudflare Access makes small-team self-hosting simple: your teammates do not
+need Cloudflare accounts. Add their email addresses to the Access `Allow` policy,
+and Cloudflare will handle the login flow before they reach OpenSEO.
 
 1. Open Cloudflare Zero Trust.
 2. Go to Access -> Applications.
@@ -94,4 +96,10 @@ To let teammates sign in to OpenSEO, update your Cloudflare Access policy.
 5. Add teammate emails (or your company email domain / group).
 6. Save.
 
-After saving, teammates can open your OpenSEO URL and sign in through Cloudflare Access.
+Screenshots from the setup flow:
+
+- [Edit the Access policy](https://github.com/user-attachments/assets/c7bbc7b4-a18e-4ae4-9fe5-3b33c72048a7)
+- [Add teammate emails to the allow list](https://github.com/user-attachments/assets/fa4ecaf2-31f7-4a64-9001-210cf729747b)
+
+After saving, teammates can open your OpenSEO URL and sign in through Cloudflare
+Access. OpenSEO will use a shared workspace for everyone allowed by the policy.

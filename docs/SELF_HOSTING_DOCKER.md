@@ -81,3 +81,21 @@ docker compose down
 ```bash
 docker compose down -v
 ```
+
+## Troubleshooting environment variables
+
+To confirm Docker Compose is using the expected environment variables:
+
+```bash
+docker compose config
+```
+
+Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64
+encoded value of your DataForSEO email and API password in this format:
+`email:password`.
+
+If you changed `.env`, recreate the container so Compose reapplies it:
+
+```bash
+docker compose up -d --force-recreate open-seo
+```
