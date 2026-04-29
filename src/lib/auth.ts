@@ -94,6 +94,8 @@ function getTrustedOrigins(baseUrl: string) {
     trustedOrigins.push(
       "http://open-seo.localhost:1355",
       "http://*.open-seo.localhost:1355",
+      "https://open-seo.localhost:1355",
+      "https://*.open-seo.localhost:1355",
     );
   }
 

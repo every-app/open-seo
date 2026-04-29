@@ -14,8 +14,9 @@ import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { themePreferenceInitScript } from "@/client/lib/theme";
 import {
   identifyAnalyticsUser,
-  initPostHog,
   resetAnalyticsUser,
+  startAnalyticsCapture,
+  stopAnalyticsCapture,
 } from "@/client/lib/posthog";
 import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
@@ -85,6 +86,7 @@ function PostHogBootstrap() {
   const isHostedMode = isHostedClientAuthMode();
   const { data: session, isPending: isSessionPending } = useSession();
   const userId = session?.user?.id ?? null;
+  const optedOut = session?.user?.analyticsOptedOut === true;
   const organizationId = getActiveOrganizationId(session);
   const previousUserIdRef = React.useRef<string | null>(null);
 
@@ -93,16 +95,17 @@ function PostHogBootstrap() {
       return;
     }
 
-    initPostHog();
-
-    if (userId) {
+    if (userId && !optedOut) {
+      startAnalyticsCapture();
       identifyAnalyticsUser({ userId, organizationId });
       previousUserIdRef.current = userId;
+    } else if (userId && optedOut) {
+      stopAnalyticsCapture();
     } else if (previousUserIdRef.current) {
       previousUserIdRef.current = null;
       resetAnalyticsUser();
     }
-  }, [isHostedMode, isSessionPending, organizationId, userId]);
+  }, [isHostedMode, isSessionPending, optedOut, organizationId, userId]);
 
   return null;
 }

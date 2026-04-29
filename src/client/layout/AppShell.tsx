@@ -6,6 +6,7 @@ import {
   CircleHelp,
   CreditCard,
   Menu,
+  Settings,
   User,
 } from "lucide-react";
 import {
@@ -13,7 +14,6 @@ import {
   MissingSeoSetupModal,
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
-import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { getProjectNavGroups } from "@/client/navigation/items";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -322,7 +322,9 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
         >
           {email ? (
             <li className="menu-title max-w-full">
-              <span className="truncate text-base-content">{email}</span>
+              <span className="truncate text-base-content" data-ph-mask>
+                {email}
+              </span>
             </li>
           ) : null}
           {mobileOnly ? (
@@ -341,6 +343,12 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
               </a>
             </li>
           ) : null}
+          <li>
+            <Link to="/settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
+          </li>
           {isHostedMode && email ? (
             <li>
               <button
@@ -352,7 +360,6 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
               </button>
             </li>
           ) : null}
-          <ThemePreferenceMenuItems />
         </ul>
       </div>
     </div>

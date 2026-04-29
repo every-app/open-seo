@@ -21,6 +21,7 @@ import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authentica
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
+import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
@@ -95,6 +96,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
 const AppSupportRoute = AppSupportRouteImport.update({
   id: '/support',
   path: '/support',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const AppBillingRoute = AppBillingRouteImport.update({
@@ -208,6 +214,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/billing': typeof AppBillingRoute
+  '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
@@ -237,6 +244,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/billing': typeof AppBillingRoute
+  '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
@@ -267,6 +275,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
   '/_app/billing': typeof AppBillingRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/support': typeof AppSupportRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
@@ -299,6 +308,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/billing'
+    | '/settings'
     | '/support'
     | '/sign-in'
     | '/sign-up'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/billing'
+    | '/settings'
     | '/support'
     | '/sign-in'
     | '/sign-up'
@@ -357,6 +368,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/verify-email'
     | '/_app/billing'
+    | '/_app/settings'
     | '/_app/support'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
@@ -478,6 +490,13 @@ declare module '@tanstack/react-router' {
       path: '/support'
       fullPath: '/support'
       preLoaderRoute: typeof AppSupportRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRouteRoute
     }
     '/_app/billing': {
@@ -618,6 +637,7 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteRouteChildren {
   AppBillingRoute: typeof AppBillingRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
@@ -625,6 +645,7 @@ interface AppRouteRouteChildren {
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppBillingRoute: AppBillingRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,

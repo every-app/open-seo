@@ -1,11 +1,18 @@
 import { createAuthClient } from "better-auth/react";
-import { organizationClient } from "better-auth/client/plugins";
+import {
+  inferAdditionalFields,
+  organizationClient,
+} from "better-auth/client/plugins";
 import { captureClientEvent, resetAnalyticsUser } from "@/client/lib/posthog";
+import { userAdditionalFields } from "@/lib/auth-options";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
 
 export const authClient = createAuthClient({
   baseURL: typeof window !== "undefined" ? window.location.origin : "",
-  plugins: [organizationClient()],
+  plugins: [
+    organizationClient(),
+    inferAdditionalFields({ user: userAdditionalFields }),
+  ],
 });
 
 export const { useSession } = authClient;

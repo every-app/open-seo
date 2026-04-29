@@ -1,7 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { AutumnProvider, useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
-import { ArrowRight, User } from "lucide-react";
+import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
@@ -235,7 +235,15 @@ function SubscribePageAccountMenu({ email }: { email: string | undefined }) {
           className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
         >
           <li className="menu-title max-w-full">
-            <span className="truncate text-base-content">{email}</span>
+            <span className="truncate text-base-content" data-ph-mask>
+              {email}
+            </span>
+          </li>
+          <li>
+            <Link to="/settings" className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
+            </Link>
           </li>
           <ThemePreferenceMenuItems />
           <li>
