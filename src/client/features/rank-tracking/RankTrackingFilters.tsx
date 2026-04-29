@@ -163,22 +163,31 @@ export function applyFilters(
     if (excludeTerms.some((t) => kw.includes(t))) return false;
 
     if (filters.minDesktopPos || filters.maxDesktopPos) {
-      const min = filters.minDesktopPos ? Number(filters.minDesktopPos) : 0;
-      const max = filters.maxDesktopPos
-        ? Number(filters.maxDesktopPos)
-        : Infinity;
-      if (row.desktop.position === null) return false;
-      if (row.desktop.position < min || row.desktop.position > max)
-        return false;
+      if (filters.maxDesktopPos !== "" && Number(filters.maxDesktopPos) === 0) {
+        if (row.desktop.position !== null) return false;
+      } else {
+        const min = filters.minDesktopPos ? Number(filters.minDesktopPos) : 0;
+        const max = filters.maxDesktopPos
+          ? Number(filters.maxDesktopPos)
+          : Infinity;
+        if (row.desktop.position === null) return false;
+        if (row.desktop.position < min || row.desktop.position > max)
+          return false;
+      }
     }
 
     if (filters.minMobilePos || filters.maxMobilePos) {
-      const min = filters.minMobilePos ? Number(filters.minMobilePos) : 0;
-      const max = filters.maxMobilePos
-        ? Number(filters.maxMobilePos)
-        : Infinity;
-      if (row.mobile.position === null) return false;
-      if (row.mobile.position < min || row.mobile.position > max) return false;
+      if (filters.maxMobilePos !== "" && Number(filters.maxMobilePos) === 0) {
+        if (row.mobile.position !== null) return false;
+      } else {
+        const min = filters.minMobilePos ? Number(filters.minMobilePos) : 0;
+        const max = filters.maxMobilePos
+          ? Number(filters.maxMobilePos)
+          : Infinity;
+        if (row.mobile.position === null) return false;
+        if (row.mobile.position < min || row.mobile.position > max)
+          return false;
+      }
     }
 
     return true;
