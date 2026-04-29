@@ -116,8 +116,16 @@ function Pricing() {
         <dl className="mt-4 space-y-6">
           <div>
             <dt className="text-sm font-medium">
-              What features use credits vs. what's unlimited?
+              What if I use all my included credits?
             </dt>
+            <dd className="mt-1 text-sm text-neutral-600 leading-relaxed">
+              You'll never have unexpected costs or bills. If you use all your
+              credits, you'll see errors when you try to do tasks. You can
+              purchase more top up credits at any time.
+            </dd>
+          </div>
+          <div>
+            <dt className="text-sm font-medium">What features use credits?</dt>
             <dd className="mt-1 text-sm text-neutral-600 leading-relaxed">
               Credits are consumed by features that query DataForSEO's API —
               backlinks, keyword volume, competitor data, and site audits. Your

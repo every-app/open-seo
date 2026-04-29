@@ -37,7 +37,7 @@ function Home() {
           "Backlink Analysis",
           "Competitor Insights",
           "Rank Tracking",
-          "AI Visibility (Coming soon)",
+          "AI Visibility",
         ].map((item) => (
           <li key={item} className="flex gap-2.5 text-sm text-neutral-800">
             <span className="text-neutral-500 mt-[2px]">&mdash;</span>
