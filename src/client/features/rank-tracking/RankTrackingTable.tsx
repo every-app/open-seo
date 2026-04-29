@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import {
   flexRender,
   getCoreRowModel,
@@ -11,7 +11,15 @@ import { Modal } from "@/client/components/Modal";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import type {
+  RankTrackingConfig,
+  RankTrackingRow,
+} from "@/types/schemas/rank-tracking";
+import {
+  depthToPages,
+  estimateRankCheckCredits,
+  pagesToDepth,
+} from "@/shared/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
 
 export function RankTrackingTable({
@@ -24,6 +32,10 @@ export function RankTrackingTable({
   domain,
   configId,
   projectId,
+  devices,
+  defaultSerpDepth,
+  onRescanSelected,
+  rescanDisabled,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -34,9 +46,15 @@ export function RankTrackingTable({
   domain: string;
   configId: string;
   projectId: string;
+  devices: RankTrackingConfig["devices"];
+  defaultSerpDepth: number;
+  onRescanSelected: (keywordIds: string[], serpDepth: number) => void;
+  rescanDisabled: boolean;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showRescan, setShowRescan] = useState(false);
+  const [rescanDepth, setRescanDepth] = useState(defaultSerpDepth);
 
   const columns = useRankTrackingColumns(showDesktop, showMobile, domain);
 
@@ -105,6 +123,22 @@ export function RankTrackingTable({
             {selectedCount !== 1 ? "s" : ""} selected
           </span>
           <button
+            className="btn btn-primary btn-xs gap-1"
+            onClick={() => {
+              setRescanDepth(defaultSerpDepth);
+              setShowRescan(true);
+            }}
+            disabled={rescanDisabled}
+            title={
+              rescanDisabled
+                ? "A rank check is already running"
+                : "Rescan selected keywords"
+            }
+          >
+            <RefreshCw className="size-3" />
+            Rescan selected
+          </button>
+          <button
             className="btn btn-error btn-xs gap-1"
             onClick={() => setShowConfirm(true)}
           >
@@ -118,6 +152,71 @@ export function RankTrackingTable({
             Clear
           </button>
         </div>
+      )}
+
+      {/* Rescan depth modal */}
+      {showRescan && (
+        <Modal maxWidth="max-w-md">
+          <h3 className="text-lg font-semibold">
+            Rescan {selectedCount} keyword
+            {selectedCount !== 1 ? "s" : ""}
+          </h3>
+          <p className="text-sm text-base-content/60 -mt-2">
+            Choose how many SERP pages to fetch for this run. The saved domain
+            depth ({depthToPages(defaultSerpDepth)} page
+            {depthToPages(defaultSerpDepth) !== 1 ? "s" : ""}) is not changed.
+          </p>
+          <div className="form-control">
+            <label className="label">
+              <span className="label-text font-medium">Search depth</span>
+            </label>
+            <select
+              className="select select-bordered w-full"
+              value={depthToPages(rescanDepth)}
+              onChange={(e) =>
+                setRescanDepth(pagesToDepth(Number(e.target.value)))
+              }
+            >
+              {Array.from({ length: 10 }, (_, i) => i + 1).map((pages) => (
+                <option key={pages} value={pages}>
+                  {pages} {pages === 1 ? "page" : "pages"} (top {pages * 10}{" "}
+                  results)
+                </option>
+              ))}
+            </select>
+            <div className="mt-1.5 text-xs text-base-content/60">
+              Estimated cost: ~$
+              {estimateRankCheckCredits(
+                selectedCount,
+                devices,
+                rescanDepth,
+              ).costUsd.toFixed(2)}
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setShowRescan(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary btn-sm gap-1"
+              onClick={() => {
+                onRescanSelected(
+                  selectedRows.map((r) => r.id),
+                  rescanDepth,
+                );
+                setShowRescan(false);
+                table.resetRowSelection();
+              }}
+              disabled={rescanDisabled}
+            >
+              <RefreshCw className="size-3" />
+              Run rescan
+            </button>
+          </div>
+        </Modal>
       )}
 
       {/* Confirm modal */}

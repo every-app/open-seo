@@ -404,6 +404,12 @@ function RankTrackingDomainDetailInner({
             domain={config.domain}
             configId={config.id}
             projectId={projectId}
+            devices={config.devices}
+            defaultSerpDepth={config.serpDepth}
+            onRescanSelected={(keywordIds, serpDepth) =>
+              startCheck({ keywordIds, serpDepth })
+            }
+            rescanDisabled={isBusy || isFreePlan}
           />
         </div>
       </div>

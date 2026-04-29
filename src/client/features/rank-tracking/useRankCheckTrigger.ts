@@ -18,12 +18,13 @@ export function useRankCheckTrigger({
   const queryClient = useQueryClient();
 
   const triggerMutation = useMutation({
-    mutationFn: (opts: { keywordIds?: string[] }) =>
+    mutationFn: (opts: { keywordIds?: string[]; serpDepth?: number }) =>
       triggerRankCheck({
         data: {
           projectId,
           configId,
           keywordIds: opts.keywordIds,
+          serpDepth: opts.serpDepth,
         },
       }),
     onSuccess: (result) => {
@@ -44,7 +45,7 @@ export function useRankCheckTrigger({
     },
   });
 
-  const startCheck = (opts: { keywordIds?: string[] }) => {
+  const startCheck = (opts: { keywordIds?: string[]; serpDepth?: number }) => {
     if (triggerMutation.isPending || isRunning) return;
     triggerMutation.mutate(opts);
   };

@@ -77,6 +77,7 @@ export const triggerCheckSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
   keywordIds: z.array(z.string().uuid()).max(2000).optional(),
+  serpDepth: z.number().int().min(10).max(100).multipleOf(10).optional(),
 });
 
 export const comparePeriodSchema = z.enum(["1d", "7d", "30d", "90d"]);

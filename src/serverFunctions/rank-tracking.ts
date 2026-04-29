@@ -99,6 +99,7 @@ export const triggerRankCheck = createServerFn({ method: "POST" })
       projectId: context.projectId,
       billingCustomer: context,
       keywordIds: data.keywordIds,
+      serpDepth: data.serpDepth,
     });
 
     if (result.ok) {

@@ -184,6 +184,7 @@ async function triggerCheck(input: {
   projectId: string;
   billingCustomer: BillingCustomerContext;
   keywordIds?: string[];
+  serpDepth?: number;
 }): Promise<RankCheckTriggerResult> {
   const config = await getValidatedConfig(input.configId, input.projectId);
 
@@ -195,9 +196,14 @@ async function triggerCheck(input: {
     );
   }
 
+  const effectiveConfig =
+    input.serpDepth !== undefined
+      ? { ...config, serpDepth: input.serpDepth }
+      : config;
+
   return beginRankCheckRun({
     workflow: env.RANK_CHECK_WORKFLOW,
-    config,
+    config: effectiveConfig,
     projectId: input.projectId,
     billingCustomer: {
       userId: input.billingCustomer.userId,
