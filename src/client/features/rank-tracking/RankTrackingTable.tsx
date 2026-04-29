@@ -122,7 +122,7 @@ export function RankTrackingTable({
 
       {/* Confirm modal */}
       {showConfirm && (
-        <Modal>
+        <Modal onClose={() => setShowConfirm(false)}>
           <h3 className="text-lg font-semibold">Remove keywords?</h3>
           <p className="text-sm text-base-content/70">
             This will stop tracking {selectedCount} keyword

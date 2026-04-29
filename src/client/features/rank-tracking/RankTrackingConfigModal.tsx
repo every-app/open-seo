@@ -128,7 +128,10 @@ export function RankTrackingConfigModal({
 
   if (step === "keywords" && createdConfigId) {
     return (
-      <Modal maxWidth="max-w-3xl">
+      <Modal
+        maxWidth="max-w-3xl"
+        onClose={() => onSaved(createdConfigId ?? undefined)}
+      >
         <KeywordSuggestionStep
           configId={createdConfigId}
           projectId={projectId}
@@ -143,7 +146,7 @@ export function RankTrackingConfigModal({
   }
 
   return (
-    <Modal maxWidth="max-w-lg">
+    <Modal maxWidth="max-w-lg" onClose={onClose}>
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">
           {isEdit ? "Edit Domain Config" : "Add Domain"}

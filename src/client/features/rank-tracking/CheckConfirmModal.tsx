@@ -34,7 +34,7 @@ export function CheckConfirmModal({
     Math.ceil(totalChecks / KEYWORDS_PER_BATCH) * SECONDS_PER_BATCH;
 
   return (
-    <Modal maxWidth="max-w-md">
+    <Modal maxWidth="max-w-md" onClose={onCancel}>
       <div>
         <h3 className="text-lg font-semibold">
           Check {keywordCount} keyword
