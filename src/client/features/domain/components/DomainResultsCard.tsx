@@ -6,6 +6,7 @@ import {
   FileSpreadsheet,
   Save,
   Search,
+  Sheet,
   SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -13,11 +14,9 @@ import { DomainFilterPanel } from "@/client/features/domain/components/DomainFil
 import { DomainKeywordsTable } from "@/client/features/domain/components/DomainKeywordsTable";
 import { DomainPagesTable } from "@/client/features/domain/components/DomainPagesTable";
 import type { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
-import {
-  downloadCsv,
-  keywordsToCsv,
-  pagesToCsv,
-} from "@/client/features/domain/utils";
+import { keywordsToTable, pagesToTable } from "@/client/features/domain/utils";
+import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type {
   DomainActiveTab,
@@ -75,8 +74,11 @@ export function DomainResultsCard({
   onToggleKeyword,
   onToggleAllVisible,
 }: Props) {
-  const currentRows =
-    activeTab === "keywords" ? filteredKeywords : filteredPages;
+  const isKeywordsTab = activeTab === "keywords";
+  const currentRows = isKeywordsTab ? filteredKeywords : filteredPages;
+  const exportTable = isKeywordsTab
+    ? keywordsToTable(filteredKeywords)
+    : pagesToTable(filteredPages);
 
   const handleCopy = async () => {
     const text = JSON.stringify(currentRows, null, 2);
@@ -84,12 +86,19 @@ export function DomainResultsCard({
     toast.success("Copied data");
   };
 
+  const handleExportToSheets = () => {
+    void exportTableToSheets({
+      headers: exportTable.headers,
+      rows: exportTable.rows,
+      feature: "domain_overview",
+    });
+  };
+
   const handleDownload = (extension: "csv" | "xls") => {
-    const rows =
-      activeTab === "keywords"
-        ? keywordsToCsv(filteredKeywords)
-        : pagesToCsv(filteredPages);
-    downloadCsv(rows, `${overview.domain}-${activeTab}.${extension}`);
+    downloadCsv(
+      `${overview.domain}-${activeTab}.${extension}`,
+      buildCsv(exportTable.headers, exportTable.rows),
+    );
 
     if (extension === "csv") {
       captureClientEvent("data:export", {
@@ -98,8 +107,6 @@ export function DomainResultsCard({
       });
     }
   };
-
-  const isKeywordsTab = activeTab === "keywords";
 
   return (
     <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
@@ -144,12 +151,18 @@ export function DomainResultsCard({
             </div>
             <ul
               tabIndex={0}
-              className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-48"
+              className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
             >
+              <li>
+                <button onClick={handleExportToSheets}>
+                  <Sheet className="size-4" />
+                  Export to Google Sheets
+                </button>
+              </li>
               <li>
                 <button onClick={handleCopy}>
                   <Copy className="size-4" />
-                  Copy data
+                  Copy data (JSON)
                 </button>
               </li>
               <li>

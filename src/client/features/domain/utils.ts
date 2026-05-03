@@ -4,7 +4,6 @@ import type {
   PageRow,
   SortOrder,
 } from "@/client/features/domain/types";
-import { buildCsv, downloadCsv as downloadCsvFile } from "@/client/lib/csv";
 
 export function toSortMode(value: string | null): DomainSortMode | undefined {
   if (
@@ -101,40 +100,32 @@ export function formatMetric(
   return formatNumber(value);
 }
 
-export function keywordsToCsv(rows: KeywordRow[]): string {
-  const headers = [
-    "Keyword",
-    "Rank",
-    "Volume",
-    "Traffic",
-    "CPC",
-    "URL",
-    "Score",
-  ];
-  const lines = rows.map((row) => [
-    row.keyword,
-    row.position,
-    row.searchVolume,
-    row.traffic,
-    row.cpc,
-    row.relativeUrl ?? row.url,
-    row.keywordDifficulty,
-  ]);
-  return buildCsv(headers, lines);
+type ExportTable = { headers: string[]; rows: (string | number | null)[][] };
+
+export function keywordsToTable(rows: KeywordRow[]): ExportTable {
+  return {
+    headers: ["Keyword", "Rank", "Volume", "Traffic", "CPC", "URL", "Score"],
+    rows: rows.map((row) => [
+      row.keyword,
+      row.position,
+      row.searchVolume,
+      row.traffic,
+      row.cpc,
+      row.relativeUrl ?? row.url,
+      row.keywordDifficulty,
+    ]),
+  };
 }
 
-export function pagesToCsv(rows: PageRow[]): string {
-  const headers = ["Page", "Organic Traffic", "Keywords"];
-  const lines = rows.map((row) => [
-    row.relativePath ?? row.page,
-    row.organicTraffic,
-    row.keywords,
-  ]);
-  return buildCsv(headers, lines);
-}
-
-export function downloadCsv(content: string, filename: string) {
-  downloadCsvFile(filename, content);
+export function pagesToTable(rows: PageRow[]): ExportTable {
+  return {
+    headers: ["Page", "Organic Traffic", "Keywords"],
+    rows: rows.map((row) => [
+      row.relativePath ?? row.page,
+      row.organicTraffic,
+      row.keywords,
+    ]),
+  };
 }
 
 export function resolveDomainPageHref(

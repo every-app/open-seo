@@ -6,6 +6,7 @@ import {
   TrendingDown,
   TrendingUp,
 } from "lucide-react";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import type { SerpResultItem } from "@/types/keywords";
 import { formatNumber } from "../utils";
 
@@ -48,8 +49,33 @@ export function SerpAnalysisCard({
 
   return (
     <div>
-      <div className="text-xs text-base-content/50 mb-3">
-        {items.length} organic results
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-xs text-base-content/50">
+          {items.length} organic results
+        </div>
+        <ExportToSheetsButton
+          headers={[
+            "Rank",
+            "Title",
+            "URL",
+            "Domain",
+            "Traffic",
+            "Referring Domains",
+            "Backlinks",
+            "Rank Change",
+          ]}
+          rows={items.map((item) => [
+            item.rank,
+            item.title ?? "",
+            item.url,
+            item.domain,
+            item.etv ?? "",
+            item.referringDomains ?? "",
+            item.backlinks ?? "",
+            item.isNew ? "new" : (item.rankChange ?? ""),
+          ])}
+          feature="serp_analysis"
+        />
       </div>
       <SerpAnalysisTable items={pageItems} />
       <SerpAnalysisPagination

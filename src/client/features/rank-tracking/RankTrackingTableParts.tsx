@@ -1,6 +1,7 @@
 import { Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type {
   RankTrackingDeviceResult,
@@ -175,16 +176,11 @@ function csvChange(
   return previous - current;
 }
 
-export function exportRankTrackingCsv(
+function buildRankTrackingExport(
   sorted: RankTrackingRow[],
   showDesktop: boolean,
   showMobile: boolean,
-  domain: string,
-) {
-  if (sorted.length === 0) {
-    toast.error("No data to export");
-    return;
-  }
+): { headers: string[]; rows: (string | number)[][] } {
   const headers = [
     "Keyword",
     "Volume",
@@ -207,14 +203,16 @@ export function exportRankTrackingCsv(
         ]
       : []),
   ];
-  const csvRows = sorted.map((row) => [
+  // Emit empty cells (not "Not ranking" strings) so Sheets infers a numeric
+  // column type and the user can sort by position.
+  const rows = sorted.map((row) => [
     row.keyword,
     row.searchVolume ?? "",
     row.keywordDifficulty ?? "",
-    row.cpc != null ? row.cpc.toFixed(2) : "",
+    row.cpc ?? "",
     ...(showDesktop
       ? [
-          row.desktop.position ?? "Not ranking",
+          row.desktop.position ?? "",
           csvChange(row.desktop.position, row.desktop.previousPosition),
           row.desktop.rankingUrl ?? "",
           row.desktop.serpFeatures.join(", "),
@@ -222,13 +220,51 @@ export function exportRankTrackingCsv(
       : []),
     ...(showMobile
       ? [
-          row.mobile.position ?? "Not ranking",
+          row.mobile.position ?? "",
           csvChange(row.mobile.position, row.mobile.previousPosition),
           row.mobile.rankingUrl ?? "",
           row.mobile.serpFeatures.join(", "),
         ]
       : []),
   ]);
+  return { headers, rows };
+}
+
+export function exportRankTrackingToSheets(
+  sorted: RankTrackingRow[],
+  showDesktop: boolean,
+  showMobile: boolean,
+) {
+  const { headers, rows } = buildRankTrackingExport(
+    sorted,
+    showDesktop,
+    showMobile,
+  );
+  void exportTableToSheets({ headers, rows, feature: "rank_tracking" });
+}
+
+export function exportRankTrackingCsv(
+  sorted: RankTrackingRow[],
+  showDesktop: boolean,
+  showMobile: boolean,
+  domain: string,
+) {
+  if (sorted.length === 0) {
+    toast.error("No data to export");
+    return;
+  }
+  const { headers, rows } = buildRankTrackingExport(
+    sorted,
+    showDesktop,
+    showMobile,
+  );
+  // CSV file download keeps cents-formatted CPC for human readability;
+  // clipboard/Sheets export uses raw numbers (see buildRankTrackingExport).
+  const csvRows = rows.map((row) =>
+    row.map((cell, idx) =>
+      idx === 3 && typeof cell === "number" ? cell.toFixed(2) : cell,
+    ),
+  );
   downloadCsv(`rank-tracking-${domain}.csv`, buildCsv(headers, csvRows));
   captureClientEvent("rank_tracking:export_csv");
 }

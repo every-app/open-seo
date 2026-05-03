@@ -1,5 +1,7 @@
+import { useMemo } from "react";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { ArrowLeft, Download, SlidersHorizontal } from "lucide-react";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import {
   BacklinksNewLostChart,
   BacklinksTrendChart,
@@ -16,7 +18,7 @@ import {
   TAB_DESCRIPTIONS,
   formatRelativeTimestamp,
 } from "./backlinksPageUtils";
-import { exportBacklinksTabCsv } from "./export";
+import { buildBacklinksTabExport, exportBacklinksTabCsv } from "./export";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 export function BacklinksOverviewPanels({
@@ -82,6 +84,10 @@ export function BacklinksResultsCard({
   exportTarget: string;
 }) {
   const currentFilterCount = filters[activeTab].activeFilterCount;
+  const exportTable = useMemo(
+    () => buildBacklinksTabExport({ tab: activeTab, rows: filteredData }),
+    [activeTab, filteredData],
+  );
 
   return (
     <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
@@ -115,19 +121,27 @@ export function BacklinksResultsCard({
           </p>
         </div>
 
-        <button
-          className="btn btn-sm btn-ghost justify-start lg:justify-center"
-          onClick={() =>
-            exportBacklinksTabCsv({
-              tab: activeTab,
-              target: exportTarget,
-              rows: filteredData,
-            })
-          }
-        >
-          <Download className="size-4" />
-          Export CSV
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <ExportToSheetsButton
+            headers={exportTable.headers}
+            rows={exportTable.rows}
+            feature={`backlinks_${activeTab}`}
+            className="btn-sm"
+          />
+          <button
+            className="btn btn-sm btn-ghost justify-start lg:justify-center"
+            onClick={() =>
+              exportBacklinksTabCsv({
+                tab: activeTab,
+                target: exportTarget,
+                rows: filteredData,
+              })
+            }
+          >
+            <Download className="size-4" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">

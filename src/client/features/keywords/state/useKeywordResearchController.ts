@@ -75,7 +75,7 @@ export function useKeywordResearchController(
     [input.sortDir, input.sortField, setSearchParams],
   );
 
-  const { handleSaveKeywords, confirmSave, exportCsv } =
+  const { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows } =
     useSaveAndExportActions({
       selectedRows: state.selectedRows,
       rows: state.rows,
@@ -114,6 +114,7 @@ export function useKeywordResearchController(
     confirmSave,
     controlsForm: state.controlsForm,
     exportCsv,
+    sheetsExportRows,
     filteredRows: state.filteredRows,
     filtersForm: state.filtersForm,
     handleRowClick,

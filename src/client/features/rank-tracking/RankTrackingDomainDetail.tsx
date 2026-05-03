@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AutumnProvider, useCustomer } from "autumn-js/react";
 import {
@@ -19,10 +18,13 @@ import {
 } from "lucide-react";
 import { useSession } from "@/lib/auth-client";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
-import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { FreePlanAlert } from "./FreePlanAlert";
 import { RankTrackingTable } from "./RankTrackingTable";
-import { exportRankTrackingCsv } from "./RankTrackingTableParts";
+import {
+  exportRankTrackingCsv,
+  exportRankTrackingToSheets,
+} from "./RankTrackingTableParts";
 import type {
   RankTrackingConfig,
   ComparePeriod,
@@ -64,27 +66,6 @@ export function RankTrackingDomainDetail(props: {
     <AutumnProvider>
       <RankTrackingDomainDetailInner {...props} />
     </AutumnProvider>
-  );
-}
-
-function FreePlanAlert({ visible }: { visible: boolean }) {
-  if (!visible) return null;
-
-  return (
-    <div className="alert alert-warning text-sm py-2">
-      <AlertTriangle className="size-4" />
-      <span>
-        We only start to track keyword positions once you{" "}
-        <Link
-          to={SUBSCRIBE_ROUTE}
-          search={{ upgrade: true }}
-          className="link font-medium"
-        >
-          upgrade to the paid plan
-        </Link>
-        .
-      </span>
-    </div>
   );
 }
 
@@ -360,7 +341,7 @@ function RankTrackingDomainDetailInner({
               const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
               if (count > 0) requestCheck(count);
             }}
-            onRefreshMetrics={() => refreshMetrics()}
+            onRefreshMetrics={refreshMetrics}
             metricsRefreshing={metricsRefreshing}
             onExport={() =>
               exportRankTrackingCsv(
@@ -370,9 +351,13 @@ function RankTrackingDomainDetailInner({
                 config.domain,
               )
             }
+            onExportToSheets={() =>
+              exportRankTrackingToSheets(filtered, showDesktop, showMobile)
+            }
             onCopyKeywords={() => {
-              const text = filtered.map((r) => r.keyword).join("\n");
-              void navigator.clipboard.writeText(text);
+              void navigator.clipboard.writeText(
+                filtered.map((r) => r.keyword).join("\n"),
+              );
               toast.success("Keywords copied to clipboard");
             }}
             isRunning={isBusy}

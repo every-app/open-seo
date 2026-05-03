@@ -14,7 +14,9 @@ import {
   Trash2,
   Copy,
 } from "lucide-react";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
+import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 
@@ -106,34 +108,34 @@ function SavedKeywordsPage() {
     }
   };
 
+  const savedHeaders = [...KEYWORD_RESEARCH_HEADERS, "Fetched At"];
+  const sheetsExportRows: CsvValue[][] = savedKeywords.map((kw) => [
+    kw.keyword,
+    kw.searchVolume ?? "",
+    kw.cpc ?? "",
+    kw.competition ?? "",
+    kw.keywordDifficulty ?? "",
+    kw.intent ?? "",
+    kw.fetchedAt ?? "",
+  ]);
+
   const exportCsv = () => {
-    if (savedKeywords.length === 0) {
+    if (sheetsExportRows.length === 0) {
       toast.error("No keywords to export");
       return;
     }
-    const headers = [
-      "Keyword",
-      "Volume",
-      "CPC",
-      "Competition",
-      "Difficulty",
-      "Intent",
-      "Fetched At",
-    ];
-    const csvRows = savedKeywords.map((kw) => [
-      kw.keyword,
-      kw.searchVolume ?? "",
-      kw.cpc?.toFixed(2) ?? "",
-      kw.competition?.toFixed(2) ?? "",
-      kw.keywordDifficulty ?? "",
-      kw.intent ?? "",
-      kw.fetchedAt ?? "",
-    ]);
-    const csv = buildCsv(headers, csvRows);
-    downloadCsv("saved-keywords.csv", csv);
+    // CSV file keeps cents-formatted CPC/competition for human readability.
+    const csvRows = sheetsExportRows.map((row) =>
+      row.map((cell, idx) =>
+        (idx === 2 || idx === 3) && typeof cell === "number"
+          ? cell.toFixed(2)
+          : cell,
+      ),
+    );
+    downloadCsv("saved-keywords.csv", buildCsv(savedHeaders, csvRows));
     captureClientEvent("data:export", {
       source_feature: "saved_keywords",
-      result_count: savedKeywords.length,
+      result_count: sheetsExportRows.length,
     });
   };
 
@@ -148,9 +150,17 @@ function SavedKeywordsPage() {
             </p>
           </div>
           {savedKeywords.length > 0 && (
-            <button className="btn btn-sm" onClick={exportCsv}>
-              <Download className="size-4" /> Export CSV
-            </button>
+            <div className="flex items-center gap-2">
+              <ExportToSheetsButton
+                headers={savedHeaders}
+                rows={sheetsExportRows}
+                feature="saved_keywords"
+                className="btn-sm"
+              />
+              <button className="btn btn-sm" onClick={exportCsv}>
+                <Download className="size-4" /> Export CSV
+              </button>
+            </div>
           )}
         </div>
 

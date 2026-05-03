@@ -5,12 +5,14 @@ import {
   exportAuditLighthouseIssues,
   getAuditLighthouseIssues,
 } from "@/serverFunctions/lighthouse";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { CategoryTab, ExportPayload, LighthouseIssue } from "./types";
 import {
   categoryLabel,
   categorySlug,
   downloadTextFile,
   issuesToCsv,
+  issuesToTable,
 } from "./utils";
 import {
   LighthouseIssueList,
@@ -62,6 +64,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
     runCopy,
     runExport,
     runExportCsv,
+    runExportSheets,
     selectedCategoryLabel,
     severityCounts,
     visibleIssues,
@@ -129,6 +132,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
                 void runExport(data);
               }}
               onExportCsv={runExportCsv}
+              onExportSheets={runExportSheets}
             />
             <LighthouseIssueList
               issues={visibleIssues}
@@ -184,6 +188,18 @@ function useLighthouseIssuesActions({
     toast.success("CSV download started");
   };
 
+  const runExportSheets = (
+    rows: LighthouseIssue[],
+    variant: "all" | "current",
+  ) => {
+    const table = issuesToTable(rows);
+    void exportTableToSheets({
+      headers: table.headers,
+      rows: table.rows,
+      feature: `lighthouse_issues_${variant}`,
+    });
+  };
+
   const runCopy = async (data: ExportPayload, toastMessage: string) => {
     try {
       const exported = await exportMutation.mutateAsync(data);
@@ -202,6 +218,7 @@ function useLighthouseIssuesActions({
     runCopy,
     runExport,
     runExportCsv,
+    runExportSheets,
     selectedCategoryLabel,
     severityCounts,
     visibleIssues,

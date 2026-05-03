@@ -1,9 +1,17 @@
 import { useState } from "react";
-import { MoreHorizontal, Play, Download, Copy, RefreshCw } from "lucide-react";
+import {
+  Copy,
+  Download,
+  MoreHorizontal,
+  Play,
+  RefreshCw,
+  Sheet,
+} from "lucide-react";
 
 export function ActionsMenu({
   onCheckNow,
   onExport,
+  onExportToSheets,
   onCopyKeywords,
   onRefreshMetrics,
   isRunning,
@@ -13,6 +21,7 @@ export function ActionsMenu({
 }: {
   onCheckNow: () => void;
   onExport: () => void;
+  onExportToSheets: () => void;
   onCopyKeywords: () => void;
   onRefreshMetrics: () => void;
   isRunning: boolean;
@@ -58,6 +67,17 @@ export function ActionsMenu({
                 className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
               />
               {metricsRefreshing ? "Refreshing..." : "Refresh Metrics"}
+            </button>
+            <button
+              className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"
+              onClick={() => {
+                onExportToSheets();
+                setOpen(false);
+              }}
+              disabled={!hasData}
+            >
+              <Sheet className="size-3.5" />
+              Export to Google Sheets
             </button>
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"

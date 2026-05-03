@@ -210,7 +210,7 @@ function PerformanceRow({
 export function ExportDropdown({
   onExport,
 }: {
-  onExport: (format: "csv" | "json") => void;
+  onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   return (
     <div className="dropdown dropdown-end">
@@ -221,8 +221,13 @@ export function ExportDropdown({
       </div>
       <ul
         tabIndex={0}
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-40"
+        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
       >
+        <li>
+          <button onClick={() => onExport("sheets")}>
+            Export to Google Sheets
+          </button>
+        </li>
         <li>
           <button onClick={() => onExport("csv")}>CSV</button>
         </li>

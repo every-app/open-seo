@@ -6,7 +6,11 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { Download, Info, SlidersHorizontal } from "lucide-react";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import {
+  buildBrandLookupExport,
+  downloadBrandLookupCsv,
+} from "@/client/features/ai-search/components/brandLookupExport";
 import { BrandLookupMentionTrendCard } from "@/client/features/ai-search/components/BrandLookupMentionTrendCard";
 import { BrandLookupFilterPanel } from "@/client/features/ai-search/components/BrandLookupFilterPanel";
 import {
@@ -264,49 +268,19 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  const handleExport = () => {
-    if (activeTab === "pages") {
-      const sortedPages = pagesTable
-        .getSortedRowModel()
-        .rows.map((row) => row.original);
-      const csv = buildCsv(
-        ["URL", "Domain", "Platform", "Mentions"],
-        sortedPages.map((row) => [
-          row.url,
-          row.domain ?? "",
-          formatPlatformLabel(row.platform),
-          row.mentions ?? "",
-        ]),
-      );
-      downloadCsv(
-        `ai-brand-lookup-pages-${slugify(result.resolvedTarget)}.csv`,
-        csv,
-      );
-      return;
-    }
-    const sortedQueries = queriesTable
-      .getSortedRowModel()
-      .rows.map((row) => row.original);
-    const csv = buildCsv(
-      ["Query", "Platform", "AI search volume", "First seen", "Last seen"],
-      sortedQueries.map((row) => [
-        row.question,
-        formatPlatformLabel(row.platform),
-        row.aiSearchVolume ?? "",
-        row.firstSeenAt ?? "",
-        row.lastSeenAt ?? "",
-      ]),
-    );
-    downloadCsv(
-      `ai-brand-lookup-queries-${slugify(result.resolvedTarget)}.csv`,
-      csv,
-    );
-  };
+  // Not memoized: TanStack's `getSortedRowModel()` is internally cached, and
+  // memoing on the table refs alone (which are stable across renders) would
+  // serve stale data when sort or filters change.
+  const exportTable = buildBrandLookupExport(
+    activeTab,
+    pagesTable.getSortedRowModel().rows.map((row) => row.original),
+    queriesTable.getSortedRowModel().rows.map((row) => row.original),
+  );
 
-  const canExport =
-    activeTab === "pages"
-      ? filteredPages.length > 0
-      : filteredQueries.length > 0;
+  const handleExport = () =>
+    downloadBrandLookupCsv(activeTab, result.resolvedTarget, exportTable);
+
+  const canExport = exportTable.rows.length > 0;
 
   const currentFilterCount = filters[activeTab].activeFilterCount;
 
@@ -332,16 +306,24 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
           </button>
         </div>
 
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm gap-1.5"
-          onClick={handleExport}
-          disabled={!canExport}
-          aria-label="Export current tab as CSV"
-        >
-          <Download className="size-3.5" />
-          Export CSV
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportToSheetsButton
+            headers={exportTable.headers}
+            rows={exportTable.rows}
+            feature={`brand_lookup_${activeTab}`}
+            className="btn-sm"
+          />
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm gap-1.5"
+            onClick={handleExport}
+            disabled={!canExport}
+            aria-label="Export current tab as CSV"
+          >
+            <Download className="size-3.5" />
+            Export CSV
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 border-b border-base-300 px-4 py-2">
@@ -409,12 +391,4 @@ function formatRelative(iso: string): string {
   if (diffHr < 24) return `${diffHr}h ago`;
   const diffDay = Math.floor(diffHr / 24);
   return `${diffDay}d ago`;
-}
-
-function slugify(value: string): string {
-  return value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 60);
 }

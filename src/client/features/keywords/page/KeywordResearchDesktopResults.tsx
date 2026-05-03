@@ -5,6 +5,8 @@ import {
   Save,
   SlidersHorizontal,
 } from "lucide-react";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
 import {
   AreaTrendChart,
   KeywordRow,
@@ -103,8 +105,14 @@ function DesktopKeywordPanel({ controller }: Props) {
 }
 
 function DesktopTableCard({ controller }: Props) {
-  const { activeFilterCount, filteredRows, rows, selectedRows, showFilters } =
-    controller;
+  const {
+    activeFilterCount,
+    filteredRows,
+    rows,
+    selectedRows,
+    sheetsExportRows,
+    showFilters,
+  } = controller;
 
   const keywordCountLabel =
     selectedRows.size > 0
@@ -141,13 +149,19 @@ function DesktopTableCard({ controller }: Props) {
           <Save className="size-3.5" />
           <span className="hidden lg:inline">Save Keywords</span>
         </button>
+        <ExportToSheetsButton
+          headers={KEYWORD_RESEARCH_HEADERS}
+          rows={sheetsExportRows}
+          feature="keyword_research"
+          className="btn-sm"
+        />
         <button
           className="btn btn-ghost btn-sm gap-1"
           onClick={controller.exportCsv}
           disabled={filteredRows.length === 0}
         >
           <FileDown className="size-3.5" />
-          <span className="hidden lg:inline">Export</span>
+          <span className="hidden lg:inline">Export CSV</span>
         </button>
       </div>
 

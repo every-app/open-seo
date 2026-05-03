@@ -129,7 +129,7 @@ function ResultsHeader({
   hasPerformanceTab: boolean;
   activeTab: string;
   setSearchParams: SearchSetter;
-  onExport: (format: "csv" | "json") => void;
+  onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">

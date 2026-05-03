@@ -1,4 +1,4 @@
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import type {
   BacklinksOverviewData,
   BacklinksSearchState,
@@ -10,103 +10,115 @@ type BacklinksFilteredData = {
   topPages: BacklinksOverviewData["topPages"];
 };
 
+export function buildBacklinksTabExport(args: {
+  tab: BacklinksSearchState["tab"];
+  rows: BacklinksFilteredData;
+}): { headers: string[]; rows: CsvValue[][] } {
+  const { tab, rows } = args;
+
+  if (tab === "backlinks") {
+    return {
+      headers: [
+        "Domain",
+        "Source URL",
+        "Target URL",
+        "Anchor",
+        "Type",
+        "Dofollow",
+        "Rel Attributes",
+        "Domain Rank",
+        "Source Page Rank",
+        "Target Rank",
+        "Spam Score",
+        "First Seen",
+        "Last Seen",
+        "Lost",
+        "Broken",
+        "Links Count",
+      ],
+      rows: rows.backlinks.map((row) => [
+        row.domainFrom,
+        row.urlFrom,
+        row.urlTo,
+        row.anchor,
+        row.itemType,
+        row.isDofollow,
+        row.relAttributes.join(", "),
+        row.domainFromRank,
+        row.pageFromRank,
+        row.rank,
+        row.spamScore,
+        row.firstSeen,
+        row.lastSeen,
+        row.isLost,
+        row.isBroken,
+        row.linksCount,
+      ]),
+    };
+  }
+
+  if (tab === "domains") {
+    return {
+      headers: [
+        "Domain",
+        "Backlinks",
+        "Referring Pages",
+        "Rank",
+        "Spam Score",
+        "First Seen",
+        "Broken Backlinks",
+        "Broken Pages",
+      ],
+      rows: rows.referringDomains.map((row) => [
+        row.domain,
+        row.backlinks,
+        row.referringPages,
+        row.rank,
+        row.spamScore,
+        row.firstSeen,
+        row.brokenBacklinks,
+        row.brokenPages,
+      ]),
+    };
+  }
+
+  return {
+    headers: [
+      "Page",
+      "Backlinks",
+      "Referring Domains",
+      "Rank",
+      "Broken Backlinks",
+    ],
+    rows: rows.topPages.map((row) => [
+      row.page,
+      row.backlinks,
+      row.referringDomains,
+      row.rank,
+      row.brokenBacklinks,
+    ]),
+  };
+}
+
 export function buildBacklinksTabCsvFile(args: {
   tab: BacklinksSearchState["tab"];
   target: string;
   rows: BacklinksFilteredData;
 }) {
-  const { tab, target, rows } = args;
-
-  if (tab === "backlinks") {
-    const headers = [
-      "Domain",
-      "Source URL",
-      "Target URL",
-      "Anchor",
-      "Type",
-      "Dofollow",
-      "Rel Attributes",
-      "Domain Rank",
-      "Source Page Rank",
-      "Target Rank",
-      "Spam Score",
-      "First Seen",
-      "Last Seen",
-      "Lost",
-      "Broken",
-      "Links Count",
-    ];
-    const lines = rows.backlinks.map((row) => [
-      row.domainFrom,
-      row.urlFrom,
-      row.urlTo,
-      row.anchor,
-      row.itemType,
-      row.isDofollow,
-      row.relAttributes.join(", "),
-      row.domainFromRank,
-      row.pageFromRank,
-      row.rank,
-      row.spamScore,
-      row.firstSeen,
-      row.lastSeen,
-      row.isLost,
-      row.isBroken,
-      row.linksCount,
-    ]);
-
-    return {
-      filename: buildFilename("backlinks", target),
-      content: buildCsv(headers, lines),
-    };
-  }
-
-  if (tab === "domains") {
-    const headers = [
-      "Domain",
-      "Backlinks",
-      "Referring Pages",
-      "Rank",
-      "Spam Score",
-      "First Seen",
-      "Broken Backlinks",
-      "Broken Pages",
-    ];
-    const lines = rows.referringDomains.map((row) => [
-      row.domain,
-      row.backlinks,
-      row.referringPages,
-      row.rank,
-      row.spamScore,
-      row.firstSeen,
-      row.brokenBacklinks,
-      row.brokenPages,
-    ]);
-
-    return {
-      filename: buildFilename("referring-domains", target),
-      content: buildCsv(headers, lines),
-    };
-  }
-
-  const headers = [
-    "Page",
-    "Backlinks",
-    "Referring Domains",
-    "Rank",
-    "Broken Backlinks",
-  ];
-  const lines = rows.topPages.map((row) => [
-    row.page,
-    row.backlinks,
-    row.referringDomains,
-    row.rank,
-    row.brokenBacklinks,
-  ]);
+  const { headers, rows } = buildBacklinksTabExport({
+    tab: args.tab,
+    rows: args.rows,
+  });
+  const filenamePrefix =
+    args.tab === "backlinks"
+      ? "backlinks"
+      : args.tab === "domains"
+        ? "referring-domains"
+        : "top-pages";
 
   return {
-    filename: buildFilename("top-pages", target),
-    content: buildCsv(headers, lines),
+    filename: buildFilename(filenamePrefix, args.target),
+    content: buildCsv(headers, rows),
   };
 }
 

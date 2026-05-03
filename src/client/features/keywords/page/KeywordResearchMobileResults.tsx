@@ -1,4 +1,6 @@
 import { FileDown, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
+import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
 import {
   KeywordCard,
   SerpAnalysisCard,
@@ -58,8 +60,14 @@ export function KeywordResearchMobileResults({ controller }: Props) {
 }
 
 function MobileKeywordCards({ controller }: Props) {
-  const { activeFilterCount, filteredRows, rows, selectedRows, showFilters } =
-    controller;
+  const {
+    activeFilterCount,
+    filteredRows,
+    rows,
+    selectedRows,
+    sheetsExportRows,
+    showFilters,
+  } = controller;
 
   const keywordCountLabel =
     selectedRows.size > 0
@@ -105,10 +113,17 @@ function MobileKeywordCards({ controller }: Props) {
         >
           <Save className="size-3.5" />
         </button>
+        <ExportToSheetsButton
+          headers={KEYWORD_RESEARCH_HEADERS}
+          rows={sheetsExportRows}
+          feature="keyword_research"
+          iconOnly
+        />
         <button
           className="btn btn-ghost btn-xs"
           onClick={controller.exportCsv}
           disabled={filteredRows.length === 0}
+          title="Download CSV"
         >
           <FileDown className="size-3.5" />
         </button>

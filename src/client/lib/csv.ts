@@ -1,6 +1,6 @@
 import Papa from "papaparse";
 
-type CsvValue = string | number | boolean | null | undefined;
+export type CsvValue = string | number | boolean | null | undefined;
 
 export function buildCsv(headers: string[], rows: CsvValue[][]): string {
   const normalizedRows = rows.map((row) =>
@@ -19,10 +19,10 @@ export function buildCsv(headers: string[], rows: CsvValue[][]): string {
   );
 }
 
-// Prevent CSV injection (formula injection) by prefixing dangerous characters
-// with a single quote. See OWASP guidance:
+// Prevent CSV/TSV injection (formula injection) by prefixing dangerous
+// characters with a single quote. See OWASP guidance:
 // https://owasp.org/www-community/attacks/CSV_Injection
-function sanitizeCsvValue(
+export function sanitizeCsvValue(
   value: string | number | boolean,
 ): string | number | boolean {
   if (typeof value !== "string" || value.length === 0) {

@@ -11,6 +11,7 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
+import { ExportToSheetsModal } from "@/client/components/table/ExportToSheetsModal";
 import { themePreferenceInitScript } from "@/client/lib/theme";
 import {
   identifyAnalyticsUser,
@@ -128,6 +129,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
             <>
               <PostHogBootstrap />
               {children}
+              <ExportToSheetsModal />
               <Toaster position="bottom-right" mobileOffset={{ bottom: 100 }} />
               {showDevtools ? (
                 <TanStackDevtools

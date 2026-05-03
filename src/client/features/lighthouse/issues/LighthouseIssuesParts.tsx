@@ -4,6 +4,7 @@ import {
   Download,
   FileWarning,
   Info,
+  Sheet,
   TriangleAlert,
 } from "lucide-react";
 import type {
@@ -88,6 +89,7 @@ export function LighthouseIssuesToolbar({
   onCopy,
   onExport,
   onExportCsv,
+  onExportSheets,
 }: {
   category: CategoryTab;
   categoryCounts: Record<CategoryTab, number>;
@@ -99,6 +101,10 @@ export function LighthouseIssuesToolbar({
   onCopy: (data: ExportPayload, toastMessage: string) => void;
   onExport: (data: ExportPayload) => void;
   onExportCsv: (issues: LighthouseIssue[], variant: "all" | "current") => void;
+  onExportSheets: (
+    issues: LighthouseIssue[],
+    variant: "all" | "current",
+  ) => void;
 }) {
   const exportCurrentCategory: ExportPayload =
     category === "all" ? { mode: "issues" } : { mode: "category", category };
@@ -121,6 +127,7 @@ export function LighthouseIssuesToolbar({
           onCopy={onCopy}
           onExport={onExport}
           onExportCsv={onExportCsv}
+          onExportSheets={onExportSheets}
           visibleIssues={visibleIssues}
         />
       </div>
@@ -167,6 +174,7 @@ function ExportMenu({
   onCopy,
   onExport,
   onExportCsv,
+  onExportSheets,
   visibleIssues,
 }: {
   allIssues: LighthouseIssue[];
@@ -176,6 +184,10 @@ function ExportMenu({
   onCopy: (data: ExportPayload, toastMessage: string) => void;
   onExport: (data: ExportPayload) => void;
   onExportCsv: (issues: LighthouseIssue[], variant: "all" | "current") => void;
+  onExportSheets: (
+    issues: LighthouseIssue[],
+    variant: "all" | "current",
+  ) => void;
   visibleIssues: LighthouseIssue[];
 }) {
   return (
@@ -189,6 +201,27 @@ function ExportMenu({
         tabIndex={0}
         className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-72"
       >
+        <li className="menu-title">
+          <span>Export to Google Sheets</span>
+        </li>
+        <li>
+          <button
+            disabled={!visibleIssues.length}
+            onClick={() => onExportSheets(visibleIssues, "current")}
+          >
+            <Sheet className="size-4" />
+            Open in Sheets — {categoryLabelLower}
+          </button>
+        </li>
+        <li>
+          <button
+            disabled={!allIssues.length}
+            onClick={() => onExportSheets(allIssues, "all")}
+          >
+            <Sheet className="size-4" />
+            Open in Sheets — all actionable
+          </button>
+        </li>
         <li className="menu-title">
           <span>Copy</span>
         </li>

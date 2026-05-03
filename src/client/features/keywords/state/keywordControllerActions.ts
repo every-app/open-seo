@@ -1,5 +1,6 @@
+import { useMemo } from "react";
 import { toast } from "sonner";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
+import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getLanguageCode } from "@/client/features/keywords/utils";
@@ -7,6 +8,26 @@ import type { KeywordResearchRow } from "@/types/keywords";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
+
+export const KEYWORD_RESEARCH_HEADERS = [
+  "Keyword",
+  "Volume",
+  "CPC",
+  "Competition",
+  "Score",
+  "Intent",
+];
+
+function keywordResearchRow(row: KeywordResearchRow): CsvValue[] {
+  return [
+    row.keyword,
+    row.searchVolume ?? "",
+    row.cpc ?? "",
+    row.competition ?? "",
+    row.keywordDifficulty ?? "",
+    row.intent,
+  ];
+}
 
 type SaveExportActionParams = {
   selectedRows: Set<string>;
@@ -100,38 +121,37 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
     );
   };
 
-  const exportCsv = () => {
-    const source =
-      selectedRows.size > 0
+  const sheetsExportRows: CsvValue[][] = useMemo(
+    () =>
+      (selectedRows.size > 0
         ? filteredRows.filter((row) => selectedRows.has(row.keyword))
-        : filteredRows;
-    if (source.length === 0) {
+        : filteredRows
+      ).map(keywordResearchRow),
+    [filteredRows, selectedRows],
+  );
+
+  const exportCsv = () => {
+    if (sheetsExportRows.length === 0) {
       toast.error("No data to export");
       return;
     }
-    const headers = [
-      "Keyword",
-      "Volume",
-      "CPC",
-      "Competition",
-      "Difficulty",
-      "Intent",
-    ];
-    const csvRows = source.map((row) => [
-      row.keyword,
-      row.searchVolume ?? "",
-      row.cpc?.toFixed(2) ?? "",
-      row.competition?.toFixed(2) ?? "",
-      row.keywordDifficulty ?? "",
-      row.intent,
-    ]);
-    const csv = buildCsv(headers, csvRows);
-    downloadCsv("keyword-research.csv", csv);
+    // CSV file keeps cents-formatted CPC/competition for human readability.
+    const csvRows = sheetsExportRows.map((row) =>
+      row.map((cell, idx) =>
+        (idx === 2 || idx === 3) && typeof cell === "number"
+          ? cell.toFixed(2)
+          : cell,
+      ),
+    );
+    downloadCsv(
+      "keyword-research.csv",
+      buildCsv(KEYWORD_RESEARCH_HEADERS, csvRows),
+    );
     captureClientEvent("data:export", {
       source_feature: "keyword_research",
-      result_count: source.length,
+      result_count: sheetsExportRows.length,
     });
   };
 
-  return { handleSaveKeywords, confirmSave, exportCsv };
+  return { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows };
 }
