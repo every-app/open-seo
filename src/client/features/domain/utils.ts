@@ -47,16 +47,10 @@ export function toSortOrderSearchParam(
   return sortOrder === getDefaultSortOrder(sortMode) ? undefined : sortOrder;
 }
 
-export function sortableNullableNumber(
-  value: number | null | undefined,
-  order: SortOrder,
-): number {
-  if (value != null) return value;
-  return order === "asc" ? Number.POSITIVE_INFINITY : Number.NEGATIVE_INFINITY;
-}
-
-export function toPageSortMode(sortMode: DomainSortMode): "traffic" | "volume" {
-  if (sortMode === "volume") return "volume";
+export function toPageSortMode(
+  sortMode: DomainSortMode,
+): "traffic" | "keywords" {
+  if (sortMode === "volume") return "keywords";
   return "traffic";
 }
 

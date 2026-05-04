@@ -58,6 +58,87 @@ export const domainKeywordSuggestionsSchema = z.object({
   languageCode: z.string().min(2).max(8),
 });
 
+export const DOMAIN_KEYWORDS_PAGE_SIZES = [50, 100, 200] as const;
+export const DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE = 100;
+export const MAX_DATAFORSEO_FILTER_CONDITIONS = 8;
+
+const optionalNumber = z
+  .union([
+    z.number(),
+    z.string().transform((value, ctx) => {
+      const trimmed = value.trim();
+      if (trimmed === "") return undefined;
+      const parsed = Number(trimmed);
+      if (!Number.isFinite(parsed)) {
+        ctx.addIssue({ code: "custom", message: "Invalid number" });
+        return z.NEVER;
+      }
+      return parsed;
+    }),
+  ])
+  .optional();
+
+const domainKeywordsFiltersSchema = z.object({
+  include: z.string().optional(),
+  exclude: z.string().optional(),
+  minTraffic: optionalNumber,
+  maxTraffic: optionalNumber,
+  minVol: optionalNumber,
+  maxVol: optionalNumber,
+  minCpc: optionalNumber,
+  maxCpc: optionalNumber,
+  minKd: optionalNumber,
+  maxKd: optionalNumber,
+  minRank: optionalNumber,
+  maxRank: optionalNumber,
+});
+
+export type DomainKeywordsFilters = z.infer<typeof domainKeywordsFiltersSchema>;
+
+export const domainKeywordsPageRequestSchema = z.object({
+  projectId: z.string().uuid(),
+  domain: z.string().min(1).max(255),
+  includeSubdomains: z.boolean().default(true),
+  locationCode: z.number().int().positive().default(2840),
+  languageCode: z.string().min(2).max(8).default("en"),
+  page: z.number().int().positive().default(1),
+  pageSize: z
+    .number()
+    .int()
+    .refine((value) =>
+      (DOMAIN_KEYWORDS_PAGE_SIZES as readonly number[]).includes(value),
+    )
+    .default(DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE),
+  sortMode: z.enum(domainSortModes).default("rank"),
+  sortOrder: z.enum(domainSortOrders).default("asc"),
+  filters: domainKeywordsFiltersSchema.default({}),
+  search: z.string().optional(),
+});
+
+const domainPagesSortModes = ["traffic", "keywords"] as const;
+
+export const domainPagesPageRequestSchema = z.object({
+  projectId: z.string().uuid(),
+  domain: z.string().min(1).max(255),
+  includeSubdomains: z.boolean().default(true),
+  locationCode: z.number().int().positive().default(2840),
+  languageCode: z.string().min(2).max(8).default("en"),
+  page: z.number().int().positive().default(1),
+  pageSize: z
+    .number()
+    .int()
+    .refine((value) =>
+      (DOMAIN_KEYWORDS_PAGE_SIZES as readonly number[]).includes(value),
+    )
+    .default(DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE),
+  sortMode: z.enum(domainPagesSortModes).default("traffic"),
+  sortOrder: z.enum(domainSortOrders).default("desc"),
+  search: z.string().optional(),
+});
+
+const filterStringParam = z.string().optional();
+const filterNumberParam = z.coerce.number().optional();
+
 export const domainSearchSchema = z.object({
   domain: z.string().optional(),
   subdomains: booleanSearchParamSchema.optional(),
@@ -66,4 +147,24 @@ export const domainSearchSchema = z.object({
   tab: z.enum(domainTabs).optional(),
   search: z.string().optional(),
   loc: z.coerce.number().int().positive().optional(),
+  page: z.coerce.number().int().positive().optional(),
+  size: z.coerce
+    .number()
+    .int()
+    .refine((value) =>
+      (DOMAIN_KEYWORDS_PAGE_SIZES as readonly number[]).includes(value),
+    )
+    .optional(),
+  include: filterStringParam,
+  exclude: filterStringParam,
+  minTraffic: filterNumberParam,
+  maxTraffic: filterNumberParam,
+  minVol: filterNumberParam,
+  maxVol: filterNumberParam,
+  minCpc: filterNumberParam,
+  maxCpc: filterNumberParam,
+  minKd: filterNumberParam,
+  maxKd: filterNumberParam,
+  minRank: filterNumberParam,
+  maxRank: filterNumberParam,
 });

@@ -15,6 +15,7 @@ import {
   fetchRelatedKeywordsRaw,
   fetchDomainRankOverviewRaw,
   fetchRankedKeywordsRaw,
+  fetchRelevantPagesRaw,
   fetchLiveSerpItemsRaw,
   fetchRankCheckSerpRaw,
   type LabsKeywordDataItem,
@@ -80,7 +81,11 @@ export function mapDataforseoPathToCreditFeature(
       return "ai_search";
     case "dataforseo_labs": {
       const endpoint = path[3] ?? "";
-      if (endpoint.startsWith("domain_") || endpoint === "ranked_keywords") {
+      if (
+        endpoint.startsWith("domain_") ||
+        endpoint === "ranked_keywords" ||
+        endpoint === "relevant_pages"
+      ) {
         return "domain_overview";
       }
       return "keyword_research";
@@ -187,16 +192,25 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         locationCode: number;
         languageCode: string;
         limit: number;
+        offset?: number;
         orderBy?: string[];
+        filters?: unknown[];
       }) {
         return meterDataforseoCall(customer, () =>
-          fetchRankedKeywordsRaw(
-            input.target,
-            input.locationCode,
-            input.languageCode,
-            input.limit,
-            input.orderBy,
-          ),
+          fetchRankedKeywordsRaw(input),
+        );
+      },
+      relevantPages(input: {
+        target: string;
+        locationCode: number;
+        languageCode: string;
+        limit: number;
+        offset?: number;
+        orderBy?: string[];
+        filters?: unknown[];
+      }) {
+        return meterDataforseoCall(customer, () =>
+          fetchRelevantPagesRaw(input),
         );
       },
     },

@@ -64,8 +64,6 @@ export type DomainOverviewData = {
   backlinks: number | null;
   referringDomains: number | null;
   hasData: boolean;
-  keywords: KeywordRow[];
-  pages: PageRow[];
 };
 
 export type DomainHistoryItem = {

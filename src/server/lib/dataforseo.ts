@@ -6,6 +6,7 @@ import {
   DataforseoLabsGoogleKeywordIdeasLiveRequestInfo,
   DataforseoLabsGoogleDomainRankOverviewLiveRequestInfo,
   DataforseoLabsGoogleRankedKeywordsLiveRequestInfo,
+  DataforseoLabsGoogleRelevantPagesLiveRequestInfo,
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
@@ -19,6 +20,7 @@ import {
   labsKeywordDataItemSchema,
   parseTaskItems,
   relatedKeywordItemSchema,
+  relevantPagesItemSchema,
   serpSnapshotItemSchema,
   type DataforseoTask,
   type DomainMetricsItem,
@@ -26,12 +28,14 @@ import {
   type KeywordOverviewItem,
   type LabsKeywordDataItem,
   type RelatedKeywordItem,
+  type RelevantPagesItem,
   type SerpLiveItem,
   successfulDataforseoTaskSchema,
 } from "@/server/lib/dataforseoSchemas";
 export type {
   DomainRankedKeywordItem,
   LabsKeywordDataItem,
+  RelevantPagesItem,
   SerpLiveItem,
 } from "@/server/lib/dataforseoSchemas";
 
@@ -346,29 +350,80 @@ export async function fetchDomainRankOverviewRaw(
   };
 }
 
-export async function fetchRankedKeywordsRaw(
-  target: string,
-  locationCode: number,
-  languageCode: string,
-  limit: number,
-  orderBy?: string[],
-): Promise<DataforseoApiResponse<DomainRankedKeywordItem[]>> {
+type RankedKeywordsPage = {
+  items: DomainRankedKeywordItem[];
+  totalCount: number | null;
+};
+
+export async function fetchRankedKeywordsRaw(input: {
+  target: string;
+  locationCode: number;
+  languageCode: string;
+  limit: number;
+  offset?: number;
+  orderBy?: string[];
+  filters?: unknown[];
+}): Promise<DataforseoApiResponse<RankedKeywordsPage>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleRankedKeywordsLiveRequestInfo({
-    target,
-    location_code: locationCode,
-    language_code: languageCode,
-    limit,
-    order_by: orderBy,
+    target: input.target,
+    location_code: input.locationCode,
+    language_code: input.languageCode,
+    limit: input.limit,
+    offset: input.offset,
+    order_by: input.orderBy,
+    filters: input.filters,
   });
 
   const endpoint = "google-ranked-keywords-live";
   const response = await api.googleRankedKeywordsLive([req]);
   const task = assertOk(response);
-  const data = parseTaskItems(endpoint, task, domainRankedKeywordItemSchema);
+  const items = parseTaskItems(endpoint, task, domainRankedKeywordItemSchema);
+  const rawTotal = (task.result?.[0] as Record<string, unknown> | undefined)
+    ?.total_count;
+  const totalCount = typeof rawTotal === "number" ? rawTotal : null;
 
   return {
-    data,
+    data: { items, totalCount },
+    billing: buildTaskBilling(task),
+  };
+}
+
+type RelevantPagesPage = {
+  items: RelevantPagesItem[];
+  totalCount: number | null;
+};
+
+export async function fetchRelevantPagesRaw(input: {
+  target: string;
+  locationCode: number;
+  languageCode: string;
+  limit: number;
+  offset?: number;
+  orderBy?: string[];
+  filters?: unknown[];
+}): Promise<DataforseoApiResponse<RelevantPagesPage>> {
+  const api = getLabsApi();
+  const req = new DataforseoLabsGoogleRelevantPagesLiveRequestInfo({
+    target: input.target,
+    location_code: input.locationCode,
+    language_code: input.languageCode,
+    limit: input.limit,
+    offset: input.offset,
+    order_by: input.orderBy,
+    filters: input.filters,
+  });
+
+  const endpoint = "google-relevant-pages-live";
+  const response = await api.googleRelevantPagesLive([req]);
+  const task = assertOk(response);
+  const items = parseTaskItems(endpoint, task, relevantPagesItemSchema);
+  const rawTotal = (task.result?.[0] as Record<string, unknown> | undefined)
+    ?.total_count;
+  const totalCount = typeof rawTotal === "number" ? rawTotal : null;
+
+  return {
+    data: { items, totalCount },
     billing: buildTaskBilling(task),
   };
 }

@@ -28,6 +28,8 @@ export async function buildCacheKey(
 
 /**
  * Get a cached JSON value from R2. Returns null on miss or expiry.
+ * Callers should validate the shape with Zod before trusting it — schema
+ * drift between writes and reads is otherwise silent.
  */
 export async function getCached(key: string): Promise<unknown> {
   const obj = await env.R2.get(`${CACHE_PREFIX}${key}`);

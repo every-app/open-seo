@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { DomainFilterPanel } from "@/client/features/domain/components/DomainFilterPanel";
+import { DomainKeywordsPagination } from "@/client/features/domain/components/DomainKeywordsPagination";
 import { DomainKeywordsTable } from "@/client/features/domain/components/DomainKeywordsTable";
 import { DomainPagesTable } from "@/client/features/domain/components/DomainPagesTable";
 import type { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
@@ -38,22 +39,37 @@ type Props = {
   activeTab: DomainActiveTab;
   sortMode: DomainSortMode;
   currentSortOrder: SortOrder;
-  pendingSearch: string;
+  searchDraft: string;
   selectedKeywords: Set<string>;
   visibleKeywords: string[];
   filteredKeywords: KeywordRow[];
-  filteredPages: PageRow[];
+  pagedPages: PageRow[];
   showFilters: boolean;
   setShowFilters: Dispatch<SetStateAction<boolean>>;
   filtersForm: ReturnType<typeof useDomainFilters>["filtersForm"];
   activeFilterCount: number;
+  dirtyFilterCount: number;
+  conditionCount: number;
+  overLimit: boolean;
   resetFilters: () => void;
+  applyFilters: () => void;
+  cancelFilterEdits: () => void;
   onSearchChange: (value: string) => void;
   onSaveKeywords: () => void;
   canSaveKeywords: boolean;
   onSortClick: (sort: DomainSortMode) => void;
   onToggleKeyword: (keyword: string) => void;
   onToggleAllVisible: () => void;
+  page: number;
+  pageSize: number;
+  totalKeywordCount: number | null;
+  totalPagesCount: number | null;
+  hasNextKeywordsPage: boolean;
+  hasNextPagesPage: boolean;
+  isKeywordsLoading: boolean;
+  isPagesLoading: boolean;
+  onPageChange: (nextPage: number) => void;
+  onPageSizeChange: (nextSize: number) => void;
 };
 
 const KEYWORDS_ONLY_SORTS: ReadonlySet<DomainSortMode> = new Set([
@@ -68,28 +84,43 @@ export function DomainResultsCard({
   activeTab,
   sortMode,
   currentSortOrder,
-  pendingSearch,
+  searchDraft,
   selectedKeywords,
   visibleKeywords,
   filteredKeywords,
-  filteredPages,
+  pagedPages,
   showFilters,
   setShowFilters,
   filtersForm,
   activeFilterCount,
+  dirtyFilterCount,
+  conditionCount,
+  overLimit,
   resetFilters,
+  applyFilters,
+  cancelFilterEdits,
   onSearchChange,
   onSaveKeywords,
   canSaveKeywords,
   onSortClick,
   onToggleKeyword,
   onToggleAllVisible,
+  page,
+  pageSize,
+  totalKeywordCount,
+  totalPagesCount,
+  hasNextKeywordsPage,
+  hasNextPagesPage,
+  isKeywordsLoading,
+  isPagesLoading,
+  onPageChange,
+  onPageSizeChange,
 }: Props) {
   const isKeywordsTab = activeTab === "keywords";
-  const currentRows = isKeywordsTab ? filteredKeywords : filteredPages;
+  const currentRows = isKeywordsTab ? filteredKeywords : pagedPages;
   const exportTable = isKeywordsTab
     ? keywordsToTable(filteredKeywords)
-    : pagesToTable(filteredPages);
+    : pagesToTable(pagedPages);
 
   const handleCopy = async () => {
     const text = JSON.stringify(currentRows, null, 2);
@@ -127,7 +158,7 @@ export function DomainResultsCard({
             from="/p/$projectId/domain"
             to="/p/$projectId/domain"
             params={{ projectId }}
-            search={(prev) => ({ ...prev, tab: undefined })}
+            search={(prev) => ({ ...prev, tab: undefined, page: undefined })}
             replace
             role="tab"
             className={`tab ${activeTab === "keywords" ? "tab-active" : ""}`}
@@ -149,6 +180,7 @@ export function DomainResultsCard({
                 tab: "pages" as const,
                 sort: nextSort,
                 order: nextOrder,
+                page: undefined,
               };
             }}
             replace
@@ -213,69 +245,112 @@ export function DomainResultsCard({
         </div>
       </div>
 
-      {isKeywordsTab ? (
-        <>
-          <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
-            <button
-              className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
-              onClick={() => setShowFilters((prev) => !prev)}
-              title="Toggle filters"
-            >
-              <SlidersHorizontal className="size-3.5" />
-              Filters
-              {activeFilterCount > 0 ? (
-                <span className="badge badge-xs badge-primary border-0 text-primary-content">
-                  {activeFilterCount}
-                </span>
-              ) : null}
-            </button>
-            <span className="text-sm text-base-content/60">
-              {filteredKeywords.length} keywords
-            </span>
-            <div className="flex-1" />
-            <label className="input input-bordered input-sm w-full max-w-xs flex items-center gap-2">
-              <Search className="size-4 text-base-content/60" />
-              <input
-                placeholder="Search in results"
-                value={pendingSearch}
-                onChange={(event) => onSearchChange(event.target.value)}
-              />
-            </label>
-          </div>
-
-          {showFilters ? (
-            <DomainFilterPanel
-              filtersForm={filtersForm}
-              activeFilterCount={activeFilterCount}
-              resetFilters={resetFilters}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
+        {isKeywordsTab ? (
+          <button
+            className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
+            onClick={() => setShowFilters((prev) => !prev)}
+            title="Toggle filters"
+          >
+            <SlidersHorizontal className="size-3.5" />
+            Filters
+            {activeFilterCount > 0 ? (
+              <span className="badge badge-xs badge-primary border-0 text-primary-content">
+                {activeFilterCount}
+              </span>
+            ) : null}
+          </button>
+        ) : null}
+        <span className="text-sm text-base-content/60">
+          {isKeywordsTab
+            ? totalKeywordCount != null
+              ? `${totalKeywordCount.toLocaleString()} keywords`
+              : `${filteredKeywords.length.toLocaleString()} keywords`
+            : totalPagesCount != null
+              ? `${totalPagesCount.toLocaleString()} pages`
+              : `${pagedPages.length.toLocaleString()} pages`}
+        </span>
+        <div className="flex-1" />
+        <form
+          className="w-full max-w-xs"
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!overLimit) applyFilters();
+          }}
+        >
+          <label className="input input-bordered input-sm w-full flex items-center gap-2">
+            <Search className="size-4 text-base-content/60" />
+            <input
+              placeholder="Search in results (press Enter)"
+              value={searchDraft}
+              onChange={(event) => onSearchChange(event.target.value)}
             />
-          ) : null}
-        </>
+          </label>
+        </form>
+      </div>
+
+      {isKeywordsTab && showFilters ? (
+        <DomainFilterPanel
+          filtersForm={filtersForm}
+          activeFilterCount={activeFilterCount}
+          dirtyFilterCount={dirtyFilterCount}
+          conditionCount={conditionCount}
+          overLimit={overLimit}
+          resetFilters={resetFilters}
+          applyFilters={applyFilters}
+          cancelFilterEdits={cancelFilterEdits}
+        />
       ) : null}
 
       <div className="p-4">
         {isKeywordsTab ? (
-          <DomainKeywordsTable
-            domain={overview.domain}
-            rows={filteredKeywords}
-            selectedKeywords={selectedKeywords}
-            visibleKeywords={visibleKeywords}
-            sortMode={sortMode}
-            currentSortOrder={currentSortOrder}
-            onSortClick={onSortClick}
-            onToggleKeyword={onToggleKeyword}
-            onToggleAllVisible={onToggleAllVisible}
-          />
+          <div
+            className={
+              isKeywordsLoading
+                ? "opacity-60 transition-opacity"
+                : "transition-opacity"
+            }
+          >
+            <DomainKeywordsTable
+              domain={overview.domain}
+              rows={filteredKeywords}
+              selectedKeywords={selectedKeywords}
+              visibleKeywords={visibleKeywords}
+              sortMode={sortMode}
+              currentSortOrder={currentSortOrder}
+              onSortClick={onSortClick}
+              onToggleKeyword={onToggleKeyword}
+              onToggleAllVisible={onToggleAllVisible}
+            />
+          </div>
         ) : (
-          <DomainPagesTable
-            domain={overview.domain}
-            rows={filteredPages}
-            sortMode={sortMode}
-            currentSortOrder={currentSortOrder}
-            onSortClick={onSortClick}
-          />
+          <div
+            className={
+              isPagesLoading
+                ? "opacity-60 transition-opacity"
+                : "transition-opacity"
+            }
+          >
+            <DomainPagesTable
+              domain={overview.domain}
+              rows={pagedPages}
+              sortMode={sortMode}
+              currentSortOrder={currentSortOrder}
+              onSortClick={onSortClick}
+            />
+          </div>
         )}
       </div>
+
+      <DomainKeywordsPagination
+        page={page}
+        pageSize={pageSize}
+        totalCount={isKeywordsTab ? totalKeywordCount : totalPagesCount}
+        hasNextPage={isKeywordsTab ? hasNextKeywordsPage : hasNextPagesPage}
+        isLoading={isKeywordsTab ? isKeywordsLoading : isPagesLoading}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
+      />
     </div>
   );
 }

@@ -110,6 +110,16 @@ export const domainMetricsItemSchema = z
   })
   .passthrough();
 
+export const relevantPagesItemSchema = z
+  .object({
+    page_address: z.string().nullable().optional(),
+    metrics: z
+      .record(z.string(), domainMetricsValueSchema.nullable().optional())
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
 const rankedKeywordInfoSchema = z
   .object({
     search_volume: z.number().nullable().optional(),
@@ -205,6 +215,7 @@ export type DomainMetricsItem = z.infer<typeof domainMetricsItemSchema>;
 export type DomainRankedKeywordItem = z.infer<
   typeof domainRankedKeywordItemSchema
 >;
+export type RelevantPagesItem = z.infer<typeof relevantPagesItemSchema>;
 export type SerpLiveItem = z.infer<typeof serpSnapshotItemSchema>;
 
 export function parseTaskItems<T extends z.ZodType>(

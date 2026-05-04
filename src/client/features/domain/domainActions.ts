@@ -1,7 +1,7 @@
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
-import type { DomainOverviewData } from "@/client/features/domain/types";
+import type { KeywordRow } from "@/client/features/domain/types";
 
 type SaveMutation = (payload: {
   projectId: string;
@@ -30,7 +30,7 @@ export function saveSelectedKeywords({
   languageCode,
 }: {
   selectedKeywords: Set<string>;
-  filteredKeywords: DomainOverviewData["keywords"];
+  filteredKeywords: KeywordRow[];
   save: (payload: Parameters<SaveMutation>[0], opts?: SaveOptions) => void;
   projectId: string;
   locationCode: number;

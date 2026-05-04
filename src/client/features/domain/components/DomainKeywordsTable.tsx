@@ -112,7 +112,7 @@ export function DomainKeywordsTable({
               </td>
             </tr>
           ) : (
-            rows.slice(0, 100).map((row) => {
+            rows.map((row) => {
               const href = resolveDomainPageHref(
                 row.relativeUrl ?? row.url,
                 domain,

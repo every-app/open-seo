@@ -12,6 +12,7 @@ import {
 } from "@/client/features/domain/utils";
 import type {
   DomainActiveTab,
+  DomainFilterValues,
   DomainSortMode,
   SortOrder,
 } from "@/client/features/domain/types";
@@ -26,6 +27,9 @@ type Props = {
     tab: DomainActiveTab;
     search: string;
     locationCode: number;
+    page: number;
+    pageSize: number;
+    appliedFilters: DomainFilterValues;
   };
   navigate: (args: {
     search: (prev: Record<string, unknown>) => Record<string, unknown>;
@@ -47,10 +51,6 @@ export function DomainOverviewPage({
     navigate,
     searchState,
   });
-  const handleShowRecentSearches = () => {
-    state.resetView();
-    onShowRecentSearches();
-  };
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -92,7 +92,7 @@ export function DomainOverviewPage({
               <button
                 type="button"
                 className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-                onClick={handleShowRecentSearches}
+                onClick={onShowRecentSearches}
               >
                 <ArrowLeft className="size-4" />
                 Recent searches
@@ -130,22 +130,37 @@ export function DomainOverviewPage({
               activeTab={searchState.tab}
               sortMode={searchState.sort}
               currentSortOrder={state.currentSortOrder}
-              pendingSearch={state.pendingSearch}
+              searchDraft={state.searchDraft}
               selectedKeywords={state.selectedKeywords}
               visibleKeywords={state.visibleKeywords}
               filteredKeywords={state.filteredKeywords}
-              filteredPages={state.filteredPages}
+              pagedPages={state.pagedPages}
               showFilters={state.showFilters}
               setShowFilters={state.setShowFilters}
               filtersForm={state.filtersForm}
               activeFilterCount={state.activeFilterCount}
+              dirtyFilterCount={state.dirtyFilterCount}
+              conditionCount={state.conditionCount}
+              overLimit={state.overLimit}
               resetFilters={state.resetFilters}
-              onSearchChange={state.setPendingSearch}
+              applyFilters={state.applyFilters}
+              cancelFilterEdits={state.cancelFilterEdits}
+              onSearchChange={state.setSearchDraft}
               onSaveKeywords={state.handleSaveKeywords}
               canSaveKeywords={state.canSaveKeywords}
               onSortClick={state.handleSortColumnClick}
               onToggleKeyword={state.toggleKeywordSelection}
               onToggleAllVisible={state.toggleAllVisibleKeywords}
+              page={state.page}
+              pageSize={state.pageSize}
+              totalKeywordCount={state.totalKeywordCount}
+              totalPagesCount={state.totalPagesCount}
+              hasNextKeywordsPage={state.hasNextKeywordsPage}
+              hasNextPagesPage={state.hasNextPagesPage}
+              isKeywordsLoading={state.keywordsLoading}
+              isPagesLoading={state.pagesLoading}
+              onPageChange={state.goToPage}
+              onPageSizeChange={state.setPageSize}
             />
           </>
         )}

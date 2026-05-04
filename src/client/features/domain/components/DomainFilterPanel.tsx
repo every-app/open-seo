@@ -1,22 +1,45 @@
-import { RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "lucide-react";
 import type { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
 import type { DomainFilterValues } from "@/client/features/domain/types";
+import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
 
 type FilterForm = ReturnType<typeof useDomainFilters>["filtersForm"];
 
 type Props = {
   filtersForm: FilterForm;
   activeFilterCount: number;
+  dirtyFilterCount: number;
+  conditionCount: number;
+  overLimit: boolean;
   resetFilters: () => void;
+  applyFilters: () => void;
+  cancelFilterEdits: () => void;
 };
 
 export function DomainFilterPanel({
   filtersForm,
   activeFilterCount,
+  dirtyFilterCount,
+  conditionCount,
+  overLimit,
   resetFilters,
+  applyFilters,
+  cancelFilterEdits,
 }: Props) {
+  const isDirty = dirtyFilterCount > 0;
+  const canApply = isDirty && !overLimit;
+  const handleApplyKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key === "Enter" && canApply) {
+      event.preventDefault();
+      applyFilters();
+    }
+  };
+
   return (
-    <div className="border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
+    <div
+      className="border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3"
+      onKeyDown={handleApplyKeyDown}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine table results</p>
@@ -25,11 +48,16 @@ export function DomainFilterPanel({
               {activeFilterCount} active
             </span>
           ) : null}
+          {isDirty ? (
+            <span className="badge badge-xs badge-warning border-0">
+              {dirtyFilterCount} unapplied
+            </span>
+          ) : null}
         </div>
         <button
           className="btn btn-xs btn-ghost gap-1"
           onClick={resetFilters}
-          disabled={activeFilterCount === 0}
+          disabled={activeFilterCount === 0 && !isDirty}
         >
           <RotateCcw className="size-3" />
           Clear all
@@ -83,6 +111,51 @@ export function DomainFilterPanel({
           minName="minRank"
           maxName="maxRank"
         />
+      </div>
+
+      {overLimit ? (
+        <div className="alert alert-warning py-2 text-xs">
+          <AlertTriangle className="size-4 shrink-0" />
+          <span>
+            Too many filter conditions ({conditionCount} of{" "}
+            {MAX_DATAFORSEO_FILTER_CONDITIONS} max). Remove some terms or ranges
+            before applying.
+          </span>
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <span className="text-xs text-base-content/50 tabular-nums">
+          {conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} conditions
+        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost"
+            onClick={cancelFilterEdits}
+            disabled={!isDirty}
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            onClick={applyFilters}
+            disabled={!canApply}
+            title={
+              overLimit
+                ? `DataForSEO accepts at most ${MAX_DATAFORSEO_FILTER_CONDITIONS} filter conditions per request`
+                : undefined
+            }
+          >
+            Apply filters
+            {isDirty ? (
+              <span className="badge badge-xs ml-1 border-0 bg-primary-content/20">
+                {dirtyFilterCount}
+              </span>
+            ) : null}
+          </button>
+        </div>
       </div>
     </div>
   );

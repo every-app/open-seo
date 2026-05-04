@@ -44,7 +44,7 @@ export function DomainPagesTable({
             <th>
               <SortableHeader
                 label="Keywords"
-                isActive={toPageSortMode(sortMode) === "volume"}
+                isActive={toPageSortMode(sortMode) === "keywords"}
                 order={currentSortOrder}
                 onClick={() => onSortClick("volume")}
               />

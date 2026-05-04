@@ -306,6 +306,15 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "live",
       ]),
     ).toBe("domain_overview");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "relevant_pages",
+        "live",
+      ]),
+    ).toBe("domain_overview");
   });
 
   it("maps real backlinks paths", () => {
