@@ -1,12 +1,15 @@
 import {
+  ChevronDown,
+  Download,
   FileDown,
   Globe,
   RotateCcw,
   Save,
+  Sheet,
   SlidersHorizontal,
 } from "lucide-react";
-import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import {
   AreaTrendChart,
   KeywordRow,
@@ -121,6 +124,15 @@ function DesktopTableCard({ controller }: Props) {
         ? `Showing ${filteredRows.length} of ${rows.length} keywords`
         : `Showing ${filteredRows.length} keywords`;
 
+  const canExport = filteredRows.length > 0;
+  const handleExportToSheets = () => {
+    void exportTableToSheets({
+      headers: KEYWORD_RESEARCH_HEADERS,
+      rows: sheetsExportRows,
+      feature: "keyword_research",
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
       <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-base-300">
@@ -149,20 +161,34 @@ function DesktopTableCard({ controller }: Props) {
           <Save className="size-3.5" />
           <span className="hidden lg:inline">Save Keywords</span>
         </button>
-        <ExportToSheetsButton
-          headers={KEYWORD_RESEARCH_HEADERS}
-          rows={sheetsExportRows}
-          feature="keyword_research"
-          className="btn-sm"
-        />
-        <button
-          className="btn btn-ghost btn-sm gap-1"
-          onClick={controller.exportCsv}
-          disabled={filteredRows.length === 0}
-        >
-          <FileDown className="size-3.5" />
-          <span className="hidden lg:inline">Export CSV</span>
-        </button>
+        <div className="dropdown dropdown-end">
+          <div
+            tabIndex={0}
+            role="button"
+            className={`btn btn-ghost btn-sm gap-1 ${!canExport ? "btn-disabled" : ""}`}
+          >
+            <Download className="size-3.5" />
+            <span className="hidden lg:inline">Export</span>
+            <ChevronDown className="size-3 opacity-60" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
+          >
+            <li>
+              <button onClick={handleExportToSheets} disabled={!canExport}>
+                <Sheet className="size-4" />
+                Export to Google Sheets
+              </button>
+            </li>
+            <li>
+              <button onClick={controller.exportCsv} disabled={!canExport}>
+                <FileDown className="size-4" />
+                Export CSV
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {showFilters ? <DesktopFilters controller={controller} /> : null}
@@ -330,9 +356,9 @@ function DesktopSerpPanel({ controller }: Props) {
     : "Last 12 available months";
 
   return (
-    <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:flex-1">
+    <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:flex-1 xl:overflow-y-auto">
       {overviewKeyword && overviewKeyword.trend.length > 0 ? (
-        <div className="shrink-0 border border-base-300 rounded-xl bg-base-100 px-4 py-3">
+        <div className="shrink-0 overflow-hidden border border-base-300 rounded-xl bg-base-100 px-4 py-3">
           <h4 className="text-sm font-semibold mb-1">
             Search Trends{" "}
             <span className="font-normal text-base-content/50">
@@ -343,7 +369,7 @@ function DesktopSerpPanel({ controller }: Props) {
         </div>
       ) : null}
 
-      <div className="flex-1 flex flex-col overflow-hidden border border-base-300 rounded-xl bg-base-100">
+      <div className="flex flex-col overflow-hidden border border-base-300 rounded-xl bg-base-100">
         <div className="shrink-0 px-4 py-3 border-b border-base-300">
           <h3 className="text-sm font-semibold flex items-center gap-1.5">
             <Globe className="size-3.5" />
@@ -355,7 +381,7 @@ function DesktopSerpPanel({ controller }: Props) {
             ) : null}
           </h3>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="p-4">
           <SerpAnalysisCard
             items={controller.serpResults}
             keyword={controller.activeSerpKeyword}

@@ -1,6 +1,14 @@
-import { FileDown, RotateCcw, Save, SlidersHorizontal } from "lucide-react";
-import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import {
+  ChevronDown,
+  Download,
+  FileDown,
+  RotateCcw,
+  Save,
+  Sheet,
+  SlidersHorizontal,
+} from "lucide-react";
 import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import {
   KeywordCard,
   SerpAnalysisCard,
@@ -76,6 +84,15 @@ function MobileKeywordCards({ controller }: Props) {
         ? `Showing ${filteredRows.length} of ${rows.length}`
         : `Showing ${filteredRows.length} keywords`;
 
+  const canExport = filteredRows.length > 0;
+  const handleExportToSheets = () => {
+    void exportTableToSheets({
+      headers: KEYWORD_RESEARCH_HEADERS,
+      rows: sheetsExportRows,
+      feature: "keyword_research",
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {controller.showApproximateMatchNotice ? (
@@ -113,20 +130,34 @@ function MobileKeywordCards({ controller }: Props) {
         >
           <Save className="size-3.5" />
         </button>
-        <ExportToSheetsButton
-          headers={KEYWORD_RESEARCH_HEADERS}
-          rows={sheetsExportRows}
-          feature="keyword_research"
-          iconOnly
-        />
-        <button
-          className="btn btn-ghost btn-xs"
-          onClick={controller.exportCsv}
-          disabled={filteredRows.length === 0}
-          title="Download CSV"
-        >
-          <FileDown className="size-3.5" />
-        </button>
+        <div className="dropdown dropdown-end">
+          <div
+            tabIndex={0}
+            role="button"
+            className={`btn btn-ghost btn-xs gap-1 ${!canExport ? "btn-disabled" : ""}`}
+            aria-label="Export"
+          >
+            <Download className="size-3.5" />
+            <ChevronDown className="size-3 opacity-60" />
+          </div>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
+          >
+            <li>
+              <button onClick={handleExportToSheets} disabled={!canExport}>
+                <Sheet className="size-4" />
+                Export to Google Sheets
+              </button>
+            </li>
+            <li>
+              <button onClick={controller.exportCsv} disabled={!canExport}>
+                <FileDown className="size-4" />
+                Export CSV
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
 
       {showFilters ? <MobileFilters controller={controller} /> : null}
