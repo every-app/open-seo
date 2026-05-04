@@ -1,4 +1,5 @@
 import { type Dispatch, type SetStateAction } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   ChevronDown,
   Copy,
@@ -14,7 +15,11 @@ import { DomainFilterPanel } from "@/client/features/domain/components/DomainFil
 import { DomainKeywordsTable } from "@/client/features/domain/components/DomainKeywordsTable";
 import { DomainPagesTable } from "@/client/features/domain/components/DomainPagesTable";
 import type { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
-import { keywordsToTable, pagesToTable } from "@/client/features/domain/utils";
+import {
+  getDefaultSortOrder,
+  keywordsToTable,
+  pagesToTable,
+} from "@/client/features/domain/utils";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -28,6 +33,7 @@ import type {
 } from "@/client/features/domain/types";
 
 type Props = {
+  projectId: string;
   overview: DomainOverviewData;
   activeTab: DomainActiveTab;
   sortMode: DomainSortMode;
@@ -42,7 +48,6 @@ type Props = {
   filtersForm: ReturnType<typeof useDomainFilters>["filtersForm"];
   activeFilterCount: number;
   resetFilters: () => void;
-  onTabChange: (tab: DomainActiveTab) => void;
   onSearchChange: (value: string) => void;
   onSaveKeywords: () => void;
   canSaveKeywords: boolean;
@@ -51,7 +56,14 @@ type Props = {
   onToggleAllVisible: () => void;
 };
 
+const KEYWORDS_ONLY_SORTS: ReadonlySet<DomainSortMode> = new Set([
+  "rank",
+  "score",
+  "cpc",
+]);
+
 export function DomainResultsCard({
+  projectId,
   overview,
   activeTab,
   sortMode,
@@ -66,7 +78,6 @@ export function DomainResultsCard({
   filtersForm,
   activeFilterCount,
   resetFilters,
-  onTabChange,
   onSearchChange,
   onSaveKeywords,
   canSaveKeywords,
@@ -112,20 +123,40 @@ export function DomainResultsCard({
     <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
         <div role="tablist" className="tabs tabs-box w-fit">
-          <button
+          <Link
+            from="/p/$projectId/domain"
+            to="/p/$projectId/domain"
+            params={{ projectId }}
+            search={(prev) => ({ ...prev, tab: undefined })}
+            replace
             role="tab"
             className={`tab ${activeTab === "keywords" ? "tab-active" : ""}`}
-            onClick={() => onTabChange("keywords")}
           >
             Top Keywords
-          </button>
-          <button
+          </Link>
+          <Link
+            from="/p/$projectId/domain"
+            to="/p/$projectId/domain"
+            params={{ projectId }}
+            search={(prev) => {
+              const fallbackSortNeeded = KEYWORDS_ONLY_SORTS.has(sortMode);
+              const nextSort = fallbackSortNeeded ? "traffic" : prev.sort;
+              const nextOrder = fallbackSortNeeded
+                ? getDefaultSortOrder("traffic")
+                : prev.order;
+              return {
+                ...prev,
+                tab: "pages" as const,
+                sort: nextSort,
+                order: nextOrder,
+              };
+            }}
+            replace
             role="tab"
             className={`tab ${activeTab === "pages" ? "tab-active" : ""}`}
-            onClick={() => onTabChange("pages")}
           >
             Top Pages
-          </button>
+          </Link>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">

@@ -1,22 +1,29 @@
+import { Link } from "@tanstack/react-router";
 import { Clock, Globe, History, Search, X } from "lucide-react";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
   controller: KeywordResearchControllerState;
+  projectId: string;
 };
 
-export function KeywordResearchEmptyState({ controller }: Props) {
+export function KeywordResearchEmptyState({ controller, projectId }: Props) {
   const { hasSearched, isLoading, lastSearchError } = controller;
 
   if (hasSearched && !isLoading && !lastSearchError) {
     return <NoResultsState controller={controller} />;
   }
 
-  return <SearchHistoryState controller={controller} />;
+  return <SearchHistoryState controller={controller} projectId={projectId} />;
 }
 
-function NoResultsState({ controller }: Props) {
+function NoResultsState({
+  controller,
+}: {
+  controller: KeywordResearchControllerState;
+}) {
   const { lastSearchKeyword, lastSearchLocationCode } = controller;
 
   return (
@@ -44,8 +51,14 @@ function NoResultsState({ controller }: Props) {
   );
 }
 
-function SearchHistoryState({ controller }: Props) {
-  const { history, historyLoaded, onSearch, removeHistoryItem } = controller;
+function SearchHistoryState({
+  controller,
+  projectId,
+}: {
+  controller: KeywordResearchControllerState;
+  projectId: string;
+}) {
+  const { history, historyLoaded, removeHistoryItem } = controller;
 
   if (!historyLoaded) {
     return null;
@@ -70,15 +83,19 @@ function SearchHistoryState({ controller }: Props) {
                 key={item.timestamp}
                 className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
               >
-                <button
-                  type="button"
+                <Link
+                  from="/p/$projectId/keywords"
+                  to="/p/$projectId/keywords"
+                  params={{ projectId }}
+                  search={{
+                    q: item.keyword,
+                    loc:
+                      item.locationCode === DEFAULT_LOCATION_CODE
+                        ? undefined
+                        : item.locationCode,
+                  }}
+                  replace
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
-                  onClick={() =>
-                    onSearch({
-                      keyword: item.keyword,
-                      locationCode: item.locationCode,
-                    })
-                  }
                 >
                   <Clock className="size-4 shrink-0 text-base-content/40" />
                   <div className="min-w-0">
@@ -89,7 +106,7 @@ function SearchHistoryState({ controller }: Props) {
                       {item.locationName}
                     </p>
                   </div>
-                </button>
+                </Link>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="text-xs text-base-content/40">
                     {new Date(item.timestamp).toLocaleDateString(undefined, {

@@ -1,4 +1,4 @@
-import { useCallback, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, type FormEvent } from "react";
 import { useKeywordControlsForm } from "@/client/features/keywords/hooks/useKeywordControlsForm";
 import { useKeywordFiltering } from "@/client/features/keywords/hooks/useKeywordFiltering";
 import { useLocalKeywordFilters } from "@/client/features/keywords/hooks/useLocalKeywordFilters";
@@ -15,6 +15,7 @@ import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import {
+  buildKeywordSearchKey,
   getNextSortParams,
   parseKeywordInput,
   useSaveAndExportActions,
@@ -96,18 +97,6 @@ export function useKeywordResearchController(
     state.setSerpPage(0);
   };
 
-  const resetView = useCallback(() => {
-    state.resetResearch();
-    state.clearSelection();
-    state.resetFilters();
-    state.setSelectedKeyword(null);
-    state.setSerpKeyword(null);
-    state.setSerpPage(0);
-    state.setMobileTab("keywords");
-    state.setShowFilters(false);
-    state.setShowSaveDialog(false);
-  }, [state]);
-
   return {
     activeFilterCount: state.activeFilterCount,
     activeSerpKeyword: state.activeSerpKeyword,
@@ -135,7 +124,6 @@ export function useKeywordResearchController(
     removeHistoryItem: state.removeHistoryItem,
     researchError: state.researchError,
     researchMutationError: state.researchMutationError,
-    resetView,
     resetFilters: state.resetFilters,
     rows: state.rows,
     searchedKeyword: state.searchedKeyword,
@@ -212,41 +200,34 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
   const setSearchParams = useKeywordSearchParams();
   const saveMutation = useKeywordSaveMutation(input.projectId);
 
-  const controlsForm = useKeywordControlsForm(
-    {
-      ...input,
-      locationCode,
-    },
-    (value) => {
-      const keywords = parseKeywordInput(value.keyword);
-      const activeLocation = value.locationCode;
-      const activeResultLimit = value.resultLimit;
-      const activeMode = value.mode;
+  // Tracks the parameters used for the most recent search trigger so the
+  // URL-driven effect below doesn't re-fire after the form-submit path
+  // already kicked off a search for the same params.
+  const lastTriggerKeyRef = useRef<string | null>(null);
 
-      setPreferredLocationCode(activeLocation);
-      setSearchParams({
-        q: value.keyword,
-        loc:
-          input.hasExplicitLocationCode ||
-          activeLocation !== DEFAULT_LOCATION_CODE
-            ? activeLocation
-            : undefined,
-        kLimit: activeResultLimit === 150 ? undefined : activeResultLimit,
-        mode: activeMode === "auto" ? undefined : activeMode,
-      });
+  const triggerSearch = useCallback(
+    (params: {
+      keyword: string;
+      locationCode: number;
+      resultLimit: ResultLimit;
+      mode: KeywordMode;
+    }) => {
+      const keywords = parseKeywordInput(params.keyword);
+      if (keywords.length === 0) return;
 
+      lastTriggerKeyRef.current = buildKeywordSearchKey(params);
       uiState.setSelectedKeyword(null);
       clearSelection();
       setSerpKeyword(null);
-      beginSearch(keywords[0] ?? "", activeLocation);
+      beginSearch(keywords[0] ?? "", params.locationCode);
 
-      runSearch(
+      void runSearch(
         {
           projectId: input.projectId,
           keywords,
-          locationCode: activeLocation,
-          resultLimit: activeResultLimit,
-          mode: activeMode,
+          locationCode: params.locationCode,
+          resultLimit: params.resultLimit,
+          mode: params.mode,
         },
         {
           onSuccess: (seedKeyword, nextRows) => {
@@ -260,7 +241,92 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
         },
       );
     },
+    [
+      beginSearch,
+      clearSelection,
+      input.projectId,
+      runSearch,
+      setSerpKeyword,
+      setSerpPage,
+      uiState,
+    ],
   );
+
+  const controlsForm = useKeywordControlsForm(
+    {
+      ...input,
+      locationCode,
+    },
+    (value) => {
+      setPreferredLocationCode(value.locationCode);
+      setSearchParams({
+        q: value.keyword,
+        loc:
+          input.hasExplicitLocationCode ||
+          value.locationCode !== DEFAULT_LOCATION_CODE
+            ? value.locationCode
+            : undefined,
+        kLimit: value.resultLimit === 150 ? undefined : value.resultLimit,
+        mode: value.mode === "auto" ? undefined : value.mode,
+      });
+
+      // Trigger immediately so re-submitting the same query (URL unchanged)
+      // still refetches. The dedup ref prevents the URL effect below from
+      // double-firing in the typical (URL-changes) case.
+      triggerSearch({
+        keyword: value.keyword,
+        locationCode: value.locationCode,
+        resultLimit: value.resultLimit,
+        mode: value.mode,
+      });
+    },
+  );
+
+  // URL-driven search trigger. Fires when the user lands on a shareable URL
+  // (direct link, cmd+click on a history item, browser back/forward) so the
+  // page reproduces the search those params describe without a form submit.
+  // When the URL is cleared (no `q`), the page resets to the recent-searches
+  // empty state so the "Recent searches" Link works without an extra handler.
+  useEffect(() => {
+    const trimmed = input.keywordInput.trim();
+
+    if (trimmed.length === 0) {
+      if (lastTriggerKeyRef.current === null) return;
+      lastTriggerKeyRef.current = null;
+      resetResearch();
+      clearSelection();
+      uiState.setSelectedKeyword(null);
+      setSerpKeyword(null);
+      setSerpPage(0);
+      return;
+    }
+
+    const urlKey = buildKeywordSearchKey({
+      keyword: input.keywordInput,
+      locationCode,
+      resultLimit: input.resultLimit,
+      mode: input.keywordMode,
+    });
+    if (urlKey === lastTriggerKeyRef.current) return;
+
+    triggerSearch({
+      keyword: input.keywordInput,
+      locationCode,
+      resultLimit: input.resultLimit,
+      mode: input.keywordMode,
+    });
+  }, [
+    clearSelection,
+    input.keywordInput,
+    input.keywordMode,
+    input.resultLimit,
+    locationCode,
+    resetResearch,
+    setSerpKeyword,
+    setSerpPage,
+    triggerSearch,
+    uiState,
+  ]);
 
   const { filteredRows, activeFilterCount } = useKeywordFiltering({
     rows,

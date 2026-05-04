@@ -209,3 +209,26 @@ export type PromptExplorerResult = z.infer<typeof promptExplorerResultSchema>;
 export const brandLookupSearchSchema = z.object({
   q: z.string().optional(),
 });
+
+/**
+ * /p/$projectId/prompt-explorer query params. The full prompt config is
+ * encoded in the URL so a search is shareable and cmd+click on a history
+ * item opens the same answer in a new tab.
+ */
+export const promptExplorerSearchSchema = z.object({
+  q: z.string().optional(),
+  models: z
+    .union([promptExplorerModelSchema, z.array(promptExplorerModelSchema)])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : Array.isArray(value) ? value : [value],
+    ),
+  web: z
+    .union([z.boolean(), z.enum(["true", "false"])])
+    .optional()
+    .transform((value) =>
+      value === undefined ? undefined : value === true || value === "true",
+    ),
+  cc: webSearchCountryCodeSchema.optional(),
+  hb: z.string().optional(),
+});

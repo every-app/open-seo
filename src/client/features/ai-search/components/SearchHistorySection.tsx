@@ -5,7 +5,12 @@ type Props<TItem extends { timestamp: number }> = {
   history: TItem[];
   historyLoaded: boolean;
   onRemoveHistoryItem: (timestamp: number) => void;
-  onSelectHistoryItem: (item: TItem) => void;
+  /**
+   * Renders the clickable area of a history row. The caller is responsible
+   * for wrapping `content` in a <Link> (or other clickable element) so that
+   * cmd+click and right-click → "open in new tab" behave natively.
+   */
+  renderItemLink: (item: TItem, content: ReactNode) => ReactNode;
   /** Icon component rendered in the empty state (e.g. Sparkles, MessageSquare). */
   emptyIcon: ComponentType<{ className?: string }>;
   /** Empty-state headline copy. */
@@ -23,7 +28,7 @@ export function SearchHistorySection<TItem extends { timestamp: number }>({
   history,
   historyLoaded,
   onRemoveHistoryItem,
-  onSelectHistoryItem,
+  renderItemLink,
   emptyIcon: EmptyIcon,
   emptyMessage,
   noun,
@@ -62,14 +67,13 @@ export function SearchHistorySection<TItem extends { timestamp: number }>({
             key={item.timestamp}
             className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
           >
-            <button
-              type="button"
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
-              onClick={() => onSelectHistoryItem(item)}
-            >
-              <Clock className="size-4 text-base-content/40 shrink-0" />
-              <div className="min-w-0">{renderItem(item)}</div>
-            </button>
+            {renderItemLink(
+              item,
+              <>
+                <Clock className="size-4 text-base-content/40 shrink-0" />
+                <div className="min-w-0">{renderItem(item)}</div>
+              </>,
+            )}
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-base-content/40">
                 {new Date(item.timestamp).toLocaleDateString(undefined, {
@@ -92,3 +96,6 @@ export function SearchHistorySection<TItem extends { timestamp: number }>({
     </section>
   );
 }
+
+export const HISTORY_ITEM_LINK_CLASS =
+  "flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200";

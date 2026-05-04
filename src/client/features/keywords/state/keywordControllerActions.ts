@@ -7,6 +7,10 @@ import { getLanguageCode } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
+import type {
+  KeywordMode,
+  ResultLimit,
+} from "@/client/features/keywords/keywordResearchTypes";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
 
 export const KEYWORD_RESEARCH_HEADERS = [
@@ -49,6 +53,25 @@ export function parseKeywordInput(value: string) {
     .split(/[\n,]/)
     .map((keyword) => keyword.trim())
     .filter(Boolean);
+}
+
+/**
+ * Stable identity for a keyword-research request. Used to dedup the
+ * URL-driven search trigger against the form-submit path so the same
+ * params don't fire two requests back-to-back.
+ */
+export function buildKeywordSearchKey(params: {
+  keyword: string;
+  locationCode: number;
+  resultLimit: ResultLimit;
+  mode: KeywordMode;
+}) {
+  return [
+    parseKeywordInput(params.keyword).join(""),
+    params.locationCode,
+    params.resultLimit,
+    params.mode,
+  ].join("|");
 }
 
 export function getNextSortParams(

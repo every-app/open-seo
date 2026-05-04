@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import {
@@ -31,7 +31,6 @@ export function RankTrackingDomainList({
   projectId: string;
   onAddDomain: () => void;
 }) {
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [archiveTarget, setArchiveTarget] = useState<ConfigSummary | null>(
     null,
@@ -88,13 +87,8 @@ export function RankTrackingDomainList({
             (summaries ?? []).map((summary) => (
               <DomainRow
                 key={summary.id}
+                projectId={projectId}
                 summary={summary}
-                onClick={() =>
-                  void navigate({
-                    to: "/p/$projectId/rank-tracking/$configId",
-                    params: { projectId, configId: summary.id },
-                  })
-                }
                 onArchive={() => setArchiveTarget(summary)}
               />
             ))
@@ -134,31 +128,26 @@ export function RankTrackingDomainList({
 }
 
 function DomainRow({
+  projectId,
   summary,
-  onClick,
   onArchive,
 }: {
+  projectId: string;
   summary: ConfigSummary;
-  onClick: () => void;
   onArchive: () => void;
 }) {
   const dl = getDevicesLabel(summary.devices);
   const sl = getScheduleLabel(summary.scheduleInterval);
 
   return (
-    <div
-      role="button"
-      tabIndex={0}
-      className="flex w-full items-center gap-4 px-5 py-3.5 text-left transition-colors hover:bg-base-200/50 cursor-pointer"
-      onClick={onClick}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onClick();
-        }
-      }}
-    >
-      <div className="min-w-0 flex-1">
+    <div className="relative flex w-full items-center gap-4 px-5 py-3.5 transition-colors hover:bg-base-200/50">
+      <Link
+        to="/p/$projectId/rank-tracking/$configId"
+        params={{ projectId, configId: summary.id }}
+        className="absolute inset-0 z-0"
+        aria-label={`Open ${summary.domain}`}
+      />
+      <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
           {LOCATIONS[summary.locationCode] ?? "US"} &middot; {dl} &middot; {sl}
@@ -177,7 +166,7 @@ function DomainRow({
           </p>
         )}
       </div>
-      <div className="hidden sm:flex items-center gap-6 text-sm">
+      <div className="hidden sm:flex items-center gap-6 text-sm pointer-events-none">
         {summary.keywordCount > 0 && (
           <div className="text-center">
             <p className="text-xs uppercase tracking-wide text-base-content/60">
@@ -189,16 +178,17 @@ function DomainRow({
       </div>
       <button
         type="button"
-        className="btn btn-ghost btn-xs text-base-content/40 hover:text-error"
+        className="btn btn-ghost btn-xs text-base-content/40 hover:text-error relative z-10"
         title="Archive domain"
         onClick={(e) => {
           e.stopPropagation();
+          e.preventDefault();
           onArchive();
         }}
       >
         <Archive className="size-4" />
       </button>
-      <ChevronRight className="size-4 shrink-0 text-base-content/40" />
+      <ChevronRight className="size-4 shrink-0 text-base-content/40 pointer-events-none" />
     </div>
   );
 }

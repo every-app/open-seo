@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { StatCard } from "@/client/features/audit/shared";
 import {
   exportPages,
@@ -12,18 +13,14 @@ import {
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
 
-type SearchSetter = (updates: Record<string, string | undefined>) => void;
-
 export function ResultsView({
   projectId,
   data,
   tab,
-  setSearchParams,
 }: {
   projectId: string;
   data: AuditResultsData;
   tab: string;
-  setSearchParams: SearchSetter;
 }) {
   const { audit, pages, lighthouse } = data;
   const hasPerformanceTab = lighthouse.length > 0;
@@ -43,11 +40,12 @@ export function ResultsView({
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body gap-3">
           <ResultsHeader
+            projectId={projectId}
+            auditId={audit.id}
             pageCount={pages.length}
             lighthouseCount={lighthouse.length}
             hasPerformanceTab={hasPerformanceTab}
             activeTab={activeTab}
-            setSearchParams={setSearchParams}
             onExport={(format) => {
               if (activeTab === "performance") {
                 exportPerformance(lighthouse, pages, format);
@@ -117,38 +115,46 @@ function useResultStats(
 }
 
 function ResultsHeader({
+  projectId,
+  auditId,
   pageCount,
   lighthouseCount,
   hasPerformanceTab,
   activeTab,
-  setSearchParams,
   onExport,
 }: {
+  projectId: string;
+  auditId: string;
   pageCount: number;
   lighthouseCount: number;
   hasPerformanceTab: boolean;
   activeTab: string;
-  setSearchParams: SearchSetter;
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       {hasPerformanceTab ? (
         <div role="tablist" className="tabs tabs-box w-fit">
-          <button
+          <Link
+            to="/p/$projectId/audit"
+            params={{ projectId }}
+            search={{ auditId, tab: "pages" }}
+            replace
             role="tab"
             className={`tab ${activeTab === "pages" ? "tab-active" : ""}`}
-            onClick={() => setSearchParams({ tab: "pages" })}
           >
             Pages ({pageCount})
-          </button>
-          <button
+          </Link>
+          <Link
+            to="/p/$projectId/audit"
+            params={{ projectId }}
+            search={{ auditId, tab: "performance" }}
+            replace
             role="tab"
             className={`tab ${activeTab === "performance" ? "tab-active" : ""}`}
-            onClick={() => setSearchParams({ tab: "performance" })}
           >
             Performance ({lighthouseCount})
-          </button>
+          </Link>
         </div>
       ) : (
         <h3 className="text-base font-medium">Pages ({pageCount})</h3>

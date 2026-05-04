@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowLeft,
@@ -95,10 +96,14 @@ function BrandLookupPageInner({
     removeHistoryItem,
   } = useBrandLookupSearchHistory(projectId);
 
+  // Dedup ref prevents repeat adds — `addSearch` identity is not stable
+  // across renders, so we'd otherwise re-write the same item every render.
+  const lastAddedQueryRef = useRef<string | null>(null);
   useEffect(() => {
-    if (hasActiveQuery && lookupQuery.isSuccess) {
-      addSearch({ query: trimmedInitialQuery });
-    }
+    if (!hasActiveQuery || !lookupQuery.isSuccess) return;
+    if (lastAddedQueryRef.current === trimmedInitialQuery) return;
+    lastAddedQueryRef.current = trimmedInitialQuery;
+    addSearch({ query: trimmedInitialQuery });
   }, [hasActiveQuery, lookupQuery.isSuccess, trimmedInitialQuery, addSearch]);
 
   const handleSubmit = (event: FormEvent) => {
@@ -118,17 +123,13 @@ function BrandLookupPageInner({
     onQueryChange(trimmed);
   };
 
-  const handleSelectHistoryItem = (item: { query: string }) => {
-    setQuery(item.query);
+  // The query input is reset whenever the URL `q` changes — including the
+  // browser-back path and Cmd+click navigation. This keeps local form state
+  // in sync with the URL source-of-truth.
+  useEffect(() => {
+    setQuery(initialQuery);
     setValidationError(null);
-    onQueryChange(item.query);
-  };
-
-  const handleShowRecentSearches = () => {
-    setQuery("");
-    setValidationError(null);
-    onQueryChange("");
-  };
+  }, [initialQuery]);
 
   const isLoading = hasActiveQuery && lookupQuery.isPending;
   const errorMessage =
@@ -191,23 +192,26 @@ function BrandLookupPageInner({
             ) : resultData ? (
               <>
                 <div>
-                  <button
-                    type="button"
+                  <Link
+                    from="/p/$projectId/brand-lookup"
+                    to="/p/$projectId/brand-lookup"
+                    params={{ projectId }}
+                    search={{ q: undefined }}
+                    replace
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-                    onClick={handleShowRecentSearches}
                   >
                     <ArrowLeft className="size-4" />
                     Recent searches
-                  </button>
+                  </Link>
                 </div>
                 <BrandLookupResults result={resultData} />
               </>
             ) : !errorMessage ? (
               <BrandLookupHistorySection
+                projectId={projectId}
                 history={history}
                 historyLoaded={historyLoaded}
                 onRemoveHistoryItem={removeHistoryItem}
-                onSelectHistoryItem={handleSelectHistoryItem}
               />
             ) : null}
           </>

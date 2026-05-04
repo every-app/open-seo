@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { ArrowLeft, Download, SlidersHorizontal } from "lucide-react";
 import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
@@ -22,25 +23,27 @@ import { buildBacklinksTabExport, exportBacklinksTabCsv } from "./export";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 export function BacklinksOverviewPanels({
+  projectId,
   data,
-  onShowHistory,
   summaryStats,
 }: {
+  projectId: string;
   data: BacklinksOverviewData;
-  onShowHistory: () => void;
   summaryStats: Array<{ label: string; value: string; description: string }>;
 }) {
   return (
     <>
       <div>
-        <button
-          type="button"
+        <Link
+          to="/p/$projectId/backlinks"
+          params={{ projectId }}
+          search={{ target: undefined, scope: undefined, tab: undefined }}
+          replace
           className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-          onClick={onShowHistory}
         >
           <ArrowLeft className="size-4" />
           Recent searches
-        </button>
+        </Link>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/65">
         <span className="badge badge-outline">{data.scope}</span>
@@ -63,14 +66,15 @@ export function BacklinksOverviewPanels({
 }
 
 export function BacklinksResultsCard({
+  projectId,
   activeTab,
   filteredData,
   filters,
   isTabLoading,
   tabErrorMessage,
-  onSetActiveTab,
   exportTarget,
 }: {
+  projectId: string;
   activeTab: BacklinksSearchState["tab"];
   filteredData: {
     backlinks: BacklinksOverviewData["backlinks"];
@@ -80,7 +84,6 @@ export function BacklinksResultsCard({
   filters: BacklinksFiltersState;
   isTabLoading: boolean;
   tabErrorMessage: string | null;
-  onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   exportTarget: string;
 }) {
   const currentFilterCount = filters[activeTab].activeFilterCount;
@@ -94,27 +97,19 @@ export function BacklinksResultsCard({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
         <div className="space-y-2">
           <div role="tablist" className="tabs tabs-box w-fit">
-            <TabButton
+            <TabLink
+              projectId={projectId}
               activeTab={activeTab}
               tab="backlinks"
-              onClick={onSetActiveTab}
             >
               Backlinks
-            </TabButton>
-            <TabButton
-              activeTab={activeTab}
-              tab="domains"
-              onClick={onSetActiveTab}
-            >
+            </TabLink>
+            <TabLink projectId={projectId} activeTab={activeTab} tab="domains">
               Referring Domains
-            </TabButton>
-            <TabButton
-              activeTab={activeTab}
-              tab="pages"
-              onClick={onSetActiveTab}
-            >
+            </TabLink>
+            <TabLink projectId={projectId} activeTab={activeTab} tab="pages">
               Top Pages
-            </TabButton>
+            </TabLink>
           </div>
           <p className="max-w-xl text-sm text-base-content/60">
             {TAB_DESCRIPTIONS[activeTab]}
@@ -280,25 +275,31 @@ function TrendCard({
   );
 }
 
-function TabButton({
+function TabLink({
+  projectId,
   activeTab,
   children,
-  onClick,
   tab,
 }: {
+  projectId: string;
   activeTab: BacklinksSearchState["tab"];
   children: string;
-  onClick: (tab: BacklinksSearchState["tab"]) => void;
   tab: BacklinksSearchState["tab"];
 }) {
   return (
-    <button
+    <Link
+      to="/p/$projectId/backlinks"
+      params={{ projectId }}
+      search={(prev) => ({
+        ...prev,
+        tab: tab === "backlinks" ? undefined : tab,
+      })}
+      replace
       role="tab"
       className={`tab ${activeTab === tab ? "tab-active" : ""}`}
-      onClick={() => onClick(tab)}
     >
       {children}
-    </button>
+    </Link>
   );
 }
 

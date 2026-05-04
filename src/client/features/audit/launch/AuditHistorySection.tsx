@@ -1,16 +1,17 @@
+import { Link } from "@tanstack/react-router";
 import { MoreHorizontal, ScanSearch, Trash2 } from "lucide-react";
 import type { getAuditHistory } from "@/serverFunctions/audit";
 import { formatDate, StatusBadge } from "@/client/features/audit/shared";
 
 export function AuditHistorySection({
+  projectId,
   history,
   isLoading,
-  onView,
   onDelete,
 }: {
+  projectId: string;
   history: Awaited<ReturnType<typeof getAuditHistory>>;
   isLoading: boolean;
-  onView: (auditId: string) => void;
   onDelete: (auditId: string) => void;
 }) {
   if (history.length === 0 && !isLoading) {
@@ -60,8 +61,8 @@ export function AuditHistorySection({
                   </td>
                   <td>
                     <HistoryActions
+                      projectId={projectId}
                       auditId={audit.id}
-                      onView={onView}
                       onDelete={onDelete}
                     />
                   </td>
@@ -76,22 +77,24 @@ export function AuditHistorySection({
 }
 
 function HistoryActions({
+  projectId,
   auditId,
-  onView,
   onDelete,
 }: {
+  projectId: string;
   auditId: string;
-  onView: (auditId: string) => void;
   onDelete: (auditId: string) => void;
 }) {
   return (
     <div className="flex items-center justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-      <button
+      <Link
+        to="/p/$projectId/audit"
+        params={{ projectId }}
+        search={{ auditId, tab: "pages" }}
         className="btn btn-primary btn-xs"
-        onClick={() => onView(auditId)}
       >
         View
-      </button>
+      </Link>
       <div className="dropdown dropdown-end">
         <div
           tabIndex={0}

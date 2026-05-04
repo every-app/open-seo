@@ -55,7 +55,6 @@ function SiteAuditPage() {
       projectId={projectId}
       auditId={auditId}
       tab={tab}
-      setSearchParams={setSearchParams}
       onBack={() => setSearchParams({ auditId: undefined })}
     />
   );
@@ -65,13 +64,11 @@ function AuditDetail({
   projectId,
   auditId,
   tab,
-  setSearchParams,
   onBack,
 }: {
   projectId: string;
   auditId: string;
   tab: string;
-  setSearchParams: (updates: Record<string, string | undefined>) => void;
   onBack: () => void;
 }) {
   const statusQuery = useQuery({
@@ -181,7 +178,6 @@ function AuditDetail({
             projectId={projectId}
             data={resultsQuery.data}
             tab={tab}
-            setSearchParams={setSearchParams}
           />
         )}
       </div>

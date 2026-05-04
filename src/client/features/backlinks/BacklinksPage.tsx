@@ -2,9 +2,7 @@ import { BacklinksSearchCard } from "./BacklinksSearchCard";
 import { BacklinksBody } from "./BacklinksPageContent";
 import type { BacklinksPageProps } from "./backlinksPageTypes";
 import {
-  navigateToBacklinksHistory,
   navigateToBacklinksSearch,
-  navigateToBacklinksTab,
   useBacklinksPageData,
 } from "./useBacklinksPageData";
 import { useBacklinksFilters } from "./useBacklinksFilters";
@@ -37,16 +35,6 @@ export function BacklinksPage({
     removeHistoryItem,
   } = useBacklinksSearchHistory(projectId);
 
-  const handleHistorySelect = (item: {
-    target: string;
-    scope: "domain" | "page";
-  }) => {
-    navigateToBacklinksSearch(navigate, {
-      target: item.target,
-      scope: item.scope,
-    });
-  };
-
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -77,6 +65,7 @@ export function BacklinksPage({
         ) : null}
 
         <BacklinksBody
+          projectId={projectId}
           accessGate={accessGate}
           backlinksDisabledByError={backlinksDisabledByError}
           history={history}
@@ -95,9 +84,6 @@ export function BacklinksPage({
           }
           topPages={topPagesQuery.data}
           onRemoveHistoryItem={removeHistoryItem}
-          onSelectHistoryItem={handleHistorySelect}
-          onShowHistory={() => navigateToBacklinksHistory(navigate)}
-          onSetActiveTab={(tab) => navigateToBacklinksTab(navigate, tab)}
           onRetryOverview={() => void overviewQuery.refetch()}
         />
       </div>

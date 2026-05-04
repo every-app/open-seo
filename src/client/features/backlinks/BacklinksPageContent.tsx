@@ -27,6 +27,7 @@ import {
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
 type BacklinksBodyProps = {
+  projectId: string;
   accessGate: UseAccessGateResult;
   backlinksDisabledByError: boolean;
   history: BacklinksSearchHistoryItem[];
@@ -41,13 +42,11 @@ type BacklinksBodyProps = {
   tabLoading: boolean;
   topPages: BacklinksTopPagesData | undefined;
   onRemoveHistoryItem: (timestamp: number) => void;
-  onSelectHistoryItem: (item: BacklinksSearchHistoryItem) => void;
-  onShowHistory: () => void;
-  onSetActiveTab: (tab: BacklinksSearchState["tab"]) => void;
   onRetryOverview: () => void;
 };
 
 export function BacklinksBody({
+  projectId,
   accessGate,
   backlinksDisabledByError,
   history,
@@ -62,9 +61,6 @@ export function BacklinksBody({
   tabLoading,
   topPages,
   onRemoveHistoryItem,
-  onSelectHistoryItem,
-  onShowHistory,
-  onSetActiveTab,
   onRetryOverview,
 }: BacklinksBodyProps) {
   const mergedData = useMemo(
@@ -123,10 +119,10 @@ export function BacklinksBody({
   if (!searchState.target) {
     return (
       <BacklinksHistorySection
+        projectId={projectId}
         history={history}
         historyLoaded={historyLoaded}
         onRemoveHistoryItem={onRemoveHistoryItem}
-        onSelectHistoryItem={onSelectHistoryItem}
       />
     );
   }
@@ -147,11 +143,12 @@ export function BacklinksBody({
   return (
     <>
       <BacklinksOverviewPanels
+        projectId={projectId}
         data={mergedData}
-        onShowHistory={onShowHistory}
         summaryStats={summaryStats}
       />
       <BacklinksResultsCard
+        projectId={projectId}
         activeTab={searchState.tab}
         filteredData={filteredData}
         filters={filters}
@@ -159,7 +156,6 @@ export function BacklinksBody({
         tabErrorMessage={
           searchState.tab !== "backlinks" ? tabErrorMessage : null
         }
-        onSetActiveTab={onSetActiveTab}
         exportTarget={mergedData.displayTarget || searchState.target}
       />
     </>

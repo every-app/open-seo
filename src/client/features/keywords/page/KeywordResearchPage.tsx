@@ -10,16 +10,10 @@ import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
 import type { KeywordResearchControllerState } from "./types";
 
-type Props = KeywordResearchControllerInput & {
-  onShowRecentSearches: () => void;
-};
+type Props = KeywordResearchControllerInput;
 
-export function KeywordResearchPage({ onShowRecentSearches, ...input }: Props) {
+export function KeywordResearchPage(input: Props) {
   const controller = useKeywordResearchController(input);
-  const handleShowRecentSearches = () => {
-    controller.resetView();
-    onShowRecentSearches();
-  };
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -34,7 +28,7 @@ export function KeywordResearchPage({ onShowRecentSearches, ...input }: Props) {
         <KeywordResearchSearchBar controller={controller} />
         <KeywordResearchContent
           controller={controller}
-          onShowRecentSearches={handleShowRecentSearches}
+          projectId={input.projectId}
         />
         <KeywordSaveDialog controller={controller} />
       </div>
@@ -44,21 +38,24 @@ export function KeywordResearchPage({ onShowRecentSearches, ...input }: Props) {
 
 function KeywordResearchContent({
   controller,
-  onShowRecentSearches,
+  projectId,
 }: {
   controller: KeywordResearchControllerState;
-  onShowRecentSearches: () => void;
+  projectId: string;
 }) {
   const recentSearchesButton = controller.hasSearched ? (
     <div>
-      <button
-        type="button"
+      <Link
+        from="/p/$projectId/keywords"
+        to="/p/$projectId/keywords"
+        params={{ projectId }}
+        search={{}}
+        replace
         className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-        onClick={onShowRecentSearches}
       >
         <ArrowLeft className="size-4" />
         Recent searches
-      </button>
+      </Link>
     </div>
   ) : null;
 
@@ -101,7 +98,10 @@ function KeywordResearchContent({
     return (
       <div className="space-y-4 pt-1">
         {recentSearchesButton}
-        <KeywordResearchEmptyState controller={controller} />
+        <KeywordResearchEmptyState
+          controller={controller}
+          projectId={projectId}
+        />
       </div>
     );
   }

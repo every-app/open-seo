@@ -1,5 +1,4 @@
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS, getLanguageCode } from "@/client/features/keywords/utils";
@@ -30,26 +29,23 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     DEFAULT_LOCATION_CODE,
   );
   const [researchError, setResearchError] = useState<string | null>(null);
+  const [researchMutationError, setResearchMutationError] =
+    useState<unknown>(null);
   const [searchedKeyword, setSearchedKeyword] = useState("");
-
-  const researchMutation = useMutation({
-    mutationFn: (data: {
-      projectId: string;
-      keywords: string[];
-      locationCode: number;
-      languageCode: string;
-      resultLimit: ResultLimit;
-      mode: KeywordMode;
-    }) => researchKeywords({ data }),
-  });
+  const [isLoading, setIsLoading] = useState(false);
+  // Sequence token so a stale fetch (e.g. user fired a second search before
+  // the first resolved) can't overwrite state that belongs to a newer one.
+  const requestSeqRef = useRef(0);
 
   const beginSearch = (seedKeyword: string, locationCode: number) => {
     setResearchError(null);
+    setResearchMutationError(null);
     setHasSearched(true);
     setLastSearchError(false);
     setSearchedKeyword(seedKeyword);
     setLastSearchKeyword(seedKeyword);
     setLastSearchLocationCode(locationCode);
+    setIsLoading(true);
   };
 
   const resetResearch = () => {
@@ -61,10 +57,12 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     setLastSearchKeyword("");
     setLastSearchLocationCode(DEFAULT_LOCATION_CODE);
     setResearchError(null);
+    setResearchMutationError(null);
     setSearchedKeyword("");
+    setIsLoading(false);
   };
 
-  const runSearch = (
+  const runSearch = async (
     input: {
       projectId: string;
       keywords: string[];
@@ -79,49 +77,54 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
   ) => {
     const seedKeyword = input.keywords[0] ?? "";
     const languageCode = getLanguageCode(input.locationCode);
+    const requestSeq = ++requestSeqRef.current;
+    const isStale = () => requestSeqRef.current !== requestSeq;
 
-    researchMutation.mutate(
-      {
-        keywords: input.keywords,
-        projectId: input.projectId,
-        locationCode: input.locationCode,
-        languageCode,
-        resultLimit: input.resultLimit,
-        mode: input.mode,
-      },
-      {
-        onSuccess: (result) => {
-          const resultCount = result.rows.length;
-
-          setResearchError(null);
-          setRows(result.rows);
-          setLastResultSource(result.source);
-          setLastUsedFallback(result.usedFallback);
-
-          captureClientEvent("keyword_research:search_complete", {
-            location_code: input.locationCode,
-            search_mode: input.mode,
-            result_count: resultCount,
-          });
-
-          if (seedKeyword) {
-            addSearch(
-              seedKeyword,
-              input.locationCode,
-              LOCATIONS[input.locationCode] || "Unknown",
-            );
-          }
-
-          handlers?.onSuccess?.(seedKeyword, result.rows);
+    try {
+      const result = await researchKeywords({
+        data: {
+          keywords: input.keywords,
+          projectId: input.projectId,
+          locationCode: input.locationCode,
+          languageCode,
+          resultLimit: input.resultLimit,
+          mode: input.mode,
         },
-        onError: (error) => {
-          setLastSearchError(true);
-          setRows([]);
-          setResearchError(getStandardErrorMessage(error, "Research failed."));
-          handlers?.onError?.();
-        },
-      },
-    );
+      });
+
+      if (isStale()) return;
+
+      setResearchError(null);
+      setResearchMutationError(null);
+      setRows(result.rows);
+      setLastResultSource(result.source);
+      setLastUsedFallback(result.usedFallback);
+
+      captureClientEvent("keyword_research:search_complete", {
+        location_code: input.locationCode,
+        search_mode: input.mode,
+        result_count: result.rows.length,
+      });
+
+      if (seedKeyword) {
+        addSearch(
+          seedKeyword,
+          input.locationCode,
+          LOCATIONS[input.locationCode] || "Unknown",
+        );
+      }
+
+      handlers?.onSuccess?.(seedKeyword, result.rows);
+    } catch (error) {
+      if (isStale()) return;
+      setLastSearchError(true);
+      setRows([]);
+      setResearchMutationError(error);
+      setResearchError(getStandardErrorMessage(error, "Research failed."));
+      handlers?.onError?.();
+    } finally {
+      if (!isStale()) setIsLoading(false);
+    }
   };
 
   return {
@@ -133,9 +136,9 @@ export function useKeywordResearchData(addSearch: AddSearchFn) {
     lastSearchKeyword,
     lastSearchLocationCode,
     researchError,
-    researchMutationError: researchMutation.error,
+    researchMutationError,
     searchedKeyword,
-    isLoading: researchMutation.isPending,
+    isLoading,
     beginSearch,
     resetResearch,
     runSearch,

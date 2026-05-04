@@ -125,6 +125,7 @@ export function DomainOverviewPage({
             ) : null}
 
             <DomainResultsCard
+              projectId={projectId}
               overview={state.overview}
               activeTab={searchState.tab}
               sortMode={searchState.sort}
@@ -139,17 +140,6 @@ export function DomainOverviewPage({
               filtersForm={state.filtersForm}
               activeFilterCount={state.activeFilterCount}
               resetFilters={state.resetFilters}
-              onTabChange={(tab) => {
-                if (
-                  tab === "pages" &&
-                  (searchState.sort === "rank" ||
-                    searchState.sort === "score" ||
-                    searchState.sort === "cpc")
-                ) {
-                  state.applySort("traffic", getDefaultSortOrder("traffic"));
-                }
-                state.setSearchParams({ tab });
-              }}
               onSearchChange={state.setPendingSearch}
               onSaveKeywords={state.handleSaveKeywords}
               canSaveKeywords={state.canSaveKeywords}

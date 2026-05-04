@@ -1,18 +1,19 @@
+import { Link } from "@tanstack/react-router";
 import { Clock, History, Link2, X } from "lucide-react";
 import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
 
 type Props = {
+  projectId: string;
   history: BacklinksSearchHistoryItem[];
   historyLoaded: boolean;
   onRemoveHistoryItem: (timestamp: number) => void;
-  onSelectHistoryItem: (item: BacklinksSearchHistoryItem) => void;
 };
 
 export function BacklinksHistorySection({
+  projectId,
   history,
   historyLoaded,
   onRemoveHistoryItem,
-  onSelectHistoryItem,
 }: Props) {
   if (!historyLoaded) {
     return null;
@@ -46,10 +47,17 @@ export function BacklinksHistorySection({
             key={item.timestamp}
             className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
           >
-            <button
-              type="button"
+            <Link
+              to="/p/$projectId/backlinks"
+              params={{ projectId }}
+              search={(prev) => ({
+                ...prev,
+                target: item.target,
+                scope: item.scope,
+                tab: undefined,
+              })}
+              replace
               className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
-              onClick={() => onSelectHistoryItem(item)}
             >
               <Clock className="size-4 text-base-content/40 shrink-0" />
               <div className="min-w-0">
@@ -60,7 +68,7 @@ export function BacklinksHistorySection({
                   {item.scope === "domain" ? "Site-wide" : "Exact page"}
                 </p>
               </div>
-            </button>
+            </Link>
             <div className="flex items-center gap-2 shrink-0">
               <span className="text-xs text-base-content/40">
                 {new Date(item.timestamp).toLocaleDateString(undefined, {

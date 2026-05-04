@@ -1,5 +1,6 @@
-import { useState, type FormEvent } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   AlertCircle,
   ArrowLeft,
@@ -23,19 +24,25 @@ import {
   AiSearchSetupGate,
 } from "@/client/features/ai-search/components/AiSearchSetupGate";
 import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
-import {
-  usePromptExplorerSearchHistory,
-  type PromptExplorerSearchHistoryItem,
-} from "@/client/hooks/usePromptExplorerSearchHistory";
+import { usePromptExplorerSearchHistory } from "@/client/hooks/usePromptExplorerSearchHistory";
 import {
   PROMPT_EXPLORER_MAX_PROMPT_LENGTH,
-  PROMPT_EXPLORER_MODELS,
   type PromptExplorerModel,
   type WebSearchCountryCode,
 } from "@/types/schemas/ai-search";
 
+type PromptExplorerFormValues = {
+  prompt: string;
+  highlightBrand: string;
+  models: PromptExplorerModel[];
+  webSearch: boolean;
+  webSearchCountryCode: WebSearchCountryCode;
+};
+
 type Props = {
   projectId: string;
+  urlState: PromptExplorerFormValues;
+  onSubmit: (values: PromptExplorerFormValues) => void;
 };
 
 const PROMPT_EXPLORER_BULLETS = [
@@ -56,22 +63,6 @@ const PROMPT_EXPLORER_BULLETS = [
   },
 ];
 
-type FormState = {
-  prompt: string;
-  highlightBrand: string;
-  models: PromptExplorerModel[];
-  webSearch: boolean;
-  webSearchCountryCode: WebSearchCountryCode;
-};
-
-const INITIAL_FORM_STATE: FormState = {
-  prompt: "",
-  highlightBrand: "",
-  models: [...PROMPT_EXPLORER_MODELS],
-  webSearch: true,
-  webSearchCountryCode: "US",
-};
-
 export function PromptExplorerPage(props: Props) {
   return (
     <HostedPlanGate>
@@ -82,9 +73,11 @@ export function PromptExplorerPage(props: Props) {
 
 function PromptExplorerPageInner({
   projectId,
+  urlState,
+  onSubmit,
   planGate,
 }: Props & { planGate: HostedPlanGateState }) {
-  const [form, setForm] = useState<FormState>(INITIAL_FORM_STATE);
+  const [form, setForm] = useState<PromptExplorerFormValues>(urlState);
   const [validationError, setValidationError] = useState<string | null>(null);
   const access = useAiSearchAccess(projectId);
 
@@ -95,45 +88,88 @@ function PromptExplorerPageInner({
     removeHistoryItem,
   } = usePromptExplorerSearchHistory(projectId);
 
-  const exploreMutation = useMutation({
-    mutationFn: (input: FormState) =>
+  const trimmedPrompt = urlState.prompt.trim();
+  const hasActivePrompt = trimmedPrompt.length > 0;
+
+  const exploreQuery = useQuery({
+    queryKey: [
+      "prompt-explorer",
+      projectId,
+      trimmedPrompt,
+      urlState.models.toSorted().join(","),
+      urlState.webSearch,
+      urlState.webSearchCountryCode,
+      urlState.highlightBrand.trim(),
+    ],
+    queryFn: () =>
       explorePrompt({
         data: {
           projectId,
-          prompt: input.prompt,
-          models: input.models,
-          highlightBrand:
-            input.highlightBrand.length > 0 ? input.highlightBrand : undefined,
-          webSearch: input.webSearch,
-          webSearchCountryCode: input.webSearchCountryCode,
+          prompt: trimmedPrompt,
+          models: urlState.models,
+          highlightBrand: urlState.highlightBrand.trim() || undefined,
+          webSearch: urlState.webSearch,
+          webSearchCountryCode: urlState.webSearchCountryCode,
         },
       }),
+    enabled:
+      hasActivePrompt &&
+      urlState.models.length > 0 &&
+      !planGate.isFreePlan &&
+      access.enabled,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
   });
 
-  const runExplore = (values: FormState) => {
-    const normalized: FormState = {
-      ...values,
-      prompt: values.prompt.trim(),
-      highlightBrand: values.highlightBrand.trim(),
-    };
+  // Sync form to URL state — covers initial mount, browser back/forward, and
+  // cmd+click history navigation (in the originating tab nothing changes; in
+  // a new tab the form mounts populated from the URL).
+  useEffect(() => {
+    setForm(urlState);
+    setValidationError(null);
+  }, [urlState]);
+
+  // Persist successful searches to history. Run on isSuccess so failed
+  // requests don't pollute recent searches. The dedup ref prevents repeat
+  // adds when downstream renders create new urlState references.
+  const lastAddedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hasActivePrompt || !exploreQuery.isSuccess) return;
+    const key = [
+      trimmedPrompt,
+      urlState.highlightBrand.trim(),
+      urlState.models.toSorted().join(","),
+      urlState.webSearch,
+      urlState.webSearchCountryCode,
+    ].join("|");
+    if (lastAddedKeyRef.current === key) return;
+    lastAddedKeyRef.current = key;
     addSearch({
-      prompt: normalized.prompt,
-      highlightBrand: normalized.highlightBrand,
-      models: normalized.models,
-      webSearch: normalized.webSearch,
-      webSearchCountryCode: normalized.webSearchCountryCode,
+      prompt: trimmedPrompt,
+      highlightBrand: urlState.highlightBrand.trim(),
+      models: urlState.models,
+      webSearch: urlState.webSearch,
+      webSearchCountryCode: urlState.webSearchCountryCode,
     });
-    exploreMutation.mutate(normalized);
-  };
+  }, [
+    hasActivePrompt,
+    exploreQuery.isSuccess,
+    trimmedPrompt,
+    urlState.highlightBrand,
+    urlState.models,
+    urlState.webSearch,
+    urlState.webSearchCountryCode,
+    addSearch,
+  ]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    const trimmedPrompt = form.prompt.trim();
-    if (trimmedPrompt.length === 0) {
+    const trimmed = form.prompt.trim();
+    if (trimmed.length === 0) {
       setValidationError("Enter a prompt");
       return;
     }
-    if (trimmedPrompt.length > PROMPT_EXPLORER_MAX_PROMPT_LENGTH) {
+    if (trimmed.length > PROMPT_EXPLORER_MAX_PROMPT_LENGTH) {
       setValidationError(
         `Keep prompts under ${PROMPT_EXPLORER_MAX_PROMPT_LENGTH} characters`,
       );
@@ -144,35 +180,22 @@ function PromptExplorerPageInner({
       return;
     }
     setValidationError(null);
-    runExplore(form);
+    onSubmit({
+      ...form,
+      prompt: trimmed,
+      highlightBrand: form.highlightBrand.trim(),
+    });
   };
 
-  const handleSelectHistoryItem = (item: PromptExplorerSearchHistoryItem) => {
-    const nextForm: FormState = {
-      prompt: item.prompt,
-      highlightBrand: item.highlightBrand,
-      models: item.models,
-      webSearch: item.webSearch,
-      webSearchCountryCode: item.webSearchCountryCode,
-    };
-    setForm(nextForm);
-    setValidationError(null);
-    runExplore(nextForm);
-  };
-
-  const handleShowRecentSearches = () => {
-    exploreMutation.reset();
-    setForm(INITIAL_FORM_STATE);
-    setValidationError(null);
-  };
-
-  const errorMessage = exploreMutation.isError
-    ? getStandardErrorMessage(exploreMutation.error)
+  const errorMessage = exploreQuery.isError
+    ? getStandardErrorMessage(exploreQuery.error)
     : null;
+  const isLoading = hasActivePrompt && exploreQuery.isPending;
+  const resultData = hasActivePrompt ? exploreQuery.data : undefined;
 
-  const updateForm = <K extends keyof FormState>(
+  const updateForm = <K extends keyof PromptExplorerFormValues>(
     key: K,
-    value: FormState[K],
+    value: PromptExplorerFormValues[K],
   ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
     if (validationError) setValidationError(null);
@@ -219,7 +242,7 @@ function PromptExplorerPageInner({
                 updateForm("webSearchCountryCode", value)
               }
               onSubmit={handleSubmit}
-              isLoading={exploreMutation.isPending}
+              isLoading={isLoading}
               validationError={validationError}
             />
 
@@ -233,28 +256,31 @@ function PromptExplorerPageInner({
               </div>
             ) : null}
 
-            {exploreMutation.isPending ? (
+            {isLoading ? (
               <PromptExplorerLoadingState modelCount={form.models.length} />
-            ) : exploreMutation.data ? (
+            ) : resultData ? (
               <>
                 <div>
-                  <button
-                    type="button"
+                  <Link
+                    from="/p/$projectId/prompt-explorer"
+                    to="/p/$projectId/prompt-explorer"
+                    params={{ projectId }}
+                    search={{}}
+                    replace
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-                    onClick={handleShowRecentSearches}
                   >
                     <ArrowLeft className="size-4" />
                     Recent searches
-                  </button>
+                  </Link>
                 </div>
-                <PromptExplorerResults result={exploreMutation.data} />
+                <PromptExplorerResults result={resultData} />
               </>
             ) : !errorMessage ? (
               <PromptExplorerHistorySection
+                projectId={projectId}
                 history={history}
                 historyLoaded={historyLoaded}
                 onRemoveHistoryItem={removeHistoryItem}
-                onSelectHistoryItem={handleSelectHistoryItem}
               />
             ) : null}
           </>
