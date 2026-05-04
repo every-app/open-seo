@@ -1,4 +1,4 @@
-import { sanitizeCsvValue, type CsvValue } from "./csv";
+import { normalizeExportValue, type CsvValue, type ExportValue } from "./csv";
 
 export const GOOGLE_SHEETS_NEW_URL = "https://sheets.new";
 
@@ -11,7 +11,7 @@ export async function copyTableToClipboard(
   }
 
   const safeRows = rows.map((row) =>
-    row.map((value) => sanitizeCsvValue(value ?? "")),
+    row.map((value) => normalizeExportValue(value ?? "")),
   );
 
   const tsv = buildTsv(headers, safeRows);
@@ -27,10 +27,7 @@ export async function copyTableToClipboard(
   ]);
 }
 
-function buildTsv(
-  headers: string[],
-  rows: (string | number | boolean)[][],
-): string {
+function buildTsv(headers: string[], rows: ExportValue[][]): string {
   const lines = [headers.map(tsvCell).join("\t")];
   for (const row of rows) {
     lines.push(row.map(tsvCell).join("\t"));
@@ -38,15 +35,12 @@ function buildTsv(
   return lines.join("\n");
 }
 
-function tsvCell(value: string | number | boolean): string {
+function tsvCell(value: ExportValue): string {
   if (typeof value !== "string") return String(value);
   return value.replace(/[\t\r\n]+/g, " ");
 }
 
-function buildHtmlTable(
-  headers: string[],
-  rows: (string | number | boolean)[][],
-): string {
+function buildHtmlTable(headers: string[], rows: ExportValue[][]): string {
   const thead = `<thead><tr>${headers.map((h) => `<th>${escapeHtml(h)}</th>`).join("")}</tr></thead>`;
   const tbody = `<tbody>${rows
     .map(
@@ -57,10 +51,23 @@ function buildHtmlTable(
   return `<table>${thead}${tbody}</table>`;
 }
 
-function escapeHtmlCell(value: string | number | boolean): string {
+function escapeHtmlCell(value: ExportValue): string {
   if (typeof value === "number" || typeof value === "boolean")
     return String(value);
+  if (isLinkableUrl(value)) {
+    const safeValue = escapeHtml(value);
+    return `<a href="${escapeHtml(value)}">${safeValue}</a>`;
+  }
   return escapeHtml(value);
+}
+
+function isLinkableUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function escapeHtml(value: string): string {

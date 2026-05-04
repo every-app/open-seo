@@ -58,6 +58,22 @@ describe("copyTableToClipboard", () => {
     expect(written[0].html).toContain("<td>1234</td>");
   });
 
+  it("rounds decimal numbers to at most two places", async () => {
+    const { written } = mockClipboard();
+    await copyTableToClipboard(["Traffic"], [[1250.321954]]);
+    expect(written[0].plain).toBe("Traffic\n1250.32");
+    expect(written[0].html).toContain("<td>1250.32</td>");
+  });
+
+  it("emits URL cells as HTML links for spreadsheet paste", async () => {
+    const { written } = mockClipboard();
+    await copyTableToClipboard(["URL"], [["https://example.com/tools"]]);
+    expect(written[0].plain).toBe("URL\nhttps://example.com/tools");
+    expect(written[0].html).toContain(
+      '<td><a href="https://example.com/tools">https://example.com/tools</a></td>',
+    );
+  });
+
   it("sanitizes formula-injection cells with a leading apostrophe", async () => {
     const { written } = mockClipboard();
     await copyTableToClipboard(["Keyword"], [['=HYPERLINK("evil")']]);

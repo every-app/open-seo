@@ -111,7 +111,7 @@ export function keywordsToTable(rows: KeywordRow[]): ExportTable {
       row.searchVolume,
       row.traffic,
       row.cpc,
-      row.relativeUrl ?? row.url,
+      row.url ?? row.relativeUrl,
       row.keywordDifficulty,
     ]),
   };
@@ -120,11 +120,7 @@ export function keywordsToTable(rows: KeywordRow[]): ExportTable {
 export function pagesToTable(rows: PageRow[]): ExportTable {
   return {
     headers: ["Page", "Organic Traffic", "Keywords"],
-    rows: rows.map((row) => [
-      row.relativePath ?? row.page,
-      row.organicTraffic,
-      row.keywords,
-    ]),
+    rows: rows.map((row) => [row.page, row.organicTraffic, row.keywords]),
   };
 }
 
