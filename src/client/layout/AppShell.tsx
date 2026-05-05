@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
   ChevronsUpDown,
@@ -35,47 +36,40 @@ export function AuthenticatedAppLayout({
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
-  const [isSeoApiKeyConfigured, setIsSeoApiKeyConfigured] = React.useState<
-    boolean | null
-  >(null);
-  const [seoApiKeyStatusError, setSeoApiKeyStatusError] = React.useState(false);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
+  const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
+  const seoApiKeyStatusQuery = useQuery({
+    queryKey: ["seoApiKeyStatus"],
+    queryFn: () => getSeoApiKeyStatus(),
+    enabled: shouldCheckSeoApiKeyStatus,
+  });
+  const isSeoApiKeyConfigured = shouldCheckSeoApiKeyStatus
+    ? (seoApiKeyStatusQuery.data?.configured ?? null)
+    : null;
+  const seoApiKeyStatusError =
+    shouldCheckSeoApiKeyStatus && seoApiKeyStatusQuery.isError;
 
   React.useEffect(() => {
-    if (location.pathname === BILLING_ROUTE) {
-      setSeoApiKeyStatusError(false);
-      setIsSeoApiKeyConfigured(null);
+    if (!shouldCheckSeoApiKeyStatus) {
       setShowMissingSeoApiKeyModal(false);
       return;
     }
 
-    let cancelled = false;
+    if (seoApiKeyStatusQuery.isError) {
+      setShowMissingSeoApiKeyModal(false);
+      return;
+    }
 
-    const checkSeoApiKeyStatus = async () => {
-      try {
-        const result = await getSeoApiKeyStatus();
-        if (cancelled) return;
-
-        setSeoApiKeyStatusError(false);
-        setIsSeoApiKeyConfigured(result.configured);
-        if (!result.configured) {
-          setShowMissingSeoApiKeyModal(true);
-        }
-      } catch {
-        if (cancelled) return;
-        setSeoApiKeyStatusError(true);
-        setIsSeoApiKeyConfigured(null);
-        setShowMissingSeoApiKeyModal(false);
-      }
-    };
-
-    void checkSeoApiKeyStatus();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [location.pathname]);
+    if (!seoApiKeyStatusQuery.isSuccess) return;
+    setShowMissingSeoApiKeyModal(!seoApiKeyStatusQuery.data.configured);
+  }, [
+    location.pathname,
+    seoApiKeyStatusQuery.data,
+    seoApiKeyStatusQuery.isError,
+    seoApiKeyStatusQuery.isSuccess,
+    shouldCheckSeoApiKeyStatus,
+  ]);
 
   const shouldShowMissingSeoApiKeyModal =
     showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;

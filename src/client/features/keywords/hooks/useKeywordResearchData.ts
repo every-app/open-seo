@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS, getLanguageCode } from "@/client/features/keywords/utils";
@@ -9,7 +10,6 @@ import type {
   KeywordSource,
   ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
-import type { KeywordResearchRow } from "@/types/keywords";
 
 type AddSearchFn = (
   keyword: string,
@@ -17,130 +17,153 @@ type AddSearchFn = (
   locationName: string,
 ) => void;
 
-export function useKeywordResearchData(addSearch: AddSearchFn) {
-  const [rows, setRows] = useState<KeywordResearchRow[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
-  const [lastSearchError, setLastSearchError] = useState(false);
-  const [lastResultSource, setLastResultSource] =
-    useState<KeywordSource>("related");
-  const [lastUsedFallback, setLastUsedFallback] = useState(false);
-  const [lastSearchKeyword, setLastSearchKeyword] = useState("");
-  const [lastSearchLocationCode, setLastSearchLocationCode] = useState(
-    DEFAULT_LOCATION_CODE,
+type KeywordResearchQueryInput = {
+  projectId: string;
+  keywordInput: string;
+  locationCode: number;
+  resultLimit: ResultLimit;
+  mode: KeywordMode;
+};
+
+type KeywordResearchRequest = {
+  projectId: string;
+  keywords: string[];
+  seedKeyword: string;
+  locationCode: number;
+  languageCode: string;
+  resultLimit: ResultLimit;
+  mode: KeywordMode;
+};
+
+const KEYWORD_RESEARCH_STALE_TIME_MS = 24 * 60 * 60 * 1000;
+
+function parseSearchKeywords(value: string) {
+  return value
+    .split(/[\n,]/)
+    .map((keyword) => keyword.trim())
+    .filter(Boolean);
+}
+
+function buildKeywordResearchQueryKey(request: KeywordResearchRequest | null) {
+  return request
+    ? [
+        "keywordResearch",
+        request.projectId,
+        request.keywords,
+        request.locationCode,
+        request.languageCode,
+        request.resultLimit,
+        request.mode,
+      ]
+    : ["keywordResearch", "idle"];
+}
+
+export function useKeywordResearchData(
+  input: KeywordResearchQueryInput,
+  addSearch: AddSearchFn,
+) {
+  const keywords = useMemo(
+    () => parseSearchKeywords(input.keywordInput),
+    [input.keywordInput],
   );
-  const [researchError, setResearchError] = useState<string | null>(null);
-  const [researchMutationError, setResearchMutationError] =
-    useState<unknown>(null);
-  const [searchedKeyword, setSearchedKeyword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  // Sequence token so a stale fetch (e.g. user fired a second search before
-  // the first resolved) can't overwrite state that belongs to a newer one.
-  const requestSeqRef = useRef(0);
+  const request = useMemo<KeywordResearchRequest | null>(() => {
+    const seedKeyword = keywords[0] ?? "";
+    if (!seedKeyword) return null;
 
-  const beginSearch = (seedKeyword: string, locationCode: number) => {
-    setResearchError(null);
-    setResearchMutationError(null);
-    setHasSearched(true);
-    setLastSearchError(false);
-    setSearchedKeyword(seedKeyword);
-    setLastSearchKeyword(seedKeyword);
-    setLastSearchLocationCode(locationCode);
-    setIsLoading(true);
-  };
+    return {
+      projectId: input.projectId,
+      keywords,
+      seedKeyword,
+      locationCode: input.locationCode,
+      languageCode: getLanguageCode(input.locationCode),
+      resultLimit: input.resultLimit,
+      mode: input.mode,
+    };
+  }, [
+    input.locationCode,
+    input.mode,
+    input.projectId,
+    input.resultLimit,
+    keywords,
+  ]);
+  const queryKey = useMemo(
+    () => buildKeywordResearchQueryKey(request),
+    [request],
+  );
+  const queryKeyString = JSON.stringify(queryKey);
 
-  const resetResearch = () => {
-    setRows([]);
-    setHasSearched(false);
-    setLastSearchError(false);
-    setLastResultSource("related");
-    setLastUsedFallback(false);
-    setLastSearchKeyword("");
-    setLastSearchLocationCode(DEFAULT_LOCATION_CODE);
-    setResearchError(null);
-    setResearchMutationError(null);
-    setSearchedKeyword("");
-    setIsLoading(false);
-  };
-
-  const runSearch = async (
-    input: {
-      projectId: string;
-      keywords: string[];
-      locationCode: number;
-      resultLimit: ResultLimit;
-      mode: KeywordMode;
-    },
-    handlers?: {
-      onSuccess?: (seedKeyword: string, rows: KeywordResearchRow[]) => void;
-      onError?: () => void;
-    },
-  ) => {
-    const seedKeyword = input.keywords[0] ?? "";
-    const languageCode = getLanguageCode(input.locationCode);
-    const requestSeq = ++requestSeqRef.current;
-    const isStale = () => requestSeqRef.current !== requestSeq;
-
-    try {
-      const result = await researchKeywords({
-        data: {
-          keywords: input.keywords,
-          projectId: input.projectId,
-          locationCode: input.locationCode,
-          languageCode,
-          resultLimit: input.resultLimit,
-          mode: input.mode,
-        },
-      });
-
-      if (isStale()) return;
-
-      setResearchError(null);
-      setResearchMutationError(null);
-      setRows(result.rows);
-      setLastResultSource(result.source);
-      setLastUsedFallback(result.usedFallback);
-
-      captureClientEvent("keyword_research:search_complete", {
-        location_code: input.locationCode,
-        search_mode: input.mode,
-        result_count: result.rows.length,
-      });
-
-      if (seedKeyword) {
-        addSearch(
-          seedKeyword,
-          input.locationCode,
-          LOCATIONS[input.locationCode] || "Unknown",
-        );
+  const researchQuery = useQuery({
+    queryKey,
+    queryFn: () => {
+      if (!request) {
+        throw new Error("Keyword research query ran without request params");
       }
 
-      handlers?.onSuccess?.(seedKeyword, result.rows);
-    } catch (error) {
-      if (isStale()) return;
-      setLastSearchError(true);
-      setRows([]);
-      setResearchMutationError(error);
-      setResearchError(getStandardErrorMessage(error, "Research failed."));
-      handlers?.onError?.();
-    } finally {
-      if (!isStale()) setIsLoading(false);
-    }
-  };
+      return researchKeywords({
+        data: {
+          projectId: request.projectId,
+          keywords: request.keywords,
+          locationCode: request.locationCode,
+          languageCode: request.languageCode,
+          resultLimit: request.resultLimit,
+          mode: request.mode,
+        },
+      });
+    },
+    enabled: request !== null,
+    staleTime: KEYWORD_RESEARCH_STALE_TIME_MS,
+    gcTime: KEYWORD_RESEARCH_STALE_TIME_MS,
+    retry: false,
+    refetchOnReconnect: false,
+    refetchOnWindowFocus: false,
+  });
+
+  const handledSuccessKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!request || !researchQuery.isSuccess || !researchQuery.data) return;
+    if (handledSuccessKeyRef.current === queryKeyString) return;
+    handledSuccessKeyRef.current = queryKeyString;
+
+    captureClientEvent("keyword_research:search_complete", {
+      location_code: request.locationCode,
+      search_mode: request.mode,
+      result_count: researchQuery.data.rows.length,
+    });
+
+    addSearch(
+      request.seedKeyword,
+      request.locationCode,
+      LOCATIONS[request.locationCode] || "Unknown",
+    );
+  }, [
+    addSearch,
+    queryKeyString,
+    request,
+    researchQuery.data,
+    researchQuery.isSuccess,
+  ]);
+
+  const hasSearched = request !== null;
+  const rows = hasSearched ? (researchQuery.data?.rows ?? []) : [];
+  const researchError =
+    hasSearched && researchQuery.isError
+      ? getStandardErrorMessage(researchQuery.error, "Research failed.")
+      : null;
 
   return {
     rows,
     hasSearched,
-    lastSearchError,
-    lastResultSource,
-    lastUsedFallback,
-    lastSearchKeyword,
-    lastSearchLocationCode,
+    lastSearchError: hasSearched && researchQuery.isError,
+    lastResultSource:
+      researchQuery.data?.source ?? ("related" as KeywordSource),
+    lastUsedFallback: researchQuery.data?.usedFallback ?? false,
+    lastSearchKeyword: request?.seedKeyword ?? "",
+    lastSearchLocationCode: request?.locationCode ?? DEFAULT_LOCATION_CODE,
     researchError,
-    researchMutationError,
-    searchedKeyword,
-    isLoading,
-    beginSearch,
-    resetResearch,
-    runSearch,
+    researchMutationError: researchQuery.error,
+    searchedKeyword: request?.seedKeyword ?? "",
+    isLoading: hasSearched && researchQuery.isPending,
+    researchQuery,
+    retryResearch: researchQuery.refetch,
   };
 }

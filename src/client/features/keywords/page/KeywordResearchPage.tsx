@@ -81,10 +81,7 @@ function KeywordResearchContent({
                 Go to Billing
               </Link>
             ) : (
-              <button
-                className="btn btn-sm"
-                onClick={() => controller.onSearch()}
-              >
+              <button className="btn btn-sm" onClick={controller.retrySearch}>
                 Try again
               </button>
             )}
