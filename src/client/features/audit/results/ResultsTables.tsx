@@ -224,9 +224,7 @@ export function ExportDropdown({
         className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
       >
         <li>
-          <button onClick={() => onExport("sheets")}>
-            Export to Sheets
-          </button>
+          <button onClick={() => onExport("sheets")}>Export to Sheets</button>
         </li>
         <li>
           <button onClick={() => onExport("csv")}>CSV</button>
