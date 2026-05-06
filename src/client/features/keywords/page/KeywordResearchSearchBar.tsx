@@ -19,7 +19,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
     <div className="card border border-base-300 bg-base-100">
       <div className="card-body gap-2">
         <form
-          className="w-full flex flex-wrap items-center gap-2"
+          className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
           onSubmit={handleSearchSubmit}
         >
           <controlsForm.Field name="keyword">
@@ -28,12 +28,12 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
               return (
                 <label
-                  className={`input input-bordered flex items-center gap-2 flex-1 min-w-0 max-w-md ${keywordError ? "input-error" : ""}`}
+                  className={`input input-bordered flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${keywordError ? "input-error" : ""}`}
                 >
                   <Search className="size-4 shrink-0 text-base-content/60" />
                   <input
                     className="grow min-w-0"
-                    placeholder="Enter Keyword"
+                    placeholder="Enter keyword"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                   />
@@ -42,67 +42,69 @@ export function KeywordResearchSearchBar({ controller }: Props) {
             }}
           </controlsForm.Field>
 
-          <controlsForm.Field name="locationCode">
-            {(field) => (
-              <select
-                className="select select-bordered select-sm w-auto"
-                value={field.state.value}
-                onChange={(event) =>
-                  field.handleChange(Number(event.target.value))
-                }
-              >
-                {LOCATION_OPTIONS.map((option) => (
-                  <option key={option.code} value={option.code}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            )}
-          </controlsForm.Field>
+          <div className="grid grid-cols-2 gap-2 lg:contents">
+            <controlsForm.Field name="locationCode">
+              {(field) => (
+                <select
+                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                  value={field.state.value}
+                  onChange={(event) =>
+                    field.handleChange(Number(event.target.value))
+                  }
+                >
+                  {LOCATION_OPTIONS.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </controlsForm.Field>
 
-          <controlsForm.Field name="resultLimit">
-            {(field) => (
-              <select
-                className="select select-bordered select-sm w-auto"
-                value={field.state.value}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  field.handleChange(isResultLimit(next) ? next : 150);
-                }}
-              >
-                {RESULT_LIMITS.map((limit) => (
-                  <option key={limit} value={limit}>
-                    {limit} results
-                  </option>
-                ))}
-              </select>
-            )}
-          </controlsForm.Field>
+            <controlsForm.Field name="resultLimit">
+              {(field) => (
+                <select
+                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                  value={field.state.value}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    field.handleChange(isResultLimit(next) ? next : 150);
+                  }}
+                >
+                  {RESULT_LIMITS.map((limit) => (
+                    <option key={limit} value={limit}>
+                      {limit} results
+                    </option>
+                  ))}
+                </select>
+              )}
+            </controlsForm.Field>
 
-          <controlsForm.Field name="mode">
-            {(field) => (
-              <select
-                className="select select-bordered select-sm w-auto"
-                value={field.state.value}
-                onChange={(event) =>
-                  field.handleChange(normalizeKeywordMode(event.target.value))
-                }
-              >
-                <option value="auto">Auto</option>
-                <option value="related">Related keywords</option>
-                <option value="suggestions">Suggestions</option>
-                <option value="ideas">Ideas</option>
-              </select>
-            )}
-          </controlsForm.Field>
+            <controlsForm.Field name="mode">
+              {(field) => (
+                <select
+                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                  value={field.state.value}
+                  onChange={(event) =>
+                    field.handleChange(normalizeKeywordMode(event.target.value))
+                  }
+                >
+                  <option value="auto">Auto</option>
+                  <option value="related">Related keywords</option>
+                  <option value="suggestions">Suggestions</option>
+                  <option value="ideas">Ideas</option>
+                </select>
+              )}
+            </controlsForm.Field>
 
-          <button
-            type="submit"
-            className="btn btn-primary btn-sm px-6 font-semibold"
-            disabled={isLoading}
-          >
-            {isLoading ? "Searching..." : "Search"}
-          </button>
+            <button
+              type="submit"
+              className="btn btn-primary w-full px-6 font-semibold lg:w-auto lg:shrink-0"
+              disabled={isLoading}
+            >
+              {isLoading ? "Searching..." : "Search"}
+            </button>
+          </div>
         </form>
         <controlsForm.Field name="keyword">
           {(field) => {

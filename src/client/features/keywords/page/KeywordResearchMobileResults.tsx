@@ -9,10 +9,8 @@ import {
 } from "lucide-react";
 import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
-import {
-  KeywordCard,
-  SerpAnalysisCard,
-} from "@/client/features/keywords/components";
+import { SerpAnalysisCard } from "@/client/features/keywords/components";
+import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
@@ -48,7 +46,7 @@ export function KeywordResearchMobileResults({ controller }: Props) {
       </div>
 
       {mobileTab === "keywords" ? (
-        <MobileKeywordCards controller={controller} />
+        <MobileKeywordResults controller={controller} />
       ) : (
         <div className="flex-1 overflow-y-auto p-4">
           <SerpAnalysisCard
@@ -67,7 +65,7 @@ export function KeywordResearchMobileResults({ controller }: Props) {
   );
 }
 
-function MobileKeywordCards({ controller }: Props) {
+function MobileKeywordResults({ controller }: Props) {
   const {
     activeFilterCount,
     filteredRows,
@@ -162,34 +160,18 @@ function MobileKeywordCards({ controller }: Props) {
 
       {showFilters ? <MobileFilters controller={controller} /> : null}
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-3">
-        {filteredRows.length === 0 ? (
-          <div className="h-full min-h-48 flex flex-col items-center justify-center text-center px-4 text-base-content/50 gap-3">
-            <p className="text-sm font-medium">
-              No keywords match your current filters.
-            </p>
-            {activeFilterCount > 0 ? (
-              <button
-                className="btn btn-ghost btn-sm"
-                onClick={controller.resetFilters}
-              >
-                Clear filters
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          filteredRows.map((row) => (
-            <KeywordCard
-              key={row.keyword}
-              row={row}
-              isSelected={selectedRows.has(row.keyword)}
-              isActive={controller.overviewKeyword?.keyword === row.keyword}
-              onToggle={() => controller.toggleRowSelection(row.keyword)}
-              onClick={() => controller.handleRowClick(row)}
-            />
-          ))
-        )}
-      </div>
+      <KeywordResearchDesktopTable
+        activeFilterCount={controller.activeFilterCount}
+        filteredRows={controller.filteredRows}
+        overviewKeyword={controller.overviewKeyword}
+        selectedRows={controller.selectedRows}
+        setSelectedRows={controller.setSelectedRows}
+        sortDir={controller.sortDir}
+        sortField={controller.sortField}
+        toggleSort={controller.toggleSort}
+        resetFilters={controller.resetFilters}
+        handleRowClick={controller.handleRowClick}
+      />
     </div>
   );
 }

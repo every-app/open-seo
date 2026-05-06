@@ -4,7 +4,11 @@ function getNextSelectionSet(
   current: Set<string>,
   allVisibleKeywords: string[],
 ): Set<string> {
-  if (current.size === allVisibleKeywords.length) {
+  const allVisibleSelected =
+    allVisibleKeywords.length > 0 &&
+    allVisibleKeywords.every((keyword) => current.has(keyword));
+
+  if (allVisibleSelected) {
     return new Set();
   }
 

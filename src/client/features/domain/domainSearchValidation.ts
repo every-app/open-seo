@@ -14,7 +14,7 @@ export function getDomainSearchValidationErrors(value: DomainControlsValues) {
   if (!normalizeDomainTarget(value.domain)) {
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a valid URL or domain (e.g. browserbase.com)",
+        domain: "Please enter a valid URL or domain (e.g. example.com)",
       },
     });
   }

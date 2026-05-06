@@ -16,7 +16,7 @@ import {
   type SortDir,
   type SortField,
 } from "@/client/features/keywords/components";
-import { formatNumber } from "@/client/features/keywords/utils";
+import { formatNumber, scoreTierClass } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
 import { EmptyFilterResults } from "./keywordResearchDesktopFilters";
 
@@ -66,18 +66,21 @@ export function KeywordResearchDesktopTable({
             current={sortField}
             dir={sortDir}
             onToggle={toggleSort}
-            className="min-w-0"
+            className="min-w-48 md:min-w-0"
           />
         ),
         cell: ({ row }) => (
           <span
-            className="block truncate font-medium capitalize"
+            className="block min-w-48 whitespace-normal break-words font-medium capitalize md:min-w-0 md:truncate"
             title={row.original.keyword}
           >
             {row.original.keyword}
           </span>
         ),
-        meta: { cellClassName: "min-w-0" },
+        meta: {
+          headerClassName: "min-w-48 md:min-w-0",
+          cellClassName: "min-w-48 md:min-w-0",
+        },
       }),
       keywordColumnHelper.accessor("searchVolume", {
         header: () => (
@@ -93,7 +96,8 @@ export function KeywordResearchDesktopTable({
         cell: ({ getValue }) => formatNumber(getValue()),
         meta: {
           headerClassName: "text-right",
-          cellClassName: "text-right tabular-nums text-base-content/70",
+          cellClassName:
+            "whitespace-nowrap text-right tabular-nums text-base-content/70",
         },
       }),
       keywordColumnHelper.accessor("cpc", {
@@ -114,7 +118,8 @@ export function KeywordResearchDesktopTable({
         },
         meta: {
           headerClassName: "text-right",
-          cellClassName: "text-right tabular-nums text-base-content/70",
+          cellClassName:
+            "whitespace-nowrap text-right tabular-nums text-base-content/70",
         },
       }),
       keywordColumnHelper.accessor("competition", {
@@ -135,7 +140,8 @@ export function KeywordResearchDesktopTable({
         },
         meta: {
           headerClassName: "text-right",
-          cellClassName: "text-right tabular-nums text-base-content/70",
+          cellClassName:
+            "whitespace-nowrap text-right tabular-nums text-base-content/70",
         },
       }),
       keywordColumnHelper.accessor("keywordDifficulty", {
@@ -158,7 +164,7 @@ export function KeywordResearchDesktopTable({
         cell: ({ getValue }) => <IntentBadge intent={getValue()} />,
         meta: {
           headerClassName: "text-center",
-          cellClassName: "text-center",
+          cellClassName: "whitespace-nowrap text-center",
         },
       }),
     ],
@@ -184,7 +190,7 @@ export function KeywordResearchDesktopTable({
   });
 
   return (
-    <div className="flex-1 overflow-y-auto">
+    <div className="flex-1 min-h-0">
       {filteredRows.length === 0 ? (
         <EmptyFilterResults
           activeFilterCount={activeFilterCount}
@@ -193,8 +199,8 @@ export function KeywordResearchDesktopTable({
       ) : (
         <AppDataTable
           table={table}
-          className="table table-xs w-full"
-          wrapperClassName="h-full overflow-y-auto"
+          className="table table-xs min-w-max md:w-full"
+          wrapperClassName="h-full overflow-auto"
           getRowProps={(row) => ({
             className: `cursor-pointer border-b border-base-200 hover:bg-base-200/50 ${
               overviewKeyword?.keyword === row.original.keyword
@@ -211,12 +217,10 @@ export function KeywordResearchDesktopTable({
 
 function ScoreCell({ value }: { value: number | null }) {
   if (value == null) return null;
-  let tierClass = "bg-success/20 text-success";
-  if (value > 60) tierClass = "bg-error/20 text-error";
-  else if (value > 30) tierClass = "bg-warning/20 text-warning";
+  const tierClass = scoreTierClass(value);
   return (
     <span
-      className={`inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold ${tierClass}`}
+      className={`score-badge ${tierClass} inline-flex size-6 items-center justify-center rounded-full text-[10px] font-semibold`}
     >
       {value}
     </span>

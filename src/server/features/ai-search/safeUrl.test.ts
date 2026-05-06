@@ -6,7 +6,7 @@ describe("safeHttpUrl", () => {
     "https://example.com",
     "http://example.com",
     "https://example.com/path?q=1#frag",
-    "https://sub.example.io",
+    "https://sub.example.com",
   ])("accepts %s", (input) => {
     expect(safeHttpUrl(input)).toBe(input);
   });
@@ -35,7 +35,7 @@ describe("safeHttpUrl", () => {
 describe("safeHostname", () => {
   it("strips protocol and www prefix", () => {
     expect(safeHostname("https://www.example.com/path")).toBe("example.com");
-    expect(safeHostname("http://sub.example.io")).toBe("sub.example.io");
+    expect(safeHostname("http://sub.example.com")).toBe("sub.example.com");
   });
 
   it("returns null for unsafe schemes", () => {

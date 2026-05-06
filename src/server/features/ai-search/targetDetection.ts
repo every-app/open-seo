@@ -6,8 +6,8 @@ type DetectedTarget = {
 };
 
 /**
- * Decide whether free-text input is a domain (e.g. "opus.pro") or a brand
- * keyword (e.g. "Opus Clip"). Heuristic: no whitespace + contains a dot +
+ * Decide whether free-text input is a domain (e.g. "example.com") or a brand
+ * keyword (e.g. "Example Brand"). Heuristic: no whitespace + contains a dot +
  * `normalizeDomain` produces a valid hostname.
  */
 export function detectTarget(rawInput: string): DetectedTarget {

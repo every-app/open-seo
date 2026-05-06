@@ -34,12 +34,12 @@ export function DomainSearchCard({
 
               return (
                 <label
-                  className={`input input-bordered flex flex-1 items-center gap-2 ${domainError ? "input-error" : ""}`}
+                  className={`input input-bordered flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${domainError ? "input-error" : ""}`}
                 >
                   <Search className="size-4 text-base-content/60" />
                   <input
-                    className="grow"
-                    placeholder="Enter a domain (e.g. coolify.io or example.com/blog)"
+                    className="grow min-w-0"
+                    placeholder="Enter a domain"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     aria-invalid={domainError ? true : undefined}

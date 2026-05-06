@@ -3,17 +3,17 @@ import { detectTarget } from "./targetDetection";
 
 describe("detectTarget", () => {
   it.each([
-    ["opus.pro", "opus.pro"],
-    ["https://opus.pro", "opus.pro"],
-    ["https://www.opus.pro/features", "opus.pro"],
+    ["example.com", "example.com"],
+    ["https://example.com", "example.com"],
+    ["https://www.example.com/features", "example.com"],
     ["WWW.Example.COM", "example.com"],
-    ["sub.example.io", "sub.example.io"],
+    ["sub.example.com", "sub.example.com"],
   ])("treats %s as a domain", (input, expected) => {
     expect(detectTarget(input)).toEqual({ type: "domain", value: expected });
   });
 
   it.each([
-    "Opus Clip",
+    "Example Brand",
     "best ai video clipper",
     "OpenAI",
     "GPT-5",
@@ -40,9 +40,9 @@ describe("detectTarget", () => {
   });
 
   it("trims whitespace before classification", () => {
-    expect(detectTarget("  opus.pro  ")).toEqual({
+    expect(detectTarget("  example.com  ")).toEqual({
       type: "domain",
-      value: "opus.pro",
+      value: "example.com",
     });
   });
 });
