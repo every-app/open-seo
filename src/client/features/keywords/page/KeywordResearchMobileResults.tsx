@@ -145,7 +145,7 @@ function MobileKeywordResults({ controller }: Props) {
             <li>
               <button onClick={handleExportToSheets} disabled={!canExport}>
                 <Sheet className="size-4" />
-                Export to Google Sheets
+                Export to Sheets
               </button>
             </li>
             <li>

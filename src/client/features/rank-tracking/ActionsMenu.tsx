@@ -77,7 +77,7 @@ export function ActionsMenu({
               disabled={!hasData}
             >
               <Sheet className="size-3.5" />
-              Export to Google Sheets
+              Export to Sheets
             </button>
             <button
               className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-base-200"

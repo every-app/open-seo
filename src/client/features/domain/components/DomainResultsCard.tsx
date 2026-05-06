@@ -217,7 +217,7 @@ export function DomainResultsCard({
               <li>
                 <button onClick={handleExportToSheets}>
                   <Sheet className="size-4" />
-                  Export to Google Sheets
+                  Export to Sheets
                 </button>
               </li>
               <li>

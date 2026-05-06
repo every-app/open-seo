@@ -225,7 +225,7 @@ export function ExportDropdown({
       >
         <li>
           <button onClick={() => onExport("sheets")}>
-            Export to Google Sheets
+            Export to Sheets
           </button>
         </li>
         <li>

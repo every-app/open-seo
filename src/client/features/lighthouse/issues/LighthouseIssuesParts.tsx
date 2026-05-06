@@ -202,7 +202,7 @@ function ExportMenu({
         className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-72"
       >
         <li className="menu-title">
-          <span>Export to Google Sheets</span>
+          <span>Export to Sheets</span>
         </li>
         <li>
           <button
