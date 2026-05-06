@@ -162,27 +162,42 @@ export function applyFilters(
 
     if (excludeTerms.some((t) => kw.includes(t))) return false;
 
-    if (filters.minDesktopPos || filters.maxDesktopPos) {
-      const min = filters.minDesktopPos ? Number(filters.minDesktopPos) : 0;
-      const max = filters.maxDesktopPos
-        ? Number(filters.maxDesktopPos)
-        : Infinity;
-      if (row.desktop.position === null) return false;
-      if (row.desktop.position < min || row.desktop.position > max)
-        return false;
-    }
+    if (
+      !matchesPositionFilter(
+        row.desktop.position,
+        filters.minDesktopPos,
+        filters.maxDesktopPos,
+      )
+    )
+      return false;
 
-    if (filters.minMobilePos || filters.maxMobilePos) {
-      const min = filters.minMobilePos ? Number(filters.minMobilePos) : 0;
-      const max = filters.maxMobilePos
-        ? Number(filters.maxMobilePos)
-        : Infinity;
-      if (row.mobile.position === null) return false;
-      if (row.mobile.position < min || row.mobile.position > max) return false;
-    }
+    if (
+      !matchesPositionFilter(
+        row.mobile.position,
+        filters.minMobilePos,
+        filters.maxMobilePos,
+      )
+    )
+      return false;
 
     return true;
   });
+}
+
+export function matchesPositionFilter(
+  position: number | null,
+  minValue: string,
+  maxValue: string,
+): boolean {
+  if (!minValue && !maxValue) return true;
+
+  const max = maxValue === "" ? Infinity : Number(maxValue);
+  if (max === 0) return position === null;
+
+  if (position === null) return false;
+
+  const min = minValue === "" ? 0 : Number(minValue);
+  return position >= min && position <= max;
 }
 
 export function countActiveFilters(filters: Filters): number {
