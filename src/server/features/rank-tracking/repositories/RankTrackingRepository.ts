@@ -4,7 +4,6 @@ import { db } from "@/db";
 import {
   rankTrackingConfigs,
   rankCheckRuns,
-  rankCheckLocks,
   rankSnapshots,
   rankTrackingKeywords,
   projects,
@@ -137,17 +136,27 @@ async function getDueConfigsWithOrganization(nowIso: string) {
 // Run CRUD
 // ---------------------------------------------------------------------------
 
-async function createRun(data: {
+/**
+ * Try to insert a new pending run. Returns true if inserted, false if blocked
+ * by the partial unique index on (config_id) WHERE status IN ('pending',
+ * 'running') — i.e. another active run exists for this config.
+ *
+ * This is how duplicate-trigger protection is enforced: the DB rejects the
+ * second insert rather than a separate lock table.
+ */
+async function tryCreateRun(data: {
   id: string;
   configId: string;
   projectId: string;
   keywordsTotal: number;
   isSubsetRun?: boolean;
-}) {
-  await db.insert(rankCheckRuns).values({
-    ...data,
-    status: "pending",
-  });
+}): Promise<boolean> {
+  const inserted = await db
+    .insert(rankCheckRuns)
+    .values({ ...data, status: "pending" })
+    .onConflictDoNothing()
+    .returning({ id: rankCheckRuns.id });
+  return inserted.length > 0;
 }
 
 async function updateRun(
@@ -176,36 +185,22 @@ async function getLatestRunForConfig(configId: string) {
   return rows[0] ?? null;
 }
 
-async function tryCreateRunLock(configId: string, runId: string) {
-  const inserted = await db
-    .insert(rankCheckLocks)
-    .values({ configId, runId })
-    .onConflictDoNothing({ target: rankCheckLocks.configId })
-    .returning({ runId: rankCheckLocks.runId });
-
-  return inserted.length > 0;
-}
-
-async function getRunLock(configId: string) {
+/**
+ * Returns the currently active (pending or running) run for a config, if any.
+ * At most one such row exists, enforced by the partial unique index.
+ */
+async function getActiveRunForConfig(configId: string) {
   const rows = await db
     .select()
-    .from(rankCheckLocks)
-    .where(eq(rankCheckLocks.configId, configId))
+    .from(rankCheckRuns)
+    .where(
+      and(
+        eq(rankCheckRuns.configId, configId),
+        inArray(rankCheckRuns.status, ["pending", "running"]),
+      ),
+    )
     .limit(1);
   return rows[0] ?? null;
-}
-
-async function deleteRunLock(configId: string, runId?: string) {
-  await db
-    .delete(rankCheckLocks)
-    .where(
-      runId
-        ? and(
-            eq(rankCheckLocks.configId, configId),
-            eq(rankCheckLocks.runId, runId),
-          )
-        : eq(rankCheckLocks.configId, configId),
-    );
 }
 
 // ---------------------------------------------------------------------------
@@ -369,13 +364,11 @@ export const RankTrackingRepository = {
   createConfig,
   updateConfig,
   getDueConfigsWithOrganization,
-  createRun,
+  tryCreateRun,
   updateRun,
   getRunById,
   getLatestRunForConfig,
-  tryCreateRunLock,
-  getRunLock,
-  deleteRunLock,
+  getActiveRunForConfig,
   insertSnapshots,
   getSnapshotsForRun,
   getKeywordsForConfig,

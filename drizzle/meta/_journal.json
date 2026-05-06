@@ -78,6 +78,13 @@
       "when": 1777422740449,
       "tag": "0010_high_liz_osborn",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1778031161783,
+      "tag": "0011_colorful_dark_beast",
+      "breakpoints": true
     }
   ]
 }

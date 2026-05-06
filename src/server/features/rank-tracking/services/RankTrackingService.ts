@@ -218,8 +218,8 @@ async function getLatestRun(configId: string, projectId: string) {
   if (!run) return null;
 
   // If the DB says the run is still active, check the workflow instance.
-  // We only report staleness here — the cron handler cleans up stale locks
-  // when it next tries to acquire one (via cleanupStaleLock). Mutating from
+  // We only report staleness here — the next call to beginRankCheckRun will
+  // mark a stale blocker as failed before retrying its insert. Mutating from
   // this read path caused a race where the original workflow kept running
   // while a replacement was started.
   const reconciliation = await reconcileActiveRankCheckRun(run);

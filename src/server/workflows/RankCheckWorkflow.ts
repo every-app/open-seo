@@ -6,11 +6,7 @@ import {
 import { NonRetryableError } from "cloudflare:workflows";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import {
-  failRunAndReleaseRankCheckLock,
-  releaseRankCheckRunLock,
-  runOwnsRankCheckLock,
-} from "@/server/features/rank-tracking/services/rankCheckRunGuards";
+import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { runLiveCheck } from "@/server/workflows/rankCheckPaths";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -50,10 +46,12 @@ async function prepareRankCheckKeywords(input: {
   serpDepth: number;
   keywordIds?: string[];
 }) {
-  const ownsLock = await runOwnsRankCheckLock(input.configId, input.runId);
-  if (!ownsLock) {
+  // If stale-cleanup marked our run failed before we got here, bail out
+  // rather than resurrecting a superseded run.
+  const run = await RankTrackingRepository.getRunById(input.runId);
+  if (!run || run.status === "failed" || run.status === "completed") {
     throw new NonRetryableError(
-      `Rank check lock is not held by run ${input.runId}`,
+      `Run ${input.runId} is no longer active (status=${run?.status ?? "missing"})`,
     );
   }
 
@@ -122,13 +120,13 @@ async function finalizeRankCheckRun(input: {
   trigger: RankCheckParams["trigger"];
   batchError: string | null;
 }) {
-  // Re-check lock ownership before finalizing. If the lock was stolen
-  // (stale cleanup raced with a slow workflow), bail out to avoid
-  // overwriting the replacement run's state.
-  const ownsLock = await runOwnsRankCheckLock(input.configId, input.runId);
-  if (!ownsLock) {
+  // If stale-cleanup already marked our run failed, don't overwrite that
+  // decision with a completed status — a replacement run may already be
+  // underway.
+  const run = await RankTrackingRepository.getRunById(input.runId);
+  if (!run || run.status === "failed" || run.status === "completed") {
     console.warn(
-      `[rank-check] ${input.runId} lost lock ownership, skipping finalization`,
+      `[rank-check] ${input.runId} no longer active (status=${run?.status ?? "missing"}), skipping finalization`,
     );
     return;
   }
@@ -143,9 +141,7 @@ async function finalizeRankCheckRun(input: {
   const keywordsChecked = new Set(snapshots.map((s) => s.trackingKeywordId))
     .size;
 
-  // Derive incompleteCount from the run's keywordsTotal (set in prepare step)
-  const run = await RankTrackingRepository.getRunById(input.runId);
-  const keywordsTotal = run?.keywordsTotal ?? keywordsChecked;
+  const keywordsTotal = run.keywordsTotal || keywordsChecked;
   const incompleteCount = keywordsTotal - keywordsChecked;
 
   let errorMessage: string | undefined;
@@ -155,6 +151,8 @@ async function finalizeRankCheckRun(input: {
     errorMessage = `${incompleteCount} keyword(s) could not be checked`;
   }
 
+  // Flipping status away from 'pending'/'running' is what releases the
+  // partial-index slot for the next run.
   await RankTrackingRepository.updateRun(input.runId, {
     status: "completed",
     keywordsChecked,
@@ -169,8 +167,6 @@ async function finalizeRankCheckRun(input: {
     lastCheckedAt: nowIso,
     lastSkipReason: null,
   });
-
-  await releaseRankCheckRunLock(input.configId, input.runId);
 
   await captureServerEvent({
     distinctId: input.billingCustomer.userId,
@@ -194,11 +190,7 @@ async function markRankCheckRunFailed(input: {
 }) {
   const errorMessage =
     input.error instanceof Error ? input.error.message : "Unknown error";
-  await failRunAndReleaseRankCheckLock(
-    input.configId,
-    input.runId,
-    errorMessage,
-  );
+  await failRunIfActive(input.runId, errorMessage);
 
   // Flag the config so the UI can show why the scheduled check was skipped
   const isInsufficientCredits =
@@ -256,11 +248,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       },
     );
     if (!configCheck.isActive) {
-      await failRunAndReleaseRankCheckLock(
-        configId,
-        runId,
-        "Config has been archived",
-      );
+      await failRunIfActive(runId, "Config has been archived");
       return;
     }
 

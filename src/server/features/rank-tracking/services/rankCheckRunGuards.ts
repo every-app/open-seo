@@ -7,16 +7,16 @@ import type {
 } from "@/types/schemas/rank-tracking";
 
 type RunRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunById>>;
-type RunLockRow = Awaited<ReturnType<typeof RankTrackingRepository.getRunLock>>;
 
-// Coordination invariants for rank checks:
-// - `workflow id === run id`, so the workflow instance is the authoritative
-//   runtime identity for a stored run.
-// - `rank_check_locks` enforces at most one active runner per config.
-// - Only the lock owner is allowed to spend credits, write snapshots, or
-//   finalize the run.
-// - Missing/unknown workflow state is tolerated briefly during startup before
-//   we treat the run as stale and repair it.
+// Coordination model:
+// - workflow id === run id (workflow instance is the authoritative runtime).
+// - A partial unique index on rank_check_runs(config_id) WHERE status IN
+//   ('pending','running') enforces at most one active run per config at the
+//   DB level. A failed INSERT *is* the "already running" signal — no
+//   separate lock table is needed.
+// - Flipping status to 'completed'/'failed' is what frees the slot.
+// - Missing/unknown workflow state is tolerated briefly during startup
+//   before we treat a run as stale and mark it failed.
 
 type RankCheckWorkflowStatus = {
   status:
@@ -77,83 +77,9 @@ function getStaleReason(
     return workflowStatus.error?.message ?? `Workflow ${workflowStatus.status}`;
   }
   if (workflowStatus.status === "complete") {
-    return "Workflow completed without releasing the run lock";
+    return "Workflow completed without finalizing the run";
   }
   return `Workflow is no longer active (${workflowStatus.status})`;
-}
-
-export async function beginRankCheckRun(input: {
-  workflow: Env["RANK_CHECK_WORKFLOW"];
-  config: RankCheckConfigForStart;
-  projectId: string;
-  billingCustomer: BillingCustomerContext;
-  keywordsTotal: number;
-  keywordIds?: string[];
-  trigger: "manual" | "scheduled";
-  workflowStartErrorMessage: string;
-}): Promise<RankCheckTriggerResult> {
-  const runId = crypto.randomUUID();
-  const lockResult = await acquireRankCheckRunLock(input.config.id, runId);
-  if (!lockResult.acquired) {
-    return {
-      ok: false,
-      reason: "already_running",
-      blockingRunId: lockResult.blockingRunId,
-    };
-  }
-
-  try {
-    await RankTrackingRepository.createRun({
-      id: runId,
-      configId: input.config.id,
-      projectId: input.projectId,
-      keywordsTotal: input.keywordsTotal,
-      isSubsetRun: (input.keywordIds?.length ?? 0) > 0,
-    });
-
-    await input.workflow.create({
-      id: runId,
-      params: {
-        runId,
-        configId: input.config.id,
-        billingCustomer: {
-          userId: input.billingCustomer.userId,
-          userEmail: input.billingCustomer.userEmail,
-          organizationId: input.billingCustomer.organizationId,
-          projectId: input.billingCustomer.projectId,
-        },
-        projectId: input.projectId,
-        domain: input.config.domain,
-        locationCode: input.config.locationCode,
-        languageCode: input.config.languageCode,
-        devices: input.config.devices,
-        serpDepth: input.config.serpDepth,
-        trigger: input.trigger,
-        keywordIds: input.keywordIds,
-      },
-    });
-  } catch (error) {
-    try {
-      await failRunAndReleaseRankCheckLock(
-        input.config.id,
-        runId,
-        input.workflowStartErrorMessage,
-      );
-    } catch {
-      await releaseRankCheckRunLock(input.config.id, runId);
-    }
-
-    try {
-      const instance = await input.workflow.get(runId);
-      await instance.terminate();
-    } catch {
-      // Workflow may not have been created
-    }
-
-    throw error;
-  }
-
-  return { ok: true, runId };
 }
 
 async function getStaleRankCheckRunReason(input: {
@@ -181,8 +107,23 @@ async function getStaleRankCheckRunReason(input: {
   return getStaleReason(workflowStatus, input.run);
 }
 
-async function failRunIfNeeded(runId: string, reason: string, run: RunRow) {
-  if (!run || run.status === "completed" || run.status === "failed") return;
+/**
+ * Mark a run as failed if it's still in an active state. Idempotent — safe to
+ * call on runs that are already completed/failed.
+ */
+export async function failRunIfActive(
+  runId: string,
+  reason: string,
+  run?: RunRow,
+) {
+  const current = run ?? (await RankTrackingRepository.getRunById(runId));
+  if (
+    !current ||
+    current.status === "completed" ||
+    current.status === "failed"
+  ) {
+    return;
+  }
   await RankTrackingRepository.updateRun(runId, {
     status: "failed",
     errorMessage: reason,
@@ -190,23 +131,95 @@ async function failRunIfNeeded(runId: string, reason: string, run: RunRow) {
   });
 }
 
-async function cleanupStaleLock(lock: NonNullable<RunLockRow>) {
-  const run = await RankTrackingRepository.getRunById(lock.runId);
-  if (run?.status === "completed" || run?.status === "failed") {
-    await RankTrackingRepository.deleteRunLock(lock.configId, lock.runId);
-    return true;
+export async function beginRankCheckRun(input: {
+  workflow: Env["RANK_CHECK_WORKFLOW"];
+  config: RankCheckConfigForStart;
+  projectId: string;
+  billingCustomer: BillingCustomerContext;
+  keywordsTotal: number;
+  keywordIds?: string[];
+  trigger: "manual" | "scheduled";
+  workflowStartErrorMessage: string;
+}): Promise<RankCheckTriggerResult> {
+  // At most two attempts: once normally, once after clearing a stale blocker.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const runId = crypto.randomUUID();
+    const inserted = await RankTrackingRepository.tryCreateRun({
+      id: runId,
+      configId: input.config.id,
+      projectId: input.projectId,
+      keywordsTotal: input.keywordsTotal,
+      isSubsetRun: (input.keywordIds?.length ?? 0) > 0,
+    });
+
+    if (inserted) {
+      try {
+        await input.workflow.create({
+          id: runId,
+          params: {
+            runId,
+            configId: input.config.id,
+            billingCustomer: input.billingCustomer,
+            projectId: input.projectId,
+            domain: input.config.domain,
+            locationCode: input.config.locationCode,
+            languageCode: input.config.languageCode,
+            devices: input.config.devices,
+            serpDepth: input.config.serpDepth,
+            trigger: input.trigger,
+            keywordIds: input.keywordIds,
+          },
+        });
+      } catch (error) {
+        // Workflow couldn't start — flip the run to failed so the
+        // partial-index slot is released. Best-effort cleanup of any
+        // zombie instance.
+        await failRunIfActive(runId, input.workflowStartErrorMessage);
+        try {
+          const instance = await input.workflow.get(runId);
+          await instance.terminate();
+        } catch {
+          // Workflow may not have been created.
+        }
+        throw error;
+      }
+      return { ok: true, runId };
+    }
+
+    // INSERT was blocked by the partial unique index — another active run
+    // exists. Inspect it to decide whether to retry or return already_running.
+    const blocker = await RankTrackingRepository.getActiveRunForConfig(
+      input.config.id,
+    );
+    if (!blocker) {
+      // Raced: blocker's status flipped between insert and select. Loop.
+      continue;
+    }
+
+    if (attempt === 0) {
+      const staleReason = await getStaleRankCheckRunReason({
+        run: blocker,
+        runId: blocker.id,
+        ageMs: Date.now() - new Date(blocker.startedAt).getTime(),
+      });
+      if (staleReason) {
+        await failRunIfActive(blocker.id, staleReason, blocker);
+        continue; // slot is free now — retry insert
+      }
+    }
+
+    return { ok: false, reason: "already_running", blockingRunId: blocker.id };
   }
 
-  const staleReason = await getStaleRankCheckRunReason({
-    runId: lock.runId,
-    run,
-    ageMs: Date.now() - new Date(lock.acquiredAt).getTime(),
-  });
-  if (!staleReason) return false;
-
-  await failRunIfNeeded(lock.runId, staleReason, run);
-  await RankTrackingRepository.deleteRunLock(lock.configId, lock.runId);
-  return true;
+  // Exhausted attempts (rapid churn). Report whatever's blocking now.
+  const final = await RankTrackingRepository.getActiveRunForConfig(
+    input.config.id,
+  );
+  return {
+    ok: false,
+    reason: "already_running",
+    blockingRunId: final?.id ?? null,
+  };
 }
 
 export async function reconcileActiveRankCheckRun(run: NonNullable<RunRow>) {
@@ -225,54 +238,4 @@ export async function reconcileActiveRankCheckRun(run: NonNullable<RunRow>) {
     errorMessage: staleReason,
     completedAt: new Date().toISOString(),
   };
-}
-
-async function acquireRankCheckRunLock(configId: string, runId: string) {
-  // Optimistic: try to grab the lock immediately
-  if (await RankTrackingRepository.tryCreateRunLock(configId, runId)) {
-    return { acquired: true as const };
-  }
-
-  // Lock exists — check if it's stale and can be cleaned up
-  const existingLock = await RankTrackingRepository.getRunLock(configId);
-  if (!existingLock) {
-    // Lock was released between our insert and select — retry once
-    if (await RankTrackingRepository.tryCreateRunLock(configId, runId)) {
-      return { acquired: true as const };
-    }
-    const blocker = await RankTrackingRepository.getRunLock(configId);
-    return { acquired: false as const, blockingRunId: blocker?.runId ?? null };
-  }
-
-  const cleaned = await cleanupStaleLock(existingLock);
-  if (!cleaned) {
-    return { acquired: false as const, blockingRunId: existingLock.runId };
-  }
-
-  // Stale lock cleaned — retry once
-  if (await RankTrackingRepository.tryCreateRunLock(configId, runId)) {
-    return { acquired: true as const };
-  }
-
-  const blocker = await RankTrackingRepository.getRunLock(configId);
-  return { acquired: false as const, blockingRunId: blocker?.runId ?? null };
-}
-
-export async function runOwnsRankCheckLock(configId: string, runId: string) {
-  const lock = await RankTrackingRepository.getRunLock(configId);
-  return lock?.runId === runId;
-}
-
-export async function releaseRankCheckRunLock(configId: string, runId: string) {
-  await RankTrackingRepository.deleteRunLock(configId, runId);
-}
-
-export async function failRunAndReleaseRankCheckLock(
-  configId: string,
-  runId: string,
-  errorMessage: string,
-) {
-  const run = await RankTrackingRepository.getRunById(runId);
-  await failRunIfNeeded(runId, errorMessage, run);
-  await RankTrackingRepository.deleteRunLock(configId, runId);
 }
