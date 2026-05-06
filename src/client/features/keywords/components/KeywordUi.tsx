@@ -47,61 +47,6 @@ export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
   );
 }
 
-export function KeywordRow({
-  row,
-  isSelected,
-  isActive,
-  onToggle,
-  onClick,
-}: {
-  row: KeywordResearchRow;
-  isSelected: boolean;
-  isActive: boolean;
-  onToggle: () => void;
-  onClick: () => void;
-}) {
-  return (
-    <div
-      className={`flex items-center gap-3 px-4 py-2 border-b border-base-200 text-sm hover:bg-base-200/50 transition-colors cursor-pointer ${
-        isActive ? "bg-primary/5 border-l-2 border-l-primary" : ""
-      }`}
-      onClick={onClick}
-    >
-      <input
-        type="checkbox"
-        className="checkbox checkbox-xs shrink-0"
-        checked={isSelected}
-        onChange={(e) => {
-          e.stopPropagation();
-          onToggle();
-        }}
-        onClick={(e) => e.stopPropagation()}
-      />
-
-      <span
-        className="flex-1 min-w-0 truncate font-medium capitalize"
-        title={row.keyword}
-      >
-        {row.keyword}
-      </span>
-
-      <span className="w-16 text-right tabular-nums text-base-content/70">
-        {formatNumber(row.searchVolume)}
-      </span>
-      <span className="w-14 text-right tabular-nums text-base-content/70">
-        {row.cpc == null ? "-" : row.cpc.toFixed(2)}
-      </span>
-      <span className="w-12 text-right tabular-nums text-base-content/70">
-        {row.competition == null ? "-" : row.competition.toFixed(2)}
-      </span>
-
-      <div className="w-10 flex justify-end">
-        <ScoreBadge value={row.keywordDifficulty} size="sm" />
-      </div>
-    </div>
-  );
-}
-
 export function KeywordCard({
   row,
   isSelected,

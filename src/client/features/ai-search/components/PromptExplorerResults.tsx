@@ -10,7 +10,7 @@ import {
   formatModelLabel,
   getModelAccent,
 } from "@/client/features/ai-search/platformLabels";
-import { formatUrlForDisplay } from "@/client/features/ai-search/urlDisplay";
+import { formatUrlForDisplay } from "@/client/components/table/url";
 import type {
   PromptExplorerModelResult,
   PromptExplorerResult,

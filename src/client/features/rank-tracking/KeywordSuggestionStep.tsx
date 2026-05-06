@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
-  useReactTable,
-  getCoreRowModel,
-  getSortedRowModel,
-  flexRender,
   type ColumnDef,
   type RowSelectionState,
   type SortingState,
@@ -14,11 +10,16 @@ import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  AppDataTable,
+  makeSelectionColumn,
+  useAppTable,
+} from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "./RankTrackingColumns";
 import {
   applyShiftRangeSelection,
   type SelectionAnchor,
-} from "./tableSelection";
+} from "@/client/components/table/tableSelection";
 
 type SuggestedKeyword = {
   keyword: string;
@@ -151,31 +152,7 @@ export function KeywordSuggestionStep({
 
   const columns = useMemo<ColumnDef<SuggestedKeyword>[]>(
     () => [
-      {
-        id: "select",
-        size: 32,
-        enableSorting: false,
-        header: ({ table }) => (
-          <input
-            type="checkbox"
-            className="checkbox checkbox-xs"
-            checked={table.getIsAllRowsSelected()}
-            onChange={table.getToggleAllRowsSelectedHandler()}
-          />
-        ),
-        cell: ({ row, table }) => (
-          <input
-            type="checkbox"
-            className="checkbox checkbox-xs"
-            checked={row.getIsSelected()}
-            onClick={(event) => {
-              event.stopPropagation();
-              applyShiftRangeSelection(event, row, table, selectAnchorRef);
-            }}
-            onChange={row.getToggleSelectedHandler()}
-          />
-        ),
-      },
+      makeSelectionColumn<SuggestedKeyword>(selectAnchorRef),
       ...baseColumns,
     ],
     [],
@@ -217,14 +194,13 @@ export function KeywordSuggestionStep({
     }
   }, [suggestionsQuery.data, hasInitialized]);
 
-  const table = useReactTable({
+  const table = useAppTable({
     data,
     columns,
     state: { rowSelection, sorting },
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    withSorting: true,
     enableRowSelection: true,
   });
 
@@ -336,49 +312,22 @@ export function KeywordSuggestionStep({
         </span>
       </div>
 
-      <div className="overflow-y-auto max-h-[400px] border border-base-300 rounded-lg">
-        <table className="table table-xs table-pin-rows w-full">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id} className="bg-base-200">
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="hover:bg-base-200/50 cursor-pointer"
-                onClick={(event) => {
-                  if (
-                    applyShiftRangeSelection(event, row, table, selectAnchorRef)
-                  ) {
-                    return;
-                  }
+      <AppDataTable
+        table={table}
+        className="table table-xs table-pin-rows w-full"
+        wrapperClassName="overflow-y-auto max-h-[400px] border border-base-300 rounded-lg"
+        stickyHeader
+        getRowProps={(row) => ({
+          className: "hover:bg-base-200/50 cursor-pointer",
+          onClick: (event) => {
+            if (applyShiftRangeSelection(event, row, table, selectAnchorRef)) {
+              return;
+            }
 
-                  row.toggleSelected();
-                }}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            row.toggleSelected();
+          },
+        })}
+      />
 
       <div className="flex items-center justify-end gap-3 pt-1">
         <button className="btn btn-ghost btn-sm" onClick={onClose}>

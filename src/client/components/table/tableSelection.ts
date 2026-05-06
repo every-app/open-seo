@@ -1,5 +1,5 @@
 import type { MouseEvent, MutableRefObject } from "react";
-import type { Row, Table } from "@tanstack/react-table";
+import type { Row, RowSelectionState, Table } from "@tanstack/react-table";
 
 export type SelectionAnchor = {
   id: string;
@@ -50,7 +50,7 @@ export function applyShiftRangeSelection<T>(
       : [currentIndex, anchorIndex];
 
   const selected = anchorRef.current.selected;
-  table.setRowSelection((currentSelection) => {
+  table.setRowSelection((currentSelection: RowSelectionState) => {
     const nextSelection = { ...currentSelection };
 
     for (let index = from; index <= to; index++) {

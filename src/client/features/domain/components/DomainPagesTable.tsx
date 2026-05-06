@@ -1,9 +1,14 @@
-import { SafeExternalLink } from "@/client/components/SafeExternalLink";
+import { useMemo } from "react";
+import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
+import {
+  AppDataTable,
+  useAppTable,
+} from "@/client/components/table/AppDataTable";
+import { ExternalUrlCell } from "@/client/components/table/url";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
 import {
   formatFloat,
   formatNumber,
-  resolveDomainPageHref,
   toPageSortMode,
 } from "@/client/features/domain/utils";
 import type {
@@ -20,6 +25,8 @@ type Props = {
   onSortClick: (sort: DomainSortMode) => void;
 };
 
+const pageColumnHelper = createColumnHelper<PageRow>();
+
 export function DomainPagesTable({
   domain,
   rows,
@@ -27,65 +34,62 @@ export function DomainPagesTable({
   currentSortOrder,
   onSortClick,
 }: Props) {
-  return (
-    <div className="overflow-x-auto">
-      <table className="table table-zebra table-sm">
-        <thead>
-          <tr>
-            <th>Page</th>
-            <th>
-              <SortableHeader
-                label="Organic Traffic"
-                isActive={toPageSortMode(sortMode) === "traffic"}
-                order={currentSortOrder}
-                onClick={() => onSortClick("traffic")}
-              />
-            </th>
-            <th>
-              <SortableHeader
-                label="Keywords"
-                isActive={toPageSortMode(sortMode) === "keywords"}
-                order={currentSortOrder}
-                onClick={() => onSortClick("volume")}
-              />
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.length === 0 ? (
-            <tr>
-              <td colSpan={3} className="py-6 text-center text-base-content/60">
-                No pages match this search.
-              </td>
-            </tr>
-          ) : (
-            rows.slice(0, 100).map((row) => {
-              const href = resolveDomainPageHref(
-                row.relativePath ?? row.page,
-                domain,
-              );
+  const columns = useMemo<ColumnDef<PageRow>[]>(
+    () => [
+      pageColumnHelper.display({
+        id: "page",
+        header: () => "Page",
+        cell: ({ row }) => (
+          <ExternalUrlCell
+            value={row.original.relativePath ?? row.original.page}
+            label={row.original.relativePath ?? row.original.page}
+            baseDomain={domain}
+            className="link link-primary inline-flex items-center gap-1"
+          />
+        ),
+        meta: {
+          cellClassName: "max-w-[420px] truncate",
+        },
+      }),
+      pageColumnHelper.accessor("organicTraffic", {
+        header: () => (
+          <SortableHeader
+            label="Organic Traffic"
+            isActive={toPageSortMode(sortMode) === "traffic"}
+            order={currentSortOrder}
+            onClick={() => onSortClick("traffic")}
+          />
+        ),
+        cell: ({ getValue }) => formatFloat(getValue()),
+      }),
+      pageColumnHelper.accessor("keywords", {
+        header: () => (
+          <SortableHeader
+            label="Keywords"
+            isActive={toPageSortMode(sortMode) === "keywords"}
+            order={currentSortOrder}
+            onClick={() => onSortClick("volume")}
+          />
+        ),
+        cell: ({ getValue }) => formatNumber(getValue()),
+      }),
+    ],
+    [currentSortOrder, domain, onSortClick, sortMode],
+  );
+  const table = useAppTable({
+    data: rows.slice(0, 100),
+    columns,
+  });
 
-              return (
-                <tr key={row.page}>
-                  <td className="max-w-[420px] truncate" title={row.page}>
-                    {href ? (
-                      <SafeExternalLink
-                        url={href}
-                        label={row.relativePath ?? row.page}
-                        className="link link-primary inline-flex items-center gap-1"
-                      />
-                    ) : (
-                      (row.relativePath ?? row.page)
-                    )}
-                  </td>
-                  <td>{formatFloat(row.organicTraffic)}</td>
-                  <td>{formatNumber(row.keywords)}</td>
-                </tr>
-              );
-            })
-          )}
-        </tbody>
-      </table>
-    </div>
+  return (
+    <AppDataTable
+      table={table}
+      className="table table-zebra table-sm"
+      empty={
+        <div className="py-6 text-center text-base-content/60">
+          No pages match this search.
+        </div>
+      }
+    />
   );
 }

@@ -1,16 +1,13 @@
-import {
-  createColumnHelper,
-  flexRender,
-  type Table,
-} from "@tanstack/react-table";
+import { createColumnHelper, type Table } from "@tanstack/react-table";
 import { ExternalLink } from "lucide-react";
+import { AppDataTable } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { numericNullsLast } from "@/client/components/table/nullSafeSort";
 import {
   formatCount,
   formatPlatformLabel,
 } from "@/client/features/ai-search/platformLabels";
-import { formatUrlForDisplay } from "@/client/features/ai-search/urlDisplay";
+import { formatUrlForDisplay } from "@/client/components/table/url";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
 type TopPageRow = BrandLookupResult["topPages"][number];
@@ -143,55 +140,17 @@ function BrandLookupTable<T>({
   urlLikeColumnId: string;
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-sm">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                const isNumeric = header.column.getCanSort();
-                return (
-                  <th
-                    key={header.id}
-                    className={`text-xs uppercase tracking-wider text-base-content/60 ${
-                      isNumeric ? "text-right" : ""
-                    }`}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </th>
-                );
-              })}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => {
-                const isNumeric = cell.column.getCanSort();
-                return (
-                  <td
-                    key={cell.id}
-                    className={cellClassName(
-                      cell.column.id,
-                      urlLikeColumnId,
-                      isNumeric,
-                    )}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <AppDataTable
+      table={table}
+      getCellClassName={(_, columnId) =>
+        cellClassName(
+          columnId,
+          urlLikeColumnId,
+          table.getColumn(columnId)?.getCanSort() ?? false,
+        )
+      }
+      getRowClassName={() => ""}
+    />
   );
 }
 

@@ -59,7 +59,6 @@ type Props = {
   canSaveKeywords: boolean;
   onSortClick: (sort: DomainSortMode) => void;
   onToggleKeyword: (keyword: string) => void;
-  onToggleAllVisible: () => void;
   page: number;
   pageSize: number;
   totalKeywordCount: number | null;
@@ -104,7 +103,6 @@ export function DomainResultsCard({
   canSaveKeywords,
   onSortClick,
   onToggleKeyword,
-  onToggleAllVisible,
   page,
   pageSize,
   totalKeywordCount,
@@ -320,7 +318,6 @@ export function DomainResultsCard({
               currentSortOrder={currentSortOrder}
               onSortClick={onSortClick}
               onToggleKeyword={onToggleKeyword}
-              onToggleAllVisible={onToggleAllVisible}
             />
           </div>
         ) : (

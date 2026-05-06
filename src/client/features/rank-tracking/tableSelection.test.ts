@@ -4,7 +4,7 @@ import type { RowSelectionState, Updater } from "@tanstack/react-table";
 import {
   applyShiftRangeSelection,
   type SelectionAnchor,
-} from "./tableSelection";
+} from "@/client/components/table/tableSelection";
 
 function makeRow(id: string, selectedIds: Set<string>) {
   return {

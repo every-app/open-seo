@@ -12,18 +12,16 @@ import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywo
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import {
   AreaTrendChart,
-  KeywordRow,
   OverviewStats,
   SerpAnalysisCard,
-  SortHeader,
 } from "@/client/features/keywords/components";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { KeywordResearchControllerState } from "./types";
 import {
-  EmptyFilterResults,
   FilterRangeInputs,
   FilterTextInput,
 } from "./keywordResearchDesktopFilters";
+import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
 
 const MONTH_SHORT_LABELS = [
   "Jan",
@@ -192,8 +190,18 @@ function DesktopTableCard({ controller }: Props) {
       </div>
 
       {showFilters ? <DesktopFilters controller={controller} /> : null}
-      <DesktopTableHeader controller={controller} />
-      <DesktopTableRows controller={controller} />
+      <KeywordResearchDesktopTable
+        activeFilterCount={controller.activeFilterCount}
+        filteredRows={controller.filteredRows}
+        overviewKeyword={controller.overviewKeyword}
+        selectedRows={controller.selectedRows}
+        setSelectedRows={controller.setSelectedRows}
+        sortDir={controller.sortDir}
+        sortField={controller.sortField}
+        toggleSort={controller.toggleSort}
+        resetFilters={controller.resetFilters}
+        handleRowClick={controller.handleRowClick}
+      />
     </div>
   );
 }
@@ -258,93 +266,6 @@ function DesktopFilters({ controller }: Props) {
           maxName="maxKd"
         />
       </div>
-    </div>
-  );
-}
-
-function DesktopTableHeader({ controller }: Props) {
-  const { filteredRows, selectedRows } = controller;
-
-  return (
-    <div className="shrink-0 flex items-center gap-3 px-4 py-2 border-b border-base-300 bg-base-100 text-xs text-base-content/60 font-medium">
-      <input
-        type="checkbox"
-        className="checkbox checkbox-xs shrink-0"
-        checked={
-          filteredRows.length > 0 && selectedRows.size === filteredRows.length
-        }
-        onChange={controller.toggleAllRows}
-      />
-      <SortHeader
-        label="Keyword"
-        field="keyword"
-        current={controller.sortField}
-        dir={controller.sortDir}
-        onToggle={controller.toggleSort}
-        className="flex-1 min-w-0"
-      />
-      <SortHeader
-        label="Volume"
-        field="searchVolume"
-        current={controller.sortField}
-        dir={controller.sortDir}
-        onToggle={controller.toggleSort}
-        className="w-16 text-right"
-      />
-      <SortHeader
-        label="CPC"
-        helpText="Cost per click in USD."
-        field="cpc"
-        current={controller.sortField}
-        dir={controller.sortDir}
-        onToggle={controller.toggleSort}
-        className="w-14 text-right"
-      />
-      <SortHeader
-        label="Comp."
-        helpText="Advertiser competition."
-        field="competition"
-        current={controller.sortField}
-        dir={controller.sortDir}
-        onToggle={controller.toggleSort}
-        className="w-12 text-right"
-      />
-      <SortHeader
-        label="Score"
-        helpText="Keyword difficulty score."
-        field="keywordDifficulty"
-        current={controller.sortField}
-        dir={controller.sortDir}
-        onToggle={controller.toggleSort}
-        className="w-10 text-right"
-      />
-    </div>
-  );
-}
-
-function DesktopTableRows({ controller }: Props) {
-  const { activeFilterCount, filteredRows, overviewKeyword, selectedRows } =
-    controller;
-
-  return (
-    <div className="flex-1 overflow-y-auto">
-      {filteredRows.length === 0 ? (
-        <EmptyFilterResults
-          activeFilterCount={activeFilterCount}
-          resetFilters={controller.resetFilters}
-        />
-      ) : (
-        filteredRows.map((row) => (
-          <KeywordRow
-            key={row.keyword}
-            row={row}
-            isSelected={selectedRows.has(row.keyword)}
-            isActive={overviewKeyword?.keyword === row.keyword}
-            onToggle={() => controller.toggleRowSelection(row.keyword)}
-            onClick={() => controller.handleRowClick(row)}
-          />
-        ))
-      )}
     </div>
   );
 }

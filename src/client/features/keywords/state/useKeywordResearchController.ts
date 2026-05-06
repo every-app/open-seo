@@ -139,6 +139,7 @@ export function useKeywordResearchController(
     serpQuery: state.serpQuery,
     serpResults: state.serpResults,
     setMobileTab: state.setMobileTab,
+    setSelectedRows: state.setSelectedRows,
     setSerpPage: state.setSerpPage,
     setShowFilters: state.setShowFilters,
     setShowSaveDialog: state.setShowSaveDialog,
@@ -165,8 +166,13 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
   const uiState = useKeywordUiState(
     Object.values(filterValues).some((v) => v.trim() !== ""),
   );
-  const { selectedRows, clearSelection, toggleRowSelection, toggleAllRows } =
-    useKeywordSelection();
+  const {
+    selectedRows,
+    setSelectedRows,
+    clearSelection,
+    toggleRowSelection,
+    toggleAllRows,
+  } = useKeywordSelection();
   const {
     setSerpKeyword,
     serpPage,
@@ -329,6 +335,7 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     searchedKeyword,
     selectedKeyword: uiState.selectedKeyword,
     selectedRows,
+    setSelectedRows,
     saveMutation,
     setPreferredLocationCode,
     setSelectedKeyword: uiState.setSelectedKeyword,

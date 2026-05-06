@@ -1,11 +1,7 @@
 import { useMemo, useState } from "react";
-import {
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type SortingState,
-} from "@tanstack/react-table";
+import { type SortingState } from "@tanstack/react-table";
 import { Download, Info, SlidersHorizontal } from "lucide-react";
+import { useAppTable } from "@/client/components/table/AppDataTable";
 import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import {
   buildBrandLookupExport,
@@ -251,21 +247,19 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
     [result.topQueries, filters.queries.values],
   );
 
-  const pagesTable = useReactTable({
+  const pagesTable = useAppTable({
     data: filteredPages,
     columns: topPagesColumns,
     state: { sorting: pagesSort },
     onSortingChange: setPagesSort,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    withSorting: true,
   });
-  const queriesTable = useReactTable({
+  const queriesTable = useAppTable({
     data: filteredQueries,
     columns: topQueriesColumns,
     state: { sorting: queriesSort },
     onSortingChange: setQueriesSort,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    withSorting: true,
   });
 
   // Not memoized: TanStack's `getSortedRowModel()` is internally cached, and

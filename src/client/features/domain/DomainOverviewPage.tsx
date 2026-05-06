@@ -150,7 +150,6 @@ export function DomainOverviewPage({
               canSaveKeywords={state.canSaveKeywords}
               onSortClick={state.handleSortColumnClick}
               onToggleKeyword={state.toggleKeywordSelection}
-              onToggleAllVisible={state.toggleAllVisibleKeywords}
               page={state.page}
               pageSize={state.pageSize}
               totalKeywordCount={state.totalKeywordCount}

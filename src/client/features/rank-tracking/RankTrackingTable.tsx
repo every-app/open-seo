@@ -1,19 +1,17 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
-import {
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { Modal } from "@/client/components/Modal";
+import {
+  AppDataTable,
+  useAppTable,
+} from "@/client/components/table/AppDataTable";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
-import type { SelectionAnchor } from "./tableSelection";
+import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 export function RankTrackingTable({
   totalCount,
@@ -47,14 +45,13 @@ export function RankTrackingTable({
     selectAnchorRef,
   );
 
-  const table = useReactTable({
+  const table = useAppTable({
     data: rows,
     columns,
     initialState: {
       sorting: [{ id: defaultSortId, desc: false }],
     },
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    withSorting: true,
     getRowId: (row) => row.trackingKeywordId,
     enableRowSelection: true,
   });
@@ -165,37 +162,7 @@ export function RankTrackingTable({
         </Modal>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="table table-sm">
-          <thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="align-top">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <AppDataTable table={table} getCellClassName={() => "align-top"} />
       <p className="text-xs text-base-content/60 pt-2">
         {rows.length} of {totalCount} keywords
       </p>

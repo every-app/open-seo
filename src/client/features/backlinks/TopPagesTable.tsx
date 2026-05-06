@@ -1,12 +1,9 @@
-import {
-  createColumnHelper,
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type SortingState,
-} from "@tanstack/react-table";
+import { createColumnHelper, type SortingState } from "@tanstack/react-table";
 import { useState } from "react";
+import {
+  AppDataTable,
+  useAppTable,
+} from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import {
   numericNullsLast,
@@ -103,13 +100,12 @@ export function TopPagesTable({
 }) {
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
 
-  const table = useReactTable({
+  const table = useAppTable({
     data: rows,
     columns,
     state: { sorting },
     onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
+    withSorting: true,
   });
 
   if (rows.length === 0) {
@@ -117,39 +113,11 @@ export function TopPagesTable({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-sm">
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <th key={header.id}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
-                </th>
-              ))}
-            </tr>
-          ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => (
-            <tr key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <td
-                  key={cell.id}
-                  className={cell.column.id === "page" ? "min-w-80" : undefined}
-                >
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <AppDataTable
+      table={table}
+      getCellClassName={(_, columnId) =>
+        columnId === "page" ? "min-w-80" : undefined
+      }
+    />
   );
 }
