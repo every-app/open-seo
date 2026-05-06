@@ -97,8 +97,11 @@ export function RankTrackingDomainList({
       </div>
 
       {archiveTarget && (
-        <Modal>
-          <h3 className="text-lg font-semibold">
+        <Modal
+          onClose={() => setArchiveTarget(null)}
+          labelledBy="archive-domain-title"
+        >
+          <h3 id="archive-domain-title" className="text-lg font-semibold">
             Archive {archiveTarget.domain}?
           </h3>
           <p className="text-sm text-base-content/70">

@@ -34,9 +34,13 @@ export function CheckConfirmModal({
     Math.ceil(totalChecks / KEYWORDS_PER_BATCH) * SECONDS_PER_BATCH;
 
   return (
-    <Modal maxWidth="max-w-md">
+    <Modal
+      maxWidth="max-w-md"
+      onClose={onCancel}
+      labelledBy="rank-check-confirm-title"
+    >
       <div>
-        <h3 className="text-lg font-semibold">
+        <h3 id="rank-check-confirm-title" className="text-lg font-semibold">
           Check {keywordCount} keyword
           {keywordCount !== 1 ? "s" : ""}
         </h3>

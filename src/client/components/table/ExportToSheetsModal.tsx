@@ -28,13 +28,17 @@ export function ExportToSheetsModal() {
   };
 
   return (
-    <Modal maxWidth="max-w-md">
+    <Modal
+      maxWidth="max-w-md"
+      onClose={closeExportToSheetsModal}
+      labelledBy="export-to-sheets-title"
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="inline-flex size-8 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="size-4" />
           </span>
-          <h3 className="text-base font-semibold">
+          <h3 id="export-to-sheets-title" className="text-base font-semibold">
             Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
           </h3>
         </div>

@@ -129,8 +129,13 @@ export function RankTrackingTable({
 
       {/* Confirm modal */}
       {showConfirm && (
-        <Modal>
-          <h3 className="text-lg font-semibold">Remove keywords?</h3>
+        <Modal
+          onClose={() => setShowConfirm(false)}
+          labelledBy="remove-keywords-title"
+        >
+          <h3 id="remove-keywords-title" className="text-lg font-semibold">
+            Remove keywords?
+          </h3>
           <p className="text-sm text-base-content/70">
             This will stop tracking {selectedCount} keyword
             {selectedCount !== 1 ? "s" : ""}. Historical ranking data is

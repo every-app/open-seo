@@ -255,7 +255,9 @@ export function KeywordSuggestionStep({
 
   const sectionHeader = (title: string) => (
     <div className="flex items-center justify-between">
-      <h2 className="text-lg font-semibold">{title}</h2>
+      <h2 id="keyword-suggestions-title" className="text-lg font-semibold">
+        {title}
+      </h2>
       <button className="btn btn-ghost btn-sm btn-square" onClick={onClose}>
         <X className="size-4" />
       </button>

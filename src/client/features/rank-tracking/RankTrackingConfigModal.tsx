@@ -127,8 +127,14 @@ export function RankTrackingConfigModal({
   const isPending = createMutation.isPending || updateMutation.isPending;
 
   if (step === "keywords" && createdConfigId) {
+    const closeKeywordStep = () => onSaved(createdConfigId);
+
     return (
-      <Modal maxWidth="max-w-3xl">
+      <Modal
+        maxWidth="max-w-3xl"
+        onClose={closeKeywordStep}
+        labelledBy="keyword-suggestions-title"
+      >
         <KeywordSuggestionStep
           configId={createdConfigId}
           projectId={projectId}
@@ -136,16 +142,20 @@ export function RankTrackingConfigModal({
           locationCode={locationCode}
           languageCode={getLanguageCode(locationCode)}
           onDone={(id) => onSaved(id)}
-          onClose={() => onSaved(createdConfigId ?? undefined)}
+          onClose={closeKeywordStep}
         />
       </Modal>
     );
   }
 
   return (
-    <Modal maxWidth="max-w-lg">
+    <Modal
+      maxWidth="max-w-lg"
+      onClose={onClose}
+      labelledBy="rank-config-modal-title"
+    >
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
+        <h2 id="rank-config-modal-title" className="text-lg font-semibold">
           {isEdit ? "Edit Domain Config" : "Add Domain"}
         </h2>
         <button className="btn btn-ghost btn-sm btn-square" onClick={onClose}>
