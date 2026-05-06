@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trash2 } from "lucide-react";
 import {
@@ -13,6 +13,7 @@ import { removeTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
+import type { SelectionAnchor } from "./tableSelection";
 
 export function RankTrackingTable({
   totalCount,
@@ -37,8 +38,14 @@ export function RankTrackingTable({
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
+  const selectAnchorRef = useRef<SelectionAnchor | null>(null);
 
-  const columns = useRankTrackingColumns(showDesktop, showMobile, domain);
+  const columns = useRankTrackingColumns(
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+  );
 
   const table = useReactTable({
     data: rows,

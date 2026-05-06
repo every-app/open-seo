@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type MutableRefObject } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import type { ColumnDef, SortingFn } from "@tanstack/react-table";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
@@ -11,6 +11,10 @@ import {
   SerpFeatureTags,
   VolumeCell,
 } from "./RankTrackingTableParts";
+import {
+  applyShiftRangeSelection,
+  type SelectionAnchor,
+} from "./tableSelection";
 
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
@@ -107,27 +111,34 @@ const positionSort: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
   );
 };
 
-const selectColumn: ColumnDef<RankTrackingRow> = {
-  id: "select",
-  size: 32,
-  enableSorting: false,
-  header: ({ table }) => (
-    <input
-      type="checkbox"
-      className="checkbox checkbox-xs"
-      checked={table.getIsAllRowsSelected()}
-      onChange={table.getToggleAllRowsSelectedHandler()}
-    />
-  ),
-  cell: ({ row }) => (
-    <input
-      type="checkbox"
-      className="checkbox checkbox-xs"
-      checked={row.getIsSelected()}
-      onChange={row.getToggleSelectedHandler()}
-    />
-  ),
-};
+function makeSelectColumn(
+  anchorRef: MutableRefObject<SelectionAnchor | null>,
+): ColumnDef<RankTrackingRow> {
+  return {
+    id: "select",
+    size: 32,
+    enableSorting: false,
+    header: ({ table }) => (
+      <input
+        type="checkbox"
+        className="checkbox checkbox-xs"
+        checked={table.getIsAllRowsSelected()}
+        onChange={table.getToggleAllRowsSelectedHandler()}
+      />
+    ),
+    cell: ({ row, table }) => (
+      <input
+        type="checkbox"
+        className="checkbox checkbox-xs"
+        checked={row.getIsSelected()}
+        onClick={(event) =>
+          applyShiftRangeSelection(event, row, table, anchorRef)
+        }
+        onChange={row.getToggleSelectedHandler()}
+      />
+    ),
+  };
+}
 
 const keywordColumn: ColumnDef<RankTrackingRow> = {
   id: "keyword",
@@ -206,9 +217,13 @@ export function useRankTrackingColumns(
   showDesktop: boolean,
   showMobile: boolean,
   domain: string,
+  selectAnchorRef: MutableRefObject<SelectionAnchor | null>,
 ): ColumnDef<RankTrackingRow>[] {
   return useMemo(() => {
-    const cols: ColumnDef<RankTrackingRow>[] = [selectColumn, keywordColumn];
+    const cols: ColumnDef<RankTrackingRow>[] = [
+      makeSelectColumn(selectAnchorRef),
+      keywordColumn,
+    ];
     if (showDesktop) {
       cols.push(makeDeviceColumn("desktop"));
       cols.push(makeUrlColumn("desktop", domain));
@@ -225,5 +240,5 @@ export function useRankTrackingColumns(
       cols.push(makeSerpColumn("mobile"));
     }
     return cols;
-  }, [showDesktop, showMobile, domain]);
+  }, [showDesktop, showMobile, domain, selectAnchorRef]);
 }

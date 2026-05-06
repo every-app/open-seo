@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   useReactTable,
@@ -15,6 +15,10 @@ import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { SortableHeader } from "./RankTrackingColumns";
+import {
+  applyShiftRangeSelection,
+  type SelectionAnchor,
+} from "./tableSelection";
 
 type SuggestedKeyword = {
   keyword: string;
@@ -25,29 +29,7 @@ type SuggestedKeyword = {
 
 const PRE_SELECT_COUNT = 20;
 
-const columns: ColumnDef<SuggestedKeyword>[] = [
-  {
-    id: "select",
-    size: 32,
-    enableSorting: false,
-    header: ({ table }) => (
-      <input
-        type="checkbox"
-        className="checkbox checkbox-xs"
-        checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
-      />
-    ),
-    cell: ({ row }) => (
-      <input
-        type="checkbox"
-        className="checkbox checkbox-xs"
-        checked={row.getIsSelected()}
-        onClick={(e) => e.stopPropagation()}
-        onChange={row.getToggleSelectedHandler()}
-      />
-    ),
-  },
+const baseColumns: ColumnDef<SuggestedKeyword>[] = [
   {
     id: "keyword",
     accessorKey: "keyword",
@@ -165,6 +147,39 @@ export function KeywordSuggestionStep({
   const [sorting, setSorting] = useState<SortingState>([
     { id: "position", desc: false },
   ]);
+  const selectAnchorRef = useRef<SelectionAnchor | null>(null);
+
+  const columns = useMemo<ColumnDef<SuggestedKeyword>[]>(
+    () => [
+      {
+        id: "select",
+        size: 32,
+        enableSorting: false,
+        header: ({ table }) => (
+          <input
+            type="checkbox"
+            className="checkbox checkbox-xs"
+            checked={table.getIsAllRowsSelected()}
+            onChange={table.getToggleAllRowsSelectedHandler()}
+          />
+        ),
+        cell: ({ row, table }) => (
+          <input
+            type="checkbox"
+            className="checkbox checkbox-xs"
+            checked={row.getIsSelected()}
+            onClick={(event) => {
+              event.stopPropagation();
+              applyShiftRangeSelection(event, row, table, selectAnchorRef);
+            }}
+            onChange={row.getToggleSelectedHandler()}
+          />
+        ),
+      },
+      ...baseColumns,
+    ],
+    [],
+  );
 
   const suggestionsQuery = useQuery({
     queryKey: [
@@ -342,7 +357,15 @@ export function KeywordSuggestionStep({
               <tr
                 key={row.id}
                 className="hover:bg-base-200/50 cursor-pointer"
-                onClick={row.getToggleSelectedHandler()}
+                onClick={(event) => {
+                  if (
+                    applyShiftRangeSelection(event, row, table, selectAnchorRef)
+                  ) {
+                    return;
+                  }
+
+                  row.toggleSelected();
+                }}
               >
                 {row.getVisibleCells().map((cell) => (
                   <td key={cell.id}>
