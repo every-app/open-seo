@@ -80,7 +80,7 @@ function DesktopKeywordPanel({ controller }: Props) {
   } = controller;
 
   return (
-    <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:flex-1">
+    <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5">
       {showApproximateMatchNotice ? (
         <div
           className="rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-base-content"
@@ -277,7 +277,7 @@ function DesktopSerpPanel({ controller }: Props) {
     : "Last 12 available months";
 
   return (
-    <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:flex-1 xl:overflow-y-auto">
+    <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:basis-2/5 xl:overflow-y-auto">
       {overviewKeyword && overviewKeyword.trend.length > 0 ? (
         <div className="shrink-0 overflow-hidden border border-base-300 rounded-xl bg-base-100 px-4 py-3">
           <h4 className="text-sm font-semibold mb-1">

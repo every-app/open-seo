@@ -1,14 +1,6 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  ExternalLink,
-  Minus,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
 import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import type { SerpResultItem } from "@/types/keywords";
-import { formatNumber } from "../utils";
 
 export function SerpAnalysisCard({
   items,
@@ -54,25 +46,12 @@ export function SerpAnalysisCard({
           {items.length} organic results
         </div>
         <ExportToSheetsButton
-          headers={[
-            "Rank",
-            "Title",
-            "URL",
-            "Domain",
-            "Traffic",
-            "Referring Domains",
-            "Backlinks",
-            "Rank Change",
-          ]}
+          headers={["Rank", "Title", "URL", "Domain"]}
           rows={items.map((item) => [
             item.rank,
             item.title ?? "",
             item.url,
             item.domain,
-            item.etv ?? "",
-            item.referringDomains ?? "",
-            item.backlinks ?? "",
-            item.isNew ? "new" : (item.rankChange ?? ""),
           ])}
           feature="serp_analysis"
         />
@@ -95,10 +74,6 @@ function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
           <tr className="text-xs text-base-content/60">
             <th className="w-8">#</th>
             <th>Page</th>
-            <th className="text-right w-20">Traffic</th>
-            <th className="text-right w-20">Ref. Domains</th>
-            <th className="text-right w-20">Backlinks</th>
-            <th className="text-center w-16">Change</th>
           </tr>
         </thead>
         <tbody>
@@ -110,7 +85,7 @@ function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
               <td className="font-mono text-base-content/50 text-xs">
                 {item.rank}
               </td>
-              <td className="max-w-[280px]">
+              <td className="min-w-0 max-w-0">
                 <div className="flex flex-col gap-0.5">
                   <a
                     href={item.url}
@@ -126,18 +101,6 @@ function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
                     {item.domain}
                   </span>
                 </div>
-              </td>
-              <td className="text-right tabular-nums text-base-content/70">
-                {formatNumber(item.etv)}
-              </td>
-              <td className="text-right tabular-nums text-base-content/70">
-                {formatNumber(item.referringDomains)}
-              </td>
-              <td className="text-right tabular-nums text-base-content/70">
-                {formatNumber(item.backlinks)}
-              </td>
-              <td className="text-center">
-                <RankChangeBadge change={item.rankChange} isNew={item.isNew} />
               </td>
             </tr>
           ))}
@@ -208,35 +171,4 @@ function SerpAnalysisEmptyState({ keyword }: { keyword?: string | null }) {
       ) : null}
     </div>
   );
-}
-
-function RankChangeBadge({
-  change,
-  isNew,
-}: {
-  change: number | null;
-  isNew?: boolean;
-}) {
-  if (isNew) {
-    return <span className="badge badge-success badge-xs">new</span>;
-  }
-  if (change == null)
-    return <Minus className="size-3 text-base-content/40 mx-auto" />;
-  if (change > 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-success text-xs">
-        <TrendingUp className="size-3" />
-        {change}
-      </span>
-    );
-  }
-  if (change < 0) {
-    return (
-      <span className="inline-flex items-center gap-0.5 text-error text-xs">
-        <TrendingDown className="size-3" />
-        {Math.abs(change)}
-      </span>
-    );
-  }
-  return <Minus className="size-3 text-base-content/40 mx-auto" />;
 }

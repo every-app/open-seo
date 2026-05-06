@@ -11,6 +11,7 @@ import {
   useSelectionAnchor,
 } from "@/client/components/table/AppDataTable";
 import {
+  IntentBadge,
   SortHeader,
   type SortDir,
   type SortField,
@@ -151,6 +152,14 @@ export function KeywordResearchDesktopTable({
         ),
         cell: ({ getValue }) => <ScoreCell value={getValue()} />,
         meta: { headerClassName: "text-right", cellClassName: "text-right" },
+      }),
+      keywordColumnHelper.accessor("intent", {
+        header: "Intent",
+        cell: ({ getValue }) => <IntentBadge intent={getValue()} />,
+        meta: {
+          headerClassName: "text-center",
+          cellClassName: "text-center",
+        },
       }),
     ],
     [selectAnchorRef, sortDir, sortField, toggleSort],

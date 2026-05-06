@@ -1,6 +1,6 @@
 import type { KeywordResearchRow } from "@/types/keywords";
 import { formatNumber, scoreTierClass } from "../utils";
-import { IntentBadge } from "./DisplayPrimitives";
+import { IntentBadge } from "./IntentBadge";
 export { SerpAnalysisCard } from "./SerpAnalysisCard";
 
 export type { SortDir, SortField } from "./DisplayPrimitives";

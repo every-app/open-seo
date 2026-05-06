@@ -10,8 +10,9 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import type { KeywordIntent, MonthlySearch } from "@/types/keywords";
+import type { MonthlySearch } from "@/types/keywords";
 import { formatNumber } from "../utils";
+import { FloatingTooltip, useFloatingTooltip } from "./FloatingTooltip";
 
 export type SortField =
   | "keyword"
@@ -30,80 +31,27 @@ export function HeaderHelpLabel({
   helpText: string;
   delayMs?: number;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-  const openTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerRef = useRef<HTMLSpanElement | null>(null);
-
-  const updatePosition = () => {
-    const rect = triggerRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setPosition({
-      top: rect.top - 8,
-      left: rect.left + rect.width / 2,
-    });
-  };
-
-  const clearOpenTimeout = () => {
-    if (openTimeoutRef.current) {
-      clearTimeout(openTimeoutRef.current);
-      openTimeoutRef.current = null;
-    }
-  };
-
-  const scheduleOpen = () => {
-    clearOpenTimeout();
-    openTimeoutRef.current = setTimeout(() => {
-      updatePosition();
-      setIsOpen(true);
-      openTimeoutRef.current = null;
-    }, delayMs);
-  };
-
-  const closeNow = () => {
-    clearOpenTimeout();
-    setIsOpen(false);
-  };
-
-  useEffect(() => clearOpenTimeout, []);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    updatePosition();
-
-    const handleReposition = () => updatePosition();
-    window.addEventListener("resize", handleReposition);
-    window.addEventListener("scroll", handleReposition, true);
-
-    return () => {
-      window.removeEventListener("resize", handleReposition);
-      window.removeEventListener("scroll", handleReposition, true);
-    };
-  }, [isOpen]);
+  const tooltip = useFloatingTooltip<HTMLSpanElement>({ delayMs });
 
   return (
     <span
-      ref={triggerRef}
+      ref={tooltip.triggerRef}
       className="relative inline-flex items-center"
-      onMouseEnter={scheduleOpen}
-      onMouseLeave={closeNow}
-      onFocus={scheduleOpen}
-      onBlur={closeNow}
+      onMouseEnter={tooltip.scheduleOpen}
+      onMouseLeave={tooltip.close}
+      onFocus={tooltip.scheduleOpen}
+      onBlur={tooltip.close}
       onKeyDown={(e) => {
-        if (e.key === "Escape") closeNow();
+        if (e.key === "Escape") tooltip.close();
       }}
+      aria-describedby={tooltip.isOpen ? tooltip.tooltipId : undefined}
     >
       <span>{label}</span>
-      {isOpen && typeof document !== "undefined"
+      {tooltip.isOpen && typeof document !== "undefined"
         ? createPortal(
-            <span
-              role="tooltip"
-              className="pointer-events-none fixed z-[1000] w-max max-w-56 -translate-x-1/2 -translate-y-full rounded-md border border-base-300 bg-base-100 px-2 py-1 text-[11px] font-normal normal-case leading-snug text-base-content shadow-md"
-              style={{ left: position.left, top: position.top }}
-            >
+            <FloatingTooltip id={tooltip.tooltipId} position={tooltip.position}>
               {helpText}
-            </span>,
+            </FloatingTooltip>,
             document.body,
           )
         : null}
@@ -251,40 +199,41 @@ export function SortHeader({
   className?: string;
 }) {
   const isActive = field === current;
+  const tooltip = useFloatingTooltip<HTMLButtonElement>({
+    enabled: !!helpText,
+  });
+
   return (
     <button
+      ref={tooltip.triggerRef}
       className={`inline-flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer select-none ${className ?? ""}`}
       onClick={() => onToggle(field)}
+      onMouseEnter={tooltip.scheduleOpen}
+      onMouseLeave={tooltip.close}
+      onFocus={tooltip.scheduleOpen}
+      onBlur={tooltip.close}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") tooltip.close();
+      }}
+      aria-describedby={
+        tooltip.isOpen && helpText ? tooltip.tooltipId : undefined
+      }
     >
-      {helpText ? <HeaderHelpLabel label={label} helpText={helpText} /> : label}
+      {label}
       {isActive &&
         (dir === "asc" ? (
           <ChevronUp className="size-3" />
         ) : (
           <ChevronDown className="size-3" />
         ))}
+      {tooltip.isOpen && helpText && typeof document !== "undefined"
+        ? createPortal(
+            <FloatingTooltip id={tooltip.tooltipId} position={tooltip.position}>
+              {helpText}
+            </FloatingTooltip>,
+            document.body,
+          )
+        : null}
     </button>
-  );
-}
-
-export function IntentBadge({ intent }: { intent: KeywordIntent }) {
-  const colors: Record<KeywordIntent, string> = {
-    informational: "badge-info",
-    commercial: "badge-warning",
-    transactional: "badge-success",
-    navigational: "badge-primary",
-    unknown: "badge-ghost",
-  };
-  const shortLabels: Record<KeywordIntent, string> = {
-    informational: "Info",
-    commercial: "Comm",
-    transactional: "Trans",
-    navigational: "Nav",
-    unknown: "?",
-  };
-  return (
-    <span className={`badge badge-sm ${colors[intent]}`}>
-      {shortLabels[intent]}
-    </span>
   );
 }
