@@ -49,6 +49,7 @@
     }
   },
   "dependencies": {
+    "@better-auth/oauth-provider": "^1.5.5",
     "@every-app/sdk": "^0.1.14",
     "@tanstack/query-core": "^5.90.9",
     "@tanstack/react-form": "^1.25.0",

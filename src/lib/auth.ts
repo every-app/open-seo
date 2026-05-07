@@ -4,7 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@/db";
 import { z } from "zod";
-import { baseAuthConfig } from "@/lib/auth-config";
+import { createBaseAuthConfig } from "@/lib/auth-config";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import {
   sendHostedPasswordResetEmail,
@@ -25,6 +25,7 @@ const hostedBaseUrlSchema = z
 function createAuth() {
   const baseUrl = getHostedBaseUrl();
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
+  const baseAuthConfig = createBaseAuthConfig(baseUrl);
 
   const auth = betterAuth({
     baseURL: baseUrl,
@@ -102,7 +103,7 @@ function getTrustedOrigins(baseUrl: string) {
   return trustedOrigins;
 }
 
-function getHostedBaseUrl() {
+export function getHostedBaseUrl() {
   const baseUrl = env.BETTER_AUTH_URL?.trim();
 
   if (!baseUrl) {
