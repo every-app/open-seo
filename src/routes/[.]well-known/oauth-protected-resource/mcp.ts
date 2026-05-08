@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
-import { getAuth, getHostedBaseUrl, hasHostedAuthConfig } from "@/lib/auth";
+import { getHostedBaseUrl, hasHostedAuthConfig } from "@/lib/auth";
 import { isHostedAuthMode } from "@/lib/auth-mode";
+import { getOAuthProviderResourceActions } from "@/lib/oauth-provider-resource-client";
 import { getMcpResource, MCP_SCOPE } from "@/lib/oauth-resource";
 
 function unavailableMetadataResponse() {
@@ -25,13 +26,13 @@ export const Route = createFileRoute(
         }
 
         const baseUrl = getHostedBaseUrl();
-        const authServerMetadata = await getAuth().api.getOAuthServerConfig();
-        const metadata = {
-          resource: getMcpResource(baseUrl),
-          authorization_servers: [authServerMetadata.issuer],
-          scopes_supported: [MCP_SCOPE],
-          resource_name: "OpenSEO MCP",
-        };
+        const metadata =
+          await getOAuthProviderResourceActions().getProtectedResourceMetadata({
+            resource: getMcpResource(baseUrl),
+            authorization_servers: [`${baseUrl}/api/auth`],
+            scopes_supported: [MCP_SCOPE],
+            resource_name: "OpenSEO MCP",
+          });
 
         return new Response(JSON.stringify(metadata), {
           headers: {

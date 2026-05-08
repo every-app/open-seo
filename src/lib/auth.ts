@@ -30,6 +30,9 @@ function createAuth() {
   const auth = betterAuth({
     baseURL: baseUrl,
     secret: getHostedSecret(),
+    // Disable Better Auth's generic /token endpoint so OAuth access tokens only
+    // flow through /oauth2/token, where the MCP resource shim can run.
+    disabledPaths: ["/token"],
     ...baseAuthConfig,
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,

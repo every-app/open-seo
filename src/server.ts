@@ -7,8 +7,20 @@ import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rank
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { computeNextCheckAt } from "@/shared/rank-tracking";
+import { handleMcpRequest, MCP_ROUTE } from "@/server/mcp/handler";
 
-const fetch = createStartHandler(defaultStreamHandler);
+const appFetch = createStartHandler(defaultStreamHandler);
+const fetch = (
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
+): Response | Promise<Response> => {
+  if (new URL(request.url).pathname === MCP_ROUTE) {
+    return handleMcpRequest(request, env, ctx);
+  }
+
+  return appFetch(request);
+};
 
 // Export Workflow classes as named exports
 export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
