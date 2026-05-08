@@ -2,10 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpRight, Check, ChevronDown, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
-import {
-  ClaudeIcon,
-  CodexIcon,
-} from "@/client/features/ai-mcp/AgentIcons";
+import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
@@ -283,7 +280,11 @@ function CodeBlock({ code }: { code: string }) {
         <code className="font-mono">{code}</code>
       </pre>
       <div className="flex shrink-0 items-start border-l border-base-300 p-1.5">
-        <CopyButton value={code} successMessage="Copied to clipboard" iconOnly />
+        <CopyButton
+          value={code}
+          successMessage="Copied to clipboard"
+          iconOnly
+        />
       </div>
     </div>
   );
