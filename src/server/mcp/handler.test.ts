@@ -77,18 +77,36 @@ const transportOptionsSchema = z.object({
   }),
 });
 
-function createMcpRequest(token: string) {
+function createMcpRequest({
+  method = "tools/call",
+  token,
+}: {
+  method?: string;
+  token?: string;
+} = {}) {
+  const headers = new Headers({
+    Accept: "application/json, text/event-stream",
+    "Content-Type": "application/json",
+  });
+
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+
   return new Request("https://open-seo.test/mcp", {
     method: "POST",
-    headers: {
-      Accept: "application/json, text/event-stream",
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
     body: JSON.stringify({
       jsonrpc: "2.0",
       id: 1,
-      method: "tools/list",
+      method,
+      params:
+        method === "tools/call"
+          ? {
+              name: "whoami",
+              arguments: {},
+            }
+          : undefined,
     }),
   });
 }
@@ -125,7 +143,7 @@ describe("handleMcpRequest", () => {
     const { handleMcpRequest } = await import("@/server/mcp/handler");
 
     const response = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
@@ -166,14 +184,14 @@ describe("handleMcpRequest", () => {
     const { handleMcpRequest } = await import("@/server/mcp/handler");
 
     const first = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
       ctx,
     );
     const second = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
@@ -207,6 +225,40 @@ describe("handleMcpRequest", () => {
     expect(body.options.authContext).toBeUndefined();
   });
 
+  it("lets unauthenticated initialize reach the MCP transport", async () => {
+    const { handleMcpRequest } = await import("@/server/mcp/handler");
+
+    const response = await handleMcpRequest(
+      createMcpRequest({ method: "initialize" }),
+      {
+        AUTH_MODE: "hosted",
+      },
+      ctx,
+    );
+    const body = transportOptionsSchema.parse(await response.json());
+
+    expect(response.status).toBe(200);
+    expect(verifyMocks.verifyJwsAccessToken).not.toHaveBeenCalled();
+    expect(body.options.authContext).toBeUndefined();
+  });
+
+  it("lets unauthenticated tools/list reach the MCP transport", async () => {
+    const { handleMcpRequest } = await import("@/server/mcp/handler");
+
+    const response = await handleMcpRequest(
+      createMcpRequest({ method: "tools/list" }),
+      {
+        AUTH_MODE: "hosted",
+      },
+      ctx,
+    );
+    const body = transportOptionsSchema.parse(await response.json());
+
+    expect(response.status).toBe(200);
+    expect(verifyMocks.verifyJwsAccessToken).not.toHaveBeenCalled();
+    expect(body.options.authContext).toBeUndefined();
+  });
+
   it("returns 401 when Better Auth rejects the access token", async () => {
     const { handleMcpRequest } = await import("@/server/mcp/handler");
     verifyMocks.verifyJwsAccessToken.mockRejectedValue(
@@ -214,7 +266,7 @@ describe("handleMcpRequest", () => {
     );
 
     const response = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
@@ -236,7 +288,7 @@ describe("handleMcpRequest", () => {
     );
 
     const response = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
@@ -251,7 +303,7 @@ describe("handleMcpRequest", () => {
     userEmailMocks.getMcpUserEmail.mockResolvedValue(null);
 
     const response = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },
@@ -268,7 +320,7 @@ describe("handleMcpRequest", () => {
     );
 
     const response = await handleMcpRequest(
-      createMcpRequest(jwtShapedToken),
+      createMcpRequest({ token: jwtShapedToken }),
       {
         AUTH_MODE: "hosted",
       },

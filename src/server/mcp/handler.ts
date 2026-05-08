@@ -33,6 +33,17 @@ type McpAccessTokenPayload = JWTPayload & {
   scope?: unknown;
 };
 
+type McpJsonRpcRequest = {
+  method?: unknown;
+};
+
+const PUBLIC_MCP_METHODS = new Set([
+  "initialize",
+  "notifications/initialized",
+  "ping",
+  "tools/list",
+]);
+
 function getTokenScopes(payload: McpAccessTokenPayload) {
   return typeof payload.scope === "string"
     ? payload.scope.split(/\s+/).filter(Boolean)
@@ -55,6 +66,20 @@ function unauthorizedResponse(resource: string) {
       )}"`,
     },
   });
+}
+
+async function isPublicMcpRequest(request: Request) {
+  if (request.method === "OPTIONS") return true;
+  if (request.method !== "POST") return false;
+
+  try {
+    const body: McpJsonRpcRequest = await request.clone().json();
+    return (
+      typeof body.method === "string" && PUBLIC_MCP_METHODS.has(body.method)
+    );
+  } catch {
+    return false;
+  }
 }
 
 export async function handleMcpRequest(
@@ -82,7 +107,7 @@ export async function handleMcpRequest(
   const organizationIdClaim = getMcpOrganizationIdClaim(baseUrl);
   const server = createOpenSeoMcpServer();
 
-  if (request.method === "OPTIONS") {
+  if (await isPublicMcpRequest(request)) {
     return createMcpHandler(server, {
       route: MCP_ROUTE,
       enableJsonResponse: true,

@@ -9,6 +9,11 @@
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
+    // Package script entrypoints
+    "scripts/backlinks-cost-profile.ts",
+    "scripts/brand-lookup-cost-profile.ts",
+    "scripts/release-notes.mjs",
+    "scripts/seed-rank-tracking.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
     "src/db/app.schema.ts",
