@@ -68,18 +68,20 @@ function unauthorizedResponse(resource: string) {
   });
 }
 
-async function isPublicMcpRequest(request: Request) {
-  if (request.method === "OPTIONS") return true;
-  if (request.method !== "POST") return false;
+async function getMcpJsonRpcMethod(request: Request) {
+  if (request.method !== "POST") return null;
 
   try {
     const body: McpJsonRpcRequest = await request.clone().json();
-    return (
-      typeof body.method === "string" && PUBLIC_MCP_METHODS.has(body.method)
-    );
+    return typeof body.method === "string" ? body.method : null;
   } catch {
-    return false;
+    return null;
   }
+}
+
+function isPublicMcpRequest(request: Request, jsonRpcMethod: string | null) {
+  if (request.method === "OPTIONS") return true;
+  return jsonRpcMethod != null && PUBLIC_MCP_METHODS.has(jsonRpcMethod);
 }
 
 export async function handleMcpRequest(
@@ -89,6 +91,7 @@ export async function handleMcpRequest(
 ) {
   const authMode =
     typeof env.AUTH_MODE === "string" ? env.AUTH_MODE : undefined;
+  const jsonRpcMethod = await getMcpJsonRpcMethod(request);
 
   if (!isHostedAuthMode(authMode)) {
     return new Response("Not found", { status: 404 });
@@ -107,7 +110,7 @@ export async function handleMcpRequest(
   const organizationIdClaim = getMcpOrganizationIdClaim(baseUrl);
   const server = createOpenSeoMcpServer();
 
-  if (await isPublicMcpRequest(request)) {
+  if (isPublicMcpRequest(request, jsonRpcMethod)) {
     return createMcpHandler(server, {
       route: MCP_ROUTE,
       enableJsonResponse: true,

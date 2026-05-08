@@ -23,10 +23,13 @@ export async function mcpProtectedResourceMetadataResponse(
   }
 
   const baseUrl = getHostedBaseUrl();
+  const resource = getMcpResource(baseUrl);
+  const authorizationServer = `${baseUrl}/api/auth`;
+
   const metadata =
     await getOAuthProviderResourceActions().getProtectedResourceMetadata({
-      resource: getMcpResource(baseUrl),
-      authorization_servers: [`${baseUrl}/api/auth`],
+      resource,
+      authorization_servers: [authorizationServer],
       scopes_supported: [...MCP_OAUTH_SCOPES],
       resource_name: "OpenSEO MCP",
     });

@@ -1,5 +1,8 @@
 import { z } from "zod";
-import { normalizeAuthRedirect } from "@/lib/auth-redirect";
+import {
+  getCurrentAuthRedirect,
+  getOAuthSignedQuery,
+} from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   getFieldError as getSharedFieldError,
@@ -11,11 +14,16 @@ export const authRedirectSearchSchema = z.object({
 });
 
 export function useAuthPageState(redirect: string | undefined) {
-  const redirectTo = normalizeAuthRedirect(redirect);
+  const redirectTo = getCurrentAuthRedirect(redirect);
+  const oauthQuery =
+    typeof window !== "undefined"
+      ? getOAuthSignedQuery(window.location.search)
+      : null;
   const isHostedMode = isHostedClientAuthMode();
 
   return {
     redirectTo,
+    oauthQuery,
     isHostedMode,
   };
 }

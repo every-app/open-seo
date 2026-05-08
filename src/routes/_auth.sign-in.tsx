@@ -26,7 +26,9 @@ export const Route = createFileRoute("/_auth/sign-in")({
 
 function SignInPage() {
   const search = Route.useSearch();
-  const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
+  const { redirectTo, oauthQuery, isHostedMode } = useAuthPageState(
+    search.redirect,
+  );
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null,
   );
@@ -52,6 +54,7 @@ function SignInPage() {
           email,
           password: value.password,
           callbackURL: redirectTo,
+          ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
         });
 
         if (!result.error) {

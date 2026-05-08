@@ -5,6 +5,29 @@ import { isHostedAuthMode } from "@/lib/auth-mode";
 import { getMcpResource } from "@/lib/oauth-resource";
 
 const TOKEN_PATH = "/api/auth/oauth2/token";
+const REGISTER_PATH = "/api/auth/oauth2/register";
+const PUBLIC_CLIENT_AUTH_METHOD = "none";
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function hasRequestAuthContext(request: Request) {
+  return Boolean(
+    request.headers.get("authorization") || request.headers.get("cookie"),
+  );
+}
+
+function requestWithReplacedBody(request: Request, body: BodyInit) {
+  const headers = new Headers(request.headers);
+  headers.delete("content-length");
+
+  return new Request(request.url, {
+    method: request.method,
+    headers,
+    body,
+  });
+}
 
 // Inject RFC 8707 `resource` into /oauth2/token requests when the client
 // omitted it. Some MCP clients (notably codex as of 2026-05) skip the
@@ -35,11 +58,48 @@ export async function maybeInjectMcpResource(
 
   params.set("resource", getMcpResource(getHostedBaseUrl()));
 
-  return new Request(request.url, {
-    method: request.method,
-    headers: request.headers,
-    body: params.toString(),
-  });
+  return requestWithReplacedBody(request, params.toString());
+}
+
+// Some hosted MCP clients attempt unauthenticated DCR while sending a
+// confidential-client auth method. Better Auth only permits unauthenticated DCR
+// for public clients, so normalize that case to the compatible public shape.
+// Claude Desktop hit this path during connector setup: it had no session or
+// registration bearer token, but sent a non-`none` token endpoint auth method.
+export async function maybeDefaultMcpClientRegistrationAuthMethod(
+  request: Request,
+): Promise<Request> {
+  if (request.method !== "POST") return request;
+
+  const url = new URL(request.url);
+  if (url.pathname !== REGISTER_PATH) return request;
+
+  const contentType = request.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) return request;
+
+  let body: unknown;
+  try {
+    body = await request.clone().json();
+  } catch {
+    return request;
+  }
+
+  if (!isJsonObject(body)) return request;
+
+  if (
+    hasRequestAuthContext(request) ||
+    body.token_endpoint_auth_method === PUBLIC_CLIENT_AUTH_METHOD
+  ) {
+    return request;
+  }
+
+  return requestWithReplacedBody(
+    request,
+    JSON.stringify({
+      ...body,
+      token_endpoint_auth_method: PUBLIC_CLIENT_AUTH_METHOD,
+    }),
+  );
 }
 
 async function handleAuthRequest(request: Request) {
@@ -56,7 +116,12 @@ async function handleAuthRequest(request: Request) {
   }
 
   const auth = getAuth();
-  return auth.handler(await maybeInjectMcpResource(request));
+  const requestWithRegistrationDefaults =
+    await maybeDefaultMcpClientRegistrationAuthMethod(request);
+  const requestWithResource = await maybeInjectMcpResource(
+    requestWithRegistrationDefaults,
+  );
+  return auth.handler(requestWithResource);
 }
 
 export const Route = createFileRoute("/api/auth/$")({
