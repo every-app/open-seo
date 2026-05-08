@@ -5,10 +5,9 @@ import { getActiveOrganizationId } from "@/lib/auth-session";
 import {
   getMcpOrganizationIdClaim,
   getMcpResource,
+  MCP_OAUTH_SCOPES,
   MCP_SCOPE,
 } from "@/lib/oauth-resource";
-
-const MCP_OAUTH_SCOPES = ["offline_access", MCP_SCOPE];
 
 function assertSingleMcpAudience(audiences: string[]) {
   if (audiences.length !== 1) {

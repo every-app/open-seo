@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { getHostedBaseUrl, hasHostedAuthConfig } from "@/lib/auth";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { getOAuthProviderResourceActions } from "@/lib/oauth-provider-resource-client";
-import { getMcpResource, MCP_SCOPE } from "@/lib/oauth-resource";
+import { getMcpResource, MCP_OAUTH_SCOPES } from "@/lib/oauth-resource";
 
 function unavailableMetadataResponse() {
   if (!isHostedAuthMode(env.AUTH_MODE)) {
@@ -30,7 +30,7 @@ export const Route = createFileRoute(
           await getOAuthProviderResourceActions().getProtectedResourceMetadata({
             resource: getMcpResource(baseUrl),
             authorization_servers: [`${baseUrl}/api/auth`],
-            scopes_supported: [MCP_SCOPE],
+            scopes_supported: [...MCP_OAUTH_SCOPES],
             resource_name: "OpenSEO MCP",
           });
 
