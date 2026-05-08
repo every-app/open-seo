@@ -20,6 +20,7 @@ import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
+import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 const SUPPORT_PATH = "/support";
@@ -38,6 +39,12 @@ export function AuthenticatedAppLayout({
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
+  const defaultProjectQuery = useQuery({
+    queryKey: ["defaultProject"],
+    queryFn: () => getOrCreateDefaultProject(),
+    enabled: !projectId,
+  });
+  const headerProjectId = projectId ?? defaultProjectQuery.data?.id ?? null;
   const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],
@@ -106,7 +113,7 @@ export function AuthenticatedAppLayout({
     <div className="flex h-[100dvh] flex-col bg-base-200">
       <TopNav
         drawerOpen={drawerOpen}
-        projectId={projectId ?? null}
+        projectId={headerProjectId}
         pathname={location.pathname}
         onOpenDrawer={() => setDrawerOpen(true)}
       />
@@ -120,7 +127,7 @@ export function AuthenticatedAppLayout({
 
       <AppContent
         drawerOpen={drawerOpen}
-        projectId={projectId ?? null}
+        projectId={headerProjectId}
         onCloseDrawer={() => setDrawerOpen(false)}
       >
         {children}
