@@ -46,6 +46,13 @@ export const saveKeywordsTool = {
         args.projectId,
         `/p/${args.projectId}/saved`,
       ),
+      structuredContent: {
+        projectId: args.projectId,
+        savedCount: args.keywords.length,
+        keywords: args.keywords,
+        locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
+        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+      },
     });
   }),
 };

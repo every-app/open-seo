@@ -44,4 +44,41 @@ describe("mcpResponse", () => {
     });
     expect(result.structuredContent).toEqual({ foo: "bar" });
   });
+
+  it("mirrors metadata into structuredContent for clients that hide _meta", () => {
+    const result = mcpResponse({
+      text: "hi",
+      meta: {
+        url: "https://app.openseo.so/p/1",
+        projectId: "1",
+        creditsRemaining: 100,
+      },
+      structuredContent: { foo: "bar" },
+    });
+
+    expect(result.structuredContent).toEqual({
+      foo: "bar",
+      meta: {
+        url: "https://app.openseo.so/p/1",
+        projectId: "1",
+        creditsRemaining: 100,
+      },
+    });
+    expect(result._meta).toEqual({
+      url: "https://app.openseo.so/p/1",
+      projectId: "1",
+      creditsRemaining: 100,
+    });
+  });
+
+  it("uses metadata as structuredContent when no data payload is provided", () => {
+    const result = mcpResponse({
+      text: "hi",
+      meta: { url: "https://app.openseo.so" },
+    });
+
+    expect(result.structuredContent).toEqual({
+      meta: { url: "https://app.openseo.so" },
+    });
+  });
 });

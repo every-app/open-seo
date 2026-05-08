@@ -17,15 +17,22 @@ export function mcpResponse(opts: {
   const result: CallToolResult = {
     content: [{ type: "text", text: opts.text }],
   };
-  if (opts.structuredContent) {
-    result.structuredContent = opts.structuredContent;
-  }
+  let meta: Record<string, unknown> | undefined;
   if (opts.meta) {
-    // Drop undefined keys so the wire payload stays clean.
-    const meta: Record<string, unknown> = {};
+    meta = {};
     for (const [key, value] of Object.entries(opts.meta)) {
       if (value !== undefined) meta[key] = value;
     }
+  }
+  if (opts.structuredContent) {
+    result.structuredContent =
+      meta && Object.keys(meta).length > 0
+        ? { ...opts.structuredContent, meta }
+        : opts.structuredContent;
+  } else if (meta && Object.keys(meta).length > 0) {
+    result.structuredContent = { meta };
+  }
+  if (meta) {
     if (Object.keys(meta).length > 0) {
       result._meta = meta;
     }
