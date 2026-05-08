@@ -62,7 +62,7 @@ const projectNavItems = [
   },
   {
     to: "/p/$projectId/ai" as const,
-    label: "AI & Agents",
+    label: "AI & MCP",
     icon: Bot,
     matchSegment: "/ai",
   },
