@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpRight, Check, ChevronDown, Copy } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import {
+  ClaudeIcon,
+  CodexIcon,
+} from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
@@ -57,7 +61,8 @@ function AiPage() {
             <Collapsible
               id="claude-code"
               title="Claude Code"
-              subtitle="HTTP MCP server via the CLI"
+              subtitle="Add with the CLI"
+              icon={<ClaudeIcon className="size-5" />}
             >
               <p className="text-sm text-base-content/70">
                 Run this in your terminal:
@@ -66,26 +71,75 @@ function AiPage() {
                 code={`claude mcp add --transport http --scope user openseo ${mcpUrl}`}
               />
               <p className="text-sm text-base-content/70">
-                Approve the login when prompted. Then ask Claude Code to call{" "}
-                <code className="font-mono text-[0.85em]">whoami</code>.
+                Approve the login when prompted.
+              </p>
+            </Collapsible>
+
+            <Collapsible
+              id="claude-desktop"
+              title="Claude Desktop"
+              subtitle="Add a custom connector"
+              icon={<ClaudeIcon className="size-5" />}
+            >
+              <ol className="ml-5 list-decimal space-y-1.5 text-sm text-base-content/70 leading-relaxed">
+                <li>
+                  Open <span className="text-base-content">Settings</span> →{" "}
+                  <span className="text-base-content">Connectors</span>.
+                </li>
+                <li>
+                  Click{" "}
+                  <span className="font-medium text-base-content">
+                    Add custom connector
+                  </span>
+                  .
+                </li>
+                <li>Paste the MCP URL above and click Add.</li>
+                <li>Approve the OpenSEO login when prompted.</li>
+              </ol>
+              <p className="text-xs text-base-content/55 leading-relaxed">
+                Requires a Claude Pro, Max, Team, or Enterprise plan.
               </p>
             </Collapsible>
 
             <Collapsible
               id="codex"
               title="Codex"
-              subtitle="Hosted MCP server via the CLI"
+              subtitle="Add with the CLI"
+              icon={<CodexIcon className="size-5" />}
             >
               <p className="text-sm text-base-content/70">
-                Run these commands:
+                Run this in your terminal:
               </p>
-              <CodeBlock
-                code={`codex mcp add openseo --url ${mcpUrl}\ncodex mcp login openseo`}
-              />
+              <CodeBlock code={`codex mcp add openseo --url ${mcpUrl}`} />
               <p className="text-sm text-base-content/70">
-                Approve the login when prompted. Then ask Codex to call{" "}
-                <code className="font-mono text-[0.85em]">whoami</code>.
+                Approve the login when prompted.
               </p>
+            </Collapsible>
+
+            <Collapsible
+              id="codex-desktop"
+              title="Codex Desktop"
+              subtitle="Settings → Integrations & MCP"
+              icon={<CodexIcon className="size-5" />}
+            >
+              <ol className="ml-5 list-decimal space-y-1.5 text-sm text-base-content/70 leading-relaxed">
+                <li>
+                  Open{" "}
+                  <span className="text-base-content">
+                    Settings → Integrations & MCP
+                  </span>
+                  .
+                </li>
+                <li>
+                  Click{" "}
+                  <span className="font-medium text-base-content">
+                    Add your own
+                  </span>
+                  .
+                </li>
+                <li>Paste the MCP URL above.</li>
+                <li>Approve the OpenSEO login when prompted.</li>
+              </ol>
             </Collapsible>
           </div>
         </section>
@@ -171,11 +225,13 @@ function Collapsible({
   id,
   title,
   subtitle,
+  icon,
   children,
 }: {
   id: string;
   title: string;
   subtitle?: string;
+  icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -190,11 +246,20 @@ function Collapsible({
         aria-controls={contentId}
         className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-base-300/50"
       >
-        <div className="flex flex-col gap-0.5">
-          <span className="text-sm font-medium text-base-content">{title}</span>
-          {subtitle ? (
-            <span className="text-xs text-base-content/55">{subtitle}</span>
+        <div className="flex min-w-0 items-center gap-3">
+          {icon ? (
+            <span className="flex size-5 shrink-0 items-center justify-center text-base-content">
+              {icon}
+            </span>
           ) : null}
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <span className="text-sm font-medium text-base-content">
+              {title}
+            </span>
+            {subtitle ? (
+              <span className="text-xs text-base-content/55">{subtitle}</span>
+            ) : null}
+          </div>
         </div>
         <ChevronDown
           className={`size-4 shrink-0 text-base-content/50 transition-transform ${
