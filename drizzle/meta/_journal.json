@@ -85,6 +85,13 @@
       "when": 1778031161783,
       "tag": "0011_colorful_dark_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1778113978173,
+      "tag": "0012_closed_impossible_man",
+      "breakpoints": true
     }
   ]
 }

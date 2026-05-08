@@ -1,0 +1,47 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { env } from "cloudflare:workers";
+import { getHostedBaseUrl, hasHostedAuthConfig } from "@/lib/auth";
+import { isHostedAuthMode } from "@/lib/auth-mode";
+import { getOAuthProviderResourceActions } from "@/lib/oauth-provider-resource-client";
+import { getMcpResource, MCP_SCOPE } from "@/lib/oauth-resource";
+
+function unavailableMetadataResponse() {
+  if (!isHostedAuthMode(env.AUTH_MODE)) {
+    return new Response("Not found", { status: 404 });
+  }
+
+  return new Response("Missing Better Auth hosted configuration", {
+    status: 500,
+  });
+}
+
+export const Route = createFileRoute(
+  "/.well-known/oauth-protected-resource/mcp",
+)({
+  server: {
+    handlers: {
+      GET: async () => {
+        if (!isHostedAuthMode(env.AUTH_MODE) || !hasHostedAuthConfig()) {
+          return unavailableMetadataResponse();
+        }
+
+        const baseUrl = getHostedBaseUrl();
+        const metadata =
+          await getOAuthProviderResourceActions().getProtectedResourceMetadata({
+            resource: getMcpResource(baseUrl),
+            authorization_servers: [`${baseUrl}/api/auth`],
+            scopes_supported: [MCP_SCOPE],
+            resource_name: "OpenSEO MCP",
+          });
+
+        return new Response(JSON.stringify(metadata), {
+          headers: {
+            "Cache-Control":
+              "public, max-age=15, stale-while-revalidate=15, stale-if-error=86400",
+            "Content-Type": "application/json",
+          },
+        });
+      },
+    },
+  },
+});

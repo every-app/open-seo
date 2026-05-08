@@ -11,6 +11,7 @@
     "drizzle.config.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
+    "src/db/app.schema.ts",
     "src/db/better-auth-schema.ts",
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],

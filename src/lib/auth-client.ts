@@ -3,6 +3,7 @@ import {
   inferAdditionalFields,
   organizationClient,
 } from "better-auth/client/plugins";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import { captureClientEvent, resetAnalyticsUser } from "@/client/lib/posthog";
 import { userAdditionalFields } from "@/lib/auth-options";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
@@ -11,6 +12,7 @@ export const authClient = createAuthClient({
   baseURL: typeof window !== "undefined" ? window.location.origin : "",
   plugins: [
     organizationClient(),
+    oauthProviderClient(),
     inferAdditionalFields({ user: userAdditionalFields }),
   ],
 });

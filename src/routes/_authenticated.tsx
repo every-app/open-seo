@@ -18,7 +18,9 @@ function AuthenticatedShellLayout() {
     if (!session?.user?.id) {
       void navigate({
         to: "/sign-in",
-        search: { redirect: window.location.pathname },
+        search: {
+          redirect: `${window.location.pathname}${window.location.search}`,
+        },
       });
     }
   }, [isPending, isHostedMode, session?.user?.id, navigate]);
