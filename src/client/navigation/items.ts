@@ -60,13 +60,14 @@ const projectNavItems = [
     icon: MessageSquare,
     matchSegment: "/prompt-explorer",
   },
-  {
-    to: "/p/$projectId/ai" as const,
-    label: "AI & Agents",
-    icon: Bot,
-    matchSegment: "/ai",
-  },
 ] as const;
+
+const aiNavItem = linkOptions({
+  to: "/ai" as const,
+  label: "AI & MCP",
+  icon: Bot,
+  matchSegment: "/ai",
+});
 
 function getProjectNavItems(projectId: string) {
   return linkOptions(
@@ -114,7 +115,7 @@ export function getProjectNavGroups(projectId: string) {
     },
     {
       type: "standalone" as const,
-      item: bySegment("/ai"),
+      item: aiNavItem,
     },
   ];
 }

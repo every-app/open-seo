@@ -24,6 +24,7 @@ import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
+import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
 import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known/oauth-authorization-server'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
@@ -40,7 +41,6 @@ import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
 import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
-import { Route as ProjectPProjectIdAiRouteImport } from './routes/_project/p/$projectId/ai'
 import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
 import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes/_project/p/$projectId/rank-tracking/index'
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
@@ -117,6 +117,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
 const AppBillingRoute = AppBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
+  getParentRoute: () => AppRouteRoute,
+} as any)
+const AppAiRoute = AppAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
   getParentRoute: () => AppRouteRoute,
 } as any)
 const DotwellKnownOpenidConfigurationRoute =
@@ -207,11 +212,6 @@ const ProjectPProjectIdAuditRoute = ProjectPProjectIdAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
-const ProjectPProjectIdAiRoute = ProjectPProjectIdAiRouteImport.update({
-  id: '/ai',
-  path: '/ai',
-  getParentRoute: () => ProjectPProjectIdRouteRoute,
-} as any)
 const DotwellKnownOauthAuthorizationServerApiAuthRoute =
   DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
     id: '/api/auth',
@@ -250,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
@@ -263,7 +264,6 @@ export interface FileRoutesByFullPath {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
-  '/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -285,6 +285,7 @@ export interface FileRoutesByTo {
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
@@ -297,7 +298,6 @@ export interface FileRoutesByTo {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
-  '/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
@@ -321,6 +321,7 @@ export interface FileRoutesById {
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
   '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
+  '/_app/ai': typeof AppAiRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/support': typeof AppSupportRoute
@@ -335,7 +336,6 @@ export interface FileRoutesById {
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
-  '/_project/p/$projectId/ai': typeof ProjectPProjectIdAiRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -359,6 +359,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/ai'
     | '/billing'
     | '/settings'
     | '/support'
@@ -372,7 +373,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/autumn/$'
     | '/.well-known/oauth-authorization-server/api/auth'
-    | '/p/$projectId/ai'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -394,6 +394,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/ai'
     | '/billing'
     | '/settings'
     | '/support'
@@ -406,7 +407,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/autumn/$'
     | '/.well-known/oauth-authorization-server/api/auth'
-    | '/p/$projectId/ai'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
@@ -429,6 +429,7 @@ export interface FileRouteTypes {
     | '/verify-email'
     | '/.well-known/oauth-authorization-server'
     | '/.well-known/openid-configuration'
+    | '/_app/ai'
     | '/_app/billing'
     | '/_app/settings'
     | '/_app/support'
@@ -443,7 +444,6 @@ export interface FileRouteTypes {
     | '/api/auth/$'
     | '/api/autumn/$'
     | '/.well-known/oauth-authorization-server/api/auth'
-    | '/_project/p/$projectId/ai'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
@@ -581,6 +581,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppBillingRouteImport
       parentRoute: typeof AppRouteRoute
     }
+    '/_app/ai': {
+      id: '/_app/ai'
+      path: '/ai'
+      fullPath: '/ai'
+      preLoaderRoute: typeof AppAiRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/.well-known/openid-configuration': {
       id: '/.well-known/openid-configuration'
       path: '/.well-known/openid-configuration'
@@ -693,13 +700,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdAuditRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
-    '/_project/p/$projectId/ai': {
-      id: '/_project/p/$projectId/ai'
-      path: '/ai'
-      fullPath: '/p/$projectId/ai'
-      preLoaderRoute: typeof ProjectPProjectIdAiRouteImport
-      parentRoute: typeof ProjectPProjectIdRouteRoute
-    }
     '/.well-known/oauth-authorization-server/api/auth': {
       id: '/.well-known/oauth-authorization-server/api/auth'
       path: '/api/auth'
@@ -739,6 +739,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteRouteChildren {
+  AppAiRoute: typeof AppAiRoute
   AppBillingRoute: typeof AppBillingRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSupportRoute: typeof AppSupportRoute
@@ -747,6 +748,7 @@ interface AppRouteRouteChildren {
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
+  AppAiRoute: AppAiRoute,
   AppBillingRoute: AppBillingRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSupportRoute: AppSupportRoute,
@@ -794,7 +796,6 @@ const ProjectPProjectIdRankTrackingRouteWithChildren =
   )
 
 interface ProjectPProjectIdRouteRouteChildren {
-  ProjectPProjectIdAiRoute: typeof ProjectPProjectIdAiRoute
   ProjectPProjectIdAuditRoute: typeof ProjectPProjectIdAuditRouteWithChildren
   ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
@@ -808,7 +809,6 @@ interface ProjectPProjectIdRouteRouteChildren {
 
 const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
   {
-    ProjectPProjectIdAiRoute: ProjectPProjectIdAiRoute,
     ProjectPProjectIdAuditRoute: ProjectPProjectIdAuditRouteWithChildren,
     ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
