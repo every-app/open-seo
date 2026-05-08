@@ -11,6 +11,7 @@ import {
 } from "@/lib/oauth-resource";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
+import { getMcpUserEmail } from "@/server/mcp/user-email";
 
 // MCP request flow:
 //   1. Resource (`resource=<mcp>`) is injected into /oauth2/token requests by
@@ -24,7 +25,6 @@ import { createOpenSeoMcpServer } from "@/server/mcp/server";
 //   3. We expect `iss = baseURL + basePath` (basePath defaults to `/api/auth`)
 //      and `aud = mcpResource`, both confirmed against the published
 //      /.well-known/oauth-authorization-server metadata.
-
 export const MCP_ROUTE = "/mcp";
 
 type McpAccessTokenPayload = JWTPayload & {
@@ -131,6 +131,17 @@ export async function handleMcpRequest(
     );
   }
 
+  const userEmail = await getMcpUserEmail(userId);
+  if (!userEmail) {
+    return new Response("MCP user context required", {
+      status: 403,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Expose-Headers": "WWW-Authenticate",
+      },
+    });
+  }
+
   return createMcpHandler(server, {
     route: MCP_ROUTE,
     enableJsonResponse: true,
@@ -138,11 +149,13 @@ export async function handleMcpRequest(
       props: {
         [MCP_AUTH_CONTEXT_PROP]: {
           userId,
+          userEmail,
           organizationId,
           clientId,
           scopes,
           audience: mcpResource,
           subject: userId,
+          baseUrl,
         },
       },
     },

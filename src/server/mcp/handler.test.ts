@@ -8,6 +8,10 @@ const verifyMocks = vi.hoisted(() => ({
   verifyJwsAccessToken: vi.fn(),
 }));
 
+const userEmailMocks = vi.hoisted(() => ({
+  getMcpUserEmail: vi.fn(),
+}));
+
 const serverMocks = vi.hoisted(() => ({
   nextServerId: 0,
   createdServerIds: [] as number[],
@@ -32,6 +36,10 @@ vi.mock("@/server/mcp/server", () => ({
     serverMocks.serverIds.set(server, serverMocks.nextServerId);
     return server;
   },
+}));
+
+vi.mock("@/server/mcp/user-email", () => ({
+  getMcpUserEmail: userEmailMocks.getMcpUserEmail,
 }));
 
 vi.mock("agents/mcp", () => ({
@@ -110,6 +118,7 @@ describe("handleMcpRequest", () => {
     verifyMocks.verifyJwsAccessToken.mockResolvedValue(
       createAccessTokenPayload(),
     );
+    userEmailMocks.getMcpUserEmail.mockResolvedValue("alice@example.com");
   });
 
   it("accepts access tokens verified by Better Auth", async () => {
@@ -129,9 +138,13 @@ describe("handleMcpRequest", () => {
       body.options.authContext?.props[MCP_AUTH_CONTEXT_PROP],
     ).toMatchObject({
       userId: "user_123",
+      userEmail: "alice@example.com",
       organizationId: "org_123",
       clientId: "client_123",
       scopes: ["offline_access", "mcp"],
+      audience: "https://open-seo.test/mcp",
+      subject: "user_123",
+      baseUrl: "https://open-seo.test",
     });
     expect(body.options.route).toBe("/mcp");
     expect(body.options.enableJsonResponse).toBe(true);
@@ -221,6 +234,21 @@ describe("handleMcpRequest", () => {
         [organizationIdClaim]: undefined,
       }),
     );
+
+    const response = await handleMcpRequest(
+      createMcpRequest(jwtShapedToken),
+      {
+        AUTH_MODE: "hosted",
+      },
+      ctx,
+    );
+
+    expect(response.status).toBe(403);
+  });
+
+  it("returns 403 when the verified user is not found", async () => {
+    const { handleMcpRequest } = await import("@/server/mcp/handler");
+    userEmailMocks.getMcpUserEmail.mockResolvedValue(null);
 
     const response = await handleMcpRequest(
       createMcpRequest(jwtShapedToken),
