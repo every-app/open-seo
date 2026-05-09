@@ -34,6 +34,10 @@
       "binding": "KV",
       "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
     },
+    {
+      "binding": "OAUTH_KV",
+      "id": "bd1759494309474a9b423b029967b0db",
+    },
   ],
   "d1_databases": [
     {

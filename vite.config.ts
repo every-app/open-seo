@@ -10,12 +10,16 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
   const port = env.PORT ? Number(env.PORT) : 3001;
   const showDevtools = env.VITE_SHOW_DEVTOOLS !== "false";
-  const allowedHosts = env.ALLOWED_HOST ? [env.ALLOWED_HOST] : undefined;
+  const allowedHosts = [
+    env.ALLOWED_HOST,
+    env.BETTER_AUTH_URL ? new URL(env.BETTER_AUTH_URL).hostname : undefined,
+  ].filter((host): host is string => Boolean(host));
   const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
 
   return {
     envPrefix: ["VITE_", "AUTH_MODE", "POSTHOG_PUBLIC_KEY", "POSTHOG_HOST"],
     server: {
+      allowedHosts,
       port,
     },
     preview: {

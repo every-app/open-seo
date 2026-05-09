@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
@@ -10,12 +10,7 @@ import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
-export function createOpenSeoMcpServer() {
-  const server = new McpServer({
-    name: "OpenSEO MCP",
-    version: "0.0.10",
-  });
-
+export function registerOpenSeoMcpTools(server: McpServer) {
   server.registerTool(whoamiTool.name, whoamiTool.config, whoamiTool.handler);
   server.registerTool(
     listProjectsTool.name,
@@ -62,6 +57,4 @@ export function createOpenSeoMcpServer() {
     getRankTrackerTool.config,
     getRankTrackerTool.handler,
   );
-
-  return server;
 }

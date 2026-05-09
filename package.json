@@ -46,11 +46,14 @@
       },
       "DATAFORSEO_API_KEY": {
         "description": "Base64-encoded `login:password` for DataForSEO API access."
+      },
+      "OAUTH_KV": {
+        "description": "KV namespace used by the Cloudflare Workers OAuth provider for MCP client registrations, grants, and tokens."
       }
     }
   },
   "dependencies": {
-    "@better-auth/oauth-provider": "^1.5.5",
+    "@cloudflare/workers-oauth-provider": "^0.4.0",
     "@every-app/sdk": "^0.1.14",
     "@modelcontextprotocol/sdk": "1.29.0",
     "@tanstack/query-core": "^5.90.9",

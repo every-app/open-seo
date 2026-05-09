@@ -25,14 +25,11 @@ const hostedBaseUrlSchema = z
 function createAuth() {
   const baseUrl = getHostedBaseUrl();
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
-  const baseAuthConfig = createBaseAuthConfig(baseUrl);
+  const baseAuthConfig = createBaseAuthConfig();
 
   const auth = betterAuth({
     baseURL: baseUrl,
     secret: getHostedSecret(),
-    // Disable Better Auth's generic /token endpoint so OAuth access tokens only
-    // flow through /oauth2/token, where the MCP resource shim can run.
-    disabledPaths: ["/token"],
     ...baseAuthConfig,
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,

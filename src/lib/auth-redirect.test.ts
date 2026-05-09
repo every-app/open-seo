@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   getAuthRedirectFromSearch,
+  getCurrentAuthRedirectFromHref,
   getOAuthAuthorizeRedirectFromSearch,
   getOAuthSignedQuery,
+  getSignInHref,
   normalizeAuthRedirect,
 } from "./auth-redirect";
 
@@ -24,6 +26,32 @@ describe("auth redirect helpers", () => {
     expect(normalizeAuthRedirect(undefined)).toBe("/");
     expect(normalizeAuthRedirect("https://evil.example/app")).toBe("/");
     expect(normalizeAuthRedirect("//evil.example/app")).toBe("/");
+  });
+
+  it("keeps same-origin relative redirects", () => {
+    expect(
+      normalizeAuthRedirect("/api/auth/oauth2/authorize?client_id=abc"),
+    ).toBe("/api/auth/oauth2/authorize?client_id=abc");
+  });
+
+  it("rejects external and protocol-relative redirects", () => {
+    expect(normalizeAuthRedirect("https://evil.test")).toBe("/");
+    expect(normalizeAuthRedirect("//evil.test")).toBe("/");
+  });
+
+  it("builds sign-in links with the redirect query only when needed", () => {
+    expect(getSignInHref("/")).toBe("/sign-in");
+    expect(getSignInHref("/oauth-consent?client_id=abc")).toBe(
+      "/sign-in?redirect=%2Foauth-consent%3Fclient_id%3Dabc",
+    );
+  });
+
+  it("extracts the current path, query, and hash from hrefs", () => {
+    expect(
+      getCurrentAuthRedirectFromHref(
+        "https://open-seo.test/projects?tab=keywords#top",
+      ),
+    ).toBe("/projects?tab=keywords#top");
   });
 
   it("preserves safe internal redirects", () => {

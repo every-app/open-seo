@@ -29,6 +29,7 @@ function SignInPage() {
   const { redirectTo, oauthQuery, isHostedMode } = useAuthPageState(
     search.redirect,
   );
+  const authCallbackURL = redirectTo;
   const [verificationEmail, setVerificationEmail] = useState<string | null>(
     null,
   );
@@ -53,7 +54,7 @@ function SignInPage() {
         const result = await authClient.signIn.email({
           email,
           password: value.password,
-          callbackURL: redirectTo,
+          callbackURL: authCallbackURL,
           ...(oauthQuery ? { oauth_query: oauthQuery } : {}),
         });
 
@@ -103,12 +104,16 @@ function SignInPage() {
     setIsSendingVerification(true);
 
     try {
-      const callbackURL = new URL("/verify-email", window.location.origin);
-      if (redirectTo !== "/")
-        callbackURL.searchParams.set("redirect", redirectTo);
+      const verificationCallbackURL = new URL(
+        "/verify-email",
+        window.location.origin,
+      );
+      if (authCallbackURL !== "/") {
+        verificationCallbackURL.searchParams.set("redirect", authCallbackURL);
+      }
       const result = await authClient.sendVerificationEmail({
         email: verificationEmail,
-        callbackURL: callbackURL.toString(),
+        callbackURL: verificationCallbackURL.toString(),
       });
 
       if (result.error) {

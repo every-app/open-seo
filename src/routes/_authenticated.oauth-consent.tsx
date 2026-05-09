@@ -1,9 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Database, KeyRound, User } from "lucide-react";
 import { useState } from "react";
-import { authClient, useSession } from "@/lib/auth-client";
-import { getOAuthClientInfo } from "@/serverFunctions/oauth";
+import { useSession } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/_authenticated/oauth-consent")({
   component: OAuthConsentPage,
@@ -27,42 +25,35 @@ function OAuthConsentPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const clientId =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search).get("client_id")
-      : null;
-
-  const clientInfoQuery = useQuery({
-    queryKey: ["oauth-client-info", clientId],
-    queryFn: () =>
-      clientId
-        ? getOAuthClientInfo({ data: { clientId } })
-        : Promise.resolve(null),
-    enabled: Boolean(clientId),
-    staleTime: 60_000,
-  });
-
-  const clientName = clientInfoQuery.data?.name ?? null;
   const userEmail = session?.user?.email ?? null;
-  const isLoadingClient = clientInfoQuery.isLoading;
-  const named = Boolean(clientName);
 
   async function respond(accept: boolean) {
     setError(null);
     setIsSubmitting(true);
 
-    const { data, error: consentError } = await authClient.oauth2.consent({
-      accept,
+    const response = await fetch("/api/oauth/consent", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        accept,
+        query: window.location.search,
+      }),
     });
+    const data: {
+      redirectTo?: string;
+      error?: string;
+    } = await response.json();
 
-    if (consentError) {
-      setError(consentError.message ?? "Unable to complete authorization.");
+    if (!response.ok) {
+      setError(data.error ?? "Unable to complete authorization.");
       setIsSubmitting(false);
       return;
     }
 
-    if (data?.redirect && data.url) {
-      window.location.assign(data.url);
+    if (data.redirectTo) {
+      window.location.assign(data.redirectTo);
       return;
     }
 
@@ -78,32 +69,11 @@ function OAuthConsentPage() {
           alt="OpenSEO"
           className="size-10 rounded-lg"
         />
-        {isLoadingClient ? (
-          <div className="mt-5 h-7 w-48 animate-pulse rounded-md bg-base-200" />
-        ) : (
-          <h1 className="mt-5 text-xl font-semibold">
-            {named ? (
-              <>
-                Authorize <span className="text-primary">{clientName}</span>
-              </>
-            ) : (
-              "Authorize MCP access"
-            )}
-          </h1>
-        )}
+        <h1 className="mt-5 text-xl font-semibold">Authorize MCP access</h1>
         <p className="mt-2 text-sm text-base-content/70">
-          {named
-            ? `${clientName} is requesting access to your OpenSEO workspace.`
-            : "An MCP client is requesting access to your OpenSEO workspace."}
+          An MCP client is requesting access to your OpenSEO workspace.
         </p>
       </div>
-
-      {!named && !isLoadingClient ? (
-        <div className="mt-5 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-content/90">
-          This client did not provide a name during registration. Only continue
-          if you started this connection yourself.
-        </div>
-      ) : null}
 
       {userEmail ? (
         <div className="mt-6 flex items-center gap-3 rounded-lg border border-base-300 bg-base-200/50 px-3 py-2 text-sm">
@@ -119,7 +89,7 @@ function OAuthConsentPage() {
 
       <div className="mt-6">
         <div className="text-xs font-medium uppercase tracking-wide text-base-content/60">
-          {named ? `This will allow ${clientName} to` : "This will allow it to"}
+          This will allow it to
         </div>
         <ul className="mt-3 space-y-3">
           {SCOPES.map((scope) => (

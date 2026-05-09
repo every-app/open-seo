@@ -25,13 +25,9 @@ import { Route as AppSupportRouteImport } from './routes/_app/support'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
-import { Route as DotwellKnownOpenidConfigurationRouteImport } from './routes/[.]well-known/openid-configuration'
-import { Route as DotwellKnownOauthProtectedResourceRouteImport } from './routes/[.]well-known/oauth-protected-resource'
-import { Route as DotwellKnownOauthAuthorizationServerRouteImport } from './routes/[.]well-known/oauth-authorization-server'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
-import { Route as DotwellKnownOauthProtectedResourceMcpRouteImport } from './routes/[.]well-known/oauth-protected-resource/mcp'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
@@ -42,7 +38,6 @@ import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
 import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
-import { Route as DotwellKnownOauthAuthorizationServerApiAuthRouteImport } from './routes/[.]well-known/oauth-authorization-server/api/auth'
 import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes/_project/p/$projectId/rank-tracking/index'
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
 import { Route as ProjectPProjectIdRankTrackingConfigIdRouteImport } from './routes/_project/p/$projectId/rank-tracking/$configId'
@@ -125,24 +120,6 @@ const AppAiRoute = AppAiRouteImport.update({
   path: '/ai',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const DotwellKnownOpenidConfigurationRoute =
-  DotwellKnownOpenidConfigurationRouteImport.update({
-    id: '/.well-known/openid-configuration',
-    path: '/.well-known/openid-configuration',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DotwellKnownOauthProtectedResourceRoute =
-  DotwellKnownOauthProtectedResourceRouteImport.update({
-    id: '/.well-known/oauth-protected-resource',
-    path: '/.well-known/oauth-protected-resource',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const DotwellKnownOauthAuthorizationServerRoute =
-  DotwellKnownOauthAuthorizationServerRouteImport.update({
-    id: '/.well-known/oauth-authorization-server',
-    path: '/.well-known/oauth-authorization-server',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiAutumnSplatRoute = ApiAutumnSplatRouteImport.update({
   id: '/api/autumn/$',
   path: '/api/autumn/$',
@@ -158,12 +135,6 @@ const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
   path: '/help/dataforseo-api-key',
   getParentRoute: () => AppRouteRoute,
 } as any)
-const DotwellKnownOauthProtectedResourceMcpRoute =
-  DotwellKnownOauthProtectedResourceMcpRouteImport.update({
-    id: '/mcp',
-    path: '/mcp',
-    getParentRoute: () => DotwellKnownOauthProtectedResourceRoute,
-  } as any)
 const ProjectPProjectIdRouteRoute = ProjectPProjectIdRouteRouteImport.update({
   id: '/p/$projectId',
   path: '/p/$projectId',
@@ -219,12 +190,6 @@ const ProjectPProjectIdAuditRoute = ProjectPProjectIdAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
-const DotwellKnownOauthAuthorizationServerApiAuthRoute =
-  DotwellKnownOauthAuthorizationServerApiAuthRouteImport.update({
-    id: '/api/auth',
-    path: '/api/auth',
-    getParentRoute: () => DotwellKnownOauthAuthorizationServerRoute,
-  } as any)
 const ProjectPProjectIdRankTrackingIndexRoute =
   ProjectPProjectIdRankTrackingIndexRouteImport.update({
     id: '/',
@@ -255,9 +220,6 @@ export interface FileRoutesByFullPath {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/settings': typeof AppSettingsRoute
@@ -267,11 +229,9 @@ export interface FileRoutesByFullPath {
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -291,9 +251,6 @@ export interface FileRoutesByTo {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/ai': typeof AppAiRoute
   '/billing': typeof AppBillingRoute
   '/settings': typeof AppSettingsRoute
@@ -302,11 +259,9 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
@@ -328,9 +283,6 @@ export interface FileRoutesById {
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
   '/verify-email': typeof VerifyEmailRoute
-  '/.well-known/oauth-authorization-server': typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  '/.well-known/oauth-protected-resource': typeof DotwellKnownOauthProtectedResourceRouteWithChildren
-  '/.well-known/openid-configuration': typeof DotwellKnownOpenidConfigurationRoute
   '/_app/ai': typeof AppAiRoute
   '/_app/billing': typeof AppBillingRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -341,11 +293,9 @@ export interface FileRoutesById {
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
   '/_app/': typeof AppIndexRoute
   '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
-  '/.well-known/oauth-protected-resource/mcp': typeof DotwellKnownOauthProtectedResourceMcpRoute
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/.well-known/oauth-authorization-server/api/auth': typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -367,9 +317,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
-    | '/.well-known/openid-configuration'
     | '/ai'
     | '/billing'
     | '/settings'
@@ -379,11 +326,9 @@ export interface FileRouteTypes {
     | '/oauth-consent'
     | '/subscribe'
     | '/p/$projectId'
-    | '/.well-known/oauth-protected-resource/mcp'
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -403,9 +348,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
-    | '/.well-known/openid-configuration'
     | '/ai'
     | '/billing'
     | '/settings'
@@ -414,11 +356,9 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/oauth-consent'
     | '/subscribe'
-    | '/.well-known/oauth-protected-resource/mcp'
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
@@ -439,9 +379,6 @@ export interface FileRouteTypes {
     | '/forgot-password'
     | '/reset-password'
     | '/verify-email'
-    | '/.well-known/oauth-authorization-server'
-    | '/.well-known/oauth-protected-resource'
-    | '/.well-known/openid-configuration'
     | '/_app/ai'
     | '/_app/billing'
     | '/_app/settings'
@@ -452,11 +389,9 @@ export interface FileRouteTypes {
     | '/_authenticated/subscribe'
     | '/_app/'
     | '/_project/p/$projectId'
-    | '/.well-known/oauth-protected-resource/mcp'
     | '/_app/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/.well-known/oauth-authorization-server/api/auth'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
@@ -480,9 +415,6 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
-  DotwellKnownOauthAuthorizationServerRoute: typeof DotwellKnownOauthAuthorizationServerRouteWithChildren
-  DotwellKnownOauthProtectedResourceRoute: typeof DotwellKnownOauthProtectedResourceRouteWithChildren
-  DotwellKnownOpenidConfigurationRoute: typeof DotwellKnownOpenidConfigurationRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
 }
@@ -601,27 +533,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAiRouteImport
       parentRoute: typeof AppRouteRoute
     }
-    '/.well-known/openid-configuration': {
-      id: '/.well-known/openid-configuration'
-      path: '/.well-known/openid-configuration'
-      fullPath: '/.well-known/openid-configuration'
-      preLoaderRoute: typeof DotwellKnownOpenidConfigurationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-protected-resource': {
-      id: '/.well-known/oauth-protected-resource'
-      path: '/.well-known/oauth-protected-resource'
-      fullPath: '/.well-known/oauth-protected-resource'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/.well-known/oauth-authorization-server': {
-      id: '/.well-known/oauth-authorization-server'
-      path: '/.well-known/oauth-authorization-server'
-      fullPath: '/.well-known/oauth-authorization-server'
-      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/autumn/$': {
       id: '/api/autumn/$'
       path: '/api/autumn/$'
@@ -642,13 +553,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/help/dataforseo-api-key'
       preLoaderRoute: typeof AppHelpDataforseoApiKeyRouteImport
       parentRoute: typeof AppRouteRoute
-    }
-    '/.well-known/oauth-protected-resource/mcp': {
-      id: '/.well-known/oauth-protected-resource/mcp'
-      path: '/mcp'
-      fullPath: '/.well-known/oauth-protected-resource/mcp'
-      preLoaderRoute: typeof DotwellKnownOauthProtectedResourceMcpRouteImport
-      parentRoute: typeof DotwellKnownOauthProtectedResourceRoute
     }
     '/_project/p/$projectId': {
       id: '/_project/p/$projectId'
@@ -719,13 +623,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/audit'
       preLoaderRoute: typeof ProjectPProjectIdAuditRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
-    }
-    '/.well-known/oauth-authorization-server/api/auth': {
-      id: '/.well-known/oauth-authorization-server/api/auth'
-      path: '/api/auth'
-      fullPath: '/.well-known/oauth-authorization-server/api/auth'
-      preLoaderRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRouteImport
-      parentRoute: typeof DotwellKnownOauthAuthorizationServerRoute
     }
     '/_project/p/$projectId/rank-tracking/': {
       id: '/_project/p/$projectId/rank-tracking/'
@@ -884,36 +781,6 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
-interface DotwellKnownOauthAuthorizationServerRouteChildren {
-  DotwellKnownOauthAuthorizationServerApiAuthRoute: typeof DotwellKnownOauthAuthorizationServerApiAuthRoute
-}
-
-const DotwellKnownOauthAuthorizationServerRouteChildren: DotwellKnownOauthAuthorizationServerRouteChildren =
-  {
-    DotwellKnownOauthAuthorizationServerApiAuthRoute:
-      DotwellKnownOauthAuthorizationServerApiAuthRoute,
-  }
-
-const DotwellKnownOauthAuthorizationServerRouteWithChildren =
-  DotwellKnownOauthAuthorizationServerRoute._addFileChildren(
-    DotwellKnownOauthAuthorizationServerRouteChildren,
-  )
-
-interface DotwellKnownOauthProtectedResourceRouteChildren {
-  DotwellKnownOauthProtectedResourceMcpRoute: typeof DotwellKnownOauthProtectedResourceMcpRoute
-}
-
-const DotwellKnownOauthProtectedResourceRouteChildren: DotwellKnownOauthProtectedResourceRouteChildren =
-  {
-    DotwellKnownOauthProtectedResourceMcpRoute:
-      DotwellKnownOauthProtectedResourceMcpRoute,
-  }
-
-const DotwellKnownOauthProtectedResourceRouteWithChildren =
-  DotwellKnownOauthProtectedResourceRoute._addFileChildren(
-    DotwellKnownOauthProtectedResourceRouteChildren,
-  )
-
 const rootRouteChildren: RootRouteChildren = {
   AppRouteRoute: AppRouteRouteWithChildren,
   ProjectRouteRoute: ProjectRouteRouteWithChildren,
@@ -922,11 +789,6 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
-  DotwellKnownOauthAuthorizationServerRoute:
-    DotwellKnownOauthAuthorizationServerRouteWithChildren,
-  DotwellKnownOauthProtectedResourceRoute:
-    DotwellKnownOauthProtectedResourceRouteWithChildren,
-  DotwellKnownOpenidConfigurationRoute: DotwellKnownOpenidConfigurationRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
 }

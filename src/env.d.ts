@@ -4,6 +4,7 @@
 declare namespace Cloudflare {
   interface Env {
     R2: R2Bucket;
+    OAUTH_KV: KVNamespace;
 
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     TEAM_DOMAIN?: string;

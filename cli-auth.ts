@@ -8,5 +8,5 @@ const baseUrl = process.env.BETTER_AUTH_URL ?? CLI_DEV_BASE_URL;
 export const auth = betterAuth({
   baseURL: baseUrl,
   secret: process.env.BETTER_AUTH_SECRET ?? randomUUID(),
-  ...createBaseAuthConfig(baseUrl),
+  ...createBaseAuthConfig(),
 });

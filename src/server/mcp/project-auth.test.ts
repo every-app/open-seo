@@ -1,13 +1,10 @@
+import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
+import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 
 const mocks = vi.hoisted(() => ({
-  getMcpAuthContext: vi.fn(),
   getProjectForOrganization: vi.fn(),
-}));
-
-vi.mock("agents/mcp", () => ({
-  getMcpAuthContext: mocks.getMcpAuthContext,
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -27,14 +24,24 @@ const authContext = {
   baseUrl: "https://open-seo.test",
 };
 
+const toolExtra: ToolExtra = {
+  signal: new AbortController().signal,
+  requestId: 1,
+  sendNotification: vi.fn(),
+  sendRequest: vi.fn(),
+  authInfo: {
+    token: "token",
+    clientId: "client_123",
+    scopes: ["mcp"],
+    resource: new URL("https://open-seo.test/mcp"),
+    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
+  } satisfies AuthInfo,
+};
+
 describe("withMcpProjectAuth", () => {
   beforeEach(() => {
     vi.resetModules();
-    mocks.getMcpAuthContext.mockReset();
     mocks.getProjectForOrganization.mockReset();
-    mocks.getMcpAuthContext.mockReturnValue({
-      props: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-    });
   });
 
   it("checks project access for the authenticated organization", async () => {
@@ -43,7 +50,7 @@ describe("withMcpProjectAuth", () => {
 
     const wrapped = withMcpProjectAuth(handler);
     await expect(
-      wrapped({ projectId: "project_123" }, undefined),
+      wrapped({ projectId: "project_123" }, toolExtra),
     ).resolves.toBe("ok");
 
     expect(mocks.getProjectForOrganization).toHaveBeenCalledWith(
@@ -57,7 +64,7 @@ describe("withMcpProjectAuth", () => {
     const handler = vi.fn().mockReturnValue("ok");
 
     const wrapped = withMcpProjectAuth(handler);
-    await wrapped({ projectId: "project_123" }, undefined);
+    await wrapped({ projectId: "project_123" }, toolExtra);
 
     expect(handler).toHaveBeenCalledWith(
       { projectId: "project_123" },
@@ -89,7 +96,7 @@ describe("withMcpProjectAuth", () => {
     const handler = vi.fn();
 
     const wrapped = withMcpProjectAuth(handler);
-    await expect(wrapped({ projectId: "project_123" }, undefined)).rejects.toBe(
+    await expect(wrapped({ projectId: "project_123" }, toolExtra)).rejects.toBe(
       error,
     );
 
