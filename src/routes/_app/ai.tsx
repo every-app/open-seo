@@ -92,6 +92,17 @@ function AiPage() {
                 </li>
                 <li>Paste the MCP URL above and click Add.</li>
                 <li>Approve the OpenSEO login when prompted.</li>
+                <li>
+                  Optional: after OpenSEO connects, click{" "}
+                  <span className="font-medium text-base-content">
+                    Configure
+                  </span>
+                  , then choose{" "}
+                  <span className="font-medium text-base-content">
+                    Always Approved
+                  </span>
+                  , except for any tools you want Claude to ask before using.
+                </li>
               </ol>
               <p className="text-xs text-base-content/55 leading-relaxed">
                 Requires a Claude Pro, Max, Team, or Enterprise plan.
