@@ -19,6 +19,7 @@ import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
+import { Route as MarketingFeaturesMcpRouteImport } from './routes/_marketing/features/mcp'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -69,6 +70,11 @@ const MarketingPricingRoute = MarketingPricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingFeaturesMcpRoute = MarketingFeaturesMcpRouteImport.update({
+  id: '/features/mcp',
+  path: '/features/mcp',
+  getParentRoute: () => MarketingRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/guides/': typeof GuidesIndexRoute
+  '/features/mcp': typeof MarketingFeaturesMcpRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -91,6 +98,7 @@ export interface FileRoutesByTo {
   '/js/script.js': typeof JsScriptDotjsRoute
   '/': typeof MarketingIndexRoute
   '/guides': typeof GuidesIndexRoute
+  '/features/mcp': typeof MarketingFeaturesMcpRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -104,6 +112,7 @@ export interface FileRoutesById {
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/_marketing/features/mcp': typeof MarketingFeaturesMcpRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -117,6 +126,7 @@ export interface FileRouteTypes {
     | '/guides/$'
     | '/js/script.js'
     | '/guides/'
+    | '/features/mcp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/js/script.js'
     | '/'
     | '/guides'
+    | '/features/mcp'
   id:
     | '__root__'
     | '/_marketing'
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/js/script.js'
     | '/_marketing/'
     | '/guides/'
+    | '/_marketing/features/mcp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -225,17 +237,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingPricingRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/features/mcp': {
+      id: '/_marketing/features/mcp'
+      path: '/features/mcp'
+      fullPath: '/features/mcp'
+      preLoaderRoute: typeof MarketingFeaturesMcpRouteImport
+      parentRoute: typeof MarketingRoute
+    }
   }
 }
 
 interface MarketingRouteChildren {
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
+  MarketingFeaturesMcpRoute: typeof MarketingFeaturesMcpRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingIndexRoute: MarketingIndexRoute,
+  MarketingFeaturesMcpRoute: MarketingFeaturesMcpRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
