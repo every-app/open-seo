@@ -5,6 +5,7 @@ This guide covers:
 1. Initial setup after clicking Deploy to Cloudflare
 2. How to update to the latest OpenSEO version
 3. How to add teammates
+4. How to connect the OpenSEO MCP server through Cloudflare Access
 
 ## Initial setup
 
@@ -52,6 +53,24 @@ Without a lifecycle rule, cached objects under `dataforseo-cache/` will accumula
 
 If login fails, re-check the three secrets and Access toggle.
 
+## Connect the MCP server through Cloudflare Access
+
+Use the same Cloudflare Access application that protects your OpenSEO Worker.
+Managed OAuth is required for MCP clients and is not enabled by default.
+
+1. Open Cloudflare Zero Trust.
+2. Go to `Access controls` -> `Applications`.
+3. Find your OpenSEO application, then select `Edit`.
+4. Go to `Additional settings` -> `OAuth`.
+5. Turn on `Managed OAuth`.
+6. Save.
+
+MCP clients should connect to:
+
+```text
+https://YOUR_WORKER_HOSTNAME/mcp
+```
+
 ## How to update to the latest OpenSEO version
 
 If your repo was created from the Cloudflare Deploy button, use this flow.
@@ -84,10 +103,6 @@ Why this is needed:
 - The update step keeps your IDs while pulling the newest OpenSEO code.
 
 ## Give teammates access to OpenSEO
-
-Cloudflare Access makes small-team self-hosting simple: your teammates do not
-need Cloudflare accounts. Add their email addresses to the Access `Allow` policy,
-and Cloudflare will handle the login flow before they reach OpenSEO.
 
 1. Open Cloudflare Zero Trust.
 2. Go to Access -> Applications.

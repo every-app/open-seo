@@ -6,12 +6,14 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { isHostedAuthMode } from "@/lib/auth-mode";
+import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import {
   createOpenSeoOAuthProvider,
   type OpenSeoOAuthEnv,
 } from "@/server/mcp/oauth-provider";
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
+import { MCP_ROUTE } from "@/server/mcp/context";
+import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { computeNextCheckAt } from "@/shared/rank-tracking";
 
 const appFetch = createStartHandler(defaultStreamHandler);
@@ -24,12 +26,22 @@ function fetch(
   env: Env,
   ctx: ExecutionContext,
 ): Response | Promise<Response> {
-  if (isHostedAuthMode(env.AUTH_MODE)) {
+  const authMode = getAuthMode(env.AUTH_MODE);
+  const publicRequest = requestWithPublicOrigin(request);
+
+  if (isHostedAuthMode(authMode)) {
     return openSeoOAuthProvider.fetch(
-      requestWithPublicOrigin(request),
+      publicRequest,
       env as OpenSeoOAuthEnv,
       ctx,
     );
+  }
+
+  if (
+    (authMode === "cloudflare_access" || authMode === "local_noauth") &&
+    new URL(publicRequest.url).pathname === MCP_ROUTE
+  ) {
+    return handleSelfHostedOpenSeoMcpRequest(publicRequest, authMode, env, ctx);
   }
 
   return handleAppFetch(request);

@@ -18,6 +18,11 @@
     "src/db/index.ts",
     "src/db/app.schema.ts",
     "src/db/better-auth-schema.ts",
+    // Package scripts and one-off maintenance utilities
+    "scripts/backlinks-cost-profile.ts",
+    "scripts/brand-lookup-cost-profile.ts",
+    "scripts/release-notes.mjs",
+    "scripts/seed-rank-tracking.ts",
   ],
   "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
   "ignore": ["drizzle-prod.config.ts"],
