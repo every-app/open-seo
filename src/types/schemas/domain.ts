@@ -136,8 +136,15 @@ export const domainPagesPageRequestSchema = z.object({
   search: z.string().optional(),
 });
 
+const optionalSearchNumberParam = z.coerce.number().optional().catch(undefined);
+const optionalSearchPositiveIntParam = z.coerce
+  .number()
+  .int()
+  .positive()
+  .optional()
+  .catch(undefined);
 const filterStringParam = z.string().optional();
-const filterNumberParam = z.coerce.number().optional();
+const filterNumberParam = optionalSearchNumberParam;
 
 export const domainSearchSchema = z.object({
   domain: z.string().optional(),
@@ -146,15 +153,16 @@ export const domainSearchSchema = z.object({
   order: z.enum(domainSortOrders).optional(),
   tab: z.enum(domainTabs).optional(),
   search: z.string().optional(),
-  loc: z.coerce.number().int().positive().optional(),
-  page: z.coerce.number().int().positive().optional(),
+  loc: optionalSearchPositiveIntParam,
+  page: optionalSearchPositiveIntParam,
   size: z.coerce
     .number()
     .int()
     .refine((value) =>
       (DOMAIN_KEYWORDS_PAGE_SIZES as readonly number[]).includes(value),
     )
-    .optional(),
+    .optional()
+    .catch(undefined),
   include: filterStringParam,
   exclude: filterStringParam,
   minTraffic: filterNumberParam,

@@ -105,6 +105,10 @@ describe("normalizeBacklinksTarget", () => {
       normalizeBacklinksTarget("https://user:pass@example.com/private"),
     );
   });
+
+  it("rejects hostnames with unrecognized public suffixes before provider calls", () => {
+    expectValidationError(() => normalizeBacklinksTarget("example.invalidtld"));
+  });
 });
 
 describe("fetchBacklinksSummaryRaw", () => {

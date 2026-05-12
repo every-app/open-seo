@@ -1,5 +1,6 @@
 import { AppError } from "@/server/lib/errors";
 import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
+import { parse as parseTld } from "tldts";
 
 type NormalizedBacklinkTarget = {
   apiTarget: string;
@@ -44,6 +45,17 @@ export function normalizeBacklinksTarget(
   const exactHostname = parsed.hostname.toLowerCase();
   const domainHostname = exactHostname.replace(/^www\./, "");
   if (!domainHostname || !domainHostname.includes(".")) {
+    throw new AppError("VALIDATION_ERROR", "Target is invalid");
+  }
+
+  const parsedHostname = parseTld(domainHostname, {
+    allowPrivateDomains: true,
+  });
+  if (
+    parsedHostname.isIp ||
+    !parsedHostname.publicSuffix ||
+    (parsedHostname.isIcann !== true && parsedHostname.isPrivate !== true)
+  ) {
     throw new AppError("VALIDATION_ERROR", "Target is invalid");
   }
 

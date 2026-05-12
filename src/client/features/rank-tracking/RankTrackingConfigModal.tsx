@@ -10,7 +10,7 @@ import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import { normalizeDomain } from "@/types/schemas/domain";
+import { domainField, normalizeDomain } from "@/types/schemas/domain";
 import {
   depthToPages,
   pagesToDepth,
@@ -54,11 +54,11 @@ export function RankTrackingConfigModal({
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (normalizedDomain: string) =>
       createRankTrackingConfig({
         data: {
           projectId,
-          domain,
+          domain: normalizedDomain,
           devices,
           serpDepth,
           locationCode,
@@ -79,12 +79,12 @@ export function RankTrackingConfigModal({
   });
 
   const updateMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (normalizedDomain: string) =>
       updateRankTrackingConfig({
         data: {
           projectId,
           configId: existingConfig!.id,
-          domain,
+          domain: normalizedDomain,
           devices,
           serpDepth,
           locationCode,
@@ -109,10 +109,16 @@ export function RankTrackingConfigModal({
       toast.error("Please enter a domain");
       return;
     }
+    const parsedDomain = domainField.safeParse(domain);
+    if (!parsedDomain.success) {
+      toast.error("Please enter a valid domain");
+      return;
+    }
+    setDomain(parsedDomain.data);
     if (isEdit) {
-      updateMutation.mutate();
+      updateMutation.mutate(parsedDomain.data);
     } else {
-      createMutation.mutate();
+      createMutation.mutate(parsedDomain.data);
     }
   };
 

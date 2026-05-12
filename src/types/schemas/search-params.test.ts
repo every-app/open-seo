@@ -24,4 +24,18 @@ describe("search param boolean parsing", () => {
       subdomains: false,
     });
   });
+
+  it("drops invalid optional domain pagination params", () => {
+    const parsed = domainSearchSchema.parse({
+      page: "0",
+      size: "25",
+      loc: "not-a-location",
+    });
+
+    expect(parsed).toEqual({
+      page: undefined,
+      size: undefined,
+      loc: undefined,
+    });
+  });
 });
