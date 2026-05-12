@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 
 const LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional";
+const LOOPS_CONTACT_UPDATE_URL = "https://app.loops.so/api/v1/contacts/update";
 
 function getRequiredEnv(name: string) {
   const value: unknown = Reflect.get(env, name);
@@ -65,6 +66,77 @@ async function sendLoopsTransactionalEmail({
   throw new Error(
     `Failed to send Loops transactional email (${response.status})`,
   );
+}
+
+function getOptionalEnv(name: string) {
+  const value: unknown = Reflect.get(env, name);
+  const trimmed = typeof value === "string" ? value.trim() : "";
+
+  return trimmed || null;
+}
+
+function getContactNameParts(name: string | null | undefined) {
+  const trimmedName = name?.trim();
+
+  if (!trimmedName) {
+    return {};
+  }
+
+  const [firstName, ...lastNameParts] = trimmedName.split(/\s+/);
+  const lastName = lastNameParts.join(" ");
+
+  return {
+    firstName,
+    ...(lastName ? { lastName } : {}),
+  };
+}
+
+export async function upsertHostedSignupContact({
+  userId,
+  email,
+  name,
+}: {
+  userId: string;
+  email: string;
+  name?: string | null;
+}) {
+  const apiKey = getOptionalEnv("LOOPS_API_KEY");
+
+  if (!apiKey) {
+    console.warn(
+      "Skipping Loops signup contact sync: LOOPS_API_KEY is not set",
+    );
+    return;
+  }
+
+  const response = await fetch(LOOPS_CONTACT_UPDATE_URL, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      email,
+      userId,
+      source: "openseo-signup",
+      userGroup: "app-user",
+      ...getContactNameParts(name),
+    }),
+  });
+
+  if (response.ok) {
+    return;
+  }
+
+  const errorPayload = await response.json().catch(() => null);
+  console.error("Loops signup contact sync error:", {
+    status: response.status,
+    email,
+    userId,
+    errorPayload,
+  });
+
+  throw new Error(`Failed to sync Loops signup contact (${response.status})`);
 }
 
 export async function sendHostedVerificationEmail({

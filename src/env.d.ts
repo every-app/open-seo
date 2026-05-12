@@ -13,6 +13,9 @@ declare namespace Cloudflare {
     POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
+    LOOPS_API_KEY?: string;
+    LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
+    LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
