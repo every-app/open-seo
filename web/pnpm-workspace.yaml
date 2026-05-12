@@ -1,0 +1,3 @@
+minimumReleaseAge: 11520
+minimumReleaseAgeExclude:
+  - '@every-app/*'
