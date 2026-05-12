@@ -61,6 +61,57 @@ export const savedKeywords = sqliteTable(
   ],
 );
 
+export const savedKeywordTags = sqliteTable(
+  "saved_keyword_tags",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    // Palette key (e.g. "blue", "rose"). Null = derive a stable color from the
+    // tag id at render time. See src/shared/tag-colors.ts.
+    color: text("color"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("saved_keyword_tags_project_normalized_name_idx").on(
+      table.projectId,
+      table.normalizedName,
+    ),
+    index("saved_keyword_tags_project_name_idx").on(
+      table.projectId,
+      table.name,
+    ),
+  ],
+);
+
+export const savedKeywordTagAssignments = sqliteTable(
+  "saved_keyword_tag_assignments",
+  {
+    savedKeywordId: text("saved_keyword_id")
+      .notNull()
+      .references(() => savedKeywords.id, { onDelete: "cascade" }),
+    tagId: text("tag_id")
+      .notNull()
+      .references(() => savedKeywordTags.id, { onDelete: "cascade" }),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("saved_keyword_tag_assignments_unique_idx").on(
+      table.savedKeywordId,
+      table.tagId,
+    ),
+    index("saved_keyword_tag_assignments_keyword_idx").on(table.savedKeywordId),
+    index("saved_keyword_tag_assignments_tag_idx").on(table.tagId),
+  ],
+);
+
 // Latest cached metrics for a keyword within a project.
 // This is joined onto savedKeywords when rendering the saved keyword list.
 export const keywordMetrics = sqliteTable(

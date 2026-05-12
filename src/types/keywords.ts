@@ -35,6 +35,19 @@ export type SavedKeywordRow = {
   intent: string | null;
   monthlySearches: MonthlySearch[];
   fetchedAt: string | null;
+  tags: SavedKeywordTag[];
+};
+
+export type SavedKeywordTag = {
+  id: string;
+  name: string;
+  normalizedName: string;
+  /** Palette key (e.g. "blue"). Null = derive a stable color from the id. */
+  color: string | null;
+};
+
+export type SavedKeywordTagSummary = SavedKeywordTag & {
+  keywordCount: number;
 };
 
 export type SerpResultItem = {

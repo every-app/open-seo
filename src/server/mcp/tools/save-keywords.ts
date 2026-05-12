@@ -18,6 +18,19 @@ const inputSchema = {
     .min(1)
     .max(100)
     .describe("Keywords to save (1-100)."),
+  tags: z
+    .array(z.string().min(1).max(64))
+    .max(20)
+    .optional()
+    .describe(
+      "Optional tags to attach to every saved keyword. Ask the user for explicit confirmation before using this, especially when saving many keywords or creating new tag names.",
+    ),
+  tagMode: z
+    .enum(["append", "replace"])
+    .optional()
+    .describe(
+      "How to apply tags. Defaults to append. Use replace to remove existing tags from these saved keywords before applying the provided tags.",
+    ),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
 } as const;
@@ -29,18 +42,34 @@ export const saveKeywordsTool = {
   config: {
     title: "Save keywords",
     description:
-      "Save keywords to a project's saved-keywords list. Free — does not call DataForSEO. Idempotent: re-saving an existing keyword is a no-op.",
+      "Save keywords to a project's saved-keywords list. Free — does not call DataForSEO. Idempotent: re-saving an existing keyword is a no-op. If tags are provided, missing tags may be created. By default tags are appended; set tagMode=replace to remove existing tags from these saved keywords before applying the provided tags, which is useful for reorganizing keywords into page/topic clusters. Ask the user for confirmation before applying or replacing tags broadly.",
     inputSchema,
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
+    if (args.tagMode === "replace" && (args.tags?.length ?? 0) === 0) {
+      throw new Error("Replacement tags are required when tagMode is replace.");
+    }
+
+    const locationCode = args.locationCode ?? DEFAULT_LOCATION_CODE;
+    const languageCode = args.languageCode ?? DEFAULT_LANGUAGE_CODE;
+
     await KeywordResearchService.saveKeywords({
       projectId: args.projectId,
       keywords: args.keywords,
-      locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-      languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+      tags: args.tags,
+      tagMode: args.tagMode ?? "append",
+      locationCode,
+      languageCode,
     });
+
+    const tagText =
+      args.tags && args.tags.length > 0
+        ? ` with tag(s): ${args.tags.join(", ")}`
+        : "";
+    const modeText = args.tagMode === "replace" ? " Replaced tags." : "";
+
     return mcpResponse({
-      text: `Saved ${args.keywords.length} keyword(s) to project ${args.projectId}.`,
+      text: `Saved ${args.keywords.length} keyword(s)${tagText} to project ${args.projectId}.${modeText}`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -50,8 +79,10 @@ export const saveKeywordsTool = {
         projectId: args.projectId,
         savedCount: args.keywords.length,
         keywords: args.keywords,
-        locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+        tags: args.tags ?? [],
+        tagMode: args.tagMode ?? "append",
+        locationCode,
+        languageCode,
       },
     });
   }),

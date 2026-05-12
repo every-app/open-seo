@@ -1,10 +1,14 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
+  deleteSavedKeywordTagSchema,
   researchKeywordsSchema,
   saveKeywordsSchema,
   getSavedKeywordsSchema,
+  exportSavedKeywordsSchema,
   removeSavedKeywordsSchema,
   serpAnalysisSchema,
+  updateSavedKeywordTagSchema,
+  updateSavedKeywordTagsSchema,
 } from "@/types/schemas/keywords";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
@@ -37,6 +41,46 @@ export const getSavedKeywords = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => getSavedKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
     return KeywordResearchService.getSavedKeywords({
+      ...data,
+      projectId: context.projectId,
+    });
+  });
+
+export const exportSavedKeywords = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => exportSavedKeywordsSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.exportSavedKeywords({
+      ...data,
+      projectId: context.projectId,
+    });
+  });
+
+export const updateSavedKeywordTags = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => updateSavedKeywordTagsSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.updateSavedKeywordTags({
+      ...data,
+      projectId: context.projectId,
+    });
+  });
+
+export const updateSavedKeywordTag = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => updateSavedKeywordTagSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.updateSavedKeywordTag({
+      ...data,
+      projectId: context.projectId,
+    });
+  });
+
+export const deleteSavedKeywordTag = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => deleteSavedKeywordTagSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    return KeywordResearchService.deleteSavedKeywordTag({
       ...data,
       projectId: context.projectId,
     });

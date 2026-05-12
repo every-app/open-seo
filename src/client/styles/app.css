@@ -169,34 +169,141 @@ select {
   @apply border-error/70 bg-error/40 text-base-content/90;
 }
 
-/* Keyword difficulty score badges */
+/* Tag chip colors — muted background + readable text in both themes.
+   Text uses darker shades on light theme for contrast, lighter on dark. */
+.tag-chip-slate {
+  background-color: color-mix(in oklab, #64748b 14%, transparent);
+  color: #334155;
+  --tw-ring-color: color-mix(in oklab, #64748b 30%, transparent);
+}
+.tag-chip-rose {
+  background-color: color-mix(in oklab, #f43f5e 14%, transparent);
+  color: #9f1239;
+  --tw-ring-color: color-mix(in oklab, #f43f5e 30%, transparent);
+}
+.tag-chip-amber {
+  background-color: color-mix(in oklab, #f59e0b 16%, transparent);
+  color: #92400e;
+  --tw-ring-color: color-mix(in oklab, #f59e0b 32%, transparent);
+}
+.tag-chip-lime {
+  background-color: color-mix(in oklab, #84cc16 16%, transparent);
+  color: #3f6212;
+  --tw-ring-color: color-mix(in oklab, #84cc16 32%, transparent);
+}
+.tag-chip-emerald {
+  background-color: color-mix(in oklab, #10b981 14%, transparent);
+  color: #065f46;
+  --tw-ring-color: color-mix(in oklab, #10b981 30%, transparent);
+}
+.tag-chip-sky {
+  background-color: color-mix(in oklab, #0ea5e9 14%, transparent);
+  color: #075985;
+  --tw-ring-color: color-mix(in oklab, #0ea5e9 30%, transparent);
+}
+.tag-chip-violet {
+  background-color: color-mix(in oklab, #8b5cf6 16%, transparent);
+  color: #5b21b6;
+  --tw-ring-color: color-mix(in oklab, #8b5cf6 32%, transparent);
+}
+.tag-chip-fuchsia {
+  background-color: color-mix(in oklab, #d946ef 14%, transparent);
+  color: #86198f;
+  --tw-ring-color: color-mix(in oklab, #d946ef 30%, transparent);
+}
+
+html[data-theme="openseo-dark"] .tag-chip-slate {
+  color: #cbd5e1;
+}
+html[data-theme="openseo-dark"] .tag-chip-rose {
+  color: #fda4af;
+}
+html[data-theme="openseo-dark"] .tag-chip-amber {
+  color: #fcd34d;
+}
+html[data-theme="openseo-dark"] .tag-chip-lime {
+  color: #d9f99d;
+}
+html[data-theme="openseo-dark"] .tag-chip-emerald {
+  color: #6ee7b7;
+}
+html[data-theme="openseo-dark"] .tag-chip-sky {
+  color: #7dd3fc;
+}
+html[data-theme="openseo-dark"] .tag-chip-violet {
+  color: #c4b5fd;
+}
+html[data-theme="openseo-dark"] .tag-chip-fuchsia {
+  color: #f5d0fe;
+}
+
+/* Keyword difficulty score badges — muted/transparent style to match tag chips */
 .score-badge {
-  @apply border text-white;
-  border-color: color-mix(in oklab, currentColor 26%, transparent);
+  @apply ring-1 ring-inset;
+}
+
+.score-tier-na {
+  background-color: color-mix(in oklab, #94a3b8 12%, transparent);
+  color: #475569;
+  --tw-ring-color: color-mix(in oklab, #94a3b8 28%, transparent);
 }
 
 .score-tier-1 {
-  background-color: #22c55e;
+  background-color: color-mix(in oklab, #10b981 15%, transparent);
+  color: #065f46;
+  --tw-ring-color: color-mix(in oklab, #10b981 30%, transparent);
 }
 
 .score-tier-2 {
-  background-color: #6bd84d;
+  background-color: color-mix(in oklab, #84cc16 15%, transparent);
+  color: #3f6212;
+  --tw-ring-color: color-mix(in oklab, #84cc16 30%, transparent);
 }
 
 .score-tier-3 {
-  background-color: #eab308;
+  background-color: color-mix(in oklab, #eab308 16%, transparent);
+  color: #854d0e;
+  --tw-ring-color: color-mix(in oklab, #eab308 32%, transparent);
 }
 
 .score-tier-4 {
-  background-color: #f97316;
+  background-color: color-mix(in oklab, #f97316 16%, transparent);
+  color: #9a3412;
+  --tw-ring-color: color-mix(in oklab, #f97316 32%, transparent);
 }
 
 .score-tier-5 {
-  background-color: #ef4444;
+  background-color: color-mix(in oklab, #ef4444 15%, transparent);
+  color: #991b1b;
+  --tw-ring-color: color-mix(in oklab, #ef4444 30%, transparent);
 }
 
 .score-tier-6 {
-  background-color: #dc2626;
+  background-color: color-mix(in oklab, #b91c1c 18%, transparent);
+  color: #7f1d1d;
+  --tw-ring-color: color-mix(in oklab, #b91c1c 32%, transparent);
+}
+
+html[data-theme="openseo-dark"] .score-tier-na {
+  color: #cbd5e1;
+}
+html[data-theme="openseo-dark"] .score-tier-1 {
+  color: #6ee7b7;
+}
+html[data-theme="openseo-dark"] .score-tier-2 {
+  color: #bef264;
+}
+html[data-theme="openseo-dark"] .score-tier-3 {
+  color: #fde047;
+}
+html[data-theme="openseo-dark"] .score-tier-4 {
+  color: #fdba74;
+}
+html[data-theme="openseo-dark"] .score-tier-5 {
+  color: #fca5a5;
+}
+html[data-theme="openseo-dark"] .score-tier-6 {
+  color: #fda4af;
 }
 
 html[data-theme="openseo-dark"] {
@@ -207,35 +314,6 @@ html[data-theme="openseo-dark"] {
   --trend-tooltip-bg: oklch(21% 0.01 255 / 0.95);
   --trend-tooltip-border: oklch(40% 0.01 255 / 0.65);
   --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
-}
-
-html[data-theme="openseo-dark"] .score-badge {
-  color: oklch(96% 0.01 95);
-  filter: saturate(1.26) brightness(1.14);
-}
-
-html[data-theme="openseo-dark"] .score-tier-1 {
-  background-color: oklch(58% 0.12 148);
-}
-
-html[data-theme="openseo-dark"] .score-tier-2 {
-  background-color: oklch(60% 0.115 132);
-}
-
-html[data-theme="openseo-dark"] .score-tier-3 {
-  background-color: oklch(66% 0.11 92);
-}
-
-html[data-theme="openseo-dark"] .score-tier-4 {
-  background-color: oklch(64% 0.12 56);
-}
-
-html[data-theme="openseo-dark"] .score-tier-5 {
-  background-color: oklch(62% 0.12 36);
-}
-
-html[data-theme="openseo-dark"] .score-tier-6 {
-  background-color: oklch(58% 0.11 30);
 }
 
 html[data-theme="openseo-dark"] .alert-warning {

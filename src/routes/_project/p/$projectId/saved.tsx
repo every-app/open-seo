@@ -1,358 +1,340 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import type {
+  OnChangeFn,
+  RowSelectionState,
+  SortingState,
+} from "@tanstack/react-table";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { SavedKeywordsBulkActionBar } from "@/client/features/saved-keywords/SavedKeywordsBulkActionBar";
+import { SavedKeywordsBulkTagsModal } from "@/client/features/saved-keywords/SavedKeywordsBulkTagsModal";
+import { SavedKeywordsFilters } from "@/client/features/saved-keywords/SavedKeywordsFilters";
+import { SavedKeywordsHeader } from "@/client/features/saved-keywords/SavedKeywordsHeader";
+import {
+  DeleteSavedKeywordsModal,
+  RemoveSavedKeywordsError,
+} from "@/client/features/saved-keywords/SavedKeywordsModals";
+import { SavedKeywordsPagination } from "@/client/features/saved-keywords/SavedKeywordsPagination";
+import { SavedKeywordsStatus } from "@/client/features/saved-keywords/SavedKeywordsStatus";
+import { SavedKeywordsTable } from "@/client/features/saved-keywords/SavedKeywordsTable";
+import { compileSavedKeywordsFilters } from "@/client/features/saved-keywords/savedKeywordsFilterTypes";
+import {
+  toSavedKeywordSort,
+  type SAVED_KEYWORD_PAGE_SIZES,
+} from "@/client/features/saved-keywords/savedKeywordsUtils";
+import { useSavedKeywordsExport } from "@/client/features/saved-keywords/useSavedKeywordsExport";
+import { useSavedKeywordsFilters } from "@/client/features/saved-keywords/useSavedKeywordsFilters";
+import { useTagManage } from "@/client/features/saved-keywords/useTagManage";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
 import {
   getSavedKeywords,
   removeSavedKeywords,
+  updateSavedKeywordTags,
 } from "@/serverFunctions/keywords";
-import {
-  Download,
-  Search,
-  Loader2,
-  AlertCircle,
-  Trash2,
-  Copy,
-} from "lucide-react";
-import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
-import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
-import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { captureClientEvent } from "@/client/lib/posthog";
+import type { SavedKeywordTag } from "@/types/keywords";
 
 export const Route = createFileRoute("/_project/p/$projectId/saved")({
   component: SavedKeywordsPage,
 });
 
-type SavedKeyword = {
-  id: string;
-  keyword: string;
-  searchVolume: number | null;
-  cpc: number | null;
-  competition: number | null;
-  keywordDifficulty: number | null;
-  intent: string | null;
-  fetchedAt: string | null;
-};
+const FILTER_DEBOUNCE_MS = 350;
 
 function SavedKeywordsPage() {
   const { projectId } = Route.useParams();
   const queryClient = useQueryClient();
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] =
+    useState<(typeof SAVED_KEYWORD_PAGE_SIZES)[number]>(50);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "fetchedAt", desc: true },
+  ]);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [removeError, setRemoveError] = useState<string | null>(null);
-  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [showTagModal, setShowTagModal] = useState(false);
 
-  const { data: savedKeywordsData, isLoading } = useQuery({
-    queryKey: ["savedKeywords", projectId],
-    queryFn: () => getSavedKeywords({ data: { projectId } }),
+  const filters = useSavedKeywordsFilters();
+  const [committedFilterValues, setCommittedFilterValues] = useState(
+    filters.values,
+  );
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setCommittedFilterValues(filters.values);
+      setPage(1);
+    }, FILTER_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [filters.values]);
+
+  const appliedFilters = useMemo(
+    () => compileSavedKeywordsFilters(committedFilterValues),
+    [committedFilterValues],
+  );
+  const exportFilters = useMemo(
+    () => compileSavedKeywordsFilters(filters.values),
+    [filters.values],
+  );
+
+  const sortState = sorting[0];
+  const sort = toSavedKeywordSort(sortState?.id);
+  const order: "asc" | "desc" = sortState
+    ? sortState.desc
+      ? "desc"
+      : "asc"
+    : "desc";
+  const tagFilterKey = selectedTagIds.join("|");
+  const hasActiveFilters =
+    filters.activeFilterCount > 0 || selectedTagIds.length > 0;
+
+  const queryInput = useMemo(
+    () => ({
+      projectId,
+      ...appliedFilters,
+      tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+      page,
+      pageSize,
+      sort,
+      order,
+    }),
+    [appliedFilters, order, page, pageSize, projectId, selectedTagIds, sort],
+  );
+
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ["savedKeywords", projectId, queryInput],
+    queryFn: () => getSavedKeywords({ data: queryInput }),
+    placeholderData: keepPreviousData,
   });
-  const savedKeywords: SavedKeyword[] = savedKeywordsData?.rows ?? [];
+
+  const savedKeywords = data?.rows ?? [];
+  const availableTags = data?.tags ?? [];
+  const totalCount = data?.totalCount ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const selectedRows = savedKeywords.filter((row) => rowSelection[row.id]);
+  const selectedIds = selectedRows.map((row) => row.id);
+  const selectedCount = selectedIds.length;
+
+  const selectedRowTags = useMemo<SavedKeywordTag[]>(() => {
+    const map = new Map<string, SavedKeywordTag>();
+    for (const row of selectedRows) {
+      for (const tag of row.tags) {
+        if (!map.has(tag.id)) map.set(tag.id, tag);
+      }
+    }
+    return [...map.values()].toSorted((a, b) =>
+      a.normalizedName.localeCompare(b.normalizedName),
+    );
+  }, [selectedRows]);
+
+  useEffect(() => {
+    setRowSelection({});
+  }, [page, pageSize, appliedFilters, tagFilterKey, sort, order]);
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
+
+  const invalidateSavedKeywords = () =>
+    queryClient.invalidateQueries({ queryKey: ["savedKeywords", projectId] });
 
   const removeMutation = useMutation({
     mutationFn: (savedKeywordIds: string[]) =>
       removeSavedKeywords({ data: { projectId, savedKeywordIds } }),
-  });
-
-  const handleDeleteSelected = async () => {
-    const ids = [...selected];
-    if (ids.length === 0) return;
-
-    setDeleting(true);
-    setRemoveError(null);
-
-    try {
-      await removeMutation.mutateAsync(ids);
-      setSelected(new Set());
+    onSuccess: (result) => {
+      setRowSelection({});
       setShowConfirm(false);
+      setRemoveError(null);
+      void invalidateSavedKeywords();
       captureClientEvent("saved_keywords:bulk_remove", {
-        count: ids.length,
+        count: result.deletedCount,
       });
       toast.success(
-        `${ids.length} keyword${ids.length !== 1 ? "s" : ""} removed`,
+        `${result.deletedCount} keyword${result.deletedCount !== 1 ? "s" : ""} removed`,
       );
-    } catch (error) {
+    },
+    onError: (error) => {
       setRemoveError(getStandardErrorMessage(error, "Remove failed."));
-    } finally {
-      void queryClient.invalidateQueries({
-        queryKey: ["savedKeywords", projectId],
-      });
-      setDeleting(false);
-    }
-  };
+    },
+  });
 
-  const handleCopySelected = () => {
-    const keywords = savedKeywords
-      .filter((kw) => selected.has(kw.id))
-      .map((kw) => kw.keyword);
-    void navigator.clipboard.writeText(keywords.join("\n"));
-    toast.success(
-      `${keywords.length} keyword${keywords.length !== 1 ? "s" : ""} copied`,
+  const tagMutation = useMutation({
+    mutationFn: (input: {
+      savedKeywordIds: string[];
+      addTags?: string[];
+      removeTagIds?: string[];
+    }) =>
+      updateSavedKeywordTags({
+        data: {
+          projectId,
+          savedKeywordIds: input.savedKeywordIds,
+          addTags: input.addTags,
+          removeTagIds: input.removeTagIds,
+        },
+      }),
+    onSuccess: (result) => {
+      setRowSelection({});
+      setShowTagModal(false);
+      void invalidateSavedKeywords();
+      toast.success(
+        `Updated tags for ${result.taggedCount} keyword${result.taggedCount !== 1 ? "s" : ""}`,
+      );
+    },
+    onError: (error) => {
+      toast.error(getStandardErrorMessage(error, "Could not update tags"));
+    },
+  });
+
+  const tagManage = useTagManage(projectId);
+  const exporter = useSavedKeywordsExport({
+    projectId,
+    appliedFilters: exportFilters,
+    selectedTagIds,
+    sort,
+    order,
+  });
+
+  const handleSortingChange: OnChangeFn<SortingState> = (updater) => {
+    setSorting((current) =>
+      typeof updater === "function" ? updater(current) : updater,
     );
+    setPage(1);
   };
 
-  const toggleSelect = (id: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
-  const toggleAll = () => {
-    if (selected.size === savedKeywords.length) {
-      setSelected(new Set());
-    } else {
-      setSelected(new Set(savedKeywords.map((kw) => kw.id)));
+  const handleDeleteTag = async (tagId: string) => {
+    const ok = await tagManage.deleteTag(tagId);
+    if (ok) {
+      setSelectedTagIds((current) => current.filter((id) => id !== tagId));
     }
   };
 
-  const savedHeaders = [...KEYWORD_RESEARCH_HEADERS, "Fetched At"];
-  const sheetsExportRows: CsvValue[][] = savedKeywords.map((kw) => [
-    kw.keyword,
-    kw.searchVolume ?? "",
-    kw.cpc ?? "",
-    kw.competition ?? "",
-    kw.keywordDifficulty ?? "",
-    kw.intent ?? "",
-    kw.fetchedAt ?? "",
-  ]);
-
-  const exportCsv = () => {
-    if (sheetsExportRows.length === 0) {
-      toast.error("No keywords to export");
-      return;
-    }
-    // CSV file keeps cents-formatted CPC/competition for human readability.
-    const csvRows = sheetsExportRows.map((row) =>
-      row.map((cell, idx) =>
-        (idx === 2 || idx === 3) && typeof cell === "number"
-          ? cell.toFixed(2)
-          : cell,
-      ),
-    );
-    downloadCsv("saved-keywords.csv", buildCsv(savedHeaders, csvRows));
-    captureClientEvent("data:export", {
-      source_feature: "saved_keywords",
-      result_count: sheetsExportRows.length,
-    });
+  const handleClearAllFilters = () => {
+    filters.resetFilters();
+    setSelectedTagIds([]);
+    setPage(1);
   };
 
   return (
-    <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
-      <div className="mx-auto max-w-5xl space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold">Saved Keywords</h1>
-            <p className="text-sm text-base-content/70">
-              Keywords you&apos;ve saved from keyword research.
-            </p>
+    <div className="overflow-auto px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
+      <div className="mx-auto max-w-6xl space-y-4">
+        <SavedKeywordsHeader
+          totalCount={totalCount}
+          exporting={exporter.exporting}
+          onExportCsv={() => void exporter.exportFilteredCsv()}
+          onExportSheets={() => void exporter.exportFilteredSheets()}
+        />
+
+        <div className="overflow-hidden rounded-lg border border-base-300 bg-base-100">
+          <SavedKeywordsFilters
+            filtersForm={filters.filtersForm}
+            activeFilterCount={filters.activeFilterCount}
+            showFilters={showFilters}
+            onToggleFilters={() => setShowFilters((v) => !v)}
+            onResetAllFilters={handleClearAllFilters}
+            availableTags={availableTags}
+            selectedTagIds={selectedTagIds}
+            busyTagIds={tagManage.busyTagIds}
+            onToggleTagFilter={(tagId) => {
+              setSelectedTagIds((current) =>
+                current.includes(tagId)
+                  ? current.filter((id) => id !== tagId)
+                  : [...current, tagId],
+              );
+              setPage(1);
+            }}
+            onClearTagSelection={() => {
+              setSelectedTagIds([]);
+              setPage(1);
+            }}
+            onUpdateTag={(input) => void tagManage.updateTag(input)}
+            onDeleteTag={(tagId) => void handleDeleteTag(tagId)}
+          />
+
+          <div className="space-y-3 p-4">
+            {removeError ? (
+              <RemoveSavedKeywordsError message={removeError} />
+            ) : null}
+            <SavedKeywordsStatus
+              totalCount={totalCount}
+              isFetching={isFetching && !isLoading}
+            />
+            <SavedKeywordsTable
+              rows={savedKeywords}
+              rowSelection={rowSelection}
+              sorting={sorting}
+              isLoading={isLoading}
+              hasActiveFilters={hasActiveFilters}
+              onRowSelectionChange={setRowSelection}
+              onSortingChange={handleSortingChange}
+            />
           </div>
-          {savedKeywords.length > 0 && (
-            <div className="flex items-center gap-2">
-              <ExportToSheetsButton
-                headers={savedHeaders}
-                rows={sheetsExportRows}
-                feature="saved_keywords"
-                className="btn-sm"
-              />
-              <button className="btn btn-sm" onClick={exportCsv}>
-                <Download className="size-4" /> Export CSV
-              </button>
-            </div>
-          )}
+
+          <SavedKeywordsPagination
+            page={page}
+            pageSize={pageSize}
+            totalCount={totalCount}
+            isLoading={isFetching}
+            onPageChange={setPage}
+            onPageSizeChange={(nextPageSize) => {
+              setPageSize(nextPageSize);
+              setPage(1);
+            }}
+          />
         </div>
 
-        {isLoading ? (
-          <div className="card bg-base-100 border border-base-300">
-            <div className="card-body gap-3" aria-busy>
-              <div className="skeleton h-4 w-48" />
-              {Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-8 gap-3 items-center"
-                >
-                  <div className="skeleton h-4 col-span-2" />
-                  <div className="skeleton h-4" />
-                  <div className="skeleton h-4" />
-                  <div className="skeleton h-4" />
-                  <div className="skeleton h-4" />
-                  <div className="skeleton h-4" />
-                  <div className="skeleton h-4" />
-                </div>
-              ))}
-            </div>
-          </div>
-        ) : savedKeywords.length === 0 ? (
-          <div className="card bg-base-100 border border-base-300">
-            <div className="card-body text-center py-12 text-base-content/50">
-              <Search className="size-8 mx-auto mb-2 opacity-40" />
-              <p>
-                No saved keywords yet. Use the Keyword Research page to find and
-                save keywords.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="card bg-base-100 border border-base-300">
-            <div className="card-body gap-3">
-              {removeError ? (
-                <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error flex items-start gap-2">
-                  <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                  <span>{removeError}</span>
-                </div>
-              ) : null}
+        <SavedKeywordsBulkActionBar
+          selectedCount={selectedCount}
+          exportingSelection={exporter.exportingSelection}
+          onCopy={() => {
+            void navigator.clipboard.writeText(
+              selectedRows.map((row) => row.keyword).join("\n"),
+            );
+            toast.success(
+              `${selectedCount} keyword${selectedCount !== 1 ? "s" : ""} copied`,
+            );
+          }}
+          onOpenTags={() => setShowTagModal(true)}
+          onExportCsv={() => exporter.exportSelectionCsv(selectedRows)}
+          onExportSheets={() =>
+            void exporter.exportSelectionSheets(selectedRows)
+          }
+          onDelete={() => setShowConfirm(true)}
+          onClear={() => setRowSelection({})}
+        />
 
-              {/* Bulk action bar or keyword count */}
-              {selected.size > 0 ? (
-                <div className="flex items-center gap-3 rounded-lg bg-base-200 px-3 py-2 text-sm">
-                  <span className="text-base-content/70">
-                    {selected.size} keyword
-                    {selected.size !== 1 ? "s" : ""} selected
-                  </span>
-                  <button
-                    className="btn btn-ghost btn-xs gap-1"
-                    onClick={handleCopySelected}
-                  >
-                    <Copy className="size-3" />
-                    Copy
-                  </button>
-                  <button
-                    className="btn btn-error btn-xs gap-1"
-                    onClick={() => setShowConfirm(true)}
-                  >
-                    <Trash2 className="size-3" />
-                    Delete
-                  </button>
-                  <button
-                    className="btn btn-ghost btn-xs"
-                    onClick={() => setSelected(new Set())}
-                  >
-                    Clear
-                  </button>
-                </div>
-              ) : (
-                <p className="text-sm text-base-content/70">
-                  {savedKeywords.length} saved keyword
-                  {savedKeywords.length !== 1 ? "s" : ""}
-                </p>
-              )}
+        {showConfirm ? (
+          <DeleteSavedKeywordsModal
+            selectedCount={selectedCount}
+            isPending={removeMutation.isPending}
+            onClose={() => setShowConfirm(false)}
+            onConfirm={() => removeMutation.mutate(selectedIds)}
+          />
+        ) : null}
 
-              <div className="overflow-x-auto">
-                <table className="table table-zebra table-sm">
-                  <thead>
-                    <tr>
-                      <th className="w-8">
-                        <input
-                          type="checkbox"
-                          className="checkbox checkbox-xs"
-                          checked={
-                            selected.size === savedKeywords.length &&
-                            savedKeywords.length > 0
-                          }
-                          onChange={toggleAll}
-                        />
-                      </th>
-                      <th>Keyword</th>
-                      <th>Volume</th>
-                      <th>CPC</th>
-                      <th>Competition</th>
-                      <th>Difficulty</th>
-                      <th>Intent</th>
-                      <th>Last Fetched</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {savedKeywords.map((kw) => (
-                      <tr key={kw.id}>
-                        <td className="w-8">
-                          <input
-                            type="checkbox"
-                            className="checkbox checkbox-xs"
-                            checked={selected.has(kw.id)}
-                            onChange={() => toggleSelect(kw.id)}
-                          />
-                        </td>
-                        <td className="font-medium">{kw.keyword}</td>
-                        <td>{formatNumber(kw.searchVolume)}</td>
-                        <td>
-                          {kw.cpc == null ? "-" : `$${kw.cpc.toFixed(2)}`}
-                        </td>
-                        <td>
-                          {kw.competition == null
-                            ? "-"
-                            : kw.competition.toFixed(2)}
-                        </td>
-                        <td>
-                          <DifficultyBadge value={kw.keywordDifficulty} />
-                        </td>
-                        <td>
-                          <span className="badge badge-sm badge-ghost">
-                            {kw.intent ?? "?"}
-                          </span>
-                        </td>
-                        <td className="text-xs text-base-content/50">
-                          {kw.fetchedAt
-                            ? new Date(kw.fetchedAt).toLocaleDateString()
-                            : "-"}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Confirm delete modal */}
-        {showConfirm && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-            <div className="card bg-base-100 border border-base-300 w-full max-w-sm shadow-xl">
-              <div className="card-body gap-4">
-                <h3 className="text-lg font-semibold">Delete keywords?</h3>
-                <p className="text-sm text-base-content/70">
-                  This will permanently delete {selected.size} saved keyword
-                  {selected.size !== 1 ? "s" : ""}.
-                </p>
-                <div className="flex justify-end gap-2">
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowConfirm(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-error btn-sm gap-1"
-                    onClick={() => void handleDeleteSelected()}
-                    disabled={deleting}
-                  >
-                    {deleting && <Loader2 className="size-3 animate-spin" />}
-                    Delete {selected.size} keyword
-                    {selected.size !== 1 ? "s" : ""}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {showTagModal ? (
+          <SavedKeywordsBulkTagsModal
+            availableTags={availableTags}
+            selectedCount={selectedCount}
+            selectedRowTags={selectedRowTags}
+            isPending={tagMutation.isPending}
+            onClose={() => setShowTagModal(false)}
+            onApply={({ addTags, removeTagIds }) =>
+              tagMutation.mutate({
+                savedKeywordIds: selectedIds,
+                addTags,
+                removeTagIds,
+              })
+            }
+          />
+        ) : null}
       </div>
     </div>
   );
-}
-
-function DifficultyBadge({ value }: { value: number | null }) {
-  if (value == null)
-    return <span className="badge badge-ghost badge-sm">-</span>;
-  if (value < 30)
-    return <span className="badge badge-success badge-sm">{value}</span>;
-  if (value <= 60)
-    return <span className="badge badge-warning badge-sm">{value}</span>;
-  return <span className="badge badge-error badge-sm">{value}</span>;
-}
-
-function formatNumber(value: number | null | undefined) {
-  if (value == null) return "-";
-  return new Intl.NumberFormat().format(value);
 }
