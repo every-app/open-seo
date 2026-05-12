@@ -4,6 +4,7 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS, getLanguageCode } from "@/client/features/keywords/utils";
 import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
+import { parseKeywordInput } from "@/client/features/keywords/state/keywordControllerActions";
 import { researchKeywords } from "@/serverFunctions/keywords";
 import type {
   KeywordMode,
@@ -35,16 +36,29 @@ type KeywordResearchRequest = {
   mode: KeywordMode;
 };
 
-const KEYWORD_RESEARCH_STALE_TIME_MS = 24 * 60 * 60 * 1000;
+export const KEYWORD_RESEARCH_STALE_TIME_MS = 24 * 60 * 60 * 1000;
 
-function parseSearchKeywords(value: string) {
-  return value
-    .split(/[\n,]/)
-    .map((keyword) => keyword.trim())
-    .filter(Boolean);
+export function buildKeywordResearchRequest(
+  input: KeywordResearchQueryInput,
+): KeywordResearchRequest | null {
+  const keywords = parseKeywordInput(input.keywordInput);
+  const seedKeyword = keywords[0] ?? "";
+  if (!seedKeyword) return null;
+
+  return {
+    projectId: input.projectId,
+    keywords,
+    seedKeyword,
+    locationCode: input.locationCode,
+    languageCode: getLanguageCode(input.locationCode),
+    resultLimit: input.resultLimit,
+    mode: input.mode,
+  };
 }
 
-function buildKeywordResearchQueryKey(request: KeywordResearchRequest | null) {
+export function buildKeywordResearchQueryKey(
+  request: KeywordResearchRequest | null,
+) {
   return request
     ? [
         "keywordResearch",
@@ -58,34 +72,35 @@ function buildKeywordResearchQueryKey(request: KeywordResearchRequest | null) {
     : ["keywordResearch", "idle"];
 }
 
+export function keywordResearchQueryFn(request: KeywordResearchRequest) {
+  return researchKeywords({
+    data: {
+      projectId: request.projectId,
+      keywords: request.keywords,
+      locationCode: request.locationCode,
+      languageCode: request.languageCode,
+      resultLimit: request.resultLimit,
+      mode: request.mode,
+    },
+  });
+}
+
 export function useKeywordResearchData(
   input: KeywordResearchQueryInput,
   addSearch: AddSearchFn,
 ) {
-  const keywords = useMemo(
-    () => parseSearchKeywords(input.keywordInput),
-    [input.keywordInput],
+  const { keywordInput, locationCode, mode, projectId, resultLimit } = input;
+  const request = useMemo<KeywordResearchRequest | null>(
+    () =>
+      buildKeywordResearchRequest({
+        keywordInput,
+        locationCode,
+        mode,
+        projectId,
+        resultLimit,
+      }),
+    [keywordInput, locationCode, mode, projectId, resultLimit],
   );
-  const request = useMemo<KeywordResearchRequest | null>(() => {
-    const seedKeyword = keywords[0] ?? "";
-    if (!seedKeyword) return null;
-
-    return {
-      projectId: input.projectId,
-      keywords,
-      seedKeyword,
-      locationCode: input.locationCode,
-      languageCode: getLanguageCode(input.locationCode),
-      resultLimit: input.resultLimit,
-      mode: input.mode,
-    };
-  }, [
-    input.locationCode,
-    input.mode,
-    input.projectId,
-    input.resultLimit,
-    keywords,
-  ]);
   const queryKey = useMemo(
     () => buildKeywordResearchQueryKey(request),
     [request],
@@ -99,16 +114,7 @@ export function useKeywordResearchData(
         throw new Error("Keyword research query ran without request params");
       }
 
-      return researchKeywords({
-        data: {
-          projectId: request.projectId,
-          keywords: request.keywords,
-          locationCode: request.locationCode,
-          languageCode: request.languageCode,
-          resultLimit: request.resultLimit,
-          mode: request.mode,
-        },
-      });
+      return keywordResearchQueryFn(request);
     },
     enabled: request !== null,
     staleTime: KEYWORD_RESEARCH_STALE_TIME_MS,

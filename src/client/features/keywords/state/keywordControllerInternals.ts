@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { usePreferredKeywordLocation } from "@/client/features/keywords/hooks/usePreferredKeywordLocation";
 import { saveKeywords } from "@/serverFunctions/keywords";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
@@ -42,12 +42,15 @@ export function useKeywordUiState(initialShowFilters: boolean) {
 export function useKeywordSearchParams() {
   const navigate = useNavigate({ from: "/p/$projectId/keywords" });
 
-  return (updates: Record<string, string | number | boolean | undefined>) => {
-    void navigate({
-      search: (prev) => ({ ...prev, ...updates }),
-      replace: true,
-    });
-  };
+  return useCallback(
+    (updates: Record<string, string | number | boolean | undefined>) => {
+      void navigate({
+        search: (prev) => ({ ...prev, ...updates }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
 }
 
 export function useKeywordSaveMutation(projectId: string) {

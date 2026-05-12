@@ -1,7 +1,7 @@
 export function KeywordResearchLoadingState() {
   return (
-    <div className="flex-1 w-full pt-1">
-      <div className="hidden md:flex h-full gap-4 mt-2">
+    <div className="flex-1 w-full">
+      <div className="hidden md:flex h-full gap-4">
         <div className="flex-1 flex flex-col min-w-0 gap-2">
           <div className="rounded-xl border border-base-300 bg-base-100 p-4">
             <div className="skeleton h-5 w-56" />
@@ -46,7 +46,7 @@ export function KeywordResearchLoadingState() {
         </div>
       </div>
 
-      <div className="md:hidden mt-2 space-y-3">
+      <div className="md:hidden space-y-3">
         <div className="rounded-xl border border-base-300 bg-base-100 p-4 space-y-3">
           <div className="skeleton h-8 w-full" />
           <div className="skeleton h-8 w-2/3" />

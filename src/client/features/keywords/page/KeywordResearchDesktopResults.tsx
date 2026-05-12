@@ -22,6 +22,10 @@ import {
   FilterTextInput,
 } from "./keywordResearchDesktopFilters";
 import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
+import {
+  KeywordResearchPagination,
+  useKeywordResearchPagination,
+} from "./KeywordResearchPagination";
 
 const MONTH_SHORT_LABELS = [
   "Jan",
@@ -64,7 +68,7 @@ type Props = {
 
 export function KeywordResearchDesktopResults({ controller }: Props) {
   return (
-    <div className="flex-1 hidden md:flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden gap-4 mt-2">
+    <div className="flex-1 hidden md:flex flex-col xl:flex-row overflow-y-auto xl:overflow-hidden gap-4">
       <DesktopKeywordPanel controller={controller} />
       <DesktopSerpPanel controller={controller} />
     </div>
@@ -114,6 +118,8 @@ function DesktopTableCard({ controller }: Props) {
     sheetsExportRows,
     showFilters,
   } = controller;
+  const { page, pageSize, pageRows, setPage, setPageSize } =
+    useKeywordResearchPagination(filteredRows);
 
   const keywordCountLabel =
     selectedRows.size > 0
@@ -192,7 +198,7 @@ function DesktopTableCard({ controller }: Props) {
       {showFilters ? <DesktopFilters controller={controller} /> : null}
       <KeywordResearchDesktopTable
         activeFilterCount={controller.activeFilterCount}
-        filteredRows={controller.filteredRows}
+        filteredRows={pageRows}
         overviewKeyword={controller.overviewKeyword}
         selectedRows={controller.selectedRows}
         setSelectedRows={controller.setSelectedRows}
@@ -202,6 +208,15 @@ function DesktopTableCard({ controller }: Props) {
         resetFilters={controller.resetFilters}
         handleRowClick={controller.handleRowClick}
       />
+      {filteredRows.length > 0 ? (
+        <KeywordResearchPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={filteredRows.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
     </div>
   );
 }

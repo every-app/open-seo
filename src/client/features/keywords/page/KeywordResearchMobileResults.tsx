@@ -11,6 +11,10 @@ import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywo
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { SerpAnalysisCard } from "@/client/features/keywords/components";
 import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
+import {
+  KeywordResearchPagination,
+  useKeywordResearchPagination,
+} from "./KeywordResearchPagination";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
@@ -74,6 +78,8 @@ function MobileKeywordResults({ controller }: Props) {
     sheetsExportRows,
     showFilters,
   } = controller;
+  const { page, pageSize, pageRows, setPage, setPageSize } =
+    useKeywordResearchPagination(filteredRows);
 
   const keywordCountLabel =
     selectedRows.size > 0
@@ -162,7 +168,7 @@ function MobileKeywordResults({ controller }: Props) {
 
       <KeywordResearchDesktopTable
         activeFilterCount={controller.activeFilterCount}
-        filteredRows={controller.filteredRows}
+        filteredRows={pageRows}
         overviewKeyword={controller.overviewKeyword}
         selectedRows={controller.selectedRows}
         setSelectedRows={controller.setSelectedRows}
@@ -172,6 +178,15 @@ function MobileKeywordResults({ controller }: Props) {
         resetFilters={controller.resetFilters}
         handleRowClick={controller.handleRowClick}
       />
+      {filteredRows.length > 0 ? (
+        <KeywordResearchPagination
+          page={page}
+          pageSize={pageSize}
+          totalCount={filteredRows.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      ) : null}
     </div>
   );
 }

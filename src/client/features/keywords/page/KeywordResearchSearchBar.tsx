@@ -4,7 +4,10 @@ import {
   isResultLimit,
   normalizeKeywordMode,
 } from "@/client/features/keywords/keywordSearchParams";
-import { RESULT_LIMITS } from "@/client/features/keywords/keywordResearchTypes";
+import {
+  MAX_KEYWORDS_PER_SUBMIT,
+  RESULT_LIMITS,
+} from "@/client/features/keywords/keywordResearchTypes";
 import { LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 import type { KeywordResearchControllerState } from "./types";
 
@@ -12,30 +15,52 @@ type Props = {
   controller: KeywordResearchControllerState;
 };
 
+function getTextareaRows(value: string): number {
+  const newlines = (value.match(/\n/g) ?? []).length;
+  const lines = newlines + 1;
+  return Math.min(MAX_KEYWORDS_PER_SUBMIT, Math.max(1, lines));
+}
+
 export function KeywordResearchSearchBar({ controller }: Props) {
-  const { controlsForm, handleSearchSubmit, isLoading } = controller;
+  const { controlsForm, handleSearchSubmit } = controller;
 
   return (
     <div className="card border border-base-300 bg-base-100">
       <div className="card-body gap-2">
         <form
-          className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-center lg:gap-2"
+          className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start lg:gap-2"
           onSubmit={handleSearchSubmit}
         >
           <controlsForm.Field name="keyword">
             {(field) => {
               const keywordError = getFieldError(field.state.meta.errors);
+              const rows = getTextareaRows(field.state.value);
 
               return (
                 <label
-                  className={`input input-bordered flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${keywordError ? "input-error" : ""}`}
+                  className={`flex w-full lg:flex-1 lg:min-w-0 lg:max-w-md items-start gap-2 rounded-lg border bg-base-100 px-4 py-3 transition-colors focus-within:border-primary ${
+                    keywordError ? "border-error" : "border-base-300"
+                  }`}
                 >
-                  <Search className="size-4 shrink-0 text-base-content/60" />
-                  <input
-                    className="grow min-w-0"
-                    placeholder="Enter keyword"
+                  <Search className="mt-0.5 size-4 shrink-0 text-base-content/60" />
+                  <textarea
+                    className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
+                    rows={rows}
+                    placeholder="Enter keywords, one per line"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
+                    onKeyDown={(event) => {
+                      // Cmd/Ctrl+Enter submits without leaving a stray newline.
+                      // Bare Enter stays as the textarea default (insert newline)
+                      // so multi-keyword input remains discoverable.
+                      if (
+                        event.key === "Enter" &&
+                        (event.metaKey || event.ctrlKey)
+                      ) {
+                        event.preventDefault();
+                        void controlsForm.handleSubmit();
+                      }
+                    }}
                   />
                 </label>
               );
@@ -100,9 +125,8 @@ export function KeywordResearchSearchBar({ controller }: Props) {
             <button
               type="submit"
               className="btn btn-primary w-full px-6 font-semibold lg:w-auto lg:shrink-0"
-              disabled={isLoading}
             >
-              {isLoading ? "Searching..." : "Search"}
+              Search
             </button>
           </div>
         </form>

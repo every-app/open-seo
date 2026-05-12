@@ -22,3 +22,11 @@ export function formatNumber(value: number | null | undefined): string {
   if (value == null) return "-";
   return new Intl.NumberFormat().format(value);
 }
+
+export function formatCompactNumber(value: number | null | undefined): string {
+  if (value == null) return "-";
+  return new Intl.NumberFormat(undefined, {
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+}

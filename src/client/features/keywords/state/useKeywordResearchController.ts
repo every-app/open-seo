@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useRef, type FormEvent } from "react";
-import { useKeywordControlsForm } from "@/client/features/keywords/hooks/useKeywordControlsForm";
+import {
+  useKeywordControlsForm,
+  type KeywordControlsValues,
+} from "@/client/features/keywords/hooks/useKeywordControlsForm";
 import { useKeywordFiltering } from "@/client/features/keywords/hooks/useKeywordFiltering";
 import { useLocalKeywordFilters } from "@/client/features/keywords/hooks/useLocalKeywordFilters";
 import { useKeywordResearchData } from "@/client/features/keywords/hooks/useKeywordResearchData";
@@ -11,7 +14,7 @@ import {
   type KeywordMode,
   type ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
-import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
+import type { OpenTabInput } from "@/client/features/keywords/state/keywordTabsStore";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import {
@@ -36,6 +39,14 @@ export type KeywordResearchControllerInput = {
   keywordMode: KeywordMode;
   sortField: SortField;
   sortDir: SortDir;
+  getOpenKeywordTabs?: () => readonly OpenTabInput[];
+  keywordTabsLimit?: number;
+  /**
+   * Called when the user submits the search form. Lets the caller decide
+   * whether the submission opens tabs or just rewrites the URL — the
+   * controller stays agnostic.
+   */
+  onFormSubmit: (value: KeywordControlsValues) => void;
 };
 
 export function useKeywordResearchController(
@@ -238,23 +249,17 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     setSerpPage(0);
   }, [clearSelection, setSerpKeyword, setSerpPage, uiState]);
 
+  const onFormSubmit = input.onFormSubmit;
   const controlsForm = useKeywordControlsForm(
     {
       ...input,
       locationCode,
+      getOpenKeywordTabs: input.getOpenKeywordTabs,
+      keywordTabsLimit: input.keywordTabsLimit,
     },
     (value) => {
       setPreferredLocationCode(value.locationCode);
-      setSearchParams({
-        q: value.keyword,
-        loc:
-          input.hasExplicitLocationCode ||
-          value.locationCode !== DEFAULT_LOCATION_CODE
-            ? value.locationCode
-            : undefined,
-        kLimit: value.resultLimit === 150 ? undefined : value.resultLimit,
-        mode: value.mode === "auto" ? undefined : value.mode,
-      });
+      onFormSubmit(value);
     },
   );
 

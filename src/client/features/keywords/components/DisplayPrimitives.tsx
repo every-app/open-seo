@@ -11,7 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import type { MonthlySearch } from "@/types/keywords";
-import { formatNumber } from "../utils";
+import { formatCompactNumber } from "../utils";
 import { FloatingTooltip, useFloatingTooltip } from "./FloatingTooltip";
 
 export type SortField =
@@ -148,10 +148,10 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
           />
           <YAxis
             tickFormatter={(value: number | string) =>
-              formatNumber(Number(value))
+              formatCompactNumber(Number(value))
             }
             tick={{ fill: "var(--trend-axis-color)", fontSize: 11 }}
-            width={56}
+            width={44}
             axisLine={false}
             tickLine={false}
           />
