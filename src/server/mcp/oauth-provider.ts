@@ -37,7 +37,10 @@ const OAUTH_AUTHORIZATION_PARAM_NAMES = [
   "code_challenge_method",
   "resource",
 ] as const;
-const REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
+// Keep access tokens reasonably short-lived while allowing refresh tokens to
+// preserve MCP sessions across normal usage.
+const MCP_ACCESS_TOKEN_TTL_SECONDS = 60 * 60 * 24;
+const MCP_REFRESH_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 30;
 
 export type OpenSeoOAuthEnv = Env & {
   OAUTH_KV: KVNamespace;
@@ -390,7 +393,8 @@ export function createOpenSeoOAuthProvider(appFetch: AppFetch) {
     tokenEndpoint: OAUTH_TOKEN_PATH,
     clientRegistrationEndpoint: OAUTH_REGISTER_PATH,
     scopesSupported: [...MCP_OAUTH_SCOPES],
-    refreshTokenTTL: REFRESH_TOKEN_TTL_SECONDS,
+    accessTokenTTL: MCP_ACCESS_TOKEN_TTL_SECONDS,
+    refreshTokenTTL: MCP_REFRESH_TOKEN_TTL_SECONDS,
     resourceMetadata: {
       scopes_supported: [...MCP_OAUTH_SCOPES],
       resource_name: "OpenSEO MCP",
