@@ -8,8 +8,13 @@ import {
   Sheet,
   SlidersHorizontal,
 } from "lucide-react";
-import { KEYWORD_RESEARCH_HEADERS } from "@/client/features/keywords/state/keywordControllerActions";
+import {
+  downloadKeywordResearchCsv,
+  KEYWORD_RESEARCH_HEADERS,
+  keywordResearchExportRow,
+} from "@/client/features/keywords/state/keywordControllerActions";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
+import { captureClientEvent } from "@/client/lib/posthog";
 import {
   AreaTrendChart,
   OverviewStats,
@@ -26,6 +31,11 @@ import {
   KeywordResearchPagination,
   useKeywordResearchPagination,
 } from "./KeywordResearchPagination";
+import {
+  TableBulkActionBar,
+  TableBulkActionButton,
+  TableBulkExportMenu,
+} from "@/client/components/table/TableBulkActionBar";
 
 const MONTH_SHORT_LABELS = [
   "Jan",
@@ -129,11 +139,29 @@ function DesktopTableCard({ controller }: Props) {
         : `Showing ${filteredRows.length} keywords`;
 
   const canExport = filteredRows.length > 0;
+  const selectedExportRows = filteredRows
+    .filter((row) => selectedRows.has(row.keyword))
+    .map(keywordResearchExportRow);
   const handleExportToSheets = () => {
     void exportTableToSheets({
       headers: KEYWORD_RESEARCH_HEADERS,
       rows: sheetsExportRows,
       feature: "keyword_research",
+    });
+  };
+  const handleExportSelectionToSheets = () => {
+    void exportTableToSheets({
+      headers: KEYWORD_RESEARCH_HEADERS,
+      rows: selectedExportRows,
+      feature: "keyword_research",
+    });
+  };
+  const handleExportSelectionCsv = () => {
+    downloadKeywordResearchCsv(selectedExportRows);
+    captureClientEvent("data:export", {
+      source_feature: "keyword_research",
+      result_count: selectedExportRows.length,
+      scope: "selection",
     });
   };
 
@@ -157,14 +185,6 @@ function DesktopTableCard({ controller }: Props) {
           {keywordCountLabel}
         </span>
         <div className="flex-1" />
-        <button
-          className="btn btn-ghost btn-sm gap-1"
-          onClick={controller.handleSaveKeywords}
-          disabled={selectedRows.size === 0}
-        >
-          <Save className="size-3.5" />
-          <span className="hidden lg:inline">Save Keywords</span>
-        </button>
         <div className="dropdown dropdown-end">
           <div
             tabIndex={0}
@@ -194,6 +214,35 @@ function DesktopTableCard({ controller }: Props) {
           </ul>
         </div>
       </div>
+
+      <TableBulkActionBar
+        selectedCount={selectedRows.size}
+        onClear={() => controller.setSelectedRows(new Set())}
+        actions={
+          <div className="flex items-center px-1.5">
+            <TableBulkActionButton
+              icon={<Save className="size-3.5" />}
+              onClick={controller.handleSaveKeywords}
+            >
+              Save Keywords
+            </TableBulkActionButton>
+            <TableBulkExportMenu
+              actions={[
+                {
+                  label: "Export to Sheets",
+                  icon: <Sheet className="size-4" />,
+                  onClick: handleExportSelectionToSheets,
+                },
+                {
+                  label: "Export CSV",
+                  icon: <FileDown className="size-4" />,
+                  onClick: handleExportSelectionCsv,
+                },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {showFilters ? <DesktopFilters controller={controller} /> : null}
       <KeywordResearchDesktopTable

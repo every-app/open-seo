@@ -132,6 +132,7 @@ export function DomainOverviewPage({
               currentSortOrder={state.currentSortOrder}
               searchDraft={state.searchDraft}
               selectedKeywords={state.selectedKeywords}
+              setSelectedKeywords={state.setSelectedKeywords}
               visibleKeywords={state.visibleKeywords}
               filteredKeywords={state.filteredKeywords}
               pagedPages={state.pagedPages}

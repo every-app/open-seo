@@ -22,7 +22,7 @@ export const KEYWORD_RESEARCH_HEADERS = [
   "Intent",
 ];
 
-function keywordResearchRow(row: KeywordResearchRow): CsvValue[] {
+export function keywordResearchExportRow(row: KeywordResearchRow): CsvValue[] {
   return [
     row.keyword,
     row.searchVolume ?? "",
@@ -145,12 +145,8 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
   };
 
   const sheetsExportRows: CsvValue[][] = useMemo(
-    () =>
-      (selectedRows.size > 0
-        ? filteredRows.filter((row) => selectedRows.has(row.keyword))
-        : filteredRows
-      ).map(keywordResearchRow),
-    [filteredRows, selectedRows],
+    () => filteredRows.map(keywordResearchExportRow),
+    [filteredRows],
   );
 
   const exportCsv = () => {
@@ -158,18 +154,7 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
       toast.error("No data to export");
       return;
     }
-    // CSV file keeps cents-formatted CPC/competition for human readability.
-    const csvRows = sheetsExportRows.map((row) =>
-      row.map((cell, idx) =>
-        (idx === 2 || idx === 3) && typeof cell === "number"
-          ? cell.toFixed(2)
-          : cell,
-      ),
-    );
-    downloadCsv(
-      "keyword-research.csv",
-      buildCsv(KEYWORD_RESEARCH_HEADERS, csvRows),
-    );
+    downloadKeywordResearchCsv(sheetsExportRows);
     captureClientEvent("data:export", {
       source_feature: "keyword_research",
       result_count: sheetsExportRows.length,
@@ -177,4 +162,19 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
   };
 
   return { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows };
+}
+
+export function downloadKeywordResearchCsv(rows: CsvValue[][]) {
+  // CSV file keeps cents-formatted CPC/competition for human readability.
+  const csvRows = rows.map((row) =>
+    row.map((cell, idx) =>
+      (idx === 2 || idx === 3) && typeof cell === "number"
+        ? cell.toFixed(2)
+        : cell,
+    ),
+  );
+  downloadCsv(
+    "keyword-research.csv",
+    buildCsv(KEYWORD_RESEARCH_HEADERS, csvRows),
+  );
 }

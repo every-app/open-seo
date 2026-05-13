@@ -1,16 +1,26 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Trash2 } from "lucide-react";
+import { FileDown, Loader2, Sheet, Trash2 } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
 import {
   AppDataTable,
   useAppTable,
 } from "@/client/components/table/AppDataTable";
+import {
+  TableBulkActionBar,
+  TableBulkActionButton,
+  TableBulkExportMenu,
+} from "@/client/components/table/TableBulkActionBar";
+import { buildCsv } from "@/client/lib/csv";
+import { downloadCsv } from "@/client/lib/csv";
+import { exportTableToSheets } from "@/client/lib/exportToSheets";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
+import { buildRankTrackingExport } from "./RankTrackingTableParts";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 export function RankTrackingTable({
@@ -59,6 +69,38 @@ export function RankTrackingTable({
   // Only includes rows that are in the current data (respects parent filtering)
   const selectedRows = table.getSelectedRowModel().rows;
   const selectedCount = selectedRows.length;
+  const selectedRankRows = selectedRows.map((row) => row.original);
+
+  const exportSelectionToSheets = () => {
+    const { headers, rows: exportRows } = buildRankTrackingExport(
+      selectedRankRows,
+      showDesktop,
+      showMobile,
+    );
+    void exportTableToSheets({
+      headers,
+      rows: exportRows,
+      feature: "rank_tracking",
+    });
+  };
+
+  const exportSelectionCsv = () => {
+    const { headers, rows: exportRows } = buildRankTrackingExport(
+      selectedRankRows,
+      showDesktop,
+      showMobile,
+    );
+    const csvRows = exportRows.map((row) =>
+      row.map((cell, idx) =>
+        idx === 3 && typeof cell === "number" ? cell.toFixed(2) : cell,
+      ),
+    );
+    downloadCsv(
+      `rank-tracking-${domain}-selected.csv`,
+      buildCsv(headers, csvRows),
+    );
+    captureClientEvent("rank_tracking:export_csv", { scope: "selection" });
+  };
 
   const removeMutation = useMutation({
     mutationFn: (keywordIds: string[]) =>
@@ -101,28 +143,35 @@ export function RankTrackingTable({
 
   return (
     <>
-      {/* Bulk action bar */}
-      {selectedCount > 0 && (
-        <div className="flex items-center gap-3 rounded-lg bg-base-200 px-3 py-2 text-sm">
-          <span className="text-base-content/70">
-            {selectedCount} keyword
-            {selectedCount !== 1 ? "s" : ""} selected
-          </span>
-          <button
-            className="btn btn-error btn-xs gap-1"
-            onClick={() => setShowConfirm(true)}
-          >
-            <Trash2 className="size-3" />
-            Remove
-          </button>
-          <button
-            className="btn btn-ghost btn-xs"
-            onClick={() => table.resetRowSelection()}
-          >
-            Clear
-          </button>
-        </div>
-      )}
+      <TableBulkActionBar
+        selectedCount={selectedCount}
+        onClear={() => table.resetRowSelection()}
+        actions={
+          <div className="flex items-center px-1.5">
+            <TableBulkActionButton
+              icon={<Trash2 className="size-3.5" />}
+              onClick={() => setShowConfirm(true)}
+              variant="danger"
+            >
+              Remove
+            </TableBulkActionButton>
+            <TableBulkExportMenu
+              actions={[
+                {
+                  label: "Export to Sheets",
+                  icon: <Sheet className="size-4" />,
+                  onClick: exportSelectionToSheets,
+                },
+                {
+                  label: "Export CSV",
+                  icon: <FileDown className="size-4" />,
+                  onClick: exportSelectionCsv,
+                },
+              ]}
+            />
+          </div>
+        }
+      />
 
       {/* Confirm modal */}
       {showConfirm && (

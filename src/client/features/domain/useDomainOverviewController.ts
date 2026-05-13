@@ -298,6 +298,7 @@ export function useDomainOverviewController({
     searchDraft: domainFilters.searchDraft,
     setSearchDraft: domainFilters.setSearchDraft,
     selectedKeywords,
+    setSelectedKeywords,
     currentSortOrder,
     setSearchParams,
     showFilters,

@@ -176,7 +176,7 @@ function csvChange(
   return previous - current;
 }
 
-function buildRankTrackingExport(
+export function buildRankTrackingExport(
   sorted: RankTrackingRow[],
   showDesktop: boolean,
   showMobile: boolean,
