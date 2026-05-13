@@ -9,7 +9,7 @@ import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-host
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
-  upsertHostedSignupContact,
+  upsertHostedVerifiedContact,
 } from "@/server/email/loops";
 
 const hostedBaseUrlSchema = z
@@ -55,6 +55,24 @@ function createAuth() {
               confirmationUrl: url,
             });
           },
+          afterEmailVerification: async (user) => {
+            try {
+              await upsertHostedVerifiedContact({
+                userId: user.id,
+                email: user.email,
+                name: user.name,
+              });
+            } catch (error) {
+              console.error(
+                "Failed to sync Loops profile after verification:",
+                {
+                  userId: user.id,
+                  email: user.email,
+                  error,
+                },
+              );
+            }
+          },
         },
     trustedOrigins: getTrustedOrigins(baseUrl),
     database: drizzleAdapter(db, {
@@ -62,25 +80,6 @@ function createAuth() {
     }),
     plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
     databaseHooks: {
-      user: {
-        create: {
-          after: async (user) => {
-            try {
-              await upsertHostedSignupContact({
-                userId: user.id,
-                email: user.email,
-                name: user.name,
-              });
-            } catch (error) {
-              console.error("Failed to create Loops profile for signup:", {
-                userId: user.id,
-                email: user.email,
-                error,
-              });
-            }
-          },
-        },
-      },
       session: {
         create: {
           before: async (session) => {
