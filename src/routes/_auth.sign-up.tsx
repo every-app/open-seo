@@ -76,7 +76,9 @@ function SignUpPage() {
           password: value.password,
           callbackURL: (() => {
             const url = new URL("/verify-email", window.location.origin);
-            url.searchParams.set("redirect", "/subscribe");
+            if (redirectTo !== "/") {
+              url.searchParams.set("redirect", redirectTo);
+            }
             return url.toString();
           })(),
         });
@@ -110,7 +112,7 @@ function SignUpPage() {
   });
 
   async function handleContinueWithGoogle() {
-    const callbackURL = redirectTo === "/" ? "/subscribe" : redirectTo;
+    const callbackURL = redirectTo;
     setSocialError(null);
     setIsStartingGoogle(true);
 
