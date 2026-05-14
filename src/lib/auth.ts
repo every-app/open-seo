@@ -56,22 +56,7 @@ function createAuth() {
             });
           },
           afterEmailVerification: async (user) => {
-            try {
-              await upsertHostedVerifiedContact({
-                userId: user.id,
-                email: user.email,
-                name: user.name,
-              });
-            } catch (error) {
-              console.error(
-                "Failed to sync Loops profile after verification:",
-                {
-                  userId: user.id,
-                  email: user.email,
-                  error,
-                },
-              );
-            }
+            await syncHostedVerifiedContact(user, "email verification");
           },
         },
     socialProviders: getSocialProviders(),
@@ -81,6 +66,17 @@ function createAuth() {
     }),
     plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
     databaseHooks: {
+      user: {
+        create: {
+          after: async (user, context) => {
+            if (context?.path !== "/callback/google") {
+              return;
+            }
+
+            await syncHostedVerifiedContact(user, "Google sign up");
+          },
+        },
+      },
       session: {
         create: {
           before: async (session) => {
@@ -107,6 +103,25 @@ function createAuth() {
 }
 
 let authInstance: ReturnType<typeof createAuth> | null = null;
+
+async function syncHostedVerifiedContact(
+  user: { id: string; email: string; name?: string | null },
+  context: string,
+) {
+  try {
+    await upsertHostedVerifiedContact({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+    });
+  } catch (error) {
+    console.error(`Failed to sync Loops profile after ${context}:`, {
+      userId: user.id,
+      email: user.email,
+      error,
+    });
+  }
+}
 
 function getTrustedOrigins(baseUrl: string) {
   const trustedOrigins = [baseUrl];
@@ -148,21 +163,29 @@ function getHostedSecret() {
 }
 
 function getSocialProviders() {
+  return {
+    google: getGoogleSocialProviderConfig(),
+  };
+}
+
+function getGoogleSocialProviderConfig() {
   const googleClientId = env.GOOGLE_CLIENT_ID?.trim();
   const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
 
-  if (!googleClientId || !googleClientSecret) {
-    return undefined;
+  if (!googleClientId) {
+    throw new Error("GOOGLE_CLIENT_ID is required in hosted mode");
+  }
+
+  if (!googleClientSecret) {
+    throw new Error("GOOGLE_CLIENT_SECRET is required in hosted mode");
   }
 
   return {
-    google: {
-      clientId: googleClientId,
-      clientSecret: googleClientSecret,
-      mapProfileToUser: (profile: { name?: string }) => ({
-        name: profile.name,
-      }),
-    },
+    clientId: googleClientId,
+    clientSecret: googleClientSecret,
+    mapProfileToUser: (profile: { name?: string }) => ({
+      name: profile.name,
+    }),
   };
 }
 
@@ -183,6 +206,7 @@ export function hasHostedAuthConfig() {
   try {
     getHostedBaseUrl();
     getHostedSecret();
+    getGoogleSocialProviderConfig();
     return (
       Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
       hasHostedAuthEmailConfig()
