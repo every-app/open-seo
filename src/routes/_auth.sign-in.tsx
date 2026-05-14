@@ -4,6 +4,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import {
   AuthPageCard,
+  AuthMethodChooser,
   authRedirectSearchSchema,
   getFieldError,
   getFormError,
@@ -34,6 +35,9 @@ function SignInPage() {
     null,
   );
   const [isSendingVerification, setIsSendingVerification] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [isStartingGoogle, setIsStartingGoogle] = useState(false);
+  const [socialError, setSocialError] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
@@ -132,19 +136,52 @@ function SignInPage() {
     }
   }
 
+  async function handleContinueWithGoogle() {
+    setSocialError(null);
+    setIsStartingGoogle(true);
+
+    try {
+      captureClientEvent("auth:sign_in_google_start", {
+        redirect_to: redirectTo,
+      });
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: authCallbackURL,
+      });
+
+      if (result.error) {
+        setSocialError(
+          result.error.message || "Google sign in is not available right now.",
+        );
+        setIsStartingGoogle(false);
+      }
+    } catch {
+      setSocialError("Google sign in is not available right now.");
+      setIsStartingGoogle(false);
+    }
+  }
+
   return (
     <AuthPageCard
       title="Sign in"
       footer={
         isHostedMode ? (
-          <div className="flex justify-between text-sm text-base-content/50">
-            <Link
-              to="/forgot-password"
-              search={getSignInSearch(redirectTo)}
-              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
-            >
-              Forgot password?
-            </Link>
+          <div
+            className={
+              showEmailForm
+                ? "flex justify-between text-sm text-base-content/50"
+                : "text-sm text-base-content/50"
+            }
+          >
+            {showEmailForm ? (
+              <Link
+                to="/forgot-password"
+                search={getSignInSearch(redirectTo)}
+                className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+              >
+                Forgot password?
+              </Link>
+            ) : null}
             <Link
               to="/sign-up"
               search={getSignInSearch(redirectTo)}
@@ -156,108 +193,128 @@ function SignInPage() {
         ) : null
       }
     >
-      <form
-        className="space-y-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          void form.handleSubmit();
-        }}
-      >
-        <form.Field name="email">
-          {(field) => {
-            const error = getFieldError(field.state.meta.errors);
-
-            return (
-              <div>
-                <input
-                  type="email"
-                  className="input input-bordered w-full"
-                  placeholder="Email address..."
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  autoComplete="email"
-                  disabled={!isHostedMode}
-                  required
-                />
-                {error ? (
-                  <p className="mt-1 text-sm text-error">{error}</p>
-                ) : null}
-              </div>
-            );
+      {!showEmailForm ? (
+        <>
+          <AuthMethodChooser
+            googleLabel="Continue with Google"
+            disabled={!isHostedMode}
+            isBusy={isStartingGoogle}
+            onContinueWithGoogle={() => {
+              void handleContinueWithGoogle();
+            }}
+            onContinueWithEmail={() => {
+              setShowEmailForm(true);
+              setSocialError(null);
+            }}
+          />
+          {socialError ? (
+            <p className="text-sm text-error">{socialError}</p>
+          ) : null}
+        </>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.handleSubmit();
           }}
-        </form.Field>
-
-        <form.Field name="password">
-          {(field) => {
-            const error = getFieldError(field.state.meta.errors);
-
-            return (
-              <div>
-                <input
-                  type="password"
-                  className="input input-bordered w-full"
-                  placeholder="Password..."
-                  value={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.value)}
-                  autoComplete="current-password"
-                  disabled={!isHostedMode}
-                  required
-                />
-                {error ? (
-                  <p className="mt-1 text-sm text-error">{error}</p>
-                ) : null}
-              </div>
-            );
-          }}
-        </form.Field>
-
-        {verificationEmail ? (
-          <div className="alert alert-warning items-start">
-            <div className="space-y-3">
-              <p className="text-sm">
-                Please check {verificationEmail} for a link to confirm your
-                email.
-              </p>
-              <button
-                type="button"
-                className="btn btn-sm btn-outline"
-                onClick={() => {
-                  void handleResendVerification();
-                }}
-                disabled={isSendingVerification}
-              >
-                {isSendingVerification
-                  ? "Sending email..."
-                  : "Send another email"}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        <form.Subscribe
-          selector={(state) => ({
-            submitError: state.errorMap.onSubmit,
-            isSubmitting: state.isSubmitting,
-          })}
         >
-          {({ submitError, isSubmitting }) => {
-            const errorMessage = getFormError(submitError);
-            return (
-              <>
-                {errorMessage ? (
-                  <p className="text-sm text-error">{errorMessage}</p>
-                ) : null}
+          <form.Field name="email">
+            {(field) => {
+              const error = getFieldError(field.state.meta.errors);
+
+              return (
+                <div>
+                  <input
+                    type="email"
+                    className="input input-bordered w-full"
+                    placeholder="Email address..."
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    autoComplete="email"
+                    disabled={!isHostedMode}
+                    required
+                  />
+                  {error ? (
+                    <p className="mt-1 text-sm text-error">{error}</p>
+                  ) : null}
+                </div>
+              );
+            }}
+          </form.Field>
+
+          <form.Field name="password">
+            {(field) => {
+              const error = getFieldError(field.state.meta.errors);
+
+              return (
+                <div>
+                  <input
+                    type="password"
+                    className="input input-bordered w-full"
+                    placeholder="Password..."
+                    value={field.state.value}
+                    onChange={(event) => field.handleChange(event.target.value)}
+                    autoComplete="current-password"
+                    disabled={!isHostedMode}
+                    required
+                  />
+                  {error ? (
+                    <p className="mt-1 text-sm text-error">{error}</p>
+                  ) : null}
+                </div>
+              );
+            }}
+          </form.Field>
+
+          {verificationEmail ? (
+            <div className="alert alert-warning items-start">
+              <div className="space-y-3">
+                <p className="text-sm">
+                  Please check {verificationEmail} for a link to confirm your
+                  email.
+                </p>
                 <button
-                  className="btn btn-soft w-full"
-                  disabled={!isHostedMode || isSubmitting}
+                  type="button"
+                  className="btn btn-sm btn-outline"
+                  onClick={() => {
+                    void handleResendVerification();
+                  }}
+                  disabled={isSendingVerification}
                 >
-                  {isSubmitting ? "Signing in..." : "Sign in"}
+                  {isSendingVerification
+                    ? "Sending email..."
+                    : "Send another email"}
                 </button>
-              </>
-            );
-          }}
-        </form.Subscribe>
-      </form>
+              </div>
+            </div>
+          ) : null}
+
+          <form.Subscribe
+            selector={(state) => ({
+              submitError: state.errorMap.onSubmit,
+              isSubmitting: state.isSubmitting,
+            })}
+          >
+            {({ submitError, isSubmitting }) => {
+              const errorMessage = getFormError(submitError);
+              return (
+                <>
+                  {errorMessage ? (
+                    <p className="text-sm text-error">{errorMessage}</p>
+                  ) : null}
+                  <button
+                    className="btn btn-soft w-full"
+                    disabled={!isHostedMode || isSubmitting}
+                  >
+                    {isSubmitting ? "Signing in..." : "Sign in"}
+                  </button>
+                </>
+              );
+            }}
+          </form.Subscribe>
+        </form>
+      )}
     </AuthPageCard>
   );
 }

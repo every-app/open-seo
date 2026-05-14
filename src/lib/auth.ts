@@ -74,6 +74,7 @@ function createAuth() {
             }
           },
         },
+    socialProviders: getSocialProviders(),
     trustedOrigins: getTrustedOrigins(baseUrl),
     database: drizzleAdapter(db, {
       provider: "sqlite",
@@ -144,6 +145,25 @@ function getHostedSecret() {
   }
 
   return secret;
+}
+
+function getSocialProviders() {
+  const googleClientId = env.GOOGLE_CLIENT_ID?.trim();
+  const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
+
+  if (!googleClientId || !googleClientSecret) {
+    return undefined;
+  }
+
+  return {
+    google: {
+      clientId: googleClientId,
+      clientSecret: googleClientSecret,
+      mapProfileToUser: (profile: { name?: string }) => ({
+        name: profile.name,
+      }),
+    },
+  };
 }
 
 function hasHostedAuthEmailConfig() {
