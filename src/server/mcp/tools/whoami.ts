@@ -6,6 +6,8 @@ import {
 import { mcpResponse } from "@/server/mcp/formatters";
 import { getAuth, type ToolExtra } from "@/server/mcp/context";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
+import { z } from "zod";
 
 async function checkBalance(featureId: string, customerId: string) {
   try {
@@ -23,6 +25,20 @@ export const whoamiTool = {
     description:
       "Returns the authenticated user, organization, server mode, token scopes, and current credit balance. Free — does not call DataForSEO. Use this first to confirm connection context before choosing a project or running paid tools.",
     inputSchema: {} as Record<string, never>,
+    outputSchema: {
+      userId: z.string(),
+      userEmail: z.string(),
+      organizationId: z.string(),
+      scopes: z.array(z.string()),
+      mode: z.enum(["hosted", "self-hosted"]),
+      creditsRemaining: z.number().nullable(),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: async (_args: Record<string, never>, extra: ToolExtra) => {
     const auth = getAuth(extra);

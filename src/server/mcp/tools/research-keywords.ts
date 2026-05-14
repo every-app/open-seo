@@ -2,6 +2,10 @@ import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -41,6 +45,35 @@ export const researchKeywordsTool = {
     description:
       "Research keyword data (search volume, difficulty, CPC, related ideas) for 1-5 seed keywords in one call. Charges credits per seed (~50-200 credits each, varies by source). Returns per-seed results — a single bad seed won't fail the batch.",
     inputSchema,
+    outputSchema: {
+      results: z.array(
+        z.union([
+          z
+            .object({
+              seed: z.string(),
+              ok: z.literal(true),
+              rowCount: z.number(),
+              source: z.string(),
+              usedFallback: z.boolean(),
+              topRows: z.array(looseObjectOutputSchema),
+            })
+            .passthrough(),
+          z
+            .object({
+              seed: z.string(),
+              ok: z.literal(false),
+              error: z.string(),
+            })
+            .passthrough(),
+        ]),
+      ),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const results = await Promise.all(

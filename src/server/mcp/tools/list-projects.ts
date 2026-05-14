@@ -1,7 +1,9 @@
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { getAuth, getBaseUrl, type ToolExtra } from "@/server/mcp/context";
+import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { z } from "zod";
 
 export const listProjectsTool = {
   name: "list_projects",
@@ -10,6 +12,24 @@ export const listProjectsTool = {
     description:
       "Lists all projects in the user's organization. Free — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain}; pass the `id` value as `projectId`.",
     inputSchema: {} as Record<string, never>,
+    outputSchema: {
+      projects: z.array(
+        z
+          .object({
+            id: z.string(),
+            name: z.string(),
+            domain: z.string().nullable().optional(),
+            url: z.string(),
+          })
+          .passthrough(),
+      ),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: async (_args: Record<string, never>, extra: ToolExtra) => {
     const auth = getAuth(extra);

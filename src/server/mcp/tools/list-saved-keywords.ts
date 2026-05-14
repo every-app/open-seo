@@ -2,6 +2,10 @@ import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 
@@ -31,6 +35,17 @@ export const listSavedKeywordsTool = {
     description:
       "Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Free — reads from OpenSEO's database, no DataForSEO call. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.",
     inputSchema,
+    outputSchema: {
+      rows: z.array(looseObjectOutputSchema),
+      totalCount: z.number(),
+      tags: z.array(looseObjectOutputSchema),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(
     async (args: z.infer<z.ZodObject<typeof inputSchema>>, context) => {

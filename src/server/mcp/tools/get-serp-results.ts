@@ -2,6 +2,7 @@ import { z } from "zod";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -37,6 +38,43 @@ export const getSerpResultsTool = {
     description:
       "Fetch live Google organic search results for 1-10 keywords. Use this to inspect who ranks for a query, verify competitors, compare SERPs across keywords, or gather source URLs before content planning. Charges credits per keyword (~30-60 each). Does not save results to OpenSEO. Per-keyword errors don't fail the batch.",
     inputSchema,
+    outputSchema: {
+      results: z.array(
+        z.union([
+          z
+            .object({
+              keyword: z.string(),
+              ok: z.literal(true),
+              items: z.array(
+                z
+                  .object({
+                    type: z.string().nullable().optional(),
+                    rank: z.number().nullable(),
+                    title: z.string().nullable(),
+                    url: z.string().nullable(),
+                    domain: z.string().nullable(),
+                    description: z.string().nullable(),
+                  })
+                  .passthrough(),
+              ),
+            })
+            .passthrough(),
+          z
+            .object({
+              keyword: z.string(),
+              ok: z.literal(false),
+              error: z.string(),
+            })
+            .passthrough(),
+        ]),
+      ),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const client = createDataforseoClient(context.billing);

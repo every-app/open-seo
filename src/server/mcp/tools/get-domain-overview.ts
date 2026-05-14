@@ -2,6 +2,7 @@ import { z } from "zod";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -28,6 +29,21 @@ export const getDomainOverviewTool = {
     description:
       "Returns a high-level view of a domain's organic footprint: estimated organic traffic, organic keyword count, backlinks, and referring domains. Use this first for domain research; for the detailed ranked-keyword list, call get_domain_keyword_suggestions next. Charges credits (~100-300 typical). Cached for 12 hours per domain.",
     inputSchema,
+    outputSchema: z
+      .object({
+        domain: z.string().optional(),
+        organicTraffic: z.number().nullable().optional(),
+        organicKeywords: z.number().nullable().optional(),
+        backlinks: z.number().nullable().optional(),
+        referringDomains: z.number().nullable().optional(),
+        ...optionalMetaOutputSchema,
+      })
+      .passthrough(),
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const result = await DomainService.getOverview(

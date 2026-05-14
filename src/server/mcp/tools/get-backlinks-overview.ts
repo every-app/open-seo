@@ -2,6 +2,10 @@ import { z } from "zod";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 
@@ -38,6 +42,16 @@ export const getBacklinksOverviewTool = {
     description:
       "Returns a backlinks profile summary (total backlinks, referring domains, top referring domains). Charges credits (~200-500 typical). Requires that the user's DataForSEO account has Backlinks enabled.",
     inputSchema,
+    outputSchema: {
+      overview: looseObjectOutputSchema,
+      referringDomains: looseObjectOutputSchema,
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const lookup = { target: args.target, scope: args.scope };

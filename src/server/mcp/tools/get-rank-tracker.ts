@@ -3,6 +3,10 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 
@@ -25,6 +29,19 @@ export const getRankTrackerTool = {
     description:
       "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + latest snapshot per keyword. Without it, lists all trackers in the project. Free — reads from OpenSEO state, no DataForSEO call. To trigger a new check, use the dashboard.",
     inputSchema,
+    outputSchema: z
+      .object({
+        configs: z.array(looseObjectOutputSchema).optional(),
+        config: looseObjectOutputSchema.optional(),
+        results: looseObjectOutputSchema.optional(),
+        ...optionalMetaOutputSchema,
+      })
+      .passthrough(),
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     if (!args.trackerId) {

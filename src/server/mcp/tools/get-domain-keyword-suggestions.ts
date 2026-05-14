@@ -2,6 +2,10 @@ import { z } from "zod";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import {
+  looseObjectOutputSchema,
+  optionalMetaOutputSchema,
+} from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -30,6 +34,15 @@ export const getDomainKeywordSuggestionsTool = {
     description:
       "Returns the organic keywords a domain ranks for, including position and available metrics. Use after get_domain_overview when you want the detailed keyword opportunity list for a competitor or reference domain. Charges credits (~100-300 typical). Cached for 12 hours.",
     inputSchema,
+    outputSchema: {
+      keywords: z.array(looseObjectOutputSchema),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const keywords = await DomainService.getSuggestedKeywords(

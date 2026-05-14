@@ -2,6 +2,7 @@ import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
+import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
@@ -44,6 +45,21 @@ export const saveKeywordsTool = {
     description:
       "Save keywords to a project's saved-keywords list. Free — does not call DataForSEO. Idempotent: re-saving an existing keyword is a no-op. If tags are provided, missing tags may be created. By default tags are appended; set tagMode=replace to remove existing tags from these saved keywords before applying the provided tags, which is useful for reorganizing keywords into page/topic clusters. Ask the user for confirmation before applying or replacing tags broadly.",
     inputSchema,
+    outputSchema: {
+      projectId: z.string(),
+      savedCount: z.number(),
+      keywords: z.array(z.string()),
+      tags: z.array(z.string()),
+      tagMode: z.enum(["append", "replace"]),
+      locationCode: z.number(),
+      languageCode: z.string(),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     if (args.tagMode === "replace" && (args.tags?.length ?? 0) === 0) {
