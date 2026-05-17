@@ -4,7 +4,7 @@ import { useState } from "react";
 import { buildPageSeo } from "@/lib/seo";
 
 const mcpDescription =
-  "Connect OpenSEO MCP to your AI agent so it can research keywords, SERPs, domains, backlinks, and rank tracking data.";
+  "Connect OpenSEO MCP so compatible AI clients can call keyword, SERP, domain, backlink, saved keyword, and rank-tracking tools.";
 
 const toolCategories = [
   {
@@ -16,7 +16,7 @@ const toolCategories = [
       },
       {
         title: "Get SERP results",
-        description: "See live Google results for a keyword.",
+        description: "See SERP results for a keyword.",
       },
       {
         title: "Get rank tracking positions",
@@ -24,7 +24,7 @@ const toolCategories = [
       },
       {
         title: "Get saved keywords",
-        description: "Pull your saved keyword lists.",
+        description: "Pull saved keywords from OpenSEO.",
       },
       {
         title: "Save keywords",
@@ -70,8 +70,10 @@ function McpPage() {
         OpenSEO MCP for your AI agent
       </h1>
       <p className="mt-4 text-neutral-700 leading-relaxed">
-        Connect OpenSEO to your AI agent so that it can research keywords,
-        SERPs, domains, backlinks, and rank tracking data for you.
+        Connect OpenSEO to your AI agent so your MCP client can call OpenSEO
+        tools for keyword research, SERP results, domain overview, domain
+        keywords, backlink overview, saved keywords, and rank-tracking
+        positions.
       </p>
 
       <a
@@ -85,10 +87,10 @@ function McpPage() {
       <section className="mt-12">
         <h2 className="text-xl font-semibold">What it does</h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-          MCP lets your AI do the most tedious parts of your job faster. Connect
-          OpenSEO once, then ask your agent to research keywords, inspect search
-          results, compare domains, and save useful ideas back to your
-          workspace.
+          MCP lets compatible AI clients call OpenSEO research tools directly.
+          After connecting OpenSEO through a supported MCP client, you can ask
+          your agent to research keywords, inspect search results, compare
+          domains, and save useful ideas back to your workspace.
         </p>
       </section>
 
@@ -121,8 +123,8 @@ function McpPage() {
         <h2 className="text-xl font-semibold">Set up OpenSEO MCP</h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
           The first connection sends you through OpenSEO login. After
-          authorization, your AI client can call OpenSEO tools using your
-          workspace permissions. The MCP server URL is{" "}
+          authorization, your MCP client can call OpenSEO tools using the
+          authorized OpenSEO project context and scopes. The MCP server URL is{" "}
           <code>https://app.openseo.so/mcp</code>. For the most current setup UI
           and a copyable endpoint, open{" "}
           <a
@@ -145,8 +147,9 @@ function McpPage() {
         </div>
 
         <p className="mt-5 text-sm leading-relaxed text-neutral-600">
-          Follow the setup steps for Claude, Claude Code, Codex, or any
-          MCP-compatible AI tool.
+          Follow the setup steps for Claude, Claude Code, Codex, or MCP clients
+          that support remote HTTP MCP servers and the required authorization
+          flow.
         </p>
 
         <div className="mt-5 divide-y divide-neutral-200 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">

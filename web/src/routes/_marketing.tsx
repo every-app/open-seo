@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
 import { useState } from "react";
 import { SiteFooter } from "@/components/site-footer";
+import { featureGroups } from "@/lib/feature-pages";
 
 function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -31,12 +32,7 @@ function MarketingLayout() {
             OpenSEO
           </Link>
           <div className="flex items-center gap-4 sm:gap-5">
-            <Link
-              to="/guides"
-              className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
-            >
-              Guides
-            </Link>
+            <FeatureDropdown />
             <Link
               to="/pricing"
               className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
@@ -65,6 +61,78 @@ function MarketingLayout() {
         <MarketingFooter />
       </div>
     </main>
+  );
+}
+
+function FeatureDropdown() {
+  return (
+    <div className="relative group">
+      <Link
+        to="/features"
+        className="text-sm text-neutral-600 transition-colors hover:text-neutral-900 md:hidden"
+      >
+        Features
+      </Link>
+      <button
+        type="button"
+        className="hidden text-sm text-neutral-600 transition-colors hover:text-neutral-900 md:inline-flex"
+      >
+        Features
+      </button>
+      <div className="pointer-events-none absolute left-1/2 top-full z-20 hidden w-[560px] -translate-x-1/2 pt-4 opacity-0 transition md:block group-hover:pointer-events-auto group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:opacity-100">
+        <div className="rounded-lg border border-neutral-200 bg-white p-5 shadow-xl shadow-neutral-900/10">
+          <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+            {featureGroups.map((group) => (
+              <div key={group.label}>
+                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  {group.label}
+                </p>
+                <div className="mt-3 space-y-1">
+                  {group.pages.map((page) => (
+                    <a
+                      key={page.slug}
+                      href={`/features/${page.slug}`}
+                      className="block rounded-md px-2 py-1.5 transition-colors hover:bg-neutral-50"
+                    >
+                      <span className="block text-sm font-semibold text-neutral-900">
+                        {page.eyebrow}
+                      </span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
+                        {page.navDescription}
+                      </span>
+                    </a>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                AI agents
+              </p>
+              <div className="mt-3 space-y-2">
+                <a
+                  href="/features/mcp"
+                  className="block rounded-md p-2 transition-colors hover:bg-neutral-50"
+                >
+                  <span className="text-sm font-semibold text-neutral-900">
+                    OpenSEO MCP
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
+                    Connect Claude, Codex, and agents.
+                  </span>
+                </a>
+                <a
+                  href="/features"
+                  className="block rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+                >
+                  View all features <span aria-hidden="true">&rarr;</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 

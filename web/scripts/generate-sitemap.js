@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { FEATURE_PAGE_SLUGS } from "../src/lib/feature-page-slugs.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +20,9 @@ const STATIC_PATHS = [
   "/privacy",
   "/terms-and-conditions",
   "/guides",
+  "/features",
+  "/features/mcp",
+  ...Object.values(FEATURE_PAGE_SLUGS).map((slug) => `/features/${slug}`),
 ];
 
 function getGuideEntries(dir = GUIDE_CONTENT_DIR, segments = []) {

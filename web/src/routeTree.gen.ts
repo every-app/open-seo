@@ -19,7 +19,16 @@ import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
+import { Route as MarketingFeaturesIndexRouteImport } from './routes/_marketing/features/index'
+import { Route as MarketingFeaturesSiteAuditRouteImport } from './routes/_marketing/features/site-audit'
+import { Route as MarketingFeaturesSavedKeywordsRouteImport } from './routes/_marketing/features/saved-keywords'
+import { Route as MarketingFeaturesRankTrackingRouteImport } from './routes/_marketing/features/rank-tracking'
 import { Route as MarketingFeaturesMcpRouteImport } from './routes/_marketing/features/mcp'
+import { Route as MarketingFeaturesKeywordResearchRouteImport } from './routes/_marketing/features/keyword-research'
+import { Route as MarketingFeaturesDomainOverviewRouteImport } from './routes/_marketing/features/domain-overview'
+import { Route as MarketingFeaturesBacklinkCheckerRouteImport } from './routes/_marketing/features/backlink-checker'
+import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
+import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -70,11 +79,64 @@ const MarketingPricingRoute = MarketingPricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingFeaturesIndexRoute = MarketingFeaturesIndexRouteImport.update({
+  id: '/features/',
+  path: '/features/',
+  getParentRoute: () => MarketingRoute,
+} as any)
+const MarketingFeaturesSiteAuditRoute =
+  MarketingFeaturesSiteAuditRouteImport.update({
+    id: '/features/site-audit',
+    path: '/features/site-audit',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesSavedKeywordsRoute =
+  MarketingFeaturesSavedKeywordsRouteImport.update({
+    id: '/features/saved-keywords',
+    path: '/features/saved-keywords',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesRankTrackingRoute =
+  MarketingFeaturesRankTrackingRouteImport.update({
+    id: '/features/rank-tracking',
+    path: '/features/rank-tracking',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingFeaturesMcpRoute = MarketingFeaturesMcpRouteImport.update({
   id: '/features/mcp',
   path: '/features/mcp',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingFeaturesKeywordResearchRoute =
+  MarketingFeaturesKeywordResearchRouteImport.update({
+    id: '/features/keyword-research',
+    path: '/features/keyword-research',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesDomainOverviewRoute =
+  MarketingFeaturesDomainOverviewRouteImport.update({
+    id: '/features/domain-overview',
+    path: '/features/domain-overview',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesBacklinkCheckerRoute =
+  MarketingFeaturesBacklinkCheckerRouteImport.update({
+    id: '/features/backlink-checker',
+    path: '/features/backlink-checker',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesAiSearchPromptsRoute =
+  MarketingFeaturesAiSearchPromptsRouteImport.update({
+    id: '/features/ai-search-prompts',
+    path: '/features/ai-search-prompts',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingFeaturesAiBrandVisibilityRoute =
+  MarketingFeaturesAiBrandVisibilityRouteImport.update({
+    id: '/features/ai-brand-visibility',
+    path: '/features/ai-brand-visibility',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -86,7 +148,16 @@ export interface FileRoutesByFullPath {
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/guides/': typeof GuidesIndexRoute
+  '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
+  '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
+  '/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
+  '/features/domain-overview': typeof MarketingFeaturesDomainOverviewRoute
+  '/features/keyword-research': typeof MarketingFeaturesKeywordResearchRoute
   '/features/mcp': typeof MarketingFeaturesMcpRoute
+  '/features/rank-tracking': typeof MarketingFeaturesRankTrackingRoute
+  '/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
+  '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
+  '/features/': typeof MarketingFeaturesIndexRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -98,7 +169,16 @@ export interface FileRoutesByTo {
   '/js/script.js': typeof JsScriptDotjsRoute
   '/': typeof MarketingIndexRoute
   '/guides': typeof GuidesIndexRoute
+  '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
+  '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
+  '/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
+  '/features/domain-overview': typeof MarketingFeaturesDomainOverviewRoute
+  '/features/keyword-research': typeof MarketingFeaturesKeywordResearchRoute
   '/features/mcp': typeof MarketingFeaturesMcpRoute
+  '/features/rank-tracking': typeof MarketingFeaturesRankTrackingRoute
+  '/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
+  '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
+  '/features': typeof MarketingFeaturesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -112,7 +192,16 @@ export interface FileRoutesById {
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
   '/guides/': typeof GuidesIndexRoute
+  '/_marketing/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
+  '/_marketing/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
+  '/_marketing/features/backlink-checker': typeof MarketingFeaturesBacklinkCheckerRoute
+  '/_marketing/features/domain-overview': typeof MarketingFeaturesDomainOverviewRoute
+  '/_marketing/features/keyword-research': typeof MarketingFeaturesKeywordResearchRoute
   '/_marketing/features/mcp': typeof MarketingFeaturesMcpRoute
+  '/_marketing/features/rank-tracking': typeof MarketingFeaturesRankTrackingRoute
+  '/_marketing/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
+  '/_marketing/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
+  '/_marketing/features/': typeof MarketingFeaturesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -126,7 +215,16 @@ export interface FileRouteTypes {
     | '/guides/$'
     | '/js/script.js'
     | '/guides/'
+    | '/features/ai-brand-visibility'
+    | '/features/ai-search-prompts'
+    | '/features/backlink-checker'
+    | '/features/domain-overview'
+    | '/features/keyword-research'
     | '/features/mcp'
+    | '/features/rank-tracking'
+    | '/features/saved-keywords'
+    | '/features/site-audit'
+    | '/features/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -138,7 +236,16 @@ export interface FileRouteTypes {
     | '/js/script.js'
     | '/'
     | '/guides'
+    | '/features/ai-brand-visibility'
+    | '/features/ai-search-prompts'
+    | '/features/backlink-checker'
+    | '/features/domain-overview'
+    | '/features/keyword-research'
     | '/features/mcp'
+    | '/features/rank-tracking'
+    | '/features/saved-keywords'
+    | '/features/site-audit'
+    | '/features'
   id:
     | '__root__'
     | '/_marketing'
@@ -151,7 +258,16 @@ export interface FileRouteTypes {
     | '/js/script.js'
     | '/_marketing/'
     | '/guides/'
+    | '/_marketing/features/ai-brand-visibility'
+    | '/_marketing/features/ai-search-prompts'
+    | '/_marketing/features/backlink-checker'
+    | '/_marketing/features/domain-overview'
+    | '/_marketing/features/keyword-research'
     | '/_marketing/features/mcp'
+    | '/_marketing/features/rank-tracking'
+    | '/_marketing/features/saved-keywords'
+    | '/_marketing/features/site-audit'
+    | '/_marketing/features/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -237,11 +353,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingPricingRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/features/': {
+      id: '/_marketing/features/'
+      path: '/features'
+      fullPath: '/features/'
+      preLoaderRoute: typeof MarketingFeaturesIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/site-audit': {
+      id: '/_marketing/features/site-audit'
+      path: '/features/site-audit'
+      fullPath: '/features/site-audit'
+      preLoaderRoute: typeof MarketingFeaturesSiteAuditRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/saved-keywords': {
+      id: '/_marketing/features/saved-keywords'
+      path: '/features/saved-keywords'
+      fullPath: '/features/saved-keywords'
+      preLoaderRoute: typeof MarketingFeaturesSavedKeywordsRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/rank-tracking': {
+      id: '/_marketing/features/rank-tracking'
+      path: '/features/rank-tracking'
+      fullPath: '/features/rank-tracking'
+      preLoaderRoute: typeof MarketingFeaturesRankTrackingRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/features/mcp': {
       id: '/_marketing/features/mcp'
       path: '/features/mcp'
       fullPath: '/features/mcp'
       preLoaderRoute: typeof MarketingFeaturesMcpRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/keyword-research': {
+      id: '/_marketing/features/keyword-research'
+      path: '/features/keyword-research'
+      fullPath: '/features/keyword-research'
+      preLoaderRoute: typeof MarketingFeaturesKeywordResearchRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/domain-overview': {
+      id: '/_marketing/features/domain-overview'
+      path: '/features/domain-overview'
+      fullPath: '/features/domain-overview'
+      preLoaderRoute: typeof MarketingFeaturesDomainOverviewRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/backlink-checker': {
+      id: '/_marketing/features/backlink-checker'
+      path: '/features/backlink-checker'
+      fullPath: '/features/backlink-checker'
+      preLoaderRoute: typeof MarketingFeaturesBacklinkCheckerRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/ai-search-prompts': {
+      id: '/_marketing/features/ai-search-prompts'
+      path: '/features/ai-search-prompts'
+      fullPath: '/features/ai-search-prompts'
+      preLoaderRoute: typeof MarketingFeaturesAiSearchPromptsRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/features/ai-brand-visibility': {
+      id: '/_marketing/features/ai-brand-visibility'
+      path: '/features/ai-brand-visibility'
+      fullPath: '/features/ai-brand-visibility'
+      preLoaderRoute: typeof MarketingFeaturesAiBrandVisibilityRouteImport
       parentRoute: typeof MarketingRoute
     }
   }
@@ -250,13 +429,32 @@ declare module '@tanstack/react-router' {
 interface MarketingRouteChildren {
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
+  MarketingFeaturesAiBrandVisibilityRoute: typeof MarketingFeaturesAiBrandVisibilityRoute
+  MarketingFeaturesAiSearchPromptsRoute: typeof MarketingFeaturesAiSearchPromptsRoute
+  MarketingFeaturesBacklinkCheckerRoute: typeof MarketingFeaturesBacklinkCheckerRoute
+  MarketingFeaturesDomainOverviewRoute: typeof MarketingFeaturesDomainOverviewRoute
+  MarketingFeaturesKeywordResearchRoute: typeof MarketingFeaturesKeywordResearchRoute
   MarketingFeaturesMcpRoute: typeof MarketingFeaturesMcpRoute
+  MarketingFeaturesRankTrackingRoute: typeof MarketingFeaturesRankTrackingRoute
+  MarketingFeaturesSavedKeywordsRoute: typeof MarketingFeaturesSavedKeywordsRoute
+  MarketingFeaturesSiteAuditRoute: typeof MarketingFeaturesSiteAuditRoute
+  MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingIndexRoute: MarketingIndexRoute,
+  MarketingFeaturesAiBrandVisibilityRoute:
+    MarketingFeaturesAiBrandVisibilityRoute,
+  MarketingFeaturesAiSearchPromptsRoute: MarketingFeaturesAiSearchPromptsRoute,
+  MarketingFeaturesBacklinkCheckerRoute: MarketingFeaturesBacklinkCheckerRoute,
+  MarketingFeaturesDomainOverviewRoute: MarketingFeaturesDomainOverviewRoute,
+  MarketingFeaturesKeywordResearchRoute: MarketingFeaturesKeywordResearchRoute,
   MarketingFeaturesMcpRoute: MarketingFeaturesMcpRoute,
+  MarketingFeaturesRankTrackingRoute: MarketingFeaturesRankTrackingRoute,
+  MarketingFeaturesSavedKeywordsRoute: MarketingFeaturesSavedKeywordsRoute,
+  MarketingFeaturesSiteAuditRoute: MarketingFeaturesSiteAuditRoute,
+  MarketingFeaturesIndexRoute: MarketingFeaturesIndexRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(
