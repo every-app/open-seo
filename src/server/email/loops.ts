@@ -91,7 +91,7 @@ function getContactNameParts(name: string | null | undefined) {
   };
 }
 
-export async function upsertHostedVerifiedContact({
+export async function upsertHostedSignupContact({
   userId,
   email,
   name,
@@ -104,7 +104,7 @@ export async function upsertHostedVerifiedContact({
 
   if (!apiKey) {
     console.warn(
-      "Skipping Loops verified contact sync: LOOPS_API_KEY is not set",
+      "Skipping Loops signup contact sync: LOOPS_API_KEY is not set",
     );
     return;
   }
@@ -129,14 +129,14 @@ export async function upsertHostedVerifiedContact({
   }
 
   const errorPayload = await response.json().catch(() => null);
-  console.error("Loops verified contact sync error:", {
+  console.error("Loops signup contact sync error:", {
     status: response.status,
     email,
     userId,
     errorPayload,
   });
 
-  throw new Error(`Failed to sync Loops verified contact (${response.status})`);
+  throw new Error(`Failed to sync Loops signup contact (${response.status})`);
 }
 
 export async function sendHostedVerificationEmail({

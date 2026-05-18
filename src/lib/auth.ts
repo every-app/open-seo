@@ -9,7 +9,7 @@ import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-host
 import {
   sendHostedPasswordResetEmail,
   sendHostedVerificationEmail,
-  upsertHostedVerifiedContact,
+  upsertHostedSignupContact,
 } from "@/server/email/loops";
 
 const hostedBaseUrlSchema = z
@@ -55,9 +55,6 @@ function createAuth() {
               confirmationUrl: url,
             });
           },
-          afterEmailVerification: async (user) => {
-            await syncHostedVerifiedContact(user, "email verification");
-          },
         },
     socialProviders: getSocialProviders(),
     trustedOrigins: getTrustedOrigins(baseUrl),
@@ -68,12 +65,8 @@ function createAuth() {
     databaseHooks: {
       user: {
         create: {
-          after: async (user, context) => {
-            if (context?.path !== "/callback/google") {
-              return;
-            }
-
-            await syncHostedVerifiedContact(user, "Google sign up");
+          after: async (user) => {
+            await syncHostedSignupContact(user);
           },
         },
       },
@@ -104,18 +97,19 @@ function createAuth() {
 
 let authInstance: ReturnType<typeof createAuth> | null = null;
 
-async function syncHostedVerifiedContact(
-  user: { id: string; email: string; name?: string | null },
-  context: string,
-) {
+async function syncHostedSignupContact(user: {
+  id: string;
+  email: string;
+  name?: string | null;
+}) {
   try {
-    await upsertHostedVerifiedContact({
+    await upsertHostedSignupContact({
       userId: user.id,
       email: user.email,
       name: user.name,
     });
   } catch (error) {
-    console.error(`Failed to sync Loops profile after ${context}:`, {
+    console.error("Failed to sync Loops profile after user creation:", {
       userId: user.id,
       email: user.email,
       error,
