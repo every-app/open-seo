@@ -1,81 +1,158 @@
-import { useCallback, useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo } from "react";
+import type {
+  KeywordSearchTabInput,
+  SearchTab,
+} from "@/client/features/search-tabs/types";
 import {
-  EMPTY_TABS_STATE,
-  KEYWORD_TABS_LIMIT,
-  closeTab as closeTabAction,
-  findMatchingTab,
-  getKeywordTabsSnapshot,
-  markTabViewed as markTabViewedAction,
-  openTabs as openTabsAction,
-  setActiveTab as setActiveTabAction,
-  subscribeKeywordTabsStore,
-  type KeywordTab,
-  type OpenTabInput,
-  type ProjectTabsState,
-} from "./keywordTabsStore";
+  getSearchTabsSnapshot,
+  useSearchTabs,
+} from "@/client/features/search-tabs/useSearchTabs";
 
-function useKeywordTabsSnapshot(projectId: string): ProjectTabsState {
-  const getSnapshot = useCallback(
-    () => getKeywordTabsSnapshot(projectId),
-    [projectId],
-  );
-  return useSyncExternalStore(
-    subscribeKeywordTabsStore,
-    getSnapshot,
-    () => EMPTY_TABS_STATE,
-  );
+export type OpenTabInput = Omit<KeywordSearchTabInput, "type">;
+
+type KeywordTab = SearchTab & {
+  input: KeywordSearchTabInput;
+  keyword: string;
+  locationCode: KeywordSearchTabInput["locationCode"];
+  resultLimit: KeywordSearchTabInput["resultLimit"];
+  mode: KeywordSearchTabInput["mode"];
+};
+
+type ProjectTabsState = {
+  tabs: KeywordTab[];
+  activeTabId: string | null;
+};
+
+type OpenTabsResult = {
+  opened: KeywordTab[];
+  focused: KeywordTab[];
+  activeTab: KeywordTab | null;
+  dropped: OpenTabInput[];
+};
+
+const KEYWORD_TABS_KEY_PREFIX = "keyword";
+
+function keywordTabsKey(projectId: string) {
+  return `${KEYWORD_TABS_KEY_PREFIX}:${projectId}`;
+}
+
+function toSearchTabInput(input: OpenTabInput): KeywordSearchTabInput {
+  return {
+    type: "keyword",
+    keyword: input.keyword,
+    locationCode: input.locationCode,
+    resultLimit: input.resultLimit,
+    mode: input.mode,
+  };
+}
+
+function toKeywordTab(tab: SearchTab): KeywordTab | null {
+  if (tab.input.type !== "keyword") return null;
+  return {
+    ...tab,
+    input: tab.input,
+    keyword: tab.input.keyword,
+    locationCode: tab.input.locationCode,
+    resultLimit: tab.input.resultLimit,
+    mode: tab.input.mode,
+  };
+}
+
+function toKeywordTabs(tabs: readonly SearchTab[]): KeywordTab[] {
+  return tabs.flatMap((tab) => {
+    const keywordTab = toKeywordTab(tab);
+    return keywordTab ? [keywordTab] : [];
+  });
+}
+
+export function getKeywordTabsSnapshot(projectId: string): ProjectTabsState {
+  const snapshot = getSearchTabsSnapshot(keywordTabsKey(projectId));
+  return {
+    tabs: toKeywordTabs(snapshot.tabs),
+    activeTabId: snapshot.activeTabId,
+  };
 }
 
 export function useKeywordTabs(projectId: string) {
-  const state = useKeywordTabsSnapshot(projectId);
+  const tabs = useSearchTabs(keywordTabsKey(projectId));
+  const keywordTabs = useMemo(() => toKeywordTabs(tabs.tabs), [tabs.tabs]);
+  const activeTab = useMemo(
+    () => keywordTabs.find((tab) => tab.id === tabs.activeTabId) ?? null,
+    [keywordTabs, tabs.activeTabId],
+  );
 
   const openTabs = useCallback(
-    (inputs: OpenTabInput[]) => openTabsAction(projectId, inputs),
-    [projectId],
+    (inputs: OpenTabInput[]): OpenTabsResult => {
+      const opened: KeywordTab[] = [];
+      const focused: KeywordTab[] = [];
+      const dropped: OpenTabInput[] = [];
+      let resultActiveTab: KeywordTab | null = null;
+      let simulatedTabs = keywordTabs;
+
+      for (const input of inputs) {
+        const result = tabs.openTab({
+          label: input.keyword,
+          input: toSearchTabInput(input),
+        });
+
+        if (result.dropped) {
+          dropped.push(input);
+          continue;
+        }
+
+        if (!result.tab) continue;
+        const keywordTab = toKeywordTab(result.tab);
+        if (!keywordTab) continue;
+        resultActiveTab = keywordTab;
+
+        const wasAlreadyOpen = simulatedTabs.some(
+          (tab) => tab.id === keywordTab.id,
+        );
+        if (wasAlreadyOpen) focused.push(keywordTab);
+        else {
+          opened.push(keywordTab);
+          simulatedTabs = [...simulatedTabs, keywordTab];
+        }
+      }
+
+      return { opened, focused, activeTab: resultActiveTab, dropped };
+    },
+    [keywordTabs, tabs],
+  );
+
+  const findMatchingTab = useCallback(
+    (input: OpenTabInput) => {
+      const match = tabs.findMatchingTab(toSearchTabInput(input));
+      return match ? toKeywordTab(match) : null;
+    },
+    [tabs],
   );
 
   const closeTab = useCallback(
-    (tabId: string) => closeTabAction(projectId, tabId),
-    [projectId],
-  );
-
-  const setActiveTab = useCallback(
-    (tabId: string | null) => setActiveTabAction(projectId, tabId),
-    [projectId],
-  );
-
-  const markTabViewed = useCallback(
-    (tabId: string, when?: number) =>
-      markTabViewedAction(projectId, tabId, when),
-    [projectId],
-  );
-
-  // Reads the latest module snapshot directly so this callback is safe to use
-  // in effect dependency arrays — its reference is stable across renders.
-  const findMatching = useCallback(
-    (input: OpenTabInput) =>
-      findMatchingTab(getKeywordTabsSnapshot(projectId), input),
-    [projectId],
-  );
-
-  const activeTab = useMemo(
-    () => state.tabs.find((tab) => tab.id === state.activeTabId) ?? null,
-    [state],
+    (tabId: string) => {
+      const result = tabs.closeTab(tabId);
+      return {
+        closedActive: result.closedActive,
+        nextActiveTab: result.nextActiveTab
+          ? toKeywordTab(result.nextActiveTab)
+          : null,
+      };
+    },
+    [tabs],
   );
 
   return {
-    tabs: state.tabs,
-    activeTabId: state.activeTabId,
+    tabs: keywordTabs,
+    activeTabId: tabs.activeTabId,
     activeTab,
-    isAtCap: state.tabs.length >= KEYWORD_TABS_LIMIT,
-    limit: KEYWORD_TABS_LIMIT,
+    isAtCap: keywordTabs.length >= tabs.limit,
+    limit: tabs.limit,
     openTabs,
     closeTab,
-    setActiveTab,
-    markTabViewed,
-    findMatchingTab: findMatching,
+    setActiveTab: tabs.setActiveTab,
+    markTabViewed: tabs.markTabViewed,
+    findMatchingTab,
   };
 }
 
 export type UseKeywordTabsReturn = ReturnType<typeof useKeywordTabs>;
-export type { KeywordTab };

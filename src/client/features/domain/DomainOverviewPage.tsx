@@ -1,21 +1,29 @@
 import { useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo } from "react";
 import { ArrowLeft } from "lucide-react";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
 import { DomainHistorySection } from "@/client/features/domain/components/DomainHistorySection";
 import { DomainResultsCard } from "@/client/features/domain/components/DomainResultsCard";
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
 import { StatCard } from "@/client/features/domain/components/StatCard";
+import { SearchTabStrip } from "@/client/features/search-tabs/SearchTabStrip";
+import type { SearchTabInput } from "@/client/features/search-tabs/types";
+import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
 import { useDomainOverviewController } from "@/client/features/domain/useDomainOverviewController";
 import {
+  normalizeDomainTarget,
   formatMetric,
   getDefaultSortOrder,
+  toSortOrderSearchParam,
 } from "@/client/features/domain/utils";
+import { createFormValidationErrors } from "@/client/lib/forms";
 import type {
   DomainActiveTab,
   DomainFilterValues,
   DomainSortMode,
   SortOrder,
 } from "@/client/features/domain/types";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 
 type Props = {
   projectId: string;
@@ -51,6 +59,118 @@ export function DomainOverviewPage({
     navigate,
     searchState,
   });
+  const urlTabInput = useMemo<SearchTabInput | null>(() => {
+    if (searchState.domain.trim() === "") return null;
+    return {
+      type: "domain",
+      domain: searchState.domain,
+      subdomains: searchState.subdomains,
+      sort: searchState.sort,
+      order: searchState.order ?? getDefaultSortOrder(searchState.sort),
+      locationCode: searchState.locationCode,
+    };
+  }, [
+    searchState.domain,
+    searchState.locationCode,
+    searchState.order,
+    searchState.sort,
+    searchState.subdomains,
+  ]);
+
+  const navigateToTab = useCallback(
+    (input: SearchTabInput | null) => {
+      if (input?.type !== "domain") {
+        navigate({
+          search: () => ({}),
+          replace: true,
+        });
+        return;
+      }
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          domain: input.domain,
+          subdomains: input.subdomains ? undefined : false,
+          sort: input.sort === "rank" ? undefined : input.sort,
+          order: toSortOrderSearchParam(input.sort, input.order),
+          loc:
+            input.locationCode === DEFAULT_LOCATION_CODE
+              ? undefined
+              : input.locationCode,
+          page: undefined,
+          size: undefined,
+        }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+  const searchTabs = useSearchTabNavigation({
+    storageKey: `domain:${projectId}`,
+    urlInput: urlTabInput,
+    getLabel: useCallback(
+      (input) => (input.type === "domain" ? input.domain : ""),
+      [],
+    ),
+    navigateToInput: navigateToTab,
+  });
+  const handleSearchSubmit = useCallback(
+    (event: React.FormEvent) => {
+      const values = state.controlsForm.state.values;
+      const target = normalizeDomainTarget(values.domain);
+      if (!target) {
+        state.handleSearchSubmit(event);
+        return;
+      }
+
+      const nextTabInput: SearchTabInput = {
+        type: "domain",
+        domain: target,
+        subdomains: values.subdomains,
+        sort: values.sort,
+        order: searchState.order ?? getDefaultSortOrder(values.sort),
+        locationCode: values.locationCode,
+      };
+
+      if (!searchTabs.canOpenTab(nextTabInput)) {
+        event.preventDefault();
+        state.controlsForm.setErrorMap({
+          onSubmit: createFormValidationErrors({
+            fields: {
+              domain: `Close a tab to open more searches (max ${searchTabs.limit}).`,
+            },
+          }),
+        });
+        return;
+      }
+
+      state.handleSearchSubmit(event);
+    },
+    [searchState.order, searchTabs, state],
+  );
+  const tabControls = searchState.domain ? (
+    <div className="flex flex-col gap-2">
+      <div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+          onClick={() => {
+            searchTabs.setActiveTab(null);
+            onShowRecentSearches();
+          }}
+        >
+          <ArrowLeft className="size-4" />
+          Recent searches
+        </button>
+      </div>
+      <SearchTabStrip
+        activeTabId={searchTabs.activeTabId}
+        tabs={searchTabs.tabs}
+        onSelect={searchTabs.selectTab}
+        onClose={searchTabs.closeTab}
+      />
+    </div>
+  ) : null;
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -66,7 +186,7 @@ export function DomainOverviewPage({
         <DomainSearchCard
           controlsForm={state.controlsForm}
           isLoading={state.isLoading}
-          onSubmit={state.handleSearchSubmit}
+          onSubmit={handleSearchSubmit}
           onSortChange={(sort) =>
             state.applySort(sort, getDefaultSortOrder(sort))
           }
@@ -76,7 +196,10 @@ export function DomainOverviewPage({
         />
 
         {state.isLoading ? (
-          <DomainOverviewLoadingState />
+          <>
+            {tabControls}
+            <DomainOverviewLoadingState />
+          </>
         ) : state.overview === null ? (
           <div className="space-y-4 pt-1">
             <DomainHistorySection
@@ -88,16 +211,7 @@ export function DomainOverviewPage({
           </div>
         ) : (
           <>
-            <div>
-              <button
-                type="button"
-                className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
-                onClick={onShowRecentSearches}
-              >
-                <ArrowLeft className="size-4" />
-                Recent searches
-              </button>
-            </div>
+            {tabControls}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <StatCard
                 label="Estimated Organic Traffic"

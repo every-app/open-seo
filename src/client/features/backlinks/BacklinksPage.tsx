@@ -1,12 +1,19 @@
+import { useCallback, useMemo } from "react";
 import { BacklinksSearchCard } from "./BacklinksSearchCard";
 import { BacklinksBody } from "./BacklinksPageContent";
 import type { BacklinksPageProps } from "./backlinksPageTypes";
+import type { BacklinksSearchState } from "./backlinksPageTypes";
 import {
   navigateToBacklinksSearch,
   useBacklinksPageData,
 } from "./useBacklinksPageData";
 import { useBacklinksFilters } from "./useBacklinksFilters";
 import { useBacklinksSearchHistory } from "@/client/hooks/useBacklinksSearchHistory";
+import type {
+  BacklinksSearchTabInput,
+  SearchTabInput,
+} from "@/client/features/search-tabs/types";
+import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
 
 export function BacklinksPage({
   projectId,
@@ -34,6 +41,49 @@ export function BacklinksPage({
     addSearch,
     removeHistoryItem,
   } = useBacklinksSearchHistory(projectId);
+  const urlTabInput = useMemo<SearchTabInput | null>(() => {
+    if (searchState.target.trim() === "") return null;
+    return {
+      type: "backlinks",
+      target: searchState.target,
+      scope: searchState.scope,
+    };
+  }, [searchState.scope, searchState.target]);
+  const navigateToTab = useCallback(
+    (input: SearchTabInput | null) => {
+      if (input?.type !== "backlinks") {
+        navigate({
+          search: () => ({}),
+          replace: true,
+        });
+        return;
+      }
+      navigateToBacklinksSearch(navigate, {
+        target: input.target,
+        scope: input.scope,
+      });
+    },
+    [navigate],
+  );
+  const searchTabs = useSearchTabNavigation({
+    storageKey: `backlinks:${projectId}`,
+    urlInput: urlTabInput,
+    getLabel: useCallback(
+      (input) => (input.type === "backlinks" ? input.target : ""),
+      [],
+    ),
+    navigateToInput: navigateToTab,
+  });
+  const toBacklinksTabInput = useCallback(
+    (
+      values: Pick<BacklinksSearchState, "target" | "scope">,
+    ): BacklinksSearchTabInput => ({
+      type: "backlinks",
+      target: values.target,
+      scope: values.scope,
+    }),
+    [],
+  );
 
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
@@ -57,7 +107,12 @@ export function BacklinksPage({
               referringDomainsQuery.isFetching ||
               topPagesQuery.isFetching
             }
+            canOpenSearch={(values) =>
+              searchTabs.canOpenTab(toBacklinksTabInput(values))
+            }
+            tabLimit={searchTabs.limit}
             onSubmit={(values) => {
+              searchTabs.openTab(toBacklinksTabInput(values));
               navigateToBacklinksSearch(navigate, values);
               addSearch({ target: values.target, scope: values.scope });
             }}
@@ -85,6 +140,16 @@ export function BacklinksPage({
           topPages={topPagesQuery.data}
           onRemoveHistoryItem={removeHistoryItem}
           onRetryOverview={() => void overviewQuery.refetch()}
+          searchTabs={
+            searchState.target
+              ? {
+                  activeTabId: searchTabs.activeTabId,
+                  tabs: searchTabs.tabs,
+                  onSelect: searchTabs.selectTab,
+                  onClose: searchTabs.closeTab,
+                }
+              : null
+          }
         />
       </div>
     </div>

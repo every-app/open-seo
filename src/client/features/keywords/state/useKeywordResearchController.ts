@@ -14,7 +14,7 @@ import {
   type KeywordMode,
   type ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
-import type { OpenTabInput } from "@/client/features/keywords/state/keywordTabsStore";
+import type { OpenTabInput } from "@/client/features/keywords/state/useKeywordTabs";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import {

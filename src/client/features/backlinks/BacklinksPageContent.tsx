@@ -25,6 +25,10 @@ import {
   filterTopPageRows,
 } from "./backlinksFiltering";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
+import {
+  SearchTabStrip,
+  type SearchTab,
+} from "@/client/features/search-tabs/SearchTabStrip";
 
 type BacklinksBodyProps = {
   projectId: string;
@@ -43,6 +47,12 @@ type BacklinksBodyProps = {
   topPages: BacklinksTopPagesData | undefined;
   onRemoveHistoryItem: (timestamp: number) => void;
   onRetryOverview: () => void;
+  searchTabs: {
+    activeTabId: string | null;
+    tabs: SearchTab[];
+    onSelect: (tab: SearchTab) => void;
+    onClose: (tabId: string) => void;
+  } | null;
 };
 
 export function BacklinksBody({
@@ -62,6 +72,7 @@ export function BacklinksBody({
   topPages,
   onRemoveHistoryItem,
   onRetryOverview,
+  searchTabs,
 }: BacklinksBodyProps) {
   const mergedData = useMemo(
     () => mergeTabData(overviewData, referringDomains, topPages),
@@ -92,6 +103,14 @@ export function BacklinksBody({
     () => buildSummaryStats(mergedData),
     [mergedData],
   );
+  const tabStrip = searchTabs ? (
+    <SearchTabStrip
+      activeTabId={searchTabs.activeTabId}
+      tabs={searchTabs.tabs}
+      onSelect={searchTabs.onSelect}
+      onClose={searchTabs.onClose}
+    />
+  ) : null;
 
   if (accessGate.isLoading) {
     return <BacklinksAccessLoadingState />;
@@ -128,20 +147,29 @@ export function BacklinksBody({
   }
 
   if (overviewLoading) {
-    return <BacklinksLoadingState />;
+    return (
+      <>
+        {tabStrip}
+        <BacklinksLoadingState />
+      </>
+    );
   }
 
   if (!mergedData) {
     return (
-      <BacklinksErrorState
-        errorMessage={overviewError}
-        onRetry={onRetryOverview}
-      />
+      <>
+        {tabStrip}
+        <BacklinksErrorState
+          errorMessage={overviewError}
+          onRetry={onRetryOverview}
+        />
+      </>
     );
   }
 
   return (
     <>
+      {tabStrip}
       <BacklinksOverviewPanels
         projectId={projectId}
         data={mergedData}

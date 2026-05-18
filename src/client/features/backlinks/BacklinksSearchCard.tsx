@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import {
   createFormValidationErrors,
   getFieldError,
+  getFormError,
   shouldValidateFieldOnChange,
 } from "@/client/lib/forms";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
@@ -14,32 +15,51 @@ type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 function getBacklinksValidationErrors(
   value: SearchDraft,
   shouldValidateUntouchedField: boolean,
+  canOpenSearch?: (value: SearchDraft) => boolean,
+  tabLimit?: number,
 ) {
-  if (value.target.trim()) {
-    return null;
+  if (!value.target.trim()) {
+    if (!shouldValidateUntouchedField) {
+      return null;
+    }
+
+    return createFormValidationErrors({
+      fields: {
+        target: "Enter a domain or URL to analyze.",
+      },
+    });
   }
 
-  if (!shouldValidateUntouchedField) {
-    return null;
+  const normalizedValue = {
+    ...value,
+    target: value.target.trim(),
+  };
+
+  if (canOpenSearch && !canOpenSearch(normalizedValue)) {
+    return createFormValidationErrors({
+      fields: {
+        target: `Close a tab to open more searches (max ${tabLimit ?? 8}).`,
+      },
+    });
   }
 
-  return createFormValidationErrors({
-    fields: {
-      target: "Enter a domain or URL to analyze.",
-    },
-  });
+  return null;
 }
 
 export function BacklinksSearchCard({
+  canOpenSearch,
   errorMessage,
   initialValues,
   isFetching,
   onSubmit,
+  tabLimit,
 }: {
+  canOpenSearch?: (values: SearchDraft) => boolean;
   errorMessage: string | null;
   initialValues: SearchDraft;
   isFetching: boolean;
   onSubmit: (values: SearchDraft) => void;
+  tabLimit?: number;
 }) {
   const [userSelectedScope, setUserSelectedScope] = useState(false);
   const form = useForm({
@@ -49,8 +69,11 @@ export function BacklinksSearchCard({
         getBacklinksValidationErrors(
           value,
           shouldValidateFieldOnChange(formApi, "target"),
+          canOpenSearch,
+          tabLimit,
         ),
-      onSubmit: ({ value }) => getBacklinksValidationErrors(value, true),
+      onSubmit: ({ value }) =>
+        getBacklinksValidationErrors(value, true, canOpenSearch, tabLimit),
     },
     onSubmit: ({ value }) => {
       const target = value.target.trim();
@@ -139,6 +162,16 @@ export function BacklinksSearchCard({
                 ) : null;
               }}
             </form.Field>
+
+            <form.Subscribe selector={(state) => state.errorMap.onSubmit}>
+              {(submitError) => {
+                const formError = getFormError(submitError);
+
+                return formError ? (
+                  <p className="text-sm text-error">{formError}</p>
+                ) : null;
+              }}
+            </form.Subscribe>
 
             <div className="flex items-center gap-1">
               <form.Field name="scope">

@@ -18,11 +18,11 @@ import {
   buildKeywordSearchKey,
 } from "@/client/features/keywords/state/keywordControllerActions";
 import { useKeywordSearchParams } from "@/client/features/keywords/state/keywordControllerInternals";
-import { useKeywordTabs } from "@/client/features/keywords/state/useKeywordTabs";
 import {
   getKeywordTabsSnapshot,
+  useKeywordTabs,
   type OpenTabInput,
-} from "@/client/features/keywords/state/keywordTabsStore";
+} from "@/client/features/keywords/state/useKeywordTabs";
 import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { KeywordResearchEmptyState } from "./KeywordResearchEmptyState";
 import { KeywordResearchLoadingState } from "./KeywordResearchLoadingState";
