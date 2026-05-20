@@ -84,7 +84,6 @@ export function BacklinksPage({
     }),
     [],
   );
-
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -102,11 +101,6 @@ export function BacklinksPage({
           <BacklinksSearchCard
             errorMessage={overviewErrorMessage}
             initialValues={searchCardInitialValues}
-            isFetching={
-              overviewQuery.isFetching ||
-              referringDomainsQuery.isFetching ||
-              topPagesQuery.isFetching
-            }
             canOpenSearch={(values) =>
               searchTabs.canOpenTab(toBacklinksTabInput(values))
             }
@@ -147,6 +141,7 @@ export function BacklinksPage({
                   tabs: searchTabs.tabs,
                   onSelect: searchTabs.selectTab,
                   onClose: searchTabs.closeTab,
+                  onViewed: searchTabs.markTabViewed,
                 }
               : null
           }

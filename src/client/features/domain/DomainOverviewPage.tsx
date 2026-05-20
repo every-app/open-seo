@@ -522,10 +522,12 @@ export function DomainOverviewPage({
         </button>
       </div>
       <SearchTabStrip
+        projectId={projectId}
         activeTabId={searchTabs.activeTabId}
         tabs={searchTabs.tabs}
         onSelect={searchTabs.selectTab}
         onClose={searchTabs.closeTab}
+        onViewed={searchTabs.markTabViewed}
       />
     </div>
   ) : null;

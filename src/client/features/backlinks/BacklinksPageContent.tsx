@@ -52,6 +52,7 @@ type BacklinksBodyProps = {
     tabs: SearchTab[];
     onSelect: (tab: SearchTab) => void;
     onClose: (tabId: string) => void;
+    onViewed: (tabId: string, when?: number) => void;
   } | null;
 };
 
@@ -105,10 +106,12 @@ export function BacklinksBody({
   );
   const tabStrip = searchTabs ? (
     <SearchTabStrip
+      projectId={projectId}
       activeTabId={searchTabs.activeTabId}
       tabs={searchTabs.tabs}
       onSelect={searchTabs.onSelect}
       onClose={searchTabs.onClose}
+      onViewed={searchTabs.onViewed}
     />
   ) : null;
 

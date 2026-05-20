@@ -1,15 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { BILLING_ROUTE } from "@/shared/billing";
-import {
-  KEYWORD_RESEARCH_STALE_TIME_MS,
-  buildKeywordResearchQueryKey,
-  buildKeywordResearchRequest,
-  keywordResearchQueryFn,
-} from "@/client/features/keywords/hooks/useKeywordResearchData";
 import { useKeywordResearchController } from "@/client/features/keywords/state/useKeywordResearchController";
 import type { KeywordResearchControllerInput } from "@/client/features/keywords/state/useKeywordResearchController";
 import type { KeywordControlsValues } from "@/client/features/keywords/hooks/useKeywordControlsForm";
@@ -20,12 +13,12 @@ import type {
   KeywordSearchTabInput,
   SearchTab,
 } from "@/client/features/search-tabs/types";
+import { SearchTabStrip } from "@/client/features/search-tabs/SearchTabStrip";
 import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
 import { KeywordResearchEmptyState } from "./KeywordResearchEmptyState";
 import { KeywordResearchLoadingState } from "./KeywordResearchLoadingState";
 import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
-import { KeywordResearchTabStrip } from "./KeywordResearchTabStrip";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = Omit<KeywordResearchControllerInput, "onFormSubmit">;
@@ -188,50 +181,6 @@ export function KeywordResearchPage(input: Props) {
     }));
   }, [controller.controlsForm, searchTabs.tabs]);
 
-  // Mark the active tab as viewed once its data lands. Reads cache state via
-  // the same query key the controller uses, so this catches both fresh fetches
-  // and warm-cache loads on tab switch.
-  const activeRequest = useMemo(
-    () =>
-      activeTab
-        ? buildKeywordResearchRequest({
-            projectId,
-            keywordInput: activeTab.input.keyword,
-            locationCode: activeTab.input.locationCode,
-            resultLimit: activeTab.input.resultLimit,
-            mode: activeTab.input.mode,
-          })
-        : null,
-    [activeTab, projectId],
-  );
-  const activeTabQuery = useQuery({
-    queryKey: buildKeywordResearchQueryKey(activeRequest),
-    queryFn: () => {
-      if (!activeRequest) throw new Error("Active tab missing request");
-      return keywordResearchQueryFn(activeRequest);
-    },
-    enabled: false,
-    staleTime: KEYWORD_RESEARCH_STALE_TIME_MS,
-    gcTime: KEYWORD_RESEARCH_STALE_TIME_MS,
-  });
-
-  const markTabViewed = searchTabs.markTabViewed;
-  useEffect(() => {
-    if (!activeTab) return;
-    if (!activeTabQuery.isSuccess) return;
-    const dataUpdatedAt = activeTabQuery.dataUpdatedAt;
-    if (dataUpdatedAt <= 0) return;
-    if (activeTab.viewedAt !== null && activeTab.viewedAt >= dataUpdatedAt) {
-      return;
-    }
-    markTabViewed(activeTab.id, dataUpdatedAt);
-  }, [
-    activeTab,
-    activeTabQuery.dataUpdatedAt,
-    activeTabQuery.isSuccess,
-    markTabViewed,
-  ]);
-
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
@@ -254,12 +203,13 @@ export function KeywordResearchPage(input: Props) {
               <ArrowLeft className="size-4" />
               Recent searches
             </button>
-            <KeywordResearchTabStrip
+            <SearchTabStrip
               projectId={projectId}
               tabs={searchTabs.tabs}
               activeTabId={searchTabs.activeTabId}
               onSelect={searchTabs.selectTab}
               onClose={searchTabs.closeTab}
+              onViewed={searchTabs.markTabViewed}
             />
           </div>
         ) : null}

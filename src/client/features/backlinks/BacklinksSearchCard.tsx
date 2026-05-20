@@ -50,14 +50,12 @@ export function BacklinksSearchCard({
   canOpenSearch,
   errorMessage,
   initialValues,
-  isFetching,
   onSubmit,
   tabLimit,
 }: {
   canOpenSearch?: (values: SearchDraft) => boolean;
   errorMessage: string | null;
   initialValues: SearchDraft;
-  isFetching: boolean;
   onSubmit: (values: SearchDraft) => void;
   tabLimit?: number;
 }) {
@@ -145,9 +143,9 @@ export function BacklinksSearchCard({
                   <button
                     type="submit"
                     className="btn btn-primary lg:col-span-2"
-                    disabled={isFetching || isSubmitting}
+                    disabled={isSubmitting}
                   >
-                    {isFetching || isSubmitting ? "Loading..." : "Search"}
+                    {isSubmitting ? "Loading..." : "Search"}
                   </button>
                 )}
               </form.Subscribe>
