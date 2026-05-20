@@ -1,4 +1,3 @@
-import type { DomainSortMode, SortOrder } from "@/client/features/domain/types";
 import type {
   KeywordMode,
   ResultLimit,
@@ -15,8 +14,6 @@ export type DomainSearchTabInput = {
   type: "domain";
   domain: string;
   subdomains: boolean;
-  sort: DomainSortMode;
-  order: SortOrder;
   locationCode: number;
 };
 

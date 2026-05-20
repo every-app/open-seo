@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { SearchTab, SearchTabInput } from "./types";
 import { useSearchTabs } from "./useSearchTabs";
 
@@ -9,17 +9,34 @@ type UseSearchTabNavigationArgs = {
   navigateToInput: (input: SearchTabInput | null) => void;
 };
 
+function tabInputKey(input: SearchTabInput | null) {
+  return input ? JSON.stringify(input) : "";
+}
+
 export function useSearchTabNavigation({
   storageKey,
   urlInput,
   getLabel,
   navigateToInput,
 }: UseSearchTabNavigationArgs) {
+  const closedInputKeysRef = useRef<Set<string>>(new Set());
   const tabs = useSearchTabs(storageKey);
-  const { activeTabId, closeTab, findMatchingTab, openTab, setActiveTab } =
-    tabs;
+  const {
+    activeTabId,
+    closeTab,
+    findMatchingTab,
+    markTabViewed,
+    openTab,
+    setActiveTab,
+  } = tabs;
 
   useEffect(() => {
+    const urlKey = tabInputKey(urlInput);
+    if (closedInputKeysRef.current.has(urlKey)) {
+      return;
+    }
+    closedInputKeysRef.current.clear();
+
     if (!urlInput) {
       setActiveTab(null);
       return;
@@ -44,6 +61,7 @@ export function useSearchTabNavigation({
 
   const selectTab = useCallback(
     (tab: SearchTab) => {
+      closedInputKeysRef.current.delete(tabInputKey(tab.input));
       setActiveTab(tab.id);
       navigateToInput(tab.input);
     },
@@ -52,29 +70,44 @@ export function useSearchTabNavigation({
 
   const closeSearchTab = useCallback(
     (tabId: string) => {
+      const closingTab = tabs.tabs.find((tab) => tab.id === tabId) ?? null;
+      if (closingTab) {
+        closedInputKeysRef.current.add(tabInputKey(closingTab.input));
+      }
       const result = closeTab(tabId);
       if (result.closedActive) {
         navigateToInput(result.nextActiveTab?.input ?? null);
       }
     },
-    [closeTab, navigateToInput],
+    [closeTab, navigateToInput, tabs.tabs],
   );
 
   const openSearchTab = useCallback(
-    (input: SearchTabInput) =>
-      openTab({
+    (input: SearchTabInput) => {
+      closedInputKeysRef.current.delete(tabInputKey(input));
+      return openTab({
         label: getLabel(input),
         input,
-      }),
+      });
+    },
     [getLabel, openTab],
+  );
+
+  const visibleTabs = useMemo(
+    () =>
+      tabs.tabs.filter(
+        (tab) => !closedInputKeysRef.current.has(tabInputKey(tab.input)),
+      ),
+    [tabs.tabs],
   );
 
   return {
     activeTabId: tabs.activeTabId,
-    tabs: tabs.tabs,
+    tabs: visibleTabs,
     canOpenTab: tabs.canOpenTab,
     closeTab: closeSearchTab,
     limit: tabs.limit,
+    markTabViewed,
     openTab: openSearchTab,
     selectTab,
     setActiveTab,

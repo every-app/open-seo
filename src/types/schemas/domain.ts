@@ -133,6 +133,7 @@ export const domainPagesPageRequestSchema = z.object({
     .default(DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE),
   sortMode: z.enum(domainPagesSortModes).default("traffic"),
   sortOrder: z.enum(domainSortOrders).default("desc"),
+  filters: domainKeywordsFiltersSchema.default({}),
   search: z.string().optional(),
 });
 
@@ -152,7 +153,6 @@ export const domainSearchSchema = z.object({
   sort: z.enum(domainSortModes).optional(),
   order: z.enum(domainSortOrders).optional(),
   tab: z.enum(domainTabs).optional(),
-  search: z.string().optional(),
   loc: optionalSearchPositiveIntParam,
   page: optionalSearchPositiveIntParam,
   size: z.coerce
@@ -175,4 +175,12 @@ export const domainSearchSchema = z.object({
   maxKd: filterNumberParam,
   minRank: filterNumberParam,
   maxRank: filterNumberParam,
+  pInclude: filterStringParam,
+  pExclude: filterStringParam,
+  pMinTraffic: filterNumberParam,
+  pMaxTraffic: filterNumberParam,
+  pMinVol: filterNumberParam,
+  pMaxVol: filterNumberParam,
 });
+
+export type DomainSearchParams = z.infer<typeof domainSearchSchema>;

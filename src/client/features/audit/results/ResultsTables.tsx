@@ -1,91 +1,154 @@
-import { ChevronDown, Download, ExternalLink } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  createColumnHelper,
+  type ColumnDef,
+  type SortingState,
+} from "@tanstack/react-table";
+import { ExternalLink } from "lucide-react";
+import {
+  AppDataTable,
+  useAppTable,
+} from "@/client/components/table/AppDataTable";
+import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
+import { SortableHeader } from "@/client/components/table/SortableHeader";
 import {
   extractPathname,
   HttpStatusBadge,
   LighthouseScoreBadge,
 } from "@/client/features/audit/shared";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
-
-type LighthouseFailureFields = {
-  errorMessage: string | null;
-  performanceScore: number | null;
-  accessibilityScore: number | null;
-  bestPracticesScore: number | null;
-  seoScore: number | null;
-};
-
-function hasMissingLighthouseScores(row: LighthouseFailureFields) {
-  return (
-    row.performanceScore == null &&
-    row.accessibilityScore == null &&
-    row.bestPracticesScore == null &&
-    row.seoScore == null
-  );
-}
+import {
+  EmptyTableMessage,
+  PagesFilterBar,
+  PerformanceFilterBar,
+} from "@/client/features/audit/results/AuditResultsTableFilters";
+import {
+  EMPTY_PAGES_FILTERS,
+  EMPTY_PERFORMANCE_FILTERS,
+  filterPages,
+  filterPerformanceRows,
+  isLighthouseFailure as getIsLighthouseFailure,
+  type LighthouseFailureFields,
+  type PageRow,
+  type PagesFilters,
+  type PerformanceFilters,
+  type PerformanceRowData,
+} from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 
 export function isLighthouseFailure(row: LighthouseFailureFields) {
-  return !!row.errorMessage || hasMissingLighthouseScores(row);
+  return getIsLighthouseFailure(row);
 }
 
 function getLighthouseFailureMessage(row: LighthouseFailureFields) {
   return row.errorMessage ?? "Lighthouse returned no category scores";
 }
 
+const pageColumnHelper = createColumnHelper<PageRow>();
+const performanceColumnHelper = createColumnHelper<PerformanceRowData>();
+
+const pagesColumns: ColumnDef<PageRow>[] = [
+  pageColumnHelper.accessor("url", {
+    header: ({ column }) => <SortableHeader column={column} label="URL" />,
+    cell: ({ getValue }) => {
+      const url = getValue();
+      return (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link link-primary inline-flex items-center gap-1 text-xs"
+        >
+          <span className="truncate">{extractPathname(url)}</span>
+          <ExternalLink className="size-3 shrink-0" />
+        </a>
+      );
+    },
+    meta: { cellClassName: "max-w-[240px] truncate" },
+  }),
+  pageColumnHelper.accessor("statusCode", {
+    header: ({ column }) => <SortableHeader column={column} label="Status" />,
+    cell: ({ getValue }) => <HttpStatusBadge code={getValue()} />,
+    sortingFn: nullableNumberSort,
+  }),
+  pageColumnHelper.accessor("title", {
+    header: ({ column }) => <SortableHeader column={column} label="Title" />,
+    cell: ({ getValue }) => {
+      const title = getValue();
+      return title ? (
+        <span title={title}>{title}</span>
+      ) : (
+        <span className="text-error text-xs">missing</span>
+      );
+    },
+    sortingFn: nullableStringSort,
+    meta: { cellClassName: "max-w-[220px] truncate" },
+  }),
+  pageColumnHelper.accessor("h1Count", {
+    header: ({ column }) => <SortableHeader column={column} label="H1" />,
+  }),
+  pageColumnHelper.accessor("wordCount", {
+    header: ({ column }) => <SortableHeader column={column} label="Words" />,
+  }),
+  pageColumnHelper.display({
+    id: "images",
+    header: ({ column }) => <SortableHeader column={column} label="Images" />,
+    cell: ({ row }) =>
+      row.original.imagesMissingAlt > 0 ? (
+        <span className="text-warning">
+          {row.original.imagesMissingAlt}/{row.original.imagesTotal}
+        </span>
+      ) : (
+        row.original.imagesTotal
+      ),
+    enableSorting: true,
+    sortingFn: (left, right) =>
+      left.original.imagesMissingAlt - right.original.imagesMissingAlt ||
+      left.original.imagesTotal - right.original.imagesTotal,
+  }),
+  pageColumnHelper.accessor("responseTimeMs", {
+    header: ({ column }) => <SortableHeader column={column} label="Speed" />,
+    cell: ({ getValue }) => {
+      const value = getValue();
+      return value ? (
+        <span className="text-xs">{value}ms</span>
+      ) : (
+        <span className="text-xs text-base-content/40">-</span>
+      );
+    },
+    sortingFn: nullableNumberSort,
+  }),
+];
+
 export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
+  const [filters, setFilters] = useState<PagesFilters>(EMPTY_PAGES_FILTERS);
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "statusCode", desc: true },
+  ]);
+  const filteredPages = useMemo(
+    () => filterPages(pages, filters),
+    [filters, pages],
+  );
+  const table = useAppTable({
+    data: filteredPages,
+    columns: pagesColumns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    withSorting: true,
+  });
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-sm">
-        <thead>
-          <tr>
-            <th>URL</th>
-            <th>Status</th>
-            <th>Title</th>
-            <th>H1</th>
-            <th>Words</th>
-            <th>Images</th>
-            <th>Speed</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pages.map((page: AuditResultsData["pages"][number]) => (
-            <tr key={page.id}>
-              <td className="max-w-[200px] truncate">
-                <a
-                  href={page.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="link link-primary text-xs inline-flex items-center gap-1"
-                >
-                  {extractPathname(page.url)}
-                  <ExternalLink className="size-3" />
-                </a>
-              </td>
-              <td>
-                <HttpStatusBadge code={page.statusCode} />
-              </td>
-              <td className="max-w-[180px] truncate" title={page.title ?? ""}>
-                {page.title || (
-                  <span className="text-error text-xs">missing</span>
-                )}
-              </td>
-              <td>{page.h1Count}</td>
-              <td>{page.wordCount}</td>
-              <td>
-                {page.imagesMissingAlt > 0 ? (
-                  <span className="text-warning">
-                    {page.imagesMissingAlt}/{page.imagesTotal}
-                  </span>
-                ) : (
-                  page.imagesTotal
-                )}
-              </td>
-              <td className="text-xs">
-                {page.responseTimeMs ? `${page.responseTimeMs}ms` : "-"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <PagesFilterBar
+        filters={filters}
+        onChange={setFilters}
+        resultCount={filteredPages.length}
+        totalCount={pages.length}
+      />
+      <AppDataTable
+        table={table}
+        className="table table-sm"
+        empty={<EmptyTableMessage label="No pages match these filters." />}
+      />
     </div>
   );
 }
@@ -101,65 +164,89 @@ export function PerformanceTable({
   lighthouse: AuditResultsData["lighthouse"];
   pages: AuditResultsData["pages"];
 }) {
+  const [filters, setFilters] = useState<PerformanceFilters>(
+    EMPTY_PERFORMANCE_FILTERS,
+  );
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: "performanceScore", desc: false },
+  ]);
+  const rows = useMemo(
+    () =>
+      lighthouse.map((result) => {
+        const page = pages.find((candidate) => candidate.id === result.pageId);
+        const pageUrl = page?.url ?? null;
+        return {
+          ...result,
+          pageUrl,
+          pagePath: pageUrl ? extractPathname(pageUrl) : null,
+        };
+      }),
+    [lighthouse, pages],
+  );
+  const filteredRows = useMemo(
+    () => filterPerformanceRows(rows, filters),
+    [filters, rows],
+  );
+  const columns = useMemo(
+    () => buildPerformanceColumns({ auditId, projectId }),
+    [auditId, projectId],
+  );
+  const table = useAppTable({
+    data: filteredRows,
+    columns,
+    state: { sorting },
+    onSortingChange: setSorting,
+    withSorting: true,
+  });
+
   return (
-    <div className="overflow-x-auto">
-      <table className="table table-sm">
-        <thead>
-          <tr>
-            <th>URL</th>
-            <th>Device</th>
-            <th>Status</th>
-            <th>Perf</th>
-            <th>A11y</th>
-            <th>SEO</th>
-            <th>LCP</th>
-            <th>CLS</th>
-            <th>INP</th>
-            <th>TTFB</th>
-            <th>Issues</th>
-          </tr>
-        </thead>
-        <tbody>
-          {lighthouse.map((result: AuditResultsData["lighthouse"][number]) => (
-            <PerformanceRow
-              key={result.id}
-              auditId={auditId}
-              projectId={projectId}
-              result={result}
-              page={pages.find(
-                (candidate: AuditResultsData["pages"][number]) =>
-                  candidate.id === result.pageId,
-              )}
-            />
-          ))}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      <PerformanceFilterBar
+        filters={filters}
+        onChange={setFilters}
+        resultCount={filteredRows.length}
+        totalCount={rows.length}
+      />
+      <AppDataTable
+        table={table}
+        className="table table-sm"
+        empty={
+          <EmptyTableMessage label="No performance results match these filters." />
+        }
+      />
     </div>
   );
 }
 
-function PerformanceRow({
+function buildPerformanceColumns({
   auditId,
   projectId,
-  result,
-  page,
 }: {
   auditId: string;
   projectId: string;
-  result: AuditResultsData["lighthouse"][number];
-  page: AuditResultsData["pages"][number] | undefined;
-}) {
-  const isFailed = isLighthouseFailure(result);
-  const failureMessage = getLighthouseFailureMessage(result);
-
-  return (
-    <tr>
-      <td className="max-w-[160px] truncate text-xs">
-        {page ? extractPathname(page.url) : "-"}
-      </td>
-      <td className="capitalize text-xs">{result.strategy}</td>
-      <td>
-        {isFailed ? (
+}): ColumnDef<PerformanceRowData>[] {
+  return [
+    performanceColumnHelper.accessor("pagePath", {
+      header: ({ column }) => <SortableHeader column={column} label="URL" />,
+      cell: ({ getValue }) => (
+        <span className="text-xs">{getValue() ?? "-"}</span>
+      ),
+      sortingFn: nullableStringSort,
+      meta: { cellClassName: "max-w-[180px] truncate" },
+    }),
+    performanceColumnHelper.accessor("strategy", {
+      header: ({ column }) => <SortableHeader column={column} label="Device" />,
+      cell: ({ getValue }) => (
+        <span className="capitalize text-xs">{getValue()}</span>
+      ),
+    }),
+    performanceColumnHelper.display({
+      id: "status",
+      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      cell: ({ row }) => {
+        const isFailed = isLighthouseFailure(row.original);
+        const failureMessage = getLighthouseFailureMessage(row.original);
+        return isFailed ? (
           <span
             className="badge badge-error badge-outline text-xs"
             title={failureMessage}
@@ -168,43 +255,92 @@ function PerformanceRow({
           </span>
         ) : (
           <span className="badge badge-success badge-outline text-xs">ok</span>
-        )}
-      </td>
-      <td>
-        <LighthouseScoreBadge score={result.performanceScore} />
-      </td>
-      <td>
-        <LighthouseScoreBadge score={result.accessibilityScore} />
-      </td>
-      <td>
-        <LighthouseScoreBadge score={result.seoScore} />
-      </td>
-      <td className="text-xs">
-        {result.lcpMs ? `${(result.lcpMs / 1000).toFixed(1)}s` : "-"}
-      </td>
-      <td className="text-xs">
-        {result.cls != null ? result.cls.toFixed(3) : "-"}
-      </td>
-      <td className="text-xs">
-        {result.inpMs ? `${Math.round(result.inpMs)}ms` : "-"}
-      </td>
-      <td className="text-xs">
-        {result.ttfbMs ? `${Math.round(result.ttfbMs)}ms` : "-"}
-      </td>
-      <td>
-        {result.r2Key && !isFailed ? (
+        );
+      },
+      enableSorting: true,
+      sortingFn: (left, right) =>
+        Number(isLighthouseFailure(left.original)) -
+        Number(isLighthouseFailure(right.original)),
+    }),
+    performanceColumnHelper.accessor("performanceScore", {
+      header: ({ column }) => <SortableHeader column={column} label="Perf" />,
+      cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("accessibilityScore", {
+      header: ({ column }) => <SortableHeader column={column} label="A11y" />,
+      cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("seoScore", {
+      header: ({ column }) => <SortableHeader column={column} label="SEO" />,
+      cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("lcpMs", {
+      header: ({ column }) => <SortableHeader column={column} label="LCP" />,
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value ? (
+          <span className="text-xs">{(value / 1000).toFixed(1)}s</span>
+        ) : (
+          <span className="text-xs text-base-content/40">-</span>
+        );
+      },
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("cls", {
+      header: ({ column }) => <SortableHeader column={column} label="CLS" />,
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value != null ? (
+          <span className="text-xs">{value.toFixed(3)}</span>
+        ) : (
+          <span className="text-xs text-base-content/40">-</span>
+        );
+      },
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("inpMs", {
+      header: ({ column }) => <SortableHeader column={column} label="INP" />,
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value ? (
+          <span className="text-xs">{Math.round(value)}ms</span>
+        ) : (
+          <span className="text-xs text-base-content/40">-</span>
+        );
+      },
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.accessor("ttfbMs", {
+      header: ({ column }) => <SortableHeader column={column} label="TTFB" />,
+      cell: ({ getValue }) => {
+        const value = getValue();
+        return value ? (
+          <span className="text-xs">{Math.round(value)}ms</span>
+        ) : (
+          <span className="text-xs text-base-content/40">-</span>
+        );
+      },
+      sortingFn: nullableNumberSort,
+    }),
+    performanceColumnHelper.display({
+      id: "issues",
+      header: () => "Issues",
+      cell: ({ row }) =>
+        row.original.r2Key && !isLighthouseFailure(row.original) ? (
           <a
             className="btn btn-primary btn-xs"
-            href={`/p/${projectId}/audit/issues/${result.id}?auditId=${auditId}&category=performance`}
+            href={`/p/${projectId}/audit/issues/${row.original.id}?auditId=${auditId}&category=performance`}
           >
             View issues
           </a>
         ) : (
           <span className="text-xs text-base-content/40">-</span>
-        )}
-      </td>
-    </tr>
-  );
+        ),
+    }),
+  ];
 }
 
 export function ExportDropdown({
@@ -213,26 +349,40 @@ export function ExportDropdown({
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-sm btn-ghost gap-1">
-        <Download className="size-4" />
-        Export
-        <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul
-        tabIndex={0}
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
-      >
-        <li>
-          <button onClick={() => onExport("sheets")}>Export to Sheets</button>
-        </li>
-        <li>
-          <button onClick={() => onExport("csv")}>CSV</button>
-        </li>
-        <li>
-          <button onClick={() => onExport("json")}>JSON</button>
-        </li>
-      </ul>
-    </div>
+    <TableExportMenu
+      buttonClassName="btn btn-sm btn-ghost gap-1"
+      menuClassName="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
+      actions={[
+        { label: "Export to Sheets", onClick: () => onExport("sheets") },
+        { label: "CSV", onClick: () => onExport("csv") },
+        { label: "JSON", onClick: () => onExport("json") },
+      ]}
+    />
   );
+}
+
+function nullableNumberSort(
+  left: { getValue: (columnId: string) => number | null },
+  right: { getValue: (columnId: string) => number | null },
+  columnId: string,
+) {
+  const a = left.getValue(columnId);
+  const b = right.getValue(columnId);
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
+function nullableStringSort(
+  left: { getValue: (columnId: string) => string | null },
+  right: { getValue: (columnId: string) => string | null },
+  columnId: string,
+) {
+  const a = left.getValue(columnId);
+  const b = right.getValue(columnId);
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return a.localeCompare(b);
 }

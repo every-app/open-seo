@@ -1,44 +1,58 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+/* eslint-disable max-lines, max-lines-per-function -- Domain Overview keeps page-only orchestration colocated to avoid fake indirection. */
+import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
 import { ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import {
+  DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
+  type DomainSearchParams,
+} from "@/types/schemas/domain";
+import {
+  DEFAULT_LOCATION_CODE,
+  LOCATIONS,
+  getLanguageCode,
+  isSupportedLocationCode,
+} from "@/client/features/keywords/locations";
+import { useDomainSearchHistory } from "@/client/hooks/useDomainSearchHistory";
+import type { DomainSearchHistoryItem } from "@/client/hooks/useDomainSearchHistory";
+import {
+  getDomainSearchChangeValidationErrors,
+  getDomainSearchValidationErrors,
+} from "@/client/features/domain/domainSearchValidation";
+import { useDomainOverviewQuery } from "@/client/features/domain/hooks/useDomainOverviewQuery";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
 import { DomainHistorySection } from "@/client/features/domain/components/DomainHistorySection";
-import { DomainResultsCard } from "@/client/features/domain/components/DomainResultsCard";
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
+import { KeywordsTab } from "@/client/features/domain/components/KeywordsTab";
+import { PagesTab } from "@/client/features/domain/components/PagesTab";
 import { StatCard } from "@/client/features/domain/components/StatCard";
 import { SearchTabStrip } from "@/client/features/search-tabs/SearchTabStrip";
 import type { SearchTabInput } from "@/client/features/search-tabs/types";
 import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
-import { useDomainOverviewController } from "@/client/features/domain/useDomainOverviewController";
 import {
-  normalizeDomainTarget,
   formatMetric,
   getDefaultSortOrder,
+  normalizeDomainTarget,
   toSortOrderSearchParam,
+  toSortSearchParam,
 } from "@/client/features/domain/utils";
-import { createFormValidationErrors } from "@/client/lib/forms";
+import {
+  createFormValidationErrors,
+  shouldValidateFieldOnChange,
+} from "@/client/lib/forms";
+import { buildDomainFiltersClearSearchUpdate } from "@/client/features/domain/domainFilterUtils";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { captureClientEvent } from "@/client/lib/posthog";
+import type { DomainOverviewRouteState } from "@/client/features/domain/domainRouteState";
 import type {
   DomainActiveTab,
-  DomainFilterValues,
   DomainSortMode,
   SortOrder,
 } from "@/client/features/domain/types";
-import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 
 type Props = {
   projectId: string;
-  searchState: {
-    domain: string;
-    subdomains: boolean;
-    sort: DomainSortMode;
-    order?: SortOrder;
-    tab: DomainActiveTab;
-    search: string;
-    locationCode: number;
-    page: number;
-    pageSize: number;
-    appliedFilters: DomainFilterValues;
-  };
+  routeState: DomainOverviewRouteState;
   navigate: (args: {
     search: (prev: Record<string, unknown>) => Record<string, unknown>;
     replace: boolean;
@@ -46,38 +60,374 @@ type Props = {
   onShowRecentSearches: () => void;
 };
 
+type DomainNavigate = Props["navigate"];
+type DomainSearchUpdate = Partial<DomainSearchParams>;
+
+const KEYWORDS_ONLY_SORTS: ReadonlySet<DomainSortMode> = new Set([
+  "rank",
+  "score",
+  "cpc",
+]);
+
+function getSortSearchUpdate(
+  nextSort: DomainSortMode,
+  nextOrder: SortOrder,
+): DomainSearchUpdate {
+  return {
+    sort: toSortSearchParam(nextSort),
+    order: toSortOrderSearchParam(nextSort, nextOrder),
+    page: undefined,
+  };
+}
+
+function getLocationSearchUpdate(
+  nextLocationCode: number,
+): DomainSearchUpdate | null {
+  if (!isSupportedLocationCode(nextLocationCode)) return null;
+  return {
+    loc:
+      nextLocationCode === DEFAULT_LOCATION_CODE ? undefined : nextLocationCode,
+    page: undefined,
+  };
+}
+
+function getPageSearchUpdate(nextPage: number): DomainSearchUpdate {
+  const safe = Math.max(1, Math.floor(nextPage));
+  return { page: safe === 1 ? undefined : safe };
+}
+
+function getPageSizeSearchUpdate(nextSize: number): DomainSearchUpdate {
+  return {
+    size: nextSize === DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE ? undefined : nextSize,
+    page: undefined,
+  };
+}
+
+function getTabSearchUpdate(
+  nextTab: DomainActiveTab,
+  currentSort: DomainSortMode,
+): DomainSearchUpdate {
+  if (nextTab === "keywords") {
+    return { tab: undefined, page: undefined };
+  }
+
+  const fallbackSortNeeded = KEYWORDS_ONLY_SORTS.has(currentSort);
+  const update: DomainSearchUpdate = {
+    tab: "pages",
+    page: undefined,
+  };
+  if (fallbackSortNeeded) {
+    update.sort = "traffic";
+    update.order = getDefaultSortOrder("traffic");
+  }
+  return update;
+}
+
+function getHistorySearchUpdate(
+  item: DomainSearchHistoryItem,
+): DomainSearchUpdate {
+  const historyLocation =
+    item.locationCode != null && isSupportedLocationCode(item.locationCode)
+      ? item.locationCode
+      : DEFAULT_LOCATION_CODE;
+
+  return {
+    ...buildDomainFiltersClearSearchUpdate(),
+    domain: item.domain,
+    subdomains: item.subdomains ? undefined : false,
+    sort: toSortSearchParam(item.sort),
+    order: undefined,
+    tab: item.tab === "keywords" ? undefined : item.tab,
+    loc:
+      historyLocation === DEFAULT_LOCATION_CODE ? undefined : historyLocation,
+    size: undefined,
+  };
+}
+
+function getSearchSubmitUpdate({
+  domain,
+  subdomains,
+  sort,
+  locationCode,
+  currentOrder,
+  activeTab,
+}: {
+  domain: string;
+  subdomains: boolean;
+  sort: DomainSortMode;
+  locationCode: number;
+  currentOrder: SortOrder;
+  activeTab: DomainActiveTab;
+}): DomainSearchUpdate {
+  return {
+    ...buildDomainFiltersClearSearchUpdate(),
+    domain,
+    subdomains: subdomains ? undefined : false,
+    sort: toSortSearchParam(sort),
+    order: toSortOrderSearchParam(sort, currentOrder),
+    tab: activeTab === "keywords" ? undefined : activeTab,
+    loc: locationCode === DEFAULT_LOCATION_CODE ? undefined : locationCode,
+    size: undefined,
+  };
+}
+
+function useDomainOverviewState({
+  navigate,
+  routeState,
+  projectId,
+}: {
+  navigate: DomainNavigate;
+  routeState: DomainOverviewRouteState;
+  projectId: string;
+}) {
+  const lastTrackedKey = useRef<string>("");
+
+  const {
+    history,
+    isLoaded: historyLoaded,
+    addSearch,
+    removeHistoryItem,
+  } = useDomainSearchHistory(projectId);
+
+  const setSearchParams = useCallback(
+    (updates: DomainSearchUpdate) => {
+      navigate({
+        search: (prev) => ({ ...prev, ...updates }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
+
+  const applySort = useCallback(
+    (nextSort: DomainSortMode, nextOrder: SortOrder) => {
+      setSearchParams(getSortSearchUpdate(nextSort, nextOrder));
+    },
+    [setSearchParams],
+  );
+
+  const applyLocationChange = useCallback(
+    (nextLocationCode: number) => {
+      const update = getLocationSearchUpdate(nextLocationCode);
+      if (update) setSearchParams(update);
+    },
+    [setSearchParams],
+  );
+
+  const handleSortColumnClick = useCallback(
+    (nextSort: DomainSortMode) => {
+      const nextOrder =
+        nextSort === routeState.sort
+          ? routeState.order === "asc"
+            ? "desc"
+            : "asc"
+          : getDefaultSortOrder(nextSort);
+      applySort(nextSort, nextOrder);
+    },
+    [applySort, routeState.order, routeState.sort],
+  );
+
+  const goToPage = useCallback(
+    (nextPage: number) => {
+      setSearchParams(getPageSearchUpdate(nextPage));
+    },
+    [setSearchParams],
+  );
+
+  const setPageSize = useCallback(
+    (nextSize: number) => {
+      setSearchParams(getPageSizeSearchUpdate(nextSize));
+    },
+    [setSearchParams],
+  );
+
+  const handleTabChange = useCallback(
+    (nextTab: DomainActiveTab) => {
+      setSearchParams(getTabSearchUpdate(nextTab, routeState.sort));
+    },
+    [routeState.sort, setSearchParams],
+  );
+
+  const handleHistorySelect = useCallback(
+    (item: DomainSearchHistoryItem) => {
+      setSearchParams(getHistorySearchUpdate(item));
+    },
+    [setSearchParams],
+  );
+
+  const languageCode = getLanguageCode(routeState.locationCode);
+  const overviewQuery = useDomainOverviewQuery({
+    projectId,
+    domain: routeState.domain,
+    includeSubdomains: routeState.subdomains,
+    locationCode: routeState.locationCode,
+    languageCode,
+  });
+  const overview = overviewQuery.data ?? null;
+  const isLoading = overviewQuery.isLoading;
+
+  const controlsForm = useForm({
+    defaultValues: {
+      domain: routeState.domain,
+      subdomains: routeState.subdomains,
+      sort: routeState.sort,
+      locationCode: routeState.locationCode,
+    },
+    validators: {
+      onChange: ({ formApi, value }) =>
+        getDomainSearchChangeValidationErrors(
+          value,
+          shouldValidateFieldOnChange(formApi, "domain"),
+          formApi.state.submissionAttempts > 0,
+        ),
+      onSubmit: ({ value }) => getDomainSearchValidationErrors(value),
+    },
+    onSubmit: ({ formApi, value }) => {
+      const target = normalizeDomainTarget(value.domain);
+      if (!target) return;
+      formApi.setFieldValue("domain", target);
+      setSearchParams(
+        getSearchSubmitUpdate({
+          domain: target,
+          subdomains: value.subdomains,
+          sort: value.sort,
+          locationCode: value.locationCode,
+          currentOrder: routeState.order,
+          activeTab: routeState.tab,
+        }),
+      );
+    },
+  });
+
+  useEffect(() => {
+    controlsForm.reset({
+      domain: routeState.domain,
+      subdomains: routeState.subdomains,
+      sort: routeState.sort,
+      locationCode: routeState.locationCode,
+    });
+  }, [
+    controlsForm,
+    routeState.domain,
+    routeState.locationCode,
+    routeState.sort,
+    routeState.subdomains,
+  ]);
+
+  useEffect(() => {
+    controlsForm.setErrorMap({
+      onSubmit: overviewQuery.error
+        ? createFormValidationErrors({
+            form: getStandardErrorMessage(
+              overviewQuery.error,
+              "Lookup failed.",
+            ),
+          })
+        : undefined,
+    });
+  }, [controlsForm, overviewQuery.error]);
+
+  useEffect(() => {
+    if (!overviewQuery.isSuccess || !overview) return;
+    const key = `${routeState.domain}|${routeState.subdomains}|${routeState.locationCode}`;
+    if (lastTrackedKey.current === key) return;
+    lastTrackedKey.current = key;
+
+    captureClientEvent("domain_overview:search_complete", {
+      sort_mode: routeState.sort,
+      include_subdomains: routeState.subdomains,
+      result_count: overview.organicKeywords ?? 0,
+      location_code: routeState.locationCode,
+    });
+    addSearch({
+      domain: routeState.domain,
+      subdomains: routeState.subdomains,
+      sort: routeState.sort,
+      tab: routeState.tab,
+      locationCode: routeState.locationCode,
+    });
+    if (!overview.hasData) {
+      toast.info("Not enough data for this domain");
+    }
+  }, [
+    addSearch,
+    overview,
+    overviewQuery.isSuccess,
+    routeState.domain,
+    routeState.locationCode,
+    routeState.sort,
+    routeState.subdomains,
+    routeState.tab,
+  ]);
+
+  useEffect(() => {
+    if (routeState.domain.trim() !== "") return;
+    lastTrackedKey.current = "";
+  }, [routeState.domain]);
+
+  const controlsLocationCode = useStore(
+    controlsForm.store,
+    (s) => s.values.locationCode,
+  );
+  const canSaveKeywords = useMemo(
+    () =>
+      controlsLocationCode === routeState.locationCode &&
+      overview !== null &&
+      overview.hasData,
+    [controlsLocationCode, overview, routeState.locationCode],
+  );
+
+  const handleSearchSubmit = useCallback(
+    (event: FormEvent) => {
+      event.preventDefault();
+      void controlsForm.handleSubmit();
+    },
+    [controlsForm],
+  );
+
+  return {
+    controlsForm,
+    isLoading,
+    overview,
+    canSaveKeywords,
+    history,
+    historyLoaded,
+    removeHistoryItem,
+    languageCode,
+    setSearchParams,
+    applySort,
+    applyLocationChange,
+    handleTabChange,
+    handleSortColumnClick,
+    handleHistorySelect,
+    handleSearchSubmit,
+    goToPage,
+    setPageSize,
+  };
+}
+
+export type DomainOverviewControlsForm = ReturnType<
+  typeof useDomainOverviewState
+>["controlsForm"];
+
 export function DomainOverviewPage({
   projectId,
-  searchState,
+  routeState,
   navigate,
   onShowRecentSearches,
 }: Props) {
-  const queryClient = useQueryClient();
-  const state = useDomainOverviewController({
-    projectId,
-    queryClient,
-    navigate,
-    searchState,
-  });
+  const state = useDomainOverviewState({ navigate, routeState, projectId });
   const urlTabInput = useMemo<SearchTabInput | null>(() => {
-    if (searchState.domain.trim() === "") return null;
+    if (routeState.domain.trim() === "") return null;
     return {
       type: "domain",
-      domain: searchState.domain,
-      subdomains: searchState.subdomains,
-      sort: searchState.sort,
-      order: searchState.order ?? getDefaultSortOrder(searchState.sort),
-      locationCode: searchState.locationCode,
+      domain: routeState.domain,
+      subdomains: routeState.subdomains,
+      locationCode: routeState.locationCode,
     };
-  }, [
-    searchState.domain,
-    searchState.locationCode,
-    searchState.order,
-    searchState.sort,
-    searchState.subdomains,
-  ]);
+  }, [routeState.domain, routeState.locationCode, routeState.subdomains]);
 
-  const navigateToTab = useCallback(
+  const navigateToSearchTab = useCallback(
     (input: SearchTabInput | null) => {
       if (input?.type !== "domain") {
         navigate({
@@ -86,18 +436,21 @@ export function DomainOverviewPage({
         });
         return;
       }
+
       navigate({
         search: (prev) => ({
           ...prev,
+          ...buildDomainFiltersClearSearchUpdate(),
           domain: input.domain,
           subdomains: input.subdomains ? undefined : false,
-          sort: input.sort === "rank" ? undefined : input.sort,
-          order: toSortOrderSearchParam(input.sort, input.order),
+          sort: undefined,
+          order: undefined,
+          tab: undefined,
+          page: undefined,
           loc:
             input.locationCode === DEFAULT_LOCATION_CODE
               ? undefined
               : input.locationCode,
-          page: undefined,
           size: undefined,
         }),
         replace: true,
@@ -105,17 +458,23 @@ export function DomainOverviewPage({
     },
     [navigate],
   );
+
   const searchTabs = useSearchTabNavigation({
     storageKey: `domain:${projectId}`,
     urlInput: urlTabInput,
-    getLabel: useCallback(
-      (input) => (input.type === "domain" ? input.domain : ""),
-      [],
-    ),
-    navigateToInput: navigateToTab,
+    getLabel: useCallback((input) => {
+      if (input.type !== "domain") return "";
+      const locationSuffix =
+        input.locationCode === DEFAULT_LOCATION_CODE
+          ? ""
+          : ` ${LOCATIONS[input.locationCode] ?? input.locationCode}`;
+      return `${input.domain}${locationSuffix}`;
+    }, []),
+    navigateToInput: navigateToSearchTab,
   });
+
   const handleSearchSubmit = useCallback(
-    (event: React.FormEvent) => {
+    (event: FormEvent) => {
       const values = state.controlsForm.state.values;
       const target = normalizeDomainTarget(values.domain);
       if (!target) {
@@ -127,8 +486,6 @@ export function DomainOverviewPage({
         type: "domain",
         domain: target,
         subdomains: values.subdomains,
-        sort: values.sort,
-        order: searchState.order ?? getDefaultSortOrder(values.sort),
         locationCode: values.locationCode,
       };
 
@@ -146,9 +503,10 @@ export function DomainOverviewPage({
 
       state.handleSearchSubmit(event);
     },
-    [searchState.order, searchTabs, state],
+    [searchTabs, state],
   );
-  const tabControls = searchState.domain ? (
+
+  const tabControls = routeState.domain ? (
     <div className="flex flex-col gap-2">
       <div>
         <button
@@ -238,44 +596,57 @@ export function DomainOverviewPage({
               </div>
             ) : null}
 
-            <DomainResultsCard
-              projectId={projectId}
-              overview={state.overview}
-              activeTab={searchState.tab}
-              sortMode={searchState.sort}
-              currentSortOrder={state.currentSortOrder}
-              searchDraft={state.searchDraft}
-              selectedKeywords={state.selectedKeywords}
-              setSelectedKeywords={state.setSelectedKeywords}
-              visibleKeywords={state.visibleKeywords}
-              filteredKeywords={state.filteredKeywords}
-              pagedPages={state.pagedPages}
-              showFilters={state.showFilters}
-              setShowFilters={state.setShowFilters}
-              filtersForm={state.filtersForm}
-              activeFilterCount={state.activeFilterCount}
-              dirtyFilterCount={state.dirtyFilterCount}
-              conditionCount={state.conditionCount}
-              overLimit={state.overLimit}
-              resetFilters={state.resetFilters}
-              applyFilters={state.applyFilters}
-              cancelFilterEdits={state.cancelFilterEdits}
-              onSearchChange={state.setSearchDraft}
-              onSaveKeywords={state.handleSaveKeywords}
-              canSaveKeywords={state.canSaveKeywords}
-              onSortClick={state.handleSortColumnClick}
-              onToggleKeyword={state.toggleKeywordSelection}
-              page={state.page}
-              pageSize={state.pageSize}
-              totalKeywordCount={state.totalKeywordCount}
-              totalPagesCount={state.totalPagesCount}
-              hasNextKeywordsPage={state.hasNextKeywordsPage}
-              hasNextPagesPage={state.hasNextPagesPage}
-              isKeywordsLoading={state.keywordsLoading}
-              isPagesLoading={state.pagesLoading}
-              onPageChange={state.goToPage}
-              onPageSizeChange={state.setPageSize}
-            />
+            <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
+                <div role="tablist" className="tabs tabs-box w-fit">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={routeState.tab === "keywords"}
+                    className={`tab ${routeState.tab === "keywords" ? "tab-active" : ""}`}
+                    onClick={() => state.handleTabChange("keywords")}
+                  >
+                    Top Keywords
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={routeState.tab === "pages"}
+                    className={`tab ${routeState.tab === "pages" ? "tab-active" : ""}`}
+                    onClick={() => state.handleTabChange("pages")}
+                  >
+                    Top Pages
+                  </button>
+                </div>
+              </div>
+
+              {routeState.tab === "keywords" ? (
+                <KeywordsTab
+                  key="keywords"
+                  projectId={projectId}
+                  domain={state.overview.domain}
+                  languageCode={state.languageCode}
+                  routeState={routeState}
+                  canSaveKeywords={state.canSaveKeywords}
+                  setSearchParams={state.setSearchParams}
+                  onSortClick={state.handleSortColumnClick}
+                  onPageChange={state.goToPage}
+                  onPageSizeChange={state.setPageSize}
+                />
+              ) : (
+                <PagesTab
+                  key="pages"
+                  projectId={projectId}
+                  domain={state.overview.domain}
+                  languageCode={state.languageCode}
+                  routeState={routeState}
+                  setSearchParams={state.setSearchParams}
+                  onSortClick={state.handleSortColumnClick}
+                  onPageChange={state.goToPage}
+                  onPageSizeChange={state.setPageSize}
+                />
+              )}
+            </div>
           </>
         )}
       </div>

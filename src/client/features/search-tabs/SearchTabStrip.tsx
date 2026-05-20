@@ -31,36 +31,34 @@ export function SearchTabStrip({
           return (
             <div
               key={tab.id}
-              role="tab"
-              aria-selected={active}
-              tabIndex={0}
-              onClick={() => onSelect(tab)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  onSelect(tab);
-                }
-              }}
-              className={`group flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition ${
+              data-search-tab-id={tab.id}
+              className={`group flex shrink-0 items-stretch overflow-hidden rounded-md text-sm transition ${
                 active
                   ? "bg-base-300 text-base-content shadow-sm"
                   : "text-base-content/80 hover:bg-base-200"
               }`}
             >
-              {renderLeading ? renderLeading(tab, active) : null}
-              <span
-                className="max-w-[10rem] truncate font-medium"
-                title={tab.label}
-              >
-                {tab.label}
-              </span>
               <button
                 type="button"
-                className="rounded p-0.5 text-base-content/50 opacity-60 transition hover:bg-base-content/10 hover:text-base-content hover:opacity-100 group-hover:opacity-100"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onClose(tab.id);
-                }}
+                role="tab"
+                data-search-tab-id={tab.id}
+                aria-selected={active}
+                className="flex min-w-0 items-center gap-1.5 px-2.5 py-1.5 text-left"
+                onClick={() => onSelect(tab)}
+              >
+                {renderLeading ? renderLeading(tab, active) : null}
+                <span
+                  className="max-w-[10rem] truncate font-medium"
+                  title={tab.label}
+                >
+                  {tab.label}
+                </span>
+              </button>
+              <button
+                type="button"
+                data-search-tab-id={tab.id}
+                className="flex items-center px-1.5 text-base-content/50 opacity-60 transition hover:bg-base-content/10 hover:text-base-content hover:opacity-100 group-hover:opacity-100"
+                onClick={() => onClose(tab.id)}
                 aria-label={`Close ${tab.label} tab`}
               >
                 <X className="size-3.5" />

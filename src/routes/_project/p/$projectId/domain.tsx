@@ -1,73 +1,58 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  stripSearchParams,
+  useNavigate,
+} from "@tanstack/react-router";
 import { DomainOverviewPage } from "@/client/features/domain/DomainOverviewPage";
-import {
-  resolveSortOrder,
-  toSortMode,
-  toSortOrder,
-} from "@/client/features/domain/utils";
-import {
-  DEFAULT_LOCATION_CODE,
-  isSupportedLocationCode,
-} from "@/client/features/keywords/locations";
 import {
   DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
   domainSearchSchema,
 } from "@/types/schemas/domain";
-import {
-  EMPTY_DOMAIN_FILTERS,
-  type DomainFilterValues,
-} from "@/client/features/domain/types";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
+import { getDomainRouteState } from "@/client/features/domain/domainRouteState";
+
+const DEFAULT_DOMAIN_SEARCH = {
+  domain: "",
+  subdomains: true,
+  sort: "rank",
+  order: undefined,
+  tab: "keywords",
+  loc: DEFAULT_LOCATION_CODE,
+  page: 1,
+  size: DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
+  include: "",
+  exclude: "",
+  minTraffic: undefined,
+  maxTraffic: undefined,
+  minVol: undefined,
+  maxVol: undefined,
+  minCpc: undefined,
+  maxCpc: undefined,
+  minKd: undefined,
+  maxKd: undefined,
+  minRank: undefined,
+  maxRank: undefined,
+  pInclude: "",
+  pExclude: "",
+  pMinTraffic: undefined,
+  pMaxTraffic: undefined,
+  pMinVol: undefined,
+  pMaxVol: undefined,
+} as const;
 
 export const Route = createFileRoute("/_project/p/$projectId/domain")({
   validateSearch: domainSearchSchema,
+  search: {
+    middlewares: [stripSearchParams(DEFAULT_DOMAIN_SEARCH)],
+  },
   component: DomainOverviewRoute,
 });
-
-function numberToFilterString(value: number | undefined): string {
-  if (value == null || !Number.isFinite(value)) return "";
-  return String(value);
-}
 
 function DomainOverviewRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
-  const {
-    domain = "",
-    subdomains = true,
-    sort = "rank",
-    order,
-    tab = "keywords",
-    search: searchTerm = "",
-    loc,
-    page,
-    size,
-  } = search;
-
-  const normalizedSort = toSortMode(sort) ?? "rank";
-  const normalizedOrder = resolveSortOrder(
-    normalizedSort,
-    toSortOrder(order ?? null),
-  );
-  const normalizedLocationCode =
-    loc != null && isSupportedLocationCode(loc) ? loc : DEFAULT_LOCATION_CODE;
-  const normalizedPage = page != null && page > 0 ? page : 1;
-  const normalizedPageSize = size ?? DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE;
-
-  const appliedFilters: DomainFilterValues = {
-    include: search.include ?? EMPTY_DOMAIN_FILTERS.include,
-    exclude: search.exclude ?? EMPTY_DOMAIN_FILTERS.exclude,
-    minTraffic: numberToFilterString(search.minTraffic),
-    maxTraffic: numberToFilterString(search.maxTraffic),
-    minVol: numberToFilterString(search.minVol),
-    maxVol: numberToFilterString(search.maxVol),
-    minCpc: numberToFilterString(search.minCpc),
-    maxCpc: numberToFilterString(search.maxCpc),
-    minKd: numberToFilterString(search.minKd),
-    maxKd: numberToFilterString(search.maxKd),
-    minRank: numberToFilterString(search.minRank),
-    maxRank: numberToFilterString(search.maxRank),
-  };
+  const routeState = getDomainRouteState(search);
 
   return (
     <DomainOverviewPage
@@ -79,18 +64,7 @@ function DomainOverviewRoute() {
         });
       }}
       navigate={navigate}
-      searchState={{
-        domain,
-        subdomains,
-        sort: normalizedSort,
-        order: normalizedOrder,
-        tab,
-        search: searchTerm,
-        locationCode: normalizedLocationCode,
-        page: normalizedPage,
-        pageSize: normalizedPageSize,
-        appliedFilters,
-      }}
+      routeState={routeState}
     />
   );
 }

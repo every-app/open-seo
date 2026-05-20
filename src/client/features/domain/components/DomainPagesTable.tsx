@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import {
   AppDataTable,
@@ -6,9 +6,10 @@ import {
 } from "@/client/components/table/AppDataTable";
 import { ExternalUrlCell } from "@/client/components/table/url";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
+import { useDomainRenderDebug } from "@/client/features/domain/domainDebug";
 import {
-  formatFloat,
   formatNumber,
+  formatRounded,
   toPageSortMode,
 } from "@/client/features/domain/utils";
 import type {
@@ -27,13 +28,14 @@ type Props = {
 
 const pageColumnHelper = createColumnHelper<PageRow>();
 
-export function DomainPagesTable({
+function DomainPagesTableComponent({
   domain,
   rows,
   sortMode,
   currentSortOrder,
   onSortClick,
 }: Props) {
+  const renderStarted = performance.now();
   const columns = useMemo<ColumnDef<PageRow>[]>(
     () => [
       pageColumnHelper.display({
@@ -60,7 +62,7 @@ export function DomainPagesTable({
             onClick={() => onSortClick("traffic")}
           />
         ),
-        cell: ({ getValue }) => formatFloat(getValue()),
+        cell: ({ getValue }) => formatRounded(getValue()),
       }),
       pageColumnHelper.accessor("keywords", {
         header: () => (
@@ -80,6 +82,12 @@ export function DomainPagesTable({
     data: rows.slice(0, 100),
     columns,
   });
+  useDomainRenderDebug("DomainPagesTable", {
+    rows: rows.length,
+    durationMs: Math.round(performance.now() - renderStarted),
+    sortMode,
+    currentSortOrder,
+  });
 
   return (
     <AppDataTable
@@ -93,3 +101,5 @@ export function DomainPagesTable({
     />
   );
 }
+
+export const DomainPagesTable = memo(DomainPagesTableComponent);

@@ -14,7 +14,6 @@ import {
   type KeywordMode,
   type ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
-import type { OpenTabInput } from "@/client/features/keywords/state/useKeywordTabs";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 import {
@@ -30,6 +29,13 @@ import {
 } from "./keywordControllerInternals";
 import { useKeywordOverviewState } from "./useKeywordOverviewState";
 
+type OpenKeywordTabInput = {
+  keyword: string;
+  locationCode: number;
+  resultLimit: ResultLimit;
+  mode: KeywordMode;
+};
+
 export type KeywordResearchControllerInput = {
   projectId: string;
   keywordInput: string;
@@ -39,7 +45,7 @@ export type KeywordResearchControllerInput = {
   keywordMode: KeywordMode;
   sortField: SortField;
   sortDir: SortDir;
-  getOpenKeywordTabs?: () => readonly OpenTabInput[];
+  getOpenKeywordTabs?: () => readonly OpenKeywordTabInput[];
   keywordTabsLimit?: number;
   /**
    * Called when the user submits the search form. Lets the caller decide

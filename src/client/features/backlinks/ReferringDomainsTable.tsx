@@ -3,6 +3,7 @@ import {
   type SortingFn,
   type SortingState,
 } from "@tanstack/react-table";
+import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   AppDataTable,
@@ -55,7 +56,20 @@ const columns = [
         helpText="The referring site linking to your target."
       />
     ),
-    cell: ({ getValue }) => getValue() ?? "-",
+    cell: ({ getValue }) => {
+      const domain = getValue();
+      if (!domain) return "-";
+      return (
+        <Link
+          from="/p/$projectId/backlinks"
+          to="/p/$projectId/backlinks"
+          search={{ target: domain, scope: "domain", tab: undefined }}
+          className="link link-primary link-hover break-all"
+        >
+          {domain}
+        </Link>
+      );
+    },
     sortingFn: stringNullsLast,
   }),
   columnHelper.accessor("backlinks", {

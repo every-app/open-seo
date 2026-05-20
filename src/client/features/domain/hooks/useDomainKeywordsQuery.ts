@@ -1,6 +1,7 @@
-import { useMemo } from "react";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { getDomainKeywordsPage } from "@/serverFunctions/domain";
+import { debugDomain } from "@/client/features/domain/domainDebug";
 import type {
   DomainFilterValues,
   DomainSortMode,
@@ -18,7 +19,6 @@ type DomainKeywordsQueryInput = {
   sortMode: DomainSortMode;
   sortOrder: SortOrder;
   appliedFilters: DomainFilterValues;
-  searchTerm: string;
   enabled: boolean;
 };
 
@@ -53,11 +53,8 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
     () => toFiltersPayload(input.appliedFilters),
     [input.appliedFilters],
   );
-  const trimmedSearch = input.searchTerm.trim();
-
-  return useQuery({
-    enabled: input.enabled && Boolean(input.domain),
-    queryKey: [
+  const queryKey = useMemo(
+    () => [
       "domain-keywords",
       input.projectId,
       input.domain,
@@ -69,8 +66,31 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
       input.sortMode,
       input.sortOrder,
       filtersPayload,
-      trimmedSearch || undefined,
     ],
+    [
+      filtersPayload,
+      input.domain,
+      input.includeSubdomains,
+      input.languageCode,
+      input.locationCode,
+      input.page,
+      input.pageSize,
+      input.projectId,
+      input.sortMode,
+      input.sortOrder,
+    ],
+  );
+
+  useEffect(() => {
+    debugDomain("useDomainKeywordsQuery:key", {
+      queryKey,
+      enabled: input.enabled && Boolean(input.domain),
+    });
+  }, [input.domain, input.enabled, queryKey]);
+
+  const query = useQuery({
+    enabled: input.enabled && Boolean(input.domain),
+    queryKey,
     queryFn: () =>
       getDomainKeywordsPage({
         data: {
@@ -84,10 +104,22 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
           sortMode: input.sortMode,
           sortOrder: input.sortOrder,
           filters: filtersPayload,
-          search: trimmedSearch || undefined,
         },
       }),
-    placeholderData: keepPreviousData,
     staleTime: 60_000,
   });
+  useEffect(() => {
+    debugDomain("useDomainKeywordsQuery:state", {
+      status: query.status,
+      fetchStatus: query.fetchStatus,
+      isFetching: query.isFetching,
+      rows: query.data?.keywords.length ?? 0,
+    });
+  }, [
+    query.data?.keywords.length,
+    query.fetchStatus,
+    query.isFetching,
+    query.status,
+  ]);
+  return query;
 }

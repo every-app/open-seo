@@ -13,10 +13,23 @@ import {
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
+function shouldUseKeywordE2eFixtures() {
+  return import.meta.env.VITE_E2E_KEYWORD_FIXTURES === "1";
+}
+
+async function getKeywordE2eFixtures() {
+  return import("../../e2e/fixtures/keyword-research-fixtures");
+}
+
 export const researchKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => researchKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
+    if (shouldUseKeywordE2eFixtures()) {
+      const fixtures = await getKeywordE2eFixtures();
+      return fixtures.getKeywordResearchFixture(data);
+    }
+
     return KeywordResearchService.research(
       {
         ...data,

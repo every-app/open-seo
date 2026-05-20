@@ -13,17 +13,14 @@ import {
 import { useKeywordResearchController } from "@/client/features/keywords/state/useKeywordResearchController";
 import type { KeywordResearchControllerInput } from "@/client/features/keywords/state/useKeywordResearchController";
 import type { KeywordControlsValues } from "@/client/features/keywords/hooks/useKeywordControlsForm";
-import {
-  parseKeywordInput,
-  buildKeywordSearchKey,
-} from "@/client/features/keywords/state/keywordControllerActions";
+import { parseKeywordInput } from "@/client/features/keywords/state/keywordControllerActions";
 import { useKeywordSearchParams } from "@/client/features/keywords/state/keywordControllerInternals";
-import {
-  getKeywordTabsSnapshot,
-  useKeywordTabs,
-  type OpenTabInput,
-} from "@/client/features/keywords/state/useKeywordTabs";
 import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
+import type {
+  KeywordSearchTabInput,
+  SearchTab,
+} from "@/client/features/search-tabs/types";
+import { useSearchTabNavigation } from "@/client/features/search-tabs/useSearchTabNavigation";
 import { KeywordResearchEmptyState } from "./KeywordResearchEmptyState";
 import { KeywordResearchLoadingState } from "./KeywordResearchLoadingState";
 import { KeywordResearchResults } from "./KeywordResearchResults";
@@ -32,16 +29,19 @@ import { KeywordResearchTabStrip } from "./KeywordResearchTabStrip";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = Omit<KeywordResearchControllerInput, "onFormSubmit">;
+type KeywordSearchTab = SearchTab & { input: KeywordSearchTabInput };
+
+function isKeywordSearchTab(tab: SearchTab): tab is KeywordSearchTab {
+  return tab.input.type === "keyword";
+}
 
 export function KeywordResearchPage(input: Props) {
-  const tabs = useKeywordTabs(input.projectId);
-  const { openTabs, setActiveTab, findMatchingTab } = tabs;
   const setSearchParams = useKeywordSearchParams();
   const projectId = input.projectId;
 
-  const setSearchParamsForTab = useCallback(
-    (tab: OpenTabInput | null) => {
-      if (!tab) {
+  const navigateToKeywordInput = useCallback(
+    (tabInput: KeywordSearchTabInput | null) => {
+      if (!tabInput) {
         setSearchParams({
           q: undefined,
           loc: undefined,
@@ -52,23 +52,24 @@ export function KeywordResearchPage(input: Props) {
       }
 
       setSearchParams({
-        q: tab.keyword,
+        q: tabInput.keyword,
         loc:
-          tab.locationCode === DEFAULT_LOCATION_CODE
+          tabInput.locationCode === DEFAULT_LOCATION_CODE
             ? undefined
-            : tab.locationCode,
-        kLimit: tab.resultLimit === 150 ? undefined : tab.resultLimit,
-        mode: tab.mode === "auto" ? undefined : tab.mode,
+            : tabInput.locationCode,
+        kLimit: tabInput.resultLimit === 150 ? undefined : tabInput.resultLimit,
+        mode: tabInput.mode === "auto" ? undefined : tabInput.mode,
       });
     },
     [setSearchParams],
   );
 
-  const urlInput = useMemo<OpenTabInput | null>(() => {
+  const urlInput = useMemo<KeywordSearchTabInput | null>(() => {
     const keywords = parseKeywordInput(input.keywordInput);
     const keyword = keywords[0];
     if (!keyword) return null;
     return {
+      type: "keyword",
       keyword,
       locationCode: input.locationCode,
       resultLimit: input.resultLimit,
@@ -80,107 +81,72 @@ export function KeywordResearchPage(input: Props) {
     input.locationCode,
     input.resultLimit,
   ]);
-  const currentUrlKey = useMemo(
-    () =>
-      buildKeywordSearchKey({
-        keyword: input.keywordInput,
-        locationCode: input.locationCode,
-        resultLimit: input.resultLimit,
-        mode: input.keywordMode,
-      }),
-    [
-      input.keywordInput,
-      input.keywordMode,
-      input.locationCode,
-      input.resultLimit,
-    ],
-  );
+  const searchTabs = useSearchTabNavigation({
+    storageKey: `keyword:${projectId}`,
+    urlInput,
+    getLabel: useCallback(
+      (tabInput) => (tabInput.type === "keyword" ? tabInput.keyword : ""),
+      [],
+    ),
+    navigateToInput: useCallback(
+      (tabInput) => {
+        navigateToKeywordInput(tabInput?.type === "keyword" ? tabInput : null);
+      },
+      [navigateToKeywordInput],
+    ),
+  });
 
-  // Effect: URL → activeTab. When the URL params resolve to a tab we already
-  // have, focus it. Otherwise create one matching the URL (handles deep links
-  // and back/forward navigation).
-  useEffect(() => {
-    if (!urlInput) {
-      if (getKeywordTabsSnapshot(projectId).activeTabId !== null) {
-        setActiveTab(null);
-      }
-      return;
-    }
-
-    const existing = findMatchingTab(urlInput);
-    if (existing) {
-      if (getKeywordTabsSnapshot(projectId).activeTabId !== existing.id) {
-        setActiveTab(existing.id);
-      }
-      return;
-    }
-
-    openTabs([urlInput]);
-  }, [urlInput, projectId, openTabs, setActiveTab, findMatchingTab]);
-
-  // Effect: activeTab → URL. After user actions (click tab, close tab, open
-  // tabs from a multi-keyword submit) the active tab can diverge from the URL.
-  // Re-align the URL so the controller below keeps reading the right query.
-  const activeTab = tabs.activeTab;
-  const activeTabUrlKey = useMemo(
-    () =>
-      activeTab
-        ? buildKeywordSearchKey({
-            keyword: activeTab.keyword,
-            locationCode: activeTab.locationCode,
-            resultLimit: activeTab.resultLimit,
-            mode: activeTab.mode,
-          })
-        : null,
-    [activeTab],
-  );
-  useEffect(() => {
-    if (!activeTab) return;
-
-    if (currentUrlKey === activeTabUrlKey) return;
-
-    setSearchParamsForTab(activeTab);
-  }, [
-    activeTab,
-    activeTab?.id,
-    activeTab?.keyword,
-    activeTab?.locationCode,
-    activeTab?.resultLimit,
-    activeTab?.mode,
-    activeTabUrlKey,
-    currentUrlKey,
-    setSearchParamsForTab,
-  ]);
+  const activeTab = useMemo<KeywordSearchTab | null>(() => {
+    if (!urlInput) return null;
+    const tab = searchTabs.tabs.find(
+      (candidate) => candidate.id === searchTabs.activeTabId,
+    );
+    return tab && isKeywordSearchTab(tab) ? tab : null;
+  }, [searchTabs.activeTabId, searchTabs.tabs, urlInput]);
 
   const onFormSubmit = useCallback(
     (value: KeywordControlsValues) => {
       const keywords = parseKeywordInput(value.keyword);
       if (keywords.length === 0) return;
 
-      const inputs: OpenTabInput[] = keywords.map((keyword) => ({
+      const inputs: KeywordSearchTabInput[] = keywords.map((keyword) => ({
+        type: "keyword",
         keyword,
         locationCode: value.locationCode,
         resultLimit: value.resultLimit,
         mode: value.mode,
       }));
 
-      const result = openTabs(inputs);
-      if (result.activeTab) setSearchParamsForTab(result.activeTab);
-    },
-    [openTabs, setSearchParamsForTab],
-  );
-  const closeTab = useCallback(
-    (tabId: string) => {
-      const result = tabs.closeTab(tabId);
-      if (result.closedActive) {
-        setSearchParamsForTab(result.nextActiveTab);
+      let activeInput: KeywordSearchTabInput | null = null;
+      for (const tabInput of inputs) {
+        const result = searchTabs.openTab(tabInput);
+        if (result.tab?.input.type === "keyword") {
+          activeInput = result.tab.input;
+        }
       }
+      if (activeInput) navigateToKeywordInput(activeInput);
     },
-    [setSearchParamsForTab, tabs],
+    [navigateToKeywordInput, searchTabs],
   );
+  const showRecentSearches = useCallback(() => {
+    searchTabs.setActiveTab(null);
+    navigateToKeywordInput(null);
+  }, [navigateToKeywordInput, searchTabs]);
   const getOpenKeywordTabs = useCallback(
-    () => getKeywordTabsSnapshot(projectId).tabs,
-    [projectId],
+    () =>
+      searchTabs.tabs.flatMap((tab) =>
+        tab.input.type === "keyword"
+          ? [
+              {
+                keyword: tab.input.keyword,
+                locationCode: tab.input.locationCode,
+                resultLimit: tab.input.resultLimit,
+                mode: tab.input.mode,
+              },
+            ]
+          : [],
+      ),
+    [searchTabs.tabs],
   );
 
   const controllerInput = useMemo<Props>(
@@ -188,20 +154,20 @@ export function KeywordResearchPage(input: Props) {
       activeTab
         ? {
             ...input,
-            keywordInput: activeTab.keyword,
-            locationCode: activeTab.locationCode,
+            keywordInput: activeTab.input.keyword,
+            locationCode: activeTab.input.locationCode,
             hasExplicitLocationCode: true,
-            resultLimit: activeTab.resultLimit,
-            keywordMode: activeTab.mode,
+            resultLimit: activeTab.input.resultLimit,
+            keywordMode: activeTab.input.mode,
             getOpenKeywordTabs,
-            keywordTabsLimit: tabs.limit,
+            keywordTabsLimit: searchTabs.limit,
           }
         : {
             ...input,
             getOpenKeywordTabs,
-            keywordTabsLimit: tabs.limit,
+            keywordTabsLimit: searchTabs.limit,
           },
-    [activeTab, getOpenKeywordTabs, input, tabs.limit],
+    [activeTab, getOpenKeywordTabs, input, searchTabs.limit],
   );
   const controller = useKeywordResearchController({
     ...controllerInput,
@@ -220,7 +186,7 @@ export function KeywordResearchPage(input: Props) {
         onSubmit: undefined,
       },
     }));
-  }, [controller.controlsForm, tabs.tabs]);
+  }, [controller.controlsForm, searchTabs.tabs]);
 
   // Mark the active tab as viewed once its data lands. Reads cache state via
   // the same query key the controller uses, so this catches both fresh fetches
@@ -230,10 +196,10 @@ export function KeywordResearchPage(input: Props) {
       activeTab
         ? buildKeywordResearchRequest({
             projectId,
-            keywordInput: activeTab.keyword,
-            locationCode: activeTab.locationCode,
-            resultLimit: activeTab.resultLimit,
-            mode: activeTab.mode,
+            keywordInput: activeTab.input.keyword,
+            locationCode: activeTab.input.locationCode,
+            resultLimit: activeTab.input.resultLimit,
+            mode: activeTab.input.mode,
           })
         : null,
     [activeTab, projectId],
@@ -249,7 +215,7 @@ export function KeywordResearchPage(input: Props) {
     gcTime: KEYWORD_RESEARCH_STALE_TIME_MS,
   });
 
-  const markTabViewed = tabs.markTabViewed;
+  const markTabViewed = searchTabs.markTabViewed;
   useEffect(() => {
     if (!activeTab) return;
     if (!activeTabQuery.isSuccess) return;
@@ -279,25 +245,21 @@ export function KeywordResearchPage(input: Props) {
         <KeywordResearchSearchBar controller={controller} />
         {controller.hasSearched ? (
           <div className="flex flex-col gap-2">
-            <Link
-              from="/p/$projectId/keywords"
-              to="/p/$projectId/keywords"
-              params={{ projectId }}
-              search={{}}
-              replace
+            <button
+              type="button"
+              data-testid="keyword-research-recent-searches"
               className="btn btn-ghost btn-sm w-fit gap-2 px-0 text-base-content/70 hover:bg-transparent"
-              onClick={() => {
-                setActiveTab(null);
-                setSearchParamsForTab(null);
-              }}
+              onClick={showRecentSearches}
             >
               <ArrowLeft className="size-4" />
               Recent searches
-            </Link>
+            </button>
             <KeywordResearchTabStrip
               projectId={projectId}
-              tabs={tabs}
-              closeTab={closeTab}
+              tabs={searchTabs.tabs}
+              activeTabId={searchTabs.activeTabId}
+              onSelect={searchTabs.selectTab}
+              onClose={searchTabs.closeTab}
             />
           </div>
         ) : null}

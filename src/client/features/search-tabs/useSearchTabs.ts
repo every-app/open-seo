@@ -44,23 +44,11 @@ function parseTabInput(value: unknown): SearchTabInput | null {
   if (value.type === "domain") {
     if (typeof value.domain !== "string" || value.domain === "") return null;
     if (typeof value.subdomains !== "boolean") return null;
-    if (
-      value.sort !== "rank" &&
-      value.sort !== "traffic" &&
-      value.sort !== "volume" &&
-      value.sort !== "score" &&
-      value.sort !== "cpc"
-    ) {
-      return null;
-    }
-    if (value.order !== "asc" && value.order !== "desc") return null;
     if (typeof value.locationCode !== "number") return null;
     return {
       type: "domain",
       domain: value.domain,
       subdomains: value.subdomains,
-      sort: value.sort,
-      order: value.order,
       locationCode: value.locationCode,
     };
   }
@@ -149,7 +137,7 @@ function loadState(key: string): TabsState {
   }
 }
 
-export function getSearchTabsSnapshot(key: string): TabsState {
+function getSearchTabsSnapshot(key: string): TabsState {
   let state = stateCache.get(key);
   if (!state) {
     state = loadState(key);
@@ -265,7 +253,7 @@ export function useSearchTabs(key: string) {
         let activeTabId = current.activeTabId;
         if (current.activeTabId === tabId) {
           closedActive = true;
-          const neighbor = tabs[index] ?? tabs[index - 1] ?? null;
+          const neighbor = tabs[index - 1] ?? tabs[index] ?? null;
           activeTabId = neighbor?.id ?? null;
           nextActiveTab = neighbor;
         }

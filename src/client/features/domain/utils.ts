@@ -80,10 +80,9 @@ export function formatNumber(value: number | null | undefined) {
   return new Intl.NumberFormat().format(value);
 }
 
-export function formatFloat(value: number | null | undefined) {
+export function formatRounded(value: number | null | undefined) {
   if (value == null) return "-";
-  if (value > 100) return new Intl.NumberFormat().format(Math.round(value));
-  return value.toFixed(2);
+  return new Intl.NumberFormat().format(Math.round(value));
 }
 
 export function formatMetric(
@@ -91,7 +90,7 @@ export function formatMetric(
   hasData: boolean | undefined,
 ) {
   if (!hasData) return "Not enough data";
-  return formatNumber(value);
+  return formatRounded(value);
 }
 
 type ExportTable = { headers: string[]; rows: (string | number | null)[][] };

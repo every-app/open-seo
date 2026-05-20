@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   createColumnHelper,
   type ColumnDef,
@@ -13,7 +13,8 @@ import {
 import { ExternalUrlCell } from "@/client/components/table/url";
 import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
 import { SortableHeader } from "@/client/features/domain/components/SortableHeader";
-import { formatFloat, formatNumber } from "@/client/features/domain/utils";
+import { useDomainRenderDebug } from "@/client/features/domain/domainDebug";
+import { formatNumber, formatRounded } from "@/client/features/domain/utils";
 import type {
   DomainSortMode,
   KeywordRow,
@@ -33,7 +34,7 @@ type Props = {
 
 const keywordColumnHelper = createColumnHelper<KeywordRow>();
 
-export function DomainKeywordsTable({
+function DomainKeywordsTableComponent({
   domain,
   rows,
   selectedKeywords,
@@ -43,6 +44,7 @@ export function DomainKeywordsTable({
   onSortClick,
   onToggleKeyword,
 }: Props) {
+  const renderStarted = performance.now();
   const selectAnchorRef = useSelectionAnchor();
   const rowSelection = useMemo<RowSelectionState>(
     () =>
@@ -91,7 +93,7 @@ export function DomainKeywordsTable({
             onClick={() => onSortClick("traffic")}
           />
         ),
-        cell: ({ getValue }) => formatFloat(getValue()),
+        cell: ({ getValue }) => formatRounded(getValue()),
       }),
       keywordColumnHelper.accessor("cpc", {
         header: () => (
@@ -157,6 +159,13 @@ export function DomainKeywordsTable({
     getRowId: (row) => row.keyword,
     enableRowSelection: true,
   });
+  useDomainRenderDebug("DomainKeywordsTable", {
+    rows: rows.length,
+    selectedCount: selectedKeywords.size,
+    durationMs: Math.round(performance.now() - renderStarted),
+    sortMode,
+    currentSortOrder,
+  });
 
   return (
     <div className="overflow-x-auto">
@@ -178,3 +187,5 @@ export function DomainKeywordsTable({
     </div>
   );
 }
+
+export const DomainKeywordsTable = memo(DomainKeywordsTableComponent);

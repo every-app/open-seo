@@ -8,23 +8,30 @@ import {
   buildKeywordResearchRequest,
   keywordResearchQueryFn,
 } from "@/client/features/keywords/hooks/useKeywordResearchData";
-import type { UseKeywordTabsReturn } from "@/client/features/keywords/state/useKeywordTabs";
 
 type Props = {
   projectId: string;
-  tabs: UseKeywordTabsReturn;
-  closeTab: (tabId: string) => void;
+  tabs: SearchTab[];
+  activeTabId: string | null;
+  onSelect: (tab: SearchTab) => void;
+  onClose: (tabId: string) => void;
 };
 
-export function KeywordResearchTabStrip({ projectId, tabs, closeTab }: Props) {
-  if (tabs.tabs.length === 0) return null;
+export function KeywordResearchTabStrip({
+  projectId,
+  tabs,
+  activeTabId,
+  onSelect,
+  onClose,
+}: Props) {
+  if (tabs.length === 0) return null;
 
   return (
     <SearchTabStrip
-      activeTabId={tabs.activeTabId}
-      tabs={tabs.tabs}
-      onSelect={(tab) => tabs.setActiveTab(tab.id)}
-      onClose={closeTab}
+      activeTabId={activeTabId}
+      tabs={tabs}
+      onSelect={onSelect}
+      onClose={onClose}
       renderLeading={(tab, active) => (
         <KeywordTabStatus tab={tab} projectId={projectId} active={active} />
       )}

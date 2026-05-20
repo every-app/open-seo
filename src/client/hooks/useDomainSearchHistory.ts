@@ -10,7 +10,6 @@ export interface DomainSearchHistoryItem {
   subdomains: boolean;
   sort: DomainSortMode;
   tab: DomainTab;
-  search?: string;
   locationCode?: number;
   timestamp: number;
 }
@@ -24,17 +23,12 @@ const domainSearchHistoryItemSchema = z.object({
   subdomains: z.boolean(),
   sort: z.enum(["rank", "traffic", "volume", "score", "cpc"]),
   tab: z.enum(["keywords", "pages"]),
-  search: z.string().optional(),
   locationCode: z.number().int().positive().optional(),
   timestamp: z.number(),
 });
 
 const domainSearchHistorySchema = z.array(domainSearchHistoryItemSchema);
 const domainSearchHistoryCodec = jsonCodec(domainSearchHistorySchema);
-
-function normalizeSearchText(value: string | undefined): string {
-  return value?.trim() ?? "";
-}
 
 function isSameSearch(
   a: DomainSearchHistoryItem,
@@ -45,8 +39,7 @@ function isSameSearch(
     a.subdomains === b.subdomains &&
     a.sort === b.sort &&
     a.tab === b.tab &&
-    a.locationCode === b.locationCode &&
-    normalizeSearchText(a.search) === normalizeSearchText(b.search)
+    a.locationCode === b.locationCode
   );
 }
 
@@ -62,7 +55,6 @@ export function useDomainSearchHistory(projectId: string) {
       isSameItem: isSameSearch,
       createItem: (item) => ({
         ...item,
-        search: normalizeSearchText(item.search) || undefined,
         timestamp: Date.now(),
       }),
       getItemKey: (item) => item.timestamp,

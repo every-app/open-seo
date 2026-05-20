@@ -28,6 +28,8 @@ interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
+  readonly VITE_E2E_DOMAIN_FIXTURES?: string;
+  readonly VITE_E2E_KEYWORD_FIXTURES?: string;
 }
 
 interface ImportMeta {

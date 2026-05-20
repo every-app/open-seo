@@ -4,6 +4,7 @@ import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput, toRelativePath } from "@/server/lib/domainUtils";
 import type { RelevantPagesItem } from "@/server/lib/dataforseo";
+import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
 const DOMAIN_PAGES_PAGE_TTL_SECONDS = 12 * 60 * 60;
 
@@ -38,10 +39,68 @@ function escapeLikeTerm(term: string): string {
   return term.replace(/[\\%_]/g, (match) => `\\${match}`);
 }
 
-function buildPageFilters(searchTerm?: string): unknown[] {
+function pushAnd(filters: unknown[], expression: unknown[]) {
+  if (filters.length > 0) filters.push("and");
+  filters.push(expression);
+}
+
+function collectNumericRange(
+  out: unknown[][],
+  field: string,
+  min: number | undefined,
+  max: number | undefined,
+) {
+  if (typeof min === "number" && Number.isFinite(min)) {
+    out.push([field, ">=", min]);
+  }
+  if (typeof max === "number" && Number.isFinite(max)) {
+    out.push([field, "<=", max]);
+  }
+}
+
+function parseTerms(value: string | undefined): string[] {
+  if (!value) return [];
+  return value
+    .toLowerCase()
+    .split(/[,+]/)
+    .map((term) => term.trim())
+    .filter(Boolean);
+}
+
+function buildPageFilters(
+  filters: DomainKeywordsFilters,
+  searchTerm?: string,
+): unknown[] {
+  const conditions: unknown[][] = [];
+
+  for (const term of parseTerms(filters.include)) {
+    conditions.push(["page_address", "ilike", `%${escapeLikeTerm(term)}%`]);
+  }
+  for (const term of parseTerms(filters.exclude)) {
+    conditions.push(["page_address", "not_ilike", `%${escapeLikeTerm(term)}%`]);
+  }
+
+  collectNumericRange(
+    conditions,
+    "metrics.organic.etv",
+    filters.minTraffic,
+    filters.maxTraffic,
+  );
+  collectNumericRange(
+    conditions,
+    "metrics.organic.count",
+    filters.minVol,
+    filters.maxVol,
+  );
+
   const trimmed = searchTerm?.trim();
-  if (!trimmed) return [];
-  return [["page_address", "ilike", `%${escapeLikeTerm(trimmed)}%`]];
+  if (trimmed) {
+    conditions.push(["page_address", "ilike", `%${escapeLikeTerm(trimmed)}%`]);
+  }
+
+  const expressions: unknown[] = [];
+  for (const condition of conditions) pushAnd(expressions, condition);
+  return expressions;
 }
 
 function mapPageItem(item: RelevantPagesItem) {
@@ -69,6 +128,7 @@ export async function getPagesPage(
     pageSize: number;
     sortMode: DomainPagesSortMode;
     sortOrder: DomainPagesSortOrder;
+    filters: DomainKeywordsFilters;
     search?: string;
   },
   billingCustomer: BillingCustomerContext,
@@ -76,7 +136,7 @@ export async function getPagesPage(
   const domain = normalizeDomainInput(input.domain, input.includeSubdomains);
   const offset = (input.page - 1) * input.pageSize;
   const orderBy = [`${SORT_FIELD_BY_MODE[input.sortMode]},${input.sortOrder}`];
-  const filters = buildPageFilters(input.search);
+  const filters = buildPageFilters(input.filters, input.search);
 
   const cacheKey = await buildCacheKey("domain:pages-page", {
     organizationId: billingCustomer.organizationId,
@@ -89,6 +149,7 @@ export async function getPagesPage(
     pageSize: input.pageSize,
     sortMode: input.sortMode,
     sortOrder: input.sortOrder,
+    filters: input.filters,
     search: input.search,
   });
 

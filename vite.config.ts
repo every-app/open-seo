@@ -8,7 +8,11 @@ import { devtools } from "@tanstack/devtools-vite";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
-  const port = env.PORT ? Number(env.PORT) : 3001;
+  const port = process.env.PORT
+    ? Number(process.env.PORT)
+    : env.PORT
+      ? Number(env.PORT)
+      : 3001;
   const showDevtools = env.VITE_SHOW_DEVTOOLS !== "false";
   const allowedHosts = [
     env.ALLOWED_HOST,
@@ -39,7 +43,7 @@ export default defineConfig(({ mode }) => {
             },
           })
         : null,
-      cloudflare({ viteEnvironment: { name: "ssr" } }),
+      cloudflare({ inspectorPort: false, viteEnvironment: { name: "ssr" } }),
       tsConfigPaths(),
       tanstackStart(),
       viteReact(),

@@ -46,6 +46,15 @@ export const EMPTY_DOMAIN_FILTERS: DomainFilterValues = {
   maxRank: "",
 };
 
+export type KeywordsFilterValues = DomainFilterValues;
+
+export type PagesFilterValues = Pick<
+  DomainFilterValues,
+  "include" | "exclude" | "minTraffic" | "maxTraffic" | "minVol" | "maxVol"
+>;
+
+export type PageFilterKey = keyof PagesFilterValues;
+
 export type DomainControlsValues = {
   domain: string;
   subdomains: boolean;
@@ -56,15 +65,6 @@ export type DomainControlsValues = {
 export type DomainSortMode = DomainControlsValues["sort"];
 export type SortOrder = "asc" | "desc";
 export type DomainActiveTab = "keywords" | "pages";
-
-export type DomainOverviewData = {
-  domain: string;
-  organicTraffic: number | null;
-  organicKeywords: number | null;
-  backlinks: number | null;
-  referringDomains: number | null;
-  hasData: boolean;
-};
 
 export type DomainHistoryItem = {
   timestamp: number;

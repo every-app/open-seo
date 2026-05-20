@@ -1,44 +1,128 @@
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, RotateCcw } from "lucide-react";
-import type { useDomainFilters } from "@/client/features/domain/hooks/useDomainFilters";
-import type { DomainFilterValues } from "@/client/features/domain/types";
+import {
+  FilterNumberInput,
+  FilterRangeGroup,
+  FilterTextInput,
+} from "@/client/features/domain/components/DomainFilterFields";
+import {
+  debugDomain,
+  useDomainRenderDebug,
+} from "@/client/features/domain/domainDebug";
 import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
 
-type FilterForm = ReturnType<typeof useDomainFilters>["filtersForm"];
+type FilterValues = Record<string, string>;
 
-type Props = {
-  filtersForm: FilterForm;
-  activeFilterCount: number;
-  dirtyFilterCount: number;
-  conditionCount: number;
-  overLimit: boolean;
-  resetFilters: () => void;
-  applyFilters: () => void;
-  cancelFilterEdits: () => void;
+type FilterTextField<TValues extends FilterValues> = {
+  key: keyof TValues;
+  label: string;
+  placeholder: string;
 };
 
-export function DomainFilterPanel({
-  filtersForm,
+type FilterRangeField<TValues extends FilterValues> = {
+  title: string;
+  minKey: keyof TValues;
+  maxKey: keyof TValues;
+  step?: string;
+};
+
+type Props<TValues extends FilterValues> = {
+  debugName: string;
+  activeFilterCount: number;
+  appliedFilters: TValues;
+  fields: ReadonlyArray<keyof TValues>;
+  textFields: ReadonlyArray<FilterTextField<TValues>>;
+  rangeFields: ReadonlyArray<FilterRangeField<TValues>>;
+  countConditions: (values: TValues) => number;
+  onApply: (values: TValues) => void;
+  onClear: () => void;
+};
+
+export function DomainFilterPanel<TValues extends FilterValues>({
+  debugName,
   activeFilterCount,
-  dirtyFilterCount,
-  conditionCount,
-  overLimit,
-  resetFilters,
-  applyFilters,
-  cancelFilterEdits,
-}: Props) {
-  const isDirty = dirtyFilterCount > 0;
-  const canApply = isDirty && !overLimit;
-  const handleApplyKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "Enter" && canApply) {
-      event.preventDefault();
-      applyFilters();
-    }
+  appliedFilters,
+  fields,
+  textFields,
+  rangeFields,
+  countConditions,
+  onApply,
+  onClear,
+}: Props<TValues>) {
+  const appliedKey = useMemo(
+    () => fields.map((key) => appliedFilters[key]).join("|"),
+    [appliedFilters, fields],
+  );
+  const [draftFilters, setDraftFilters] = useState(appliedFilters);
+  useEffect(() => {
+    setDraftFilters(appliedFilters);
+    // appliedKey covers content changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedKey]);
+
+  const onValueChange = useCallback((key: keyof TValues, value: string) => {
+    setDraftFilters((current) => ({ ...current, [key]: value }));
+  }, []);
+  const meta = useMemo(
+    () =>
+      getFilterMeta({
+        values: draftFilters,
+        appliedFilters,
+        fields,
+        countConditions,
+      }),
+    [appliedFilters, countConditions, draftFilters, fields],
+  );
+  useDomainRenderDebug(debugName, {
+    activeFilterCount,
+    conditionCount: meta.conditionCount,
+    dirtyCount: meta.dirtyCount,
+  });
+  const applyFilters = useCallback(() => {
+    if (meta.overLimit) return;
+    debugDomain(`${debugName}:apply`, {
+      conditionCount: meta.conditionCount,
+      dirtyCount: meta.dirtyCount,
+      draftFilters,
+    });
+    onApply(draftFilters);
+  }, [
+    debugName,
+    draftFilters,
+    meta.conditionCount,
+    meta.dirtyCount,
+    meta.overLimit,
+    onApply,
+  ]);
+  const cancelFilterEdits = useCallback(() => {
+    debugDomain(`${debugName}:cancel`);
+    setDraftFilters(appliedFilters);
+  }, [appliedFilters, debugName]);
+  const resetFilters = useCallback(() => {
+    debugDomain(`${debugName}:clear`);
+    onClear();
+  }, [debugName, onClear]);
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (event.key !== "Enter") return;
+    if (meta.overLimit) return;
+    event.preventDefault();
+    applyFilters();
   };
+  const handleValueChange = useCallback(
+    (key: keyof TValues, value: string) => {
+      debugDomain(`${debugName}:draft-change`, {
+        field: String(key),
+        valueLength: value.length,
+      });
+      onValueChange(key, value);
+    },
+    [debugName, onValueChange],
+  );
 
   return (
     <div
       className="border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3"
-      onKeyDown={handleApplyKeyDown}
+      onKeyDown={handleKeyDown}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
@@ -48,16 +132,17 @@ export function DomainFilterPanel({
               {activeFilterCount} active
             </span>
           ) : null}
-          {isDirty ? (
+          {meta.dirtyCount > 0 ? (
             <span className="badge badge-xs badge-warning border-0">
-              {dirtyFilterCount} unapplied
+              {meta.dirtyCount} unapplied
             </span>
           ) : null}
         </div>
         <button
+          type="button"
           className="btn btn-xs btn-ghost gap-1"
           onClick={resetFilters}
-          disabled={activeFilterCount === 0 && !isDirty}
+          disabled={activeFilterCount === 0 && !meta.isDirty}
         >
           <RotateCcw className="size-3" />
           Clear all
@@ -65,75 +150,56 @@ export function DomainFilterPanel({
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <FilterTextInput
-          form={filtersForm}
-          name="include"
-          label="Include Terms"
-          placeholder="audit, checker, template"
-        />
-        <FilterTextInput
-          form={filtersForm}
-          name="exclude"
-          label="Exclude Terms"
-          placeholder="jobs, salary, course"
-        />
+        {textFields.map((field) => (
+          <FilterTextInput
+            key={String(field.key)}
+            label={field.label}
+            placeholder={field.placeholder}
+            value={draftFilters[field.key]}
+            onChange={(value) => handleValueChange(field.key, value)}
+          />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        <FilterRangeInputs
-          form={filtersForm}
-          title="Traffic"
-          minName="minTraffic"
-          maxName="maxTraffic"
-        />
-        <FilterRangeInputs
-          form={filtersForm}
-          title="Volume"
-          minName="minVol"
-          maxName="maxVol"
-        />
-        <FilterRangeInputs
-          form={filtersForm}
-          title="CPC (USD)"
-          minName="minCpc"
-          maxName="maxCpc"
-          step="0.01"
-        />
-        <FilterRangeInputs
-          form={filtersForm}
-          title="Score (KD)"
-          minName="minKd"
-          maxName="maxKd"
-        />
-        <FilterRangeInputs
-          form={filtersForm}
-          title="Rank"
-          minName="minRank"
-          maxName="maxRank"
-        />
+        {rangeFields.map((field) => (
+          <FilterRangeGroup key={String(field.minKey)} title={field.title}>
+            <FilterNumberInput
+              value={draftFilters[field.minKey]}
+              onChange={(value) => handleValueChange(field.minKey, value)}
+              placeholder="Min"
+              step={field.step}
+            />
+            <FilterNumberInput
+              value={draftFilters[field.maxKey]}
+              onChange={(value) => handleValueChange(field.maxKey, value)}
+              placeholder="Max"
+              step={field.step}
+            />
+          </FilterRangeGroup>
+        ))}
       </div>
 
-      {overLimit ? (
+      {meta.overLimit ? (
         <div className="alert alert-warning py-2 text-xs">
           <AlertTriangle className="size-4 shrink-0" />
           <span>
-            Too many filter conditions ({conditionCount} of{" "}
+            Too many filter conditions ({meta.conditionCount} of{" "}
             {MAX_DATAFORSEO_FILTER_CONDITIONS} max). Remove some terms or ranges
             before applying.
           </span>
         </div>
       ) : null}
-
       <div className="flex items-center justify-between gap-2 pt-1">
         <span className="text-xs text-base-content/50 tabular-nums">
-          {conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} conditions
+          {meta.conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} conditions
         </span>
         <div className="flex items-center gap-2">
           <button
             type="button"
             className="btn btn-sm btn-ghost"
             onClick={cancelFilterEdits}
-            disabled={!isDirty}
+            disabled={!meta.isDirty}
           >
             Cancel
           </button>
@@ -141,17 +207,17 @@ export function DomainFilterPanel({
             type="button"
             className="btn btn-sm btn-primary"
             onClick={applyFilters}
-            disabled={!canApply}
+            disabled={!meta.isDirty || meta.overLimit}
             title={
-              overLimit
+              meta.overLimit
                 ? `DataForSEO accepts at most ${MAX_DATAFORSEO_FILTER_CONDITIONS} filter conditions per request`
                 : undefined
             }
           >
             Apply filters
-            {isDirty ? (
+            {meta.isDirty ? (
               <span className="badge badge-xs ml-1 border-0 bg-primary-content/20">
-                {dirtyFilterCount}
+                {meta.dirtyCount}
               </span>
             ) : null}
           </button>
@@ -161,80 +227,27 @@ export function DomainFilterPanel({
   );
 }
 
-function FilterTextInput({
-  form,
-  name,
-  label,
-  placeholder,
+function getFilterMeta<TValues extends FilterValues>({
+  values,
+  appliedFilters,
+  fields,
+  countConditions,
 }: {
-  form: FilterForm;
-  name: "include" | "exclude";
-  label: string;
-  placeholder: string;
+  values: TValues;
+  appliedFilters: TValues;
+  fields: ReadonlyArray<keyof TValues>;
+  countConditions: (values: TValues) => number;
 }) {
-  return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </span>
-      <form.Field name={name}>
-        {(field) => (
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
-            placeholder={placeholder}
-            value={field.state.value}
-            onChange={(event) => field.handleChange(event.target.value)}
-          />
-        )}
-      </form.Field>
-    </label>
+  const conditionCount = countConditions(values);
+  const dirtyCount = fields.reduce(
+    (acc, key) =>
+      acc + (values[key].trim() !== appliedFilters[key].trim() ? 1 : 0),
+    0,
   );
-}
-
-function FilterRangeInputs({
-  form,
-  title,
-  minName,
-  maxName,
-  step,
-}: {
-  form: FilterForm;
-  title: string;
-  minName: keyof DomainFilterValues;
-  maxName: keyof DomainFilterValues;
-  step?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {title}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <form.Field name={minName}>
-          {(field) => (
-            <input
-              className="input input-bordered input-xs bg-base-100"
-              placeholder="Min"
-              type="number"
-              step={step}
-              value={field.state.value}
-              onChange={(event) => field.handleChange(event.target.value)}
-            />
-          )}
-        </form.Field>
-        <form.Field name={maxName}>
-          {(field) => (
-            <input
-              className="input input-bordered input-xs bg-base-100"
-              placeholder="Max"
-              type="number"
-              step={step}
-              value={field.state.value}
-              onChange={(event) => field.handleChange(event.target.value)}
-            />
-          )}
-        </form.Field>
-      </div>
-    </div>
-  );
+  return {
+    conditionCount,
+    dirtyCount,
+    isDirty: dirtyCount > 0,
+    overLimit: conditionCount > MAX_DATAFORSEO_FILTER_CONDITIONS,
+  };
 }

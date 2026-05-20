@@ -1,13 +1,13 @@
 import type { FormEvent } from "react";
 import { AlertCircle, Search } from "lucide-react";
 import { getFieldError, getFormError } from "@/client/lib/forms";
-import type { useDomainOverviewController } from "@/client/features/domain/useDomainOverviewController";
+import type { DomainOverviewControlsForm } from "@/client/features/domain/DomainOverviewPage";
 import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
 import { LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 
 type Props = {
-  controlsForm: ReturnType<typeof useDomainOverviewController>["controlsForm"];
+  controlsForm: DomainOverviewControlsForm;
   isLoading: boolean;
   onSubmit: (event: FormEvent) => void;
   onSortChange: (sort: DomainSortMode) => void;

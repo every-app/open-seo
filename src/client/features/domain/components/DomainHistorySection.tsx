@@ -59,7 +59,6 @@ export function DomainHistorySection({
                 </p>
                 <p className="text-sm text-base-content/60 truncate">
                   {item.subdomains ? "Include subdomains" : "Root domain only"}
-                  {item.search?.trim() ? ` - ${item.search}` : ""}
                 </p>
               </div>
             </button>

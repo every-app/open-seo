@@ -1,4 +1,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
 import { DOMAIN_KEYWORDS_PAGE_SIZES } from "@/types/schemas/domain";
 
 type Props = {
@@ -70,27 +72,72 @@ export function DomainKeywordsPagination({
             {totalPages != null ? ` of ${totalPages.toLocaleString()}` : ""}
           </span>
           <div className="flex items-center gap-1">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-square"
+            <PageLink
+              page={page - 1}
               disabled={!canGoPrev || isLoading}
-              onClick={() => onPageChange(page - 1)}
-              aria-label="Previous page"
+              onPageChange={onPageChange}
+              label="Previous page"
             >
               <ChevronLeft className="size-4" />
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm btn-square"
+            </PageLink>
+            <PageLink
+              page={page + 1}
               disabled={!canGoNext || isLoading}
-              onClick={() => onPageChange(page + 1)}
-              aria-label="Next page"
+              onPageChange={onPageChange}
+              label="Next page"
             >
               <ChevronRight className="size-4" />
-            </button>
+            </PageLink>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function PageLink({
+  page,
+  disabled,
+  label,
+  children,
+  onPageChange,
+}: {
+  page: number;
+  disabled: boolean;
+  label: string;
+  children: ReactNode;
+  onPageChange: (nextPage: number) => void;
+}) {
+  return (
+    <Link
+      from="/p/$projectId/domain"
+      to="/p/$projectId/domain"
+      search={(prev) => ({
+        ...prev,
+        page: page === 1 ? undefined : page,
+      })}
+      aria-label={label}
+      aria-disabled={disabled}
+      className={`btn btn-ghost btn-sm btn-square ${disabled ? "btn-disabled" : ""}`}
+      onClick={(event) => {
+        if (disabled) {
+          event.preventDefault();
+          return;
+        }
+        if (
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey ||
+          event.button !== 0
+        ) {
+          return;
+        }
+        event.preventDefault();
+        onPageChange(page);
+      }}
+    >
+      {children}
+    </Link>
   );
 }
