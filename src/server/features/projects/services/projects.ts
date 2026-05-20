@@ -51,41 +51,23 @@ export async function getOrCreateDefaultProject(organizationId: string) {
     return mapProject(existing);
   }
 
-  try {
-    const id = await ProjectRepository.createProject(
-      organizationId,
-      "Default",
-      undefined,
-    );
-
+  const id = await ProjectRepository.tryCreateDefaultProject(organizationId);
+  if (id) {
     return {
       id,
       name: "Default",
       domain: null,
       createdAt: new Date().toISOString(),
     };
-  } catch (error) {
-    if (!isDefaultProjectUniqueConstraintError(error)) {
-      throw error;
-    }
-
-    const createdProject =
-      await ProjectRepository.getDefaultProjectForOrganization(organizationId);
-    if (createdProject) {
-      return mapProject(createdProject);
-    }
-
-    throw error;
   }
-}
 
-function isDefaultProjectUniqueConstraintError(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  const message = error.message.toLowerCase();
-  return (
-    message.includes("unique constraint failed") &&
-    message.includes("projects.organization_id")
-  );
+  const createdProject =
+    await ProjectRepository.getDefaultProjectForOrganization(organizationId);
+  if (createdProject) {
+    return mapProject(createdProject);
+  }
+
+  throw new AppError("INTERNAL_ERROR");
 }
 
 export async function getProject(projectId: string) {

@@ -54,6 +54,21 @@ async function createProject(
   return id;
 }
 
+async function tryCreateDefaultProject(organizationId: string) {
+  const id = crypto.randomUUID();
+  const inserted = await db
+    .insert(projects)
+    .values({
+      id,
+      organizationId,
+      name: "Default",
+      domain: null,
+    })
+    .onConflictDoNothing()
+    .returning({ id: projects.id });
+  return inserted.length > 0 ? id : null;
+}
+
 async function deleteProject(projectId: string, organizationId: string) {
   const project = await getProjectForOrganization(projectId, organizationId);
   if (!project) {
@@ -76,5 +91,6 @@ export const ProjectRepository = {
   getProjectForOrganization,
   getProjectById,
   createProject,
+  tryCreateDefaultProject,
   deleteProject,
 } as const;

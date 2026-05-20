@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getProjectById: vi.fn(),
   getProjectForOrganization: vi.fn(),
   listProjects: vi.fn(),
+  tryCreateDefaultProject: vi.fn(),
 }));
 
 vi.mock("@/server/features/projects/repositories/ProjectRepository", () => ({
@@ -26,30 +27,24 @@ describe("project service", () => {
     for (const mock of Object.values(mocks)) mock.mockReset();
   });
 
-  it("recovers from the default project unique constraint race", async () => {
+  it("recovers from the default project creation race", async () => {
     mocks.getDefaultProjectForOrganization
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce(defaultProject);
-    mocks.createProject.mockRejectedValue(
-      new Error("UNIQUE constraint failed: projects.organization_id"),
-    );
+    mocks.tryCreateDefaultProject.mockResolvedValue(null);
     const { getOrCreateDefaultProject } = await import("./projects");
 
     await expect(getOrCreateDefaultProject("org_1")).resolves.toEqual(
       defaultProject,
     );
-    expect(mocks.createProject).toHaveBeenCalledWith(
-      "org_1",
-      "Default",
-      undefined,
-    );
+    expect(mocks.tryCreateDefaultProject).toHaveBeenCalledWith("org_1");
     expect(mocks.getDefaultProjectForOrganization).toHaveBeenCalledTimes(2);
   });
 
   it("does not swallow unrelated default project create failures", async () => {
     const error = new Error("D1 unavailable");
     mocks.getDefaultProjectForOrganization.mockResolvedValue(null);
-    mocks.createProject.mockRejectedValue(error);
+    mocks.tryCreateDefaultProject.mockRejectedValue(error);
     const { getOrCreateDefaultProject } = await import("./projects");
 
     await expect(getOrCreateDefaultProject("org_1")).rejects.toBe(error);
