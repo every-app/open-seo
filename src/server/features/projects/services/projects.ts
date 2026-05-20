@@ -45,23 +45,47 @@ export async function deleteProject(
 }
 
 export async function getOrCreateDefaultProject(organizationId: string) {
-  const existing = await ProjectRepository.listProjects(organizationId);
-  if (existing.length > 0) {
-    return mapProject(existing[0]);
+  const existing =
+    await ProjectRepository.getDefaultProjectForOrganization(organizationId);
+  if (existing) {
+    return mapProject(existing);
   }
 
-  const id = await ProjectRepository.createProject(
-    organizationId,
-    "Default",
-    undefined,
-  );
+  try {
+    const id = await ProjectRepository.createProject(
+      organizationId,
+      "Default",
+      undefined,
+    );
 
-  return {
-    id,
-    name: "Default",
-    domain: null,
-    createdAt: new Date().toISOString(),
-  };
+    return {
+      id,
+      name: "Default",
+      domain: null,
+      createdAt: new Date().toISOString(),
+    };
+  } catch (error) {
+    if (!isDefaultProjectUniqueConstraintError(error)) {
+      throw error;
+    }
+
+    const createdProject =
+      await ProjectRepository.getDefaultProjectForOrganization(organizationId);
+    if (createdProject) {
+      return mapProject(createdProject);
+    }
+
+    throw error;
+  }
+}
+
+function isDefaultProjectUniqueConstraintError(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes("unique constraint failed") &&
+    message.includes("projects.organization_id")
+  );
 }
 
 export async function getProject(projectId: string) {

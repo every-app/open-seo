@@ -12,6 +12,7 @@
     // Package script entrypoints
     "scripts/backlinks-cost-profile.ts",
     "scripts/brand-lookup-cost-profile.ts",
+    "scripts/d1-default-project-cleanup.ts",
     "scripts/release-notes.mjs",
     "scripts/seed-rank-tracking.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
@@ -21,6 +22,7 @@
     // Package scripts and one-off maintenance utilities
     "scripts/backlinks-cost-profile.ts",
     "scripts/brand-lookup-cost-profile.ts",
+    "scripts/d1-default-project-cleanup.ts",
     "scripts/release-notes.mjs",
     "scripts/seed-rank-tracking.ts",
   ],

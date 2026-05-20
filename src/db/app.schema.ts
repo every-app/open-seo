@@ -20,17 +20,29 @@ export const delegatedUsers = sqliteTable("delegated_users", {
 });
 
 // Projects for keyword research
-export const projects = sqliteTable("projects", {
-  id: text("id").primaryKey(),
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organization.id, { onDelete: "cascade" }),
-  name: text("name").notNull(),
-  domain: text("domain"),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
-});
+export const projects = sqliteTable(
+  "projects",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    domain: text("domain"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    // Only the auto-created Default/null-domain project is a singleton. This
+    // guards the get-or-create race that can happen when several requests enter
+    // a new organization at once, without forbidding users from manually
+    // creating multiple projects with the same name or domain later.
+    uniqueIndex("projects_one_default_per_organization_idx")
+      .on(table.organizationId)
+      .where(sql`${table.name} = 'Default' AND ${table.domain} IS NULL`),
+  ],
+);
 
 // User-saved keywords within a project. This is the canonical saved list.
 export const savedKeywords = sqliteTable(

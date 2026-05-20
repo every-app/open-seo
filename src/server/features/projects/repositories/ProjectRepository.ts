@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
@@ -6,7 +6,18 @@ import { AppError } from "@/server/lib/errors";
 async function listProjects(organizationId: string) {
   return db.query.projects.findMany({
     where: eq(projects.organizationId, organizationId),
-    orderBy: desc(projects.createdAt),
+    orderBy: [desc(projects.createdAt), desc(projects.id)],
+  });
+}
+
+async function getDefaultProjectForOrganization(organizationId: string) {
+  return db.query.projects.findFirst({
+    where: and(
+      eq(projects.organizationId, organizationId),
+      eq(projects.name, "Default"),
+      isNull(projects.domain),
+    ),
+    orderBy: [desc(projects.createdAt), desc(projects.id)],
   });
 }
 
@@ -61,6 +72,7 @@ async function deleteProject(projectId: string, organizationId: string) {
 
 export const ProjectRepository = {
   listProjects,
+  getDefaultProjectForOrganization,
   getProjectForOrganization,
   getProjectById,
   createProject,
