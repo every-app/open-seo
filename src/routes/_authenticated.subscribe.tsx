@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { getStoredRedditAttribution } from "@/client/lib/reddit-attribution";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
+import { captureRedditConversionEvent } from "@/serverFunctions/redditConversions";
 
 export const Route = createFileRoute("/_authenticated/subscribe")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -54,6 +56,15 @@ function SubscribePageContent() {
     if (subscribeRouteState === "redirectToApp") {
       if (checkoutCompleted) {
         captureClientEvent("billing:checkout_success");
+        const attribution = getStoredRedditAttribution();
+        if (attribution) {
+          void captureRedditConversionEvent({
+            data: { attribution, eventType: "Purchase" },
+          }).finally(() => {
+            void navigate({ to: "/", replace: true });
+          });
+          return;
+        }
       }
       void navigate({ to: "/", replace: true });
     }
