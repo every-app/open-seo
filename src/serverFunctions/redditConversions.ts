@@ -6,7 +6,7 @@ import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 
 const conversionInputSchema = z.object({
   attribution: redditAttributionSchema,
-  eventType: z.enum(["SignUp", "Purchase"]),
+  eventType: z.enum(["SIGN_UP", "PURCHASE"]),
 });
 
 export const captureRedditConversionEvent = createServerFn({ method: "POST" })
@@ -15,13 +15,13 @@ export const captureRedditConversionEvent = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const status = await captureRedditConversion({
       attribution: data.attribution,
-      conversionId: `${data.eventType.toLowerCase()}:${context.userId}`,
+      conversionId: `${data.eventType === "SIGN_UP" ? "signup" : "purchase"}:${context.userId}`,
       email: context.userEmail,
       eventType: data.eventType,
       organizationId: context.organizationId,
       userId: context.userId,
-      valueDecimal: data.eventType === "Purchase" ? 10 : undefined,
-      currency: data.eventType === "Purchase" ? "USD" : undefined,
+      valueDecimal: data.eventType === "PURCHASE" ? 10 : undefined,
+      currency: data.eventType === "PURCHASE" ? "USD" : undefined,
     });
 
     return { status };

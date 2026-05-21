@@ -7,7 +7,7 @@ import {
   type RedditAttributionInput,
 } from "@/shared/reddit-attribution";
 
-type RedditConversionType = "SignUp" | "Purchase";
+type RedditConversionType = "SIGN_UP" | "PURCHASE";
 
 type CaptureRedditConversionArgs = {
   attribution: RedditAttributionInput;
@@ -34,12 +34,12 @@ async function sha256(value: string) {
 }
 
 function getRedditConfig() {
-  const accountId = getEnv("REDDIT_AD_ACCOUNT_ID") || getEnv("REDDIT_PIXEL_ID");
+  const pixelId = getEnv("REDDIT_PIXEL_ID");
   const accessToken = getEnv("REDDIT_CONVERSIONS_ACCESS_TOKEN");
 
-  if (!accountId || !accessToken) return null;
+  if (!pixelId || !accessToken) return null;
 
-  return { accountId, accessToken };
+  return { accessToken, pixelId };
 }
 
 async function upsertAttribution(args: CaptureRedditConversionArgs) {
@@ -88,7 +88,7 @@ async function hasSentConversion(args: CaptureRedditConversionArgs) {
   const existing = await db.query.redditAttributions.findFirst({
     where: eq(redditAttributions.userId, args.userId),
   });
-  return args.eventType === "SignUp"
+  return args.eventType === "SIGN_UP"
     ? Boolean(existing?.signupSentAt)
     : Boolean(existing?.purchaseSentAt);
 }
@@ -96,7 +96,7 @@ async function hasSentConversion(args: CaptureRedditConversionArgs) {
 async function markConversionSent(args: CaptureRedditConversionArgs) {
   const now = new Date().toISOString();
   const sentColumn =
-    args.eventType === "SignUp" ? "signupSentAt" : "purchaseSentAt";
+    args.eventType === "SIGN_UP" ? "signupSentAt" : "purchaseSentAt";
 
   await db
     .update(redditAttributions)
@@ -118,36 +118,38 @@ export async function captureRedditConversion(
   const config = getRedditConfig();
   if (!config) return "stored" as const;
 
-  const eventMetadata: Record<string, unknown> = {
+  const metadata: Record<string, unknown> = {
     conversion_id: args.conversionId,
-    transaction_id: args.conversionId,
   };
   if (args.valueDecimal !== undefined) {
-    eventMetadata.value_decimal = args.valueDecimal;
-    eventMetadata.currency = args.currency ?? "USD";
-    eventMetadata.item_count = 1;
+    metadata.currency = args.currency ?? "USD";
+    metadata.item_count = 1;
+    metadata.value = args.valueDecimal;
   }
 
   const payload = {
-    events: [
-      {
-        click_id: args.attribution.clickId,
-        event_at: new Date().toISOString(),
-        event_type: {
-          tracking_type: args.eventType,
+    data: {
+      events: [
+        {
+          action_source: "WEBSITE",
+          click_id: args.attribution.clickId,
+          event_at: Date.now(),
+          metadata,
+          type: {
+            tracking_type: args.eventType,
+          },
+          user: {
+            email: await sha256(args.email),
+            external_id: await sha256(args.userId),
+            uuid: args.attribution.uuid,
+          },
         },
-        event_metadata: eventMetadata,
-        user: {
-          email: await sha256(args.email),
-          external_id: await sha256(args.userId),
-          uuid: args.attribution.uuid,
-        },
-      },
-    ],
+      ],
+    },
   };
 
   const response = await fetch(
-    `https://ads-api.reddit.com/api/v2.0/conversions/events/${config.accountId}`,
+    `https://ads-api.reddit.com/api/v3/pixels/${config.pixelId}/conversion_events`,
     {
       method: "POST",
       headers: {

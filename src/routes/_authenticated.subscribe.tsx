@@ -59,7 +59,7 @@ function SubscribePageContent() {
         const attribution = getStoredRedditAttribution();
         if (attribution) {
           void captureRedditConversionEvent({
-            data: { attribution, eventType: "Purchase" },
+            data: { attribution, eventType: "PURCHASE" },
           }).finally(() => {
             void navigate({ to: "/", replace: true });
           });

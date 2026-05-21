@@ -131,7 +131,7 @@ function PostHogBootstrap() {
 
     redditSignupInFlightRef.current = true;
     void captureRedditConversionEvent({
-      data: { attribution, eventType: "SignUp" },
+      data: { attribution, eventType: "SIGN_UP" },
     })
       .then((result) => {
         if (result.status === "sent" || result.status === "already_sent") {

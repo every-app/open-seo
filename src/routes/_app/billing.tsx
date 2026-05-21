@@ -81,7 +81,7 @@ function BillingPageContent() {
     if (!attribution) return;
 
     void captureRedditConversionEvent({
-      data: { attribution, eventType: "Purchase" },
+      data: { attribution, eventType: "PURCHASE" },
     });
   }, [billingRouteState, checkoutCompleted]);
 
