@@ -14,10 +14,16 @@ import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { registerOpenSeoMcpTools } from "@/server/mcp/server";
 
 function createOpenSeoMcpServer() {
-  const server = new McpServer({
-    name: "OpenSEO MCP",
-    version: "0.0.10",
-  });
+  const server = new McpServer(
+    {
+      name: "OpenSEO MCP",
+      version: "0.0.10",
+    },
+    {
+      instructions:
+        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
+    },
+  );
   registerOpenSeoMcpTools(server);
 
   return server;
