@@ -12,13 +12,15 @@ Easy to self-host and extend, but we have a managed version too:
 
 - [Why Use This](#why-use-this)
 - [Main SEO Workflows](#main-seo-workflows)
+- [OpenSEO MCP](#openseo-mcp)
+- [OpenSEO Skills](#openseo-skills)
 - [Roadmap](#roadmap)
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [DataForSEO API Key Setup](#dataforseo-api-key-setup)
 - [Self-hosting](#self-hosting)
-  - [Cloudflare Self-Hosting](#cloudflare-self-hosting)
   - [Docker Self Hosting](#docker-self-hosting)
+  - [Cloudflare Self-Hosting](#cloudflare-self-hosting)
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
@@ -30,6 +32,7 @@ Easy to self-host and extend, but we have a managed version too:
   - Pay only for what you use.
 - Fork and vibe code your own features.
 - Focused workflows instead of a bloated, complex SEO suite.
+- Best in class MCP and AI Skills.
 
 ## Main SEO Workflows
 
@@ -43,20 +46,122 @@ Easy to self-host and extend, but we have a managed version too:
   - See who links to your site, which pages attract links, and where links are newly won or lost.
 - Site Audits
   - Catch technical issues early so your site is easier for search engines to crawl and rank.
+- AI brand visibility
+  - See how your brand appears in AI answers, including competitor mentions and source coverage.
+- AI search prompt explorer
+  - Track and explore the prompts people might use when they ask AI tools for recommendations in your market.
+
+## OpenSEO MCP
+
+OpenSEO exposes an MCP server so AI agents can use your SEO data directly.
+
+Connect Codex, Claude Code, Claude Desktop, or another MCP client to:
+
+- Run keyword research
+- Inspect SERPs
+- Compare domains
+- Review backlinks
+- Work through SEO decisions from your editor or chat
+
+In the app, open **AI & MCP** and copy your MCP server URL. Point your agent at whichever OpenSEO instance you use.
+
+Hosted app:
+
+```sh
+codex mcp add openseo --url https://app.openseo.so/mcp
+claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
+```
+
+Cloudflare self-hosted:
+
+```sh
+codex mcp add openseo --url https://your-openseo-domain.com/mcp
+claude mcp add --transport http --scope user openseo https://your-openseo-domain.com/mcp
+```
+
+Local Docker:
+
+```sh
+codex mcp add openseo --url http://localhost:3001/mcp
+claude mcp add --transport http --scope user openseo http://localhost:3001/mcp
+```
+
+Approve the OpenSEO login when your agent asks.
+
+## OpenSEO Skills
+
+OpenSEO skills are reusable workflows for Codex and Claude Code. They guide your agent through SEO tasks and can use the OpenSEO MCP for live keyword, SERP, backlink, and domain data.
+
+### Installation Options
+
+Install with `skills add`:
+
+```sh
+npx skills add every-app/open-seo
+```
+
+Auto-accept each OpenSEO skill:
+
+```sh
+npx skills add every-app/open-seo --skill '*'
+```
+
+Install for Claude Code only:
+
+```sh
+npx skills add every-app/open-seo --skill '*' --agent claude-code
+```
+
+Install for OpenAI Codex only:
+
+```sh
+npx skills add every-app/open-seo --skill '*' --agent codex
+```
+
+You can also pick skills directly from the GitHub repo and copy them into your agent's skills folder:
+
+```sh
+git clone https://github.com/every-app/open-seo.git
+
+# Codex
+mkdir -p ~/.codex/skills
+cp -R open-seo/.agents/skills/* ~/.codex/skills/
+
+# Claude Code
+mkdir -p ~/.claude/skills
+cp -R open-seo/.agents/skills/* ~/.claude/skills/
+```
+
+Start with `/onboarding-checklist`. It will ask about your project and help configure your workspace.
+
+### Available Skills
+
+- `onboarding-checklist`
+- `seo-coach`
+- `keyword-research`
+- `keyword-clustering`
+- `competitive-landscape`
+- `competitor-analysis`
+- `link-prospecting`
 
 ## Roadmap
 
 Top priorities:
 
-- AI SEO, GEO, LLM Visibility
-- MCP for Claude
-- Making the best agentic workflows for SEO
+- Google Search Console Integration + MCP
+- Custom Reports for Clients
+- Improved and Scheduled Site Audits
+- In App AI Agent
+- Support Multiple Projects
+
+Our top priority is always refining the current product and making existing features better based on user feedback.
 
 If something important is missing, please join the [Discord](https://discord.gg/c9uGs3cFXr) or email me at ben@openseo.so and request it.
 
 ## Community
 
 Email me: ben@openseo.so
+
 Join Discord to chat: [Discord](https://discord.gg/c9uGs3cFXr)
 
 Follow along for updates:
@@ -99,8 +204,8 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 
 OpenSEO supports two self-hosting paths:
 
-- Docker for your homelab or local use (Recommended).
-- Cloudflare for use across multiple devices or for your team.
+- Docker for personal use and testing (Recommended for local use).
+- Cloudflare for internet-facing self-hosting across multiple devices or for your team.
 
 _Docker_
 
@@ -111,6 +216,9 @@ _Cloudflare_
 If you love OpenSEO and want to use it across multiple devices or with your team, you can host it on Cloudflare which we'll be a SaaS-like experience. Also, this will have automatic database backups and other nice convenience features. It's just a bit more effort to get started if you're unfamiliar with Cloudflare.
 
 ## Docker Self Hosting
+
+> [!WARNING]
+> By default, the Docker version is intended for local use only. It runs in single-user mode with no authentication. For internet-facing self-hosting, use Cloudflare (free plan compatible). Or read [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md) before exposing to the internet.
 
 Prerequisites:
 
@@ -140,12 +248,6 @@ Or use a single command:
 docker compose up -d --pull always
 ```
 
-Use a pinned version tag in `.env` if preferred:
-
-```sh
-OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
-```
-
 For more info, see [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
 
 ## Cloudflare Self-Hosting
@@ -160,71 +262,7 @@ Reference these docs while deploying since the Cloudflare UI doesn't indicate wh
 
 ## Local Development
 
-### Prerequisites
-
-- Node.js 20+
-- [pnpm](https://pnpm.io/)
-- A DataForSEO account/API credentials
-
-### Local Development Workflow
-
-```sh
-pnpm install
-
-# Run once per fresh local DB
-pnpm run db:migrate:local
-```
-
-Configure .env.local:
-
-1. `cp .env.example .env.local`
-2. Add `DATAFORSEO_API_KEY` as a base64-encoded `login:password` value:
-
-   `printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64`
-
-Run Locally:
-
-```sh
-# Option 1
-pnpm run dev
-
-# Option 2 (Recommended)
-# This log file makes it easier for your coding agent to debug.
-mkdir .logs
-touch .logs/dev-server.log
-
-# This command uses portless, which is great for worktrees. It also pipes logs to that fixed file, which is helpful for agent debugging output.
-pnpm dev:agents
-```
-
-`pnpm dev:agents` runs through [portless](https://github.com/vercel-labs/portless) at `http://open-seo.localhost:1355` by default.
-
-When using a git worktree, [portless](https://github.com/vercel-labs/portless) prefixes the branch name, for example `http://feature-name.open-seo.localhost:1355`.
-
-### Database Commands
-
-Generate migration:
-
-```sh
-pnpm run db:generate
-```
-
-Migrate local DB:
-
-```sh
-pnpm run db:migrate:local
-```
-
-### Auth modes
-
-- `AUTH_MODE=cloudflare_access` (default): validates Cloudflare Access JWTs (`cf-access-jwt-assertion`) using `TEAM_DOMAIN` + `POLICY_AUD`.
-- `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects `admin@localhost`.
-- `AUTH_MODE=hosted`: Better Auth-backed email/password mode. Requires Better Auth schema generation plus `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
-
-Local scripts (`pnpm dev` and `pnpm dev:agents`) set `AUTH_MODE=local_noauth` automatically.
-Use `AUTH_MODE=cloudflare_access pnpm dev` when you specifically want to test Access validation locally.
-
-For Cloudflare deployments, ensure Cloudflare Access is enabled on your Worker route/domain and provide `TEAM_DOMAIN` + `POLICY_AUD` in environment variables.
+See [`docs/LOCAL_DEVELOPMENT.md`](./docs/LOCAL_DEVELOPMENT.md).
 
 ## Contributing
 

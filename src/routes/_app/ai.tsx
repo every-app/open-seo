@@ -1,13 +1,38 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight, Check, ChevronDown, Copy } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
+import { ArrowUpRight } from "lucide-react";
 import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
+import {
+  CodeBlock,
+  Collapsible,
+  CopyButton,
+} from "@/client/features/ai-mcp/SetupControls";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 const SUPPORT_EMAIL = "ben@openseo.so";
 const SAM_GITHUB_URL = "https://github.com/every-app/sam";
+const SKILL_NAMES = [
+  "onboarding-checklist",
+  "seo-coach",
+  "keyword-research",
+  "keyword-clustering",
+  "competitive-landscape",
+  "competitor-analysis",
+  "link-prospecting",
+];
+const SKILLS_INSTALL = `npx skills add every-app/open-seo`;
+const ALL_SKILLS_INSTALL = `npx skills add every-app/open-seo --skill '*'`;
+const CLAUDE_CODE_SKILLS_INSTALL = `npx skills add every-app/open-seo --skill '*' --agent claude-code`;
+const CODEX_SKILLS_INSTALL = `npx skills add every-app/open-seo --skill '*' --agent codex`;
+const SKILLS_MANUAL_INSTALL = `git clone https://github.com/every-app/open-seo.git
+
+# Codex
+mkdir -p ~/.codex/skills
+cp -R open-seo/.agents/skills/* ~/.codex/skills/
+
+# Claude Code
+mkdir -p ~/.claude/skills
+cp -R open-seo/.agents/skills/* ~/.claude/skills/`;
 
 export const Route = createFileRoute("/_app/ai")({
   component: AiPage,
@@ -25,7 +50,7 @@ function AiPage() {
         <h1 className="text-2xl font-semibold">AI & MCP</h1>
         <p className="mt-2 text-sm text-base-content/70 leading-relaxed">
           Connect your AI agent to OpenSEO. Run keyword research, SERP analysis,
-          and domain lookups from your editor or chat.
+          domain lookups, and backlink reviews from your editor or chat.
         </p>
 
         <section className="mt-8">
@@ -45,7 +70,9 @@ function AiPage() {
             </code>
           </div>
           <p className="mt-2.5 text-xs text-base-content/55 leading-relaxed">
-            Paste this into any MCP client. Sign in with OpenSEO when prompted.
+            Paste this into any MCP client. This URL points at the OpenSEO
+            instance you are using now, whether hosted, self-hosted, or local.
+            Sign in with OpenSEO when prompted.
           </p>
         </section>
 
@@ -153,6 +180,72 @@ function AiPage() {
         </section>
 
         <section className="mt-12">
+          <h2 className="text-base font-semibold">OpenSEO Skills</h2>
+          <p className="mt-1.5 text-sm text-base-content/70 leading-relaxed">
+            Skills give Codex and Claude Code reusable SEO workflows that can
+            call your OpenSEO MCP tools when live SERP, keyword, backlink, or
+            domain data is needed.
+          </p>
+          <div className="mt-4 divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300 bg-base-200">
+            <Collapsible
+              id="skills-add"
+              title="Install with skills add"
+              subtitle="Recommended cross-agent installer"
+            >
+              <CodeBlock code={SKILLS_INSTALL} />
+              <p className="text-sm text-base-content/70">
+                You can also auto-accept each OpenSEO skill:
+              </p>
+              <CodeBlock code={ALL_SKILLS_INSTALL} />
+            </Collapsible>
+            <Collapsible
+              id="claude-code-skills"
+              title="Install for Claude Code"
+              subtitle="Target Claude Code only"
+              icon={<ClaudeIcon className="size-5" />}
+            >
+              <CodeBlock code={CLAUDE_CODE_SKILLS_INSTALL} />
+            </Collapsible>
+            <Collapsible
+              id="codex-skills"
+              title="Install for Codex"
+              subtitle="Target OpenAI Codex only"
+              icon={<CodexIcon className="size-5" />}
+            >
+              <CodeBlock code={CODEX_SKILLS_INSTALL} />
+            </Collapsible>
+            <Collapsible
+              id="manual-skills"
+              title="Manual GitHub install"
+              subtitle="Clone the repo and copy the skills"
+            >
+              <CodeBlock code={SKILLS_MANUAL_INSTALL} />
+            </Collapsible>
+          </div>
+          <div className="mt-5">
+            <p className="text-sm text-base-content/70 leading-relaxed">
+              Start with{" "}
+              <span className="font-mono text-base-content">
+                /onboarding-checklist
+              </span>
+              . It will ask about your project and help configure your
+              workspace.
+            </p>
+            <p className="mt-4 text-xs font-medium uppercase tracking-wide text-base-content/50">
+              Available skills
+            </p>
+            <ul className="mt-2 grid gap-1.5 text-sm text-base-content/70 sm:grid-cols-2">
+              {SKILL_NAMES.map((skill) => (
+                <li key={skill} className="flex gap-2">
+                  <span className="text-base-content/35">-</span>
+                  <span>{skill}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        <section className="mt-12">
           <h2 className="text-base font-semibold">Available tools</h2>
           <div className="mt-5">
             <AvailableTools />
@@ -226,138 +319,5 @@ function AiPage() {
         </p>
       </div>
     </div>
-  );
-}
-
-function Collapsible({
-  id,
-  title,
-  subtitle,
-  icon,
-  children,
-}: {
-  id: string;
-  title: string;
-  subtitle?: string;
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  const [open, setOpen] = useState(false);
-  const contentId = `collapsible-${id}`;
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-controls={contentId}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition-colors hover:bg-base-300/50"
-      >
-        <div className="flex min-w-0 items-center gap-3">
-          {icon ? (
-            <span className="flex size-5 shrink-0 items-center justify-center text-base-content">
-              {icon}
-            </span>
-          ) : null}
-          <div className="flex min-w-0 flex-col gap-0.5">
-            <span className="text-sm font-medium text-base-content">
-              {title}
-            </span>
-            {subtitle ? (
-              <span className="text-xs text-base-content/55">{subtitle}</span>
-            ) : null}
-          </div>
-        </div>
-        <ChevronDown
-          className={`size-4 shrink-0 text-base-content/50 transition-transform ${
-            open ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-      {open ? (
-        <div id={contentId} className="space-y-3 px-4 pb-4 pt-1">
-          {children}
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function CodeBlock({ code }: { code: string }) {
-  return (
-    <div className="flex items-stretch overflow-hidden rounded-md border border-base-300 bg-base-100">
-      <pre className="min-w-0 flex-1 overflow-x-auto p-3 text-xs leading-relaxed text-base-content">
-        <code className="font-mono">{code}</code>
-      </pre>
-      <div className="flex shrink-0 items-start border-l border-base-300 p-1.5">
-        <CopyButton
-          value={code}
-          successMessage="Copied to clipboard"
-          iconOnly
-        />
-      </div>
-    </div>
-  );
-}
-
-function CopyButton({
-  value,
-  successMessage,
-  label,
-  iconOnly = false,
-}: {
-  value: string;
-  successMessage: string;
-  label?: string;
-  iconOnly?: boolean;
-}) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = async () => {
-    if (typeof navigator === "undefined" || !navigator.clipboard?.writeText) {
-      toast.error("Clipboard not available");
-      return;
-    }
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(successMessage);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Could not copy to clipboard");
-    }
-  };
-
-  if (iconOnly) {
-    return (
-      <button
-        type="button"
-        onClick={handleCopy}
-        aria-label="Copy"
-        className="flex size-7 items-center justify-center rounded-md text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
-      >
-        {copied ? (
-          <Check className="size-3.5 text-success" />
-        ) : (
-          <Copy className="size-3.5" />
-        )}
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      className="inline-flex items-center gap-1.5 rounded-md border border-base-300 bg-base-100 px-2 py-1 text-xs font-medium text-base-content/70 transition-colors hover:bg-base-300/50 hover:text-base-content"
-    >
-      {copied ? (
-        <Check className="size-3 text-success" />
-      ) : (
-        <Copy className="size-3" />
-      )}
-      {label ?? "Copy"}
-    </button>
   );
 }
