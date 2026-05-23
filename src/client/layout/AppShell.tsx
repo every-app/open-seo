@@ -338,10 +338,10 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
           ) : null}
           {isHostedMode ? (
             <li>
-              <a href={BILLING_ROUTE} className="flex items-center gap-2">
+              <Link to={BILLING_ROUTE} className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Billing
-              </a>
+              </Link>
             </li>
           ) : null}
           <li>

@@ -4,6 +4,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
+import { Link } from "@tanstack/react-router";
 import { ExternalLink } from "lucide-react";
 import {
   AppDataTable,
@@ -330,12 +331,14 @@ function buildPerformanceColumns({
       header: () => "Issues",
       cell: ({ row }) =>
         row.original.r2Key && !isLighthouseFailure(row.original) ? (
-          <a
+          <Link
             className="btn btn-primary btn-xs"
-            href={`/p/${projectId}/audit/issues/${row.original.id}?auditId=${auditId}&category=performance`}
+            to="/p/$projectId/audit/issues/$resultId"
+            params={{ projectId, resultId: row.original.id }}
+            search={{ auditId, category: "performance" }}
           >
             View issues
-          </a>
+          </Link>
         ) : (
           <span className="text-xs text-base-content/40">-</span>
         ),

@@ -3,7 +3,6 @@ import {
   type SortingFn,
   type SortingState,
 } from "@tanstack/react-table";
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   AppDataTable,
@@ -24,6 +23,7 @@ import {
   formatDecimal,
   formatNumber,
 } from "./backlinksPageUtils";
+import { BacklinksExternalLink } from "./BacklinksPageLinks";
 
 type ReferringDomainRow = BacklinksOverviewData["referringDomains"][number];
 
@@ -60,14 +60,11 @@ const columns = [
       const domain = getValue();
       if (!domain) return "-";
       return (
-        <Link
-          from="/p/$projectId/backlinks"
-          to="/p/$projectId/backlinks"
-          search={{ target: domain, scope: "domain", tab: undefined }}
-          className="link link-primary link-hover break-all"
-        >
-          {domain}
-        </Link>
+        <BacklinksExternalLink
+          url={getDomainWebsiteHref(domain)}
+          label={domain}
+          className="link link-primary link-hover break-all inline-flex items-center gap-1"
+        />
       );
     },
     sortingFn: stringNullsLast,
@@ -156,6 +153,14 @@ const columns = [
 ];
 
 const DEFAULT_SORTING: SortingState = [{ id: "backlinks", desc: true }];
+
+function getDomainWebsiteHref(domain: string) {
+  try {
+    return new URL(domain).toString();
+  } catch {
+    return `https://${domain}`;
+  }
+}
 
 export function ReferringDomainsTable({
   rows,

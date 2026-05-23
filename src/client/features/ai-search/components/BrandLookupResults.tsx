@@ -112,7 +112,7 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
 
 function KpiTiles({ result }: { result: BrandLookupResult }) {
   return (
-    <section className="flex flex-col divide-y divide-base-200 overflow-hidden rounded-xl border border-base-300 bg-base-100">
+    <section className="flex flex-col divide-y divide-base-200 rounded-xl border border-base-300 bg-base-100">
       <KpiTile
         label="Total mentions"
         tooltip="Number of LLM answers where your domain appeared in the text or citations."
@@ -194,7 +194,7 @@ function PlatformStatRow({
         {formatPlatformLabel(row.platform)}
         {row.platform === "chat_gpt" ? (
           <span
-            className="tooltip tooltip-right inline-flex"
+            className="tooltip tooltip-right z-20 inline-flex"
             data-tip="DataForSEO indexes ChatGPT mentions for US English only — country selection is not available for this platform."
           >
             <Info className="size-3 text-base-content/40" />
