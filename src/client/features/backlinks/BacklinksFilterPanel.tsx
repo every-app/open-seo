@@ -239,7 +239,7 @@ function ReferringDomainsFilters({
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
         <FilterRangeInputs
           form={form}
           title="Backlinks"
@@ -251,6 +251,13 @@ function ReferringDomainsFilters({
           title="Rank"
           minName="minRank"
           maxName="maxRank"
+        />
+        <FilterRangeInputs
+          form={form}
+          title="Spam Score"
+          minName="minSpamScore"
+          maxName="maxSpamScore"
+          step="0.1"
         />
       </div>
     </>

@@ -47,6 +47,7 @@ type BacklinksBodyProps = {
   topPages: BacklinksTopPagesData | undefined;
   onRemoveHistoryItem: (timestamp: number) => void;
   onRetryOverview: () => void;
+  onTabChange: (tab: BacklinksSearchState["tab"]) => void;
   searchTabs: {
     activeTabId: string | null;
     tabs: SearchTab[];
@@ -73,6 +74,7 @@ export function BacklinksBody({
   topPages,
   onRemoveHistoryItem,
   onRetryOverview,
+  onTabChange,
   searchTabs,
 }: BacklinksBodyProps) {
   const mergedData = useMemo(
@@ -179,7 +181,6 @@ export function BacklinksBody({
         summaryStats={summaryStats}
       />
       <BacklinksResultsCard
-        projectId={projectId}
         activeTab={searchState.tab}
         filteredData={filteredData}
         filters={filters}
@@ -188,6 +189,7 @@ export function BacklinksBody({
           searchState.tab !== "backlinks" ? tabErrorMessage : null
         }
         exportTarget={mergedData.displayTarget || searchState.target}
+        onTabChange={onTabChange}
       />
     </>
   );

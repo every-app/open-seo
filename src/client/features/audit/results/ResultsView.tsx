@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Link } from "@tanstack/react-router";
 import { StatCard } from "@/client/features/audit/shared";
 import {
   exportPages,
@@ -13,14 +12,18 @@ import {
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
 
+type ResultsTab = "pages" | "performance";
+
 export function ResultsView({
   projectId,
   data,
+  onTabChange,
   tab,
 }: {
   projectId: string;
   data: AuditResultsData;
   tab: string;
+  onTabChange: (tab: ResultsTab) => void;
 }) {
   const { audit, pages, lighthouse } = data;
   const hasPerformanceTab = lighthouse.length > 0;
@@ -40,12 +43,11 @@ export function ResultsView({
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body gap-3">
           <ResultsHeader
-            projectId={projectId}
-            auditId={audit.id}
             pageCount={pages.length}
             lighthouseCount={lighthouse.length}
             hasPerformanceTab={hasPerformanceTab}
             activeTab={activeTab}
+            onTabChange={onTabChange}
             onExport={(format) => {
               if (activeTab === "performance") {
                 exportPerformance(lighthouse, pages, format);
@@ -115,46 +117,45 @@ function useResultStats(
 }
 
 function ResultsHeader({
-  projectId,
-  auditId,
   pageCount,
   lighthouseCount,
   hasPerformanceTab,
   activeTab,
+  onTabChange,
   onExport,
 }: {
-  projectId: string;
-  auditId: string;
   pageCount: number;
   lighthouseCount: number;
   hasPerformanceTab: boolean;
   activeTab: string;
+  onTabChange: (tab: ResultsTab) => void;
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
+  const tabs: Array<{ tab: ResultsTab; label: string }> = [
+    { tab: "pages", label: `Pages (${pageCount})` },
+    { tab: "performance", label: `Performance (${lighthouseCount})` },
+  ];
+
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       {hasPerformanceTab ? (
         <div role="tablist" className="tabs tabs-box w-fit">
-          <Link
-            to="/p/$projectId/audit"
-            params={{ projectId }}
-            search={{ auditId, tab: "pages" }}
-            replace
-            role="tab"
-            className={`tab ${activeTab === "pages" ? "tab-active" : ""}`}
-          >
-            Pages ({pageCount})
-          </Link>
-          <Link
-            to="/p/$projectId/audit"
-            params={{ projectId }}
-            search={{ auditId, tab: "performance" }}
-            replace
-            role="tab"
-            className={`tab ${activeTab === "performance" ? "tab-active" : ""}`}
-          >
-            Performance ({lighthouseCount})
-          </Link>
+          {tabs.map(({ label, tab }) => {
+            const isActive = activeTab === tab;
+
+            return (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`tab ${isActive ? "tab-active" : ""}`}
+                onClick={() => onTabChange(tab)}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
       ) : (
         <h3 className="text-base font-medium">Pages ({pageCount})</h3>

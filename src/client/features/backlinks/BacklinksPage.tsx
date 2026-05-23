@@ -65,6 +65,18 @@ export function BacklinksPage({
     },
     [navigate],
   );
+  const handleResultTabChange = useCallback(
+    (tab: BacklinksSearchState["tab"]) => {
+      navigate({
+        search: (prev) => ({
+          ...prev,
+          tab: tab === "backlinks" ? undefined : tab,
+        }),
+        replace: true,
+      });
+    },
+    [navigate],
+  );
   const searchTabs = useSearchTabNavigation({
     storageKey: `backlinks:${projectId}`,
     urlInput: urlTabInput,
@@ -134,6 +146,7 @@ export function BacklinksPage({
           topPages={topPagesQuery.data}
           onRemoveHistoryItem={removeHistoryItem}
           onRetryOverview={() => void overviewQuery.refetch()}
+          onTabChange={handleResultTabChange}
           searchTabs={
             searchState.target
               ? {

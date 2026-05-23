@@ -107,6 +107,14 @@ export function filterReferringDomainRows(
       return false;
     if (!passesNumericFilter(row.rank, filters.minRank, filters.maxRank))
       return false;
+    if (
+      !passesNumericFilter(
+        row.spamScore,
+        filters.minSpamScore,
+        filters.maxSpamScore,
+      )
+    )
+      return false;
     return true;
   });
 }

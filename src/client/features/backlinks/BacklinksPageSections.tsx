@@ -22,6 +22,15 @@ import {
 import { buildBacklinksTabExport, exportBacklinksTabCsv } from "./export";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
+const BACKLINKS_RESULTS_TABS: Array<{
+  tab: BacklinksSearchState["tab"];
+  label: string;
+}> = [
+  { tab: "backlinks", label: "Backlinks" },
+  { tab: "domains", label: "Referring Domains" },
+  { tab: "pages", label: "Top Pages" },
+];
+
 export function BacklinksOverviewPanels({
   projectId,
   data,
@@ -66,15 +75,14 @@ export function BacklinksOverviewPanels({
 }
 
 export function BacklinksResultsCard({
-  projectId,
   activeTab,
   filteredData,
   filters,
   isTabLoading,
   tabErrorMessage,
   exportTarget,
+  onTabChange,
 }: {
-  projectId: string;
   activeTab: BacklinksSearchState["tab"];
   filteredData: {
     backlinks: BacklinksOverviewData["backlinks"];
@@ -85,6 +93,7 @@ export function BacklinksResultsCard({
   isTabLoading: boolean;
   tabErrorMessage: string | null;
   exportTarget: string;
+  onTabChange: (tab: BacklinksSearchState["tab"]) => void;
 }) {
   const currentFilterCount = filters[activeTab].activeFilterCount;
   const exportTable = useMemo(
@@ -97,19 +106,15 @@ export function BacklinksResultsCard({
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
         <div className="space-y-2">
           <div role="tablist" className="tabs tabs-box w-fit">
-            <TabLink
-              projectId={projectId}
-              activeTab={activeTab}
-              tab="backlinks"
-            >
-              Backlinks
-            </TabLink>
-            <TabLink projectId={projectId} activeTab={activeTab} tab="domains">
-              Referring Domains
-            </TabLink>
-            <TabLink projectId={projectId} activeTab={activeTab} tab="pages">
-              Top Pages
-            </TabLink>
+            {BACKLINKS_RESULTS_TABS.map(({ label, tab }) => (
+              <TabLink
+                key={tab}
+                activeTab={activeTab}
+                label={label}
+                onSelect={onTabChange}
+                tab={tab}
+              />
+            ))}
           </div>
           <p className="max-w-xl text-sm text-base-content/60">
             {TAB_DESCRIPTIONS[activeTab]}
@@ -276,30 +281,28 @@ function TrendCard({
 }
 
 function TabLink({
-  projectId,
   activeTab,
-  children,
+  label,
+  onSelect,
   tab,
 }: {
-  projectId: string;
   activeTab: BacklinksSearchState["tab"];
-  children: string;
+  label: string;
+  onSelect: (tab: BacklinksSearchState["tab"]) => void;
   tab: BacklinksSearchState["tab"];
 }) {
+  const isActive = activeTab === tab;
+
   return (
-    <Link
-      to="/p/$projectId/backlinks"
-      params={{ projectId }}
-      search={(prev) => ({
-        ...prev,
-        tab: tab === "backlinks" ? undefined : tab,
-      })}
-      replace
+    <button
+      type="button"
       role="tab"
-      className={`tab ${activeTab === tab ? "tab-active" : ""}`}
+      aria-selected={isActive}
+      className={`tab ${isActive ? "tab-active" : ""}`}
+      onClick={() => onSelect(tab)}
     >
-      {children}
-    </Link>
+      {label}
+    </button>
   );
 }
 

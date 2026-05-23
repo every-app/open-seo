@@ -56,6 +56,7 @@ function SiteAuditPage() {
       auditId={auditId}
       tab={tab}
       onBack={() => setSearchParams({ auditId: undefined })}
+      onTabChange={(nextTab) => setSearchParams({ tab: nextTab })}
     />
   );
 }
@@ -65,11 +66,13 @@ function AuditDetail({
   auditId,
   tab,
   onBack,
+  onTabChange,
 }: {
   projectId: string;
   auditId: string;
   tab: string;
   onBack: () => void;
+  onTabChange: (tab: "pages" | "performance") => void;
 }) {
   const statusQuery = useQuery({
     queryKey: ["audit-status", projectId, auditId],
@@ -178,6 +181,7 @@ function AuditDetail({
             projectId={projectId}
             data={resultsQuery.data}
             tab={tab}
+            onTabChange={onTabChange}
           />
         )}
       </div>

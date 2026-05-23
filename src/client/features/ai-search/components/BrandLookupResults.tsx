@@ -277,6 +277,8 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
   const canExport = exportTable.rows.length > 0;
 
   const currentFilterCount = filters[activeTab].activeFilterCount;
+  const queriesActive = activeTab === "queries";
+  const pagesActive = activeTab === "pages";
 
   return (
     <section className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
@@ -285,7 +287,8 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
           <button
             type="button"
             role="tab"
-            className={`tab ${activeTab === "queries" ? "tab-active" : ""}`}
+            aria-selected={queriesActive}
+            className={`tab ${queriesActive ? "tab-active" : ""}`}
             onClick={() => setActiveTab("queries")}
           >
             Queries
@@ -293,7 +296,8 @@ function CitationTabsCard({ result }: { result: BrandLookupResult }) {
           <button
             type="button"
             role="tab"
-            className={`tab ${activeTab === "pages" ? "tab-active" : ""}`}
+            aria-selected={pagesActive}
+            className={`tab ${pagesActive ? "tab-active" : ""}`}
             onClick={() => setActiveTab("pages")}
           >
             Related pages

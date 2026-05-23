@@ -19,6 +19,8 @@ export type ReferringDomainsFilterValues = {
   maxBacklinks: string;
   minRank: string;
   maxRank: string;
+  minSpamScore: string;
+  maxSpamScore: string;
 };
 
 export type TopPagesFilterValues = {
@@ -53,6 +55,8 @@ export const EMPTY_REFERRING_DOMAINS_FILTERS: ReferringDomainsFilterValues = {
   maxBacklinks: "",
   minRank: "",
   maxRank: "",
+  minSpamScore: "",
+  maxSpamScore: "",
 };
 
 export const EMPTY_TOP_PAGES_FILTERS: TopPagesFilterValues = {
