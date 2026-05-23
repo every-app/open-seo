@@ -17,6 +17,7 @@ import {
   MCP_ROUTE,
   withWorkersOAuthMcpScopes,
 } from "@/server/mcp/context";
+import { normalizeClientRegistrationRequest } from "@/server/mcp/oauth-registration";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { handleAuthenticatedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { resolveHostedContext } from "@/middleware/ensure-user/hosted";
@@ -407,5 +408,21 @@ export function createOpenSeoOAuthProvider(appFetch: AppFetch) {
     onError: oauthErrorResponse,
   };
 
-  return new OAuthProvider(options);
+  const provider = new OAuthProvider(options);
+
+  return {
+    async fetch(request: Request, env: OpenSeoOAuthEnv, ctx: ExecutionContext) {
+      const url = new URL(request.url);
+
+      if (url.pathname === OAUTH_REGISTER_PATH) {
+        // Cloudflare's provider can reject public DCR clients, but Perplexity
+        // does not appear to retry as confidential and instead expects a
+        // client_secret. Normalize before handing the request to Cloudflare so
+        // it still owns client creation, secret hashing, and token storage.
+        request = await normalizeClientRegistrationRequest(request);
+      }
+
+      return provider.fetch(request, env, ctx);
+    },
+  };
 }
