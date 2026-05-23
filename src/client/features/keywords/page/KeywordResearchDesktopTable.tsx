@@ -127,7 +127,7 @@ export function KeywordResearchDesktopTable({
         header: () => (
           <SortHeader
             label="Comp."
-            helpText="Advertiser competition."
+            helpText="Paid-search competition from Google Ads (0-1): higher means more advertisers bidding."
             field="competition"
             current={sortField}
             dir={sortDir}
@@ -149,7 +149,7 @@ export function KeywordResearchDesktopTable({
         header: () => (
           <SortHeader
             label="Score"
-            helpText="Keyword difficulty score."
+            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
             field="keywordDifficulty"
             current={sortField}
             dir={sortDir}

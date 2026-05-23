@@ -72,7 +72,7 @@ export function SavedKeywordsTable({
           <SortableHeader
             column={column}
             label="Competition"
-            helpText="Advertiser competition."
+            helpText="Paid-search competition from Google Ads (0-1): higher means more advertisers bidding."
           />
         ),
         cell: ({ getValue }) => {
@@ -85,7 +85,7 @@ export function SavedKeywordsTable({
           <SortableHeader
             column={column}
             label="Difficulty"
-            helpText="Keyword difficulty score."
+            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
           />
         ),
         cell: ({ getValue }) => <DifficultyBadge value={getValue()} />,

@@ -128,7 +128,7 @@ function DomainKeywordsTableComponent({
         header: () => (
           <SortableHeader
             label="Score"
-            helpText="Keyword difficulty score."
+            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
             isActive={sortMode === "score"}
             order={currentSortOrder}
             onClick={() => onSortClick("score")}
