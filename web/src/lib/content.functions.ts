@@ -1,6 +1,6 @@
 import { notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { guideSource } from "@/lib/source";
+import { docsSource, guideSource } from "@/lib/source";
 
 export const getGuidePost = createServerFn({ method: "GET" })
   .inputValidator((slugs: string[]) => slugs)
@@ -26,4 +26,55 @@ export const getGuidePosts = createServerFn({ method: "GET" }).handler(
       slugs: page.slugs,
     }));
   },
+);
+
+function getContentPost(source: typeof docsSource, slugs: string[]) {
+  const page = source.getPage(slugs);
+  if (!page) throw notFound();
+
+  return {
+    path: page.path,
+    title: page.data.title,
+    description: page.data.description,
+    url: page.url,
+  };
+}
+
+function getContentPosts(source: typeof docsSource) {
+  const topLevelOrder = new Map([
+    ["mcp", 0],
+    ["skills", 1],
+  ]);
+  const pages = source.getPages();
+
+  return pages
+    .map((page: (typeof pages)[number]) => ({
+      title: page.data.title,
+      description: page.data.description,
+      url: page.url,
+      slugs: page.slugs,
+    }))
+    .sort((a, b) => {
+      const depth = a.slugs.length - b.slugs.length;
+      if (depth !== 0) return depth;
+
+      const order =
+        (topLevelOrder.get(a.slugs[0] ?? "") ?? Number.MAX_SAFE_INTEGER) -
+        (topLevelOrder.get(b.slugs[0] ?? "") ?? Number.MAX_SAFE_INTEGER);
+      if (order !== 0) return order;
+
+      return a.title.localeCompare(b.title);
+    });
+}
+
+export const getDocsPost = createServerFn({ method: "GET" })
+  .inputValidator((slugs: string[]) => slugs)
+  .handler(async ({ data: slugs }) => getContentPost(docsSource, slugs));
+
+export const getDocsPosts = createServerFn({ method: "GET" }).handler(
+  async () => getContentPosts(docsSource),
+);
+
+export const getDocsPageTree = createServerFn({ method: "GET" }).handler(
+  async () => docsSource.getPageTree() as any,
 );

@@ -32,7 +32,10 @@ function GuideIndex() {
         ) : (
           <div className="space-y-8">
             {guides.map((guide) => (
-              <article key={guide.url} className="border-b pb-8 last:border-b-0">
+              <article
+                key={guide.url}
+                className="border-b pb-8 last:border-b-0"
+              >
                 <Link
                   to="/guides/$"
                   params={{ _splat: guide.slugs.join("/") }}

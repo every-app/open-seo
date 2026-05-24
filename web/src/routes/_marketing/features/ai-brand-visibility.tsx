@@ -5,7 +5,9 @@ import { buildPageSeo } from "@/lib/seo";
 
 const page = featurePages.aiBrandVisibility;
 
-export const Route = createFileRoute("/_marketing/features/ai-brand-visibility")({
+export const Route = createFileRoute(
+  "/_marketing/features/ai-brand-visibility",
+)({
   head: () =>
     buildPageSeo({
       title: "AI Brand Visibility Tool",

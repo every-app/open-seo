@@ -1,0 +1,54 @@
+---
+title: "Keyword Clustering Agent Skill"
+description: "Cluster keywords by intent and map them to existing or proposed pages with your AI agent."
+---
+
+<RunSkillCallout command="/keyword-clustering" />
+
+The Keyword Clustering Agent Skill turns a messy keyword list into a page plan.
+
+Your agent sorts keywords, compares intent, and decides which terms belong on the same page. It uses the keyword set, SERP context, and your site context to recommend page groups.
+
+You get a content map: which keywords belong together, which pages should target them, where existing pages fit, and where cannibalization might become a problem.
+
+## What this skill helps your agent do
+
+- Group keywords by intent, SERP similarity, and page type.
+- Separate terms that look similar but need different pages.
+- Map clusters to existing URLs when they fit.
+- Recommend new pages when no current page matches the search intent.
+- Flag weak, off-strategy, or do-not-target keywords.
+- Suggest saved keyword tags only after user confirmation.
+
+## When to use it
+
+Use this skill when you already have keywords but do not yet have a content plan.
+
+It helps when a keyword export is too large to sort by hand, when multiple pages might compete for the same intent, or when you need to turn research into page briefs.
+
+## What you get back
+
+Your agent should return clusters, primary keywords, secondary keywords, search intent, page targets, priorities, and notes about cannibalization or consolidation.
+
+## How to get the best result
+
+- Provide a keyword list, saved keyword tag, Search Console export, seed topic, or target domain.
+- Share existing pages if you want the agent to map keywords to current URLs.
+- Ask the agent to check SERP overlap for important borderline terms.
+- Keep final tag changes user-approved.
+
+## Use it with OpenSEO MCP
+
+Set up [OpenSEO MCP](/docs/mcp) so your agent can read saved keywords, inspect SERPs, and use OpenSEO project context while clustering.
+
+## Read the actual skill
+
+The source `SKILL.md` lives on GitHub:
+
+- [Keyword Clustering skill](https://github.com/every-app/open-seo/tree/main/.agents/skills/keyword-clustering)
+
+## Related skills
+
+- [Keyword Research](/docs/skills/keyword-research) when you need more candidate terms.
+- [Competitor Analysis](/docs/skills/competitor-analysis) when competitor pages should inform the map.
+- [SEO Coach](/docs/skills/seo-coach) if you are unsure whether clustering is the next step.

@@ -7,3 +7,4 @@ dist
 source.generated.ts
 pnpm-lock.yaml
 routeTree.gen.ts
+content/legal/terms-and-conditions.md

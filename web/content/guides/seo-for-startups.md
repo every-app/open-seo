@@ -7,7 +7,9 @@ date: "2026-04-22"
 
 If you've started a company, you've probably considered investing some time into SEO for your startup, or search engine optimization. In this guide, I'll try to give you an overview of how you should be thinking about SEO as someone building something new.
 
-SEO is something that compounds over time as your brand builds its reputation and it can be a great channel for potential customers to find you. But SEO tools can also be your secret weapon for market research before you even have a website.
+SEO compounds as your brand builds its reputation. It can also help with market research before you have a website.
+
+If you want an agent to help, connect [OpenSEO MCP](/docs/mcp) first so it can use live keyword, SERP, domain, backlink, and saved keyword data. If you are not sure where to start, use the [SEO coach](/docs/skills/seo-coach). If you are setting up SEO for a new company or site, begin with [SEO project setup](/docs/skills/seo-project-setup).
 
 ## Table of Contents
 
@@ -22,7 +24,7 @@ SEO is something that compounds over time as your brand builds its reputation an
 
 ### Improving your site's rankings
 
-Google's goal is to show the website, or AI answer, most likely to satisfy the user's search. Your ranking improves when Google shows your website for a search term, the person clicks, and then actually finds what they were looking for.
+Google's goal is to show the website, or AI answer, most likely to satisfy the user's search. Your ranking improves when Google shows your website for a search term, the person clicks, and then finds what they were looking for.
 
 The major ways to improve SEO are still pretty simple:
 
@@ -34,13 +36,13 @@ Lots of guides and influencers will try to sell you shortcuts for SEO. For new c
 
 ### Market Research
 
-In 2026, when founders are researching a new market, they're probably reaching for Claude or ChatGPT to do "Deep Research." These tools are useful. They search the web, read through Reddit conversations, and pull together industry reports and blog posts much faster than most of us would manually.
+In 2026, when founders research a new market, they often reach for Claude or ChatGPT to do "Deep Research." These tools search the web, read Reddit conversations, and pull together industry reports and blog posts faster than most of us would by hand.
 
-That kind of research is great for qualitative context. It helps you understand how people talk, what themes come up repeatedly, and which companies are getting attention. But SEO tools can give you a different kind of signal. They can help you cut through claims and marketing copy and get a better sense of how customers in the space are actually behaving.
+That research is good for qualitative context. It helps you understand how people talk, what themes come up, and which companies are getting attention. SEO tools give you a different signal. They show what customers search for, which pages Google rewards, and where competitors get traffic.
 
-In the [Market Research Techniques](#market-research-techniques) section, we'll go into how you can use SEO tools to answer questions like:
+SEO tools can help answer questions like:
 
-- Which competitors in the space are really the most popular and trusted?
+- Which competitors in the space are the most popular and trusted?
 - What are people searching when Google recommends my competitors?
 - Which of my competitors' pages drive the most traffic?
 - What blog posts or pages should you add to your website to help customers and drive traffic?
@@ -48,44 +50,49 @@ In the [Market Research Techniques](#market-research-techniques) section, we'll 
 
 ## Market Research Techniques
 
-To make this more concrete, I'll reference a few OpenSEO screenshots below so you can see what this kind of data actually looks like in practice.
+The screenshots below show what this data looks like in OpenSEO.
 
 ### Competitor Research
 
-This is one of the more useful ways founders can use SEO data.
+Competitor research gives founders a fast read on market demand.
 
 With a tool like [OpenSEO](https://openseo.so/), you can enter a competitor's domain and see which keywords it ranks for, which pages are ranking, and where the estimated traffic seems to come from.
 
-That can shape your own strategy in a very practical way. If a competitor is getting a lot of traction from a specific kind of page, that may be a sign that buyers care about that topic more than you realized. It can also help you spot use cases, niches, or workflows that fit your product but are not yet obvious from talking to a few customers.
+That can shape your strategy. If a competitor gets traffic from a specific page type, buyers may care about that topic more than you realized. It can also reveal use cases, niches, or workflows that fit your product but do not show up in a few customer calls.
+
+For a focused workflow, use the [competitor analysis skill](/docs/skills/competitor-analysis). If you are still figuring out which domains matter, start with the broader [competitive landscape skill](/docs/skills/competitive-landscape).
 
 ![OpenSEO domain overview showing top pages, keywords, and estimated traffic](https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/85c0c3bf-fe49-4e18-998b-5a5017304100/public)
 
 ### Keyword Research
-Keyword research lets you see how much search volume exists for certain terms, explore related keywords, and get a feel for what kinds of searches are informational versus commercial. That matters because not every search is equally valuable. Some simple answer-style searches may send fewer clicks because Google can answer them right on the results page with an AI answer. Searches with comparison, workflow, or buying intent are often more useful because people still want detail, options, and proof.
 
-It is also a good way to map a market. If you search a seed phrase like "best crm for," the suggested and related keywords can quickly show you which audiences are worth paying attention to: agencies, startups, consultants, real estate teams, and so on.
+Keyword research shows how much search volume exists for certain terms, related searches, and whether a query is informational or commercial. Not every search is equally valuable. Simple answer-style searches may send fewer clicks because Google can answer them on the results page. Searches with comparison, workflow, or buying intent often work better because people still want detail, options, and proof.
+
+It also helps map a market. If you search a seed phrase like "best crm for," the suggested and related keywords can show you which audiences are worth attention: agencies, startups, consultants, real estate teams, and so on.
+
+For a repeatable workflow, use the [keyword research skill](/docs/skills/keyword-research). When you have a useful list of ideas, use the [keyword clustering skill](/docs/skills/keyword-clustering) to group them into page targets.
 
 ![OpenSEO keyword research view showing related or suggested keywords for a seed term](https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/f8739457-4cc0-4f99-8c7a-7c74b35f0d00/public)
 
 ### Backlink Analysis
 
-Backlink analysis lets you see which websites link to a specific website.
+Backlink analysis shows which websites link to a specific website.
 
-When you look at who links to competitors, you start to see which publications, directories, newsletters, and communities actually matter in the market. You can also get a feel for why certain companies are seen as credible. Sometimes they are earning attention through PR. Sometimes it is partnerships. Sometimes it is original research or a genuinely useful tool that people keep citing.
+When you look at who links to competitors, you start to see which publications, directories, newsletters, and communities matter in the market. You can also see why certain companies are treated as credible. Sometimes they earn attention through PR. Sometimes it is partnerships, original research, or a useful tool that people keep citing.
 
-That kind of visibility can tell you a lot about the structure of a market and where attention is really coming from.
+Those links can tell you how attention moves through a market.
 
 ![OpenSEO backlink analysis showing referring domains or top backlinks for a competitor](https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d9a2a5ea-6aa4-469e-10b5-e413febe4200/public)
 
 ## How can you improve your site's rankings?
 
-You do not need to become an SEO expert to make progress here. For most founders, it is enough to cover the basics well and avoid obvious mistakes.
+You do not need to become an SEO expert to make progress. For most founders, covering the basics and avoiding obvious mistakes is enough.
 
 ### Site Title & Description
 
 Your page title and meta description are the billboard Google shows searchers.
 
-They play a big role in whether someone clicks. A good title usually matches the search clearly, tells the reader what they will get, and gives them a reason to choose your result. If someone searches for "inventory software for small manufacturers," that page should look like it was written for that exact need.
+They play a big role in whether someone clicks. A good title matches the search, tells the reader what they will get, and gives them a reason to choose your result. If someone searches for "inventory software for small manufacturers," that page should look like it was written for that need.
 
 ### Google Search Console
 
@@ -101,7 +108,7 @@ If you're new to it, Google's docs are worth reading:
 
 ### Site Audits
 
-Structuring your website optimally can get very deep, and there is a whole specialty built around it called "Technical SEO". If you're just getting started, you probably shouldn't obsess over perfect audit scores.
+Site structure can get deep. There is a whole specialty built around it called "Technical SEO". If you're starting out, do not obsess over perfect audit scores.
 
 The main things to care about are:
 
@@ -111,46 +118,49 @@ The main things to care about are:
 
 For most teams, a quick pass with [Google Search Console](https://search.google.com/search-console/about) or any site audit tool (e.g., Ahrefs, Screaming Frog) is enough to find the highest-priority issues.
 
-If you're non-technical, using the SEO tooling built into your CMS or hosting provider and fixing the major problems is usually good enough. If you are technical, running an audit and resolving the highest-priority crawl, indexation, broken link, or performance issues is a worthwhile way to spend an hour or two since your coding agent can likely do the implementation.
+If you're non-technical, use the SEO tooling built into your CMS or hosting provider and fix the major problems. If you are technical, run an audit and resolve the highest-priority crawl, indexation, broken link, or performance issues. Your coding agent can help with the implementation.
 
 ### Quality Content
 
 Google wants to show relevant pages that satisfy the search. If people land on your site and find what they wanted, your website will climb the rankings.
 
-There is no real shortcut around this. The page has to be useful.
+There is no shortcut here. The page has to be useful.
 
 That does not mean every company needs a giant blog. It means the pages you do publish should do a clear job well. They might explain something your buyer needs to understand, compare options, answer a buying question, or solve a specific workflow problem.
 
-You can use AI to help write content. The bar is still the same, though: if the page is better than the alternatives for the search term, it has a chance to climb. If it is vague, padded, or interchangeable with everything else already ranking, it probably will not.
+You can use AI to help write content. The bar is still the same: if the page is better than the alternatives for the search term, it has a chance to climb. If it is vague, padded, or interchangeable with everything already ranking, it probably will not.
 
 ### Backlinks
 
 Backlinks are when other companies link to your website. They signal your website's authority on the topic that the linking page ranks for.
 
-There are plenty of sketchy offers out there for backlink exchanges and paid placements. Some of those tactics may move a metric here or there, but they aren't going to get your business over the hump.
+There are plenty of sketchy offers for backlink exchanges and paid placements. Some may move a metric, but they rarely help the business.
 
-The backlinks that tend to matter most are the ones that make sense for your business regardless of their SEO benefit. Some examples: a niche publication, a respected directory, a relevant newsletter, a partner case study, or a genuinely useful piece of research that people cite.
+The backlinks that tend to matter most are the ones that make sense for your business regardless of their SEO benefit. Some examples: a niche publication, a respected directory, a relevant newsletter, a partner case study, or a useful piece of research that people cite.
 
-The best way to get those links is usually to give people a real reason to talk about you. That might mean publishing a strong customer story, creating original data, building a unique free tool, or getting your company listed in the places your market already trusts.
+The best way to get those links is to give people a real reason to talk about you. Publish a strong customer story, create original data, build a useful free tool, or get listed in the places your market trusts.
+
+For a focused outreach workflow, use the [link prospecting skill](/docs/skills/link-prospecting). If you want an AI agent to help with this work, [set up OpenSEO MCP](/docs/mcp) so it can use live OpenSEO data. If you are new to the process, start with [SEO coach](/docs/skills/seo-coach). For a fresh project, use [SEO project setup](/docs/skills/seo-project-setup) before jumping into research.
 
 ## A simple founder SEO priority list
 
-If you're still not sure who your customer is yet, trying to improve your ranking isn't worth it yet. Instead use SEO tools for research.
+If you're still not sure who your customer is, rankings can wait. Use SEO tools for research first.
 
 When you're ready to start focusing on SEO, this is a good order:
 
 1. Make sure the product, positioning, and site messaging are clear
-2. Set up [Google Search Console](https://search.google.com/search-console/about)
-3. Fix major crawl, indexation, and performance problems
-4. Identify the core searches that map to your product and customer pain points
-5. Build or improve the pages that deserve to rank
-6. Use competitor and keyword research to find obvious gaps
-7. Earn mentions and links by doing things worth citing
+2. Run [SEO project setup](/docs/skills/seo-project-setup) so goals, scope, and data sources are clear
+3. Set up [Google Search Console](https://search.google.com/search-console/about) and [OpenSEO MCP](/docs/mcp)
+4. Fix major crawl, indexation, and performance problems
+5. Identify the core searches that map to your product and customer pain points
+6. Build or improve the pages that deserve to rank
+7. Use [competitor analysis](/docs/skills/competitor-analysis) and [keyword research](/docs/skills/keyword-research) to find obvious gaps
+8. Earn mentions and links by doing things worth citing
 
 ## Final thought
 
-SEO is worth understanding as a founder because it helps you see what the market is asking for, what Google believes users want, and whether your company is showing up as a credible answer.
+SEO is worth understanding as a founder because it shows what the market is asking for, what Google believes users want, and whether your company appears as a credible answer.
 
-Used well, it can become both a research tool and a compounding distribution channel. The core idea is still pretty simple: understand the customer, make genuinely useful pages, keep your site technically healthy, and give people a reason to talk about your company.
+Used well, it becomes both a research tool and a compounding distribution channel. Understand the customer, make useful pages, keep your site healthy, and give people a reason to talk about your company.
 
 If you want to explore this data yourself, [OpenSEO](https://openseo.so/) is an affordable SEO tool built by a founder for founders, without the usual bloat of tools made for SEO power users.

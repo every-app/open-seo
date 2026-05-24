@@ -84,9 +84,12 @@ export const featurePages = {
       "MCP access so AI agents can research and save keywords for you.",
     ],
     related: [
+      { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
+      {
+        label: "Keyword Research",
+        href: "/docs/skills/keyword-research",
+      },
       { label: "Rank Tracking", href: "/features/rank-tracking" },
-      { label: "Saved Keywords", href: "/features/saved-keywords" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
     faqs: [
       {
@@ -230,8 +233,11 @@ export const featurePages = {
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
     related: [
+      {
+        label: "Link Prospecting",
+        href: "/docs/skills/link-prospecting",
+      },
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "Site Audit", href: "/features/site-audit" },
       { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
     faqs: [
@@ -303,9 +309,12 @@ export const featurePages = {
       "Open-source and self-hostable for teams that want control over their SEO stack.",
     ],
     related: [
+      {
+        label: "Competitor Analysis",
+        href: "/docs/skills/competitor-analysis",
+      },
       { label: "Keyword Research", href: "/features/keyword-research" },
       { label: "Backlink Checker", href: "/features/backlink-checker" },
-      { label: "Rank Tracking", href: "/features/rank-tracking" },
     ],
     faqs: [
       {
@@ -376,9 +385,12 @@ export const featurePages = {
       "OpenSEO can expose ranking data to AI agents through MCP.",
     ],
     related: [
+      { label: "Keyword Clustering", href: "/docs/skills/keyword-clustering" },
+      {
+        label: "Competitor Analysis",
+        href: "/docs/skills/competitor-analysis",
+      },
       { label: "Keyword Research", href: "/features/keyword-research" },
-      { label: "Saved Keywords", href: "/features/saved-keywords" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
     faqs: [
       {

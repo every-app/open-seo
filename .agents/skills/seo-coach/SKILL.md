@@ -28,7 +28,7 @@ Example:
 I can coach you through this. Are you new to SEO, or do you mostly want help using OpenSEO faster?
 
 Good starting points:
-- Set up the onboarding checklist
+- Set up SEO project context
 - Find keyword opportunities
 - Map keywords to pages
 - Study a competitor
@@ -37,7 +37,7 @@ Good starting points:
 
 ## What each workflow does
 
-- `onboarding-checklist`: sets up the workspace, verifies MCP, captures goals, positioning, and GSC exports.
+- `seo-project-setup`: sets up the workspace, verifies MCP, captures goals, positioning, and GSC exports.
 - `keyword-research`: finds search opportunities from seed topics and evaluates volume, difficulty, CPC, intent, and SERPs.
 - `keyword-clustering`: groups keywords by intent and maps clusters to existing or proposed pages.
 - `competitive-landscape`: identifies who wins across a market and what content/backlink patterns are working.
@@ -90,11 +90,11 @@ When the user asks for execution:
 
 Offer concise options based on context:
 
-- "Let's run onboarding first so future work has context."
+- "Let's set up project context first."
 - "Let's research keywords from your seed topics."
 - "Let's cluster your GSC/query export into page targets."
 - "Let's map the competitive landscape before choosing pages."
-- "Let's deep-dive one competitor."
+- "Let's study one competitor."
 - "Let's find link prospects for your best linkable asset."
 
 ## Guardrails

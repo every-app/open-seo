@@ -2,6 +2,7 @@ import {
   defineConfig,
   defineCollections,
   frontmatterSchema,
+  metaSchema,
 } from "fumadocs-mdx/config/zod-3";
 import { z } from "zod";
 
@@ -14,6 +15,18 @@ export const guide = defineCollections({
     author: z.string(),
     date: z.string(),
   }),
+});
+
+export const docs = defineCollections({
+  type: "doc",
+  dir: "content/docs",
+  schema: pageSchema,
+});
+
+export const docsMeta = defineCollections({
+  type: "meta",
+  dir: "content/docs",
+  schema: metaSchema,
 });
 
 export const legal = defineCollections({

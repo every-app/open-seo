@@ -13,7 +13,7 @@ Easy to self-host and extend, but we have a managed version too:
 - [Why Use This](#why-use-this)
 - [Main SEO Workflows](#main-seo-workflows)
 - [OpenSEO MCP](#openseo-mcp)
-- [OpenSEO Skills](#openseo-skills)
+- [OpenSEO Agent Skills](#openseo-agent-skills)
 - [Roadmap](#roadmap)
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
@@ -88,9 +88,9 @@ claude mcp add --transport http --scope user openseo http://localhost:3001/mcp
 
 Approve the OpenSEO login when your agent asks.
 
-## OpenSEO Skills
+## OpenSEO Agent Skills
 
-OpenSEO skills are reusable workflows for Codex and Claude Code. They guide your agent through SEO tasks and can use the OpenSEO MCP for live keyword, SERP, backlink, and domain data.
+OpenSEO Agent Skills are reusable workflows for Codex and Claude Code. They guide your agent through SEO tasks and can use the OpenSEO MCP for live keyword, SERP, backlink, and domain data.
 
 ### Installation Options
 
@@ -132,11 +132,11 @@ mkdir -p ~/.claude/skills
 cp -R open-seo/.agents/skills/* ~/.claude/skills/
 ```
 
-Start with `/onboarding-checklist`. It will ask about your project and help configure your workspace.
+Start with `/seo-project-setup`. It will ask about your project and help configure your workspace.
 
 ### Available Skills
 
-- `onboarding-checklist`
+- `seo-project-setup`
 - `seo-coach`
 - `keyword-research`
 - `keyword-clustering`

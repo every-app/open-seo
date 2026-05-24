@@ -1,13 +1,13 @@
 ---
-name: onboarding-checklist
-description: Guide a new OpenSEO user through workspace setup, site goals, positioning context, MCP checks, SEO strategy, and Search Console data intake.
+name: seo-project-setup
+description: Set up a durable local SEO workspace with project context, notes, goals, positioning, preferences, MCP checks, and Search Console data intake.
 ---
 
-# OpenSEO Onboarding Checklist
+# OpenSEO SEO Project Setup
 
 ## Goal
 
-Help the user set up a durable SEO workspace and gather enough context for future OpenSEO workflows to be useful. This is an intake and readiness workflow, not a full audit.
+Help the user set up a local SEO workspace for one website or SEO project. The folder is where the agent saves notes, goals, exports, briefs, reports, preferences, and project context over time. This is a workspace and context setup workflow, not a full audit.
 
 ## Tone
 
@@ -23,7 +23,7 @@ Suggest that the user choose or create a local folder for SEO work, for example:
 - `~/Documents/SEO/<company-or-site>/`
 - A repo or workspace folder if SEO work should live beside website/content files
 
-Explain that keeping notes, exports, briefs, scraped pages, and reports in one folder helps the agent build context over time.
+Explain that keeping notes, exports, briefs, scraped pages, reports, and preferences in one folder helps the agent build context over time. Future SEO workflows can use that folder rather than starting from a blank conversation.
 
 Recommended starter structure:
 
@@ -38,7 +38,7 @@ seo-workspace/
   reports/
 ```
 
-Do not create folders unless the user asks. If file tools are available and the user asks, create a simple structure and a short `README.md` with the current goals and known sites.
+Do not create folders unless the user asks. If file tools are available and the user asks, create a simple structure and a short `README.md` with the current goals, known sites, and user preferences for how the agent should approach SEO for this project.
 
 ### 2. Collect website scope
 
@@ -159,5 +159,5 @@ Then summarize:
 
 - Keep setup lightweight. The user should feel oriented, not assigned homework.
 - Do not pretend a GSC CSV has been uploaded unless you can see it.
-- Keep onboarding focused on setup and context unless the user asks for live research.
+- Keep project setup focused on setup and context unless the user asks for live research.
 - If web search or scraping is used for positioning research, distinguish source evidence from inference.

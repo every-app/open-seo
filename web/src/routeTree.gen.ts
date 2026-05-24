@@ -13,9 +13,11 @@ import { Route as TermsAndConditionsRouteImport } from './routes/terms-and-condi
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
+import { Route as DocsIndexRouteImport } from './routes/docs/index'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as JsScriptDotjsRouteImport } from './routes/js/script[.]js'
 import { Route as GuidesSplatRouteImport } from './routes/guides/$'
+import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
@@ -49,6 +51,11 @@ const GuidesIndexRoute = GuidesIndexRouteImport.update({
   path: '/guides/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocsIndexRoute = DocsIndexRouteImport.update({
+  id: '/docs/',
+  path: '/docs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarketingIndexRoute = MarketingIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -62,6 +69,11 @@ const JsScriptDotjsRoute = JsScriptDotjsRouteImport.update({
 const GuidesSplatRoute = GuidesSplatRouteImport.update({
   id: '/guides/$',
   path: '/guides/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsSplatRoute = DocsSplatRouteImport.update({
+  id: '/docs/$',
+  path: '/docs/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
@@ -145,8 +157,10 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
+  '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
@@ -165,9 +179,11 @@ export interface FileRoutesByTo {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/': typeof MarketingIndexRoute
+  '/docs': typeof DocsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
@@ -188,9 +204,11 @@ export interface FileRoutesById {
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
+  '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/_marketing/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
   '/_marketing/features/ai-search-prompts': typeof MarketingFeaturesAiSearchPromptsRoute
@@ -212,8 +230,10 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
+    | '/docs/'
     | '/guides/'
     | '/features/ai-brand-visibility'
     | '/features/ai-search-prompts'
@@ -232,9 +252,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
     | '/'
+    | '/docs'
     | '/guides'
     | '/features/ai-brand-visibility'
     | '/features/ai-search-prompts'
@@ -254,9 +276,11 @@ export interface FileRouteTypes {
     | '/_marketing/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
     | '/_marketing/'
+    | '/docs/'
     | '/guides/'
     | '/_marketing/features/ai-brand-visibility'
     | '/_marketing/features/ai-search-prompts'
@@ -276,8 +300,10 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiEventRoute: typeof ApiEventRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
+  DocsSplatRoute: typeof DocsSplatRoute
   GuidesSplatRoute: typeof GuidesSplatRoute
   JsScriptDotjsRoute: typeof JsScriptDotjsRoute
+  DocsIndexRoute: typeof DocsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
 }
 
@@ -311,6 +337,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GuidesIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/docs/': {
+      id: '/docs/'
+      path: '/docs'
+      fullPath: '/docs/'
+      preLoaderRoute: typeof DocsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_marketing/': {
       id: '/_marketing/'
       path: '/'
@@ -330,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/guides/$'
       fullPath: '/guides/$'
       preLoaderRoute: typeof GuidesSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs/$': {
+      id: '/docs/$'
+      path: '/docs/$'
+      fullPath: '/docs/$'
+      preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subscribe': {
@@ -467,8 +507,10 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiEventRoute: ApiEventRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
+  DocsSplatRoute: DocsSplatRoute,
   GuidesSplatRoute: GuidesSplatRoute,
   JsScriptDotjsRoute: JsScriptDotjsRoute,
+  DocsIndexRoute: DocsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
 }
 export const routeTree = rootRouteImport

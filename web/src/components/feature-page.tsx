@@ -133,9 +133,7 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
       </section>
 
       <section className="mt-12 rounded-lg border border-neutral-200 bg-neutral-50 p-5">
-        <h2 className="text-lg font-semibold text-neutral-900">
-          Try OpenSEO
-        </h2>
+        <h2 className="text-lg font-semibold text-neutral-900">Try OpenSEO</h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
           The open source alternative to bloated, expensive, legacy SEO tools.
         </p>

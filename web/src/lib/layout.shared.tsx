@@ -10,8 +10,25 @@ export function baseOptions(): BaseLayoutProps {
     },
     links: [
       {
-        text: "Guides",
+        text: "Resources",
         url: "/guides",
+        items: [
+          {
+            text: "Guides",
+            description: "Founder-focused SEO articles.",
+            url: "/guides",
+          },
+          {
+            text: "MCP",
+            description: "Connect OpenSEO to AI clients.",
+            url: "/docs/mcp",
+          },
+          {
+            text: "Skills",
+            description: "Focused OpenSEO workflows.",
+            url: "/docs/skills",
+          },
+        ],
       },
       {
         text: "GitHub",
