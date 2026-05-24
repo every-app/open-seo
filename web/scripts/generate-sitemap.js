@@ -10,6 +10,7 @@ const __dirname = dirname(__filename);
 
 const DIST_DIR = join(__dirname, "../dist/client");
 const GUIDE_CONTENT_DIR = join(__dirname, "../content/guides");
+const DOCS_CONTENT_DIR = join(__dirname, "../content/docs");
 
 const DEFAULT_SITE_URL = "https://openseo.so";
 const SITE_URL = (process.env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
@@ -20,12 +21,13 @@ const STATIC_PATHS = [
   "/privacy",
   "/terms-and-conditions",
   "/guides",
+  "/docs",
   "/features",
   "/features/mcp",
   ...Object.values(FEATURE_PAGE_SLUGS).map((slug) => `/features/${slug}`),
 ];
 
-function getGuideEntries(dir = GUIDE_CONTENT_DIR, segments = []) {
+function getContentEntries(contentDir, basePath, dir = contentDir, segments = []) {
   if (!existsSync(dir)) {
     return [];
   }
@@ -38,7 +40,10 @@ function getGuideEntries(dir = GUIDE_CONTENT_DIR, segments = []) {
     const entryPath = join(dir, entry.name);
 
     if (entry.isDirectory()) {
-      return getGuideEntries(entryPath, [...segments, entry.name]);
+      return getContentEntries(contentDir, basePath, entryPath, [
+        ...segments,
+        entry.name,
+      ]);
     }
 
     if (!entry.isFile() || !/\.(md|mdx)$/i.test(entry.name)) {
@@ -46,9 +51,14 @@ function getGuideEntries(dir = GUIDE_CONTENT_DIR, segments = []) {
     }
 
     const slug = entry.name.replace(/\.(md|mdx)$/i, "");
+    const pathSegments = slug === "index" ? segments : [...segments, slug];
+
     return [
       {
-        path: `/guides/${[...segments, slug].join("/")}`,
+        path:
+          pathSegments.length > 0
+            ? `${basePath}/${pathSegments.join("/")}`
+            : basePath,
         lastmod: statSync(entryPath).mtime.toISOString(),
       },
     ];
@@ -72,8 +82,11 @@ function main() {
   for (const path of STATIC_PATHS) {
     entries.set(path, { path, lastmod: null });
   }
-  for (const guide of getGuideEntries()) {
-    entries.set(guide.path, guide);
+  for (const entry of [
+    ...getContentEntries(GUIDE_CONTENT_DIR, "/guides"),
+    ...getContentEntries(DOCS_CONTENT_DIR, "/docs"),
+  ]) {
+    entries.set(entry.path, entry);
   }
 
   const sorted = Array.from(entries.values()).sort((a, b) =>
