@@ -6,6 +6,14 @@ import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
+import {
+  findSerpCompetitorsTool,
+  getGoogleBusinessQuestionsTool,
+  getKeywordSearchVolumeTool,
+  getLocalSerpResultsTool,
+  getRankedKeywordsTool,
+  searchLocalBusinessesTool,
+} from "@/server/mcp/tools/dataforseo-research-tools";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
@@ -56,5 +64,35 @@ export function registerOpenSeoMcpTools(server: McpServer) {
     getRankTrackerTool.name,
     getRankTrackerTool.config,
     getRankTrackerTool.handler,
+  );
+  server.registerTool(
+    getRankedKeywordsTool.name,
+    getRankedKeywordsTool.config,
+    getRankedKeywordsTool.handler,
+  );
+  server.registerTool(
+    findSerpCompetitorsTool.name,
+    findSerpCompetitorsTool.config,
+    findSerpCompetitorsTool.handler,
+  );
+  server.registerTool(
+    searchLocalBusinessesTool.name,
+    searchLocalBusinessesTool.config,
+    searchLocalBusinessesTool.handler,
+  );
+  server.registerTool(
+    getLocalSerpResultsTool.name,
+    getLocalSerpResultsTool.config,
+    getLocalSerpResultsTool.handler,
+  );
+  server.registerTool(
+    getGoogleBusinessQuestionsTool.name,
+    getGoogleBusinessQuestionsTool.config,
+    getGoogleBusinessQuestionsTool.handler,
+  );
+  server.registerTool(
+    getKeywordSearchVolumeTool.name,
+    getKeywordSearchVolumeTool.config,
+    getKeywordSearchVolumeTool.handler,
   );
 }

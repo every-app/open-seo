@@ -10,7 +10,11 @@ import {
 } from "dataforseo-client";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
-import type { DataforseoApiResponse } from "@/server/lib/dataforseoCost";
+import {
+  DataforseoChargedTaskError,
+  type DataforseoApiCallCost,
+  type DataforseoApiResponse,
+} from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
 import {
   dataforseoResponseSchema,
@@ -135,6 +139,29 @@ type DataforseoTaskLike = {
   result?: DataforseoTask["result"];
 };
 
+const dataforseoGenericItemSchema = z.record(z.string(), z.unknown());
+
+const dataforseoGenericResultSchema = z
+  .object({
+    total_count: z.number().nullable().optional(),
+    count: z.number().nullable().optional(),
+    offset: z.number().nullable().optional(),
+    items: z.array(dataforseoGenericItemSchema).nullable().optional(),
+    items_without_answers: z
+      .array(dataforseoGenericItemSchema)
+      .nullable()
+      .optional(),
+  })
+  .passthrough();
+
+type GenericDataforseoItem = z.infer<typeof dataforseoGenericItemSchema>;
+
+const dataforseoChargedTaskSchema = z.object({
+  path: z.array(z.string()),
+  cost: z.number(),
+  result_count: z.number().nullable().optional(),
+});
+
 function formatDataforseoErrorPayload(value: unknown): string {
   const text =
     typeof value === "string"
@@ -150,6 +177,43 @@ function formatDataforseoErrorPayload(value: unknown): string {
   return text.length > MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH
     ? `${text.slice(0, MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH)}... [truncated]`
     : text;
+}
+
+function compactObject(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(value).filter(([, entry]) => entry !== undefined),
+  );
+}
+
+function extractGenericItems(task: DataforseoTask): GenericDataforseoItem[] {
+  const result = task.result ?? [];
+  const resultItems = z.array(dataforseoGenericResultSchema).parse(result);
+  const resultHasNestedItems = resultItems.some((item) =>
+    Object.hasOwn(item, "items"),
+  );
+
+  return resultHasNestedItems
+    ? resultItems.flatMap((item) => [
+        ...(item.items ?? []),
+        ...(item.items_without_answers ?? []),
+      ])
+    : z.array(dataforseoGenericItemSchema).parse(result);
+}
+
+async function postGenericItems(
+  path: string,
+  payload: Record<string, unknown>,
+): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  const responseRaw = await postDataforseo(path, [compactObject(payload)]);
+  const response = dataforseoResponseSchema.parse(responseRaw);
+  const task = assertOk(response);
+
+  return {
+    data: extractGenericItems(task),
+    billing: buildTaskBilling(task),
+  };
 }
 
 function getTaskDebugPayload(task: DataforseoTaskLike) {
@@ -192,6 +256,13 @@ function assertOk<T extends DataforseoTaskLike>(
     throw new AppError("INTERNAL_ERROR", "DataForSEO response missing task");
   }
   if (task.status_code !== 20000) {
+    const chargedTask = dataforseoChargedTaskSchema.safeParse(task);
+    if (chargedTask.success) {
+      throw new DataforseoChargedTaskError(
+        task.status_message || "DataForSEO task failed",
+        buildTaskBilling(chargedTask.data),
+      );
+    }
     throw new AppError(
       "INTERNAL_ERROR",
       task.status_message || "DataForSEO task failed",
@@ -222,11 +293,15 @@ function assertOk<T extends DataforseoTaskLike>(
   return parsedTask.data;
 }
 
-function buildTaskBilling(task: DataforseoTask) {
+function buildTaskBilling(task: {
+  path: string[];
+  cost: number;
+  result_count?: number | null;
+}): DataforseoApiCallCost {
   return {
     path: task.path,
     costUsd: task.cost,
-    resultCount: task.result_count,
+    resultCount: task.result_count ?? null,
   };
 }
 
@@ -363,6 +438,8 @@ export async function fetchRankedKeywordsRaw(input: {
   offset?: number;
   orderBy?: string[];
   filters?: unknown[];
+  itemTypes?: DataforseoLabsItemType[];
+  includeSubdomains?: boolean;
 }): Promise<DataforseoApiResponse<RankedKeywordsPage>> {
   const api = getLabsApi();
   const req = new DataforseoLabsGoogleRankedKeywordsLiveRequestInfo({
@@ -373,6 +450,8 @@ export async function fetchRankedKeywordsRaw(input: {
     offset: input.offset,
     order_by: input.orderBy,
     filters: input.filters,
+    item_types: input.itemTypes,
+    include_subdomains: input.includeSubdomains,
   });
 
   const endpoint = "google-ranked-keywords-live";
@@ -459,6 +538,30 @@ export async function fetchLiveSerpItemsRaw(
     data,
     billing: buildTaskBilling(task),
   };
+}
+
+export async function fetchLocalSerpItemsRaw(input: {
+  keyword: string;
+  locationCoordinate?: string;
+  languageCode: string;
+  searchType: "maps" | "local_finder";
+  device: "desktop" | "mobile";
+  depth: number;
+  searchPlaces?: boolean;
+}): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  const path =
+    input.searchType === "maps"
+      ? "/v3/serp/google/maps/live/advanced"
+      : "/v3/serp/google/local_finder/live/advanced";
+  return postGenericItems(path, {
+    keyword: input.keyword,
+    location_coordinate: input.locationCoordinate,
+    language_code: input.languageCode,
+    device: input.device,
+    os: input.device === "desktop" ? "windows" : "android",
+    depth: input.depth,
+    search_places: input.searchPlaces,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -620,4 +723,76 @@ export async function fetchKeywordOverviewRaw(
     data,
     billing: buildTaskBilling(parsedTask.data),
   };
+}
+
+export async function fetchBusinessListingsSearchRaw(input: {
+  categories?: string[];
+  title?: string;
+  locationCoordinate: string;
+  orderBy?: string[];
+  limit: number;
+}): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  return postGenericItems("/v3/business_data/business_listings/search/live", {
+    categories: input.categories,
+    title: input.title,
+    location_coordinate: input.locationCoordinate,
+    order_by: input.orderBy,
+    limit: input.limit,
+  });
+}
+
+export async function fetchBusinessQuestionsAnswersRaw(input: {
+  keyword: string;
+  locationCoordinate: string;
+  languageCode: string;
+  depth: number;
+}): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  return postGenericItems(
+    "/v3/business_data/google/questions_and_answers/live",
+    {
+      keyword: input.keyword,
+      location_coordinate: input.locationCoordinate,
+      language_code: input.languageCode,
+      depth: input.depth,
+    },
+  );
+}
+
+export async function fetchKeywordSearchVolumeRaw(input: {
+  keywords: string[];
+  locationCode?: number;
+  languageCode?: string;
+}): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  return postGenericItems("/v3/keywords_data/google_ads/search_volume/live", {
+    keywords: input.keywords,
+    location_code: input.locationCode,
+    language_code: input.languageCode,
+  });
+}
+
+export type DataforseoLabsItemType =
+  | "organic"
+  | "paid"
+  | "featured_snippet"
+  | "local_pack"
+  | "ai_overview_reference";
+
+export async function fetchSerpCompetitorsRaw(input: {
+  keywords: string[];
+  locationCode: number;
+  languageCode: string;
+  itemTypes?: DataforseoLabsItemType[];
+  includeSubdomains?: boolean;
+  limit: number;
+  offset?: number;
+}): Promise<DataforseoApiResponse<GenericDataforseoItem[]>> {
+  return postGenericItems("/v3/dataforseo_labs/google/serp_competitors/live", {
+    keywords: input.keywords,
+    location_code: input.locationCode,
+    language_code: input.languageCode,
+    item_types: input.itemTypes,
+    include_subdomains: input.includeSubdomains,
+    limit: input.limit,
+    offset: input.offset,
+  });
 }

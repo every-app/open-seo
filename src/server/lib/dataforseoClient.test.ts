@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
@@ -48,7 +49,12 @@ vi.mock("@/server/lib/dataforseo", () => ({
   fetchKeywordIdeasRaw: vi.fn(),
   fetchKeywordSuggestionsRaw: vi.fn(),
   fetchRelatedKeywordsRaw: vi.fn(),
+  fetchBusinessListingsSearchRaw: vi.fn(),
+  fetchBusinessQuestionsAnswersRaw: vi.fn(),
   fetchDomainRankOverviewRaw: vi.fn(),
+  fetchKeywordSearchVolumeRaw: vi.fn(),
+  fetchLocalSerpItemsRaw: vi.fn(),
+  fetchSerpCompetitorsRaw: vi.fn(),
   fetchRankedKeywordsRaw: vi.fn(),
   fetchLiveSerpItemsRaw: vi.fn(),
 }));
@@ -76,6 +82,7 @@ import {
   createDataforseoClient,
   mapDataforseoPathToCreditFeature,
 } from "./dataforseoClient";
+import { DataforseoChargedTaskError } from "./dataforseoCost";
 import { fetchBacklinksSummaryRaw } from "./dataforseoBacklinks";
 
 const billingCustomer = {
@@ -228,6 +235,32 @@ describe("meterDataforseoCall with split balances", () => {
     expect(trackMock).not.toHaveBeenCalled();
   });
 
+  it("meters charged DataForSEO task errors before rethrowing", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    vi.mocked(fetchBacklinksSummaryRaw).mockRejectedValue(
+      new DataforseoChargedTaskError("DataForSEO task failed", {
+        costUsd: RAW_COST,
+        path: ["v3", "backlinks", "summary", "live"],
+        resultCount: 0,
+      }),
+    );
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(client.backlinks.summary(backlinksInput)).rejects.toThrow(
+      "DataForSEO task failed",
+    );
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: EXPECTED_CREDITS,
+      }),
+    );
+  });
+
   it("includes balanceFeatureId in track properties", async () => {
     setupHostedMode();
     mockBalances(30, 5000);
@@ -371,5 +404,46 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "live",
       ]),
     ).toBe("ai_search");
+  });
+
+  it("maps local and supporting paths to the intended credit features", () => {
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "business_data",
+        "business_listings",
+        "search",
+        "live",
+      ]),
+    ).toBe("local_seo");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "serp",
+        "google",
+        "local_finder",
+        "live",
+        "advanced",
+      ]),
+    ).toBe("local_seo");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "serp",
+        "google",
+        "maps",
+        "live",
+        "advanced",
+      ]),
+    ).toBe("local_seo");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "keywords_data",
+        "google_ads",
+        "search_volume",
+        "live",
+      ]),
+    ).toBe("keyword_research");
   });
 });

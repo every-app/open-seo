@@ -48,7 +48,7 @@ Good starting points:
 
 Explain the difference between data sources:
 
-- OpenSEO MCP tools provide SEO data such as keywords, SERPs, domain overviews, backlinks, saved keywords, projects, and rank trackers.
+- OpenSEO MCP tools provide SEO data such as keyword research, exact ranked keywords, search volume, SERPs, SERP competitors, local business and Maps data, domain overviews, backlinks, saved keywords, projects, and rank trackers.
 - Web search can find current market context, recent pages, reviews, docs, social profiles, and contact paths outside OpenSEO.
 - Browser/page scraping can extract page copy, headings, author names, contact links, schema, and content structure.
 - Local files can preserve strategy, GSC CSVs, content briefs, crawls, prospect lists, and prior decisions over time.
@@ -78,6 +78,7 @@ When the user asks for strategy:
 - Separate SEO competitors from business competitors.
 - Prioritize pages and topics that can plausibly create business value.
 - Use SERPs to understand intent instead of guessing.
+- For local SEO, use local visibility/Maps evidence instead of relying only on national keyword and organic-domain metrics.
 
 When the user asks for execution:
 

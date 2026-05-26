@@ -19,14 +19,14 @@ const toolCategories: ToolCategory[] = [
         description: "Get keyword ideas with volume, difficulty, and CPC.",
       },
       {
-        name: "get_serp_results",
-        title: "Get SERP results",
-        description: "See live Google results for a keyword.",
-      },
-      {
         name: "get_rank_tracker",
         title: "Get rank tracking positions",
         description: "Read tracked keyword positions.",
+      },
+      {
+        name: "get_keyword_search_volume",
+        title: "Get keyword search volume",
+        description: "Check Google Ads volume and CPC for keyword demand.",
       },
       {
         name: "list_saved_keywords",
@@ -41,8 +41,23 @@ const toolCategories: ToolCategory[] = [
     ],
   },
   {
-    label: "Domain",
+    label: "Competitive Research",
     tools: [
+      {
+        name: "get_serp_results",
+        title: "Get SERP results",
+        description: "See live Google results for a keyword.",
+      },
+      {
+        name: "find_serp_competitors",
+        title: "Find SERP competitors",
+        description: "Compare domains across a keyword set.",
+      },
+      {
+        name: "get_ranked_keywords",
+        title: "Get ranked keywords",
+        description: "Find exact keyword, page, and rank rows.",
+      },
       {
         name: "get_domain_overview",
         title: "Get domain overview",
@@ -57,6 +72,26 @@ const toolCategories: ToolCategory[] = [
         name: "get_backlinks_overview",
         title: "Get backlinks overview",
         description: "Check backlink and referring-domain stats.",
+      },
+    ],
+  },
+  {
+    label: "Local Business",
+    tools: [
+      {
+        name: "search_local_businesses",
+        title: "Search local businesses",
+        description: "Find local business candidates near a coordinate.",
+      },
+      {
+        name: "get_local_serp_results",
+        title: "Get local SERP results",
+        description: "Fetch one Maps or Local Finder result set.",
+      },
+      {
+        name: "get_google_business_questions",
+        title: "Get business questions",
+        description: "Read Google Business Profile Q&A rows.",
       },
     ],
   },

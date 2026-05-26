@@ -15,19 +15,22 @@ Group keywords into page-level clusters and decide which existing or new page sh
 - A keyword list, saved keyword tag, seed topic, or target domain
 - Optional existing URLs/pages to map against
 
-If keywords are not provided, use `list_saved_keywords` for saved sets, `research_keywords` for seed discovery, or `get_domain_keyword_suggestions` when the user starts from a target domain.
+If keywords are not provided, use `list_saved_keywords` for saved sets, `research_keywords` for seed discovery, or `get_ranked_keywords` when the user starts from a target domain.
 
 ## OpenSEO MCP tools
 
 - `list_saved_keywords`: fetch an existing keyword set, optionally filtered by tags.
 - `research_keywords`: expand a seed when the user starts from a topic.
-- `get_domain_keyword_suggestions`: gather ranking keywords when the user starts from a domain.
+- `get_ranked_keywords`: gather exact ranking keywords and URLs when the user starts from a domain or page.
 - `get_serp_results`: validate whether keywords belong on the same page by checking SERP overlap and intent.
+- `get_local_serp_results`: use for local SEO clusters when Maps/local-pack intent should affect page mapping.
 - `save_keywords`: optionally tag final clusters after user confirmation.
 
 ## Workflow
 
 1. Gather the candidate keyword set.
+   - Use `get_ranked_keywords` for domain/page-driven clustering.
+   - Use `search_local_businesses` and `get_local_serp_results` when proximity, local packs, or Google Business results determine whether terms belong on location pages.
 2. Remove duplicates, irrelevant terms, and terms that clearly require a different product or audience.
 3. Build clusters around intent and page type:
    - Same SERP intent and similar ranking pages belong together.

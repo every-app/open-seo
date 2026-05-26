@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, max-lines-per-function */
 import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
@@ -13,9 +14,15 @@ import {
   fetchKeywordOverviewRaw,
   fetchKeywordSuggestionsRaw,
   fetchRelatedKeywordsRaw,
+  fetchBusinessListingsSearchRaw,
+  fetchBusinessQuestionsAnswersRaw,
   fetchDomainRankOverviewRaw,
+  fetchKeywordSearchVolumeRaw,
+  fetchLocalSerpItemsRaw,
   fetchRankedKeywordsRaw,
   fetchRelevantPagesRaw,
+  fetchSerpCompetitorsRaw,
+  type DataforseoLabsItemType,
   fetchLiveSerpItemsRaw,
   fetchRankCheckSerpRaw,
   type LabsKeywordDataItem,
@@ -47,6 +54,7 @@ import {
 import {
   type DataforseoApiResponse,
   type DataforseoApiCallCost,
+  DataforseoChargedTaskError,
 } from "@/server/lib/dataforseoCost";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -58,7 +66,8 @@ type CreditFeature =
   | "backlinks"
   | "site_audit"
   | "rank_tracking"
-  | "ai_search";
+  | "ai_search"
+  | "local_seo";
 
 /**
  * Maps a DataForSEO API response path (e.g. ["v3", "dataforseo_labs", "google", "related_keywords", "live"])
@@ -76,9 +85,15 @@ export function mapDataforseoPathToCreditFeature(
     case "backlinks":
       return "backlinks";
     case "serp":
-      return "keyword_research";
+      return path[2] === "google" && ["maps", "local_finder"].includes(path[3])
+        ? "local_seo"
+        : "keyword_research";
     case "ai_optimization":
       return "ai_search";
+    case "business_data":
+      return "local_seo";
+    case "keywords_data":
+      return "keyword_research";
     case "dataforseo_labs": {
       const endpoint = path[3] ?? "";
       if (
@@ -97,6 +112,33 @@ export function mapDataforseoPathToCreditFeature(
 
 export function createDataforseoClient(customer: BillingCustomerContext) {
   return {
+    business: {
+      businessListings(input: {
+        categories?: string[];
+        title?: string;
+        locationCoordinate: string;
+        orderBy?: string[];
+        limit: number;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () => fetchBusinessListingsSearchRaw(input),
+          "local_seo",
+        );
+      },
+      questionsAnswers(input: {
+        keyword: string;
+        locationCoordinate: string;
+        languageCode: string;
+        depth: number;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () => fetchBusinessQuestionsAnswersRaw(input),
+          "local_seo",
+        );
+      },
+    },
     backlinks: {
       summary(input: BacklinksRequest) {
         return meterDataforseoCall(customer, () =>
@@ -195,6 +237,8 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         offset?: number;
         orderBy?: string[];
         filters?: unknown[];
+        itemTypes?: DataforseoLabsItemType[];
+        includeSubdomains?: boolean;
       }) {
         return meterDataforseoCall(customer, () =>
           fetchRankedKeywordsRaw(input),
@@ -211,24 +255,6 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       }) {
         return meterDataforseoCall(customer, () =>
           fetchRelevantPagesRaw(input),
-        );
-      },
-    },
-    labs: {
-      keywordOverview(input: {
-        keywords: string[];
-        locationCode: number;
-        languageCode: string;
-      }) {
-        return meterDataforseoCall(
-          customer,
-          () =>
-            fetchKeywordOverviewRaw(
-              input.keywords,
-              input.locationCode,
-              input.languageCode,
-            ),
-          "rank_tracking",
         );
       },
     },
@@ -259,6 +285,63 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
           customer,
           () => fetchRankCheckSerpRaw(input),
           "rank_tracking",
+        );
+      },
+      local(input: {
+        keyword: string;
+        locationCoordinate?: string;
+        languageCode: string;
+        searchType: "maps" | "local_finder";
+        device: "desktop" | "mobile";
+        depth: number;
+        searchPlaces?: boolean;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () => fetchLocalSerpItemsRaw(input),
+          "local_seo",
+        );
+      },
+    },
+    keywordData: {
+      searchVolume(input: {
+        keywords: string[];
+        locationCode?: number;
+        languageCode?: string;
+      }) {
+        return meterDataforseoCall(customer, () =>
+          fetchKeywordSearchVolumeRaw(input),
+        );
+      },
+    },
+    labs: {
+      keywordOverview(input: {
+        keywords: string[];
+        locationCode: number;
+        languageCode: string;
+      }) {
+        return meterDataforseoCall(
+          customer,
+          () =>
+            fetchKeywordOverviewRaw(
+              input.keywords,
+              input.locationCode,
+              input.languageCode,
+            ),
+          "rank_tracking",
+        );
+      },
+      serpCompetitors(input: {
+        keywords: string[];
+        locationCode: number;
+        languageCode: string;
+        itemTypes?: DataforseoLabsItemType[];
+        includeSubdomains?: boolean;
+        limit: number;
+        offset?: number;
+      }) {
+        return meterDataforseoCall(customer, () =>
+          fetchSerpCompetitorsRaw(input),
         );
       },
     },
@@ -308,7 +391,21 @@ async function meterDataforseoCall<T>(
     billingCustomer.id,
   );
 
-  const result = await execute();
+  let result: DataforseoApiResponse<T>;
+  try {
+    result = await execute();
+  } catch (error) {
+    if (error instanceof DataforseoChargedTaskError) {
+      await trackDataforseoCost({
+        customer,
+        customerId: billingCustomer.id,
+        billing: error.billing,
+        monthlyRemaining,
+        creditFeature,
+      });
+    }
+    throw error;
+  }
 
   await trackDataforseoCost({
     customer,

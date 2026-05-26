@@ -3,7 +3,7 @@ title: "Set up OpenSEO MCP"
 description: "Connect OpenSEO MCP to Claude, Codex, and other AI clients."
 ---
 
-OpenSEO MCP lets compatible AI clients call OpenSEO tools for keyword research, SERP inspection, domain research, backlink overview, saved keywords, and rank tracking.
+OpenSEO MCP lets compatible AI clients call OpenSEO tools for keyword research, SERP inspection, local business research, competitive search intelligence, domain research, backlink overview, saved keywords, and rank tracking.
 
 The hosted MCP server URL is:
 
@@ -57,6 +57,10 @@ OpenSEO MCP exposes tools for SEO research workflows:
 
 - Research keywords with volume, difficulty, and CPC.
 - Fetch live Google organic SERP results for keywords.
+- Find exact keyword, page, rank, volume, CPC, intent, and traffic rows for a domain or page.
+- Compare SERP competitors across a supplied keyword set.
+- Search local businesses near a coordinate, fetch one Maps or Local Finder SERP, and read Google Business Q&A when needed.
+- Check Google Ads keyword volume and CPC for demand prioritization.
 - List saved keywords from an OpenSEO project.
 - Save useful keywords back to OpenSEO.
 - Read rank tracker configs and latest keyword positions.
