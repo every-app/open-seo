@@ -37,7 +37,7 @@ export function resolveSortOrder(
 export function toSortSearchParam(
   sortMode: DomainSortMode,
 ): DomainSortMode | undefined {
-  return sortMode === "rank" ? undefined : sortMode;
+  return sortMode === "traffic" ? undefined : sortMode;
 }
 
 export function toSortOrderSearchParam(

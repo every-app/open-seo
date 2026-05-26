@@ -14,7 +14,7 @@ import { getDomainRouteState } from "@/client/features/domain/domainRouteState";
 const DEFAULT_DOMAIN_SEARCH = {
   domain: "",
   subdomains: true,
-  sort: "rank",
+  sort: "traffic",
   order: undefined,
   tab: "keywords",
   loc: DEFAULT_LOCATION_CODE,

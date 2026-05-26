@@ -160,7 +160,7 @@ export function KeywordSuggestionStep({
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [hasInitialized, setHasInitialized] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([
-    { id: "position", desc: false },
+    { id: "traffic", desc: true },
   ]);
   const selectAnchorRef = useRef<SelectionAnchor | null>(null);
 
@@ -188,17 +188,15 @@ export function KeywordSuggestionStep({
 
   const data = suggestionsQuery.data ?? [];
 
-  // Pre-select top 20 by position once data loads
+  // Pre-select top 20 by traffic once data loads.
   useEffect(() => {
     const items = suggestionsQuery.data;
     if (items && items.length > 0 && !hasInitialized) {
-      // Data comes sorted by search volume from the API, but we display sorted
-      // by position. Pre-select the 20 with the best (lowest) positions.
       const indexed = items.map((item, i) => ({
         index: i,
-        position: item.position ?? 999,
+        traffic: item.traffic ?? 0,
       }));
-      indexed.sort((a, b) => a.position - b.position);
+      indexed.sort((a, b) => b.traffic - a.traffic);
       const initial: RowSelectionState = {};
       for (let i = 0; i < Math.min(PRE_SELECT_COUNT, indexed.length); i++) {
         initial[indexed[i].index] = true;

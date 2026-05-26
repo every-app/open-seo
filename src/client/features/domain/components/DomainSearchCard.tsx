@@ -78,7 +78,7 @@ export function DomainSearchCard({
                 className="select select-bordered shrink-0"
                 value={field.state.value}
                 onChange={(event) => {
-                  const next = toSortMode(event.target.value) ?? "rank";
+                  const next = toSortMode(event.target.value) ?? "traffic";
                   field.handleChange(next);
                   onSortChange(next);
                 }}

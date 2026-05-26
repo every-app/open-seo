@@ -45,7 +45,7 @@ function numberToFilterString(value: number | undefined): string {
 export function getDomainRouteState(
   search: DomainSearchParams,
 ): DomainOverviewRouteState {
-  const normalizedSort = toSortMode(search.sort ?? null) ?? "rank";
+  const normalizedSort = toSortMode(search.sort ?? null) ?? "traffic";
   const normalizedLocationCode =
     search.loc != null && isSupportedLocationCode(search.loc)
       ? search.loc

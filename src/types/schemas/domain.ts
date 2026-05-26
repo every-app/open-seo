@@ -109,8 +109,8 @@ export const domainKeywordsPageRequestSchema = z.object({
       (DOMAIN_KEYWORDS_PAGE_SIZES as readonly number[]).includes(value),
     )
     .default(DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE),
-  sortMode: z.enum(domainSortModes).default("rank"),
-  sortOrder: z.enum(domainSortOrders).default("asc"),
+  sortMode: z.enum(domainSortModes).default("traffic"),
+  sortOrder: z.enum(domainSortOrders).default("desc"),
   filters: domainKeywordsFiltersSchema.default({}),
   search: z.string().optional(),
 });

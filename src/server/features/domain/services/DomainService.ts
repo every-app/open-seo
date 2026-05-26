@@ -143,7 +143,7 @@ async function getSuggestedKeywords(
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     limit: 100,
-    orderBy: ["keyword_data.keyword_info.search_volume,desc"],
+    orderBy: ["ranked_serp_element.serp_item.etv,desc"],
   });
 
   const keywords = rankedKeywordsResponse.items
