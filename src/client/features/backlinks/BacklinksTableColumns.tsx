@@ -30,7 +30,7 @@ function BacklinkFlags({ row }: { row: BacklinksRow }) {
         <span className="badge badge-sm badge-outline">Nofollow</span>
       ) : null}
       {row.linksCount != null && row.linksCount > 1 ? (
-        <span className="badge badge-sm badge-outline inline-flex min-w-fit items-center whitespace-nowrap">
+        <span className="badge badge-sm badge-outline min-w-fit whitespace-nowrap">
           {row.linksCount} links
         </span>
       ) : null}
@@ -43,25 +43,27 @@ function DomainFlagBadges({ group }: { group: GroupedBacklinkDomain }) {
   if (group.lostCount > 0) {
     badges.push({
       label: `${group.lostCount} Lost`,
-      className: "badge badge-sm badge-error badge-outline",
+      className:
+        "badge badge-sm badge-error badge-outline min-w-fit whitespace-nowrap",
     });
   }
   if (group.brokenCount > 0) {
     badges.push({
       label: `${group.brokenCount} Broken`,
-      className: "badge badge-sm badge-warning badge-outline",
+      className:
+        "badge badge-sm badge-warning badge-outline min-w-fit whitespace-nowrap",
     });
   }
   if (group.nofollowCount > 0) {
     badges.push({
       label: `${group.nofollowCount} Nofollow`,
-      className: "badge badge-sm badge-outline",
+      className: "badge badge-sm badge-outline min-w-fit whitespace-nowrap",
     });
   }
   if (badges.length === 0) return null;
 
   return (
-    <div className="flex gap-1">
+    <div className="flex flex-wrap gap-1">
       {badges.map((badge) => (
         <span key={badge.label} className={badge.className}>
           {badge.label}

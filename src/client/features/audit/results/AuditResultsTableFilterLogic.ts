@@ -163,3 +163,29 @@ function parseFilterNumber(value: string) {
   const parsed = Number(trimmed);
   return Number.isFinite(parsed) ? parsed : null;
 }
+
+export function nullableNumberSort(
+  left: { getValue: (columnId: string) => number | null },
+  right: { getValue: (columnId: string) => number | null },
+  columnId: string,
+) {
+  const a = left.getValue(columnId);
+  const b = right.getValue(columnId);
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
+export function nullableStringSort(
+  left: { getValue: (columnId: string) => string | null },
+  right: { getValue: (columnId: string) => string | null },
+  columnId: string,
+) {
+  const a = left.getValue(columnId);
+  const b = right.getValue(columnId);
+  if (!a && !b) return 0;
+  if (!a) return 1;
+  if (!b) return -1;
+  return a.localeCompare(b);
+}

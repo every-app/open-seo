@@ -19,9 +19,11 @@ import {
 } from "@/client/features/audit/shared";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import {
+  countActiveFilters,
   EmptyTableMessage,
   PagesFilterBar,
   PerformanceFilterBar,
+  TableFilterToggle,
 } from "@/client/features/audit/results/AuditResultsTableFilters";
 import {
   EMPTY_PAGES_FILTERS,
@@ -29,6 +31,8 @@ import {
   filterPages,
   filterPerformanceRows,
   isLighthouseFailure as getIsLighthouseFailure,
+  nullableNumberSort,
+  nullableStringSort,
   type LighthouseFailureFields,
   type PageRow,
   type PagesFilters,
@@ -122,9 +126,11 @@ const pagesColumns: ColumnDef<PageRow>[] = [
 
 export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
   const [filters, setFilters] = useState<PagesFilters>(EMPTY_PAGES_FILTERS);
+  const [showFilters, setShowFilters] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "statusCode", desc: true },
   ]);
+  const activeFilterCount = countActiveFilters(filters, EMPTY_PAGES_FILTERS);
   const filteredPages = useMemo(
     () => filterPages(pages, filters),
     [filters, pages],
@@ -139,12 +145,21 @@ export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
 
   return (
     <div className="space-y-3">
-      <PagesFilterBar
-        filters={filters}
-        onChange={setFilters}
+      <TableFilterToggle
+        showFilters={showFilters}
+        onToggle={() => setShowFilters((current) => !current)}
+        activeFilterCount={activeFilterCount}
         resultCount={filteredPages.length}
         totalCount={pages.length}
       />
+      {showFilters ? (
+        <PagesFilterBar
+          filters={filters}
+          onChange={setFilters}
+          activeFilterCount={activeFilterCount}
+          onReset={() => setFilters(EMPTY_PAGES_FILTERS)}
+        />
+      ) : null}
       <AppDataTable
         table={table}
         className="table table-sm"
@@ -168,6 +183,7 @@ export function PerformanceTable({
   const [filters, setFilters] = useState<PerformanceFilters>(
     EMPTY_PERFORMANCE_FILTERS,
   );
+  const [showFilters, setShowFilters] = useState(false);
   const [sorting, setSorting] = useState<SortingState>([
     { id: "performanceScore", desc: false },
   ]);
@@ -188,6 +204,10 @@ export function PerformanceTable({
     () => filterPerformanceRows(rows, filters),
     [filters, rows],
   );
+  const activeFilterCount = countActiveFilters(
+    filters,
+    EMPTY_PERFORMANCE_FILTERS,
+  );
   const columns = useMemo(
     () => buildPerformanceColumns({ auditId, projectId }),
     [auditId, projectId],
@@ -202,12 +222,21 @@ export function PerformanceTable({
 
   return (
     <div className="space-y-3">
-      <PerformanceFilterBar
-        filters={filters}
-        onChange={setFilters}
+      <TableFilterToggle
+        showFilters={showFilters}
+        onToggle={() => setShowFilters((current) => !current)}
+        activeFilterCount={activeFilterCount}
         resultCount={filteredRows.length}
         totalCount={rows.length}
       />
+      {showFilters ? (
+        <PerformanceFilterBar
+          filters={filters}
+          onChange={setFilters}
+          activeFilterCount={activeFilterCount}
+          onReset={() => setFilters(EMPTY_PERFORMANCE_FILTERS)}
+        />
+      ) : null}
       <AppDataTable
         table={table}
         className="table table-sm"
@@ -362,30 +391,4 @@ export function ExportDropdown({
       ]}
     />
   );
-}
-
-function nullableNumberSort(
-  left: { getValue: (columnId: string) => number | null },
-  right: { getValue: (columnId: string) => number | null },
-  columnId: string,
-) {
-  const a = left.getValue(columnId);
-  const b = right.getValue(columnId);
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
-  return a - b;
-}
-
-function nullableStringSort(
-  left: { getValue: (columnId: string) => string | null },
-  right: { getValue: (columnId: string) => string | null },
-  columnId: string,
-) {
-  const a = left.getValue(columnId);
-  const b = right.getValue(columnId);
-  if (!a && !b) return 0;
-  if (!a) return 1;
-  if (!b) return -1;
-  return a.localeCompare(b);
 }
