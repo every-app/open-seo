@@ -1,12 +1,6 @@
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
-import { useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import {
-  getCurrentAuthRedirectFromHref,
-  getSignInSearch,
-} from "@/lib/auth-redirect";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 
 export const Route = createFileRoute("/_app")({
@@ -14,26 +8,10 @@ export const Route = createFileRoute("/_app")({
 });
 
 function AppRouteLayout() {
-  const navigate = useNavigate();
-  const { data: session, isPending } = useSession();
-  const isHostedMode = isHostedClientAuthMode();
+  const authGate = useHostedAuthRouteGuard();
   useOnboardingRedirect();
 
-  useEffect(() => {
-    if (isPending || !isHostedMode || session?.user?.id) {
-      return;
-    }
-
-    void navigate({
-      to: "/sign-in",
-      search: getSignInSearch(
-        getCurrentAuthRedirectFromHref(window.location.href),
-      ),
-      replace: true,
-    });
-  }, [isPending, isHostedMode, session?.user?.id, navigate]);
-
-  if (isHostedMode && (isPending || !session?.user?.id)) {
+  if (!authGate.canRenderAuthenticatedContent) {
     return null;
   }
 

@@ -9,15 +9,17 @@ export function useOnboardingRedirect() {
   const navigate = useNavigate();
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
+  const isEmailVerified = session?.user?.emailVerified === true;
   const onboardingQuery = useQuery({
     ...onboardingAnswersQueryOptions(),
-    enabled: isHostedMode && Boolean(session?.user?.id),
+    enabled: isHostedMode && Boolean(session?.user?.id) && isEmailVerified,
   });
 
   useEffect(() => {
     if (
       !isHostedMode ||
       !session?.user?.id ||
+      !isEmailVerified ||
       onboardingQuery.isLoading ||
       onboardingQuery.isError ||
       onboardingQuery.data?.completedAt ||
@@ -33,6 +35,7 @@ export function useOnboardingRedirect() {
     onboardingQuery.data?.completedAt,
     onboardingQuery.isError,
     onboardingQuery.isLoading,
+    isEmailVerified,
     session?.user?.id,
   ]);
 }

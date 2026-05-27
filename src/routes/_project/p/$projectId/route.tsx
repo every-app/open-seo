@@ -1,9 +1,9 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
 import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   getCurrentAuthRedirectFromHref,
   getSignInSearch,
@@ -34,12 +34,17 @@ export const Route = createFileRoute("/_project/p/$projectId")({
 
 function ProjectLayout() {
   const { projectId } = Route.useParams();
+  const authGate = useHostedAuthRouteGuard();
   useOnboardingRedirect();
+
+  if (!authGate.canRenderAuthenticatedContent) {
+    return null;
+  }
 
   return (
     <AuthenticatedAppLayout
       projectId={projectId}
-      banner={isHostedClientAuthMode() ? <FreePlanBanner /> : undefined}
+      banner={authGate.isHostedMode ? <FreePlanBanner /> : undefined}
     >
       <Outlet />
     </AuthenticatedAppLayout>

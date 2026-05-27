@@ -69,6 +69,16 @@ export function getSignInSearch(redirectTo: string) {
   return redirectTo === "/" ? {} : { redirect: redirectTo };
 }
 
+export function getVerifyEmailSearch(
+  email: string | undefined,
+  redirectTo: string,
+) {
+  const search: { email?: string; redirect?: string } = {};
+  if (email) search.email = email;
+  if (redirectTo !== "/") search.redirect = redirectTo;
+  return search;
+}
+
 export function getSignInHref(redirectTo: string) {
   const search = getSignInSearch(redirectTo);
   if (!("redirect" in search)) {

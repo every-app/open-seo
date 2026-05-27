@@ -5,6 +5,7 @@ import {
   getOAuthAuthorizeRedirectFromSearch,
   getOAuthSignedQuery,
   getSignInHref,
+  getVerifyEmailSearch,
   normalizeAuthRedirect,
 } from "./auth-redirect";
 
@@ -44,6 +45,18 @@ describe("auth redirect helpers", () => {
     expect(getSignInHref("/oauth-consent?client_id=abc")).toBe(
       "/sign-in?redirect=%2Foauth-consent%3Fclient_id%3Dabc",
     );
+  });
+
+  it("builds verify-email search params without a root redirect", () => {
+    expect(getVerifyEmailSearch("ben@example.com", "/")).toEqual({
+      email: "ben@example.com",
+    });
+    expect(
+      getVerifyEmailSearch("ben@example.com", "/onboarding?step=0"),
+    ).toEqual({
+      email: "ben@example.com",
+      redirect: "/onboarding?step=0",
+    });
   });
 
   it("extracts the current path, query, and hash from hrefs", () => {

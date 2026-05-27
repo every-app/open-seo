@@ -109,7 +109,11 @@ function VerifyEmailPage() {
     ? verificationIssueSchema.parse(search.error)
     : null;
   const email = search.email;
-  const isWaiting = !errorMessage && !session?.user?.emailVerified && !!email;
+  const isWaiting =
+    !errorMessage &&
+    !bypassEmailVerification &&
+    !session?.user?.emailVerified &&
+    !!email;
   const [isResending, setIsResending] = useState(false);
   const isVerified = !!session?.user?.emailVerified;
   const pageCopy = getVerifyEmailPageCopy({
@@ -122,7 +126,10 @@ function VerifyEmailPage() {
   });
 
   useEffect(() => {
-    if (!isVerified && !bypassEmailVerification) {
+    if (
+      isPending ||
+      (!isVerified && !(bypassEmailVerification && session?.user?.id))
+    ) {
       return;
     }
 
@@ -138,7 +145,13 @@ function VerifyEmailPage() {
     // hit the server before updated handlers are ready, causing
     // "action is not a function" errors).
     window.location.replace(redirectTo);
-  }, [bypassEmailVerification, isVerified, redirectTo]);
+  }, [
+    bypassEmailVerification,
+    isPending,
+    isVerified,
+    redirectTo,
+    session?.user?.id,
+  ]);
 
   useEffect(() => {
     if (!verificationIssueType) {

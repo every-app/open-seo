@@ -25,27 +25,11 @@ function AuthPageLayout() {
       return;
     }
 
-    if (isHostedMode && !session.user.emailVerified) {
-      void navigate({
-        to: "/verify-email",
-        search: {
-          email: session.user.email,
-          redirect: redirectTo,
-        },
-        replace: true,
-      });
-      return;
-    }
-
+    // Already authenticated: hand off to the destination. If the user is
+    // unverified, that route's useHostedAuthRouteGuard bounces them to
+    // /verify-email — this layout doesn't duplicate that rule.
     void navigate({ href: redirectTo, replace: true });
-  }, [
-    isHostedMode,
-    navigate,
-    redirectTo,
-    session?.user?.email,
-    session?.user?.emailVerified,
-    session?.user?.id,
-  ]);
+  }, [navigate, redirectTo, session?.user?.id]);
 
   if (isHostedMode && (isPending || session?.user?.id)) {
     return null;

@@ -11,7 +11,7 @@ import {
 } from "@/client/features/auth/AuthPage";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
-import { getSignInSearch } from "@/lib/auth-redirect";
+import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import {
   HOSTED_PASSWORD_MAX_LENGTH,
   HOSTED_PASSWORD_MIN_LENGTH,
@@ -52,8 +52,6 @@ function SignUpPage() {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
-  const bypassEmailVerification =
-    import.meta.env.BYPASS_EMAIL_VERIFICATION === "true";
 
   const form = useForm({
     defaultValues: {
@@ -73,23 +71,25 @@ function SignUpPage() {
         });
         const resolvedName =
           value.name.trim() || email.split("@")[0] || "OpenSEO User";
+        const verificationCallbackURL = new URL(
+          "/verify-email",
+          window.location.origin,
+        );
+        const verificationSearch = getVerifyEmailSearch(
+          undefined,
+          postSignupRedirect,
+        );
+        if (verificationSearch.redirect) {
+          verificationCallbackURL.searchParams.set(
+            "redirect",
+            verificationSearch.redirect,
+          );
+        }
         const result = await authClient.signUp.email({
           name: resolvedName,
           email,
           password: value.password,
-          callbackURL: (() => {
-            if (bypassEmailVerification) {
-              return new URL(
-                postSignupRedirect,
-                window.location.origin,
-              ).toString();
-            }
-            const url = new URL("/verify-email", window.location.origin);
-            if (postSignupRedirect !== "/") {
-              url.searchParams.set("redirect", postSignupRedirect);
-            }
-            return url.toString();
-          })(),
+          callbackURL: verificationCallbackURL.toString(),
         });
 
         if (result.error) {
@@ -105,13 +105,10 @@ function SignUpPage() {
         captureClientEvent("auth:sign_up_success", {
           redirect_to: redirectTo,
         });
-        if (bypassEmailVerification) {
-          window.location.replace(postSignupRedirect);
-          return;
-        }
         void navigate({
           to: "/verify-email",
-          search: { email, ...getSignInSearch(postSignupRedirect) },
+          search: getVerifyEmailSearch(email, postSignupRedirect),
+          replace: true,
         });
       } catch {
         formApi.setErrorMap({
