@@ -21,7 +21,13 @@ export default defineConfig(({ mode }) => {
   const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
 
   return {
-    envPrefix: ["VITE_", "AUTH_MODE", "POSTHOG_PUBLIC_KEY", "POSTHOG_HOST"],
+    envPrefix: [
+      "VITE_",
+      "AUTH_MODE",
+      "BYPASS_EMAIL_VERIFICATION",
+      "POSTHOG_PUBLIC_KEY",
+      "POSTHOG_HOST",
+    ],
     server: {
       allowedHosts,
       port,

@@ -7,6 +7,7 @@ import {
   getCurrentAuthRedirectFromHref,
   getSignInSearch,
 } from "@/lib/auth-redirect";
+import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 
 export const Route = createFileRoute("/_app")({
   component: AppRouteLayout,
@@ -16,6 +17,7 @@ function AppRouteLayout() {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
   const isHostedMode = isHostedClientAuthMode();
+  useOnboardingRedirect();
 
   useEffect(() => {
     if (isPending || !isHostedMode || session?.user?.id) {

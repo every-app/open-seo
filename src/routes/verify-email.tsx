@@ -102,6 +102,8 @@ function VerifyEmailPage() {
   const redirectTo = normalizeAuthRedirect(search.redirect);
   const isHostedMode = isHostedClientAuthMode();
   const { data: session, isPending } = useSession();
+  const bypassEmailVerification =
+    import.meta.env.BYPASS_EMAIL_VERIFICATION === "true";
   const errorMessage = getVerificationErrorMessage(search.error);
   const verificationIssueType = search.error
     ? verificationIssueSchema.parse(search.error)
@@ -120,13 +122,15 @@ function VerifyEmailPage() {
   });
 
   useEffect(() => {
-    if (!isVerified) {
+    if (!isVerified && !bypassEmailVerification) {
       return;
     }
 
-    captureClientEvent("auth:verification_success", {
-      redirect_to: redirectTo,
-    });
+    if (isVerified) {
+      captureClientEvent("auth:verification_success", {
+        redirect_to: redirectTo,
+      });
+    }
 
     // Full page reload instead of client-side navigation: the auth→app
     // transition needs a clean server-side load so that all server function
@@ -134,7 +138,7 @@ function VerifyEmailPage() {
     // hit the server before updated handlers are ready, causing
     // "action is not a function" errors).
     window.location.replace(redirectTo);
-  }, [isVerified, redirectTo]);
+  }, [bypassEmailVerification, isVerified, redirectTo]);
 
   useEffect(() => {
     if (!verificationIssueType) {

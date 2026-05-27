@@ -48,9 +48,12 @@ function SignUpPage() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
+  const postSignupRedirect = redirectTo === "/" ? "/onboarding" : redirectTo;
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
+  const bypassEmailVerification =
+    import.meta.env.BYPASS_EMAIL_VERIFICATION === "true";
 
   const form = useForm({
     defaultValues: {
@@ -75,9 +78,15 @@ function SignUpPage() {
           email,
           password: value.password,
           callbackURL: (() => {
+            if (bypassEmailVerification) {
+              return new URL(
+                postSignupRedirect,
+                window.location.origin,
+              ).toString();
+            }
             const url = new URL("/verify-email", window.location.origin);
-            if (redirectTo !== "/") {
-              url.searchParams.set("redirect", redirectTo);
+            if (postSignupRedirect !== "/") {
+              url.searchParams.set("redirect", postSignupRedirect);
             }
             return url.toString();
           })(),
@@ -96,9 +105,13 @@ function SignUpPage() {
         captureClientEvent("auth:sign_up_success", {
           redirect_to: redirectTo,
         });
+        if (bypassEmailVerification) {
+          window.location.replace(postSignupRedirect);
+          return;
+        }
         void navigate({
           to: "/verify-email",
-          search: { email, ...getSignInSearch(redirectTo) },
+          search: { email, ...getSignInSearch(postSignupRedirect) },
         });
       } catch {
         formApi.setErrorMap({
@@ -112,18 +125,17 @@ function SignUpPage() {
   });
 
   async function handleContinueWithGoogle() {
-    const callbackURL = redirectTo;
     setSocialError(null);
     setIsStartingGoogle(true);
 
     try {
       captureClientEvent("auth:sign_up_google_start", {
-        redirect_to: callbackURL,
+        redirect_to: redirectTo,
       });
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL,
-        newUserCallbackURL: callbackURL,
+        callbackURL: redirectTo,
+        newUserCallbackURL: postSignupRedirect,
         requestSignUp: true,
       });
 

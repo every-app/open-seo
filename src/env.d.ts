@@ -7,6 +7,7 @@ declare namespace Cloudflare {
     OAUTH_KV: KVNamespace;
 
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+    BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
     POSTHOG_PUBLIC_KEY?: string;
@@ -26,6 +27,7 @@ declare namespace Cloudflare {
 
 interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
+  readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;

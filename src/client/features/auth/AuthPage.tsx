@@ -55,7 +55,7 @@ export function AuthMethodChooser({
     <div className="space-y-3">
       <button
         type="button"
-        className="btn w-full bg-white text-neutral border border-base-content/15 hover:bg-base-100 hover:border-base-content/25 disabled:bg-base-300"
+        className="btn w-full border border-black/10 bg-white text-neutral-900 hover:border-black/20 hover:bg-neutral-50 disabled:bg-white disabled:text-neutral-500 disabled:opacity-70"
         onClick={onContinueWithGoogle}
         disabled={disabled || isBusy}
       >

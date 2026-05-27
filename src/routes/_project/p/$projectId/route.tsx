@@ -1,5 +1,6 @@
 import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
 import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
+import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/_project/p/$projectId")({
 
 function ProjectLayout() {
   const { projectId } = Route.useParams();
+  useOnboardingRedirect();
 
   return (
     <AuthenticatedAppLayout
