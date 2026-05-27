@@ -25,8 +25,27 @@ function AuthPageLayout() {
       return;
     }
 
+    if (isHostedMode && !session.user.emailVerified) {
+      void navigate({
+        to: "/verify-email",
+        search: {
+          email: session.user.email,
+          redirect: redirectTo,
+        },
+        replace: true,
+      });
+      return;
+    }
+
     void navigate({ href: redirectTo, replace: true });
-  }, [navigate, redirectTo, session?.user?.id]);
+  }, [
+    isHostedMode,
+    navigate,
+    redirectTo,
+    session?.user?.email,
+    session?.user?.emailVerified,
+    session?.user?.id,
+  ]);
 
   if (isHostedMode && (isPending || session?.user?.id)) {
     return null;
