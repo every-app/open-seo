@@ -29,7 +29,7 @@ export const PAGE_FILTER_FIELDS = [
   "maxVol",
 ] as const satisfies ReadonlyArray<keyof PagesFilterValues>;
 
-const PAGE_SEARCH_PARAM_BY_FIELD = {
+export const PAGE_SEARCH_PARAM_BY_FIELD = {
   include: "pInclude",
   exclude: "pExclude",
   minTraffic: "pMinTraffic",
@@ -42,23 +42,10 @@ type SearchUpdate = Partial<DomainSearchParams>;
 type FilterValues = Record<string, string>;
 type FilterKey<TValues extends FilterValues> = Extract<keyof TValues, string>;
 
-export function getPageFilterSearchParam(
-  key: PageFilterKey,
-): (typeof PAGE_SEARCH_PARAM_BY_FIELD)[PageFilterKey] {
-  return PAGE_SEARCH_PARAM_BY_FIELD[key];
-}
-
 export function countKeywordFilterConditions(
   values: KeywordsFilterValues,
 ): number {
-  let n = 0;
-  for (const term of values.include.split(/[,+]/)) if (term.trim()) n += 1;
-  for (const term of values.exclude.split(/[,+]/)) if (term.trim()) n += 1;
-  for (const key of KEYWORD_FILTER_FIELDS) {
-    if (key === "include" || key === "exclude") continue;
-    if (values[key].trim() !== "") n += 1;
-  }
-  return n;
+  return countFilterConditions(values, KEYWORD_FILTER_FIELDS);
 }
 
 export function countPageFilterConditions(values: PagesFilterValues): number {
@@ -81,14 +68,14 @@ export function buildPagesSearchUpdate(
   return buildFilterSearchUpdate<PagesFilterValues>(
     values,
     PAGE_FILTER_FIELDS,
-    (key) => getPageFilterSearchParam(key),
+    (key) => PAGE_SEARCH_PARAM_BY_FIELD[key],
   );
 }
 
 export function buildPagesClearSearchUpdate(): SearchUpdate {
   return buildFilterClearSearchUpdate<PagesFilterValues>(
     PAGE_FILTER_FIELDS,
-    (key) => getPageFilterSearchParam(key),
+    (key) => PAGE_SEARCH_PARAM_BY_FIELD[key],
   );
 }
 
@@ -99,8 +86,9 @@ export function buildDomainFiltersClearSearchUpdate(): SearchUpdate {
   );
   Object.assign(
     update,
-    buildFilterClearSearchUpdate<PagesFilterValues>(PAGE_FILTER_FIELDS, (key) =>
-      getPageFilterSearchParam(key),
+    buildFilterClearSearchUpdate<PagesFilterValues>(
+      PAGE_FILTER_FIELDS,
+      (key) => PAGE_SEARCH_PARAM_BY_FIELD[key],
     ),
   );
   return update;

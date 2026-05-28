@@ -1,5 +1,6 @@
 import { createColumnHelper, type SortingState } from "@tanstack/react-table";
 import { useState } from "react";
+import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,
   useAppTable,
@@ -10,7 +11,6 @@ import {
   stringNullsLast,
 } from "@/client/components/table/nullSafeSort";
 import { EmptyTableState } from "./BacklinksPageEmptyTableState";
-import { BacklinksExternalLink } from "./BacklinksPageLinks";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
 import { formatNumber } from "./backlinksPageUtils";
 
@@ -30,7 +30,7 @@ const columns = [
     cell: ({ getValue }) => {
       const page = getValue();
       return page ? (
-        <BacklinksExternalLink
+        <SafeExternalLink
           url={page}
           label={page}
           className="link link-hover break-all inline-flex items-center gap-1"

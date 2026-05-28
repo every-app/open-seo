@@ -77,12 +77,10 @@ export function CodeBlock({ code }: { code: string }) {
 export function CopyButton({
   value,
   successMessage,
-  label,
   iconOnly = false,
 }: {
   value: string;
   successMessage: string;
-  label?: string;
   iconOnly?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
@@ -130,7 +128,7 @@ export function CopyButton({
       ) : (
         <Copy className="size-3" />
       )}
-      {label ?? "Copy"}
+      Copy
     </button>
   );
 }

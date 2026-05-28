@@ -13,11 +13,7 @@ export function AddKeywordsPanel({
 }: {
   configId: string;
   projectId: string;
-  onSuccess: (result: {
-    added: number;
-    addedIds: string[];
-    checkTriggered: boolean;
-  }) => void;
+  onSuccess: (result: { added: number; checkTriggered: boolean }) => void;
   onCancel: () => void;
 }) {
   const [keywordInput, setKeywordInput] = useState("");

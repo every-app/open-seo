@@ -1,6 +1,9 @@
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { mcpResponse } from "@/server/mcp/formatters";
-import { getAuth, getBaseUrl, type ToolExtra } from "@/server/mcp/context";
+import {
+  requireMcpToolAuthContext,
+  type ToolExtra,
+} from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { z } from "zod";
@@ -32,8 +35,7 @@ export const listProjectsTool = {
     },
   },
   handler: async (_args: Record<string, never>, extra: ToolExtra) => {
-    const auth = getAuth(extra);
-    const baseUrl = getBaseUrl(extra);
+    const { baseUrl, ...auth } = requireMcpToolAuthContext(extra);
     const projects = await ProjectService.listProjects(auth.organizationId);
     const lines =
       projects.length === 0

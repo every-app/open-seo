@@ -80,10 +80,7 @@ function getSortSearchUpdate(
   };
 }
 
-function getLocationSearchUpdate(
-  nextLocationCode: number,
-): DomainSearchUpdate | null {
-  if (!isSupportedLocationCode(nextLocationCode)) return null;
+function getLocationSearchUpdate(nextLocationCode: number): DomainSearchUpdate {
   return {
     loc:
       nextLocationCode === DEFAULT_LOCATION_CODE ? undefined : nextLocationCode,
@@ -208,8 +205,7 @@ function useDomainOverviewState({
 
   const applyLocationChange = useCallback(
     (nextLocationCode: number) => {
-      const update = getLocationSearchUpdate(nextLocationCode);
-      if (update) setSearchParams(update);
+      setSearchParams(getLocationSearchUpdate(nextLocationCode));
     },
     [setSearchParams],
   );

@@ -1,16 +1,7 @@
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
+import { downloadFile } from "@/client/lib/download";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
-
-function downloadFile(content: string, filename: string, mime: string) {
-  const blob = new Blob([content], { type: `${mime};charset=utf-8;` });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 const PAGES_HEADERS = [
   "URL",

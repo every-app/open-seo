@@ -1,11 +1,4 @@
-import {
-  AccessGate,
-  AccessGateLoadingState,
-} from "@/client/features/access-gate/AccessGate";
-
-export function AiSearchAccessLoadingState() {
-  return <AccessGateLoadingState />;
-}
+import { AccessGate } from "@/client/features/access-gate/AccessGate";
 
 export function AiSearchSetupGate({
   errorMessage,

@@ -83,10 +83,6 @@ const cachedResultSchema = z.object({
 
 const CACHE_VERSION = 2;
 
-function getMode(input: ResearchKeywordsInput): KeywordMode {
-  return input.mode ?? "auto";
-}
-
 async function fetchRowsFromSource(
   source: KeywordSource,
   input: ResearchKeywordsInput,
@@ -195,12 +191,6 @@ async function fetchManualRows(
   };
 }
 
-function isUsableCachedResult(cached: CachedResult): boolean {
-  if (cached.rows.length === 0) return false;
-
-  return true;
-}
-
 async function buildResearchCacheKey(
   input: ResearchKeywordsInput,
   normalizedKeywords: string[],
@@ -254,7 +244,7 @@ export async function research(
   }
 
   const seedKeyword = uniqueKeywords[0];
-  const mode = getMode(input);
+  const mode = input.mode ?? "auto";
   const cacheKey = await buildResearchCacheKey(
     input,
     uniqueKeywords,
@@ -268,7 +258,7 @@ export async function research(
     ? cachedResult.data
     : null;
 
-  if (cached && isUsableCachedResult(cached)) {
+  if (cached && cached.rows.length > 0) {
     return cached;
   }
 

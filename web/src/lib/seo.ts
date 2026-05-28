@@ -25,7 +25,6 @@ type BuildSeoParams = {
   description?: string;
   titleSuffix?: string;
   ogType?: "website" | "article";
-  imagePath?: string;
   imageAlt?: string;
 };
 
@@ -35,12 +34,11 @@ export function buildPageSeo({
   description,
   titleSuffix,
   ogType = "website",
-  imagePath = DEFAULT_SOCIAL_IMAGE_PATH,
   imageAlt = DEFAULT_SOCIAL_IMAGE_ALT,
 }: BuildSeoParams) {
   const fullTitle = titleSuffix ? `${title} - ${titleSuffix}` : title;
   const canonicalUrl = toCanonicalUrl(path);
-  const socialImageUrl = toCanonicalUrl(imagePath);
+  const socialImageUrl = toCanonicalUrl(DEFAULT_SOCIAL_IMAGE_PATH);
 
   return {
     meta: [

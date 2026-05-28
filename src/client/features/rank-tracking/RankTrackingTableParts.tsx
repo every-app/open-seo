@@ -159,13 +159,6 @@ export function CpcCell({ value }: { value: number | null }) {
   return <span className="font-mono text-sm">${value.toFixed(2)}</span>;
 }
 
-export function comparePositions(a: number | null, b: number | null): number {
-  if (a === null && b === null) return 0;
-  if (a === null) return 1; // nulls sort last
-  if (b === null) return -1;
-  return a - b;
-}
-
 /** Numeric change for CSV export — numbers bypass the CSV formula-injection sanitizer */
 function csvChange(
   current: number | null,

@@ -69,7 +69,7 @@ async function createConfig(input: {
     id: configId,
     projectId: input.projectId,
     domain: normalizedDomain,
-    locationCode: input.locationCode ?? 2840,
+    locationCode,
     languageCode: input.languageCode ?? "en",
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,

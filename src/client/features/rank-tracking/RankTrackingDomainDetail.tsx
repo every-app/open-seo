@@ -122,7 +122,6 @@ function RankTrackingDomainDetailInner({
 
   const handleKeywordsAdded = (result: {
     added: number;
-    addedIds: string[];
     checkTriggered: boolean;
   }) => {
     void queryClient.invalidateQueries({

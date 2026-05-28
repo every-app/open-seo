@@ -119,10 +119,6 @@ function isTimeoutError(error: unknown): boolean {
   return "name" in error && error.name === "TimeoutError";
 }
 
-function parseXmlDocument(body: string): unknown {
-  return xmlParser.parse(body) as unknown;
-}
-
 async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
   nestedSitemaps: string[];
   pageUrls: string[];
@@ -156,7 +152,7 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
         return { nestedSitemaps: [], pageUrls: [], timedOut: false };
       }
 
-      const parsed = parseXmlDocument(body);
+      const parsed = xmlParser.parse(body) as unknown;
       const sections = getParsedSitemapSections(parsed);
       const nestedSitemaps = getSitemapLocations(sections.sitemap)
         .map((loc) => normalizeUrl(loc, finalUrl))

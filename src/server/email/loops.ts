@@ -3,15 +3,21 @@ import { env } from "cloudflare:workers";
 const LOOPS_TRANSACTIONAL_URL = "https://app.loops.so/api/v1/transactional";
 const LOOPS_CONTACT_UPDATE_URL = "https://app.loops.so/api/v1/contacts/update";
 
-function getRequiredEnv(name: string) {
+function getOptionalEnv(name: string) {
   const value: unknown = Reflect.get(env, name);
   const trimmed = typeof value === "string" ? value.trim() : "";
 
-  if (!trimmed) {
+  return trimmed || null;
+}
+
+function getRequiredEnv(name: string) {
+  const value = getOptionalEnv(name);
+
+  if (!value) {
     throw new Error(`${name} is required in hosted mode`);
   }
 
-  return trimmed;
+  return value;
 }
 
 function getHostedAuthEmailConfig() {
@@ -66,13 +72,6 @@ async function sendLoopsTransactionalEmail({
   throw new Error(
     `Failed to send Loops transactional email (${response.status})`,
   );
-}
-
-function getOptionalEnv(name: string) {
-  const value: unknown = Reflect.get(env, name);
-  const trimmed = typeof value === "string" ? value.trim() : "";
-
-  return trimmed || null;
 }
 
 function getContactNameParts(name: string | null | undefined) {

@@ -4,7 +4,6 @@ import type { ColumnDef, SortingFn } from "@tanstack/react-table";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import {
-  comparePositions,
   CpcCell,
   DeviceRankCell,
   DeviceUrlCell,
@@ -101,20 +100,6 @@ const cpcColumn: ColumnDef<RankTrackingRow> = {
   sortingFn: nullsLastNumeric,
 };
 
-const positionSort: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
-  const device = columnId === "desktopPosition" ? "desktop" : "mobile";
-  return comparePositions(
-    rowA.original[device].position,
-    rowB.original[device].position,
-  );
-};
-
-function makeSelectColumn(
-  anchorRef: MutableRefObject<SelectionAnchor | null>,
-): ColumnDef<RankTrackingRow> {
-  return makeSelectionColumn<RankTrackingRow>(anchorRef);
-}
-
 const keywordColumn: ColumnDef<RankTrackingRow> = {
   id: "keyword",
   accessorKey: "keyword",
@@ -140,7 +125,7 @@ function makeDeviceColumn(
     size: 120,
     maxSize: 140,
     cell: ({ row }) => <DeviceRankCell result={row.original[device]} />,
-    sortingFn: positionSort,
+    sortingFn: nullsLastNumeric,
   };
 }
 
@@ -196,7 +181,7 @@ export function useRankTrackingColumns(
 ): ColumnDef<RankTrackingRow>[] {
   return useMemo(() => {
     const cols: ColumnDef<RankTrackingRow>[] = [
-      makeSelectColumn(selectAnchorRef),
+      makeSelectionColumn<RankTrackingRow>(selectAnchorRef),
       keywordColumn,
     ];
     if (showDesktop) {

@@ -4,7 +4,6 @@ import {
   BacklinksResultsCard,
 } from "./BacklinksPageSections";
 import {
-  BacklinksAccessLoadingState,
   BacklinksErrorState,
   BacklinksLoadingState,
   BacklinksSetupGate,
@@ -18,6 +17,7 @@ import type {
   BacklinksTopPagesData,
 } from "./backlinksPageTypes";
 import type { UseAccessGateResult } from "@/client/features/access-gate/useAccessGate";
+import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { buildSummaryStats } from "./backlinksPageUtils";
 import {
   filterBacklinkRows,
@@ -118,7 +118,7 @@ export function BacklinksBody({
   ) : null;
 
   if (accessGate.isLoading) {
-    return <BacklinksAccessLoadingState />;
+    return <AccessGateLoadingState />;
   }
 
   if (accessGate.statusErrorMessage) {

@@ -37,23 +37,6 @@ export function categoryLabel(category: CategoryTab) {
   return `${category.charAt(0).toUpperCase()}${category.slice(1)}`;
 }
 
-export function categorySlug(category: CategoryTab) {
-  return category === "all" ? "all" : category;
-}
-
 export function issuesToCsv(issues: LighthouseIssue[]) {
   return buildCsv(ISSUE_HEADERS, issuesToRows(issues));
-}
-
-export function downloadTextFile(
-  filename: string,
-  content: string,
-  mimeType: string,
-) {
-  const blob = new Blob([content], { type: mimeType });
-  const link = document.createElement("a");
-  link.href = URL.createObjectURL(blob);
-  link.download = filename;
-  link.click();
-  URL.revokeObjectURL(link.href);
 }

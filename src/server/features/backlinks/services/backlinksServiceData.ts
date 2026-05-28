@@ -1,7 +1,6 @@
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
-  type BacklinksRequest,
   type fetchBacklinksHistoryRaw,
   type fetchBacklinksRowsRaw,
   type fetchBacklinksSummaryRaw,
@@ -159,9 +158,10 @@ export async function profileTopPagesRows(
 
   const dataforseo = createDataforseoClient(billingCustomer);
 
-  const request = buildBacklinksRequest(
-    normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
-  );
+  const request = {
+    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
+      .apiTarget,
+  };
   const response = await dataforseo.backlinks.domainPages({
     ...request,
     limit: 100,
@@ -173,17 +173,13 @@ export async function profileTopPagesRows(
   return { rows };
 }
 
-function buildBacklinksRequest(target: string): BacklinksRequest {
-  return { target };
-}
-
 function buildBacklinksListRequest(
   target: string,
   limit: number,
   options?: BacklinksSpamFilterOptions,
 ) {
   return {
-    ...buildBacklinksRequest(target),
+    target,
     limit,
     ...normalizeBacklinksSpamFilterOptions(options),
   };

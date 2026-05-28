@@ -40,14 +40,14 @@ const PLATFORM_DOT_CLASS: Record<PlatformRow["platform"], string> = {
 };
 
 export function BrandLookupResults({ result }: Props) {
-  const erroredPlatforms = result.perPlatform.filter(
-    (p) => p.status === "error",
-  );
-  const allPlatformsErrored =
-    erroredPlatforms.length === result.perPlatform.length &&
-    result.perPlatform.length > 0;
-
   if (!result.hasData) {
+    const erroredPlatforms = result.perPlatform.filter(
+      (p) => p.status === "error",
+    );
+    const allPlatformsErrored =
+      erroredPlatforms.length === result.perPlatform.length &&
+      result.perPlatform.length > 0;
+
     if (allPlatformsErrored) {
       return (
         <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
@@ -63,7 +63,10 @@ export function BrandLookupResults({ result }: Props) {
         </div>
         {erroredPlatforms.length > 0 ? (
           <p className="text-xs text-base-content/60">
-            Note: {formatPlatformList(erroredPlatforms.map((p) => p.platform))}{" "}
+            Note:{" "}
+            {erroredPlatforms
+              .map((p) => formatPlatformLabel(p.platform))
+              .join(" and ")}{" "}
             {erroredPlatforms.length === 1 ? "was" : "were"} unavailable — some
             mentions may be missing.
           </p>
@@ -86,10 +89,6 @@ export function BrandLookupResults({ result }: Props) {
       <CitationTabsCard result={result} />
     </div>
   );
-}
-
-function formatPlatformList(platforms: PlatformRow["platform"][]): string {
-  return platforms.map(formatPlatformLabel).join(" and ");
 }
 
 function BrandHeader({ result }: { result: BrandLookupResult }) {

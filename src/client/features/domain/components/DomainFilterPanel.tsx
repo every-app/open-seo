@@ -60,9 +60,6 @@ export function DomainFilterPanel<TValues extends FilterValues>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appliedKey]);
 
-  const onValueChange = useCallback((key: keyof TValues, value: string) => {
-    setDraftFilters((current) => ({ ...current, [key]: value }));
-  }, []);
   const meta = useMemo(
     () =>
       getFilterMeta({
@@ -114,9 +111,9 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         field: String(key),
         valueLength: value.length,
       });
-      onValueChange(key, value);
+      setDraftFilters((current) => ({ ...current, [key]: value }));
     },
-    [debugName, onValueChange],
+    [debugName],
   );
 
   return (

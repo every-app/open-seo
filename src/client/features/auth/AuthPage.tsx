@@ -4,10 +4,6 @@ import {
   getOAuthSignedQuery,
 } from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import {
-  getFieldError as getSharedFieldError,
-  getFormError as getSharedFormError,
-} from "@/client/lib/forms";
 
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -26,14 +22,6 @@ export function useAuthPageState(redirect: string | undefined) {
     oauthQuery,
     isHostedMode,
   };
-}
-
-export function getFieldError(errors: readonly unknown[]) {
-  return getSharedFieldError(errors);
-}
-
-export function getFormError(error: unknown) {
-  return getSharedFormError(error);
 }
 
 export function AuthMethodChooser({

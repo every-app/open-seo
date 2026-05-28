@@ -9,8 +9,8 @@ type ProjectScopedArgs = {
   projectId: string;
 };
 
-async function requireProjectAccess(_extra: ToolExtra, projectId: string) {
-  const { baseUrl, ...auth } = requireMcpToolAuthContext(_extra);
+async function requireProjectAccess(extra: ToolExtra, projectId: string) {
+  const { baseUrl, ...auth } = requireMcpToolAuthContext(extra);
 
   // This lookup enforces that the project belongs to the authenticated org.
   await ProjectService.getProjectForOrganization(

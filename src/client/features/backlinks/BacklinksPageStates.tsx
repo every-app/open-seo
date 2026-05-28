@@ -1,12 +1,5 @@
 import { ShieldAlert } from "lucide-react";
-import {
-  AccessGate,
-  AccessGateLoadingState,
-} from "@/client/features/access-gate/AccessGate";
-
-export function BacklinksAccessLoadingState() {
-  return <AccessGateLoadingState />;
-}
+import { AccessGate } from "@/client/features/access-gate/AccessGate";
 
 export function BacklinksSetupGate({
   errorMessage,

@@ -1,6 +1,5 @@
 /* eslint-disable max-lines */
 import { z } from "zod";
-import { AppError } from "@/server/lib/errors";
 import { createDataforseoClient } from "@/server/lib/dataforseoClient";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -85,7 +84,6 @@ const rankedTargetSchema = z
     "Use a domain without protocol/www or an absolute page URL.",
   );
 
-const looseRecordSchema = z.record(z.string(), z.unknown());
 const getRankedKeywordsInputSchema = {
   projectId: projectIdSchema,
   target: rankedTargetSchema,
@@ -180,18 +178,10 @@ type GetGoogleBusinessQuestionsArgs = z.infer<
 const QUESTIONS_ANSWERS_MIN_RADIUS = 200;
 const QUESTIONS_ANSWERS_MAX_RADIUS = 199999;
 
-function resolveMarketLocationCode(market: Market | undefined): number {
-  const country = market?.country?.trim().toLowerCase();
-  if (
-    !country ||
-    ["us", "usa", "united states", "united states of america"].includes(country)
-  ) {
-    return DEFAULT_LOCATION_CODE;
-  }
-  throw new AppError(
-    "VALIDATION_ERROR",
-    "Only United States country targeting is supported by this MCP tool today.",
-  );
+function resolveMarketLocationCode(_market: Market | undefined): number {
+  // The Zod enum on market.country already restricts values to United States
+  // variants, so no other country can reach this code path.
+  return DEFAULT_LOCATION_CODE;
 }
 
 function formatCoordinate(value: number): string {
@@ -263,9 +253,12 @@ function buildRankedKeywordFilters(args: {
   return filters.length > 0 ? filters : undefined;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function asRecord(value: unknown): Record<string, unknown> | undefined {
-  const parsed = looseRecordSchema.safeParse(value);
-  return parsed.success ? parsed.data : undefined;
+  return isRecord(value) ? value : undefined;
 }
 
 function displayValue(value: unknown): string {

@@ -234,7 +234,6 @@ function McpRecommendation({
 function OnboardingChoiceGroup({
   title,
   description,
-  reason,
   options,
   selectedValues,
   onToggle,
@@ -246,7 +245,6 @@ function OnboardingChoiceGroup({
 }: {
   title: string;
   description?: string;
-  reason?: string;
   options: string[];
   selectedValues: string[];
   onToggle: (value: string) => void;
@@ -274,11 +272,6 @@ function OnboardingChoiceGroup({
         <h2 className="text-lg font-semibold">{title}</h2>
         {description ? (
           <p className="mt-1 text-sm text-base-content/60">{description}</p>
-        ) : null}
-        {reason ? (
-          <p className="mt-2 text-xs leading-relaxed text-base-content/55">
-            {reason}
-          </p>
         ) : null}
       </div>
 

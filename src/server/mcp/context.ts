@@ -90,10 +90,6 @@ export function getAuth(extra: ToolExtra): McpAuth {
   return auth;
 }
 
-export function getBaseUrl(extra: ToolExtra): string {
-  return requireMcpToolAuthContext(extra).baseUrl;
-}
-
 export function buildBillingCustomer(
   auth: McpAuth,
   projectId: string,

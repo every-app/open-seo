@@ -51,17 +51,16 @@ interface CheckContext {
 export async function runLiveCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<{ totalFailed: number }> {
+): Promise<void> {
   const deviceList: Array<"desktop" | "mobile"> =
     ctx.devices === "both" ? ["desktop", "mobile"] : [ctx.devices];
   let checked = 0;
-  let totalFailed = 0;
 
   for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
     const batch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
     const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
 
-    const batchResults = await step.do(
+    await step.do(
       `live-batch-${batchIndex}`,
       SINGLE_ATTEMPT_STEP_CONFIG,
       async () => {
@@ -82,12 +81,10 @@ export async function runLiveCheck(
         );
         const settled = await Promise.allSettled(promises);
         const results: RankCheckResultWithDevice[] = [];
-        let batchFailed = 0;
         for (const outcome of settled) {
           if (outcome.status === "fulfilled") {
             results.push(outcome.value);
           } else {
-            batchFailed++;
             console.error("Rank check call failed:", outcome.reason);
           }
         }
@@ -101,16 +98,7 @@ export async function runLiveCheck(
             mapResultsToSnapshotRows(ctx.runId, results),
           );
         }
-        return { batchFailed };
       },
     );
-
-    totalFailed += batchResults.batchFailed;
   }
-
-  if (totalFailed > 0) {
-    console.warn(`Rank check completed with ${totalFailed} failed API call(s)`);
-  }
-
-  return { totalFailed };
 }

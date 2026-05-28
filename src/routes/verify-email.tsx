@@ -230,11 +230,7 @@ function VerifyEmailPage() {
               {isResending ? "Sending email..." : "Resend email"}
             </button>
           </div>
-        ) : isPending ? (
-          <div className="flex justify-center py-4">
-            <span className="loading loading-spinner loading-md" />
-          </div>
-        ) : isVerified ? (
+        ) : isPending || isVerified ? (
           <div className="flex justify-center py-4">
             <span className="loading loading-spinner loading-md" />
           </div>

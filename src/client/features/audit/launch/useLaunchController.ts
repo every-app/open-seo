@@ -131,24 +131,15 @@ function useLaunchMutations({
   return { startMutation, deleteMutation };
 }
 
-function applyMaxPages(
-  launchForm: {
-    setFieldValue: (field: "maxPagesInput", value: string) => void;
-  },
-  value: number,
-) {
-  const safeValue = Number.isFinite(value)
-    ? Math.max(MIN_PAGES, Math.min(MAX_PAGES_LIMIT, Math.round(value)))
-    : MIN_PAGES;
-  launchForm.setFieldValue("maxPagesInput", String(safeValue));
-  return safeValue;
-}
-
 function commitMaxPagesInput(launchForm: {
   state: { values: { maxPagesInput: string } };
   setFieldValue: (field: "maxPagesInput", value: string) => void;
 }) {
   const maxPagesInput = launchForm.state.values.maxPagesInput;
-  if (!maxPagesInput) return applyMaxPages(launchForm, MIN_PAGES);
-  return applyMaxPages(launchForm, Number.parseInt(maxPagesInput, 10));
+  const value = maxPagesInput ? Number.parseInt(maxPagesInput, 10) : MIN_PAGES;
+  const safeValue = Number.isFinite(value)
+    ? Math.max(MIN_PAGES, Math.min(MAX_PAGES_LIMIT, Math.round(value)))
+    : MIN_PAGES;
+  launchForm.setFieldValue("maxPagesInput", String(safeValue));
+  return safeValue;
 }

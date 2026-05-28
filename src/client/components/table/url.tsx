@@ -73,7 +73,7 @@ function getUrlDisplayLabel(
   return formatUrlForDisplay(value);
 }
 
-function getSafeExternalUrl(value: string) {
+export function getSafeExternalUrl(value: string) {
   try {
     const parsed = new URL(value);
     return parsed.protocol === "http:" || parsed.protocol === "https:"

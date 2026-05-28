@@ -7,7 +7,7 @@ export type PerformanceRowData = PerformanceResultRow & {
   pagePath: string | null;
 };
 
-export type LighthouseFailureFields = {
+type LighthouseFailureFields = {
   errorMessage: string | null;
   performanceScore: number | null;
   accessibilityScore: number | null;

@@ -4,6 +4,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { useState } from "react";
+import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,
   useAppTable,
@@ -23,7 +24,6 @@ import {
   formatDecimal,
   formatNumber,
 } from "./backlinksPageUtils";
-import { BacklinksExternalLink } from "./BacklinksPageLinks";
 
 type ReferringDomainRow = BacklinksOverviewData["referringDomains"][number];
 
@@ -60,7 +60,7 @@ const columns = [
       const domain = getValue();
       if (!domain) return "-";
       return (
-        <BacklinksExternalLink
+        <SafeExternalLink
           url={getDomainWebsiteHref(domain)}
           label={domain}
           className="link link-primary link-hover break-all inline-flex items-center gap-1"

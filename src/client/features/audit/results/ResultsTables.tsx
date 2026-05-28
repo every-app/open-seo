@@ -30,23 +30,14 @@ import {
   EMPTY_PERFORMANCE_FILTERS,
   filterPages,
   filterPerformanceRows,
-  isLighthouseFailure as getIsLighthouseFailure,
+  isLighthouseFailure,
   nullableNumberSort,
   nullableStringSort,
-  type LighthouseFailureFields,
   type PageRow,
   type PagesFilters,
   type PerformanceFilters,
   type PerformanceRowData,
 } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
-
-export function isLighthouseFailure(row: LighthouseFailureFields) {
-  return getIsLighthouseFailure(row);
-}
-
-function getLighthouseFailureMessage(row: LighthouseFailureFields) {
-  return row.errorMessage ?? "Lighthouse returned no category scores";
-}
 
 const pageColumnHelper = createColumnHelper<PageRow>();
 const performanceColumnHelper = createColumnHelper<PerformanceRowData>();
@@ -275,7 +266,8 @@ function buildPerformanceColumns({
       header: ({ column }) => <SortableHeader column={column} label="Status" />,
       cell: ({ row }) => {
         const isFailed = isLighthouseFailure(row.original);
-        const failureMessage = getLighthouseFailureMessage(row.original);
+        const failureMessage =
+          row.original.errorMessage ?? "Lighthouse returned no category scores";
         return isFailed ? (
           <span
             className="badge badge-error badge-outline text-xs"

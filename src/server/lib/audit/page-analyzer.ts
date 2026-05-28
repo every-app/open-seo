@@ -21,17 +21,13 @@ export function analyzeHtml(
 ): PageAnalysis {
   const $ = cheerio.load(html);
 
-  // --- Title ---
   const title = $("title").first().text().trim();
 
-  // --- Meta description ---
   const metaDescription =
     $('meta[name="description"]').first().attr("content")?.trim() ?? "";
 
-  // --- Canonical ---
   const canonical = $('link[rel="canonical"]').first().attr("href") ?? null;
 
-  // --- Robots meta ---
   const robotsMeta = $('meta[name="robots"]').first().attr("content") ?? null;
 
   // --- Open Graph ---
@@ -67,7 +63,6 @@ export function analyzeHtml(
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
   const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
 
-  // --- Images ---
   const images: Array<{ src: string | null; alt: string | null }> = [];
   $("img").each((_, el) => {
     images.push({
@@ -103,7 +98,6 @@ export function analyzeHtml(
     hasStructuredData = true;
   });
 
-  // --- Hreflang ---
   const hreflangTags: string[] = [];
   $('link[rel="alternate"][hreflang]').each((_, el) => {
     const hreflang = $(el).attr("hreflang");

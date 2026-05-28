@@ -1,6 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { member, user as authUser } from "@/db/better-auth-schema";
+import { slugify, toHex } from "./org-slug";
 
 type HostedUser = {
   id: string;
@@ -17,23 +18,6 @@ type HostedOrganizationCreateInput = {
 type HostedOrganizationCreator = (
   input: HostedOrganizationCreateInput,
 ) => Promise<{ id: string }>;
-
-function slugify(value: string) {
-  const slug = value
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-
-  return slug || "workspace";
-}
-
-function toHex(value: string) {
-  return Array.from(new TextEncoder().encode(value), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
 
 function getDefaultHostedOrganizationName(user: HostedUser) {
   const name = user.name?.trim() || user.email.split("@")[0] || "OpenSEO";

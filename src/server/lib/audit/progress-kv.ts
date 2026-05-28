@@ -38,17 +38,6 @@ function key(auditId: string): string {
 }
 
 /**
- * Append a crawled URL entry to the progress list.
- * Newest entries are prepended so the array is sorted newest-first.
- */
-async function pushCrawledUrl(
-  auditId: string,
-  entry: CrawledUrlEntry,
-): Promise<void> {
-  await pushCrawledUrls(auditId, [entry]);
-}
-
-/**
  * Append multiple crawled URL entries in one KV write.
  * New entries are prepended and the list is capped.
  */
@@ -85,7 +74,6 @@ async function clear(auditId: string): Promise<void> {
 }
 
 export const AuditProgressKV = {
-  pushCrawledUrl,
   pushCrawledUrls,
   getCrawledUrls,
   clear,

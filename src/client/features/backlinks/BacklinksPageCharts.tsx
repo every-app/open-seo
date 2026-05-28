@@ -10,7 +10,7 @@ import {
 } from "recharts";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
 import {
-  formatFullDate,
+  formatCompactDate,
   formatMonthLabel,
   formatTooltipValue,
 } from "./backlinksPageUtils";
@@ -194,5 +194,5 @@ function formatChartTick(value: unknown) {
 }
 
 function formatChartLabel(value: unknown) {
-  return typeof value === "string" ? formatFullDate(value) : "";
+  return typeof value === "string" ? formatCompactDate(value) : "";
 }

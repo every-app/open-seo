@@ -23,14 +23,10 @@ function extractProjectId(data: unknown) {
     : null;
 }
 
-function getRuntimeAuthMode() {
-  return getAuthMode(import.meta.env.AUTH_MODE ?? env.AUTH_MODE);
-}
-
 export const ensureUserMiddleware = createMiddleware({
   type: "function",
 }).server(async ({ next, data }) => {
-  const authMode = getRuntimeAuthMode();
+  const authMode = getAuthMode(import.meta.env.AUTH_MODE ?? env.AUTH_MODE);
   const headers = getRequest().headers;
   let context: EnsuredUserContext;
 

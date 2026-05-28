@@ -17,9 +17,7 @@ import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { computeNextCheckAt } from "@/shared/rank-tracking";
 
 const appFetch = createStartHandler(defaultStreamHandler);
-const handleAppFetch = (request: Request): Response | Promise<Response> =>
-  appFetch(request);
-const openSeoOAuthProvider = createOpenSeoOAuthProvider(handleAppFetch);
+const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
 
 function fetch(
   request: Request,
@@ -44,7 +42,7 @@ function fetch(
     return handleSelfHostedOpenSeoMcpRequest(publicRequest, authMode, env, ctx);
   }
 
-  return handleAppFetch(request);
+  return appFetch(request);
 }
 
 // Export Workflow classes as named exports

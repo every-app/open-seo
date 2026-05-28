@@ -28,8 +28,8 @@ export const getGuidePosts = createServerFn({ method: "GET" }).handler(
   },
 );
 
-function getContentPost(source: typeof docsSource, slugs: string[]) {
-  const page = source.getPage(slugs);
+function getContentPost(slugs: string[]) {
+  const page = docsSource.getPage(slugs);
   if (!page) throw notFound();
 
   return {
@@ -40,12 +40,12 @@ function getContentPost(source: typeof docsSource, slugs: string[]) {
   };
 }
 
-function getContentPosts(source: typeof docsSource) {
+function getContentPosts() {
   const topLevelOrder = new Map([
     ["mcp", 0],
     ["skills", 1],
   ]);
-  const pages = source.getPages();
+  const pages = docsSource.getPages();
 
   return pages
     .map((page: (typeof pages)[number]) => ({
@@ -69,10 +69,10 @@ function getContentPosts(source: typeof docsSource) {
 
 export const getDocsPost = createServerFn({ method: "GET" })
   .inputValidator((slugs: string[]) => slugs)
-  .handler(async ({ data: slugs }) => getContentPost(docsSource, slugs));
+  .handler(async ({ data: slugs }) => getContentPost(slugs));
 
 export const getDocsPosts = createServerFn({ method: "GET" }).handler(
-  async () => getContentPosts(docsSource),
+  async () => getContentPosts(),
 );
 
 export const getDocsPageTree = createServerFn({ method: "GET" }).handler(

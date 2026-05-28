@@ -59,11 +59,7 @@ function AiPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
                 MCP server URL
               </p>
-              <CopyButton
-                value={mcpUrl}
-                successMessage="MCP URL copied"
-                label="Copy"
-              />
+              <CopyButton value={mcpUrl} successMessage="MCP URL copied" />
             </div>
             <code className="mt-2 block break-all font-mono text-sm text-base-content">
               {mcpUrl}

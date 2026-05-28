@@ -19,11 +19,7 @@ export function asAppError(error: unknown): AppError | null {
   return null;
 }
 
-function toErrorCode(error: unknown): ErrorCode {
-  return asAppError(error)?.code ?? "INTERNAL_ERROR";
-}
-
 export function toClientError(error: unknown): Error {
   const appError = asAppError(error);
-  return new Error(appError?.code ?? toErrorCode(error));
+  return new Error(appError?.code ?? "INTERNAL_ERROR");
 }

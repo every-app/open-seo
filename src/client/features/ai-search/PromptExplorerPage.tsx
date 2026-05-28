@@ -19,10 +19,8 @@ import { PromptExplorerResults } from "@/client/features/ai-search/components/Pr
 import { PromptExplorerLoadingState } from "@/client/features/ai-search/components/PromptExplorerLoadingState";
 import { PromptExplorerHistorySection } from "@/client/features/ai-search/components/PromptExplorerHistorySection";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
-import {
-  AiSearchAccessLoadingState,
-  AiSearchSetupGate,
-} from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { AiSearchSetupGate } from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { usePromptExplorerSearchHistory } from "@/client/hooks/usePromptExplorerSearchHistory";
 import {
@@ -215,7 +213,7 @@ function PromptExplorerPageInner({
         </div>
 
         {access.isLoading ? (
-          <AiSearchAccessLoadingState />
+          <AccessGateLoadingState />
         ) : !access.enabled ? (
           <AiSearchSetupGate
             errorMessage={access.errorMessage ?? access.statusErrorMessage}

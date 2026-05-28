@@ -1,5 +1,7 @@
 import { ExternalLink } from "lucide-react";
 
+import { getSafeExternalUrl } from "./table/url";
+
 export function SafeExternalLink({
   url,
   label,
@@ -20,15 +22,4 @@ export function SafeExternalLink({
       <ExternalLink className="size-3 shrink-0" />
     </a>
   );
-}
-
-function getSafeExternalUrl(value: string) {
-  try {
-    const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:"
-      ? parsed.toString()
-      : null;
-  } catch {
-    return null;
-  }
 }

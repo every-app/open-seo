@@ -58,121 +58,6 @@ export type KeywordResearchControllerInput = {
 export function useKeywordResearchController(
   input: KeywordResearchControllerInput,
 ) {
-  const state = useKeywordControllerState(input);
-  const controlsForm = state.controlsForm;
-  const setSearchParams = state.setSearchParams;
-  const retryResearch = state.retryResearch;
-
-  const onSearch = useCallback(
-    (overrides?: Partial<{ keyword: string; locationCode: number }>) => {
-      if (overrides?.keyword !== undefined) {
-        controlsForm.setFieldValue("keyword", overrides.keyword);
-      }
-
-      if (overrides?.locationCode !== undefined) {
-        controlsForm.setFieldValue("locationCode", overrides.locationCode);
-      }
-
-      void controlsForm.handleSubmit();
-    },
-    [controlsForm],
-  );
-
-  const retrySearch = useCallback(() => {
-    void retryResearch();
-  }, [retryResearch]);
-
-  const handleSearchSubmit = useCallback(
-    (event: FormEvent) => {
-      event.preventDefault();
-      void controlsForm.handleSubmit();
-    },
-    [controlsForm],
-  );
-
-  const toggleSort = useCallback(
-    (field: SortField) => {
-      setSearchParams(getNextSortParams(input.sortField, input.sortDir, field));
-    },
-    [input.sortDir, input.sortField, setSearchParams],
-  );
-
-  const { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows } =
-    useSaveAndExportActions({
-      selectedRows: state.selectedRows,
-      rows: state.rows,
-      filteredRows: state.filteredRows,
-      input,
-      saveKeywordsMutate: state.saveMutation.mutate,
-      setShowSaveDialog: state.setShowSaveDialog,
-    });
-
-  const handleToggleAllRows = () => {
-    state.toggleAllRows(state.filteredRows.map((row) => row.keyword));
-  };
-
-  const handleRowClick = (row: KeywordResearchRow) => {
-    captureClientEvent("keyword_research:serp_open");
-    state.setSelectedKeyword(row);
-    state.setSerpKeyword(row.keyword);
-    state.setSerpPage(0);
-  };
-
-  return {
-    activeFilterCount: state.activeFilterCount,
-    activeSerpKeyword: state.activeSerpKeyword,
-    confirmSave,
-    controlsForm: state.controlsForm,
-    exportCsv,
-    sheetsExportRows,
-    filteredRows: state.filteredRows,
-    filtersForm: state.filtersForm,
-    handleRowClick,
-    handleSaveKeywords,
-    handleSearchSubmit,
-    hasSearched: state.hasSearched,
-    history: state.history,
-    historyLoaded: state.historyLoaded,
-    isLoading: state.isLoading,
-    lastResultSource: state.lastResultSource,
-    lastSearchError: state.lastSearchError,
-    lastSearchKeyword: state.lastSearchKeyword,
-    lastSearchLocationCode: state.lastSearchLocationCode,
-    lastUsedFallback: state.lastUsedFallback,
-    mobileTab: state.mobileTab,
-    onSearch,
-    overviewKeyword: state.overviewKeyword,
-    removeHistoryItem: state.removeHistoryItem,
-    researchError: state.researchError,
-    researchMutationError: state.researchMutationError,
-    retrySearch,
-    resetFilters: state.resetFilters,
-    rows: state.rows,
-    searchedKeyword: state.searchedKeyword,
-    selectedRows: state.selectedRows,
-    serpError: state.serpError,
-    serpLoading: state.serpLoading,
-    serpPage: state.serpPage,
-    serpQuery: state.serpQuery,
-    serpResults: state.serpResults,
-    setMobileTab: state.setMobileTab,
-    setSelectedRows: state.setSelectedRows,
-    setSerpPage: state.setSerpPage,
-    setShowFilters: state.setShowFilters,
-    setShowSaveDialog: state.setShowSaveDialog,
-    showApproximateMatchNotice: state.showApproximateMatchNotice,
-    showFilters: state.showFilters,
-    showSaveDialog: state.showSaveDialog,
-    sortDir: input.sortDir,
-    sortField: input.sortField,
-    toggleAllRows: handleToggleAllRows,
-    toggleRowSelection: state.toggleRowSelection,
-    toggleSort,
-    SERP_PAGE_SIZE: state.SERP_PAGE_SIZE,
-  };
-}
-
-function useKeywordControllerState(input: KeywordResearchControllerInput) {
   const { locationCode, setPreferredLocationCode } =
     useResolvedKeywordLocation(input);
   const {
@@ -277,11 +162,6 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     previousSearchKeyRef.current = activeSearchKey;
     handledSerpSearchKeyRef.current = null;
 
-    if (!activeSearchKey) {
-      clearActiveKeywordResult();
-      return;
-    }
-
     clearActiveKeywordResult();
   }, [activeSearchKey, clearActiveKeywordResult]);
 
@@ -319,13 +199,58 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
       keywordMode: input.keywordMode,
     });
 
+  const retrySearch = useCallback(() => {
+    void retryResearch();
+  }, [retryResearch]);
+
+  const handleSearchSubmit = useCallback(
+    (event: FormEvent) => {
+      event.preventDefault();
+      void controlsForm.handleSubmit();
+    },
+    [controlsForm],
+  );
+
+  const toggleSort = useCallback(
+    (field: SortField) => {
+      setSearchParams(getNextSortParams(input.sortField, input.sortDir, field));
+    },
+    [input.sortDir, input.sortField, setSearchParams],
+  );
+
+  const { handleSaveKeywords, confirmSave, exportCsv, sheetsExportRows } =
+    useSaveAndExportActions({
+      selectedRows,
+      rows,
+      filteredRows,
+      input,
+      saveKeywordsMutate: saveMutation.mutate,
+      setShowSaveDialog: uiState.setShowSaveDialog,
+    });
+
+  const handleToggleAllRows = () => {
+    toggleAllRows(filteredRows.map((row) => row.keyword));
+  };
+
+  const handleRowClick = (row: KeywordResearchRow) => {
+    captureClientEvent("keyword_research:serp_open");
+    uiState.setSelectedKeyword(row);
+    setSerpKeyword(row.keyword);
+    setSerpPage(0);
+  };
+
   return {
     activeFilterCount,
     activeSerpKeyword,
-    clearSelection,
+    confirmSave,
     controlsForm,
+    exportCsv,
+    sheetsExportRows,
     filteredRows,
     filtersForm,
+    handleRowClick,
+    handleSaveKeywords,
+    handleSearchSubmit,
     hasSearched,
     history,
     historyLoaded,
@@ -340,32 +265,29 @@ function useKeywordControllerState(input: KeywordResearchControllerInput) {
     removeHistoryItem,
     researchError,
     researchMutationError,
-    retryResearch,
+    retrySearch,
     resetFilters,
     rows,
     searchedKeyword,
-    selectedKeyword: uiState.selectedKeyword,
     selectedRows,
-    setSelectedRows,
-    saveMutation,
-    setPreferredLocationCode,
-    setSelectedKeyword: uiState.setSelectedKeyword,
-    setSearchParams,
-    setSerpKeyword,
     serpError,
     serpLoading,
     serpPage,
     serpQuery,
     serpResults,
     setMobileTab: uiState.setMobileTab,
+    setSelectedRows,
     setSerpPage,
     setShowFilters: uiState.setShowFilters,
     setShowSaveDialog: uiState.setShowSaveDialog,
     showApproximateMatchNotice,
     showFilters: uiState.showFilters,
     showSaveDialog: uiState.showSaveDialog,
-    toggleAllRows,
+    sortDir: input.sortDir,
+    sortField: input.sortField,
+    toggleAllRows: handleToggleAllRows,
     toggleRowSelection,
+    toggleSort,
     SERP_PAGE_SIZE,
   };
 }

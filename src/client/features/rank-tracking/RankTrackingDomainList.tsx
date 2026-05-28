@@ -14,10 +14,7 @@ import {
   getRankTrackingConfigSummaries,
   updateRankTrackingConfig,
 } from "@/serverFunctions/rank-tracking";
-import {
-  devicesLabel as getDevicesLabel,
-  scheduleLabel as getScheduleLabel,
-} from "@/shared/rank-tracking";
+import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { Modal } from "@/client/components/Modal";
 
 type ConfigSummary = Awaited<
@@ -139,9 +136,6 @@ function DomainRow({
   summary: ConfigSummary;
   onArchive: () => void;
 }) {
-  const dl = getDevicesLabel(summary.devices);
-  const sl = getScheduleLabel(summary.scheduleInterval);
-
   return (
     <div className="relative flex w-full items-center gap-4 px-5 py-3.5 transition-colors hover:bg-base-200/50">
       <Link
@@ -153,7 +147,9 @@ function DomainRow({
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[summary.locationCode] ?? "US"} &middot; {dl} &middot; {sl}
+          {LOCATIONS[summary.locationCode] ?? "US"} &middot;{" "}
+          {devicesLabel(summary.devices)} &middot;{" "}
+          {scheduleLabel(summary.scheduleInterval)}
           {summary.lastRunCompletedAt && (
             <>
               {" "}

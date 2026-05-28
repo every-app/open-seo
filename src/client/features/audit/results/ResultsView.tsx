@@ -5,9 +5,9 @@ import {
   exportPerformance,
 } from "@/client/features/audit/results/export";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
+import { isLighthouseFailure } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 import {
   ExportDropdown,
-  isLighthouseFailure,
   PagesTable,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";

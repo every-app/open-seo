@@ -24,18 +24,16 @@ export function mcpResponse(opts: {
       if (value !== undefined) meta[key] = value;
     }
   }
+  const hasMeta = meta != null && Object.keys(meta).length > 0;
   if (opts.structuredContent) {
-    result.structuredContent =
-      meta && Object.keys(meta).length > 0
-        ? { ...opts.structuredContent, meta }
-        : opts.structuredContent;
-  } else if (meta && Object.keys(meta).length > 0) {
+    result.structuredContent = hasMeta
+      ? { ...opts.structuredContent, meta }
+      : opts.structuredContent;
+  } else if (hasMeta) {
     result.structuredContent = { meta };
   }
-  if (meta) {
-    if (Object.keys(meta).length > 0) {
-      result._meta = meta;
-    }
+  if (hasMeta) {
+    result._meta = meta;
   }
   return result;
 }

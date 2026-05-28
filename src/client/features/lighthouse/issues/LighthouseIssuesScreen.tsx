@@ -5,15 +5,10 @@ import {
   exportAuditLighthouseIssues,
   getAuditLighthouseIssues,
 } from "@/serverFunctions/lighthouse";
+import { downloadFile } from "@/client/lib/download";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { CategoryTab, ExportPayload, LighthouseIssue } from "./types";
-import {
-  categoryLabel,
-  categorySlug,
-  downloadTextFile,
-  issuesToCsv,
-  issuesToTable,
-} from "./utils";
+import { categoryLabel, issuesToCsv, issuesToTable } from "./utils";
 import {
   LighthouseIssueList,
   LighthouseIssuesHeader,
@@ -170,7 +165,7 @@ function useLighthouseIssuesActions({
   const runExport = async (data: ExportPayload) => {
     try {
       const exported = await exportMutation.mutateAsync(data);
-      downloadTextFile(exported.filename, exported.content, "application/json");
+      downloadFile(exported.content, exported.filename, "application/json");
       toast.success("Download started");
     } catch (error) {
       const message =
@@ -183,8 +178,8 @@ function useLighthouseIssuesActions({
     rows: LighthouseIssue[],
     variant: "all" | "current",
   ) => {
-    const filename = `lighthouse-${variant}-${categorySlug(category)}-issues.csv`;
-    downloadTextFile(filename, issuesToCsv(rows), "text/csv");
+    const filename = `lighthouse-${variant}-${category}-issues.csv`;
+    downloadFile(issuesToCsv(rows), filename, "text/csv");
     toast.success("CSV download started");
   };
 

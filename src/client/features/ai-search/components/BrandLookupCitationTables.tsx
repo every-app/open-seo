@@ -149,7 +149,6 @@ function BrandLookupTable<T>({
           table.getColumn(columnId)?.getCanSort() ?? false,
         )
       }
-      getRowClassName={() => ""}
     />
   );
 }

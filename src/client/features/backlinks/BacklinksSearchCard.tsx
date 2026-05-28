@@ -8,7 +8,10 @@ import {
   shouldValidateFieldOnChange,
 } from "@/client/lib/forms";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
-import { resolveBacklinksSearchScope } from "./backlinksSearchScope";
+import {
+  inferBacklinksSearchScopeFromTarget,
+  resolveBacklinksSearchScope,
+} from "./backlinksSearchScope";
 
 type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 
@@ -124,11 +127,7 @@ export function BacklinksSearchCard({
                           if (!userSelectedScope) {
                             form.setFieldValue(
                               "scope",
-                              resolveBacklinksSearchScope({
-                                target: nextTarget,
-                                selectedScope: form.state.values.scope,
-                                userSelectedScope: false,
-                              }),
+                              inferBacklinksSearchScopeFromTarget(nextTarget),
                             );
                           }
                         }}

@@ -124,9 +124,7 @@ export async function getLatestResults(
   }
 
   return {
-    rows: activeKeywords
-      .map((keyword) => rows.get(keyword.id))
-      .filter((row): row is RankTrackingRow => row != null),
+    rows: [...rows.values()],
     run:
       latestRunId && latestStartedAt
         ? { id: latestRunId, lastCheckedAt: latestStartedAt }

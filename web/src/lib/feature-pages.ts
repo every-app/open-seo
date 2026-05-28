@@ -9,9 +9,7 @@ export type FeaturePage = {
   primaryKeyword: string;
   secondaryKeywords: string[];
   imageAlt: string;
-  imagePlaceholder: string;
-  imageSrc?: string;
-  ctaLabel?: string;
+  imageSrc: string;
   workflows: Array<{
     title: string;
     description: string;
@@ -47,7 +45,6 @@ export const featurePages = {
       "keyword research tools",
     ],
     imageAlt: "OpenSEO keyword research dashboard",
-    imagePlaceholder: "Keyword research screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d77077d0-cdf4-4523-0c41-56a7b4861300/public",
     workflows: [
@@ -123,7 +120,6 @@ export const featurePages = {
       "seo audit tools",
     ],
     imageAlt: "OpenSEO site audit report",
-    imagePlaceholder: "Site audit screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/53149e87-0027-4fa8-5d13-bcaab60c7100/public",
     workflows: [
@@ -196,7 +192,6 @@ export const featurePages = {
       "google backlink checker",
     ],
     imageAlt: "OpenSEO backlinks report",
-    imagePlaceholder: "Backlink checker screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d97206ed-bd64-447c-2b9e-1b9f07c5ec00/public",
     workflows: [
@@ -272,7 +267,6 @@ export const featurePages = {
       "competitor analysis seo tool",
     ],
     imageAlt: "OpenSEO domain overview",
-    imagePlaceholder: "Domain overview screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/189e22b8-fdf8-46b4-198c-e912beef2300/public",
     workflows: [
@@ -348,7 +342,6 @@ export const featurePages = {
       "google rank tracker",
     ],
     imageAlt: "OpenSEO rank tracking table",
-    imagePlaceholder: "Rank tracking screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/4a0f8508-1527-46a8-c91c-086456f21c00/public",
     workflows: [
@@ -424,7 +417,6 @@ export const featurePages = {
       "keyword planning",
     ],
     imageAlt: "OpenSEO saved keywords list",
-    imagePlaceholder: "Saved keywords screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/8938a529-b443-4d4f-9869-c972f3cef900/public",
     workflows: [
@@ -497,7 +489,6 @@ export const featurePages = {
       "answer engine optimization",
     ],
     imageAlt: "OpenSEO AI brand visibility report",
-    imagePlaceholder: "AI brand visibility screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/cde3e4f8-079f-4890-cb17-371087107400/public",
     workflows: [
@@ -570,7 +561,6 @@ export const featurePages = {
       "answer engine optimization tool",
     ],
     imageAlt: "OpenSEO prompt explorer",
-    imagePlaceholder: "Prompt explorer screenshot placeholder",
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/9f3d38f2-aa97-417c-ca74-ae378654d700/public",
     workflows: [

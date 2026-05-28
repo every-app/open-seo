@@ -4,9 +4,8 @@ import {
   AuthPageCard,
   AuthPageShell,
   authRedirectSearchSchema,
-  getFieldError,
-  getFormError,
 } from "@/client/features/auth/AuthPage";
+import { getFieldError, getFormError } from "@/client/lib/forms";
 import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";

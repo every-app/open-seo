@@ -18,7 +18,7 @@ import {
 import {
   KEYWORD_FILTER_FIELDS,
   PAGE_FILTER_FIELDS,
-  getPageFilterSearchParam,
+  PAGE_SEARCH_PARAM_BY_FIELD,
 } from "@/client/features/domain/domainFilterUtils";
 import { resolveSortOrder, toSortMode, toSortOrder } from "./utils";
 
@@ -95,6 +95,6 @@ function hasKeywordSearchFilters(search: DomainSearchParams): boolean {
 
 function hasPageSearchFilters(search: DomainSearchParams): boolean {
   return PAGE_FILTER_FIELDS.some(
-    (key) => search[getPageFilterSearchParam(key)] != null,
+    (key) => search[PAGE_SEARCH_PARAM_BY_FIELD[key]] != null,
   );
 }

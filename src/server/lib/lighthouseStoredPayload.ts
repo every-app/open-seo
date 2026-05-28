@@ -1,62 +1,5 @@
 import { z } from "zod";
-import {
-  LIGHTHOUSE_CATEGORIES,
-  type LighthouseCategory,
-} from "@/shared/lighthouse";
-
-export type StoredLighthouseIssue = {
-  category: LighthouseCategory;
-  auditKey: string;
-  title: string;
-  description: string;
-  score: number | null;
-  scoreDisplayMode: string | null;
-  displayValue: string | null;
-  impactMs: number | null;
-  impactBytes: number | null;
-  severity: "critical" | "warning" | "info";
-  items: string[];
-};
-
-type StoredLighthouseMetric = {
-  score: number | null;
-  displayValue: string | null;
-  numericValue: number | null;
-};
-
-export type StoredLighthouseMetrics = {
-  firstContentfulPaint: StoredLighthouseMetric;
-  largestContentfulPaint: StoredLighthouseMetric;
-  totalBlockingTime: StoredLighthouseMetric;
-  cumulativeLayoutShift: StoredLighthouseMetric;
-  speedIndex: StoredLighthouseMetric;
-  timeToInteractive: StoredLighthouseMetric;
-  interactionToNextPaint: StoredLighthouseMetric;
-  serverResponseTime: StoredLighthouseMetric;
-};
-
-export type StoredLighthousePayload = {
-  version: 2;
-  source: "dataforseo-lighthouse";
-  hasIssueDetails: boolean;
-  metadata: {
-    requestedUrl: string;
-    finalUrl: string;
-    strategy: "mobile" | "desktop";
-    fetchedAt: string;
-    lighthouseVersion: string | null;
-    taskId: string | null;
-    cost: number | null;
-  };
-  scores: {
-    performance: number | null;
-    accessibility: number | null;
-    "best-practices": number | null;
-    seo: number | null;
-  };
-  metrics: StoredLighthouseMetrics;
-  issues: StoredLighthouseIssue[];
-};
+import { LIGHTHOUSE_CATEGORIES } from "@/shared/lighthouse";
 
 export type RawLighthouseAudit = {
   title?: string;
@@ -85,6 +28,31 @@ const storedLighthouseMetricSchema = z.object({
   numericValue: z.number().nullable(),
 });
 
+const storedLighthouseMetricsSchema = z.object({
+  firstContentfulPaint: storedLighthouseMetricSchema,
+  largestContentfulPaint: storedLighthouseMetricSchema,
+  totalBlockingTime: storedLighthouseMetricSchema,
+  cumulativeLayoutShift: storedLighthouseMetricSchema,
+  speedIndex: storedLighthouseMetricSchema,
+  timeToInteractive: storedLighthouseMetricSchema,
+  interactionToNextPaint: storedLighthouseMetricSchema,
+  serverResponseTime: storedLighthouseMetricSchema,
+});
+
+const storedLighthouseIssueSchema = z.object({
+  category: z.enum(LIGHTHOUSE_CATEGORIES),
+  auditKey: z.string(),
+  title: z.string(),
+  description: z.string(),
+  score: z.number().nullable(),
+  scoreDisplayMode: z.string().nullable(),
+  displayValue: z.string().nullable(),
+  impactMs: z.number().nullable(),
+  impactBytes: z.number().nullable(),
+  severity: z.enum(["critical", "warning", "info"]),
+  items: z.array(z.string()),
+});
+
 export const storedLighthousePayloadSchema = z.object({
   version: z.literal(2),
   source: z.literal("dataforseo-lighthouse"),
@@ -104,32 +72,16 @@ export const storedLighthousePayloadSchema = z.object({
     "best-practices": z.number().nullable(),
     seo: z.number().nullable(),
   }),
-  metrics: z.object({
-    firstContentfulPaint: storedLighthouseMetricSchema,
-    largestContentfulPaint: storedLighthouseMetricSchema,
-    totalBlockingTime: storedLighthouseMetricSchema,
-    cumulativeLayoutShift: storedLighthouseMetricSchema,
-    speedIndex: storedLighthouseMetricSchema,
-    timeToInteractive: storedLighthouseMetricSchema,
-    interactionToNextPaint: storedLighthouseMetricSchema,
-    serverResponseTime: storedLighthouseMetricSchema,
-  }),
-  issues: z.array(
-    z.object({
-      category: z.enum(LIGHTHOUSE_CATEGORIES),
-      auditKey: z.string(),
-      title: z.string(),
-      description: z.string(),
-      score: z.number().nullable(),
-      scoreDisplayMode: z.string().nullable(),
-      displayValue: z.string().nullable(),
-      impactMs: z.number().nullable(),
-      impactBytes: z.number().nullable(),
-      severity: z.enum(["critical", "warning", "info"]),
-      items: z.array(z.string()),
-    }),
-  ),
+  metrics: storedLighthouseMetricsSchema,
+  issues: z.array(storedLighthouseIssueSchema),
 });
+
+type StoredLighthouseMetric = z.infer<typeof storedLighthouseMetricSchema>;
+type StoredLighthouseMetrics = z.infer<typeof storedLighthouseMetricsSchema>;
+export type StoredLighthouseIssue = z.infer<typeof storedLighthouseIssueSchema>;
+export type StoredLighthousePayload = z.infer<
+  typeof storedLighthousePayloadSchema
+>;
 
 export function scoreToPercent(
   score: number | null | undefined,
@@ -244,7 +196,7 @@ export function buildStoredLighthouseIssues(input: {
 
       const isPass =
         score == null ||
-        (score != null && score >= 90) ||
+        score >= 90 ||
         scoreDisplayMode === "notApplicable" ||
         scoreDisplayMode === "informative" ||
         scoreDisplayMode === "manual" ||

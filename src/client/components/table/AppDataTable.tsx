@@ -182,11 +182,7 @@ export function AppDataTable<TData>({
                   .join(" ")}
               >
                 {row.getVisibleCells().map((cell) => {
-                  const rawMeta: unknown = cell.column.columnDef.meta;
-                  const meta = isAppColumnMeta<TData>(rawMeta)
-                    ? rawMeta
-                    : undefined;
-                  const metaClass = meta?.cellClassName;
+                  const metaClass = cell.column.columnDef.meta?.cellClassName;
                   return (
                     <td
                       key={cell.id}
@@ -224,8 +220,7 @@ function HeaderCell<TData>({
   fixedLayout?: boolean;
   stickyHeader?: boolean;
 }) {
-  const rawMeta: unknown = header.column.columnDef.meta;
-  const meta = isAppColumnMeta<TData>(rawMeta) ? rawMeta : undefined;
+  const meta = header.column.columnDef.meta;
   return (
     <th
       className={[
@@ -241,8 +236,4 @@ function HeaderCell<TData>({
         : flexRender(header.column.columnDef.header, header.getContext())}
     </th>
   );
-}
-
-function isAppColumnMeta<TData>(value: unknown): value is AppColumnMeta<TData> {
-  return typeof value === "object" && value !== null;
 }

@@ -6,10 +6,9 @@ import {
   AuthPageCard,
   AuthMethodChooser,
   authRedirectSearchSchema,
-  getFieldError,
-  getFormError,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
+import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { getSignInSearch } from "@/lib/auth-redirect";

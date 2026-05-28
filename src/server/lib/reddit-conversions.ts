@@ -82,12 +82,7 @@ async function upsertAttribution(args: CaptureRedditConversionArgs) {
       updatedAt: now,
     });
   }
-}
 
-async function hasSentConversion(args: CaptureRedditConversionArgs) {
-  const existing = await db.query.redditAttributions.findFirst({
-    where: eq(redditAttributions.userId, args.userId),
-  });
   return args.eventType === "SIGN_UP"
     ? Boolean(existing?.signupSentAt)
     : Boolean(existing?.purchaseSentAt);
@@ -112,8 +107,8 @@ export async function captureRedditConversion(
 ) {
   if (!hasRedditAttribution(args.attribution)) return "skipped" as const;
 
-  await upsertAttribution(args);
-  if (await hasSentConversion(args)) return "already_sent" as const;
+  const alreadySent = await upsertAttribution(args);
+  if (alreadySent) return "already_sent" as const;
 
   const config = getRedditConfig();
   if (!config) return "stored" as const;

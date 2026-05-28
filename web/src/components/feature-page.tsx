@@ -20,7 +20,7 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
             href="https://app.openseo.so/sign-up"
             className="inline-flex h-10 items-center justify-center rounded-md bg-neutral-900 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            {page.ctaLabel ?? "Try OpenSEO"}
+            Try OpenSEO
           </a>
         </div>
       </header>
@@ -142,7 +142,7 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
             href="https://app.openseo.so/sign-up"
             className="inline-flex h-9 items-center justify-center rounded-md bg-neutral-900 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            {page.ctaLabel ?? "Try OpenSEO"}
+            Try OpenSEO
           </a>
         </div>
       </section>
@@ -151,43 +151,19 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 }
 
 function FeatureImage({ page }: FeaturePageProps) {
-  if (page.imageSrc) {
-    return (
-      <figure className="mt-9">
-        <img
-          src={page.imageSrc}
-          alt={page.imageAlt}
-          width={1600}
-          height={1000}
-          loading="eager"
-          decoding="async"
-          className="aspect-[16/10] w-full rounded-lg border border-neutral-200 object-cover object-top"
-        />
-        <figcaption className="mt-2 text-[11px] text-neutral-500">
-          {page.eyebrow} in OpenSEO.
-        </figcaption>
-      </figure>
-    );
-  }
-
   return (
     <figure className="mt-9">
-      <div
-        role="img"
-        aria-label={page.imageAlt}
-        className="flex aspect-[16/10] w-full items-center justify-center rounded-lg border border-dashed border-neutral-300 bg-neutral-50 px-6 text-center"
-      >
-        <div>
-          <p className="text-sm font-medium text-neutral-900">
-            {page.imagePlaceholder}
-          </p>
-          <p className="mt-1 text-xs text-neutral-500">
-            Replace with final product screenshot or short demo asset.
-          </p>
-        </div>
-      </div>
+      <img
+        src={page.imageSrc}
+        alt={page.imageAlt}
+        width={1600}
+        height={1000}
+        loading="eager"
+        decoding="async"
+        className="aspect-[16/10] w-full rounded-lg border border-neutral-200 object-cover object-top"
+      />
       <figcaption className="mt-2 text-[11px] text-neutral-500">
-        Placeholder for final OpenSEO product imagery.
+        {page.eyebrow} in OpenSEO.
       </figcaption>
     </figure>
   );

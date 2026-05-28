@@ -17,7 +17,7 @@ export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
         <span className="font-bold text-base truncate max-w-[240px] capitalize">
           {keyword.keyword}
         </span>
-        <ScoreBadge value={keyword.keywordDifficulty} size="sm" />
+        <ScoreBadge value={keyword.keywordDifficulty} />
       </div>
 
       <div className="w-px h-6 bg-base-300 shrink-0" />
@@ -47,24 +47,14 @@ export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
   );
 }
 
-function ScoreBadge({
-  value,
-  size = "sm",
-}: {
-  value: number | null;
-  size?: "sm" | "lg";
-}) {
+function ScoreBadge({ value }: { value: number | null }) {
   if (value == null) return null;
 
   const tierClass = scoreTierClass(value);
-  const sizeClasses =
-    size === "lg"
-      ? "size-9 text-sm font-bold"
-      : "size-6 text-[10px] font-semibold";
 
   return (
     <span
-      className={`score-badge ${tierClass} inline-flex items-center justify-center rounded-full ${sizeClasses}`}
+      className={`score-badge ${tierClass} inline-flex items-center justify-center rounded-full size-6 text-[10px] font-semibold`}
     >
       {value}
     </span>

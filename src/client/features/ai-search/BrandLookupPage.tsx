@@ -19,10 +19,8 @@ import { BrandLookupSearchCard } from "@/client/features/ai-search/components/Br
 import { BrandLookupHistorySection } from "@/client/features/ai-search/components/BrandLookupHistorySection";
 import { AiSearchLoadingState } from "@/client/features/ai-search/components/AiSearchLoadingState";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
-import {
-  AiSearchAccessLoadingState,
-  AiSearchSetupGate,
-} from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { AiSearchSetupGate } from "@/client/features/ai-search/components/AiSearchSetupGate";
+import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { useBrandLookupSearchHistory } from "@/client/hooks/useBrandLookupSearchHistory";
 import { BRAND_LOOKUP_MAX_INPUT_LENGTH } from "@/types/schemas/ai-search";
@@ -151,7 +149,7 @@ function BrandLookupPageInner({
         </div>
 
         {access.isLoading ? (
-          <AiSearchAccessLoadingState />
+          <AccessGateLoadingState />
         ) : !access.enabled ? (
           <AiSearchSetupGate
             errorMessage={access.errorMessage ?? access.statusErrorMessage}
