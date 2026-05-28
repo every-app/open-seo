@@ -8,7 +8,10 @@ import {
 } from "@/client/features/auth/AuthPage";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient, useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  isEmailVerificationBypassed,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
 
@@ -102,8 +105,7 @@ function VerifyEmailPage() {
   const redirectTo = normalizeAuthRedirect(search.redirect);
   const isHostedMode = isHostedClientAuthMode();
   const { data: session, isPending } = useSession();
-  const bypassEmailVerification =
-    import.meta.env.BYPASS_EMAIL_VERIFICATION === "true";
+  const bypassEmailVerification = isEmailVerificationBypassed();
   const errorMessage = getVerificationErrorMessage(search.error);
   const verificationIssueType = search.error
     ? verificationIssueSchema.parse(search.error)

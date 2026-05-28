@@ -3,13 +3,17 @@ import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { onboardingAnswersQueryOptions } from "@/client/features/onboarding/onboardingModel";
 import { useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  isEmailVerificationBypassed,
+  isHostedClientAuthMode,
+} from "@/lib/auth-mode";
 
 export function useOnboardingRedirect() {
   const navigate = useNavigate();
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
-  const isEmailVerified = session?.user?.emailVerified === true;
+  const isEmailVerified =
+    session?.user?.emailVerified === true || isEmailVerificationBypassed();
   const onboardingQuery = useQuery({
     ...onboardingAnswersQueryOptions(),
     enabled: isHostedMode && Boolean(session?.user?.id) && isEmailVerified,
