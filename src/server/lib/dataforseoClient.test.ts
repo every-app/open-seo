@@ -354,6 +354,9 @@ describe("mapDataforseoPathToCreditFeature", () => {
     expect(
       mapDataforseoPathToCreditFeature(["v3", "backlinks", "summary", "live"]),
     ).toBe("backlinks");
+    expect(mapDataforseoPathToCreditFeature(["backlinks", "summary"])).toBe(
+      "backlinks",
+    );
     expect(
       mapDataforseoPathToCreditFeature([
         "v3",
@@ -376,7 +379,7 @@ describe("mapDataforseoPathToCreditFeature", () => {
     ).toBe("site_audit");
   });
 
-  it("maps real ai_optimization paths to ai_search", () => {
+  it("maps ai_optimization llm_mentions paths to ai_citations", () => {
     expect(
       mapDataforseoPathToCreditFeature([
         "v3",
@@ -385,7 +388,7 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "search",
         "live",
       ]),
-    ).toBe("ai_search");
+    ).toBe("ai_citations");
     expect(
       mapDataforseoPathToCreditFeature([
         "v3",
@@ -394,16 +397,30 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "aggregated_metrics",
         "live",
       ]),
-    ).toBe("ai_search");
+    ).toBe("ai_citations");
     expect(
       mapDataforseoPathToCreditFeature([
         "v3",
         "ai_optimization",
-        "claude",
-        "llm_responses",
+        "llm_mentions",
+        "top_pages",
         "live",
       ]),
-    ).toBe("ai_search");
+    ).toBe("ai_citations");
+  });
+
+  it("maps ai_optimization provider llm_responses paths to ai_prompt_responses", () => {
+    for (const provider of ["chat_gpt", "claude", "gemini", "perplexity"]) {
+      expect(
+        mapDataforseoPathToCreditFeature([
+          "v3",
+          "ai_optimization",
+          provider,
+          "llm_responses",
+          "live",
+        ]),
+      ).toBe("ai_prompt_responses");
+    }
   });
 
   it("maps local and supporting paths to the intended credit features", () => {

@@ -6,6 +6,10 @@ import {
   SEO_DATA_COST_MARKUP,
   roundUsdForBilling,
 } from "@/shared/billing";
+import {
+  type CreditFeature,
+  mapDataforseoPathToCreditFeature,
+} from "@/shared/billing-credit-features";
 import { autumn } from "@/server/billing/autumn";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
@@ -60,55 +64,7 @@ import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
-type CreditFeature =
-  | "keyword_research"
-  | "domain_overview"
-  | "backlinks"
-  | "site_audit"
-  | "rank_tracking"
-  | "ai_search"
-  | "local_seo";
-
-/**
- * Maps a DataForSEO API response path (e.g. ["v3", "dataforseo_labs", "google", "related_keywords", "live"])
- * to a product feature for analytics. path[1] is the API module; for dataforseo_labs,
- * path[3] distinguishes keyword vs domain endpoints.
- */
-export function mapDataforseoPathToCreditFeature(
-  path: string[],
-): CreditFeature {
-  const module = path[1];
-
-  switch (module) {
-    case "on_page":
-      return "site_audit";
-    case "backlinks":
-      return "backlinks";
-    case "serp":
-      return path[2] === "google" && ["maps", "local_finder"].includes(path[3])
-        ? "local_seo"
-        : "keyword_research";
-    case "ai_optimization":
-      return "ai_search";
-    case "business_data":
-      return "local_seo";
-    case "keywords_data":
-      return "keyword_research";
-    case "dataforseo_labs": {
-      const endpoint = path[3] ?? "";
-      if (
-        endpoint.startsWith("domain_") ||
-        endpoint === "ranked_keywords" ||
-        endpoint === "relevant_pages"
-      ) {
-        return "domain_overview";
-      }
-      return "keyword_research";
-    }
-    default:
-      return "site_audit";
-  }
-}
+export { mapDataforseoPathToCreditFeature };
 
 export function createDataforseoClient(customer: BillingCustomerContext) {
   return {
@@ -457,10 +413,14 @@ async function trackDataforseoCost(args: {
   const monthlyDeduct = Math.min(args.monthlyRemaining, totalCostCredits);
   const topupDeduct = totalCostCredits - monthlyDeduct;
 
+  const creditFeature =
+    args.creditFeature ?? mapDataforseoPathToCreditFeature(args.billing.path);
+
   const properties = {
     provider: "dataforseo",
     currency: "USD",
     paths: [args.billing.path.join("/")],
+    creditFeature,
     totalCostUsd,
     totalCostCredits,
     fromCache: false,
@@ -497,9 +457,7 @@ async function trackDataforseoCost(args: {
       organizationId: args.customer.organizationId,
       properties: {
         project_id: args.customer.projectId,
-        credit_feature:
-          args.creditFeature ??
-          mapDataforseoPathToCreditFeature(args.billing.path),
+        credit_feature: creditFeature,
         monthly_credits: monthlyDeduct,
         topup_credits: topupDeduct,
         total_credits: totalCostCredits,

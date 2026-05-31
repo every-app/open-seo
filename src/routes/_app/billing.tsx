@@ -6,6 +6,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getStoredRedditAttribution } from "@/client/lib/reddit-attribution";
 import { BillingUsageChart } from "@/client/features/billing/BillingUsageChart";
+import { BillingFeatureBreakdown } from "@/client/features/billing/BillingFeatureBreakdown";
 import { parseTopUpAmount } from "@/client/features/billing/HostedBillingContentUtils";
 import { getBillingRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
@@ -309,6 +310,9 @@ function BillingPageContent() {
 
       {/* Usage chart */}
       <BillingUsageChart />
+
+      {/* Per-feature usage breakdown */}
+      <BillingFeatureBreakdown />
 
       {error ? <p className="text-sm text-error">{error}</p> : null}
 
