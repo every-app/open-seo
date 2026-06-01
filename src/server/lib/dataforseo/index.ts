@@ -1,0 +1,33 @@
+// Public surface of the DataForSEO integration. Internals live in the
+// per-section files (labs / serp / keywordsData / business / backlinks / ai /
+// lighthouse); everything funnels through envelope.ts (status + billing) and is
+// metered in client.ts.
+
+export { createDataforseoClient } from "@/server/lib/dataforseo/client";
+
+export {
+  type LabsKeywordDataItem,
+  type DomainRankedKeywordItem,
+  type RelevantPagesItem,
+} from "@/server/lib/dataforseo/labs";
+
+export {
+  type SerpLiveItem,
+  type RankCheckResult,
+} from "@/server/lib/dataforseo/serp";
+
+export {
+  normalizeBacklinksTarget,
+  type BacklinksSummaryItem,
+  type BacklinksItem,
+  type ReferringDomainItem,
+  type DomainPageSummaryItem,
+  type BacklinksHistoryItem,
+} from "@/server/lib/dataforseo/backlinks";
+
+export {
+  buildLlmTarget,
+  CHATGPT_LANGUAGE_CODE,
+  CHATGPT_LOCATION_CODE,
+  type LlmPlatform,
+} from "@/server/lib/dataforseo/ai";

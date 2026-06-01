@@ -13,7 +13,7 @@ vi.mock("cloudflare:workers", () => ({
   env: {},
 }));
 
-vi.mock("@/server/lib/dataforseoClient", () => ({
+vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
 }));
 

@@ -1,14 +1,14 @@
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
-  type fetchBacklinksHistoryRaw,
-  type fetchBacklinksRowsRaw,
-  type fetchBacklinksSummaryRaw,
-  type fetchDomainPagesSummaryRaw,
-  type fetchReferringDomainsRaw,
+  createDataforseoClient,
   normalizeBacklinksTarget,
-} from "@/server/lib/dataforseoBacklinks";
-import { createDataforseoClient } from "@/server/lib/dataforseoClient";
+  type BacklinksHistoryItem,
+  type BacklinksItem,
+  type BacklinksSummaryItem,
+  type DomainPageSummaryItem,
+  type ReferringDomainItem,
+} from "@/server/lib/dataforseo";
 import {
   normalizeBacklinksSpamFilterOptions,
   type BacklinksSpamFilterOptions,
@@ -204,9 +204,9 @@ function buildBacklinksDateRange(now: Date): BacklinksDateRange {
 function buildOverviewResult(args: {
   normalizedTarget: ReturnType<typeof normalizeBacklinksTarget>;
   now: Date;
-  summary: Awaited<ReturnType<typeof fetchBacklinksSummaryRaw>>["data"];
-  backlinks: Awaited<ReturnType<typeof fetchBacklinksRowsRaw>>["data"];
-  history: Awaited<ReturnType<typeof fetchBacklinksHistoryRaw>>["data"];
+  summary: BacklinksSummaryItem;
+  backlinks: BacklinksItem[];
+  history: BacklinksHistoryItem[];
 }): BacklinksOverviewResult {
   const historyRows = args.history
     .map((item) => ({
@@ -277,9 +277,7 @@ function normalizeHistoryDate(value: string | null | undefined) {
   return value ? value.slice(0, 10) : null;
 }
 
-function mapBacklinksRows(
-  rows: Awaited<ReturnType<typeof fetchBacklinksRowsRaw>>["data"],
-) {
+function mapBacklinksRows(rows: BacklinksItem[]) {
   return rows.map((item) => ({
     domainFrom: item.domain_from ?? null,
     urlFrom: item.url_from ?? null,
@@ -300,9 +298,7 @@ function mapBacklinksRows(
   }));
 }
 
-function mapReferringDomainsRows(
-  rows: Awaited<ReturnType<typeof fetchReferringDomainsRaw>>["data"],
-) {
+function mapReferringDomainsRows(rows: ReferringDomainItem[]) {
   return rows.map((item) => ({
     domain: item.domain ?? null,
     backlinks: item.backlinks ?? null,
@@ -315,9 +311,7 @@ function mapReferringDomainsRows(
   }));
 }
 
-function mapTopPagesRows(
-  rows: Awaited<ReturnType<typeof fetchDomainPagesSummaryRaw>>["data"],
-) {
+function mapTopPagesRows(rows: DomainPageSummaryItem[]) {
   return rows.map((item) => ({
     page: item.page ?? item.url ?? null,
     backlinks: item.backlinks ?? null,

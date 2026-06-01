@@ -19,11 +19,7 @@ import {
   DataforseoLabsGoogleRankedKeywordsLiveRequestInfo,
 } from "dataforseo-client";
 import * as schema from "../src/db/schema";
-import {
-  domainRankedKeywordItemSchema,
-  type DomainRankedKeywordItem,
-} from "../src/server/lib/dataforseoSchemas";
-import { z } from "zod";
+import type { DomainRankedKeywordItem } from "../src/server/lib/dataforseo";
 import { loadLocalEnv, parseArgs } from "./cli-utils";
 
 loadLocalEnv();
@@ -207,14 +203,7 @@ async function fetchRankedKeywords(
     );
   }
 
-  const rawItems = task.result?.[0]?.items ?? [];
-  const parsed = z.array(domainRankedKeywordItemSchema).safeParse(rawItems);
-  if (!parsed.success) {
-    console.error("Schema validation issues:", parsed.error.issues.slice(0, 3));
-    throw new Error("DataForSEO response failed schema validation");
-  }
-
-  return parsed.data;
+  return task.result?.[0]?.items ?? [];
 }
 
 // ---------------------------------------------------------------------------

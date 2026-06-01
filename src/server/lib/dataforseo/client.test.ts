@@ -45,45 +45,53 @@ vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: vi.fn(),
 }));
 
-vi.mock("@/server/lib/dataforseo", () => ({
-  fetchKeywordIdeasRaw: vi.fn(),
-  fetchKeywordSuggestionsRaw: vi.fn(),
-  fetchRelatedKeywordsRaw: vi.fn(),
-  fetchBusinessListingsSearchRaw: vi.fn(),
-  fetchBusinessQuestionsAnswersRaw: vi.fn(),
-  fetchDomainRankOverviewRaw: vi.fn(),
-  fetchKeywordSearchVolumeRaw: vi.fn(),
-  fetchLocalSerpItemsRaw: vi.fn(),
-  fetchSerpCompetitorsRaw: vi.fn(),
-  fetchRankedKeywordsRaw: vi.fn(),
-  fetchLiveSerpItemsRaw: vi.fn(),
+// Mock every section module the client wraps so meterDataforseoCall's
+// `execute()` resolves to a controllable fixture.
+vi.mock("@/server/lib/dataforseo/labs", () => ({
+  fetchRelatedKeywords: vi.fn(),
+  fetchKeywordSuggestions: vi.fn(),
+  fetchKeywordIdeas: vi.fn(),
+  fetchDomainRankOverview: vi.fn(),
+  fetchRankedKeywords: vi.fn(),
+  fetchRelevantPages: vi.fn(),
+  fetchKeywordOverview: vi.fn(),
+  fetchSerpCompetitors: vi.fn(),
 }));
-
-vi.mock("@/server/lib/dataforseoLighthouse", () => ({
-  fetchDataforseoLighthouseResultRaw: vi.fn(),
+vi.mock("@/server/lib/dataforseo/serp", () => ({
+  fetchLiveSerp: vi.fn(),
+  fetchRankCheckSerp: vi.fn(),
+  fetchLocalSerp: vi.fn(),
 }));
-
-vi.mock("@/server/lib/dataforseoBacklinks", () => ({
-  fetchBacklinksHistoryRaw: vi.fn(),
-  fetchBacklinksRowsRaw: vi.fn(),
-  fetchBacklinksSummaryRaw: vi.fn(),
-  fetchDomainPagesSummaryRaw: vi.fn(),
-  fetchReferringDomainsRaw: vi.fn(),
+vi.mock("@/server/lib/dataforseo/keywordsData", () => ({
+  fetchKeywordSearchVolume: vi.fn(),
 }));
-
-vi.mock("@/server/lib/dataforseoLlm", () => ({
-  fetchLlmResponseRaw: vi.fn(),
-  fetchLlmAggregatedMetricsRaw: vi.fn(),
-  fetchLlmMentionsSearchRaw: vi.fn(),
-  fetchLlmTopPagesRaw: vi.fn(),
+vi.mock("@/server/lib/dataforseo/business", () => ({
+  fetchBusinessListingsSearch: vi.fn(),
+  fetchQuestionsAnswers: vi.fn(),
+}));
+vi.mock("@/server/lib/dataforseo/backlinks", () => ({
+  fetchBacklinksSummary: vi.fn(),
+  fetchBacklinksRows: vi.fn(),
+  fetchReferringDomains: vi.fn(),
+  fetchDomainPagesSummary: vi.fn(),
+  fetchBacklinksHistory: vi.fn(),
+}));
+vi.mock("@/server/lib/dataforseo/lighthouse", () => ({
+  fetchLighthouseResult: vi.fn(),
+}));
+vi.mock("@/server/lib/dataforseo/ai", () => ({
+  fetchLlmMentionsSearch: vi.fn(),
+  fetchLlmAggregatedMetrics: vi.fn(),
+  fetchLlmTopPages: vi.fn(),
+  fetchLlmResponse: vi.fn(),
 }));
 
 import {
   createDataforseoClient,
   mapDataforseoPathToCreditFeature,
-} from "./dataforseoClient";
-import { DataforseoChargedTaskError } from "./dataforseoCost";
-import { fetchBacklinksSummaryRaw } from "./dataforseoBacklinks";
+} from "@/server/lib/dataforseo/client";
+import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
+import { fetchBacklinksSummary } from "@/server/lib/dataforseo/backlinks";
 
 const billingCustomer = {
   organizationId: "org_123",
@@ -113,9 +121,9 @@ function mockBalances(monthly: number, topup: number) {
 }
 
 function mockDataforseoResult(costUsd: number) {
-  vi.mocked(fetchBacklinksSummaryRaw).mockResolvedValue({
+  vi.mocked(fetchBacklinksSummary).mockResolvedValue({
     data: { rank: 42 },
-    billing: { costUsd, path: ["backlinks", "summary"], resultCount: 1 },
+    billing: { costUsd, path: ["backlinks", "summary"] },
   });
 }
 
@@ -238,11 +246,10 @@ describe("meterDataforseoCall with split balances", () => {
   it("meters charged DataForSEO task errors before rethrowing", async () => {
     setupHostedMode();
     mockBalances(5000, 3000);
-    vi.mocked(fetchBacklinksSummaryRaw).mockRejectedValue(
+    vi.mocked(fetchBacklinksSummary).mockRejectedValue(
       new DataforseoChargedTaskError("DataForSEO task failed", {
         costUsd: RAW_COST,
         path: ["v3", "backlinks", "summary", "live"],
-        resultCount: 0,
       }),
     );
 

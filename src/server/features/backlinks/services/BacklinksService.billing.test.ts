@@ -15,11 +15,8 @@ vi.mock("@/server/lib/r2-cache", () => ({
   setCached: vi.fn(async () => undefined),
 }));
 
-vi.mock("@/server/lib/dataforseoBacklinks", () => ({
+vi.mock("@/server/lib/dataforseo", () => ({
   normalizeBacklinksTarget: vi.fn(),
-}));
-
-vi.mock("@/server/lib/dataforseoClient", () => ({
   createDataforseoClient: vi.fn(() => ({
     backlinks: {
       summary: backlinksSummaryMock,
@@ -31,7 +28,7 @@ vi.mock("@/server/lib/dataforseoClient", () => ({
   })),
 }));
 
-import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinks";
+import { normalizeBacklinksTarget } from "@/server/lib/dataforseo";
 import { createBacklinksService } from "./BacklinksService";
 
 const billingCustomer = {

@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseoClient";
+import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { AppError } from "@/server/lib/errors";
 import type {
@@ -270,6 +270,7 @@ async function refreshKeywordMetrics(
       }
     >();
     for (const item of items) {
+      if (!item.keyword) continue;
       metricsMap.set(item.keyword.toLowerCase(), {
         searchVolume: item.keyword_info?.search_volume ?? null,
         keywordDifficulty: item.keyword_properties?.keyword_difficulty ?? null,

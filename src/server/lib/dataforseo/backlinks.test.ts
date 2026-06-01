@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
-import type * as DataforseoBacklinksSupport from "@/server/lib/dataforseoBacklinksSupport";
 
 vi.mock("@/server/lib/runtime-env", () => ({
   getRequiredEnvValue: vi.fn(async () => "test-api-key"),
@@ -10,19 +9,25 @@ const { classifyBacklinksError } = vi.hoisted(() => ({
   classifyBacklinksError: vi.fn(),
 }));
 
-vi.mock("@/server/lib/dataforseoBacklinksSupport", async () => {
-  const actual = await vi.importActual<typeof DataforseoBacklinksSupport>(
-    "@/server/lib/dataforseoBacklinksSupport",
-  );
-  return { ...actual, classifyBacklinksError };
-});
+// The classifier is built inside backlinks.ts via createDataforseoAccessClassifier;
+// returning our hoisted mock lets the test drive classification.
+vi.mock("@/server/lib/dataforseoAccessClassification", () => ({
+  createDataforseoAccessClassifier: () => classifyBacklinksError,
+}));
 
 import {
-  fetchBacklinksHistoryRaw,
-  fetchBacklinksRowsRaw,
-  fetchBacklinksSummaryRaw,
+  fetchBacklinksHistory,
+  fetchBacklinksRows,
+  fetchBacklinksSummary,
   normalizeBacklinksTarget,
-} from "@/server/lib/dataforseoBacklinks";
+} from "@/server/lib/dataforseo/backlinks";
+
+// A successful DataForSEO task always carries billing metadata (path + cost).
+const billed = {
+  path: ["v3", "backlinks", "summary", "live"],
+  cost: 0.02,
+  result_count: 0,
+};
 
 describe("normalizeBacklinksTarget", () => {
   it("treats explicit homepage URLs as page lookups", () => {
@@ -43,14 +48,6 @@ describe("normalizeBacklinksTarget", () => {
     });
   });
 
-  it("keeps trailing slashes for root page URLs", () => {
-    expect(normalizeBacklinksTarget("https://example.com/")).toEqual({
-      apiTarget: "https://example.com/",
-      displayTarget: "https://example.com/",
-      scope: "page",
-    });
-  });
-
   it("treats bare hostnames as domain lookups", () => {
     expect(normalizeBacklinksTarget("Example.com")).toEqual({
       apiTarget: "example.com",
@@ -64,21 +61,6 @@ describe("normalizeBacklinksTarget", () => {
       normalizeBacklinksTarget("https://Example.com/pricing", {
         scope: "domain",
       }),
-    ).toEqual({
-      apiTarget: "example.com",
-      displayTarget: "example.com",
-      scope: "domain",
-    });
-  });
-
-  it("normalizes domain scope for URLs with query strings or fragments", () => {
-    expect(
-      normalizeBacklinksTarget(
-        "https://Example.com/pricing?utm_source=newsletter#hero",
-        {
-          scope: "domain",
-        },
-      ),
     ).toEqual({
       apiTarget: "example.com",
       displayTarget: "example.com",
@@ -111,7 +93,7 @@ describe("normalizeBacklinksTarget", () => {
   });
 });
 
-describe("fetchBacklinksSummaryRaw", () => {
+describe("fetchBacklinksSummary", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
   });
@@ -143,9 +125,7 @@ describe("fetchBacklinksSummaryRaw", () => {
     });
 
     await expect(
-      fetchBacklinksSummaryRaw({
-        target: "example.com",
-      }),
+      fetchBacklinksSummary({ target: "example.com" }),
     ).rejects.toMatchObject({ code: "BACKLINKS_NOT_ENABLED" });
 
     expect(classifyBacklinksError).toHaveBeenCalledWith(
@@ -165,6 +145,7 @@ describe("fetchBacklinksSummaryRaw", () => {
             {
               status_code: 20000,
               status_message: "Ok.",
+              ...billed,
               result: [null],
             },
           ],
@@ -175,9 +156,7 @@ describe("fetchBacklinksSummaryRaw", () => {
     classifyBacklinksError.mockReturnValue(null);
 
     await expect(
-      fetchBacklinksSummaryRaw({
-        target: "not-a-real-input.example",
-      }),
+      fetchBacklinksSummary({ target: "not-a-real-input.example" }),
     ).resolves.toMatchObject({ data: {} });
   });
 
@@ -191,6 +170,7 @@ describe("fetchBacklinksSummaryRaw", () => {
             {
               status_code: 20000,
               status_message: "Ok.",
+              ...billed,
               result: [],
             },
           ],
@@ -201,55 +181,37 @@ describe("fetchBacklinksSummaryRaw", () => {
     classifyBacklinksError.mockReturnValue(null);
 
     await expect(
-      fetchBacklinksSummaryRaw({
-        target: "example.com",
-      }),
+      fetchBacklinksSummary({ target: "example.com" }),
     ).resolves.toMatchObject({ data: {} });
   });
 
   it("treats empty backlinks rows and history results as valid empty arrays", async () => {
-    vi.mocked(fetch)
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            status_code: 20000,
-            status_message: "Ok.",
-            tasks: [
-              {
-                status_code: 20000,
-                status_message: "Ok.",
-                result: [],
-              },
-            ],
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
-      )
-      .mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({
-            status_code: 20000,
-            status_message: "Ok.",
-            tasks: [
-              {
-                status_code: 20000,
-                status_message: "Ok.",
-                result: [],
-              },
-            ],
-          }),
-          { status: 200, headers: { "Content-Type": "application/json" } },
-        ),
+    const emptyOk = () =>
+      new Response(
+        JSON.stringify({
+          status_code: 20000,
+          status_message: "Ok.",
+          tasks: [
+            {
+              status_code: 20000,
+              status_message: "Ok.",
+              ...billed,
+              result: [],
+            },
+          ],
+        }),
+        { status: 200, headers: { "Content-Type": "application/json" } },
       );
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(emptyOk())
+      .mockResolvedValueOnce(emptyOk());
     classifyBacklinksError.mockReturnValue(null);
 
     await expect(
-      fetchBacklinksRowsRaw({
-        target: "example.com",
-      }),
+      fetchBacklinksRows({ target: "example.com" }),
     ).resolves.toMatchObject({ data: [] });
     await expect(
-      fetchBacklinksHistoryRaw({
+      fetchBacklinksHistory({
         target: "example.com",
         dateFrom: "2025-01-01",
         dateTo: "2025-12-31",

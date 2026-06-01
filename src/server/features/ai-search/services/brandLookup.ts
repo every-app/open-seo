@@ -1,13 +1,13 @@
 import { waitUntil } from "cloudflare:workers";
 import { sortBy } from "remeda";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseoClient";
+import { createDataforseoClient } from "@/server/lib/dataforseo";
 import {
   buildLlmTarget,
   CHATGPT_LANGUAGE_CODE,
   CHATGPT_LOCATION_CODE,
   type LlmPlatform,
-} from "@/server/lib/dataforseoLlm";
+} from "@/server/lib/dataforseo";
 import type {
   LlmAggregatedTotal,
   LlmMentionItem,

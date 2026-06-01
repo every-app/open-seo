@@ -129,31 +129,3 @@ export const llmResponseResultSchema = z
   .passthrough();
 
 export type LlmResponseResult = z.infer<typeof llmResponseResultSchema>;
-
-// ---------------------------------------------------------------------------
-// Top-level envelope used by every AI Optimization endpoint.
-// We re-declare here (instead of reusing dataforseoSchemas.ts) because the
-// `result` shape differs from Labs/SERP — items are not always under
-// `result[0].items` and totals/items can both be present.
-// ---------------------------------------------------------------------------
-
-const llmTaskSchema = z
-  .object({
-    status_code: z.number().optional(),
-    status_message: z.string().optional(),
-    path: z.array(z.string()),
-    cost: z.number(),
-    result_count: z.number().nullable().optional(),
-    result: z.array(z.unknown()).nullable().optional(),
-  })
-  .passthrough();
-
-export type LlmDataforseoTask = z.infer<typeof llmTaskSchema>;
-
-export const llmResponseEnvelopeSchema = z
-  .object({
-    status_code: z.number().optional(),
-    status_message: z.string().optional(),
-    tasks: z.array(llmTaskSchema).optional(),
-  })
-  .passthrough();

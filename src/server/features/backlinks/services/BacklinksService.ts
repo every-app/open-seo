@@ -1,5 +1,5 @@
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
-import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinks";
+import { normalizeBacklinksTarget } from "@/server/lib/dataforseo";
 import {
   normalizeBacklinksSpamFilterOptions,
   type BacklinksSpamFilterOptions,

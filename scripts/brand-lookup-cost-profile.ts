@@ -3,11 +3,11 @@ import {
   buildLlmTarget,
   CHATGPT_LANGUAGE_CODE,
   CHATGPT_LOCATION_CODE,
-  fetchLlmAggregatedMetricsRaw,
-  fetchLlmMentionsSearchRaw,
-  fetchLlmTopPagesRaw,
+  fetchLlmAggregatedMetrics,
+  fetchLlmMentionsSearch,
+  fetchLlmTopPages,
   type LlmPlatform,
-} from "@/server/lib/dataforseoLlm";
+} from "@/server/lib/dataforseo/ai";
 import { applyBillingMarkupUsd } from "@/shared/billing";
 import { loadLocalEnv, parseArgs } from "./cli-utils";
 
@@ -65,7 +65,7 @@ async function main() {
       const languageCode =
         platform === "chat_gpt" ? CHATGPT_LANGUAGE_CODE : userLanguageCode;
 
-      const aggregated = await fetchLlmAggregatedMetricsRaw({
+      const aggregated = await fetchLlmAggregatedMetrics({
         target: llmTarget,
         platform,
         locationCode,
@@ -74,7 +74,7 @@ async function main() {
       });
       calls.push(toRecord(platform, "aggregated_metrics", aggregated.billing));
 
-      const topPages = await fetchLlmTopPagesRaw({
+      const topPages = await fetchLlmTopPages({
         target: llmTarget,
         platform,
         locationCode,
@@ -83,7 +83,7 @@ async function main() {
       });
       calls.push(toRecord(platform, "top_pages", topPages.billing));
 
-      const mentions = await fetchLlmMentionsSearchRaw({
+      const mentions = await fetchLlmMentionsSearch({
         target: llmTarget,
         platform,
         locationCode,
@@ -133,7 +133,6 @@ type CallRecord = {
   platform: LlmPlatform;
   endpoint: string;
   path: string;
-  resultCount: number | null;
   rawUsd: number;
   billedUsd: number;
 };
@@ -148,13 +147,12 @@ type RunSummary = {
 function toRecord(
   platform: LlmPlatform,
   endpoint: string,
-  billing: { costUsd: number; path: string[]; resultCount: number | null },
+  billing: { costUsd: number; path: string[] },
 ): CallRecord {
   return {
     platform,
     endpoint,
     path: billing.path.join("/"),
-    resultCount: billing.resultCount,
     rawUsd: round(billing.costUsd),
     billedUsd: applyBillingMarkupUsd(billing.costUsd),
   };

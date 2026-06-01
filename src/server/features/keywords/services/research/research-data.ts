@@ -1,6 +1,6 @@
-import { type LabsKeywordDataItem } from "@/server/lib/dataforseoClient";
+import { type LabsKeywordDataItem } from "@/server/lib/dataforseo";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseoClient";
+import { createDataforseoClient } from "@/server/lib/dataforseo";
 import {
   normalizeIntent,
   normalizeKeyword,
@@ -37,8 +37,8 @@ function mapKeywordDataItems(items: LabsKeywordDataItem[]): EnrichedKeyword[] {
       keyword: normalized,
       searchVolume: keywordInfo?.search_volume ?? null,
       trend: (keywordInfo?.monthly_searches ?? []).map((entry) => ({
-        year: entry.year,
-        month: entry.month,
+        year: entry.year ?? 0,
+        month: entry.month ?? 0,
         searchVolume: entry.search_volume ?? 0,
       })),
       cpc: item.keyword_info?.cpc ?? null,
@@ -63,40 +63,13 @@ async function fetchRelatedRows(
     depth: 3,
   });
 
-  const rows: EnrichedKeyword[] = [];
-  const seen = new Set<string>();
-
-  for (const item of items) {
-    const keywordData = item.keyword_data;
-    const keyword = keywordData.keyword;
-    if (!keyword) continue;
-
-    const normalized = normalizeKeyword(keyword);
-    if (seen.has(normalized)) continue;
-    seen.add(normalized);
-
-    const keywordInfo = keywordData.keyword_info_normalized_with_clickstream
-      ?.search_volume
-      ? keywordData.keyword_info_normalized_with_clickstream
-      : keywordData.keyword_info;
-
-    rows.push({
-      keyword: normalized,
-      searchVolume: keywordInfo?.search_volume ?? null,
-      trend: (keywordInfo?.monthly_searches ?? []).map((entry) => ({
-        year: entry.year,
-        month: entry.month,
-        searchVolume: entry.search_volume ?? 0,
-      })),
-      cpc: keywordData.keyword_info?.cpc ?? null,
-      competition: keywordData.keyword_info?.competition ?? null,
-      keywordDifficulty:
-        keywordData.keyword_properties?.keyword_difficulty ?? null,
-      intent: normalizeIntent(keywordData.search_intent_info?.main_intent),
-    });
-  }
-
-  return rows;
+  // Related items wrap the keyword payload one level deeper; unwrap and reuse
+  // the same mapper as suggestions/ideas.
+  return mapKeywordDataItems(
+    items
+      .map((item) => item.keyword_data)
+      .filter((data): data is NonNullable<typeof data> => data != null),
+  );
 }
 
 export async function fetchResearchRowsBySource(

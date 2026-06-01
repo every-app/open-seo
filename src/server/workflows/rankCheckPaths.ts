@@ -1,6 +1,6 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import type { createDataforseoClient } from "@/server/lib/dataforseoClient";
+import type { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { RankCheckResult } from "@/server/lib/dataforseo";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
