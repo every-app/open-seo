@@ -17,6 +17,7 @@ const mobileNavItems = [
     label: "Resources",
     links: [
       { label: "Guides", href: "/guides" },
+      { label: "Open Source SEO", href: "/open-source-seo" },
       { label: "MCP Setup", href: "/docs/mcp" },
       { label: "Skills", href: "/docs/skills" },
     ],
@@ -201,6 +202,11 @@ function ResourcesDropdown() {
       label: "Guides",
       href: "/guides",
       description: "Founder-focused SEO articles.",
+    },
+    {
+      label: "Open Source SEO",
+      href: "/open-source-seo",
+      description: "Why OpenSEO is open source.",
     },
     {
       label: "MCP",

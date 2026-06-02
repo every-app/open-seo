@@ -9,6 +9,7 @@ export function SiteFooter({ className }: { className?: string }) {
           <div className="mt-2 flex flex-col gap-1.5">
             <Link to="/">OpenSEO</Link>
             <Link to="/features/mcp">MCP</Link>
+            <Link to="/open-source-seo">Open Source SEO</Link>
             <Link to="/pricing">Pricing</Link>
             <Link to="/guides">Guides</Link>
           </div>

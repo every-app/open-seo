@@ -21,6 +21,7 @@ import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
+import { Route as MarketingOpenSourceSeoRouteImport } from './routes/_marketing/open-source-seo'
 import { Route as MarketingFeaturesIndexRouteImport } from './routes/_marketing/features/index'
 import { Route as MarketingFeaturesSiteAuditRouteImport } from './routes/_marketing/features/site-audit'
 import { Route as MarketingFeaturesSavedKeywordsRouteImport } from './routes/_marketing/features/saved-keywords'
@@ -91,6 +92,11 @@ const MarketingPricingRoute = MarketingPricingRouteImport.update({
   path: '/pricing',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingOpenSourceSeoRoute = MarketingOpenSourceSeoRouteImport.update({
+  id: '/open-source-seo',
+  path: '/open-source-seo',
+  getParentRoute: () => MarketingRoute,
+} as any)
 const MarketingFeaturesIndexRoute = MarketingFeaturesIndexRouteImport.update({
   id: '/features/',
   path: '/features/',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/_marketing': typeof MarketingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/_marketing/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/'
     | '/privacy'
     | '/terms-and-conditions'
+    | '/open-source-seo'
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
   to:
     | '/privacy'
     | '/terms-and-conditions'
+    | '/open-source-seo'
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
@@ -273,6 +284,7 @@ export interface FileRouteTypes {
     | '/_marketing'
     | '/privacy'
     | '/terms-and-conditions'
+    | '/_marketing/open-source-seo'
     | '/_marketing/pricing'
     | '/api/event'
     | '/api/subscribe'
@@ -393,6 +405,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingPricingRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/open-source-seo': {
+      id: '/_marketing/open-source-seo'
+      path: '/open-source-seo'
+      fullPath: '/open-source-seo'
+      preLoaderRoute: typeof MarketingOpenSourceSeoRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/features/': {
       id: '/_marketing/features/'
       path: '/features'
@@ -467,6 +486,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface MarketingRouteChildren {
+  MarketingOpenSourceSeoRoute: typeof MarketingOpenSourceSeoRoute
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
   MarketingFeaturesAiBrandVisibilityRoute: typeof MarketingFeaturesAiBrandVisibilityRoute
@@ -482,6 +502,7 @@ interface MarketingRouteChildren {
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingOpenSourceSeoRoute: MarketingOpenSourceSeoRoute,
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingIndexRoute: MarketingIndexRoute,
   MarketingFeaturesAiBrandVisibilityRoute:

@@ -24,10 +24,16 @@ const STATIC_PATHS = [
   "/docs",
   "/features",
   "/features/mcp",
+  "/open-source-seo",
   ...Object.values(FEATURE_PAGE_SLUGS).map((slug) => `/features/${slug}`),
 ];
 
-function getContentEntries(contentDir, basePath, dir = contentDir, segments = []) {
+function getContentEntries(
+  contentDir,
+  basePath,
+  dir = contentDir,
+  segments = [],
+) {
   if (!existsSync(dir)) {
     return [];
   }
