@@ -1,4 +1,4 @@
-<img width="840" height="400" alt="Github Banner Image (grey)" src="https://github.com/user-attachments/assets/9543d182-5143-4f9e-add5-8887eca0eb70" />
+<img width="840" height="400" alt="Image" src="https://github.com/user-attachments/assets/14351615-2008-4f80-817d-8aaef25aa71a" />
 
 # OpenSEO
 
@@ -17,7 +17,7 @@ Easy to self-host, fork and extend, but we have a managed version too:
   - Bring your own DataForSEO API key and pay only for what you use.
 - Fork and vibe code your own custom tool.
 
-<img width="1386" height="840" alt="Screenshot 2026-06-02 at 2 03 14 PM" src="https://github.com/user-attachments/assets/982c69bc-1d99-4f8d-9b82-dfe9b039dfa4" />
+<img width="1386" height="840" alt="Image" src="https://github.com/user-attachments/assets/535bc833-e001-4f94-b078-fcc5d17ddfe9" />
 
 ## Table of Contents
 
