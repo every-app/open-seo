@@ -17,7 +17,7 @@ Easy to self-host, fork and extend, but we have a managed version too:
   - Bring your own DataForSEO API key and pay only for what you use.
 - Fork and vibe code your own custom tool.
 
-<img width="1386" height="840" alt="Image" src="https://github.com/user-attachments/assets/535bc833-e001-4f94-b078-fcc5d17ddfe9" />
+<img width="1385" height="794" alt="Image" src="https://github.com/user-attachments/assets/fd208249-44ea-4849-bb4b-5fc896aeab73" />
 
 ## Table of Contents
 
