@@ -1,12 +1,23 @@
+<img width="840" height="400" alt="Github Banner Image (grey)" src="https://github.com/user-attachments/assets/9543d182-5143-4f9e-add5-8887eca0eb70" />
+
 # OpenSEO
 
 OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
 
-Easy to self-host and extend, but we have a managed version too:
+Easy to self-host, fork and extend, but we have a managed version too:
 
 [openseo.so](https://openseo.so)
 
-![OpenSEO demo (placeholder)](https://github.com/user-attachments/assets/6a928771-66ff-486b-b131-a54a3943985f)
+## Why Use This
+
+- Best in class MCP and AI Skills.
+- Modern, simple UI.
+  - Focused workflows instead of a bloated, complex SEO suite.
+- No subscriptions.
+  - Bring your own DataForSEO API key and pay only for what you use.
+- Fork and vibe code your own custom tool.
+
+<img width="1386" height="840" alt="Screenshot 2026-06-02 at 2 03 14 PM" src="https://github.com/user-attachments/assets/982c69bc-1d99-4f8d-9b82-dfe9b039dfa4" />
 
 ## Table of Contents
 
@@ -24,15 +35,6 @@ Easy to self-host and extend, but we have a managed version too:
 - [Local Development](#local-development)
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
-
-## Why Use This
-
-- Open source and self-hostable.
-- No subscriptions.
-  - Pay only for what you use.
-- Fork and vibe code your own features.
-- Focused workflows instead of a bloated, complex SEO suite.
-- Best in class MCP and AI Skills.
 
 ## Main SEO Workflows
 
@@ -149,6 +151,7 @@ Start with `/seo-project-setup`. It will ask about your project and help configu
 Top priorities:
 
 - Google Search Console Integration + MCP
+- Local SEO
 - Custom Reports for Clients
 - Improved and Scheduled Site Audits
 - In App AI Agent
