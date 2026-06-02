@@ -8,7 +8,7 @@ Easy to self-host, fork and extend, but we have a managed version too:
 
 [openseo.so](https://openseo.so)
 
-## Why Use This
+## Why use OpenSEO?
 
 - Best in class MCP and AI Skills.
 - Modern, simple UI.
@@ -21,7 +21,7 @@ Easy to self-host, fork and extend, but we have a managed version too:
 
 ## Table of Contents
 
-- [Why Use This](#why-use-this)
+- [Why use OpenSEO?](#why-use-this)
 - [Main SEO Workflows](#main-seo-workflows)
 - [OpenSEO MCP](#openseo-mcp)
 - [OpenSEO Agent Skills](#openseo-agent-skills)
