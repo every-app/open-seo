@@ -29,6 +29,7 @@ Easy to self-host, fork and extend, but we have a managed version too:
 - [Community](#community)
 - [Pricing / Costs (Free + API costs)](#pricing--costs)
 - [DataForSEO API Key Setup](#dataforseo-api-key-setup)
+- [Google Search Console](#google-search-console)
 - [Self-hosting](#self-hosting)
   - [Docker Self Hosting](#docker-self-hosting)
   - [Cloudflare Self-Hosting](#cloudflare-self-hosting)
@@ -202,6 +203,12 @@ printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64
 - Docker self-hosting: `.env`
 - Cloudflare: Set it in the workers UI
 - Local development: `.env.local`
+
+## Google Search Console
+
+Search Console is optional and works in self-hosted deployments using your own
+Google OAuth client. It takes ~10 minutes of one-time setup — see
+[`docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md`](./docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md).
 
 ## Self-hosting
 

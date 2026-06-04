@@ -29,6 +29,7 @@ import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
@@ -144,6 +145,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
+  id: '/api/gsc/oauth/callback',
+  path: '/api/gsc/oauth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
   id: '/help/dataforseo-api-key',
   path: '/help/dataforseo-api-key',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -287,6 +294,7 @@ export interface FileRoutesByTo {
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
@@ -324,6 +332,7 @@ export interface FileRoutesById {
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -360,6 +369,7 @@ export interface FileRouteTypes {
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/gsc/oauth/callback'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/gsc/oauth/callback'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
@@ -429,6 +440,7 @@ export interface FileRouteTypes {
     | '/_app/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
@@ -456,6 +468,7 @@ export interface RootRouteChildren {
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
+  ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -598,6 +611,13 @@ declare module '@tanstack/react-router' {
       path: '/api/auth/$'
       fullPath: '/api/auth/$'
       preLoaderRoute: typeof ApiAuthSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/gsc/oauth/callback': {
+      id: '/api/gsc/oauth/callback'
+      path: '/api/gsc/oauth/callback'
+      fullPath: '/api/gsc/oauth/callback'
+      preLoaderRoute: typeof ApiGscOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/help/dataforseo-api-key': {
@@ -857,6 +877,7 @@ const rootRouteChildren: RootRouteChildren = {
     Char91DotwellKnownChar93OpenaiAppsChallengeRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
+  ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

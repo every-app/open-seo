@@ -6,6 +6,7 @@ import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
+import { hasSelfHostedGscConfig } from "@/server/features/gsc/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   GscNotConnectedError,
@@ -21,6 +22,7 @@ import {
   type GscPerformanceInput,
 } from "@/server/features/gsc/searchAnalytics";
 import { GscApiError, GscTokenError } from "@/server/lib/gscClient";
+import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
 
 const TEXT_SUMMARY_ROWS = 15;
 
@@ -33,17 +35,28 @@ function integrationsUrl(baseUrl: string, projectId: string): string {
   return buildDashboardUrl(baseUrl, `/p/${projectId}/integrations`);
 }
 
-/** GSC connect requires Better Auth, which only runs in hosted mode. In
- *  self-hosted deployments the tools return this instead of a broken flow. */
-async function hostedOnlyResponse(
+/** Self-hosted GSC requires the operator to provide a Google OAuth client and
+ *  BETTER_AUTH_SECRET. Hosted mode always has both; self-hosted tools return this
+ *  setup nudge before attempting a token lookup when either is missing. */
+async function missingSelfHostedGoogleClientResponse(
   context: ProjectAuthContext,
   projectId: string,
 ) {
-  if (await isHostedServerAuthMode()) return null;
+  const [hosted, configured] = await Promise.all([
+    isHostedServerAuthMode(),
+    hasSelfHostedGscConfig(),
+  ]);
+  if (hosted || configured) return null;
+
   return mcpResponse({
-    text: "Google Search Console connect is only available on the hosted OpenSEO service, not in self-hosted mode. Use a GSC CSV export instead.",
+    text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from Integrations. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,
     meta: buildProjectMeta(context, projectId),
-    structuredContent: { ok: false, connected: false, reason: "hosted_only" },
+    structuredContent: {
+      ok: false,
+      connected: false,
+      reason: "gsc_oauth_not_configured",
+      setupDocsUrl: GSC_SELF_HOSTED_SETUP_DOCS_URL,
+    },
   });
 }
 
@@ -147,6 +160,7 @@ export const getSearchConsolePerformanceTool = {
       ok: z.boolean(),
       reason: z.string().optional(),
       connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
       siteUrl: z.string().optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
@@ -176,7 +190,10 @@ export const getSearchConsolePerformanceTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: PerfArgs, context) => {
-    const blocked = await hostedOnlyResponse(context, args.projectId);
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
     if (blocked) return blocked;
 
     const connectUrl = integrationsUrl(context.baseUrl, args.projectId);
@@ -292,6 +309,7 @@ export const inspectUrlsTool = {
       ok: z.boolean(),
       reason: z.string().optional(),
       connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
       siteUrl: z.string().optional(),
       results: z
         .array(
@@ -313,7 +331,10 @@ export const inspectUrlsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: InspectArgs, context) => {
-    const blocked = await hostedOnlyResponse(context, args.projectId);
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
     if (blocked) return blocked;
 
     const connectUrl = integrationsUrl(context.baseUrl, args.projectId);

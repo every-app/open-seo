@@ -5,6 +5,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
+import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
 import { SitePicker } from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import {
@@ -30,16 +31,17 @@ export function SearchConsoleConnectionCard({
   const connectionQuery = useQuery({
     queryKey: connectionKey,
     queryFn: () => getGscConnection({ data: { projectId } }),
-    enabled: hosted,
   });
   const connection = connectionQuery.data;
   const connected = Boolean(connection?.connected);
+  const selfHostedNeedsSetup =
+    !hosted && connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
 
   const showPicker = picking || (connection?.currentUserHasGrant && !connected);
   const sitesQuery = useQuery({
     queryKey: ["gscSites", projectId],
     queryFn: () => listGscSites({ data: { projectId } }),
-    enabled: Boolean(showPicker),
+    enabled: Boolean(showPicker && !selfHostedNeedsSetup),
   });
 
   const setSiteMutation = useMutation({
@@ -70,24 +72,16 @@ export function SearchConsoleConnectionCard({
 
   const handleConnect = () => void startGscLink(window.location.href);
 
-  if (!hosted) {
-    return (
-      <IntegrationCard>
-        <p className="text-sm text-base-content/60">
-          Available on hosted OpenSEO. Self-hosted? Use a CSV export.
-        </p>
-      </IntegrationCard>
-    );
-  }
-
   return (
     <IntegrationCard
       status={
         connectionQuery.isLoading
           ? undefined
-          : connected
-            ? "connected"
-            : "disconnected"
+          : selfHostedNeedsSetup
+            ? "setup_required"
+            : connected
+              ? "connected"
+              : "disconnected"
       }
     >
       {connectionQuery.isLoading ? (
@@ -95,6 +89,8 @@ export function SearchConsoleConnectionCard({
           <span className="loading loading-spinner loading-sm" />
           Checking…
         </div>
+      ) : selfHostedNeedsSetup ? (
+        <SelfHostedSetupWarning />
       ) : connected && !picking ? (
         <ConnectedState
           siteUrl={connection?.siteUrl ?? ""}
@@ -156,7 +152,7 @@ function IntegrationCard({
   status,
   children,
 }: {
-  status?: "connected" | "disconnected";
+  status?: "connected" | "disconnected" | "setup_required";
   children: React.ReactNode;
 }) {
   return (
@@ -177,24 +173,39 @@ function IntegrationCard({
   );
 }
 
-function StatusPill({ status }: { status: "connected" | "disconnected" }) {
+function StatusPill({
+  status,
+}: {
+  status: "connected" | "disconnected" | "setup_required";
+}) {
   const connected = status === "connected";
+  const setupRequired = status === "setup_required";
   return (
     <span
       className={[
         "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
         connected
           ? "border-success/30 bg-success/10 text-success"
-          : "border-base-300 bg-base-200 text-base-content/60",
+          : setupRequired
+            ? "border-warning/30 bg-warning/10 text-warning"
+            : "border-base-300 bg-base-200 text-base-content/60",
       ].join(" ")}
     >
       <span
         className={[
           "size-1.5 rounded-full",
-          connected ? "bg-success" : "bg-base-content/40",
+          connected
+            ? "bg-success"
+            : setupRequired
+              ? "bg-warning"
+              : "bg-base-content/40",
         ].join(" ")}
       />
-      {connected ? "Connected" : "Not connected"}
+      {connected
+        ? "Connected"
+        : setupRequired
+          ? "Setup required"
+          : "Not connected"}
     </span>
   );
 }

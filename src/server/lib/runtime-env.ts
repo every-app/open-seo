@@ -2,7 +2,9 @@ import { isHostedAuthMode } from "@/lib/auth-mode";
 
 let workersEnvPromise: Promise<Record<string, unknown> | null> | null = null;
 
-async function getEnvValue(name: string): Promise<string | undefined> {
+export async function getOptionalEnvValue(
+  name: string,
+): Promise<string | undefined> {
   const processValue =
     typeof process !== "undefined" ? process.env?.[name] : undefined;
   if (processValue) {
@@ -15,7 +17,7 @@ async function getEnvValue(name: string): Promise<string | undefined> {
 }
 
 export async function getRequiredEnvValue(name: string): Promise<string> {
-  const value = await getEnvValue(name);
+  const value = await getOptionalEnvValue(name);
   if (!value) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
@@ -23,7 +25,7 @@ export async function getRequiredEnvValue(name: string): Promise<string> {
 }
 
 export async function isHostedServerAuthMode(): Promise<boolean> {
-  return isHostedAuthMode(await getEnvValue("AUTH_MODE"));
+  return isHostedAuthMode(await getOptionalEnvValue("AUTH_MODE"));
 }
 
 async function getWorkersEnv(): Promise<Record<string, unknown> | null> {

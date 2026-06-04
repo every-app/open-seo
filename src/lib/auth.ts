@@ -4,6 +4,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { db } from "@/db";
 import { z } from "zod";
+import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createBaseAuthConfig } from "@/lib/auth-config";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import {
@@ -24,7 +25,12 @@ const hostedBaseUrlSchema = z
   }, "BETTER_AUTH_URL must use https or localhost");
 
 function createAuth() {
-  const baseUrl = getHostedBaseUrl();
+  // Hosted needs the real configured URL (cookies, callbacks, /api/auth routes
+  // all use it). Self-hosted only builds this instance to mint/refresh Search
+  // Console tokens, which never read baseURL — so a placeholder is fine there.
+  const baseUrl = isHostedAuthMode(env.AUTH_MODE)
+    ? getHostedBaseUrl()
+    : "http://localhost";
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig();
 
@@ -142,11 +148,14 @@ export function getHostedBaseUrl() {
   return hostedBaseUrlSchema.parse(baseUrl);
 }
 
+// Required in hosted mode, and in self-hosted mode when Search Console is
+// enabled (it keys the OAuth-token encryption and is needed to build the auth
+// instance that mints/refreshes Search Console tokens).
 function getHostedSecret() {
   const secret = env.BETTER_AUTH_SECRET?.trim();
 
   if (!secret) {
-    throw new Error("BETTER_AUTH_SECRET is required in hosted mode");
+    throw new Error("BETTER_AUTH_SECRET is required");
   }
 
   if (secret.length < 32) {
@@ -157,6 +166,15 @@ function getHostedSecret() {
 }
 
 function getSocialProviders() {
+  // Google social login is hosted-only. Self-hosted builds the auth instance
+  // solely for Search Console token ops, which use the genericOAuth provider
+  // (createBaseAuthConfig) with its own creds — so it must NOT require the
+  // social-login config here, otherwise getAuth() construction would be coupled
+  // to GSC creds rather than just BETTER_AUTH_SECRET.
+  if (!isHostedAuthMode(env.AUTH_MODE)) {
+    return {};
+  }
+
   return {
     google: getGoogleSocialProviderConfig(),
   };

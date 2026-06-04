@@ -29,7 +29,7 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
       },
       where: eq(userOnboardingAnswers.userId, context.userId),
     });
-    const hostedUser = await db.query.user.findFirst({
+    const userRecord = await db.query.user.findFirst({
       columns: {
         createdAt: true,
       },
@@ -53,7 +53,7 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
     return {
       completedAt: answers?.completedAt ?? null,
       gscNudgeDismissedAt: answers?.gscNudgeDismissedAt ?? null,
-      userCreatedAt: hostedUser?.createdAt?.toISOString() ?? null,
+      userCreatedAt: userRecord?.createdAt?.toISOString() ?? null,
       answers: {
         interestedFeatures,
         workFor: answers?.workFor ?? null,

@@ -9,6 +9,11 @@ services:
       - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: Google Search Console. See
+      # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"

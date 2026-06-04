@@ -6,6 +6,7 @@ import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   isHostedServerAuthMode: vi.fn(),
+  hasSelfHostedGscConfig: vi.fn(),
   GscService: {
     getPerformance: vi.fn(),
     inspectUrls: vi.fn(),
@@ -32,6 +33,9 @@ class GscTokenError extends Error {}
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: mocks.isHostedServerAuthMode,
+}));
+vi.mock("@/server/features/gsc/oauth-config", () => ({
+  hasSelfHostedGscConfig: mocks.hasSelfHostedGscConfig,
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
@@ -75,6 +79,8 @@ describe("search console MCP tools", () => {
     mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
     mocks.isHostedServerAuthMode.mockReset();
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.hasSelfHostedGscConfig.mockReset();
+    mocks.hasSelfHostedGscConfig.mockResolvedValue(false);
     mocks.GscService.getPerformance.mockReset();
     mocks.GscService.inspectUrls.mockReset();
   });
@@ -211,8 +217,9 @@ describe("search console MCP tools", () => {
     expect(mocks.GscService.getPerformance).not.toHaveBeenCalled();
   });
 
-  it("returns a hosted-only message in self-hosted mode", async () => {
+  it("returns a setup message in self-hosted mode without a Google client", async () => {
     mocks.isHostedServerAuthMode.mockResolvedValue(false);
+    mocks.hasSelfHostedGscConfig.mockResolvedValue(false);
     const { getSearchConsolePerformanceTool } =
       await import("./search-console-tools");
 
@@ -221,8 +228,38 @@ describe("search console MCP tools", () => {
       toolExtra,
     );
 
-    expect(result.structuredContent).toMatchObject({ reason: "hosted_only" });
+    expect(result.structuredContent).toMatchObject({
+      reason: "gsc_oauth_not_configured",
+    });
     expect(mocks.GscService.getPerformance).not.toHaveBeenCalled();
+  });
+
+  it("allows performance queries in self-hosted mode with a Google client", async () => {
+    mocks.isHostedServerAuthMode.mockResolvedValue(false);
+    mocks.hasSelfHostedGscConfig.mockResolvedValue(true);
+    mocks.GscService.getPerformance.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      connectedBy: "alice@example.com",
+      request: {
+        dimensions: ["query"],
+        startDate: "2026-04-27",
+        endDate: "2026-05-25",
+        rowLimit: 1000,
+      },
+      rows: [],
+    });
+    const { getSearchConsolePerformanceTool } =
+      await import("./search-console-tools");
+
+    const result = await getSearchConsolePerformanceTool.handler(
+      { projectId: "project_1" },
+      toolExtra,
+    );
+
+    expect(mocks.GscService.getPerformance).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: "project_1" }),
+    );
+    expect(result.structuredContent).toMatchObject({ ok: true });
   });
 
   it("inspects multiple URLs and reports partial failures inline", async () => {
@@ -285,8 +322,9 @@ describe("search console MCP tools", () => {
     });
   });
 
-  it("returns a hosted-only message for inspect_urls in self-hosted mode", async () => {
+  it("returns a setup message for inspect_urls in self-hosted mode without a Google client", async () => {
     mocks.isHostedServerAuthMode.mockResolvedValue(false);
+    mocks.hasSelfHostedGscConfig.mockResolvedValue(false);
     const { inspectUrlsTool } = await import("./search-console-tools");
 
     const result = await inspectUrlsTool.handler(
@@ -294,7 +332,9 @@ describe("search console MCP tools", () => {
       toolExtra,
     );
 
-    expect(result.structuredContent).toMatchObject({ reason: "hosted_only" });
+    expect(result.structuredContent).toMatchObject({
+      reason: "gsc_oauth_not_configured",
+    });
     expect(mocks.GscService.inspectUrls).not.toHaveBeenCalled();
   });
 });

@@ -9,16 +9,6 @@ import {
 import { sql } from "drizzle-orm";
 import { organization, user } from "./better-auth-schema";
 
-// This stores users for Cloudflare Access and local_noauth mode
-// since they don't map to better-auth's user schema
-export const delegatedUsers = sqliteTable("delegated_users", {
-  id: text("id").primaryKey(),
-  email: text("email").notNull().unique(),
-  createdAt: text("created_at")
-    .notNull()
-    .default(sql`(current_timestamp)`),
-});
-
 export const userOnboardingAnswers = sqliteTable(
   "user_onboarding_answers",
   {

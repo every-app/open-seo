@@ -11,9 +11,10 @@ import { dismissGscNudge } from "@/serverFunctions/onboarding";
 
 /**
  * One-time re-engagement prompt nudging users who finished onboarding *before*
- * the Search Console step existed to connect GSC. Hosted-only (the connect flow
- * needs Better Auth). Shows once — server-persisted dismissal means it never
- * reappears after the user connects or dismisses, on any device.
+ * the Search Console step existed to connect GSC. Hosted-only because this is
+ * a hosted onboarding re-engagement nudge. Shows once — server-persisted
+ * dismissal means it never reappears after the user connects or dismisses, on
+ * any device.
  *
  * `suppressed` lets the layout hide this when another modal (e.g. the missing
  * DataForSEO key prompt) is already showing so the two never stack.

@@ -1,8 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import { GscService } from "@/server/features/gsc/services/GscService";
+import { hasSelfHostedGscConfig } from "@/server/features/gsc/oauth-config";
+import { createSelfHostedGscAuthorizationUrl } from "@/server/features/gsc/selfHostedOAuth";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { getPublicOrigin } from "@/server/mcp/public-origin";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   requireAuthenticatedContext,
   requireProjectContext,
@@ -11,6 +16,9 @@ import {
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 const setSiteSchema = projectScopedSchema.extend({
   siteUrl: z.string().min(1),
+});
+const startSelfHostedLinkSchema = z.object({
+  callbackURL: z.string().min(1),
 });
 
 // Account-level grant check (no project needed) for surfaces like onboarding
@@ -26,13 +34,17 @@ export const getGscConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => projectScopedSchema.parse(data))
   .handler(async ({ context }) => {
-    const [connection, currentUserHasGrant] = await Promise.all([
-      GscService.getConnection(context.projectId),
-      GscService.userHasGrant(context.userId),
-    ]);
+    const [connection, currentUserHasGrant, hosted, gscConfigured] =
+      await Promise.all([
+        GscService.getConnection(context.projectId),
+        GscService.userHasGrant(context.userId),
+        isHostedServerAuthMode(),
+        hasSelfHostedGscConfig(),
+      ]);
     return {
       connected: Boolean(connection),
       currentUserHasGrant,
+      googleOAuthConfigured: hosted || gscConfigured,
       siteUrl: connection?.siteUrl ?? null,
       connectedByEmail: connection?.connectedAccountEmail ?? null,
       connectedAt: connection?.createdAt ?? null,
@@ -96,4 +108,21 @@ export const disconnectGsc = createServerFn({ method: "POST" })
       }),
     );
     return { connected: false as const };
+  });
+
+export const startSelfHostedGscLink = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .inputValidator((data: unknown) => startSelfHostedLinkSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const publicOrigin = getPublicOrigin(getRequest());
+    const url = await createSelfHostedGscAuthorizationUrl({
+      user: {
+        userId: context.userId,
+        userEmail: context.userEmail,
+      },
+      callbackURL: data.callbackURL,
+      publicOrigin,
+    });
+
+    return { url };
   });

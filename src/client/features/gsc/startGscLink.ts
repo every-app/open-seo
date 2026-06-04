@@ -1,6 +1,8 @@
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { authClient } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { startSelfHostedGscLink } from "@/serverFunctions/gsc";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 
 /**
@@ -12,6 +14,12 @@ import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
  */
 export async function startGscLink(callbackURL: string): Promise<void> {
   try {
+    if (!isHostedClientAuthMode()) {
+      const res = await startSelfHostedGscLink({ data: { callbackURL } });
+      window.location.href = res.url;
+      return;
+    }
+
     const res = await authClient.oauth2.link({
       providerId: GSC_OAUTH_PROVIDER_ID,
       callbackURL,

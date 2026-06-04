@@ -141,6 +141,13 @@
       "when": 1780519331717,
       "tag": "0019_true_absorbing_man",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1780599087400,
+      "tag": "0020_drop_delegated_users",
+      "breakpoints": true
     }
   ]
 }

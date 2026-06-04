@@ -3,11 +3,11 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
+import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
 import { SitePicker } from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   getGscConnection,
   listGscSites,
@@ -19,14 +19,12 @@ import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
  * Onboarding step for connecting Google Search Console: link the account-level
  * OAuth grant, then bind a verified property to the user's default project —
  * the same binding the project's Integrations page does — so it's done in one
- * place. Hosted-only (the connect flow needs Better Auth).
+ * place.
  */
 export function SearchConsoleOnboardingStep() {
-  const hosted = isHostedClientAuthMode();
   const projectQuery = useQuery({
     queryKey: ["defaultProject"],
     queryFn: () => getOrCreateDefaultProject(),
-    enabled: hosted,
   });
 
   return (
@@ -35,11 +33,7 @@ export function SearchConsoleOnboardingStep() {
         Connect with Google Search Console now?
       </h2>
 
-      {!hosted ? (
-        <p className="rounded-lg border border-base-300 bg-base-200/40 px-3 py-2.5 text-sm text-base-content/60">
-          Available on hosted OpenSEO. Self-hosted? Use a CSV export.
-        </p>
-      ) : projectQuery.data ? (
+      {projectQuery.data ? (
         <GscConnect projectId={projectQuery.data.id} />
       ) : (
         <Checking />
@@ -66,11 +60,13 @@ function GscConnect({ projectId }: { projectId: string }) {
   const connection = connectionQuery.data;
   const connected = Boolean(connection?.connected);
   const hasGrant = Boolean(connection?.currentUserHasGrant);
+  const needsSetup =
+    connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
 
   const sitesQuery = useQuery({
     queryKey: ["gscSites", projectId],
     queryFn: () => listGscSites({ data: { projectId } }),
-    enabled: hasGrant && !connected,
+    enabled: hasGrant && !connected && !needsSetup,
   });
 
   const setSiteMutation = useMutation({
@@ -89,6 +85,10 @@ function GscConnect({ projectId }: { projectId: string }) {
   };
 
   if (connectionQuery.isLoading) return <Checking />;
+
+  if (needsSetup) {
+    return <SelfHostedSetupWarning />;
+  }
 
   if (connected) {
     return (

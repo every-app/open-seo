@@ -3,7 +3,7 @@ import { sql } from "drizzle-orm";
 import { organization } from "./better-auth-schema";
 import { projects } from "./app.schema";
 
-// Connected Google Search Console property per project (hosted-only).
+// Connected Google Search Console property per project.
 // OAuth tokens live in the better-auth `account` table under providerId
 // "google-search-console"; this row only records which verified property maps
 // to a project and whose grant to use when calling the GSC API.

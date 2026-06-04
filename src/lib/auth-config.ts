@@ -1,16 +1,7 @@
 import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
-import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
-
-/** Read-only Search Console scope. openid/email/profile are also required —
- *  the genericOAuth callback rejects with `name_is_missing` without a name claim. */
-const GSC_OAUTH_SCOPES = [
-  "openid",
-  "email",
-  "profile",
-  "https://www.googleapis.com/auth/webmasters.readonly",
-];
+import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
 
 export function createBaseAuthConfig() {
   return {
@@ -35,7 +26,7 @@ export function createBaseAuthConfig() {
             clientSecret: env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
             discoveryUrl:
               "https://accounts.google.com/.well-known/openid-configuration",
-            scopes: GSC_OAUTH_SCOPES,
+            scopes: [...GSC_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
             prompt: "consent", // force refresh-token issuance on re-consent
             pkce: true,
