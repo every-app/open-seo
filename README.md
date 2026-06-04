@@ -1,4 +1,4 @@
-<img width="840" height="400" alt="Image" src="https://github.com/user-attachments/assets/14351615-2008-4f80-817d-8aaef25aa71a" />
+<img width="840" height="400" alt="Image" src="https://github.com/user-attachments/assets/e18296af-fc1e-4921-bf64-93616e7bbee9" />
 
 # OpenSEO
 
