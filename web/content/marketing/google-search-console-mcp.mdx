@@ -1,0 +1,72 @@
+---
+title: Free Google Search Console MCP
+description: Connect Google Search Console to your AI agent for free. Read clicks, impressions, CTR, position, and indexing through the OpenSEO MCP, with no Google Cloud setup.
+---
+
+Many Google Search Console (GSC) MCP servers are open source and free, but they take a lot of effort to set up. You need to create a Google Cloud project, enable an API, build an OAuth client, download a `credentials.json`, then keep a local server running. OpenSEO handles the Google connection for you. You sign up, connect your property, and start asking.
+
+## Setup: Simple, zero-config
+
+### With OpenSEO
+
+1. Sign up for OpenSEO.
+2. Go through the onboarding.
+2. When prompted, click **Connect Search Console** and pick your property.
+3. Add the [OpenSEO MCP endpoint](/docs/mcp) to Claude, Cursor, or ChatGPT.
+
+### The DIY way (every other GSC MCP)
+
+1. Create a Google Cloud project
+2. Enable the Search Console API
+3. Configure the OAuth consent screen
+4. Create OAuth client credentials
+5. Download `credentials.json`
+6. Install and run a local MCP server
+
+## Things to actually ask it
+
+- "Which queries am I ranking on page two for that I'm close to pushing onto page one?"
+- "Show me pages where impressions went up but clicks stayed flat — probably a title or meta problem."
+- "Are any of my blog posts competing with each other for the same query?"
+- "Is `/pricing` indexed? If not, what's blocking it?"
+- "Which queries lost the most clicks over the last 28 days?"
+
+## What your agent can read
+
+Two read-only tools over the property you connect. Both pull Google's own numbers, and neither uses credits.
+
+**Search performance.** Clicks, impressions, CTR, and average position for your site, sliced by query, page, country, device, and date. Pull up to 16 months of history in a single question.
+
+**URL inspection.** Whether a page is indexed and, if not, why: coverage status, last crawl, the canonical Google chose versus the one you declared, plus mobile and rich-result checks. Up to 10 URLs at a time.
+
+The agent can read and inspect. It cannot change anything in your account.
+
+## Why it's free (and what isn't)
+
+Google doesn't charge you to read your own Search Console data, so neither do we. The Search Console tools use zero credits. When you want more, like keyword research, rank tracking, or backlink data, those tools run through the same MCP and use credits. Connect Search Console first, and reach for the rest when you need it.
+
+## OpenSEO vs. the alternatives
+
+<ComparisonTable />
+
+## FAQ
+
+### Is it really free?
+
+Yes, all you need is an OpenSEO account. OpenSEO's other features do use usage credits, but aren't necessary to use the Google Search Console MCP.
+
+### Is it open source?
+
+Yes. OpenSEO is open source, so you can self-host the whole thing, including the Search Console MCP. The one-click connection here uses OpenSEO's hosted Google app. If you self-host, you bring your own Google OAuth client, the same Cloud-console step the hosted version saves you. Hosted means no setup; self-hosted means full control.
+
+### Is it read-only?
+
+Yes. OpenSEO requests read-only access (`webmasters.readonly`). Your agent can read performance data and inspect URLs, but it can't change your account.
+
+### Which AI clients work?
+
+Any MCP client, including Claude Code, Cursor, Codex, and OpenClaw. Add the OpenSEO MCP endpoint and sign in.
+
+### How fresh is the data?
+
+It's Google's own data, so the most recent few days can be incomplete. History runs back 16 months, the same as the Search Console interface.

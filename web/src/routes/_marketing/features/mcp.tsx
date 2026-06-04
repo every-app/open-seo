@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { buildPageSeo } from "@/lib/seo";
 
 const mcpDescription =
-  "Connect OpenSEO MCP so compatible AI clients can call keyword, SERP, domain, backlink, saved keyword, and rank-tracking tools.";
+  "Connect OpenSEO MCP so compatible AI clients can call keyword, SERP, domain, backlink, saved keyword, rank-tracking, and Google Search Console tools.";
 
 const toolCategories = [
   {
@@ -39,13 +39,33 @@ const toolCategories = [
       },
     ],
   },
+  {
+    label: "Search Console",
+    tools: [
+      {
+        title: "Get GSC performance",
+        description:
+          "Read clicks, impressions, CTR, and position from the connected property.",
+      },
+      {
+        title: "Inspect URLs",
+        description:
+          "Check index coverage, crawl, canonical, mobile, and rich-result signals.",
+      },
+      {
+        title: "Use first-party data",
+        description:
+          "Run read-only Search Console calls for free with no OpenSEO credits.",
+      },
+    ],
+  },
 ] as const;
 
 const workflows = [
   {
     title: "Research with live SEO data",
     description:
-      "Give Codex, Claude, and other MCP clients access to OpenSEO keyword, SERP, domain, backlink, saved keyword, and rank-tracking data.",
+      "Give Codex, Claude, and other MCP clients access to OpenSEO keyword, SERP, domain, backlink, saved keyword, rank-tracking, and Search Console data.",
   },
   {
     title: "Keep the agent focused",
@@ -80,7 +100,8 @@ function McpPage() {
       <p className="mt-4 text-neutral-700 leading-relaxed">
         Connect OpenSEO to your AI agent so it can research keywords, inspect
         SERPs, compare competitors, summarize backlink context, save keyword
-        opportunities, and review rank-tracking data with live SEO context.
+        opportunities, review rank-tracking data, and read first-party Search
+        Console signals with live SEO context.
       </p>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -134,7 +155,7 @@ function McpPage() {
 
       <section className="mt-12">
         <h2 className="text-xl font-semibold">Available tool groups</h2>
-        <div className="mt-5 grid gap-x-8 gap-y-8 md:grid-cols-2">
+        <div className="mt-5 grid gap-x-8 gap-y-8 md:grid-cols-3">
           {toolCategories.map((category) => (
             <div key={category.label}>
               <h3 className="text-xs font-semibold uppercase tracking-wide text-neutral-500">
@@ -154,6 +175,25 @@ function McpPage() {
               </ul>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-12 rounded-lg border border-neutral-200 bg-white p-5">
+        <h2 className="text-lg font-semibold text-neutral-900">
+          New: free Google Search Console MCP
+        </h2>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+          OpenSEO MCP can read Search Console performance and URL inspection
+          data from a connected hosted project. These tools are read-only and do
+          not use OpenSEO credits.
+        </p>
+        <div className="mt-4">
+          <a
+            href="/google-search-console-mcp"
+            className="inline-flex h-9 items-center justify-center rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+          >
+            Explore GSC MCP
+          </a>
         </div>
       </section>
 

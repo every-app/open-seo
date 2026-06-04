@@ -3,7 +3,7 @@ import { featureGroups } from "@/lib/feature-pages";
 import { buildPageSeo } from "@/lib/seo";
 
 const featuresDescription =
-  "Explore OpenSEO's open-source SEO tools for AI-agent workflows, keyword research, rank tracking, backlinks, site audits, competitor analysis, and AI visibility.";
+  "Explore OpenSEO's open-source SEO tools for AI-agent workflows, Google Search Console MCP, keyword research, rank tracking, backlinks, site audits, competitor analysis, and AI visibility.";
 
 export const Route = createFileRoute("/_marketing/features/")({
   head: () =>
@@ -37,27 +37,49 @@ function FeaturesIndex() {
               AI agent workflows
             </h2>
             <p className="mt-1 text-sm leading-relaxed text-neutral-600">
-              Let supported MCP clients research keywords, SERPs, domains, and
-              backlinks through OpenSEO.
+              Let supported MCP clients research keywords, SERPs, domains,
+              backlinks, and first-party Search Console data through OpenSEO.
             </p>
           </div>
-          <a
-            href="/features/mcp"
-            className="mt-5 block rounded-lg border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-900"
-          >
-            <p className="text-xs font-medium text-neutral-500">OpenSEO MCP</p>
-            <h3 className="mt-2 text-lg font-semibold text-neutral-900">
-              OpenSEO MCP for your AI agent
-            </h3>
-            <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-              Connect OpenSEO to Claude, Codex, and supported MCP clients so
-              agents can call OpenSEO research tools with authorized project
-              context.
-            </p>
-            <p className="mt-3 text-sm font-medium text-neutral-900">
-              Explore MCP <span aria-hidden="true">&rarr;</span>
-            </p>
-          </a>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <a
+              href="/features/mcp"
+              className="block rounded-lg border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-900"
+            >
+              <p className="text-xs font-medium text-neutral-500">
+                OpenSEO MCP
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-neutral-900">
+                OpenSEO MCP for your AI agent
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+                Connect OpenSEO to Claude, Codex, and supported MCP clients so
+                agents can call OpenSEO research tools with authorized project
+                context.
+              </p>
+              <p className="mt-3 text-sm font-medium text-neutral-900">
+                Explore MCP <span aria-hidden="true">&rarr;</span>
+              </p>
+            </a>
+            <a
+              href="/google-search-console-mcp"
+              className="block rounded-lg border border-neutral-200 bg-white p-5 transition-colors hover:border-neutral-900"
+            >
+              <p className="text-xs font-medium text-neutral-500">
+                Search Console MCP
+              </p>
+              <h3 className="mt-2 text-lg font-semibold text-neutral-900">
+                Free Google Search Console MCP
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+                Let your agent read clicks, impressions, CTR, position, and URL
+                inspection data from your connected Search Console property.
+              </p>
+              <p className="mt-3 text-sm font-medium text-neutral-900">
+                Explore GSC MCP <span aria-hidden="true">&rarr;</span>
+              </p>
+            </a>
+          </div>
         </section>
 
         {featureGroups.map((group) => (

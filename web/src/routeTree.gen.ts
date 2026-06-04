@@ -22,6 +22,7 @@ import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
 import { Route as MarketingOpenSourceSeoRouteImport } from './routes/_marketing/open-source-seo'
+import { Route as MarketingGoogleSearchConsoleMcpRouteImport } from './routes/_marketing/google-search-console-mcp'
 import { Route as MarketingFeaturesIndexRouteImport } from './routes/_marketing/features/index'
 import { Route as MarketingFeaturesSiteAuditRouteImport } from './routes/_marketing/features/site-audit'
 import { Route as MarketingFeaturesSavedKeywordsRouteImport } from './routes/_marketing/features/saved-keywords'
@@ -97,6 +98,12 @@ const MarketingOpenSourceSeoRoute = MarketingOpenSourceSeoRouteImport.update({
   path: '/open-source-seo',
   getParentRoute: () => MarketingRoute,
 } as any)
+const MarketingGoogleSearchConsoleMcpRoute =
+  MarketingGoogleSearchConsoleMcpRouteImport.update({
+    id: '/google-search-console-mcp',
+    path: '/google-search-console-mcp',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingFeaturesIndexRoute = MarketingFeaturesIndexRouteImport.update({
   id: '/features/',
   path: '/features/',
@@ -160,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
@@ -183,6 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
@@ -209,6 +218,7 @@ export interface FileRoutesById {
   '/_marketing': typeof MarketingRouteWithChildren
   '/privacy': typeof PrivacyRoute
   '/terms-and-conditions': typeof TermsAndConditionsRoute
+  '/_marketing/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/_marketing/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
@@ -236,6 +246,7 @@ export interface FileRouteTypes {
     | '/'
     | '/privacy'
     | '/terms-and-conditions'
+    | '/google-search-console-mcp'
     | '/open-source-seo'
     | '/pricing'
     | '/api/event'
@@ -259,6 +270,7 @@ export interface FileRouteTypes {
   to:
     | '/privacy'
     | '/terms-and-conditions'
+    | '/google-search-console-mcp'
     | '/open-source-seo'
     | '/pricing'
     | '/api/event'
@@ -284,6 +296,7 @@ export interface FileRouteTypes {
     | '/_marketing'
     | '/privacy'
     | '/terms-and-conditions'
+    | '/_marketing/google-search-console-mcp'
     | '/_marketing/open-source-seo'
     | '/_marketing/pricing'
     | '/api/event'
@@ -412,6 +425,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingOpenSourceSeoRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/google-search-console-mcp': {
+      id: '/_marketing/google-search-console-mcp'
+      path: '/google-search-console-mcp'
+      fullPath: '/google-search-console-mcp'
+      preLoaderRoute: typeof MarketingGoogleSearchConsoleMcpRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/features/': {
       id: '/_marketing/features/'
       path: '/features'
@@ -486,6 +506,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface MarketingRouteChildren {
+  MarketingGoogleSearchConsoleMcpRoute: typeof MarketingGoogleSearchConsoleMcpRoute
   MarketingOpenSourceSeoRoute: typeof MarketingOpenSourceSeoRoute
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
@@ -502,6 +523,7 @@ interface MarketingRouteChildren {
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
+  MarketingGoogleSearchConsoleMcpRoute: MarketingGoogleSearchConsoleMcpRoute,
   MarketingOpenSourceSeoRoute: MarketingOpenSourceSeoRoute,
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingIndexRoute: MarketingIndexRoute,

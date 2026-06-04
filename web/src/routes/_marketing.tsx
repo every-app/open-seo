@@ -17,7 +17,7 @@ const mobileNavItems = [
     label: "Resources",
     links: [
       { label: "Guides", href: "/guides" },
-      { label: "Open Source SEO", href: "/open-source-seo" },
+      { label: "Why Open Source?", href: "/open-source-seo" },
       { label: "MCP Setup", href: "/docs/mcp" },
       { label: "Skills", href: "/docs/skills" },
     ],
@@ -204,9 +204,9 @@ function ResourcesDropdown() {
       description: "Founder-focused SEO articles.",
     },
     {
-      label: "Open Source SEO",
+      label: "Why Open Source?",
       href: "/open-source-seo",
-      description: "Why OpenSEO is open source.",
+      description: "Open source puts the power in user's hands.",
     },
     {
       label: "MCP",
@@ -311,6 +311,17 @@ function FeatureDropdown() {
                   </span>
                   <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
                     Connect Claude, Codex, and agents.
+                  </span>
+                </a>
+                <a
+                  href="/google-search-console-mcp"
+                  className="block rounded-md p-2 transition-colors hover:bg-neutral-50"
+                >
+                  <span className="text-sm font-semibold text-neutral-900">
+                    Search Console MCP
+                  </span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
+                    Free first-party GSC data for agents.
                   </span>
                 </a>
                 <a
