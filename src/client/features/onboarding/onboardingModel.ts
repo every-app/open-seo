@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getOnboardingAnswers } from "@/serverFunctions/onboarding";
 
-export const ONBOARDING_LAST_STEP = 3;
+export const ONBOARDING_LAST_STEP = 4;
 
 export const INTEREST_OPTIONS = [
   "AI workflows with Claude or Codex (MCP)",

@@ -21,10 +21,11 @@ Use this when the user wants a market-level view across several competitors. For
 ## OpenSEO MCP tools
 
 - `research_keywords`: discover representative market queries.
-- `get_keyword_search_volume`: validate known query sets and trend/metric priority.
+- `get_keyword_metrics`: validate known query sets with volume, difficulty, intent, and trends.
 - `get_serp_results`: identify recurring ranking domains across target queries.
 - `find_serp_competitors`: compare domains competing across supplied keywords; use this before manual SERP counting when a keyword set is available.
 - `get_domain_overview`: size organic footprint for candidate leaders.
+- `get_search_console_performance`: when the user's own domain is in the comparison and Search Console is connected, anchor their position with first-party clicks/impressions/CTR rather than third-party estimates.
 - `get_ranked_keywords`: find exact ranking keywords, URLs, ranks, intents, and SERP result types for leaders.
 - `get_backlinks_overview`: compare backlink/referring-domain strength where relevant.
 - `search_local_businesses`, `get_local_serp_results`, and `get_google_business_questions`: use for local SEO markets where proximity, Maps rankings, business categories, reviews, or Google Q&A affect who is winning.
@@ -35,7 +36,7 @@ Use this when the user wants a market-level view across several competitors. For
    - Use provided keywords, or call `research_keywords` to build 5-10 representative queries.
    - Include mixed intent: informational, commercial, comparison, and tool/software terms when applicable.
    - For local SEO, include neighborhood/city/service-area queries and identify the priority locations or coordinates.
-2. If the query set is already known, use `get_keyword_search_volume` to validate relative demand and `find_serp_competitors` to identify recurring domains at scale.
+2. If the query set is already known, use `get_keyword_metrics` to validate relative demand and difficulty and `find_serp_competitors` to identify recurring domains at scale.
 3. For local SEO, call `search_local_businesses` and `get_local_serp_results` for the highest-priority location(s) before synthesizing winners. Use `get_serp_results` as a complement for organic pages, not as the only local evidence.
 4. Call `get_serp_results` for representative queries when live SERP composition, ranking URLs, or SERP features need inspection. Send at most 10 queries per call.
 5. Identify recurring domains and group them by type:

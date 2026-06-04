@@ -94,9 +94,13 @@ After the user has described the company, website, goals, and positioning, check
 
 Do not run research tools just to test connectivity; `whoami` and `list_projects` are enough.
 
-### 6. Request Google Search Console export
+### 6. Connect Google Search Console
 
-Ask the user to export a CSV from Google Search Console and place it in the SEO working folder.
+GSC is the richest first-party signal: existing impressions, near-ranking terms, cannibalization, and pages that already have search demand.
+
+**Preferred (hosted): connect it natively.** On the project's Integrations page, connect Google Search Console and pull live data with `get_search_console_performance`. Once connected, the agent reads it directly in `keyword-research` and `keyword-clustering` — no manual files to maintain.
+
+**Fallback (self-hosted, or if the user prefers files):** ask the user to export CSVs from Search Console into the SEO working folder.
 
 Recommended exports:
 
@@ -113,8 +117,6 @@ gsc/pages-last-3-months.csv
 gsc/queries-last-16-months.csv
 gsc/pages-last-16-months.csv
 ```
-
-Explain that GSC data reveals existing impressions, near-ranking terms, cannibalization, and pages that already have search demand.
 
 ### 7. Inventory existing assets
 
@@ -158,6 +160,6 @@ Then summarize:
 ## Guardrails
 
 - Keep setup lightweight. The user should feel oriented, not assigned homework.
-- Do not pretend a GSC CSV has been uploaded unless you can see it.
+- Do not pretend a GSC CSV has been uploaded unless you can see it, and do not claim Search Console is connected unless `get_search_console_performance` confirms it (it returns a "not connected" message otherwise).
 - Keep project setup focused on setup and context unless the user asks for live research.
 - If web search or scraping is used for positioning research, distinguish source evidence from inference.

@@ -9,13 +9,17 @@ import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import {
   findSerpCompetitorsTool,
   getGoogleBusinessQuestionsTool,
-  getKeywordSearchVolumeTool,
+  getKeywordMetricsTool,
   getLocalSerpResultsTool,
   getRankedKeywordsTool,
   searchLocalBusinessesTool,
 } from "@/server/mcp/tools/dataforseo-research-tools";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
+import {
+  getSearchConsolePerformanceTool,
+  inspectUrlsTool,
+} from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 export function registerOpenSeoMcpTools(server: McpServer) {
@@ -91,8 +95,18 @@ export function registerOpenSeoMcpTools(server: McpServer) {
     getGoogleBusinessQuestionsTool.handler,
   );
   server.registerTool(
-    getKeywordSearchVolumeTool.name,
-    getKeywordSearchVolumeTool.config,
-    getKeywordSearchVolumeTool.handler,
+    getKeywordMetricsTool.name,
+    getKeywordMetricsTool.config,
+    getKeywordMetricsTool.handler,
+  );
+  server.registerTool(
+    getSearchConsolePerformanceTool.name,
+    getSearchConsolePerformanceTool.config,
+    getSearchConsolePerformanceTool.handler,
+  );
+  server.registerTool(
+    inspectUrlsTool.name,
+    inspectUrlsTool.config,
+    inspectUrlsTool.handler,
   );
 }

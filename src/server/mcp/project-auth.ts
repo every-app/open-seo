@@ -1,4 +1,5 @@
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
+import { AppError } from "@/server/lib/errors";
 import {
   buildBillingCustomer,
   requireMcpToolAuthContext,
@@ -12,11 +13,16 @@ type ProjectScopedArgs = {
 async function requireProjectAccess(extra: ToolExtra, projectId: string) {
   const { baseUrl, ...auth } = requireMcpToolAuthContext(extra);
 
-  // This lookup enforces that the project belongs to the authenticated org.
-  await ProjectService.getProjectForOrganization(
+  // Authorize the caller-supplied projectId against the token's organization.
+  // Assert on the result instead of relying on the lookup throwing, so this
+  // stays a hard gate even if the service's error behavior ever changes.
+  const project = await ProjectService.getProjectForOrganization(
     auth.organizationId,
     projectId,
   );
+  if (!project) {
+    throw new AppError("FORBIDDEN");
+  }
 
   return {
     auth,

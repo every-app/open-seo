@@ -7,6 +7,7 @@ import {
   CircleHelp,
   CreditCard,
   Menu,
+  Plug,
   Settings,
   User,
 } from "lucide-react";
@@ -15,7 +16,11 @@ import {
   MissingSeoSetupModal,
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
-import { getProjectNavGroups } from "@/client/navigation/items";
+import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
+import {
+  getProjectNavGroups,
+  integrationsLinkOptions,
+} from "@/client/navigation/items";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -137,6 +142,11 @@ export function AuthenticatedAppLayout({
         ref={setupModalRef}
         isOpen={shouldShowMissingSeoApiKeyModal}
         onClose={() => setShowMissingSeoApiKeyModal(false)}
+      />
+
+      <GscReEngagementModal
+        projectId={headerProjectId}
+        suppressed={shouldShowMissingSeoApiKeyModal}
       />
     </div>
   );
@@ -290,16 +300,22 @@ function TopNav({
             </button>
           </div>
 
-          <AccountMenu />
+          <AccountMenu projectId={projectId} />
         </div>
       </div>
 
-      <AccountMenu mobileOnly />
+      <AccountMenu mobileOnly projectId={projectId} />
     </div>
   );
 }
 
-function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
+function AccountMenu({
+  mobileOnly = false,
+  projectId,
+}: {
+  mobileOnly?: boolean;
+  projectId?: string | null;
+}) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
   const email = session?.user?.email;
@@ -341,6 +357,17 @@ function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
               <Link to={BILLING_ROUTE} className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Billing
+              </Link>
+            </li>
+          ) : null}
+          {projectId ? (
+            <li>
+              <Link
+                {...integrationsLinkOptions(projectId)}
+                className="flex items-center gap-2"
+              >
+                <Plug className="h-4 w-4" />
+                Integrations
               </Link>
             </li>
           ) : null}

@@ -1,5 +1,5 @@
 // Public surface of the DataForSEO integration. Internals live in the
-// per-section files (labs / serp / keywordsData / business / backlinks / ai /
+// per-section files (labs / serp / business / backlinks / ai /
 // lighthouse); everything funnels through envelope.ts (status + billing) and is
 // metered in client.ts.
 
@@ -9,6 +9,7 @@ export {
   type LabsKeywordDataItem,
   type DomainRankedKeywordItem,
   type RelevantPagesItem,
+  type KeywordOverviewItem,
 } from "@/server/lib/dataforseo/labs";
 
 export {

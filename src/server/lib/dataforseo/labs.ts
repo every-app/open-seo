@@ -29,7 +29,7 @@ export type LabsKeywordDataItem = KeywordDataInfo;
 type RelatedKeywordItem = DataforseoLabsRelatedKeywordsLiveItem;
 type DomainMetricsItem = DataforseoLabsDomainRankOverviewLiveItem;
 export type RelevantPagesItem = DataforseoLabsRelevantPagesLiveItem;
-type KeywordOverviewItem = DataforseoLabsGoogleKeywordOverviewLiveItem;
+export type KeywordOverviewItem = DataforseoLabsGoogleKeywordOverviewLiveItem;
 type SerpCompetitorItem = DataforseoLabsSerpCompetitorsLiveItem;
 
 // Ranked keywords is the one Labs endpoint the SDK types loosely: its

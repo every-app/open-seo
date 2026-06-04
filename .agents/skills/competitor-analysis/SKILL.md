@@ -21,6 +21,7 @@ Use this for a named competitor. For identifying the market leaders first, use `
 ## OpenSEO MCP tools
 
 - `get_domain_overview`: baseline organic traffic and keyword count.
+- `get_search_console_performance`: when comparing to the user's own domain and Search Console is connected, use it as the first-party baseline (real clicks/impressions/CTR/position) instead of estimating the user's own performance from third-party data.
 - `get_ranked_keywords`: exact keyword, URL, rank, intent, traffic, CPC, and SERP-type rows for the competitor domain or page.
 - `get_backlinks_overview`: backlink/referring-domain profile.
 - `find_serp_competitors`: validate whether the named competitor is a real search competitor across the target keyword set.
@@ -31,7 +32,7 @@ Use this for a named competitor. For identifying the market leaders first, use `
 ## Workflow
 
 1. Call `get_domain_overview` for the competitor, passing provided location/language when supported.
-2. If comparing to the user, call `get_domain_overview` for the user's domain too.
+2. If comparing to the user, call `get_domain_overview` for the user's domain too — and if Search Console is connected, `get_search_console_performance` for the user's real baseline.
 3. Call `get_ranked_keywords` for the competitor. Use filters like `maxRank`, `minSearchVolume`, `excludeBrandTerms`, and `resultTypes` to keep rows relevant.
 4. If comparing to the user, call `get_ranked_keywords` for the user's domain/page too, or use `get_serp_results` for the shared terms when a lighter check is enough.
 5. For local SEO, use `search_local_businesses` and `get_local_serp_results` around the relevant business location(s) before drawing local-pack conclusions. Add `get_google_business_questions` only when Q&A evidence matters.

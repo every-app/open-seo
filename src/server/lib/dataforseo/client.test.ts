@@ -62,9 +62,6 @@ vi.mock("@/server/lib/dataforseo/serp", () => ({
   fetchRankCheckSerp: vi.fn(),
   fetchLocalSerp: vi.fn(),
 }));
-vi.mock("@/server/lib/dataforseo/keywordsData", () => ({
-  fetchKeywordSearchVolume: vi.fn(),
-}));
 vi.mock("@/server/lib/dataforseo/business", () => ({
   fetchBusinessListingsSearch: vi.fn(),
   fetchQuestionsAnswers: vi.fn(),

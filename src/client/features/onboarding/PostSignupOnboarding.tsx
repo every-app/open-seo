@@ -5,10 +5,12 @@ import {
   CLIENT_WEBSITE_COUNT_OPTIONS,
   CLIENT_WORK_FOR,
   INTEREST_OPTIONS,
+  ONBOARDING_LAST_STEP,
   type OnboardingAnswers,
   SOURCE_OPTIONS,
   WORK_FOR_OPTIONS,
 } from "@/client/features/onboarding/onboardingModel";
+import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
 
 type PostSignupOnboardingProps = {
   firstName: string;
@@ -62,7 +64,7 @@ export function PostSignupOnboarding({
           className="mx-auto size-10 rounded-lg"
         />
         <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
-          Step {step + 1} of 4
+          Step {step + 1} of {ONBOARDING_LAST_STEP + 1}
         </p>
         <h1 className="text-xl font-semibold">
           {title ??
@@ -120,6 +122,8 @@ export function PostSignupOnboarding({
             otherValue={answers.sourceOther}
             onOtherChange={(sourceOther) => updateAnswers({ sourceOther })}
           />
+        ) : step === 3 ? (
+          <SearchConsoleOnboardingStep />
         ) : (
           <McpRecommendation
             isSaving={isSaving}
@@ -129,7 +133,7 @@ export function PostSignupOnboarding({
           />
         )}
 
-        {step < 3 ? (
+        {step < ONBOARDING_LAST_STEP ? (
           <div className="mt-5 flex items-center justify-between gap-3">
             <button
               type="button"

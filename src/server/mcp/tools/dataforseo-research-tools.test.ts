@@ -273,24 +273,81 @@ describe("DataForSEO research MCP tools", () => {
     ).toBe(true);
   });
 
-  it("sorts keyword volume rows by numeric competition index", async () => {
-    const searchVolume = vi.fn().mockResolvedValue([
-      { keyword: "low", competition: "LOW", competition_index: 10 },
-      { keyword: "high", competition: "HIGH", competition_index: 90 },
-      { keyword: "medium", competition: "MEDIUM", competition_index: 50 },
+  it("normalizes keyword_overview rows with difficulty and intent", async () => {
+    const keywordOverview = vi.fn().mockResolvedValue([
+      {
+        keyword: "seo automation",
+        keyword_info: {
+          search_volume: 2400,
+          cpc: 25.6,
+          competition: 0.24,
+          competition_level: "LOW",
+        },
+        keyword_properties: { keyword_difficulty: 18 },
+        search_intent_info: { main_intent: "commercial" },
+      },
     ]);
 
     mocks.createDataforseoClient.mockReturnValue({
-      keywordData: { searchVolume },
+      labs: { keywordOverview },
     });
-    const { getKeywordSearchVolumeTool } =
+    const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
-    const result = await getKeywordSearchVolumeTool.handler(
+    const result = await getKeywordMetricsTool.handler(
+      { projectId: "project_1", keywords: ["seo automation"] },
+      toolExtra,
+    );
+
+    expect(keywordOverview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        keywords: ["seo automation"],
+        locationCode: 2840,
+        languageCode: "en",
+        creditFeature: "keyword_research",
+      }),
+    );
+    const rows = z
+      .object({
+        keywords: z.array(
+          z
+            .object({
+              keyword: z.string(),
+              search_volume: z.number().nullable(),
+              keyword_difficulty: z.number().nullable(),
+              main_intent: z.string().nullable(),
+            })
+            .passthrough(),
+        ),
+      })
+      .passthrough()
+      .parse(result.structuredContent).keywords;
+    expect(rows[0]).toMatchObject({
+      keyword: "seo automation",
+      search_volume: 2400,
+      keyword_difficulty: 18,
+      main_intent: "commercial",
+    });
+  });
+
+  it("sorts keyword metric rows by the requested numeric field", async () => {
+    const keywordOverview = vi.fn().mockResolvedValue([
+      { keyword: "low", keyword_info: { search_volume: 10 } },
+      { keyword: "high", keyword_info: { search_volume: 90 } },
+      { keyword: "medium", keyword_info: { search_volume: 50 } },
+    ]);
+
+    mocks.createDataforseoClient.mockReturnValue({
+      labs: { keywordOverview },
+    });
+    const { getKeywordMetricsTool } =
+      await import("./dataforseo-research-tools");
+
+    const result = await getKeywordMetricsTool.handler(
       {
         projectId: "project_1",
         keywords: ["low", "high", "medium"],
-        sortBy: "competition",
+        sortBy: "search_volume",
       },
       toolExtra,
     );
@@ -302,42 +359,36 @@ describe("DataForSEO research MCP tools", () => {
     expect(rows.map((row) => row.keyword)).toEqual(["high", "medium", "low"]);
   });
 
-  it("defaults empty keyword volume market objects to United States", async () => {
-    const searchVolume = vi
-      .fn()
-      .mockResolvedValue([{ keyword: "storage units", search_volume: 1000 }]);
+  it("drops monthly trends when includeMonthlyTrends is false", async () => {
+    const keywordOverview = vi.fn().mockResolvedValue([
+      {
+        keyword: "seo",
+        keyword_info: {
+          search_volume: 100,
+          monthly_searches: [{ year: 2026, month: 1, search_volume: 100 }],
+        },
+      },
+    ]);
 
     mocks.createDataforseoClient.mockReturnValue({
-      keywordData: { searchVolume },
+      labs: { keywordOverview },
     });
-    const { getKeywordSearchVolumeTool } =
+    const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
-    await getKeywordSearchVolumeTool.handler(
+    const result = await getKeywordMetricsTool.handler(
       {
         projectId: "project_1",
-        keywords: ["storage units"],
-        market: {},
+        keywords: ["seo"],
+        includeMonthlyTrends: false,
       },
       toolExtra,
     );
 
-    expect(searchVolume).toHaveBeenCalledWith(
-      expect.objectContaining({
-        locationCode: 2840,
-      }),
-    );
-  });
-
-  it("does not accept keyword volume location names", async () => {
-    const { getKeywordSearchVolumeTool } =
-      await import("./dataforseo-research-tools");
-
-    expect(
-      getKeywordSearchVolumeTool.config.inputSchema.market?.safeParse({
-        country: "US",
-        locationName: "Pittsburgh,PA,United States",
-      }).success,
-    ).toBe(false);
+    const rows = z
+      .object({ keywords: z.array(z.record(z.string(), z.unknown())) })
+      .passthrough()
+      .parse(result.structuredContent).keywords;
+    expect(rows[0]).not.toHaveProperty("monthly_searches");
   });
 });

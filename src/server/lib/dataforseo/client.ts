@@ -38,7 +38,6 @@ import {
   fetchLocalSerp,
   fetchRankCheckSerp,
 } from "@/server/lib/dataforseo/serp";
-import { fetchKeywordSearchVolume } from "@/server/lib/dataforseo/keywordsData";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import {
   fetchLlmAggregatedMetrics,
@@ -59,16 +58,25 @@ export { mapDataforseoPathToCreditFeature };
 
 /**
  * Wraps a section fetcher with billing metering. Each entry on the client is
- * `meter(customer, fetcher, creditFeature?)`, which returns a function with the
+ * `meter(customer, fetcher, defaultFeature?)`, which returns a function with the
  * fetcher's own input type and resolves to its unwrapped `.data`.
+ *
+ * `defaultFeature` is the fallback credit feature; a caller can override it per
+ * call by passing `creditFeature` in the input (e.g. an MCP tool attributing
+ * spend to its own feature). The extra field is ignored by the fetchers, which
+ * read named fields rather than spreading the input.
  */
 function meter<I, T>(
   customer: BillingCustomerContext,
   fetcher: (input: I) => Promise<DataforseoApiResponse<T>>,
-  creditFeature?: CreditFeature,
-): (input: I) => Promise<T> {
-  return (input: I) =>
-    meterDataforseoCall(customer, () => fetcher(input), creditFeature);
+  defaultFeature?: CreditFeature,
+): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
+  return (input) =>
+    meterDataforseoCall(
+      customer,
+      () => fetcher(input),
+      input.creditFeature ?? defaultFeature,
+    );
 }
 
 export function createDataforseoClient(customer: BillingCustomerContext) {
@@ -103,10 +111,10 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       rankCheck: meter(customer, fetchRankCheckSerp, "rank_tracking"),
       local: meter(customer, fetchLocalSerp, "local_seo"),
     },
-    keywordData: {
-      searchVolume: meter(customer, fetchKeywordSearchVolume),
-    },
     labs: {
+      // Callers (e.g. the keyword-metrics MCP tool) can attribute the spend to
+      // their own feature by passing `creditFeature` in the input; defaults to
+      // rank_tracking when omitted.
       keywordOverview: meter(customer, fetchKeywordOverview, "rank_tracking"),
       serpCompetitors: meter(customer, fetchSerpCompetitors),
     },

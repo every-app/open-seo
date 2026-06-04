@@ -1,6 +1,9 @@
 /* eslint-disable max-lines */
 import { z } from "zod";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import {
+  createDataforseoClient,
+  type KeywordOverviewItem,
+} from "@/server/lib/dataforseo";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -12,6 +15,7 @@ import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
   languageCodeSchema,
+  locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
 
@@ -50,16 +54,6 @@ const localSerpNearSchema = z.object({
   longitude: z.number().min(-180).max(180),
   zoom: z.number().int().min(4).max(18).optional(),
 });
-
-const keywordMarketSchema = z
-  .object({
-    country: z
-      .enum(["US", "USA", "United States", "United States of America"])
-      .optional(),
-  })
-  .strict()
-  .optional()
-  .describe("Optional Google Ads market. Defaults to United States.");
 
 const domainTargetSchema = z
   .string()
@@ -146,13 +140,20 @@ const findSerpCompetitorsInputSchema = {
   offset: z.number().int().min(0).max(1000).optional(),
 } as const;
 
-const getKeywordSearchVolumeInputSchema = {
+const keywordMetricsSortSchema = z.enum([
+  "search_volume",
+  "keyword_difficulty",
+  "cpc",
+  "competition",
+]);
+
+const getKeywordMetricsInputSchema = {
   projectId: projectIdSchema,
-  keywords: z.array(z.string().min(1).max(80)).min(1).max(100),
-  market: keywordMarketSchema,
-  includeMonthlyTrends: z.boolean().optional(),
-  sortBy: z.enum(["search_volume", "cpc", "competition"]).optional(),
+  keywords: z.array(z.string().min(1).max(80)).min(1).max(700),
+  locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
+  includeMonthlyTrends: z.boolean().optional(),
+  sortBy: keywordMetricsSortSchema.optional(),
 } as const;
 
 type Market = z.infer<typeof marketSchema>;
@@ -162,8 +163,8 @@ type GetRankedKeywordsArgs = z.infer<
 type FindSerpCompetitorsArgs = z.infer<
   z.ZodObject<typeof findSerpCompetitorsInputSchema>
 >;
-type GetKeywordSearchVolumeArgs = z.infer<
-  z.ZodObject<typeof getKeywordSearchVolumeInputSchema>
+type GetKeywordMetricsArgs = z.infer<
+  z.ZodObject<typeof getKeywordMetricsInputSchema>
 >;
 type SearchLocalBusinessesArgs = z.infer<
   z.ZodObject<typeof searchLocalBusinessesInputSchema>
@@ -302,20 +303,32 @@ function sortCompetitors(
   });
 }
 
-function sortKeywordRows(
-  items: Record<string, unknown>[],
-  sortBy: GetKeywordSearchVolumeArgs["sortBy"],
+function normalizeKeywordOverview(item: KeywordOverviewItem) {
+  const info = item.keyword_info;
+  return {
+    keyword: item.keyword,
+    search_volume: info?.search_volume ?? null,
+    keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null,
+    main_intent: item.search_intent_info?.main_intent ?? null,
+    cpc: info?.cpc ?? null,
+    competition: info?.competition ?? null,
+    competition_level: info?.competition_level ?? null,
+    monthly_searches: info?.monthly_searches ?? null,
+  };
+}
+
+type KeywordMetricRow = ReturnType<typeof normalizeKeywordOverview>;
+
+function sortKeywordMetricRows(
+  rows: KeywordMetricRow[],
+  sortBy: NonNullable<GetKeywordMetricsArgs["sortBy"]> = "search_volume",
 ) {
-  const field =
-    sortBy === "cpc"
-      ? "cpc"
-      : sortBy === "competition"
-        ? "competition_index"
-        : "search_volume";
-  return items.toSorted((a, b) => {
-    const aValue = typeof a[field] === "number" ? a[field] : 0;
-    const bValue = typeof b[field] === "number" ? b[field] : 0;
-    return bValue - aValue;
+  return rows.toSorted((a, b) => {
+    const aValue = a[sortBy];
+    const bValue = b[sortBy];
+    const aNum = typeof aValue === "number" ? aValue : 0;
+    const bNum = typeof bValue === "number" ? bValue : 0;
+    return bNum - aNum;
   });
 }
 
@@ -552,13 +565,13 @@ export const findSerpCompetitorsTool = {
   ),
 };
 
-export const getKeywordSearchVolumeTool = {
-  name: "get_keyword_search_volume",
+export const getKeywordMetricsTool = {
+  name: "get_keyword_metrics",
   config: {
-    title: "Get keyword search volume",
+    title: "Get keyword metrics",
     description:
-      "Checks Google Ads keyword planner-style search volume, CPC, competition, and monthly trends for known keywords. This is demand prioritization data, not local-radius rank data. Charges DataForSEO Keywords Data credits.",
-    inputSchema: getKeywordSearchVolumeInputSchema,
+      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. Charges DataForSEO Labs credits.",
+    inputSchema: getKeywordMetricsInputSchema,
     outputSchema: {
       keywords: z.array(looseObjectOutputSchema),
       ...optionalMetaOutputSchema,
@@ -569,36 +582,33 @@ export const getKeywordSearchVolumeTool = {
       destructiveHint: false,
     },
   },
-  handler: withMcpProjectAuth(
-    async (args: GetKeywordSearchVolumeArgs, context) => {
-      const client = createDataforseoClient(context.billing);
-      const keywords = await client.keywordData.searchVolume({
-        keywords: args.keywords,
-        locationCode: resolveMarketLocationCode(args.market),
-        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
-      });
-      const rows = sortKeywordRows(
-        keywords,
-        args.sortBy ?? "search_volume",
-      ).map((item) =>
-        args.includeMonthlyTrends === false
-          ? Object.fromEntries(
-              Object.entries(item).filter(
-                ([key]) => key !== "monthly_searches",
-              ),
-            )
-          : item,
-      );
+  handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
+    const client = createDataforseoClient(context.billing);
+    const items = await client.labs.keywordOverview({
+      keywords: args.keywords,
+      locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
+      languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+      creditFeature: "keyword_research",
+    });
+    const rows = sortKeywordMetricRows(
+      items.map(normalizeKeywordOverview),
+      args.sortBy ?? "search_volume",
+    ).map((row) =>
+      args.includeMonthlyTrends === false
+        ? Object.fromEntries(
+            Object.entries(row).filter(([key]) => key !== "monthly_searches"),
+          )
+        : row,
+    );
 
-      return mcpResponse({
-        text: `Fetched search volume for ${rows.length} keyword rows.`,
-        meta: buildProjectMeta(
-          context,
-          args.projectId,
-          `/p/${args.projectId}/keywords`,
-        ),
-        structuredContent: { keywords: rows },
-      });
-    },
-  ),
+    return mcpResponse({
+      text: `Fetched metrics (volume, difficulty, intent) for ${rows.length} keywords.`,
+      meta: buildProjectMeta(
+        context,
+        args.projectId,
+        `/p/${args.projectId}/keywords`,
+      ),
+      structuredContent: { keywords: rows },
+    });
+  }),
 };

@@ -20,6 +20,7 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
     const answers = await db.query.userOnboardingAnswers.findFirst({
       columns: {
         completedAt: true,
+        gscNudgeDismissedAt: true,
         interestedFeatures: true,
         workFor: true,
         clientWebsiteCount: true,
@@ -51,6 +52,7 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
 
     return {
       completedAt: answers?.completedAt ?? null,
+      gscNudgeDismissedAt: answers?.gscNudgeDismissedAt ?? null,
       userCreatedAt: hostedUser?.createdAt?.toISOString() ?? null,
       answers: {
         interestedFeatures,
@@ -100,6 +102,28 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
       .onConflictDoUpdate({
         target: userOnboardingAnswers.userId,
         set,
+      });
+
+    return { ok: true };
+  });
+
+// Records that the one-time "connect Search Console" nudge has been shown and
+// resolved (dismissed or acted on) so it never reappears for this user.
+export const dismissGscNudge = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .handler(async ({ context }) => {
+    const now = new Date().toISOString();
+    await db
+      .insert(userOnboardingAnswers)
+      .values({
+        userId: context.userId,
+        organizationId: context.organizationId,
+        gscNudgeDismissedAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: userOnboardingAnswers.userId,
+        set: { gscNudgeDismissedAt: now, updatedAt: now },
       });
 
     return { ok: true };

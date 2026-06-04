@@ -42,6 +42,11 @@ describe("withMcpProjectAuth", () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.getProjectForOrganization.mockReset();
+    // Default: the project belongs to the org. Individual tests override.
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_123",
+      name: "Test",
+    });
   });
 
   it("checks project access for the authenticated organization", async () => {
@@ -99,6 +104,22 @@ describe("withMcpProjectAuth", () => {
     await expect(wrapped({ projectId: "project_123" }, toolExtra)).rejects.toBe(
       error,
     );
+
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  // Defense-in-depth: even if the project lookup ever resolves falsy instead of
+  // throwing (e.g. a future refactor returns null), the wrapper must still deny
+  // access rather than run the handler with an unauthorized projectId.
+  it("rejects when the project lookup resolves no project, without calling the handler", async () => {
+    mocks.getProjectForOrganization.mockResolvedValue(null);
+    const { withMcpProjectAuth } = await import("@/server/mcp/project-auth");
+    const handler = vi.fn();
+
+    const wrapped = withMcpProjectAuth(handler);
+    await expect(
+      wrapped({ projectId: "someone-elses-project" }, toolExtra),
+    ).rejects.toThrow();
 
     expect(handler).not.toHaveBeenCalled();
   });

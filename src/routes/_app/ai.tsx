@@ -12,7 +12,7 @@ const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 const SUPPORT_EMAIL = "ben@openseo.so";
 const SAM_GITHUB_URL = "https://github.com/every-app/sam";
 const SKILL_NAMES = [
-  "onboarding-checklist",
+  "seo-project-setup",
   "seo-coach",
   "keyword-research",
   "keyword-clustering",
@@ -222,7 +222,7 @@ function AiPage() {
             <p className="text-sm text-base-content/70 leading-relaxed">
               Start with{" "}
               <span className="font-mono text-base-content">
-                /onboarding-checklist
+                /seo-project-setup
               </span>
               . It will ask about your project and help configure your
               workspace.

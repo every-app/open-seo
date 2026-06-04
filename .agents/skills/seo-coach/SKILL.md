@@ -37,7 +37,7 @@ Good starting points:
 
 ## What each workflow does
 
-- `seo-project-setup`: sets up the workspace, verifies MCP, captures goals, positioning, and GSC exports.
+- `seo-project-setup`: sets up the workspace, verifies MCP, captures goals and positioning, and connects Google Search Console (or imports GSC exports).
 - `keyword-research`: finds search opportunities from seed topics and evaluates volume, difficulty, CPC, intent, and SERPs.
 - `keyword-clustering`: groups keywords by intent and maps clusters to existing or proposed pages.
 - `competitive-landscape`: identifies who wins across a market and what content/backlink patterns are working.
@@ -49,6 +49,7 @@ Good starting points:
 Explain the difference between data sources:
 
 - OpenSEO MCP tools provide SEO data such as keyword research, exact ranked keywords, search volume, SERPs, SERP competitors, local business and Maps data, domain overviews, backlinks, saved keywords, projects, and rank trackers.
+- Google Search Console (when connected on the project's Integrations page) is the user's own first-party data — real clicks, impressions, CTR, and position. Read it live with `get_search_console_performance` instead of asking for CSV exports. It's free (no credits) and the best starting point for "what already ranks" and near-ranking opportunities.
 - Web search can find current market context, recent pages, reviews, docs, social profiles, and contact paths outside OpenSEO.
 - Browser/page scraping can extract page copy, headings, author names, contact links, schema, and content structure.
 - Local files can preserve strategy, GSC CSVs, content briefs, crawls, prospect lists, and prior decisions over time.

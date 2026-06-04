@@ -120,6 +120,16 @@ export function getProjectNavGroups(projectId: string) {
   ];
 }
 
+// Integrations is a setup surface, so it lives in the account dropdown rather
+// than the workflow nav — but it's still project-scoped (a property is bound
+// per project), hence the projectId param.
+export function integrationsLinkOptions(projectId: string) {
+  return linkOptions({
+    to: "/p/$projectId/integrations" as const,
+    params: { projectId },
+  });
+}
+
 export const dataforseoHelpLinkOptions = linkOptions({
   to: "/help/dataforseo-api-key",
 });

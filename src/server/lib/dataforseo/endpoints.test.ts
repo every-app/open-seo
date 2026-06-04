@@ -12,7 +12,6 @@ import {
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
-import { fetchKeywordSearchVolume } from "@/server/lib/dataforseo/keywordsData";
 
 function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
   const body = init?.body;
@@ -82,53 +81,6 @@ describe("DataForSEO SDK-backed endpoints", () => {
       path: ["v3", "business_data", "google", "questions_and_answers", "live"],
       costUsd: 0.0006,
     });
-  });
-
-  it("does not send location_name for keyword search volume", async () => {
-    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
-      Response.json({
-        status_code: 20000,
-        tasks: [
-          {
-            status_code: 20000,
-            path: [
-              "v3",
-              "keywords_data",
-              "google_ads",
-              "search_volume",
-              "live",
-            ],
-            cost: 0.0001,
-            result_count: 1,
-            result: [
-              {
-                keyword: "storage units",
-                location_code: 2840,
-                language_code: "en",
-                search_volume: 1000,
-              },
-            ],
-          },
-        ],
-      }),
-    );
-    vi.stubGlobal("fetch", fetchMock);
-
-    await fetchKeywordSearchVolume({
-      keywords: ["storage units"],
-      locationCode: 2840,
-      languageCode: "en",
-    });
-
-    const payload = parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1]);
-    expect(payload).toEqual([
-      {
-        keywords: ["storage units"],
-        location_code: 2840,
-        language_code: "en",
-      },
-    ]);
-    expect(JSON.stringify(payload)).not.toContain("location_name");
   });
 
   it("serializes LLM mentions domain targets for all live endpoints", async () => {
