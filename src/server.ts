@@ -15,6 +15,10 @@ import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
 import { computeNextCheckAt } from "@/shared/rank-tracking";
+import {
+  AUTUMN_WEBHOOK_PATH,
+  handleAutumnWebhookRequest,
+} from "@/server/billing/autumn-webhook";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
@@ -26,8 +30,13 @@ function fetch(
 ): Response | Promise<Response> {
   const authMode = getAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
+  const pathname = new URL(publicRequest.url).pathname;
 
   if (isHostedAuthMode(authMode)) {
+    if (pathname === AUTUMN_WEBHOOK_PATH) {
+      return handleAutumnWebhookRequest(publicRequest);
+    }
+
     return openSeoOAuthProvider.fetch(
       publicRequest,
       env as OpenSeoOAuthEnv,
@@ -37,7 +46,7 @@ function fetch(
 
   if (
     (authMode === "cloudflare_access" || authMode === "local_noauth") &&
-    new URL(publicRequest.url).pathname === MCP_ROUTE
+    pathname === MCP_ROUTE
   ) {
     return handleSelfHostedOpenSeoMcpRequest(publicRequest, authMode, env, ctx);
   }

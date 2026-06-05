@@ -29,10 +29,10 @@ import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
-import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
+import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
@@ -145,11 +145,6 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
-  id: '/api/gsc/oauth/callback',
-  path: '/api/gsc/oauth/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
   id: '/help/dataforseo-api-key',
   path: '/help/dataforseo-api-key',
@@ -164,6 +159,11 @@ const ProjectPProjectIdIndexRoute = ProjectPProjectIdIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
+  id: '/api/gsc/oauth/callback',
+  path: '/api/gsc/oauth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ProjectPProjectIdSavedRoute = ProjectPProjectIdSavedRouteImport.update({
   id: '/saved',
@@ -260,7 +260,6 @@ export interface FileRoutesByFullPath {
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -270,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -294,7 +294,6 @@ export interface FileRoutesByTo {
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
@@ -302,6 +301,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
@@ -332,7 +332,6 @@ export interface FileRoutesById {
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
-  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -342,6 +341,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/_project/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -369,7 +369,6 @@ export interface FileRouteTypes {
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/api/gsc/oauth/callback'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -379,6 +378,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/saved'
+    | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/audit/'
@@ -403,7 +403,6 @@ export interface FileRouteTypes {
     | '/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/api/gsc/oauth/callback'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
@@ -411,6 +410,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/keywords'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/saved'
+    | '/api/gsc/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/audit'
@@ -440,7 +440,6 @@ export interface FileRouteTypes {
     | '/_app/help/dataforseo-api-key'
     | '/api/auth/$'
     | '/api/autumn/$'
-    | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
@@ -450,6 +449,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/saved'
+    | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/'
     | '/_project/p/$projectId/rank-tracking/$configId'
     | '/_project/p/$projectId/audit/'
@@ -613,13 +613,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/gsc/oauth/callback': {
-      id: '/api/gsc/oauth/callback'
-      path: '/api/gsc/oauth/callback'
-      fullPath: '/api/gsc/oauth/callback'
-      preLoaderRoute: typeof ApiGscOauthCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/_app/help/dataforseo-api-key': {
       id: '/_app/help/dataforseo-api-key'
       path: '/help/dataforseo-api-key'
@@ -640,6 +633,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/'
       preLoaderRoute: typeof ProjectPProjectIdIndexRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/api/gsc/oauth/callback': {
+      id: '/api/gsc/oauth/callback'
+      path: '/api/gsc/oauth/callback'
+      fullPath: '/api/gsc/oauth/callback'
+      preLoaderRoute: typeof ApiGscOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_project/p/$projectId/saved': {
       id: '/_project/p/$projectId/saved'

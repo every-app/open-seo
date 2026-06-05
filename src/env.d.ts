@@ -19,6 +19,8 @@ declare namespace Cloudflare {
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
+    AUTUMN_SECRET_KEY?: string;
+    AUTUMN_WEBHOOK_SECRET?: string;
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;

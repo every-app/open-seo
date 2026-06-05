@@ -148,6 +148,13 @@
       "when": 1780599087400,
       "tag": "0020_drop_delegated_users",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1780625404317,
+      "tag": "0021_autumn_billing",
+      "breakpoints": true
     }
   ]
 }
