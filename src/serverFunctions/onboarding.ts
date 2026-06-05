@@ -82,7 +82,12 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
       ...(data.mcpSetupIntent !== undefined
         ? { mcpSetupIntent: data.mcpSetupIntent }
         : {}),
-      ...(completedAt !== undefined ? { completedAt } : {}),
+      // Completing onboarding means the user passed the Search Console step, so
+      // resolve the GSC prompt — the legacy re-engagement nudge must not fire
+      // for anyone who already saw that step.
+      ...(completedAt !== undefined
+        ? { completedAt, gscNudgeDismissedAt: completedAt }
+        : {}),
       updatedAt: now,
     };
 
@@ -97,6 +102,7 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
         foundVia: data.foundVia,
         mcpSetupIntent: data.mcpSetupIntent,
         completedAt,
+        gscNudgeDismissedAt: completedAt,
         updatedAt: now,
       })
       .onConflictDoUpdate({

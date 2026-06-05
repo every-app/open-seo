@@ -24,9 +24,9 @@ export const userOnboardingAnswers = sqliteTable(
     foundVia: text("found_via"),
     mcpSetupIntent: text("mcp_setup_intent"),
     completedAt: text("completed_at"),
-    // Set when the user dismisses (or acts on) the one-time "connect Search
-    // Console" nudge shown to people who finished onboarding before the GSC
-    // step existed. Null = never shown/dismissed.
+    // Set when the user resolves the Search Console ask, either in current
+    // onboarding or via the one-time re-engagement nudge for legacy users.
+    // Null = not yet shown/resolved.
     gscNudgeDismissedAt: text("gsc_nudge_dismissed_at"),
     createdAt: text("created_at")
       .notNull()

@@ -48,6 +48,10 @@ export function GscReEngagementModal({
     },
   });
 
+  // Legacy users — those who finished onboarding before it included the Search
+  // Console step — have no gscNudgeDismissedAt set, so they're the only ones who
+  // see this. Anyone who completes current onboarding gets it stamped (they
+  // already saw that step), and dismissing/connecting clears it too.
   const eligible =
     hosted &&
     !suppressed &&
