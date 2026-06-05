@@ -5,6 +5,7 @@ import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { AppError } from "@/server/lib/errors";
 import {
   createGscClient,
+  GscApiError,
   GscTokenError,
   type GscSite,
   type UrlInspectionResult,
@@ -29,6 +30,11 @@ type GscPerformanceResult = {
   connectedBy: string | null;
   request: GscSearchAnalyticsRequest;
   rows: GscSearchAnalyticsRow[];
+};
+
+type GscSiteListResult = {
+  sites: GscSite[];
+  requiresReconnect: boolean;
 };
 
 /** Thrown when a project has no connected GSC property. */
@@ -62,6 +68,44 @@ async function userHasGrant(userId: string): Promise<boolean> {
 /** List verified properties available on a user's google-search-console grant. */
 async function listSitesForUser(userId: string): Promise<GscSite[]> {
   return createGscClient({ userId }).listSites();
+}
+
+/** Expected ways a stored grant fails to reach Search Console: no token could be
+ *  minted (refresh token revoked or expired), or Google rejected the call
+ *  (401/403). These surface a reconnect prompt instead of being routed through
+ *  error tracking. Other statuses (429, 5xx) are genuine faults and propagate. */
+function isExpectedGrantFailure(error: unknown): boolean {
+  if (error instanceof GscTokenError) return true;
+  return (
+    error instanceof GscApiError &&
+    (error.status === 401 || error.status === 403)
+  );
+}
+
+/** List properties for the picker UI. When the stored grant can't currently
+ *  reach GSC, return a reconnect signal instead of throwing, so an expected
+ *  external-auth failure doesn't land in error tracking.
+ *
+ *  Only a GscTokenError unlinks the stored grant — the one unambiguous "this
+ *  grant is dead" signal (Better Auth couldn't mint/refresh a token, i.e. the
+ *  user revoked access or the refresh token expired). A bare 401/403 from
+ *  sites.list is left in place: Search Console also returns 403 for quota/rate
+ *  limits, so destroying the grant there would force needless reconnects across
+ *  every project on it. Reconnecting re-upserts the grant either way. */
+async function listSitesForUserWithGrantStatus(
+  userId: string,
+): Promise<GscSiteListResult> {
+  try {
+    return { sites: await listSitesForUser(userId), requiresReconnect: false };
+  } catch (error) {
+    if (!isExpectedGrantFailure(error)) {
+      throw error;
+    }
+    if (error instanceof GscTokenError) {
+      await unlinkUserGrant(userId);
+    }
+    return { sites: [], requiresReconnect: true };
+  }
 }
 
 /** Map a verified property to a project. Rejects unverified properties and
@@ -210,7 +254,7 @@ async function inspectUrls(input: {
 export const GscService = {
   getConnection,
   userHasGrant,
-  listSitesForUser,
+  listSitesForUserWithGrantStatus,
   setSite,
   disconnect,
   getPerformance,

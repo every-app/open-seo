@@ -55,12 +55,13 @@ export const listGscSites = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => projectScopedSchema.parse(data))
   .handler(async ({ context }) => {
-    const [sites, connection] = await Promise.all([
-      GscService.listSitesForUser(context.userId),
+    const [siteList, connection] = await Promise.all([
+      GscService.listSitesForUserWithGrantStatus(context.userId),
       GscService.getConnection(context.projectId),
     ]);
     return {
-      sites: sites.map((s) => ({
+      requiresReconnect: siteList.requiresReconnect,
+      sites: siteList.sites.map((s) => ({
         siteUrl: s.siteUrl,
         permissionLevel: s.permissionLevel,
         selectable: s.permissionLevel !== "siteUnverifiedUser",

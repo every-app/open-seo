@@ -68,6 +68,15 @@ function GscConnect({ projectId }: { projectId: string }) {
     queryFn: () => listGscSites({ data: { projectId } }),
     enabled: hasGrant && !connected && !needsSetup,
   });
+  const requiresReconnect = Boolean(sitesQuery.data?.requiresReconnect);
+
+  React.useEffect(() => {
+    if (!requiresReconnect) return;
+
+    void queryClient.invalidateQueries({
+      queryKey: ["gscConnection", projectId],
+    });
+  }, [requiresReconnect, queryClient, projectId]);
 
   const setSiteMutation = useMutation({
     mutationFn: (siteUrl: string) =>
@@ -107,7 +116,7 @@ function GscConnect({ projectId }: { projectId: string }) {
     return (
       <SitePicker
         loading={sitesQuery.isLoading}
-        error={sitesQuery.isError}
+        error={sitesQuery.isError || requiresReconnect}
         sites={sitesQuery.data?.sites ?? []}
         selectedSiteUrl={selectedSiteUrl}
         onSelect={setSelectedSiteUrl}
