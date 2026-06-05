@@ -16,7 +16,7 @@ const mobileNavItems = [
   {
     label: "Resources",
     links: [
-      { label: "Guides", href: "/guides" },
+      { label: "Blog", href: "/blogs" },
       { label: "Why Open Source?", href: "/open-source-seo" },
       { label: "MCP Setup", href: "/docs/mcp" },
       { label: "Skills", href: "/docs/skills" },
@@ -199,8 +199,8 @@ function MarketingLayout() {
 function ResourcesDropdown() {
   const resources = [
     {
-      label: "Guides",
-      href: "/guides",
+      label: "Blog",
+      href: "/blogs",
       description: "Founder-focused SEO articles.",
     },
     {
@@ -223,7 +223,7 @@ function ResourcesDropdown() {
   return (
     <div className="relative group">
       <a
-        href="/guides"
+        href="/blogs"
         className="text-sm font-semibold text-neutral-600 transition-colors hover:text-neutral-900 md:hidden"
       >
         Resources

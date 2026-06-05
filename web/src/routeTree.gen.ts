@@ -14,10 +14,12 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as MarketingRouteImport } from './routes/_marketing'
 import { Route as GuidesIndexRouteImport } from './routes/guides/index'
 import { Route as DocsIndexRouteImport } from './routes/docs/index'
+import { Route as BlogsIndexRouteImport } from './routes/blogs/index'
 import { Route as MarketingIndexRouteImport } from './routes/_marketing/index'
 import { Route as JsScriptDotjsRouteImport } from './routes/js/script[.]js'
 import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
+import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
@@ -58,6 +60,11 @@ const DocsIndexRoute = DocsIndexRouteImport.update({
   path: '/docs/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogsIndexRoute = BlogsIndexRouteImport.update({
+  id: '/blogs/',
+  path: '/blogs/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MarketingIndexRoute = MarketingIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -76,6 +83,11 @@ const GuidesSplatRoute = GuidesSplatRouteImport.update({
 const DocsSplatRoute = DocsSplatRouteImport.update({
   id: '/docs/$',
   path: '/docs/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogsSplatRoute = BlogsSplatRouteImport.update({
+  id: '/blogs/$',
+  path: '/blogs/$',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
@@ -172,9 +184,11 @@ export interface FileRoutesByFullPath {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
+  '/blogs/': typeof BlogsIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
@@ -196,10 +210,12 @@ export interface FileRoutesByTo {
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/': typeof MarketingIndexRoute
+  '/blogs': typeof BlogsIndexRoute
   '/docs': typeof DocsIndexRoute
   '/guides': typeof GuidesIndexRoute
   '/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
@@ -223,10 +239,12 @@ export interface FileRoutesById {
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
   '/api/subscribe': typeof ApiSubscribeRoute
+  '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
   '/guides/$': typeof GuidesSplatRoute
   '/js/script.js': typeof JsScriptDotjsRoute
   '/_marketing/': typeof MarketingIndexRoute
+  '/blogs/': typeof BlogsIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/guides/': typeof GuidesIndexRoute
   '/_marketing/features/ai-brand-visibility': typeof MarketingFeaturesAiBrandVisibilityRoute
@@ -251,9 +269,11 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/blogs/$'
     | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
+    | '/blogs/'
     | '/docs/'
     | '/guides/'
     | '/features/ai-brand-visibility'
@@ -275,10 +295,12 @@ export interface FileRouteTypes {
     | '/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/blogs/$'
     | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
     | '/'
+    | '/blogs'
     | '/docs'
     | '/guides'
     | '/features/ai-brand-visibility'
@@ -301,10 +323,12 @@ export interface FileRouteTypes {
     | '/_marketing/pricing'
     | '/api/event'
     | '/api/subscribe'
+    | '/blogs/$'
     | '/docs/$'
     | '/guides/$'
     | '/js/script.js'
     | '/_marketing/'
+    | '/blogs/'
     | '/docs/'
     | '/guides/'
     | '/_marketing/features/ai-brand-visibility'
@@ -325,9 +349,11 @@ export interface RootRouteChildren {
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiEventRoute: typeof ApiEventRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
+  BlogsSplatRoute: typeof BlogsSplatRoute
   DocsSplatRoute: typeof DocsSplatRoute
   GuidesSplatRoute: typeof GuidesSplatRoute
   JsScriptDotjsRoute: typeof JsScriptDotjsRoute
+  BlogsIndexRoute: typeof BlogsIndexRoute
   DocsIndexRoute: typeof DocsIndexRoute
   GuidesIndexRoute: typeof GuidesIndexRoute
 }
@@ -369,6 +395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blogs/': {
+      id: '/blogs/'
+      path: '/blogs'
+      fullPath: '/blogs/'
+      preLoaderRoute: typeof BlogsIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_marketing/': {
       id: '/_marketing/'
       path: '/'
@@ -395,6 +428,13 @@ declare module '@tanstack/react-router' {
       path: '/docs/$'
       fullPath: '/docs/$'
       preLoaderRoute: typeof DocsSplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blogs/$': {
+      id: '/blogs/$'
+      path: '/blogs/$'
+      fullPath: '/blogs/$'
+      preLoaderRoute: typeof BlogsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/subscribe': {
@@ -550,9 +590,11 @@ const rootRouteChildren: RootRouteChildren = {
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiEventRoute: ApiEventRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
+  BlogsSplatRoute: BlogsSplatRoute,
   DocsSplatRoute: DocsSplatRoute,
   GuidesSplatRoute: GuidesSplatRoute,
   JsScriptDotjsRoute: JsScriptDotjsRoute,
+  BlogsIndexRoute: BlogsIndexRoute,
   DocsIndexRoute: DocsIndexRoute,
   GuidesIndexRoute: GuidesIndexRoute,
 }

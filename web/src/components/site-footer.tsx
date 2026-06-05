@@ -42,7 +42,7 @@ export function SiteFooter({ className }: { className?: string }) {
           <p className="font-semibold text-neutral-900">Resources</p>
           <div className="mt-2 flex flex-col gap-1.5">
             <Link to="/open-source-seo">Why Open Source?</Link>
-            <Link to="/guides">Guides</Link>
+            <Link to="/blogs">Blog</Link>
             <a href="/docs">Docs</a>
             <a href="/docs/skills">Skills</a>
           </div>
