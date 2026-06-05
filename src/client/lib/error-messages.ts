@@ -23,6 +23,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AI_SEARCH_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
+  UPSTREAM_UNAVAILABLE:
+    "The data provider is temporarily unavailable. Please retry in a moment.",
   CONFLICT: "This request conflicts with existing data.",
   INTERNAL_ERROR:
     "An unexpected error occurred. Please check server logs and try again.",

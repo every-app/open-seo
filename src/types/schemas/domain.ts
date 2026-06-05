@@ -1,3 +1,4 @@
+import { parse as parseTld } from "tldts";
 import { z } from "zod";
 
 /**
@@ -12,6 +13,19 @@ export function normalizeDomain(input: string): string {
   return hostname.replace(/^www\./, "");
 }
 
+/**
+ * True when `host` resolves to a real registrable domain (public-suffix list),
+ * rejecting IPs and fake TLDs like `example.por` before they reach DataForSEO.
+ */
+export function isValidDomainHost(host: string): boolean {
+  const parsed = parseTld(host, { allowPrivateDomains: true });
+  return (
+    !parsed.isIp &&
+    !!parsed.publicSuffix &&
+    (parsed.isIcann === true || parsed.isPrivate === true)
+  );
+}
+
 /** Zod field: accepts a bare domain or full URL, outputs a clean hostname. */
 export const domainField = z
   .string()
@@ -20,13 +34,19 @@ export const domainField = z
   .transform((val, ctx) => {
     try {
       const hostname = normalizeDomain(val);
-      if (!hostname.includes(".")) {
-        ctx.addIssue({ code: "custom", message: "Invalid domain format" });
+      if (!hostname.includes(".") || !isValidDomainHost(hostname)) {
+        ctx.addIssue({
+          code: "custom",
+          message: "Enter a valid domain like example.com",
+        });
         return z.NEVER;
       }
       return hostname;
     } catch {
-      ctx.addIssue({ code: "custom", message: "Invalid domain format" });
+      ctx.addIssue({
+        code: "custom",
+        message: "Enter a valid domain like example.com",
+      });
       return z.NEVER;
     }
   });

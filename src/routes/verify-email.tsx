@@ -73,10 +73,12 @@ function getVerifyEmailPageCopy({
     };
   }
 
-  if (isWaiting && email) {
+  if (isWaiting) {
     return {
       title: "Verify your email",
-      helperText: `Click the link we sent to ${email} to verify your email.`,
+      helperText: email
+        ? `Click the link we sent to ${email} to verify your email.`
+        : "Check your inbox for the link to verify your email.",
     };
   }
 
@@ -95,8 +97,8 @@ function getVerifyEmailPageCopy({
   }
 
   return {
-    title: "Email confirmed",
-    helperText: "Your email is confirmed. You can sign in now.",
+    title: "Sign in to continue",
+    helperText: "Sign in to continue to your account.",
   };
 }
 
@@ -110,14 +112,18 @@ function VerifyEmailPage() {
   const verificationIssueType = search.error
     ? verificationIssueSchema.parse(search.error)
     : null;
-  const email = search.email;
+  const email = search.email ?? session?.user?.email;
+  const isVerified = !!session?.user?.emailVerified;
+  const [isResending, setIsResending] = useState(false);
+  // A hosted user who still needs to verify (session resolved, not verified)
+  // must see the resend / "check your inbox" state — never a sign-in CTA, which
+  // the verification gate would immediately block (the email-verify trap).
   const isWaiting =
+    isHostedMode &&
     !errorMessage &&
     !bypassEmailVerification &&
-    !session?.user?.emailVerified &&
-    !!email;
-  const [isResending, setIsResending] = useState(false);
-  const isVerified = !!session?.user?.emailVerified;
+    !isPending &&
+    !isVerified;
   const pageCopy = getVerifyEmailPageCopy({
     isHostedMode,
     errorMessage,
@@ -222,16 +228,18 @@ function VerifyEmailPage() {
             </Link>
           </div>
         ) : isWaiting ? (
-          <div className="space-y-4">
-            <button
-              type="button"
-              className="btn btn-soft w-full"
-              onClick={() => void handleResend()}
-              disabled={isResending}
-            >
-              {isResending ? "Sending email..." : "Resend email"}
-            </button>
-          </div>
+          email ? (
+            <div className="space-y-4">
+              <button
+                type="button"
+                className="btn btn-soft w-full"
+                onClick={() => void handleResend()}
+                disabled={isResending}
+              >
+                {isResending ? "Sending email..." : "Resend email"}
+              </button>
+            </div>
+          ) : null
         ) : isPending || isVerified ? (
           <div className="flex justify-center py-4">
             <span className="loading loading-spinner loading-md" />

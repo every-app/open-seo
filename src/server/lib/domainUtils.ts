@@ -1,5 +1,6 @@
 import { getDomain } from "tldts";
 import { AppError } from "@/server/lib/errors";
+import { isValidDomainHost } from "@/types/schemas/domain";
 
 export function toRelativePath(url: string | null | undefined): string | null {
   if (!url) return null;
@@ -34,6 +35,15 @@ export function normalizeDomainInput(
 
   if (!host) {
     throw new AppError("VALIDATION_ERROR", "Domain is invalid");
+  }
+
+  // Reject fake TLDs / non-registrable hosts (e.g. "example.por") before they
+  // reach DataForSEO and come back as an opaque "Invalid Field: 'target'".
+  if (!isValidDomainHost(host)) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Enter a valid domain like example.com",
+    );
   }
 
   if (includeSubdomains) {

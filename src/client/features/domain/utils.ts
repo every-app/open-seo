@@ -4,6 +4,7 @@ import type {
   PageRow,
   SortOrder,
 } from "@/client/features/domain/types";
+import { isValidDomainHost } from "@/types/schemas/domain";
 
 export function toSortMode(value: string | null): DomainSortMode | undefined {
   if (
@@ -67,6 +68,7 @@ export function normalizeDomainTarget(input: string): string | null {
     const hostname = parsed.hostname.toLowerCase();
     if (!hostname || !hostname.includes(".")) return null;
     if (!/^[a-z\d.-]+$/.test(hostname)) return null;
+    if (!isValidDomainHost(hostname)) return null;
 
     const path = parsed.pathname === "/" ? "" : parsed.pathname;
     return `${hostname}${path}`;

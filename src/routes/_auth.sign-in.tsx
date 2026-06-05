@@ -1,7 +1,6 @@
 import { useForm } from "@tanstack/react-form";
-import { Link, createFileRoute } from "@tanstack/react-router";
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { toast } from "sonner";
 import {
   AuthPageCard,
   AuthMethodChooser,
@@ -11,7 +10,7 @@ import {
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
-import { getSignInSearch } from "@/lib/auth-redirect";
+import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 
 const signInSchema = z.object({
@@ -26,14 +25,11 @@ export const Route = createFileRoute("/_auth/sign-in")({
 
 function SignInPage() {
   const search = Route.useSearch();
+  const navigate = useNavigate();
   const { redirectTo, oauthQuery, isHostedMode } = useAuthPageState(
     search.redirect,
   );
   const authCallbackURL = redirectTo;
-  const [verificationEmail, setVerificationEmail] = useState<string | null>(
-    null,
-  );
-  const [isSendingVerification, setIsSendingVerification] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
@@ -52,7 +48,6 @@ function SignInPage() {
         captureClientEvent("auth:sign_in_submit", {
           redirect_to: redirectTo,
         });
-        setVerificationEmail(null);
 
         const result = await authClient.signIn.email({
           email,
@@ -72,12 +67,12 @@ function SignInPage() {
           captureClientEvent("auth:sign_in_block_unverified", {
             redirect_to: redirectTo,
           });
-          setVerificationEmail(email);
-          formApi.setErrorMap({
-            onSubmit: {
-              form: "Please confirm your email before signing in.",
-              fields: {},
-            },
+          // Email not verified yet: send them to the verification page (which
+          // shows "check your inbox" + resend) instead of leaving them on a
+          // sign-in form that will keep rejecting them.
+          void navigate({
+            to: "/verify-email",
+            search: getVerifyEmailSearch(email, redirectTo),
           });
           return;
         }
@@ -98,42 +93,6 @@ function SignInPage() {
       }
     },
   });
-
-  async function handleResendVerification() {
-    if (!verificationEmail) {
-      return;
-    }
-
-    setIsSendingVerification(true);
-
-    try {
-      const verificationCallbackURL = new URL(
-        "/verify-email",
-        window.location.origin,
-      );
-      if (authCallbackURL !== "/") {
-        verificationCallbackURL.searchParams.set("redirect", authCallbackURL);
-      }
-      const result = await authClient.sendVerificationEmail({
-        email: verificationEmail,
-        callbackURL: verificationCallbackURL.toString(),
-      });
-
-      if (result.error) {
-        toast.error(result.error.message || "We couldn't send another email.");
-        return;
-      }
-
-      captureClientEvent("auth:verification_resend");
-      toast.success("A new email is on the way.");
-    } catch {
-      toast.error(
-        "We couldn't send another email right now. Please try again.",
-      );
-    } finally {
-      setIsSendingVerification(false);
-    }
-  }
 
   async function handleContinueWithGoogle() {
     setSocialError(null);
@@ -265,29 +224,6 @@ function SignInPage() {
               );
             }}
           </form.Field>
-
-          {verificationEmail ? (
-            <div className="alert alert-warning items-start">
-              <div className="space-y-3">
-                <p className="text-sm">
-                  Please check {verificationEmail} for a link to confirm your
-                  email.
-                </p>
-                <button
-                  type="button"
-                  className="btn btn-sm btn-outline"
-                  onClick={() => {
-                    void handleResendVerification();
-                  }}
-                  disabled={isSendingVerification}
-                >
-                  {isSendingVerification
-                    ? "Sending email..."
-                    : "Send another email"}
-                </button>
-              </div>
-            </div>
-          ) : null}
 
           <form.Subscribe
             selector={(state) => ({

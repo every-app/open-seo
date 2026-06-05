@@ -109,7 +109,7 @@ async function getSuggestedKeywords(
     keywordDifficulty: number | null;
   }>
 > {
-  const domain = input.domain.toLowerCase().trim();
+  const domain = normalizeDomainInput(input.domain, true);
 
   const cacheKey = await buildCacheKey("domain:keyword-suggestions", {
     organizationId: billingCustomer.organizationId,

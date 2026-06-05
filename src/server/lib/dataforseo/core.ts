@@ -8,11 +8,16 @@ import {
 } from "dataforseo-client";
 import { AppError } from "@/server/lib/errors";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import type { ErrorCode } from "@/shared/error-codes";
 
 const API_BASE = "https://api.dataforseo.com";
 const MAX_DATAFORSEO_ERROR_PAYLOAD_LENGTH = 1600;
 // Safety ceiling on any live call (Lighthouse is the slowest, ~tens of seconds).
 const DATAFORSEO_REQUEST_TIMEOUT_MS = 60_000;
+// Retry idempotent reads on transient 5xx. Total attempts = retries + 1; the
+// shared request-timeout signal still caps overall wall time.
+const DATAFORSEO_MAX_RETRIES = 2;
+const DATAFORSEO_RETRY_BACKOFF_MS = 250;
 
 /**
  * Translates a DataForSEO HTTP/task failure into a product-specific AppError
@@ -63,32 +68,47 @@ function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
     const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${apiKey}`);
+    // Resolve the signal once so retries share the overall request timeout
+    // rather than restarting a fresh 60s budget on each attempt.
+    const signal =
+      init?.signal ?? AbortSignal.timeout(DATAFORSEO_REQUEST_TIMEOUT_MS);
 
-    const response = await fetch(url, {
-      ...init,
-      headers,
-      signal:
-        init?.signal ?? AbortSignal.timeout(DATAFORSEO_REQUEST_TIMEOUT_MS),
-    });
-    if (response.ok) return response;
+    for (let attempt = 0; ; attempt++) {
+      const response = await fetch(url, { ...init, headers, signal });
+      if (response.ok) return response;
 
-    const rawText = await response.text();
-    const path = formatDataforseoRequestPath(url);
-    const classified = classify?.(response.status, rawText, path);
-    if (classified) throw classified;
+      // Transient upstream 5xx on an idempotent read -> back off and retry.
+      if (response.status >= 500 && attempt < DATAFORSEO_MAX_RETRIES) {
+        await new Promise((resolve) =>
+          setTimeout(resolve, DATAFORSEO_RETRY_BACKOFF_MS * (attempt + 1)),
+        );
+        continue;
+      }
 
-    const error = new AppError(
-      response.status === 429 ? "RATE_LIMITED" : "INTERNAL_ERROR",
-      `DataForSEO HTTP ${response.status} on ${path}`,
-      {
-        provider: "dataforseo",
-        providerStatus: String(response.status),
-        providerPath: path,
-        responseBody: formatDataforseoErrorPayload(rawText),
-      },
-    );
-    error.name = "DataForSEOHttpError";
-    throw error;
+      const rawText = await response.text();
+      const path = formatDataforseoRequestPath(url);
+      const classified = classify?.(response.status, rawText, path);
+      if (classified) throw classified;
+
+      const code: ErrorCode =
+        response.status >= 500
+          ? "UPSTREAM_UNAVAILABLE"
+          : response.status === 429
+            ? "RATE_LIMITED"
+            : "INTERNAL_ERROR";
+      const error = new AppError(
+        code,
+        `DataForSEO HTTP ${response.status} on ${path}`,
+        {
+          provider: "dataforseo",
+          providerStatus: String(response.status),
+          providerPath: path,
+          responseBody: formatDataforseoErrorPayload(rawText),
+        },
+      );
+      error.name = "DataForSEOHttpError";
+      throw error;
+    }
   };
 }
 
