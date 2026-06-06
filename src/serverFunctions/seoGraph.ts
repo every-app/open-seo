@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { env } from "cloudflare:workers";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
 import { db } from "@/db";
 import { seoGraphAudits } from "@/db/app.schema";
 import { requireProjectContext } from "@/serverFunctions/middleware";
@@ -102,8 +102,8 @@ export const getSeoGraphAuditStatus = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => getSeoGraphAuditStatusSchema.parse(data))
   .handler(async ({ data, context }) => {
     const row = await db.query.seoGraphAudits.findFirst({
-      where: (t, { and, eq: deq }) =>
-        and(deq(t.id, data.auditId), deq(t.projectId, context.projectId)),
+      where: (t, { and: dand, eq: deq }) =>
+        dand(deq(t.id, data.auditId), deq(t.projectId, context.projectId)),
     });
 
     if (!row) throw new Error("Audit not found");
@@ -141,7 +141,12 @@ export const getSeoGraphAuditStatus = createServerFn({ method: "POST" })
                 })
                 .where(eq(seoGraphAudits.id, data.auditId));
 
-              return { ...row, status, routingPath: JSON.stringify(routing_path), clientReport: client_report ?? null };
+              return {
+                ...row,
+                status,
+                routingPath: JSON.stringify(routing_path),
+                clientReport: client_report ?? null,
+              };
             }
 
             // Still running — update routing_path in D1 for progress display
@@ -184,8 +189,10 @@ export const deleteSeoGraphAudit = createServerFn({ method: "POST" })
     await db
       .delete(seoGraphAudits)
       .where(
-        eq(seoGraphAudits.id, data.auditId) &&
+        and(
+          eq(seoGraphAudits.id, data.auditId),
           eq(seoGraphAudits.projectId, context.projectId),
+        ),
       );
     return { success: true };
   });
