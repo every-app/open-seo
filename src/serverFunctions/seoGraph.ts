@@ -17,7 +17,7 @@ import {
 // Falls back to the known Railway deployment URL.
 const RAILWAY_BASE =
   (env as unknown as { RAILWAY_SEO_API_URL?: string }).RAILWAY_SEO_API_URL ??
-  "https://openclaw-api-k30t.onrender.com";
+  "https://seo-ai-api-hsaz.onrender.com";
 
 const RAILWAY_API_KEY =
   (env as unknown as { RAILWAY_SEO_API_KEY?: string }).RAILWAY_SEO_API_KEY ??
