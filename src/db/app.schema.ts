@@ -447,3 +447,35 @@ export const auditLighthouseResults = sqliteTable(
   },
   (table) => [index("audit_lighthouse_results_audit_id_idx").on(table.auditId)],
 );
+
+// ─── SEO Graph Audits (LangGraph / Railway backend) ───────────────────────────
+export const seoGraphAudits = sqliteTable(
+  "seo_graph_audits",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    startedByUserId: text("started_by_user_id").notNull(),
+    domain: text("domain").notNull(),
+    keywordsJson: text("keywords_json").notNull().default("[]"),
+    // run_id returned by Railway FastAPI after POST /api/v1/audit-graph
+    runId: text("run_id"),
+    status: text("status", {
+      enum: ["pending", "running", "completed", "failed"],
+    })
+      .notNull()
+      .default("pending"),
+    // JSON array of node names in order visited, e.g. ["gather","technical","supervisor","crawlability_fix","strategy","synthesis"]
+    routingPath: text("routing_path").notNull().default("[]"),
+    clientReport: text("client_report"),
+    errorMessage: text("error_message"),
+    startedAt: text("started_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+    completedAt: text("completed_at"),
+  },
+  (table) => [
+    index("seo_graph_audits_project_id_idx").on(table.projectId),
+  ],
+);

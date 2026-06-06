@@ -10,6 +10,8 @@ declare namespace Cloudflare {
 		R2: R2Bucket;
 		DB: D1Database;
 		DATAFORSEO_API_KEY: string;
+		RAILWAY_SEO_API_URL?: string;
+		RAILWAY_SEO_API_KEY?: string;
 		PORT: string;
 		AUTH_MODE: string;
 		BETTER_AUTH_SECRET: string;

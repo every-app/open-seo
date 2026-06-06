@@ -8,6 +8,7 @@ import {
   Search,
   Sparkles,
   TrendingUp,
+  Zap,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
 
@@ -47,6 +48,13 @@ const projectNavItems = [
     label: "Site Audit",
     icon: ClipboardCheck,
     matchSegment: "/audit",
+  },
+  // ─── AI SEO Audit (LangGraph / Railway backend) ───────────────────────────
+  {
+    to: "/p/$projectId/seo-audit" as const,
+    label: "AI SEO Audit",
+    icon: Zap,
+    matchSegment: "/seo-audit",
   },
   {
     to: "/p/$projectId/brand-lookup" as const,
@@ -99,11 +107,12 @@ export function getProjectNavGroups(projectId: string) {
       type: "group" as const,
       label: "Domain",
       icon: Globe,
-      matchSegments: ["/domain", "/backlinks", "/audit"],
+      matchSegments: ["/domain", "/backlinks", "/audit", "/seo-audit"],
       items: [
         bySegment("/domain"),
         bySegment("/backlinks"),
         bySegment("/audit"),
+        bySegment("/seo-audit"),
       ],
     },
     {
