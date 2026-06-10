@@ -345,6 +345,16 @@ Searching ten pages deep costs 8x more than one page. Tracking both devices cost
 - Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.
 - Exact cost can vary slightly based on returned rows and DataForSEO pricing.
 
+### 6) AI Search — Brand Lookup
+
+- One lookup = 6 DataForSEO AI Optimization calls (`aggregated_metrics` + `top_pages` + `mentions_search` across ChatGPT and Google AI Overview): up to about `$0.85` per lookup.
+  - `aggregated_metrics`: `$0.101` per platform.
+  - `top_pages`: page-ranked cited sources per platform.
+  - `mentions_search`: row-priced; `$0.20` per platform at the app's full 100-row sample (lower-volume brands return fewer rows and cost less).
+- Adding competitors (Share of Voice) adds 2 `cross_aggregated_metrics` calls: about `$0.10` each, `$0.20` total.
+- Results are cached for 24 hours, so repeating the same lookup (same target + competitor set) is free within a day.
+- Re-measure anytime with `pnpm billing:brand-lookup --target=example.com --competitors=a.com,b.com --confirmLive=true`.
+
 ### Planning examples
 
 - 100 keyword research requests at the default 150 results: `$3.50`

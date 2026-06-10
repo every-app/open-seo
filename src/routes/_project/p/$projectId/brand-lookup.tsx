@@ -10,17 +10,24 @@ export const Route = createFileRoute("/_project/p/$projectId/brand-lookup")({
 function BrandLookupRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
-  const { q = "" } = Route.useSearch();
+  // `c` is already an opaque competitor string array via the schema transform.
+  const { q = "", c = [] } = Route.useSearch();
 
   return (
     <BrandLookupPage
       projectId={projectId}
       initialQuery={q}
-      onQueryChange={(nextQuery) => {
+      initialCompetitors={c}
+      onSearchChange={(nextQuery, nextCompetitors) => {
         void navigate({
           search: (prev) => ({
             ...prev,
             q: nextQuery.trim() || undefined,
+            // One serialization site: comma-join the competitor list.
+            c:
+              nextCompetitors.length > 0
+                ? nextCompetitors.join(",")
+                : undefined,
           }),
           replace: true,
         });

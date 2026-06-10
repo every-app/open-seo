@@ -146,7 +146,7 @@ function TopPagesFilters({
         <div className="min-w-[220px]">
           <FilterRangeInputs
             form={form}
-            title="Mentions"
+            title="Source mentions"
             minName="minMentions"
             maxName="maxMentions"
           />

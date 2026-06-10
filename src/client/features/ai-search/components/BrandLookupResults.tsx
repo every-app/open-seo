@@ -1,45 +1,23 @@
-import { useMemo, useState } from "react";
-import { type SortingState } from "@tanstack/react-table";
-import { Download, Info, SlidersHorizontal } from "lucide-react";
-import { useAppTable } from "@/client/components/table/AppDataTable";
-import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
-import {
-  buildBrandLookupExport,
-  downloadBrandLookupCsv,
-} from "@/client/features/ai-search/components/brandLookupExport";
+import { Info } from "lucide-react";
 import { BrandLookupMentionTrendCard } from "@/client/features/ai-search/components/BrandLookupMentionTrendCard";
-import { BrandLookupFilterPanel } from "@/client/features/ai-search/components/BrandLookupFilterPanel";
-import {
-  TopPagesTable,
-  TopQueriesTable,
-  topPagesColumns,
-  topQueriesColumns,
-} from "@/client/features/ai-search/components/BrandLookupCitationTables";
+import { BrandLookupShareOfVoice } from "@/client/features/ai-search/components/BrandLookupShareOfVoice";
+import { CitationTabsCard } from "@/client/features/ai-search/components/BrandLookupCitationsCard";
 import {
   formatCount,
   formatPlatformLabel,
+  PLATFORM_DOT_CLASS,
 } from "@/client/features/ai-search/platformLabels";
-import {
-  filterQueries,
-  filterTopPages,
-} from "@/client/features/ai-search/brandLookupFiltering";
-import { useBrandLookupFilters } from "@/client/features/ai-search/useBrandLookupFilters";
-import type { CitationTab } from "@/client/features/ai-search/brandLookupFilterTypes";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
 type Props = {
   result: BrandLookupResult;
+  projectId: string;
 };
 
 type PlatformRow = BrandLookupResult["perPlatform"][number];
-type MetricKey = "mentions" | "aiSearchVolume" | "impressions";
+type MetricKey = "mentions" | "aiSearchVolume";
 
-const PLATFORM_DOT_CLASS: Record<PlatformRow["platform"], string> = {
-  chat_gpt: "bg-emerald-500",
-  google: "bg-sky-500",
-};
-
-export function BrandLookupResults({ result }: Props) {
+export function BrandLookupResults({ result, projectId }: Props) {
   if (!result.hasData) {
     const erroredPlatforms = result.perPlatform.filter(
       (p) => p.status === "error",
@@ -76,17 +54,27 @@ export function BrandLookupResults({ result }: Props) {
   }
 
   const hasTrendData = result.monthlyVolume.length > 0;
+  const sov = result.shareOfVoice;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <BrandHeader result={result} />
+
+      {/* One shared grid so the cards align by construction: stats left, trend
+          right, Share of Voice flowing into the next free half-width cell —
+          whichever of trend/SoV is absent, the rest stay column-aligned. A
+          lone stats card keeps full width instead of half a grid. */}
       <div
-        className={`grid gap-4 ${hasTrendData ? "lg:grid-cols-2" : "grid-cols-1"}`}
+        className={
+          hasTrendData || sov ? "grid gap-4 lg:grid-cols-2" : undefined
+        }
       >
-        <KpiTiles result={result} />
+        <StatsCard result={result} />
         {hasTrendData ? <MentionTrendCard result={result} /> : null}
+        {sov ? <BrandLookupShareOfVoice shareOfVoice={sov} /> : null}
       </div>
-      <CitationTabsCard result={result} />
+
+      <CitationTabsCard result={result} projectId={projectId} />
     </div>
   );
 }
@@ -109,64 +97,54 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
   );
 }
 
-function KpiTiles({ result }: { result: BrandLookupResult }) {
+function StatsCard({ result }: { result: BrandLookupResult }) {
   return (
-    <section className="flex flex-col divide-y divide-base-200 rounded-xl border border-base-300 bg-base-100">
-      <KpiTile
-        label="Total mentions"
-        tooltip="Number of LLM answers where your domain appeared in the text or citations."
-        total={result.totalMentions}
-        perPlatform={result.perPlatform}
-        metric="mentions"
-      />
-      <KpiTile
-        label="AI search volume"
-        tooltip="Monthly volume of user prompts on topics where your domain shows up in LLM answers."
-        total={result.totalAiSearchVolume}
-        perPlatform={result.perPlatform}
-        metric="aiSearchVolume"
-      />
-      <KpiTile
-        label="Estimated impressions"
-        tooltip="How often your domain is shown to users across LLM answers, based on mention frequency and topic search volume."
-        total={result.totalImpressions}
-        perPlatform={result.perPlatform}
-        metric="impressions"
-      />
+    <section className="rounded-xl border border-base-300 bg-base-100">
+      <div className="flex h-full flex-col divide-y divide-base-200">
+        <StatBlock
+          label="Mentions"
+          tooltip="Estimated count of AI answers where the searched brand or domain appeared in the answer text or cited sources."
+          value={result.totalMentions}
+          perPlatform={result.perPlatform}
+          metric="mentions"
+        />
+        <StatBlock
+          label="AI search volume"
+          tooltip="Estimated monthly search demand for prompts where the searched brand or domain appears in AI answers. This is prompt demand, not mention count."
+          value={result.totalAiSearchVolume}
+          perPlatform={result.perPlatform}
+          metric="aiSearchVolume"
+        />
+      </div>
     </section>
   );
 }
 
-function KpiTile({
+function StatBlock({
   label,
   tooltip,
-  total,
+  value,
   perPlatform,
   metric,
 }: {
   label: string;
   tooltip: string;
-  total: number | null;
+  value: number | null;
   perPlatform: PlatformRow[];
   metric: MetricKey;
 }) {
   return (
-    <div className="flex flex-1 items-center justify-between gap-6 px-5 py-3">
-      <div className="min-w-0">
-        <p className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
-          {label}
-          <span
-            className="tooltip tooltip-right inline-flex normal-case"
-            data-tip={tooltip}
-          >
-            <Info className="size-3 text-base-content/40" />
-          </span>
-        </p>
-        <p className="mt-1 text-2xl font-semibold tabular-nums">
-          {formatCount(total)}
-        </p>
-      </div>
-      <div className="flex shrink-0 flex-col gap-1.5 min-w-[12rem]">
+    <div className="flex flex-1 flex-col justify-center p-4">
+      <p className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-base-content/50">
+        {label}
+        <span className="tooltip inline-flex normal-case" data-tip={tooltip}>
+          <Info className="size-3 text-base-content/40" />
+        </span>
+      </p>
+      <p className="mt-1 text-3xl font-semibold tabular-nums">
+        {formatCount(value)}
+      </p>
+      <div className="mt-3 space-y-1 border-t border-base-200 pt-2.5">
         {perPlatform.map((row) => (
           <PlatformStatRow key={row.platform} row={row} metric={metric} />
         ))}
@@ -193,7 +171,7 @@ function PlatformStatRow({
         {formatPlatformLabel(row.platform)}
         {row.platform === "chat_gpt" ? (
           <span
-            className="tooltip tooltip-right z-20 inline-flex"
+            className="tooltip z-20 inline-flex"
             data-tip="DataForSEO indexes ChatGPT mentions for US English only — country selection is not available for this platform."
           >
             <Info className="size-3 text-base-content/40" />
@@ -221,156 +199,6 @@ function MentionTrendCard({ result }: { result: BrandLookupResult }) {
       <div className="p-4">
         <BrandLookupMentionTrendCard result={result} />
       </div>
-    </section>
-  );
-}
-
-const DEFAULT_PAGES_SORT: SortingState = [{ id: "mentions", desc: true }];
-const DEFAULT_QUERIES_SORT: SortingState = [
-  { id: "aiSearchVolume", desc: true },
-];
-
-function CitationTabsCard({ result }: { result: BrandLookupResult }) {
-  const [activeTab, setActiveTab] = useState<CitationTab>("queries");
-  const [pagesSort, setPagesSort] = useState<SortingState>(DEFAULT_PAGES_SORT);
-  const [queriesSort, setQueriesSort] =
-    useState<SortingState>(DEFAULT_QUERIES_SORT);
-  const filters = useBrandLookupFilters();
-
-  const filteredPages = useMemo(
-    () => filterTopPages(result.topPages, filters.pages.values),
-    [result.topPages, filters.pages.values],
-  );
-  const filteredQueries = useMemo(
-    () => filterQueries(result.topQueries, filters.queries.values),
-    [result.topQueries, filters.queries.values],
-  );
-
-  const pagesTable = useAppTable({
-    data: filteredPages,
-    columns: topPagesColumns,
-    state: { sorting: pagesSort },
-    onSortingChange: setPagesSort,
-    withSorting: true,
-  });
-  const queriesTable = useAppTable({
-    data: filteredQueries,
-    columns: topQueriesColumns,
-    state: { sorting: queriesSort },
-    onSortingChange: setQueriesSort,
-    withSorting: true,
-  });
-
-  // Not memoized: TanStack's `getSortedRowModel()` is internally cached, and
-  // memoing on the table refs alone (which are stable across renders) would
-  // serve stale data when sort or filters change.
-  const exportTable = buildBrandLookupExport(
-    activeTab,
-    pagesTable.getSortedRowModel().rows.map((row) => row.original),
-    queriesTable.getSortedRowModel().rows.map((row) => row.original),
-  );
-
-  const handleExport = () =>
-    downloadBrandLookupCsv(activeTab, result.resolvedTarget, exportTable);
-
-  const canExport = exportTable.rows.length > 0;
-
-  const currentFilterCount = filters[activeTab].activeFilterCount;
-  const queriesActive = activeTab === "queries";
-  const pagesActive = activeTab === "pages";
-
-  return (
-    <section className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
-      <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-3">
-        <div role="tablist" className="tabs tabs-box w-fit">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={queriesActive}
-            className={`tab ${queriesActive ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("queries")}
-          >
-            Queries
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pagesActive}
-            className={`tab ${pagesActive ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("pages")}
-          >
-            Related pages
-          </button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <ExportToSheetsButton
-            headers={exportTable.headers}
-            rows={exportTable.rows}
-            feature={`brand_lookup_${activeTab}`}
-            className="btn-sm"
-          />
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm gap-1.5"
-            onClick={handleExport}
-            disabled={!canExport}
-            aria-label="Export current tab as CSV"
-          >
-            <Download className="size-3.5" />
-            Export CSV
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 border-b border-base-300 px-4 py-2">
-        <button
-          type="button"
-          className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
-          onClick={() => filters.setShowFilters((current) => !current)}
-          title="Toggle table filters"
-        >
-          <SlidersHorizontal className="size-3.5" />
-          Filters
-          {currentFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {currentFilterCount}
-            </span>
-          ) : null}
-        </button>
-      </div>
-
-      <div className="border-b border-base-300 px-4 py-2 text-xs text-base-content/60">
-        {activeTab === "pages" ? (
-          <>
-            Other pages LLMs cited in the same answers that referenced{" "}
-            <strong className="text-base-content/80">
-              {result.resolvedTarget}
-            </strong>
-            . Useful for spotting the sources competing for attention alongside
-            your domain.
-          </>
-        ) : (
-          <>
-            User prompts where the LLM's answer referenced{" "}
-            <strong className="text-base-content/80">
-              {result.resolvedTarget}
-            </strong>{" "}
-            in its text or citations. The prompt itself does not have to mention
-            your domain.
-          </>
-        )}
-      </div>
-
-      {filters.showFilters ? (
-        <BrandLookupFilterPanel activeTab={activeTab} filters={filters} />
-      ) : null}
-
-      {activeTab === "pages" ? (
-        <TopPagesTable table={pagesTable} />
-      ) : (
-        <TopQueriesTable table={queriesTable} />
-      )}
     </section>
   );
 }

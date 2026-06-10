@@ -22,9 +22,34 @@ export const aiSearchProjectSchema = z.object({
 /** Maximum allowed length for a free-text brand or domain search input. */
 export const BRAND_LOOKUP_MAX_INPUT_LENGTH = 250;
 
+/** Maximum number of competitors compared in one Share-of-Voice lookup. */
+const BRAND_LOOKUP_MAX_COMPETITORS = 5;
+
+/**
+ * Canonicalize raw comma-separated competitor text: split, trim, drop empties,
+ * dedupe, cap. Shared by the `c` URL-param transform and the page form so the
+ * two never diverge.
+ */
+export function parseCompetitorList(raw: string): string[] {
+  return Array.from(
+    new Set(
+      raw
+        .split(",")
+        .map((part) => part.trim())
+        .filter((part) => part.length > 0),
+    ),
+  ).slice(0, BRAND_LOOKUP_MAX_COMPETITORS);
+}
+
 export const brandLookupInputSchema = z.object({
   projectId: z.string().min(1),
   query: z.string().trim().min(1).max(BRAND_LOOKUP_MAX_INPUT_LENGTH),
+  // Optional competitor brands/domains to compare Share of Voice against.
+  // cross_aggregated_metrics caps groups at 10 (target + 9); we cap at 5.
+  competitors: z
+    .array(z.string().trim().min(1).max(BRAND_LOOKUP_MAX_INPUT_LENGTH))
+    .max(BRAND_LOOKUP_MAX_COMPETITORS)
+    .default([]),
   locationCode: z.number().int().positive().default(2840),
   languageCode: z.string().min(2).max(8).default("en"),
 });
@@ -36,18 +61,42 @@ const brandPlatformBreakdownSchema = z.object({
   status: z.enum(["success", "error"]),
   mentions: z.number().int().nonnegative().nullable(),
   aiSearchVolume: z.number().int().nonnegative().nullable(),
-  impressions: z.number().int().nonnegative().nullable(),
+});
+
+const brandShareOfVoiceSchema = z.object({
+  // The platforms whose cross_aggregated call succeeded and are summed into
+  // the entries — so the UI can caption a single-platform leaderboard honestly
+  // when the other platform's call failed.
+  platforms: z.array(z.enum(["chat_gpt", "google"])),
+  entries: z.array(
+    z.object({
+      label: z.string().max(BRAND_LOOKUP_MAX_INPUT_LENGTH),
+      isTarget: z.boolean(),
+      mentions: z.number().int().nonnegative().nullable(),
+      sharePct: z.number().nullable(),
+    }),
+  ),
+});
+
+const brandTopPageKeywordSchema = z.object({
+  question: z.string().max(500),
+  aiSearchVolume: z.number().int().nonnegative().nullable(),
 });
 
 const brandTopPageSchema = z.object({
-  url: z.string(),
-  domain: z.string().nullable(),
-  mentions: z.number().int().nonnegative().nullable(),
+  url: z.string().max(2048),
+  domain: z.string().max(253).nullable(),
   platform: z.enum(["chat_gpt", "google"]),
+  // Page-level citation mentions from DataForSEO top_pages.
+  mentions: z.number().int().nonnegative().nullable(),
+  // Page-level AI search volume from DataForSEO top_pages.
+  capturedVolume: z.number().int().nonnegative().nullable(),
+  // Example prompts from the fetched mentions sample that cited this page.
+  keywords: z.array(brandTopPageKeywordSchema).max(50),
 });
 
 const brandTopQuerySchema = z.object({
-  question: z.string(),
+  question: z.string().max(500),
   platform: z.enum(["chat_gpt", "google"]),
   aiSearchVolume: z.number().int().nonnegative().nullable(),
   firstSeenAt: z.string().nullable(),
@@ -55,13 +104,13 @@ const brandTopQuerySchema = z.object({
   citedSources: z
     .array(
       z.object({
-        url: z.string(),
-        domain: z.string().nullable(),
-        title: z.string().nullable(),
+        url: z.string().max(2048),
+        domain: z.string().max(253).nullable(),
+        title: z.string().max(300).nullable(),
       }),
     )
     .max(10),
-  brandsMentioned: z.array(z.string()).max(20),
+  brandsMentioned: z.array(z.string().max(200)).max(20),
 });
 
 const brandMonthlyVolumeSchema = z.object({
@@ -78,9 +127,13 @@ export const brandLookupResultSchema = z.object({
   hasData: z.boolean(),
   totalMentions: z.number().int().nonnegative().nullable(),
   totalAiSearchVolume: z.number().int().nonnegative().nullable(),
-  totalImpressions: z.number().int().nonnegative().nullable(),
   perPlatform: z.array(brandPlatformBreakdownSchema),
-  topPages: z.array(brandTopPageSchema).max(20),
+  // Competitor Share of Voice — null when no competitors were supplied or both
+  // cross_aggregated calls failed. No legacy-cache shim: pre-SoV cache entries
+  // are unreachable anyway (the cache key's param set changed), see the
+  // buildCacheKey comment in brandLookup.ts.
+  shareOfVoice: brandShareOfVoiceSchema.nullable(),
+  topPages: z.array(brandTopPageSchema).max(40),
   topQueries: z.array(brandTopQuerySchema).max(50),
   monthlyVolume: z.array(brandMonthlyVolumeSchema),
 });
@@ -205,9 +258,23 @@ export type PromptExplorerResult = z.infer<typeof promptExplorerResultSchema>;
 // URL search params
 // ---------------------------------------------------------------------------
 
-/** /p/$projectId/brand-lookup query params — `q` keeps the lookup shareable. */
+/**
+ * /p/$projectId/brand-lookup query params. `q` keeps the lookup shareable; `c`
+ * is a comma-joined competitor list (route + page treat the parsed result as an
+ * opaque string array). `c` accepts a raw string (from the URL) OR an array
+ * (TanStack Router re-validates its own transformed output on navigate) — same
+ * union pattern as `models` below.
+ */
 export const brandLookupSearchSchema = z.object({
   q: z.string().optional(),
+  c: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((value) =>
+      value === undefined
+        ? undefined
+        : parseCompetitorList(Array.isArray(value) ? value.join(",") : value),
+    ),
 });
 
 /**

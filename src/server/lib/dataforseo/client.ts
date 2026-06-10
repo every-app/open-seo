@@ -41,6 +41,7 @@ import {
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import {
   fetchLlmAggregatedMetrics,
+  fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
   fetchLlmResponse,
   fetchLlmTopPages,
@@ -125,6 +126,7 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       mentionsSearch: meter(customer, fetchLlmMentionsSearch),
       aggregatedMetrics: meter(customer, fetchLlmAggregatedMetrics),
       topPages: meter(customer, fetchLlmTopPages),
+      crossAggregatedMetrics: meter(customer, fetchLlmCrossAggregatedMetrics),
       llmResponse: meter(customer, fetchLlmResponse),
     },
   } as const;

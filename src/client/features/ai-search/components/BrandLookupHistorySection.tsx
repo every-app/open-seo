@@ -25,7 +25,13 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
           from="/p/$projectId/brand-lookup"
           to="/p/$projectId/brand-lookup"
           params={{ projectId }}
-          search={{ q: item.query }}
+          search={{
+            q: item.query,
+            c:
+              item.competitors.length > 0
+                ? item.competitors.join(",")
+                : undefined,
+          }}
           replace
           className={HISTORY_ITEM_LINK_CLASS}
         >
@@ -33,7 +39,14 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
         </Link>
       )}
       renderItem={(item) => (
-        <p className="font-medium text-base-content truncate">{item.query}</p>
+        <div className="min-w-0">
+          <p className="truncate font-medium text-base-content">{item.query}</p>
+          {item.competitors.length > 0 ? (
+            <p className="truncate text-xs text-base-content/50">
+              vs {item.competitors.join(", ")}
+            </p>
+          ) : null}
+        </div>
       )}
     />
   );

@@ -3,9 +3,11 @@ import {
   AiOptimizationChatGptLlmResponsesLiveRequestInfo,
   AiOptimizationClaudeLlmResponsesLiveRequestInfo,
   AiOptimizationGeminiLlmResponsesLiveRequestInfo,
+  AiOptimizationLLmMentionsCrossAggregateMetricsTargetInfo,
   AiOptimizationLLmMentionsDomainElement,
   AiOptimizationLLmMentionsKeywordElement,
   AiOptimizationLlmMentionsAggregatedMetricsLiveRequestInfo,
+  AiOptimizationLlmMentionsCrossAggregatedMetricsLiveRequestInfo,
   AiOptimizationLlmMentionsSearchLiveRequestInfo,
   AiOptimizationLlmMentionsTopPagesLiveRequestInfo,
   type BaseAiOptimizationLLmMentionsTargetElement,
@@ -13,10 +15,12 @@ import {
 } from "dataforseo-client";
 import {
   llmAggregatedTotalSchema,
+  llmCrossAggregatedItemSchema,
   llmMentionItemSchema,
   llmResponseResultSchema,
   llmTopPagesItemSchema,
   type LlmAggregatedTotal,
+  type LlmCrossAggregatedItem,
   type LlmMentionItem,
   type LlmResponseResult,
   type LlmTopPagesItem,
@@ -235,6 +239,66 @@ export async function fetchLlmTopPages(
     throw new AppError(
       "INTERNAL_ERROR",
       "DataForSEO llm_mentions/top_pages returned an invalid shape",
+    );
+  }
+  return { data: items.data, billing: buildTaskBilling(task) };
+}
+
+// ---------------------------------------------------------------------------
+// LLM Mentions Cross-Aggregated Metrics
+// Compares 2..10 aggregation groups (target + competitors) in one call and
+// returns one item per group, keyed by its aggregation_key (brand label).
+// ---------------------------------------------------------------------------
+
+type LlmCrossAggregatedMetricsInput = {
+  groups: Array<{ key: string; target: LlmTarget }>;
+  platform: LlmPlatform;
+  locationCode: number;
+  languageCode: string;
+  internalListLimit?: number;
+};
+
+export async function fetchLlmCrossAggregatedMetrics(
+  input: LlmCrossAggregatedMetricsInput,
+): Promise<DataforseoApiResponse<LlmCrossAggregatedItem[]>> {
+  if (input.groups.length < 2 || input.groups.length > 10) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "DataForSEO llm_mentions/cross_aggregated_metrics requires 2 to 10 target groups",
+    );
+  }
+
+  const response = await aiOptimizationApi(
+    classifyAiSearchError,
+  ).llmMentionsCrossAggregatedMetricsLive([
+    new AiOptimizationLlmMentionsCrossAggregatedMetricsLiveRequestInfo({
+      targets: input.groups.map(
+        (group) =>
+          new AiOptimizationLLmMentionsCrossAggregateMetricsTargetInfo({
+            aggregation_key: group.key,
+            target: targetList(group.target),
+          }),
+      ),
+      platform: input.platform,
+      location_code: input.locationCode,
+      language_code: input.languageCode,
+      internal_list_limit: clampLimit(input.internalListLimit ?? 5, 1, 10),
+    }),
+  ]);
+  const task = assertOk(
+    response,
+    assertOptions(
+      "/v3/ai_optimization/llm_mentions/cross_aggregated_metrics/live",
+    ),
+  );
+
+  const items = z
+    .array(llmCrossAggregatedItemSchema)
+    .safeParse(firstResult(task)?.items ?? []);
+  if (!items.success) {
+    throw new AppError(
+      "INTERNAL_ERROR",
+      "DataForSEO llm_mentions/cross_aggregated_metrics returned an invalid shape",
     );
   }
   return { data: items.data, billing: buildTaskBilling(task) };

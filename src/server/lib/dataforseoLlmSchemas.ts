@@ -91,6 +91,27 @@ export const llmTopPagesItemSchema = z
 export type LlmTopPagesItem = z.infer<typeof llmTopPagesItemSchema>;
 
 // ---------------------------------------------------------------------------
+// LLM Mentions Cross-Aggregated Metrics — `/v3/ai_optimization/llm_mentions/cross_aggregated_metrics/live`
+// One item per requested aggregation group (target + competitors).
+// `.passthrough()` because the real item also carries location, language,
+// sources_domain, and brand_entities arrays we intentionally ignore.
+// ---------------------------------------------------------------------------
+
+export const llmCrossAggregatedItemSchema = z
+  .object({
+    // The shared SDK type AiOptimizationLlmMentionssLiveItem documents `key` as
+    // the URL of a found page, but for cross_aggregated `key` is the request
+    // aggregation_key (the brand label).
+    key: z.string().nullable().optional(),
+    platform: z.array(groupElementSchema).nullable().optional(),
+  })
+  .passthrough();
+
+export type LlmCrossAggregatedItem = z.infer<
+  typeof llmCrossAggregatedItemSchema
+>;
+
+// ---------------------------------------------------------------------------
 // LLM Responses — shared between ChatGPT/Claude/Gemini/Perplexity
 // All four model endpoints return the same envelope shape.
 // ---------------------------------------------------------------------------

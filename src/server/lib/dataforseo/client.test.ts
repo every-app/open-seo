@@ -80,6 +80,7 @@ vi.mock("@/server/lib/dataforseo/ai", () => ({
   fetchLlmMentionsSearch: vi.fn(),
   fetchLlmAggregatedMetrics: vi.fn(),
   fetchLlmTopPages: vi.fn(),
+  fetchLlmCrossAggregatedMetrics: vi.fn(),
   fetchLlmResponse: vi.fn(),
 }));
 

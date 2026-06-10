@@ -23,24 +23,29 @@ import { AiSearchSetupGate } from "@/client/features/ai-search/components/AiSear
 import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { useBrandLookupSearchHistory } from "@/client/hooks/useBrandLookupSearchHistory";
-import { BRAND_LOOKUP_MAX_INPUT_LENGTH } from "@/types/schemas/ai-search";
+import {
+  BRAND_LOOKUP_MAX_INPUT_LENGTH,
+  parseCompetitorList,
+} from "@/types/schemas/ai-search";
+import { detectTarget } from "@/shared/targetDetection";
 
 type Props = {
   projectId: string;
   initialQuery: string;
-  onQueryChange: (next: string) => void;
+  initialCompetitors: string[];
+  onSearchChange: (nextQuery: string, nextCompetitors: string[]) => void;
 };
 
 const BRAND_LOOKUP_BULLETS = [
   {
     icon: TrendingUp,
     title: "Track AI visibility",
-    body: "Count how often ChatGPT and Google AI Overview cite your brand, and watch the trend month over month.",
+    body: "See estimated counts for ChatGPT and Google AI Overview answers that cite your brand, and watch the trend month over month.",
   },
   {
     icon: Quote,
     title: "See the prompts",
-    body: "View the actual user questions where LLMs reference your domain — the real demand driving AI traffic.",
+    body: "View sample user questions where LLMs reference your brand or domain.",
   },
   {
     icon: BarChart3,
@@ -60,24 +65,38 @@ export function BrandLookupPage(props: Props) {
 function BrandLookupPageInner({
   projectId,
   initialQuery,
-  onQueryChange,
+  initialCompetitors,
+  onSearchChange,
   planGate,
 }: Props & { planGate: HostedPlanGateState }) {
   const [query, setQuery] = useState(initialQuery);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  // Raw comma-separated competitor text; parsed into a deduped array on submit.
+  const [competitorsInput, setCompetitorsInput] = useState(
+    initialCompetitors.join(", "),
+  );
+  // Field-tagged so the error styling lands on the input that caused it.
+  const [validationError, setValidationError] = useState<{
+    field: "query" | "competitors";
+    message: string;
+  } | null>(null);
 
   const access = useAiSearchAccess(projectId);
 
   const trimmedInitialQuery = initialQuery.trim();
   const hasActiveQuery = trimmedInitialQuery.length > 0;
+  // The URL `c` param is the source of truth for the active lookup; the local
+  // `competitorsInput` text only drives the input until the next submit. A
+  // stable string key, since `initialCompetitors` is a fresh array each render.
+  const competitorKey = initialCompetitors.join(",");
 
   const lookupQuery = useQuery({
-    queryKey: ["brand-lookup", projectId, trimmedInitialQuery],
+    queryKey: ["brand-lookup", projectId, trimmedInitialQuery, competitorKey],
     queryFn: () =>
       lookupBrand({
         data: {
           projectId,
           query: trimmedInitialQuery,
+          competitors: initialCompetitors,
           locationCode: 2840,
           languageCode: "en",
         },
@@ -96,38 +115,83 @@ function BrandLookupPageInner({
 
   // Dedup ref prevents repeat adds — `addSearch` identity is not stable
   // across renders, so we'd otherwise re-write the same item every render.
-  const lastAddedQueryRef = useRef<string | null>(null);
+  // Key on query + competitors so changing competitors records a fresh entry.
+  const lastAddedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!hasActiveQuery || !lookupQuery.isSuccess) return;
-    if (lastAddedQueryRef.current === trimmedInitialQuery) return;
-    lastAddedQueryRef.current = trimmedInitialQuery;
-    addSearch({ query: trimmedInitialQuery });
-  }, [hasActiveQuery, lookupQuery.isSuccess, trimmedInitialQuery, addSearch]);
+    const addedKey = `${trimmedInitialQuery}::${competitorKey}`;
+    if (lastAddedKeyRef.current === addedKey) return;
+    lastAddedKeyRef.current = addedKey;
+    addSearch({
+      query: trimmedInitialQuery,
+      competitors: competitorKey ? competitorKey.split(",") : [],
+    });
+  }, [
+    hasActiveQuery,
+    lookupQuery.isSuccess,
+    trimmedInitialQuery,
+    competitorKey,
+    addSearch,
+  ]);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const trimmed = query.trim();
     if (trimmed.length === 0) {
-      setValidationError("Enter a brand name or domain");
+      setValidationError({
+        field: "query",
+        message: "Enter a brand name or domain",
+      });
       return;
     }
     if (trimmed.length > BRAND_LOOKUP_MAX_INPUT_LENGTH) {
-      setValidationError(
-        `Keep it under ${BRAND_LOOKUP_MAX_INPUT_LENGTH} characters`,
-      );
+      setValidationError({
+        field: "query",
+        message: `Keep it under ${BRAND_LOOKUP_MAX_INPUT_LENGTH} characters`,
+      });
+      return;
+    }
+    const competitors = parseCompetitorList(competitorsInput);
+    // Mirror the server's input schema (per-item max) and its competitor
+    // resolution (a competitor that resolves to the target is dropped) so the
+    // user gets an inline message instead of a generic server error or a
+    // silently missing Share of Voice section.
+    const tooLong = competitors.find(
+      (competitor) => competitor.length > BRAND_LOOKUP_MAX_INPUT_LENGTH,
+    );
+    if (tooLong) {
+      setValidationError({
+        field: "competitors",
+        message: `Keep each competitor under ${BRAND_LOOKUP_MAX_INPUT_LENGTH} characters`,
+      });
+      return;
+    }
+    const targetValue = detectTarget(trimmed).value.toLowerCase();
+    const matchesTarget = competitors.find(
+      (competitor) =>
+        detectTarget(competitor).value.toLowerCase() === targetValue,
+    );
+    if (matchesTarget) {
+      setValidationError({
+        field: "competitors",
+        message: `"${matchesTarget}" matches the brand you're looking up — remove it from competitors`,
+      });
       return;
     }
     setValidationError(null);
-    onQueryChange(trimmed);
+    onSearchChange(trimmed, competitors);
   };
 
-  // The query input is reset whenever the URL `q` changes — including the
-  // browser-back path and Cmd+click navigation. This keeps local form state
-  // in sync with the URL source-of-truth.
+  // The form inputs are reset whenever the URL `q`/`c` changes — including the
+  // browser-back path and Cmd+click navigation. This keeps local form state in
+  // sync with the URL source-of-truth. Depend on the stable `competitorKey`
+  // string (not the fresh-each-render `initialCompetitors` array) so typing in
+  // the competitor field isn't clobbered on every render.
   useEffect(() => {
     setQuery(initialQuery);
+    setCompetitorsInput(competitorKey.split(",").join(", "));
     setValidationError(null);
-  }, [initialQuery]);
+  }, [initialQuery, competitorKey]);
 
   const isLoading = hasActiveQuery && lookupQuery.isPending;
   const errorMessage =
@@ -159,7 +223,7 @@ function BrandLookupPageInner({
         ) : planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
             feature="Brand Lookup"
-            description="See how ChatGPT and Google AI Overview cite any brand or domain — total mentions, the prompts driving them, and the pages cited alongside yours."
+            description="See how ChatGPT and Google AI Overview cite any brand or domain — total mentions, sample prompts where it appears, and the pages cited alongside it."
             bullets={BRAND_LOOKUP_BULLETS}
           />
         ) : (
@@ -168,6 +232,11 @@ function BrandLookupPageInner({
               query={query}
               onQueryChange={(next) => {
                 setQuery(next);
+                if (validationError) setValidationError(null);
+              }}
+              competitors={competitorsInput}
+              onCompetitorsChange={(next) => {
+                setCompetitorsInput(next);
                 if (validationError) setValidationError(null);
               }}
               onSubmit={handleSubmit}
@@ -194,7 +263,7 @@ function BrandLookupPageInner({
                     from="/p/$projectId/brand-lookup"
                     to="/p/$projectId/brand-lookup"
                     params={{ projectId }}
-                    search={{ q: undefined }}
+                    search={{ q: undefined, c: undefined }}
                     replace
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
                   >
@@ -202,7 +271,7 @@ function BrandLookupPageInner({
                     Recent searches
                   </Link>
                 </div>
-                <BrandLookupResults result={resultData} />
+                <BrandLookupResults result={resultData} projectId={projectId} />
               </>
             ) : !errorMessage ? (
               <BrandLookupHistorySection

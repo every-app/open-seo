@@ -8,6 +8,7 @@ import { fetchQuestionsAnswers } from "@/server/lib/dataforseo/business";
 import {
   buildLlmTarget,
   fetchLlmAggregatedMetrics,
+  fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
   fetchLlmResponse,
   fetchLlmTopPages,
@@ -83,7 +84,7 @@ describe("DataForSEO SDK-backed endpoints", () => {
     });
   });
 
-  it("serializes LLM mentions domain targets for all live endpoints", async () => {
+  it("serializes LLM mentions domain targets for search, top pages, and aggregated endpoints", async () => {
     const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
       const path =
         typeof url === "string" || url instanceof URL
@@ -132,8 +133,8 @@ describe("DataForSEO SDK-backed endpoints", () => {
       platform: "google",
       locationCode: 2840,
       languageCode: "en",
+      itemsListLimit: 10,
     });
-
     const expectedTarget = [
       {
         search_scope: ["any"],
@@ -176,6 +177,79 @@ describe("DataForSEO SDK-backed endpoints", () => {
           internal_list_limit: 5,
         },
       ],
+    ]);
+  });
+
+  it("serializes cross-aggregated target groups", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            status_code: 20000,
+            path: [
+              "v3",
+              "ai_optimization",
+              "llm_mentions",
+              "cross_aggregated_metrics",
+              "live",
+            ],
+            cost: 0.0001,
+            result_count: 1,
+            result: [{ items: [] }],
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchLlmCrossAggregatedMetrics({
+      groups: [
+        {
+          key: "example.com",
+          target: buildLlmTarget({ type: "domain", value: "example.com" }),
+        },
+        {
+          key: "Acme Storage",
+          target: buildLlmTarget({ type: "keyword", value: "Acme Storage" }),
+        },
+      ],
+      platform: "google",
+      locationCode: 2840,
+      languageCode: "en",
+    });
+
+    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
+      {
+        targets: [
+          {
+            aggregation_key: "example.com",
+            target: [
+              {
+                search_scope: ["any"],
+                search_filter: "include",
+                domain: "example.com",
+                include_subdomains: true,
+              },
+            ],
+          },
+          {
+            aggregation_key: "Acme Storage",
+            target: [
+              {
+                search_scope: ["any", "brand_entities"],
+                search_filter: "include",
+                keyword: "Acme Storage",
+                match_type: "word_match",
+              },
+            ],
+          },
+        ],
+        location_code: 2840,
+        language_code: "en",
+        platform: "google",
+        internal_list_limit: 5,
+      },
     ]);
   });
 

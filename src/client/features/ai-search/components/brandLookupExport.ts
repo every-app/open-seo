@@ -14,12 +14,21 @@ export function buildBrandLookupExport(
 ): { headers: string[]; rows: CsvValue[][] } {
   if (tab === "pages") {
     return {
-      headers: ["URL", "Domain", "Platform", "Mentions"],
+      headers: [
+        "URL",
+        "Domain",
+        "Platform",
+        "Source mentions",
+        "Source AI search volume",
+        "Fetched-sample prompt examples",
+      ],
       rows: sortedPages.map((row) => [
         row.url,
         row.domain ?? "",
         formatPlatformLabel(row.platform),
         row.mentions ?? "",
+        row.capturedVolume ?? "",
+        row.keywords.map((keyword) => keyword.question).join("; "),
       ]),
     };
   }

@@ -44,7 +44,11 @@ export function filterTopPages(
   const excludeTerms = parseTerms(filters.exclude);
 
   return rows.filter((row) => {
-    const textFields = [row.url, row.domain]
+    const textFields = [
+      row.url,
+      row.domain,
+      ...row.keywords.map((keyword) => keyword.question),
+    ]
       .filter((v): v is string => Boolean(v))
       .join(" ");
 

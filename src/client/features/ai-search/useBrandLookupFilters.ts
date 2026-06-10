@@ -8,7 +8,10 @@ import {
 } from "./brandLookupFilterTypes";
 import { countActiveFilters } from "./brandLookupFiltering";
 
-const STORAGE_KEY_PREFIX = "brand-lookup-filters:";
+// v3: the pages tab returned to provider page-level metrics after a brief
+// sampled-prompt scale. Bump the prefix so local min/max filters do not carry
+// between incompatible metric scales.
+const STORAGE_KEY_PREFIX = "brand-lookup-filters-v3:";
 
 type FilterValues = Record<string, string>;
 
