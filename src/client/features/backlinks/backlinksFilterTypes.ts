@@ -3,6 +3,8 @@ export type BacklinksTabFilterValues = {
   exclude: string;
   minDomainRank: string;
   maxDomainRank: string;
+  minAhrefsDr: string;
+  maxAhrefsDr: string;
   minLinkAuthority: string;
   maxLinkAuthority: string;
   minSpamScore: string;
@@ -19,6 +21,8 @@ export type ReferringDomainsFilterValues = {
   maxBacklinks: string;
   minRank: string;
   maxRank: string;
+  minAhrefsDr: string;
+  maxAhrefsDr: string;
   minSpamScore: string;
   maxSpamScore: string;
 };
@@ -39,6 +43,8 @@ export const EMPTY_BACKLINKS_FILTERS: BacklinksTabFilterValues = {
   exclude: "",
   minDomainRank: "",
   maxDomainRank: "",
+  minAhrefsDr: "",
+  maxAhrefsDr: "",
   minLinkAuthority: "",
   maxLinkAuthority: "",
   minSpamScore: "",
@@ -55,6 +61,8 @@ export const EMPTY_REFERRING_DOMAINS_FILTERS: ReferringDomainsFilterValues = {
   maxBacklinks: "",
   minRank: "",
   maxRank: "",
+  minAhrefsDr: "",
+  maxAhrefsDr: "",
   minSpamScore: "",
   maxSpamScore: "",
 };

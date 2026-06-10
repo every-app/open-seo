@@ -11,7 +11,6 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts";
 import { getRankConfigTrend } from "@/serverFunctions/rank-tracking";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import {
   formatDateTick,
   TrendRangeToggle,
@@ -32,12 +31,10 @@ interface PayloadEntry {
 }
 
 export function RankTrackingOverview({
-  rows,
   device,
   projectId,
   configId,
 }: {
-  rows: RankTrackingRow[];
   device: "desktop" | "mobile";
   projectId: string;
   configId: string;

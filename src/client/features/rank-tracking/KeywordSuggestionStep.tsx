@@ -5,11 +5,8 @@ import {
   type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table";
-import { Loader2, AlertCircle, FileDown, Sheet, X } from "lucide-react";
+import { Loader2, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
-import { buildCsv, downloadCsv } from "@/client/lib/csv";
-import { exportTableToSheets } from "@/client/lib/exportToSheets";
-import { captureClientEvent } from "@/client/lib/posthog";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -18,11 +15,6 @@ import {
   makeSelectionColumn,
   useAppTable,
 } from "@/client/components/table/AppDataTable";
-import {
-  TableBulkActionBar,
-  TableBulkActionButton,
-  TableBulkExportMenu,
-} from "@/client/components/table/TableBulkActionBar";
 import { SortableHeader } from "./RankTrackingColumns";
 import {
   applyShiftRangeSelection,
@@ -37,12 +29,6 @@ type SuggestedKeyword = {
 };
 
 const PRE_SELECT_COUNT = 20;
-const SUGGESTED_KEYWORD_EXPORT_HEADERS = [
-  "Keyword",
-  "Position",
-  "Volume",
-  "Traffic",
-];
 
 const baseColumns: ColumnDef<SuggestedKeyword>[] = [
   {
@@ -240,32 +226,6 @@ export function KeywordSuggestionStep({
       addMutation.mutate(selectedKeywords);
     }
   };
-  const selectedSuggestionRows = table
-    .getSelectedRowModel()
-    .rows.map((row) => row.original);
-  const selectedSuggestionExportRows = selectedSuggestionRows.map((row) => [
-    row.keyword,
-    row.position ?? "",
-    row.searchVolume ?? "",
-    row.traffic ?? "",
-  ]);
-  const handleExportSelectionToSheets = () => {
-    void exportTableToSheets({
-      headers: SUGGESTED_KEYWORD_EXPORT_HEADERS,
-      rows: selectedSuggestionExportRows,
-      feature: "rank_tracking",
-    });
-  };
-  const handleExportSelectionCsv = () => {
-    downloadCsv(
-      `rank-tracking-suggestions-${domain}.csv`,
-      buildCsv(SUGGESTED_KEYWORD_EXPORT_HEADERS, selectedSuggestionExportRows),
-    );
-    captureClientEvent("rank_tracking:suggestions_export_csv", {
-      result_count: selectedSuggestionRows.length,
-      scope: "selection",
-    });
-  };
 
   const sectionHeader = (title: string) => (
     <div className="flex items-center justify-between">
@@ -301,17 +261,11 @@ export function KeywordSuggestionStep({
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <AlertCircle className="size-8 text-error" />
           <p className="text-xs text-base-content/50">
-            You can try again or add keywords manually later.
+            You can skip this step and add keywords manually later.
           </p>
           <div className="flex gap-2 mt-2">
-            <button className="btn btn-ghost btn-sm" onClick={onClose}>
+            <button className="btn btn-primary btn-sm" onClick={onClose}>
               Skip
-            </button>
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => suggestionsQuery.refetch()}
-            >
-              Try Again
             </button>
           </div>
         </div>
@@ -330,7 +284,7 @@ export function KeywordSuggestionStep({
             add keywords manually.
           </p>
           <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
-            Continue
+            Skip
           </button>
         </div>
       </>
@@ -365,44 +319,25 @@ export function KeywordSuggestionStep({
       />
 
       <div className="flex items-center justify-between gap-3 pt-1">
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>
-          Skip
-        </button>
-        <TableBulkActionBar
-          selectedCount={selectedCount}
-          selectedLabel={`of ${data.length} selected`}
-          onClear={() => table.resetRowSelection()}
-          placement="inline"
-          actions={
-            <div className="flex items-center px-1.5">
-              <TableBulkActionButton
-                icon={
-                  addMutation.isPending ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : undefined
-                }
-                onClick={handleAdd}
-                disabled={addMutation.isPending}
-              >
-                Add Keyword{selectedCount !== 1 ? "s" : ""}
-              </TableBulkActionButton>
-              <TableBulkExportMenu
-                actions={[
-                  {
-                    label: "Export to Sheets",
-                    icon: <Sheet className="size-4" />,
-                    onClick: handleExportSelectionToSheets,
-                  },
-                  {
-                    label: "Export CSV",
-                    icon: <FileDown className="size-4" />,
-                    onClick: handleExportSelectionCsv,
-                  },
-                ]}
-              />
-            </div>
-          }
-        />
+        <p className="text-xs text-base-content/60">
+          {selectedCount} of {data.length} selected
+        </p>
+        <div className="flex items-center gap-2">
+          <button className="btn btn-ghost btn-sm" onClick={onClose}>
+            Skip
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={handleAdd}
+            disabled={addMutation.isPending || selectedCount === 0}
+          >
+            {addMutation.isPending && (
+              <Loader2 className="size-3.5 animate-spin" />
+            )}
+            Save Keyword{selectedCount !== 1 ? "s" : ""}
+          </button>
+        </div>
       </div>
     </div>
   );

@@ -23,6 +23,10 @@ import {
   BacklinksExportMenu,
 } from "./BacklinksToolbarMenus";
 import { buildBacklinksTabExport } from "./export";
+import {
+  filterBacklinkRows,
+  filterReferringDomainRows,
+} from "./backlinksFiltering";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 import { useAhrefsDomainRatings } from "./useAhrefsDomainRatings";
 
@@ -101,21 +105,49 @@ export function BacklinksResultsCard({
   exportTarget: string;
   onTabChange: (tab: BacklinksSearchState["tab"]) => void;
 }) {
-  const currentFilterCount = filters[activeTab].activeFilterCount;
-  const exportTable = useMemo(
-    () => buildBacklinksTabExport({ tab: activeTab, rows: filteredData }),
-    [activeTab, filteredData],
-  );
   const {
     ratings: domainRatings,
     isLoading: isLoadingRatings,
     loadRatings,
   } = useAhrefsDomainRatings(projectId);
+  const showAhrefsDrFilter = domainRatings !== null && activeTab !== "pages";
+  const currentFilterCount = countVisibleFilters(
+    filters[activeTab].values,
+    showAhrefsDrFilter,
+  );
+  const visibleFilteredData = useMemo(
+    () => ({
+      backlinks: filterBacklinkRows(
+        filteredData.backlinks,
+        filters.backlinks.values,
+        domainRatings,
+      ),
+      referringDomains: filterReferringDomainRows(
+        filteredData.referringDomains,
+        filters.domains.values,
+        domainRatings,
+      ),
+      topPages: filteredData.topPages,
+    }),
+    [
+      domainRatings,
+      filteredData.backlinks,
+      filteredData.referringDomains,
+      filteredData.topPages,
+      filters.backlinks.values,
+      filters.domains.values,
+    ],
+  );
+  const exportTable = useMemo(
+    () =>
+      buildBacklinksTabExport({ tab: activeTab, rows: visibleFilteredData }),
+    [activeTab, visibleFilteredData],
+  );
   // Domains keyed by both tables that the DR column can enrich. The Referring
   // Domains list loads lazily, so this grows once that tab is opened.
   const ratableDomains = useMemo(
-    () => collectRatableDomains(filteredData),
-    [filteredData],
+    () => collectRatableDomains(visibleFilteredData),
+    [visibleFilteredData],
   );
   // Once the user has opted in, keep newly loaded domains enriched without a
   // re-click (e.g. after switching to the lazily-loaded Referring Domains tab).
@@ -152,7 +184,7 @@ export function BacklinksResultsCard({
           <BacklinksExportMenu
             activeTab={activeTab}
             exportTarget={exportTarget}
-            filteredData={filteredData}
+            filteredData={visibleFilteredData}
             headers={exportTable.headers}
             rows={exportTable.rows}
           />
@@ -183,7 +215,12 @@ export function BacklinksResultsCard({
       </div>
 
       {filters.showFilters ? (
-        <BacklinksFilterPanel activeTab={activeTab} filters={filters} />
+        <BacklinksFilterPanel
+          activeTab={activeTab}
+          filters={filters}
+          showAhrefsDrFilter={showAhrefsDrFilter}
+          activeFilterCount={currentFilterCount}
+        />
       ) : null}
 
       <div className="p-4">
@@ -194,7 +231,7 @@ export function BacklinksResultsCard({
         ) : null}
         {activeTab === "backlinks" ? (
           <BacklinksTable
-            rows={filteredData.backlinks}
+            rows={visibleFilteredData.backlinks}
             domainRatings={domainRatings}
           />
         ) : null}
@@ -203,7 +240,7 @@ export function BacklinksResultsCard({
         ) : null}
         {activeTab === "domains" && !isTabLoading && !tabErrorMessage ? (
           <ReferringDomainsTable
-            rows={filteredData.referringDomains}
+            rows={visibleFilteredData.referringDomains}
             domainRatings={domainRatings}
           />
         ) : null}
@@ -233,6 +270,21 @@ function collectRatableDomains(filteredData: {
   return [
     ...new Set(domains.filter((domain): domain is string => Boolean(domain))),
   ];
+}
+
+function countVisibleFilters(
+  values: Record<string, string>,
+  showAhrefsDrFilter: boolean,
+) {
+  return Object.entries(values).filter(([key, value]) => {
+    if (
+      !showAhrefsDrFilter &&
+      (key === "minAhrefsDr" || key === "maxAhrefsDr")
+    ) {
+      return false;
+    }
+    return value.trim() !== "";
+  }).length;
 }
 
 function OverviewGrid({

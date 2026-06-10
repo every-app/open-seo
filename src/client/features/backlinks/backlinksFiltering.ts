@@ -5,6 +5,7 @@ import type {
   ReferringDomainsFilterValues,
   TopPagesFilterValues,
 } from "./backlinksFilterTypes";
+import type { DomainRatings } from "./useAhrefsDomainRatings";
 
 function passesNumericFilter(
   value: number | null | undefined,
@@ -40,6 +41,7 @@ function passesTextFilter(
 export function filterBacklinkRows(
   rows: BacklinksOverviewData["backlinks"],
   filters: BacklinksTabFilterValues,
+  domainRatings?: DomainRatings | null,
 ): BacklinksOverviewData["backlinks"] {
   const includeTerms = parseTerms(filters.include);
   const excludeTerms = parseTerms(filters.exclude);
@@ -55,6 +57,17 @@ export function filterBacklinkRows(
         row.domainFromRank,
         filters.minDomainRank,
         filters.maxDomainRank,
+      )
+    )
+      return false;
+    if (
+      domainRatings &&
+      !passesNumericFilter(
+        row.domainFrom
+          ? domainRatings[row.domainFrom.replace(/^www\./, "")]
+          : null,
+        filters.minAhrefsDr,
+        filters.maxAhrefsDr,
       )
     )
       return false;
@@ -90,6 +103,7 @@ export function filterBacklinkRows(
 export function filterReferringDomainRows(
   rows: BacklinksOverviewData["referringDomains"],
   filters: ReferringDomainsFilterValues,
+  domainRatings?: DomainRatings | null,
 ): BacklinksOverviewData["referringDomains"] {
   const includeTerms = parseTerms(filters.include);
   const excludeTerms = parseTerms(filters.exclude);
@@ -106,6 +120,15 @@ export function filterReferringDomainRows(
     )
       return false;
     if (!passesNumericFilter(row.rank, filters.minRank, filters.maxRank))
+      return false;
+    if (
+      domainRatings &&
+      !passesNumericFilter(
+        row.domain ? domainRatings[row.domain] : null,
+        filters.minAhrefsDr,
+        filters.maxAhrefsDr,
+      )
+    )
       return false;
     if (
       !passesNumericFilter(

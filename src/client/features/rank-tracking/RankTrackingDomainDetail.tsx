@@ -256,7 +256,6 @@ function RankTrackingDomainDetailInner({
         {/* Portfolio overview */}
         {(rows?.length ?? 0) > 0 && (
           <RankTrackingOverview
-            rows={rows ?? []}
             device={activeDevice}
             projectId={projectId}
             configId={config.id}

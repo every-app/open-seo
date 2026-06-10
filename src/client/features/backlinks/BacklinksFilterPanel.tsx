@@ -106,8 +106,10 @@ function CompactRangeInput({
 
 function BacklinksTabFilters({
   form,
+  showAhrefsDrFilter,
 }: {
   form: BacklinksFiltersState["backlinks"]["form"];
+  showAhrefsDrFilter: boolean;
 }) {
   return (
     <>
@@ -133,6 +135,14 @@ function BacklinksTabFilters({
           minName="minDomainRank"
           maxName="maxDomainRank"
         />
+        {showAhrefsDrFilter ? (
+          <FilterRangeInputs
+            form={form}
+            title="Ahrefs DR"
+            minName="minAhrefsDr"
+            maxName="maxAhrefsDr"
+          />
+        ) : null}
         <FilterRangeInputs
           form={form}
           title="Link Authority"
@@ -219,8 +229,10 @@ function BacklinksTabFilters({
 
 function ReferringDomainsFilters({
   form,
+  showAhrefsDrFilter,
 }: {
   form: BacklinksFiltersState["domains"]["form"];
+  showAhrefsDrFilter: boolean;
 }) {
   return (
     <>
@@ -252,6 +264,14 @@ function ReferringDomainsFilters({
           minName="minRank"
           maxName="maxRank"
         />
+        {showAhrefsDrFilter ? (
+          <FilterRangeInputs
+            form={form}
+            title="Ahrefs DR"
+            minName="minAhrefsDr"
+            maxName="maxAhrefsDr"
+          />
+        ) : null}
         <FilterRangeInputs
           form={form}
           title="Spam Score"
@@ -313,9 +333,13 @@ function TopPagesFilters({
 export function BacklinksFilterPanel({
   activeTab,
   filters,
+  showAhrefsDrFilter,
+  activeFilterCount,
 }: {
   activeTab: BacklinksTab;
   filters: BacklinksFiltersState;
+  showAhrefsDrFilter: boolean;
+  activeFilterCount: number;
 }) {
   const current = filters[activeTab];
 
@@ -324,9 +348,9 @@ export function BacklinksFilterPanel({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
-          {current.activeFilterCount > 0 ? (
+          {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {current.activeFilterCount} active
+              {activeFilterCount} active
             </span>
           ) : null}
         </div>
@@ -334,7 +358,7 @@ export function BacklinksFilterPanel({
           type="button"
           className="btn btn-xs btn-ghost gap-1"
           onClick={current.reset}
-          disabled={current.activeFilterCount === 0}
+          disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear all
@@ -342,10 +366,16 @@ export function BacklinksFilterPanel({
       </div>
 
       {activeTab === "backlinks" ? (
-        <BacklinksTabFilters form={filters.backlinks.form} />
+        <BacklinksTabFilters
+          form={filters.backlinks.form}
+          showAhrefsDrFilter={showAhrefsDrFilter}
+        />
       ) : null}
       {activeTab === "domains" ? (
-        <ReferringDomainsFilters form={filters.domains.form} />
+        <ReferringDomainsFilters
+          form={filters.domains.form}
+          showAhrefsDrFilter={showAhrefsDrFilter}
+        />
       ) : null}
       {activeTab === "pages" ? (
         <TopPagesFilters form={filters.pages.form} />
