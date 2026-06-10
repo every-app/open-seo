@@ -1,4 +1,11 @@
-import { Outlet, createFileRoute, redirect } from "@tanstack/react-router";
+import {
+  Outlet,
+  createFileRoute,
+  redirect,
+  useLocation,
+} from "@tanstack/react-router";
+import { useEffect } from "react";
+import { setLastProjectId } from "@/client/lib/active-project";
 import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
 import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
@@ -36,6 +43,18 @@ function ProjectLayout() {
   const { projectId } = Route.useParams();
   const authGate = useHostedAuthRouteGuard();
   useOnboardingRedirect();
+
+  // Remember this as the last-visited project for the landing redirect.
+  // Settings is excluded: editing another project's settings is
+  // administration, not a context switch, so it shouldn't change which
+  // project the app opens next time.
+  const isSettingsPage = useLocation({
+    select: (l) => l.pathname.endsWith("/settings"),
+  });
+  useEffect(() => {
+    if (isSettingsPage) return;
+    setLastProjectId(projectId);
+  }, [projectId, isSettingsPage]);
 
   if (!authGate.canRenderAuthenticatedContent) {
     return null;

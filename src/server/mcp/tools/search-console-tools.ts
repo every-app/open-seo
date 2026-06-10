@@ -31,8 +31,8 @@ type ProjectAuthContext = {
   baseUrl: string;
 };
 
-function integrationsUrl(baseUrl: string, projectId: string): string {
-  return buildDashboardUrl(baseUrl, `/p/${projectId}/integrations`);
+function connectGscUrl(baseUrl: string, projectId: string): string {
+  return buildDashboardUrl(baseUrl, `/p/${projectId}/settings#search-console`);
 }
 
 /** Self-hosted GSC requires the operator to provide a Google OAuth client and
@@ -49,7 +49,7 @@ async function missingSelfHostedGoogleClientResponse(
   if (hosted || configured) return null;
 
   return mcpResponse({
-    text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from Integrations. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,
+    text: `This self-hosted OpenSEO deployment is not configured for Search Console yet. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and BETTER_AUTH_SECRET, then reconnect Search Console from the project's settings page. Setup docs: ${GSC_SELF_HOSTED_SETUP_DOCS_URL}`,
     meta: buildProjectMeta(context, projectId),
     structuredContent: {
       ok: false,
@@ -196,11 +196,11 @@ export const getSearchConsolePerformanceTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = integrationsUrl(context.baseUrl, args.projectId);
+    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
     const meta = buildProjectMeta(
       context,
       args.projectId,
-      `/p/${args.projectId}/integrations`,
+      `/p/${args.projectId}/settings`,
     );
 
     // GSC rejects searchAppearance combined with any other dimension.
@@ -337,11 +337,11 @@ export const inspectUrlsTool = {
     );
     if (blocked) return blocked;
 
-    const connectUrl = integrationsUrl(context.baseUrl, args.projectId);
+    const connectUrl = connectGscUrl(context.baseUrl, args.projectId);
     const meta = buildProjectMeta(
       context,
       args.projectId,
-      `/p/${args.projectId}/integrations`,
+      `/p/${args.projectId}/settings`,
     );
 
     try {

@@ -120,12 +120,11 @@ export function getProjectNavGroups(projectId: string) {
   ];
 }
 
-// Integrations is a setup surface, so it lives in the account dropdown rather
-// than the workflow nav — but it's still project-scoped (a property is bound
-// per project), hence the projectId param.
-export function integrationsLinkOptions(projectId: string) {
+// Per-project configuration (name, domain, Search Console, delete) lives on the
+// project settings page rather than the workflow nav, hence the projectId param.
+export function projectSettingsLinkOptions(projectId: string) {
   return linkOptions({
-    to: "/p/$projectId/integrations" as const,
+    to: "/p/$projectId/settings" as const,
     params: { projectId },
   });
 }

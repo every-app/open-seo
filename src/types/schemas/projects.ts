@@ -1,13 +1,27 @@
 import { z } from "zod";
 
+const projectNameField = z
+  .string()
+  .trim()
+  .min(1, "Project name is required")
+  .max(120);
+
+const projectDomainField = z
+  .string()
+  .trim()
+  .max(255)
+  .transform((value) => value || undefined)
+  .optional();
+
 export const createProjectSchema = z.object({
-  name: z.string().min(1, "Project name is required").max(120),
-  domain: z
-    .string()
-    .trim()
-    .max(255)
-    .transform((value) => value || undefined)
-    .optional(),
+  name: projectNameField,
+  domain: projectDomainField,
+});
+
+export const updateProjectSchema = z.object({
+  projectId: z.string().min(1),
+  name: projectNameField,
+  domain: projectDomainField,
 });
 
 export const deleteProjectSchema = z.object({
@@ -15,4 +29,5 @@ export const deleteProjectSchema = z.object({
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
+export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;

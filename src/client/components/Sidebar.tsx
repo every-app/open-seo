@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { ChevronsUpDown, X } from "lucide-react";
+import { X } from "lucide-react";
 import { getProjectNavGroups } from "@/client/navigation/items";
+import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 
 interface SidebarProps {
   projectId: string;
@@ -29,15 +30,11 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
 
       {/* Project picker */}
       <div className="px-3 py-3 border-b border-base-300">
-        <div
-          className="tooltip tooltip-bottom w-full"
-          data-tip="Multiple projects coming soon"
-        >
-          <button className="btn btn-ghost btn-sm w-full justify-between font-medium text-sm cursor-default">
-            <span className="truncate">Default</span>
-            <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/40" />
-          </button>
-        </div>
+        <ProjectSwitcher
+          activeProjectId={projectId}
+          variant="sidebar"
+          onCloseDrawer={onNavigate}
+        />
       </div>
 
       {/* Navigation */}

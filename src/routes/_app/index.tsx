@@ -1,7 +1,11 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
+import { useQuery } from "@tanstack/react-query";
+import { getProjects } from "@/serverFunctions/projects";
+import {
+  clearLastProjectId,
+  getLastProjectId,
+} from "@/client/lib/active-project";
 import {
   getErrorCode,
   getStandardErrorMessage,
@@ -17,19 +21,29 @@ export const Route = createFileRoute("/_app/")({
 function IndexRedirect() {
   const navigate = useNavigate();
 
-  const { mutate, error, isError } = useMutation({
-    mutationFn: () => getOrCreateDefaultProject(),
-    onSuccess: (project) => {
-      void navigate({
-        to: "/p/$projectId/keywords",
-        params: { projectId: project.id },
-      });
-    },
+  const { data, error, isError, refetch } = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => getProjects(),
+    retry: false,
   });
 
   useEffect(() => {
-    mutate();
-  }, [mutate]);
+    if (!data || data.length === 0) return;
+
+    // localStorage is untrusted — only honor the remembered project if it's
+    // actually in the org's list; otherwise fall back to the most recent and
+    // clear the stale id.
+    const lastProjectId = getLastProjectId();
+    const target = data.find((project) => project.id === lastProjectId);
+    if (lastProjectId && !target) {
+      clearLastProjectId();
+    }
+
+    void navigate({
+      to: "/p/$projectId/keywords",
+      params: { projectId: (target ?? data[0]).id },
+    });
+  }, [data, navigate]);
 
   useEffect(() => {
     if (getErrorCode(error) !== "PAYMENT_REQUIRED") {
@@ -51,7 +65,7 @@ function IndexRedirect() {
               "An unexpected error occurred. Please check server logs.",
             )}
             onRetry={() => {
-              mutate();
+              void refetch();
             }}
           />
         </div>
@@ -64,7 +78,7 @@ function IndexRedirect() {
           <UnauthenticatedErrorCard
             message="Please sign in to access your OpenSEO workspace."
             onRetry={() => {
-              mutate();
+              void refetch();
             }}
           />
         </div>

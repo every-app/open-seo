@@ -13,19 +13,20 @@ import {
   listGscSites,
   setGscSite,
 } from "@/serverFunctions/gsc";
-import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
+import { getProjects } from "@/serverFunctions/projects";
 
 /**
  * Onboarding step for connecting Google Search Console: link the account-level
- * OAuth grant, then bind a verified property to the user's default project —
+ * OAuth grant, then bind a verified property to the user's first project —
  * the same binding the project's Integrations page does — so it's done in one
  * place.
  */
 export function SearchConsoleOnboardingStep() {
-  const projectQuery = useQuery({
-    queryKey: ["defaultProject"],
-    queryFn: () => getOrCreateDefaultProject(),
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => getProjects(),
   });
+  const projectId = projectsQuery.data?.[0]?.id;
 
   return (
     <div className="space-y-4">
@@ -33,11 +34,7 @@ export function SearchConsoleOnboardingStep() {
         Connect with Google Search Console now?
       </h2>
 
-      {projectQuery.data ? (
-        <GscConnect projectId={projectQuery.data.id} />
-      ) : (
-        <Checking />
-      )}
+      {projectId ? <GscConnect projectId={projectId} /> : <Checking />}
 
       <p className="text-xs leading-relaxed text-base-content/55">
         For now, Search Console data flows through the OpenSEO MCP. We're

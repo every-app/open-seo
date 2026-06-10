@@ -3,11 +3,10 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   ChevronDown,
-  ChevronsUpDown,
   CircleHelp,
   CreditCard,
+  FolderCog,
   Menu,
-  Plug,
   Settings,
   User,
 } from "lucide-react";
@@ -19,13 +18,15 @@ import {
 import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
 import {
   getProjectNavGroups,
-  integrationsLinkOptions,
+  projectSettingsLinkOptions,
 } from "@/client/navigation/items";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
-import { getOrCreateDefaultProject } from "@/serverFunctions/projects";
+import { getProjects } from "@/serverFunctions/projects";
+import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
+import { getLastProjectId } from "@/client/lib/active-project";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 const SUPPORT_PATH = "/support";
@@ -44,12 +45,27 @@ export function AuthenticatedAppLayout({
   const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
-  const defaultProjectQuery = useQuery({
-    queryKey: ["defaultProject"],
-    queryFn: () => getOrCreateDefaultProject(),
+  // On non-project pages (e.g. /settings) there's no projectId in the URL, so
+  // derive one for the nav/switcher: prefer the last-visited project, else the
+  // most recent. Reading localStorage in an effect keeps SSR/first render stable.
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => getProjects(),
     enabled: !projectId,
   });
-  const headerProjectId = projectId ?? defaultProjectQuery.data?.id ?? null;
+  const [rememberedProjectId, setRememberedProjectId] = React.useState<
+    string | null
+  >(null);
+  React.useEffect(() => {
+    setRememberedProjectId(getLastProjectId());
+  }, []);
+  const fallbackProjects = projectsQuery.data ?? [];
+  const fallbackProjectId =
+    fallbackProjects.find((project) => project.id === rememberedProjectId)
+      ?.id ??
+    fallbackProjects[0]?.id ??
+    null;
+  const headerProjectId = projectId ?? fallbackProjectId;
   const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],
@@ -284,21 +300,7 @@ function TopNav({
         </div>
 
         <div className="flex items-center rounded-full border border-base-300 bg-base-100/70 px-1 py-1 shadow-sm">
-          <div
-            className="tooltip tooltip-left before:whitespace-nowrap"
-            data-tip="Multiple projects coming soon"
-          >
-            <button
-              type="button"
-              className="flex h-10 cursor-default items-center gap-2 rounded-full px-3 text-left transition-colors hover:bg-base-200/80"
-              aria-label="Current project"
-            >
-              <span className="max-w-28 truncate text-sm font-medium text-base-content">
-                Default
-              </span>
-              <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/35" />
-            </button>
-          </div>
+          <ProjectSwitcher activeProjectId={projectId} variant="topbar" />
 
           <AccountMenu projectId={projectId} />
         </div>
@@ -363,11 +365,11 @@ function AccountMenu({
           {projectId ? (
             <li>
               <Link
-                {...integrationsLinkOptions(projectId)}
+                {...projectSettingsLinkOptions(projectId)}
                 className="flex items-center gap-2"
               >
-                <Plug className="h-4 w-4" />
-                Integrations
+                <FolderCog className="h-4 w-4" />
+                Project settings
               </Link>
             </li>
           ) : null}

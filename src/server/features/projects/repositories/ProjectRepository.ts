@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
@@ -10,15 +10,12 @@ async function listProjects(organizationId: string) {
   });
 }
 
-async function getDefaultProjectForOrganization(organizationId: string) {
-  return db.query.projects.findFirst({
-    where: and(
-      eq(projects.organizationId, organizationId),
-      eq(projects.name, "Default"),
-      isNull(projects.domain),
-    ),
-    orderBy: [desc(projects.createdAt), desc(projects.id)],
-  });
+async function countProjects(organizationId: string) {
+  const [row] = await db
+    .select({ value: count() })
+    .from(projects)
+    .where(eq(projects.organizationId, organizationId));
+  return row?.value ?? 0;
 }
 
 async function getProjectForOrganization(
@@ -33,25 +30,40 @@ async function getProjectForOrganization(
   });
 }
 
-async function getProjectById(projectId: string) {
-  return db.query.projects.findFirst({
-    where: eq(projects.id, projectId),
-  });
-}
-
 async function createProject(
   organizationId: string,
   name: string,
   domain?: string,
 ) {
   const id = crypto.randomUUID();
-  await db.insert(projects).values({
-    id,
-    organizationId,
-    name,
-    domain,
-  });
-  return id;
+  const [row] = await db
+    .insert(projects)
+    .values({ id, organizationId, name, domain })
+    .returning();
+  return row;
+}
+
+async function updateProject(
+  projectId: string,
+  organizationId: string,
+  input: { name: string; domain?: string },
+) {
+  const [row] = await db
+    .update(projects)
+    .set({ name: input.name, domain: input.domain ?? null })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+      ),
+    )
+    .returning();
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  return row;
 }
 
 async function tryCreateDefaultProject(organizationId: string) {
@@ -87,10 +99,10 @@ async function deleteProject(projectId: string, organizationId: string) {
 
 export const ProjectRepository = {
   listProjects,
-  getDefaultProjectForOrganization,
+  countProjects,
   getProjectForOrganization,
-  getProjectById,
   createProject,
+  updateProject,
   tryCreateDefaultProject,
   deleteProject,
 } as const;
