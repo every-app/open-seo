@@ -12,7 +12,6 @@ import {
 import type { TooltipContentProps } from "recharts";
 import { getRankConfigTrend } from "@/serverFunctions/rank-tracking";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
-import { computeScorecards } from "./rankTrackingScorecards";
 import {
   formatDateTick,
   TrendRangeToggle,
@@ -45,11 +44,6 @@ export function RankTrackingOverview({
 }) {
   const [sinceDays, setSinceDays] = useState(730);
 
-  const scorecards = useMemo(
-    () => computeScorecards(rows, device),
-    [rows, device],
-  );
-
   const { data: trend, isLoading: trendLoading } = useQuery({
     queryKey: ["rankConfigTrend", projectId, configId, device, sinceDays],
     queryFn: () =>
@@ -74,153 +68,111 @@ export function RankTrackingOverview({
 
   return (
     <div className="px-4 pt-4 pb-4">
-      <div className="grid items-start gap-3 lg:grid-cols-2">
-        {/* All metrics in one card */}
-        <div className="rounded-lg border border-base-300 bg-base-100 p-4">
-          <div className="grid grid-cols-2 gap-x-4 gap-y-4 sm:grid-cols-3">
-            <Scorecard
-              label="Visibility"
-              value={
-                scorecards.visibility === null
-                  ? "-"
-                  : `${Math.round(scorecards.visibility)}%`
-              }
-              delta={scorecards.visibilityDelta}
-              hint="of click potential"
-            />
-            <Scorecard
-              label="Ranking"
-              value={String(scorecards.ranking)}
-              delta={scorecards.rankingDelta}
-              hint={`of ${rows.length} tracked`}
-            />
-            <Scorecard
-              label="In Top 3"
-              value={String(scorecards.top3)}
-              hint="of ranked keywords"
-            />
-            <Scorecard
-              label="In Top 10"
-              value={String(scorecards.top10)}
-              hint="includes Top 3"
-            />
-            <Scorecard
-              label="Improved / Declined"
-              value={`${scorecards.improved} / ${scorecards.declined}`}
-              hint="vs comparison period"
-            />
-          </div>
+      <div className="rounded-lg border border-base-300 p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">Position distribution</span>
+          <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
         </div>
 
-        {/* Position distribution */}
-        <div className="rounded-lg border border-base-300 p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-sm font-medium">Position distribution</span>
-            <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
-          </div>
-
-          <div className="flex flex-wrap gap-x-3 gap-y-1">
-            {BUCKETS.map((b) => (
-              <span
-                key={b.key}
-                className="inline-flex items-center gap-1 text-[11px] text-base-content/60"
-              >
-                <span
-                  className="size-2 rounded-sm"
-                  style={{ backgroundColor: b.color }}
-                />
-                {b.label}
-              </span>
-            ))}
-          </div>
-
-          {trendLoading ? (
-            <div className="flex items-center justify-center p-8">
-              <Loader2 className="size-4 animate-spin text-base-content/50" />
-            </div>
-          ) : chartData.length <= 1 ? (
-            <div className="rounded-lg border border-dashed border-base-300 p-8 text-center text-xs text-base-content/60">
-              {chartData.length === 0
-                ? "No history yet — run a check to start tracking positions over time."
-                : "Only 1 check so far — the trend fills in after the next check."}
-            </div>
-          ) : (
-            <div
-              ref={containerRef}
-              className="w-full min-w-0"
-              style={{ height: 180 }}
+        <div className="flex flex-wrap gap-x-3 gap-y-1">
+          {BUCKETS.map((b) => (
+            <span
+              key={b.key}
+              className="inline-flex items-center gap-1 text-[11px] text-base-content/60"
             >
-              {width > 0 ? (
-                <AreaChart
-                  width={width}
-                  height={180}
-                  data={chartData}
-                  margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="currentColor"
-                    opacity={0.1}
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="checkedAt"
-                    type="number"
-                    scale="time"
-                    domain={["dataMin", "dataMax"]}
-                    tickFormatter={formatDateTick}
-                    tick={{ fontSize: 10, fill: "#888" }}
-                    tickLine={false}
-                    axisLine={false}
-                    minTickGap={32}
-                  />
-                  <YAxis
-                    allowDecimals={false}
-                    tick={{ fontSize: 10, fill: "#888" }}
-                    tickLine={false}
-                    axisLine={false}
-                    width={28}
-                  />
-                  <Tooltip
-                    content={(props: TooltipContentProps<number, string>) => {
-                      const { active, payload, label } = props;
-                      if (
-                        !active ||
-                        !payload?.length ||
-                        typeof label !== "number"
-                      ) {
-                        return null;
-                      }
-                      const byKey = new Map(
-                        payload.map((p: PayloadEntry) => [
-                          String(p.dataKey),
-                          typeof p.value === "number" ? p.value : 0,
-                        ]),
-                      );
-                      return (
-                        <DistributionTooltip label={label} byKey={byKey} />
-                      );
-                    }}
-                    cursor={{ stroke: "rgba(150,150,150,0.3)" }}
-                  />
-                  {BUCKETS.map((b) => (
-                    <Area
-                      key={b.key}
-                      type="monotone"
-                      dataKey={b.key}
-                      name={b.label}
-                      stackId="positions"
-                      stroke={b.color}
-                      fill={b.color}
-                      fillOpacity={0.7}
-                      isAnimationActive={false}
-                    />
-                  ))}
-                </AreaChart>
-              ) : null}
-            </div>
-          )}
+              <span
+                className="size-2 rounded-sm"
+                style={{ backgroundColor: b.color }}
+              />
+              {b.label}
+            </span>
+          ))}
         </div>
+
+        {trendLoading ? (
+          <div className="flex items-center justify-center p-8">
+            <Loader2 className="size-4 animate-spin text-base-content/50" />
+          </div>
+        ) : chartData.length <= 1 ? (
+          <div className="rounded-lg border border-dashed border-base-300 p-8 text-center text-xs text-base-content/60">
+            {chartData.length === 0
+              ? "No history yet — run a check to start tracking positions over time."
+              : "Only 1 check so far — the trend fills in after the next check."}
+          </div>
+        ) : (
+          <div
+            ref={containerRef}
+            className="w-full min-w-0"
+            style={{ height: 220 }}
+          >
+            {width > 0 ? (
+              <AreaChart
+                width={width}
+                height={220}
+                data={chartData}
+                margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="currentColor"
+                  opacity={0.1}
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="checkedAt"
+                  type="number"
+                  scale="time"
+                  domain={["dataMin", "dataMax"]}
+                  tickFormatter={formatDateTick}
+                  tick={{ fontSize: 10, fill: "#888" }}
+                  tickLine={false}
+                  axisLine={false}
+                  minTickGap={32}
+                />
+                <YAxis
+                  allowDecimals={false}
+                  tick={{ fontSize: 10, fill: "#888" }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={28}
+                />
+                <Tooltip
+                  content={(props: TooltipContentProps<number, string>) => {
+                    const { active, payload, label } = props;
+                    if (
+                      !active ||
+                      !payload?.length ||
+                      typeof label !== "number"
+                    ) {
+                      return null;
+                    }
+                    const byKey = new Map(
+                      payload.map((p: PayloadEntry) => [
+                        String(p.dataKey),
+                        typeof p.value === "number" ? p.value : 0,
+                      ]),
+                    );
+                    return <DistributionTooltip label={label} byKey={byKey} />;
+                  }}
+                  cursor={{ stroke: "rgba(150,150,150,0.3)" }}
+                />
+                {BUCKETS.map((b) => (
+                  <Area
+                    key={b.key}
+                    type="monotone"
+                    dataKey={b.key}
+                    name={b.label}
+                    stackId="positions"
+                    stroke={b.color}
+                    fill={b.color}
+                    fillOpacity={0.7}
+                    isAnimationActive={false}
+                  />
+                ))}
+              </AreaChart>
+            ) : null}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -254,40 +206,6 @@ function DistributionTooltip({
           </span>
         </p>
       ))}
-    </div>
-  );
-}
-
-function Scorecard({
-  label,
-  value,
-  delta,
-  hint,
-}: {
-  label: string;
-  value: string;
-  delta?: number | null;
-  hint?: string;
-}) {
-  return (
-    <div className="min-w-0">
-      <p className="text-xs text-base-content/55">{label}</p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-xl font-semibold tabular-nums">{value}</span>
-        {delta != null && delta !== 0 && (
-          <span
-            className={`text-xs font-medium ${
-              delta > 0 ? "text-success" : "text-warning"
-            }`}
-          >
-            {delta > 0 ? "▲" : "▼"}{" "}
-            {Number.isInteger(delta)
-              ? Math.abs(delta)
-              : Math.abs(delta).toFixed(1)}
-          </span>
-        )}
-      </div>
-      {hint && <p className="text-[11px] text-base-content/45">{hint}</p>}
     </div>
   );
 }
