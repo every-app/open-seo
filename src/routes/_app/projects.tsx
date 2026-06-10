@@ -1,8 +1,14 @@
 import * as React from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronRight, Plus } from "lucide-react";
-import { getProjects } from "@/serverFunctions/projects";
+import { toast } from "sonner";
+import {
+  getArchivedProjects,
+  getProjects,
+  restoreProject,
+} from "@/serverFunctions/projects";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
 
@@ -80,11 +86,67 @@ function ProjectsPage() {
             ))}
           </ul>
         )}
+
+        <ArchivedProjects />
       </div>
 
       {creating ? (
         <CreateProjectModal onClose={() => setCreating(false)} />
       ) : null}
     </div>
+  );
+}
+
+function ArchivedProjects() {
+  const queryClient = useQueryClient();
+  const archivedQuery = useQuery({
+    queryKey: ["projects", "archived"],
+    queryFn: () => getArchivedProjects(),
+  });
+  const archived = archivedQuery.data ?? [];
+
+  const restoreMutation = useMutation({
+    mutationFn: (projectId: string) =>
+      restoreProject({ data: { archivedProjectId: projectId } }),
+    onSuccess: async () => {
+      // Prefix match invalidates both the active and archived lists.
+      await queryClient.invalidateQueries({ queryKey: ["projects"] });
+      toast.success("Project restored");
+    },
+    onError: (error) =>
+      toast.error(getStandardErrorMessage(error, "Failed to restore project")),
+  });
+
+  if (archived.length === 0) return null;
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-medium text-base-content/50">Archived</h2>
+      <ul className="divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300">
+        {archived.map((project) => (
+          <li
+            key={project.id}
+            className="flex items-center justify-between gap-3 p-3"
+          >
+            <span className="flex min-w-0 flex-col">
+              <span className="truncate font-medium text-base-content/70">
+                {project.name}
+              </span>
+              <span className="truncate text-xs text-base-content/50">
+                {project.domain ?? "No domain set"}
+              </span>
+            </span>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm shrink-0"
+              onClick={() => restoreMutation.mutate(project.id)}
+              disabled={restoreMutation.isPending}
+            >
+              Restore
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

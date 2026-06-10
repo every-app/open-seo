@@ -155,6 +155,13 @@
       "when": 1780625404317,
       "tag": "0021_autumn_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1781107930529,
+      "tag": "0022_purple_hitman",
+      "breakpoints": true
     }
   ]
 }

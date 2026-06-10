@@ -1,6 +1,7 @@
 import type {
+  ArchiveProjectInput,
   CreateProjectInput,
-  DeleteProjectInput,
+  RestoreProjectInput,
   UpdateProjectInput,
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
@@ -95,16 +96,48 @@ export async function updateProject(
   }
 }
 
-export async function deleteProject(
+export async function archiveProject(
   organizationId: string,
-  input: DeleteProjectInput,
+  input: ArchiveProjectInput,
 ) {
   const remaining = await ProjectRepository.countProjects(organizationId);
   if (remaining <= 1) {
-    throw new AppError("CONFLICT", "You can't delete your only project.");
+    throw new AppError("CONFLICT", "You can't archive your only project.");
   }
 
-  await ProjectRepository.deleteProject(input.projectId, organizationId);
+  await ProjectRepository.archiveProject(input.projectId, organizationId);
+  return { success: true };
+}
+
+export async function listArchivedProjects(organizationId: string) {
+  const rows = await ProjectRepository.listArchivedProjects(organizationId);
+  return rows.map(mapProject);
+}
+
+export async function restoreProject(
+  organizationId: string,
+  input: RestoreProjectInput,
+) {
+  try {
+    await ProjectRepository.restoreProject(
+      input.archivedProjectId,
+      organizationId,
+    );
+  } catch (error) {
+    // The Default singleton index is the only unique index on projects, and
+    // restore only writes archived_at — so a UNIQUE failure can only mean an
+    // active Default/no-domain project already exists.
+    if (
+      error instanceof Error &&
+      error.message.includes("UNIQUE constraint failed")
+    ) {
+      throw new AppError(
+        "CONFLICT",
+        'An active project named "Default" with no domain already exists. Rename it first, then restore this one.',
+      );
+    }
+    throw error;
+  }
   return { success: true };
 }
 

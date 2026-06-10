@@ -53,6 +53,9 @@ export const projects = sqliteTable(
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),
+    // Soft delete: archived projects are hidden everywhere but their data
+    // (keywords, rank tracking, audits) is preserved.
+    archivedAt: text("archived_at"),
   },
   (table) => [
     // Only the auto-created Default/null-domain project is a singleton. This
@@ -61,7 +64,9 @@ export const projects = sqliteTable(
     // creating multiple projects with the same name or domain later.
     uniqueIndex("projects_one_default_per_organization_idx")
       .on(table.organizationId)
-      .where(sql`${table.name} = 'Default' AND ${table.domain} IS NULL`),
+      .where(
+        sql`${table.name} = 'Default' AND ${table.domain} IS NULL AND ${table.archivedAt} IS NULL`,
+      ),
   ],
 );
 

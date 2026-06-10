@@ -5,8 +5,9 @@ import {
   requireProjectContext,
 } from "@/serverFunctions/middleware";
 import {
+  archiveProjectSchema,
   createProjectSchema,
-  deleteProjectSchema,
+  restoreProjectSchema,
   updateProjectSchema,
 } from "@/types/schemas/projects";
 import { z } from "zod";
@@ -31,11 +32,24 @@ export const updateProject = createServerFn({ method: "POST" })
     ProjectService.updateProject(context.organizationId, data),
   );
 
-export const deleteProject = createServerFn({ method: "POST" })
+export const archiveProject = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => deleteProjectSchema.parse(data))
+  .inputValidator((data: unknown) => archiveProjectSchema.parse(data))
   .handler(async ({ data, context }) =>
-    ProjectService.deleteProject(context.organizationId, data),
+    ProjectService.archiveProject(context.organizationId, data),
+  );
+
+export const getArchivedProjects = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .handler(async ({ context }) =>
+    ProjectService.listArchivedProjects(context.organizationId),
+  );
+
+export const restoreProject = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .inputValidator((data: unknown) => restoreProjectSchema.parse(data))
+  .handler(async ({ data, context }) =>
+    ProjectService.restoreProject(context.organizationId, data),
   );
 
 export const getProjectAccess = createServerFn({ method: "POST" })

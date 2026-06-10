@@ -10,7 +10,7 @@ import {
   getLastProjectId,
 } from "@/client/lib/active-project";
 import {
-  deleteProject,
+  archiveProject,
   getProjects,
   updateProject,
 } from "@/serverFunctions/projects";
@@ -60,7 +60,7 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
         <SearchConsoleConnectionCard projectId={projectId} />
       </section>
 
-      <DangerSection project={project} canDelete={projects.length > 1} />
+      <DangerSection project={project} canArchive={projects.length > 1} />
     </div>
   );
 }
@@ -146,58 +146,58 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
 function DangerSection({
   project,
-  canDelete,
+  canArchive,
 }: {
   project: ProjectSummary;
-  canDelete: boolean;
+  canArchive: boolean;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [confirming, setConfirming] = React.useState(false);
 
-  const deleteMutation = useMutation({
-    mutationFn: () => deleteProject({ data: { projectId: project.id } }),
+  const archiveMutation = useMutation({
+    mutationFn: () => archiveProject({ data: { projectId: project.id } }),
     onSuccess: async () => {
       if (getLastProjectId() === project.id) clearLastProjectId();
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
-      toast.success("Project deleted");
+      toast.success("Project archived");
       // Re-resolve to a remaining project via the landing redirect.
       void navigate({ to: "/" });
     },
     onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Failed to delete project")),
+      toast.error(getStandardErrorMessage(error, "Failed to archive project")),
   });
 
   return (
     <section className="space-y-3 border-t border-base-300 pt-8">
       <h2 className="text-sm font-medium text-base-content/50">
-        Delete project
+        Archive project
       </h2>
 
       {confirming ? (
         <div className="space-y-3">
           <p className="text-sm text-base-content/70">
-            Deleting{" "}
+            Archiving{" "}
             <span className="font-medium text-base-content">
               {project.name}
             </span>{" "}
-            permanently removes its Search Console connection, rank tracking,
-            audits, and saved keywords. This can't be undone.
+            removes it from your workspace and stops its scheduled rank
+            tracking. You can restore it later from the Projects page.
           </p>
           <div className="flex gap-2">
             <button
               type="button"
               className="btn btn-error btn-sm"
-              onClick={() => deleteMutation.mutate()}
-              disabled={deleteMutation.isPending}
+              onClick={() => archiveMutation.mutate()}
+              disabled={archiveMutation.isPending}
             >
-              Yes, delete project
+              Yes, archive project
             </button>
             <button
               type="button"
               className="btn btn-ghost btn-sm"
               onClick={() => setConfirming(false)}
-              disabled={deleteMutation.isPending}
+              disabled={archiveMutation.isPending}
             >
               Cancel
             </button>
@@ -206,17 +206,17 @@ function DangerSection({
       ) : (
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-base-content/60">
-            {canDelete
-              ? "Permanently delete this project and all of its data."
-              : "You can't delete your only project."}
+            {canArchive
+              ? "Archive this project to remove it from your workspace."
+              : "You can't archive your only project."}
           </p>
           <button
             type="button"
             className="btn btn-outline btn-error btn-sm shrink-0"
             onClick={() => setConfirming(true)}
-            disabled={!canDelete}
+            disabled={!canArchive}
           >
-            Delete project
+            Archive project
           </button>
         </div>
       )}

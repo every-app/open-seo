@@ -3,10 +3,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
   updateProject: vi.fn(),
-  deleteProject: vi.fn(),
+  archiveProject: vi.fn(),
+  restoreProject: vi.fn(),
   countProjects: vi.fn(),
   getProjectForOrganization: vi.fn(),
   listProjects: vi.fn(),
+  listArchivedProjects: vi.fn(),
   tryCreateDefaultProject: vi.fn(),
 }));
 
@@ -143,26 +145,57 @@ describe("project service", () => {
     });
   });
 
-  describe("deleteProject", () => {
-    it("refuses to delete the org's only project", async () => {
+  describe("archiveProject", () => {
+    it("refuses to archive the org's only project", async () => {
       mocks.countProjects.mockResolvedValue(1);
-      const { deleteProject } = await import("./projects");
+      const { archiveProject } = await import("./projects");
 
       await expect(
-        deleteProject("org_1", { projectId: "project_default" }),
+        archiveProject("org_1", { projectId: "project_default" }),
       ).rejects.toMatchObject({ code: "CONFLICT" });
-      expect(mocks.deleteProject).not.toHaveBeenCalled();
+      expect(mocks.archiveProject).not.toHaveBeenCalled();
     });
 
-    it("deletes when more than one project remains", async () => {
+    it("archives when more than one project remains", async () => {
       mocks.countProjects.mockResolvedValue(2);
-      mocks.deleteProject.mockResolvedValue(undefined);
-      const { deleteProject } = await import("./projects");
+      mocks.archiveProject.mockResolvedValue(undefined);
+      const { archiveProject } = await import("./projects");
 
       await expect(
-        deleteProject("org_1", { projectId: "project_acme" }),
+        archiveProject("org_1", { projectId: "project_acme" }),
       ).resolves.toEqual({ success: true });
-      expect(mocks.deleteProject).toHaveBeenCalledWith("project_acme", "org_1");
+      expect(mocks.archiveProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+      );
+    });
+  });
+
+  describe("restoreProject", () => {
+    it("restores an archived project", async () => {
+      mocks.restoreProject.mockResolvedValue(undefined);
+      const { restoreProject } = await import("./projects");
+
+      await expect(
+        restoreProject("org_1", { archivedProjectId: "project_acme" }),
+      ).resolves.toEqual({ success: true });
+      expect(mocks.restoreProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+      );
+    });
+
+    it("maps the Default singleton conflict to a friendly CONFLICT", async () => {
+      mocks.restoreProject.mockRejectedValue(
+        new Error(
+          "UNIQUE constraint failed: projects.projects_one_default_per_organization_idx",
+        ),
+      );
+      const { restoreProject } = await import("./projects");
+
+      await expect(
+        restoreProject("org_1", { archivedProjectId: "project_default" }),
+      ).rejects.toMatchObject({ code: "CONFLICT" });
     });
   });
 });

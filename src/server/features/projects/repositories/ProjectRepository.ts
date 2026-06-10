@@ -1,11 +1,14 @@
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
 
 async function listProjects(organizationId: string) {
   return db.query.projects.findMany({
-    where: eq(projects.organizationId, organizationId),
+    where: and(
+      eq(projects.organizationId, organizationId),
+      isNull(projects.archivedAt),
+    ),
     orderBy: [desc(projects.createdAt), desc(projects.id)],
   });
 }
@@ -14,7 +17,12 @@ async function countProjects(organizationId: string) {
   const [row] = await db
     .select({ value: count() })
     .from(projects)
-    .where(eq(projects.organizationId, organizationId));
+    .where(
+      and(
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    );
   return row?.value ?? 0;
 }
 
@@ -26,6 +34,7 @@ async function getProjectForOrganization(
     where: and(
       eq(projects.id, projectId),
       eq(projects.organizationId, organizationId),
+      isNull(projects.archivedAt),
     ),
   });
 }
@@ -81,28 +90,60 @@ async function tryCreateDefaultProject(organizationId: string) {
   return inserted.length > 0 ? id : null;
 }
 
-async function deleteProject(projectId: string, organizationId: string) {
-  const project = await getProjectForOrganization(projectId, organizationId);
-  if (!project) {
-    throw new AppError("NOT_FOUND");
-  }
+async function listArchivedProjects(organizationId: string) {
+  return db.query.projects.findMany({
+    where: and(
+      eq(projects.organizationId, organizationId),
+      isNotNull(projects.archivedAt),
+    ),
+    orderBy: [desc(projects.archivedAt), desc(projects.id)],
+  });
+}
 
-  await db
-    .delete(projects)
+async function restoreProject(projectId: string, organizationId: string) {
+  const [row] = await db
+    .update(projects)
+    .set({ archivedAt: null })
     .where(
       and(
         eq(projects.id, projectId),
         eq(projects.organizationId, organizationId),
+        isNotNull(projects.archivedAt),
       ),
-    );
+    )
+    .returning({ id: projects.id });
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+}
+
+async function archiveProject(projectId: string, organizationId: string) {
+  const [row] = await db
+    .update(projects)
+    .set({ archivedAt: sql`(current_timestamp)` })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .returning({ id: projects.id });
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
 }
 
 export const ProjectRepository = {
   listProjects,
+  listArchivedProjects,
   countProjects,
   getProjectForOrganization,
   createProject,
   updateProject,
   tryCreateDefaultProject,
-  deleteProject,
+  archiveProject,
+  restoreProject,
 } as const;

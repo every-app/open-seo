@@ -24,10 +24,18 @@ export const updateProjectSchema = z.object({
   domain: projectDomainField,
 });
 
-export const deleteProjectSchema = z.object({
+export const archiveProjectSchema = z.object({
   projectId: z.string().min(1),
+});
+
+// Deliberately not named `projectId`: ensureUserMiddleware resolves any
+// `projectId` in input data against active projects and 404s on archived
+// ones before the handler runs.
+export const restoreProjectSchema = z.object({
+  archivedProjectId: z.string().min(1),
 });
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
-export type DeleteProjectInput = z.infer<typeof deleteProjectSchema>;
+export type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
+export type RestoreProjectInput = z.infer<typeof restoreProjectSchema>;
