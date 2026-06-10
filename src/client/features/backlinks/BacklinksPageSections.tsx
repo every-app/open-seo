@@ -1,8 +1,7 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
-import { ArrowLeft, Download, SlidersHorizontal } from "lucide-react";
-import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
+import { ArrowLeft, SlidersHorizontal } from "lucide-react";
 import {
   BacklinksNewLostChart,
   BacklinksTrendChart,
@@ -19,8 +18,13 @@ import {
   TAB_DESCRIPTIONS,
   formatRelativeTimestamp,
 } from "./backlinksPageUtils";
-import { buildBacklinksTabExport, exportBacklinksTabCsv } from "./export";
+import {
+  BacklinksActionsMenu,
+  BacklinksExportMenu,
+} from "./BacklinksToolbarMenus";
+import { buildBacklinksTabExport } from "./export";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
+import { useAhrefsDomainRatings } from "./useAhrefsDomainRatings";
 
 const BACKLINKS_RESULTS_TABS: Array<{
   tab: BacklinksSearchState["tab"];
@@ -75,6 +79,7 @@ export function BacklinksOverviewPanels({
 }
 
 export function BacklinksResultsCard({
+  projectId,
   activeTab,
   filteredData,
   filters,
@@ -83,6 +88,7 @@ export function BacklinksResultsCard({
   exportTarget,
   onTabChange,
 }: {
+  projectId: string;
   activeTab: BacklinksSearchState["tab"];
   filteredData: {
     backlinks: BacklinksOverviewData["backlinks"];
@@ -100,6 +106,27 @@ export function BacklinksResultsCard({
     () => buildBacklinksTabExport({ tab: activeTab, rows: filteredData }),
     [activeTab, filteredData],
   );
+  const {
+    ratings: domainRatings,
+    isLoading: isLoadingRatings,
+    loadRatings,
+  } = useAhrefsDomainRatings(projectId);
+  // Domains keyed by both tables that the DR column can enrich. The Referring
+  // Domains list loads lazily, so this grows once that tab is opened.
+  const ratableDomains = useMemo(
+    () => collectRatableDomains(filteredData),
+    [filteredData],
+  );
+  // Once the user has opted in, keep newly loaded domains enriched without a
+  // re-click (e.g. after switching to the lazily-loaded Referring Domains tab).
+  // KV-cached, so re-requesting already-known domains is nearly free.
+  useEffect(() => {
+    if (!domainRatings) return;
+    const missing = ratableDomains.filter(
+      (domain) => !Object.hasOwn(domainRatings, domain),
+    );
+    if (missing.length > 0) void loadRatings(missing);
+  }, [domainRatings, ratableDomains, loadRatings]);
 
   return (
     <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
@@ -122,25 +149,20 @@ export function BacklinksResultsCard({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <ExportToSheetsButton
+          <BacklinksExportMenu
+            activeTab={activeTab}
+            exportTarget={exportTarget}
+            filteredData={filteredData}
             headers={exportTable.headers}
             rows={exportTable.rows}
-            feature={`backlinks_${activeTab}`}
-            className="btn-sm"
           />
-          <button
-            className="btn btn-sm btn-ghost justify-start lg:justify-center"
-            onClick={() =>
-              exportBacklinksTabCsv({
-                tab: activeTab,
-                target: exportTarget,
-                rows: filteredData,
-              })
-            }
-          >
-            <Download className="size-4" />
-            Export CSV
-          </button>
+          {activeTab !== "pages" ? (
+            <BacklinksActionsMenu
+              isLoadingRatings={isLoadingRatings}
+              loadRatings={loadRatings}
+              ratableDomains={ratableDomains}
+            />
+          ) : null}
         </div>
       </div>
 
@@ -171,13 +193,19 @@ export function BacklinksResultsCard({
           </div>
         ) : null}
         {activeTab === "backlinks" ? (
-          <BacklinksTable rows={filteredData.backlinks} />
+          <BacklinksTable
+            rows={filteredData.backlinks}
+            domainRatings={domainRatings}
+          />
         ) : null}
         {activeTab === "domains" && isTabLoading && !tabErrorMessage ? (
           <TabLoadingState label="Loading referring domains" />
         ) : null}
         {activeTab === "domains" && !isTabLoading && !tabErrorMessage ? (
-          <ReferringDomainsTable rows={filteredData.referringDomains} />
+          <ReferringDomainsTable
+            rows={filteredData.referringDomains}
+            domainRatings={domainRatings}
+          />
         ) : null}
         {activeTab === "pages" && isTabLoading && !tabErrorMessage ? (
           <TabLoadingState label="Loading top pages" />
@@ -188,6 +216,23 @@ export function BacklinksResultsCard({
       </div>
     </div>
   );
+}
+
+/** Unique domains the DR column keys on, from both the backlinks and referring
+ * domains tables, normalized to match how each table renders its domain. */
+function collectRatableDomains(filteredData: {
+  backlinks: BacklinksOverviewData["backlinks"];
+  referringDomains: BacklinksOverviewData["referringDomains"];
+}): string[] {
+  const domains = [
+    ...filteredData.backlinks.map((row) =>
+      row.domainFrom?.replace(/^www\./, ""),
+    ),
+    ...filteredData.referringDomains.map((row) => row.domain),
+  ];
+  return [
+    ...new Set(domains.filter((domain): domain is string => Boolean(domain))),
+  ];
 }
 
 function OverviewGrid({

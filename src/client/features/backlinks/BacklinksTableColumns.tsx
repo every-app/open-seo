@@ -14,6 +14,7 @@ import {
   formatDecimal,
   formatNumber,
 } from "./backlinksPageUtils";
+import type { DomainRatings } from "./useAhrefsDomainRatings";
 
 function BacklinkFlags({ row }: { row: BacklinksRow }) {
   return (
@@ -73,7 +74,7 @@ function DomainFlagBadges({ group }: { group: GroupedBacklinkDomain }) {
   );
 }
 
-export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
+const baseBacklinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
   {
     id: "source",
     accessorKey: "domain",
@@ -319,3 +320,51 @@ export const backlinksColumns: ColumnDef<GroupedBacklinkDomain>[] = [
     sortDescFirst: true,
   },
 ];
+
+/**
+ * Columns for the grouped backlinks table. When `domainRatings` is provided
+ * (the user clicked "Ahrefs DR"), an Ahrefs DR column is inserted after DA;
+ * otherwise it stays hidden.
+ */
+export function buildBacklinksColumns(
+  domainRatings: DomainRatings | null,
+): ColumnDef<GroupedBacklinkDomain>[] {
+  if (!domainRatings) return baseBacklinksColumns;
+
+  const ratings = domainRatings;
+  const drColumn: ColumnDef<GroupedBacklinkDomain> = {
+    id: "ahrefsDr",
+    accessorFn: (row) => ratings[row.domain] ?? null,
+    header: ({ column }) => (
+      <SortableHeader
+        column={column}
+        label="Ahrefs DR"
+        helpText="Ahrefs Domain Rating (0-100) for the linking domain."
+        align="right"
+      />
+    ),
+    size: 90,
+    minSize: 70,
+    cell: ({ row }) => {
+      if (row.depth > 0) return null;
+      const dr = ratings[row.original.domain] ?? null;
+      return (
+        <div className="text-right tabular-nums text-sm">
+          {dr == null ? "—" : formatDecimal(dr)}
+        </div>
+      );
+    },
+    sortingFn: numericNullsLast,
+    sortDescFirst: true,
+  };
+
+  const insertAt =
+    baseBacklinksColumns.findIndex(
+      (column) => column.id === "domainAuthority",
+    ) + 1;
+  return [
+    ...baseBacklinksColumns.slice(0, insertAt),
+    drColumn,
+    ...baseBacklinksColumns.slice(insertAt),
+  ];
+}

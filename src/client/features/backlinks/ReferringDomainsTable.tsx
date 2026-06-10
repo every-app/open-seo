@@ -3,7 +3,7 @@ import {
   type SortingFn,
   type SortingState,
 } from "@tanstack/react-table";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,
@@ -24,6 +24,7 @@ import {
   formatDecimal,
   formatNumber,
 } from "./backlinksPageUtils";
+import type { DomainRatings } from "./useAhrefsDomainRatings";
 
 type ReferringDomainRow = BacklinksOverviewData["referringDomains"][number];
 
@@ -47,7 +48,7 @@ const sortByIssues: SortingFn<ReferringDomainRow> = (left, right, columnId) => {
   );
 };
 
-const columns = [
+const baseColumns = [
   columnHelper.accessor("domain", {
     header: ({ column }) => (
       <SortableHeader
@@ -152,6 +153,46 @@ const columns = [
   }),
 ];
 
+/**
+ * Columns for the referring domains table. When `domainRatings` is provided
+ * (the user clicked "Ahrefs DR"), an Ahrefs DR column is inserted after Rank;
+ * otherwise it stays hidden.
+ */
+function buildReferringDomainColumns(domainRatings: DomainRatings | null) {
+  if (!domainRatings) return baseColumns;
+
+  const ratings = domainRatings;
+  const drColumn = columnHelper.accessor(
+    (row) => (row.domain ? (ratings[row.domain] ?? null) : null),
+    {
+      id: "ahrefsDr",
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          label="Ahrefs DR"
+          helpText="Ahrefs Domain Rating (0-100) for this referring domain."
+        />
+      ),
+      cell: ({ getValue }) => {
+        const dr = getValue();
+        return dr == null ? "—" : formatDecimal(dr);
+      },
+      sortingFn: numericNullsLast,
+      sortDescFirst: true,
+    },
+  );
+
+  const insertAt =
+    baseColumns.findIndex(
+      (column) => "accessorKey" in column && column.accessorKey === "rank",
+    ) + 1;
+  return [
+    ...baseColumns.slice(0, insertAt),
+    drColumn,
+    ...baseColumns.slice(insertAt),
+  ];
+}
+
 const DEFAULT_SORTING: SortingState = [{ id: "backlinks", desc: true }];
 
 function getDomainWebsiteHref(domain: string) {
@@ -164,10 +205,16 @@ function getDomainWebsiteHref(domain: string) {
 
 export function ReferringDomainsTable({
   rows,
+  domainRatings,
 }: {
   rows: BacklinksOverviewData["referringDomains"];
+  domainRatings: DomainRatings | null;
 }) {
   const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
+  const columns = useMemo(
+    () => buildReferringDomainColumns(domainRatings),
+    [domainRatings],
+  );
 
   const table = useAppTable({
     data: rows,

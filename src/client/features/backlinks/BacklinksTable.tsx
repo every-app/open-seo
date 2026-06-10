@@ -4,20 +4,27 @@ import {
   useAppTable,
 } from "@/client/components/table/AppDataTable";
 import { EmptyTableState } from "./BacklinksPageEmptyTableState";
-import { backlinksColumns } from "./BacklinksTableColumns";
+import { buildBacklinksColumns } from "./BacklinksTableColumns";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
 import { groupBacklinksByDomain } from "./backlinksPageUtils";
+import type { DomainRatings } from "./useAhrefsDomainRatings";
 
 export function BacklinksTable({
   rows,
+  domainRatings,
 }: {
   rows: BacklinksOverviewData["backlinks"];
+  domainRatings: DomainRatings | null;
 }) {
   const groupedData = useMemo(() => groupBacklinksByDomain(rows), [rows]);
+  const columns = useMemo(
+    () => buildBacklinksColumns(domainRatings),
+    [domainRatings],
+  );
 
   const table = useAppTable({
     data: groupedData,
-    columns: backlinksColumns,
+    columns,
     initialState: {
       sorting: [{ id: "firstSeen", desc: true }],
     },

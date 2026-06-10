@@ -181,6 +181,7 @@ export function BacklinksBody({
         summaryStats={summaryStats}
       />
       <BacklinksResultsCard
+        projectId={projectId}
         activeTab={searchState.tab}
         filteredData={filteredData}
         filters={filters}
