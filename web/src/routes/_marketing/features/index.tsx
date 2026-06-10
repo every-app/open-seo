@@ -8,7 +8,7 @@ const featuresDescription =
 export const Route = createFileRoute("/_marketing/features/")({
   head: () =>
     buildPageSeo({
-      title: "OpenSEO Features",
+      title: "Features",
       description: featuresDescription,
       path: "/features",
       titleSuffix: "OpenSEO",
@@ -69,7 +69,7 @@ function FeaturesIndex() {
                 Search Console MCP
               </p>
               <h3 className="mt-2 text-lg font-semibold text-neutral-900">
-                Free Google Search Console MCP
+                Google Search Console MCP — no Google Cloud setup
               </h3>
               <p className="mt-2 text-sm leading-relaxed text-neutral-600">
                 Let your agent read clicks, impressions, CTR, position, and URL

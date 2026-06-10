@@ -8,7 +8,7 @@ const page = featurePages.domainOverview;
 export const Route = createFileRoute("/_marketing/features/domain-overview")({
   head: () =>
     buildPageSeo({
-      title: "Domain Analysis Tool",
+      title: "Domain Overview Tool: Traffic, Keywords & Top Pages",
       description: page.description,
       path: "/features/domain-overview",
       titleSuffix: "OpenSEO",

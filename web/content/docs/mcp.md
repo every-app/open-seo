@@ -34,6 +34,24 @@ After adding the server, approve the OpenSEO login when prompted.
 
 Claude Desktop custom connectors require a Claude plan that supports custom connectors.
 
+## Cursor
+
+1. Open Cursor Settings -> Tools & Integrations -> MCP Tools.
+2. Click New MCP Server. Cursor opens `mcp.json`.
+3. Add:
+
+```json
+{
+  "mcpServers": {
+    "openseo": {
+      "url": "https://app.openseo.so/mcp"
+    }
+  }
+}
+```
+
+4. Approve the OpenSEO login when prompted.
+
 ## Codex CLI
 
 Run this in your terminal:

@@ -17,11 +17,6 @@ const softwareApplicationLd = {
   operatingSystem: "Web",
   url: toCanonicalUrl(PATH),
   description: frontmatter.description,
-  offers: {
-    "@type": "Offer",
-    price: "0",
-    priceCurrency: "USD",
-  },
   provider: {
     "@type": "Organization",
     name: "OpenSEO",
@@ -32,7 +27,7 @@ const softwareApplicationLd = {
 export const Route = createFileRoute("/_marketing/google-search-console-mcp")({
   head: () =>
     buildPageSeo({
-      title: "Free Google Search Console MCP",
+      title: "Google Search Console MCP Server: No Google Cloud Setup",
       description: frontmatter.description,
       path: PATH,
       titleSuffix: "OpenSEO",
@@ -58,7 +53,7 @@ function GoogleSearchConsoleMcpPage() {
             href="https://app.openseo.so/sign-up"
             className="inline-flex h-10 items-center justify-center rounded-md bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            Try it now
+            Get started
             <span className="ml-2" aria-hidden="true">
               &rarr;
             </span>
@@ -92,15 +87,15 @@ function GoogleSearchConsoleMcpCta() {
         Point your AI at your real search data
       </p>
       <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-        Free to connect. No Google Cloud project. Works with Claude, Cursor, and
-        ChatGPT.
+        No Google Cloud project. Zero credits to read your own data. Works with
+        Claude, Cursor, and Codex.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
           href="https://app.openseo.so/sign-up"
           className="inline-flex h-10 items-center justify-center rounded-md bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Try it now
+          Get started
           <span className="ml-2" aria-hidden="true">
             &rarr;
           </span>

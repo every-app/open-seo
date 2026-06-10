@@ -3,7 +3,7 @@ import { buildPageSeo } from "@/lib/seo";
 
 const homeTitle = "OpenSEO - Open Source SEO Platform";
 const homeDescription =
-  "Own your SEO. OpenSEO helps teams manage keyword research, backlink analysis, competitor monitoring, and site audits without expensive monthly SEO software subscriptions.";
+  "The open source SEO platform: keyword research, backlinks, rank tracking, and AI visibility. Self-host free (MIT) or use the managed app for $10/month.";
 
 export const Route = createFileRoute("/_marketing/")({
   head: () =>
@@ -23,11 +23,11 @@ function Home() {
     <>
       {/* Headline */}
       <h1 className="text-3xl font-bold tracking-tight leading-tight">
-        Own your SEO
+        The Open Source SEO Platform
       </h1>
 
       <p className="text-neutral-700 mt-4 leading-relaxed">
-        Open source alternative to Semrush and Ahrefs
+        Own your SEO — a self-hostable alternative to Semrush and Ahrefs.
       </p>
 
       {/* Features */}
@@ -48,12 +48,22 @@ function Home() {
 
       {/* CTA */}
       <div className="mt-6">
-        <a
-          href="https://app.openseo.so/sign-up"
-          className="inline-flex items-center justify-center h-10 px-5 text-sm font-medium bg-neutral-900 text-white rounded-md hover:bg-neutral-800 transition-colors"
-        >
-          Try now
-        </a>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <a
+            href="https://app.openseo.so/sign-up"
+            className="inline-flex items-center justify-center h-10 px-5 text-sm font-medium bg-neutral-900 text-white rounded-md hover:bg-neutral-800 transition-colors"
+          >
+            Try now
+          </a>
+          <a
+            href="https://github.com/every-app/open-seo"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center h-10 px-5 text-sm font-medium border border-neutral-300 text-neutral-900 rounded-md hover:border-neutral-900 transition-colors"
+          >
+            View on GitHub
+          </a>
+        </div>
         <p className="text-xs text-neutral-500 mt-3">
           No credit card required.
         </p>
@@ -66,8 +76,16 @@ function Home() {
             Self-host via Docker or Cloudflare
           </p>
           <p className="text-sm text-neutral-600 mt-2 leading-relaxed">
-            100% open source (MIT). Bring your own DataForSEO api key. Fork and
-            vibe code custom features for your workflow.
+            100% open source (MIT). Bring your own DataForSEO API key. Fork and
+            vibe code custom features for your workflow. See how OpenSEO
+            compares to the other{" "}
+            <a
+              href="/blogs/best-open-source-seo-tools"
+              className="font-medium text-neutral-900 hover:text-neutral-700 transition-colors underline decoration-neutral-300 underline-offset-4"
+            >
+              open source SEO tools
+            </a>
+            .
           </p>
           <a
             href="https://github.com/every-app/open-seo"

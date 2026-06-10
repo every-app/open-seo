@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { buildPageSeo } from "@/lib/seo";
 
 const mcpDescription =
-  "Connect OpenSEO MCP so compatible AI clients can call keyword, SERP, domain, backlink, saved keyword, rank-tracking, and Google Search Console tools.";
+  "Give Claude, Cursor, or any MCP client real SEO tools: keyword research, live SERPs, backlinks, rank tracking, and Search Console data via one MCP server.";
 
 const toolCategories = [
   {
@@ -19,6 +19,11 @@ const toolCategories = [
       {
         title: "Save keywords",
         description: "Keep useful ideas organized in your OpenSEO project.",
+      },
+      {
+        title: "Get rank tracker data",
+        description:
+          "Read tracked-keyword positions and latest results from your project's rank trackers.",
       },
     ],
   },
@@ -52,37 +57,37 @@ const toolCategories = [
         description:
           "Check index coverage, crawl, canonical, mobile, and rich-result signals.",
       },
-      {
-        title: "Use first-party data",
-        description:
-          "Run read-only Search Console calls for free with no OpenSEO credits.",
-      },
     ],
   },
 ] as const;
 
 const workflows = [
   {
-    title: "Research with live SEO data",
+    title: "First-pass keyword research",
     description:
-      "Give Codex, Claude, and other MCP clients access to OpenSEO keyword, SERP, domain, backlink, saved keyword, rank-tracking, and Search Console data.",
+      "Ask the agent to expand seed topics into keyword ideas with volume, difficulty, and CPC, then save the promising ones back to your OpenSEO project for human review.",
   },
   {
-    title: "Keep the agent focused",
+    title: "Competitor teardown",
     description:
-      "Ask for a specific workflow like competitor analysis or keyword clustering instead of a vague SEO recommendation.",
+      "Point the agent at a competitor domain and have it pull the domain overview, ranking keywords, and backlink stats, then summarize where you can realistically compete.",
   },
   {
-    title: "Save useful output",
+    title: "Striking-distance sweep from Search Console",
     description:
-      "Let the agent save promising keywords back to OpenSEO so human review and rank tracking can happen in the same workspace.",
+      "Have the agent read your GSC queries, find page-two keywords worth pushing to page one, and check the live SERP for each before recommending changes.",
+  },
+  {
+    title: "Keyword clustering and tagging",
+    description:
+      "Let the agent group saved keywords by intent, tag them by page or topic cluster, and hand back a content plan you can act on in the OpenSEO UI.",
   },
 ];
 
 export const Route = createFileRoute("/_marketing/features/mcp")({
   head: () =>
     buildPageSeo({
-      title: "OpenSEO MCP",
+      title: "SEO MCP Server: Keyword, SERP & Backlink Tools",
       description: mcpDescription,
       path: "/features/mcp",
       titleSuffix: "OpenSEO",
@@ -95,13 +100,14 @@ function McpPage() {
     <>
       <p className="text-sm font-medium text-neutral-500">OpenSEO MCP</p>
       <h1 className="mt-3 text-3xl font-bold tracking-tight leading-tight">
-        OpenSEO MCP for AI SEO workflows
+        An SEO MCP server for AI agents
       </h1>
       <p className="mt-4 text-neutral-700 leading-relaxed">
-        Connect OpenSEO to your AI agent so it can research keywords, inspect
-        SERPs, compare competitors, summarize backlink context, save keyword
-        opportunities, review rank-tracking data, and read first-party Search
-        Console signals with live SEO context.
+        OpenSEO is an SEO MCP server that connects Claude, Cursor, Codex, or any
+        MCP client to real data, so your agent can research keywords, inspect
+        live SERPs, compare competitor domains, summarize backlink context, save
+        keyword opportunities, review rank-tracking data, and read first-party
+        Search Console signals.
       </p>
 
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
@@ -120,17 +126,26 @@ function McpPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="text-xl font-semibold">What it does</h2>
+        <h2 className="text-xl font-semibold">What is an SEO MCP server?</h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
-          MCP lets compatible AI clients call OpenSEO research tools directly.
-          After connecting OpenSEO through a supported MCP client, your agent
-          can perform structured SEO research with data from your OpenSEO
-          project instead of relying on generic guesses.
+          MCP (Model Context Protocol) is the standard AI clients use to call
+          external tools. An SEO MCP server exposes SEO data (keyword metrics,
+          SERP results, domain and backlink stats) as tools an agent can call
+          mid-conversation. Instead of guessing at search volumes or rankings,
+          your agent queries real data from your OpenSEO project, and can save
+          its findings back so you can review them in the UI. Pair it with{" "}
+          <a
+            href="/features/keyword-research"
+            className="font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition-colors hover:text-neutral-700"
+          >
+            keyword research
+          </a>{" "}
+          for an agent-driven first pass over any topic.
         </p>
       </section>
 
       <section className="mt-12">
-        <h2 className="text-xl font-semibold">Useful workflows</h2>
+        <h2 className="text-xl font-semibold">Agent workflows that work</h2>
         <ol className="mt-6 space-y-6">
           {workflows.map((workflow, index) => (
             <li
@@ -180,12 +195,13 @@ function McpPage() {
 
       <section className="mt-12 rounded-lg border border-neutral-200 bg-white p-5">
         <h2 className="text-lg font-semibold text-neutral-900">
-          New: free Google Search Console MCP
+          Google Search Console MCP — no Google Cloud setup
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-neutral-600">
           OpenSEO MCP can read Search Console performance and URL inspection
-          data from a connected hosted project. These tools are read-only and do
-          not use OpenSEO credits.
+          data from a connected hosted project. No Google Cloud project or OAuth
+          credentials needed. These tools are read-only and do not use OpenSEO
+          credits.
         </p>
         <div className="mt-4">
           <a
