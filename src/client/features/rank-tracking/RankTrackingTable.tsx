@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 import { FileDown, Loader2, Sheet, Trash2 } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
@@ -21,6 +21,10 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
 import { buildRankTrackingExport } from "./RankTrackingTableParts";
+import {
+  KeywordTrendModal,
+  type KeywordTrendTarget,
+} from "./KeywordTrendModal";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 export function RankTrackingTable({
@@ -33,6 +37,8 @@ export function RankTrackingTable({
   domain,
   configId,
   projectId,
+  locationCode,
+  serpDepth,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -43,16 +49,31 @@ export function RankTrackingTable({
   domain: string;
   configId: string;
   projectId: string;
+  locationCode: number;
+  serpDepth: number;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
+  const [trendTarget, setTrendTarget] = useState<KeywordTrendTarget | null>(
+    null,
+  );
   const selectAnchorRef = useRef<SelectionAnchor | null>(null);
+
+  const handleKeywordClick = useCallback(
+    (row: RankTrackingRow) =>
+      setTrendTarget({
+        trackingKeywordId: row.trackingKeywordId,
+        keyword: row.keyword,
+      }),
+    [],
+  );
 
   const columns = useRankTrackingColumns(
     showDesktop,
     showMobile,
     domain,
     selectAnchorRef,
+    handleKeywordClick,
   );
 
   const table = useAppTable({
@@ -209,6 +230,18 @@ export function RankTrackingTable({
             </button>
           </div>
         </Modal>
+      )}
+
+      {trendTarget && (
+        <KeywordTrendModal
+          target={trendTarget}
+          projectId={projectId}
+          configId={configId}
+          domain={domain}
+          locationCode={locationCode}
+          serpDepth={serpDepth}
+          onClose={() => setTrendTarget(null)}
+        />
       )}
 
       <AppDataTable table={table} getCellClassName={() => "align-top"} />

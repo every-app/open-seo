@@ -19,7 +19,43 @@ import {
   addKeywordsSchema,
   removeKeywordsSchema,
   refreshMetricsSchema,
+  getKeywordHistorySchema,
+  getConfigTrendSchema,
+  getPositionMatrixSchema,
 } from "@/types/schemas/rank-tracking";
+
+export interface RankKeywordHistoryPoint {
+  device: "desktop" | "mobile";
+  checkedAt: string;
+  position: number | null;
+}
+
+interface RankConfigTrendPoint {
+  runId: string;
+  checkedAt: string;
+  top3: number;
+  top4to10: number;
+  top11to20: number;
+  notRanking: number;
+}
+
+export interface RankPositionMatrixCell {
+  runId: string;
+  checkedAt: string;
+  trackingKeywordId: string;
+  position: number | null;
+}
+
+async function requireConfig(configId: string, projectId: string) {
+  const config = await RankTrackingRepository.getConfigById({
+    configId,
+    projectId,
+  });
+  if (!config) {
+    throw new AppError("INTERNAL_ERROR", "Rank tracking config not found");
+  }
+  return config;
+}
 
 export const getRankTrackingConfigs = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
@@ -250,4 +286,56 @@ export const refreshTrackingKeywordMetrics = createServerFn({ method: "POST" })
     );
 
     return result;
+  });
+
+export const getRankKeywordHistory = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => getKeywordHistorySchema.parse(data))
+  .handler(async ({ data, context }): Promise<RankKeywordHistoryPoint[]> => {
+    await requireConfig(data.configId, context.projectId);
+    return RankTrackingRepository.getKeywordHistory(
+      data.configId,
+      data.trackingKeywordId,
+      data.sinceDays,
+    );
+  });
+
+export const getRankConfigTrend = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => getConfigTrendSchema.parse(data))
+  .handler(async ({ data, context }): Promise<RankConfigTrendPoint[]> => {
+    await requireConfig(data.configId, context.projectId);
+    const rows = await RankTrackingRepository.getConfigTrend(
+      data.configId,
+      data.device,
+      data.sinceDays,
+    );
+    // SQLite sum()/count() can return strings; coerce and derive "not ranking"
+    // (position > 20 or null) as the remainder so the buckets cover every kw.
+    return rows.map((row) => {
+      const top3 = Number(row.top3) || 0;
+      const top4to10 = Number(row.top4to10) || 0;
+      const top11to20 = Number(row.top11to20) || 0;
+      const total = Number(row.total) || 0;
+      return {
+        runId: row.runId,
+        checkedAt: row.checkedAt,
+        top3,
+        top4to10,
+        top11to20,
+        notRanking: Math.max(0, total - top3 - top4to10 - top11to20),
+      };
+    });
+  });
+
+export const getRankPositionMatrix = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) => getPositionMatrixSchema.parse(data))
+  .handler(async ({ data, context }): Promise<RankPositionMatrixCell[]> => {
+    await requireConfig(data.configId, context.projectId);
+    return RankTrackingRepository.getPositionMatrix(
+      data.configId,
+      data.device,
+      data.runLimit,
+    );
   });

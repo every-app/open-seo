@@ -160,7 +160,7 @@ export function CpcCell({ value }: { value: number | null }) {
 }
 
 /** Numeric change for CSV export — numbers bypass the CSV formula-injection sanitizer */
-function csvChange(
+export function csvChange(
   current: number | null,
   previous: number | null,
 ): number | string {

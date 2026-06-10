@@ -12,6 +12,9 @@ import {
   getLatestSnapshotsForKeywords,
   getSnapshotsBeforeDate,
   getEarliestSnapshotsForKeywords,
+  getKeywordHistory,
+  getConfigTrend,
+  getPositionMatrix,
 } from "./snapshotQueries";
 
 const DB_BATCH_SIZE = 100;
@@ -380,4 +383,7 @@ export const RankTrackingRepository = {
   getLatestSnapshotsForKeywords,
   getSnapshotsBeforeDate,
   getEarliestSnapshotsForKeywords,
+  getKeywordHistory,
+  getConfigTrend,
+  getPositionMatrix,
 };

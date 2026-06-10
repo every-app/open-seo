@@ -100,17 +100,28 @@ const cpcColumn: ColumnDef<RankTrackingRow> = {
   sortingFn: nullsLastNumeric,
 };
 
-const keywordColumn: ColumnDef<RankTrackingRow> = {
-  id: "keyword",
-  accessorKey: "keyword",
-  header: ({ column }) => (
-    <SortableHeader column={column} label="Keyword" id="keyword" />
-  ),
-  cell: ({ getValue }) => (
-    <span className="font-medium">{getValue<string>()}</span>
-  ),
-  sortingFn: "alphanumeric",
-};
+function makeKeywordColumn(
+  onKeywordClick: (row: RankTrackingRow) => void,
+): ColumnDef<RankTrackingRow> {
+  return {
+    id: "keyword",
+    accessorKey: "keyword",
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Keyword" id="keyword" />
+    ),
+    cell: ({ row }) => (
+      <button
+        type="button"
+        className="font-medium text-left link link-hover decoration-dotted underline-offset-2"
+        onClick={() => onKeywordClick(row.original)}
+        title="View position history"
+      >
+        {row.original.keyword}
+      </button>
+    ),
+    sortingFn: "alphanumeric",
+  };
+}
 
 function makeDeviceColumn(
   device: "desktop" | "mobile",
@@ -178,11 +189,12 @@ export function useRankTrackingColumns(
   showMobile: boolean,
   domain: string,
   selectAnchorRef: MutableRefObject<SelectionAnchor | null>,
+  onKeywordClick: (row: RankTrackingRow) => void,
 ): ColumnDef<RankTrackingRow>[] {
   return useMemo(() => {
     const cols: ColumnDef<RankTrackingRow>[] = [
       makeSelectionColumn<RankTrackingRow>(selectAnchorRef),
-      keywordColumn,
+      makeKeywordColumn(onKeywordClick),
     ];
     if (showDesktop) {
       cols.push(makeDeviceColumn("desktop"));
@@ -200,5 +212,5 @@ export function useRankTrackingColumns(
       cols.push(makeSerpColumn("mobile"));
     }
     return cols;
-  }, [showDesktop, showMobile, domain, selectAnchorRef]);
+  }, [showDesktop, showMobile, domain, selectAnchorRef, onKeywordClick]);
 }

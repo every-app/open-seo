@@ -1,4 +1,5 @@
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { toSqliteTimestamp } from "@/server/features/rank-tracking/rankTrackingTimestamps";
 import { AppError } from "@/server/lib/errors";
 import type { ComparePeriod } from "@/types/schemas/rank-tracking";
 import type {
@@ -42,9 +43,9 @@ export async function getLatestResults(
 
   // Get comparison snapshots from before the target date
   const days = PERIOD_DAYS[comparePeriod];
-  const targetDate = new Date(
-    Date.now() - days * 24 * 60 * 60 * 1000,
-  ).toISOString();
+  const targetDate = toSqliteTimestamp(
+    new Date(Date.now() - days * 24 * 60 * 60 * 1000),
+  );
 
   const comparisonSnapshots =
     await RankTrackingRepository.getSnapshotsBeforeDate(configId, targetDate);

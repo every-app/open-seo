@@ -114,3 +114,27 @@ export const refreshMetricsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
 });
+
+const deviceEnum = z.enum(["desktop", "mobile"]);
+const sinceDaysField = z.number().int().positive().max(730).default(365);
+
+export const getKeywordHistorySchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+  trackingKeywordId: z.string().uuid(),
+  sinceDays: sinceDaysField,
+});
+
+export const getConfigTrendSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+  device: deviceEnum,
+  sinceDays: sinceDaysField,
+});
+
+export const getPositionMatrixSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+  device: deviceEnum,
+  runLimit: z.number().int().positive().max(26).default(12),
+});
