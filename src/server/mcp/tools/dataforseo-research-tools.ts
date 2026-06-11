@@ -38,22 +38,53 @@ const marketSchema = z
   .object({
     country: z
       .enum(["US", "USA", "United States", "United States of America"])
-      .optional(),
+      .optional()
+      .describe("Country selector. Only the United States is supported."),
   })
   .optional()
   .describe("Optional United States market object. Defaults to United States.");
 
-const nearSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  radiusKm: z.number().min(1).max(100000),
-});
+const nearSchema = z
+  .object({
+    latitude: z
+      .number()
+      .min(-90)
+      .max(90)
+      .describe("Latitude of the search center."),
+    longitude: z
+      .number()
+      .min(-180)
+      .max(180)
+      .describe("Longitude of the search center."),
+    radiusKm: z
+      .number()
+      .min(1)
+      .max(100000)
+      .describe("Search radius around the center, in kilometers."),
+  })
+  .describe("Coordinate and radius to search around.");
 
-const localSerpNearSchema = z.object({
-  latitude: z.number().min(-90).max(90),
-  longitude: z.number().min(-180).max(180),
-  zoom: z.number().int().min(4).max(18).optional(),
-});
+const localSerpNearSchema = z
+  .object({
+    latitude: z
+      .number()
+      .min(-90)
+      .max(90)
+      .describe("Latitude the SERP is fetched from."),
+    longitude: z
+      .number()
+      .min(-180)
+      .max(180)
+      .describe("Longitude the SERP is fetched from."),
+    zoom: z
+      .number()
+      .int()
+      .min(4)
+      .max(18)
+      .optional()
+      .describe("Map zoom level (4-18). Higher zoom narrows the local area."),
+  })
+  .describe("Coordinate (and optional map zoom) the SERP is fetched from.");
 
 const domainTargetSchema = z
   .string()
@@ -80,64 +111,176 @@ const rankedTargetSchema = z
 
 const getRankedKeywordsInputSchema = {
   projectId: projectIdSchema,
-  target: rankedTargetSchema,
+  target: rankedTargetSchema.describe(
+    "Domain (no protocol/www) or absolute page URL to list ranked keywords for.",
+  ),
   market: marketSchema,
-  resultTypes: z.array(rankedResultTypeSchema).min(1).max(5).optional(),
-  includeSubdomains: z.boolean().optional(),
-  minSearchVolume: z.number().int().min(0).optional(),
-  maxRank: z.number().int().min(1).max(100).optional(),
+  resultTypes: z
+    .array(rankedResultTypeSchema)
+    .min(1)
+    .max(5)
+    .optional()
+    .describe("SERP result types to include. Defaults to organic and paid."),
+  includeSubdomains: z
+    .boolean()
+    .optional()
+    .describe(
+      "Include subdomains of the target. Defaults to true for domains, false for page URLs.",
+    ),
+  minSearchVolume: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Only return keywords with at least this monthly search volume."),
+  maxRank: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Only return keywords ranking at this position or better."),
   excludeBrandTerms: z
     .array(z.string().min(1).max(80))
     .min(1)
     .max(10)
-    .optional(),
+    .optional()
+    .describe("Exclude keywords containing any of these brand terms."),
   sortBy: z
     .enum(["rank", "search_volume", "traffic_estimate", "cpc"])
-    .optional(),
-  limit: z.number().int().min(1).max(100).optional(),
-  offset: z.number().int().min(0).max(1000).optional(),
+    .optional()
+    .describe("Sort order for returned rows. Defaults to search_volume."),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Maximum rows to return (1-100). Defaults to 50."),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .max(1000)
+    .optional()
+    .describe("Rows to skip for pagination."),
 } as const;
 
 const searchLocalBusinessesInputSchema = {
   projectId: projectIdSchema,
-  query: z.string().min(1).max(200).optional(),
+  query: z
+    .string()
+    .min(1)
+    .max(200)
+    .optional()
+    .describe("Business name or title text to match."),
   near: nearSchema,
-  categories: z.array(z.string().min(1).max(120)).min(1).max(10).optional(),
-  limit: z.number().int().min(1).max(50).optional(),
+  categories: z
+    .array(z.string().min(1).max(120))
+    .min(1)
+    .max(10)
+    .optional()
+    .describe("Business categories to filter by (e.g. 'pizza_restaurant')."),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Maximum businesses to return (1-50). Defaults to 20."),
 } as const;
 
 const localSearchTypeSchema = z.enum(["maps", "local_finder"]);
 
 const getLocalSerpResultsInputSchema = {
   projectId: projectIdSchema,
-  keyword: z.string().min(1).max(120),
+  keyword: z
+    .string()
+    .min(1)
+    .max(120)
+    .describe("Search query to run on Google Maps or Local Finder."),
   near: localSerpNearSchema,
-  searchType: localSearchTypeSchema.optional(),
-  device: z.enum(["desktop", "mobile"]).optional(),
-  depth: z.number().int().min(1).max(100).optional(),
+  searchType: localSearchTypeSchema
+    .optional()
+    .describe("Which local SERP to fetch. Defaults to maps."),
+  device: z
+    .enum(["desktop", "mobile"])
+    .optional()
+    .describe("Device the SERP is rendered for. Defaults to desktop."),
+  depth: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Number of results to fetch (1-100). Defaults to 20."),
   languageCode: languageCodeSchema.optional(),
 } as const;
 
 const getGoogleBusinessQuestionsInputSchema = {
   projectId: projectIdSchema,
-  keyword: z.string().min(1).max(200),
+  keyword: z
+    .string()
+    .min(1)
+    .max(200)
+    .describe(
+      "Business name or search phrase identifying the Google Business Profile.",
+    ),
   near: nearSchema,
-  depth: z.number().int().min(1).max(100).optional(),
+  depth: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Maximum Q&A rows to fetch (1-100). Defaults to 20."),
   languageCode: languageCodeSchema.optional(),
 } as const;
 
 const findSerpCompetitorsInputSchema = {
   projectId: projectIdSchema,
-  keywords: z.array(z.string().min(1).max(120)).min(1).max(100),
+  keywords: z
+    .array(z.string().min(1).max(120))
+    .min(1)
+    .max(100)
+    .describe("Keywords whose SERPs are compared (1-100)."),
   market: marketSchema,
-  resultTypes: z.array(serpCompetitorResultTypeSchema).min(1).max(4).optional(),
-  excludeDomains: z.array(domainTargetSchema).min(1).max(50).optional(),
-  includeSubdomains: z.boolean().optional(),
+  resultTypes: z
+    .array(serpCompetitorResultTypeSchema)
+    .min(1)
+    .max(4)
+    .optional()
+    .describe(
+      "SERP result types to include. Defaults to organic and local_pack.",
+    ),
+  excludeDomains: z
+    .array(domainTargetSchema)
+    .min(1)
+    .max(50)
+    .optional()
+    .describe("Domains to exclude from results (e.g. the user's own site)."),
+  includeSubdomains: z
+    .boolean()
+    .optional()
+    .describe("Count subdomains as part of the same competitor domain."),
   sortBy: z
     .enum(["visibility", "traffic_estimate", "avg_position", "keyword_count"])
-    .optional(),
-  limit: z.number().int().min(1).max(100).optional(),
-  offset: z.number().int().min(0).max(1000).optional(),
+    .optional()
+    .describe("Sort order for returned competitors. Defaults to visibility."),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .optional()
+    .describe("Maximum competitors to return (1-100). Defaults to 50."),
+  offset: z
+    .number()
+    .int()
+    .min(0)
+    .max(1000)
+    .optional()
+    .describe("Rows to skip for pagination."),
 } as const;
 
 const keywordMetricsSortSchema = z.enum([
@@ -149,11 +292,20 @@ const keywordMetricsSortSchema = z.enum([
 
 const getKeywordMetricsInputSchema = {
   projectId: projectIdSchema,
-  keywords: z.array(z.string().min(1).max(80)).min(1).max(700),
+  keywords: z
+    .array(z.string().min(1).max(80))
+    .min(1)
+    .max(700)
+    .describe("Keywords to fetch metrics for (1-700)."),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
-  includeMonthlyTrends: z.boolean().optional(),
-  sortBy: keywordMetricsSortSchema.optional(),
+  includeMonthlyTrends: z
+    .boolean()
+    .optional()
+    .describe("Include monthly search-volume trend rows. Defaults to true."),
+  sortBy: keywordMetricsSortSchema
+    .optional()
+    .describe("Sort order for returned rows. Defaults to search_volume."),
 } as const;
 
 type Market = z.infer<typeof marketSchema>;
@@ -346,7 +498,7 @@ export const getRankedKeywordsTool = {
   config: {
     title: "Get ranked keywords",
     description:
-      "Returns exact keyword, URL, rank, search volume, CPC, intent, and traffic rows for a domain or page. Use this for strategy evidence; use get_domain_overview for aggregate domain footprint. Charges DataForSEO Labs credits.",
+      "Returns exact keyword, URL, rank, search volume, CPC, intent, and traffic rows for a domain or page. Use this for strategy evidence; use get_domain_overview for aggregate domain footprint. Charges credits.",
     inputSchema: getRankedKeywordsInputSchema,
     outputSchema: {
       keywords: z.array(looseObjectOutputSchema),
@@ -405,7 +557,7 @@ export const searchLocalBusinessesTool = {
   config: {
     title: "Search local businesses",
     description:
-      "Searches DataForSEO Business Listings near a coordinate. Use this to find local business candidates or nearby competitors; it does not run Maps rank checks or Q&A. Charges DataForSEO Business Data credits.",
+      "Searches local business listings near a coordinate. Use this to find local business candidates or nearby competitors; it does not run Maps rank checks or Q&A. Charges credits.",
     inputSchema: searchLocalBusinessesInputSchema,
     outputSchema: {
       businesses: z.array(looseObjectOutputSchema),
@@ -441,7 +593,7 @@ export const getLocalSerpResultsTool = {
   config: {
     title: "Get local SERP results",
     description:
-      "Fetches one Google Maps or Local Finder SERP near a coordinate. Returns provider rows with rank fields intact; callers decide how to match a target business. Charges DataForSEO SERP credits.",
+      "Fetches one Google Maps or Local Finder SERP near a coordinate. Returns provider rows with rank fields intact; callers decide how to match a target business. Charges credits.",
     inputSchema: getLocalSerpResultsInputSchema,
     outputSchema: {
       results: z.array(looseObjectOutputSchema),
@@ -480,7 +632,7 @@ export const getGoogleBusinessQuestionsTool = {
   config: {
     title: "Get Google business questions",
     description:
-      "Fetches Google Business Profile questions and answers for one business keyword near a coordinate. Run this only when Q&A evidence is needed. Charges DataForSEO Business Data credits.",
+      "Fetches Google Business Profile questions and answers for one business keyword near a coordinate. Run this only when Q&A evidence is needed. Charges credits.",
     inputSchema: getGoogleBusinessQuestionsInputSchema,
     outputSchema: {
       questions: z.array(looseObjectOutputSchema),
@@ -516,7 +668,7 @@ export const findSerpCompetitorsTool = {
   config: {
     title: "Find SERP competitors",
     description:
-      "Compares domains competing for a supplied keyword set using DataForSEO Labs SERP Competitors. Useful for market and search-intelligence reports; not radius-based local SEO. Charges DataForSEO Labs credits.",
+      "Compares domains competing in Google results for a supplied keyword set. Useful for market and search-intelligence reports; not radius-based local SEO. Charges credits.",
     inputSchema: findSerpCompetitorsInputSchema,
     outputSchema: {
       competitors: z.array(looseObjectOutputSchema),
@@ -570,7 +722,7 @@ export const getKeywordMetricsTool = {
   config: {
     title: "Get keyword metrics",
     description:
-      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. Charges DataForSEO Labs credits.",
+      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. Charges credits.",
     inputSchema: getKeywordMetricsInputSchema,
     outputSchema: {
       keywords: z.array(looseObjectOutputSchema),

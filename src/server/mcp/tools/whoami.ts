@@ -23,7 +23,7 @@ export const whoamiTool = {
   config: {
     title: "Who am I",
     description:
-      "Returns the authenticated user, organization, server mode, token scopes, and current credit balance. Free — does not call DataForSEO. Use this first to confirm connection context before choosing a project or running paid tools.",
+      "Returns the authenticated user, organization, server mode, token scopes, and current credit balance. Free — charges no credits. Use this first to confirm connection context before choosing a project or running paid tools.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
       userId: z.string(),

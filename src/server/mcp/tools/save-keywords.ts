@@ -43,7 +43,7 @@ export const saveKeywordsTool = {
   config: {
     title: "Save keywords",
     description:
-      "Save keywords to a project's saved-keywords list. Free — does not call DataForSEO. Idempotent: re-saving an existing keyword is a no-op. If tags are provided, missing tags may be created. By default tags are appended; set tagMode=replace to remove existing tags from these saved keywords before applying the provided tags, which is useful for reorganizing keywords into page/topic clusters. Ask the user for confirmation before applying or replacing tags broadly.",
+      "Save keywords to a project's saved-keywords list. Free — charges no credits. Idempotent: re-saving an existing keyword is a no-op. If tags are provided, missing tags may be created. By default tags are appended; set tagMode=replace to remove existing tags from these saved keywords before applying the provided tags, which is useful for reorganizing keywords into page/topic clusters. Ask the user for confirmation before applying or replacing tags broadly.",
     inputSchema,
     outputSchema: {
       projectId: z.string(),

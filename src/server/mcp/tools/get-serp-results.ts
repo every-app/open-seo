@@ -13,7 +13,7 @@ import {
 } from "@/server/mcp/schemas";
 
 const querySchema = z.object({
-  keyword: z.string().min(1),
+  keyword: z.string().min(1).describe("Search query to fetch the SERP for."),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
 });

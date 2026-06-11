@@ -1,5 +1,7 @@
 import type { CreateMcpHandlerOptions } from "agents/mcp";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { Client } from "@modelcontextprotocol/sdk/client/index.js";
+import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
@@ -12,6 +14,7 @@ const selfHostedAuthMocks = vi.hoisted(() => ({
 const serverMocks = vi.hoisted(() => ({
   nextServerId: 0,
   serverIds: new WeakMap<McpServer, number>(),
+  lastServer: undefined as McpServer | undefined,
 }));
 
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
@@ -31,6 +34,7 @@ vi.mock("agents/mcp", () => ({
   createMcpHandler: (_server: McpServer, options: CreateMcpHandlerOptions) => {
     serverMocks.nextServerId += 1;
     serverMocks.serverIds.set(_server, serverMocks.nextServerId);
+    serverMocks.lastServer = _server;
 
     return async () =>
       new Response(
@@ -85,6 +89,7 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     vi.clearAllMocks();
     serverMocks.nextServerId = 0;
     serverMocks.serverIds = new WeakMap<McpServer, number>();
+    serverMocks.lastServer = undefined;
     selfHostedAuthMocks.resolveLocalNoAuthContext.mockResolvedValue({
       userId: "local-admin",
       userEmail: "admin@localhost",
@@ -172,5 +177,47 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
       selfHostedAuthMocks.resolveCloudflareAccessContext,
     ).not.toHaveBeenCalled();
     expect(body.options.authContext).toBeUndefined();
+  });
+
+  // Directory scanners (e.g. Smithery) read server metadata from initialize.
+  it("serves directory metadata in the initialize response", async () => {
+    const { handleSelfHostedOpenSeoMcpRequest } =
+      await import("@/server/mcp/transport");
+
+    await handleSelfHostedOpenSeoMcpRequest(
+      createMcpRequest(),
+      "local_noauth",
+      {},
+      ctx,
+    );
+    const server = serverMocks.lastServer;
+    if (!server) throw new Error("MCP server was not created");
+
+    const [clientTransport, serverTransport] =
+      InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "test-client", version: "0.0.0" });
+    await Promise.all([
+      client.connect(clientTransport),
+      server.connect(serverTransport),
+    ]);
+
+    const serverInfo = client.getServerVersion();
+    expect(serverInfo).toMatchObject({
+      name: "OpenSEO MCP",
+      title: "OpenSEO",
+      websiteUrl: "https://openseo.so",
+      icons: [
+        {
+          src: "https://openseo.so/android-chrome-512x512.png",
+          mimeType: "image/png",
+          sizes: ["512x512"],
+        },
+      ],
+    });
+    expect(serverInfo?.description).toContain(
+      "SEO research tools for AI agents",
+    );
+
+    await client.close();
   });
 });

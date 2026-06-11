@@ -17,7 +17,18 @@ function createOpenSeoMcpServer() {
   const server = new McpServer(
     {
       name: "OpenSEO MCP",
-      version: "0.0.10",
+      title: "OpenSEO",
+      version: "0.0.11",
+      description:
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+      websiteUrl: "https://openseo.so",
+      icons: [
+        {
+          src: "https://openseo.so/android-chrome-512x512.png",
+          mimeType: "image/png",
+          sizes: ["512x512"],
+        },
+      ],
     },
     {
       instructions:

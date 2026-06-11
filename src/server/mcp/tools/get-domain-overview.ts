@@ -15,7 +15,11 @@ import {
 const inputSchema = {
   projectId: projectIdSchema,
   domain: z.string().min(1).describe("Domain to analyze (e.g. 'example.com')."),
-  includeSubdomains: z.boolean().optional().default(false),
+  includeSubdomains: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Include subdomains in the domain's metrics. Defaults to false."),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
 } as const;

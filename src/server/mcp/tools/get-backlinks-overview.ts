@@ -40,7 +40,7 @@ export const getBacklinksOverviewTool = {
   config: {
     title: "Get backlinks overview",
     description:
-      "Returns a backlinks profile summary (total backlinks, referring domains, top referring domains). Charges credits (~200-500 typical). Requires that the user's DataForSEO account has Backlinks enabled.",
+      "Returns a backlinks profile summary (total backlinks, referring domains, top referring domains). Charges credits (~200-500 typical). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
     inputSchema,
     outputSchema: {
       overview: looseObjectOutputSchema,
