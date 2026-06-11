@@ -209,7 +209,7 @@ describe("fetchBacklinksSummary", () => {
 
     await expect(
       fetchBacklinksRows({ target: "example.com" }),
-    ).resolves.toMatchObject({ data: [] });
+    ).resolves.toMatchObject({ data: { items: [], totalCount: null } });
     await expect(
       fetchBacklinksHistory({
         target: "example.com",

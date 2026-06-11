@@ -1,28 +1,27 @@
-import { createColumnHelper, type SortingState } from "@tanstack/react-table";
-import { useState } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,
   useAppTable,
 } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
-import {
-  numericNullsLast,
-  stringNullsLast,
-} from "@/client/components/table/nullSafeSort";
+import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { EmptyTableState } from "./BacklinksPageEmptyTableState";
-import type { BacklinksOverviewData } from "./backlinksPageTypes";
+import type { TopPageRow } from "./backlinksPageTypes";
+import type { TopPagesSortField } from "@/types/schemas/backlinks";
 import { formatNumber } from "./backlinksPageUtils";
-
-type TopPageRow = BacklinksOverviewData["topPages"][number];
 
 const columnHelper = createColumnHelper<TopPageRow>();
 
+// Column ids map to server-side sort fields; sorting re-queries DataForSEO
+// across all pages, not just the loaded page of results.
 const columns = [
   columnHelper.accessor("page", {
-    header: ({ column }) => (
-      <SortableHeader
-        column={column}
+    id: "page",
+    enableSorting: false,
+    header: () => (
+      <HeaderHelpLabel
         label="Page"
         helpText="Page on the target site receiving backlinks."
       />
@@ -39,9 +38,9 @@ const columns = [
         "-"
       );
     },
-    sortingFn: stringNullsLast,
   }),
   columnHelper.accessor("backlinks", {
+    id: "backlinks" satisfies TopPagesSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -50,10 +49,10 @@ const columns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("referringDomains", {
+    id: "referringDomains" satisfies TopPagesSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -62,10 +61,10 @@ const columns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("rank", {
+    id: "rank" satisfies TopPagesSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -74,10 +73,10 @@ const columns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("brokenBacklinks", {
+    id: "brokenBacklinks" satisfies TopPagesSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -86,26 +85,25 @@ const columns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
 ];
 
-const DEFAULT_SORTING: SortingState = [{ id: "backlinks", desc: true }];
-
 export function TopPagesTable({
   rows,
+  sorting,
+  onSortingChange,
 }: {
-  rows: BacklinksOverviewData["topPages"];
+  rows: TopPageRow[];
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
 }) {
-  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
-
   const table = useAppTable({
     data: rows,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
-    withSorting: true,
+    onSortingChange,
+    manualSorting: true,
   });
 
   if (rows.length === 0) {

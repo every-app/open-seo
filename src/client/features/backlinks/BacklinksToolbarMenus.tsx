@@ -8,26 +8,17 @@ import {
 } from "lucide-react";
 import type { CsvValue } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
-import type {
-  BacklinksOverviewData,
-  BacklinksSearchState,
-} from "./backlinksPageTypes";
+import type { BacklinksSearchState } from "./backlinksPageTypes";
 import { exportBacklinksTabCsv } from "./export";
 
 export function BacklinksExportMenu({
   activeTab,
   exportTarget,
-  filteredData,
   headers,
   rows,
 }: {
   activeTab: BacklinksSearchState["tab"];
   exportTarget: string;
-  filteredData: {
-    backlinks: BacklinksOverviewData["backlinks"];
-    referringDomains: BacklinksOverviewData["referringDomains"];
-    topPages: BacklinksOverviewData["topPages"];
-  };
   headers: string[];
   rows: CsvValue[][];
 }) {
@@ -86,7 +77,8 @@ export function BacklinksExportMenu({
               exportBacklinksTabCsv({
                 tab: activeTab,
                 target: exportTarget,
-                rows: filteredData,
+                headers,
+                rows,
               })
             }
             disabled={rows.length === 0}

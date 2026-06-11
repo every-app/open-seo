@@ -9,20 +9,51 @@ import {
   type DomainPageSummaryItem,
   type ReferringDomainItem,
 } from "@/server/lib/dataforseo";
-import {
-  normalizeBacklinksSpamFilterOptions,
-  type BacklinksSpamFilterOptions,
+import type {
+  BacklinksLookupInput,
+  BacklinksRowsPageInput,
+  BacklinksSpamFilterOptions,
+  ReferringDomainsPageInput,
+  TopPagesPageInput,
 } from "@/types/schemas/backlinks";
+
 import {
   backlinksOverviewSchema,
-  referringDomainRowSchema,
-  topPageRowSchema,
+  backlinksRowsPageResultSchema,
+  referringDomainsPageResultSchema,
+  topPagesPageResultSchema,
   type BacklinksOverviewResult,
+  type BacklinksRowsPageResult,
+  type ReferringDomainsPageResult,
+  type TopPagesPageResult,
 } from "@/server/features/backlinks/services/backlinksOverviewSchema";
-import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
+import {
+  buildBacklinksRowsApiFilters,
+  buildBacklinksRowsOrderBy,
+  buildReferringDomainsApiFilters,
+  buildReferringDomainsOrderBy,
+  buildTopPagesApiFilters,
+  buildTopPagesOrderBy,
+} from "@/server/features/backlinks/services/backlinksApiFilters";
+
+// The page-request schemas carry projectId for the web middleware; the
+// service layer is organization-scoped and never reads it.
+export type BacklinksRowsPageServiceInput = Omit<
+  BacklinksRowsPageInput,
+  "projectId"
+>;
+export type ReferringDomainsPageServiceInput = Omit<
+  ReferringDomainsPageInput,
+  "projectId"
+>;
+export type TopPagesPageServiceInput = Omit<TopPagesPageInput, "projectId">;
 
 const BACKLINKS_OVERVIEW_TTL_SECONDS = 6 * 60 * 60;
 const BACKLINKS_TAB_TTL_SECONDS = 6 * 60 * 60;
+
+const backlinksOverviewCacheSchema = z.object({
+  overview: backlinksOverviewSchema,
+});
 
 export type BacklinksCache = {
   get(key: string): Promise<unknown>;
@@ -32,24 +63,6 @@ export type BacklinksCache = {
 type BacklinksOverviewProfile = {
   overview: BacklinksOverviewResult;
 };
-
-type ReferringDomainsProfile = {
-  rows: BacklinksOverviewResult["referringDomains"];
-};
-
-type TopPagesProfile = {
-  rows: BacklinksOverviewResult["topPages"];
-};
-
-const backlinksOverviewCacheSchema = z.object({
-  overview: backlinksOverviewSchema,
-});
-
-const referringDomainsCacheSchema = z.object({
-  rows: z.array(referringDomainRowSchema),
-});
-
-const topPagesCacheSchema = z.object({ rows: z.array(topPageRowSchema) });
 
 type BacklinksDateRange = {
   dateFrom: string;
@@ -61,10 +74,10 @@ export async function profileBacklinksOverview(
   cacheKey: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
-  options?: BacklinksSpamFilterOptions,
 ): Promise<BacklinksOverviewProfile> {
-  const cachedRaw = await cache.get(cacheKey);
-  const cached = backlinksOverviewCacheSchema.safeParse(cachedRaw);
+  const cached = backlinksOverviewCacheSchema.safeParse(
+    await cache.get(cacheKey),
+  );
   if (cached.success) {
     return {
       overview: cached.data.overview,
@@ -77,16 +90,10 @@ export async function profileBacklinksOverview(
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
-  const request = buildBacklinksListRequest(
-    normalizedTarget.apiTarget,
-    100,
-    options,
-  );
   const dateRange = buildBacklinksDateRange(now);
 
-  const [summary, backlinks, history] = await Promise.all([
-    dataforseo.backlinks.summary({ target: request.target }),
-    dataforseo.backlinks.rows(request),
+  const [summary, history] = await Promise.all([
+    dataforseo.backlinks.summary({ target: normalizedTarget.apiTarget }),
     normalizedTarget.scope === "domain"
       ? dataforseo.backlinks.history({
           target: normalizedTarget.apiTarget,
@@ -99,7 +106,6 @@ export async function profileBacklinksOverview(
     normalizedTarget,
     now,
     summary,
-    backlinks,
     history,
   });
   await cacheValue(
@@ -112,76 +118,131 @@ export async function profileBacklinksOverview(
   return { overview };
 }
 
-export async function profileReferringDomainsRows(
+export async function profileBacklinksRowsPage(
   cache: BacklinksCache,
   cacheKey: string,
-  input: BacklinksLookupInput,
+  input: BacklinksRowsPageServiceInput,
   billingCustomer: BillingCustomerContext,
-  options?: BacklinksSpamFilterOptions,
-): Promise<ReferringDomainsProfile> {
-  const cachedRaw = await cache.get(cacheKey);
-  const cached = referringDomainsCacheSchema.safeParse(cachedRaw);
-  if (cached.success) {
-    return {
-      rows: cached.data.rows,
-    };
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
-
-  const request = buildBacklinksListRequest(
-    normalizeBacklinksTarget(input.target, { scope: input.scope }).apiTarget,
-    100,
-    options,
+  spamOptions?: BacklinksSpamFilterOptions,
+): Promise<BacklinksRowsPageResult> {
+  const cached = backlinksRowsPageResultSchema.safeParse(
+    await cache.get(cacheKey),
   );
-  const response = await dataforseo.backlinks.referringDomains(request);
-  const rows = mapReferringDomainsRows(response);
-
-  await cacheValue(cache, cacheKey, { rows }, BACKLINKS_TAB_TTL_SECONDS);
-
-  return { rows };
-}
-
-export async function profileTopPagesRows(
-  cache: BacklinksCache,
-  cacheKey: string,
-  input: BacklinksLookupInput,
-  billingCustomer: BillingCustomerContext,
-): Promise<TopPagesProfile> {
-  const cachedRaw = await cache.get(cacheKey);
-  const cached = topPagesCacheSchema.safeParse(cachedRaw);
   if (cached.success) {
-    return {
-      rows: cached.data.rows,
-    };
+    return cached.data;
   }
 
   const dataforseo = createDataforseoClient(billingCustomer);
+  const offset = (input.page - 1) * input.pageSize;
+  const filters = buildBacklinksRowsApiFilters(input.filters);
 
-  const request = {
+  const response = await dataforseo.backlinks.rows({
     target: normalizeBacklinksTarget(input.target, { scope: input.scope })
       .apiTarget,
-  };
-  const response = await dataforseo.backlinks.domainPages({
-    ...request,
-    limit: 100,
+    limit: input.pageSize,
+    offset,
+    orderBy: buildBacklinksRowsOrderBy(input.sortField, input.sortOrder),
+    filters: filters.length > 0 ? filters : undefined,
+    mode: input.mode,
+    ...spamOptions,
   });
-  const rows = mapTopPagesRows(response);
 
-  await cacheValue(cache, cacheKey, { rows }, BACKLINKS_TAB_TTL_SECONDS);
+  const result = buildPageResult(input, offset, {
+    rows: mapBacklinksRows(response.items),
+    totalCount: response.totalCount,
+  });
+  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
 
-  return { rows };
+  return result;
 }
 
-function buildBacklinksListRequest(
-  target: string,
-  limit: number,
-  options?: BacklinksSpamFilterOptions,
+export async function profileReferringDomainsPage(
+  cache: BacklinksCache,
+  cacheKey: string,
+  input: ReferringDomainsPageServiceInput,
+  billingCustomer: BillingCustomerContext,
+  spamOptions?: BacklinksSpamFilterOptions,
+): Promise<ReferringDomainsPageResult> {
+  const cached = referringDomainsPageResultSchema.safeParse(
+    await cache.get(cacheKey),
+  );
+  if (cached.success) {
+    return cached.data;
+  }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
+  const offset = (input.page - 1) * input.pageSize;
+  const filters = buildReferringDomainsApiFilters(input.filters);
+
+  const response = await dataforseo.backlinks.referringDomains({
+    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
+      .apiTarget,
+    limit: input.pageSize,
+    offset,
+    orderBy: buildReferringDomainsOrderBy(input.sortField, input.sortOrder),
+    filters: filters.length > 0 ? filters : undefined,
+    ...spamOptions,
+  });
+
+  const result = buildPageResult(input, offset, {
+    rows: mapReferringDomainsRows(response.items),
+    totalCount: response.totalCount,
+  });
+  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
+
+  return result;
+}
+
+export async function profileTopPagesPage(
+  cache: BacklinksCache,
+  cacheKey: string,
+  input: TopPagesPageServiceInput,
+  billingCustomer: BillingCustomerContext,
+): Promise<TopPagesPageResult> {
+  const cached = topPagesPageResultSchema.safeParse(await cache.get(cacheKey));
+  if (cached.success) {
+    return cached.data;
+  }
+
+  const dataforseo = createDataforseoClient(billingCustomer);
+  const offset = (input.page - 1) * input.pageSize;
+  const filters = buildTopPagesApiFilters(input.filters);
+
+  const response = await dataforseo.backlinks.domainPages({
+    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
+      .apiTarget,
+    limit: input.pageSize,
+    offset,
+    orderBy: buildTopPagesOrderBy(input.sortField, input.sortOrder),
+    filters: filters.length > 0 ? filters : undefined,
+  });
+
+  const result = buildPageResult(input, offset, {
+    rows: mapTopPagesRows(response.items),
+    totalCount: response.totalCount,
+  });
+  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
+
+  return result;
+}
+
+function buildPageResult<TRow>(
+  input: { page: number; pageSize: number },
+  offset: number,
+  data: { rows: TRow[]; totalCount: number | null },
 ) {
+  const hasMore =
+    data.totalCount != null
+      ? offset + data.rows.length < data.totalCount
+      : data.rows.length === input.pageSize;
+
   return {
-    target,
-    limit,
-    ...normalizeBacklinksSpamFilterOptions(options),
+    rows: data.rows,
+    totalCount: data.totalCount,
+    hasMore,
+    page: input.page,
+    pageSize: input.pageSize,
+    fetchedAt: new Date().toISOString(),
   };
 }
 
@@ -205,7 +266,6 @@ function buildOverviewResult(args: {
   normalizedTarget: ReturnType<typeof normalizeBacklinksTarget>;
   now: Date;
   summary: BacklinksSummaryItem;
-  backlinks: BacklinksItem[];
   history: BacklinksHistoryItem[];
 }): BacklinksOverviewResult {
   const historyRows = args.history
@@ -253,9 +313,6 @@ function buildOverviewResult(args: {
         args.summary.lost_reffering_domains ??
         null,
     },
-    backlinks: mapBacklinksRows(args.backlinks),
-    referringDomains: [],
-    topPages: [],
     trends: historyRows.map((item) => ({
       date: item.date,
       backlinks: item.backlinks,

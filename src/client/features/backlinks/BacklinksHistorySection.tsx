@@ -55,6 +55,9 @@ export function BacklinksHistorySection({
                 target: item.target,
                 scope: item.scope,
                 tab: undefined,
+                page: undefined,
+                sort: undefined,
+                order: undefined,
               })}
               replace
               className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"

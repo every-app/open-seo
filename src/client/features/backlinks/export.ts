@@ -1,20 +1,25 @@
 import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import type {
-  BacklinksOverviewData,
   BacklinksSearchState,
+  BacklinksTabRows,
 } from "./backlinksPageTypes";
+import type { DomainRatings } from "./useAhrefsDomainRatings";
 
-type BacklinksFilteredData = {
-  backlinks: BacklinksOverviewData["backlinks"];
-  referringDomains: BacklinksOverviewData["referringDomains"];
-  topPages: BacklinksOverviewData["topPages"];
-};
-
+/**
+ * Builds the export table for the active tab. When `domainRatings` is loaded
+ * (the user clicked "Ahrefs DR"), an Ahrefs DR column is included for the
+ * Backlinks and Referring Domains tabs, matching the on-screen table.
+ */
 export function buildBacklinksTabExport(args: {
   tab: BacklinksSearchState["tab"];
-  rows: BacklinksFilteredData;
+  rows: BacklinksTabRows;
+  domainRatings?: DomainRatings | null;
 }): { headers: string[]; rows: CsvValue[][] } {
-  const { tab, rows } = args;
+  const { tab, rows, domainRatings } = args;
+  const ratingFor = (domain: string | null | undefined): CsvValue => {
+    if (!domainRatings || !domain) return null;
+    return domainRatings[domain.replace(/^www\./, "")] ?? null;
+  };
 
   if (tab === "backlinks") {
     return {
@@ -27,6 +32,7 @@ export function buildBacklinksTabExport(args: {
         "Dofollow",
         "Rel Attributes",
         "Domain Rank",
+        ...(domainRatings ? ["Ahrefs DR"] : []),
         "Source Page Rank",
         "Target Rank",
         "Spam Score",
@@ -45,6 +51,7 @@ export function buildBacklinksTabExport(args: {
         row.isDofollow,
         row.relAttributes.join(", "),
         row.domainFromRank,
+        ...(domainRatings ? [ratingFor(row.domainFrom)] : []),
         row.pageFromRank,
         row.rank,
         row.spamScore,
@@ -64,6 +71,7 @@ export function buildBacklinksTabExport(args: {
         "Backlinks",
         "Referring Pages",
         "Rank",
+        ...(domainRatings ? ["Ahrefs DR"] : []),
         "Spam Score",
         "First Seen",
         "Broken Backlinks",
@@ -74,6 +82,7 @@ export function buildBacklinksTabExport(args: {
         row.backlinks,
         row.referringPages,
         row.rank,
+        ...(domainRatings ? [ratingFor(row.domain)] : []),
         row.spamScore,
         row.firstSeen,
         row.brokenBacklinks,
@@ -100,38 +109,28 @@ export function buildBacklinksTabExport(args: {
   };
 }
 
-export function buildBacklinksTabCsvFile(args: {
-  tab: BacklinksSearchState["tab"];
-  target: string;
-  rows: BacklinksFilteredData;
-}) {
-  const { headers, rows } = buildBacklinksTabExport({
-    tab: args.tab,
-    rows: args.rows,
-  });
-  const filenamePrefix =
-    args.tab === "backlinks"
-      ? "backlinks"
-      : args.tab === "domains"
-        ? "referring-domains"
-        : "top-pages";
-
-  return {
-    filename: buildFilename(filenamePrefix, args.target),
-    content: buildCsv(headers, rows),
-  };
-}
-
 export function exportBacklinksTabCsv(args: {
   tab: BacklinksSearchState["tab"];
   target: string;
-  rows: BacklinksFilteredData;
+  headers: string[];
+  rows: CsvValue[][];
 }) {
-  const file = buildBacklinksTabCsvFile(args);
-  downloadCsv(file.filename, file.content);
+  downloadCsv(
+    buildBacklinksTabCsvFilename(args.tab, args.target),
+    buildCsv(args.headers, args.rows),
+  );
 }
 
-function buildFilename(tabPrefix: string, target: string) {
+export function buildBacklinksTabCsvFilename(
+  tab: BacklinksSearchState["tab"],
+  target: string,
+) {
+  const tabPrefix =
+    tab === "backlinks"
+      ? "backlinks"
+      : tab === "domains"
+        ? "referring-domains"
+        : "top-pages";
   const normalizedTarget = target
     .toLowerCase()
     .trim()

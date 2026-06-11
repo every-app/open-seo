@@ -1,8 +1,12 @@
 import {
-  MAX_DATAFORSEO_FILTER_CONDITIONS,
-  type DomainKeywordsFilters,
-} from "@/types/schemas/domain";
-import { AppError } from "@/server/lib/errors";
+  assertFilterConditionBudget,
+  collectNumericRange,
+  escapeLikeTerm,
+  joinClauses,
+  parseFilterTerms,
+  type FilterClause,
+} from "@/server/lib/dataforseo/filters";
+import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
 export type DomainKeywordsSortMode =
   | "rank"
@@ -27,62 +31,26 @@ export function buildOrderBy(
   return [`${SORT_FIELD_BY_MODE[sortMode]},${sortOrder}`];
 }
 
-function escapeLikeTerm(term: string): string {
-  return term.replace(/[\\%_]/g, (match) => `\\${match}`);
-}
-
-function pushAnd(filters: unknown[], expression: Clause) {
-  if (filters.length > 0) filters.push("and");
-  filters.push(expression);
-}
-
-function parseTerms(value: string | undefined): string[] {
-  if (!value) return [];
-  return value
-    .toLowerCase()
-    .split(/[,+]/)
-    .map((term) => term.trim())
-    .filter(Boolean);
-}
-
-function collectNumericRange(
-  out: Clause[],
-  field: string,
-  min: number | undefined,
-  max: number | undefined,
-) {
-  if (typeof min === "number" && Number.isFinite(min)) {
-    out.push([field, ">=", min]);
-  }
-  if (typeof max === "number" && Number.isFinite(max)) {
-    out.push([field, "<=", max]);
-  }
-}
-
 /**
- * DataForSEO accepts up to 8 filter conditions per request joined by
- * "and"/"or" operators. Each include/exclude term is one ilike clause;
- * numeric ranges add one per bound; the free-text search term adds one OR-
- * group of two (keyword OR url). The client surfaces the same condition
- * count and disables Apply when over budget, so reaching the cap here
- * indicates a misbehaving client — we throw rather than silently truncate.
+ * Each include/exclude term is one ilike clause; numeric ranges add one per
+ * bound; the free-text search term adds one OR-group of two (keyword OR url).
+ * The client surfaces the same condition count and disables Apply when over
+ * the DataForSEO budget.
  */
-type Clause = unknown[];
-
 export function buildKeywordFilters(
   filters: DomainKeywordsFilters,
   searchTerm?: string,
 ): unknown[] {
-  const conditions: Clause[] = [];
+  const conditions: FilterClause[] = [];
 
-  for (const term of parseTerms(filters.include)) {
+  for (const term of parseFilterTerms(filters.include)) {
     conditions.push([
       "keyword_data.keyword",
       "ilike",
       `%${escapeLikeTerm(term)}%`,
     ]);
   }
-  for (const term of parseTerms(filters.exclude)) {
+  for (const term of parseFilterTerms(filters.exclude)) {
     conditions.push([
       "keyword_data.keyword",
       "not_ilike",
@@ -125,21 +93,15 @@ export function buildKeywordFilters(
   const searchGroup = trimmedSearch ? buildSearchGroup(trimmedSearch) : null;
 
   // The search OR-group costs 2 slots; everything else is 1.
-  const totalConditions = conditions.length + (searchGroup ? 2 : 0);
-  if (totalConditions > MAX_DATAFORSEO_FILTER_CONDITIONS) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      `Too many filter conditions (${totalConditions} of ${MAX_DATAFORSEO_FILTER_CONDITIONS} max).`,
-    );
-  }
+  assertFilterConditionBudget(conditions.length + (searchGroup ? 2 : 0));
 
-  const expressions: unknown[] = [];
-  for (const clause of conditions) pushAnd(expressions, clause);
-  if (searchGroup) pushAnd(expressions, searchGroup);
-  return expressions;
+  return joinClauses(
+    searchGroup ? [...conditions, searchGroup] : conditions,
+    "and",
+  );
 }
 
-function buildSearchGroup(term: string): Clause {
+function buildSearchGroup(term: string): FilterClause {
   const escaped = escapeLikeTerm(term);
   return [
     ["keyword_data.keyword", "ilike", `%${escaped}%`],

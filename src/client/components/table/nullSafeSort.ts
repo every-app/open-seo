@@ -7,20 +7,16 @@ import type { Row } from "@tanstack/react-table";
  * direction from the cell context and return a value that survives the flip.
  */
 
-export function isDescending<TData>(
-  row: Row<TData>,
-  columnId: string,
-): boolean {
+function isDescending<TData>(row: Row<TData>, columnId: string): boolean {
   const cell = row.getAllCells().find((c) => c.column.id === columnId);
   return cell?.column.getIsSorted() === "desc";
 }
 
 /**
  * Compare two nullable numeric values with nulls always at the bottom,
- * regardless of the column's current sort direction. Use this directly for
- * tiebreakers or when the value isn't the column's accessor.
+ * regardless of the column's current sort direction.
  */
-export function compareNumericNullsLast(
+function compareNumericNullsLast(
   a: number | null | undefined,
   b: number | null | undefined,
   descending: boolean,
@@ -43,34 +39,4 @@ export function numericNullsLast<TData>(
     rowB.getValue<number | null | undefined>(columnId),
     isDescending(rowA, columnId),
   );
-}
-
-export function stringNullsLast<TData>(
-  rowA: Row<TData>,
-  rowB: Row<TData>,
-  columnId: string,
-): number {
-  const a = rowA.getValue<string | null | undefined>(columnId);
-  const b = rowB.getValue<string | null | undefined>(columnId);
-  if (!a && !b) return 0;
-  if (!a || !b) {
-    const sign = isDescending(rowA, columnId) ? -1 : 1;
-    return (!a ? 1 : -1) * sign;
-  }
-  return a.toLowerCase().localeCompare(b.toLowerCase());
-}
-
-export function dateNullsLast<TData>(
-  rowA: Row<TData>,
-  rowB: Row<TData>,
-  columnId: string,
-): number {
-  const a = rowA.getValue<string | null | undefined>(columnId);
-  const b = rowB.getValue<string | null | undefined>(columnId);
-  if (!a && !b) return 0;
-  if (!a || !b) {
-    const sign = isDescending(rowA, columnId) ? -1 : 1;
-    return (!a ? 1 : -1) * sign;
-  }
-  return Date.parse(a) - Date.parse(b);
 }

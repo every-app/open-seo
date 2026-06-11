@@ -1,385 +1,234 @@
-import { RotateCcw } from "lucide-react";
+import { DomainFilterPanel } from "@/client/features/domain/components/DomainFilterPanel";
 import type { BacklinksTab } from "@/types/schemas/backlinks";
+import {
+  BACKLINKS_FILTER_FIELDS,
+  REFERRING_DOMAINS_FILTER_FIELDS,
+  TOP_PAGES_FILTER_FIELDS,
+  countFilterConditions,
+  type BacklinksTabFilterValues,
+} from "./backlinksFilterTypes";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyForm = { Field: React.ComponentType<any> };
-
-function FilterTextInput({
-  form,
-  name,
-  label,
-  placeholder,
-}: {
-  form: AnyForm;
-  name: string;
-  label: string;
-  placeholder: string;
-}) {
-  return (
-    <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {label}
-      </span>
-      <form.Field name={name}>
-        {(field: {
-          state: { value: string };
-          handleChange: (v: string) => void;
-        }) => (
-          <input
-            className="input input-bordered input-sm w-full bg-base-100"
-            placeholder={placeholder}
-            value={field.state.value}
-            onChange={(event) => field.handleChange(event.target.value)}
-          />
-        )}
-      </form.Field>
-    </label>
-  );
-}
-
-function FilterRangeInputs({
-  form,
-  title,
-  minName,
-  maxName,
-  step,
-}: {
-  form: AnyForm;
-  title: string;
-  minName: string;
-  maxName: string;
-  step?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        {title}
-      </p>
-      <div className="grid grid-cols-2 gap-2">
-        <CompactRangeInput
-          form={form}
-          name={minName}
-          placeholder="Min"
-          step={step}
-        />
-        <CompactRangeInput
-          form={form}
-          name={maxName}
-          placeholder="Max"
-          step={step}
-        />
-      </div>
-    </div>
-  );
-}
-
-function CompactRangeInput({
-  form,
-  name,
-  placeholder,
-  step,
-}: {
-  form: AnyForm;
-  name: string;
-  placeholder: string;
-  step?: string;
-}) {
-  return (
-    <form.Field name={name}>
-      {(field: {
-        state: { value: string };
-        handleChange: (v: string) => void;
-      }) => (
-        <input
-          className="input input-bordered input-xs bg-base-100"
-          placeholder={placeholder}
-          type="number"
-          step={step}
-          value={field.state.value}
-          onChange={(event) => field.handleChange(event.target.value)}
-        />
-      )}
-    </form.Field>
-  );
-}
-
-function BacklinksTabFilters({
-  form,
-  showAhrefsDrFilter,
-}: {
-  form: BacklinksFiltersState["backlinks"]["form"];
-  showAhrefsDrFilter: boolean;
-}) {
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <FilterTextInput
-          form={form}
-          name="include"
-          label="Include Terms"
-          placeholder="example.com, blog"
-        />
-        <FilterTextInput
-          form={form}
-          name="exclude"
-          label="Exclude Terms"
-          placeholder="spam, forum"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
-        <FilterRangeInputs
-          form={form}
-          title="Domain Authority"
-          minName="minDomainRank"
-          maxName="maxDomainRank"
-        />
-        {showAhrefsDrFilter ? (
-          <FilterRangeInputs
-            form={form}
-            title="Ahrefs DR"
-            minName="minAhrefsDr"
-            maxName="maxAhrefsDr"
-          />
-        ) : null}
-        <FilterRangeInputs
-          form={form}
-          title="Link Authority"
-          minName="minLinkAuthority"
-          maxName="maxLinkAuthority"
-        />
-        <FilterRangeInputs
-          form={form}
-          title="Spam Score"
-          minName="minSpamScore"
-          maxName="maxSpamScore"
-          step="0.1"
-        />
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-            Link Type
-          </p>
-          <form.Field name="linkType">
-            {(field) => (
-              <div className="flex items-center gap-1">
-                {(["", "dofollow", "nofollow"] as const).map((value) => (
-                  <button
-                    key={value || "all"}
-                    type="button"
-                    className={`btn btn-xs ${field.state.value === value ? "btn-soft" : "btn-ghost"}`}
-                    onClick={() => field.handleChange(value)}
-                  >
-                    {value === ""
-                      ? "All"
-                      : value === "dofollow"
-                        ? "Dofollow"
-                        : "Nofollow"}
-                  </button>
-                ))}
-              </div>
-            )}
-          </form.Field>
-        </div>
-
-        <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-            Visibility
-          </p>
-          <div className="flex items-center gap-3">
-            <form.Field name="hideLost">
-              {(field) => (
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-xs"
-                    checked={field.state.value === "true"}
-                    onChange={(event) =>
-                      field.handleChange(event.target.checked ? "true" : "")
-                    }
-                  />
-                  <span className="text-xs">Hide lost</span>
-                </label>
-              )}
-            </form.Field>
-            <form.Field name="hideBroken">
-              {(field) => (
-                <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="checkbox checkbox-xs"
-                    checked={field.state.value === "true"}
-                    onChange={(event) =>
-                      field.handleChange(event.target.checked ? "true" : "")
-                    }
-                  />
-                  <span className="text-xs">Hide broken</span>
-                </label>
-              )}
-            </form.Field>
-          </div>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function ReferringDomainsFilters({
-  form,
-  showAhrefsDrFilter,
-}: {
-  form: BacklinksFiltersState["domains"]["form"];
-  showAhrefsDrFilter: boolean;
-}) {
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <FilterTextInput
-          form={form}
-          name="include"
-          label="Include Terms"
-          placeholder="example.com, blog"
-        />
-        <FilterTextInput
-          form={form}
-          name="exclude"
-          label="Exclude Terms"
-          placeholder="spam, forum"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
-        <FilterRangeInputs
-          form={form}
-          title="Backlinks"
-          minName="minBacklinks"
-          maxName="maxBacklinks"
-        />
-        <FilterRangeInputs
-          form={form}
-          title="Rank"
-          minName="minRank"
-          maxName="maxRank"
-        />
-        {showAhrefsDrFilter ? (
-          <FilterRangeInputs
-            form={form}
-            title="Ahrefs DR"
-            minName="minAhrefsDr"
-            maxName="maxAhrefsDr"
-          />
-        ) : null}
-        <FilterRangeInputs
-          form={form}
-          title="Spam Score"
-          minName="minSpamScore"
-          maxName="maxSpamScore"
-          step="0.1"
-        />
-      </div>
-    </>
-  );
-}
-
-function TopPagesFilters({
-  form,
-}: {
-  form: BacklinksFiltersState["pages"]["form"];
-}) {
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <FilterTextInput
-          form={form}
-          name="include"
-          label="Include Terms"
-          placeholder="/blog, /products"
-        />
-        <FilterTextInput
-          form={form}
-          name="exclude"
-          label="Exclude Terms"
-          placeholder="/tag, /author"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 lg:grid-cols-3">
-        <FilterRangeInputs
-          form={form}
-          title="Backlinks"
-          minName="minBacklinks"
-          maxName="maxBacklinks"
-        />
-        <FilterRangeInputs
-          form={form}
-          title="Referring Domains"
-          minName="minReferringDomains"
-          maxName="maxReferringDomains"
-        />
-        <FilterRangeInputs
-          form={form}
-          title="Rank"
-          minName="minRank"
-          maxName="maxRank"
-        />
-      </div>
-    </>
-  );
-}
-
+/**
+ * Filters are applied explicitly (not per keystroke) because every change
+ * triggers a billed DataForSEO request. Each include/exclude term and each
+ * set field costs one DataForSEO filter condition, capped per request —
+ * DomainFilterPanel surfaces the count and gates Apply.
+ */
 export function BacklinksFilterPanel({
   activeTab,
   filters,
-  showAhrefsDrFilter,
-  activeFilterCount,
+  onApplied,
 }: {
   activeTab: BacklinksTab;
   filters: BacklinksFiltersState;
-  showAhrefsDrFilter: boolean;
-  activeFilterCount: number;
+  onApplied: () => void;
 }) {
-  const current = filters[activeTab];
+  if (activeTab === "backlinks") {
+    const state = filters.backlinks;
+    return (
+      <DomainFilterPanel
+        key="backlinks"
+        debugName="BacklinksFilterPanel"
+        appliedFilters={state.values}
+        fields={BACKLINKS_FILTER_FIELDS}
+        activeFilterCount={state.activeFilterCount}
+        countConditions={countFilterConditions}
+        textFields={[
+          {
+            key: "include",
+            label: "Source URL Contains",
+            placeholder: "example.com, blog",
+          },
+          {
+            key: "exclude",
+            label: "Source URL Excludes",
+            placeholder: "spam, forum",
+          },
+        ]}
+        rangeFields={[
+          {
+            title: "Domain Authority",
+            minKey: "minDomainRank",
+            maxKey: "maxDomainRank",
+          },
+          {
+            title: "Link Authority",
+            minKey: "minLinkAuthority",
+            maxKey: "maxLinkAuthority",
+          },
+          {
+            title: "Spam Score",
+            minKey: "minSpamScore",
+            maxKey: "maxSpamScore",
+            step: "0.1",
+          },
+        ]}
+        onApply={(values) => {
+          state.apply(values);
+          onApplied();
+        }}
+        onClear={() => {
+          state.reset();
+          onApplied();
+        }}
+        renderExtra={(draft, setValue) => (
+          <BacklinksToggleControls draft={draft} setValue={setValue} />
+        )}
+      />
+    );
+  }
 
+  if (activeTab === "domains") {
+    const state = filters.domains;
+    return (
+      <DomainFilterPanel
+        key="domains"
+        debugName="ReferringDomainsFilterPanel"
+        appliedFilters={state.values}
+        fields={REFERRING_DOMAINS_FILTER_FIELDS}
+        activeFilterCount={state.activeFilterCount}
+        countConditions={countFilterConditions}
+        textFields={[
+          {
+            key: "include",
+            label: "Domain Contains",
+            placeholder: "example.com, blog",
+          },
+          {
+            key: "exclude",
+            label: "Domain Excludes",
+            placeholder: "spam, forum",
+          },
+        ]}
+        rangeFields={[
+          {
+            title: "Backlinks",
+            minKey: "minBacklinks",
+            maxKey: "maxBacklinks",
+          },
+          { title: "Rank", minKey: "minRank", maxKey: "maxRank" },
+          {
+            title: "Spam Score",
+            minKey: "minSpamScore",
+            maxKey: "maxSpamScore",
+            step: "0.1",
+          },
+        ]}
+        onApply={(values) => {
+          state.apply(values);
+          onApplied();
+        }}
+        onClear={() => {
+          state.reset();
+          onApplied();
+        }}
+      />
+    );
+  }
+
+  const state = filters.pages;
   return (
-    <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine results</p>
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
-            </span>
-          ) : null}
+    <DomainFilterPanel
+      key="pages"
+      debugName="TopPagesFilterPanel"
+      appliedFilters={state.values}
+      fields={TOP_PAGES_FILTER_FIELDS}
+      activeFilterCount={state.activeFilterCount}
+      countConditions={countFilterConditions}
+      textFields={[
+        {
+          key: "include",
+          label: "Page URL Contains",
+          placeholder: "/blog, /products",
+        },
+        {
+          key: "exclude",
+          label: "Page URL Excludes",
+          placeholder: "/tag, /author",
+        },
+      ]}
+      rangeFields={[
+        { title: "Backlinks", minKey: "minBacklinks", maxKey: "maxBacklinks" },
+        {
+          title: "Referring Domains",
+          minKey: "minReferringDomains",
+          maxKey: "maxReferringDomains",
+        },
+        { title: "Rank", minKey: "minRank", maxKey: "maxRank" },
+      ]}
+      onApply={(values) => {
+        state.apply(values);
+        onApplied();
+      }}
+      onClear={() => {
+        state.reset();
+        onApplied();
+      }}
+    />
+  );
+}
+
+function BacklinksToggleControls({
+  draft,
+  setValue,
+}: {
+  draft: BacklinksTabFilterValues;
+  setValue: (key: keyof BacklinksTabFilterValues, value: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-4">
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+          Link Type
+        </p>
+        <div className="flex items-center gap-1">
+          {(["", "dofollow", "nofollow"] as const).map((value) => (
+            <button
+              key={value || "all"}
+              type="button"
+              className={`btn btn-xs ${draft.linkType === value ? "btn-soft" : "btn-ghost"}`}
+              onClick={() => setValue("linkType", value)}
+            >
+              {value === ""
+                ? "All"
+                : value === "dofollow"
+                  ? "Dofollow"
+                  : "Nofollow"}
+            </button>
+          ))}
         </div>
-        <button
-          type="button"
-          className="btn btn-xs btn-ghost gap-1"
-          onClick={current.reset}
-          disabled={activeFilterCount === 0}
-        >
-          <RotateCcw className="size-3" />
-          Clear all
-        </button>
       </div>
 
-      {activeTab === "backlinks" ? (
-        <BacklinksTabFilters
-          form={filters.backlinks.form}
-          showAhrefsDrFilter={showAhrefsDrFilter}
-        />
-      ) : null}
-      {activeTab === "domains" ? (
-        <ReferringDomainsFilters
-          form={filters.domains.form}
-          showAhrefsDrFilter={showAhrefsDrFilter}
-        />
-      ) : null}
-      {activeTab === "pages" ? (
-        <TopPagesFilters form={filters.pages.form} />
-      ) : null}
+      <div className="space-y-1.5">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+          Visibility
+        </p>
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-xs"
+              checked={draft.hideLost === "true"}
+              onChange={(event) =>
+                setValue("hideLost", event.target.checked ? "true" : "")
+              }
+            />
+            <span className="text-xs">Hide lost</span>
+          </label>
+          <label className="flex items-center gap-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              className="checkbox checkbox-xs"
+              checked={draft.hideBroken === "true"}
+              onChange={(event) =>
+                setValue("hideBroken", event.target.checked ? "true" : "")
+              }
+            />
+            <span className="text-xs">Hide broken</span>
+          </label>
+        </div>
+      </div>
     </div>
   );
 }

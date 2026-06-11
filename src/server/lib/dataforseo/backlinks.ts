@@ -17,6 +17,7 @@ import {
   assertOk,
   buildTaskBilling,
   parseTaskItems,
+  parseTaskTotalCount,
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 
@@ -24,7 +25,16 @@ export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget
 
 type BacklinksRequest = { target: string };
 type BacklinksListRequest = BacklinksRequest &
-  BacklinksSpamFilterOptions & { limit?: number };
+  BacklinksSpamFilterOptions & {
+    limit?: number;
+    offset?: number;
+    /** DataForSEO order_by entries, e.g. ["rank,desc"]. */
+    orderBy?: string[];
+    /** Pre-built DataForSEO filter expressions, already joined with and/or. */
+    filters?: unknown[];
+    /** Result grouping (backlinks list only): "one_per_domain" | "as_is". */
+    mode?: string;
+  };
 type BacklinksTimeseriesRequest = {
   target: string;
   dateFrom: string;
@@ -146,6 +156,24 @@ function buildCommonPayload(input: BacklinksRequest) {
 const assertOptions = (path: string) =>
   ({ classify: classifyBacklinksError, classifyPath: path }) as const;
 
+/**
+ * Joins caller-provided filter expressions with the spam-score condition.
+ * `userFilters` arrives already and/or-joined, so the spam condition is
+ * appended with a single top-level "and".
+ */
+function combineFilters(
+  userFilters: unknown[] | undefined,
+  spamCondition: unknown[] | undefined,
+): unknown[] | undefined {
+  const merged: unknown[] = [];
+  if (userFilters && userFilters.length > 0) merged.push(...userFilters);
+  if (spamCondition) {
+    if (merged.length > 0) merged.push("and");
+    merged.push(spamCondition);
+  }
+  return merged.length > 0 ? merged : undefined;
+}
+
 export async function fetchBacklinksSummary(input: BacklinksRequest) {
   const response = await backlinksApi(classifyBacklinksError).summaryLive([
     new BacklinksSummaryLiveRequestInfo(buildCommonPayload(input)),
@@ -179,14 +207,19 @@ export async function fetchBacklinksSummary(input: BacklinksRequest) {
 
 export async function fetchBacklinksRows(input: BacklinksListRequest) {
   const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
-  const filters = spamFilterOptions.hideSpam
-    ? [["backlink_spam_score", "<=", spamFilterOptions.spamThreshold]]
-    : undefined;
+  const filters = combineFilters(
+    input.filters,
+    spamFilterOptions.hideSpam
+      ? ["backlink_spam_score", "<=", spamFilterOptions.spamThreshold]
+      : undefined,
+  );
   const response = await backlinksApi(classifyBacklinksError).backlinksLive([
     new BacklinksBacklinksLiveRequestInfo({
       ...buildCommonPayload(input),
       limit: input.limit ?? 100,
-      order_by: ["rank,desc"],
+      offset: input.offset,
+      order_by: input.orderBy ?? ["rank,desc"],
+      mode: input.mode,
       ...(filters ? { filters } : {}),
     }),
   ]);
@@ -195,23 +228,30 @@ export async function fetchBacklinksRows(input: BacklinksListRequest) {
     assertOptions("/v3/backlinks/backlinks/live"),
   );
   return {
-    data: parseTaskItems("backlinks-live", task, backlinksItemSchema),
+    data: {
+      items: parseTaskItems("backlinks-live", task, backlinksItemSchema),
+      totalCount: parseTaskTotalCount(task),
+    },
     billing: buildTaskBilling(task),
   };
 }
 
 export async function fetchReferringDomains(input: BacklinksListRequest) {
   const spamFilterOptions = normalizeBacklinksSpamFilterOptions(input);
-  const filters = spamFilterOptions.hideSpam
-    ? [["backlinks_spam_score", "<=", spamFilterOptions.spamThreshold]]
-    : undefined;
+  const filters = combineFilters(
+    input.filters,
+    spamFilterOptions.hideSpam
+      ? ["backlinks_spam_score", "<=", spamFilterOptions.spamThreshold]
+      : undefined,
+  );
   const response = await backlinksApi(
     classifyBacklinksError,
   ).referringDomainsLive([
     new BacklinksReferringDomainsLiveRequestInfo({
       ...buildCommonPayload(input),
       limit: input.limit ?? 100,
-      order_by: ["backlinks,desc"],
+      offset: input.offset,
+      order_by: input.orderBy ?? ["backlinks,desc"],
       ...(filters ? { filters } : {}),
     }),
   ]);
@@ -220,23 +260,30 @@ export async function fetchReferringDomains(input: BacklinksListRequest) {
     assertOptions("/v3/backlinks/referring_domains/live"),
   );
   return {
-    data: parseTaskItems(
-      "referring-domains-live",
-      task,
-      referringDomainItemSchema,
-    ),
+    data: {
+      items: parseTaskItems(
+        "referring-domains-live",
+        task,
+        referringDomainItemSchema,
+      ),
+      totalCount: parseTaskTotalCount(task),
+    },
     billing: buildTaskBilling(task),
   };
 }
 
 export async function fetchDomainPagesSummary(input: BacklinksListRequest) {
+  const filters =
+    input.filters && input.filters.length > 0 ? input.filters : undefined;
   const response = await backlinksApi(
     classifyBacklinksError,
   ).domainPagesSummaryLive([
     new BacklinksDomainPagesSummaryLiveRequestInfo({
       ...buildCommonPayload(input),
       limit: input.limit ?? 100,
-      order_by: ["backlinks,desc"],
+      offset: input.offset,
+      order_by: input.orderBy ?? ["backlinks,desc"],
+      ...(filters ? { filters } : {}),
     }),
   ]);
   const task = assertOk(
@@ -244,11 +291,14 @@ export async function fetchDomainPagesSummary(input: BacklinksListRequest) {
     assertOptions("/v3/backlinks/domain_pages_summary/live"),
   );
   return {
-    data: parseTaskItems(
-      "domain-pages-summary-live",
-      task,
-      domainPageSummaryItemSchema,
-    ),
+    data: {
+      items: parseTaskItems(
+        "domain-pages-summary-live",
+        task,
+        domainPageSummaryItemSchema,
+      ),
+      totalCount: parseTaskTotalCount(task),
+    },
     billing: buildTaskBilling(task),
   };
 }

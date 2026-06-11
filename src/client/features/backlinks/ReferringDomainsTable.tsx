@@ -1,24 +1,16 @@
-import {
-  createColumnHelper,
-  type SortingFn,
-  type SortingState,
-} from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { createColumnHelper } from "@tanstack/react-table";
+import type { OnChangeFn, SortingState } from "@tanstack/react-table";
+import { useMemo } from "react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 import {
   AppDataTable,
   useAppTable,
 } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
-import {
-  compareNumericNullsLast,
-  dateNullsLast,
-  isDescending,
-  numericNullsLast,
-  stringNullsLast,
-} from "@/client/components/table/nullSafeSort";
+import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { EmptyTableState } from "./BacklinksPageEmptyTableState";
-import type { BacklinksOverviewData } from "./backlinksPageTypes";
+import type { ReferringDomainRow } from "./backlinksPageTypes";
+import type { ReferringDomainsSortField } from "@/types/schemas/backlinks";
 import {
   formatCompactDate,
   formatDecimal,
@@ -26,30 +18,13 @@ import {
 } from "./backlinksPageUtils";
 import type { DomainRatings } from "./useAhrefsDomainRatings";
 
-type ReferringDomainRow = BacklinksOverviewData["referringDomains"][number];
-
 const columnHelper = createColumnHelper<ReferringDomainRow>();
 
-// Nulls always to the bottom in both directions, same as the pre-TanStack
-// implementation. Secondary compare on brokenPages must also keep nulls last —
-// coercing to 0 would mix unknown values with real zeroes.
-const sortByIssues: SortingFn<ReferringDomainRow> = (left, right, columnId) => {
-  const descending = isDescending(left, columnId);
-  const primary = compareNumericNullsLast(
-    left.original.brokenBacklinks,
-    right.original.brokenBacklinks,
-    descending,
-  );
-  if (primary !== 0) return primary;
-  return compareNumericNullsLast(
-    left.original.brokenPages,
-    right.original.brokenPages,
-    descending,
-  );
-};
-
+// Column ids map to server-side sort fields; sorting re-queries DataForSEO
+// across all referring domains, not just the loaded page.
 const baseColumns = [
   columnHelper.accessor("domain", {
+    id: "domain" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -68,9 +43,9 @@ const baseColumns = [
         />
       );
     },
-    sortingFn: stringNullsLast,
   }),
   columnHelper.accessor("backlinks", {
+    id: "backlinks" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -79,10 +54,10 @@ const baseColumns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("referringPages", {
+    id: "referringPages" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -91,10 +66,10 @@ const baseColumns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("rank", {
+    id: "rank" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -103,10 +78,10 @@ const baseColumns = [
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("spamScore", {
+    id: "spamScore" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -115,10 +90,10 @@ const baseColumns = [
       />
     ),
     cell: ({ getValue }) => formatDecimal(getValue()),
-    sortingFn: numericNullsLast,
     sortDescFirst: true,
   }),
   columnHelper.accessor("firstSeen", {
+    id: "firstSeen" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -127,11 +102,10 @@ const baseColumns = [
       />
     ),
     cell: ({ getValue }) => formatCompactDate(getValue()),
-    sortingFn: dateNullsLast,
     sortDescFirst: true,
   }),
-  columnHelper.display({
-    id: "issues",
+  columnHelper.accessor("brokenBacklinks", {
+    id: "brokenBacklinks" satisfies ReferringDomainsSortField,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -147,8 +121,6 @@ const baseColumns = [
         </div>
       </div>
     ),
-    enableSorting: true,
-    sortingFn: sortByIssues,
     sortDescFirst: true,
   }),
 ];
@@ -156,44 +128,35 @@ const baseColumns = [
 /**
  * Columns for the referring domains table. When `domainRatings` is provided
  * (the user clicked "Ahrefs DR"), an Ahrefs DR column is inserted after Rank;
- * otherwise it stays hidden.
+ * otherwise it stays hidden. DR is loaded client-side from Ahrefs, so it can't
+ * participate in server-side sorting.
  */
 function buildReferringDomainColumns(domainRatings: DomainRatings | null) {
   if (!domainRatings) return baseColumns;
 
   const ratings = domainRatings;
-  const drColumn = columnHelper.accessor(
-    (row) => (row.domain ? (ratings[row.domain] ?? null) : null),
-    {
-      id: "ahrefsDr",
-      header: ({ column }) => (
-        <SortableHeader
-          column={column}
-          label="Ahrefs DR"
-          helpText="Ahrefs Domain Rating (0-100) for this referring domain."
-        />
-      ),
-      cell: ({ getValue }) => {
-        const dr = getValue();
-        return dr == null ? "—" : formatDecimal(dr);
-      },
-      sortingFn: numericNullsLast,
-      sortDescFirst: true,
+  const drColumn = columnHelper.display({
+    id: "ahrefsDr",
+    header: () => (
+      <HeaderHelpLabel
+        label="Ahrefs DR"
+        helpText="Ahrefs Domain Rating (0-100) for this referring domain."
+      />
+    ),
+    cell: ({ row }) => {
+      const domain = row.original.domain;
+      const dr = domain ? (ratings[domain] ?? null) : null;
+      return dr == null ? "—" : formatDecimal(dr);
     },
-  );
+  });
 
-  const insertAt =
-    baseColumns.findIndex(
-      (column) => "accessorKey" in column && column.accessorKey === "rank",
-    ) + 1;
+  const insertAt = baseColumns.findIndex((column) => column.id === "rank") + 1;
   return [
     ...baseColumns.slice(0, insertAt),
     drColumn,
     ...baseColumns.slice(insertAt),
   ];
 }
-
-const DEFAULT_SORTING: SortingState = [{ id: "backlinks", desc: true }];
 
 function getDomainWebsiteHref(domain: string) {
   try {
@@ -206,11 +169,14 @@ function getDomainWebsiteHref(domain: string) {
 export function ReferringDomainsTable({
   rows,
   domainRatings,
+  sorting,
+  onSortingChange,
 }: {
-  rows: BacklinksOverviewData["referringDomains"];
+  rows: ReferringDomainRow[];
   domainRatings: DomainRatings | null;
+  sorting: SortingState;
+  onSortingChange: OnChangeFn<SortingState>;
 }) {
-  const [sorting, setSorting] = useState<SortingState>(DEFAULT_SORTING);
   const columns = useMemo(
     () => buildReferringDomainColumns(domainRatings),
     [domainRatings],
@@ -220,8 +186,8 @@ export function ReferringDomainsTable({
     data: rows,
     columns,
     state: { sorting },
-    onSortingChange: setSorting,
-    withSorting: true,
+    onSortingChange,
+    manualSorting: true,
   });
 
   if (rows.length === 0) {

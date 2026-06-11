@@ -42,22 +42,45 @@ async function main() {
   const includeTabs = parseBoolean(args.includeTabs, true);
   const runs = [];
 
+  const pageInput = {
+    ...input,
+    page: 1,
+    pageSize: 100,
+    sortOrder: "desc",
+  } as const;
+
   for (let index = 0; index < repeat; index += 1) {
     const overview = await service.profileOverview(input, billingCustomer);
+    const rows = includeTabs
+      ? await service.profileBacklinksPage(
+          { ...pageInput, sortField: "rank", filters: {}, mode: "as_is" },
+          billingCustomer,
+        )
+      : null;
     const domains = includeTabs
-      ? await service.profileReferringDomains(input, billingCustomer)
+      ? await service.profileReferringDomainsPage(
+          { ...pageInput, sortField: "backlinks", filters: {} },
+          billingCustomer,
+        )
       : null;
     const pages = includeTabs
-      ? await service.profileTopPages(input, billingCustomer)
+      ? await service.profileTopPagesPage(
+          { ...pageInput, sortField: "backlinks", filters: {} },
+          billingCustomer,
+        )
       : null;
 
     runs.push({
       run: index + 1,
       overview: {
-        backlinksRows: overview.overview.backlinks.length,
         trendRows: overview.overview.trends.length,
         newLostRows: overview.overview.newLostTrends.length,
       },
+      backlinksTab: rows
+        ? {
+            rows: rows.rows.length,
+          }
+        : null,
       domainsTab: domains
         ? {
             rows: domains.rows.length,

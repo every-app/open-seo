@@ -19,7 +19,7 @@ const backlinksRowSchema = z.object({
   linksCount: z.number().nullable(),
 });
 
-export const referringDomainRowSchema = z.object({
+const referringDomainRowSchema = z.object({
   domain: z.string().nullable(),
   backlinks: z.number().nullable(),
   referringPages: z.number().nullable(),
@@ -30,7 +30,7 @@ export const referringDomainRowSchema = z.object({
   brokenPages: z.number().nullable(),
 });
 
-export const topPageRowSchema = z.object({
+const topPageRowSchema = z.object({
   page: z.string().nullable(),
   backlinks: z.number().nullable(),
   referringDomains: z.number().nullable(),
@@ -71,12 +71,35 @@ export const backlinksOverviewSchema = z.object({
     newReferringDomains: z.number().nullable(),
     lostReferringDomains: z.number().nullable(),
   }),
-  backlinks: z.array(backlinksRowSchema),
-  referringDomains: z.array(referringDomainRowSchema),
-  topPages: z.array(topPageRowSchema),
   trends: z.array(backlinksTrendRowSchema),
   newLostTrends: z.array(backlinksNewLostTrendRowSchema),
   fetchedAt: z.string(),
 });
 
 export type BacklinksOverviewResult = z.infer<typeof backlinksOverviewSchema>;
+
+function buildPageResultSchema<T extends z.ZodTypeAny>(rowSchema: T) {
+  return z.object({
+    rows: z.array(rowSchema),
+    totalCount: z.number().nullable(),
+    hasMore: z.boolean(),
+    page: z.number(),
+    pageSize: z.number(),
+    fetchedAt: z.string(),
+  });
+}
+
+export const backlinksRowsPageResultSchema =
+  buildPageResultSchema(backlinksRowSchema);
+export const referringDomainsPageResultSchema = buildPageResultSchema(
+  referringDomainRowSchema,
+);
+export const topPagesPageResultSchema = buildPageResultSchema(topPageRowSchema);
+
+export type BacklinksRowsPageResult = z.infer<
+  typeof backlinksRowsPageResultSchema
+>;
+export type ReferringDomainsPageResult = z.infer<
+  typeof referringDomainsPageResultSchema
+>;
+export type TopPagesPageResult = z.infer<typeof topPagesPageResultSchema>;

@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
-import { useForm, useStore } from "@tanstack/react-form";
+import { useCallback, useState } from "react";
+import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
 import {
   EMPTY_BACKLINKS_FILTERS,
   EMPTY_REFERRING_DOMAINS_FILTERS,
   EMPTY_TOP_PAGES_FILTERS,
+  countActiveFilters,
+  countFilterConditions,
   type BacklinksTabFilterValues,
   type ReferringDomainsFilterValues,
   type TopPagesFilterValues,
 } from "./backlinksFilterTypes";
-import { countActiveFilters } from "./backlinksFiltering";
 
 const STORAGE_KEY_PREFIX = "backlinks-filters:";
 
@@ -36,6 +37,13 @@ function loadFromStorage<T extends FilterValues>(tab: string, fallback: T): T {
       }
     }
 
+    // Filters persisted before the server-side-filtering change had no
+    // condition budget; values over the DataForSEO cap would fail every
+    // query on load, so start fresh instead.
+    if (countFilterConditions(result) > MAX_DATAFORSEO_FILTER_CONDITIONS) {
+      return fallbackClone;
+    }
+
     return result;
   } catch {
     return fallbackClone;
@@ -50,24 +58,30 @@ function saveToStorage(tab: string, values: FilterValues) {
   }
 }
 
+/**
+ * Holds the *applied* filters for one tab. Draft edits live inside the filter
+ * panel; values here are what the server queries use, persisted per tab.
+ */
 function useTabFilters<T extends FilterValues>(tab: string, emptyValues: T) {
-  const [defaultValues] = useState<T>(() =>
+  const [values, setValues] = useState<T>(() =>
     loadFromStorage(tab, { ...emptyValues }),
   );
-  const form = useForm({ defaultValues });
-  const values = useStore(form.store, (state) => state.values);
 
-  useEffect(() => {
-    saveToStorage(tab, values);
-  }, [tab, values]);
+  const apply = useCallback(
+    (next: T) => {
+      setValues(next);
+      saveToStorage(tab, next);
+    },
+    [tab],
+  );
 
   const reset = useCallback(() => {
-    form.reset({ ...emptyValues }, { keepDefaultValues: true });
-  }, [emptyValues, form]);
+    apply({ ...emptyValues });
+  }, [apply, emptyValues]);
 
   return {
-    form,
     values,
+    apply,
     reset,
     activeFilterCount: countActiveFilters(values),
   };
