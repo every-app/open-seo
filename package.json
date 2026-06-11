@@ -2,7 +2,7 @@
   "name": "open-seo",
   "private": true,
   "sideEffects": false,
-  "version": "0.0.18",
+  "version": "0.0.19",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "scripts": {
