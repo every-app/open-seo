@@ -34,5 +34,6 @@ dist-sourcemaps/
 # Localflare generated files
 .localflare/
 
-# Local Claude config
-.claude/
+# Local Claude config (skills are shared)
+.claude/*
+!.claude/skills/
