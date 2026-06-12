@@ -4,7 +4,7 @@ import { getFieldError, getFormError } from "@/client/lib/forms";
 import type { DomainOverviewControlsForm } from "@/client/features/domain/DomainOverviewPage";
 import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
-import { LOCATION_OPTIONS } from "@/client/features/keywords/locations";
+import { LABS_LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 
 type Props = {
   controlsForm: DomainOverviewControlsForm;
@@ -63,7 +63,7 @@ export function DomainSearchCard({
                   onLocationChange(next);
                 }}
               >
-                {LOCATION_OPTIONS.map((option) => (
+                {LABS_LOCATION_OPTIONS.map((option) => (
                   <option key={option.code} value={option.code}>
                     {option.label}
                   </option>

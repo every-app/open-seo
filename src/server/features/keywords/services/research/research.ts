@@ -10,8 +10,12 @@ import { KeywordResearchRepository } from "@/server/features/keywords/repositori
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { ResearchKeywordsInput } from "@/types/schemas/keywords";
 import { z } from "zod";
+import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { type EnrichedKeyword, normalizeKeyword } from "./helpers";
-import { fetchResearchRowsBySource } from "./research-data";
+import {
+  fetchGoogleAdsResearchRows,
+  fetchResearchRowsBySource,
+} from "./research-data";
 import {
   AUTO_KEYWORD_SOURCES,
   MIN_NON_SEED_FOR_AUTO,
@@ -19,10 +23,11 @@ import {
   hasSufficientCoverage,
   type KeywordMode,
   type KeywordSource,
+  type ResearchSource,
 } from "./selection";
 
 type SourceAttempt = {
-  source: KeywordSource;
+  source: ResearchSource;
   rowCount: number;
   nonSeedCount: number;
 };
@@ -35,7 +40,7 @@ type ResearchDiagnostics = {
 
 type ResearchResult = {
   rows: KeywordResearchRow[];
-  source: KeywordSource;
+  source: ResearchSource;
   usedFallback: boolean;
   diagnostics: ResearchDiagnostics;
 };
@@ -65,14 +70,14 @@ const cachedKeywordRowSchema = z.object({
 });
 
 const sourceAttemptSchema = z.object({
-  source: z.enum(["related", "suggestions", "ideas"]),
+  source: z.enum(["related", "suggestions", "ideas", "google_ads"]),
   rowCount: z.number(),
   nonSeedCount: z.number(),
 });
 
 const cachedResultSchema = z.object({
   rows: z.array(cachedKeywordRowSchema),
-  source: z.enum(["related", "suggestions", "ideas"]),
+  source: z.enum(["related", "suggestions", "ideas", "google_ads"]),
   usedFallback: z.boolean(),
   diagnostics: z.object({
     requestedMode: z.enum(["auto", "related", "suggestions", "ideas"]),
@@ -81,7 +86,9 @@ const cachedResultSchema = z.object({
   }),
 });
 
-const CACHE_VERSION = 2;
+// v3: research volumes are no longer clickstream-refined, and Google-Ads-only
+// locations route to keywords_for_keywords.
+const CACHE_VERSION = 3;
 
 async function fetchRowsFromSource(
   source: KeywordSource,
@@ -96,6 +103,7 @@ async function fetchRowsFromSource(
       locationCode: input.locationCode,
       languageCode: input.languageCode,
       resultLimit: input.resultLimit,
+      includeClickstreamData: input.clickstream,
     },
     billingCustomer,
   );
@@ -161,6 +169,39 @@ async function fetchAutoRows(
   };
 }
 
+async function fetchGoogleAdsRows(
+  input: ResearchKeywordsInput,
+  seedKeyword: string,
+  billingCustomer: BillingCustomerContext,
+): Promise<ResearchResult> {
+  const rows = await fetchGoogleAdsResearchRows(
+    {
+      seedKeyword,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      resultLimit: input.resultLimit,
+    },
+    billingCustomer,
+  );
+
+  return {
+    rows,
+    source: "google_ads",
+    usedFallback: false,
+    diagnostics: {
+      requestedMode: "auto",
+      threshold: MIN_NON_SEED_FOR_AUTO,
+      sourceAttempts: [
+        {
+          source: "google_ads",
+          rowCount: rows.length,
+          nonSeedCount: countNonSeedKeywords(rows, seedKeyword),
+        },
+      ],
+    },
+  };
+}
+
 async function fetchManualRows(
   mode: Exclude<KeywordMode, "auto">,
   input: ResearchKeywordsInput,
@@ -207,6 +248,7 @@ async function buildResearchCacheKey(
     resultLimit: input.resultLimit,
     mode,
     depth: 3,
+    clickstream: input.clickstream,
   });
 }
 
@@ -244,9 +286,17 @@ export async function research(
   }
 
   const seedKeyword = uniqueKeywords[0];
-  const mode = input.mode ?? "auto";
+  const provider = getKeywordDataProvider(input.locationCode);
+  // Labs source modes and clickstream refinement don't exist for
+  // Google-Ads-served countries; collapse both so equivalent requests share
+  // one cache entry.
+  const effectiveInput: ResearchKeywordsInput =
+    provider === "google_ads"
+      ? { ...input, mode: "auto", clickstream: false }
+      : input;
+  const mode = effectiveInput.mode ?? "auto";
   const cacheKey = await buildResearchCacheKey(
-    input,
+    effectiveInput,
     uniqueKeywords,
     mode,
     billingCustomer,
@@ -263,12 +313,19 @@ export async function research(
   }
 
   const result =
-    mode === "auto"
-      ? await fetchAutoRows(input, seedKeyword, billingCustomer)
-      : await fetchManualRows(mode, input, seedKeyword, billingCustomer);
+    provider === "google_ads"
+      ? await fetchGoogleAdsRows(effectiveInput, seedKeyword, billingCustomer)
+      : mode === "auto"
+        ? await fetchAutoRows(effectiveInput, seedKeyword, billingCustomer)
+        : await fetchManualRows(
+            mode,
+            effectiveInput,
+            seedKeyword,
+            billingCustomer,
+          );
 
   await setCached(cacheKey, result, CACHE_TTL.researchResult);
-  persistRows(input, result.rows);
+  persistRows(effectiveInput, result.rows);
 
   return result;
 }

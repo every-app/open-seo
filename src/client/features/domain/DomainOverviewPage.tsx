@@ -11,7 +11,7 @@ import {
   DEFAULT_LOCATION_CODE,
   LOCATIONS,
   getLanguageCode,
-  isSupportedLocationCode,
+  isLabsLocationCode,
 } from "@/client/features/keywords/locations";
 import { useDomainSearchHistory } from "@/client/hooks/useDomainSearchHistory";
 import type { DomainSearchHistoryItem } from "@/client/hooks/useDomainSearchHistory";
@@ -124,7 +124,7 @@ function getHistorySearchUpdate(
   item: DomainSearchHistoryItem,
 ): DomainSearchUpdate {
   const historyLocation =
-    item.locationCode != null && isSupportedLocationCode(item.locationCode)
+    item.locationCode != null && isLabsLocationCode(item.locationCode)
       ? item.locationCode
       : DEFAULT_LOCATION_CODE;
 

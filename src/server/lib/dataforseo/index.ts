@@ -13,6 +13,11 @@ export {
 } from "@/server/lib/dataforseo/labs";
 
 export {
+  type AdsKeywordItem,
+  type AdsKeywordIdeaItem,
+} from "@/server/lib/dataforseo/google-ads";
+
+export {
   type SerpLiveItem,
   type RankCheckResult,
 } from "@/server/lib/dataforseo/serp";

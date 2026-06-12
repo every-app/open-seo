@@ -34,6 +34,12 @@ const inputSchema = {
     .union([z.literal(150), z.literal(300), z.literal(500)])
     .optional()
     .describe("Max keywords returned per seed. Defaults to 150."),
+  includeClickstreamData: z
+    .boolean()
+    .optional()
+    .describe(
+      "Refine search volumes with clickstream data, which disaggregates Google Ads' grouped close-variant volumes (plurals/misspellings). DOUBLES the credit cost of each seed. Default false (standard Google-Ads-derived volumes). No effect for countries served from Google Ads data.",
+    ),
 } as const;
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
@@ -43,7 +49,7 @@ export const researchKeywordsTool = {
   config: {
     title: "Research keywords (bulk)",
     description:
-      "Research keyword data (search volume, difficulty, CPC, related ideas) for 1-5 seed keywords in one call. Charges credits per seed (~50-200 credits each, varies by source). Returns per-seed results — a single bad seed won't fail the batch.",
+      "Research keyword data (search volume, difficulty, CPC, related ideas) for 1-5 seed keywords in one call. Charges credits per seed (~30-100 credits each, varies by source; flat ~96 for countries served from Google Ads data, where difficulty/intent are unavailable). Returns per-seed results — a single bad seed won't fail the batch.",
     inputSchema,
     outputSchema: {
       results: z.array(
@@ -87,6 +93,7 @@ export const researchKeywordsTool = {
               languageCode: item.languageCode ?? DEFAULT_LANGUAGE_CODE,
               resultLimit: args.resultLimit ?? 150,
               mode: "auto",
+              clickstream: args.includeClickstreamData ?? false,
             },
             context.billing,
           );

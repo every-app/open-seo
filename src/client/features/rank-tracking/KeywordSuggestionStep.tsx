@@ -9,6 +9,7 @@ import { Loader2, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
+import { isLabsLocationCode } from "@/client/features/keywords/locations";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   AppDataTable,
@@ -158,6 +159,9 @@ export function KeywordSuggestionStep({
     [],
   );
 
+  // Ranked-keyword suggestions are Labs-backed; countries served from Google
+  // Ads keyword data (e.g. Iceland) have no ranking data to suggest from.
+  const labsSupported = isLabsLocationCode(locationCode);
   const suggestionsQuery = useQuery({
     queryKey: [
       "domainKeywordSuggestions",
@@ -170,6 +174,7 @@ export function KeywordSuggestionStep({
       getDomainKeywordSuggestions({
         data: { projectId, domain, locationCode, languageCode },
       }),
+    enabled: labsSupported,
   });
 
   const data = suggestionsQuery.data ?? [];
@@ -237,6 +242,23 @@ export function KeywordSuggestionStep({
       </button>
     </div>
   );
+
+  if (!labsSupported) {
+    return (
+      <>
+        {sectionHeader("Add keywords manually")}
+        <div className="flex flex-col items-center justify-center gap-3 py-16">
+          <p className="text-xs text-base-content/50">
+            Ranked-keyword suggestions aren't available for this country.
+            Continue and add the keywords you want to track manually.
+          </p>
+          <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
+            Continue
+          </button>
+        </div>
+      </>
+    );
+  }
 
   // Loading state
   if (suggestionsQuery.isLoading) {

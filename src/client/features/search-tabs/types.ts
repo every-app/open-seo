@@ -23,6 +23,7 @@ export type KeywordSearchTabInput = {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 export type SearchTabInput =

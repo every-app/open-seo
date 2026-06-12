@@ -40,6 +40,7 @@ export function KeywordResearchPage(input: Props) {
           loc: undefined,
           kLimit: undefined,
           mode: undefined,
+          cs: undefined,
         });
         return;
       }
@@ -52,6 +53,7 @@ export function KeywordResearchPage(input: Props) {
             : tabInput.locationCode,
         kLimit: tabInput.resultLimit === 150 ? undefined : tabInput.resultLimit,
         mode: tabInput.mode === "auto" ? undefined : tabInput.mode,
+        cs: tabInput.clickstream ? true : undefined,
       });
     },
     [setSearchParams],
@@ -67,8 +69,10 @@ export function KeywordResearchPage(input: Props) {
       locationCode: input.locationCode,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
+      clickstream: input.clickstream,
     };
   }, [
+    input.clickstream,
     input.keywordInput,
     input.keywordMode,
     input.locationCode,
@@ -108,6 +112,7 @@ export function KeywordResearchPage(input: Props) {
         locationCode: value.locationCode,
         resultLimit: value.resultLimit,
         mode: value.mode,
+        clickstream: value.clickstream,
       }));
 
       let activeInput: KeywordSearchTabInput | null = null;
@@ -135,6 +140,7 @@ export function KeywordResearchPage(input: Props) {
                 locationCode: tab.input.locationCode,
                 resultLimit: tab.input.resultLimit,
                 mode: tab.input.mode,
+                clickstream: tab.input.clickstream,
               },
             ]
           : [],
@@ -152,6 +158,7 @@ export function KeywordResearchPage(input: Props) {
             hasExplicitLocationCode: true,
             resultLimit: activeTab.input.resultLimit,
             keywordMode: activeTab.input.mode,
+            clickstream: activeTab.input.clickstream,
             getOpenKeywordTabs,
             keywordTabsLimit: searchTabs.limit,
           }

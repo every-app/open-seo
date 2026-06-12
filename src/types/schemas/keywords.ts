@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { TAG_COLOR_KEYS } from "@/shared/tag-colors";
+import { booleanSearchParamSchema } from "@/types/schemas/domain";
 
 const savedKeywordTagSchema = z.string().trim().min(1).max(64);
 const tagColorSchema = z.enum(TAG_COLOR_KEYS);
@@ -26,6 +27,8 @@ export const researchKeywordsSchema = z.object({
     .enum(["auto", "related", "suggestions", "ideas"])
     .optional()
     .default("auto"),
+  // Clickstream-refined volumes double the DataForSEO request cost; opt-in.
+  clickstream: z.boolean().optional().default(false),
 });
 
 export const saveKeywordsSchema = z
@@ -184,6 +187,7 @@ export const keywordsSearchSchema = z.object({
   loc: z.coerce.number().int().positive().optional(),
   kLimit: z.union([z.literal(150), z.literal(300), z.literal(500)]).optional(),
   mode: z.enum(keywordModes).optional(),
+  cs: booleanSearchParamSchema.optional(),
   sort: z.enum(keywordSortFields).optional(),
   order: z.enum(sortDirs).optional(),
   minVol: z.string().optional(),

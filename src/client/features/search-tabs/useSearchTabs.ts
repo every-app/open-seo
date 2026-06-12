@@ -77,6 +77,8 @@ function parseTabInput(value: unknown): SearchTabInput | null {
       locationCode: value.locationCode,
       resultLimit: value.resultLimit,
       mode: value.mode,
+      // Tabs persisted before the clickstream toggle existed default to off.
+      clickstream: value.clickstream === true,
     };
   }
 

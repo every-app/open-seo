@@ -2,6 +2,11 @@ import type { EnrichedKeyword } from "./helpers";
 
 export type KeywordSource = "related" | "suggestions" | "ideas";
 export type KeywordMode = "auto" | KeywordSource;
+/**
+ * Where research rows actually came from. "google_ads" is not requestable as
+ * a mode; it's the automatic source for countries Labs doesn't support.
+ */
+export type ResearchSource = KeywordSource | "google_ads";
 
 export const AUTO_KEYWORD_SOURCES: KeywordSource[] = [
   "related",

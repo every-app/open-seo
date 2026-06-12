@@ -220,6 +220,7 @@ function getSearchTabQueryConfig(
     locationCode: input.locationCode,
     resultLimit: input.resultLimit,
     mode: input.mode,
+    clickstream: input.clickstream,
   });
 
   return {

@@ -65,12 +65,14 @@ export function buildKeywordSearchKey(params: {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 }) {
   return [
     parseKeywordInput(params.keyword).join(""),
     params.locationCode,
     params.resultLimit,
     params.mode,
+    params.clickstream ? "cs" : "",
   ].join("|");
 }
 

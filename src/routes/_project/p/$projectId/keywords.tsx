@@ -47,6 +47,7 @@ function KeywordResearchPageRoute() {
       hasExplicitLocationCode={search.loc != null}
       resultLimit={isResultLimit(resultLimit) ? resultLimit : 150}
       keywordMode={normalizeKeywordMode(keywordMode)}
+      clickstream={search.cs ?? false}
       sortField={normalizeSortField(sortField)}
       sortDir={normalizeSortDir(sortDir)}
     />

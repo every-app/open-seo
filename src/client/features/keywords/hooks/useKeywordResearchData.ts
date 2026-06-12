@@ -8,7 +8,7 @@ import { parseKeywordInput } from "@/client/features/keywords/state/keywordContr
 import { researchKeywords } from "@/serverFunctions/keywords";
 import type {
   KeywordMode,
-  KeywordSource,
+  ResearchSource,
   ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
 
@@ -24,6 +24,7 @@ type KeywordResearchQueryInput = {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 type KeywordResearchRequest = {
@@ -34,6 +35,7 @@ type KeywordResearchRequest = {
   languageCode: string;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 export const KEYWORD_RESEARCH_STALE_TIME_MS = 24 * 60 * 60 * 1000;
@@ -53,6 +55,7 @@ export function buildKeywordResearchRequest(
     languageCode: getLanguageCode(input.locationCode),
     resultLimit: input.resultLimit,
     mode: input.mode,
+    clickstream: input.clickstream,
   };
 }
 
@@ -68,6 +71,7 @@ export function buildKeywordResearchQueryKey(
         request.languageCode,
         request.resultLimit,
         request.mode,
+        request.clickstream,
       ]
     : ["keywordResearch", "idle"];
 }
@@ -81,6 +85,7 @@ export function keywordResearchQueryFn(request: KeywordResearchRequest) {
       languageCode: request.languageCode,
       resultLimit: request.resultLimit,
       mode: request.mode,
+      clickstream: request.clickstream,
     },
   });
 }
@@ -89,7 +94,14 @@ export function useKeywordResearchData(
   input: KeywordResearchQueryInput,
   addSearch: AddSearchFn,
 ) {
-  const { keywordInput, locationCode, mode, projectId, resultLimit } = input;
+  const {
+    clickstream,
+    keywordInput,
+    locationCode,
+    mode,
+    projectId,
+    resultLimit,
+  } = input;
   const request = useMemo<KeywordResearchRequest | null>(
     () =>
       buildKeywordResearchRequest({
@@ -98,8 +110,9 @@ export function useKeywordResearchData(
         mode,
         projectId,
         resultLimit,
+        clickstream,
       }),
-    [keywordInput, locationCode, mode, projectId, resultLimit],
+    [clickstream, keywordInput, locationCode, mode, projectId, resultLimit],
   );
   const queryKey = useMemo(
     () => buildKeywordResearchQueryKey(request),
@@ -133,6 +146,7 @@ export function useKeywordResearchData(
     captureClientEvent("keyword_research:search_complete", {
       location_code: request.locationCode,
       search_mode: request.mode,
+      clickstream: request.clickstream,
       result_count: researchQuery.data.rows.length,
     });
 
@@ -161,7 +175,7 @@ export function useKeywordResearchData(
     hasSearched,
     lastSearchError: hasSearched && researchQuery.isError,
     lastResultSource:
-      researchQuery.data?.source ?? ("related" as KeywordSource),
+      researchQuery.data?.source ?? ("related" as ResearchSource),
     lastUsedFallback: researchQuery.data?.usedFallback ?? false,
     lastSearchKeyword: request?.seedKeyword ?? "",
     lastSearchLocationCode: request?.locationCode ?? DEFAULT_LOCATION_CODE,

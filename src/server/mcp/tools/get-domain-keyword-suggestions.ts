@@ -10,6 +10,7 @@ import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
+  assertLabsLocationCode,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -45,6 +46,7 @@ export const getDomainKeywordSuggestionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
+    assertLabsLocationCode(args.locationCode);
     const keywords = await DomainService.getSuggestedKeywords(
       {
         domain: args.domain,

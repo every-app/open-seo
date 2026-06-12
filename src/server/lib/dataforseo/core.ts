@@ -3,6 +3,7 @@ import {
   BacklinksApi,
   BusinessDataApi,
   DataforseoLabsApi,
+  KeywordsDataApi,
   OnPageApi,
   SerpApi,
 } from "dataforseo-client";
@@ -119,6 +120,7 @@ function http(classify?: DataforseoErrorClassifier) {
 // Per-section API factories. Each is created per-request so the auth secret is
 // read lazily (it lives in the Worker env, not in module scope).
 export const labsApi = () => new DataforseoLabsApi(API_BASE, http());
+export const keywordsDataApi = () => new KeywordsDataApi(API_BASE, http());
 export const serpApi = () => new SerpApi(API_BASE, http());
 export const businessDataApi = () => new BusinessDataApi(API_BASE, http());
 export const onPageApi = () => new OnPageApi(API_BASE, http());

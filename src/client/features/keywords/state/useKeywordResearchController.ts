@@ -34,6 +34,7 @@ type OpenKeywordTabInput = {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 export type KeywordResearchControllerInput = {
@@ -43,6 +44,7 @@ export type KeywordResearchControllerInput = {
   hasExplicitLocationCode: boolean;
   resultLimit: ResultLimit;
   keywordMode: KeywordMode;
+  clickstream: boolean;
   sortField: SortField;
   sortDir: SortDir;
   getOpenKeywordTabs?: () => readonly OpenKeywordTabInput[];
@@ -115,6 +117,7 @@ export function useKeywordResearchController(
       locationCode,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
+      clickstream: input.clickstream,
     },
     addSearch,
   );
@@ -127,6 +130,7 @@ export function useKeywordResearchController(
         locationCode,
         resultLimit: input.resultLimit,
         mode: input.keywordMode,
+        clickstream: input.clickstream,
       })
     : null;
 

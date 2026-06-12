@@ -4,7 +4,7 @@ import {
 } from "@/types/schemas/domain";
 import {
   DEFAULT_LOCATION_CODE,
-  isSupportedLocationCode,
+  isLabsLocationCode,
 } from "@/client/features/keywords/locations";
 import {
   EMPTY_DOMAIN_FILTERS,
@@ -46,8 +46,9 @@ export function getDomainRouteState(
   search: DomainSearchParams,
 ): DomainOverviewRouteState {
   const normalizedSort = toSortMode(search.sort ?? null) ?? "traffic";
+  // Domain analytics is Labs-backed; Google-Ads-only countries aren't valid.
   const normalizedLocationCode =
-    search.loc != null && isSupportedLocationCode(search.loc)
+    search.loc != null && isLabsLocationCode(search.loc)
       ? search.loc
       : DEFAULT_LOCATION_CODE;
 

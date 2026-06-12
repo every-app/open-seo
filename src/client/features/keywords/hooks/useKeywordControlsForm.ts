@@ -16,6 +16,7 @@ type KeywordTabValidationInput = {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 type UseKeywordControlsFormInput = {
@@ -23,6 +24,7 @@ type UseKeywordControlsFormInput = {
   locationCode: number;
   resultLimit: ResultLimit;
   keywordMode: KeywordMode;
+  clickstream: boolean;
   getOpenKeywordTabs?: () => readonly KeywordTabValidationInput[];
   keywordTabsLimit?: number;
 };
@@ -32,6 +34,7 @@ export type KeywordControlsValues = {
   locationCode: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
+  clickstream: boolean;
 };
 
 function getKeywordSearchValidationErrors(
@@ -82,6 +85,7 @@ function getKeywordTabCapacityError(
       locationCode: value.locationCode,
       resultLimit: value.resultLimit,
       mode: value.mode,
+      clickstream: value.clickstream,
     };
     const alreadyOpen = simulatedOpenTabs.some((tab) =>
       keywordTabMatches(tab, input),
@@ -113,7 +117,8 @@ function keywordTabMatches(
     tab.keyword === input.keyword &&
     tab.locationCode === input.locationCode &&
     tab.resultLimit === input.resultLimit &&
-    tab.mode === input.mode
+    tab.mode === input.mode &&
+    tab.clickstream === input.clickstream
   );
 }
 
@@ -127,6 +132,7 @@ export function useKeywordControlsForm(
       locationCode: input.locationCode,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
+      clickstream: input.clickstream,
     },
     validators: {
       onChange: ({ formApi, value }) =>
@@ -154,6 +160,7 @@ export function useKeywordControlsForm(
       locationCode: input.locationCode,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
+      clickstream: input.clickstream,
     });
   }, [
     form,
@@ -161,6 +168,7 @@ export function useKeywordControlsForm(
     input.keywordMode,
     input.locationCode,
     input.resultLimit,
+    input.clickstream,
   ]);
 
   return form;

@@ -2,8 +2,10 @@
 import { z } from "zod";
 import {
   createDataforseoClient,
+  type AdsKeywordItem,
   type KeywordOverviewItem,
 } from "@/server/lib/dataforseo";
+import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -303,6 +305,12 @@ const getKeywordMetricsInputSchema = {
     .boolean()
     .optional()
     .describe("Include monthly search-volume trend rows. Defaults to true."),
+  includeClickstreamData: z
+    .boolean()
+    .optional()
+    .describe(
+      "Refine search volumes with clickstream data, which disaggregates Google Ads' grouped close-variant volumes (plurals/misspellings). DOUBLES the credit cost of the call. Default false. No effect for countries served from Google Ads data.",
+    ),
   sortBy: keywordMetricsSortSchema
     .optional()
     .describe("Sort order for returned rows. Defaults to search_volume."),
@@ -457,19 +465,40 @@ function sortCompetitors(
 
 function normalizeKeywordOverview(item: KeywordOverviewItem) {
   const info = item.keyword_info;
+  // Only present when the caller opted into clickstream-refined volumes.
+  const clickstreamInfo = item.keyword_info_normalized_with_clickstream;
   return {
     keyword: item.keyword,
-    search_volume: info?.search_volume ?? null,
+    search_volume:
+      clickstreamInfo?.search_volume ?? info?.search_volume ?? null,
     keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null,
     main_intent: item.search_intent_info?.main_intent ?? null,
     cpc: info?.cpc ?? null,
     competition: info?.competition ?? null,
     competition_level: info?.competition_level ?? null,
-    monthly_searches: info?.monthly_searches ?? null,
+    monthly_searches:
+      (clickstreamInfo?.search_volume
+        ? clickstreamInfo.monthly_searches
+        : info?.monthly_searches) ?? null,
   };
 }
 
 type KeywordMetricRow = ReturnType<typeof normalizeKeywordOverview>;
+
+// Google Ads items (countries Labs doesn't cover) have no difficulty/intent.
+function normalizeAdsKeyword(item: AdsKeywordItem): KeywordMetricRow {
+  return {
+    keyword: item.keyword,
+    search_volume: item.search_volume ?? null,
+    keyword_difficulty: null,
+    main_intent: null,
+    cpc: item.cpc ?? null,
+    competition:
+      item.competition_index != null ? item.competition_index / 100 : null,
+    competition_level: item.competition ?? null,
+    monthly_searches: item.monthly_searches ?? null,
+  };
+}
 
 function sortKeywordMetricRows(
   rows: KeywordMetricRow[],
@@ -722,7 +751,7 @@ export const getKeywordMetricsTool = {
   config: {
     title: "Get keyword metrics",
     description:
-      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. Charges credits.",
+      "Hydrate up to 700 known keywords with search volume, keyword difficulty (KD), search intent, CPC, competition, and monthly trends in a single call. Use it to score candidate or known keywords — including Search Console striking-distance queries — by real demand and ranking difficulty. For countries served from Google Ads data (e.g. Iceland), KD and intent are null. Charges credits.",
     inputSchema: getKeywordMetricsInputSchema,
     outputSchema: {
       keywords: z.array(looseObjectOutputSchema),
@@ -736,14 +765,29 @@ export const getKeywordMetricsTool = {
   },
   handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
     const client = createDataforseoClient(context.billing);
-    const items = await client.labs.keywordOverview({
-      keywords: args.keywords,
-      locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-      languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
-      creditFeature: "keyword_research",
-    });
+    const locationCode = args.locationCode ?? DEFAULT_LOCATION_CODE;
+    const languageCode = args.languageCode ?? DEFAULT_LANGUAGE_CODE;
+    const normalized =
+      getKeywordDataProvider(locationCode) === "google_ads"
+        ? (
+            await client.keywords.adsSearchVolume({
+              keywords: args.keywords,
+              locationCode,
+              languageCode,
+              creditFeature: "keyword_research",
+            })
+          ).map(normalizeAdsKeyword)
+        : (
+            await client.labs.keywordOverview({
+              keywords: args.keywords,
+              locationCode,
+              languageCode,
+              includeClickstreamData: args.includeClickstreamData ?? false,
+              creditFeature: "keyword_research",
+            })
+          ).map(normalizeKeywordOverview);
     const rows = sortKeywordMetricRows(
-      items.map(normalizeKeywordOverview),
+      normalized,
       args.sortBy ?? "search_volume",
     ).map((row) =>
       args.includeMonthlyTrends === false

@@ -51,7 +51,7 @@ export const domainField = z
     }
   });
 
-const booleanSearchParamSchema = z
+export const booleanSearchParamSchema = z
   .union([z.boolean(), z.enum(["true", "false"])])
   .transform((value) => value === true || value === "true");
 
