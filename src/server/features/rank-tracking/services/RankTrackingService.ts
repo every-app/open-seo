@@ -330,10 +330,12 @@ async function estimateCost(configId: string, projectId: string) {
   const config = await getValidatedConfig(configId, projectId);
   const keywordCount =
     await RankTrackingRepository.getKeywordCountForConfig(configId);
+  // Estimates the cost of a manual "check now", which always runs live.
   const { costUsd, costCredits } = estimateRankCheckCredits(
     keywordCount,
     config.devices,
     config.serpDepth,
+    "live",
   );
   return {
     costUsd,

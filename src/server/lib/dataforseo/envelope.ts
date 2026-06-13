@@ -82,6 +82,14 @@ export function buildTaskBilling(
   return billing;
 }
 
+/** DataForSEO's "No Search Results" (40501) — a successful empty result, not a failure. */
+export function isNoResultsTask(task: DataforseoTaskLike): boolean {
+  return (
+    task.status_code === 40501 ||
+    (task.status_message?.toLowerCase().includes("no search results") ?? false)
+  );
+}
+
 type AssertOkOptions = {
   /** Maps a recognised access / billing failure to a product error. */
   classify?: DataforseoErrorClassifier;
@@ -124,11 +132,7 @@ export function assertOk<T extends DataforseoTaskLike>(
   }
 
   if (task.status_code !== 20000) {
-    const isNoResults =
-      task.status_code === 40501 ||
-      (task.status_message?.toLowerCase().includes("no search results") ??
-        false);
-    if (treatNoResultsAsEmpty && isNoResults) return task;
+    if (treatNoResultsAsEmpty && isNoResultsTask(task)) return task;
 
     const message = task.status_message || "DataForSEO task failed";
     const path = classifyPath ?? (task.path ? `/${task.path.join("/")}` : "");

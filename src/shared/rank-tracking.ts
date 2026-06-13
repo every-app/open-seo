@@ -10,10 +10,22 @@ import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 // ---------------------------------------------------------------------------
 
 /** DataForSEO Live API: cost of first page (10 results) */
-const BASE_PAGE_COST_USD = 0.002;
+const LIVE_BASE_PAGE_COST_USD = 0.002;
 
 /** DataForSEO Live API: cost of each additional page (75% of base) */
-const EXTRA_PAGE_COST_USD = 0.0015;
+const LIVE_EXTRA_PAGE_COST_USD = 0.0015;
+
+/** DataForSEO task queue (standard priority): cost of first page (10 results) */
+const QUEUED_BASE_PAGE_COST_USD = 0.0006;
+
+/** DataForSEO task queue (standard priority): cost of each additional page (75% of base) */
+const QUEUED_EXTRA_PAGE_COST_USD = 0.00045;
+
+/**
+ * How a rank check reaches DataForSEO: "live" is the instant endpoint used for
+ * manual checks; "queued" is the cheaper task queue used for scheduled checks.
+ */
+type RankCheckMethod = "live" | "queued";
 
 /** How many keywords are checked per batch */
 export const KEYWORDS_PER_BATCH = 10;
@@ -32,9 +44,11 @@ export const MAX_CONFIGS_PER_PROJECT = 20;
 // ---------------------------------------------------------------------------
 
 /** DataForSEO cost for a single SERP request at the given depth. */
-function costPerSerpAtDepth(depth: number): number {
+function costPerSerpAtDepth(depth: number, method: RankCheckMethod): number {
   const pages = depth / 10;
-  return BASE_PAGE_COST_USD + (pages - 1) * EXTRA_PAGE_COST_USD;
+  return method === "queued"
+    ? QUEUED_BASE_PAGE_COST_USD + (pages - 1) * QUEUED_EXTRA_PAGE_COST_USD
+    : LIVE_BASE_PAGE_COST_USD + (pages - 1) * LIVE_EXTRA_PAGE_COST_USD;
 }
 
 export function depthToPages(depth: number): number {
@@ -49,10 +63,11 @@ export function estimateRankCheckCredits(
   keywordCount: number,
   devices: RankTrackingConfig["devices"],
   depth: number,
+  method: RankCheckMethod,
 ) {
   const totalChecks = keywordCount * devicesCount(devices);
   const costUsd = roundUsdForBilling(
-    totalChecks * costPerSerpAtDepth(depth) * SEO_DATA_COST_MARKUP,
+    totalChecks * costPerSerpAtDepth(depth, method) * SEO_DATA_COST_MARKUP,
   );
   const costCredits = Math.ceil(costUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD);
   return { costUsd, costCredits };

@@ -289,10 +289,13 @@ export function RankTrackingConfigModal({
         </div>
 
         {(() => {
+          // Scheduled checks run through the cheaper task queue; manual
+          // configs only ever pay the live price.
           const { costUsd: costPerKeyword } = estimateRankCheckCredits(
             1,
             devices,
             serpDepth,
+            schedule === "manual" ? "live" : "queued",
           );
           const checksPerMonth = schedule === "daily" ? 30 : 4;
           return (

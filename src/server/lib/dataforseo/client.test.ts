@@ -60,6 +60,7 @@ vi.mock("@/server/lib/dataforseo/labs", () => ({
 vi.mock("@/server/lib/dataforseo/serp", () => ({
   fetchLiveSerp: vi.fn(),
   fetchRankCheckSerp: vi.fn(),
+  postRankCheckTasks: vi.fn(),
   fetchLocalSerp: vi.fn(),
 }));
 vi.mock("@/server/lib/dataforseo/business", () => ({

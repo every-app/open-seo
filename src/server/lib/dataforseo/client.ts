@@ -41,6 +41,7 @@ import {
   fetchLiveSerp,
   fetchLocalSerp,
   fetchRankCheckSerp,
+  postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 import {
@@ -117,6 +118,10 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
     serp: {
       live: meter(customer, fetchLiveSerp),
       rankCheck: meter(customer, fetchRankCheckSerp, "rank_tracking"),
+      // Posts up to 100 queued rank check tasks; one metered charge covers the
+      // whole batch (DataForSEO bills task_post at post time, collection is
+      // free).
+      rankCheckTaskPost: meter(customer, postRankCheckTasks, "rank_tracking"),
       local: meter(customer, fetchLocalSerp, "local_seo"),
     },
     labs: {

@@ -7,7 +7,11 @@ import { NonRetryableError } from "cloudflare:workflows";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import { runLiveCheck } from "@/server/workflows/rankCheckPaths";
+import {
+  runLiveCheck,
+  runQueuedCheck,
+  type QueuedCheckStats,
+} from "@/server/workflows/rankCheckPaths";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
@@ -44,6 +48,7 @@ async function prepareRankCheckKeywords(input: {
   billingCustomer: BillingCustomerContext;
   devices: RankCheckParams["devices"];
   serpDepth: number;
+  trigger: RankCheckParams["trigger"];
   keywordIds?: string[];
 }) {
   // If stale-cleanup marked our run failed before we got here, bail out
@@ -72,12 +77,15 @@ async function prepareRankCheckKeywords(input: {
     throw new AppError("INTERNAL_ERROR", "No keywords to track");
   }
 
-  // Verify the user has enough credits for the full check before starting
+  // Verify the user has enough credits for the full check before starting.
+  // Scheduled checks go through the cheaper task queue, so estimate at queued
+  // pricing — a live-price estimate would skip checks the user can afford.
   if (await isHostedServerAuthMode()) {
     const { costCredits } = estimateRankCheckCredits(
       trackingKeywords.length,
       input.devices,
       input.serpDepth,
+      input.trigger === "scheduled" ? "queued" : "live",
     );
     const [monthlyCheck, topupCheck] = await Promise.all([
       autumn.check({
@@ -119,6 +127,7 @@ async function finalizeRankCheckRun(input: {
   billingCustomer: BillingCustomerContext;
   trigger: RankCheckParams["trigger"];
   batchError: string | null;
+  queueStats: QueuedCheckStats | null;
 }) {
   // If stale-cleanup already marked our run failed, don't overwrite that
   // decision with a completed status — a replacement run may already be
@@ -168,6 +177,19 @@ async function finalizeRankCheckRun(input: {
     lastSkipReason: null,
   });
 
+  // One-line summary per run so fallback rates are visible in Workers Logs.
+  // Keys match the PostHog event properties for log/event correlation.
+  const queueSummary = input.queueStats
+    ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked}`
+    : "";
+  // Error text can echo vendor/user content — keep it one line and bounded.
+  const errorSummary = errorMessage
+    ? ` error="${errorMessage.replace(/\s+/g, " ").slice(0, 200)}"`
+    : "";
+  console.log(
+    `[rank-check] ${input.runId} completed org=${input.billingCustomer.organizationId} project=${input.projectId} trigger=${input.trigger} keywords=${keywordsChecked}/${keywordsTotal}${queueSummary}${errorSummary}`,
+  );
+
   await captureServerEvent({
     distinctId: input.billingCustomer.userId,
     event: "rank_tracking:check_complete",
@@ -177,6 +199,14 @@ async function finalizeRankCheckRun(input: {
       status: "completed",
       trigger: input.trigger,
       keywords_checked: keywordsChecked,
+      ...(input.queueStats
+        ? {
+            queue_tasks: input.queueStats.queueTasks,
+            queue_collected: input.queueStats.queueCollected,
+            fallback_tasks: input.queueStats.fallbackTasks,
+            fallback_checked: input.queueStats.fallbackChecked,
+          }
+        : {}),
     },
   });
 }
@@ -267,6 +297,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
             billingCustomer,
             devices,
             serpDepth,
+            trigger,
             keywordIds,
           }),
       );
@@ -276,9 +307,10 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       console.log(`[rank-check] ${runId} loaded ${keywords.length} keywords`);
 
       let batchError: string | null = null;
+      let queueStats: QueuedCheckStats | null = null;
 
       try {
-        await runLiveCheck(step, {
+        const checkContext = {
           client,
           keywords,
           devices,
@@ -287,7 +319,14 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           locationCode,
           languageCode,
           runId,
-        });
+        };
+        // Scheduled checks use DataForSEO's task queue (~30% of live cost);
+        // manual checks stay on the live endpoint for instant results.
+        if (trigger === "scheduled") {
+          queueStats = await runQueuedCheck(step, checkContext);
+        } else {
+          await runLiveCheck(step, checkContext);
+        }
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
         // persisted incrementally. Continue to finalization.
@@ -303,6 +342,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           billingCustomer,
           trigger,
           batchError,
+          queueStats,
         }),
       );
     } catch (error) {
