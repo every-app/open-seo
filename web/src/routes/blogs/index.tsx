@@ -1,10 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { HomeLayout } from "fumadocs-ui/layouts/home";
-import { baseOptions } from "@/lib/layout.shared";
+import { SiteFooter } from "@/components/site-footer";
+import { BlogLayout } from "@/components/blog-layout";
 import { getBlogPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 
-const blogIndexDescription = "Founder-focused SEO articles from OpenSEO.";
+const blogIndexDescription = "SEO articles and guides from OpenSEO.";
 
 export const Route = createFileRoute("/blogs/")({
   head: () =>
@@ -21,37 +21,49 @@ function BlogIndex() {
   const posts = Route.useLoaderData();
 
   return (
-    <HomeLayout {...baseOptions()}>
-      <div className="max-w-3xl mx-auto px-6 py-12 md:py-24">
-        <h1 className="text-4xl font-bold mb-8">Blog</h1>
+    <BlogLayout>
+      <div className="mx-auto max-w-5xl px-6 py-12 md:py-24">
+        <p className="text-sm font-medium text-[var(--color-brand-accent)]">
+          Resources
+        </p>
+        <h1 className="mt-3 text-4xl font-semibold tracking-tight text-neutral-950 md:text-6xl">
+          Blog
+        </h1>
 
         {posts.length === 0 ? (
-          <p className="text-fd-muted-foreground">
+          <p className="mt-8 text-[var(--color-brand-muted)]">
             No posts yet. Check back soon.
           </p>
         ) : (
-          <div className="space-y-8">
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
             {posts.map((post) => (
-              <article key={post.url} className="border-b pb-8 last:border-b-0">
+              <article key={post.url}>
                 <Link
                   to="/blogs/$"
                   params={{ _splat: post.slugs.join("/") }}
-                  className="group"
+                  className="group block h-full rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
                 >
-                  <h2 className="text-2xl font-semibold group-hover:text-fd-primary transition-colors mb-2">
+                  <h2 className="text-2xl font-semibold tracking-tight text-neutral-950 transition-colors group-hover:text-[var(--color-brand-accent)]">
                     {post.title}
                   </h2>
                   {post.description && (
-                    <p className="text-fd-muted-foreground">
+                    <p className="mt-3 text-sm leading-6 text-[var(--color-brand-muted)]">
                       {post.description}
                     </p>
                   )}
+                  <p className="mt-5 text-sm font-medium text-neutral-950">
+                    Read post <span aria-hidden="true">&rarr;</span>
+                  </p>
                 </Link>
               </article>
             ))}
           </div>
         )}
+
+        <div className="mt-16 border-t border-[var(--color-border-subtle)] pt-8">
+          <SiteFooter className="text-xs text-neutral-600 [&_a]:transition-colors [&_a]:hover:text-neutral-900" />
+        </div>
       </div>
-    </HomeLayout>
+    </BlogLayout>
   );
 }

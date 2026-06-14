@@ -3,15 +3,20 @@
 @import "fumadocs-ui/css/preset.css";
 
 @theme {
-  --color-brand: #1a1a1a;
-  --color-brand-muted: #6b7280;
-  --color-brand-accent: #2563eb;
-  --color-surface: #fafafa;
+  --color-brand: #111111;
+  --color-brand-muted: #66625e;
+  --color-brand-accent: #ff5600;
+  --color-surface: #f5f1ec;
   --color-surface-raised: #ffffff;
-  --color-border-subtle: #e5e7eb;
+  --color-border-subtle: #d8d1c8;
 }
 
 html,
 body {
+  background: var(--color-fd-background);
+  color: var(--color-fd-foreground);
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
   overflow-x: clip;
 }

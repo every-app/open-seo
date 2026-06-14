@@ -18,6 +18,7 @@ export type FeaturePage = {
     label: string;
     value: string;
   }>;
+  showMetrics?: boolean;
   useCases: string[];
   differentiators: string[];
   related: Array<{
@@ -70,6 +71,7 @@ export const featurePages = {
       { label: "CPC", value: "Commercial signal" },
       { label: "SERP results", value: "Search context" },
     ],
+    showMetrics: true,
     useCases: [
       "Build a content roadmap from real keyword data.",
       "Find lower-competition variants before writing.",
@@ -145,6 +147,7 @@ export const featurePages = {
       { label: "Affected pages", value: "Scope" },
       { label: "Audit history", value: "Progress" },
     ],
+    showMetrics: true,
     useCases: [
       "Audit a new site before publishing SEO work.",
       "Find technical issues after a migration or redesign.",
@@ -217,6 +220,7 @@ export const featurePages = {
       { label: "Target URLs", value: "Distribution" },
       { label: "Rank and spam signals", value: "Quality context" },
     ],
+    showMetrics: true,
     useCases: [
       "See who links to a competitor.",
       "Inspect link opportunities for important pages.",
@@ -292,6 +296,7 @@ export const featurePages = {
       { label: "Top keywords", value: "Rankings" },
       { label: "Top pages", value: "Organic reach" },
     ],
+    showMetrics: true,
     useCases: [
       "Research a competitor before writing a content plan.",
       "Estimate a site's organic footprint.",
@@ -372,6 +377,7 @@ export const featurePages = {
       { label: "SERP features", value: "Context" },
       { label: "Position change", value: "Movement" },
     ],
+    showMetrics: true,
     useCases: [
       "Monitor target keywords after publishing content.",
       "Track launch, migration, and optimization impact.",

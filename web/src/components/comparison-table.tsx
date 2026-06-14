@@ -77,7 +77,7 @@ const ROWS: { label: string; cells: Cell[] }[] = [
 export function ComparisonTable() {
   return (
     <div className="not-prose my-8">
-      <div className="overflow-x-auto rounded-xl border border-neutral-200">
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border-subtle)] bg-white">
         <table className="w-full min-w-[680px] border-collapse text-left">
           <thead>
             <tr>
@@ -88,7 +88,7 @@ export function ComparisonTable() {
                   scope="col"
                   className={`p-4 align-bottom text-sm font-semibold ${
                     col.highlight
-                      ? "border-x border-neutral-200 bg-neutral-50 text-neutral-950"
+                      ? "border-x border-[var(--color-border-subtle)] bg-[#fbfaf8] text-neutral-950"
                       : "text-neutral-900"
                   }`}
                 >
@@ -102,7 +102,7 @@ export function ComparisonTable() {
               <tr key={row.label}>
                 <th
                   scope="row"
-                  className="border-t border-neutral-200 p-4 align-top text-sm font-medium text-neutral-500"
+                  className="border-t border-[var(--color-border-subtle)] p-4 align-top text-sm font-medium text-[var(--color-brand-muted)]"
                 >
                   {row.label}
                 </th>
@@ -111,8 +111,10 @@ export function ComparisonTable() {
                   return (
                     <td
                       key={COLUMNS[i]?.name ?? i}
-                      className={`border-t border-neutral-200 p-4 align-top text-sm ${
-                        highlight ? "border-x bg-neutral-50" : ""
+                      className={`border-t border-[var(--color-border-subtle)] p-4 align-top text-sm ${
+                        highlight
+                          ? "border-x border-[var(--color-border-subtle)] bg-[#fbfaf8]"
+                          : ""
                       }`}
                     >
                       <CellContent cell={cell} highlight={highlight} />
@@ -141,14 +143,16 @@ function CellContent({ cell, highlight }: { cell: Cell; highlight?: boolean }) {
     <div className="flex items-start gap-2.5">
       <span
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center ${
-          tone === "negative" ? "text-neutral-300" : "text-neutral-900"
+          tone === "negative"
+            ? "text-neutral-300"
+            : "text-[var(--color-brand-accent)]"
         }`}
       >
         <ToneIcon tone={tone} />
       </span>
       <span className={`leading-snug ${textClass}`}>
         {cell.code ? (
-          <code className="rounded bg-neutral-100 px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-800">
+          <code className="rounded bg-[#ebe4da] px-1.5 py-0.5 font-mono text-[0.85em] text-neutral-800">
             {cell.text}
           </code>
         ) : (

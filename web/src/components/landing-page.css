@@ -1,0 +1,691 @@
+/**
+ * Landing-page styles.
+ *
+ * Scoped under `.itc` and kept unlayered (plain CSS) so these component
+ * classes win over Tailwind's layered utilities, matching the page's design.
+ * Palette vars that exactly match the global @theme tokens (app.css) alias
+ * them instead of redefining the hex; vars with bespoke values stay local.
+ */
+
+.itc {
+  --canvas: var(--color-surface);
+  --surface: var(--color-surface-raised);
+  --surface-2: #ebe7e1;
+  --ink: var(--color-brand);
+  --ink-muted: #626260;
+  --ink-subtle: #7b7b78;
+  --ink-tertiary: #9c9fa5;
+  --hairline: #d3cec6;
+  --hairline-soft: #ebe7e1;
+  --orange: var(--color-brand-accent);
+  --inverse: #000000;
+  --inverse-surface: #313130;
+  --inverse-muted: #9c9fa5;
+  /* Testimonial band (light: deep greige band, white cards, charcoal text) */
+  --q-bg: #e3dccd;
+  --q-card: #ffffff;
+  --q-card-border: #d0c9bb;
+  --q-text: #111111;
+  --q-muted: #7b7b78;
+  --q-avatar-bg: #111111;
+  --q-avatar-fg: #ffffff;
+  --q-mark: #b8ac96;
+  /* Dark "emphasis" surfaces: featured pricing card + MCP terminal */
+  --feat-bg: #221f1b;
+  --feat-text: #ffffff;
+  --term-bg: #221f1b;
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--canvas);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+.itc *,
+.itc *::before,
+.itc *::after {
+  box-sizing: border-box;
+}
+.itc img,
+.itc video {
+  display: block;
+  max-width: 100%;
+}
+/* Zero-specificity reset so component classes below always win. */
+.itc :where(a) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.itc-container {
+  max-width: 1232px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.itc-narrow {
+  max-width: 760px;
+}
+
+.itc-section {
+  padding: 96px 0;
+}
+.itc-section-open-source {
+  background: #f8f6f2;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+}
+.itc-section-demo {
+  background: var(--canvas);
+}
+.itc-section-demo + .itc-footer {
+  margin-top: 0;
+}
+@media (max-width: 767px) {
+  .itc-section {
+    padding: 64px 0;
+  }
+}
+
+/* ── Type scale (Inter standing in for Saans; weight 500 carries display) ── */
+.itc-display-xl {
+  font-size: clamp(40px, 6.5vw, 72px);
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.028em;
+  margin: 0;
+  text-wrap: balance;
+}
+/* Desktop keeps the headline on two lines via a forced break; mobile wraps
+   naturally (the break is removed below the tablet breakpoint). */
+.itc-h1-br {
+  display: inline;
+}
+@media (max-width: 767px) {
+  .itc-h1-br {
+    display: none;
+  }
+}
+@media (min-width: 768px) {
+  /* Let the forced <br> own the break; don't let balance re-split into 3 lines. */
+  .itc-display-xl {
+    text-wrap: wrap;
+  }
+}
+.itc-display-lg {
+  font-size: clamp(32px, 4.4vw, 52px);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.026em;
+  margin: 0;
+  text-wrap: balance;
+}
+.itc-display-md {
+  font-size: clamp(28px, 3.4vw, 40px);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0;
+  text-wrap: balance;
+}
+.itc-card-title {
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.013em;
+  margin: 0;
+}
+.itc-subhead {
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+.itc-body-lg {
+  font-size: 18px;
+  line-height: 1.5;
+  letter-spacing: -0.005em;
+}
+.itc-body-sm {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.itc-caption {
+  font-size: 12px;
+  line-height: 1.4;
+}
+.itc-eyebrow {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.3;
+  letter-spacing: 0;
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+}
+.itc-muted {
+  color: var(--ink-muted);
+}
+.itc-subtle {
+  color: var(--ink-subtle);
+}
+@media (max-width: 479px) {
+  .itc-subhead {
+    font-size: 18px;
+  }
+}
+
+/* ── Buttons: 8px radius, 10x18 padding, never pill ── */
+.itc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+.itc-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.itc-btn-lg {
+  min-height: 54px;
+  padding: 15px 28px;
+  font-size: 17px;
+  border-radius: 10px;
+}
+.itc-btn-primary {
+  background: var(--ink);
+  color: #ffffff;
+}
+.itc-btn-primary:hover {
+  background: #000000;
+}
+.itc-btn-secondary {
+  background: var(--surface);
+  color: var(--ink);
+  border-color: var(--hairline);
+}
+.itc-btn-secondary:hover {
+  border-color: var(--ink);
+}
+.itc-btn-fin {
+  background: var(--orange);
+  color: #ffffff;
+}
+.itc-btn-fin:hover {
+  background: #e64d00;
+}
+.itc-btn-fin:focus-visible {
+  outline-color: var(--orange);
+}
+.itc-arrow {
+  transition: transform 0.15s ease;
+}
+.itc-btn:hover .itc-arrow,
+.itc-textlink:hover .itc-arrow {
+  transform: translateX(2px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .itc-arrow,
+  .itc-btn,
+  .itc-textlink {
+    transition: none;
+  }
+  .itc-btn:hover .itc-arrow,
+  .itc-textlink:hover .itc-arrow {
+    transform: none;
+  }
+}
+
+.itc-textlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  border-radius: 4px;
+}
+.itc-textlink:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.itc-textlink:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* ── Surfaces: white lift on cream, hairline borders, no shadows ── */
+.itc-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+}
+.itc-mockup {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 12px;
+}
+@media (min-width: 768px) {
+  .itc-mockup {
+    padding: 20px;
+  }
+}
+.itc-mockup-media {
+  border-radius: 8px;
+  border: 1px solid var(--hairline-soft);
+  overflow: hidden;
+  background: var(--canvas);
+}
+
+/* ── Hero ── */
+.itc-hero {
+  align-items: center;
+  display: flex;
+  min-height: calc(100svh - 150px);
+  padding-top: clamp(104px, 12vh, 176px);
+  padding-bottom: clamp(96px, 12vh, 144px);
+  position: relative;
+  text-align: center;
+}
+.itc-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: background-color 0.18s ease;
+}
+.itc-hero .itc-container {
+  position: relative;
+  z-index: 1;
+}
+.itc-hero-title {
+  color: var(--ink);
+  transition: color 0.18s ease;
+}
+.itc-hero-title-accent {
+  color: inherit;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+.itc-hero-subtitle {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+.itc-hero-subtitle-counter,
+.itc-hero-subtitle-win {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  font-style: italic;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    text-decoration-color 0.18s ease;
+}
+.itc-hero-subtitle-counter {
+  color: #7a746d;
+}
+.itc-hero-subtitle-win {
+  color: var(--orange);
+  font-weight: 500;
+}
+@media (max-width: 767px) {
+  .itc-hero {
+    min-height: calc(100svh - 120px);
+    padding-top: 72px;
+    padding-bottom: 88px;
+  }
+}
+.itc-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+@media (max-width: 479px) {
+  .itc-hero-ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ── Testimonial band (colors driven by --q-* palette vars) ── */
+.itc-inverse {
+  background: var(--q-bg);
+  color: var(--q-text);
+}
+.itc-testimonials {
+  padding: 72px 0;
+}
+.itc-testimonials-title {
+  max-width: none;
+  text-align: center;
+  white-space: nowrap;
+}
+.itc-quote-mark {
+  color: var(--q-mark);
+  font-size: 48px;
+  font-weight: 500;
+  line-height: 0.5;
+}
+.itc-quote-grid {
+  display: grid;
+  gap: 20px;
+}
+@media (min-width: 768px) {
+  .itc-quote-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  .itc-testimonials {
+    padding: 56px 0;
+  }
+  .itc-testimonials-title {
+    white-space: normal;
+  }
+}
+.itc-quote-card {
+  margin: 0;
+  background: var(--q-card);
+  border: 1px solid var(--q-card-border);
+  border-radius: 12px;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.itc-quote-text {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  color: var(--q-text);
+  text-wrap: pretty;
+  flex: 1;
+}
+.itc-quote-attr {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.itc-quote-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px;
+  background: var(--q-avatar-bg);
+  color: var(--q-avatar-fg);
+  font-size: 14px;
+  font-weight: 500;
+  flex: none;
+  overflow: hidden;
+}
+.itc-quote-avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.itc-quote-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  line-height: 1.3;
+}
+.itc-quote-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--q-text);
+}
+.itc-quote-handle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--q-muted);
+  text-decoration: none;
+}
+.itc-quote-handle:hover {
+  color: var(--q-text);
+}
+.itc-quote-handle:focus-visible {
+  outline: 2px solid var(--q-text);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* ── Product grid ── */
+.itc-feature-grid {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+}
+@media (min-width: 768px) {
+  .itc-feature-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.itc-feature-card {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  text-decoration: none;
+  transition: border-color 0.15s ease;
+}
+.itc-feature-card:hover {
+  border-color: var(--ink);
+}
+.itc-feature-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.itc-feature-card-body {
+  padding: 16px 8px 8px;
+}
+.itc-feature-list-grid {
+  display: grid;
+  gap: 16px;
+  margin-top: 28px;
+}
+@media (min-width: 768px) {
+  .itc-feature-list-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.itc-feature-list-card {
+  min-height: 128px;
+  padding: 20px;
+  transition: border-color 0.15s ease;
+}
+.itc-feature-list-card:hover {
+  border-color: var(--ink);
+}
+.itc-feature-list-card:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.itc-feature-more-header {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* ── MCP (the single orange moment) ── */
+.itc-mcp-section {
+  background: #eee8de;
+  border-top: 1px solid var(--hairline);
+  padding: 84px 0 92px;
+}
+.itc-hero + .itc-mcp-section {
+  margin-top: 24px;
+}
+.itc-mcp-grid {
+  display: grid;
+  gap: 48px;
+  align-items: center;
+}
+@media (min-width: 980px) {
+  .itc-mcp-grid {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    gap: 64px;
+  }
+}
+@media (max-width: 767px) {
+  .itc-mcp-section {
+    padding: 64px 0;
+  }
+  .itc-hero + .itc-mcp-section {
+    margin-top: 28px;
+  }
+}
+.itc-terminal {
+  background: var(--term-bg);
+  border-radius: 16px;
+  overflow: hidden;
+  min-width: 0;
+}
+.itc-terminal-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid #2a2a29;
+}
+.itc-terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: #313130;
+}
+.itc-terminal-label {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--inverse-muted);
+}
+.itc-terminal pre {
+  margin: 0;
+  padding: 20px 20px 24px;
+  overflow-x: auto;
+  font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.7;
+  color: #d6d3ce;
+}
+.itc-terminal .t-orange {
+  color: var(--orange);
+}
+.itc-terminal .t-bright {
+  color: #ffffff;
+}
+.itc-terminal .t-dim {
+  color: var(--inverse-muted);
+}
+.itc-agent-icons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+.itc-agent-icon {
+  align-items: center;
+  background: var(--surface-2);
+  border-radius: 10px;
+  display: inline-flex;
+  height: 44px;
+  justify-content: center;
+  overflow: hidden;
+  width: 44px;
+}
+.itc-agent-icon svg {
+  height: 28px;
+  width: 28px;
+}
+
+/* ── Footer ── */
+.itc-footer {
+  background: #eee8de;
+  border-top: 1px solid var(--hairline);
+}
+.itc-sitefooter {
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+.itc-sitefooter a {
+  color: var(--ink-muted);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+.itc-sitefooter a:hover {
+  color: var(--ink);
+}
+.itc-newsletter input {
+  border-color: var(--hairline) !important;
+  border-radius: 8px !important;
+}
+.itc-newsletter input:focus {
+  border-color: var(--ink) !important;
+  box-shadow: none !important;
+}
+.itc-newsletter button {
+  border-radius: 8px !important;
+  background: var(--ink) !important;
+}
+
+/* ── Floating Discord pill (quiet messenger-style nod) ── */
+.itc-discord {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--ink);
+  color: #ffffff;
+  border-radius: 9999px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.itc-discord:hover {
+  background: #000000;
+}
+.itc-discord:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+@media (max-width: 767px) {
+  .itc-discord span {
+    display: none;
+  }
+  .itc-discord {
+    padding: 12px;
+  }
+}

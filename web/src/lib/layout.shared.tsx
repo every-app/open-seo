@@ -15,7 +15,7 @@ export function baseOptions(): BaseLayoutProps {
         items: [
           {
             text: "Blog",
-            description: "Founder-focused SEO articles.",
+            description: "SEO articles and guides.",
             url: "/blogs",
           },
           {

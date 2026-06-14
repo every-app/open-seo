@@ -13,17 +13,23 @@ type LegalPageProps = {
 export function LegalPage({ title, description, children }: LegalPageProps) {
   return (
     <HomeLayout {...baseOptions()}>
-      <article className="max-w-3xl mx-auto px-6 py-12 md:py-24">
-        <header className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">{title}</h1>
+      <article className="mx-auto max-w-3xl bg-[var(--color-surface)] px-6 py-12 text-neutral-950 md:py-24">
+        <header className="mb-10 border-b border-[var(--color-border-subtle)] pb-8">
+          <h1 className="mb-4 text-4xl font-semibold tracking-tight md:text-6xl">
+            {title}
+          </h1>
           {description ? (
-            <p className="text-lg text-fd-muted-foreground">{description}</p>
+            <p className="text-lg leading-8 text-[var(--color-brand-muted)]">
+              {description}
+            </p>
           ) : null}
         </header>
 
-        <DocsBody>{children}</DocsBody>
+        <DocsBody className="text-neutral-800 [&_a]:!text-neutral-950 [&_a]:underline [&_a]:decoration-[var(--color-brand-accent)] [&_a]:underline-offset-4 [&_h2]:text-neutral-950 [&_h3]:text-neutral-950 [&_li]:text-neutral-700 [&_p]:text-neutral-700 [&_strong]:text-neutral-950">
+          {children}
+        </DocsBody>
 
-        <div className="mt-12 border-t border-neutral-200 pt-8">
+        <div className="mt-16 border-t border-[var(--color-border-subtle)] pt-8">
           <SiteFooter className="text-xs text-neutral-600 [&_a]:transition-colors [&_a]:hover:text-neutral-900" />
         </div>
       </article>
