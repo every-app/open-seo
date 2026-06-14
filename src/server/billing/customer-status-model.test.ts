@@ -13,6 +13,7 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
       organizationId: "org_123",
       isPaying: true,
       paidPlanId: AUTUMN_PAID_PLAN_ID,
+      paidPlanStatus: "active",
     });
   });
 
@@ -39,6 +40,7 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
 
     expect(snapshot.isPaying).toBe(false);
     expect(snapshot.paidPlanId).toBeNull();
+    expect(snapshot.paidPlanStatus).toBeNull();
   });
 
   it("records a scheduled (not-yet-active) paid plan as not paying", () => {
@@ -51,6 +53,7 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
       organizationId: "org_456",
       isPaying: false,
       paidPlanId: AUTUMN_PAID_PLAN_ID,
+      paidPlanStatus: "scheduled",
     });
   });
 
@@ -65,5 +68,6 @@ describe("deriveBillingCustomerStatusSnapshot", () => {
 
     expect(snapshot.isPaying).toBe(true);
     expect(snapshot.paidPlanId).toBe(AUTUMN_PAID_PLAN_ID);
+    expect(snapshot.paidPlanStatus).toBe("active");
   });
 });

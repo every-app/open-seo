@@ -18,6 +18,7 @@ export type BillingCustomerStatusSnapshot = {
   organizationId: string;
   isPaying: boolean;
   paidPlanId: string | null;
+  paidPlanStatus: string | null;
   customerJson: string;
   syncedAt: string;
 };
@@ -36,6 +37,7 @@ export function deriveBillingCustomerStatusSnapshot(
     organizationId,
     isPaying: subscription?.status === "active",
     paidPlanId: subscription?.planId ?? null,
+    paidPlanStatus: subscription?.status ?? null,
     // Full payload kept verbatim — query rarely-used fields via json_extract.
     customerJson: JSON.stringify(customer),
     syncedAt: new Date().toISOString(),
