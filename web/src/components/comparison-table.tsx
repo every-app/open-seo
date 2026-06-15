@@ -35,7 +35,7 @@ const ROWS: { label: string; cells: Cell[] }[] = [
     ],
   },
   {
-    label: "Price",
+    label: "Cost to run",
     cells: [
       {
         text: "Included in the $10/mo plan, zero credits (free to self-host)",

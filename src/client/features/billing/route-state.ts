@@ -21,7 +21,10 @@ export function getSubscribeRouteState(args: {
   hasSession: boolean;
   isCustomerLoading: boolean;
   isCustomerError: boolean;
+  hasManagedAccess: boolean;
   planStatus: PlanStatus;
+  isUpgradeFlow: boolean;
+  checkoutCompleted: boolean;
 }) {
   if (!args.hasSession || args.isCustomerLoading) {
     return "loading" as const;
@@ -35,5 +38,17 @@ export function getSubscribeRouteState(args: {
     return "redirectToApp" as const;
   }
 
-  return "showWelcome" as const;
+  // Grandfathered free-plan users landing here outside the upgrade flow
+  // belong in the app, not on the paywall.
+  if (args.hasManagedAccess && !args.isUpgradeFlow) {
+    return "redirectToApp" as const;
+  }
+
+  // Back from Stripe but Autumn hasn't reflected the subscription yet — poll
+  // instead of showing the paywall again (whose only CTA is paying twice).
+  if (args.checkoutCompleted) {
+    return "finalizing" as const;
+  }
+
+  return "showPaywall" as const;
 }

@@ -33,7 +33,7 @@ export const listSavedKeywordsTool = {
   config: {
     title: "List saved keywords",
     description:
-      "Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Free — reads from OpenSEO's database, charges no credits. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.",
+      "Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Uses no credits — reads from OpenSEO's database, no DataForSEO call. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.",
     inputSchema,
     outputSchema: {
       rows: z.array(looseObjectOutputSchema),

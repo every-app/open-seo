@@ -1,5 +1,8 @@
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
-import { AUTUMN_PAID_PLAN_FEATURE_ID } from "@/shared/billing";
+import {
+  AUTUMN_MANAGED_ACCESS_FEATURE_ID,
+  AUTUMN_PAID_PLAN_FEATURE_ID,
+} from "@/shared/billing";
 import { autumn } from "@/server/billing/autumn";
 import { AppError } from "@/server/lib/errors";
 
@@ -32,6 +35,15 @@ export async function customerHasPaidPlan(customerId: string) {
   const result = await autumn.check({
     customerId,
     featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
+  });
+
+  return result.allowed;
+}
+
+export async function customerHasManagedAccess(customerId: string) {
+  const result = await autumn.check({
+    customerId,
+    featureId: AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   });
 
   return result.allowed;

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MoneyBackGuarantee } from "@/components/money-back-guarantee";
 import { buildPageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/_marketing/pricing")({
@@ -6,7 +7,7 @@ export const Route = createFileRoute("/_marketing/pricing")({
     buildPageSeo({
       title: "Pricing",
       description:
-        "OpenSEO is free to self-host. The managed service is $10/month and includes Usage Credits.",
+        "OpenSEO is free to self-host. The managed service is $10/month with a 30-day money-back guarantee.",
       path: "/pricing",
       titleSuffix: "OpenSEO",
     }),
@@ -43,9 +44,10 @@ function Pricing() {
             </div>
             <ul className="mt-3 space-y-2">
               {[
-                "Access to OpenSEO's managed service",
+                "Keyword research, backlinks, rank tracking, and site audits",
+                "MCP server and agent skills for Claude, Cursor, and ChatGPT",
+                "Search Console integration that never uses credits",
                 "Includes $10.00 of Usage Credits each billing cycle",
-                "Monthly included credits reset each cycle",
               ].map((item) => (
                 <li
                   key={item}
@@ -102,6 +104,9 @@ function Pricing() {
             &rarr;
           </span>
         </a>
+        <p className="mt-3 text-xs text-neutral-500">
+          <MoneyBackGuarantee />.
+        </p>
       </section>
 
       {/* Self-hosted */}
@@ -132,6 +137,17 @@ function Pricing() {
           FAQ
         </h2>
         <dl className="mt-5 divide-y divide-[var(--color-border-subtle)] rounded-xl border border-[var(--color-border-subtle)] bg-white">
+          <div className="p-5">
+            <dt className="text-sm font-medium text-neutral-950">
+              Is there a free trial?
+            </dt>
+            <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
+              No — instead, every subscription comes with a 30-day money-back
+              guarantee. If OpenSEO isn&apos;t for you, email ben@openseo.so
+              within 30 days of your first charge and we&apos;ll refund it. You
+              can also self-host the open-source version for free.
+            </dd>
+          </div>
           <div className="p-5">
             <dt className="text-sm font-medium text-neutral-950">
               What if I use all my included credits?
@@ -168,7 +184,9 @@ function Pricing() {
             </dt>
             <dd className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
               Yes. Cancel from your billing portal at any time. Your access
-              continues through the end of the current billing period.{" "}
+              continues through the end of the current billing period. Within
+              your first 30 days, you can email ben@openseo.so for a full
+              refund.{" "}
             </dd>
           </div>
           <div className="p-5">

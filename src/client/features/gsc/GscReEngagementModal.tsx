@@ -107,7 +107,7 @@ export function GscReEngagementModal({
         </h2>
         <p className="text-sm text-base-content/70">
           Bring your real clicks, impressions, and rankings into OpenSEO and
-          query them from Claude or Codex over MCP. It's free.
+          query them from Claude or Codex over MCP. It never uses credits.
         </p>
       </div>
 

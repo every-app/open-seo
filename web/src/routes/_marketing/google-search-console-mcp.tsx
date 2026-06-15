@@ -17,6 +17,18 @@ const softwareApplicationLd = {
   operatingSystem: "Web",
   url: toCanonicalUrl(PATH),
   description: frontmatter.description,
+  offers: {
+    "@type": "Offer",
+    price: "10.00",
+    priceCurrency: "USD",
+    priceSpecification: {
+      "@type": "UnitPriceSpecification",
+      price: "10.00",
+      priceCurrency: "USD",
+      billingDuration: 1,
+      unitCode: "MON",
+    },
+  },
   provider: {
     "@type": "Organization",
     name: "OpenSEO",
@@ -62,6 +74,10 @@ function GoogleSearchConsoleMcpPage() {
             </span>
           </a>
         </div>
+        <p className="mt-3 text-xs text-neutral-500">
+          $10/month, 30-day money-back guarantee. Search Console tools never
+          use credits.
+        </p>
       </header>
 
       <DocsBody className="min-w-0 text-neutral-800 [&_a]:!text-neutral-950 [&_h2]:!text-neutral-950 [&_h2_a]:!no-underline [&_h3]:!text-neutral-950 [&_h3_a]:!no-underline [&_h4]:!text-neutral-950 [&_h4_a]:!no-underline [&_h5_a]:!no-underline [&_h6_a]:!no-underline [&_li]:!text-neutral-700 [&_li_a]:font-medium [&_li_a]:underline [&_li_a]:decoration-[var(--color-brand-accent)] [&_li_a]:underline-offset-4 [&_li_a:hover]:!text-neutral-700 [&_p]:!text-neutral-700 [&_p_a]:font-medium [&_p_a]:underline [&_p_a]:decoration-[var(--color-brand-accent)] [&_p_a]:underline-offset-4 [&_p_a:hover]:!text-neutral-700 [&_strong]:!text-neutral-950">
@@ -90,8 +106,8 @@ function GoogleSearchConsoleMcpCta() {
         Point your AI at your real search data
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-        Free to connect. No Google Cloud project. Works with Claude, Codex,
-        OpenClaw, OpenCode, and Gemini.
+        No Google Cloud project. Zero credits to read your own data. Works with
+        Claude, Codex, OpenClaw, OpenCode, and Gemini.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a

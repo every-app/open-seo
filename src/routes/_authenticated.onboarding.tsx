@@ -11,12 +11,21 @@ import {
   onboardingAnswersQueryOptions,
   restoreOnboardingAnswers,
 } from "@/client/features/onboarding/onboardingModel";
+import { managedAccessQueryOptions } from "@/client/features/billing/managed-access";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const ONBOARDING_EXISTING_USER_CUTOFF = "2026-05-27T00:00:00.000Z";
+
+// First step that requires a subscription. The earlier steps (interests, who
+// you work for, how you found us) collect profiling answers we want even from
+// users who bounce at the paywall, so the gate sits here — after them, before
+// Search Console + MCP setup.
+const SUBSCRIBE_GATE_STEP = 3;
 
 const clampStep = (step: number) =>
   Math.min(Math.max(0, Math.trunc(step)), ONBOARDING_LAST_STEP);
@@ -81,6 +90,17 @@ function OnboardingFlow({
   const { step } = Route.useSearch();
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
+  // Self-hosted has no paywall; hosted users must subscribe before the gated
+  // steps. Answers from earlier steps are already saved, so a user who pays
+  // returns to the gated step with everything intact.
+  const isHostedMode = isHostedClientAuthMode();
+  const accessQuery = useQuery({
+    ...managedAccessQueryOptions(),
+    enabled: isHostedMode,
+  });
+  const needsSubscription =
+    isHostedMode && accessQuery.data?.hasManagedAccess === false;
+
   const saveMutation = useMutation({
     mutationFn: (extra: {
       mcpSetupIntent?: "yes" | "no";
@@ -97,6 +117,21 @@ function OnboardingFlow({
   const goToStep = (next: number) =>
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
+  // Advance to the next step, but divert to the paywall when crossing into the
+  // first gated step. The just-saved answers let the user resume here on return.
+  const advanceFromCurrentStep = () => {
+    const next = clampStep(step + 1);
+    if (next >= SUBSCRIBE_GATE_STEP && needsSubscription) {
+      void navigate({
+        to: SUBSCRIBE_ROUTE,
+        search: { redirect: `/onboarding?step=${SUBSCRIBE_GATE_STEP}` },
+        replace: true,
+      });
+      return;
+    }
+    goToStep(next);
+  };
+
   const handleNext = () => {
     if (step === 0) {
       captureClientEvent("onboarding:interests_selected", {
@@ -105,13 +140,13 @@ function OnboardingFlow({
       });
     }
     saveMutation.mutate({});
-    goToStep(step + 1);
+    advanceFromCurrentStep();
   };
 
   const handleSkip = () => {
     saveMutation.mutate({});
     captureClientEvent("onboarding:step_skipped", { step });
-    goToStep(step + 1);
+    advanceFromCurrentStep();
   };
 
   const handleFinish = async (mcpSetupIntent: "yes" | "no") => {

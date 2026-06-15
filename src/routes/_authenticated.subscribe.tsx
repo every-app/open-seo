@@ -6,16 +6,38 @@ import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMen
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getStoredRedditAttribution } from "@/client/lib/reddit-attribution";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
-import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
+import { MANAGED_ACCESS_QUERY_KEY } from "@/client/features/billing/managed-access";
+import { normalizeAuthRedirect } from "@/lib/auth-redirect";
+import { queryClient } from "@/client/tanstack-db";
+import {
+  AUTUMN_MANAGED_ACCESS_FEATURE_ID,
+  AUTUMN_PAID_PLAN_ID,
+} from "@/shared/billing";
 import { captureRedditConversionEvent } from "@/serverFunctions/redditConversions";
 
+const SUPPORT_EMAIL = "ben@openseo.so";
+
+const PLAN_FEATURES = [
+  "Keyword research, backlinks, rank tracking, and site audits",
+  "MCP server and agent skills for Claude, Cursor, and ChatGPT",
+  "Search Console integration that never uses credits",
+  "Includes $10.00 of Usage Credits each month",
+];
+
 export const Route = createFileRoute("/_authenticated/subscribe")({
-  validateSearch: (search: Record<string, unknown>) => ({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { upgrade?: true; redirect?: string } => ({
     upgrade:
       search.upgrade === true || search.upgrade === "true" ? true : undefined,
+    redirect:
+      typeof search.redirect === "string"
+        ? normalizeAuthRedirect(search.redirect)
+        : undefined,
   }),
   component: SubscribePage,
 });
@@ -30,7 +52,7 @@ function SubscribePage() {
 
 function SubscribePageContent() {
   const navigate = useNavigate();
-  const { upgrade: isUpgradeFlow } = Route.useSearch();
+  const { upgrade: isUpgradeFlow, redirect } = Route.useSearch();
   const { data: session } = useSession();
   const [isAttaching, setIsAttaching] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,43 +60,112 @@ function SubscribePageContent() {
     typeof window !== "undefined" &&
     new URLSearchParams(window.location.search).get("checkout") === "success";
 
+  const hasSession = Boolean(session?.user?.id);
   const customerQuery = useCustomer({
     queryOptions: {
-      enabled: Boolean(session?.user?.id),
+      enabled: hasSession,
     },
   });
 
+  // Read managed access from the already-loaded Autumn customer (local, no API
+  // call) instead of a separate server round-trip. Self-hosted has no Autumn
+  // customer, so mirror the server's "always granted" behavior there.
+  const hasManagedAccess = isHostedClientAuthMode()
+    ? customerQuery.check({ featureId: AUTUMN_MANAGED_ACCESS_FEATURE_ID })
+        .allowed
+    : true;
+
   const planStatus = getCustomerPlanStatus(customerQuery.data);
   const subscribeRouteState = getSubscribeRouteState({
-    hasSession: Boolean(session?.user?.id),
+    hasSession,
     isCustomerLoading: customerQuery.isLoading,
     isCustomerError: customerQuery.isError,
+    hasManagedAccess,
     planStatus,
+    isUpgradeFlow: isUpgradeFlow === true,
+    checkoutCompleted,
   });
+
+  // Autumn can lag Stripe by a few seconds after checkout; poll until the
+  // subscription shows up so the just-paid user isn't shown the paywall again.
+  const isFinalizing = subscribeRouteState === "finalizing";
+  useEffect(() => {
+    if (!isFinalizing) return;
+    const interval = setInterval(() => {
+      void customerQuery.refetch();
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [customerQuery, isFinalizing]);
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
+      // The app layouts gate on this query; make sure they see fresh access
+      // state instead of a cached "no access" that would bounce back here.
+      void queryClient.invalidateQueries({
+        queryKey: MANAGED_ACCESS_QUERY_KEY,
+      });
+      const destination = redirect ?? "/";
+      const [destinationPath, destinationQuery] = destination.split("?");
+      const destinationSearch = destinationQuery
+        ? Object.fromEntries(new URLSearchParams(destinationQuery))
+        : undefined;
+      const goToApp = () =>
+        void navigate({
+          to: destinationPath,
+          search: destinationSearch,
+          replace: true,
+        });
       if (checkoutCompleted) {
         captureClientEvent("billing:checkout_success");
         const attribution = getStoredRedditAttribution();
         if (attribution) {
           void captureRedditConversionEvent({
             data: { attribution, eventType: "PURCHASE" },
-          }).finally(() => {
-            void navigate({ to: "/", replace: true });
-          });
+          }).finally(goToApp);
           return;
         }
       }
-      void navigate({ to: "/", replace: true });
+      goToApp();
     }
-  }, [checkoutCompleted, navigate, subscribeRouteState]);
+  }, [checkoutCompleted, navigate, redirect, subscribeRouteState]);
+
+  useEffect(() => {
+    if (subscribeRouteState === "showPaywall" && !isUpgradeFlow) {
+      captureClientEvent("billing:paywall_viewed");
+    }
+  }, [isUpgradeFlow, subscribeRouteState]);
 
   if (
     subscribeRouteState === "loading" ||
     subscribeRouteState === "redirectToApp"
   ) {
     return null;
+  }
+
+  if (subscribeRouteState === "finalizing") {
+    return (
+      <div className="w-full max-w-xs space-y-4 text-center">
+        <img
+          src="/transparent-logo.png"
+          alt="OpenSEO"
+          className="mx-auto size-10 rounded-lg"
+        />
+        <h1 className="text-xl font-semibold">
+          Finalizing your subscription&hellip;
+        </h1>
+        <span className="loading loading-spinner loading-md" />
+        <p className="text-sm text-base-content/60">
+          This usually takes a few seconds.
+        </p>
+        <p className="text-xs text-base-content/50">
+          Taking longer?{" "}
+          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
+            Email {SUPPORT_EMAIL}
+          </a>
+          .
+        </p>
+      </div>
+    );
   }
 
   if (subscribeRouteState === "error") {
@@ -115,10 +206,12 @@ function SubscribePageContent() {
 
     try {
       captureClientEvent("billing:checkout_start");
+      const successUrl = new URL(window.location.href);
+      successUrl.searchParams.set("checkout", "success");
       await customerQuery.attach({
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
-        successUrl: `${window.location.origin}${window.location.pathname}?checkout=success`,
+        successUrl: successUrl.toString(),
       });
     } catch (err) {
       setError(
@@ -162,11 +255,7 @@ function SubscribePageContent() {
         </div>
 
         <ul className="space-y-2">
-          {[
-            "Access to all OpenSEO features",
-            "Do keyword research, backlink analysis and site audits",
-            "Includes $10.00 of Usage Credits each month",
-          ].map((item) => (
+          {PLAN_FEATURES.map((item) => (
             <li
               key={item}
               className="flex gap-2.5 text-sm text-base-content/70"
@@ -190,11 +279,26 @@ function SubscribePageContent() {
         </button>
 
         <p className="text-center text-xs text-base-content/50">
-          Cancel anytime — no commitment. Powered by Stripe.
+          <span
+            className="tooltip before:max-w-60 before:whitespace-normal"
+            data-tip={`Not for you yet? Email ${SUPPORT_EMAIL} within 30 days of your charge and we'll refund your subscription.`}
+          >
+            <span className="cursor-help underline decoration-dotted">
+              30-day money-back guarantee
+            </span>
+          </span>
+          . Cancel anytime. Powered by Stripe.
         </p>
       </div>
 
       <div className="text-center space-y-2">
+        <p className="text-sm text-base-content/60">
+          Questions?{" "}
+          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
+            Email {SUPPORT_EMAIL}
+          </a>
+          .
+        </p>
         {isUpgradeFlow ? (
           <button
             type="button"
@@ -204,22 +308,7 @@ function SubscribePageContent() {
             <ArrowRight className="size-3.5 rotate-180" />
             Back to app
           </button>
-        ) : (
-          <>
-            <p className="text-sm text-base-content/60">
-              Or try it free — you have $0.50 of credits to explore before
-              committing.
-            </p>
-            <button
-              type="button"
-              className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-base-content/70 hover:text-base-content transition-colors"
-              onClick={() => void navigate({ to: "/", replace: true })}
-            >
-              Continue with free trial
-              <ArrowRight className="size-3.5" />
-            </button>
-          </>
-        )}
+        ) : null}
       </div>
     </div>
   );

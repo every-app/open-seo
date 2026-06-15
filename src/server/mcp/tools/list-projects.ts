@@ -13,7 +13,7 @@ export const listProjectsTool = {
   config: {
     title: "List projects",
     description:
-      "Lists all projects in the user's organization. Free — charges no credits. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain}; pass the `id` value as `projectId`.",
+      "Lists all projects in the user's organization. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain}; pass the `id` value as `projectId`.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
       projects: z.array(

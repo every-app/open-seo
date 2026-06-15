@@ -138,7 +138,7 @@ export function SearchConsoleConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Real clicks, impressions, and rankings. Free.
+            Real clicks, impressions, and rankings. No credits used.
           </p>
           <button
             type="button"

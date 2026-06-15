@@ -10,6 +10,10 @@ import {
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
+import {
+  customerHasManagedAccess,
+  getOrCreateOrganizationCustomer,
+} from "@/server/billing/subscription";
 
 const AUTUMN_EVENTS_LIST_URL = "https://api.useautumn.com/v1/events.list";
 const EVENT_PAGE_LIMIT = 1000;
@@ -47,6 +51,20 @@ export type BillingUsageEvent = {
   value: number;
   properties: Record<string, z.infer<typeof billingUsagePropertySchema>>;
 };
+
+// Whether this organization may use the managed product at all. Both the
+// legacy free plan (grandfathered users) and the paid base plan grant the
+// feature; new customers get no default product and must subscribe.
+export const getManagedAccessStatus = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .handler(async ({ context }) => {
+    if (!(await isHostedServerAuthMode())) {
+      return { hasManagedAccess: true };
+    }
+
+    const customer = await getOrCreateOrganizationCustomer(context);
+    return { hasManagedAccess: await customerHasManagedAccess(customer.id) };
+  });
 
 export const getBillingUsageEvents = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)

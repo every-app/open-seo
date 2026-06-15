@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { AuditService } from "@/server/features/audit/services/AuditService";
+import { customerHasManagedAccess } from "@/server/billing/subscription";
+import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   deleteAuditSchema,
@@ -16,6 +19,15 @@ export const startAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => startAuditSchema.parse(data))
   .handler(async ({ data, context }) => {
+    // The crawler runs on our Workers compute and isn't credit-metered, so
+    // gate it on plan access in hosted mode (grandfathered free plans pass).
+    if (
+      (await isHostedServerAuthMode()) &&
+      !(await customerHasManagedAccess(context.organizationId))
+    ) {
+      throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
+    }
+
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
       billingCustomer: context,

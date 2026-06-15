@@ -182,7 +182,7 @@ function BillingPageContent() {
           <div className="text-sm">
             <span className="font-medium">Plan</span>{" "}
             <span className="text-base-content/50">
-              {isFreePlan ? "Free Trial" : "Base Plan"}
+              {isFreePlan ? "Free Plan" : "Base Plan"}
             </span>
           </div>
 

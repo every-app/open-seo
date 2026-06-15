@@ -27,7 +27,7 @@ export const getRankTrackerTool = {
   config: {
     title: "Get rank tracker",
     description:
-      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + latest snapshot per keyword. Without it, lists all trackers in the project. Free — reads from OpenSEO state, charges no credits. To trigger a new check, use the dashboard.",
+      "Read-only access to rank tracker configs and their latest results. With `trackerId`, returns config + latest snapshot per keyword. Without it, lists all trackers in the project. Uses no credits — reads from OpenSEO state, no DataForSEO call. To trigger a new check, use the dashboard.",
     inputSchema,
     outputSchema: z
       .object({
