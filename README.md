@@ -4,15 +4,18 @@
 
 OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
 
-Easy to self-host, fork and extend, but we have a managed version too:
+## Why use OpenSEO?
 
-[openseo.so](https://openseo.so)
+- Best in class MCP and AI Skills.
+- Modern, simple UI.
+  - Focused workflows instead of a bloated, complex SEO suite.
+- No subscriptions.
+  - Bring your own DataForSEO API key and pay only for what you use.
+- Fork and vibe code your own custom tool.
 
 <img width="1385" height="794" alt="Image" src="https://github.com/user-attachments/assets/fd208249-44ea-4849-bb4b-5fc896aeab73" />
 
 ## Table of Contents
-
-- [Why use OpenSEO?](#why-use-this)
 - [Main SEO Workflows](#main-seo-workflows)
 - [OpenSEO MCP](#openseo-mcp)
 - [OpenSEO Agent Skills](#openseo-agent-skills)
@@ -28,14 +31,10 @@ Easy to self-host, fork and extend, but we have a managed version too:
 - [Contributing](#contributing)
 - [SEO API Cost Reference](#seo-api-cost-reference)
 
-## Why use OpenSEO?
+## Hosted Version
+If you not interested in self hosting, or just want to support the project, we also have a hosted version:
 
-- Best in class MCP and AI Skills.
-- Modern, simple UI.
-  - Focused workflows instead of a bloated, complex SEO suite.
-- No subscriptions.
-  - Bring your own DataForSEO API key and pay only for what you use.
-- Fork and vibe code your own custom tool.
+[openseo.so](https://openseo.so)
 
 ## Main SEO Workflows
 
