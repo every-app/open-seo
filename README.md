@@ -16,6 +16,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 <img width="1385" height="794" alt="Image" src="https://github.com/user-attachments/assets/fd208249-44ea-4849-bb4b-5fc896aeab73" />
 
 ## Table of Contents
+
 - [Main SEO Workflows](#main-seo-workflows)
 - [OpenSEO MCP](#openseo-mcp)
 - [OpenSEO Agent Skills](#openseo-agent-skills)
@@ -32,6 +33,7 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 - [SEO API Cost Reference](#seo-api-cost-reference)
 
 ## Hosted Version
+
 If you not interested in self hosting, or just want to support the project, we also have a hosted version:
 
 [openseo.so](https://openseo.so)

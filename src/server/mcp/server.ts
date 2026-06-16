@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
@@ -22,91 +23,172 @@ import {
 } from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
+// Each handler is wrapped with instrumentMcpToolHandler so failures reach
+// PostHog — the MCP route has no error middleware of its own. Tools are
+// registered one explicit call at a time (not via a loop/helper) so each one's
+// input/output schema types stay concrete, which the SDK's registerTool
+// generics require to type the handler callback.
 export function registerOpenSeoMcpTools(server: McpServer) {
-  server.registerTool(whoamiTool.name, whoamiTool.config, whoamiTool.handler);
+  server.registerTool(
+    whoamiTool.name,
+    whoamiTool.config,
+    instrumentMcpToolHandler(
+      whoamiTool.name,
+      whoamiTool.config.outputSchema,
+      whoamiTool.handler,
+    ),
+  );
   server.registerTool(
     listProjectsTool.name,
     listProjectsTool.config,
-    listProjectsTool.handler,
+    instrumentMcpToolHandler(
+      listProjectsTool.name,
+      listProjectsTool.config.outputSchema,
+      listProjectsTool.handler,
+    ),
   );
   server.registerTool(
     listSavedKeywordsTool.name,
     listSavedKeywordsTool.config,
-    listSavedKeywordsTool.handler,
+    instrumentMcpToolHandler(
+      listSavedKeywordsTool.name,
+      listSavedKeywordsTool.config.outputSchema,
+      listSavedKeywordsTool.handler,
+    ),
   );
   server.registerTool(
     researchKeywordsTool.name,
     researchKeywordsTool.config,
-    researchKeywordsTool.handler,
+    instrumentMcpToolHandler(
+      researchKeywordsTool.name,
+      researchKeywordsTool.config.outputSchema,
+      researchKeywordsTool.handler,
+    ),
   );
   server.registerTool(
     saveKeywordsTool.name,
     saveKeywordsTool.config,
-    saveKeywordsTool.handler,
+    instrumentMcpToolHandler(
+      saveKeywordsTool.name,
+      saveKeywordsTool.config.outputSchema,
+      saveKeywordsTool.handler,
+    ),
   );
   server.registerTool(
     getDomainOverviewTool.name,
     getDomainOverviewTool.config,
-    getDomainOverviewTool.handler,
+    instrumentMcpToolHandler(
+      getDomainOverviewTool.name,
+      getDomainOverviewTool.config.outputSchema,
+      getDomainOverviewTool.handler,
+    ),
   );
   server.registerTool(
     getDomainKeywordSuggestionsTool.name,
     getDomainKeywordSuggestionsTool.config,
-    getDomainKeywordSuggestionsTool.handler,
+    instrumentMcpToolHandler(
+      getDomainKeywordSuggestionsTool.name,
+      getDomainKeywordSuggestionsTool.config.outputSchema,
+      getDomainKeywordSuggestionsTool.handler,
+    ),
   );
   server.registerTool(
     getBacklinksOverviewTool.name,
     getBacklinksOverviewTool.config,
-    getBacklinksOverviewTool.handler,
+    instrumentMcpToolHandler(
+      getBacklinksOverviewTool.name,
+      getBacklinksOverviewTool.config.outputSchema,
+      getBacklinksOverviewTool.handler,
+    ),
   );
   server.registerTool(
     getSerpResultsTool.name,
     getSerpResultsTool.config,
-    getSerpResultsTool.handler,
+    instrumentMcpToolHandler(
+      getSerpResultsTool.name,
+      getSerpResultsTool.config.outputSchema,
+      getSerpResultsTool.handler,
+    ),
   );
   server.registerTool(
     getRankTrackerTool.name,
     getRankTrackerTool.config,
-    getRankTrackerTool.handler,
+    instrumentMcpToolHandler(
+      getRankTrackerTool.name,
+      getRankTrackerTool.config.outputSchema,
+      getRankTrackerTool.handler,
+    ),
   );
   server.registerTool(
     getRankedKeywordsTool.name,
     getRankedKeywordsTool.config,
-    getRankedKeywordsTool.handler,
+    instrumentMcpToolHandler(
+      getRankedKeywordsTool.name,
+      getRankedKeywordsTool.config.outputSchema,
+      getRankedKeywordsTool.handler,
+    ),
   );
   server.registerTool(
     findSerpCompetitorsTool.name,
     findSerpCompetitorsTool.config,
-    findSerpCompetitorsTool.handler,
+    instrumentMcpToolHandler(
+      findSerpCompetitorsTool.name,
+      findSerpCompetitorsTool.config.outputSchema,
+      findSerpCompetitorsTool.handler,
+    ),
   );
   server.registerTool(
     searchLocalBusinessesTool.name,
     searchLocalBusinessesTool.config,
-    searchLocalBusinessesTool.handler,
+    instrumentMcpToolHandler(
+      searchLocalBusinessesTool.name,
+      searchLocalBusinessesTool.config.outputSchema,
+      searchLocalBusinessesTool.handler,
+    ),
   );
   server.registerTool(
     getLocalSerpResultsTool.name,
     getLocalSerpResultsTool.config,
-    getLocalSerpResultsTool.handler,
+    instrumentMcpToolHandler(
+      getLocalSerpResultsTool.name,
+      getLocalSerpResultsTool.config.outputSchema,
+      getLocalSerpResultsTool.handler,
+    ),
   );
   server.registerTool(
     getGoogleBusinessQuestionsTool.name,
     getGoogleBusinessQuestionsTool.config,
-    getGoogleBusinessQuestionsTool.handler,
+    instrumentMcpToolHandler(
+      getGoogleBusinessQuestionsTool.name,
+      getGoogleBusinessQuestionsTool.config.outputSchema,
+      getGoogleBusinessQuestionsTool.handler,
+    ),
   );
   server.registerTool(
     getKeywordMetricsTool.name,
     getKeywordMetricsTool.config,
-    getKeywordMetricsTool.handler,
+    instrumentMcpToolHandler(
+      getKeywordMetricsTool.name,
+      getKeywordMetricsTool.config.outputSchema,
+      getKeywordMetricsTool.handler,
+    ),
   );
   server.registerTool(
     getSearchConsolePerformanceTool.name,
     getSearchConsolePerformanceTool.config,
-    getSearchConsolePerformanceTool.handler,
+    instrumentMcpToolHandler(
+      getSearchConsolePerformanceTool.name,
+      getSearchConsolePerformanceTool.config.outputSchema,
+      getSearchConsolePerformanceTool.handler,
+    ),
   );
   server.registerTool(
     inspectUrlsTool.name,
     inspectUrlsTool.config,
-    inspectUrlsTool.handler,
+    instrumentMcpToolHandler(
+      inspectUrlsTool.name,
+      inspectUrlsTool.config.outputSchema,
+      inspectUrlsTool.handler,
+    ),
   );
 }
