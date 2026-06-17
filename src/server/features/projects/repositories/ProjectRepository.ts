@@ -30,13 +30,18 @@ async function getProjectForOrganization(
   projectId: string,
   organizationId: string,
 ) {
-  return db.query.projects.findFirst({
-    where: and(
-      eq(projects.id, projectId),
-      eq(projects.organizationId, organizationId),
-      isNull(projects.archivedAt),
-    ),
-  });
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .limit(1);
+  return project ?? null;
 }
 
 async function createProject(
