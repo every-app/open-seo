@@ -15,7 +15,7 @@ import {
 
 // Returns the onboarding project (id + domain). Uses the org's default project;
 // onboarding targets a single project in v1.
-export const getOnboardingStrategyState = createServerFn({ method: "GET" })
+export const getOnboardingChatState = createServerFn({ method: "GET" })
   .middleware(requireAuthenticatedContext)
   .handler(async ({ context }) => {
     const [project] = await ProjectService.listProjectsEnsuringOne(
@@ -36,7 +36,7 @@ const saveSiteSchema = z.object({
   locationCode: z.number().int(),
 });
 
-// Persists the site + default location for the project before generation.
+// Persists the site + default location for the onboarding project.
 export const saveOnboardingSite = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .inputValidator((data: unknown) => saveSiteSchema.parse(data))
@@ -53,19 +53,12 @@ export const saveOnboardingSite = createServerFn({ method: "POST" })
       throw new AppError("VALIDATION_ERROR", "Unsupported location");
     }
     const newDomain = normalizeDomainInput(data.domain, false);
-    const domainChanged = newDomain !== project.domain;
     await db
       .update(projects)
       .set({
         domain: newDomain,
         locationCode: data.locationCode,
         languageCode: getLanguageCode(data.locationCode),
-        // A new domain is a different site, so reset the one-free-run claim
-        // guard; otherwise a 'complete' status blocks the free seed for the
-        // corrected domain. Same-domain edits keep the guard intact.
-        ...(domainChanged
-          ? { onboardingRunStatus: null, onboardingRunAt: null }
-          : {}),
       })
       .where(
         and(

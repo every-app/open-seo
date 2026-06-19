@@ -176,6 +176,13 @@
       "when": 1781809245835,
       "tag": "0024_clumsy_barracuda",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "6",
+      "when": 1781892941214,
+      "tag": "0025_loving_mojo",
+      "breakpoints": true
     }
   ]
 }

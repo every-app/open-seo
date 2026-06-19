@@ -26,6 +26,23 @@
       "class_name": "RankCheckWorkflow",
     },
   ],
+  // Durable Object backing the onboarding strategy chat (Agents SDK
+  // AIChatAgent). One instance per project; messages persist in the DO's
+  // SQLite. SQLite-backed classes must be declared in `migrations` below.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "ONBOARDING_CHAT",
+        "class_name": "OnboardingChatAgent",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["OnboardingChatAgent"],
+    },
+  ],
   "triggers": {
     "crons": ["*/15 * * * *"],
   },

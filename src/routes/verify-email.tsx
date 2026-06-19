@@ -115,15 +115,17 @@ function VerifyEmailPage() {
   const email = search.email ?? session?.user?.email;
   const isVerified = !!session?.user?.emailVerified;
   const [isResending, setIsResending] = useState(false);
-  // A hosted user who still needs to verify (session resolved, not verified)
-  // must see the resend / "check your inbox" state — never a sign-in CTA, which
-  // the verification gate would immediately block (the email-verify trap).
+  // A hosted user who still needs to verify must see the resend / "check your
+  // inbox" state — never a sign-in CTA, which the verification gate would
+  // immediately block (the email-verify trap). Keying off `email` (which the
+  // sign-up flow always passes) covers the just-signed-up case even while the
+  // session is still resolving, so we never flash the sign-in fallback.
   const isWaiting =
     isHostedMode &&
     !errorMessage &&
     !bypassEmailVerification &&
-    !isPending &&
-    !isVerified;
+    !isVerified &&
+    (Boolean(email) || !isPending);
   const pageCopy = getVerifyEmailPageCopy({
     isHostedMode,
     errorMessage,

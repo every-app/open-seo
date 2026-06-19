@@ -59,6 +59,7 @@
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.201",
+    "@cloudflare/ai-chat": "^0.8.4",
     "@cloudflare/workers-oauth-provider": "^0.4.0",
     "@every-app/sdk": "^0.1.14",
     "@modelcontextprotocol/sdk": "1.29.0",
@@ -70,7 +71,7 @@
     "@tanstack/react-router-devtools": "^1.166.11",
     "@tanstack/react-start": "^1.167.16",
     "@tanstack/react-table": "^8.21.3",
-    "agents": "0.12.3",
+    "agents": "0.15.0",
     "ai": "^6.0.199",
     "autumn-js": "^1.1.7",
     "better-auth": "^1.5.5",

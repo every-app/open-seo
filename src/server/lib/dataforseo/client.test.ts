@@ -33,9 +33,16 @@ vi.mock("@/server/billing/autumn", () => ({
   },
 }));
 
-vi.mock("@/server/billing/subscription", () => ({
-  getOrCreateOrganizationCustomer: getOrCreateMock,
-}));
+// Keep the real subscription module (its assertUsageCreditsAvailable calls the
+// mocked autumn.check) and only stub the customer lookup, so the balance-assert
+// logic stays exercised through these tests after it moved out of client.ts.
+vi.mock("@/server/billing/subscription", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    getOrCreateOrganizationCustomer: getOrCreateMock,
+  };
+});
 
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: isHostedServerAuthModeMock,

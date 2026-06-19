@@ -5,14 +5,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import {
-  ArrowUp,
-  Check,
-  Globe,
-  Loader2,
-  ShieldCheck,
-  Sparkles,
-} from "lucide-react";
+import { ArrowUp, Check, Globe, Loader2, Sparkles } from "lucide-react";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
@@ -80,10 +73,24 @@ export function WelcomeMessage({
         <div className="space-y-3 text-base-content/80">
           <p>Hey, I’m Sam — welcome to OpenSEO.</p>
           <p>
-            You’re on the free preview: {FREE_ONBOARDING_QUESTION_LIMIT}{" "}
-            questions with me before you upgrade. I can draft an SEO strategy
-            for <span className="font-medium text-base-content">{domain}</span>{" "}
-            and answer questions about OpenSEO or SEO.
+            To get full access to OpenSEO, you need to upgrade to the paid plan.
+            But, I’m here if you have any questions.
+          </p>
+          <p>
+            You can also{" "}
+            <a
+              href={DISCORD_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="link link-primary"
+            >
+              join the Discord
+            </a>{" "}
+            or email{" "}
+            <a href="mailto:ben@openseo.so" className="link link-primary">
+              ben@openseo.so
+            </a>{" "}
+            if you have any questions I can’t help you with.
           </p>
           <p>
             Want me to analyze{" "}
@@ -203,10 +210,6 @@ export function UpgradeSidebar({
           >
             {isStartingCheckout ? "Redirecting..." : "Upgrade to continue"}
           </button>
-          <p className="flex items-center justify-center gap-1.5 text-center text-xs text-base-content/45">
-            <ShieldCheck className="size-3.5" />
-            Open source — self-host for free anytime
-          </p>
           <p className="text-center text-xs leading-relaxed text-base-content/55">
             Want advice from other OpenSEO users?{" "}
             <a

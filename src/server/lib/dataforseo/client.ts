@@ -1,16 +1,12 @@
 import {
-  AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-  AUTUMN_SEO_DATA_CREDITS_PER_USD,
-  AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-  SEO_DATA_COST_MARKUP,
-  roundUsdForBilling,
-} from "@/shared/billing";
-import {
   type CreditFeature,
   mapDataforseoPathToCreditFeature,
 } from "@/shared/billing-credit-features";
-import { autumn } from "@/server/billing/autumn";
-import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
+import {
+  assertUsageCreditsAvailable,
+  getOrCreateOrganizationCustomer,
+  trackUsageCreditSpend,
+} from "@/server/billing/subscription";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import {
   fetchBusinessListingsSearch,
@@ -56,8 +52,6 @@ import {
   type DataforseoApiCallCost,
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
-import { AppError } from "@/server/lib/errors";
-import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 export { mapDataforseoPathToCreditFeature };
@@ -69,26 +63,19 @@ export { mapDataforseoPathToCreditFeature };
  *
  * `defaultFeature` is the fallback credit feature; a caller can override it per
  * call by passing `creditFeature` in the input (e.g. an MCP tool attributing
- * spend to its own feature). The extra fields are ignored by the fetchers, which
+ * spend to its own feature). The extra field is ignored by the fetchers, which
  * read named fields rather than spreading the input.
- *
- * `skipBalanceAssert` (in the input) lets a caller spend without first gating on
- * the org's remaining balance — used by the free onboarding seed so a
- * zero-balance new signup still gets its strategy. Cost is still tracked.
  */
 function meter<I, T>(
   customer: BillingCustomerContext,
   fetcher: (input: I) => Promise<DataforseoApiResponse<T>>,
   defaultFeature?: CreditFeature,
-): (
-  input: I & { creditFeature?: CreditFeature; skipBalanceAssert?: boolean },
-) => Promise<T> {
+): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
   return (input) =>
     meterDataforseoCall(
       customer,
       () => fetcher(input),
       input.creditFeature ?? defaultFeature,
-      input.skipBalanceAssert ?? false,
     );
 }
 
@@ -155,7 +142,6 @@ async function meterDataforseoCall<T>(
   customer: BillingCustomerContext,
   execute: () => Promise<DataforseoApiResponse<T>>,
   creditFeature?: CreditFeature,
-  skipBalanceAssert = false,
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
@@ -166,11 +152,9 @@ async function meterDataforseoCall<T>(
 
   const billingCustomer = await getOrCreateOrganizationCustomer(customer);
 
-  // The onboarding seed skips the balance gate so a zero-balance new signup
-  // still gets a strategy; spend is tracked against monthly balance below.
-  const { monthlyRemaining } = skipBalanceAssert
-    ? { monthlyRemaining: 0 }
-    : await assertSeoDataBalanceAvailable(billingCustomer.id);
+  const { monthlyRemaining } = await assertUsageCreditsAvailable(
+    billingCustomer.id,
+  );
 
   let result: DataforseoApiResponse<T>;
   try {
@@ -199,28 +183,6 @@ async function meterDataforseoCall<T>(
   return result.data;
 }
 
-async function assertSeoDataBalanceAvailable(customerId: string) {
-  const [monthlyCheck, topupCheck] = await Promise.all([
-    autumn.check({
-      customerId,
-      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-    }),
-    autumn.check({
-      customerId,
-      featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-    }),
-  ]);
-
-  const monthlyRemaining = monthlyCheck.balance?.remaining ?? 0;
-  const topupRemaining = topupCheck.balance?.remaining ?? 0;
-
-  if (monthlyRemaining + topupRemaining <= 0) {
-    throw new AppError("INSUFFICIENT_CREDITS");
-  }
-
-  return { monthlyRemaining };
-}
-
 async function trackDataforseoCost(args: {
   customer: BillingCustomerContext;
   customerId: string;
@@ -228,66 +190,17 @@ async function trackDataforseoCost(args: {
   monthlyRemaining: number;
   creditFeature?: CreditFeature;
 }) {
-  const totalCostUsd = roundUsdForBilling(
-    args.billing.costUsd * SEO_DATA_COST_MARKUP,
-  );
-  const totalCostCredits = Math.ceil(
-    totalCostUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD,
-  );
-
-  const monthlyDeduct = Math.min(args.monthlyRemaining, totalCostCredits);
-  const topupDeduct = totalCostCredits - monthlyDeduct;
-
-  const creditFeature =
-    args.creditFeature ?? mapDataforseoPathToCreditFeature(args.billing.path);
-
-  const properties = {
-    provider: "dataforseo",
-    currency: "USD",
-    paths: [args.billing.path.join("/")],
-    creditFeature,
-    totalCostUsd,
-    totalCostCredits,
-    fromCache: false,
-  };
-
-  if (monthlyDeduct > 0) {
-    await autumn.track({
-      customerId: args.customerId,
-      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-      value: monthlyDeduct,
-      properties: {
-        ...properties,
-        balanceFeatureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-      },
-    });
-  }
-
-  if (topupDeduct > 0) {
-    await autumn.track({
-      customerId: args.customerId,
-      featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-      value: topupDeduct,
-      properties: {
-        ...properties,
-        balanceFeatureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-      },
-    });
-  }
-
-  if (totalCostCredits > 0) {
-    await captureServerEvent({
-      distinctId: args.customer.userId,
-      event: "usage:credits_consume",
-      organizationId: args.customer.organizationId,
-      properties: {
-        project_id: args.customer.projectId,
-        credit_feature: creditFeature,
-        monthly_credits: monthlyDeduct,
-        topup_credits: topupDeduct,
-        total_credits: totalCostCredits,
-        cost_usd: totalCostUsd,
-      },
-    });
-  }
+  await trackUsageCreditSpend({
+    customer: args.customer,
+    customerId: args.customerId,
+    creditFeature:
+      args.creditFeature ?? mapDataforseoPathToCreditFeature(args.billing.path),
+    costUsd: args.billing.costUsd,
+    monthlyRemaining: args.monthlyRemaining,
+    properties: {
+      provider: "dataforseo",
+      paths: [args.billing.path.join("/")],
+      fromCache: false,
+    },
+  });
 }

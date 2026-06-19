@@ -1,5 +1,6 @@
-import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, type UIMessage } from "ai";
+import { useAgent } from "agents/react";
+import { useAgentChat } from "@cloudflare/ai-chat/react";
+import { type UIMessage } from "ai";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
@@ -13,12 +14,39 @@ import {
   SuggestedQuestions,
   UpgradeSidebar,
   WelcomeMessage,
-} from "./OnboardingStrategyChatParts";
+} from "./OnboardingChatParts";
 
 function messageHasText(message: UIMessage): boolean {
   return message.parts.some(
     (part) => part.type === "text" && part.text.trim().length > 0,
   );
+}
+
+// While Sam is running a tool, surface what it's doing so the wait reads as
+// progress, not a hang — gathering site data takes a few seconds before any
+// text streams back.
+function activeToolLabel(
+  message: UIMessage | undefined,
+  domain: string,
+): string | null {
+  if (!message || message.role !== "assistant") return null;
+  for (const part of message.parts) {
+    if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
+      continue;
+    }
+    // Tool parts carry a `state`; skip ones that have already finished so the
+    // label only shows while a tool is actually in flight.
+    if (
+      "state" in part &&
+      (part.state === "output-available" || part.state === "output-error")
+    ) {
+      continue;
+    }
+    if (part.type === "tool-read_website") return `Reading ${domain}…`;
+    if (part.type === "tool-get_seo_metrics") return "Checking your rankings…";
+    return "Researching your site…";
+  }
+  return null;
 }
 
 function ChatBubble({ message }: { message: UIMessage }) {
@@ -67,19 +95,19 @@ const SUGGESTED_QUESTIONS = [
 // their strategy via the welcome CTA. Clicking it prompts Sam to draft/show it.
 const STRATEGY_SUGGESTION = "What do you recommend for my site?";
 
-export function StrategyChat({
+export function OnboardingChatConversation({
   projectId,
   domain,
 }: {
   projectId: string;
   domain: string;
 }) {
-  const { messages, sendMessage, status, error } = useChat({
-    transport: new DefaultChatTransport({
-      api: "/api/onboarding/chat",
-      body: { projectId },
-    }),
-  });
+  // The conversation lives in a Durable Object (Agents SDK), keyed by projectId,
+  // so history persists across reloads. The WebSocket connection is authorized
+  // in the Worker (src/server.ts) before it reaches the DO; billing gates come
+  // back as normal assistant messages rather than HTTP errors.
+  const agent = useAgent({ agent: "onboarding-chat", name: projectId });
+  const { messages, sendMessage, status } = useAgentChat({ agent });
 
   // This chat is only ever the pre-upgrade free preview: once a user upgrades
   // they are routed into the GSC onboarding step and never return here, so
@@ -132,7 +160,6 @@ export function StrategyChat({
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, status]);
 
-  // Show a typing indicator until the assistant's reply starts streaming text.
   const lastMessage = messages[messages.length - 1];
   const suggestionPool = strategyRequested
     ? SUGGESTED_QUESTIONS
@@ -140,7 +167,13 @@ export function StrategyChat({
   const remainingSuggestions = suggestionPool.filter(
     (question) => !usedSuggestions.includes(question),
   );
-  const showTyping = isBusy && (!lastMessage || !messageHasText(lastMessage));
+  // Show the typing indicator from the moment the user sends until the
+  // assistant's reply has visible text — covers the "submitted" wait, when the
+  // last message is still the user's own (so it can't gate on assistant text).
+  const showTyping =
+    isBusy &&
+    (lastMessage?.role !== "assistant" || !messageHasText(lastMessage));
+  const toolLabel = activeToolLabel(lastMessage, domain);
   const showSuggestions =
     remainingSuggestions.length > 0 &&
     !isBusy &&
@@ -185,10 +218,15 @@ export function StrategyChat({
                 <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Sparkles className="size-4" />
                 </div>
-                <div className="flex items-center gap-1.5 pt-2 text-base-content/40">
-                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-                  <span className="size-1.5 animate-bounce rounded-full bg-current" />
+                <div className="flex items-center gap-2 pt-2 text-base-content/40">
+                  {toolLabel ? (
+                    <span className="text-sm">{toolLabel}</span>
+                  ) : null}
+                  <span className="flex items-center gap-1.5">
+                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                    <span className="size-1.5 animate-bounce rounded-full bg-current" />
+                  </span>
                 </div>
               </div>
             ) : null}
@@ -199,11 +237,10 @@ export function StrategyChat({
                   <Sparkles className="size-4" />
                 </div>
                 <p className="pt-1 text-sm text-error">
-                  {/* useChat surfaces the failed response body as error.message;
-                      the server's 402 backstop sends the paywall copy below. */}
-                  {(error?.message ?? "").includes("free strategy questions")
-                    ? "You've reached the free question limit. Upgrade to continue."
-                    : "Something went wrong. Please refresh and try again."}
+                  {/* Billing gates (free-question cap / out-of-credits) come
+                      back as normal assistant messages now, so this only covers
+                      genuine failures. */}
+                  Something went wrong. Please refresh and try again.
                 </p>
               </div>
             ) : null}

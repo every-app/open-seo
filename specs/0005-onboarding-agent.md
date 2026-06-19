@@ -4,10 +4,13 @@
 
 Proposed (June 2026) — v1 product spec, pending technical design.
 
-> **Update (June 2026):** the first PR ships the chat + live strategy generation
-> only. Persisting the strategy (the "Project Context" store, R2 versioning) and
-> the `get_project_context` MCP tool described below are **deferred to a later
-> PR** — the generated strategy is shown in the chat but not yet saved.
+> **Update (June 2026):** what shipped is a chat where Sam analyzes the site
+> on demand (via `read_website` + `get_seo_metrics` tools) and writes the
+> strategy in-stream, rather than the staged synthesize → persist pipeline
+> described below. Persisting the strategy (the "Project Context" store + R2
+> versioning) and the `get_project_context` MCP tool are **deferred to a later
+> PR** — the strategy is shown in the chat but not yet saved. Sections below
+> describe the original plan.
 
 ## Goal
 

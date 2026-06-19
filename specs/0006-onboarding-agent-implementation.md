@@ -7,13 +7,16 @@ Accepted (June 2026) — technical plan for `specs/0005-onboarding-agent.md`.
 Supersedes an earlier draft that proposed Cloudflare Project Think + Durable
 Objects + a Workflow. We dropped all of that (see "Why not Think / Workflows").
 
-> **Update (June 2026):** to keep the first PR small, strategy **persistence**
-> (the `project_context_versions` store + R2 markdown versioning) and the
-> `get_project_context` **MCP tool** were deferred to a later PR. `seed.ts` now
-> returns the synthesized strategy to the chat without saving it; the
-> `claimRun` spend guard still bounds the paid run. Sections below describing
-> the store, versioning, and the MCP read tool reflect the original plan, not
-> what shipped.
+> **Update (June 2026):** the shipped implementation diverged from the plan
+> below. The deterministic seed + synthesis pipeline — and its `claimRun`
+> run-status guard and `skipBalanceAssert` bypass — was replaced by an on-demand
+> chat: Sam calls two tools (`read_website`, `get_seo_metrics`) and writes the
+> strategy itself in-stream (see `src/routes/api/onboarding/chat.ts`). Strategy
+> **persistence** (the `project_context_versions` store + R2 versioning) and the
+> `get_project_context` **MCP tool** are deferred to a later PR. Onboarding
+> spend — DataForSEO **and** LLM tokens — draws down the org's onboarding-plan
+> trial credits via the normal balance gate. The sections below describe the
+> original plan, not what shipped.
 
 ## TL;DR
 

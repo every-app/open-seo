@@ -19,6 +19,12 @@ vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: vi.fn(),
 }));
 
+// subscription.ts now imports posthog (for trackUsageCreditSpend); stub it so
+// the test doesn't pull in the cloudflare:workers runtime it depends on.
+vi.mock("@/server/lib/posthog", () => ({
+  captureServerEvent: vi.fn(),
+}));
+
 import {
   customerHasPaidPlan,
   getOrCreateOrganizationCustomer,

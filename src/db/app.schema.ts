@@ -54,10 +54,6 @@ export const projects = sqliteTable(
     // onboarding and reused by every project-scoped data call.
     locationCode: integer("location_code").notNull().default(2840),
     languageCode: text("language_code").notNull().default("en"),
-    // Onboarding strategy generation run state. Null = never run; the atomic
-    // transition null -> 'running' is the at-most-once guard for the (free) run.
-    onboardingRunStatus: text("onboarding_run_status"),
-    onboardingRunAt: text("onboarding_run_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

@@ -7,6 +7,8 @@ export const AUTUMN_PAID_PLAN_FEATURE_ID = "paid_plan";
 // Granted by both the legacy free plan (grandfathered users) and the paid
 // base plan. New customers get no default product, so this is the paywall.
 export const AUTUMN_MANAGED_ACCESS_FEATURE_ID = "managed_service_access";
+// The shared usage-credit pool. Both DataForSEO and onboarding-LLM spend deduct
+// from these (monthly usage_credits first, then rolled-over topup_credits).
 export const AUTUMN_SEO_DATA_BALANCE_FEATURE_ID = "usage_credits";
 export const AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID = "topup_credits";
 export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;

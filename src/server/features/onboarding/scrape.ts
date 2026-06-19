@@ -12,7 +12,7 @@ const FETCH_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 2_000_000;
 const USER_AGENT = "OpenSEO-Onboarding/1.0 (+https://openseo.so)";
 
-export type ScrapedPage = {
+type ScrapedPage = {
   url: string;
   title: string | null;
   text: string;

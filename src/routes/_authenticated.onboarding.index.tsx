@@ -1,8 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { Settings, User } from "lucide-react";
 import { useState } from "react";
-import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
+import { OnboardingAccountMenu } from "@/client/features/onboarding/OnboardingAccountMenu";
 import { PostSignupOnboarding } from "@/client/features/onboarding/PostSignupOnboarding";
 import {
   buildOnboardingPayload,
@@ -14,7 +13,7 @@ import {
 import { managedAccessQueryOptions } from "@/client/features/billing/managed-access";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
-import { signOutAndRedirect, useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
@@ -111,7 +110,10 @@ function OnboardingFlow({
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
   const advanceFromCurrentStep = () => {
-    if (step === 2) {
+    // The strategy chat is a hosted-only, pre-paywall surface (it needs the
+    // managed LLM + trial credits). Self-hosted skips it and continues straight
+    // to the GSC/MCP steps.
+    if (step === 2 && isHostedMode) {
       void navigate({ to: "/onboarding/chat", replace: true });
       return;
     }
@@ -189,48 +191,5 @@ function OnboardingFlow({
       isSaving={saveMutation.isPending}
       accountMenu={<OnboardingAccountMenu email={email} />}
     />
-  );
-}
-
-function OnboardingAccountMenu({ email }: { email: string | undefined }) {
-  if (!email) return null;
-
-  const handleSignOut = () => signOutAndRedirect();
-
-  return (
-    <div className="fixed top-4 right-4">
-      <div className="dropdown dropdown-end">
-        <button
-          type="button"
-          tabIndex={0}
-          className="btn btn-ghost btn-circle"
-          aria-label="Open account menu"
-        >
-          <User className="h-5 w-5" />
-        </button>
-        <ul
-          tabIndex={0}
-          className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-        >
-          <li className="menu-title max-w-full">
-            <span className="truncate text-base-content" data-ph-mask>
-              {email}
-            </span>
-          </li>
-          <li>
-            <a href="/settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </a>
-          </li>
-          <ThemePreferenceMenuItems />
-          <li>
-            <button type="button" onClick={handleSignOut}>
-              Sign out
-            </button>
-          </li>
-        </ul>
-      </div>
-    </div>
   );
 }

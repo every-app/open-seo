@@ -44,6 +44,19 @@ async function getProjectForOrganization(
   return project ?? null;
 }
 
+// Look up a project by id alone (no org scoping). Only for trusted server
+// contexts that have already authorized access another way — e.g. the
+// onboarding chat Durable Object, whose connections are authorized in the
+// Worker before they reach the DO, and which derives its org from the project.
+async function getProjectById(projectId: string) {
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(and(eq(projects.id, projectId), isNull(projects.archivedAt)))
+    .limit(1);
+  return project ?? null;
+}
+
 async function createProject(
   organizationId: string,
   name: string,
@@ -146,6 +159,7 @@ export const ProjectRepository = {
   listArchivedProjects,
   countProjects,
   getProjectForOrganization,
+  getProjectById,
   createProject,
   updateProject,
   tryCreateDefaultProject,
