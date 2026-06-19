@@ -3,7 +3,7 @@ import { env } from "cloudflare:workers";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import { resolveCloudflareAccessContext } from "@/middleware/ensure-user/cloudflareAccess";
 import { resolveLocalNoAuthContext } from "@/middleware/ensure-user/delegated";
-import { AppError } from "@/server/lib/errors";
+import { responseForAppError } from "@/server/lib/http-errors";
 import { handleSelfHostedGscOAuthCallback } from "@/server/features/gsc/selfHostedOAuth";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 
@@ -15,22 +15,6 @@ async function resolveSelfHostedContext(request: Request) {
   return authMode === "local_noauth"
     ? resolveLocalNoAuthContext()
     : resolveCloudflareAccessContext(request.headers);
-}
-
-function responseForError(error: unknown) {
-  if (error instanceof AppError) {
-    const status =
-      error.code === "UNAUTHENTICATED"
-        ? 401
-        : error.code === "FORBIDDEN"
-          ? 403
-          : error.code === "VALIDATION_ERROR"
-            ? 400
-            : 500;
-    return new Response(error.message, { status });
-  }
-
-  return new Response("Search Console OAuth failed", { status: 500 });
 }
 
 async function handleCallbackRequest(request: Request) {
@@ -47,7 +31,7 @@ async function handleCallbackRequest(request: Request) {
       publicOrigin: getPublicOrigin(request),
     });
   } catch (error) {
-    return responseForError(error);
+    return responseForAppError(error, "Search Console OAuth failed");
   }
 }
 

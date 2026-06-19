@@ -169,6 +169,13 @@
       "when": 1781467831570,
       "tag": "0023_sad_cobalt_man",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "6",
+      "when": 1781809245835,
+      "tag": "0024_clumsy_barracuda",
+      "breakpoints": true
     }
   ]
 }

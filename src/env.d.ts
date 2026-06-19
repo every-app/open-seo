@@ -24,6 +24,11 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+
+    // OpenRouter API key for onboarding strategy synthesis + chat.
+    OPENROUTER_API_KEY?: string;
+    // Optional OpenRouter model slug override (defaults in openrouter.ts).
+    OPENROUTER_MODEL?: string;
   }
 }
 
@@ -38,4 +43,9 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+}
+
+declare module "*.md?raw" {
+  const content: string;
+  export default content;
 }

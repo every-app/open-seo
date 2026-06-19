@@ -69,19 +69,26 @@ export { mapDataforseoPathToCreditFeature };
  *
  * `defaultFeature` is the fallback credit feature; a caller can override it per
  * call by passing `creditFeature` in the input (e.g. an MCP tool attributing
- * spend to its own feature). The extra field is ignored by the fetchers, which
+ * spend to its own feature). The extra fields are ignored by the fetchers, which
  * read named fields rather than spreading the input.
+ *
+ * `skipBalanceAssert` (in the input) lets a caller spend without first gating on
+ * the org's remaining balance — used by the free onboarding seed so a
+ * zero-balance new signup still gets its strategy. Cost is still tracked.
  */
 function meter<I, T>(
   customer: BillingCustomerContext,
   fetcher: (input: I) => Promise<DataforseoApiResponse<T>>,
   defaultFeature?: CreditFeature,
-): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
+): (
+  input: I & { creditFeature?: CreditFeature; skipBalanceAssert?: boolean },
+) => Promise<T> {
   return (input) =>
     meterDataforseoCall(
       customer,
       () => fetcher(input),
       input.creditFeature ?? defaultFeature,
+      input.skipBalanceAssert ?? false,
     );
 }
 
@@ -148,6 +155,7 @@ async function meterDataforseoCall<T>(
   customer: BillingCustomerContext,
   execute: () => Promise<DataforseoApiResponse<T>>,
   creditFeature?: CreditFeature,
+  skipBalanceAssert = false,
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
@@ -158,9 +166,11 @@ async function meterDataforseoCall<T>(
 
   const billingCustomer = await getOrCreateOrganizationCustomer(customer);
 
-  const { monthlyRemaining } = await assertSeoDataBalanceAvailable(
-    billingCustomer.id,
-  );
+  // The onboarding seed skips the balance gate so a zero-balance new signup
+  // still gets a strategy; spend is tracked against monthly balance below.
+  const { monthlyRemaining } = skipBalanceAssert
+    ? { monthlyRemaining: 0 }
+    : await assertSeoDataBalanceAvailable(billingCustomer.id);
 
   let result: DataforseoApiResponse<T>;
   try {

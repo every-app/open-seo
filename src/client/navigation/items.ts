@@ -120,15 +120,6 @@ export function getProjectNavGroups(projectId: string) {
   ];
 }
 
-// Per-project configuration (name, domain, Search Console, delete) lives on the
-// project settings page rather than the workflow nav, hence the projectId param.
-export function projectSettingsLinkOptions(projectId: string) {
-  return linkOptions({
-    to: "/p/$projectId/settings" as const,
-    params: { projectId },
-  });
-}
-
 export const dataforseoHelpLinkOptions = linkOptions({
   to: "/help/dataforseo-api-key",
 });

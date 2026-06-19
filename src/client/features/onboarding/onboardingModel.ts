@@ -14,8 +14,8 @@ export const INTEREST_OPTIONS = [
 ] as const;
 
 export const WORK_FOR_OPTIONS = [
-  "My clients",
   "My own startup or business",
+  "My clients",
   "My employer's website",
   "My own side project",
   "I'm exploring before choosing a project",

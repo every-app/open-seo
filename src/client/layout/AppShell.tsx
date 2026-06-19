@@ -5,7 +5,6 @@ import {
   ChevronDown,
   CircleHelp,
   CreditCard,
-  FolderCog,
   Menu,
   Settings,
   User,
@@ -16,10 +15,7 @@ import {
   SeoApiStatusBanners,
 } from "@/client/layout/AppShellParts";
 import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
-import {
-  getProjectNavGroups,
-  projectSettingsLinkOptions,
-} from "@/client/navigation/items";
+import { getProjectNavGroups } from "@/client/navigation/items";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -302,22 +298,16 @@ function TopNav({
         <div className="flex items-center rounded-full border border-base-300 bg-base-100/70 px-1 py-1 shadow-sm">
           <ProjectSwitcher activeProjectId={projectId} variant="topbar" />
 
-          <AccountMenu projectId={projectId} />
+          <AccountMenu />
         </div>
       </div>
 
-      <AccountMenu mobileOnly projectId={projectId} />
+      <AccountMenu mobileOnly />
     </div>
   );
 }
 
-function AccountMenu({
-  mobileOnly = false,
-  projectId,
-}: {
-  mobileOnly?: boolean;
-  projectId?: string | null;
-}) {
+function AccountMenu({ mobileOnly = false }: { mobileOnly?: boolean }) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
   const email = session?.user?.email;
@@ -359,17 +349,6 @@ function AccountMenu({
               <Link to={BILLING_ROUTE} className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Billing
-              </Link>
-            </li>
-          ) : null}
-          {projectId ? (
-            <li>
-              <Link
-                {...projectSettingsLinkOptions(projectId)}
-                className="flex items-center gap-2"
-              >
-                <FolderCog className="h-4 w-4" />
-                Project settings
               </Link>
             </li>
           ) : null}

@@ -1,0 +1,28 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { readSite } from "@/server/features/onboarding/scrape";
+
+describe("readSite SSRF guard", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("blocks a metadata/private host without fetching it", async () => {
+    const result = await readSite("169.254.169.254");
+
+    expect(result.blocked).toBe(true);
+    expect(result.pages).toEqual([]);
+    // The blocked host must be rejected before any outbound page fetch.
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("blocks localhost-style targets", async () => {
+    const result = await readSite("localhost:3000");
+
+    expect(result.blocked).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});

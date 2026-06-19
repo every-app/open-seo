@@ -65,6 +65,8 @@ export async function resolveDelegatedContext(
   return {
     userId,
     userEmail: ensuredEmail,
+    // Delegated auth (Cloudflare Access / local) has no unverified state.
+    emailVerified: true,
     organizationId,
   };
 }

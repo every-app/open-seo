@@ -21,16 +21,10 @@ import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const ONBOARDING_EXISTING_USER_CUTOFF = "2026-05-27T00:00:00.000Z";
 
-// First step that requires a subscription. The earlier steps (interests, who
-// you work for, how you found us) collect profiling answers we want even from
-// users who bounce at the paywall, so the gate sits here — after them, before
-// Search Console + MCP setup.
-const SUBSCRIBE_GATE_STEP = 3;
-
 const clampStep = (step: number) =>
   Math.min(Math.max(0, Math.trunc(step)), ONBOARDING_LAST_STEP);
 
-export const Route = createFileRoute("/_authenticated/onboarding")({
+export const Route = createFileRoute("/_authenticated/onboarding/")({
   // Step lives in the URL so it survives refresh and works with back/forward.
   validateSearch: (search: Record<string, unknown>): { step: number } => {
     const raw = Number(search.step);
@@ -90,9 +84,8 @@ function OnboardingFlow({
   const { step } = Route.useSearch();
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
-  // Self-hosted has no paywall; hosted users must subscribe before the gated
-  // steps. Answers from earlier steps are already saved, so a user who pays
-  // returns to the gated step with everything intact.
+  // Self-hosted has no paywall. Hosted users now get a short strategy chat
+  // before the subscribe gate, so this only feeds later paid onboarding steps.
   const isHostedMode = isHostedClientAuthMode();
   const accessQuery = useQuery({
     ...managedAccessQueryOptions(),
@@ -117,14 +110,17 @@ function OnboardingFlow({
   const goToStep = (next: number) =>
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
-  // Advance to the next step, but divert to the paywall when crossing into the
-  // first gated step. The just-saved answers let the user resume here on return.
   const advanceFromCurrentStep = () => {
+    if (step === 2) {
+      void navigate({ to: "/onboarding/chat", replace: true });
+      return;
+    }
+
     const next = clampStep(step + 1);
-    if (next >= SUBSCRIBE_GATE_STEP && needsSubscription) {
+    if (step >= 3 && needsSubscription) {
       void navigate({
         to: SUBSCRIBE_ROUTE,
-        search: { redirect: `/onboarding?step=${SUBSCRIBE_GATE_STEP}` },
+        search: { redirect: `/onboarding?step=${next}` },
         replace: true,
       });
       return;
@@ -187,6 +183,9 @@ function OnboardingFlow({
       onBack={() => goToStep(step - 1)}
       onSkip={handleSkip}
       onFinish={handleFinish}
+      onUpgradeAcknowledged={() =>
+        void navigate({ to: "/onboarding", search: { step }, replace: true })
+      }
       isSaving={saveMutation.isPending}
       accountMenu={<OnboardingAccountMenu email={email} />}
     />

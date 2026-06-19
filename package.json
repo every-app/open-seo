@@ -58,9 +58,11 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/react": "^3.0.201",
     "@cloudflare/workers-oauth-provider": "^0.4.0",
     "@every-app/sdk": "^0.1.14",
     "@modelcontextprotocol/sdk": "1.29.0",
+    "@openrouter/ai-sdk-provider": "^2.9.0",
     "@tanstack/query-core": "^5.90.9",
     "@tanstack/react-form": "^1.25.0",
     "@tanstack/react-query": "^5.90.9",
@@ -69,6 +71,7 @@
     "@tanstack/react-start": "^1.167.16",
     "@tanstack/react-table": "^8.21.3",
     "agents": "0.12.3",
+    "ai": "^6.0.199",
     "autumn-js": "^1.1.7",
     "better-auth": "^1.5.5",
     "cheerio": "^1.2.0",
