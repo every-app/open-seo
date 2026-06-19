@@ -47,16 +47,14 @@ function getVerificationErrorMessage(error: string | undefined) {
 function getVerifyEmailPageCopy({
   isHostedMode,
   errorMessage,
-  isWaiting,
   isPending,
-  isVerified,
+  isRedirecting,
   email,
 }: {
   isHostedMode: boolean;
   errorMessage: string | null;
-  isWaiting: boolean;
   isPending: boolean;
-  isVerified: boolean;
+  isRedirecting: boolean;
   email: string | undefined;
 }) {
   if (!isHostedMode) {
@@ -73,12 +71,10 @@ function getVerifyEmailPageCopy({
     };
   }
 
-  if (isWaiting) {
+  if (isRedirecting) {
     return {
-      title: "Verify your email",
-      helperText: email
-        ? `Click the link we sent to ${email} to verify your email.`
-        : "Check your inbox for the link to verify your email.",
+      title: "Email confirmed",
+      helperText: "You're all set. Taking you to your account now.",
     };
   }
 
@@ -89,16 +85,15 @@ function getVerifyEmailPageCopy({
     };
   }
 
-  if (isVerified) {
-    return {
-      title: "Email confirmed",
-      helperText: "You're all set. Taking you to your account now.",
-    };
-  }
-
+  // Default: the user just signed up (or reloaded this page) and still needs to
+  // click the verification link. There is never a sign-in CTA here — an
+  // unverified hosted user would be bounced straight back by the verification
+  // gate.
   return {
-    title: "Sign in to continue",
-    helperText: "Sign in to continue to your account.",
+    title: "Verify your email",
+    helperText: email
+      ? `Click the link we sent to ${email} to verify your email.`
+      : "Check your inbox for the link to verify your email.",
   };
 }
 
@@ -115,23 +110,15 @@ function VerifyEmailPage() {
   const email = search.email ?? session?.user?.email;
   const isVerified = !!session?.user?.emailVerified;
   const [isResending, setIsResending] = useState(false);
-  // A hosted user who still needs to verify must see the resend / "check your
-  // inbox" state — never a sign-in CTA, which the verification gate would
-  // immediately block (the email-verify trap). Keying off `email` (which the
-  // sign-up flow always passes) covers the just-signed-up case even while the
-  // session is still resolving, so we never flash the sign-in fallback.
-  const isWaiting =
-    isHostedMode &&
-    !errorMessage &&
-    !bypassEmailVerification &&
-    !isVerified &&
-    (Boolean(email) || !isPending);
+  // Verified (or bypass) users are sent on to the app by the effect below; until
+  // that lands we show the redirecting state instead of the resend prompt.
+  const isRedirecting =
+    isVerified || (bypassEmailVerification && Boolean(session?.user?.id));
   const pageCopy = getVerifyEmailPageCopy({
     isHostedMode,
     errorMessage,
-    isWaiting,
     isPending,
-    isVerified,
+    isRedirecting,
     email,
   });
 
@@ -229,32 +216,20 @@ function VerifyEmailPage() {
               Back to sign in
             </Link>
           </div>
-        ) : isWaiting ? (
-          email ? (
-            <div className="space-y-4">
-              <button
-                type="button"
-                className="btn btn-soft w-full"
-                onClick={() => void handleResend()}
-                disabled={isResending}
-              >
-                {isResending ? "Sending email..." : "Resend email"}
-              </button>
-            </div>
-          ) : null
-        ) : isPending || isVerified ? (
+        ) : isPending || isRedirecting ? (
           <div className="flex justify-center py-4">
             <span className="loading loading-spinner loading-md" />
           </div>
-        ) : (
-          <Link
-            to="/sign-in"
-            search={getSignInSearch(redirectTo)}
+        ) : email ? (
+          <button
+            type="button"
             className="btn btn-soft w-full"
+            onClick={() => void handleResend()}
+            disabled={isResending}
           >
-            Sign in to continue
-          </Link>
-        )}
+            {isResending ? "Sending email..." : "Resend email"}
+          </button>
+        ) : null}
       </AuthPageCard>
     </AuthPageShell>
   );
