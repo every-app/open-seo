@@ -15,6 +15,7 @@ import { AppError } from "@/server/lib/errors";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { readSite } from "@/server/features/onboarding/scrape";
 import { DomainService } from "@/server/features/domain/services/DomainService";
+import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { getOnboardingModel } from "@/server/lib/openrouter";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
@@ -45,9 +46,16 @@ function buildSystemPrompt(domain: string | null): string {
     "For OpenSEO product questions, use the OpenSEO Fact Sheet below as your source of truth. Do not invent product facts, feature details, pricing, limits, integrations, or support claims. If the fact sheet does not support the answer, say you are not sure and suggest contacting ben@openseo.so.",
     "When users want advice from people in the community, a second opinion, or help beyond this onboarding chat, mention the OpenSEO Discord from the fact sheet.",
     "When the user asks how OpenSEO helps them get traffic or rank higher, lead with the fact sheet's SEO strategy framing: positioning, topical authority, focused early topics, then expansion into broader searches. Do not answer as only a feature list.",
-    "OpenSEO is limited until the user upgrades to the paid plan. Be direct about that, but do not hard-sell.",
-    "You have tools to research the user's own site: read_website reads their pages as text, and get_seo_metrics returns their estimated organic traffic, ranking-keyword count, and the keywords they already rank for. Use them whenever the user asks you to analyze their site, recommend an SEO strategy, or for any site-specific advice. read_website is always available; get_seo_metrics may report it's unavailable for brand-new sites or unsupported markets — if so, work from the site content and say rankings aren't available yet. Never invent metrics you weren't given by a tool.",
-    "When the user asks for a strategy, recommendations, or an analysis of their site, first gather data with the tools, then write a concise, practical, honest strategy specific to THIS site (never generic) in Markdown with these sections: '## Positioning' (one paragraph on what the site does and how it should position itself in search); '## Themes' (3-5 content/topic themes worth owning, each a bullet with a one-line rationale); '## Target keywords' (a short Markdown table of starter keywords with columns Keyword | Why it fits — prefer and mark keywords they already rank for; if the site is brand new with no rankings, say so plainly and propose keywords from the content); '## Do this next' (a numbered list of 3-5 concrete next actions). Keep the whole strategy under ~400 words.",
+    "This chat is the free onboarding preview: the user hasn't upgraded yet. Here you can answer questions and analyze their site with your tools, but they can't act inside OpenSEO yet — connecting Google Search Console, rank tracking, content tools, and the full research workflows all unlock on the paid plan. In ANY reply, you may describe what OpenSEO will do for them after they upgrade, but never tell them to do those things now and never hand them a to-do list of off-platform SEO work. Be direct that these unlock on the paid plan, but do not hard-sell.",
+    "You have three tools to analyze THIS user's own site. Use them whenever the user asks you to analyze their site, recommend a strategy, or for any site-specific advice. Never state a metric, search volume, or keyword difficulty you did not get from a tool.",
+    "- read_website: reads their pages as plain text. Always available.",
+    "- get_seo_metrics: their estimated organic traffic, ranking-keyword count, and the keywords they already rank for (each with real search volume and difficulty). May report it's unavailable for brand-new sites or unsupported markets.",
+    "- research_keywords: given one seed topic from their site, returns related keywords each with real monthly search volume and difficulty (KD). Use it to ground keyword suggestions in real data — especially when get_seo_metrics shows no rankings. Seed it with the site's primary topic; call it again only for a clearly distinct second theme.",
+    "When the user asks for a strategy, recommendations, or an analysis of their site, first gather data with the tools, then write a concise, honest strategy specific to THIS site (never generic) in Markdown with exactly these sections, under ~350 words total:",
+    "'## Positioning' — one paragraph on what the site does and how it should position itself in search.",
+    "'## Themes' — 3-5 content/topic themes worth owning, each a bullet with a one-line rationale.",
+    "'## Target keywords' — a short Markdown table with columns Keyword | Volume | KD | Why it fits. Every keyword, and its Volume and KD, must come from get_seo_metrics or research_keywords — never invent, estimate, or leave these numbers blank. Mark keywords they already rank for. If you genuinely could not get keyword data for their market, say so in one line instead of showing a table with made-up numbers.",
+    "Close with a single short sentence offering to go deeper on any theme or keyword — not a 'next steps' or homework list.",
     domain
       ? `The user's website is ${domain}.`
       : "If you need the user's website before answering, ask for it briefly.",
@@ -96,7 +104,14 @@ export class OnboardingChatAgent extends AIChatAgent {
     const billingCustomer = {
       // The org is the Autumn customer; userId is only an analytics distinctId.
       userId: organizationId,
-      userEmail: "",
+      // The DO only knows the org/project, not the user, so it has no real email
+      // to attach. The org's Autumn customer is already created with the real
+      // email by the Worker's authorize step before any message reaches here, so
+      // this placeholder is only ever seen by a get-on-existing (never persisted)
+      // — Autumn rejects an empty string. Mirrors the scheduled rank-check job's
+      // user-less metering, but onboarding-specific so it's identifiable in
+      // Autumn logs.
+      userEmail: "system-onboarding@openseo.so",
       organizationId,
       projectId: project.id,
     };
@@ -218,59 +233,135 @@ export class OnboardingChatAgent extends AIChatAgent {
               };
             }
 
-            // Fetch the overview and ranked keywords in parallel so the tool
-            // doesn't block on the two DataForSEO calls in series. Trade-off:
-            // this always issues the (metered) ranked-keywords call, even for
-            // sites with no rankings where the sequential version skipped it.
-            const [overview, ranked] = await Promise.all([
-              DomainService.getOverview(
+            try {
+              // Fetch the overview and ranked keywords in parallel so the tool
+              // doesn't block on the two DataForSEO calls in series. Trade-off:
+              // this always issues the (metered) ranked-keywords call, even for
+              // sites with no rankings where the sequential version skipped it.
+              const [overview, ranked] = await Promise.all([
+                DomainService.getOverview(
+                  {
+                    projectId: project.id,
+                    domain: project.domain,
+                    includeSubdomains: false,
+                    locationCode: project.locationCode,
+                    languageCode: project.languageCode,
+                  },
+                  billingCustomer,
+                  metering,
+                ),
+                DomainService.getSuggestedKeywords(
+                  {
+                    domain: project.domain,
+                    locationCode: project.locationCode,
+                    languageCode: project.languageCode,
+                    organizationId,
+                    projectId: project.id,
+                  },
+                  billingCustomer,
+                  metering,
+                ),
+              ]);
+
+              const rankedKeywords = overview.hasData
+                ? ranked.slice(0, 20).map((kw) => ({
+                    keyword: kw.keyword,
+                    position: kw.position,
+                    searchVolume: kw.searchVolume,
+                    keywordDifficulty: kw.keywordDifficulty,
+                  }))
+                : [];
+
+              return {
+                available: true,
+                market: LOCATIONS[project.locationCode] ?? "your market",
+                hasRankings: overview.hasData,
+                organicTraffic: overview.organicTraffic,
+                organicKeywords: overview.organicKeywords,
+                rankedKeywords,
+              };
+            } catch (error) {
+              console.error("[onboarding] get_seo_metrics failed", {
+                domain: project.domain,
+                locationCode: project.locationCode,
+                languageCode: project.languageCode,
+                error,
+              });
+              throw error;
+            }
+          },
+        }),
+        research_keywords: tool({
+          description:
+            "Research real keyword ideas for the user's site. Given one seed topic drawn from their content, returns related keywords each with monthly search volume, keyword difficulty (KD), and intent. Use to ground keyword suggestions in real data, especially when the site has no rankings yet.",
+          inputSchema: z.object({
+            seed: z
+              .string()
+              .min(1)
+              .describe(
+                "A short seed topic or phrase from the site's content (e.g. 'agentless PAM').",
+              ),
+          }),
+          execute: async ({ seed }) => {
+            if (!project.domain) {
+              throw new AppError(
+                "VALIDATION_ERROR",
+                "Set a website domain first",
+              );
+            }
+            try {
+              const researchResult = await KeywordResearchService.research(
                 {
                   projectId: project.id,
-                  domain: project.domain,
-                  includeSubdomains: false,
+                  keywords: [seed],
                   locationCode: project.locationCode,
                   languageCode: project.languageCode,
+                  resultLimit: 150,
+                  // One source (keyword_ideas) keeps onboarding spend to a single
+                  // DataForSEO call; research() routes unsupported markets to the
+                  // Google Ads fallback automatically.
+                  mode: "ideas",
+                  clickstream: false,
                 },
                 billingCustomer,
-                metering,
-              ),
-              DomainService.getSuggestedKeywords(
-                {
-                  domain: project.domain,
-                  locationCode: project.locationCode,
-                  languageCode: project.languageCode,
-                  organizationId,
-                  projectId: project.id,
-                },
-                billingCustomer,
-                metering,
-              ),
-            ]);
+                "onboarding",
+              );
 
-            const rankedKeywords = overview.hasData
-              ? ranked.slice(0, 20).map((kw) => ({
-                  keyword: kw.keyword,
-                  position: kw.position,
-                  searchVolume: kw.searchVolume,
-                  keywordDifficulty: kw.keywordDifficulty,
-                }))
-              : [];
+              const keywords = researchResult.rows
+                // Keep only keywords with a real volume — the strategy table
+                // shows volume + KD, so a null-volume row can't be grounded.
+                .filter((row) => row.searchVolume != null)
+                .toSorted(
+                  (a, b) => (b.searchVolume ?? 0) - (a.searchVolume ?? 0),
+                )
+                .map((row) => ({
+                  keyword: row.keyword,
+                  searchVolume: row.searchVolume,
+                  keywordDifficulty: row.keywordDifficulty,
+                  intent: row.intent,
+                }));
 
-            return {
-              available: true,
-              market: LOCATIONS[project.locationCode] ?? "your market",
-              hasRankings: overview.hasData,
-              organicTraffic: overview.organicTraffic,
-              organicKeywords: overview.organicKeywords,
-              rankedKeywords,
-            };
+              return { available: keywords.length > 0, keywords };
+            } catch (error) {
+              console.error("[onboarding] research_keywords failed", {
+                domain: project.domain,
+                seed,
+                locationCode: project.locationCode,
+                languageCode: project.languageCode,
+                error,
+              });
+              throw error;
+            }
           },
         }),
       } as ToolSet,
     });
 
     return result.toUIMessageStreamResponse({
-      onError: () => "The assistant hit an error. Please try again.",
+      onError: (error) => {
+        console.error("[onboarding] chat stream error", error);
+        return "The assistant hit an error. Please try again.";
+      },
     });
   }
 }

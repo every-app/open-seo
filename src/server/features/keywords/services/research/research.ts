@@ -1,5 +1,6 @@
 import { AppError } from "@/server/lib/errors";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import type { CreditFeature } from "@/shared/billing-credit-features";
 import {
   CACHE_TTL,
   buildCacheKey,
@@ -95,6 +96,7 @@ async function fetchRowsFromSource(
   input: ResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<EnrichedKeyword[]> {
   return fetchResearchRowsBySource(
     {
@@ -104,6 +106,7 @@ async function fetchRowsFromSource(
       languageCode: input.languageCode,
       resultLimit: input.resultLimit,
       includeClickstreamData: input.clickstream,
+      creditFeature,
     },
     billingCustomer,
   );
@@ -113,6 +116,7 @@ async function fetchAutoRows(
   input: ResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<ResearchResult> {
   const attempts: SourceAttempt[] = [];
   let lastSource: KeywordSource = "related";
@@ -125,6 +129,7 @@ async function fetchAutoRows(
       input,
       seedKeyword,
       billingCustomer,
+      creditFeature,
     );
     for (const row of rows) {
       if (accumulatedRows.length >= input.resultLimit) break;
@@ -173,6 +178,7 @@ async function fetchGoogleAdsRows(
   input: ResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<ResearchResult> {
   const rows = await fetchGoogleAdsResearchRows(
     {
@@ -180,6 +186,7 @@ async function fetchGoogleAdsRows(
       locationCode: input.locationCode,
       languageCode: input.languageCode,
       resultLimit: input.resultLimit,
+      creditFeature,
     },
     billingCustomer,
   );
@@ -207,12 +214,14 @@ async function fetchManualRows(
   input: ResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<ResearchResult> {
   const rows = await fetchRowsFromSource(
     mode,
     input,
     seedKeyword,
     billingCustomer,
+    creditFeature,
   );
   const attempt: SourceAttempt = {
     source: mode,
@@ -276,6 +285,7 @@ function persistRows(input: ResearchKeywordsInput, rows: EnrichedKeyword[]) {
 export async function research(
   input: ResearchKeywordsInput,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<ResearchResult> {
   const uniqueKeywords = [
     ...new Set(input.keywords.map(normalizeKeyword)),
@@ -314,14 +324,25 @@ export async function research(
 
   const result =
     provider === "google_ads"
-      ? await fetchGoogleAdsRows(effectiveInput, seedKeyword, billingCustomer)
+      ? await fetchGoogleAdsRows(
+          effectiveInput,
+          seedKeyword,
+          billingCustomer,
+          creditFeature,
+        )
       : mode === "auto"
-        ? await fetchAutoRows(effectiveInput, seedKeyword, billingCustomer)
+        ? await fetchAutoRows(
+            effectiveInput,
+            seedKeyword,
+            billingCustomer,
+            creditFeature,
+          )
         : await fetchManualRows(
             mode,
             effectiveInput,
             seedKeyword,
             billingCustomer,
+            creditFeature,
           );
 
   await setCached(cacheKey, result, CACHE_TTL.researchResult);

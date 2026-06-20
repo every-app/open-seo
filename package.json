@@ -7,6 +7,7 @@
   "packageManager": "pnpm@10.30.1",
   "scripts": {
     "dev": "vite dev",
+    "dev:clear-chat": "rm -rf .wrangler/state/v3/do/open-seo-OnboardingChatAgent",
     "dev:agents": "mkdir -p .logs && portless run vite dev 2>&1 | tee .logs/dev-server.log",
     "dev:agents:force": "mkdir -p .logs && portless --force run vite dev 2>&1 | tee .logs/dev-server.log",
     "build": "vite build && tsc --noEmit",
@@ -99,8 +100,8 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.13.18",
-    "@cloudflare/workers-types": "^4.20251014.0",
+    "@cloudflare/vite-plugin": "^1.40.2",
+    "@cloudflare/workers-types": "^4.20260611.1",
     "@libsql/client": "^0.15.15",
     "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.1.11",
@@ -122,6 +123,6 @@
     "vite": "^7.1.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
-    "wrangler": "^4.45.3"
+    "wrangler": "^4.100.0"
   }
 }

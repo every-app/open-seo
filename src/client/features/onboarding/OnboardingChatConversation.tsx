@@ -3,7 +3,7 @@ import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { type UIMessage } from "ai";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Loader2, Check, AlertTriangle } from "lucide-react";
 import { Markdown } from "@/client/components/Markdown";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
@@ -16,37 +16,57 @@ import {
   WelcomeMessage,
 } from "./OnboardingChatParts";
 
-function messageHasText(message: UIMessage): boolean {
+// Whether an assistant message already shows something — visible text or a tool
+// badge. Used to decide when the standalone typing indicator is still needed: a
+// running tool badge already reads as progress, so the dots would double up.
+function messageHasVisibleContent(message: UIMessage): boolean {
   return message.parts.some(
-    (part) => part.type === "text" && part.text.trim().length > 0,
+    (part) =>
+      (part.type === "text" && part.text.trim().length > 0) ||
+      part.type.startsWith("tool-"),
   );
 }
 
-// While Sam is running a tool, surface what it's doing so the wait reads as
-// progress, not a hang — gathering site data takes a few seconds before any
-// text streams back.
-function activeToolLabel(
-  message: UIMessage | undefined,
-  domain: string,
-): string | null {
-  if (!message || message.role !== "assistant") return null;
-  for (const part of message.parts) {
-    if (typeof part.type !== "string" || !part.type.startsWith("tool-")) {
-      continue;
-    }
-    // Tool parts carry a `state`; skip ones that have already finished so the
-    // label only shows while a tool is actually in flight.
-    if (
-      "state" in part &&
-      (part.state === "output-available" || part.state === "output-error")
-    ) {
-      continue;
-    }
-    if (part.type === "tool-read_website") return `Reading ${domain}…`;
-    if (part.type === "tool-get_seo_metrics") return "Checking your rankings…";
-    return "Researching your site…";
-  }
-  return null;
+// Friendly labels for each tool Sam can run, so the chat shows what it's doing
+// rather than going silent while it gathers site data. `running` shows while the
+// call is in flight; `done` stays as a persistent badge once it finishes.
+const TOOL_LABELS: Record<string, { running: string; done: string }> = {
+  "tool-read_website": { running: "Reading site", done: "Read site" },
+  "tool-get_seo_metrics": {
+    running: "Getting SEO metrics",
+    done: "SEO metrics",
+  },
+  "tool-research_keywords": {
+    running: "Researching keywords",
+    done: "Keyword research",
+  },
+};
+
+// A small inline badge for one tool call, rendered in document order inside the
+// assistant bubble so the sequence of work stays visible after it completes.
+function ToolBadge({ part }: { part: UIMessage["parts"][number] }) {
+  const labels = TOOL_LABELS[part.type];
+  if (!labels) return null;
+  const state = "state" in part ? part.state : undefined;
+  const isError = state === "output-error";
+  const isDone = state === "output-available";
+  const isRunning = !isError && !isDone;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
+        isError ? "bg-error/10 text-error" : "bg-base-200 text-base-content/70"
+      }`}
+    >
+      {isRunning ? (
+        <Loader2 className="size-3 animate-spin" />
+      ) : isError ? (
+        <AlertTriangle className="size-3" />
+      ) : (
+        <Check className="size-3" />
+      )}
+      <span>{isRunning ? `${labels.running}…` : labels.done}</span>
+    </span>
+  );
 }
 
 function ChatBubble({ message }: { message: UIMessage }) {
@@ -74,11 +94,17 @@ function ChatBubble({ message }: { message: UIMessage }) {
         <Sparkles className="size-4" />
       </div>
       <div className="min-w-0 flex-1 space-y-2 pt-0.5 text-sm">
-        {message.parts.map((part, index) =>
-          part.type === "text" && part.text.trim() ? (
-            <Markdown key={index}>{part.text}</Markdown>
-          ) : null,
-        )}
+        {message.parts.map((part, index) => {
+          if (part.type === "text") {
+            return part.text.trim() ? (
+              <Markdown key={index}>{part.text}</Markdown>
+            ) : null;
+          }
+          if (part.type.startsWith("tool-")) {
+            return <ToolBadge key={index} part={part} />;
+          }
+          return null;
+        })}
       </div>
     </div>
   );
@@ -168,12 +194,14 @@ export function OnboardingChatConversation({
     (question) => !usedSuggestions.includes(question),
   );
   // Show the typing indicator from the moment the user sends until the
-  // assistant's reply has visible text — covers the "submitted" wait, when the
-  // last message is still the user's own (so it can't gate on assistant text).
+  // assistant's reply shows something — covers the "submitted" wait (last
+  // message is still the user's own) and the gap before any text or tool badge
+  // renders. Once a tool badge is in flight, it carries the progress, so the
+  // dots would just double up.
   const showTyping =
     isBusy &&
-    (lastMessage?.role !== "assistant" || !messageHasText(lastMessage));
-  const toolLabel = activeToolLabel(lastMessage, domain);
+    (lastMessage?.role !== "assistant" ||
+      !messageHasVisibleContent(lastMessage));
   const showSuggestions =
     remainingSuggestions.length > 0 &&
     !isBusy &&
@@ -219,9 +247,6 @@ export function OnboardingChatConversation({
                   <Sparkles className="size-4" />
                 </div>
                 <div className="flex items-center gap-2 pt-2 text-base-content/40">
-                  {toolLabel ? (
-                    <span className="text-sm">{toolLabel}</span>
-                  ) : null}
                   <span className="flex items-center gap-1.5">
                     <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
                     <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />

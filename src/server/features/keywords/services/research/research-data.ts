@@ -3,6 +3,7 @@ import {
   type LabsKeywordDataItem,
 } from "@/server/lib/dataforseo";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import type { CreditFeature } from "@/shared/billing-credit-features";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import {
   normalizeIntent,
@@ -18,6 +19,9 @@ type FetchResearchRowsParams = {
   resultLimit: number;
   source: KeywordSource;
   includeClickstreamData?: boolean;
+  // Attribute the DataForSEO spend to a specific feature (e.g. "onboarding");
+  // defaults to the path-derived feature when omitted.
+  creditFeature?: CreditFeature;
 };
 
 function mapKeywordDataItems(items: LabsKeywordDataItem[]): EnrichedKeyword[] {
@@ -106,6 +110,7 @@ export async function fetchGoogleAdsResearchRows(
       locationCode: params.locationCode,
       languageCode: params.languageCode,
       limit: params.resultLimit,
+      creditFeature: params.creditFeature,
     }),
   );
 }
@@ -121,6 +126,7 @@ async function fetchRelatedRows(
     limit: params.resultLimit,
     depth: 3,
     includeClickstreamData: params.includeClickstreamData,
+    creditFeature: params.creditFeature,
   });
 
   // Related items wrap the keyword payload one level deeper; unwrap and reuse
@@ -150,6 +156,7 @@ export async function fetchResearchRowsBySource(
         languageCode: params.languageCode,
         limit: params.resultLimit,
         includeClickstreamData: params.includeClickstreamData,
+        creditFeature: params.creditFeature,
       }),
     );
   }
@@ -161,6 +168,7 @@ export async function fetchResearchRowsBySource(
       languageCode: params.languageCode,
       limit: params.resultLimit,
       includeClickstreamData: params.includeClickstreamData,
+      creditFeature: params.creditFeature,
     }),
   );
 }
