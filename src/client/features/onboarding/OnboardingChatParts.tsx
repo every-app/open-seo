@@ -180,11 +180,11 @@ export function UpgradeSidebar({
       <div className="flex flex-1 flex-col gap-5 px-6 py-6">
         <div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-semibold tracking-tight">$10</span>
+            <span className="text-3xl font-semibold tracking-tight">$20</span>
             <span className="text-sm text-base-content/55">/month</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-base-content/55">
-            Includes $10 of usage credits every month, plus a 30-day money-back
+            Includes $20 of usage credits every month, plus a 30-day money-back
             guarantee.
           </p>
         </div>

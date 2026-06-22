@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_marketing/pricing")({
     buildPageSeo({
       title: "Pricing",
       description:
-        "OpenSEO is free to self-host. The managed service is $10/month with a 30-day money-back guarantee.",
+        "OpenSEO is free to self-host. The managed service is $20/month with a 30-day money-back guarantee.",
       path: "/pricing",
       titleSuffix: "OpenSEO",
     }),
@@ -24,7 +24,7 @@ function Pricing() {
         Start small, scale by usage
       </h1>
       <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--color-brand-muted)]">
-        Use the managed app for $10/month, or self-host OpenSEO with your own
+        Use the managed app for $20/month, or self-host OpenSEO with your own
         API keys.
       </p>
 
@@ -39,7 +39,7 @@ function Pricing() {
             <div className="flex items-baseline justify-between gap-4">
               <p className="font-semibold text-neutral-950">Base Plan</p>
               <p className="text-xl font-semibold tabular-nums text-neutral-950">
-                $10/month
+                $20/month
               </p>
             </div>
             <ul className="mt-3 space-y-2">
@@ -47,7 +47,7 @@ function Pricing() {
                 "Keyword research, backlinks, rank tracking, and site audits",
                 "MCP server and agent skills for Claude, Cursor, and ChatGPT",
                 "Search Console integration that never uses credits",
-                "Includes $10.00 of Usage Credits each billing cycle",
+                "Includes $20.00 of Usage Credits each billing cycle",
               ].map((item) => (
                 <li
                   key={item}

@@ -173,7 +173,7 @@ function BillingPageContent() {
               <p className="mt-2 text-xs text-amber-600">
                 You&rsquo;re running low on credits.{" "}
                 {isFreePlan
-                  ? "Upgrade to get $10/month."
+                  ? "Upgrade to get $20/month."
                   : "Buy more credits below."}
               </p>
             ) : null}
@@ -191,13 +191,13 @@ function BillingPageContent() {
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-sm font-medium">Base Plan</span>
                 <span className="text-sm font-medium tabular-nums">
-                  $10/month
+                  $20/month
                 </span>
               </div>
               <ul className="space-y-1.5">
                 {[
                   "Access to all OpenSEO features",
-                  "Includes $10.00 of Usage Credits each month",
+                  "Includes $20.00 of Usage Credits each month",
                 ].map((item) => (
                   <li
                     key={item}

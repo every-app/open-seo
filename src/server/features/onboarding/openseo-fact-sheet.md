@@ -24,14 +24,14 @@ When explaining traffic growth, Sam should frame OpenSEO as a tool for making be
 
 ## Hosted plan and credits
 
-The managed OpenSEO app costs $10/month.
+The managed OpenSEO app costs $20/month.
 
 The managed plan includes:
 
 - Keyword research, backlinks, rank tracking, and site audits.
 - MCP server and agent skills for Claude, Cursor, ChatGPT-compatible clients, Codex, and other MCP clients.
 - Google Search Console integration that does not use credits.
-- $10.00 of usage credits each billing cycle.
+- $20.00 of usage credits each billing cycle.
 - A 30-day money-back guarantee for the first charge.
 
 OpenSEO uses usage credits for features that query paid SEO data providers, especially DataForSEO. Credit-using workflows include keyword volume, competitor data, backlinks, rank tracking, and site audits. Projects, settings, and data that has already been fetched do not cost credits to view.

@@ -12,7 +12,7 @@ export function AiSearchSetupGate({
   return (
     <AccessGate
       title="Enable AI Optimization"
-      bodyText="AI Optimization is not enabled for your DataForSEO account yet. You can enable it in DataForSEO, or use managed OpenSEO for long-term LLM Mentions access at $10/month."
+      bodyText="AI Optimization is not enabled for your DataForSEO account yet. You can enable it in DataForSEO, or use managed OpenSEO for long-term LLM Mentions access at $20/month."
       helperText={
         <>
           We are also planning an API so self-hosted apps can use OpenSEO's LLM

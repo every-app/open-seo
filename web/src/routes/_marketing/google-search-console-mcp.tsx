@@ -75,7 +75,7 @@ function GoogleSearchConsoleMcpPage() {
           </a>
         </div>
         <p className="mt-3 text-xs text-neutral-500">
-          $10/month, 30-day money-back guarantee. Search Console tools never
+          $20/month, 30-day money-back guarantee. Search Console tools never
           use credits.
         </p>
       </header>
