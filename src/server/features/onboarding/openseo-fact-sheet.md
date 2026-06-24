@@ -88,13 +88,13 @@ OpenSEO MCP tools cover workflows such as:
 
 - Keyword research with volume, difficulty, CPC, intent, and trends.
 - Live Google organic SERP inspection.
-- Domain and page ranked keyword research.
+- Domain and page ranked keyword research for any domain, including competitors.
 - SERP competitor comparisons.
 - Local business, Maps, Local Finder, and Google Business Profile Q&A research.
 - Saved keyword listing and saving.
 - Rank tracker config and latest position reads.
-- Domain organic footprint summaries.
-- Backlink and referring-domain overview data.
+- Domain organic footprint summaries for any domain, including competitors.
+- Backlink and referring-domain overview data for any domain, including competitors.
 - Google Search Console performance reads.
 - Google URL inspection reads.
 
@@ -105,7 +105,7 @@ OpenSEO also provides agent skills for workflows such as SEO project setup, SEO 
 OpenSEO's app includes these practical workflows:
 
 - Keyword research: expand seed topics into keyword ideas, compare search volume, difficulty, CPC, intent, and SERP context, then save useful opportunities.
-- Domain overview: understand a domain's organic footprint and ranking keywords.
+- Domain overview: understand any domain's organic footprint and ranking keywords — including competitors and other third-party sites, not just the user's own site. Domains are looked up one at a time and use credits.
 - Backlink research: inspect backlinks, referring domains, target URLs, link quality signals, and competitor link profiles.
 - Rank tracking: track keyword positions over time.
 - Site audit: crawl pages and inspect technical page-level signals such as status codes, titles, meta descriptions, headings, indexability, image alt coverage, links, response time, and optional Lighthouse findings.
@@ -118,6 +118,7 @@ After subscribing, a hosted user can:
 
 - Set up Google Search Console from onboarding or the app.
 - Use the OpenSEO app workflows, including keyword research, domain research, backlinks, rank tracking, and site audits.
+- Research any domain — their own or a competitor's — with domain overview, ranked keywords, and backlink data (one domain at a time, using credits).
 - Connect OpenSEO to an AI client through MCP.
 - Install OpenSEO skills for agent-driven SEO workflows.
 - Use the monthly included credits and buy top-up credits if needed.
