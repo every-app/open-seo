@@ -122,8 +122,12 @@ export function AuthPageCard({
 
 export function AuthPageShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] flex flex-col items-center justify-center p-4 bg-base-200">
-      {children}
+    // `h-[100dvh]` + `overflow-y-auto` makes this a scroll container, and the
+    // auto-margin child centers when it fits but stays fully reachable (top and
+    // bottom) when it's taller than the viewport. Plain `justify-center` clips
+    // the overflow with no way to scroll to it.
+    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto p-4 bg-base-200">
+      <div className="m-auto flex w-full flex-col items-center">{children}</div>
     </div>
   );
 }
