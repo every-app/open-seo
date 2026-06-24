@@ -8,4 +8,5 @@ coverage
 *.log
 Dockerfile
 .env
-.env.local
+.env.*
+!.env.example
