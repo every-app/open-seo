@@ -1,24 +1,18 @@
-<img width="834" height="300" alt="Image" src="https://github.com/user-attachments/assets/a7171d94-26d7-4cdc-be35-29daa1137101" />
-
 # OpenSEO
 
 > Open source alternative to Semrush and Ahrefs
 
 OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
 
-## Why use OpenSEO?
+> All-in-one SEO tool for you and your AI agent.
 
-- Best in class MCP and AI Skills.
-- Modern, simple UI.
-  - Focused workflows instead of a bloated, complex SEO suite.
-- No subscriptions.
-  - Bring your own DataForSEO API key and pay only for what you use.
-- Fork and vibe code your own custom tool.
+Connect with any agent like Claude Code, OpenClaw or Hermes. We have pre-built skills, but you can build your own to tailor OpenSEO to your needs.
 
 <img width="1385" height="794" alt="Image" src="https://github.com/user-attachments/assets/fd208249-44ea-4849-bb4b-5fc896aeab73" />
 
 ## Table of Contents
 
+- [Why use OpenSEO?](#why-use-openseo)
 - [Main SEO Workflows](#main-seo-workflows)
 - [OpenSEO MCP](#openseo-mcp)
 - [OpenSEO Agent Skills](#openseo-agent-skills)
@@ -39,6 +33,15 @@ OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too
 If you not interested in self hosting, or just want to support the project, we also have a hosted version:
 
 [openseo.so](https://openseo.so)
+
+## Why use OpenSEO?
+
+- Best in class MCP and AI Skills.
+- Modern, simple UI.
+  - Focused workflows instead of a bloated, complex SEO suite.
+- No subscriptions.
+  - Bring your own DataForSEO API key and pay only for what you use.
+- Fork and vibe code your own custom tool.
 
 ## Main SEO Workflows
 
