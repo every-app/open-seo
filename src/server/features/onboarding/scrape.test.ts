@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readSite } from "@/server/features/onboarding/scrape";
+import { readPages, readSite } from "@/server/features/onboarding/scrape";
 
 describe("readSite SSRF guard", () => {
   beforeEach(() => {
@@ -23,6 +23,36 @@ describe("readSite SSRF guard", () => {
     const result = await readSite("localhost:3000");
 
     expect(result.blocked).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("readPages SSRF guard", () => {
+  beforeEach(() => {
+    vi.stubGlobal("fetch", vi.fn());
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it("skips private/metadata URLs without fetching them", async () => {
+    const result = await readPages([
+      "http://169.254.169.254/latest/meta-data/",
+      "http://localhost:3000/admin",
+    ]);
+
+    expect(result.blocked).toBe(true);
+    expect(result.pages).toEqual([]);
+    // Every URL is validated before any outbound fetch.
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("returns blocked for an empty URL list without fetching", async () => {
+    const result = await readPages([]);
+
+    expect(result.blocked).toBe(true);
+    expect(result.pages).toEqual([]);
     expect(fetch).not.toHaveBeenCalled();
   });
 });

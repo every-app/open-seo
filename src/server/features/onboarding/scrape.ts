@@ -6,7 +6,7 @@
 
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 
-const MAX_PAGES = 5;
+export const MAX_PAGES = 5;
 const PER_PAGE_CHAR_LIMIT = 4000;
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_RESPONSE_BYTES = 2_000_000;
@@ -19,7 +19,6 @@ type ScrapedPage = {
 };
 
 type SiteReadResult = {
-  rootUrl: string;
   pages: ScrapedPage[];
   /** True when we couldn't read any page (blocked, offline, etc.). */
   blocked: boolean;
@@ -139,37 +138,61 @@ function decodeEntities(value: string): string {
     .replace(/&nbsp;/g, " ");
 }
 
-/** Discovers and reads up to MAX_PAGES pages of a site as plain text. */
+/** Fetches one (already-validated) URL and shapes it as a page, or null if it
+ * couldn't be read or yielded no text. */
+async function scrapePage(url: string): Promise<ScrapedPage | null> {
+  const html = await fetchText(url);
+  if (!html) {
+    return null;
+  }
+  const text = htmlToText(html).slice(0, PER_PAGE_CHAR_LIMIT);
+  if (text.length === 0) {
+    return null;
+  }
+  return { url, title: extractTitle(html), text };
+}
+
+/**
+ * Reads a specific list of page URLs as plain text — used when the user names
+ * exact pages (their own or a competitor's) rather than asking us to discover a
+ * site. Each URL is independently run through the SSRF guard, so a blocked or
+ * unreachable URL is skipped rather than failing the batch.
+ */
+export async function readPages(urls: string[]): Promise<SiteReadResult> {
+  const pages: ScrapedPage[] = [];
+  for (const rawUrl of urls.slice(0, MAX_PAGES)) {
+    let url: string;
+    try {
+      // Re-validates host, blocks private/metadata IPs, does DoH DNS resolution.
+      url = await normalizeAndValidateStartUrl(rawUrl);
+    } catch {
+      continue; // blocked or unparseable URL
+    }
+    const page = await scrapePage(url);
+    if (page) {
+      pages.push(page);
+    }
+  }
+
+  return { pages, blocked: pages.length === 0 };
+}
+
+/**
+ * Discovers a site's representative URLs (homepage + sitemap) and reads them.
+ * Just URL discovery on top of readPages, which does the validated fetching.
+ */
 export async function readSite(domain: string): Promise<SiteReadResult> {
   let rootUrl: string;
   try {
     rootUrl = await normalizeAndValidateStartUrl(domain);
   } catch {
     // Blocked (private/metadata host) or unparseable domain — nothing to read.
-    return { rootUrl: `https://${domain}`, pages: [], blocked: true };
+    return { pages: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
 
   // Prefer the sitemap for representative URLs; always include the homepage.
   const sitemap = await fetchText(`${origin}/sitemap.xml`);
   const discovered = sitemap ? parseSitemapUrls(sitemap, origin) : [];
-  const targets = [
-    rootUrl,
-    ...discovered.filter((url) => url !== rootUrl),
-  ].slice(0, MAX_PAGES);
-
-  const pages: ScrapedPage[] = [];
-  for (const url of targets) {
-    const html = await fetchText(url);
-    if (!html) {
-      continue;
-    }
-    const text = htmlToText(html).slice(0, PER_PAGE_CHAR_LIMIT);
-    if (text.length === 0) {
-      continue;
-    }
-    pages.push({ url, title: extractTitle(html), text });
-  }
-
-  return { rootUrl, pages, blocked: pages.length === 0 };
+  return readPages([rootUrl, ...discovered.filter((url) => url !== rootUrl)]);
 }

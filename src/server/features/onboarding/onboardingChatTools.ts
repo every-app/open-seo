@@ -1,7 +1,11 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
-import { readSite } from "@/server/features/onboarding/scrape";
+import {
+  MAX_PAGES,
+  readPages,
+  readSite,
+} from "@/server/features/onboarding/scrape";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
@@ -75,18 +79,34 @@ function coreSiteTools(ctx: ToolContext): ToolSet {
   return {
     read_website: tool({
       description:
-        "Read the user's own website (their pages, as plain text) to ground site-specific advice and strategy. Uses the project's saved domain.",
-      inputSchema: z.object({}),
-      execute: async () => {
-        if (!project.domain) {
-          throw new AppError("VALIDATION_ERROR", "Set a website domain first");
+        "Read web pages as plain text to ground advice. With no arguments, reads the user's own site (homepage plus a few pages from its sitemap) from the project's saved domain. Pass `urls` to read specific pages the user names instead — particular pages of their site, or a competitor's page to compare. Always available; uses no credits.",
+      inputSchema: z.object({
+        urls: z
+          .array(z.string().url())
+          .max(MAX_PAGES)
+          .optional()
+          .describe(
+            `Specific page URLs to read (max ${MAX_PAGES}). Omit to read the user's own site from its saved domain.`,
+          ),
+      }),
+      execute: async ({ urls }) => {
+        const site =
+          urls && urls.length > 0
+            ? await readPages(urls)
+            : project.domain
+              ? await readSite(project.domain)
+              : null;
+        if (!site) {
+          throw new AppError(
+            "VALIDATION_ERROR",
+            "Provide page URLs to read, or set a website domain first.",
+          );
         }
-        const site = await readSite(project.domain);
         if (site.blocked) {
           return {
             blocked: true,
             pages: [],
-            note: "Could not read the site's pages. Ask the user to describe what they do, and keep the advice high-level.",
+            note: "Could not read the requested page(s). Ask the user to describe what they cover, and keep the advice high-level.",
           };
         }
         return {
