@@ -3,7 +3,13 @@ import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { type UIMessage } from "ai";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Loader2, Check, AlertTriangle } from "lucide-react";
+import {
+  Sparkles,
+  Loader2,
+  Check,
+  AlertTriangle,
+  ChevronRight,
+} from "lucide-react";
 import { Markdown } from "@/client/components/Markdown";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
@@ -23,7 +29,43 @@ function messageHasVisibleContent(message: UIMessage): boolean {
   return message.parts.some(
     (part) =>
       (part.type === "text" && part.text.trim().length > 0) ||
+      (part.type === "reasoning" && part.text.trim().length > 0) ||
       part.type.startsWith("tool-"),
+  );
+}
+
+// Collapsible "thinking" block for the model's reasoning stream. Collapsed by
+// default so the chain-of-thought doesn't bury the answer; while it's still
+// streaming it doubles as the progress indicator ("Thinking…" + spinner).
+function ReasoningBlock({
+  part,
+}: {
+  part: Extract<UIMessage["parts"][number], { type: "reasoning" }>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const isStreaming = part.state === "streaming";
+  return (
+    <div className="text-base-content/60">
+      <button
+        type="button"
+        onClick={() => setExpanded((open) => !open)}
+        className="inline-flex items-center gap-1.5 text-xs hover:text-base-content/80"
+      >
+        {isStreaming ? (
+          <Loader2 className="size-3 animate-spin" />
+        ) : (
+          <ChevronRight
+            className={`size-3 transition-transform ${expanded ? "rotate-90" : ""}`}
+          />
+        )}
+        <span>{isStreaming ? "Thinking…" : "Thought process"}</span>
+      </button>
+      {expanded ? (
+        <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-base-300 pl-3 text-xs text-base-content/50">
+          {part.text}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -39,6 +81,26 @@ const TOOL_LABELS: Record<string, { running: string; done: string }> = {
   "tool-research_keywords": {
     running: "Researching keywords",
     done: "Keyword research",
+  },
+  "tool-get_domain_overview": {
+    running: "Analyzing domain",
+    done: "Domain overview",
+  },
+  "tool-get_serp_results": {
+    running: "Checking search results",
+    done: "Search results",
+  },
+  "tool-find_serp_competitors": {
+    running: "Finding competitors",
+    done: "Competitors",
+  },
+  "tool-get_competitor_keywords": {
+    running: "Analyzing competitor",
+    done: "Competitor keywords",
+  },
+  "tool-get_backlinks_overview": {
+    running: "Checking backlinks",
+    done: "Backlinks overview",
   },
 };
 
@@ -95,6 +157,11 @@ function ChatBubble({ message }: { message: UIMessage }) {
       </div>
       <div className="min-w-0 flex-1 space-y-2 pt-0.5 text-sm">
         {message.parts.map((part, index) => {
+          if (part.type === "reasoning") {
+            return part.text.trim() ? (
+              <ReasoningBlock key={index} part={part} />
+            ) : null;
+          }
           if (part.type === "text") {
             return part.text.trim() ? (
               <Markdown key={index}>{part.text}</Markdown>
@@ -111,15 +178,18 @@ function ChatBubble({ message }: { message: UIMessage }) {
 }
 
 const SUGGESTED_QUESTIONS = [
-  "How does OpenSEO help me get more traffic?",
-  "Why is OpenSEO better than Claude?",
+  "How will OpenSEO help me get more traffic?",
+  "Compare OpenSEO and Claude",
   "What do I get after I upgrade?",
-  "How does Google Search Console work in OpenSEO?",
+  "How does the Google Search Console integration work?",
+  "Right fit for consultants and agencies?",
 ];
 
-// Offered as a highlighted chip only when the user hasn't already asked for
-// their strategy via the welcome CTA. Clicking it prompts Sam to draft/show it.
+// Highlighted (primary) chips shown first, before the general questions.
+// STRATEGY_SUGGESTION drops out once the user has asked for their strategy.
 const STRATEGY_SUGGESTION = "What do you recommend for my site?";
+const COMPETITOR_SUGGESTION = "Compare against my competitors";
+const PRIMARY_SUGGESTIONS = [STRATEGY_SUGGESTION, COMPETITOR_SUGGESTION];
 
 export function OnboardingChatConversation({
   projectId,
@@ -187,9 +257,11 @@ export function OnboardingChatConversation({
   }, [messages, status]);
 
   const lastMessage = messages[messages.length - 1];
-  const suggestionPool = strategyRequested
-    ? SUGGESTED_QUESTIONS
-    : [STRATEGY_SUGGESTION, ...SUGGESTED_QUESTIONS];
+  const suggestionPool = [
+    ...(strategyRequested ? [] : [STRATEGY_SUGGESTION]),
+    COMPETITOR_SUGGESTION,
+    ...SUGGESTED_QUESTIONS,
+  ];
   const remainingSuggestions = suggestionPool.filter(
     (question) => !usedSuggestions.includes(question),
   );
@@ -202,11 +274,12 @@ export function OnboardingChatConversation({
     isBusy &&
     (lastMessage?.role !== "assistant" ||
       !messageHasVisibleContent(lastMessage));
+  // Show the chips up front (before the first message) and after each assistant
+  // reply, but not while a reply is mid-flight.
   const showSuggestions =
     remainingSuggestions.length > 0 &&
     !isBusy &&
-    messages.length > 0 &&
-    lastMessage?.role === "assistant";
+    (messages.length === 0 || lastMessage?.role === "assistant");
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -225,16 +298,6 @@ export function OnboardingChatConversation({
               checkoutError={checkoutError}
               isStartingCheckout={isStartingCheckout}
               onUpgrade={() => void startCheckout()}
-              onAskAboutOpenSeo={() =>
-                sendText("I have questions about OpenSEO before I upgrade.")
-              }
-              onProposeStrategy={() => {
-                setStrategyRequested(true);
-                sendText(
-                  `Please analyze ${domain} and show me my SEO strategy.`,
-                );
-              }}
-              disableActions={isBusy || messages.length > 0}
             />
 
             {messages.map((message) => (
@@ -273,7 +336,7 @@ export function OnboardingChatConversation({
             {showSuggestions ? (
               <SuggestedQuestions
                 questions={remainingSuggestions}
-                primaryQuestion={STRATEGY_SUGGESTION}
+                primaryQuestions={PRIMARY_SUGGESTIONS}
                 onSelect={(question) => {
                   setUsedSuggestions((current) =>
                     current.includes(question)

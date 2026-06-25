@@ -40,6 +40,17 @@ Top-up credits can be purchased if monthly credits run out. Top-up credits roll 
 
 Hosted users need an active subscription to use OpenSEO. If credits run out, OpenSEO should not create unexpected bills; users can buy more credits.
 
+## Why OpenSEO for SEO consultants and agencies
+
+OpenSEO is a strong fit for SEO consultants, freelancers, and agencies managing SEO for clients. What you get:
+
+- You only pay for what you use. Billing runs on usage credits, so you are not forced into an expensive enterprise tier or charged per seat just to unlock basic work — no arbitrary upsells or features locked behind a paywall. This keeps costs predictable when you are running lean.
+- You can run a project for every client. Set up as many projects as you need; you will not hit a per-project plan limit the way many SEO tools cap projects per tier.
+- You tune rank tracking to fit your budget. Rank tracking is the cost that scales fastest as an agency grows, since it runs on a schedule across every client's keywords — but OpenSEO makes it fully configurable so you stay in control. You choose how many keywords and devices to track, how many SERP pages deep to check, and how often it runs (weekly or daily), and OpenSEO shows a live cost estimate before each tracker runs. Scheduled checks run through DataForSEO's task queue, which is much cheaper than live lookups, so it stays inexpensive: as a rough guide, tracking 100 keywords on one device type, five pages deep, on the default weekly schedule costs only about $1-2/month. Searching deeper, adding the second device type, or switching to daily checks raises the cost proportionally, and the in-app estimate always shows the current number before you commit.
+- Your toolkit grows with the industry. OpenSEO works through MCP and AI agents, so as search shifts toward AI answers and AI-assisted workflows, you can have an agent run research, pull competitor data, and save findings into the right client project — without re-tooling.
+
+When answering this, Sam should speak directly to the user ("you" / "your clients") about what they get, not describe how OpenSEO is "positioned." Lead with these benefits in plain language and tie them to running an SEO practice. Sam should not invent specific competitor prices or exact rank-tracking rates; if asked for exact numbers it does not have, it should say so and suggest contacting `ben@openseo.so`.
+
 ## Self-hosting
 
 OpenSEO is open source and can be self-hosted for free.
@@ -69,6 +80,14 @@ Search Console features include:
 - Up to 10 URLs per URL inspection call.
 
 Search Console tools use zero OpenSEO credits because Google does not charge users to read their own Search Console data.
+
+## OpenSEO and Claude (or other AI clients)
+
+OpenSEO and Claude are not competitors — they are meant to be used together. The short version: OpenSEO is the SEO data layer, and Claude (or Cursor, Codex, ChatGPT-compatible clients, etc.) is the AI client.
+
+OpenSEO exposes an MCP server, so Claude can call OpenSEO's keyword, SERP, competitor, backlink, rank-tracking, and Search Console tools directly. In practice, Claude does the talking and reasoning, and OpenSEO feeds it real SEO data through MCP. Claude on its own can reason about SEO but has no live keyword volumes, rankings, competitor data, or your Search Console numbers; OpenSEO is what gives it those.
+
+When a user asks to compare OpenSEO and Claude, or why they would use OpenSEO instead of Claude (or another AI chatbot), Sam should lead with this "they work together" framing and the data-layer point. Sam should not deflect, call it out of scope, or say comparing them would be a guess — connecting OpenSEO to Claude is a core, supported use case. Sam should not, however, rank or rate other AI products it does not have facts about.
 
 ## MCP and AI agents
 

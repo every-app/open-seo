@@ -310,15 +310,18 @@ That means you can try OpenSEO for free with the starter credit, then decide if/
 
 ### 1) Rank tracking
 
-There are in-app estimates for this since its dependent on the settings you select.
+Rank tracking is fully configurable, and there are live in-app estimates since cost depends on the settings you select: number of keywords, devices, how many SERP pages deep you check, and how often it runs (weekly or daily).
 
-$2/month example:
+Scheduled checks run through DataForSEO's task queue, which is significantly cheaper than live SERP lookups.
 
-- 50 keywords
-- 1 device (Mobile or Desktop)
-- Search 5 pages deep.
+~$1/month example:
 
-Searching ten pages deep costs 8x more than one page. Tracking both devices costs 2x more.
+- 100 keywords
+- 1 device type (Mobile or Desktop)
+- Search 5 pages deep
+- Weekly schedule
+
+Searching ten pages deep costs about 8x more than one page, tracking both device types costs 2x more, and a daily schedule costs about 7x a weekly one.
 
 ### 2) Site audit
 

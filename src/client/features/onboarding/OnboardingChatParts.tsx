@@ -12,17 +12,17 @@ const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 
 export function SuggestedQuestions({
   questions,
-  primaryQuestion,
+  primaryQuestions = [],
   onSelect,
 }: {
   questions: string[];
-  primaryQuestion?: string;
+  primaryQuestions?: string[];
   onSelect: (question: string) => void;
 }) {
   return (
     <div className="ml-10 flex flex-wrap gap-2">
       {questions.map((question) =>
-        question === primaryQuestion ? (
+        primaryQuestions.includes(question) ? (
           <button
             key={question}
             type="button"
@@ -52,17 +52,11 @@ export function WelcomeMessage({
   checkoutError,
   isStartingCheckout,
   onUpgrade,
-  onAskAboutOpenSeo,
-  onProposeStrategy,
-  disableActions,
 }: {
   domain: string;
   checkoutError: string | null;
   isStartingCheckout: boolean;
   onUpgrade: () => void;
-  onAskAboutOpenSeo: () => void;
-  onProposeStrategy: () => void;
-  disableActions: boolean;
 }) {
   return (
     <div className="flex gap-3">
@@ -95,27 +89,9 @@ export function WelcomeMessage({
           <p>
             Want me to analyze{" "}
             <span className="font-medium text-base-content">{domain}</span> and
-            draft a strategy, or do you have questions first?
+            draft a strategy, or do you have questions first? Pick one below to
+            get started.
           </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-soft btn-sm"
-            disabled={disableActions}
-            onClick={onAskAboutOpenSeo}
-          >
-            Ask about OpenSEO
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            disabled={disableActions}
-            onClick={onProposeStrategy}
-          >
-            Show my strategy
-          </button>
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-200/50 p-3 text-xs lg:hidden">
