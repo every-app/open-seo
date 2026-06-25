@@ -1,6 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
+import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
@@ -99,6 +100,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getBacklinksOverviewTool.name,
       getBacklinksOverviewTool.config.outputSchema,
       getBacklinksOverviewTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBacklinksProfileTool.name,
+    getBacklinksProfileTool.config,
+    instrumentMcpToolHandler(
+      getBacklinksProfileTool.name,
+      getBacklinksProfileTool.config.outputSchema,
+      getBacklinksProfileTool.handler,
     ),
   );
   server.registerTool(

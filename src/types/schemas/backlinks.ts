@@ -88,7 +88,7 @@ export const backlinksRowsFiltersSchema = z.object({
  * each referring domain's strongest link (the default, denoised view);
  * `as_is` returns every individual backlink.
  */
-const backlinksRowsModeSchema = z.enum(["one_per_domain", "as_is"]);
+export const backlinksRowsModeSchema = z.enum(["one_per_domain", "as_is"]);
 
 export const referringDomainsFiltersSchema = z.object({
   include: z.string().optional(),
