@@ -48,9 +48,9 @@ export function RankTrackingConfigModal({
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
   const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
-  const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
-    existingConfig?.scheduleInterval ?? "weekly",
-  );
+  const [schedule, setSchedule] = useState<
+    "daily" | "weekly" | "monthly" | "manual"
+  >(existingConfig?.scheduleInterval ?? "weekly");
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
   const createMutation = useMutation({
@@ -249,6 +249,7 @@ export function RankTrackingConfigModal({
               if (
                 value === "daily" ||
                 value === "weekly" ||
+                value === "monthly" ||
                 value === "manual"
               ) {
                 setSchedule(value);
@@ -257,6 +258,7 @@ export function RankTrackingConfigModal({
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
             <option value="manual">Manual only</option>
           </select>
           {schedule === "daily" && (

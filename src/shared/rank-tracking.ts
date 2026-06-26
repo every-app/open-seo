@@ -88,9 +88,27 @@ export function estimateRankCheckCredits(
  * Otherwise a random hour (04–09 UTC) and minute are chosen.
  */
 export function computeNextCheckAt(
-  interval: "daily" | "weekly",
+  interval: "daily" | "weekly" | "monthly",
   previousNextCheckAt?: string | null,
 ): string {
+  if (interval === "monthly") {
+    if (previousNextCheckAt) {
+      const anchor = new Date(previousNextCheckAt);
+      const now = Date.now();
+      // Advance month-by-month until the result is in the future
+      while (anchor.getTime() <= now) {
+        anchor.setUTCMonth(anchor.getUTCMonth() + 1);
+      }
+      return anchor.toISOString();
+    }
+    const nextDate = new Date();
+    nextDate.setUTCMonth(nextDate.getUTCMonth() + 1);
+    const hour = 4 + Math.floor(Math.random() * 6);
+    const minute = Math.floor(Math.random() * 60);
+    nextDate.setUTCHours(hour, minute, 0, 0);
+    return nextDate.toISOString();
+  }
+
   const daysAhead = interval === "daily" ? 1 : 7;
 
   if (previousNextCheckAt) {
@@ -122,6 +140,7 @@ export function scheduleLabel(
 ): string {
   if (interval === "daily") return "Daily";
   if (interval === "weekly") return "Weekly";
+  if (interval === "monthly") return "Monthly";
   return "Manual";
 }
 

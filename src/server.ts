@@ -149,7 +149,8 @@ export default {
           // Still advance schedule so this config doesn't stay due forever
           const skipInterval =
             config.scheduleInterval === "daily" ||
-            config.scheduleInterval === "weekly"
+            config.scheduleInterval === "weekly" ||
+            config.scheduleInterval === "monthly"
               ? config.scheduleInterval
               : null;
           if (skipInterval) {
@@ -170,7 +171,8 @@ export default {
         // Advance nextCheckAt immediately to prevent retry storms if the run fails
         const interval =
           config.scheduleInterval === "daily" ||
-          config.scheduleInterval === "weekly"
+          config.scheduleInterval === "weekly" ||
+          config.scheduleInterval === "monthly"
             ? config.scheduleInterval
             : null;
         if (interval) {

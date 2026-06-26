@@ -62,7 +62,9 @@ async function createConfig(input: {
   const configId = crypto.randomUUID();
   const scheduleInterval = input.scheduleInterval ?? "weekly";
   const nextCheckAt =
-    scheduleInterval === "daily" || scheduleInterval === "weekly"
+    scheduleInterval === "daily" ||
+    scheduleInterval === "weekly" ||
+    scheduleInterval === "monthly"
       ? computeNextCheckAt(scheduleInterval)
       : null;
 
