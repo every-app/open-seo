@@ -346,7 +346,7 @@ Searching ten pages deep costs about 8x more than one page, tracking both device
 ### 5) Backlinks search
 
 > [!NOTE]
-> There is a 2 week free trial, but then DataForSEO requires a $100/month commitment for this API. You can access this data for just $20/month through [openseo.so](https://openseo.so). Soon, we'll let you use an OpenSEO API key so that you can call our API from your self hosted instance.
+> There is a 2 week free trial, but then DataForSEO requires a $100/month commitment for this API. You can access this data for just $10/month through [openseo.so](https://openseo.so). Soon, we'll let you use an OpenSEO API key so that you can call our API from your self hosted instance.
 
 - Backlinks search costs about `$0.06` for a domain or `$0.04` for a page.
 - Opening extra tabs like `Referring Domains` or `Top Pages` adds about `+$0.02` each.

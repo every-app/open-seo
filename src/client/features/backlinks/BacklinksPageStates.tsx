@@ -13,7 +13,7 @@ export function BacklinksSetupGate({
   return (
     <AccessGate
       title="Enable Backlinks"
-      bodyText="Backlinks are not enabled for your DataForSEO account yet. You can enable them in DataForSEO, or use managed OpenSEO for long-term backlinks access at $20/month."
+      bodyText="Backlinks are not enabled for your DataForSEO account yet. You can enable them in DataForSEO, or use managed OpenSEO for long-term backlinks access at $10/month."
       helperText={
         <>
           We are also planning a Backlinks API so self-hosted apps can use
