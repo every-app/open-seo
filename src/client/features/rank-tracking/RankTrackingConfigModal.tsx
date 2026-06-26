@@ -17,10 +17,10 @@ import {
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
 import {
-  LOCATION_OPTIONS,
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
 } from "@/client/features/keywords/locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 
 type Props = {
@@ -188,17 +188,7 @@ export function RankTrackingConfigModal({
           <label className="label">
             <span className="label-text font-medium">Country</span>
           </label>
-          <select
-            className="select select-bordered w-full"
-            value={locationCode}
-            onChange={(e) => setLocationCode(Number(e.target.value))}
-          >
-            {LOCATION_OPTIONS.map((loc) => (
-              <option key={loc.code} value={loc.code}>
-                {loc.label}
-              </option>
-            ))}
-          </select>
+          <LocationSelect value={locationCode} onChange={setLocationCode} />
         </div>
 
         <div className="form-control">
