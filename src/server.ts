@@ -3,14 +3,26 @@ import {
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routeAgentRequest } from "agents";
+import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
+import { db } from "@/db";
+import {
+  projects,
+  rankTrackingConfigs,
+  rankTrackingKeywords,
+} from "@/db/schema";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import {
+  RankTrackingService,
+  type RankTrackingKeywordScheduleInterval,
+} from "@/server/features/rank-tracking/services/RankTrackingService";
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import {
   customerHasPaidPlan,
   getOrCreateOrganizationCustomer,
 } from "@/server/billing/subscription";
+import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import {
@@ -28,6 +40,167 @@ import {
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
+const KEYWORD_INTERVALS_API_PATH = "/api/rank-tracking/keyword-intervals";
+const KEYWORD_INTERVALS = new Set<RankTrackingKeywordScheduleInterval>([
+  "inherit",
+  "daily",
+  "weekly",
+  "manual-paused",
+]);
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function getStringField(
+  data: Record<string, unknown>,
+  field: string,
+): string {
+  const value = data[field];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new AppError("VALIDATION_ERROR", `${field} is required`);
+  }
+  return value;
+}
+
+function getKeywordInterval(
+  data: Record<string, unknown>,
+): RankTrackingKeywordScheduleInterval {
+  const value = data.scheduleIntervalOverride;
+  if (typeof value !== "string" || !KEYWORD_INTERVALS.has(value as never)) {
+    throw new AppError("VALIDATION_ERROR", "Invalid keyword interval");
+  }
+  return value as RankTrackingKeywordScheduleInterval;
+}
+
+async function readJsonObject(
+  request: Request,
+): Promise<Record<string, unknown>> {
+  const body = await request.json().catch(() => null);
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    throw new AppError("VALIDATION_ERROR", "Invalid JSON body");
+  }
+  return body as Record<string, unknown>;
+}
+
+async function authorizeProjectApiRequest(
+  request: Request,
+  projectId: string,
+) {
+  let context;
+  try {
+    context = await resolveUserContextFromHeaders(request.headers);
+  } catch {
+    throw new AppError("UNAUTHENTICATED", "Unauthorized");
+  }
+
+  const project = await ProjectRepository.getProjectForOrganization(
+    projectId,
+    context.organizationId,
+  );
+  if (!project) {
+    throw new AppError("FORBIDDEN", "Forbidden");
+  }
+}
+
+async function handleKeywordIntervalsApiRequest(
+  request: Request,
+): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "PATCH") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  try {
+    const url = new URL(request.url);
+    const data =
+      request.method === "GET"
+        ? Object.fromEntries(url.searchParams)
+        : await readJsonObject(request);
+    const projectId = getStringField(data, "projectId");
+    const configId = getStringField(data, "configId");
+
+    await authorizeProjectApiRequest(request, projectId);
+
+    if (request.method === "GET") {
+      return jsonResponse(
+        await RankTrackingService.getKeywordSchedules(configId, projectId),
+      );
+    }
+
+    const keywordIds = data.keywordIds;
+    if (
+      !Array.isArray(keywordIds) ||
+      keywordIds.length === 0 ||
+      !keywordIds.every((id) => typeof id === "string")
+    ) {
+      throw new AppError("VALIDATION_ERROR", "Select at least one keyword");
+    }
+
+    const result = await RankTrackingService.updateKeywordScheduleOverride(
+      configId,
+      projectId,
+      keywordIds,
+      getKeywordInterval(data),
+    );
+    return jsonResponse(result);
+  } catch (error) {
+    if (error instanceof AppError) {
+      const status =
+        error.code === "UNAUTHENTICATED"
+          ? 401
+          : error.code === "FORBIDDEN"
+            ? 403
+            : error.code === "VALIDATION_ERROR"
+              ? 400
+              : 500;
+      return jsonResponse({ error: error.message }, status);
+    }
+
+    console.error("[rank-tracking] keyword interval API error:", error);
+    return jsonResponse({ error: "Internal server error" }, 500);
+  }
+}
+
+async function getDueRankTrackingConfigs(nowIso: string) {
+  return db
+    .select({
+      id: rankTrackingConfigs.id,
+      projectId: rankTrackingConfigs.projectId,
+      domain: rankTrackingConfigs.domain,
+      locationCode: rankTrackingConfigs.locationCode,
+      languageCode: rankTrackingConfigs.languageCode,
+      devices: rankTrackingConfigs.devices,
+      serpDepth: rankTrackingConfigs.serpDepth,
+      scheduleInterval: rankTrackingConfigs.scheduleInterval,
+      nextCheckAt: rankTrackingConfigs.nextCheckAt,
+      organizationId: projects.organizationId,
+    })
+    .from(rankTrackingConfigs)
+    .innerJoin(projects, eq(rankTrackingConfigs.projectId, projects.id))
+    .where(
+      and(
+        eq(rankTrackingConfigs.isActive, true),
+        isNull(projects.archivedAt),
+        or(
+          lte(rankTrackingConfigs.nextCheckAt, nowIso),
+          sql`exists (
+            select 1
+            from ${rankTrackingKeywords}
+            where ${rankTrackingKeywords.configId} = ${rankTrackingConfigs.id}
+              and ${rankTrackingKeywords.scheduleIntervalOverride} in ('daily', 'weekly')
+              and (
+                ${rankTrackingKeywords.nextCheckAt} is null
+                or ${rankTrackingKeywords.nextCheckAt} <= ${nowIso}
+              )
+          )`,
+        ),
+      ),
+    )
+    .limit(50);
+}
 
 // Authorize an onboarding-chat connection in the Worker, before it reaches the
 // Durable Object. The DO instance name is the projectId (set client-side); we
@@ -87,6 +260,10 @@ function fetch(
     return routeOnboardingChatAgent(publicRequest, env);
   }
 
+  if (pathname === KEYWORD_INTERVALS_API_PATH) {
+    return handleKeywordIntervalsApiRequest(publicRequest);
+  }
+
   if (isHostedAuthMode(authMode)) {
     if (pathname === AUTUMN_WEBHOOK_PATH) {
       return handleAutumnWebhookRequest(publicRequest);
@@ -123,8 +300,7 @@ export default {
     _ctx: ExecutionContext,
   ) {
     const nowIso = new Date().toISOString();
-    const dueConfigs =
-      await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);
+    const dueConfigs = await getDueRankTrackingConfigs(nowIso);
 
     const isHosted = await isHostedServerAuthMode();
 
@@ -139,17 +315,19 @@ export default {
         }
 
         // Skip configs with no keywords before advancing the schedule
-        const kwCount = await RankTrackingRepository.getKeywordCountForConfig(
+        const keywords = await RankTrackingRepository.getKeywordsForConfig(
           config.id,
         );
-        if (kwCount === 0) {
+        if (keywords.length === 0) {
           console.log(
             `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
           );
           // Still advance schedule so this config doesn't stay due forever
+          // (manual configs have no interval, so they are never auto-advanced).
           const skipInterval =
-            config.scheduleInterval === "daily" ||
-            config.scheduleInterval === "weekly"
+            (config.scheduleInterval === "daily" ||
+              config.scheduleInterval === "weekly") &&
+            RankTrackingService.isConfigScheduleDue(config, nowIso)
               ? config.scheduleInterval
               : null;
           if (skipInterval) {
@@ -167,10 +345,36 @@ export default {
           continue;
         }
 
+        const dueKeywords = RankTrackingService.getDueKeywordsForScheduledRun(
+          config,
+          keywords,
+          nowIso,
+        );
+        if (dueKeywords.length === 0) {
+          console.log(
+            `[cron] Skipping config ${config.id} (${config.domain}) — no due keywords`,
+          );
+          if (RankTrackingService.isConfigScheduleDue(config, nowIso)) {
+            await RankTrackingRepository.updateConfig(
+              config.id,
+              config.projectId,
+              {
+                nextCheckAt: computeNextCheckAt(
+                  config.scheduleInterval as "daily" | "weekly",
+                  config.nextCheckAt,
+                ),
+              },
+            );
+          }
+          continue;
+        }
+
         // Advance nextCheckAt immediately to prevent retry storms if the run fails
+        // (manual configs have no interval, so they are never auto-advanced).
         const interval =
-          config.scheduleInterval === "daily" ||
-          config.scheduleInterval === "weekly"
+          (config.scheduleInterval === "daily" ||
+            config.scheduleInterval === "weekly") &&
+          RankTrackingService.isConfigScheduleDue(config, nowIso)
             ? config.scheduleInterval
             : null;
         if (interval) {
@@ -182,6 +386,14 @@ export default {
             },
           );
         }
+        await RankTrackingService.advanceKeywordSchedulesForScheduledRun(
+          dueKeywords,
+        );
+
+        const keywordIds =
+          dueKeywords.length === keywords.length
+            ? undefined
+            : dueKeywords.map((keyword) => keyword.id);
 
         const result = await beginRankCheckRun({
           workflow: env.RANK_CHECK_WORKFLOW,
@@ -193,7 +405,8 @@ export default {
             organizationId: config.organizationId,
             projectId: config.projectId,
           },
-          keywordsTotal: kwCount,
+          keywordsTotal: keywordIds ? keywordIds.length : keywords.length,
+          keywordIds,
           trigger: "scheduled",
           workflowStartErrorMessage: "Failed to start scheduled workflow",
         });

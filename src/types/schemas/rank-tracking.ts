@@ -1,6 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
-import { rankTrackingConfigs } from "@/db/app.schema";
+import { rankTrackingConfigs, rankTrackingKeywords } from "@/db/app.schema";
 import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
@@ -8,6 +8,9 @@ import { domainField } from "@/types/schemas/domain";
 // ---------------------------------------------------------------------------
 
 export type RankTrackingConfig = InferSelectModel<typeof rankTrackingConfigs>;
+export type RankTrackingKeyword = InferSelectModel<
+  typeof rankTrackingKeywords
+>;
 
 // ---------------------------------------------------------------------------
 // API / UI types
@@ -40,6 +43,30 @@ export interface RankTrackingRow {
   desktop: RankTrackingDeviceResult;
   mobile: RankTrackingDeviceResult;
 }
+
+export type RankTrackingKeywordScheduleInterval =
+  RankTrackingKeyword["scheduleIntervalOverride"];
+export type EffectiveKeywordScheduleInterval =
+  | RankTrackingConfig["scheduleInterval"]
+  | "manual-paused";
+
+export interface RankTrackingKeywordSchedule {
+  trackingKeywordId: string;
+  keyword: string;
+  scheduleIntervalOverride: RankTrackingKeywordScheduleInterval;
+  effectiveInterval: EffectiveKeywordScheduleInterval;
+  nextCheckAt: string | null;
+}
+
+export interface RankTrackingKeywordSchedulesResponse {
+  configScheduleInterval: RankTrackingConfig["scheduleInterval"];
+  keywords: RankTrackingKeywordSchedule[];
+}
+
+export type RankTrackingScheduledRow = RankTrackingRow &
+  RankTrackingKeywordSchedule & {
+    effectiveNextCheckAt: string | null;
+  };
 
 // ---------------------------------------------------------------------------
 // Validation schemas

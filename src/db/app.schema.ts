@@ -249,6 +249,12 @@ export const rankTrackingKeywords = sqliteTable(
     keywordDifficulty: integer("keyword_difficulty"),
     cpc: real("cpc"),
     metricsFetchedAt: text("metrics_fetched_at"),
+    scheduleIntervalOverride: text("schedule_interval_override", {
+      enum: ["inherit", "daily", "weekly", "manual-paused"],
+    })
+      .notNull()
+      .default("inherit"),
+    nextCheckAt: text("next_check_at"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),
@@ -257,6 +263,10 @@ export const rankTrackingKeywords = sqliteTable(
     uniqueIndex("rank_tracking_keywords_config_keyword_idx").on(
       table.configId,
       table.keyword,
+    ),
+    index("rank_tracking_keywords_config_next_check_idx").on(
+      table.configId,
+      table.nextCheckAt,
     ),
   ],
 );

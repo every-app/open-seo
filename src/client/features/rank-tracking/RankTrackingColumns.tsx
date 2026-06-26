@@ -2,7 +2,11 @@ import { useMemo, type MutableRefObject } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
 import type { ColumnDef, SortingFn } from "@tanstack/react-table";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import type {
+  EffectiveKeywordScheduleInterval,
+  RankTrackingKeywordScheduleInterval,
+  RankTrackingScheduledRow,
+} from "@/types/schemas/rank-tracking";
 import {
   CpcCell,
   DeviceRankCell,
@@ -12,12 +16,16 @@ import {
   VolumeCell,
 } from "./RankTrackingTableParts";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
+import { KeywordIntervalMenu } from "./RankTrackingTableToolbar";
 
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
   volume: "Estimated monthly search volume from Google",
   kd: "Keyword difficulty score (0-100) — higher means harder to rank",
   cpc: "Average cost per click in Google Ads (USD)",
+  interval: "How often this keyword is scheduled for automatic rank checks",
+  nextCheck:
+    "The next automatic rank check time for this keyword's effective schedule",
   desktopPosition:
     "Current Google ranking position, showing change from the comparison period",
   mobilePosition:
@@ -60,7 +68,11 @@ export function SortableHeader({
   );
 }
 
-const nullsLastNumeric: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
+const nullsLastNumeric: SortingFn<RankTrackingScheduledRow> = (
+  rowA,
+  rowB,
+  columnId,
+) => {
   const a = rowA.getValue<number | null>(columnId);
   const b = rowB.getValue<number | null>(columnId);
   if (a == null && b == null) return 0;
@@ -69,7 +81,20 @@ const nullsLastNumeric: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
   return a - b;
 };
 
-const volumeColumn: ColumnDef<RankTrackingRow> = {
+const nullsLastIsoDate: SortingFn<RankTrackingScheduledRow> = (
+  rowA,
+  rowB,
+  columnId,
+) => {
+  const a = rowA.getValue<string | null>(columnId);
+  const b = rowB.getValue<string | null>(columnId);
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a.localeCompare(b);
+};
+
+const volumeColumn: ColumnDef<RankTrackingScheduledRow> = {
   id: "volume",
   accessorKey: "searchVolume",
   header: ({ column }) => (
@@ -80,7 +105,7 @@ const volumeColumn: ColumnDef<RankTrackingRow> = {
   sortingFn: nullsLastNumeric,
 };
 
-const kdColumn: ColumnDef<RankTrackingRow> = {
+const kdColumn: ColumnDef<RankTrackingScheduledRow> = {
   id: "kd",
   accessorKey: "keywordDifficulty",
   header: ({ column }) => <SortableHeader column={column} label="KD" id="kd" />,
@@ -89,7 +114,7 @@ const kdColumn: ColumnDef<RankTrackingRow> = {
   sortingFn: nullsLastNumeric,
 };
 
-const cpcColumn: ColumnDef<RankTrackingRow> = {
+const cpcColumn: ColumnDef<RankTrackingScheduledRow> = {
   id: "cpc",
   accessorKey: "cpc",
   header: ({ column }) => (
@@ -101,8 +126,8 @@ const cpcColumn: ColumnDef<RankTrackingRow> = {
 };
 
 function makeKeywordColumn(
-  onKeywordClick: (row: RankTrackingRow) => void,
-): ColumnDef<RankTrackingRow> {
+  onKeywordClick: (row: RankTrackingScheduledRow) => void,
+): ColumnDef<RankTrackingScheduledRow> {
   return {
     id: "keyword",
     accessorKey: "keyword",
@@ -123,9 +148,132 @@ function makeKeywordColumn(
   };
 }
 
+function intervalLabel(
+  interval:
+    | RankTrackingKeywordScheduleInterval
+    | EffectiveKeywordScheduleInterval,
+): string {
+  if (interval === "inherit") return "Inherit";
+  if (interval === "daily") return "Daily";
+  if (interval === "weekly") return "Weekly";
+  if (interval === "manual-paused") return "Paused";
+  return "Manual";
+}
+
+function formatNextCheck(value: string): string {
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function ScheduleIntervalCell({
+  row,
+  onKeywordIntervalChange,
+  intervalActionBusy,
+}: {
+  row: RankTrackingScheduledRow;
+  onKeywordIntervalChange?: (
+    row: RankTrackingScheduledRow,
+    interval: RankTrackingKeywordScheduleInterval,
+  ) => void;
+  intervalActionBusy?: boolean;
+}) {
+  const override = row.scheduleIntervalOverride;
+  const isInherited = override === "inherit";
+  const badgeClass =
+    override === "manual-paused"
+      ? "bg-warning/15 text-warning"
+      : isInherited
+        ? "bg-base-200 text-base-content/65"
+        : "bg-primary/10 text-primary";
+
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="flex min-w-0 flex-col">
+        <span
+          className={`badge badge-sm border-0 font-medium ${badgeClass}`}
+          title={`Effective interval: ${intervalLabel(row.effectiveInterval)}`}
+        >
+          {intervalLabel(override)}
+        </span>
+        {isInherited && (
+          <span className="mt-0.5 text-[11px] leading-tight text-base-content/50">
+            {intervalLabel(row.effectiveInterval)}
+          </span>
+        )}
+      </span>
+      {onKeywordIntervalChange && (
+        <KeywordIntervalMenu
+          label={null}
+          title={`Set schedule for ${row.keyword}`}
+          busy={intervalActionBusy}
+          buttonClassName="btn btn-ghost btn-xs btn-square"
+          menuClassName="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-60"
+          onSelect={(interval) => onKeywordIntervalChange(row, interval)}
+        />
+      )}
+    </div>
+  );
+}
+
+function NextCheckCell({ row }: { row: RankTrackingScheduledRow }) {
+  const scheduled =
+    row.effectiveInterval === "daily" || row.effectiveInterval === "weekly";
+  if (!scheduled) {
+    return <span className="text-xs text-base-content/40">Not scheduled</span>;
+  }
+  if (row.effectiveNextCheckAt === null) {
+    return <span className="text-xs font-medium text-warning">Due now</span>;
+  }
+  return (
+    <span className="text-xs" title={row.effectiveNextCheckAt}>
+      {formatNextCheck(row.effectiveNextCheckAt)}
+    </span>
+  );
+}
+
+function makeIntervalColumn(
+  onKeywordIntervalChange?: (
+    row: RankTrackingScheduledRow,
+    interval: RankTrackingKeywordScheduleInterval,
+  ) => void,
+  intervalActionBusy?: boolean,
+): ColumnDef<RankTrackingScheduledRow> {
+  return {
+    id: "interval",
+    accessorKey: "scheduleIntervalOverride",
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Interval" id="interval" />
+    ),
+    size: 140,
+    cell: ({ row }) => (
+      <ScheduleIntervalCell
+        row={row.original}
+        onKeywordIntervalChange={onKeywordIntervalChange}
+        intervalActionBusy={intervalActionBusy}
+      />
+    ),
+    sortingFn: "alphanumeric",
+  };
+}
+
+const nextCheckColumn: ColumnDef<RankTrackingScheduledRow> = {
+  id: "nextCheck",
+  accessorKey: "effectiveNextCheckAt",
+  header: ({ column }) => (
+    <SortableHeader column={column} label="Next Check" id="nextCheck" />
+  ),
+  size: 140,
+  cell: ({ row }) => <NextCheckCell row={row.original} />,
+  sortingFn: nullsLastIsoDate,
+};
+
 function makeDeviceColumn(
   device: "desktop" | "mobile",
-): ColumnDef<RankTrackingRow> {
+): ColumnDef<RankTrackingScheduledRow> {
   const id = device === "desktop" ? "desktopPosition" : "mobilePosition";
   return {
     id,
@@ -143,7 +291,7 @@ function makeDeviceColumn(
 function makeUrlColumn(
   device: "desktop" | "mobile",
   domain: string,
-): ColumnDef<RankTrackingRow> {
+): ColumnDef<RankTrackingScheduledRow> {
   return {
     id: device === "desktop" ? "desktopUrl" : "mobileUrl",
     enableSorting: false,
@@ -164,7 +312,7 @@ function makeUrlColumn(
 
 function makeSerpColumn(
   device: "desktop" | "mobile",
-): ColumnDef<RankTrackingRow> {
+): ColumnDef<RankTrackingScheduledRow> {
   return {
     id: device === "desktop" ? "desktopSerp" : "mobileSerp",
     enableSorting: false,
@@ -189,12 +337,19 @@ export function useRankTrackingColumns(
   showMobile: boolean,
   domain: string,
   selectAnchorRef: MutableRefObject<SelectionAnchor | null>,
-  onKeywordClick: (row: RankTrackingRow) => void,
-): ColumnDef<RankTrackingRow>[] {
+  onKeywordClick: (row: RankTrackingScheduledRow) => void,
+  onKeywordIntervalChange?: (
+    row: RankTrackingScheduledRow,
+    interval: RankTrackingKeywordScheduleInterval,
+  ) => void,
+  intervalActionBusy?: boolean,
+): ColumnDef<RankTrackingScheduledRow>[] {
   return useMemo(() => {
-    const cols: ColumnDef<RankTrackingRow>[] = [
-      makeSelectionColumn<RankTrackingRow>(selectAnchorRef),
+    const cols: ColumnDef<RankTrackingScheduledRow>[] = [
+      makeSelectionColumn<RankTrackingScheduledRow>(selectAnchorRef),
       makeKeywordColumn(onKeywordClick),
+      makeIntervalColumn(onKeywordIntervalChange, intervalActionBusy),
+      nextCheckColumn,
     ];
     if (showDesktop) {
       cols.push(makeDeviceColumn("desktop"));
@@ -212,5 +367,13 @@ export function useRankTrackingColumns(
       cols.push(makeSerpColumn("mobile"));
     }
     return cols;
-  }, [showDesktop, showMobile, domain, selectAnchorRef, onKeywordClick]);
+  }, [
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+    onKeywordClick,
+    onKeywordIntervalChange,
+    intervalActionBusy,
+  ]);
 }

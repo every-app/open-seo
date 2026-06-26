@@ -135,10 +135,10 @@ function RangeFilter({
   );
 }
 
-export function applyFilters(
-  rows: RankTrackingRow[],
+export function applyFilters<TRow extends RankTrackingRow>(
+  rows: TRow[],
   filters: Filters,
-): RankTrackingRow[] {
+): TRow[] {
   const includeTerms = filters.include
     ? filters.include
         .toLowerCase()

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AutumnProvider, useCustomer } from "autumn-js/react";
 import {
   getLatestRankResults,
@@ -19,14 +19,21 @@ import {
   countMatrixRuns,
   RankTrackingHistoryMatrix,
 } from "./RankTrackingHistoryMatrix";
-import { RankTrackingTableToolbar } from "./RankTrackingTableToolbar";
+import {
+  RankTrackingTableToolbar,
+  fetchRankTrackingKeywordSchedules,
+  rankTrackingKeywordSchedulesQueryKey,
+  updateRankTrackingKeywordSchedules,
+} from "./RankTrackingTableToolbar";
 import {
   exportRankTrackingCsv,
   exportRankTrackingToSheets,
 } from "./RankTrackingTableParts";
 import type {
-  RankTrackingConfig,
   ComparePeriod,
+  RankTrackingConfig,
+  RankTrackingKeywordScheduleInterval,
+  RankTrackingScheduledRow,
 } from "@/types/schemas/rank-tracking";
 import { AddKeywordsPanel } from "./AddKeywordsPanel";
 import {
@@ -40,6 +47,7 @@ import { CheckConfirmModal } from "./CheckConfirmModal";
 import { useMetricsRefresh } from "./useMetricsRefresh";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 function deviceVisibility(
   devices: RankTrackingConfig["devices"],
@@ -108,6 +116,14 @@ function RankTrackingDomainDetailInner({
         data: { projectId, configId: config.id, comparePeriod },
       }),
   });
+  const resultRows = resultsData?.rows ?? [];
+
+  const { data: keywordSchedules } = useQuery({
+    queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
+    queryFn: () =>
+      fetchRankTrackingKeywordSchedules({ projectId, configId: config.id }),
+    enabled: resultRows.length > 0,
+  });
 
   const latestRun = useRankRunPolling(projectId, config.id);
 
@@ -144,6 +160,9 @@ function RankTrackingDomainDetailInner({
       queryKey: ["rankTrackingResults", projectId, config.id],
     });
     void queryClient.invalidateQueries({
+      queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
+    });
+    void queryClient.invalidateQueries({
       queryKey: ["rankTrackingLatestRun", projectId, config.id],
     });
     setShowAddKeywords(false);
@@ -169,6 +188,39 @@ function RankTrackingDomainDetailInner({
   const { refresh: refreshMetrics, isRefreshing: metricsRefreshing } =
     useMetricsRefresh(projectId, config.id);
 
+  const intervalMutation = useMutation({
+    mutationFn: (input: {
+      keywordIds: string[];
+      scheduleIntervalOverride: RankTrackingKeywordScheduleInterval;
+    }) =>
+      updateRankTrackingKeywordSchedules({
+        projectId,
+        configId: config.id,
+        ...input,
+      }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({
+        queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
+      });
+      toast.success(
+        `${result.updated} keyword schedule${result.updated !== 1 ? "s" : ""} updated`,
+      );
+    },
+    onError: (error) => {
+      toast.error(
+        getStandardErrorMessage(error, "Failed to update keyword schedules"),
+      );
+    },
+  });
+
+  const setKeywordIntervals = (
+    keywordIds: string[],
+    scheduleIntervalOverride: RankTrackingKeywordScheduleInterval,
+  ) => {
+    if (keywordIds.length === 0) return;
+    intervalMutation.mutate({ keywordIds, scheduleIntervalOverride });
+  };
+
   const requestCheck = (count: number, keywordIds?: string[]) => {
     if (count < 50) {
       startCheck({ keywordIds });
@@ -179,16 +231,57 @@ function RankTrackingDomainDetailInner({
     setPendingCheck({ count, keywordIds });
   };
 
-  const rows = resultsData?.rows;
+  const rows = resultRows;
   const run = resultsData?.run;
   const hasBothDevices = config.devices === "both";
   const { showDesktop, showMobile } = deviceVisibility(
     config.devices,
     activeDevice,
   );
+  const schedulesById = useMemo(
+    () =>
+      new Map(
+        (keywordSchedules?.keywords ?? []).map((schedule) => [
+          schedule.trackingKeywordId,
+          schedule,
+        ]),
+      ),
+    [keywordSchedules],
+  );
+  const rowsWithSchedules = useMemo<RankTrackingScheduledRow[]>(
+    () =>
+      rows.map((row) => {
+        const schedule = schedulesById.get(row.trackingKeywordId);
+        const scheduleIntervalOverride =
+          schedule?.scheduleIntervalOverride ?? "inherit";
+        const effectiveInterval =
+          schedule?.effectiveInterval ??
+          keywordSchedules?.configScheduleInterval ??
+          config.scheduleInterval;
+        const nextCheckAt = schedule?.nextCheckAt ?? null;
+
+        return {
+          ...row,
+          scheduleIntervalOverride,
+          effectiveInterval,
+          nextCheckAt,
+          effectiveNextCheckAt:
+            scheduleIntervalOverride === "inherit"
+              ? config.nextCheckAt
+              : nextCheckAt,
+        };
+      }),
+    [
+      rows,
+      schedulesById,
+      keywordSchedules?.configScheduleInterval,
+      config.scheduleInterval,
+      config.nextCheckAt,
+    ],
+  );
   const filtered = useMemo(
-    () => applyFilters(rows ?? [], filters),
-    [rows, filters],
+    () => applyFilters(rowsWithSchedules, filters),
+    [rowsWithSchedules, filters],
   );
   const activeFilterCount = countActiveFilters(filters);
   const defaultSortId = showDesktop ? "desktopPosition" : "mobilePosition";
@@ -254,7 +347,7 @@ function RankTrackingDomainDetailInner({
         )}
 
         {/* Portfolio overview */}
-        {(rows?.length ?? 0) > 0 && (
+        {rows.length > 0 && (
           <RankTrackingOverview
             device={activeDevice}
             projectId={projectId}
@@ -291,11 +384,18 @@ function RankTrackingDomainDetailInner({
             toast.success("Keywords copied to clipboard");
           }}
           onCheckNow={() => {
-            const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
+            const count = costEstimate?.keywordCount ?? rows.length;
             if (count > 0) requestCheck(count);
           }}
           onRefreshMetrics={refreshMetrics}
           metricsRefreshing={metricsRefreshing}
+          onSetKeywordInterval={(interval) =>
+            setKeywordIntervals(
+              filtered.map((row) => row.trackingKeywordId),
+              interval,
+            )
+          }
+          intervalBusy={intervalMutation.isPending}
           checkBusy={isBusy}
           checkDisabled={isFreePlan}
           hasData={filtered.length > 0}
@@ -325,9 +425,10 @@ function RankTrackingDomainDetailInner({
           ) : (
             <RankTrackingTable
               key={defaultSortId}
-              totalCount={rows?.length ?? 0}
+              totalCount={rows.length}
               rows={filtered}
               resultsLoading={resultsLoading}
+              intervalUpdatePending={intervalMutation.isPending}
               showDesktop={showDesktop}
               showMobile={showMobile}
               defaultSortId={defaultSortId}
@@ -336,6 +437,7 @@ function RankTrackingDomainDetailInner({
               projectId={projectId}
               locationCode={config.locationCode}
               serpDepth={config.serpDepth}
+              onSetKeywordInterval={setKeywordIntervals}
             />
           )}
         </div>
