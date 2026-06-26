@@ -81,19 +81,25 @@ export function LocationSelect({
   };
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
-    } else if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((index) => Math.max(index - 1, 0));
-    } else if (event.key === "Enter") {
-      event.preventDefault();
-      const option = filtered[activeIndex];
-      if (option) select(option);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      setOpen(false);
+    switch (event.key) {
+      case "ArrowDown":
+        event.preventDefault();
+        setActiveIndex((index) => Math.min(index + 1, filtered.length - 1));
+        break;
+      case "ArrowUp":
+        event.preventDefault();
+        setActiveIndex((index) => Math.max(index - 1, 0));
+        break;
+      case "Enter": {
+        event.preventDefault();
+        const option = filtered[activeIndex];
+        if (option) select(option);
+        break;
+      }
+      case "Escape":
+        event.preventDefault();
+        setOpen(false);
+        break;
     }
   };
 
