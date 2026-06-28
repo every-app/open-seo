@@ -56,6 +56,72 @@ Without a lifecycle rule, cached objects under `dataforseo-cache/` will accumula
 
 If login fails, re-check the three secrets and Access toggle.
 
+## Connect the MCP server through Cloudflare Access
+
+Use the same Cloudflare Access application that protects your OpenSEO Worker.
+Managed OAuth is required for MCP clients and is not enabled by default.
+
+1. Open Cloudflare Zero Trust.
+2. Go to `Access controls` -> `Applications`.
+3. Find your OpenSEO application, then select `Edit`.
+4. Go to `Additional settings` -> `OAuth`.
+5. Turn on `Managed OAuth`.
+6. Save.
+
+MCP clients should connect to:
+
+```text
+https://YOUR_WORKER_HOSTNAME/mcp
+```
+
+## How to update to the latest OpenSEO version
+
+If your repo was created from the Cloudflare Deploy button, use this flow.
+
+### One-time setup
+
+Run this once in your local repo:
+
+```bash
+git remote add upstream https://github.com/every-app/open-seo.git
+git fetch upstream
+```
+
+### Update steps (use every time)
+
+```bash
+git fetch upstream
+cp wrangler.jsonc wrangler.local.backup.jsonc
+git checkout main
+git reset --hard upstream/main
+cp wrangler.local.backup.jsonc wrangler.jsonc
+git add wrangler.jsonc
+git commit -m "restore Cloudflare settings" || true
+git push --force-with-lease origin main
+```
+
+Why this is needed:
+
+- `wrangler.jsonc` has your Cloudflare resource IDs.
+- The update step keeps your IDs while pulling the newest OpenSEO code.
+
+## Give teammates access to OpenSEO
+
+1. Open Cloudflare Zero Trust.
+2. Go to Access -> Applications.
+3. Open your OpenSEO application.
+4. Edit the `Allow` policy.
+5. Add teammate emails (or your company email domain / group).
+6. Save.
+
+Screenshots from the setup flow:
+
+- [Edit the Access policy](https://github.com/user-attachments/assets/c7bbc7b4-a18e-4ae4-9fe5-3b33c72048a7)
+- [Add teammate emails to the allow list](https://github.com/user-attachments/assets/fa4ecaf2-31f7-4a64-9001-210cf729747b)
+
+After saving, teammates can open your OpenSEO URL and sign in through Cloudflare
+Access. OpenSEO will use a shared workspace for everyone allowed by the policy.
+
 ## Manual deploy with Wrangler
 
 Use this flow if the Deploy to Cloudflare button fails with `Cannot provision a KV Namespace with the title "open-seo" because it already exists`. The reliable path is to create Cloudflare resources yourself, put their IDs into `wrangler.jsonc`, then deploy with Wrangler.
@@ -177,69 +243,3 @@ pnpm exec wrangler r2 bucket lifecycle add open-seo-YOUR_SUFFIX dataforseo-cache
 3. OpenSEO should load after login.
 
 If login fails, re-check the three secrets, the Access toggle, and the binding values in `wrangler.jsonc`.
-
-## Connect the MCP server through Cloudflare Access
-
-Use the same Cloudflare Access application that protects your OpenSEO Worker.
-Managed OAuth is required for MCP clients and is not enabled by default.
-
-1. Open Cloudflare Zero Trust.
-2. Go to `Access controls` -> `Applications`.
-3. Find your OpenSEO application, then select `Edit`.
-4. Go to `Additional settings` -> `OAuth`.
-5. Turn on `Managed OAuth`.
-6. Save.
-
-MCP clients should connect to:
-
-```text
-https://YOUR_WORKER_HOSTNAME/mcp
-```
-
-## How to update to the latest OpenSEO version
-
-If your repo was created from the Cloudflare Deploy button, use this flow.
-
-### One-time setup
-
-Run this once in your local repo:
-
-```bash
-git remote add upstream https://github.com/every-app/open-seo.git
-git fetch upstream
-```
-
-### Update steps (use every time)
-
-```bash
-git fetch upstream
-cp wrangler.jsonc wrangler.local.backup.jsonc
-git checkout main
-git reset --hard upstream/main
-cp wrangler.local.backup.jsonc wrangler.jsonc
-git add wrangler.jsonc
-git commit -m "restore Cloudflare settings" || true
-git push --force-with-lease origin main
-```
-
-Why this is needed:
-
-- `wrangler.jsonc` has your Cloudflare resource IDs.
-- The update step keeps your IDs while pulling the newest OpenSEO code.
-
-## Give teammates access to OpenSEO
-
-1. Open Cloudflare Zero Trust.
-2. Go to Access -> Applications.
-3. Open your OpenSEO application.
-4. Edit the `Allow` policy.
-5. Add teammate emails (or your company email domain / group).
-6. Save.
-
-Screenshots from the setup flow:
-
-- [Edit the Access policy](https://github.com/user-attachments/assets/c7bbc7b4-a18e-4ae4-9fe5-3b33c72048a7)
-- [Add teammate emails to the allow list](https://github.com/user-attachments/assets/fa4ecaf2-31f7-4a64-9001-210cf729747b)
-
-After saving, teammates can open your OpenSEO URL and sign in through Cloudflare
-Access. OpenSEO will use a shared workspace for everyone allowed by the policy.
