@@ -201,10 +201,8 @@ describe("get_backlinks_profile MCP tool", () => {
       { hideSpam: false },
     );
     expect(result.structuredContent?.backlinks).toEqual(backlinkPage);
-    expect(result.content[0]).toMatchObject({
-      type: "text",
-      text: expect.stringContaining("- has more: yes"),
-    });
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain("- has more: yes");
   });
 
   it("passes through final-page pagination state", async () => {
