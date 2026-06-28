@@ -26,7 +26,7 @@ export type DomainListFilters = {
   locationCode: string;
 };
 
-export type DomainListFilterOption = {
+type DomainListFilterOption = {
   value: string;
   label: string;
 };
@@ -68,10 +68,24 @@ export function FilterPanel({
 
   return (
     <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
-      <FilterPanelHeader
-        activeFilterCount={activeFilterCount}
-        onReset={onReset}
-      />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold">Refine results</p>
+          {activeFilterCount > 0 && (
+            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+              {activeFilterCount} active
+            </span>
+          )}
+        </div>
+        <button
+          className="btn btn-xs btn-ghost gap-1"
+          onClick={onReset}
+          disabled={activeFilterCount === 0}
+        >
+          <RotateCcw className="size-3" />
+          Clear all
+        </button>
+      </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="space-y-1.5">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
@@ -155,12 +169,17 @@ export function DomainListFilterBar({
           <select
             className="select select-bordered select-sm w-full bg-base-100"
             value={filters.device}
-            onChange={(event) =>
-              onChange({
-                ...filters,
-                device: event.target.value as DomainListFilters["device"],
-              })
-            }
+            onChange={(event) => {
+              const value = event.target.value;
+              if (
+                value === "all" ||
+                value === "both" ||
+                value === "desktop" ||
+                value === "mobile"
+              ) {
+                onChange({ ...filters, device: value });
+              }
+            }}
           >
             <option value="all">All devices</option>
             {options.devices.map((option) => (
@@ -202,35 +221,6 @@ export function DomainListFilterBar({
           </button>
         )}
       </div>
-    </div>
-  );
-}
-
-function FilterPanelHeader({
-  activeFilterCount,
-  onReset,
-}: {
-  activeFilterCount: number;
-  onReset: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-semibold">Refine results</p>
-        {activeFilterCount > 0 && (
-          <span className="badge badge-xs badge-primary border-0 text-primary-content">
-            {activeFilterCount} active
-          </span>
-        )}
-      </div>
-      <button
-        className="btn btn-xs btn-ghost gap-1"
-        onClick={onReset}
-        disabled={activeFilterCount === 0}
-      >
-        <RotateCcw className="size-3" />
-        Clear all
-      </button>
     </div>
   );
 }
@@ -296,9 +286,7 @@ export function applyDomainListFilters<T extends DomainFilterableConfig>(
   });
 }
 
-export function getDomainListFilterOptions<T extends DomainFilterableConfig>(
-  configs: T[],
-): {
+export function getDomainListFilterOptions(configs: DomainFilterableConfig[]): {
   devices: DomainListFilterOption[];
   locations: DomainListFilterOption[];
 } {
@@ -321,7 +309,7 @@ export function getDomainListFilterOptions<T extends DomainFilterableConfig>(
   const locations = Array.from(locationMap, ([code, label]) => ({
     value: String(code),
     label,
-  })).sort((a, b) => a.label.localeCompare(b.label));
+  })).toSorted((a, b) => a.label.localeCompare(b.label));
 
   return { devices, locations };
 }

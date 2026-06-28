@@ -190,8 +190,8 @@ describe("getDomainListFilterOptions", () => {
       { value: "mobile", label: "Mobile" },
     ]);
     expect(options.locations).toEqual([
-      { value: "2250", label: "France" },
-      { value: "2826", label: "United Kingdom" },
+      { value: "2250", label: "FR" },
+      { value: "2826", label: "UK" },
     ]);
   });
 });

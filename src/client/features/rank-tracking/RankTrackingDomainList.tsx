@@ -53,7 +53,7 @@ export function RankTrackingDomainList({
     queryKey: ["rankTrackingConfigSummaries", projectId],
     queryFn: () => getRankTrackingConfigSummaries({ data: { projectId } }),
   });
-  const allSummaries = summaries ?? [];
+  const allSummaries = useMemo(() => summaries ?? [], [summaries]);
   const filteredSummaries = useMemo(
     () => applyDomainListFilters(allSummaries, filters),
     [allSummaries, filters],
