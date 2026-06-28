@@ -77,6 +77,34 @@ export function estimateRankCheckCredits(
 // Schedule
 // ---------------------------------------------------------------------------
 
+type ScheduledRankTrackingInterval = Exclude<
+  RankTrackingConfig["scheduleInterval"],
+  "manual"
+>;
+
+export function isScheduledRankTrackingInterval(
+  interval: RankTrackingConfig["scheduleInterval"],
+): interval is ScheduledRankTrackingInterval {
+  return interval !== "manual";
+}
+
+function endOfMonthWithTime(source: Date, monthOffset = 0): Date {
+  const endOfMonth = new Date(
+    Date.UTC(
+      source.getUTCFullYear(),
+      source.getUTCMonth() + monthOffset + 1,
+      0,
+    ),
+  );
+  endOfMonth.setUTCHours(
+    source.getUTCHours(),
+    source.getUTCMinutes(),
+    source.getUTCSeconds(),
+    source.getUTCMilliseconds(),
+  );
+  return endOfMonth;
+}
+
 /**
  * Compute the next check time for a scheduled config.
  *
@@ -88,15 +116,41 @@ export function estimateRankCheckCredits(
  * Otherwise a random hour (04–09 UTC) and minute are chosen.
  */
 export function computeNextCheckAt(
-  interval: "daily" | "weekly",
+  interval: ScheduledRankTrackingInterval,
   previousNextCheckAt?: string | null,
 ): string {
+  const now = Date.now();
+
+  if (interval === "monthly") {
+    if (previousNextCheckAt) {
+      const anchor = new Date(previousNextCheckAt);
+      let monthOffset = 1;
+      let nextDate = endOfMonthWithTime(anchor, monthOffset);
+      while (nextDate.getTime() <= now) {
+        monthOffset += 1;
+        nextDate = endOfMonthWithTime(anchor, monthOffset);
+      }
+      return nextDate.toISOString();
+    }
+
+    const hour = 4 + Math.floor(Math.random() * 6);
+    const minute = Math.floor(Math.random() * 60);
+    const nextDate = endOfMonthWithTime(new Date());
+    nextDate.setUTCHours(hour, minute, 0, 0);
+    if (nextDate.getTime() <= now) {
+      const followingMonth = endOfMonthWithTime(nextDate, 1);
+      followingMonth.setUTCHours(hour, minute, 0, 0);
+      return followingMonth.toISOString();
+    }
+    return nextDate.toISOString();
+  }
+
   const daysAhead = interval === "daily" ? 1 : 7;
 
   if (previousNextCheckAt) {
     const anchor = new Date(previousNextCheckAt).getTime();
     const intervalMs = daysAhead * 86_400_000;
-    const steps = Math.floor(Math.max(0, Date.now() - anchor) / intervalMs) + 1;
+    const steps = Math.floor(Math.max(0, now - anchor) / intervalMs) + 1;
     return new Date(anchor + steps * intervalMs).toISOString();
   }
 
@@ -122,6 +176,7 @@ export function scheduleLabel(
 ): string {
   if (interval === "daily") return "Daily";
   if (interval === "weekly") return "Weekly";
+  if (interval === "monthly") return "Monthly";
   return "Manual";
 }
 

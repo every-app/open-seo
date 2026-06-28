@@ -94,7 +94,11 @@ function RankTrackingDomainDetailInner({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [comparePeriod, setComparePeriod] = useState<ComparePeriod>(
-    config.scheduleInterval === "daily" ? "1d" : "7d",
+    config.scheduleInterval === "daily"
+      ? "1d"
+      : config.scheduleInterval === "monthly"
+        ? "30d"
+        : "7d",
   );
   const [activeDevice, setActiveDevice] = useState<"desktop" | "mobile">(
     config.devices === "mobile" ? "mobile" : "desktop",

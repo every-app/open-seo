@@ -48,9 +48,9 @@ export function RankTrackingConfigModal({
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
   const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
-  const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
-    existingConfig?.scheduleInterval ?? "weekly",
-  );
+  const [schedule, setSchedule] = useState<
+    RankTrackingConfig["scheduleInterval"]
+  >(existingConfig?.scheduleInterval ?? "weekly");
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
   const createMutation = useMutation({
@@ -239,6 +239,7 @@ export function RankTrackingConfigModal({
               if (
                 value === "daily" ||
                 value === "weekly" ||
+                value === "monthly" ||
                 value === "manual"
               ) {
                 setSchedule(value);
@@ -247,6 +248,7 @@ export function RankTrackingConfigModal({
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly (end of month)</option>
             <option value="manual">Manual only</option>
           </select>
           {schedule === "daily" && (
@@ -287,7 +289,8 @@ export function RankTrackingConfigModal({
             serpDepth,
             schedule === "manual" ? "live" : "queued",
           );
-          const checksPerMonth = schedule === "daily" ? 30 : 4;
+          const checksPerMonth =
+            schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
           return (
             <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
               <div>
