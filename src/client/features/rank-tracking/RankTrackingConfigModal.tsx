@@ -18,7 +18,6 @@ import {
 } from "@/shared/rank-tracking";
 import {
   LANGUAGE_OPTIONS,
-  LOCATION_OPTIONS,
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
 } from "@/client/features/keywords/locations";
@@ -194,23 +193,13 @@ export function RankTrackingConfigModal({
           <label className="label">
             <span className="label-text font-medium">Country</span>
           </label>
-          <select
-            className="select select-bordered w-full"
+          <LocationSelect
             value={locationCode}
-            onChange={}
-          >
-            {LOCATION_OPTIONS.map((loc) => (
-              <option key={loc.code} value={loc.code}>
-                {loc.label}
-              </option>
-            ))}
-          </select>
-          <LocationSelect value={locationCode} onChange={(e) => {
-              const newLocationCode = Number(e.target.value);
+            onChange={(newLocationCode) => {
               setLocationCode(newLocationCode);
               setLanguageCode(getLanguageCode(newLocationCode));
-            }} />
-
+            }}
+          />
         </div>
 
         <div className="form-control">
