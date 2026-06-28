@@ -133,13 +133,9 @@ export function DomainListFilterBar({
   onReset: () => void;
 }) {
   return (
-    <div className="border-t border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-5 py-3 space-y-3">
-      <FilterPanelHeader
-        activeFilterCount={activeFilterCount}
-        onReset={onReset}
-      />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_12rem_14rem]">
-        <label className="form-control gap-1.5">
+    <div className="border-t border-base-300 px-5 py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <label className="form-control flex-1 gap-1.5">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
             Search
           </span>
@@ -152,7 +148,7 @@ export function DomainListFilterBar({
             }
           />
         </label>
-        <label className="form-control gap-1.5">
+        <label className="form-control gap-1.5 lg:w-44">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
             Device
           </span>
@@ -174,7 +170,7 @@ export function DomainListFilterBar({
             ))}
           </select>
         </label>
-        <label className="form-control gap-1.5">
+        <label className="form-control gap-1.5 lg:w-52">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
             Country
           </span>
@@ -193,6 +189,18 @@ export function DomainListFilterBar({
             ))}
           </select>
         </label>
+        {activeFilterCount > 0 && (
+          <button
+            className="btn btn-ghost btn-sm gap-1.5 self-start lg:self-auto"
+            onClick={onReset}
+          >
+            <RotateCcw className="size-3" />
+            Clear
+            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+              {activeFilterCount}
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );

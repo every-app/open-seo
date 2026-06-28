@@ -30,6 +30,11 @@ type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
 >[number];
 
+// Below this many domains the list is short enough to scan by eye, so the
+// filter controls are more chrome than help. Still shown if filters are active
+// (e.g. archiving dropped the count) so they never get orphaned.
+const FILTER_BAR_MIN_DOMAINS = 6;
+
 export function RankTrackingDomainList({
   projectId,
   onAddDomain,
@@ -89,7 +94,8 @@ export function RankTrackingDomainList({
             Add Domain
           </button>
         </div>
-        {allSummaries.length > 0 && (
+        {(allSummaries.length >= FILTER_BAR_MIN_DOMAINS ||
+          activeFilterCount > 0) && (
           <DomainListFilterBar
             filters={filters}
             options={filterOptions}
@@ -98,7 +104,7 @@ export function RankTrackingDomainList({
             onReset={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
           />
         )}
-        <div className="divide-y divide-base-300">
+        <div className="divide-y divide-base-300 border-t border-base-300">
           {allSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-2">
               <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
