@@ -14,7 +14,6 @@ import {
   DEFAULT_BACKLINKS_PAGE_SIZE,
   backlinksRowsFiltersSchema,
   backlinksRowsModeSchema,
-  backlinksRowsPageRequestSchema,
   backlinksRowsSortFieldSchema,
   backlinksSortOrderSchema,
   backlinksTargetScopeSchema,
@@ -25,6 +24,7 @@ const inputSchema = {
   target: z
     .string()
     .min(1)
+    .max(2048)
     .describe(
       "Domain or URL to analyze (e.g. 'example.com' or 'https://example.com/blog').",
     ),
@@ -85,7 +85,7 @@ function formatStatus(row: {
   isLost?: boolean | null;
   isBroken?: boolean | null;
 }) {
-  const statuses = [];
+  const statuses: string[] = [];
   if (row.isLost) statuses.push("lost");
   if (row.isBroken) statuses.push("broken");
   return statuses.length > 0 ? statuses.join(", ") : "live";
@@ -112,7 +112,7 @@ export const getBacklinksProfileTool = {
   config: {
     title: "Get backlinks profile",
     description:
-      "Returns one bounded page of detailed backlink rows for a domain or page: linking URLs, target URLs, anchors, dofollow/nofollow, authority/spam signals, and lost/broken status. Supports filters, sorting, one_per_domain/as_is mode, and pagination. Charges credits (~200-500 typical). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
+      "Returns one bounded page of detailed backlink rows for a domain or page: linking URLs, target URLs, anchors, dofollow/nofollow, authority/spam signals, and lost/broken status. Supports filters, sorting, one_per_domain/as_is mode, and pagination. Charges credits (~30 per page typical). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
     inputSchema,
     outputSchema: {
       backlinks: backlinksProfileOutputSchema,
@@ -125,8 +125,9 @@ export const getBacklinksProfileTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const parsed = backlinksRowsPageRequestSchema.parse({
-      projectId: args.projectId,
+    // The MCP SDK already validated args against inputSchema (which mirrors
+    // backlinksRowsPageRequestSchema), so pass them straight through.
+    const request = {
       target: args.target,
       scope: args.scope,
       page: args.page,
@@ -135,16 +136,6 @@ export const getBacklinksProfileTool = {
       sortOrder: args.sortOrder,
       filters: args.filters,
       mode: args.mode,
-    });
-    const request = {
-      target: parsed.target,
-      scope: parsed.scope,
-      page: parsed.page,
-      pageSize: parsed.pageSize,
-      sortField: parsed.sortField,
-      sortOrder: parsed.sortOrder,
-      filters: parsed.filters,
-      mode: parsed.mode,
     };
 
     const backlinks = await BacklinksService.profileBacklinksPage(
