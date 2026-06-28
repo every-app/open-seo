@@ -490,6 +490,20 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
   },
 ] as const;
 
+/**
+ * Languages selectable for rank tracking, which runs against the DataForSEO
+ * SERP (Google) API. This is the full set of language codes that API accepts;
+ * source/refresh it from the live endpoint (auth required):
+ *   GET https://api.dataforseo.com/v3/serp/google/languages
+ * (Country list above comes from the sibling Labs endpoint cited at the top of
+ * this file: /v3/dataforseo_labs/locations_and_languages.)
+ *
+ * `code` is the DataForSEO `language_code` (authoritative); `label` is its
+ * `language_name`, lightly cleaned for display. Deviations from the raw
+ * endpoint: the deprecated `iw` Hebrew alias and the redundant `no` are
+ * dropped (Norway uses `nb`, which both SERP and Labs accept). Every country
+ * default in LOCATION_OPTIONS must appear here so the picker can show it.
+ */
 export const LANGUAGE_OPTIONS = [
   { code: "af", label: "Afrikaans" },
   { code: "ak", label: "Akan" },
