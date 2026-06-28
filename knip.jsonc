@@ -1,38 +1,32 @@
 {
-  "entry": [
-    // Detect Tanstack Start Routes
-    "cli-auth.ts",
-    "src/start.ts",
-    "src/server.ts",
-    "src/router.tsx",
-    "src/routes/**/*.ts",
-    "src/routes/**/*.tsx",
-    // Drizzle config (plugin disabled due to cloudflare:workers import issues)
-    "drizzle.config.ts",
-    // Package script entrypoints
-    "scripts/backlinks-cost-profile.ts",
-    "scripts/brand-lookup-cost-profile.ts",
-    "scripts/d1-default-project-cleanup.ts",
-    "scripts/release-notes.mjs",
-    "scripts/seed-rank-tracking.ts",
-    // DB schema — exports consumed via `import * as schema` / drizzle()
-    "src/db/index.ts",
-    "src/db/app.schema.ts",
-    "src/db/better-auth-schema.ts",
-    // Package scripts and one-off maintenance utilities
-    "scripts/backlinks-cost-profile.ts",
-    "scripts/brand-lookup-cost-profile.ts",
-    "scripts/d1-default-project-cleanup.ts",
-    "scripts/release-notes.mjs",
-    "scripts/seed-rank-tracking.ts",
-  ],
-  "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
-  "ignore": ["drizzle-prod.config.ts"],
-  // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
-  "drizzle": false,
-  "ignoreDependencies": [
-    // Tailwindcss used via @tailwindcss/vite plugin
-    "tailwindcss",
-    "daisyui",
-  ],
+	"entry": [
+		// Detect Tanstack Start Routes
+		"cli-auth.ts",
+		"src/start.ts",
+		"src/server.ts",
+		"src/router.tsx",
+		"src/routes/**/*.ts",
+		"src/routes/**/*.tsx",
+		// Drizzle config (plugin disabled due to cloudflare:workers import issues)
+		"drizzle.config.ts",
+		// DB schema — exports consumed via `import * as schema` / drizzle()
+		"src/db/index.ts",
+		"src/db/app.schema.ts",
+		"src/db/better-auth-schema.ts",
+	],
+	"project": [
+		"**/*.{js,mjs,ts,tsx}",
+		"!src/routeTree.gen.ts",
+		"!web/**"
+	],
+	"ignore": [
+		"drizzle-prod.config.ts"
+	],
+	// Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
+	"drizzle": false,
+	"ignoreDependencies": [
+		// Tailwindcss used via @tailwindcss/vite plugin
+		"tailwindcss",
+		"daisyui",
+	],
 }
