@@ -1,5 +1,10 @@
 import { RotateCcw } from "lucide-react";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import { LOCATIONS } from "@/client/features/keywords/locations";
+import { devicesLabel } from "@/shared/rank-tracking";
+import type {
+  RankTrackingConfig,
+  RankTrackingRow,
+} from "@/types/schemas/rank-tracking";
 
 export type Filters = {
   include: string;
@@ -10,6 +15,22 @@ export type Filters = {
   maxMobilePos: string;
 };
 
+type DomainFilterableConfig = Pick<
+  RankTrackingConfig,
+  "domain" | "devices" | "locationCode"
+>;
+
+export type DomainListFilters = {
+  query: string;
+  device: "all" | RankTrackingConfig["devices"];
+  locationCode: string;
+};
+
+type DomainListFilterOption = {
+  value: string;
+  label: string;
+};
+
 export const EMPTY_FILTERS: Filters = {
   include: "",
   exclude: "",
@@ -18,6 +39,18 @@ export const EMPTY_FILTERS: Filters = {
   minMobilePos: "",
   maxMobilePos: "",
 };
+
+export const EMPTY_DOMAIN_LIST_FILTERS: DomainListFilters = {
+  query: "",
+  device: "all",
+  locationCode: "all",
+};
+
+const DEVICE_FILTER_ORDER: RankTrackingConfig["devices"][] = [
+  "both",
+  "desktop",
+  "mobile",
+];
 
 export function FilterPanel({
   filters,
@@ -97,6 +130,101 @@ export function FilterPanel({
   );
 }
 
+export function DomainListFilterBar({
+  filters,
+  options,
+  activeFilterCount,
+  onChange,
+  onReset,
+}: {
+  filters: DomainListFilters;
+  options: {
+    devices: DomainListFilterOption[];
+    locations: DomainListFilterOption[];
+  };
+  activeFilterCount: number;
+  onChange: (filters: DomainListFilters) => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="border-t border-base-300 px-5 py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <label className="form-control flex-1 gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Search
+          </span>
+          <input
+            className="input input-bordered input-sm w-full bg-base-100"
+            placeholder="Domain or website"
+            value={filters.query}
+            onChange={(event) =>
+              onChange({ ...filters, query: event.target.value })
+            }
+          />
+        </label>
+        <label className="form-control gap-1.5 lg:w-44">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Device
+          </span>
+          <select
+            className="select select-bordered select-sm w-full bg-base-100"
+            value={filters.device}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (
+                value === "all" ||
+                value === "both" ||
+                value === "desktop" ||
+                value === "mobile"
+              ) {
+                onChange({ ...filters, device: value });
+              }
+            }}
+          >
+            <option value="all">All devices</option>
+            {options.devices.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-control gap-1.5 lg:w-52">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Country
+          </span>
+          <select
+            className="select select-bordered select-sm w-full bg-base-100"
+            value={filters.locationCode}
+            onChange={(event) =>
+              onChange({ ...filters, locationCode: event.target.value })
+            }
+          >
+            <option value="all">All countries</option>
+            {options.locations.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {activeFilterCount > 0 && (
+          <button
+            className="btn btn-ghost btn-sm gap-1.5 self-start lg:self-auto"
+            onClick={onReset}
+          >
+            <RotateCcw className="size-3" />
+            Clear
+            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+              {activeFilterCount}
+            </span>
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RangeFilter({
   title,
   minValue,
@@ -133,6 +261,57 @@ function RangeFilter({
       </div>
     </div>
   );
+}
+
+export function applyDomainListFilters<T extends DomainFilterableConfig>(
+  configs: T[],
+  filters: DomainListFilters,
+): T[] {
+  const query = filters.query.trim().toLowerCase();
+  const locationCode =
+    filters.locationCode === "all" ? null : Number(filters.locationCode);
+
+  return configs.filter((config) => {
+    if (query && !config.domain.toLowerCase().includes(query)) return false;
+
+    if (filters.device !== "all" && config.devices !== filters.device) {
+      return false;
+    }
+
+    if (locationCode !== null && config.locationCode !== locationCode) {
+      return false;
+    }
+
+    return true;
+  });
+}
+
+export function getDomainListFilterOptions(configs: DomainFilterableConfig[]): {
+  devices: DomainListFilterOption[];
+  locations: DomainListFilterOption[];
+} {
+  const deviceValues = new Set(configs.map((config) => config.devices));
+  const devices = DEVICE_FILTER_ORDER.filter((device) =>
+    deviceValues.has(device),
+  ).map((device) => ({
+    value: device,
+    label: devicesLabel(device),
+  }));
+
+  const locationMap = new Map<number, string>();
+  for (const config of configs) {
+    locationMap.set(
+      config.locationCode,
+      LOCATIONS[config.locationCode] ?? String(config.locationCode),
+    );
+  }
+
+  const locations = Array.from(locationMap, ([code, label]) => ({
+    value: String(code),
+    label,
+  })).toSorted((a, b) => a.label.localeCompare(b.label));
+
+  return { devices, locations };
 }
 
 export function applyFilters(
@@ -206,5 +385,15 @@ export function countActiveFilters(filters: Filters): number {
   if (filters.exclude) count++;
   if (filters.minDesktopPos || filters.maxDesktopPos) count++;
   if (filters.minMobilePos || filters.maxMobilePos) count++;
+  return count;
+}
+
+export function countActiveDomainListFilters(
+  filters: DomainListFilters,
+): number {
+  let count = 0;
+  if (filters.query.trim()) count++;
+  if (filters.device !== "all") count++;
+  if (filters.locationCode !== "all") count++;
   return count;
 }

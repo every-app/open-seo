@@ -1,11 +1,23 @@
 import { describe, expect, it } from "vitest";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import {
+  applyDomainListFilters,
   applyFilters,
+  countActiveDomainListFilters,
+  EMPTY_DOMAIN_LIST_FILTERS,
   EMPTY_FILTERS,
+  getDomainListFilterOptions,
   matchesPositionFilter,
+  type DomainListFilters,
   type Filters,
 } from "./RankTrackingFilters";
+
+type DomainSummary = {
+  id: string;
+  domain: string;
+  devices: "both" | "desktop" | "mobile";
+  locationCode: number;
+};
 
 function makeRow(
   keyword: string,
@@ -35,6 +47,21 @@ function makeRow(
 
 function withFilters(overrides: Partial<Filters>): Filters {
   return { ...EMPTY_FILTERS, ...overrides };
+}
+
+function makeSummary(
+  id: string,
+  domain: string,
+  devices: DomainSummary["devices"],
+  locationCode: number,
+): DomainSummary {
+  return { id, domain, devices, locationCode };
+}
+
+function withDomainFilters(
+  overrides: Partial<DomainListFilters>,
+): DomainListFilters {
+  return { ...EMPTY_DOMAIN_LIST_FILTERS, ...overrides };
 }
 
 describe("matchesPositionFilter", () => {
@@ -82,5 +109,104 @@ describe("applyFilters", () => {
         withFilters({ maxDesktopPos: "0", maxMobilePos: "0" }),
       ).map((row) => row.keyword),
     ).toEqual(["unranked both"]);
+  });
+});
+
+describe("applyDomainListFilters", () => {
+  const summaries = [
+    makeSummary("alpha-us-mobile", "alpha.example.com", "mobile", 2840),
+    makeSummary("alpha-fr-desktop", "alpha.example.com", "desktop", 2250),
+    makeSummary("alpha-fr-mobile", "alpha.example.com", "mobile", 2250),
+    makeSummary("bravo-fr-both", "bravo.example.com", "both", 2250),
+    makeSummary("charlie-uk-desktop", "charlie.example.com", "desktop", 2826),
+  ];
+
+  it("narrows by text query and restores all when cleared", () => {
+    expect(
+      applyDomainListFilters(
+        summaries,
+        withDomainFilters({ query: "ALPHA" }),
+      ).map((summary) => summary.id),
+    ).toEqual(["alpha-us-mobile", "alpha-fr-desktop", "alpha-fr-mobile"]);
+
+    expect(
+      applyDomainListFilters(summaries, EMPTY_DOMAIN_LIST_FILTERS).map(
+        (summary) => summary.id,
+      ),
+    ).toEqual(summaries.map((summary) => summary.id));
+  });
+
+  it("filters by device", () => {
+    expect(
+      applyDomainListFilters(
+        summaries,
+        withDomainFilters({ device: "mobile" }),
+      ).map((summary) => summary.id),
+    ).toEqual(["alpha-us-mobile", "alpha-fr-mobile"]);
+  });
+
+  it("filters by country", () => {
+    expect(
+      applyDomainListFilters(
+        summaries,
+        withDomainFilters({ locationCode: "2250" }),
+      ).map((summary) => summary.id),
+    ).toEqual(["alpha-fr-desktop", "alpha-fr-mobile", "bravo-fr-both"]);
+  });
+
+  it("combines domain, device, and country filters with AND semantics", () => {
+    expect(
+      applyDomainListFilters(
+        summaries,
+        withDomainFilters({
+          query: "alpha",
+          device: "mobile",
+          locationCode: "2250",
+        }),
+      ).map((summary) => summary.id),
+    ).toEqual(["alpha-fr-mobile"]);
+  });
+
+  it("returns an empty list when filters match nothing", () => {
+    expect(
+      applyDomainListFilters(
+        summaries,
+        withDomainFilters({ query: "missing", device: "mobile" }),
+      ),
+    ).toEqual([]);
+  });
+});
+
+describe("getDomainListFilterOptions", () => {
+  it("derives distinct device and country options from available summaries", () => {
+    const options = getDomainListFilterOptions([
+      makeSummary("a", "a.com", "mobile", 2250),
+      makeSummary("b", "b.com", "desktop", 2250),
+      makeSummary("c", "c.com", "mobile", 2826),
+    ]);
+
+    expect(options.devices).toEqual([
+      { value: "desktop", label: "Desktop" },
+      { value: "mobile", label: "Mobile" },
+    ]);
+    expect(options.locations).toEqual([
+      { value: "2250", label: "FR" },
+      { value: "2826", label: "UK" },
+    ]);
+  });
+});
+
+describe("countActiveDomainListFilters", () => {
+  it("counts non-empty domain list filters", () => {
+    expect(countActiveDomainListFilters(EMPTY_DOMAIN_LIST_FILTERS)).toBe(0);
+    expect(
+      countActiveDomainListFilters(
+        withDomainFilters({
+          query: "alpha",
+          device: "desktop",
+          locationCode: "2840",
+        }),
+      ),
+    ).toBe(3);
   });
 });
