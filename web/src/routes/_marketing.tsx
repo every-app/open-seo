@@ -9,35 +9,72 @@ import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SiteFooter } from "@/components/site-footer";
 import { featureGroups } from "@/lib/feature-pages";
 
-const githubStarCount = "2.1k";
+const GITHUB_REPO = "every-app/open-seo";
+// Used if GitHub is unreachable at build time so the header never renders empty.
+const FALLBACK_STAR_COUNT = "2.1k";
 
-const mobileNavItems = [
-  {
-    label: "Product",
-    links: [
-      { label: "Features", href: "/features" },
-      { label: "Pricing", href: "/pricing" },
-    ],
-  },
-  {
-    label: "Resources",
-    links: [
-      { label: "Blog", href: "/blogs" },
-      { label: "Why Open Source?", href: "/open-source-seo" },
-      { label: "MCP Setup", href: "/docs/mcp" },
-      { label: "Skills", href: "/docs/skills" },
-    ],
-  },
-  {
-    label: "Community",
-    links: [
-      {
-        label: `GitHub ${githubStarCount}`,
-        href: "https://github.com/every-app/open-seo",
+// Round to the nearest hundred and render in thousands, e.g. 3140 -> "3.1k".
+function formatStarCount(count: number): string {
+  if (count < 1000) return String(count);
+  return `${(Math.round(count / 100) / 10).toString()}k`;
+}
+
+async function fetchGithubStarCount(): Promise<string> {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        // GitHub rejects requests without a User-Agent.
+        "User-Agent": "openseo-landing",
       },
-    ],
-  },
-];
+    });
+    if (!res.ok) return FALLBACK_STAR_COUNT;
+    const data = (await res.json()) as { stargazers_count?: number };
+    return typeof data.stargazers_count === "number"
+      ? formatStarCount(data.stargazers_count)
+      : FALLBACK_STAR_COUNT;
+  } catch {
+    return FALLBACK_STAR_COUNT;
+  }
+}
+
+// Memoized for the duration of a build so prerendering every marketing page
+// only hits GitHub once instead of once per page.
+let starCountPromise: Promise<string> | null = null;
+function loadGithubStarCount(): Promise<string> {
+  starCountPromise ??= fetchGithubStarCount();
+  return starCountPromise;
+}
+
+function getMobileNavItems(githubStarCount: string) {
+  return [
+    {
+      label: "Product",
+      links: [
+        { label: "Features", href: "/features" },
+        { label: "Pricing", href: "/pricing" },
+      ],
+    },
+    {
+      label: "Resources",
+      links: [
+        { label: "Blog", href: "/blogs" },
+        { label: "Why Open Source?", href: "/open-source-seo" },
+        { label: "MCP Setup", href: "/docs/mcp" },
+        { label: "Skills", href: "/docs/skills" },
+      ],
+    },
+    {
+      label: "Community",
+      links: [
+        {
+          label: `GitHub ${githubStarCount}`,
+          href: "https://github.com/every-app/open-seo",
+        },
+      ],
+    },
+  ];
+}
 
 function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -85,12 +122,20 @@ function CloseIcon({ size = 28 }: { size?: number }) {
 }
 
 export const Route = createFileRoute("/_marketing")({
+  // Runs at prerender/SSR time, so the count is baked into the static HTML that
+  // Cloudflare serves from the edge — no per-viewer request for it.
+  loader: async () => ({ githubStarCount: await loadGithubStarCount() }),
+  // The value is fixed per build; never refetch it on client navigation.
+  staleTime: Infinity,
   component: MarketingLayout,
 });
 
 function MarketingLayout() {
+  const { githubStarCount } = Route.useLoaderData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { pathname } = useLocation();
+
+  const mobileNavItems = getMobileNavItems(githubStarCount);
   // The home route owns the full viewport width (and its own footer/CTA band);
   // every other marketing page gets the shared marketing canvas and footer.
   const isHome = pathname === "/";
