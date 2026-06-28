@@ -77,7 +77,7 @@ export function estimateRankCheckCredits(
 // Schedule
 // ---------------------------------------------------------------------------
 
-export type ScheduledRankTrackingInterval = Exclude<
+type ScheduledRankTrackingInterval = Exclude<
   RankTrackingConfig["scheduleInterval"],
   "manual"
 >;
