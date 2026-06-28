@@ -25,7 +25,7 @@ const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
   "MCP server and agent skills for Claude, Cursor, and ChatGPT",
   "Search Console integration that never uses credits",
-  "Includes $20.00 of Usage Credits each month",
+  "Includes $10.00 of Usage Credits each month",
 ];
 
 export const Route = createFileRoute("/_authenticated/subscribe")({
@@ -251,7 +251,7 @@ function SubscribePageContent() {
       <div className="rounded-lg border border-base-300 p-5 space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <span className="font-semibold">Base Plan</span>
-          <span className="text-lg font-semibold tabular-nums">$20/month</span>
+          <span className="text-lg font-semibold tabular-nums">$10/month</span>
         </div>
 
         <ul className="space-y-2">

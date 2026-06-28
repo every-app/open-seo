@@ -20,7 +20,10 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
-import { computeNextCheckAt } from "@/shared/rank-tracking";
+import {
+  computeNextCheckAt,
+  isScheduledRankTrackingInterval,
+} from "@/shared/rank-tracking";
 import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
@@ -147,11 +150,11 @@ export default {
             `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
           );
           // Still advance schedule so this config doesn't stay due forever
-          const skipInterval =
-            config.scheduleInterval === "daily" ||
-            config.scheduleInterval === "weekly"
-              ? config.scheduleInterval
-              : null;
+          const skipInterval = isScheduledRankTrackingInterval(
+            config.scheduleInterval,
+          )
+            ? config.scheduleInterval
+            : null;
           if (skipInterval) {
             await RankTrackingRepository.updateConfig(
               config.id,
@@ -168,11 +171,11 @@ export default {
         }
 
         // Advance nextCheckAt immediately to prevent retry storms if the run fails
-        const interval =
-          config.scheduleInterval === "daily" ||
-          config.scheduleInterval === "weekly"
-            ? config.scheduleInterval
-            : null;
+        const interval = isScheduledRankTrackingInterval(
+          config.scheduleInterval,
+        )
+          ? config.scheduleInterval
+          : null;
         if (interval) {
           await RankTrackingRepository.updateConfig(
             config.id,

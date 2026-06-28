@@ -16,6 +16,7 @@ import {
   type TopPagesPageServiceInput,
 } from "@/server/features/backlinks/services/backlinksServiceData";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import type { CreditFeature } from "@/shared/billing-credit-features";
 
 const defaultCache: BacklinksCache = {
   get: getCached,
@@ -39,12 +40,22 @@ function createBacklinksService(cache: BacklinksCache = defaultCache) {
     async profileOverview(
       input: BacklinksLookupInput,
       billingCustomer: BillingCustomerContext,
+      // Lets a caller (e.g. onboarding) attribute the spend to its own credit
+      // feature. Applied to the DataForSEO calls, not the cache key, so cached
+      // results stay shared across callers.
+      creditFeature?: CreditFeature,
     ) {
       const cacheKey = await buildCacheKey("backlinks:overview", {
         ...buildTargetCacheInput(input, billingCustomer),
       });
 
-      return profileBacklinksOverview(cache, cacheKey, input, billingCustomer);
+      return profileBacklinksOverview(
+        cache,
+        cacheKey,
+        input,
+        billingCustomer,
+        creditFeature,
+      );
     },
     async profileBacklinksPage(
       input: BacklinksRowsPageServiceInput,

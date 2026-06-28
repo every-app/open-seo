@@ -16,6 +16,7 @@ import {
   estimateRankCheckCredits,
   computeNextCheckAt,
   devicesCount,
+  isScheduledRankTrackingInterval,
   MAX_KEYWORDS_PER_CONFIG,
   MAX_CONFIGS_PER_PROJECT,
 } from "@/shared/rank-tracking";
@@ -61,10 +62,9 @@ async function createConfig(input: {
 
   const configId = crypto.randomUUID();
   const scheduleInterval = input.scheduleInterval ?? "weekly";
-  const nextCheckAt =
-    scheduleInterval === "daily" || scheduleInterval === "weekly"
-      ? computeNextCheckAt(scheduleInterval)
-      : null;
+  const nextCheckAt = isScheduledRankTrackingInterval(scheduleInterval)
+    ? computeNextCheckAt(scheduleInterval)
+    : null;
 
   await RankTrackingRepository.createConfig({
     id: configId,

@@ -324,7 +324,7 @@ export const featurePages = {
       {
         question: "How does this compare to Semrush Domain Overview?",
         answer:
-          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app is $20/month and includes usage credits.",
+          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app is $10/month and includes usage credits.",
       },
       {
         question: "Can OpenSEO help with competitor keyword analysis?",

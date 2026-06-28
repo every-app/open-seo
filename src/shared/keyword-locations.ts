@@ -490,6 +490,153 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
   },
 ] as const;
 
+/**
+ * Languages selectable for rank tracking, which runs against the DataForSEO
+ * SERP (Google) API. This is the full set of language codes that API accepts;
+ * source/refresh it from the live endpoint (auth required):
+ *   GET https://api.dataforseo.com/v3/serp/google/languages
+ * (Country list above comes from the sibling Labs endpoint cited at the top of
+ * this file: /v3/dataforseo_labs/locations_and_languages.)
+ *
+ * `code` is the DataForSEO `language_code` (authoritative); `label` is its
+ * `language_name`, lightly cleaned for display. Deviations from the raw
+ * endpoint: the deprecated `iw` Hebrew alias and the redundant `no` are
+ * dropped (Norway uses `nb`, which both SERP and Labs accept). Every country
+ * default in LOCATION_OPTIONS must appear here so the picker can show it.
+ *
+ * This is the master list; the picker shows a per-country subset via
+ * getLanguageOptions() below.
+ */
+const LANGUAGE_OPTIONS = [
+  { code: "af", label: "Afrikaans" },
+  { code: "ak", label: "Akan" },
+  { code: "sq", label: "Albanian" },
+  { code: "am", label: "Amharic" },
+  { code: "ar", label: "Arabic" },
+  { code: "hy", label: "Armenian" },
+  { code: "az", label: "Azerbaijani" },
+  { code: "ban", label: "Balinese" },
+  { code: "eu", label: "Basque" },
+  { code: "be", label: "Belarusian" },
+  { code: "bn", label: "Bengali" },
+  { code: "bs", label: "Bosnian" },
+  { code: "bg", label: "Bulgarian" },
+  { code: "my", label: "Burmese" },
+  { code: "ca", label: "Catalan" },
+  { code: "ceb", label: "Cebuano" },
+  { code: "ny", label: "Chichewa" },
+  { code: "zh-CN", label: "Chinese (Simplified)" },
+  { code: "zh-TW", label: "Chinese (Traditional)" },
+  { code: "hr", label: "Croatian" },
+  { code: "cs", label: "Czech" },
+  { code: "da", label: "Danish" },
+  { code: "nl", label: "Dutch" },
+  { code: "en", label: "English" },
+  { code: "et", label: "Estonian" },
+  { code: "ee", label: "Ewe" },
+  { code: "fo", label: "Faroese" },
+  { code: "fa", label: "Farsi" },
+  { code: "fil", label: "Filipino" },
+  { code: "fi", label: "Finnish" },
+  { code: "fr", label: "French" },
+  { code: "fy", label: "Frisian" },
+  { code: "gaa", label: "Ga" },
+  { code: "gl", label: "Galician" },
+  { code: "lg", label: "Ganda" },
+  { code: "ka", label: "Georgian" },
+  { code: "de", label: "German" },
+  { code: "el", label: "Greek" },
+  { code: "gu", label: "Gujarati" },
+  { code: "ht", label: "Haitian" },
+  { code: "ha", label: "Hausa" },
+  { code: "he", label: "Hebrew" },
+  { code: "hi", label: "Hindi" },
+  { code: "hu", label: "Hungarian" },
+  { code: "is", label: "Icelandic" },
+  { code: "bem", label: "IciBemba" },
+  { code: "ig", label: "Igbo" },
+  { code: "id", label: "Indonesian" },
+  { code: "ga", label: "Irish" },
+  { code: "it", label: "Italian" },
+  { code: "ja", label: "Japanese" },
+  { code: "kn", label: "Kannada" },
+  { code: "kk", label: "Kazakh" },
+  { code: "km", label: "Khmer" },
+  { code: "rw", label: "Kinyarwanda" },
+  { code: "rn", label: "Kirundi" },
+  { code: "kg", label: "Kongo" },
+  { code: "ko", label: "Korean" },
+  { code: "mfe", label: "Kreol morisien" },
+  { code: "crs", label: "Kreol Seselwa" },
+  { code: "kri", label: "Krio" },
+  { code: "ckb", label: "Kurdish" },
+  { code: "ky", label: "Kyrgyz" },
+  { code: "lo", label: "Lao" },
+  { code: "lv", label: "Latvian" },
+  { code: "ln", label: "Lingala" },
+  { code: "lt", label: "Lithuanian" },
+  { code: "ach", label: "Luo" },
+  { code: "mk", label: "Macedonian" },
+  { code: "mg", label: "Malagasy" },
+  { code: "ms", label: "Malay" },
+  { code: "ml", label: "Malayalam" },
+  { code: "mt", label: "Maltese" },
+  { code: "mi", label: "Maori" },
+  { code: "mr", label: "Marathi" },
+  { code: "mn", label: "Mongolian" },
+  { code: "ne", label: "Nepali" },
+  { code: "nso", label: "Northern Sotho" },
+  { code: "nb", label: "Norwegian (Bokmål)" },
+  { code: "nyn", label: "Nyankole" },
+  { code: "om", label: "Oromo" },
+  { code: "ps", label: "Pashto" },
+  { code: "pcm", label: "Pidgin" },
+  { code: "pl", label: "Polish" },
+  { code: "pt", label: "Portuguese" },
+  { code: "pt-BR", label: "Portuguese (Brazil)" },
+  { code: "pt-PT", label: "Portuguese (Portugal)" },
+  { code: "pa", label: "Punjabi" },
+  { code: "qu", label: "Quechua" },
+  { code: "ro", label: "Romanian" },
+  { code: "rm", label: "Romansh" },
+  { code: "ru", label: "Russian" },
+  { code: "sr", label: "Serbian" },
+  { code: "sr-Latn", label: "Serbian (Latin)" },
+  { code: "sr-ME", label: "Serbian (Montenegro)" },
+  { code: "st", label: "Sesotho" },
+  { code: "sn", label: "Shona" },
+  { code: "loz", label: "Silozi" },
+  { code: "sd", label: "Sindhi" },
+  { code: "si", label: "Sinhalese" },
+  { code: "sk", label: "Slovak" },
+  { code: "sl", label: "Slovenian" },
+  { code: "so", label: "Somali" },
+  { code: "es", label: "Spanish" },
+  { code: "es-419", label: "Spanish (Latin America)" },
+  { code: "sw", label: "Swahili" },
+  { code: "sv", label: "Swedish" },
+  { code: "tl", label: "Tagalog" },
+  { code: "tg", label: "Tajik" },
+  { code: "ta", label: "Tamil" },
+  { code: "te", label: "Telugu" },
+  { code: "th", label: "Thai" },
+  { code: "ti", label: "Tigrinya" },
+  { code: "to", label: "Tonga (Tonga Islands)" },
+  { code: "lua", label: "Tshiluba" },
+  { code: "tn", label: "Tswana" },
+  { code: "tum", label: "Tumbuka" },
+  { code: "tr", label: "Turkish" },
+  { code: "tk", label: "Turkmen" },
+  { code: "uk", label: "Ukrainian" },
+  { code: "ur", label: "Urdu" },
+  { code: "uz", label: "Uzbek" },
+  { code: "vi", label: "Vietnamese" },
+  { code: "cy", label: "Welsh" },
+  { code: "wo", label: "Wolof" },
+  { code: "xh", label: "Xhosa" },
+  { code: "yo", label: "Yoruba" },
+  { code: "zu", label: "Zulu" },
+] as const;
 /** Countries usable by DataForSEO Labs features (domain overview etc.). */
 export const LABS_LOCATION_OPTIONS = LOCATION_OPTIONS.filter(
   (option) => !option.googleAdsOnly,
@@ -513,6 +660,50 @@ const LOCATION_LANGUAGE: Record<number, string> = Object.fromEntries(
 
 export function getLanguageCode(locationCode: number): string {
   return LOCATION_LANGUAGE[locationCode] ?? "en";
+}
+
+/**
+ * Countries where DataForSEO offers more than one language, from the Labs
+ * locations_and_languages endpoint (each country's default is included).
+ * Every other country offers just its single default (see getLanguageOptions);
+ * googleAdsOnly countries have no per-country language data, so they fall back
+ * to the default too. Keep each list's codes present in LANGUAGE_OPTIONS.
+ */
+const MULTI_LANGUAGE_LOCATIONS: Record<number, readonly string[]> = {
+  2012: ["ar", "fr"], // Algeria
+  2056: ["de", "fr", "nl"], // Belgium
+  2124: ["en", "fr"], // Canada
+  2196: ["el", "en"], // Cyprus
+  2300: ["el", "en"], // Greece
+  2344: ["en", "zh-TW"], // Hong Kong
+  2356: ["en", "hi"], // India
+  2360: ["en", "id"], // Indonesia
+  2376: ["ar", "he"], // Israel
+  2458: ["en", "ms"], // Malaysia
+  2504: ["ar", "fr"], // Morocco
+  2586: ["en", "ur"], // Pakistan
+  2608: ["en", "tl"], // Philippines
+  2702: ["en", "zh-CN"], // Singapore
+  2756: ["de", "fr", "it"], // Switzerland
+  2784: ["ar", "en"], // United Arab Emirates
+  2804: ["ru", "uk"], // Ukraine
+  2818: ["ar", "en"], // Egypt
+  2840: ["en", "es"], // United States
+  2704: ["en", "vi"], // Vietnam
+};
+
+/**
+ * Languages to offer for a location's rank-tracking config. Restricts the
+ * global LANGUAGE_OPTIONS list to the languages DataForSEO supports for that
+ * country, so the picker isn't a wall of irrelevant options.
+ */
+export function getLanguageOptions(
+  locationCode: number,
+): readonly (typeof LANGUAGE_OPTIONS)[number][] {
+  const codes = new Set(
+    MULTI_LANGUAGE_LOCATIONS[locationCode] ?? [getLanguageCode(locationCode)],
+  );
+  return LANGUAGE_OPTIONS.filter((language) => codes.has(language.code));
 }
 
 export function isSupportedLocationCode(locationCode: number): boolean {

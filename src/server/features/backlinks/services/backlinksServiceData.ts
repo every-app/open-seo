@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import type { CreditFeature } from "@/shared/billing-credit-features";
 import {
   createDataforseoClient,
   normalizeBacklinksTarget,
@@ -74,6 +75,7 @@ export async function profileBacklinksOverview(
   cacheKey: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
+  creditFeature?: CreditFeature,
 ): Promise<BacklinksOverviewProfile> {
   const cached = backlinksOverviewCacheSchema.safeParse(
     await cache.get(cacheKey),
@@ -93,11 +95,15 @@ export async function profileBacklinksOverview(
   const dateRange = buildBacklinksDateRange(now);
 
   const [summary, history] = await Promise.all([
-    dataforseo.backlinks.summary({ target: normalizedTarget.apiTarget }),
+    dataforseo.backlinks.summary({
+      target: normalizedTarget.apiTarget,
+      creditFeature,
+    }),
     normalizedTarget.scope === "domain"
       ? dataforseo.backlinks.history({
           target: normalizedTarget.apiTarget,
           ...dateRange,
+          creditFeature,
         })
       : Promise.resolve([]),
   ]);

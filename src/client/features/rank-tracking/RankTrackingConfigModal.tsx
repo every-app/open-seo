@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import {
@@ -17,10 +17,11 @@ import {
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
 import {
-  LOCATION_OPTIONS,
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
+  getLanguageOptions,
 } from "@/client/features/keywords/locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 
 type Props = {
@@ -47,10 +48,18 @@ export function RankTrackingConfigModal({
   const [locationCode, setLocationCode] = useState(
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
-  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
-  const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
-    existingConfig?.scheduleInterval ?? "weekly",
+  const [languageCode, setLanguageCode] = useState(
+    existingConfig?.languageCode ??
+      getLanguageCode(existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE),
   );
+  const languageOptions = useMemo(
+    () => getLanguageOptions(locationCode),
+    [locationCode],
+  );
+  const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
+  const [schedule, setSchedule] = useState<
+    RankTrackingConfig["scheduleInterval"]
+  >(existingConfig?.scheduleInterval ?? "weekly");
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
   const createMutation = useMutation({
@@ -62,7 +71,7 @@ export function RankTrackingConfigModal({
           devices,
           serpDepth,
           locationCode,
-          languageCode: getLanguageCode(locationCode),
+          languageCode,
           scheduleInterval: schedule,
         },
       }),
@@ -88,7 +97,7 @@ export function RankTrackingConfigModal({
           devices,
           serpDepth,
           locationCode,
-          languageCode: getLanguageCode(locationCode),
+          languageCode,
           scheduleInterval: schedule,
         },
       }),
@@ -146,7 +155,7 @@ export function RankTrackingConfigModal({
           projectId={projectId}
           domain={domain}
           locationCode={locationCode}
-          languageCode={getLanguageCode(locationCode)}
+          languageCode={languageCode}
           onDone={(id) => onSaved(id)}
           onClose={closeKeywordStep}
         />
@@ -188,14 +197,28 @@ export function RankTrackingConfigModal({
           <label className="label">
             <span className="label-text font-medium">Country</span>
           </label>
+          <LocationSelect
+            value={locationCode}
+            onChange={(newLocationCode) => {
+              setLocationCode(newLocationCode);
+              setLanguageCode(getLanguageCode(newLocationCode));
+            }}
+          />
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text font-medium">Language</span>
+          </label>
           <select
             className="select select-bordered w-full"
-            value={locationCode}
-            onChange={(e) => setLocationCode(Number(e.target.value))}
+            value={languageCode}
+            onChange={(e) => setLanguageCode(e.target.value)}
+            disabled={languageOptions.length <= 1}
           >
-            {LOCATION_OPTIONS.map((loc) => (
-              <option key={loc.code} value={loc.code}>
-                {loc.label}
+            {languageOptions.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label}
               </option>
             ))}
           </select>
@@ -249,6 +272,7 @@ export function RankTrackingConfigModal({
               if (
                 value === "daily" ||
                 value === "weekly" ||
+                value === "monthly" ||
                 value === "manual"
               ) {
                 setSchedule(value);
@@ -257,6 +281,7 @@ export function RankTrackingConfigModal({
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly (end of month)</option>
             <option value="manual">Manual only</option>
           </select>
           {schedule === "daily" && (
@@ -297,7 +322,8 @@ export function RankTrackingConfigModal({
             serpDepth,
             schedule === "manual" ? "live" : "queued",
           );
-          const checksPerMonth = schedule === "daily" ? 30 : 4;
+          const checksPerMonth =
+            schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
           return (
             <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
               <div>
