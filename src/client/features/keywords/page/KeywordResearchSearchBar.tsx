@@ -8,10 +8,8 @@ import {
   MAX_KEYWORDS_PER_SUBMIT,
   RESULT_LIMITS,
 } from "@/client/features/keywords/keywordResearchTypes";
-import {
-  LOCATION_OPTIONS,
-  isLabsLocationCode,
-} from "@/client/features/keywords/locations";
+import { isLabsLocationCode } from "@/client/features/keywords/locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
@@ -73,19 +71,11 @@ export function KeywordResearchSearchBar({ controller }: Props) {
           <div className="grid grid-cols-2 gap-2 lg:contents">
             <controlsForm.Field name="locationCode">
               {(field) => (
-                <select
-                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                <LocationSelect
                   value={field.state.value}
-                  onChange={(event) =>
-                    field.handleChange(Number(event.target.value))
-                  }
-                >
-                  {LOCATION_OPTIONS.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(code) => field.handleChange(code)}
+                  className="w-full lg:w-44 lg:shrink-0"
+                />
               )}
             </controlsForm.Field>
 

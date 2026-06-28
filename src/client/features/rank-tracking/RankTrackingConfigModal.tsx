@@ -22,6 +22,7 @@ import {
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
 } from "@/client/features/keywords/locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 
 type Props = {
@@ -196,11 +197,7 @@ export function RankTrackingConfigModal({
           <select
             className="select select-bordered w-full"
             value={locationCode}
-            onChange={(e) => {
-              const newLocationCode = Number(e.target.value);
-              setLocationCode(newLocationCode);
-              setLanguageCode(getLanguageCode(newLocationCode));
-            }}
+            onChange={}
           >
             {LOCATION_OPTIONS.map((loc) => (
               <option key={loc.code} value={loc.code}>
@@ -208,6 +205,12 @@ export function RankTrackingConfigModal({
               </option>
             ))}
           </select>
+          <LocationSelect value={locationCode} onChange={(e) => {
+              const newLocationCode = Number(e.target.value);
+              setLocationCode(newLocationCode);
+              setLanguageCode(getLanguageCode(newLocationCode));
+            }} />
+
         </div>
 
         <div className="form-control">
