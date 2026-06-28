@@ -66,7 +66,13 @@ Managed OAuth is required for MCP clients and is not enabled by default.
 3. Find your OpenSEO application, then select `Edit`.
 4. Go to `Additional settings` -> `OAuth`.
 5. Turn on `Managed OAuth`.
-6. Save.
+6. In `Managed OAuth settings`, allow the redirect URIs your MCP clients use:
+   - Allow `localhost` / loopback clients — for CLI and desktop agents (Codex
+     CLI, Claude Code) that register `http://localhost:PORT/callback`.
+   - Add HTTPS redirect URIs for web connectors (a path may end in `/*`).
+   - Without this, clients can't finish [Dynamic Client Registration](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/managed-oauth/)
+     and log in but expose no tools.
+7. Save.
 
 MCP clients should connect to:
 
