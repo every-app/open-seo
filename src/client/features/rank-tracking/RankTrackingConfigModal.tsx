@@ -17,6 +17,7 @@ import {
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
 import {
+  LANGUAGE_OPTIONS,
   LOCATION_OPTIONS,
   DEFAULT_LOCATION_CODE,
   getLanguageCode,
@@ -47,6 +48,10 @@ export function RankTrackingConfigModal({
   const [locationCode, setLocationCode] = useState(
     existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
   );
+  const [languageCode, setLanguageCode] = useState(
+    existingConfig?.languageCode ??
+      getLanguageCode(existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE),
+  );
   const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
   const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
     existingConfig?.scheduleInterval ?? "weekly",
@@ -62,7 +67,7 @@ export function RankTrackingConfigModal({
           devices,
           serpDepth,
           locationCode,
-          languageCode: getLanguageCode(locationCode),
+          languageCode,
           scheduleInterval: schedule,
         },
       }),
@@ -88,7 +93,7 @@ export function RankTrackingConfigModal({
           devices,
           serpDepth,
           locationCode,
-          languageCode: getLanguageCode(locationCode),
+          languageCode,
           scheduleInterval: schedule,
         },
       }),
@@ -146,7 +151,7 @@ export function RankTrackingConfigModal({
           projectId={projectId}
           domain={domain}
           locationCode={locationCode}
-          languageCode={getLanguageCode(locationCode)}
+          languageCode={languageCode}
           onDone={(id) => onSaved(id)}
           onClose={closeKeywordStep}
         />
@@ -191,11 +196,32 @@ export function RankTrackingConfigModal({
           <select
             className="select select-bordered w-full"
             value={locationCode}
-            onChange={(e) => setLocationCode(Number(e.target.value))}
+            onChange={(e) => {
+              const newLocationCode = Number(e.target.value);
+              setLocationCode(newLocationCode);
+              setLanguageCode(getLanguageCode(newLocationCode));
+            }}
           >
             {LOCATION_OPTIONS.map((loc) => (
               <option key={loc.code} value={loc.code}>
                 {loc.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text font-medium">Language</span>
+          </label>
+          <select
+            className="select select-bordered w-full"
+            value={languageCode}
+            onChange={(e) => setLanguageCode(e.target.value)}
+          >
+            {LANGUAGE_OPTIONS.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label}
               </option>
             ))}
           </select>

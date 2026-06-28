@@ -4,6 +4,7 @@ export {
   DEFAULT_LOCATION_CODE,
   LABS_LOCATION_OPTIONS,
   LOCATION_OPTIONS,
+  LANGUAGE_OPTIONS,
   LOCATIONS,
   getLanguageCode,
   isLabsLocationCode,
