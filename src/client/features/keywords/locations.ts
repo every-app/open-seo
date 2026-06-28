@@ -3,9 +3,9 @@
 export {
   DEFAULT_LOCATION_CODE,
   LABS_LOCATION_OPTIONS,
-  LANGUAGE_OPTIONS,
   LOCATIONS,
   getLanguageCode,
+  getLanguageOptions,
   isLabsLocationCode,
   isSupportedLocationCode,
 } from "@/shared/keyword-locations";

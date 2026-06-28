@@ -503,8 +503,11 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
  * endpoint: the deprecated `iw` Hebrew alias and the redundant `no` are
  * dropped (Norway uses `nb`, which both SERP and Labs accept). Every country
  * default in LOCATION_OPTIONS must appear here so the picker can show it.
+ *
+ * This is the master list; the picker shows a per-country subset via
+ * getLanguageOptions() below.
  */
-export const LANGUAGE_OPTIONS = [
+const LANGUAGE_OPTIONS = [
   { code: "af", label: "Afrikaans" },
   { code: "ak", label: "Akan" },
   { code: "sq", label: "Albanian" },
@@ -657,6 +660,50 @@ const LOCATION_LANGUAGE: Record<number, string> = Object.fromEntries(
 
 export function getLanguageCode(locationCode: number): string {
   return LOCATION_LANGUAGE[locationCode] ?? "en";
+}
+
+/**
+ * Countries where DataForSEO offers more than one language, from the Labs
+ * locations_and_languages endpoint (each country's default is included).
+ * Every other country offers just its single default (see getLanguageOptions);
+ * googleAdsOnly countries have no per-country language data, so they fall back
+ * to the default too. Keep each list's codes present in LANGUAGE_OPTIONS.
+ */
+const MULTI_LANGUAGE_LOCATIONS: Record<number, readonly string[]> = {
+  2012: ["ar", "fr"], // Algeria
+  2056: ["de", "fr", "nl"], // Belgium
+  2124: ["en", "fr"], // Canada
+  2196: ["el", "en"], // Cyprus
+  2300: ["el", "en"], // Greece
+  2344: ["en", "zh-TW"], // Hong Kong
+  2356: ["en", "hi"], // India
+  2360: ["en", "id"], // Indonesia
+  2376: ["ar", "he"], // Israel
+  2458: ["en", "ms"], // Malaysia
+  2504: ["ar", "fr"], // Morocco
+  2586: ["en", "ur"], // Pakistan
+  2608: ["en", "tl"], // Philippines
+  2702: ["en", "zh-CN"], // Singapore
+  2756: ["de", "fr", "it"], // Switzerland
+  2784: ["ar", "en"], // United Arab Emirates
+  2804: ["ru", "uk"], // Ukraine
+  2818: ["ar", "en"], // Egypt
+  2840: ["en", "es"], // United States
+  2704: ["en", "vi"], // Vietnam
+};
+
+/**
+ * Languages to offer for a location's rank-tracking config. Restricts the
+ * global LANGUAGE_OPTIONS list to the languages DataForSEO supports for that
+ * country, so the picker isn't a wall of irrelevant options.
+ */
+export function getLanguageOptions(
+  locationCode: number,
+): readonly (typeof LANGUAGE_OPTIONS)[number][] {
+  const codes = new Set(
+    MULTI_LANGUAGE_LOCATIONS[locationCode] ?? [getLanguageCode(locationCode)],
+  );
+  return LANGUAGE_OPTIONS.filter((language) => codes.has(language.code));
 }
 
 export function isSupportedLocationCode(locationCode: number): boolean {
