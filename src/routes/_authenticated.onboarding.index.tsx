@@ -25,9 +25,17 @@ const clampStep = (step: number) =>
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   // Step lives in the URL so it survives refresh and works with back/forward.
-  validateSearch: (search: Record<string, unknown>): { step: number } => {
+  // The subscribe route appends `checkout=success` when it sends a just-paid
+  // user back here; it triggers the one-time "You're in!" screen on the GSC
+  // step. Preserve it through validation so the router doesn't strip it.
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { step: number; checkout?: string } => {
     const raw = Number(search.step);
-    return { step: Number.isFinite(raw) ? clampStep(raw) : 0 };
+    return {
+      step: Number.isFinite(raw) ? clampStep(raw) : 0,
+      ...(search.checkout === "success" ? { checkout: "success" } : {}),
+    };
   },
   // Send users who already finished onboarding home before rendering. Running
   // this in beforeLoad (not a component effect) means it can't race with the
@@ -83,8 +91,8 @@ function OnboardingFlow({
   const { step } = Route.useSearch();
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
-  // Self-hosted has no paywall. Hosted users now get a short strategy chat
-  // before the subscribe gate, so this only feeds later paid onboarding steps.
+  // Self-hosted has no paywall. Hosted users hit the subscribe gate after the
+  // three intro questions, before the paid GSC/MCP connect steps.
   const isHostedMode = isHostedClientAuthMode();
   const accessQuery = useQuery({
     ...managedAccessQueryOptions(),
@@ -110,16 +118,14 @@ function OnboardingFlow({
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
   const advanceFromCurrentStep = () => {
-    // The strategy chat is a hosted-only, pre-paywall surface (it needs the
-    // managed LLM + trial credits). Self-hosted skips it and continues straight
-    // to the GSC/MCP steps.
-    if (step === 2 && isHostedMode) {
-      void navigate({ to: "/onboarding/chat", replace: true });
-      return;
-    }
-
     const next = clampStep(step + 1);
-    if (step >= 3 && needsSubscription) {
+    // After the three intro questions, hosted users hit the subscribe paywall
+    // before the GSC/MCP connect steps. We return to step 3 (GSC) afterward;
+    // the subscribe route appends `checkout=success` once payment lands, which
+    // drives the one-time "You're in!" screen there.
+    // The strategy chat that used to sit here is parked for now; see
+    // /onboarding/chat (still routed) — we'll revisit it later.
+    if (step === 2 && needsSubscription) {
       void navigate({
         to: SUBSCRIBE_ROUTE,
         search: { redirect: `/onboarding?step=${next}` },

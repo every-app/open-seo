@@ -106,9 +106,15 @@ function SubscribePageContent() {
       });
       const destination = redirect ?? "/";
       const [destinationPath, destinationQuery] = destination.split("?");
-      const destinationSearch = destinationQuery
+      const destinationSearch: Record<string, string> = destinationQuery
         ? Object.fromEntries(new URLSearchParams(destinationQuery))
-        : undefined;
+        : {};
+      // Tell the destination a fresh checkout just landed (the onboarding GSC
+      // step uses this to show its one-time "You're in!" screen). Only set it
+      // when payment actually completed, not speculatively at redirect time.
+      if (checkoutCompleted) {
+        destinationSearch.checkout = "success";
+      }
       const goToApp = () =>
         void navigate({
           to: destinationPath,
