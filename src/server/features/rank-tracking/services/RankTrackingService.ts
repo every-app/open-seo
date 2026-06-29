@@ -37,6 +37,11 @@ async function createConfig(input: {
   const normalizedDomain = normalizeDomain(input.domain);
 
   const locationCode = input.locationCode ?? 2840;
+  const scheduleInterval = input.scheduleInterval ?? "weekly";
+  const nextCheckAt = isScheduledRankTrackingInterval(scheduleInterval)
+    ? computeNextCheckAt(scheduleInterval)
+    : null;
+
   const existing =
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
@@ -44,10 +49,31 @@ async function createConfig(input: {
       locationCode,
     );
   if (existing) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      "This domain + country combination is already being tracked",
-    );
+    // The (project, domain, location) row still exists when a domain is
+    // archived — archiving only flips isActive to false. So re-adding an
+    // archived domain reactivates that row (keeping its keyword/ranking
+    // history) with the freshly chosen settings, rather than colliding with
+    // the unique index. An already-active row is a genuine duplicate.
+    if (existing.isActive) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "This domain + country combination is already being tracked",
+      );
+    }
+
+    await RankTrackingRepository.updateConfig(existing.id, input.projectId, {
+      isActive: true,
+      languageCode: input.languageCode ?? "en",
+      devices: input.devices ?? "both",
+      serpDepth: input.serpDepth,
+      scheduleInterval,
+      nextCheckAt,
+      // Drop any stale skip reason from before it was archived so the
+      // re-added domain doesn't surface an outdated warning.
+      lastSkipReason: null,
+    });
+
+    return { configId: existing.id };
   }
 
   const allConfigs = await RankTrackingRepository.getConfigsForProject(
@@ -61,10 +87,6 @@ async function createConfig(input: {
   }
 
   const configId = crypto.randomUUID();
-  const scheduleInterval = input.scheduleInterval ?? "weekly";
-  const nextCheckAt = isScheduledRankTrackingInterval(scheduleInterval)
-    ? computeNextCheckAt(scheduleInterval)
-    : null;
 
   await RankTrackingRepository.createConfig({
     id: configId,
