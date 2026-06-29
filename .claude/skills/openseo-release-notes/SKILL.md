@@ -16,7 +16,8 @@ Cut a release for this repo end to end. The deliverables are a version bump in `
 
 - Find the latest tag: `git tag --sort=-creatordate | head -1`. Verify the branch is up to date with `origin/main` (`git fetch origin main && git log HEAD..origin/main --oneline` should be empty; flag it if not).
 - List commits: `git log <last-tag>..HEAD --oneline`. You can also run `pnpm release:notes` for a generated skeleton.
-- For each commit, fetch the PR body (`gh pr view <num> --json title,body`) — squash-commit subjects can be stale. Verify claims against the final code when a PR body and commit subject disagree (features get reverted before merge).
+- For each commit, fetch the PR body and author (`gh pr view <num> --repo every-app/open-seo --json title,body,author`) — squash-commit subjects can be stale. The `(#NN)` in commit subjects references the **public** repo (`every-app/open-seo`), so look authors up there, not on `origin`. Verify claims against the final code when a PR body and commit subject disagree (features get reverted before merge).
+- Record the PR author's GitHub handle alongside each change so the bullet can credit them.
 
 ## 3. Draft the notes
 
@@ -25,6 +26,7 @@ Write `release-notes/v<version>.md` matching the style of the 2–3 most recent 
 - One-sentence summary line at the top (no heading). Lead with the biggest user-facing win, stated as the outcome.
 - `## What's new`, `## Improved`, `## Fixed` — include a section only when it has content.
 - Imperative bullets ("Add…", "Improve…", "Cut…"), concise, user-facing.
+- **Credit the contributor.** End each bullet with `— thanks @handle`, using the PR author's GitHub handle, for the feature or fix they contributed. When a bullet has sub-bullets, put the credit at the end of the top-level bullet (the feature), not on the sub-bullet. Skip the credit for the repo maintainer's own PRs (`bensenescu`) — only credit outside contributors. If one bullet folds in work from multiple contributors, thank each (`— thanks @a, @b`).
 - **Be punchy — lead with the impact, not the mechanism.** The top-level bullet is the outcome the user gets ("Reduce rank tracking costs by ~3x"); push the how into one brief sub-bullet beneath it. Don't open a bullet with the implementation ("Run scheduled checks through DataForSEO's task queue and…") — that buries the lead.
 - End with: `Full Changelog: https://github.com/every-app/open-seo/compare/v<prev>...v<version>`
 
