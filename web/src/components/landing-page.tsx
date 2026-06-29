@@ -444,7 +444,7 @@ function McpSection() {
               ))}
             </div>
             <div style={{ marginTop: 32 }}>
-              <a href="/docs/mcp" className="itc-btn itc-btn-fin">
+              <a href="/features/mcp" className="itc-btn itc-btn-fin">
                 Learn about MCP tools
                 <IconArrowRight size={16} className="itc-arrow" />
               </a>
