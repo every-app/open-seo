@@ -194,8 +194,7 @@ function SavedKeywordsPage() {
   });
 
   const refreshMetricsMutation = useMutation({
-    mutationFn: () =>
-      refreshSavedKeywordMetrics({ data: { projectId } }),
+    mutationFn: () => refreshSavedKeywordMetrics({ data: { projectId } }),
     onSuccess: (result) => {
       void invalidateSavedKeywords();
       toast.success(
@@ -203,7 +202,9 @@ function SavedKeywordsPage() {
       );
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Could not update keyword stats."));
+      toast.error(
+        getStandardErrorMessage(error, "Could not update keyword stats."),
+      );
     },
   });
 
