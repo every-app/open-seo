@@ -6,6 +6,7 @@ import {
   getSavedKeywordsSchema,
   exportSavedKeywordsSchema,
   removeSavedKeywordsSchema,
+  refreshSavedKeywordMetricsSchema,
   serpAnalysisSchema,
   updateSavedKeywordTagSchema,
   updateSavedKeywordTagsSchema,
@@ -106,6 +107,18 @@ export const removeSavedKeywords = createServerFn({
   .inputValidator((data: unknown) => removeSavedKeywordsSchema.parse(data))
   .handler(async ({ data, context }) => {
     return KeywordResearchService.removeSavedKeywords(context.projectId, data);
+  });
+
+export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .inputValidator((data: unknown) =>
+    refreshSavedKeywordMetricsSchema.parse(data),
+  )
+  .handler(async ({ context }) => {
+    return KeywordResearchService.refreshSavedKeywordMetrics(
+      { projectId: context.projectId },
+      context,
+    );
   });
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })
