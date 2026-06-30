@@ -143,6 +143,10 @@ export const deleteSavedKeywordTagSchema = z.object({
   tagId: z.string().min(1),
 });
 
+export const refreshSavedKeywordMetricsSchema = z.object({
+  projectId: z.string().min(1),
+});
+
 export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;
 export type SaveKeywordsInput = z.infer<typeof saveKeywordsSchema>;
 export type RemoveSavedKeywordsInput = z.infer<
@@ -160,6 +164,10 @@ export type UpdateSavedKeywordTagInput = z.infer<
 >;
 export type DeleteSavedKeywordTagInput = z.infer<
   typeof deleteSavedKeywordTagSchema
+>;
+
+export type RefreshSavedKeywordMetricsInput = z.infer<
+  typeof refreshSavedKeywordMetricsSchema
 >;
 export const serpAnalysisSchema = z.object({
   projectId: z.string().min(1),
