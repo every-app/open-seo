@@ -45,6 +45,25 @@
     ],
     "eslint/max-depth": ["error", 4],
     "eslint/max-params": ["error", 5],
-    "import/no-cycle": "error"
-  }
+    "import/no-cycle": "error",
+    "eslint/no-restricted-imports": [
+      "error",
+      {
+        "patterns": [
+          {
+            "group": ["@/db/d1", "@/db/d1/*", "@/db/pg", "@/db/pg/*"],
+            "message": "Import the provider-aware `db` from \"@/db\", tables from \"@/db/schema\", and batched writes via \"@/db/runBatch\". Dialect-specific clients/schemas may only be imported by the seam files in src/db and src/lib/auth.ts, otherwise the code silently bypasses DATABASE_PROVIDER."
+          }
+        ]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["src/db/**", "src/lib/auth.ts"],
+      "rules": {
+        "eslint/no-restricted-imports": "off"
+      }
+    }
+  ]
 }

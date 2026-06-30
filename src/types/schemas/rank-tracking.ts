@@ -1,6 +1,6 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
-import { rankTrackingConfigs } from "@/db/app.schema";
+import { rankTrackingConfigs } from "@/db/schema";
 import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------

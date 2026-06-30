@@ -11,6 +11,7 @@ import {
   type SQL,
 } from "drizzle-orm";
 import { db } from "@/db";
+import { runBatch } from "@/db/runBatch";
 import {
   keywordMetrics,
   savedKeywordTagAssignments,
@@ -121,20 +122,20 @@ async function saveKeywordsToProject(params: {
 }): Promise<SavedKeywordRecord[]> {
   if (params.keywords.length === 0) return [];
 
-  const [first, ...rest] = params.keywords.map((keyword) =>
-    db
-      .insert(savedKeywords)
-      .values({
-        id: crypto.randomUUID(),
-        projectId: params.projectId,
-        keyword,
-        locationCode: params.locationCode,
-        languageCode: params.languageCode,
-      })
-      .onConflictDoNothing(),
+  await runBatch((tx) =>
+    params.keywords.map((keyword) =>
+      tx
+        .insert(savedKeywords)
+        .values({
+          id: crypto.randomUUID(),
+          projectId: params.projectId,
+          keyword,
+          locationCode: params.locationCode,
+          languageCode: params.languageCode,
+        })
+        .onConflictDoNothing(),
+    ),
   );
-
-  await db.batch([first, ...rest]);
 
   return listSavedKeywordRowsByKeywords(params);
 }

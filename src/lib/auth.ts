@@ -2,7 +2,11 @@ import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { db } from "@/db";
+import * as d1Schema from "@/db/d1/schema";
+import { d1Db } from "@/db/d1/client";
+import { pgDb } from "@/db/pg/client";
+import * as pgSchema from "@/db/pg/schema";
+import { getDatabaseProvider } from "@/db/provider";
 import { z } from "zod";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createBaseAuthConfig } from "@/lib/auth-config";
@@ -34,6 +38,17 @@ function createAuth() {
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig();
 
+  const database =
+    getDatabaseProvider() === "postgres"
+      ? drizzleAdapter(pgDb, {
+          provider: "pg",
+          schema: pgSchema,
+        })
+      : drizzleAdapter(d1Db, {
+          provider: "sqlite",
+          schema: d1Schema,
+        });
+
   const auth = betterAuth({
     baseURL: baseUrl,
     secret: getHostedSecret(),
@@ -64,9 +79,7 @@ function createAuth() {
         },
     socialProviders: getSocialProviders(),
     trustedOrigins: getTrustedOrigins(baseUrl),
-    database: drizzleAdapter(db, {
-      provider: "sqlite",
-    }),
+    database,
     plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
     databaseHooks: {
       user: {

@@ -9,10 +9,13 @@
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
+    "drizzle-pg.config.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
+    "src/db/schema.ts",
     "src/db/app.schema.ts",
     "src/db/better-auth-schema.ts",
+    "src/db/pg/schema.ts",
     // Standalone CLI/dev scripts, invoked via package.json scripts
     "scripts/**",
   ],

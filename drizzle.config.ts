@@ -5,7 +5,9 @@ const localUrl = getLocalD1Url();
 
 export default defineConfig({
   dialect: "sqlite",
-  schema: "./src/db/schema.ts",
+  // The raw SQLite barrel (not ../schema, the provider-aware one, which imports
+  // cloudflare:workers and can't load under drizzle-kit's node runtime).
+  schema: "./src/db/d1/schema.ts",
   out: "./drizzle",
   dbCredentials: {
     url: localUrl || "", // Empty fallback for CI/non-dev environments

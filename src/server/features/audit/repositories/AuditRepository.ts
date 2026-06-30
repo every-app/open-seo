@@ -1,30 +1,16 @@
 /**
  * Data access layer for site audit tables.
- * All D1 interactions for audits, audit_pages, and stored Lighthouse results.
+ * Provider-aware (D1 or Postgres) via the `@/db` handle.
  */
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { audits, auditLighthouseResults, auditPages } from "@/db/schema";
+import { executeInBatches } from "@/db/runBatch";
 import type {
   AuditConfig,
   LighthouseResult,
   StepPageResult,
 } from "@/server/lib/audit/types";
-
-const DB_BATCH_SIZE = 100;
-type BatchStatement = Parameters<typeof db.batch>[0][number];
-
-async function executeInBatches<T>(
-  items: T[],
-  buildStatement: (item: T) => BatchStatement,
-) {
-  for (let i = 0; i < items.length; i += DB_BATCH_SIZE) {
-    const chunk = items.slice(i, i + DB_BATCH_SIZE).map(buildStatement);
-    const [first, ...rest] = chunk;
-    if (!first) continue;
-    await db.batch([first, ...rest]);
-  }
-}
 
 async function createAudit(data: {
   id: string;
@@ -130,8 +116,8 @@ async function batchWriteResults(
   pages: StepPageResult[],
   lighthouseResults: LighthouseResult[],
 ) {
-  await executeInBatches(pages, (page) =>
-    db.insert(auditPages).values({
+  await executeInBatches(pages, (tx, page) =>
+    tx.insert(auditPages).values({
       id: page.id,
       auditId,
       url: page.url,
@@ -168,8 +154,8 @@ async function batchWriteResults(
     return;
   }
 
-  await executeInBatches(lighthouseResults, (result) =>
-    db.insert(auditLighthouseResults).values({
+  await executeInBatches(lighthouseResults, (tx, result) =>
+    tx.insert(auditLighthouseResults).values({
       id: crypto.randomUUID(),
       auditId,
       pageId: result.pageId,

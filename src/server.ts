@@ -5,12 +5,8 @@ import {
 import { routeAgentRequest } from "agents";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
-import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import {
-  customerHasPaidPlan,
-  getOrCreateOrganizationCustomer,
-} from "@/server/billing/subscription";
+import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import {
@@ -20,10 +16,7 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
-import {
-  computeNextCheckAt,
-  isScheduledRankTrackingInterval,
-} from "@/shared/rank-tracking";
+import { withPgClient } from "@/db";
 import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
@@ -81,6 +74,16 @@ function fetch(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
+): Promise<Response> {
+  // Scope a per-request Postgres client (no-op in D1 mode). The client isn't
+  // closed here — the Workers↔Hyperdrive socket is reclaimed at invocation end.
+  return withPgClient(() => Promise.resolve(handleFetch(request, env, ctx)));
+}
+
+function handleFetch(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
 ): Response | Promise<Response> {
   const authMode = getAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
@@ -125,97 +128,7 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ) {
-    const nowIso = new Date().toISOString();
-    const dueConfigs =
-      await RankTrackingRepository.getDueConfigsWithOrganization(nowIso);
-
-    const isHosted = await isHostedServerAuthMode();
-
-    for (const config of dueConfigs) {
-      try {
-        // Skip configs whose org doesn't have a paid plan
-        if (isHosted && !(await customerHasPaidPlan(config.organizationId))) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — org ${config.organizationId} no longer has access`,
-          );
-          continue;
-        }
-
-        // Skip configs with no keywords before advancing the schedule
-        const kwCount = await RankTrackingRepository.getKeywordCountForConfig(
-          config.id,
-        );
-        if (kwCount === 0) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
-          );
-          // Still advance schedule so this config doesn't stay due forever
-          const skipInterval = isScheduledRankTrackingInterval(
-            config.scheduleInterval,
-          )
-            ? config.scheduleInterval
-            : null;
-          if (skipInterval) {
-            await RankTrackingRepository.updateConfig(
-              config.id,
-              config.projectId,
-              {
-                nextCheckAt: computeNextCheckAt(
-                  skipInterval,
-                  config.nextCheckAt,
-                ),
-              },
-            );
-          }
-          continue;
-        }
-
-        // Advance nextCheckAt immediately to prevent retry storms if the run fails
-        const interval = isScheduledRankTrackingInterval(
-          config.scheduleInterval,
-        )
-          ? config.scheduleInterval
-          : null;
-        if (interval) {
-          await RankTrackingRepository.updateConfig(
-            config.id,
-            config.projectId,
-            {
-              nextCheckAt: computeNextCheckAt(interval, config.nextCheckAt),
-            },
-          );
-        }
-
-        const result = await beginRankCheckRun({
-          workflow: env.RANK_CHECK_WORKFLOW,
-          config,
-          projectId: config.projectId,
-          billingCustomer: {
-            userId: "system",
-            userEmail: "system@openseo.so",
-            organizationId: config.organizationId,
-            projectId: config.projectId,
-          },
-          keywordsTotal: kwCount,
-          trigger: "scheduled",
-          workflowStartErrorMessage: "Failed to start scheduled workflow",
-        });
-
-        if (!result.ok) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — run already active`,
-          );
-        } else {
-          console.log(
-            `[cron] Started scheduled rank check ${result.runId} for config ${config.id} (${config.domain})`,
-          );
-        }
-      } catch (err) {
-        console.error(
-          `[cron] Error processing config ${config.id} (${config.domain}):`,
-          err,
-        );
-      }
-    }
+    // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
+    await withPgClient(() => runScheduledRankChecks(env));
   },
 };

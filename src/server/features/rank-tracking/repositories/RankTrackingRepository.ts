@@ -8,6 +8,7 @@ import {
   rankTrackingKeywords,
   projects,
 } from "@/db/schema";
+import { executeInBatches } from "@/db/runBatch";
 import {
   getLatestSnapshotsForKeywords,
   getSnapshotsBeforeDate,
@@ -16,21 +17,6 @@ import {
   getConfigTrend,
   getPositionMatrix,
 } from "./snapshotQueries";
-
-const DB_BATCH_SIZE = 100;
-type BatchStatement = Parameters<typeof db.batch>[0][number];
-
-async function executeInBatches<T>(
-  items: T[],
-  buildStatement: (item: T) => BatchStatement,
-) {
-  for (let i = 0; i < items.length; i += DB_BATCH_SIZE) {
-    const chunk = items.slice(i, i + DB_BATCH_SIZE).map(buildStatement);
-    const [first, ...rest] = chunk;
-    if (!first) continue;
-    await db.batch([first, ...rest]);
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Config CRUD
@@ -216,8 +202,8 @@ async function insertSnapshots(
     Omit<InferInsertModel<typeof rankSnapshots>, "id" | "checkedAt">
   >,
 ) {
-  await executeInBatches(snapshots, (snapshot) =>
-    db.insert(rankSnapshots).values(snapshot).onConflictDoNothing(),
+  await executeInBatches(snapshots, (tx, snapshot) =>
+    tx.insert(rankSnapshots).values(snapshot).onConflictDoNothing(),
   );
 }
 
@@ -240,8 +226,8 @@ async function getKeywordsForConfig(configId: string) {
 async function addKeywordsToConfig(
   keywords: Array<{ id: string; configId: string; keyword: string }>,
 ) {
-  await executeInBatches(keywords, (kw) =>
-    db.insert(rankTrackingKeywords).values(kw).onConflictDoNothing(),
+  await executeInBatches(keywords, (tx, kw) =>
+    tx.insert(rankTrackingKeywords).values(kw).onConflictDoNothing(),
   );
 }
 
@@ -340,8 +326,8 @@ async function updateKeywordMetrics(
     metricsFetchedAt: string;
   }>,
 ) {
-  await executeInBatches(updates, (u) =>
-    db
+  await executeInBatches(updates, (tx, u) =>
+    tx
       .update(rankTrackingKeywords)
       .set({
         searchVolume: u.searchVolume,

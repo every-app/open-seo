@@ -6,6 +6,7 @@ routeTree.gen.ts
 
 dist/
 drizzle/
+drizzle-pg/
 planning/
 worker-configuration.d.ts
 web/
