@@ -13,8 +13,9 @@ dist-sourcemaps/
 .DS_Store
 .cache
 .env
-.env.local
-.env.production
+.env.
+.env.*
+!.env.example
 .vercel
 .output
 .nitro
