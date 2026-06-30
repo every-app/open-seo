@@ -13,6 +13,7 @@ import {
   runQueuedCheck,
   type QueuedCheckStats,
 } from "@/server/workflows/rankCheckPaths";
+import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
@@ -277,7 +278,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
     const client = createDataforseoClient(billingCustomer);
 
     // Guard: skip if config was archived after the workflow was triggered
-    const configCheck = await step.do(
+    const configCheck = await pgStep(
+      step,
       "check-active",
       { retries: { limit: 0, delay: "1 second" } },
       async () => {
@@ -298,7 +300,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices})`,
       );
 
-      const prepareResult = await step.do(
+      const prepareResult = await pgStep(
+        step,
         "prepare",
         { retries: { limit: 0, delay: "1 second" } },
         async () =>
@@ -345,7 +348,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         console.warn(`[rank-check] ${runId} partial failure: ${batchError}`);
       }
 
-      await step.do("finalize", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
+      await pgStep(step, "finalize", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
         finalizeRankCheckRun({
           runId,
           configId,
@@ -358,7 +361,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       );
     } catch (error) {
       console.error(`Rank check ${runId} failed:`, error);
-      await step.do("mark-failed", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
+      await pgStep(step, "mark-failed", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
         markRankCheckRunFailed({
           runId,
           configId,

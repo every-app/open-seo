@@ -15,6 +15,7 @@ import type {
 } from "@/server/lib/audit/types";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
+import { pgStep } from "@/server/workflows/pgStep";
 
 const LIGHTHOUSE_URL_BATCH_SIZE = 10;
 
@@ -103,7 +104,7 @@ async function runDiscoveryPhase(
   origin: string,
   maxPages: number,
 ) {
-  return step.do("discover-urls", async () => {
+  return pgStep(step, "discover-urls", undefined, async () => {
     const result = await discoverUrls(origin, maxPages);
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
       pagesTotal: Math.min(result.urls.length + 1, maxPages),
@@ -168,8 +169,10 @@ async function runLighthousePhase(
     const counts = countLighthouseBatchResults(lighthouseBatchResults);
     failedChecks += counts.failed;
     completedChecks += counts.completed;
-    await step.do(
+    await pgStep(
+      step,
       `lighthouse-progress-batch-${lighthouseBatchIndex}`,
+      undefined,
       async () => {
         await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
           lighthouseCompleted: completedChecks,
@@ -192,7 +195,7 @@ async function selectLighthousePages(params: {
 }) {
   const { step, auditId, workflowInstanceId, allPages, startUrl, strategy } =
     params;
-  return step.do("select-lighthouse-sample", async () => {
+  return pgStep(step, "select-lighthouse-sample", undefined, async () => {
     const sample = selectLighthouseSample(allPages, startUrl, strategy);
     const selectedUrls = new Set(sample);
 
@@ -274,7 +277,7 @@ async function finalizeAudit(args: {
     lighthouseResults,
   } = args;
 
-  await step.do("finalize", async () => {
+  await pgStep(step, "finalize", undefined, async () => {
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
       currentPhase: "finalizing",
     });

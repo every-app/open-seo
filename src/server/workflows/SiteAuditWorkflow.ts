@@ -15,6 +15,7 @@ import { AuditRepository } from "@/server/features/audit/repositories/AuditRepos
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
+import { pgStep } from "@/server/workflows/pgStep";
 
 interface AuditParams {
   auditId: string;
@@ -63,7 +64,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       });
     } catch (error) {
       console.error(`Audit ${auditId} failed:`, error);
-      await step.do("mark-failed", async () => {
+      await pgStep(step, "mark-failed", undefined, async () => {
         await AuditRepository.failAudit(auditId, event.instanceId);
 
         const latestAudit = await AuditRepository.getAuditForWorkflow(

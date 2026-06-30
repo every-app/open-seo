@@ -202,8 +202,23 @@ async function insertSnapshots(
     Omit<InferInsertModel<typeof rankSnapshots>, "id" | "checkedAt">
   >,
 ) {
+  // Target the (run, keyword, device) unique index explicitly. An UNtargeted
+  // ON CONFLICT DO NOTHING also swallows a primary-key collision, which would
+  // silently drop every row if the `id` serial sequence ever drifts behind
+  // max(id) (e.g. after a data import that copied explicit ids). Scoping the
+  // clause to the intended dedupe index keeps re-runs idempotent while letting
+  // a pk collision surface as a loud duplicate-key error instead of data loss.
   await executeInBatches(snapshots, (tx, snapshot) =>
-    tx.insert(rankSnapshots).values(snapshot).onConflictDoNothing(),
+    tx
+      .insert(rankSnapshots)
+      .values(snapshot)
+      .onConflictDoNothing({
+        target: [
+          rankSnapshots.runId,
+          rankSnapshots.trackingKeywordId,
+          rankSnapshots.device,
+        ],
+      }),
   );
 }
 

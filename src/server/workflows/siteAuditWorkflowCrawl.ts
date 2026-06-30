@@ -5,6 +5,7 @@ import { isSameOrigin, normalizeUrl } from "@/server/lib/audit/url-utils";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import { crawlPage } from "@/server/workflows/site-audit-workflow-helpers";
+import { pgStep } from "@/server/workflows/pgStep";
 
 const CRAWL_CONCURRENCY = 25;
 
@@ -236,10 +237,15 @@ async function persistCrawlProgress(params: {
     );
   });
 
-  await step.do(`progress-batch-${crawlBatchIndex}`, async () => {
-    await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
-      pagesCrawled,
-      pagesTotal: Math.min(visitedCount + queueLength, maxPages),
-    });
-  });
+  await pgStep(
+    step,
+    `progress-batch-${crawlBatchIndex}`,
+    undefined,
+    async () => {
+      await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
+        pagesCrawled,
+        pagesTotal: Math.min(visitedCount + queueLength, maxPages),
+      });
+    },
+  );
 }
