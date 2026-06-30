@@ -5,6 +5,7 @@ import {
   getKeywordDataProvider,
   getLanguageCode,
   isLabsLocationCode,
+  isSupportedLanguageCode,
   isSupportedLocationCode,
 } from "./keyword-locations";
 
@@ -38,6 +39,21 @@ describe("keyword locations", () => {
     expect(LABS_LOCATION_OPTIONS.length + adsOnly.length).toBe(
       LOCATION_OPTIONS.length,
     );
+  });
+
+  it("accepts every supported language code and rejects unknown ones", () => {
+    // Every per-country default we send is, by construction, a supported code.
+    for (const option of LOCATION_OPTIONS) {
+      expect(isSupportedLanguageCode(option.languageCode)).toBe(true);
+    }
+    expect(isSupportedLanguageCode("en")).toBe(true);
+    expect(isSupportedLanguageCode("zh-TW")).toBe(true);
+    // Non-default codes from the master picker list are valid too (e.g. Hindi).
+    expect(isSupportedLanguageCode("hi")).toBe(true);
+    // Malformed/unsupported codes DataForSEO would reject as a charged failure.
+    expect(isSupportedLanguageCode("english")).toBe(false);
+    expect(isSupportedLanguageCode("en-US")).toBe(false);
+    expect(isSupportedLanguageCode("zh-tw")).toBe(false);
   });
 
   it("keeps the picker sorted alphabetically with unique codes", () => {

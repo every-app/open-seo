@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
-import { getKeywordDataProvider } from "@/shared/keyword-locations";
+import {
+  getKeywordDataProvider,
+  isSupportedLanguageCode,
+} from "@/shared/keyword-locations";
 
 export const DEFAULT_LOCATION_CODE = 2840;
 export const DEFAULT_LANGUAGE_CODE = "en";
@@ -35,5 +38,8 @@ export function assertLabsLocationCode(locationCode: number | undefined) {
 
 export const languageCodeSchema = z
   .string()
-  .min(2)
+  .refine(isSupportedLanguageCode, {
+    message:
+      "Unsupported language code. Use a supported code such as 'en', 'es', 'de', or 'fr'.",
+  })
   .describe("Language code (e.g. 'en', 'es', 'fr'). Defaults to 'en'.");

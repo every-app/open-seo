@@ -60,6 +60,28 @@ describe("assertOk", () => {
     }
   });
 
+  it("appends the echoed request value to opaque 'Invalid Field' failures", () => {
+    const task = {
+      status_code: 40501,
+      status_message: "Invalid Field: 'target'.",
+      path: ["v3", "dataforseo_labs", "google", "domain_rank_overview", "live"],
+      cost: 0.02,
+      result_count: 0,
+      data: { target: "not a valid domain", language_code: "en" },
+    };
+    try {
+      assertOk({ status_code: 20000, tasks: [task] });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.message).toBe(
+          `Invalid Field: 'target'. (sent target="not a valid domain")`,
+        );
+      }
+    }
+  });
+
   it("uses the classifier for non-charged (no-cost) failures", () => {
     const classify = vi.fn(() => new AppError("BACKLINKS_NOT_ENABLED", "nope"));
     const task = {

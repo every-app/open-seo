@@ -9,6 +9,36 @@ let browserPostHogClientPromise: Promise<BrowserPostHogClient | null> | null =
 let browserPostHogInitialized = false;
 let analyticsCaptureEnabled = true;
 
+type ExceptionEntry = {
+  value?: unknown;
+  mechanism?: { synthetic?: boolean };
+  stacktrace?: { frames?: unknown[] };
+};
+
+// Unactionable exceptions we don't want polluting error tracking. They share
+// the trait of not being our code: browser extensions inject promise rejections
+// and cross-origin scripts surface as a detail-less "Script error.", while the
+// global onerror handler synthesizes a stackless "undefined" when it fires
+// without a real Error object. Real app errors always carry a stack, so the
+// "undefined" rule is gated on synthetic + no frames to avoid false drops.
+function isIgnorableException(
+  properties: Record<string, unknown> | undefined,
+): boolean {
+  const list = properties?.["$exception_list"];
+  if (!Array.isArray(list) || list.length === 0) return false;
+  return list.every((entry: ExceptionEntry) => {
+    const value = typeof entry?.value === "string" ? entry.value : "";
+    if (value.includes("Object Not Found Matching Id")) return true;
+    if (value === "Script error.") return true;
+    const frames = entry?.stacktrace?.frames;
+    return (
+      value === "undefined" &&
+      entry?.mechanism?.synthetic === true &&
+      (!Array.isArray(frames) || frames.length === 0)
+    );
+  });
+}
+
 function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
   if (typeof window === "undefined" || !isHostedClientAuthMode()) {
     return Promise.resolve(null);
@@ -34,6 +64,15 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
           api_host: host,
           defaults: "2026-01-30",
           capture_exceptions: true,
+          before_send(event) {
+            if (
+              event?.event === "$exception" &&
+              isIgnorableException(event.properties)
+            ) {
+              return null;
+            }
+            return event;
+          },
           capture_pageview: "history_change",
           respect_dnt: true,
           session_recording: {

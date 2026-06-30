@@ -48,6 +48,15 @@ export const Route = createRootRoute({
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
       },
+      // Disable browser auto-translate (Google Translate) app-wide. It rewrites
+      // text nodes into <font> wrappers, which React then can't remove/insert,
+      // crashing render with NotFoundError ("removeChild"/"insertBefore"). The
+      // product UI is data-dense (keywords, domains, metrics) and not meaningful
+      // to machine-translate; the marketing site is a separate app and unaffected.
+      {
+        name: "google",
+        content: "notranslate",
+      },
       {
         name: "apple-mobile-web-app-capable",
         content: "yes",
@@ -155,7 +164,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
 
   return (
-    <html suppressHydrationWarning>
+    <html suppressHydrationWarning translate="no">
       <head>
         <script
           dangerouslySetInnerHTML={{ __html: themePreferenceInitScript }}

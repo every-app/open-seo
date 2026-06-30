@@ -82,6 +82,26 @@ export function buildTaskBilling(
   return billing;
 }
 
+/**
+ * DataForSEO echoes the posted request params back on `task.data`. Its
+ * validation rejections are opaque ("Invalid Field: 'target'.") and name the
+ * field but not the value we sent — and these tasks are charged, so we want to
+ * know exactly what tripped them. Append the offending value so the charged
+ * failure is diagnosable from the captured message alone.
+ */
+function describeInvalidField(
+  message: string,
+  task: DataforseoTaskLike,
+): string {
+  const match = message.match(/Invalid Field:\s*'([^']+)'/i);
+  if (!match) return message;
+  const field = match[1];
+  if (!isRecord(task.data)) return message;
+  const value = task.data[field];
+  if (value === undefined) return message;
+  return `${message} (sent ${field}=${JSON.stringify(value)})`;
+}
+
 /** DataForSEO's "No Search Results" (40501) — a successful empty result, not a failure. */
 export function isNoResultsTask(task: DataforseoTaskLike): boolean {
   return (
@@ -139,10 +159,11 @@ export function assertOk<T extends DataforseoTaskLike>(
     const classified = classify?.(task.status_code, message, path);
     if (classified) throw classified;
 
+    const detailedMessage = describeInvalidField(message, task);
     const billing = tryBuildTaskBilling(task);
-    if (billing) throw new DataforseoChargedTaskError(message, billing);
+    if (billing) throw new DataforseoChargedTaskError(detailedMessage, billing);
 
-    throw new AppError("INTERNAL_ERROR", message);
+    throw new AppError("INTERNAL_ERROR", detailedMessage);
   }
 
   return task;

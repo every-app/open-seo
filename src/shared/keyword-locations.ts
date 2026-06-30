@@ -658,8 +658,22 @@ const LOCATION_LANGUAGE: Record<number, string> = Object.fromEntries(
   LOCATION_OPTIONS.map((option) => [option.code, option.languageCode]),
 );
 
+const SUPPORTED_LANGUAGE_CODES = new Set<string>(
+  LANGUAGE_OPTIONS.map((language) => language.code),
+);
+
 export function getLanguageCode(locationCode: number): string {
   return LOCATION_LANGUAGE[locationCode] ?? "en";
+}
+
+/**
+ * Language codes DataForSEO accepts — the master LANGUAGE_OPTIONS list. Callers
+ * (e.g. MCP tools) can pass an arbitrary `language_code`; an unsupported one is
+ * otherwise rejected by DataForSEO as an opaque *charged* "Invalid Field:
+ * 'language_code'." failure, so we validate against this set first (cost 0).
+ */
+export function isSupportedLanguageCode(languageCode: string): boolean {
+  return SUPPORTED_LANGUAGE_CODES.has(languageCode);
 }
 
 /**

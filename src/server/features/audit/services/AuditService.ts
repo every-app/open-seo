@@ -173,14 +173,26 @@ async function remove(auditId: string, projectId: string) {
       );
     }
 
+    const instance = await env.SITE_AUDIT_WORKFLOW.get(
+      audit.workflowInstanceId,
+    );
     try {
-      const instance = await env.SITE_AUDIT_WORKFLOW.get(
-        audit.workflowInstanceId,
-      );
       await instance.terminate();
     } catch (error) {
-      console.error(`Failed to terminate audit workflow ${audit.id}:`, error);
-      throw new AppError("CONFLICT", "Unable to stop the running audit.");
+      // terminate() throws when the instance already reached a terminal state
+      // (it completed or errored in the moment before the user hit stop). That
+      // race shouldn't block deletion — re-check the live status and only fail
+      // if the workflow is genuinely still running.
+      const status = await instance.status().catch(() => null);
+      const stillRunning =
+        status != null &&
+        ["queued", "running", "paused", "waiting", "waitingForPause"].includes(
+          status.status,
+        );
+      if (stillRunning) {
+        console.error(`Failed to terminate audit workflow ${audit.id}:`, error);
+        throw new AppError("CONFLICT", "Unable to stop the running audit.");
+      }
     }
   }
 
