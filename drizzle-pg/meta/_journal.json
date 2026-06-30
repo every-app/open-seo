@@ -22,6 +22,20 @@
       "when": 1781902417326,
       "tag": "0002_clean_moira_mactaggert",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782833725049,
+      "tag": "0003_sturdy_may_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782851683039,
+      "tag": "0004_dashing_betty_ross",
+      "breakpoints": true
     }
   ]
 }

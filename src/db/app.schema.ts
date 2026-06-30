@@ -71,6 +71,11 @@ export const projects = sqliteTable(
       .where(
         sql`${table.name} = 'Default' AND ${table.domain} IS NULL AND ${table.archivedAt} IS NULL`,
       ),
+    // Every project listing filters by organization; the partial-unique index
+    // above only covers the Default-project row, so without this the org-scoped
+    // list queries seq-scan. Per-org row counts are small, so the archived/
+    // created_at ordering sorts cheaply on top of this single-column lookup.
+    index("projects_organization_id_idx").on(table.organizationId),
   ],
 );
 
@@ -149,7 +154,8 @@ export const savedKeywordTagAssignments = sqliteTable(
       table.savedKeywordId,
       table.tagId,
     ),
-    index("saved_keyword_tag_assignments_keyword_idx").on(table.savedKeywordId),
+    // No standalone index on savedKeywordId — the unique index above has it as
+    // its leftmost column, so it already serves savedKeywordId lookups.
     index("saved_keyword_tag_assignments_tag_idx").on(table.tagId),
   ],
 );
@@ -323,7 +329,8 @@ export const rankSnapshots = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
-    index("rank_snapshots_run_idx").on(table.runId),
+    // No standalone index on runId — the unique index below has it as its
+    // leftmost column, so it already serves runId lookups.
     index("rank_snapshots_keyword_device_idx").on(
       table.trackingKeywordId,
       table.device,

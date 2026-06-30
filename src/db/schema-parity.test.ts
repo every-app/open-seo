@@ -225,7 +225,9 @@ const REQUIRED_BETTER_AUTH_INDEXES: {
 }[] = [
   { table: "session", columns: ["user_id"], unique: false },
   { table: "account", columns: ["user_id"], unique: false },
+  { table: "account", columns: ["account_id", "provider_id"], unique: false },
   { table: "verification", columns: ["identifier"], unique: false },
+  { table: "verification", columns: ["expires_at"], unique: false },
   { table: "organization", columns: ["slug"], unique: true },
   { table: "member", columns: ["organization_id"], unique: false },
   { table: "member", columns: ["user_id"], unique: false },
