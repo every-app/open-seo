@@ -6,16 +6,17 @@
 export { createDataforseoClient } from "@/server/lib/dataforseo/client";
 
 export {
+  fetchKeywordMetricsForList,
+  type KeywordMetricRow,
+} from "@/server/lib/dataforseo/keyword-metrics";
+
+export {
   type LabsKeywordDataItem,
   type DomainRankedKeywordItem,
   type RelevantPagesItem,
-  type KeywordOverviewItem,
 } from "@/server/lib/dataforseo/labs";
 
-export {
-  type AdsKeywordItem,
-  type AdsKeywordIdeaItem,
-} from "@/server/lib/dataforseo/google-ads";
+export { type AdsKeywordIdeaItem } from "@/server/lib/dataforseo/google-ads";
 
 export {
   fetchRankCheckTaskResult,

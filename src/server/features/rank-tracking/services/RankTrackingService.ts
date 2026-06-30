@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
-import { getKeywordDataProvider } from "@/shared/keyword-locations";
+import {
+  createDataforseoClient,
+  fetchKeywordMetricsForList,
+} from "@/server/lib/dataforseo";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { AppError } from "@/server/lib/errors";
 import type {
@@ -260,8 +262,6 @@ async function getLatestRun(configId: string, projectId: string) {
 // Keyword metrics (volume, difficulty, CPC)
 // ---------------------------------------------------------------------------
 
-const KEYWORD_OVERVIEW_BATCH_SIZE = 700;
-
 async function refreshKeywordMetrics(
   configId: string,
   projectId: string,
@@ -272,76 +272,35 @@ async function refreshKeywordMetrics(
   if (keywords.length === 0) return { updated: 0 };
 
   const client = createDataforseoClient(billingCustomer);
+  const metrics = await fetchKeywordMetricsForList(client, {
+    keywords: keywords.map((kw) => kw.keyword),
+    locationCode: config.locationCode,
+    languageCode: config.languageCode,
+    creditFeature: "rank_tracking",
+  });
+  const byKeyword = new Map(
+    metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),
+  );
+
   const now = new Date().toISOString();
-  let updated = 0;
+  const updates = keywords
+    .map((kw) => {
+      const metric = byKeyword.get(kw.keyword.toLowerCase());
+      if (!metric) return null;
+      // Rank tracking only tracks volume / difficulty / CPC.
+      return {
+        id: kw.id,
+        searchVolume: metric.searchVolume,
+        keywordDifficulty: metric.keywordDifficulty,
+        cpc: metric.cpc,
+        metricsFetchedAt: now,
+      };
+    })
+    .filter((u): u is NonNullable<typeof u> => u !== null);
 
-  // Countries Labs doesn't cover get volume/CPC from Google Ads (no KD).
-  const useGoogleAds =
-    getKeywordDataProvider(config.locationCode) === "google_ads";
-
-  for (let i = 0; i < keywords.length; i += KEYWORD_OVERVIEW_BATCH_SIZE) {
-    const batch = keywords.slice(i, i + KEYWORD_OVERVIEW_BATCH_SIZE);
-    const request = {
-      keywords: batch.map((kw) => kw.keyword),
-      locationCode: config.locationCode,
-      languageCode: config.languageCode,
-    };
-
-    // Build a lookup by lowercase keyword
-    const metricsMap = new Map<
-      string,
-      {
-        searchVolume: number | null;
-        keywordDifficulty: number | null;
-        cpc: number | null;
-      }
-    >();
-    if (useGoogleAds) {
-      const adsItems = await client.keywords.adsSearchVolume({
-        ...request,
-        creditFeature: "rank_tracking",
-      });
-      for (const item of adsItems) {
-        if (!item.keyword) continue;
-        metricsMap.set(item.keyword.toLowerCase(), {
-          searchVolume: item.search_volume ?? null,
-          keywordDifficulty: null,
-          cpc: item.cpc ?? null,
-        });
-      }
-    } else {
-      for (const item of await client.labs.keywordOverview(request)) {
-        if (!item.keyword) continue;
-        metricsMap.set(item.keyword.toLowerCase(), {
-          searchVolume: item.keyword_info?.search_volume ?? null,
-          keywordDifficulty:
-            item.keyword_properties?.keyword_difficulty ?? null,
-          cpc: item.keyword_info?.cpc ?? null,
-        });
-      }
-    }
-
-    const updates = batch
-      .map((kw) => {
-        const metrics = metricsMap.get(kw.keyword.toLowerCase());
-        if (!metrics) return null;
-        return {
-          id: kw.id,
-          searchVolume: metrics.searchVolume,
-          keywordDifficulty: metrics.keywordDifficulty,
-          cpc: metrics.cpc,
-          metricsFetchedAt: now,
-        };
-      })
-      .filter((u): u is NonNullable<typeof u> => u !== null);
-
-    if (updates.length > 0) {
-      await RankTrackingRepository.updateKeywordMetrics(updates);
-      updated += updates.length;
-    }
-  }
-
-  return { updated };
+  if (updates.length === 0) return { updated: 0 };
+  await RankTrackingRepository.updateKeywordMetrics(updates);
+  return { updated: updates.length };
 }
 
 // ---------------------------------------------------------------------------

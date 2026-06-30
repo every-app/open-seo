@@ -3,6 +3,7 @@ import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
+import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
@@ -13,9 +14,17 @@ vi.mock("cloudflare:workers", () => ({
   env: {},
 }));
 
-vi.mock("@/server/lib/dataforseo", () => ({
-  createDataforseoClient: mocks.createDataforseoClient,
-}));
+// Keep the real fetchKeywordMetricsForList (it only routes provider calls onto
+// the supplied client) so the handler's normalization is exercised end-to-end.
+vi.mock("@/server/lib/dataforseo", async () => {
+  const keywordMetrics = await vi.importActual<{
+    fetchKeywordMetricsForList: typeof FetchKeywordMetricsForList;
+  }>("@/server/lib/dataforseo/keyword-metrics");
+  return {
+    createDataforseoClient: mocks.createDataforseoClient,
+    fetchKeywordMetricsForList: keywordMetrics.fetchKeywordMetricsForList,
+  };
+});
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {

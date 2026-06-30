@@ -2,10 +2,9 @@
 import { z } from "zod";
 import {
   createDataforseoClient,
-  type AdsKeywordItem,
-  type KeywordOverviewItem,
+  fetchKeywordMetricsForList,
+  type KeywordMetricRow,
 } from "@/server/lib/dataforseo";
-import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -439,45 +438,31 @@ function sortCompetitors(
   });
 }
 
-function normalizeKeywordOverview(item: KeywordOverviewItem) {
-  const info = item.keyword_info;
-  // Only present when the caller opted into clickstream-refined volumes.
-  const clickstreamInfo = item.keyword_info_normalized_with_clickstream;
+// Project the shared canonical metric row onto this tool's snake_case API
+// shape (kept stable for MCP clients); an absent trend stays null as before.
+function toMcpKeywordMetricRow(row: KeywordMetricRow) {
   return {
-    keyword: item.keyword,
-    search_volume:
-      clickstreamInfo?.search_volume ?? info?.search_volume ?? null,
-    keyword_difficulty: item.keyword_properties?.keyword_difficulty ?? null,
-    main_intent: item.search_intent_info?.main_intent ?? null,
-    cpc: info?.cpc ?? null,
-    competition: info?.competition ?? null,
-    competition_level: info?.competition_level ?? null,
-    monthly_searches:
-      (clickstreamInfo?.search_volume
-        ? clickstreamInfo.monthly_searches
-        : info?.monthly_searches) ?? null,
+    keyword: row.keyword,
+    search_volume: row.searchVolume,
+    keyword_difficulty: row.keywordDifficulty,
+    main_intent: row.intent,
+    cpc: row.cpc,
+    competition: row.competition,
+    competition_level: row.competitionLevel,
+    monthly_searches: row.monthlySearches.length
+      ? row.monthlySearches.map((entry) => ({
+          year: entry.year,
+          month: entry.month,
+          search_volume: entry.searchVolume,
+        }))
+      : null,
   };
 }
 
-type KeywordMetricRow = ReturnType<typeof normalizeKeywordOverview>;
-
-// Google Ads items (countries Labs doesn't cover) have no difficulty/intent.
-function normalizeAdsKeyword(item: AdsKeywordItem): KeywordMetricRow {
-  return {
-    keyword: item.keyword,
-    search_volume: item.search_volume ?? null,
-    keyword_difficulty: null,
-    main_intent: null,
-    cpc: item.cpc ?? null,
-    competition:
-      item.competition_index != null ? item.competition_index / 100 : null,
-    competition_level: item.competition ?? null,
-    monthly_searches: item.monthly_searches ?? null,
-  };
-}
+type McpKeywordMetricRow = ReturnType<typeof toMcpKeywordMetricRow>;
 
 function sortKeywordMetricRows(
-  rows: KeywordMetricRow[],
+  rows: McpKeywordMetricRow[],
   sortBy: NonNullable<GetKeywordMetricsArgs["sortBy"]> = "search_volume",
 ) {
   return rows.toSorted((a, b) => {
@@ -846,27 +831,15 @@ export const getKeywordMetricsTool = {
     const client = createDataforseoClient(context.billing);
     const locationCode = args.locationCode ?? DEFAULT_LOCATION_CODE;
     const languageCode = args.languageCode ?? DEFAULT_LANGUAGE_CODE;
-    const normalized =
-      getKeywordDataProvider(locationCode) === "google_ads"
-        ? (
-            await client.keywords.adsSearchVolume({
-              keywords: args.keywords,
-              locationCode,
-              languageCode,
-              creditFeature: "keyword_research",
-            })
-          ).map(normalizeAdsKeyword)
-        : (
-            await client.labs.keywordOverview({
-              keywords: args.keywords,
-              locationCode,
-              languageCode,
-              includeClickstreamData: args.includeClickstreamData ?? false,
-              creditFeature: "keyword_research",
-            })
-          ).map(normalizeKeywordOverview);
+    const metrics = await fetchKeywordMetricsForList(client, {
+      keywords: args.keywords,
+      locationCode,
+      languageCode,
+      includeClickstreamData: args.includeClickstreamData ?? false,
+      creditFeature: "keyword_research",
+    });
     const rows = sortKeywordMetricRows(
-      normalized,
+      metrics.map(toMcpKeywordMetricRow),
       args.sortBy ?? "search_volume",
     ).map((row) =>
       args.includeMonthlyTrends === false
