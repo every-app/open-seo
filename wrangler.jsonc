@@ -64,14 +64,20 @@
       "migrations_dir": "drizzle",
     },
   ],
-  // Postgres scale path (opt-in). D1 remains the default; leave this commented
-  // for free self-hosting. To run on Postgres set DATABASE_PROVIDER=postgres and
-  // uncomment a Hyperdrive binding pointing at your Postgres pooler. Without
-  // Hyperdrive, POSTGRES_DATABASE_URL is used as a direct-connection fallback
-  // (no edge pooling/caching — not recommended for the scaled hosted path).
-  // "hyperdrive": [
-  //   { "binding": "HYPERDRIVE", "id": "<your-hyperdrive-config-id>" },
-  // ],
+  // Postgres scale path. Production runs on Postgres: DATABASE_PROVIDER is set as
+  // a worker *secret* (`wrangler secret put DATABASE_PROVIDER` -> "postgres") so it
+  // survives `wrangler deploy` — which resets plain vars/bindings and is what
+  // reverted prod to the D1 default before. This Hyperdrive binding points the
+  // pooled connection at that Postgres. Without Hyperdrive, POSTGRES_DATABASE_URL
+  // is the direct-connection fallback (no edge pooling/caching).
+  //
+  // SELF-HOSTERS on the free D1 default: DELETE this hyperdrive block before
+  // deploying. The id below lives in OpenSEO's Cloudflare account, so `wrangler
+  // deploy` will fail without access to it. D1 stays the default when
+  // DATABASE_PROVIDER is unset.
+  "hyperdrive": [
+    { "binding": "HYPERDRIVE", "id": "9d64ccfb559f44449ce52a143912f898" },
+  ],
   "r2_buckets": [
     {
       "bucket_name": "open-seo",
