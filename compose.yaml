@@ -9,6 +9,9 @@ services:
       - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: free Google PageSpeed Insights key. When set, site-audit
+      # Lighthouse runs on Google's free API instead of DataForSEO OnPage.
+      - PAGESPEED_API_KEY=${PAGESPEED_API_KEY:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

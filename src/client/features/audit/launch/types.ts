@@ -10,5 +10,7 @@ export type LaunchFormValues = {
 export const DEFAULT_LAUNCH_FORM_VALUES: LaunchFormValues = {
   url: "",
   maxPagesInput: "50",
-  runLighthouse: false,
+  // On by default: without Lighthouse the results view has no Performance tab
+  // and the only way to add one is re-crawling the whole site.
+  runLighthouse: true,
 };

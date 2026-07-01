@@ -148,6 +148,10 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
                 We choose a sample of 20 pages to audit, removing pages from
                 duplicate templates.
               </p>
+              <p className="text-xs text-base-content/60">
+                Runs on the free Google PageSpeed Insights API when
+                PAGESPEED_API_KEY is set.
+              </p>
             </div>
           ) : null
         }
