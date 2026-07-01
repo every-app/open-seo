@@ -97,6 +97,24 @@ function handleOpenSeoMcpRequest(
   env: unknown,
   ctx: ExecutionContext,
 ): Promise<Response> {
+  // Decline the optional standalone GET SSE stream: this server is stateless
+  // (POST returns JSON) and pushes no server-initiated messages, so the stream
+  // does nothing but leak memory — each GET is held open by a keepalive and
+  // pins a per-request McpServer (~5MB), so a few dozen concurrent clients OOM
+  // the 128MB isolate. 405 is the spec's "no stream" response; returning it
+  // before building the server means a GET allocates nothing.
+  if (request.method === "GET") {
+    return Promise.resolve(
+      new Response("Method Not Allowed", {
+        status: 405,
+        headers: {
+          Allow: "POST, DELETE, OPTIONS",
+          "Access-Control-Allow-Origin": "*",
+        },
+      }),
+    );
+  }
+
   const server = createOpenSeoMcpServer();
   const handler = createMcpHandler(server, {
     route: MCP_ROUTE,
