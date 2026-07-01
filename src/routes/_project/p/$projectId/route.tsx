@@ -8,7 +8,6 @@ import { useEffect } from "react";
 import { setLastProjectId } from "@/client/lib/active-project";
 import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
 import { FreePlanBanner } from "@/client/features/billing/FreePlanBanner";
-import { useSubscribeRedirect } from "@/client/features/billing/useSubscribeRedirect";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
@@ -44,7 +43,6 @@ function ProjectLayout() {
   const { projectId } = Route.useParams();
   const authGate = useHostedAuthRouteGuard();
   useOnboardingRedirect();
-  const subscribeGate = useSubscribeRedirect();
 
   // Remember this as the last-visited project for the landing redirect.
   // Settings is excluded: editing another project's settings is
@@ -58,7 +56,7 @@ function ProjectLayout() {
     setLastProjectId(projectId);
   }, [projectId, isSettingsPage]);
 
-  if (!authGate.canRenderAuthenticatedContent || subscribeGate.isBlocking) {
+  if (!authGate.canRenderAuthenticatedContent) {
     return null;
   }
 

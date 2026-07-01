@@ -10,9 +10,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
-import { MANAGED_ACCESS_QUERY_KEY } from "@/client/features/billing/managed-access";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
-import { queryClient } from "@/client/tanstack-db";
 import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
@@ -99,22 +97,11 @@ function SubscribePageContent() {
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
-      // The app layouts gate on this query; make sure they see fresh access
-      // state instead of a cached "no access" that would bounce back here.
-      void queryClient.invalidateQueries({
-        queryKey: MANAGED_ACCESS_QUERY_KEY,
-      });
       const destination = redirect ?? "/";
       const [destinationPath, destinationQuery] = destination.split("?");
       const destinationSearch: Record<string, string> = destinationQuery
         ? Object.fromEntries(new URLSearchParams(destinationQuery))
         : {};
-      // Tell the destination a fresh checkout just landed (the onboarding GSC
-      // step uses this to show its one-time "You're in!" screen). Only set it
-      // when payment actually completed, not speculatively at redirect time.
-      if (checkoutCompleted) {
-        destinationSearch.checkout = "success";
-      }
       const goToApp = () =>
         void navigate({
           to: destinationPath,

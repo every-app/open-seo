@@ -1,7 +1,9 @@
 import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
+import { isDisposableEmailDomain } from "@/server/auth/disposable-email";
 import * as d1Schema from "@/db/d1/schema";
 import { d1Db } from "@/db/d1/client";
 import { pgDb } from "@/db/pg/client";
@@ -84,6 +86,20 @@ function createAuth() {
     databaseHooks: {
       user: {
         create: {
+          // Hosted only: keep cheap mass-signups off the free plan by rejecting
+          // throwaway-inbox domains before the user row is created. Self-hosted
+          // has no shared credit pool to protect, so it's left untouched.
+          before: async (user) => {
+            if (
+              isHostedAuthMode(env.AUTH_MODE) &&
+              isDisposableEmailDomain(user.email)
+            ) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Please sign up with a non-disposable email address.",
+              });
+            }
+            return { data: user };
+          },
           after: async (user) => {
             await syncHostedSignupContact(user);
           },

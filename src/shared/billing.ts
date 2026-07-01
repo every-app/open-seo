@@ -4,8 +4,9 @@ export const SUBSCRIBE_ROUTE = "/subscribe";
 export const AUTUMN_PAID_PLAN_ID = "base-plan";
 export const AUTUMN_SEO_DATA_TOP_UP_PLAN_ID = "credit-top-up";
 export const AUTUMN_PAID_PLAN_FEATURE_ID = "paid_plan";
-// Granted by both the legacy free plan (grandfathered users) and the paid
-// base plan. New customers get no default product, so this is the paywall.
+// Granted by both the free plan (now the Autumn Default, so every non-paid
+// user gets it) and the paid base plan. It's the floor for using the managed
+// service at all — paid-only features gate on AUTUMN_PAID_PLAN_FEATURE_ID.
 export const AUTUMN_MANAGED_ACCESS_FEATURE_ID = "managed_service_access";
 // The shared usage-credit pool. Both DataForSEO and onboarding-LLM spend deduct
 // from these (monthly usage_credits first, then rolled-over topup_credits).

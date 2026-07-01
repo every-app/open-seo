@@ -23,7 +23,6 @@ type PostSignupOnboardingProps = {
   onBack: () => void;
   onSkip: () => void;
   onFinish: (mcpSetupIntent: "yes" | "no") => void;
-  onUpgradeAcknowledged: () => void;
   isSaving: boolean;
   accountMenu: ReactNode;
 };
@@ -39,7 +38,6 @@ export function PostSignupOnboarding({
   onBack,
   onSkip,
   onFinish,
-  onUpgradeAcknowledged,
   isSaving,
   accountMenu,
 }: PostSignupOnboardingProps) {
@@ -54,55 +52,6 @@ export function PostSignupOnboarding({
 
   const updateAnswers = (patch: Partial<OnboardingAnswers>) =>
     onAnswersChange({ ...answers, ...patch });
-
-  // After a successful checkout the user lands on the GSC step with
-  // `?checkout=success`. Show a one-time "you're in" screen (same layout as the
-  // steps) and only reveal the actual GSC step once they continue, which drops
-  // the param.
-  const justUpgraded =
-    step === 3 &&
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("checkout") === "success";
-
-  if (justUpgraded) {
-    return (
-      <div className="w-full max-w-md space-y-6">
-        {accountMenu}
-
-        <div className="text-center space-y-3">
-          <img
-            src="/transparent-logo.png"
-            alt="OpenSEO"
-            className="mx-auto size-10 rounded-lg"
-          />
-          <h1 className="text-xl font-semibold">You’re in! 🎉</h1>
-          <p className="text-sm text-base-content/60">
-            Your subscription’s active.
-          </p>
-        </div>
-
-        <div className="rounded-lg border border-base-300 bg-base-100 p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">
-            Finish setting up your account
-          </h2>
-          <p className="mt-1.5 text-sm leading-relaxed text-base-content/70">
-            Two quick steps left — connect Google Search Console, then set up
-            MCP for your agent.
-          </p>
-          <div className="mt-5 flex justify-end">
-            <button
-              type="button"
-              className="btn btn-soft"
-              onClick={onUpgradeAcknowledged}
-            >
-              Continue
-              <ArrowRight className="size-4" />
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-md space-y-6">

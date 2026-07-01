@@ -10,12 +10,9 @@ import {
   onboardingAnswersQueryOptions,
   restoreOnboardingAnswers,
 } from "@/client/features/onboarding/onboardingModel";
-import { managedAccessQueryOptions } from "@/client/features/billing/managed-access";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const ONBOARDING_EXISTING_USER_CUTOFF = "2026-05-27T00:00:00.000Z";
@@ -25,17 +22,9 @@ const clampStep = (step: number) =>
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   // Step lives in the URL so it survives refresh and works with back/forward.
-  // The subscribe route appends `checkout=success` when it sends a just-paid
-  // user back here; it triggers the one-time "You're in!" screen on the GSC
-  // step. Preserve it through validation so the router doesn't strip it.
-  validateSearch: (
-    search: Record<string, unknown>,
-  ): { step: number; checkout?: string } => {
+  validateSearch: (search: Record<string, unknown>): { step: number } => {
     const raw = Number(search.step);
-    return {
-      step: Number.isFinite(raw) ? clampStep(raw) : 0,
-      ...(search.checkout === "success" ? { checkout: "success" } : {}),
-    };
+    return { step: Number.isFinite(raw) ? clampStep(raw) : 0 };
   },
   // Send users who already finished onboarding home before rendering. Running
   // this in beforeLoad (not a component effect) means it can't race with the
@@ -91,16 +80,6 @@ function OnboardingFlow({
   const { step } = Route.useSearch();
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
-  // Self-hosted has no paywall. Hosted users hit the subscribe gate after the
-  // three intro questions, before the paid GSC/MCP connect steps.
-  const isHostedMode = isHostedClientAuthMode();
-  const accessQuery = useQuery({
-    ...managedAccessQueryOptions(),
-    enabled: isHostedMode,
-  });
-  const needsSubscription =
-    isHostedMode && accessQuery.data?.hasManagedAccess === false;
-
   const saveMutation = useMutation({
     mutationFn: (extra: {
       mcpSetupIntent?: "yes" | "no";
@@ -117,25 +96,6 @@ function OnboardingFlow({
   const goToStep = (next: number) =>
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
-  const advanceFromCurrentStep = () => {
-    const next = clampStep(step + 1);
-    // After the three intro questions, hosted users hit the subscribe paywall
-    // before the GSC/MCP connect steps. We return to step 3 (GSC) afterward;
-    // the subscribe route appends `checkout=success` once payment lands, which
-    // drives the one-time "You're in!" screen there.
-    // The strategy chat that used to sit here is parked for now; see
-    // /onboarding/chat (still routed) — we'll revisit it later.
-    if (step === 2 && needsSubscription) {
-      void navigate({
-        to: SUBSCRIBE_ROUTE,
-        search: { redirect: `/onboarding?step=${next}` },
-        replace: true,
-      });
-      return;
-    }
-    goToStep(next);
-  };
-
   const handleNext = () => {
     if (step === 0) {
       captureClientEvent("onboarding:interests_selected", {
@@ -144,13 +104,13 @@ function OnboardingFlow({
       });
     }
     saveMutation.mutate({});
-    advanceFromCurrentStep();
+    goToStep(step + 1);
   };
 
   const handleSkip = () => {
     saveMutation.mutate({});
     captureClientEvent("onboarding:step_skipped", { step });
-    advanceFromCurrentStep();
+    goToStep(step + 1);
   };
 
   const handleFinish = async (mcpSetupIntent: "yes" | "no") => {
@@ -191,9 +151,6 @@ function OnboardingFlow({
       onBack={() => goToStep(step - 1)}
       onSkip={handleSkip}
       onFinish={handleFinish}
-      onUpgradeAcknowledged={() =>
-        void navigate({ to: "/onboarding", search: { step }, replace: true })
-      }
       isSaving={saveMutation.isPending}
       accountMenu={<OnboardingAccountMenu email={email} />}
     />

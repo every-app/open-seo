@@ -2,7 +2,6 @@ import { Outlet, createFileRoute } from "@tanstack/react-router";
 import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
-import { useSubscribeRedirect } from "@/client/features/billing/useSubscribeRedirect";
 
 export const Route = createFileRoute("/_app")({
   component: AppRouteLayout,
@@ -11,9 +10,8 @@ export const Route = createFileRoute("/_app")({
 function AppRouteLayout() {
   const authGate = useHostedAuthRouteGuard();
   useOnboardingRedirect();
-  const subscribeGate = useSubscribeRedirect();
 
-  if (!authGate.canRenderAuthenticatedContent || subscribeGate.isBlocking) {
+  if (!authGate.canRenderAuthenticatedContent) {
     return null;
   }
 

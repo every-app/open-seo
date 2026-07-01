@@ -20,7 +20,8 @@ export const startAudit = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => startAuditSchema.parse(data))
   .handler(async ({ data, context }) => {
     // The crawler runs on our Workers compute and isn't credit-metered, so
-    // gate it on plan access in hosted mode (grandfathered free plans pass).
+    // gate it on managed access in hosted mode. Free and paid plans both grant
+    // it; only customers with no Autumn product at all are turned away.
     if (
       (await isHostedServerAuthMode()) &&
       !(await customerHasManagedAccess(context.organizationId))
