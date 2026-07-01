@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
+import { captcha } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { isDisposableEmailDomain } from "@/server/auth/disposable-email";
@@ -39,6 +40,18 @@ function createAuth() {
     : "http://localhost";
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig();
+
+  // Turnstile captcha on signup — hosted only, and only when BOTH keys are set.
+  // Requiring the site key too (not just the secret) keeps the server in
+  // lockstep with the client widget, which renders only when the site key is
+  // present: a secret-only deploy would otherwise fail closed and reject every
+  // signup (client sends no token). Left off entirely when unconfigured so
+  // local/self-hosted builds are unaffected. Relies on the same
+  // build-env == runtime-env contract as AUTH_MODE.
+  const turnstileSecretKey =
+    isHostedAuthMode(env.AUTH_MODE) && env.TURNSTILE_SITE_KEY?.trim()
+      ? env.TURNSTILE_SECRET_KEY?.trim()
+      : undefined;
 
   const database =
     getDatabaseProvider() === "postgres"
@@ -82,7 +95,19 @@ function createAuth() {
     socialProviders: getSocialProviders(),
     trustedOrigins: getTrustedOrigins(baseUrl),
     database,
-    plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
+    plugins: [
+      ...baseAuthConfig.plugins,
+      ...(turnstileSecretKey
+        ? [
+            captcha({
+              provider: "cloudflare-turnstile",
+              secretKey: turnstileSecretKey,
+              endpoints: ["/sign-up/email"],
+            }),
+          ]
+        : []),
+      tanstackStartCookies(),
+    ],
     databaseHooks: {
       user: {
         create: {

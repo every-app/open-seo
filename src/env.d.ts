@@ -30,6 +30,11 @@ declare namespace Cloudflare {
     AUTUMN_SECRET_KEY?: string;
     AUTUMN_WEBHOOK_SECRET?: string;
 
+    // Cloudflare Turnstile — signup captcha (hosted only). Secret verifies
+    // tokens server-side; site key is public and inlined into the client build.
+    TURNSTILE_SECRET_KEY?: string;
+    TURNSTILE_SITE_KEY?: string;
+
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
@@ -46,6 +51,7 @@ interface ImportMetaEnv {
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
+  readonly TURNSTILE_SITE_KEY?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;
 }

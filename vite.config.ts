@@ -27,6 +27,7 @@ export default defineConfig(({ mode }) => {
       "BYPASS_EMAIL_VERIFICATION",
       "POSTHOG_PUBLIC_KEY",
       "POSTHOG_HOST",
+      "TURNSTILE_SITE_KEY",
     ],
     server: {
       allowedHosts,
