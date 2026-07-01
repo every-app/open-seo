@@ -13,7 +13,7 @@ import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import type { AuditConfig } from "@/server/lib/audit/types";
-import { captureServerEvent } from "@/server/lib/posthog";
+import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
 import { pgStep } from "@/server/workflows/pgStep";
 
@@ -64,6 +64,15 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       });
     } catch (error) {
       console.error(`Audit ${auditId} failed:`, error);
+      // Workflow entrypoints run outside the server-function middleware, so
+      // nothing else forwards this throw to PostHog as a $exception. Capture it
+      // here (awaited — Workflows have no ctx.waitUntil) before re-throwing.
+      await captureServerError(error, {
+        source: "site_audit_workflow",
+        audit_id: auditId,
+        organization_id: billingCustomer.organizationId,
+        project_id: projectId,
+      });
       await pgStep(step, "mark-failed", undefined, async () => {
         await AuditRepository.failAudit(auditId, event.instanceId);
 

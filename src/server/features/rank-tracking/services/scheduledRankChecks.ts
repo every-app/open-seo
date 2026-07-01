@@ -20,9 +20,6 @@ export async function runScheduledRankChecks(env: Env) {
     try {
       // Skip configs whose org doesn't have a paid plan
       if (isHosted && !(await customerHasPaidPlan(config.organizationId))) {
-        console.log(
-          `[cron] Skipping config ${config.id} (${config.domain}) — org ${config.organizationId} no longer has access`,
-        );
         continue;
       }
 

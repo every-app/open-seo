@@ -116,6 +116,16 @@ async function batchWriteResults(
   pages: StepPageResult[],
   lighthouseResults: LighthouseResult[],
 ) {
+  // The `finalize` workflow step can retry after a partial write (multi-chunk
+  // inserts aren't atomic, and steps after the insert can throw). Clear any
+  // rows from a prior attempt first so the re-run is idempotent — otherwise
+  // stable page ids collide on the PK and lighthouse rows silently duplicate.
+  // audit_lighthouse_results.page_id FKs audit_pages, so delete it first.
+  await db
+    .delete(auditLighthouseResults)
+    .where(eq(auditLighthouseResults.auditId, auditId));
+  await db.delete(auditPages).where(eq(auditPages.auditId, auditId));
+
   await executeInBatches(pages, (tx, page) =>
     tx.insert(auditPages).values({
       id: page.id,
