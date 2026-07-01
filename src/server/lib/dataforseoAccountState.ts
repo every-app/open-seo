@@ -58,6 +58,14 @@ export async function fetchDataforseoAccountState(): Promise<DataforseoAccountSt
   });
 
   if (!response.ok) {
+    // 401/403 here means the API key itself is invalid or missing — surface a
+    // clear, actionable message instead of a generic "unexpected error".
+    if (response.status === 401 || response.status === 403) {
+      throw new AppError(
+        "DATAFORSEO_AUTH_FAILED",
+        `DataForSEO HTTP ${response.status} on /v3/appendix/user_data`,
+      );
+    }
     throw new AppError(
       "INTERNAL_ERROR",
       `DataForSEO HTTP ${response.status} on /v3/appendix/user_data`,
