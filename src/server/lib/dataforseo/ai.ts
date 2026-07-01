@@ -310,6 +310,24 @@ export async function fetchLlmCrossAggregatedMetrics(
 
 type LlmResponseModelSlug = "chat_gpt" | "claude" | "gemini" | "perplexity";
 
+/**
+ * Accepted `model_name` values per slug, mirroring DataForSEO's
+ * `/ai_optimization/{model}/llm_responses/models` catalog (verified 2026-06-30).
+ * We validate against this before dispatching because DataForSEO BILLS a task
+ * that fails with `Invalid Field: 'model_name'` — a stale or mistyped model name
+ * would otherwise pay for a guaranteed-rejected call. DataForSEO resolves a
+ * basic alias (e.g. `claude-sonnet-4-5`) to its latest dated version.
+ */
+const ACCEPTED_LLM_MODEL_NAMES: Record<
+  LlmResponseModelSlug,
+  ReadonlySet<string>
+> = {
+  chat_gpt: new Set(["gpt-5"]),
+  claude: new Set(["claude-sonnet-4-5", "claude-sonnet-4-6"]),
+  gemini: new Set(["gemini-2.5-pro"]),
+  perplexity: new Set(["sonar-reasoning-pro", "sonar-pro", "sonar"]),
+};
+
 type LlmResponsesInput = {
   userPrompt: string;
   modelSlug: LlmResponseModelSlug;
@@ -348,6 +366,15 @@ function buildPerplexityLlmResponseRequest(
 export async function fetchLlmResponse(
   input: LlmResponsesInput,
 ): Promise<DataforseoApiResponse<LlmResponseResult>> {
+  // Fail fast on an unknown model_name: DataForSEO charges for tasks that fail
+  // with `Invalid Field: 'model_name'`, so we must never dispatch one.
+  if (!ACCEPTED_LLM_MODEL_NAMES[input.modelSlug].has(input.modelName)) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Unsupported DataForSEO model_name "${input.modelName}" for ${input.modelSlug}`,
+    );
+  }
+
   // DataForSEO's Gemini endpoint rejects `web_search_country_iso_code` with a
   // 40501 "Invalid Field" error. The other three models accept it.
   const supportsCountry = input.modelSlug !== "gemini";

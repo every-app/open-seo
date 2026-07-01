@@ -356,3 +356,25 @@ describe("DataForSEO SDK-backed endpoints", () => {
     ]);
   });
 });
+
+describe("fetchLlmResponse model_name validation", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("rejects an unknown model_name before dispatching a paid LLM task", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchLlmResponse({
+        userPrompt: "What is OpenSEO?",
+        modelSlug: "claude",
+        // DataForSEO dropped this from its catalog; it must never be dispatched.
+        modelName: "claude-sonnet-4-0",
+      }),
+    ).rejects.toThrow(/Unsupported DataForSEO model_name/);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

@@ -123,10 +123,12 @@ async function runModel(
   return reapplyHighlightBrand(shaped, args.highlightBrand);
 }
 
-// DataForSEO's Claude catalog caps at the 4.0 family (no Sonnet 4.5+ yet).
+// Each value must be a member of ACCEPTED_LLM_MODEL_NAMES in dataforseo/ai.ts,
+// which mirrors DataForSEO's llm_responses/models catalog. DataForSEO dropped
+// the Claude Sonnet 4.0 family, so we target the 4.5 alias (latest dated 4.5).
 const MODEL_NAMES: Record<PromptExplorerModel, string> = {
   chat_gpt: "gpt-5",
-  claude: "claude-sonnet-4-0",
+  claude: "claude-sonnet-4-5",
   gemini: "gemini-2.5-pro",
   perplexity: "sonar-reasoning-pro",
 };
