@@ -8,7 +8,26 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  formatMcpTable,
+  readPath,
+  type McpTableColumn,
+} from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
+
+const RANK_RESULT_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "keyword", value: (row) => readPath(row, "keyword") },
+  { header: "desktop", value: (row) => readPath(row, "desktop", "position") },
+  {
+    header: "prev (desktop)",
+    value: (row) => readPath(row, "desktop", "previousPosition"),
+  },
+  { header: "mobile", value: (row) => readPath(row, "mobile", "position") },
+  {
+    header: "prev (mobile)",
+    value: (row) => readPath(row, "mobile", "previousPosition"),
+  },
+];
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -85,12 +104,9 @@ export const getRankTrackerTool = {
       `Schedule: ${config.scheduleInterval}, devices: ${config.devices}, depth: ${config.serpDepth}`,
       `Latest run: ${results.run?.lastCheckedAt ?? "never"}`,
       `Keywords (${results.rows.length}):`,
-      ...results.rows
-        .slice(0, 25)
-        .map(
-          (r) =>
-            `- "${r.keyword}"  desktop:#${r.desktop.position ?? "-"} (was ${r.desktop.previousPosition ?? "-"})  mobile:#${r.mobile.position ?? "-"}`,
-        ),
+      results.rows.length === 0
+        ? "No keywords tracked yet."
+        : formatMcpTable(results.rows, RANK_RESULT_COLUMNS),
     ].join("\n");
     return mcpResponse({
       text,

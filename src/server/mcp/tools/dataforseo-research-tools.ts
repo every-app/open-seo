@@ -14,6 +14,11 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
+  formatMcpTable,
+  readPath,
+  type McpTableColumn,
+} from "@/server/mcp/table";
+import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
   languageCodeSchema,
@@ -414,35 +419,6 @@ function buildRankedKeywordFilters(args: {
   return filters.length > 0 ? filters : undefined;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-  return isRecord(value) ? value : undefined;
-}
-
-function displayValue(value: unknown): string {
-  if (typeof value === "string" || typeof value === "number") {
-    return String(value);
-  }
-  return "?";
-}
-
-function summarizeRankedKeyword(item: Record<string, unknown>): string {
-  const keywordData = asRecord(item.keyword_data);
-  const keywordInfo = asRecord(keywordData?.keyword_info);
-  const serpElement = asRecord(item.ranked_serp_element);
-  const serpItem = asRecord(serpElement?.serp_item);
-  const keyword = displayValue(keywordData?.keyword ?? item.keyword);
-  const rank = displayValue(
-    serpItem?.rank_absolute ?? serpElement?.rank_absolute ?? item.rank_absolute,
-  );
-  const volume = displayValue(keywordInfo?.search_volume);
-  const url = displayValue(serpItem?.url ?? serpElement?.url);
-  return `- "${keyword}" #${rank} vol:${volume} ${url}`.trim();
-}
-
 function sortCompetitors(
   items: Record<string, unknown>[],
   sortBy: FindSerpCompetitorsArgs["sortBy"],
@@ -522,6 +498,95 @@ function hostMatchesDomain(host: string, domain: string): boolean {
   );
 }
 
+// Provider rows ship in full in structuredContent; these tables render every
+// row into the text content block so text-only MCP clients see the data, not
+// just a count. Loose rows are read positionally via readPath.
+
+type RankedKeywordRow = {
+  keyword: unknown;
+  rank: unknown;
+  volume: unknown;
+  cpc: unknown;
+  url: unknown;
+};
+
+function toRankedKeywordRow(item: unknown): RankedKeywordRow {
+  return {
+    keyword:
+      readPath(item, "keyword_data", "keyword") ?? readPath(item, "keyword"),
+    rank:
+      readPath(item, "ranked_serp_element", "serp_item", "rank_absolute") ??
+      readPath(item, "ranked_serp_element", "rank_absolute") ??
+      readPath(item, "rank_absolute"),
+    volume: readPath(item, "keyword_data", "keyword_info", "search_volume"),
+    cpc: readPath(item, "keyword_data", "keyword_info", "cpc"),
+    url:
+      readPath(item, "ranked_serp_element", "serp_item", "url") ??
+      readPath(item, "ranked_serp_element", "url"),
+  };
+}
+
+const RANKED_KEYWORD_COLUMNS: McpTableColumn<RankedKeywordRow>[] = [
+  { header: "keyword", value: (row) => row.keyword },
+  { header: "rank", value: (row) => row.rank },
+  { header: "volume", value: (row) => row.volume },
+  { header: "CPC", value: (row) => row.cpc },
+  { header: "url", value: (row) => row.url },
+];
+
+const LOCAL_BUSINESS_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "title", value: (row) => readPath(row, "title") },
+  { header: "category", value: (row) => readPath(row, "category") },
+  { header: "rating", value: (row) => readPath(row, "rating", "value") },
+  { header: "reviews", value: (row) => readPath(row, "rating", "votes_count") },
+  { header: "phone", value: (row) => readPath(row, "phone") },
+  { header: "address", value: (row) => readPath(row, "address") },
+];
+
+const LOCAL_SERP_COLUMNS: McpTableColumn<unknown>[] = [
+  {
+    header: "rank",
+    value: (row) =>
+      readPath(row, "rank_absolute") ?? readPath(row, "rank_group"),
+  },
+  { header: "title", value: (row) => readPath(row, "title") },
+  { header: "rating", value: (row) => readPath(row, "rating", "value") },
+  { header: "reviews", value: (row) => readPath(row, "rating", "votes_count") },
+  { header: "phone", value: (row) => readPath(row, "phone") },
+  { header: "address", value: (row) => readPath(row, "address") },
+];
+
+const BUSINESS_QUESTION_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "question", value: (row) => readPath(row, "question_text") },
+  { header: "asked by", value: (row) => readPath(row, "profile_name") },
+  { header: "when", value: (row) => readPath(row, "time_ago") },
+  {
+    header: "answers",
+    value: (row) => {
+      const answers = readPath(row, "items");
+      return Array.isArray(answers) ? answers.length : 0;
+    },
+  },
+];
+
+const SERP_COMPETITOR_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "domain", value: (row) => readPath(row, "domain") },
+  { header: "keywords", value: (row) => readPath(row, "keywords_count") },
+  { header: "avg pos", value: (row) => readPath(row, "avg_position") },
+  { header: "median pos", value: (row) => readPath(row, "median_position") },
+  { header: "visibility", value: (row) => readPath(row, "visibility") },
+  { header: "etv", value: (row) => readPath(row, "etv") },
+];
+
+const KEYWORD_METRIC_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "keyword", value: (row) => readPath(row, "keyword") },
+  { header: "volume", value: (row) => readPath(row, "search_volume") },
+  { header: "KD", value: (row) => readPath(row, "keyword_difficulty") },
+  { header: "CPC", value: (row) => readPath(row, "cpc") },
+  { header: "competition", value: (row) => readPath(row, "competition") },
+  { header: "intent", value: (row) => readPath(row, "main_intent") },
+];
+
 export const getRankedKeywordsTool = {
   name: "get_ranked_keywords",
   config: {
@@ -559,15 +624,13 @@ export const getRankedKeywordsTool = {
       includeSubdomains: args.includeSubdomains ?? !targetIsPage,
     });
 
+    const rankedRows = keywords.items.map(toRankedKeywordRow);
+    const text =
+      rankedRows.length === 0
+        ? `No ranked keyword rows for ${args.target}.`
+        : `Found ${rankedRows.length} ranked keyword rows for ${args.target}${keywords.totalCount != null ? ` (of ${keywords.totalCount} total)` : ""}:\n${formatMcpTable(rankedRows, RANKED_KEYWORD_COLUMNS)}`;
     return mcpResponse({
-      text: [
-        `Found ${keywords.items.length} ranked keyword rows for ${args.target}.`,
-        ...keywords.items
-          .slice(0, 10)
-          .map((item) =>
-            summarizeRankedKeyword(item as Record<string, unknown>),
-          ),
-      ].join("\n"),
+      text,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -608,8 +671,12 @@ export const searchLocalBusinessesTool = {
         limit: args.limit ?? 20,
       });
 
+      const header = `Found ${businesses.length} local business rows${args.query ? ` for ${args.query}` : ""}.`;
       return mcpResponse({
-        text: `Found ${businesses.length} local business rows${args.query ? ` for ${args.query}` : ""}.`,
+        text:
+          businesses.length === 0
+            ? header
+            : `${header}\n${formatMcpTable(businesses, LOCAL_BUSINESS_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { businesses },
       });
@@ -647,8 +714,12 @@ export const getLocalSerpResultsTool = {
         searchPlaces: false,
       });
 
+      const header = `Fetched ${results.length} local SERP rows for "${args.keyword}".`;
       return mcpResponse({
-        text: `Fetched ${results.length} local SERP rows for "${args.keyword}".`,
+        text:
+          results.length === 0
+            ? header
+            : `${header}\n${formatMcpTable(results, LOCAL_SERP_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { results },
       });
@@ -683,8 +754,12 @@ export const getGoogleBusinessQuestionsTool = {
         depth: args.depth ?? 20,
       });
 
+      const header = `Fetched ${questions.length} Google Business Q&A rows for ${args.keyword}.`;
       return mcpResponse({
-        text: `Fetched ${questions.length} Google Business Q&A rows for ${args.keyword}.`,
+        text:
+          questions.length === 0
+            ? header
+            : `${header}\n${formatMcpTable(questions, BUSINESS_QUESTION_COLUMNS)}`,
         meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
         structuredContent: { questions },
       });
@@ -733,8 +808,12 @@ export const findSerpCompetitorsTool = {
             });
       const sorted = sortCompetitors(filtered, args.sortBy ?? "visibility");
 
+      const header = `Found ${sorted.length} SERP competitors across ${args.keywords.length} keywords.`;
       return mcpResponse({
-        text: `Found ${sorted.length} SERP competitors across ${args.keywords.length} keywords.`,
+        text:
+          sorted.length === 0
+            ? header
+            : `${header}\n${formatMcpTable(sorted, SERP_COMPETITOR_COLUMNS)}`,
         meta: buildProjectMeta(
           context,
           args.projectId,
@@ -797,8 +876,12 @@ export const getKeywordMetricsTool = {
         : row,
     );
 
+    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
     return mcpResponse({
-      text: `Fetched metrics (volume, difficulty, intent) for ${rows.length} keywords.`,
+      text:
+        rows.length === 0
+          ? header
+          : `${header}\n${formatMcpTable(rows, KEYWORD_METRIC_COLUMNS)}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

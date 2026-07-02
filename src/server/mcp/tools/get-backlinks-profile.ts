@@ -7,6 +7,7 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import {
   BACKLINKS_DEFAULT_SORT,
@@ -91,7 +92,7 @@ function formatStatus(row: {
   return statuses.length > 0 ? statuses.join(", ") : "live";
 }
 
-function formatBacklinkRow(row: {
+type BacklinkRow = {
   domainFrom?: string | null;
   urlFrom?: string | null;
   urlTo?: string | null;
@@ -102,10 +103,18 @@ function formatBacklinkRow(row: {
   spamScore?: number | null;
   isLost?: boolean | null;
   isBroken?: boolean | null;
-}) {
-  const source = row.urlFrom ?? row.domainFrom ?? "?";
-  return `- ${source} -> ${row.urlTo ?? "?"} anchor:"${row.anchor ?? ""}" ${formatLinkType(row.isDofollow)} rank:${formatMetric(row.rank)} domainRank:${formatMetric(row.domainFromRank)} spam:${formatMetric(row.spamScore)} status:${formatStatus(row)}`;
-}
+};
+
+const BACKLINK_COLUMNS: McpTableColumn<BacklinkRow>[] = [
+  { header: "source", value: (row) => row.urlFrom ?? row.domainFrom },
+  { header: "target", value: (row) => row.urlTo },
+  { header: "anchor", value: (row) => row.anchor },
+  { header: "type", value: (row) => formatLinkType(row.isDofollow) },
+  { header: "rank", value: (row) => row.rank },
+  { header: "domainRank", value: (row) => row.domainFromRank },
+  { header: "spam", value: (row) => row.spamScore },
+  { header: "status", value: (row) => formatStatus(row) },
+];
 
 export const getBacklinksProfileTool = {
   name: "get_backlinks_profile",
@@ -143,7 +152,6 @@ export const getBacklinksProfileTool = {
       context.billing,
       { hideSpam: args.hideSpam ?? true },
     );
-    const shownRows = backlinks.rows.slice(0, 10);
     const text = [
       `Backlinks profile for ${request.target} (${request.scope ?? "domain"}):`,
       `- page: ${backlinks.page}`,
@@ -152,8 +160,9 @@ export const getBacklinksProfileTool = {
       `- total backlinks: ${formatMetric(backlinks.totalCount)}`,
       `- has more: ${backlinks.hasMore ? "yes" : "no"}`,
       "",
-      `Backlink rows (${shownRows.length} shown in text, ${backlinks.rows.length} in structured content):`,
-      ...shownRows.map(formatBacklinkRow),
+      backlinks.rows.length === 0
+        ? "No backlink rows for this page."
+        : formatMcpTable(backlinks.rows, BACKLINK_COLUMNS),
     ].join("\n");
 
     return mcpResponse({

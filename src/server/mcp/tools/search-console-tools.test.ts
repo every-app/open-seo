@@ -140,6 +140,12 @@ describe("search console MCP tools", () => {
       siteUrl: "https://example.com/",
       rowCount: 1,
     });
+    const text = result.content?.[0];
+    expect(text?.type === "text" && text.text).toContain(
+      "key | clicks | impressions | CTR | position",
+    );
+    expect(text?.type === "text" && text.text).toContain("seo tools");
+    expect(text?.type === "text" && text.text).toContain("4.0%");
   });
 
   it("surfaces a not-connected message with a connect URL", async () => {

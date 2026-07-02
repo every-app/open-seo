@@ -7,7 +7,22 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  formatMcpTable,
+  readPath,
+  type McpTableColumn,
+} from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
+
+const REFERRING_DOMAIN_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "domain", value: (row) => readPath(row, "domain") },
+  { header: "backlinks", value: (row) => readPath(row, "backlinks") },
+  {
+    header: "referring pages",
+    value: (row) => readPath(row, "referringPages"),
+  },
+  { header: "rank", value: (row) => readPath(row, "rank") },
+];
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -80,10 +95,9 @@ export const getBacklinksOverviewTool = {
       `- referring pages: ${formatMetric(summary.referringPages)}`,
       `- rank: ${formatMetric(summary.rank)}`,
       "",
-      `Top referring domains (${Math.min(topDomains.length, 10)} shown):`,
-      ...topDomains
-        .slice(0, 10)
-        .map((d) => `- ${d.domain ?? "?"}  backlinks:${d.backlinks ?? "?"}`),
+      topDomains.length === 0
+        ? "No referring domains found."
+        : `Referring domains (${topDomains.length}):\n${formatMcpTable(topDomains, REFERRING_DOMAIN_COLUMNS)}`,
     ].join("\n");
     return mcpResponse({
       text,

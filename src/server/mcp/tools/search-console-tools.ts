@@ -4,6 +4,7 @@ import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { hasSelfHostedGscConfig } from "@/server/features/gsc/oauth-config";
@@ -25,6 +26,31 @@ import { GscApiError, GscTokenError } from "@/server/lib/gscClient";
 import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
 
 const TEXT_SUMMARY_ROWS = 15;
+
+type GscPerfRow = {
+  keys?: string[];
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number;
+};
+
+const GSC_PERF_COLUMNS: McpTableColumn<GscPerfRow>[] = [
+  { header: "key", value: (row) => row.keys?.join(" / ") ?? "(total)" },
+  { header: "clicks", value: (row) => row.clicks },
+  { header: "impressions", value: (row) => row.impressions },
+  {
+    header: "CTR",
+    value: (row) => row.ctr,
+    format: (value) =>
+      typeof value === "number" ? `${(value * 100).toFixed(1)}%` : "—",
+  },
+  {
+    header: "position",
+    value: (row) => row.position,
+    format: (value) => (typeof value === "number" ? value.toFixed(1) : "—"),
+  },
+];
 
 type ProjectAuthContext = {
   auth: { organizationId: string };
@@ -234,17 +260,12 @@ export const getSearchConsolePerformanceTool = {
       const hasMore = rows.length >= requestedLimit;
       const nextStartRow = (result.request.startRow ?? 0) + rows.length;
 
-      const summaryLines = rows.slice(0, TEXT_SUMMARY_ROWS).map((r) => {
-        const label = r.keys?.join(" / ") ?? "(total)";
-        const ctrPct = (r.ctr * 100).toFixed(1);
-        return `  ${label} — ${r.clicks} clicks, ${r.impressions} impr, ${ctrPct}% CTR, pos ${r.position.toFixed(1)}`;
-      });
       const header =
         `${result.siteUrl} · ${dimensions.join("+")} · ${result.request.startDate}→${result.request.endDate} · ` +
         `${rows.length} row${rows.length === 1 ? "" : "s"}${hasMore ? " (more available — paginate with startRow)" : ""}`;
       const text =
-        summaryLines.length > 0
-          ? `${header}\n${summaryLines.join("\n")}${rows.length > summaryLines.length ? `\n  …and ${rows.length - summaryLines.length} more` : ""}`
+        rows.length > 0
+          ? `${header}\n${formatMcpTable(rows, GSC_PERF_COLUMNS)}`
           : `${header}\nNo rows for this query/date range.`;
 
       return mcpResponse({

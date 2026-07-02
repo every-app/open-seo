@@ -48,6 +48,13 @@ const toolExtra: ToolExtra = {
   } satisfies AuthInfo,
 };
 
+function textOf(result: {
+  content?: Array<{ type: string; text?: string }>;
+}): string {
+  const first = result.content?.[0];
+  return first?.type === "text" ? (first.text ?? "") : "";
+}
+
 describe("DataForSEO research MCP tools", () => {
   beforeEach(() => {
     vi.resetModules();
@@ -100,6 +107,8 @@ describe("DataForSEO research MCP tools", () => {
       .passthrough()
       .parse(result.structuredContent);
     expect(content.businesses).toEqual([{ title: "Acme Cafe" }]);
+    expect(textOf(result)).toContain("title | category");
+    expect(textOf(result)).toContain("Acme Cafe");
   });
 
   it("fetches one local SERP with search_places disabled", async () => {
@@ -152,6 +161,8 @@ describe("DataForSEO research MCP tools", () => {
       rank_group: 1,
       rank_absolute: 2,
     });
+    expect(textOf(result)).toContain("rank | title | rating");
+    expect(textOf(result)).toContain("Acme Cafe");
   });
 
   it("fetches Google Business Q&A as an explicit tool", async () => {
@@ -191,6 +202,8 @@ describe("DataForSEO research MCP tools", () => {
     expect(content.questions).toEqual([
       { question_text: "Do you serve breakfast?" },
     ]);
+    expect(textOf(result)).toContain("question | asked by");
+    expect(textOf(result)).toContain("Do you serve breakfast?");
   });
 
   it("passes only explicit brand exclusions to ranked keyword filters", async () => {
@@ -249,6 +262,8 @@ describe("DataForSEO research MCP tools", () => {
     expect(content.competitors.map((row) => row.domain)).toEqual([
       "competitor.example",
     ]);
+    expect(textOf(result)).toContain("domain | keywords | avg pos");
+    expect(textOf(result)).toContain("competitor.example");
   });
 
   it("keeps AI overview result types out of SERP competitors", async () => {
@@ -328,6 +343,9 @@ describe("DataForSEO research MCP tools", () => {
       keyword_difficulty: 18,
       main_intent: "commercial",
     });
+    const out = textOf(result);
+    expect(out).toContain("keyword | volume | KD | CPC | competition | intent");
+    expect(out).toContain("seo automation");
   });
 
   it("sorts keyword metric rows by the requested numeric field", async () => {

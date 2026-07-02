@@ -4,6 +4,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
@@ -11,6 +12,22 @@ import {
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
+
+type SerpItem = {
+  type?: string | null;
+  rank: number | null;
+  title: string | null;
+  url: string | null;
+  domain: string | null;
+  description: string | null;
+};
+
+const SERP_ITEM_COLUMNS: McpTableColumn<SerpItem>[] = [
+  { header: "rank", value: (item) => item.rank },
+  { header: "domain", value: (item) => item.domain },
+  { header: "title", value: (item) => item.title },
+  { header: "url", value: (item) => item.url },
+];
 
 const querySchema = z.object({
   keyword: z.string().min(1).describe("Search query to fetch the SERP for."),
@@ -111,16 +128,13 @@ export const getSerpResultsTool = {
     const text =
       results
         .map((r) => {
-          if (r.ok) {
-            const top = r.items.slice(0, 3);
-            return `"${r.keyword}" (${r.items.length} results):\n${top
-              .map(
-                (it) =>
-                  `  #${it.rank ?? "?"}  ${it.domain ?? "?"} — ${it.title ?? "?"}`,
-              )
-              .join("\n")}`;
+          if (!r.ok) {
+            return `"${r.keyword}": FAILED — ${r.error}`;
           }
-          return `"${r.keyword}": FAILED — ${r.error}`;
+          if (r.items.length === 0) {
+            return `"${r.keyword}" (0 results)`;
+          }
+          return `"${r.keyword}" (${r.items.length} results):\n${formatMcpTable(r.items, SERP_ITEM_COLUMNS)}`;
         })
         .join("\n\n") +
       `\n\n${okCount} of ${results.length} queries succeeded.`;
