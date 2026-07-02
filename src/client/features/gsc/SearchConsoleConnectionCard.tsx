@@ -68,6 +68,9 @@ export function SearchConsoleConnectionCard({
       void queryClient.invalidateQueries({
         queryKey: ["searchPerformance", projectId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
+      });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
@@ -83,6 +86,9 @@ export function SearchConsoleConnectionCard({
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
       void queryClient.invalidateQueries({
         queryKey: ["searchPerformance", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
       });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),

@@ -75,24 +75,34 @@ export function toDimensionRows(
   return output;
 }
 
-/** Filter `["query","page"]` rows to positions 5..20, highest impressions
- *  first. These are the improvement candidates the page exists to surface. */
+/** Reduce `["query","page"]` rows to one striking-distance row per query.
+ *
+ *  GSC returns a row per page that ranks for a query, so a query fans out across
+ *  every page it appears on. A query only belongs in "striking distance" when
+ *  the site's BEST-ranking page for it sits in the 5..20 band — if any page
+ *  already ranks above position 5, the site effectively ranks near the top and
+ *  improving a secondary page won't move traffic. So we collapse each query to
+ *  its top page (lowest average position; ties broken by impressions) and keep
+ *  it only when that top page is in band. Result is sorted by impressions. */
 export function buildStrikingDistanceRows(
   rows: GscSearchAnalyticsRow[],
   limit: number = STRIKING_DISTANCE_ROW_LIMIT,
 ): StrikingDistanceRow[] {
-  const candidates: StrikingDistanceRow[] = [];
+  const topPageByQuery = new Map<string, StrikingDistanceRow>();
   for (const row of rows) {
     const query = row.keys?.[0];
     const page = row.keys?.[1];
     if (!query || !page) continue;
-    if (
-      row.position < STRIKING_DISTANCE_MIN_POSITION ||
-      row.position > STRIKING_DISTANCE_MAX_POSITION
-    ) {
-      continue;
-    }
-    candidates.push({
+
+    const current = topPageByQuery.get(query);
+    const isBetter =
+      !current ||
+      row.position < current.position ||
+      (row.position === current.position &&
+        row.impressions > current.impressions);
+    if (!isBetter) continue;
+
+    topPageByQuery.set(query, {
       query,
       page,
       clicks: row.clicks,
@@ -100,7 +110,13 @@ export function buildStrikingDistanceRows(
       position: row.position,
     });
   }
-  return candidates
+
+  return Array.from(topPageByQuery.values())
+    .filter(
+      (row) =>
+        row.position >= STRIKING_DISTANCE_MIN_POSITION &&
+        row.position <= STRIKING_DISTANCE_MAX_POSITION,
+    )
     .toSorted((a, b) => b.impressions - a.impressions)
     .slice(0, limit);
 }

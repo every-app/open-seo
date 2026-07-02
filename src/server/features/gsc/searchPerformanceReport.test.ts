@@ -61,6 +61,14 @@ const row = (query: string, position: number, impressions: number) => ({
   position,
 });
 
+// Same query can map to multiple pages; this lets a test set distinct pages.
+const pageRow = (
+  query: string,
+  page: string,
+  position: number,
+  impressions: number,
+) => ({ keys: [query, page], clicks: 1, impressions, ctr: 0.01, position });
+
 describe("buildStrikingDistanceRows", () => {
   it("keeps only positions 5..20 and sorts by impressions desc", () => {
     const rows = buildStrikingDistanceRows([
@@ -92,6 +100,26 @@ describe("buildStrikingDistanceRows", () => {
       },
     ]);
     expect(rows).toHaveLength(0);
+  });
+
+  it("drops a query whose top page already ranks above the band", () => {
+    // openseo: homepage ranks #2, a secondary page ranks #6. The site already
+    // ranks near the top, so the query is not a striking-distance opportunity.
+    const rows = buildStrikingDistanceRows([
+      pageRow("openseo", "https://x.com/home", 2, 900),
+      pageRow("openseo", "https://x.com/mcp", 6, 300),
+    ]);
+    expect(rows).toHaveLength(0);
+  });
+
+  it("collapses a query to its best-ranking page when that page is in band", () => {
+    const rows = buildStrikingDistanceRows([
+      pageRow("kw", "https://x.com/a", 14, 100),
+      pageRow("kw", "https://x.com/b", 8, 500),
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].page).toBe("https://x.com/b");
+    expect(rows[0].position).toBe(8);
   });
 });
 

@@ -3,13 +3,20 @@ import type { MutableRefObject } from "react";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
-import type { getSearchPerformanceReport } from "@/serverFunctions/searchPerformance";
+import type {
+  getSearchPerformanceReport,
+  getSearchPerformanceTable,
+} from "@/serverFunctions/searchPerformance";
 
 export type Report = Extract<
   Awaited<ReturnType<typeof getSearchPerformanceReport>>,
   { connected: true }
 >;
-type DimensionRow = Report["queries"][number];
+export type SearchPerformanceTableRow = Extract<
+  Awaited<ReturnType<typeof getSearchPerformanceTable>>,
+  { connected: true }
+>["rows"][number];
+type DimensionRow = SearchPerformanceTableRow;
 type StrikingRow = Report["strikingDistance"][number];
 
 const numberFormat = new Intl.NumberFormat("en-US");

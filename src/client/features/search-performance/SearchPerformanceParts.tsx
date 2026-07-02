@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { Loader2, Save } from "lucide-react";
+import { Copy, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
   AppDataTable,
@@ -12,6 +11,7 @@ import {
   TableBulkActionBar,
   TableBulkActionButton,
 } from "@/client/components/table/TableBulkActionBar";
+import { TablePagination } from "@/client/components/table/TablePagination";
 import {
   buildDimensionColumns,
   buildStrikingColumns,
@@ -19,44 +19,54 @@ import {
   formatCtr,
   formatPosition,
   type Report,
+  type SearchPerformanceTableRow,
 } from "@/client/features/search-performance/SearchPerformanceColumns";
 import { buildCsv, downloadCsv, type CsvValue } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
+import {
+  SEARCH_PERFORMANCE_PAGE_SIZES,
+  type SearchPerformanceTableDimension,
+} from "@/types/schemas/search-performance";
 import { saveKeywords } from "@/serverFunctions/keywords";
 
 export type Tab = "striking" | "queries" | "pages";
+export type ExportTarget = "csv" | "sheets";
 
-function buildTabTable(
-  report: Report,
-  tab: Tab,
-): { filename: string; headers: string[]; rows: CsvValue[][] } {
+type ExportTable = { filename: string; headers: string[]; rows: CsvValue[][] };
+
+function strikingExportTable(report: Report): ExportTable {
   const stamp = `${report.range.startDate}-to-${report.range.endDate}`;
-  if (tab === "striking") {
-    return {
-      filename: `search-performance-striking-distance-${stamp}.csv`,
-      headers: ["Query", "Page", "Impressions", "Clicks", "Position"],
-      rows: report.strikingDistance.map((row) => [
-        row.query,
-        row.page,
-        row.impressions,
-        row.clicks,
-        row.position,
-      ]),
-    };
-  }
-  const source = tab === "queries" ? report.queries : report.pages;
   return {
-    filename: `search-performance-${tab}-${stamp}.csv`,
+    filename: `search-performance-striking-distance-${stamp}.csv`,
+    headers: ["Query", "Page", "Impressions", "Clicks", "Position"],
+    rows: report.strikingDistance.map((row) => [
+      row.query,
+      row.page,
+      row.impressions,
+      row.clicks,
+      row.position,
+    ]),
+  };
+}
+
+function dimensionExportTable(
+  dimension: SearchPerformanceTableDimension,
+  rows: SearchPerformanceTableRow[],
+  stamp: string,
+): ExportTable {
+  const isPage = dimension === "page";
+  return {
+    filename: `search-performance-${isPage ? "pages" : "queries"}-${stamp}.csv`,
     headers: [
-      tab === "queries" ? "Query" : "Page",
+      isPage ? "Page" : "Query",
       "Clicks",
       "Impressions",
       "CTR",
       "Position",
     ],
-    rows: source.map((row) => [
+    rows: rows.map((row) => [
       row.key,
       row.clicks,
       row.impressions,
@@ -66,18 +76,36 @@ function buildTabTable(
   };
 }
 
-export function exportCurrentTab(report: Report, tab: Tab): void {
-  const { filename, headers, rows } = buildTabTable(report, tab);
-  downloadCsv(filename, buildCsv(headers, rows));
-  captureClientEvent("data:export", {
-    source_feature: "search_performance",
-    result_count: rows.length,
+function runExport(table: ExportTable, target: ExportTarget): void {
+  if (target === "csv") {
+    downloadCsv(table.filename, buildCsv(table.headers, table.rows));
+    captureClientEvent("data:export", {
+      source_feature: "search_performance",
+      result_count: table.rows.length,
+    });
+    return;
+  }
+  void exportTableToSheets({
+    headers: table.headers,
+    rows: table.rows,
+    feature: "search_performance",
   });
 }
 
-export function exportCurrentTabToSheets(report: Report, tab: Tab): void {
-  const { headers, rows } = buildTabTable(report, tab);
-  void exportTableToSheets({ headers, rows, feature: "search_performance" });
+export function exportStriking(report: Report, target: ExportTarget): void {
+  runExport(strikingExportTable(report), target);
+}
+
+/** Export the full queries/pages dataset (fetched separately, not the visible
+ *  page) so pagination never truncates a download. */
+export function exportDimensionRows(
+  dimension: SearchPerformanceTableDimension,
+  rows: SearchPerformanceTableRow[],
+  range: Report["range"],
+  target: ExportTarget,
+): void {
+  const stamp = `${range.startDate}-to-${range.endDate}`;
+  runExport(dimensionExportTable(dimension, rows, stamp), target);
 }
 
 export function TabButton({
@@ -189,7 +217,7 @@ export function DimensionTable({
   rows,
   keyLabel,
 }: {
-  rows: Report["queries"];
+  rows: SearchPerformanceTableRow[];
   keyLabel: string;
 }) {
   const columns = useMemo(() => buildDimensionColumns(keyLabel), [keyLabel]);
@@ -203,7 +231,7 @@ export function DimensionTable({
     <AppDataTable
       table={table}
       className="table table-zebra table-sm"
-      wrapperClassName="overflow-x-auto rounded-lg border border-base-300"
+      wrapperClassName="overflow-x-auto"
       empty={
         <p className="p-6 text-sm text-base-content/60">
           No data for this period yet. Search Console data trails by a few days.
@@ -228,17 +256,35 @@ export function StrikingDistanceTable({
     data: rows,
     columns,
     withSorting: true,
+    withPagination: true,
     enableRowSelection: true,
     state: { rowSelection },
     onRowSelectionChange: setRowSelection,
     getRowId: (row) => `${row.query}::${row.page}`,
-    initialState: { sorting: [{ id: "impressions", desc: true }] },
+    initialState: {
+      sorting: [{ id: "impressions", desc: true }],
+      // All rows are already loaded; paginate client-side to keep the table
+      // short. 50/page by default.
+      pagination: { pageIndex: 0, pageSize: 50 },
+    },
   });
+  const pagination = table.getState().pagination;
 
-  // Rows are query x page; saving dedupes to the query strings.
+  // Rows are query x page; saving/copying dedupes to the query strings.
   const selectedQueries = Array.from(
     new Set(table.getSelectedRowModel().rows.map((row) => row.original.query)),
   );
+
+  const copyKeywords = async () => {
+    try {
+      await navigator.clipboard.writeText(selectedQueries.join("\n"));
+      toast.success(
+        `Copied ${selectedQueries.length} ${selectedQueries.length === 1 ? "keyword" : "keywords"}`,
+      );
+    } catch {
+      toast.error("Couldn't copy to clipboard");
+    }
+  };
 
   const save = useMutation({
     mutationFn: (keywords: string[]) =>
@@ -272,31 +318,40 @@ export function StrikingDistanceTable({
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-base-content/60">
+    <>
+      <div className="p-4">
+        <p className="mb-3 text-sm text-base-content/60">
           Queries ranking at positions 5 to 20, sorted by impressions. Improve
           the listed page to move them into the top results.
         </p>
-        <Link
-          to="/p/$projectId/saved"
-          params={{ projectId }}
-          className="btn btn-ghost btn-sm"
-        >
-          View saved
-        </Link>
+        <AppDataTable
+          table={table}
+          className="table table-zebra table-sm"
+          wrapperClassName="overflow-x-auto"
+        />
       </div>
-      <AppDataTable
-        table={table}
-        className="table table-zebra table-sm"
-        wrapperClassName="overflow-x-auto rounded-lg border border-base-300"
+      <TablePagination
+        page={pagination.pageIndex + 1}
+        pageSize={pagination.pageSize}
+        pageSizes={SEARCH_PERFORMANCE_PAGE_SIZES}
+        totalCount={rows.length}
+        hasNextPage={table.getCanNextPage()}
+        isLoading={false}
+        onPageChange={(nextPage) => table.setPageIndex(nextPage - 1)}
+        onPageSizeChange={(nextSize) => table.setPageSize(nextSize)}
       />
       <TableBulkActionBar
         selectedCount={selectedQueries.length}
         selectedLabel={selectedQueries.length === 1 ? "query" : "queries"}
         onClear={() => setRowSelection({})}
         actions={
-          <div className="flex items-center px-1.5">
+          <div className="flex items-center gap-1 px-1.5">
+            <TableBulkActionButton
+              icon={<Copy className="size-3.5" />}
+              onClick={() => void copyKeywords()}
+            >
+              Copy keywords
+            </TableBulkActionButton>
             <TableBulkActionButton
               icon={
                 save.isPending ? (
@@ -313,6 +368,6 @@ export function StrikingDistanceTable({
           </div>
         }
       />
-    </div>
+    </>
   );
 }
