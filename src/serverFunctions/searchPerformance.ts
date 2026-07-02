@@ -1,8 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
-import { z } from "zod";
 import {
   GscNotConnectedError,
   GscService,
+  isExpectedGrantFailure,
 } from "@/server/features/gsc/services/GscService";
 import {
   resolveDateRange,
@@ -14,28 +14,8 @@ import {
   sumSearchTotals,
   toDimensionRows,
 } from "@/server/features/gsc/searchPerformanceReport";
-import { GscTokenError } from "@/server/lib/gscClient";
 import { requireProjectContext } from "@/serverFunctions/middleware";
-
-const SEARCH_PERFORMANCE_RANGES = [
-  "last_7_days",
-  "last_28_days",
-  "last_3_months",
-] as const;
-
-const GSC_DEVICES = ["DESKTOP", "MOBILE", "TABLET"] as const;
-
-const searchPerformanceInputSchema = z.object({
-  projectId: z.string().min(1),
-  dateRange: z.enum(SEARCH_PERFORMANCE_RANGES).default("last_28_days"),
-  device: z.enum(GSC_DEVICES).optional(),
-  // ISO-3166-1 alpha-3, the code GSC returns in `country` dimension keys.
-  country: z
-    .string()
-    .length(3)
-    .transform((value) => value.toLowerCase())
-    .optional(),
-});
+import { searchPerformanceInputSchema } from "@/types/schemas/search-performance";
 
 const TABLE_ROW_LIMIT = 250;
 // query x page fan-out needs more rows to find the 5..20 band.
@@ -133,7 +113,6 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
 
       return {
         connected: true as const,
-        siteUrl: current.siteUrl,
         range: {
           startDate,
           endDate,
@@ -148,11 +127,12 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         countries: toDimensionRows(countries.rows),
       };
     } catch (error) {
-      // Not connected (or a dead grant): the page renders the connect card.
-      // Anything else is a real fault and goes through error handling.
+      // Not connected, or a dead/denied grant (token failure or 401/403): the
+      // page renders the connect card, which surfaces the reconnect prompt.
+      // Other statuses (429, 5xx) are real faults and go through error handling.
       if (
         error instanceof GscNotConnectedError ||
-        error instanceof GscTokenError
+        isExpectedGrantFailure(error)
       ) {
         return { connected: false as const };
       }

@@ -74,7 +74,7 @@ async function listSitesForUser(userId: string): Promise<GscSite[]> {
  *  minted (refresh token revoked or expired), or Google rejected the call
  *  (401/403). These surface a reconnect prompt instead of being routed through
  *  error tracking. Other statuses (429, 5xx) are genuine faults and propagate. */
-function isExpectedGrantFailure(error: unknown): boolean {
+export function isExpectedGrantFailure(error: unknown): boolean {
   if (error instanceof GscTokenError) return true;
   return (
     error instanceof GscApiError &&
