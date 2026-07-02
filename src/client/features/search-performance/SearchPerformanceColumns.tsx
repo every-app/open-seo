@@ -96,17 +96,24 @@ export function buildStrikingColumns(
     strikingHelper.accessor("page", {
       enableSorting: false,
       header: () => "Page",
-      cell: ({ getValue }) => (
-        <a
-          href={getValue()}
-          target="_blank"
-          rel="noreferrer"
-          className="link link-hover block max-w-sm truncate"
-          title={getValue()}
-        >
-          {getValue()}
-        </a>
-      ),
+      // GSC page keys are canonical http(s) URLs of the verified property;
+      // the scheme check is defense-in-depth before rendering an href.
+      cell: ({ getValue }) =>
+        /^https?:\/\//.test(getValue()) ? (
+          <a
+            href={getValue()}
+            target="_blank"
+            rel="noreferrer"
+            className="link link-hover block max-w-sm truncate"
+            title={getValue()}
+          >
+            {getValue()}
+          </a>
+        ) : (
+          <span className="block max-w-sm truncate" title={getValue()}>
+            {getValue()}
+          </span>
+        ),
     }),
     strikingHelper.accessor("impressions", {
       header: ({ column }) => (
