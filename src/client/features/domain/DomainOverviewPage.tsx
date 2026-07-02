@@ -596,7 +596,7 @@ export function DomainOverviewPage({
 
             <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
-                <div role="tablist" className="tabs tabs-box w-fit">
+                <div role="tablist" className="tabs tabs-border w-fit">
                   <button
                     type="button"
                     role="tab"

@@ -154,7 +154,7 @@ export function PostSignupOnboarding({
               </button>
               <button
                 type="button"
-                className="btn btn-soft"
+                className="btn btn-primary"
                 disabled={!canContinue || isSaving}
                 onClick={onNext}
               >
@@ -216,7 +216,7 @@ function McpRecommendation({
 
       <button
         type="button"
-        className="btn btn-neutral mt-5 w-full"
+        className="btn btn-primary mt-5 w-full"
         disabled={isSaving}
         onClick={onSetup}
       >

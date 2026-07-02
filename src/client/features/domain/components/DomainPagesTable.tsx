@@ -92,7 +92,7 @@ function DomainPagesTableComponent({
   return (
     <AppDataTable
       table={table}
-      className="table table-zebra table-sm"
+      className="table table-sm"
       empty={
         <div className="py-6 text-center text-base-content/60">
           No pages match this search.

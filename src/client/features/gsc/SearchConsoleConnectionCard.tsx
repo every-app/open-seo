@@ -152,7 +152,7 @@ export function SearchConsoleConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Real clicks, impressions, and rankings. No credits used.
+            Connect your Google Search Console to get insights in OpenSEO.
           </p>
           <button
             type="button"
@@ -182,14 +182,9 @@ function IntegrationCard({
   return (
     <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
       <div className="flex items-start justify-between gap-4 p-5 sm:p-6">
-        <div>
-          <h2 className="text-base font-semibold leading-tight">
-            Google Search Console
-          </h2>
-          <p className="mt-0.5 text-sm text-base-content/55">
-            Your search data, straight from Google.
-          </p>
-        </div>
+        <h2 className="text-base font-semibold leading-tight">
+          Google Search Console
+        </h2>
         {status ? <StatusPill status={status} /> : null}
       </div>
       <div className="border-t border-base-300 p-5 sm:p-6">{children}</div>

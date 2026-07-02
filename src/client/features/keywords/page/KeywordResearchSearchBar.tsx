@@ -117,7 +117,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
             <button
               type="submit"
-              className="btn btn-primary w-full px-6 font-semibold lg:w-auto lg:shrink-0"
+              className="btn btn-primary w-full px-6 lg:w-auto lg:shrink-0"
             >
               Search
             </button>

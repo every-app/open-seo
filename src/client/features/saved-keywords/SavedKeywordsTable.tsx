@@ -131,7 +131,7 @@ export function SavedKeywordsTable({
   return (
     <AppDataTable
       table={table}
-      className="table table-zebra table-sm"
+      className="table table-sm"
       isLoading={isLoading}
       loading={<SavedKeywordsSkeleton />}
       empty={<SavedKeywordsEmptyState hasActiveFilters={hasActiveFilters} />}

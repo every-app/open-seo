@@ -84,7 +84,7 @@ export function BacklinksErrorState({
           </p>
         </div>
       </div>
-      <button className="btn btn-outline btn-sm" onClick={onRetry}>
+      <button className="btn btn-sm" onClick={onRetry}>
         Retry
       </button>
     </section>

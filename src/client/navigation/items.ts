@@ -1,5 +1,4 @@
 import {
-  BarChart3,
   Bookmark,
   Bot,
   ClipboardCheck,
@@ -11,69 +10,60 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
+import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 
 const projectNavItems = [
   {
     to: "/p/$projectId/keywords" as const,
     label: "Keyword Research",
     icon: Search,
-    matchSegment: "/keywords",
   },
   {
     to: "/p/$projectId/saved" as const,
     label: "Saved Keywords",
     icon: Bookmark,
-    matchSegment: "/saved",
   },
   {
     to: "/p/$projectId/rank-tracking" as const,
     label: "Rank Tracking",
     icon: TrendingUp,
-    matchSegment: "/rank-tracking",
   },
   {
     to: "/p/$projectId/search-performance" as const,
-    label: "Search Performance",
-    icon: BarChart3,
-    matchSegment: "/search-performance",
+    label: "GSC Insights",
+    icon: GoogleGlyphMuted,
   },
   {
     to: "/p/$projectId/domain" as const,
     label: "Domain Overview",
     icon: Globe,
-    matchSegment: "/domain",
   },
   {
     to: "/p/$projectId/backlinks" as const,
     label: "Backlinks",
     icon: Link2,
-    matchSegment: "/backlinks",
   },
   {
     to: "/p/$projectId/audit" as const,
     label: "Site Audit",
     icon: ClipboardCheck,
-    matchSegment: "/audit",
   },
   {
     to: "/p/$projectId/brand-lookup" as const,
     label: "Brand Lookup",
     icon: Sparkles,
-    matchSegment: "/brand-lookup",
   },
   {
     to: "/p/$projectId/prompt-explorer" as const,
     label: "Prompt Explorer",
     icon: MessageSquare,
-    matchSegment: "/prompt-explorer",
   },
 ] as const;
 
-const aiNavItem = linkOptions({
+export const aiNavItem = linkOptions({
   to: "/ai" as const,
   label: "AI & MCP",
   icon: Bot,
-  matchSegment: "/ai",
 });
 
 function getProjectNavItems(projectId: string) {
@@ -86,47 +76,32 @@ function getProjectNavItems(projectId: string) {
   );
 }
 
+// Grouped by scope: "My Site" is the project's own domain (tracked data),
+// "Research" is point-at-anything lookup tools.
 export function getProjectNavGroups(projectId: string) {
   const all = getProjectNavItems(projectId);
-  const bySegment = (seg: string) => all.find((i) => i.matchSegment === seg)!;
+  const byPath = (path: (typeof projectNavItems)[number]["to"]) =>
+    all.find((i) => i.to === path)!;
 
   return [
     {
-      type: "group" as const,
-      label: "Keywords",
-      icon: Search,
-      matchSegments: ["/keywords", "/saved", "/rank-tracking"],
+      label: "Research",
       items: [
-        bySegment("/keywords"),
-        bySegment("/saved"),
-        bySegment("/rank-tracking"),
+        byPath("/p/$projectId/keywords"),
+        byPath("/p/$projectId/domain"),
+        byPath("/p/$projectId/backlinks"),
+        byPath("/p/$projectId/brand-lookup"),
+        byPath("/p/$projectId/prompt-explorer"),
       ],
     },
     {
-      type: "standalone" as const,
-      item: bySegment("/search-performance"),
-    },
-    {
-      type: "group" as const,
-      label: "Domain",
-      icon: Globe,
-      matchSegments: ["/domain", "/backlinks", "/audit"],
+      label: "My Site",
       items: [
-        bySegment("/domain"),
-        bySegment("/backlinks"),
-        bySegment("/audit"),
+        byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/rank-tracking"),
+        byPath("/p/$projectId/saved"),
+        byPath("/p/$projectId/audit"),
       ],
-    },
-    {
-      type: "group" as const,
-      label: "AI Visibility",
-      icon: Sparkles,
-      matchSegments: ["/brand-lookup", "/prompt-explorer"],
-      items: [bySegment("/brand-lookup"), bySegment("/prompt-explorer")],
-    },
-    {
-      type: "standalone" as const,
-      item: aiNavItem,
     },
   ];
 }

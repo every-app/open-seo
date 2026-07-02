@@ -174,7 +174,7 @@ export function PromptExplorerForm({
           </div>
           <button
             type="submit"
-            className="btn btn-primary"
+            className="btn btn-primary shrink-0 px-6"
             disabled={isLoading || form.models.length === 0}
           >
             {isLoading ? "Running…" : "Run"}

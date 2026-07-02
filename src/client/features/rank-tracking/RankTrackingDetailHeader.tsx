@@ -93,7 +93,7 @@ export function RankTrackingDetailHeader({
           <option value="90d">vs 90 days ago</option>
         </select>
         <div className="hidden sm:block h-6 w-px bg-base-300" />
-        <button className="btn btn-outline btn-sm gap-1" onClick={onEdit}>
+        <button className="btn btn-sm gap-1" onClick={onEdit}>
           <Settings className="size-3.5" />
           Configure
         </button>

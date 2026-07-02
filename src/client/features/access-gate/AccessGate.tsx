@@ -62,7 +62,7 @@ export function AccessGate({
             {isRefetching ? refetchingLabel : buttonLabel}
           </button>
           <a
-            className="btn btn-outline"
+            className="btn"
             href={externalUrl}
             target="_blank"
             rel="noreferrer"

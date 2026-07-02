@@ -13,11 +13,9 @@ function closeDropdown() {
 
 export function ProjectSwitcher({
   activeProjectId,
-  variant = "topbar",
   onCloseDrawer,
 }: {
   activeProjectId: string | null;
-  variant?: "topbar" | "sidebar";
   // Mobile sidebar passes this so switching / navigating away also closes the
   // drawer overlay.
   onCloseDrawer?: () => void;
@@ -31,8 +29,6 @@ export function ProjectSwitcher({
   const activeProject =
     projects.find((project) => project.id === activeProjectId) ?? null;
 
-  const isSidebar = variant === "sidebar";
-
   const handleSelect = (project: ProjectSummary) => {
     closeDropdown();
     onCloseDrawer?.();
@@ -45,16 +41,12 @@ export function ProjectSwitcher({
   };
 
   return (
-    <div className={`dropdown ${isSidebar ? "w-full" : "dropdown-end"}`}>
+    <div className="dropdown w-full">
       <button
         type="button"
         tabIndex={0}
         aria-label="Switch project"
-        className={
-          isSidebar
-            ? "btn btn-ghost btn-sm w-full justify-between font-medium"
-            : "flex h-10 max-w-[12rem] items-center gap-2 rounded-full px-3 text-left transition-colors hover:bg-base-200/80"
-        }
+        className="flex w-full items-center justify-between gap-2 rounded-lg border border-base-300 bg-base-100 px-3 py-1.5 text-left transition-colors hover:border-base-content/25"
       >
         <span className="flex min-w-0 flex-col">
           <span className="truncate text-sm font-medium text-base-content">
@@ -71,9 +63,7 @@ export function ProjectSwitcher({
 
       <ul
         tabIndex={0}
-        className={`dropdown-content z-30 menu rounded-box border border-base-300 bg-base-100 p-2 shadow-lg ${
-          isSidebar ? "w-full" : "mt-2 w-64"
-        }`}
+        className="dropdown-content z-30 menu w-full rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
       >
         {projects.map((project) => {
           const isActive = project.id === activeProjectId;
@@ -101,9 +91,10 @@ export function ProjectSwitcher({
         })}
 
         {projects.length > 0 ? (
-          <li>
-            <hr className="my-1 border-base-300" />
-          </li>
+          <li
+            aria-hidden="true"
+            className="pointer-events-none my-1 h-px bg-base-300 p-0"
+          />
         ) : null}
 
         <li>

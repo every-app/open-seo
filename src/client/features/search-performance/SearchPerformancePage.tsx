@@ -209,12 +209,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
             </span>
           </div>
         ) : !report?.connected ? (
-          <div className="max-w-2xl space-y-4">
-            <p className="text-sm text-base-content/70">
-              Find your striking-distance keywords — queries ranking just off
-              the top of page one, where a small improvement can win the most
-              new clicks. Connect Search Console to see them.
-            </p>
+          <div className="max-w-2xl">
             <SearchConsoleConnectionCard projectId={projectId} />
           </div>
         ) : (
@@ -222,7 +217,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
             <TotalsCards report={report} />
             <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
               <div className="flex flex-col gap-3 border-b border-base-300 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-                <div role="tablist" className="tabs tabs-box w-fit">
+                <div role="tablist" className="tabs tabs-border w-fit">
                   <TabButton
                     active={tab === "striking"}
                     onClick={() => setTab("striking")}

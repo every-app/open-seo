@@ -139,7 +139,7 @@ function ResultsHeader({
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
       {hasPerformanceTab ? (
-        <div role="tablist" className="tabs tabs-box w-fit">
+        <div role="tablist" className="tabs tabs-border w-fit">
           {tabs.map(({ label, tab }) => {
             const isActive = activeTab === tab;
 
