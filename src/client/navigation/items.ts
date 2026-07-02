@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bookmark,
   Bot,
   ClipboardCheck,
@@ -29,6 +30,12 @@ const projectNavItems = [
     label: "Rank Tracking",
     icon: TrendingUp,
     matchSegment: "/rank-tracking",
+  },
+  {
+    to: "/p/$projectId/search-performance" as const,
+    label: "Search Performance",
+    icon: BarChart3,
+    matchSegment: "/search-performance",
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -94,6 +101,10 @@ export function getProjectNavGroups(projectId: string) {
         bySegment("/saved"),
         bySegment("/rank-tracking"),
       ],
+    },
+    {
+      type: "standalone" as const,
+      item: bySegment("/search-performance"),
     },
     {
       type: "group" as const,

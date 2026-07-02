@@ -2,6 +2,7 @@ import {
   flexRender,
   getCoreRowModel,
   getExpandedRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
   type ColumnDef,
@@ -38,15 +39,20 @@ type UseAppTableOptions<TData> = Omit<
 > & {
   withSorting?: boolean;
   withExpanded?: boolean;
+  withPagination?: boolean;
 };
 
 export function useAppTable<TData>(options: UseAppTableOptions<TData>) {
-  const { withSorting, withExpanded, ...tableOptions } = options;
+  const { withSorting, withExpanded, withPagination, ...tableOptions } =
+    options;
   return useReactTable({
     ...tableOptions,
     getCoreRowModel: getCoreRowModel(),
     ...(withSorting ? { getSortedRowModel: getSortedRowModel() } : {}),
     ...(withExpanded ? { getExpandedRowModel: getExpandedRowModel() } : {}),
+    ...(withPagination
+      ? { getPaginationRowModel: getPaginationRowModel() }
+      : {}),
   });
 }
 

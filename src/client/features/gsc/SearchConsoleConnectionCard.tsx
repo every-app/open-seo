@@ -63,6 +63,14 @@ export function SearchConsoleConnectionCard({
       setPicking(false);
       void queryClient.invalidateQueries({ queryKey: connectionKey });
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
+      // The Search Performance report caches {connected:false}; refresh it so
+      // the page shows data right after connecting instead of the stale card.
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformance", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
+      });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
@@ -76,6 +84,12 @@ export function SearchConsoleConnectionCard({
       // Disconnect can drop the account-level grant server-side; keep the
       // shared grant-status cache (onboarding step + re-engagement nudge) honest.
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformance", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
+      });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
