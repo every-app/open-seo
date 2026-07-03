@@ -5,11 +5,13 @@ import { getTableConfig as getSqliteTableConfig } from "drizzle-orm/sqlite-core"
 import { getTableConfig as getPgTableConfig } from "drizzle-orm/pg-core";
 import { describe, expect, it } from "vitest";
 import * as sqliteApp from "./app.schema";
+import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteReddit from "./reddit-attribution.schema";
 import * as pgApp from "./pg/app.schema";
+import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
 import * as pgGsc from "./pg/gsc.schema";
@@ -131,11 +133,12 @@ function foreignKeys(table: Table, dialect: Dialect): string[] {
 
 const sqliteAppTables = tablesFrom(
   sqliteApp,
+  sqliteSam,
   sqliteBilling,
   sqliteGsc,
   sqliteReddit,
 );
-const pgAppTables = tablesFrom(pgApp, pgBilling, pgGsc, pgReddit);
+const pgAppTables = tablesFrom(pgApp, pgSam, pgBilling, pgGsc, pgReddit);
 const sqliteAuthTables = tablesFrom(sqliteAuth);
 const pgAuthTables = tablesFrom(pgAuth);
 

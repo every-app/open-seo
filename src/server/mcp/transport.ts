@@ -1,9 +1,10 @@
 import { createMcpHandler } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getMcpResource, MCP_SCOPE } from "@/lib/oauth-resource";
+import { MCP_SCOPE } from "@/lib/oauth-resource";
 import { resolveCloudflareAccessContext } from "@/middleware/ensure-user/cloudflareAccess";
 import { resolveLocalNoAuthContext } from "@/middleware/ensure-user/delegated";
 import {
+  buildFirstPartyMcpAuthContext,
   createWorkersOAuthMcpProps,
   MCP_AUTH_CONTEXT_PROP,
   MCP_ROUTE,
@@ -77,16 +78,14 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     authMode === "local_noauth"
       ? await resolveLocalNoAuthContext()
       : await resolveCloudflareAccessContext(request.headers);
-  const props = createWorkersOAuthMcpProps({
-    userId: context.userId,
-    userEmail: context.userEmail,
-    organizationId: context.organizationId,
-    clientId: null,
-    scopes: [],
-    audience: getMcpResource(baseUrl),
-    subject: context.userId,
-    baseUrl,
-  });
+  const props = createWorkersOAuthMcpProps(
+    buildFirstPartyMcpAuthContext({
+      userId: context.userId,
+      userEmail: context.userEmail,
+      organizationId: context.organizationId,
+      baseUrl,
+    }),
+  );
 
   return handleOpenSeoMcpRequest(request, props, env, ctx);
 }

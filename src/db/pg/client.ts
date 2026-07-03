@@ -65,6 +65,13 @@ export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
   if (getDatabaseProvider() !== "postgres") {
     return fn();
   }
+  // Reentrant: nested scopes (e.g. a DO hook calling helpers that defensively
+  // scope themselves) reuse the ambient client instead of opening another
+  // connection. Workflow steps are unaffected — ALS never crosses step.do, so
+  // each step's own wrap still creates its client.
+  if (pgClientStore.getStore()) {
+    return fn();
+  }
   const sql = postgres(getPostgresConnectionString(), {
     max: 1,
     fetch_types: false,

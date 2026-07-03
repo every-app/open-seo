@@ -58,7 +58,9 @@ type ProjectAuthContext = {
 };
 
 function connectGscUrl(baseUrl: string, projectId: string): string {
-  return buildDashboardUrl(baseUrl, `/p/${projectId}/settings#search-console`);
+  // GSC Insights hosts the connection card AND the data the user came for,
+  // so land them there rather than in settings.
+  return buildDashboardUrl(baseUrl, `/p/${projectId}/search-performance`);
 }
 
 /** Self-hosted GSC requires the operator to provide a Google OAuth client and

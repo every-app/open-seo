@@ -1,10 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
-import type { ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import {
   CircleHelp,
   CreditCard,
+  LayoutGrid,
   LogOut,
+  MessageCircle,
   Settings,
   User,
   X,
@@ -14,6 +16,7 @@ import {
   getProjectNavGroups,
 } from "@/client/navigation/items";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
+import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
@@ -72,6 +75,33 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
     ...(projectId ? getProjectNavGroups(projectId) : []),
     connectNavGroup,
   ];
+  const navigate = useNavigate();
+  const location = useLocation();
+  const onSamRoute = location.pathname.includes("/sam");
+
+  // PostHog-style sidebar tabs: Browse shows the regular nav, Chat shows the
+  // SAM chat history. The tab is view state (switching to Browse leaves the
+  // conversation open in the content panel), but the route wins: landing on
+  // /sam selects Chat, navigating anywhere else flips back to Browse.
+  const [view, setView] = useState<"browse" | "chat">(
+    onSamRoute ? "chat" : "browse",
+  );
+  useEffect(() => {
+    setView(onSamRoute ? "chat" : "browse");
+  }, [onSamRoute]);
+
+  const openChat = () => {
+    setView("chat");
+    if (!projectId) return;
+    if (!onSamRoute) {
+      void navigate({
+        to: "/p/$projectId/sam",
+        params: { projectId },
+        search: {},
+      });
+      onNavigate?.();
+    }
+  };
 
   return (
     <div className="flex h-full w-60 flex-col bg-base-200">
@@ -102,30 +132,80 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         />
       </div>
 
-      <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-        {navGroups.map((group) => (
-          <div key={group.label} className="mb-1">
-            <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-              {group.label}
-            </div>
-            {group.items.map((item) => {
-              const { icon, label, ...linkProps } = item;
-              return (
-                <SidebarNavLink
-                  key={linkProps.to}
-                  icon={icon}
-                  label={label}
-                  onNavigate={onNavigate}
-                  linkProps={linkProps}
-                />
-              );
-            })}
+      {projectId ? (
+        // Same underline tab idiom as the in-page tab strips (e.g. Domain
+        // Overview's Top Keywords / Top Pages).
+        <div className="px-3 pb-1">
+          <div role="tablist" className="tabs tabs-border w-full">
+            <SidebarViewTab
+              icon={LayoutGrid}
+              label="Browse"
+              active={view === "browse"}
+              onClick={() => setView("browse")}
+            />
+            <SidebarViewTab
+              icon={MessageCircle}
+              label="Chat"
+              active={view === "chat"}
+              onClick={openChat}
+            />
           </div>
-        ))}
-      </nav>
+        </div>
+      ) : null}
+
+      {view === "chat" && projectId ? (
+        <SamSidebarPanel projectId={projectId} onNavigate={onNavigate} />
+      ) : (
+        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+          {navGroups.map((group) => (
+            <div key={group.label} className="mb-1">
+              <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
+                {group.label}
+              </div>
+              {group.items.map((item) => {
+                const { icon, label, ...linkProps } = item;
+                return (
+                  <SidebarNavLink
+                    key={linkProps.to}
+                    icon={icon}
+                    label={label}
+                    onNavigate={onNavigate}
+                    linkProps={linkProps}
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </nav>
+      )}
 
       <SidebarFooter onNavigate={onNavigate} />
     </div>
+  );
+}
+
+function SidebarViewTab({
+  icon: Icon,
+  label,
+  active,
+  onClick,
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={active}
+      onClick={onClick}
+      className={`tab flex-1 gap-1.5 ${active ? "tab-active" : ""}`}
+    >
+      <Icon className="size-4" />
+      {label}
+    </button>
   );
 }
 

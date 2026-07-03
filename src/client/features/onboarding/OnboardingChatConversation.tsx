@@ -1,16 +1,12 @@
 import { useAgent } from "agents/react";
 import { useAgentChat } from "@cloudflare/ai-chat/react";
-import { type UIMessage } from "ai";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useRef, useState } from "react";
 import {
-  Sparkles,
-  Loader2,
-  Check,
-  AlertTriangle,
-  ChevronRight,
-} from "lucide-react";
-import { Markdown } from "@/client/components/Markdown";
+  ChatMessage,
+  messageHasVisibleContent,
+  type ResolveToolLabel,
+} from "@/client/components/chat/ChatMessage";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
@@ -21,53 +17,6 @@ import {
   UpgradeSidebar,
   WelcomeMessage,
 } from "./OnboardingChatParts";
-
-// Whether an assistant message already shows something — visible text or a tool
-// badge. Used to decide when the standalone typing indicator is still needed: a
-// running tool badge already reads as progress, so the dots would double up.
-function messageHasVisibleContent(message: UIMessage): boolean {
-  return message.parts.some(
-    (part) =>
-      (part.type === "text" && part.text.trim().length > 0) ||
-      (part.type === "reasoning" && part.text.trim().length > 0) ||
-      part.type.startsWith("tool-"),
-  );
-}
-
-// Collapsible "thinking" block for the model's reasoning stream. Collapsed by
-// default so the chain-of-thought doesn't bury the answer; while it's still
-// streaming it doubles as the progress indicator ("Thinking…" + spinner).
-function ReasoningBlock({
-  part,
-}: {
-  part: Extract<UIMessage["parts"][number], { type: "reasoning" }>;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const isStreaming = part.state === "streaming";
-  return (
-    <div className="text-base-content/60">
-      <button
-        type="button"
-        onClick={() => setExpanded((open) => !open)}
-        className="inline-flex items-center gap-1.5 text-xs hover:text-base-content/80"
-      >
-        {isStreaming ? (
-          <Loader2 className="size-3 animate-spin" />
-        ) : (
-          <ChevronRight
-            className={`size-3 transition-transform ${expanded ? "rotate-90" : ""}`}
-          />
-        )}
-        <span>{isStreaming ? "Thinking…" : "Thought process"}</span>
-      </button>
-      {expanded ? (
-        <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-base-300 pl-3 text-xs text-base-content/50">
-          {part.text}
-        </div>
-      ) : null}
-    </div>
-  );
-}
 
 // Friendly labels for each tool Sam can run, so the chat shows what it's doing
 // rather than going silent while it gathers site data. `running` shows while the
@@ -104,78 +53,10 @@ const TOOL_LABELS: Record<string, { running: string; done: string }> = {
   },
 };
 
-// A small inline badge for one tool call, rendered in document order inside the
-// assistant bubble so the sequence of work stays visible after it completes.
-function ToolBadge({ part }: { part: UIMessage["parts"][number] }) {
-  const labels = TOOL_LABELS[part.type];
-  if (!labels) return null;
-  const state = "state" in part ? part.state : undefined;
-  const isError = state === "output-error";
-  const isDone = state === "output-available";
-  const isRunning = !isError && !isDone;
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
-        isError ? "bg-error/10 text-error" : "bg-base-200 text-base-content/70"
-      }`}
-    >
-      {isRunning ? (
-        <Loader2 className="size-3 animate-spin" />
-      ) : isError ? (
-        <AlertTriangle className="size-3" />
-      ) : (
-        <Check className="size-3" />
-      )}
-      <span>{isRunning ? `${labels.running}…` : labels.done}</span>
-    </span>
-  );
-}
-
-function ChatBubble({ message }: { message: UIMessage }) {
-  const isUser = message.role === "user";
-
-  if (isUser) {
-    return (
-      <div className="flex justify-end pl-8 sm:pl-16">
-        <div className="rounded-box rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-content">
-          {message.parts.map((part, index) =>
-            part.type === "text" ? (
-              <span key={index} className="whitespace-pre-wrap">
-                {part.text}
-              </span>
-            ) : null,
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex gap-3">
-      <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Sparkles className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1 space-y-2 pt-0.5 text-sm">
-        {message.parts.map((part, index) => {
-          if (part.type === "reasoning") {
-            return part.text.trim() ? (
-              <ReasoningBlock key={index} part={part} />
-            ) : null;
-          }
-          if (part.type === "text") {
-            return part.text.trim() ? (
-              <Markdown key={index}>{part.text}</Markdown>
-            ) : null;
-          }
-          if (part.type.startsWith("tool-")) {
-            return <ToolBadge key={index} part={part} />;
-          }
-          return null;
-        })}
-      </div>
-    </div>
-  );
-}
+// Onboarding curates a label per tool and hides any tool it hasn't named, so
+// the pre-paywall preview only shows the handful it means to surface.
+const resolveToolLabel: ResolveToolLabel = (partType) =>
+  TOOL_LABELS[partType] ?? null;
 
 const SUGGESTED_QUESTIONS = [
   "How will OpenSEO help me get more traffic?",
@@ -300,37 +181,36 @@ export function OnboardingChatConversation({
               onUpgrade={() => void startCheckout()}
             />
 
-            {messages.map((message) => (
-              <ChatBubble key={message.id} message={message} />
+            {messages.map((message, index) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                resolveToolLabel={resolveToolLabel}
+                streaming={
+                  isBusy &&
+                  index === messages.length - 1 &&
+                  message.role === "assistant"
+                }
+              />
             ))}
 
             {showTyping ? (
-              <div className="flex gap-3">
-                <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Sparkles className="size-4" />
-                </div>
-                <div className="flex items-center gap-2 pt-2 text-base-content/40">
-                  <span className="flex items-center gap-1.5">
-                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-current" />
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 pt-1 text-base-content/40">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-current" />
+                </span>
               </div>
             ) : null}
 
             {status === "error" ? (
-              <div className="flex gap-3">
-                <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
-                  <Sparkles className="size-4" />
-                </div>
-                <p className="pt-1 text-sm text-error">
-                  {/* Billing gates (free-question cap / out-of-credits) come
-                      back as normal assistant messages now, so this only covers
-                      genuine failures. */}
-                  Something went wrong. Please refresh and try again.
-                </p>
-              </div>
+              <p className="text-sm text-error">
+                {/* Billing gates (free-question cap / out-of-credits) come
+                    back as normal assistant messages now, so this only covers
+                    genuine failures. */}
+                Something went wrong. Please refresh and try again.
+              </p>
             ) : null}
 
             {showSuggestions ? (

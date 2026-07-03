@@ -9,6 +9,9 @@ declare namespace Cloudflare {
     // Durable Object backing the onboarding strategy chat (see wrangler.jsonc).
     ONBOARDING_CHAT: DurableObjectNamespace;
 
+    // Durable Object backing the SAM in-app agent (see wrangler.jsonc).
+    SAM_CHAT: DurableObjectNamespace;
+
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
@@ -38,7 +41,7 @@ declare namespace Cloudflare {
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
-    // OpenRouter API key for the onboarding chat.
+    // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;

@@ -1,8 +1,9 @@
-// Lightweight, dependency-free site reading for onboarding: discover a few URLs
-// from the sitemap (falling back to the homepage) and extract readable text from
-// each page via plain fetch. This is enough to let the model infer what a site
-// does. JS-heavy sites degrade gracefully (less text); a Browser Rendering
-// upgrade can slot in behind this same interface later.
+// Lightweight, dependency-free site reading shared by the chat agents
+// (onboarding + SAM): discover URLs from the sitemap (falling back to the
+// homepage) and extract readable text from each page via plain fetch. This is
+// enough to let the model infer what a site does. JS-heavy sites degrade
+// gracefully (less text); a Browser Rendering upgrade can slot in behind this
+// same interface later.
 
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
 
@@ -153,14 +154,17 @@ async function scrapePage(url: string): Promise<ScrapedPage | null> {
 }
 
 /**
- * Reads a specific list of page URLs as plain text — used when the user names
- * exact pages (their own or a competitor's) rather than asking us to discover a
- * site. Each URL is independently run through the SSRF guard, so a blocked or
- * unreachable URL is skipped rather than failing the batch.
+ * Reads a specific list of page URLs as plain text — used when the caller names
+ * exact pages (the user's own or a competitor's) rather than asking us to
+ * discover a site. Each URL is independently run through the SSRF guard, so a
+ * blocked or unreachable URL is skipped rather than failing the batch.
  */
-export async function readPages(urls: string[]): Promise<SiteReadResult> {
+export async function readPages(
+  urls: string[],
+  maxPages: number = MAX_PAGES,
+): Promise<SiteReadResult> {
   const pages: ScrapedPage[] = [];
-  for (const rawUrl of urls.slice(0, MAX_PAGES)) {
+  for (const rawUrl of urls.slice(0, maxPages)) {
     let url: string;
     try {
       // Re-validates host, blocks private/metadata IPs, does DoH DNS resolution.
@@ -178,21 +182,40 @@ export async function readPages(urls: string[]): Promise<SiteReadResult> {
 }
 
 /**
- * Discovers a site's representative URLs (homepage + sitemap) and reads them.
- * Just URL discovery on top of readPages, which does the validated fetching.
+ * Lists a site's page URLs without reading them: the homepage plus what the
+ * sitemap declares, capped at `limit`. Lets an agent see what a site has and
+ * choose which pages to read (readPages) instead of blindly taking the first N.
  */
-export async function readSite(domain: string): Promise<SiteReadResult> {
+export async function discoverSiteUrls(
+  domain: string,
+  limit: number,
+): Promise<{ urls: string[]; blocked: boolean }> {
   let rootUrl: string;
   try {
     rootUrl = await normalizeAndValidateStartUrl(domain);
   } catch {
-    // Blocked (private/metadata host) or unparseable domain — nothing to read.
-    return { pages: [], blocked: true };
+    // Blocked (private/metadata host) or unparseable domain — nothing to list.
+    return { urls: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
 
-  // Prefer the sitemap for representative URLs; always include the homepage.
   const sitemap = await fetchText(`${origin}/sitemap.xml`);
   const discovered = sitemap ? parseSitemapUrls(sitemap, origin) : [];
-  return readPages([rootUrl, ...discovered.filter((url) => url !== rootUrl)]);
+  const urls = [rootUrl, ...discovered.filter((url) => url !== rootUrl)];
+  return { urls: urls.slice(0, limit), blocked: false };
+}
+
+/**
+ * Discovers a site's representative URLs (homepage + sitemap) and reads them.
+ * Just URL discovery on top of readPages, which does the validated fetching.
+ */
+export async function readSite(
+  domain: string,
+  maxPages: number = MAX_PAGES,
+): Promise<SiteReadResult> {
+  const discovered = await discoverSiteUrls(domain, maxPages);
+  if (discovered.blocked) {
+    return { pages: [], blocked: true };
+  }
+  return readPages(discovered.urls, maxPages);
 }

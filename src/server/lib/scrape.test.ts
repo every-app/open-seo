@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { readPages, readSite } from "@/server/features/onboarding/scrape";
+import { readPages, readSite } from "@/server/lib/scrape";
 
 describe("readSite SSRF guard", () => {
   beforeEach(() => {

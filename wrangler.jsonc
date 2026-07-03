@@ -35,12 +35,22 @@
         "name": "ONBOARDING_CHAT",
         "class_name": "OnboardingChatAgent",
       },
+      // SAM in-app agent. One instance per chat session; messages persist in the
+      // DO's SQLite. SQLite-backed classes must be declared in `migrations`.
+      {
+        "name": "SAM_CHAT",
+        "class_name": "SamChatAgent",
+      },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["OnboardingChatAgent"],
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["SamChatAgent"],
     },
   ],
   "triggers": {

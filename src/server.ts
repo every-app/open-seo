@@ -5,6 +5,7 @@ import {
 import { routeAgentRequest } from "agents";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
+import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -56,16 +57,64 @@ async function authorizeOnboardingChat(
   return undefined;
 }
 
-// Route /agents/* to the onboarding chat DO. Auth happens here (both the WS
-// upgrade and any HTTP message-history fetch), keeping it off the OAuth wrapper
-// and TanStack route guard below.
-async function routeOnboardingChatAgent(
+// Authorize a SAM agent connection in the Worker, before it reaches the Durable
+// Object. The DO instance name is the sessionId (set client-side); we resolve
+// the session here and authorize the caller against the session's project via
+// the same canonical project-access check the rest of the app uses, so the DO
+// can trust its `name` and derive org/project/user from the session row.
+async function authorizeSamChat(
   request: Request,
-  env: Env,
-): Promise<Response> {
+  sessionId: string,
+): Promise<Response | undefined> {
+  let context;
+  try {
+    context = await resolveUserContextFromHeaders(request.headers);
+  } catch {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const session = await SamSessionRepository.getActiveSession(sessionId);
+  const project = session
+    ? await ProjectRepository.getProjectForOrganization(
+        session.projectId,
+        context.organizationId,
+      )
+    : null;
+  if (!session || !project) {
+    return new Response("Forbidden", { status: 403 });
+  }
+  // Same as onboarding above: make sure the Autumn customer (and its default
+  // free-plan credits) exists before the DO's balance gate runs, or a brand-new
+  // org's first message hits a false "out of credits".
+  if (await isHostedServerAuthMode()) {
+    await getOrCreateOrganizationCustomer(context);
+  }
+  return undefined;
+}
+
+// Both chat DOs live behind /agents/*. Dispatch on the DO binding partyserver
+// resolved for the request (rather than re-parsing the path), and fail closed
+// on anything unrecognized.
+function authorizeChatAgent(
+  request: Request,
+  lobby: { className: string; name: string },
+): Promise<Response | undefined> | Response {
+  switch (lobby.className) {
+    case "SAM_CHAT":
+      return authorizeSamChat(request, lobby.name);
+    case "ONBOARDING_CHAT":
+      return authorizeOnboardingChat(request, lobby.name);
+    default:
+      return new Response("Forbidden", { status: 403 });
+  }
+}
+
+// Route /agents/* to the onboarding and SAM chat DOs. Auth happens here (both
+// the WS upgrade and any HTTP message-history fetch), keeping it off the OAuth
+// wrapper and TanStack route guard below.
+async function routeChatAgents(request: Request, env: Env): Promise<Response> {
   const response = await routeAgentRequest(request, env, {
-    onBeforeConnect: (req, lobby) => authorizeOnboardingChat(req, lobby.name),
-    onBeforeRequest: (req, lobby) => authorizeOnboardingChat(req, lobby.name),
+    onBeforeConnect: (req, lobby) => authorizeChatAgent(req, lobby),
+    onBeforeRequest: (req, lobby) => authorizeChatAgent(req, lobby),
   });
   return response ?? new Response("Not found", { status: 404 });
 }
@@ -90,7 +139,7 @@ function handleFetch(
   const pathname = new URL(publicRequest.url).pathname;
 
   if (pathname.startsWith("/agents/")) {
-    return routeOnboardingChatAgent(publicRequest, env);
+    return routeChatAgents(publicRequest, env);
   }
 
   if (isHostedAuthMode(authMode)) {
@@ -120,6 +169,8 @@ export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
 // Durable Object class for the onboarding strategy chat (Agents SDK).
 export { OnboardingChatAgent } from "./server/features/onboarding/OnboardingChatAgent";
+// Durable Object class for the SAM in-app agent (Agents SDK).
+export { SamChatAgent } from "./server/features/sam/SamChatAgent";
 
 export default {
   fetch,
