@@ -9,8 +9,13 @@ import {
   User,
   X,
 } from "lucide-react";
-import { aiNavItem, getProjectNavGroups } from "@/client/navigation/items";
+import {
+  connectNavGroup,
+  getProjectNavGroups,
+} from "@/client/navigation/items";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
+import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
+import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -63,7 +68,10 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
-  const navGroups = projectId ? getProjectNavGroups(projectId) : [];
+  const navGroups = [
+    ...(projectId ? getProjectNavGroups(projectId) : []),
+    connectNavGroup,
+  ];
 
   return (
     <div className="flex h-full w-60 flex-col bg-base-200">
@@ -125,76 +133,81 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
   const email = session?.user?.email;
-  const { icon: aiIcon, label: aiLabel, ...aiLinkProps } = aiNavItem;
+
+  const closeMenu = () => {
+    closeDropdown();
+    onNavigate?.();
+  };
 
   return (
     <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
-      <SidebarNavLink
-        icon={aiIcon}
-        label={aiLabel}
-        onNavigate={onNavigate}
-        linkProps={aiLinkProps}
-      />
       <SidebarNavLink
         icon={CircleHelp}
         label="Help & Community"
         onNavigate={onNavigate}
         linkProps={{ to: "/support" }}
       />
-      {isHostedMode ? (
-        <SidebarNavLink
-          icon={CreditCard}
-          label="Billing"
-          onNavigate={onNavigate}
-          linkProps={{ to: BILLING_ROUTE }}
-        />
-      ) : null}
-      <SidebarNavLink
-        icon={Settings}
-        label="Settings"
-        onNavigate={onNavigate}
-        linkProps={{ to: "/settings" }}
-      />
 
       {email ? (
-        isHostedMode ? (
-          <div className="dropdown dropdown-top w-full">
-            <button
-              type="button"
-              tabIndex={0}
-              className={`${navItemClass} w-full`}
-              aria-label="Open account menu"
-            >
-              <User className="h-4 w-4 shrink-0" />
-              <span className="truncate" data-ph-mask>
-                {email}
-              </span>
-            </button>
-            <ul
-              tabIndex={0}
-              className="dropdown-content z-30 menu mb-1 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-            >
-              <li>
-                <button
-                  type="button"
-                  className="text-error"
-                  onClick={() => signOutAndRedirect()}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </li>
-            </ul>
-          </div>
-        ) : (
-          <div className={navItemBaseClass}>
+        <div className="dropdown dropdown-top w-full">
+          <button
+            type="button"
+            tabIndex={0}
+            className={`${navItemClass} w-full`}
+            aria-label="Open account menu"
+          >
             <User className="h-4 w-4 shrink-0" />
             <span className="truncate" data-ph-mask>
               {email}
             </span>
-          </div>
-        )
-      ) : null}
+          </button>
+          <ul
+            tabIndex={0}
+            className="dropdown-content z-30 menu mb-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+          >
+            <li>
+              <Link to="/settings" onClick={closeMenu}>
+                <Settings className="h-4 w-4" />
+                Settings
+              </Link>
+            </li>
+            {isHostedMode ? (
+              <li>
+                <Link to={BILLING_ROUTE} onClick={closeMenu}>
+                  <CreditCard className="h-4 w-4" />
+                  Billing
+                </Link>
+              </li>
+            ) : null}
+            <ThemePreferenceMenuItems />
+            {isHostedMode ? (
+              <>
+                <li
+                  aria-hidden
+                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
+                />
+                <li>
+                  <button
+                    type="button"
+                    className="text-error"
+                    onClick={() => signOutAndRedirect()}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </button>
+                </li>
+              </>
+            ) : null}
+          </ul>
+        </div>
+      ) : (
+        <SidebarNavLink
+          icon={Settings}
+          label="Settings"
+          onNavigate={onNavigate}
+          linkProps={{ to: "/settings" }}
+        />
+      )}
     </div>
   );
 }

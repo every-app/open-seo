@@ -60,11 +60,17 @@ const projectNavItems = [
   },
 ] as const;
 
-export const aiNavItem = linkOptions({
+const aiNavItem = linkOptions({
   to: "/ai" as const,
   label: "AI & MCP",
   icon: Bot,
 });
+
+// Always-visible sidebar group (not project-scoped, unlike the groups below).
+export const connectNavGroup = {
+  label: "Connect",
+  items: [aiNavItem],
+};
 
 function getProjectNavItems(projectId: string) {
   return linkOptions(

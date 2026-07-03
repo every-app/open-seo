@@ -3,13 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronsUpDown, FolderCog } from "lucide-react";
 import { getProjects } from "@/serverFunctions/projects";
 import { setLastProjectId } from "@/client/lib/active-project";
+import { closeDropdown } from "@/client/lib/dropdown";
 import type { ProjectSummary } from "./types";
-
-function closeDropdown() {
-  if (document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-}
 
 export function ProjectSwitcher({
   activeProjectId,
