@@ -1,4 +1,3 @@
-import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
 import type { StepPageResult } from "@/server/lib/audit/types";
 import { isSameOrigin, normalizeUrl } from "@/server/lib/audit/url-utils";
 
@@ -31,6 +30,11 @@ export async function crawlPage(
     }
 
     const html = await response.text();
+    // Dynamic import keeps cheerio (page-analyzer's HTML parser) out of the
+    // worker's startup module graph: SiteAuditWorkflow is re-exported from
+    // src/server.ts, so a static import would evaluate cheerio in every
+    // isolate's baseline heap, not just when an audit actually crawls.
+    const { analyzeHtml } = await import("@/server/lib/audit/page-analyzer");
     const analysis = analyzeHtml(
       html,
       finalUrl,

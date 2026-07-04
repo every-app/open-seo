@@ -78,6 +78,12 @@ type SamContext = {
  * the app DB, so every session in a project shares them.
  */
 export class SamChatAgent extends Think {
+  // SAM's toolset is the MCP tools from beforeTurn; it has no use for Think's
+  // workspace bash tool, whose just-bash dependency is stubbed out of the
+  // bundle anyway (see vite.config.ts) to keep ~30 MB of eagerly-evaluated
+  // source out of every isolate's baseline heap.
+  override workspaceBash = false;
+
   // Session row + project, resolved once per DO lifetime (the binding is
   // immutable). Null until a turn/provider needs it — and left null when the
   // registry row is gone, which beforeTurn turns into a polite refusal.

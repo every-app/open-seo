@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import { defineConfig, loadEnv } from "vite";
 import tsConfigPaths from "vite-tsconfig-paths";
@@ -23,17 +24,19 @@ export default defineConfig(({ mode }) => {
   return {
     resolve: {
       alias: {
-        // TODO: Remove this workaround once fixed upstream — either turndown
-        // drops the bare require from its ESM build, or @cloudflare/think
-        // stops eagerly importing just-bash/turndown at module init
+        // TODO: Remove this workaround once @cloudflare/think stops eagerly
+        // importing just-bash at module init
         // (https://github.com/cloudflare/agents/issues/1673).
         //
-        // turndown's ESM build (pulled in via just-bash's html-to-markdown
-        // command) contains a bare CommonJS `require("@mixmark-io/domino")`
-        // that the Cloudflare Workers runtime rejects at deploy time (error
-        // 10021). Its CJS build goes through Vite's CommonJS transform, which
-        // rewrites that require into a bundled import.
-        turndown: "turndown/lib/turndown.cjs.js",
+        // just-bash (plus its turndown → @mixmark-io/domino chain, ~30 MB of
+        // source) is only used by Think's workspace bash tool, which SAM
+        // disables — but the eager import drags it into the main worker's
+        // startup module graph, inflating every isolate's baseline heap
+        // toward the 128 MB limit (production OOM bursts on unrelated
+        // routes). Alias it to a throwing stub so it never ships.
+        "just-bash": fileURLToPath(
+          new URL("./src/server/lib/just-bash-stub.ts", import.meta.url),
+        ),
       },
     },
     envPrefix: [
