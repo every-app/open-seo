@@ -22,14 +22,45 @@ type LighthouseStrategy = "mobile" | "desktop";
 // audit UI (scores, metrics, and per-audit issues) is provider-agnostic.
 const PSI_ENDPOINT =
   "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
-// Lighthouse runs on Google's side are slow; some pages take well over a minute.
-const PSI_REQUEST_TIMEOUT_MS = 90_000;
+// Lighthouse runs on Google's side are slow; under load some runs take 60-90s+.
+// (Queue wait for a concurrency slot below does not count against this budget.)
+const PSI_REQUEST_TIMEOUT_MS = 120_000;
 const PSI_REQUEST_CATEGORIES = [
   "PERFORMANCE",
   "ACCESSIBILITY",
   "BEST_PRACTICES",
   "SEO",
 ] as const;
+
+// PSI's Lighthouse backend rejects bursts of parallel runs (HTTP 500
+// "Lighthouse returned error: Something went wrong.") and queues the rest past
+// our timeout. The audit's Lighthouse phase fires batches of up to 10 URLs x 2
+// strategies at once, so every PSI call is funneled through this small
+// in-isolate queue. Measured against a live site: 20 concurrent runs fail ~10%
+// instantly, while 4 concurrent completes 20/20.
+const PSI_MAX_CONCURRENT_REQUESTS = 4;
+let psiSlotsAvailable = PSI_MAX_CONCURRENT_REQUESTS;
+const psiSlotWaiters: Array<() => void> = [];
+
+async function withPsiSlot<T>(run: () => Promise<T>): Promise<T> {
+  if (psiSlotsAvailable > 0) {
+    psiSlotsAvailable -= 1;
+  } else {
+    await new Promise<void>((resolve) => psiSlotWaiters.push(resolve));
+  }
+  try {
+    return await run();
+  } finally {
+    const next = psiSlotWaiters.shift();
+    // Hand the slot directly to the next waiter so a newly arriving caller
+    // can't jump the queue between release and resume.
+    if (next) {
+      next();
+    } else {
+      psiSlotsAvailable += 1;
+    }
+  }
+}
 
 // Newer Lighthouse (13.x) returns `details.items` as an object for some audits
 // (e.g. document-latency-insight) instead of an array. Accept either and
@@ -110,21 +141,25 @@ export async function fetchPagespeedLighthouse(input: {
   const apiKey = (await getOptionalEnvValue("PAGESPEED_API_KEY"))?.trim();
   if (apiKey) params.set("key", apiKey);
 
-  const response = await fetch(`${PSI_ENDPOINT}?${params.toString()}`, {
-    headers: { accept: "application/json" },
-    signal: AbortSignal.timeout(PSI_REQUEST_TIMEOUT_MS),
+  const raw = await withPsiSlot(async () => {
+    const response = await fetch(`${PSI_ENDPOINT}?${params.toString()}`, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(PSI_REQUEST_TIMEOUT_MS),
+    });
+
+    if (!response.ok) {
+      const body = await response.text().catch(() => "");
+      throw new Error(
+        `PageSpeed Insights HTTP ${response.status}${
+          body ? `: ${body.slice(0, 200)}` : ""
+        }`,
+      );
+    }
+
+    return response.json();
   });
 
-  if (!response.ok) {
-    const body = await response.text().catch(() => "");
-    throw new Error(
-      `PageSpeed Insights HTTP ${response.status}${
-        body ? `: ${body.slice(0, 200)}` : ""
-      }`,
-    );
-  }
-
-  const parsed = psiResponseSchema.safeParse(await response.json());
+  const parsed = psiResponseSchema.safeParse(raw);
   if (!parsed.success) {
     throw new Error(
       `PageSpeed Insights returned an invalid response: ${summarizeZodIssues(parsed.error)}`,
