@@ -21,6 +21,21 @@ export default defineConfig(({ mode }) => {
   const emitSourcemaps = env.POSTHOG_SOURCEMAPS === "true";
 
   return {
+    resolve: {
+      alias: {
+        // TODO: Remove this workaround once fixed upstream — either turndown
+        // drops the bare require from its ESM build, or @cloudflare/think
+        // stops eagerly importing just-bash/turndown at module init
+        // (https://github.com/cloudflare/agents/issues/1673).
+        //
+        // turndown's ESM build (pulled in via just-bash's html-to-markdown
+        // command) contains a bare CommonJS `require("@mixmark-io/domino")`
+        // that the Cloudflare Workers runtime rejects at deploy time (error
+        // 10021). Its CJS build goes through Vite's CommonJS transform, which
+        // rewrites that require into a bundled import.
+        turndown: "turndown/lib/turndown.cjs.js",
+      },
+    },
     envPrefix: [
       "VITE_",
       "AUTH_MODE",
