@@ -21,7 +21,12 @@ import {
   type Report,
   type SearchPerformanceTableRow,
 } from "@/client/features/search-performance/SearchPerformanceColumns";
-import { buildCsv, downloadCsv, type CsvValue } from "@/client/lib/csv";
+import {
+  buildCsv,
+  downloadCsv,
+  normalizeExportValue,
+  type CsvValue,
+} from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -277,7 +282,12 @@ export function StrikingDistanceTable({
 
   const copyKeywords = async () => {
     try {
-      await navigator.clipboard.writeText(selectedQueries.join("\n"));
+      // Sanitize against spreadsheet formula injection: GSC query strings are
+      // untrusted and may begin with =, +, -, @, etc. See @/client/lib/csv.
+      const text = selectedQueries
+        .map((query) => normalizeExportValue(query))
+        .join("\n");
+      await navigator.clipboard.writeText(text);
       toast.success(
         `Copied ${selectedQueries.length} ${selectedQueries.length === 1 ? "keyword" : "keywords"}`,
       );
