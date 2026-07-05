@@ -23,6 +23,7 @@ import {
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import { checkSiteStatusTool } from "@/server/mcp/tools/check-site-status";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
 // PostHog — the MCP route has no error middleware of its own. Tools are
@@ -37,6 +38,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       whoamiTool.name,
       whoamiTool.config.outputSchema,
       whoamiTool.handler,
+    ),
+  );
+  server.registerTool(
+    checkSiteStatusTool.name,
+    checkSiteStatusTool.config,
+    instrumentMcpToolHandler(
+      checkSiteStatusTool.name,
+      checkSiteStatusTool.config.outputSchema,
+      checkSiteStatusTool.handler,
     ),
   );
   server.registerTool(
