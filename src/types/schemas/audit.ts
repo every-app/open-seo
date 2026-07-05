@@ -1,13 +1,24 @@
 import { z } from "zod";
+import {
+  DEFAULT_AUDIT_PAGES,
+  MIN_AUDIT_PAGES,
+  PAID_MAX_AUDIT_PAGES,
+} from "@/shared/audit-limits";
 
 // ─── Server function input schemas ──────────────────────────────────────────
 
 export const startAuditSchema = z.object({
   projectId: z.string().min(1),
   startUrl: z.string().min(1, "URL is required").max(2048),
-  maxPages: z.number().int().min(10).max(10_000).optional().default(50),
+  maxPages: z
+    .number()
+    .int()
+    .min(MIN_AUDIT_PAGES)
+    .max(PAID_MAX_AUDIT_PAGES)
+    .optional()
+    .default(DEFAULT_AUDIT_PAGES),
   lighthouseStrategy: z
-    .enum(["auto", "all", "manual", "none"])
+    .enum(["auto", "manual", "none"])
     .optional()
     .default("auto"),
 });

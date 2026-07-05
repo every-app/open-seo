@@ -127,10 +127,6 @@ export function selectLighthouseSample(
     (p) => p.statusCode >= 200 && p.statusCode < 300,
   );
 
-  if (strategy === "all") {
-    return validPages.map((p) => p.url);
-  }
-
   if (strategy === "manual") {
     // manual = user picks after crawl; for now return empty
     return [];

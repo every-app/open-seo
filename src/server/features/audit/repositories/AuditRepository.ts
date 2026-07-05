@@ -201,19 +201,23 @@ async function getAuditsByProject(projectId: string) {
   return rows.map(({ audit }) => audit);
 }
 
-async function getAuditCapacityUsageForUser(userId: string) {
+async function getAuditUsageForUser(userId: string) {
   const rows = await db.query.audits.findMany({
     where: eq(audits.startedByUserId, userId),
     columns: {
+      status: true,
       pagesTotal: true,
       lighthouseTotal: true,
     },
   });
 
-  return rows.reduce(
-    (total, row) => total + row.pagesTotal + row.lighthouseTotal,
-    0,
-  );
+  return {
+    capacityUnits: rows.reduce(
+      (total, row) => total + row.pagesTotal + row.lighthouseTotal,
+      0,
+    ),
+    runningCount: rows.filter((row) => row.status === "running").length,
+  };
 }
 
 async function getAuditResultsForProject(auditId: string, projectId: string) {
@@ -284,7 +288,7 @@ export const AuditRepository = {
   batchWriteResults,
   getAuditForProject,
   getAuditsByProject,
-  getAuditCapacityUsageForUser,
+  getAuditUsageForUser,
   getAuditResultsForProject,
   getLighthouseResultById,
   deleteAuditForProject,

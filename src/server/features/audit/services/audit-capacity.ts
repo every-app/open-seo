@@ -1,9 +1,43 @@
 import type { LighthouseStrategy } from "@/server/lib/audit/types";
+import {
+  DEFAULT_AUDIT_PAGES,
+  FREE_MAX_AUDIT_PAGES,
+  MIN_AUDIT_PAGES,
+  PAID_MAX_AUDIT_PAGES,
+} from "@/shared/audit-limits";
 
-export const MAX_USER_AUDIT_USAGE = 100_000;
+export type AuditLimitTier = "free" | "paid";
+
+// The crawler runs on our Workers compute and isn't credit-metered, so these
+// per-tier bounds are the abuse control: free accounts cost nothing to create,
+// so they get one small audit at a time and a modest total budget. Paid gets
+// bounds sized for real sites rather than abuse (a payment method on file is
+// the deterrent). Self-hosted deployments resolve to the paid tier.
+export const AUDIT_LIMITS: Record<
+  AuditLimitTier,
+  {
+    maxPagesPerAudit: number;
+    maxCapacityUnits: number;
+    maxRunningAudits: number;
+  }
+> = {
+  free: {
+    maxPagesPerAudit: FREE_MAX_AUDIT_PAGES,
+    maxCapacityUnits: 2_000,
+    maxRunningAudits: 1,
+  },
+  paid: {
+    maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
+    maxCapacityUnits: 100_000,
+    maxRunningAudits: Number.POSITIVE_INFINITY,
+  },
+};
 
 export function clampAuditMaxPages(maxPages?: number) {
-  return Math.min(Math.max(maxPages ?? 50, 10), 10_000);
+  return Math.min(
+    Math.max(maxPages ?? DEFAULT_AUDIT_PAGES, MIN_AUDIT_PAGES),
+    PAID_MAX_AUDIT_PAGES,
+  );
 }
 
 export function getEstimatedAuditCapacity(input: {
@@ -12,20 +46,8 @@ export function getEstimatedAuditCapacity(input: {
 }) {
   const pagesTotal = clampAuditMaxPages(input.maxPages);
   const lighthouseStrategy = input.lighthouseStrategy ?? "auto";
-
-  let lighthouseChecks = 0;
-  switch (lighthouseStrategy) {
-    case "all":
-      lighthouseChecks = pagesTotal * 2;
-      break;
-    case "auto":
-      lighthouseChecks = 20;
-      break;
-    case "manual":
-    case "none":
-      lighthouseChecks = 0;
-      break;
-  }
+  // "auto" samples up to 10 pages, checked on mobile + desktop.
+  const lighthouseChecks = lighthouseStrategy === "auto" ? 20 : 0;
 
   return {
     pagesTotal,

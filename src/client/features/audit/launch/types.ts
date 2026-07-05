@@ -1,5 +1,15 @@
-export const MIN_PAGES = 10;
-export const MAX_PAGES_LIMIT = 10_000;
+import {
+  DEFAULT_AUDIT_PAGES,
+  FREE_MAX_AUDIT_PAGES,
+  MIN_AUDIT_PAGES,
+  PAID_MAX_AUDIT_PAGES,
+} from "@/shared/audit-limits";
+
+export const MIN_PAGES = MIN_AUDIT_PAGES;
+
+export function getMaxPagesLimit(isFreePlan: boolean) {
+  return isFreePlan ? FREE_MAX_AUDIT_PAGES : PAID_MAX_AUDIT_PAGES;
+}
 
 export type LaunchFormValues = {
   url: string;
@@ -9,6 +19,6 @@ export type LaunchFormValues = {
 
 export const DEFAULT_LAUNCH_FORM_VALUES: LaunchFormValues = {
   url: "",
-  maxPagesInput: "50",
+  maxPagesInput: String(DEFAULT_AUDIT_PAGES),
   runLighthouse: false,
 };

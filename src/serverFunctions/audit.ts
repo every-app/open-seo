@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { AuditService } from "@/server/features/audit/services/AuditService";
-import { customerHasManagedAccess } from "@/server/billing/subscription";
+import type { AuditLimitTier } from "@/server/features/audit/services/audit-capacity";
+import {
+  customerHasManagedAccess,
+  customerHasPaidPlan,
+} from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -20,13 +24,19 @@ export const startAudit = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => startAuditSchema.parse(data))
   .handler(async ({ data, context }) => {
     // The crawler runs on our Workers compute and isn't credit-metered, so
-    // gate it on managed access in hosted mode. Free and paid plans both grant
-    // it; only customers with no Autumn product at all are turned away.
-    if (
-      (await isHostedServerAuthMode()) &&
-      !(await customerHasManagedAccess(context.organizationId))
-    ) {
-      throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
+    // plan-tier limits are the abuse bound in hosted mode: free accounts get
+    // one small audit at a time, paid keeps the full limits, and customers
+    // with no Autumn product at all are turned away. Self-hosted isn't gated.
+    let limitTier: AuditLimitTier = "paid";
+    if (await isHostedServerAuthMode()) {
+      const [hasManagedAccess, hasPaidPlan] = await Promise.all([
+        customerHasManagedAccess(context.organizationId),
+        customerHasPaidPlan(context.organizationId),
+      ]);
+      if (!hasManagedAccess) {
+        throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
+      }
+      limitTier = hasPaidPlan ? "paid" : "free";
     }
 
     const result = await AuditService.startAudit({
@@ -36,6 +46,7 @@ export const startAudit = createServerFn({ method: "POST" })
       startUrl: data.startUrl,
       maxPages: data.maxPages,
       lighthouseStrategy: data.lighthouseStrategy,
+      limitTier,
     });
 
     waitUntil(
@@ -47,6 +58,7 @@ export const startAudit = createServerFn({ method: "POST" })
           project_id: context.projectId,
           max_pages: data.maxPages ?? 50,
           run_lighthouse: data.lighthouseStrategy !== "none",
+          plan_tier: limitTier,
         },
       }),
     );

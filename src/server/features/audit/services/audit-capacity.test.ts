@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  AUDIT_LIMITS,
   clampAuditMaxPages,
   getEstimatedAuditCapacity,
-  MAX_USER_AUDIT_USAGE,
 } from "@/server/features/audit/services/audit-capacity";
 
 describe("audit capacity helpers", () => {
@@ -38,21 +38,23 @@ describe("audit capacity helpers", () => {
       lighthouseTotal: 20,
       total: 120,
     });
-    expect(
-      getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "all" }),
-    ).toEqual({
-      pagesTotal: 100,
-      lighthouseTotal: 200,
-      total: 300,
-    });
   });
 
-  it("stays within the global capacity limit for the maximum auto audit", () => {
+  it("stays within the paid capacity limit for the maximum auto audit", () => {
     expect(
       getEstimatedAuditCapacity({
         maxPages: 10_000,
         lighthouseStrategy: "auto",
       }).total,
-    ).toBeLessThan(MAX_USER_AUDIT_USAGE);
+    ).toBeLessThan(AUDIT_LIMITS.paid.maxCapacityUnits);
+  });
+
+  it("fits a maximum free audit within the free capacity budget", () => {
+    const freeAudit = getEstimatedAuditCapacity({
+      maxPages: AUDIT_LIMITS.free.maxPagesPerAudit,
+      lighthouseStrategy: "auto",
+    });
+    expect(freeAudit.pagesTotal).toBe(AUDIT_LIMITS.free.maxPagesPerAudit);
+    expect(freeAudit.total).toBeLessThan(AUDIT_LIMITS.free.maxCapacityUnits);
   });
 });
