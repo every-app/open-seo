@@ -13,6 +13,10 @@ import { getDatabaseProvider } from "@/db/provider";
 import { z } from "zod";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createBaseAuthConfig } from "@/lib/auth-config";
+import {
+  getHostedTurnstileSecretKey,
+  hasHostedTurnstileConfig,
+} from "@/lib/auth-turnstile";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import {
   sendHostedPasswordResetEmail,
@@ -41,17 +45,12 @@ function createAuth() {
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig();
 
-  // Turnstile captcha on signup — hosted only, and only when BOTH keys are set.
-  // Requiring the site key too (not just the secret) keeps the server in
-  // lockstep with the client widget, which renders only when the site key is
-  // present: a secret-only deploy would otherwise fail closed and reject every
-  // signup (client sends no token). Left off entirely when unconfigured so
-  // local/self-hosted builds are unaffected. Relies on the same
-  // build-env == runtime-env contract as AUTH_MODE.
-  const turnstileSecretKey =
-    isHostedAuthMode(env.AUTH_MODE) && env.TURNSTILE_SITE_KEY?.trim()
-      ? env.TURNSTILE_SECRET_KEY?.trim()
-      : undefined;
+  // Turnstile captcha on signup — hosted only. Enforcement is driven by the
+  // server-side secret alone so a client build/runtime site-key mismatch cannot
+  // silently omit the Better Auth captcha plugin. Hosted deployments that expose
+  // the client widget without the matching server secret fail configuration
+  // checks instead of presenting a bypassable captcha.
+  const turnstileSecretKey = getHostedTurnstileSecretKey(env);
 
   const database =
     getDatabaseProvider() === "postgres"
@@ -274,8 +273,9 @@ export function hasHostedAuthConfig() {
     getHostedSecret();
     getGoogleSocialProviderConfig();
     return (
-      Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
-      hasHostedAuthEmailConfig()
+      hasHostedTurnstileConfig(env) &&
+      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
+        hasHostedAuthEmailConfig())
     );
   } catch {
     return false;
