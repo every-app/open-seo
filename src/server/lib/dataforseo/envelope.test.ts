@@ -148,4 +148,29 @@ describe("assertOk", () => {
       ),
     ).toBe(task);
   });
+
+  it("still surfaces a charged 40501 'Invalid Field' failure even with treatNoResultsAsEmpty", () => {
+    // 40501 is not unique to no-results — it also covers validation rejections,
+    // which are real charged failures we must not mask as empty results.
+    const task = {
+      status_code: 40501,
+      status_message: "Invalid Field: 'categories'.",
+      path: ["v3", "business_data", "business_listings", "search", "live"],
+      cost: 0.02,
+      result_count: 0,
+      data: { categories: ["not_a_real_category"] },
+    };
+    try {
+      assertOk(
+        { status_code: 20000, tasks: [task] },
+        { treatNoResultsAsEmpty: true },
+      );
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.billing).toEqual({ path: task.path, costUsd: 0.02 });
+      }
+    }
+  });
 });

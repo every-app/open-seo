@@ -102,11 +102,15 @@ function describeInvalidField(
   return `${message} (sent ${field}=${JSON.stringify(value)})`;
 }
 
-/** DataForSEO's "No Search Results" (40501) — a successful empty result, not a failure. */
+/**
+ * DataForSEO's "No Search Results" (40501) — a successful empty result, not a
+ * failure. Match on the status message, not the code alone: 40501 also covers
+ * validation rejections like "Invalid Field: 'target'.", which are real charged
+ * failures we must surface rather than mask as empty results.
+ */
 export function isNoResultsTask(task: DataforseoTaskLike): boolean {
   return (
-    task.status_code === 40501 ||
-    (task.status_message?.toLowerCase().includes("no search results") ?? false)
+    task.status_message?.toLowerCase().includes("no search results") ?? false
   );
 }
 
