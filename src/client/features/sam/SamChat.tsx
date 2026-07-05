@@ -7,6 +7,9 @@ import {
   invalidateSamSessions,
   samSessionsQueryOptions,
 } from "@/client/features/sam/samQueries";
+import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
+import { useSamAccess } from "./useSamAccess";
+import { SamSetupGate } from "./SamSetupGate";
 import { SamConversation } from "./SamConversation";
 
 /**
@@ -23,6 +26,7 @@ export function SamChat({
   activeSessionId: string | undefined;
 }) {
   const navigate = useNavigate();
+  const access = useSamAccess(projectId);
   const sessionsQuery = useQuery(samSessionsQueryOptions(projectId));
   const sessions = sessionsQuery.data ?? [];
 
@@ -52,6 +56,27 @@ export function SamChat({
     if (activeSessionId || !firstSessionId) return;
     goToSession(firstSessionId);
   }, [activeSessionId, firstSessionId, goToSession]);
+
+  // Gate the whole page until OPENROUTER_API_KEY is configured — SAM cannot
+  // answer a single turn without it, so surface setup instructions instead of
+  // letting a chat fail mid-stream.
+  if (access.isLoading || !access.enabled) {
+    return (
+      <div className="overflow-auto px-4 py-4 md:px-6 md:py-6">
+        <div className="mx-auto max-w-3xl">
+          {access.isLoading ? (
+            <AccessGateLoadingState />
+          ) : (
+            <SamSetupGate
+              errorMessage={access.errorMessage ?? access.statusErrorMessage}
+              isRefetching={access.isRefetching}
+              onRetry={access.onRetry}
+            />
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (activeSessionId) {
     return (

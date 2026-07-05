@@ -31,6 +31,7 @@ import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_auth
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
+import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/openrouter-api-key'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
@@ -161,6 +162,11 @@ const AuthenticatedOnboardingChatRoute =
     path: '/onboarding/chat',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AppHelpOpenrouterApiKeyRoute = AppHelpOpenrouterApiKeyRouteImport.update({
+  id: '/help/openrouter-api-key',
+  path: '/help/openrouter-api-key',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
   id: '/help/dataforseo-api-key',
   path: '/help/dataforseo-api-key',
@@ -285,6 +291,7 @@ export interface FileRoutesByFullPath {
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -323,6 +330,7 @@ export interface FileRoutesByTo {
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -365,6 +373,7 @@ export interface FileRoutesById {
   '/_app/': typeof AppIndexRoute
   '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/_app/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -406,6 +415,7 @@ export interface FileRouteTypes {
     | '/subscribe'
     | '/p/$projectId'
     | '/help/dataforseo-api-key'
+    | '/help/openrouter-api-key'
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -444,6 +454,7 @@ export interface FileRouteTypes {
     | '/oauth-consent'
     | '/subscribe'
     | '/help/dataforseo-api-key'
+    | '/help/openrouter-api-key'
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -485,6 +496,7 @@ export interface FileRouteTypes {
     | '/_app/'
     | '/_project/p/$projectId'
     | '/_app/help/dataforseo-api-key'
+    | '/_app/help/openrouter-api-key'
     | '/_authenticated/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -678,6 +690,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_app/help/openrouter-api-key': {
+      id: '/_app/help/openrouter-api-key'
+      path: '/help/openrouter-api-key'
+      fullPath: '/help/openrouter-api-key'
+      preLoaderRoute: typeof AppHelpOpenrouterApiKeyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/help/dataforseo-api-key': {
       id: '/_app/help/dataforseo-api-key'
       path: '/help/dataforseo-api-key'
@@ -822,6 +841,7 @@ interface AppRouteRouteChildren {
   AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
+  AppHelpOpenrouterApiKeyRoute: typeof AppHelpOpenrouterApiKeyRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -832,6 +852,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,
+  AppHelpOpenrouterApiKeyRoute: AppHelpOpenrouterApiKeyRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
