@@ -50,19 +50,31 @@ async function createConfig(input: {
       normalizedDomain,
       locationCode,
     );
-  if (existing) {
-    // The (project, domain, location) row still exists when a domain is
-    // archived — archiving only flips isActive to false. So re-adding an
-    // archived domain reactivates that row (keeping its keyword/ranking
-    // history) with the freshly chosen settings, rather than colliding with
-    // the unique index. An already-active row is a genuine duplicate.
-    if (existing.isActive) {
-      throw new AppError(
-        "VALIDATION_ERROR",
-        "This domain + country combination is already being tracked",
-      );
-    }
+  // The (project, domain, location) row still exists when a domain is
+  // archived — archiving only flips isActive to false. So re-adding an
+  // archived domain reactivates that row (keeping its keyword/ranking
+  // history) with the freshly chosen settings, rather than colliding with
+  // the unique index. An already-active row is a genuine duplicate.
+  if (existing?.isActive) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "This domain + country combination is already being tracked",
+    );
+  }
 
+  // Enforced for reactivations too, not just new rows — otherwise archiving
+  // and re-adding domains would push a project past the active-config cap.
+  const allConfigs = await RankTrackingRepository.getConfigsForProject(
+    input.projectId,
+  );
+  if (allConfigs.length >= MAX_CONFIGS_PER_PROJECT) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Maximum ${MAX_CONFIGS_PER_PROJECT} tracked domains per project`,
+    );
+  }
+
+  if (existing) {
     await RankTrackingRepository.updateConfig(existing.id, input.projectId, {
       isActive: true,
       languageCode: input.languageCode ?? "en",
@@ -76,16 +88,6 @@ async function createConfig(input: {
     });
 
     return { configId: existing.id };
-  }
-
-  const allConfigs = await RankTrackingRepository.getConfigsForProject(
-    input.projectId,
-  );
-  if (allConfigs.length >= MAX_CONFIGS_PER_PROJECT) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      `Maximum ${MAX_CONFIGS_PER_PROJECT} tracked domains per project`,
-    );
   }
 
   const configId = crypto.randomUUID();

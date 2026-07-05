@@ -45,6 +45,7 @@ describe("RankTrackingService.createConfig", () => {
 
   it("reactivates an archived config instead of throwing, applying the new settings", async () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
+    mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.updateConfig.mockResolvedValue(undefined);
     const { RankTrackingService } = await import("./RankTrackingService");
 
@@ -74,6 +75,25 @@ describe("RankTrackingService.createConfig", () => {
       ...archivedConfig,
       isActive: true,
     });
+    const { RankTrackingService } = await import("./RankTrackingService");
+
+    await expect(
+      RankTrackingService.createConfig(baseInput),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
+    expect(mocks.createConfig).not.toHaveBeenCalled();
+  });
+
+  it("rejects reactivating an archived config when the project is at the active-config cap", async () => {
+    const { MAX_CONFIGS_PER_PROJECT } = await import("@/shared/rank-tracking");
+    mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
+    mocks.getConfigsForProject.mockResolvedValue(
+      Array.from({ length: MAX_CONFIGS_PER_PROJECT }, (_, i) => ({
+        ...archivedConfig,
+        id: `config_${i}`,
+        isActive: true,
+      })),
+    );
     const { RankTrackingService } = await import("./RankTrackingService");
 
     await expect(
