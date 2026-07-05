@@ -54,13 +54,23 @@ POSTGRES_DATABASE_URL=postgres://openseo:openseo@localhost:5433/openseo \
 
 ## 3. Point the app at Postgres
 
-The Cloudflare Vite runtime reads Worker vars from `.env.local`, so set both
-values there (not just in your shell):
+The Cloudflare Vite runtime reads Worker vars from `.env.local`, so set the
+provider flag there (not just in your shell):
 
 ```sh
 # .env.local
 DATABASE_PROVIDER=postgres
-POSTGRES_DATABASE_URL=postgres://openseo:openseo@localhost:5433/openseo
+```
+
+The connection string comes from the `HYPERDRIVE` binding: in local dev,
+miniflare resolves it to the `localConnectionString` committed in
+`wrangler.jsonc`, which already points at the Docker container from step 1.
+(In deployed Workers the same binding resolves to real Hyperdrive — the app
+never connects to Postgres except through this binding.) If your local Postgres
+lives elsewhere, override without touching the config:
+
+```sh
+CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://... pnpm dev
 ```
 
 Then start the dev server as usual:
@@ -69,8 +79,12 @@ Then start the dev server as usual:
 pnpm dev
 ```
 
-To switch back to D1, remove those two lines (or set `DATABASE_PROVIDER=d1`) and
+To switch back to D1, remove that line (or set `DATABASE_PROVIDER=d1`) and
 restart.
+
+> `POSTGRES_DATABASE_URL` (step 2) is only read by Node-side tooling —
+> `drizzle-kit` and `scripts/migrate-d1-to-postgres.ts`. The app itself ignores
+> it.
 
 ## 4. Verify
 

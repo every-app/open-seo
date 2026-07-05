@@ -21,7 +21,6 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
-    POSTGRES_DATABASE_URL?: string;
     HYPERDRIVE?: {
       connectionString: string;
     };

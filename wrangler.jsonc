@@ -78,15 +78,23 @@
   // a worker *secret* (`wrangler secret put DATABASE_PROVIDER` -> "postgres") so it
   // survives `wrangler deploy` — which resets plain vars/bindings and is what
   // reverted prod to the D1 default before. This Hyperdrive binding points the
-  // pooled connection at that Postgres. Without Hyperdrive, POSTGRES_DATABASE_URL
-  // is the direct-connection fallback (no edge pooling/caching).
+  // pooled connection at that Postgres. Hyperdrive is the ONLY way the app
+  // connects to Postgres — there is no direct-connection fallback.
+  //
+  // `localConnectionString` is local-dev only (ignored by `wrangler deploy`):
+  // it's the throwaway Docker Postgres from docs/LOCAL_POSTGRES.md, and nothing
+  // connects to it unless DATABASE_PROVIDER=postgres is set in .env.local.
   //
   // SELF-HOSTERS on the free D1 default: DELETE this hyperdrive block before
   // deploying. The id below lives in OpenSEO's Cloudflare account, so `wrangler
   // deploy` will fail without access to it. D1 stays the default when
   // DATABASE_PROVIDER is unset.
   "hyperdrive": [
-    { "binding": "HYPERDRIVE", "id": "9d64ccfb559f44449ce52a143912f898" },
+    {
+      "binding": "HYPERDRIVE",
+      "id": "9d64ccfb559f44449ce52a143912f898",
+      "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
+    },
   ],
   "r2_buckets": [
     {

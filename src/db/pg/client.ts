@@ -57,9 +57,7 @@ export const pgDb = new Proxy(
  * stale-connection risk) and do NOT call `sql.end()`: the Workers↔Hyperdrive
  * socket is torn down automatically when the invocation ends, and the pooled
  * origin connection stays warm for reuse. Not ending it also means a streamed
- * response can keep querying after the handler returns. (Without a Hyperdrive
- * binding, `POSTGRES_DATABASE_URL` opens a direct connection that the Workers
- * runtime still reclaims at invocation end.)
+ * response can keep querying after the handler returns.
  */
 export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
   if (getDatabaseProvider() !== "postgres") {

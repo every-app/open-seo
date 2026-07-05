@@ -63,8 +63,8 @@ during the window is expected — see the detailed runbook.)
 ## 6. Cut over
 
 Point the deployment at Postgres (`DATABASE_PROVIDER=postgres` plus a Hyperdrive
-binding or `POSTGRES_DATABASE_URL`) and deploy, then smoke-test (load a project,
-save a keyword, check billing):
+binding — the app only connects to Postgres through Hyperdrive) and deploy, then
+smoke-test (load a project, save a keyword, check billing):
 
 ```sh
 pnpm deploy:postgres

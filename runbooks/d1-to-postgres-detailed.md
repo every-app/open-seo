@@ -83,7 +83,8 @@ after cutover would collide with migrated rows.
    Confirm it ends with **"All row counts match."**
 
 3. **Cut over.** Point the deployment at Postgres (`DATABASE_PROVIDER=postgres`
-   plus a Hyperdrive binding or `POSTGRES_DATABASE_URL`) and deploy:
+   plus a Hyperdrive binding — the app only connects to Postgres through
+   Hyperdrive) and deploy:
 
    ```sh
    pnpm deploy:postgres
