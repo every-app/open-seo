@@ -72,7 +72,10 @@ async function authorizeSamChat(
   } catch {
     return new Response("Unauthorized", { status: 401 });
   }
-  const session = await SamSessionRepository.getActiveSession(sessionId);
+  const session = await SamSessionRepository.getActiveSession(
+    sessionId,
+    context.userId,
+  );
   const project = session
     ? await ProjectRepository.getProjectForOrganization(
         session.projectId,

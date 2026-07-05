@@ -17,7 +17,10 @@ export const listSamSessions = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
   .inputValidator((data: unknown) => projectScopedSchema.parse(data))
   .handler(async ({ context }) => {
-    return SamSessionRepository.listSessionsForProject(context.projectId);
+    return SamSessionRepository.listSessionsForProject(
+      context.projectId,
+      context.userId,
+    );
   });
 
 // Creates a new SAM chat session and returns its id; the client then opens a DO
@@ -47,7 +50,10 @@ export const archiveSamSession = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     // Authorize against the session's project (the canonical project-access
     // path), not the caller's org directly.
-    const session = await SamSessionRepository.getActiveSession(data.sessionId);
+    const session = await SamSessionRepository.getActiveSession(
+      data.sessionId,
+      context.userId,
+    );
     const project = session
       ? await ProjectRepository.getProjectForOrganization(
           session.projectId,

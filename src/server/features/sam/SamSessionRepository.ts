@@ -21,7 +21,8 @@ async function createSession(input: CreateSamSessionInput) {
 }
 
 // Callers must have already authorized the project (requireProjectContext).
-async function listSessionsForProject(projectId: string) {
+// Scoped to userId so a project member only sees their own sessions.
+async function listSessionsForProject(projectId: string, userId: string) {
   return db
     .select({
       id: samSessions.id,
@@ -31,7 +32,11 @@ async function listSessionsForProject(projectId: string) {
     })
     .from(samSessions)
     .where(
-      and(eq(samSessions.projectId, projectId), isNull(samSessions.archivedAt)),
+      and(
+        eq(samSessions.projectId, projectId),
+        eq(samSessions.userId, userId),
+        isNull(samSessions.archivedAt),
+      ),
     )
     .orderBy(desc(samSessions.updatedAt), desc(samSessions.id));
 }
@@ -49,16 +54,23 @@ async function getSessionById(id: string) {
   return row ?? null;
 }
 
-// Excludes archived sessions so callers treat them like deleted ones
-// (connection refused / not archivable) even though the row and DO transcript
-// are kept. Does NOT authorize: callers must check the caller's access to
+// Look up a caller's own active session by id, scoped to userId so one org
+// member can't act on another's session. Excludes archived sessions so callers
+// treat them like deleted ones (connection refused / not archivable) even
+// though the row and DO transcript are kept. Callers must still check access to
 // row.projectId via the canonical project-access path
 // (ProjectRepository.getProjectForOrganization) before acting on the session.
-async function getActiveSession(id: string) {
+async function getActiveSession(id: string, userId: string) {
   const [row] = await db
     .select()
     .from(samSessions)
-    .where(and(eq(samSessions.id, id), isNull(samSessions.archivedAt)))
+    .where(
+      and(
+        eq(samSessions.id, id),
+        eq(samSessions.userId, userId),
+        isNull(samSessions.archivedAt),
+      ),
+    )
     .limit(1);
   return row ?? null;
 }
