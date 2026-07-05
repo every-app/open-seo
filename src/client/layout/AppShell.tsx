@@ -32,25 +32,30 @@ export function AuthenticatedAppLayout({
     React.useState(false);
   // On non-project pages (e.g. /settings) there's no projectId in the URL, so
   // derive one for the nav/switcher: prefer the last-visited project, else the
-  // most recent. Reading localStorage in an effect keeps SSR/first render stable.
+  // most recent. The whole app tree is client-only (see root ClientOnly), so we
+  // can read localStorage synchronously during the first render — this lets the
+  // sidebar show the full project nav on the very first paint instead of briefly
+  // flashing only the always-visible Connect group while projects load.
   const projectsQuery = useQuery({
     queryKey: ["projects"],
     queryFn: () => getProjects(),
     enabled: !projectId,
   });
-  const [rememberedProjectId, setRememberedProjectId] = React.useState<
-    string | null
-  >(null);
-  React.useEffect(() => {
-    setRememberedProjectId(getLastProjectId());
-  }, []);
+  const [rememberedProjectId] = React.useState<string | null>(() =>
+    getLastProjectId(),
+  );
   const fallbackProjects = projectsQuery.data ?? [];
   const fallbackProjectId =
     fallbackProjects.find((project) => project.id === rememberedProjectId)
       ?.id ??
     fallbackProjects[0]?.id ??
     null;
-  const sidebarProjectId = projectId ?? fallbackProjectId;
+  // Once the projects list loads, fallbackProjectId is the validated choice
+  // (remembered-if-valid, else most recent). Before it loads, fall back to the
+  // remembered id so the project nav renders immediately; a stale id here only
+  // builds links that self-correct via the route guard once data arrives.
+  const sidebarProjectId =
+    projectId ?? fallbackProjectId ?? rememberedProjectId;
   const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],

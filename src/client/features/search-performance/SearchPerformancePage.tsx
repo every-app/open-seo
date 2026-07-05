@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TablePagination } from "@/client/components/table/TablePagination";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
+import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
   DimensionTable,
   exportDimensionRows,
@@ -198,10 +199,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         </div>
 
         {reportQuery.isPending ? (
-          <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
-            <Loader2 className="size-4 animate-spin" /> Loading Search Console
-            data…
-          </div>
+          <SearchPerformanceLoadingState />
         ) : reportQuery.isError ? (
           <div className="alert alert-error">
             <span className="text-sm">
