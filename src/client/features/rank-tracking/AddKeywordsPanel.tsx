@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@tanstack/react-query";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
+import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { Loader2 } from "lucide-react";
 
@@ -46,6 +47,12 @@ export function AddKeywordsPanel({
               .split("\n")
               .map((l) => l.trim())
               .filter(Boolean);
+            if (lines.some((l) => l.length > MAX_TRACKED_KEYWORD_LENGTH)) {
+              toast.error(
+                `Keywords must be ${MAX_TRACKED_KEYWORD_LENGTH} characters or fewer.`,
+              );
+              return;
+            }
             if (lines.length > 0) mutation.mutate(lines);
           }}
           disabled={isPending || !keywordInput.trim()}

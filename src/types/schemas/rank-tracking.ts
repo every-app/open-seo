@@ -1,6 +1,7 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
 import { rankTrackingConfigs } from "@/db/schema";
+import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
@@ -101,7 +102,10 @@ export const estimateCostSchema = z.object({
 export const addKeywordsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  keywords: z.array(z.string().min(1).max(200)).min(1).max(2000),
+  keywords: z
+    .array(z.string().min(1).max(MAX_TRACKED_KEYWORD_LENGTH))
+    .min(1)
+    .max(2000),
 });
 
 export const removeKeywordsSchema = z.object({

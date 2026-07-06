@@ -67,12 +67,20 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       // Workflow entrypoints run outside the server-function middleware, so
       // nothing else forwards this throw to PostHog as a $exception. Capture it
       // here (awaited — Workflows have no ctx.waitUntil) before re-throwing.
-      await captureServerError(error, {
-        source: "site_audit_workflow",
-        audit_id: auditId,
-        organization_id: billingCustomer.organizationId,
-        project_id: projectId,
-      });
+      // Deploy-time resets are expected churn, not actionable errors.
+      const isDeployReset =
+        error instanceof Error &&
+        error.message.includes(
+          "Durable Object reset because its code was updated",
+        );
+      if (!isDeployReset) {
+        await captureServerError(error, {
+          source: "site_audit_workflow",
+          audit_id: auditId,
+          organization_id: billingCustomer.organizationId,
+          project_id: projectId,
+        });
+      }
       await pgStep(step, "mark-failed", undefined, async () => {
         await AuditRepository.failAudit(auditId, event.instanceId);
 

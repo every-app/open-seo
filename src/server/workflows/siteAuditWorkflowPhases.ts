@@ -19,6 +19,22 @@ import { pgStep } from "@/server/workflows/pgStep";
 
 const LIGHTHOUSE_URL_BATCH_SIZE = 10;
 
+// Workflows rejects step outputs over 1MiB; keep the sitemap seed list well
+// under that. The crawl visits at most maxPages URLs, so extra seeds are moot.
+const SITEMAP_SEED_BYTE_BUDGET = 768 * 1024;
+
+function capSitemapSeeds(urls: string[], maxPages: number): string[] {
+  const seeds: string[] = [];
+  let bytes = 0;
+  for (const url of urls) {
+    if (seeds.length >= maxPages) break;
+    bytes += url.length + 3; // JSON quotes + comma
+    if (bytes > SITEMAP_SEED_BYTE_BUDGET) break;
+    seeds.push(url);
+  }
+  return seeds;
+}
+
 function countLighthouseBatchResults(results: LighthouseResult[]): {
   completed: number;
   failed: number;
@@ -110,7 +126,7 @@ async function runDiscoveryPhase(
       pagesTotal: Math.min(result.urls.length + 1, maxPages),
       currentPhase: "crawling",
     });
-    return { sitemapUrls: result.urls };
+    return { sitemapUrls: capSitemapSeeds(result.urls, maxPages) };
   });
 }
 

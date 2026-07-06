@@ -31,6 +31,7 @@ vi.mock("@/server/billing/autumn", () => ({
     check: checkMock,
     track: trackMock,
   },
+  AUTUMN_TRACK_RETRY_OPTIONS: {},
 }));
 
 // Keep the real subscription module (its assertUsageCreditsAvailable calls the
@@ -189,6 +190,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
         value: EXPECTED_CREDITS,
       }),
+      expect.anything(),
     );
   });
 
@@ -207,6 +209,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
         value: EXPECTED_CREDITS,
       }),
+      expect.anything(),
     );
   });
 
@@ -226,6 +229,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
         value: monthlyAvailable,
       }),
+      expect.anything(),
     );
     expect(trackMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -233,6 +237,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
         value: EXPECTED_CREDITS - monthlyAvailable,
       }),
+      expect.anything(),
     );
   });
 
@@ -271,6 +276,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
         value: EXPECTED_CREDITS,
       }),
+      expect.anything(),
     );
   });
 
@@ -316,6 +322,7 @@ describe("meterDataforseoCall with split balances", () => {
         featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
         value: EXPECTED_CREDITS,
       }),
+      expect.anything(),
     );
   });
 

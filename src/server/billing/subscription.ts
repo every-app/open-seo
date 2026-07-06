@@ -9,7 +9,7 @@ import {
   roundUsdForBilling,
 } from "@/shared/billing";
 import type { CreditFeature } from "@/shared/billing-credit-features";
-import { autumn } from "@/server/billing/autumn";
+import { autumn, AUTUMN_TRACK_RETRY_OPTIONS } from "@/server/billing/autumn";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
 
@@ -127,27 +127,33 @@ export async function trackUsageCreditSpend(args: {
   };
 
   if (monthlyDeduct > 0) {
-    await autumn.track({
-      customerId: args.customerId,
-      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-      value: monthlyDeduct,
-      properties: {
-        ...properties,
-        balanceFeatureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+    await autumn.track(
+      {
+        customerId: args.customerId,
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: monthlyDeduct,
+        properties: {
+          ...properties,
+          balanceFeatureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        },
       },
-    });
+      AUTUMN_TRACK_RETRY_OPTIONS,
+    );
   }
 
   if (topupDeduct > 0) {
-    await autumn.track({
-      customerId: args.customerId,
-      featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-      value: topupDeduct,
-      properties: {
-        ...properties,
-        balanceFeatureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+    await autumn.track(
+      {
+        customerId: args.customerId,
+        featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+        value: topupDeduct,
+        properties: {
+          ...properties,
+          balanceFeatureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+        },
       },
-    });
+      AUTUMN_TRACK_RETRY_OPTIONS,
+    );
   }
 
   await captureServerEvent({
