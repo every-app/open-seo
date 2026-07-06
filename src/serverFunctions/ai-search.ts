@@ -26,7 +26,7 @@ async function assertPaidPlan(organizationId: string) {
 
 export const lookupBrand = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => brandLookupInputSchema.parse(data))
+  .validator(brandLookupInputSchema)
   .handler(async ({ data, context }) => {
     await assertPaidPlan(context.organizationId);
     return getBrandLookup({ ...data, projectId: context.projectId }, context);
@@ -34,7 +34,7 @@ export const lookupBrand = createServerFn({ method: "POST" })
 
 export const explorePrompt = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => promptExplorerInputSchema.parse(data))
+  .validator(promptExplorerInputSchema)
   .handler(async ({ data, context }) => {
     await assertPaidPlan(context.organizationId);
     return runExplorePrompt({ ...data, projectId: context.projectId }, context);

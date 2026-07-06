@@ -15,7 +15,7 @@ const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 // Lists the SAM chat sessions for a project (newest first) for the side-panel.
 export const listSamSessions = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     return SamSessionRepository.listSessionsForProject(
       context.projectId,
@@ -27,7 +27,7 @@ export const listSamSessions = createServerFn({ method: "GET" })
 // connection keyed by that id.
 export const createSamSession = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     const session = await SamSessionRepository.createSession({
       projectId: context.projectId,
@@ -46,7 +46,7 @@ const archiveSchema = z.object({ sessionId: z.string().min(1) });
 // unarchive can restore it. There is no unarchive UI yet.
 export const archiveSamSession = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => archiveSchema.parse(data))
+  .validator(archiveSchema)
   .handler(async ({ data, context }) => {
     // Authorize against the session's project (the canonical project-access
     // path), not the caller's org directly.

@@ -21,7 +21,7 @@ import {
 
 export const startAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => startAuditSchema.parse(data))
+  .validator(startAuditSchema)
   .handler(async ({ data, context }) => {
     // The crawler runs on our Workers compute and isn't credit-metered, so
     // plan-tier limits are the abuse bound in hosted mode: free accounts get
@@ -68,35 +68,35 @@ export const startAudit = createServerFn({ method: "POST" })
 
 export const getAuditStatus = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getAuditStatusSchema.parse(data))
+  .validator(getAuditStatusSchema)
   .handler(async ({ data, context }) => {
     return AuditService.getStatus(data.auditId, context.projectId);
   });
 
 export const getAuditResults = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getAuditResultsSchema.parse(data))
+  .validator(getAuditResultsSchema)
   .handler(async ({ data, context }) => {
     return AuditService.getResults(data.auditId, context.projectId);
   });
 
 export const getAuditHistory = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getAuditHistorySchema.parse(data))
+  .validator(getAuditHistorySchema)
   .handler(async ({ context }) => {
     return AuditService.getHistory(context.projectId);
   });
 
 export const getCrawlProgress = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getCrawlProgressSchema.parse(data))
+  .validator(getCrawlProgressSchema)
   .handler(async ({ data, context }) => {
     return AuditService.getCrawlProgress(data.auditId, context.projectId);
   });
 
 export const deleteAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => deleteAuditSchema.parse(data))
+  .validator(deleteAuditSchema)
   .handler(async ({ data, context }) => {
     await AuditService.remove(data.auditId, context.projectId);
     return { success: true };

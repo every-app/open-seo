@@ -17,7 +17,7 @@ type BacklinksAccessStatus = {
 
 export const getBacklinksAccessSetupStatus = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => backlinksProjectSchema.parse(data))
+  .validator(backlinksProjectSchema)
   .handler(async (): Promise<BacklinksAccessStatus> => {
     if (await isHostedServerAuthMode()) {
       return { enabled: true, errorMessage: null };

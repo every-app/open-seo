@@ -64,7 +64,7 @@ function isExpectedConnectionFailure(error: unknown): boolean {
  */
 export const getSearchPerformanceReport = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => searchPerformanceInputSchema.parse(data))
+  .validator(searchPerformanceInputSchema)
   .handler(async ({ data, context }) => {
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,
@@ -137,9 +137,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
  */
 export const getSearchPerformanceTable = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) =>
-    searchPerformanceTableInputSchema.parse(data),
-  )
+  .validator(searchPerformanceTableInputSchema)
   .handler(async ({ data, context }) => {
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,
@@ -185,9 +183,7 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
  */
 export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) =>
-    searchPerformanceTableExportInputSchema.parse(data),
-  )
+  .validator(searchPerformanceTableExportInputSchema)
   .handler(async ({ data, context }) => {
     const { startDate, endDate } = resolveDateRange({
       dateRange: data.dateRange,

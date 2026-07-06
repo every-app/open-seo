@@ -24,7 +24,7 @@ async function getKeywordE2eFixtures() {
 
 export const researchKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => researchKeywordsSchema.parse(data))
+  .validator(researchKeywordsSchema)
   .handler(async ({ data, context }) => {
     if (shouldUseKeywordE2eFixtures()) {
       const fixtures = await getKeywordE2eFixtures();
@@ -42,7 +42,7 @@ export const researchKeywords = createServerFn({ method: "POST" })
 
 export const saveKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => saveKeywordsSchema.parse(data))
+  .validator(saveKeywordsSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.saveKeywords({
       ...data,
@@ -52,7 +52,7 @@ export const saveKeywords = createServerFn({ method: "POST" })
 
 export const getSavedKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getSavedKeywordsSchema.parse(data))
+  .validator(getSavedKeywordsSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.getSavedKeywords({
       ...data,
@@ -62,7 +62,7 @@ export const getSavedKeywords = createServerFn({ method: "POST" })
 
 export const exportSavedKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => exportSavedKeywordsSchema.parse(data))
+  .validator(exportSavedKeywordsSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.exportSavedKeywords({
       ...data,
@@ -72,7 +72,7 @@ export const exportSavedKeywords = createServerFn({ method: "POST" })
 
 export const updateSavedKeywordTags = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => updateSavedKeywordTagsSchema.parse(data))
+  .validator(updateSavedKeywordTagsSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.updateSavedKeywordTags({
       ...data,
@@ -82,7 +82,7 @@ export const updateSavedKeywordTags = createServerFn({ method: "POST" })
 
 export const updateSavedKeywordTag = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => updateSavedKeywordTagSchema.parse(data))
+  .validator(updateSavedKeywordTagSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.updateSavedKeywordTag({
       ...data,
@@ -92,7 +92,7 @@ export const updateSavedKeywordTag = createServerFn({ method: "POST" })
 
 export const deleteSavedKeywordTag = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => deleteSavedKeywordTagSchema.parse(data))
+  .validator(deleteSavedKeywordTagSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.deleteSavedKeywordTag({
       ...data,
@@ -104,16 +104,14 @@ export const removeSavedKeywords = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => removeSavedKeywordsSchema.parse(data))
+  .validator(removeSavedKeywordsSchema)
   .handler(async ({ data, context }) => {
     return KeywordResearchService.removeSavedKeywords(context.projectId, data);
   });
 
 export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) =>
-    refreshSavedKeywordMetricsSchema.parse(data),
-  )
+  .validator(refreshSavedKeywordMetricsSchema)
   .handler(async ({ context }) => {
     return KeywordResearchService.refreshSavedKeywordMetrics(
       { projectId: context.projectId },
@@ -123,7 +121,7 @@ export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
 
 export const getSerpAnalysis = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => serpAnalysisSchema.parse(data))
+  .validator(serpAnalysisSchema)
   .handler(async ({ data, context }) =>
     KeywordResearchService.getSerpAnalysis(
       {

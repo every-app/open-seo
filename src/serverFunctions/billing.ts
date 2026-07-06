@@ -50,7 +50,7 @@ export type BillingUsageEvent = {
 
 export const getBillingUsageEvents = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => billingUsageRangeSchema.parse(data))
+  .validator(billingUsageRangeSchema)
   .handler(async ({ data, context }) => {
     if (!(await isHostedServerAuthMode())) {
       return [];

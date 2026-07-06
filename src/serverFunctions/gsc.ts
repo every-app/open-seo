@@ -32,7 +32,7 @@ export const getGscGrantStatus = createServerFn({ method: "GET" })
 
 export const getGscConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     const [connection, currentUserHasGrant, hosted, gscConfigured] =
       await Promise.all([
@@ -53,7 +53,7 @@ export const getGscConnection = createServerFn({ method: "POST" })
 
 export const listGscSites = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     const [siteList, connection] = await Promise.all([
       GscService.listSitesForUserWithGrantStatus(context.userId),
@@ -72,7 +72,7 @@ export const listGscSites = createServerFn({ method: "POST" })
 
 export const setGscSite = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => setSiteSchema.parse(data))
+  .validator(setSiteSchema)
   .handler(async ({ data, context }) => {
     const connection = await GscService.setSite({
       projectId: context.projectId,
@@ -94,7 +94,7 @@ export const setGscSite = createServerFn({ method: "POST" })
 
 export const disconnectGsc = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async ({ context }) => {
     await GscService.disconnect({
       projectId: context.projectId,
@@ -113,7 +113,7 @@ export const disconnectGsc = createServerFn({ method: "POST" })
 
 export const startSelfHostedGscLink = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => startSelfHostedLinkSchema.parse(data))
+  .validator(startSelfHostedLinkSchema)
   .handler(async ({ data, context }) => {
     const publicOrigin = getPublicOrigin(getRequest());
     const url = await createSelfHostedGscAuthorizationUrl({

@@ -59,21 +59,21 @@ async function requireConfig(configId: string, projectId: string) {
 
 export const getRankTrackingConfigs = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getConfigsSchema.parse(data))
+  .validator(getConfigsSchema)
   .handler(async ({ context }) => {
     return RankTrackingRepository.getConfigsForProject(context.projectId);
   });
 
 export const getRankTrackingConfigSummaries = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getConfigsSchema.parse(data))
+  .validator(getConfigsSchema)
   .handler(async ({ context }) => {
     return RankTrackingRepository.getConfigSummaries(context.projectId);
   });
 
 export const createRankTrackingConfig = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => createConfigSchema.parse(data))
+  .validator(createConfigSchema)
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.createConfig({
       projectId: context.projectId,
@@ -104,7 +104,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
 
 export const updateRankTrackingConfig = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => updateConfigSchema.parse(data))
+  .validator(updateConfigSchema)
   .handler(async ({ data, context }) => {
     await RankTrackingService.updateConfig(data.configId, context.projectId, {
       domain: data.domain,
@@ -120,7 +120,7 @@ export const updateRankTrackingConfig = createServerFn({ method: "POST" })
 
 export const triggerRankCheck = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => triggerCheckSchema.parse(data))
+  .validator(triggerCheckSchema)
   .handler(async ({ data, context }) => {
     const isHosted = await isHostedServerAuthMode();
     if (isHosted && !(await customerHasPaidPlan(context.organizationId))) {
@@ -157,7 +157,7 @@ export const triggerRankCheck = createServerFn({ method: "POST" })
 
 export const getLatestRankResults = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getLatestResultsSchema.parse(data))
+  .validator(getLatestResultsSchema)
   .handler(async ({ data, context }) => {
     return getLatestResults(
       data.configId,
@@ -168,21 +168,21 @@ export const getLatestRankResults = createServerFn({ method: "POST" })
 
 export const getLatestRankRun = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getLatestRunSchema.parse(data))
+  .validator(getLatestRunSchema)
   .handler(async ({ data, context }) => {
     return RankTrackingService.getLatestRun(data.configId, context.projectId);
   });
 
 export const estimateRankCheckCost = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => estimateCostSchema.parse(data))
+  .validator(estimateCostSchema)
   .handler(async ({ data, context }) => {
     return RankTrackingService.estimateCost(data.configId, context.projectId);
   });
 
 export const addTrackingKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => addKeywordsSchema.parse(data))
+  .validator(addKeywordsSchema)
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.addKeywords(
       data.configId,
@@ -252,7 +252,7 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
 
 export const removeTrackingKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => removeKeywordsSchema.parse(data))
+  .validator(removeKeywordsSchema)
   .handler(async ({ data, context }) => {
     await RankTrackingService.removeKeywords(
       data.configId,
@@ -264,7 +264,7 @@ export const removeTrackingKeywords = createServerFn({ method: "POST" })
 
 export const refreshTrackingKeywordMetrics = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => refreshMetricsSchema.parse(data))
+  .validator(refreshMetricsSchema)
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.refreshKeywordMetrics(
       data.configId,
@@ -290,7 +290,7 @@ export const refreshTrackingKeywordMetrics = createServerFn({ method: "POST" })
 
 export const getRankKeywordHistory = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getKeywordHistorySchema.parse(data))
+  .validator(getKeywordHistorySchema)
   .handler(async ({ data, context }): Promise<RankKeywordHistoryPoint[]> => {
     await requireConfig(data.configId, context.projectId);
     return RankTrackingRepository.getKeywordHistory(
@@ -302,7 +302,7 @@ export const getRankKeywordHistory = createServerFn({ method: "POST" })
 
 export const getRankConfigTrend = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getConfigTrendSchema.parse(data))
+  .validator(getConfigTrendSchema)
   .handler(async ({ data, context }): Promise<RankConfigTrendPoint[]> => {
     await requireConfig(data.configId, context.projectId);
     const rows = await RankTrackingRepository.getConfigTrend(
@@ -330,7 +330,7 @@ export const getRankConfigTrend = createServerFn({ method: "POST" })
 
 export const getRankPositionMatrix = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => getPositionMatrixSchema.parse(data))
+  .validator(getPositionMatrixSchema)
   .handler(async ({ data, context }): Promise<RankPositionMatrixCell[]> => {
     await requireConfig(data.configId, context.projectId);
     return RankTrackingRepository.getPositionMatrix(

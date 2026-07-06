@@ -17,7 +17,7 @@ type AiSearchAccessStatus = {
 
 export const getAiSearchAccessSetupStatus = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => aiSearchProjectSchema.parse(data))
+  .validator(aiSearchProjectSchema)
   .handler(async (): Promise<AiSearchAccessStatus> => {
     if (await isHostedServerAuthMode()) {
       return { enabled: true, errorMessage: null };

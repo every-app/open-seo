@@ -21,7 +21,7 @@ type SamAccessStatus = {
 // deployments always have the key provisioned, so only self-hosted is checked.
 export const getSamAccessSetupStatus = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => projectScopedSchema.parse(data))
+  .validator(projectScopedSchema)
   .handler(async (): Promise<SamAccessStatus> => {
     if (await isHostedServerAuthMode()) {
       return { enabled: true, errorMessage: null };
