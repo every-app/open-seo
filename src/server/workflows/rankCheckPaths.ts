@@ -48,6 +48,7 @@ interface CheckContext {
   domain: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   runId: string;
 }
 
@@ -90,6 +91,7 @@ async function checkBatchLive(
           keywordId: task.keywordId,
           locationCode: ctx.locationCode,
           languageCode: ctx.languageCode,
+          locationName: ctx.locationName,
           device: task.device,
           targetDomain: ctx.domain,
           depth: ctx.serpDepth,
@@ -294,6 +296,7 @@ export async function runQueuedCheck(
             tasks: chunk,
             locationCode: ctx.locationCode,
             languageCode: ctx.languageCode,
+            locationName: ctx.locationName,
             depth: ctx.serpDepth,
             targetDomain: ctx.domain,
           }),

@@ -141,15 +141,19 @@ export async function fetchRankCheckSerp(input: {
   keywordId: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   device: "desktop" | "mobile";
   targetDomain: string;
   depth: number;
 }): Promise<DataforseoApiResponse<RankCheckResult>> {
   const depth = clampSerpDepth(input.depth);
+  const locationParams = input.locationName
+    ? { location_name: input.locationName }
+    : { location_code: input.locationCode };
   const response = await serpApi().googleOrganicLiveAdvanced([
     new SerpGoogleOrganicLiveAdvancedRequestInfo({
       keyword: input.keyword,
-      location_code: input.locationCode,
+      ...locationParams,
       language_code: input.languageCode,
       device: input.device,
       os: input.device === "desktop" ? "windows" : "android",
@@ -197,6 +201,7 @@ export async function postRankCheckTasks(input: {
   tasks: RankCheckTaskInput[];
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   depth: number;
   targetDomain: string;
 }): Promise<DataforseoApiResponse<PostedRankCheckTask[]>> {
@@ -207,12 +212,15 @@ export async function postRankCheckTasks(input: {
     );
   }
   const depth = clampSerpDepth(input.depth);
+  const locationParams = input.locationName
+    ? { location_name: input.locationName }
+    : { location_code: input.locationCode };
   const response = await serpApi().googleOrganicTaskPost(
     input.tasks.map(
       (task) =>
         new SerpGoogleOrganicTaskPostRequestInfo({
           keyword: task.keyword,
-          location_code: input.locationCode,
+          ...locationParams,
           language_code: input.languageCode,
           device: task.device,
           os: task.device === "desktop" ? "windows" : "android",

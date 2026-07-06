@@ -225,6 +225,7 @@ export const rankTrackingConfigs = sqliteTable(
     })
       .notNull()
       .default("weekly"),
+    locationName: text("location_name"),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     lastCheckedAt: text("last_checked_at"),
     nextCheckAt: text("next_check_at"),
@@ -234,11 +235,9 @@ export const rankTrackingConfigs = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
-    uniqueIndex("rank_tracking_configs_project_domain_location_idx").on(
-      table.projectId,
-      table.domain,
-      table.locationCode,
-    ),
+    uniqueIndex(
+      "rank_tracking_configs_project_domain_location_name_idx",
+    ).on(table.projectId, table.domain, table.locationCode, table.locationName),
   ],
 );
 

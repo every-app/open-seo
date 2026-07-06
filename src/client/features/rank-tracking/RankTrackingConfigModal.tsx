@@ -21,7 +21,9 @@ import {
   getLanguageCode,
   getLanguageOptions,
 } from "@/client/features/keywords/locations";
+import { LOCATION_OPTIONS } from "@/shared/keyword-locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
+import { SerpLocationCombobox } from "@/client/components/SerpLocationCombobox";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 
 type Props = {
@@ -60,7 +62,20 @@ export function RankTrackingConfigModal({
   const [schedule, setSchedule] = useState<
     RankTrackingConfig["scheduleInterval"]
   >(existingConfig?.scheduleInterval ?? "weekly");
+  const [targetingMode, setTargetingMode] = useState<"national" | "local">(
+    existingConfig?.locationName ? "local" : "national",
+  );
+  const [locationName, setLocationName] = useState<string | undefined>(
+    existingConfig?.locationName ?? undefined,
+  );
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
+
+  const selectedCountryLabel = useMemo(
+    () =>
+      LOCATION_OPTIONS.find((opt) => opt.code === locationCode)?.label ??
+      "United States",
+    [locationCode],
+  );
 
   const createMutation = useMutation({
     mutationFn: (normalizedDomain: string) =>
@@ -72,6 +87,7 @@ export function RankTrackingConfigModal({
           serpDepth,
           locationCode,
           languageCode,
+          locationName: targetingMode === "local" ? locationName : undefined,
           scheduleInterval: schedule,
         },
       }),
@@ -98,6 +114,7 @@ export function RankTrackingConfigModal({
           serpDepth,
           locationCode,
           languageCode,
+          locationName: targetingMode === "local" ? locationName : undefined,
           scheduleInterval: schedule,
         },
       }),
@@ -204,6 +221,60 @@ export function RankTrackingConfigModal({
               setLanguageCode(getLanguageCode(newLocationCode));
             }}
           />
+        </div>
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text font-medium">Search Targeting</span>
+          </label>
+          <div className="flex gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                className="radio radio-sm"
+                checked={targetingMode === "national"}
+                onChange={() => {
+                  setTargetingMode("national");
+                  setLocationName(undefined);
+                }}
+              />
+              <span className="text-sm">National</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="radio"
+                className="radio radio-sm"
+                checked={targetingMode === "local"}
+                onChange={() => setTargetingMode("local")}
+              />
+              <span className="text-sm">Local</span>
+            </label>
+          </div>
+          <p className="text-xs text-base-content/50 mt-1.5">
+            {targetingMode === "local" ? (
+              <>
+                <span className="text-success font-medium">Best for:</span>{" "}
+                "near me" queries, city/county keywords, service-area pages.
+              </>
+            ) : (
+              <>
+                <span className="font-medium">Best for:</span> broad category
+                terms with no location modifier (e.g. "site preparation
+                services," "land clearing oklahoma"). Local targeting can
+                understate rankings for non-geo-modified terms.
+              </>
+            )}
+          </p>
+          {targetingMode === "local" && (
+            <div className="mt-2">
+              <SerpLocationCombobox
+                value={locationName}
+                onChange={setLocationName}
+                countryName={selectedCountryLabel}
+                placeholder="Search cities..."
+              />
+            </div>
+          )}
         </div>
 
         <div className="form-control">

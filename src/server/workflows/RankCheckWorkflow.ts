@@ -38,6 +38,7 @@ interface RankCheckParams {
   domain: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   devices: "both" | "desktop" | "mobile";
   serpDepth: number;
   trigger: "manual" | "scheduled";
@@ -269,6 +270,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       domain,
       locationCode,
       languageCode,
+      locationName,
       devices,
       serpDepth,
       trigger,
@@ -332,6 +334,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           domain,
           locationCode,
           languageCode,
+          locationName,
           runId,
         };
         // Scheduled checks use DataForSEO's task queue (~30% of live cost);

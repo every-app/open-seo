@@ -205,7 +205,10 @@ function DomainRow({
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[summary.locationCode] ?? "US"} &middot;{" "}
+          {summary.locationName
+            ? summary.locationName.split(",").slice(0, 2).join(", ")
+            : (LOCATIONS[summary.locationCode] ?? "US")}{" "}
+          &middot;{" "}
           {devicesLabel(summary.devices)} &middot;{" "}
           {scheduleLabel(summary.scheduleInterval)}
           {summary.lastRunCompletedAt && (

@@ -34,6 +34,7 @@ export function KeywordTrendModal({
   configId,
   domain,
   locationCode,
+  locationName,
   serpDepth,
   onClose,
 }: {
@@ -42,6 +43,7 @@ export function KeywordTrendModal({
   configId: string;
   domain: string;
   locationCode: number;
+  locationName?: string;
   serpDepth: number;
   onClose: () => void;
 }) {
@@ -145,7 +147,11 @@ export function KeywordTrendModal({
             {target.keyword}
           </h3>
           <p className="text-xs text-base-content/60">
-            {domain} &middot; {LOCATIONS[locationCode] ?? "US"} &middot;
+            {domain} &middot;{" "}
+            {locationName
+              ? locationName.split(",").slice(0, 2).join(", ")
+              : (LOCATIONS[locationCode] ?? "US")}{" "}
+            &middot;
             Position over time
           </p>
         </div>

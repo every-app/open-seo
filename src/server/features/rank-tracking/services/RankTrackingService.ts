@@ -32,6 +32,7 @@ async function createConfig(input: {
   domain: string;
   locationCode?: number;
   languageCode?: string;
+  locationName?: string;
   devices?: RankTrackingConfig["devices"];
   serpDepth: number;
   scheduleInterval?: RankTrackingConfig["scheduleInterval"];
@@ -98,6 +99,7 @@ async function createConfig(input: {
     domain: normalizedDomain,
     locationCode,
     languageCode: input.languageCode ?? "en",
+    locationName: input.locationName ?? null,
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,
     scheduleInterval,
@@ -114,6 +116,7 @@ async function updateConfig(
     domain?: string;
     locationCode?: number;
     languageCode?: string;
+    locationName?: string;
     devices?: RankTrackingConfig["devices"];
     serpDepth?: number;
     scheduleInterval?: RankTrackingConfig["scheduleInterval"];
@@ -128,6 +131,8 @@ async function updateConfig(
     updates.locationCode = input.locationCode;
   if (input.languageCode !== undefined)
     updates.languageCode = input.languageCode;
+  if (input.locationName !== undefined)
+    updates.locationName = input.locationName;
   if (input.devices !== undefined) updates.devices = input.devices;
   if (input.serpDepth !== undefined) updates.serpDepth = input.serpDepth;
   if (input.isActive !== undefined) updates.isActive = input.isActive;

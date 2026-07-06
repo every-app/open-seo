@@ -45,7 +45,10 @@ export function RankTrackingDetailHeader({
       <div>
         <h2 className="text-lg font-semibold">{config.domain}</h2>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[config.locationCode] ?? "US"} &middot;{" "}
+          {config.locationName
+            ? config.locationName.split(",").slice(0, 2).join(", ")
+            : (LOCATIONS[config.locationCode] ?? "US")}{" "}
+          &middot;{" "}
           {devicesLabel(config.devices)} &middot;{" "}
           {scheduleLabel(config.scheduleInterval)}
           {run && (

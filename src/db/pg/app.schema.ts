@@ -228,6 +228,7 @@ export const rankTrackingConfigs = pgTable(
     })
       .notNull()
       .default("weekly"),
+    locationName: text("location_name"),
     isActive: boolean("is_active").notNull().default(true),
     lastCheckedAt: timestampColumn("last_checked_at"),
     nextCheckAt: timestampColumn("next_check_at"),
@@ -235,11 +236,9 @@ export const rankTrackingConfigs = pgTable(
     createdAt: timestampColumn("created_at").notNull().default(isoNow),
   },
   (table) => [
-    uniqueIndex("rank_tracking_configs_project_domain_location_idx").on(
-      table.projectId,
-      table.domain,
-      table.locationCode,
-    ),
+    uniqueIndex(
+      "rank_tracking_configs_project_domain_location_name_idx",
+    ).on(table.projectId, table.domain, table.locationCode, table.locationName),
   ],
 );
 
