@@ -25,7 +25,7 @@ import {
   type LlmResponseResult,
   type LlmTopPagesItem,
 } from "@/server/lib/dataforseoLlmSchemas";
-import { createDataforseoAccessClassifier } from "@/server/lib/dataforseoAccessClassification";
+import { createDataforseoBillingClassifier } from "@/server/lib/dataforseoBillingClassification";
 import { AppError } from "@/server/lib/errors";
 import { aiOptimizationApi } from "@/server/lib/dataforseo/core";
 import {
@@ -42,11 +42,8 @@ export const CHATGPT_LANGUAGE_CODE = "en";
 
 export type LlmPlatform = "chat_gpt" | "google";
 
-const classifyAiSearchError = createDataforseoAccessClassifier({
+const classifyAiSearchError = createDataforseoBillingClassifier({
   pathPrefix: "/ai_optimization/",
-  notEnabledCode: "AI_SEARCH_NOT_ENABLED",
-  notEnabledMessage:
-    "AI Optimization is not enabled for the connected DataForSEO account",
   billingIssueCode: "AI_SEARCH_BILLING_ISSUE",
   billingIssueMessage:
     "The connected DataForSEO account has a billing or balance issue",

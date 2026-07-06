@@ -1,20 +1,6 @@
 import { AppError } from "@/server/lib/errors";
 import type { ErrorCode } from "@/shared/error-codes";
 
-const ACCESS_SIGNALS = [
-  "not available",
-  "not enabled",
-  "not allowed",
-  "access denied",
-  "forbidden",
-  "insufficient",
-  "subscription",
-  "upgrade",
-  "plan",
-  "activate your subscription",
-  "plans and subscriptions",
-];
-
 const BILLING_SIGNALS = [
   "insufficient funds",
   "balance is too low",
@@ -25,22 +11,25 @@ const BILLING_SIGNALS = [
   "recharged",
 ];
 
-const ACCESS_STATUS_CODES = new Set([40204, 403]);
 const BILLING_STATUS_CODES = new Set([40200, 40210, 402]);
 
-type DataforseoAccessClassifier = (
+type DataforseoBillingClassifier = (
   status: number | undefined,
   details: string,
   path: string,
 ) => AppError | null;
 
-export function createDataforseoAccessClassifier(config: {
+/**
+ * Maps DataForSEO balance/payment failures for a given API section to a typed
+ * billing error. Feature-enablement is no longer classified: Backlinks and AI
+ * Optimization are included in every DataForSEO account, so the only remaining
+ * account-level failure is a depleted balance.
+ */
+export function createDataforseoBillingClassifier(config: {
   pathPrefix: string;
-  notEnabledCode: ErrorCode;
-  notEnabledMessage: string;
   billingIssueCode: ErrorCode;
   billingIssueMessage: string;
-}): DataforseoAccessClassifier {
+}): DataforseoBillingClassifier {
   return (status, details, path) => {
     if (!path.includes(config.pathPrefix)) return null;
 
@@ -54,13 +43,6 @@ export function createDataforseoAccessClassifier(config: {
       return new AppError(config.billingIssueCode, config.billingIssueMessage);
     }
 
-    const matchesAccessStatus =
-      status != null && ACCESS_STATUS_CODES.has(status);
-    const matchesAccessText = ACCESS_SIGNALS.some((signal) =>
-      text.includes(signal),
-    );
-    if (!matchesAccessStatus && !matchesAccessText) return null;
-
-    return new AppError(config.notEnabledCode, config.notEnabledMessage);
+    return null;
   };
 }

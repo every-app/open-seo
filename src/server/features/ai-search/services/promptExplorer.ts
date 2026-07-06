@@ -286,7 +286,6 @@ function mapErrorToResult(
   if (
     reason instanceof AppError &&
     (reason.code === "INSUFFICIENT_CREDITS" ||
-      reason.code === "AI_SEARCH_NOT_ENABLED" ||
       reason.code === "AI_SEARCH_BILLING_ISSUE")
   ) {
     // These account-level failures apply to every model, so surface one clear

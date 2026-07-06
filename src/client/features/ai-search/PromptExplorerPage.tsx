@@ -19,9 +19,6 @@ import { PromptExplorerResults } from "@/client/features/ai-search/components/Pr
 import { PromptExplorerLoadingState } from "@/client/features/ai-search/components/PromptExplorerLoadingState";
 import { PromptExplorerHistorySection } from "@/client/features/ai-search/components/PromptExplorerHistorySection";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
-import { AiSearchSetupGate } from "@/client/features/ai-search/components/AiSearchSetupGate";
-import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
-import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { usePromptExplorerSearchHistory } from "@/client/hooks/usePromptExplorerSearchHistory";
 import {
   PROMPT_EXPLORER_MAX_PROMPT_LENGTH,
@@ -77,7 +74,6 @@ function PromptExplorerPageInner({
 }: Props & { planGate: HostedPlanGateState }) {
   const [form, setForm] = useState<PromptExplorerFormValues>(urlState);
   const [validationError, setValidationError] = useState<string | null>(null);
-  const access = useAiSearchAccess(projectId);
 
   const {
     history,
@@ -110,11 +106,11 @@ function PromptExplorerPageInner({
           webSearchCountryCode: urlState.webSearchCountryCode,
         },
       }),
+    // Client-side gate is a UX optimization only; the paywall is enforced
+    // server-side (explorePrompt → assertPaidPlan) before any DataForSEO spend,
+    // so a stale free-plan window here just yields a rejected request, not cost.
     enabled:
-      hasActivePrompt &&
-      urlState.models.length > 0 &&
-      !planGate.isFreePlan &&
-      access.enabled,
+      hasActivePrompt && urlState.models.length > 0 && !planGate.isFreePlan,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -199,8 +195,6 @@ function PromptExplorerPageInner({
     if (validationError) setValidationError(null);
   };
 
-  if (planGate.isLoading) return null;
-
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -212,15 +206,7 @@ function PromptExplorerPageInner({
           </p>
         </div>
 
-        {access.isLoading ? (
-          <AccessGateLoadingState />
-        ) : !access.enabled ? (
-          <AiSearchSetupGate
-            errorMessage={access.errorMessage ?? access.statusErrorMessage}
-            isRefetching={access.isRefetching}
-            onRetry={access.onRetry}
-          />
-        ) : planGate.isFreePlan ? (
+        {planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
             feature="Prompt Explorer"
             description="Ask one prompt across ChatGPT, Claude, Gemini, and Perplexity at the same time and compare their answers — including which sources each model cites."

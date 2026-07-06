@@ -83,10 +83,12 @@ describe("assertOk", () => {
   });
 
   it("uses the classifier for non-charged (no-cost) failures", () => {
-    const classify = vi.fn(() => new AppError("BACKLINKS_NOT_ENABLED", "nope"));
+    const classify = vi.fn(
+      () => new AppError("BACKLINKS_BILLING_ISSUE", "nope"),
+    );
     const task = {
-      status_code: 40204,
-      status_message: "subscription required",
+      status_code: 40200,
+      status_message: "balance is too low",
     };
     expect(() =>
       assertOk(
@@ -95,16 +97,16 @@ describe("assertOk", () => {
       ),
     ).toThrow("nope");
     expect(classify).toHaveBeenCalledWith(
-      40204,
-      "subscription required",
+      40200,
+      "balance is too low",
       "/v3/backlinks/summary/live",
     );
   });
 
   it.each([
-    [40204, "BACKLINKS_NOT_ENABLED"],
-    [403, "BACKLINKS_NOT_ENABLED"],
     [40200, "BACKLINKS_BILLING_ISSUE"],
+    [40210, "BACKLINKS_BILLING_ISSUE"],
+    [402, "BACKLINKS_BILLING_ISSUE"],
   ] as const)(
     "uses the classifier for account failure %s before charging billed task metadata",
     (status, code) => {
@@ -113,7 +115,7 @@ describe("assertOk", () => {
       );
       const task = {
         status_code: status,
-        status_message: "Backlinks subscription required",
+        status_message: "Account balance is too low",
         path: ["v3", "backlinks", "summary", "live"],
         cost: 0.05,
         result_count: 0,
@@ -128,7 +130,7 @@ describe("assertOk", () => {
       }
       expect(classify).toHaveBeenCalledWith(
         status,
-        "Backlinks subscription required",
+        "Account balance is too low",
         "/v3/backlinks/summary/live",
       );
     },

@@ -9,10 +9,10 @@ const { classifyBacklinksError } = vi.hoisted(() => ({
   classifyBacklinksError: vi.fn(),
 }));
 
-// The classifier is built inside backlinks.ts via createDataforseoAccessClassifier;
+// The classifier is built inside backlinks.ts via createDataforseoBillingClassifier;
 // returning our hoisted mock lets the test drive classification.
-vi.mock("@/server/lib/dataforseoAccessClassification", () => ({
-  createDataforseoAccessClassifier: () => classifyBacklinksError,
+vi.mock("@/server/lib/dataforseoBillingClassification", () => ({
+  createDataforseoBillingClassifier: () => classifyBacklinksError,
 }));
 
 import {
@@ -107,18 +107,18 @@ describe("fetchBacklinksSummary", () => {
     vi.mocked(fetch).mockResolvedValue(
       new Response(
         JSON.stringify({
-          status_code: 40204,
-          status_message: "Backlinks subscription required",
+          status_code: 40200,
+          status_message: "Account balance is too low",
           tasks: [],
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       ),
     );
     classifyBacklinksError.mockImplementation((status: number | undefined) => {
-      if (status === 40204) {
+      if (status === 40200) {
         return new AppError(
-          "BACKLINKS_NOT_ENABLED",
-          "Backlinks is not enabled",
+          "BACKLINKS_BILLING_ISSUE",
+          "The connected DataForSEO account has a billing or balance issue",
         );
       }
       return null;
@@ -126,11 +126,11 @@ describe("fetchBacklinksSummary", () => {
 
     await expect(
       fetchBacklinksSummary({ target: "example.com" }),
-    ).rejects.toMatchObject({ code: "BACKLINKS_NOT_ENABLED" });
+    ).rejects.toMatchObject({ code: "BACKLINKS_BILLING_ISSUE" });
 
     expect(classifyBacklinksError).toHaveBeenCalledWith(
-      40204,
-      expect.stringContaining("Backlinks subscription required"),
+      40200,
+      expect.stringContaining("Account balance is too low"),
       "/v3/backlinks/summary/live",
     );
   });

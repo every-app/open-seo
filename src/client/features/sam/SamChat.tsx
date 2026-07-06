@@ -7,7 +7,6 @@ import {
   invalidateSamSessions,
   samSessionsQueryOptions,
 } from "@/client/features/sam/samQueries";
-import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { useSamAccess } from "./useSamAccess";
 import { SamSetupGate } from "./SamSetupGate";
 import { SamConversation } from "./SamConversation";
@@ -57,22 +56,19 @@ export function SamChat({
     goToSession(firstSessionId);
   }, [activeSessionId, firstSessionId, goToSession]);
 
-  // Gate the whole page until OPENROUTER_API_KEY is configured — SAM cannot
-  // answer a single turn without it, so surface setup instructions instead of
-  // letting a chat fail mid-stream.
-  if (access.isLoading || !access.enabled) {
+  // SAM cannot answer a turn without OPENROUTER_API_KEY, so surface setup
+  // instructions instead of letting a chat fail mid-stream. Only shown once the
+  // check confirms the key is missing (self-hosted) — never as a blocking
+  // skeleton while the check is in flight.
+  if (access.showSetupGate) {
     return (
       <div className="overflow-auto px-4 py-4 md:px-6 md:py-6">
         <div className="mx-auto max-w-3xl">
-          {access.isLoading ? (
-            <AccessGateLoadingState />
-          ) : (
-            <SamSetupGate
-              errorMessage={access.errorMessage ?? access.statusErrorMessage}
-              isRefetching={access.isRefetching}
-              onRetry={access.onRetry}
-            />
-          )}
+          <SamSetupGate
+            errorMessage={access.errorMessage}
+            isRefetching={access.isRefetching}
+            onRetry={access.onRetry}
+          />
         </div>
       </div>
     );

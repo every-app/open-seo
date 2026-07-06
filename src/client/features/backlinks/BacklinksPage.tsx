@@ -101,10 +101,8 @@ export function BacklinksPage({
   });
 
   const {
-    accessGate,
     activeTabErrorMessage,
     activeTabQuery,
-    backlinksDisabledByError,
     overviewErrorMessage,
     overviewQuery,
     referringDomainsQuery,
@@ -192,28 +190,22 @@ export function BacklinksPage({
           </p>
         </div>
 
-        {!accessGate.isLoading &&
-        accessGate.enabled &&
-        !backlinksDisabledByError ? (
-          <BacklinksSearchCard
-            errorMessage={overviewErrorMessage}
-            initialValues={searchCardInitialValues}
-            canOpenSearch={(values) =>
-              searchTabs.canOpenTab(toBacklinksTabInput(values))
-            }
-            tabLimit={searchTabs.limit}
-            onSubmit={(values) => {
-              searchTabs.openTab(toBacklinksTabInput(values));
-              navigateToBacklinksSearch(navigate, values);
-              addSearch({ target: values.target, scope: values.scope });
-            }}
-          />
-        ) : null}
+        <BacklinksSearchCard
+          errorMessage={overviewErrorMessage}
+          initialValues={searchCardInitialValues}
+          canOpenSearch={(values) =>
+            searchTabs.canOpenTab(toBacklinksTabInput(values))
+          }
+          tabLimit={searchTabs.limit}
+          onSubmit={(values) => {
+            searchTabs.openTab(toBacklinksTabInput(values));
+            navigateToBacklinksSearch(navigate, values);
+            addSearch({ target: values.target, scope: values.scope });
+          }}
+        />
 
         <BacklinksBody
           projectId={projectId}
-          accessGate={accessGate}
-          backlinksDisabledByError={backlinksDisabledByError}
           history={history}
           historyLoaded={historyLoaded}
           overviewData={overviewQuery.data}

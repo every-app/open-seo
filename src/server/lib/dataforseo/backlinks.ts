@@ -10,7 +10,7 @@ import {
   normalizeBacklinksSpamFilterOptions,
   type BacklinksSpamFilterOptions,
 } from "@/types/schemas/backlinks";
-import { createDataforseoAccessClassifier } from "@/server/lib/dataforseoAccessClassification";
+import { createDataforseoBillingClassifier } from "@/server/lib/dataforseoBillingClassification";
 import { AppError } from "@/server/lib/errors";
 import { backlinksApi } from "@/server/lib/dataforseo/core";
 import {
@@ -41,11 +41,8 @@ type BacklinksTimeseriesRequest = {
   dateTo: string;
 };
 
-const classifyBacklinksError = createDataforseoAccessClassifier({
+const classifyBacklinksError = createDataforseoBillingClassifier({
   pathPrefix: "/backlinks/",
-  notEnabledCode: "BACKLINKS_NOT_ENABLED",
-  notEnabledMessage:
-    "Backlinks is not enabled for the connected DataForSEO account",
   billingIssueCode: "BACKLINKS_BILLING_ISSUE",
   billingIssueMessage:
     "The connected DataForSEO account has a billing or balance issue",
