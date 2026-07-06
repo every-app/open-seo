@@ -194,6 +194,9 @@ function enqueueDiscoveredLinks(params: {
 }) {
   const { crawledBatch, queue, queued, visited, origin, robots } = params;
   for (const pageResult of crawledBatch) {
+    // Mark the final URL (post-redirect) as visited so a canonical trailing-slash
+    // URL from the sitemap isn't re-crawled after the bare path already fetched it.
+    visited.add(pageResult.url);
     for (const link of pageResult.internalLinks.filter((candidate) =>
       shouldQueueCrawlLink(candidate, origin, robots, visited, queued),
     )) {

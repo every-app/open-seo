@@ -8,7 +8,8 @@
  * - Strip fragments (#...)
  * - Sort query parameters
  * - Lowercase the hostname
- * - Remove trailing slash (except for root path "/")
+ * - Trailing slashes are preserved so canonical URLs (e.g. WordPress /path/)
+ *   are not rewritten to non-canonical redirect sources
  */
 export function normalizeUrl(url: string, base?: string): string | null {
   try {
@@ -28,13 +29,7 @@ export function normalizeUrl(url: string, base?: string): string | null {
     // Lowercase hostname
     parsed.hostname = parsed.hostname.toLowerCase();
 
-    // Remove trailing slash (but keep "/" for root)
-    let normalized = parsed.toString();
-    if (normalized.endsWith("/") && parsed.pathname !== "/") {
-      normalized = normalized.slice(0, -1);
-    }
-
-    return normalized;
+    return parsed.toString();
   } catch {
     return null;
   }
@@ -130,4 +125,28 @@ export function detectUrlTemplate(pathname: string): string {
  */
 export function getOrigin(url: string): string {
   return new URL(url).origin;
+}
+
+/**
+ * Produce a canonical key for URL equality checks that tolerate common
+ * redirect patterns:
+ *   - Trailing-slash redirects  (/path → /path/)
+ *   - www ↔ non-www             (www.example.com → example.com)
+ *   - http → https upgrades
+ *
+ * Strips www., forces https, lowercases hostname, sorts query params,
+ * and strips fragments. Does NOT strip trailing slashes from the path
+ * (the canonical form is preserved as-is).
+ */
+export function canonicalUrlKey(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.protocol = "https:";
+    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    parsed.hash = "";
+    parsed.searchParams.sort();
+    return parsed.toString();
+  } catch {
+    return url.toLowerCase();
+  }
 }

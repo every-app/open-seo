@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canonicalUrlKey,
   detectUrlTemplate,
   getOrigin,
   isSameOrigin,
@@ -7,13 +8,25 @@ import {
 } from "@/server/lib/audit/url-utils";
 
 describe("normalizeUrl", () => {
-  it("normalizes host/query/hash/trailing slash", () => {
+  it("normalizes host/query/hash, preserves trailing slash", () => {
     const value = normalizeUrl(
       "https://Example.COM/path/?b=2&a=1#section",
       "https://fallback.com",
     );
 
     expect(value).toBe("https://example.com/path/?a=1&b=2");
+  });
+
+  it("preserves trailing slash on path-only URLs", () => {
+    expect(normalizeUrl("https://example.com/services/")).toBe(
+      "https://example.com/services/",
+    );
+  });
+
+  it("preserves absence of trailing slash", () => {
+    expect(normalizeUrl("https://example.com/services")).toBe(
+      "https://example.com/services",
+    );
   });
 
   it("returns null for unsupported protocol", () => {
@@ -57,6 +70,29 @@ describe("getOrigin", () => {
   it("returns URL origin", () => {
     expect(getOrigin("https://example.com:8080/path?q=1")).toBe(
       "https://example.com:8080",
+    );
+  });
+});
+
+describe("canonicalUrlKey", () => {
+  it("treats www and non-www as equal", () => {
+    expect(canonicalUrlKey("https://www.example.com/")).toBe(
+      canonicalUrlKey("https://example.com/"),
+    );
+  });
+
+  it("treats http and https as equal", () => {
+    expect(canonicalUrlKey("http://example.com/")).toBe(
+      canonicalUrlKey("https://example.com/"),
+    );
+  });
+
+  it("preserves trailing slash distinction in path", () => {
+    expect(canonicalUrlKey("https://example.com/services/")).toBe(
+      canonicalUrlKey("https://www.example.com/services/"),
+    );
+    expect(canonicalUrlKey("https://example.com/services/")).not.toBe(
+      canonicalUrlKey("https://example.com/services"),
     );
   });
 });

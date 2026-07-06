@@ -1,4 +1,4 @@
-import { detectUrlTemplate } from "./url-utils";
+import { detectUrlTemplate, canonicalUrlKey } from "./url-utils";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
@@ -135,8 +135,14 @@ export function selectLighthouseSample(
   // strategy === "auto": homepage + 1 per URL pattern, capped at 10
   const selected = new Set<string>();
 
-  // Always include the start URL / homepage
-  const startPage = validPages.find((p) => p.url === startUrl);
+  // Always include the start URL / homepage.
+  // Use canonicalUrlKey() on both sides so the comparison survives:
+  //   - trailing-slash redirects  (/services → /services/)
+  //   - www ↔ non-www redirects   (www.example.com → example.com)
+  //   - http → https upgrades
+  const startPage = validPages.find(
+    (p) => canonicalUrlKey(p.url) === canonicalUrlKey(startUrl),
+  );
   if (startPage) selected.add(startPage.url);
 
   // Group by URL template pattern
