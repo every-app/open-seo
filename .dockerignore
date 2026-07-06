@@ -1,10 +1,11 @@
 .git
 .github
+.claude
 .logs
-.wrangler
-node_modules
-dist
-coverage
+**/.wrangler
+**/node_modules
+**/dist
+**/coverage
 *.log
 Dockerfile
 .env
