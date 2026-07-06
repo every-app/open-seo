@@ -269,8 +269,10 @@ async function refreshKeywordMetrics(
   projectId: string,
   billingCustomer: BillingCustomerContext,
 ): Promise<{ updated: number }> {
-  const config = await getValidatedConfig(configId, projectId);
-  const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);
+  const [config, keywords] = await Promise.all([
+    getValidatedConfig(configId, projectId),
+    RankTrackingRepository.getKeywordsForConfig(configId),
+  ]);
   if (keywords.length === 0) return { updated: 0 };
 
   const client = createDataforseoClient(billingCustomer);

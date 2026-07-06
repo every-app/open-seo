@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -41,14 +41,6 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
 });
 
 function SubscribePage() {
-  return (
-    <AutumnProvider>
-      <SubscribePageContent />
-    </AutumnProvider>
-  );
-}
-
-function SubscribePageContent() {
   const navigate = useNavigate();
   const { upgrade: isUpgradeFlow, redirect } = Route.useSearch();
   const { data: session } = useSession();

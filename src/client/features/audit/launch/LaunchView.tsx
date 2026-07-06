@@ -1,4 +1,4 @@
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { AuditHistorySection } from "@/client/features/audit/launch/AuditHistorySection";
 import { LaunchFormCard } from "@/client/features/audit/launch/LaunchFormCard";
 import { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
@@ -18,11 +18,7 @@ export function LaunchView(props: LaunchViewProps) {
     return <LaunchContent {...props} isFreePlan={false} />;
   }
 
-  return (
-    <AutumnProvider>
-      <HostedLaunchView {...props} />
-    </AutumnProvider>
-  );
+  return <HostedLaunchView {...props} />;
 }
 
 function HostedLaunchView(props: LaunchViewProps) {

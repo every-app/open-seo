@@ -6,6 +6,18 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "observability": {
     "enabled": true,
+    // Spans are billed as observability events (free tier 200k/day); add a
+    // traces head_sampling_rate below 1 if span volume becomes a cost concern.
+    "traces": {
+      "enabled": true,
+    },
+  },
+  // Smart Placement relocates only the `fetch` handler (cron + Workflow runs
+  // stay at the edge) toward external subrequests — Postgres via Hyperdrive,
+  // SEO APIs — not D1/KV/R2 bindings, so it's a DB no-op on the D1 default.
+  // Must live here: a dashboard-only toggle is wiped by `wrangler deploy`.
+  "placement": {
+    "mode": "smart",
   },
   // Uncomment when deploying to the openseo.so Cloudflare account. Self-hosters
   // should leave this commented (or replace with their own zone) — otherwise

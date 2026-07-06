@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
@@ -23,11 +23,7 @@ export function HostedPlanGate({
     return children(SELF_HOSTED_PLAN_GATE);
   }
 
-  return (
-    <AutumnProvider>
-      <HostedPlanGateContent>{children}</HostedPlanGateContent>
-    </AutumnProvider>
-  );
+  return <HostedPlanGateContent>{children}</HostedPlanGateContent>;
 }
 
 function HostedPlanGateContent({

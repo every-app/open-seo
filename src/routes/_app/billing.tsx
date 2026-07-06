@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -31,14 +31,6 @@ export const Route = createFileRoute("/_app/billing")({
 });
 
 function BillingPage() {
-  return (
-    <AutumnProvider>
-      <BillingPageContent />
-    </AutumnProvider>
-  );
-}
-
-function BillingPageContent() {
   const { data: session, isPending: isSessionPending } = useSession();
   const [topUpAmount, setTopUpAmount] = useState("20");
   const [isPending, setIsPending] = useState(false);
