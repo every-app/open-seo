@@ -80,10 +80,20 @@ export async function runCrawlPhase(
       urlsToCrawl,
       origin,
     );
-    allPages.push(...crawledBatch);
+
+    // De-duplicate by final URL within the batch. If two queued URLs resolved
+    // to the same post-redirect destination (e.g. /about → /about/ while
+    // /about/ was also in the batch), store only the first result.
+    const seenFinalUrls = new Set<string>();
+    const uniqueBatch = crawledBatch.filter((p) => {
+      if (seenFinalUrls.has(p.url)) return false;
+      seenFinalUrls.add(p.url);
+      return true;
+    });
+    allPages.push(...uniqueBatch);
 
     enqueueDiscoveredLinks({
-      crawledBatch,
+      crawledBatch: uniqueBatch,
       queue,
       queued,
       visited,
@@ -95,7 +105,7 @@ export async function runCrawlPhase(
       crawlBatchIndex,
       auditId,
       workflowInstanceId,
-      crawledBatch,
+      crawledBatch: uniqueBatch,
       pagesCrawled: allPages.length,
       visitedCount: visited.size,
       queueLength: queue.length,
@@ -159,6 +169,11 @@ function selectNextCrawlBatch(
     if (visited.has(url)) continue;
     if (!robots.isAllowed(url)) continue;
     visited.add(url);
+    // Pre-emptively block the trailing-slash counterpart so /about and /about/
+    // can never appear in the same batch (or any later one). The one that
+    // dequeues first is crawled; the redirect leads to the canonical form, and
+    // enqueueDiscoveredLinks marks pageResult.url visited afterwards.
+    visited.add(url.endsWith("/") ? url.slice(0, -1) : url + "/");
     urlsToCrawl.push(url);
   }
 
