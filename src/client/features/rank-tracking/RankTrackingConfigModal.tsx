@@ -114,7 +114,9 @@ export function RankTrackingConfigModal({
           serpDepth,
           locationCode,
           languageCode,
-          locationName: targetingMode === "local" ? locationName : undefined,
+          // null clears a previously-set local target; undefined would leave
+          // the old location_name in the DB and silently keep city targeting.
+          locationName: targetingMode === "local" ? locationName : null,
           scheduleInterval: schedule,
         },
       }),

@@ -116,7 +116,7 @@ async function updateConfig(
     domain?: string;
     locationCode?: number;
     languageCode?: string;
-    locationName?: string;
+    locationName?: string | null;
     devices?: RankTrackingConfig["devices"];
     serpDepth?: number;
     scheduleInterval?: RankTrackingConfig["scheduleInterval"];
