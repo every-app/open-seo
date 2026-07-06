@@ -1,3 +1,4 @@
+import { env } from "cloudflare:workers";
 import type { EnsuredUserContext } from "@/middleware/ensure-user/types";
 import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
@@ -20,9 +21,24 @@ export type BillingCustomerContext = Pick<
   projectId?: string;
 };
 
+// Existence is monotonic and the Autumn customer id is always the org id we
+// pass, so once we've confirmed a customer exists we can skip the round trip
+// and reuse the org id. Callers only need `.id` (they read balances via
+// `check`), and a degraded Autumn API otherwise added seconds to every hot-path
+// request that ensured the customer (incident 2026-07-06). Long TTL is safe:
+// we only ever cache confirmed existence, never absence.
+const CUSTOMER_ENSURED_TTL_SECONDS = 24 * 60 * 60;
+const customerEnsuredKey = (organizationId: string) =>
+  `autumn:customer-ensured:${organizationId}`;
+
 export async function getOrCreateOrganizationCustomer(
   context: BillingCustomerContext,
-) {
+): Promise<{ id: string }> {
+  const cacheKey = customerEnsuredKey(context.organizationId);
+  if (await env.KV.get(cacheKey)) {
+    return { id: context.organizationId };
+  }
+
   const customer = await autumn.customers.getOrCreate({
     customerId: context.organizationId,
     email: context.userEmail,
@@ -32,10 +48,11 @@ export async function getOrCreateOrganizationCustomer(
     throw new AppError("INTERNAL_ERROR", "Failed to resolve billing customer");
   }
 
-  return {
-    ...customer,
-    id: customer.id,
-  };
+  await env.KV.put(cacheKey, "1", {
+    expirationTtl: CUSTOMER_ENSURED_TTL_SECONDS,
+  });
+
+  return { id: customer.id };
 }
 
 export async function customerHasPaidPlan(customerId: string) {

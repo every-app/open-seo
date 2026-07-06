@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { AUTUMN_PAID_PLAN_FEATURE_ID } from "@/shared/billing";
 
-const { checkMock, getOrCreateMock } = vi.hoisted(() => ({
+const { checkMock, getOrCreateMock, kvGetMock, kvPutMock } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   getOrCreateMock: vi.fn(),
+  kvGetMock: vi.fn(),
+  kvPutMock: vi.fn(),
+}));
+
+vi.mock("cloudflare:workers", () => ({
+  env: { KV: { get: kvGetMock, put: kvPutMock } },
 }));
 
 vi.mock("@/server/billing/autumn", () => ({
@@ -33,6 +39,7 @@ import {
 describe("subscription billing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    kvGetMock.mockResolvedValue(null);
   });
 
   it("checks the paid plan entitlement", async () => {
@@ -65,5 +72,19 @@ describe("subscription billing", () => {
       customerId: "org_123",
       email: "alice@example.com",
     });
+    expect(kvPutMock).toHaveBeenCalled();
+  });
+
+  it("skips the Autumn round trip when the customer was recently ensured", async () => {
+    kvGetMock.mockResolvedValue("1");
+
+    const result = await getOrCreateOrganizationCustomer({
+      organizationId: "org_123",
+      userId: "user_123",
+      userEmail: "alice@example.com",
+    });
+
+    expect(result).toEqual({ id: "org_123" });
+    expect(getOrCreateMock).not.toHaveBeenCalled();
   });
 });
