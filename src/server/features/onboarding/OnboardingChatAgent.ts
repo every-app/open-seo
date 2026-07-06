@@ -71,6 +71,28 @@ export class OnboardingChatAgent extends AIChatAgent {
   // Cap stored history; the onboarding chat is short and pre-paywall.
   maxPersistedMessages = 60;
 
+  // The base class persists each message as its own bounded SQLite row, so DO
+  // storage occasionally returns a transient internal error (code 10001) that
+  // clears on retry. Retry the message-write path a couple of times before
+  // surfacing the failure, rethrowing on non-transient errors or the last try.
+  async persistMessages(
+    ...args: Parameters<AIChatAgent["persistMessages"]>
+  ): Promise<void> {
+    const maxAttempts = 3;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await super.persistMessages(...args);
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const transient =
+          message.includes("internal error") || message.includes("10001");
+        if (!transient || attempt >= maxAttempts) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
+      }
+    }
+  }
+
   async onChatMessage(
     onFinish: StreamTextOnFinishCallback<ToolSet>,
     options?: OnChatMessageOptions,

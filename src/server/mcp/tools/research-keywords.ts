@@ -11,6 +11,7 @@ import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
+  assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -107,6 +108,7 @@ export const researchKeywordsTool = {
     const results = await Promise.all(
       args.seeds.map(async (item) => {
         try {
+          assertLanguageForLocation(item.locationCode, item.languageCode);
           const data = await KeywordResearchService.research(
             {
               projectId: args.projectId,

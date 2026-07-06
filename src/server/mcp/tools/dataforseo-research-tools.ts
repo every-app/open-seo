@@ -20,6 +20,7 @@ import {
 import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
+  assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -828,6 +829,7 @@ export const getKeywordMetricsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
+    assertLanguageForLocation(args.locationCode, args.languageCode);
     const client = createDataforseoClient(context.billing);
     const locationCode = args.locationCode ?? DEFAULT_LOCATION_CODE;
     const languageCode = args.languageCode ?? DEFAULT_LANGUAGE_CODE;

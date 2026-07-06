@@ -53,6 +53,7 @@ import {
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import { AppError } from "@/server/lib/errors";
 
 export { mapDataforseoPathToCreditFeature };
 
@@ -161,6 +162,14 @@ async function meterDataforseoCall<T>(
     result = await execute();
   } catch (error) {
     if (error instanceof DataforseoChargedTaskError) {
+      // A malformed request (DataForSEO "Invalid Field: ...") that DataForSEO
+      // did not bill returns no value to the customer, so don't charge — surface
+      // it as a non-reportable VALIDATION_ERROR. If DataForSEO still billed us
+      // (costUsd > 0), fall through to the normal charge + capture path so the
+      // spend stays metered and visible instead of silently eaten.
+      if (error.isInvalidField && error.billing.costUsd <= 0) {
+        throw new AppError("VALIDATION_ERROR", error.message);
+      }
       await trackDataforseoCost({
         customer,
         customerId: billingCustomer.id,

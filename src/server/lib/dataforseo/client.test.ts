@@ -274,6 +274,51 @@ describe("meterDataforseoCall with split balances", () => {
     );
   });
 
+  it("skips the charge for an unbilled invalid-field failure and rethrows VALIDATION_ERROR", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    vi.mocked(fetchBacklinksSummary).mockRejectedValue(
+      new DataforseoChargedTaskError(
+        "Invalid Field: 'target'.",
+        { costUsd: 0, path: ["v3", "backlinks", "summary", "live"] },
+        true,
+      ),
+    );
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(
+      client.backlinks.summary(backlinksInput),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+
+    expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it("still meters an invalid-field failure that DataForSEO actually billed", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    vi.mocked(fetchBacklinksSummary).mockRejectedValue(
+      new DataforseoChargedTaskError(
+        "Invalid Field: 'target'.",
+        { costUsd: RAW_COST, path: ["v3", "backlinks", "summary", "live"] },
+        true,
+      ),
+    );
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(client.backlinks.summary(backlinksInput)).rejects.toThrow(
+      "Invalid Field: 'target'.",
+    );
+
+    expect(trackMock).toHaveBeenCalledTimes(1);
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: EXPECTED_CREDITS,
+      }),
+    );
+  });
+
   it("includes balanceFeatureId in track properties", async () => {
     setupHostedMode();
     mockBalances(30, 5000);

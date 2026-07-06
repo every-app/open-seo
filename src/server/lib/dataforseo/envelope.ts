@@ -29,6 +29,13 @@ export class DataforseoChargedTaskError extends AppError {
   constructor(
     message: string,
     public readonly billing: DataforseoApiCallCost,
+    /**
+     * True when the task failed because OUR request was malformed (DataForSEO
+     * "Invalid Field: ..."). The customer got no value, so — when the task
+     * wasn't billed — meterDataforseoCall skips the charge and rethrows this as
+     * a non-reportable VALIDATION_ERROR.
+     */
+    public readonly isInvalidField = false,
   ) {
     super("INTERNAL_ERROR", message);
     this.name = "DataforseoChargedTaskError";
@@ -82,6 +89,8 @@ export function buildTaskBilling(
   return billing;
 }
 
+const INVALID_FIELD_MESSAGE_RE = /Invalid Field:\s*'([^']+)'/i;
+
 /**
  * DataForSEO echoes the posted request params back on `task.data`. Its
  * validation rejections are opaque ("Invalid Field: 'target'.") and name the
@@ -93,7 +102,7 @@ function describeInvalidField(
   message: string,
   task: DataforseoTaskLike,
 ): string {
-  const match = message.match(/Invalid Field:\s*'([^']+)'/i);
+  const match = message.match(INVALID_FIELD_MESSAGE_RE);
   if (!match) return message;
   const field = match[1];
   if (!isRecord(task.data)) return message;
@@ -165,7 +174,12 @@ export function assertOk<T extends DataforseoTaskLike>(
 
     const detailedMessage = describeInvalidField(message, task);
     const billing = tryBuildTaskBilling(task);
-    if (billing) throw new DataforseoChargedTaskError(detailedMessage, billing);
+    if (billing)
+      throw new DataforseoChargedTaskError(
+        detailedMessage,
+        billing,
+        INVALID_FIELD_MESSAGE_RE.test(message),
+      );
 
     throw new AppError("INTERNAL_ERROR", detailedMessage);
   }

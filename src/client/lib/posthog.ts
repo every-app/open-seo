@@ -30,6 +30,7 @@ function isIgnorableException(
     const value = typeof entry?.value === "string" ? entry.value : "";
     if (value.includes("Object Not Found Matching Id")) return true;
     if (value === "Script error.") return true;
+    if (value.includes("signal is aborted without reason")) return true;
     const frames = entry?.stacktrace?.frames;
     return (
       value === "undefined" &&

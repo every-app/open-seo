@@ -2,6 +2,7 @@ import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 import {
   getKeywordDataProvider,
+  getLanguageOptions,
   isSupportedLanguageCode,
 } from "@/shared/keyword-locations";
 
@@ -32,6 +33,32 @@ export function assertLabsLocationCode(locationCode: number | undefined) {
     throw new AppError(
       "VALIDATION_ERROR",
       "Domain analytics is not available for this country. Keyword research and rank tracking work; domain-level data is limited to DataForSEO Labs locations.",
+    );
+  }
+}
+
+/**
+ * Guards Labs-backed tools against a language DataForSEO doesn't serve for the
+ * chosen location. A mismatched pair (e.g. language_code="ru" for the United
+ * States) is otherwise rejected as an opaque *charged* "Invalid Field:
+ * 'language_code'." task failure, so validate the pair first (cost 0). Only
+ * Labs locations have authoritative per-location language lists; Google Ads
+ * locations are left to the metering safety net.
+ */
+export function assertLanguageForLocation(
+  locationCode: number | undefined,
+  languageCode: string | undefined,
+) {
+  if (languageCode == null) return;
+  const resolvedLocation = locationCode ?? DEFAULT_LOCATION_CODE;
+  if (getKeywordDataProvider(resolvedLocation) !== "labs") return;
+  const options = getLanguageOptions(resolvedLocation);
+  if (!options.some((option) => option.code === languageCode)) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Language '${languageCode}' is not available for this location. Available: ${options
+        .map((option) => option.code)
+        .join(", ")}.`,
     );
   }
 }
