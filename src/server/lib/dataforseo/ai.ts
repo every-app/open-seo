@@ -28,6 +28,7 @@ import {
 import { createDataforseoBillingClassifier } from "@/server/lib/dataforseoBillingClassification";
 import { AppError } from "@/server/lib/errors";
 import { aiOptimizationApi } from "@/server/lib/dataforseo/core";
+import type { LlmPlatform, LlmTarget } from "@/server/lib/dataforseo/shared";
 import {
   assertOk,
   buildTaskBilling,
@@ -35,12 +36,6 @@ import {
   type DataforseoApiResponse,
   type DataforseoTaskLike,
 } from "@/server/lib/dataforseo/envelope";
-
-// ChatGPT mention/response data is only available for US/en per DataForSEO docs.
-export const CHATGPT_LOCATION_CODE = 2840;
-export const CHATGPT_LANGUAGE_CODE = "en";
-
-export type LlmPlatform = "chat_gpt" | "google";
 
 const classifyAiSearchError = createDataforseoBillingClassifier({
   pathPrefix: "/ai_optimization/",
@@ -51,45 +46,6 @@ const classifyAiSearchError = createDataforseoBillingClassifier({
 
 const assertOptions = (path: string) =>
   ({ classify: classifyAiSearchError, classifyPath: path }) as const;
-
-// ---------------------------------------------------------------------------
-// Target builders — DataForSEO's `target` array accepts domain OR keyword
-// entries. We always pass exactly one target per call.
-// ---------------------------------------------------------------------------
-
-type LlmTarget =
-  | {
-      domain: string;
-      include_subdomains?: boolean;
-      search_filter?: "include" | "exclude";
-      search_scope?: string[];
-    }
-  | {
-      keyword: string;
-      search_filter?: "include" | "exclude";
-      search_scope?: string[];
-      match_type?: "word_match" | "partial_match";
-    };
-
-export function buildLlmTarget(input: {
-  type: "domain" | "keyword";
-  value: string;
-}): LlmTarget {
-  if (input.type === "domain") {
-    return {
-      domain: input.value,
-      include_subdomains: true,
-      search_filter: "include",
-      search_scope: ["any"],
-    };
-  }
-  return {
-    keyword: input.value,
-    search_filter: "include",
-    search_scope: ["any", "brand_entities"],
-    match_type: "word_match",
-  };
-}
 
 function clampLimit(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.floor(value)));

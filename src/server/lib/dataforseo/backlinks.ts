@@ -21,8 +21,6 @@ import {
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 
-export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
-
 type BacklinksRequest = { target: string };
 type BacklinksListRequest = BacklinksRequest &
   BacklinksSpamFilterOptions & {
