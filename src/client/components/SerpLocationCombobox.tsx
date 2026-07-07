@@ -58,10 +58,13 @@ export function SerpLocationCombobox({
     if (!trimmed) {
       setResults([]);
       setOpen(false);
+      setIsLoading(false);
       return;
     }
     if (skipNextFetchRef.current) {
       skipNextFetchRef.current = false;
+      // A superseded in-flight fetch bails without clearing the spinner.
+      setIsLoading(false);
       return;
     }
     let cancelled = false;
