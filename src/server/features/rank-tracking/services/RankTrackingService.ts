@@ -289,6 +289,9 @@ async function refreshKeywordMetrics(
     keywords: keywords.map((kw) => kw.keyword),
     locationCode: config.locationCode,
     languageCode: config.languageCode,
+    // Local configs get volume/CPC scoped to the tracked city; national
+    // numbers can overstate local demand by orders of magnitude.
+    locationName: config.locationName ?? undefined,
     creditFeature: "rank_tracking",
   });
   const byKeyword = new Map(

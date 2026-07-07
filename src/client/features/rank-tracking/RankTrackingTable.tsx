@@ -70,13 +70,14 @@ export function RankTrackingTable({
     [],
   );
 
-  const columns = useRankTrackingColumns(
+  const columns = useRankTrackingColumns({
     showDesktop,
     showMobile,
     domain,
     selectAnchorRef,
-    handleKeywordClick,
-  );
+    onKeywordClick: handleKeywordClick,
+    locationName,
+  });
 
   const table = useAppTable({
     data: rows,

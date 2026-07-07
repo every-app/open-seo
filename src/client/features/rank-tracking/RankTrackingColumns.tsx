@@ -3,6 +3,7 @@ import { ArrowUp, ArrowDown } from "lucide-react";
 import type { ColumnDef, SortingFn } from "@tanstack/react-table";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import {
   CpcCell,
   DeviceRankCell,
@@ -69,16 +70,30 @@ const nullsLastNumeric: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
   return a - b;
 };
 
-const volumeColumn: ColumnDef<RankTrackingRow> = {
-  id: "volume",
-  accessorKey: "searchVolume",
-  header: ({ column }) => (
-    <SortableHeader column={column} label="Volume" id="volume" />
-  ),
-  size: 90,
-  cell: ({ getValue }) => <VolumeCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
-};
+// Local configs fetch volume scoped to the tracked city, so the header must
+// say which number the user is looking at — national volume can overstate
+// local demand by orders of magnitude.
+function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
+  return {
+    id: "volume",
+    accessorKey: "searchVolume",
+    header: ({ column }) => (
+      <SortableHeader
+        column={column}
+        label={locationLabel ? "Local volume" : "Volume"}
+        id="volume"
+        tooltip={
+          locationLabel
+            ? `Estimated monthly searches in ${locationLabel} from Google Ads`
+            : undefined
+        }
+      />
+    ),
+    size: 90,
+    cell: ({ getValue }) => <VolumeCell value={getValue<number | null>()} />,
+    sortingFn: nullsLastNumeric,
+  };
+}
 
 const kdColumn: ColumnDef<RankTrackingRow> = {
   id: "kd",
@@ -184,13 +199,25 @@ function makeSerpColumn(
   };
 }
 
-export function useRankTrackingColumns(
-  showDesktop: boolean,
-  showMobile: boolean,
-  domain: string,
-  selectAnchorRef: MutableRefObject<SelectionAnchor | null>,
-  onKeywordClick: (row: RankTrackingRow) => void,
-): ColumnDef<RankTrackingRow>[] {
+export function useRankTrackingColumns(options: {
+  showDesktop: boolean;
+  showMobile: boolean;
+  domain: string;
+  selectAnchorRef: MutableRefObject<SelectionAnchor | null>;
+  onKeywordClick: (row: RankTrackingRow) => void;
+  locationName?: string | null;
+}): ColumnDef<RankTrackingRow>[] {
+  const {
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+    onKeywordClick,
+    locationName,
+  } = options;
+  const locationLabel = locationName
+    ? formatLocationLabel(locationName, 2)
+    : undefined;
   return useMemo(() => {
     const cols: ColumnDef<RankTrackingRow>[] = [
       makeSelectionColumn<RankTrackingRow>(selectAnchorRef),
@@ -204,7 +231,7 @@ export function useRankTrackingColumns(
       cols.push(makeDeviceColumn("mobile"));
       cols.push(makeUrlColumn("mobile", domain));
     }
-    cols.push(volumeColumn, kdColumn, cpcColumn);
+    cols.push(makeVolumeColumn(locationLabel), kdColumn, cpcColumn);
     if (showDesktop) {
       cols.push(makeSerpColumn("desktop"));
     }
@@ -212,5 +239,12 @@ export function useRankTrackingColumns(
       cols.push(makeSerpColumn("mobile"));
     }
     return cols;
-  }, [showDesktop, showMobile, domain, selectAnchorRef, onKeywordClick]);
+  }, [
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+    onKeywordClick,
+    locationLabel,
+  ]);
 }
