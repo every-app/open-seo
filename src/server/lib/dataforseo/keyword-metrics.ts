@@ -128,9 +128,21 @@ export async function fetchKeywordMetricsForList(
         languageCode: params.languageCode,
         creditFeature: params.creditFeature,
       });
+      const covered = new Set<string>();
       for (const item of items) {
         if (!item.keyword) continue;
+        covered.add(item.keyword.toLowerCase());
         rows.push(normalizeAdsKeyword(item, item.keyword));
+      }
+      if (params.locationName) {
+        // A local request must overwrite whatever scope the stored metrics
+        // had — keywords Ads collapsed away get explicit nulls so stale
+        // (possibly national) numbers can't survive under a local label.
+        rows.push(
+          ...keywords
+            .filter((keyword) => !covered.has(keyword.toLowerCase()))
+            .map(nullMetricRow),
+        );
       }
     } else if (params.locationName) {
       const [adsItems, labsItems] = await Promise.all([
@@ -166,6 +178,19 @@ export async function fetchKeywordMetricsForList(
   }
 
   return rows;
+}
+
+function nullMetricRow(keyword: string): KeywordMetricRow {
+  return {
+    keyword,
+    searchVolume: null,
+    cpc: null,
+    competition: null,
+    competitionLevel: null,
+    keywordDifficulty: null,
+    intent: null,
+    monthlySearches: [],
+  };
 }
 
 function mergeLocalAndNationalRows(
