@@ -78,12 +78,7 @@ export async function fetchSerpLocationsForCountry(
 
   const cacheKey = `serp-locations:${iso}`;
   const r2Hit = cachedLocationsSchema.safeParse(await getCached(cacheKey));
-  const locations = r2Hit.success
-    ? r2Hit.data
-    : await fetchFromDataforseo(iso).then(async (fresh) => {
-        await setCached(cacheKey, fresh, R2_TTL_SECONDS);
-        return fresh;
-      });
+  const locations = r2Hit.success ? r2Hit.data : await fillFromOrigin(iso);
 
   await (
     await coloCache()
@@ -98,6 +93,27 @@ export async function fetchSerpLocationsForCountry(
   );
 
   return locations;
+}
+
+// Coalesce concurrent cold fills within an isolate: the prewarm fired on
+// selecting Local and the user's first debounced search otherwise both miss
+// the caches and each fetch + parse the ~9.5MB origin payload. Entries are
+// deleted on settle so the parsed array isn't retained past the fill (and a
+// failed fill — e.g. the owning request got cancelled — isn't sticky).
+const inflightFills = new Map<string, Promise<SerpLocationResult[]>>();
+
+function fillFromOrigin(iso: string): Promise<SerpLocationResult[]> {
+  const inflight = inflightFills.get(iso);
+  if (inflight) return inflight;
+
+  const fill = fetchFromDataforseo(iso)
+    .then(async (fresh) => {
+      await setCached(`serp-locations:${iso}`, fresh, R2_TTL_SECONDS);
+      return fresh;
+    })
+    .finally(() => inflightFills.delete(iso));
+  inflightFills.set(iso, fill);
+  return fill;
 }
 
 async function fetchFromDataforseo(iso: string): Promise<SerpLocationResult[]> {
