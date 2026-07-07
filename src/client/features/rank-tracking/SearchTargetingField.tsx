@@ -61,10 +61,7 @@ export function SearchTargetingField({
           </>
         ) : (
           <>
-            <span className="font-medium">Best for:</span> broad category terms
-            with no location modifier (e.g. "site preparation services," "land
-            clearing oklahoma"). Local targeting can understate rankings for
-            non-geo-modified terms.
+            Local targeting can understate rankings for non-geo-modified terms.
           </>
         )}
       </p>

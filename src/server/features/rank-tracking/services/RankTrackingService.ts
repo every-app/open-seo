@@ -45,11 +45,13 @@ async function createConfig(input: {
     ? computeNextCheckAt(scheduleInterval)
     : null;
 
+  const locationName = input.locationName ?? null;
   const existing =
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
       normalizedDomain,
       locationCode,
+      locationName,
     );
   // The (project, domain, location) row still exists when a domain is
   // archived — archiving only flips isActive to false. So re-adding an
@@ -59,7 +61,9 @@ async function createConfig(input: {
   if (existing?.isActive) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "This domain + country combination is already being tracked",
+      locationName
+        ? "This domain + city combination is already being tracked"
+        : "This domain + country combination is already being tracked",
     );
   }
 
@@ -99,7 +103,7 @@ async function createConfig(input: {
     domain: normalizedDomain,
     locationCode,
     languageCode: input.languageCode ?? "en",
-    locationName: input.locationName ?? null,
+    locationName,
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,
     scheduleInterval,
