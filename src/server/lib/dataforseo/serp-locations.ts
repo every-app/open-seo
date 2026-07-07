@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { serpApi } from "@/server/lib/dataforseo/core";
 import { assertOk } from "@/server/lib/dataforseo/envelope";
+import { getCached, setCached } from "@/server/lib/r2-cache";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 
 export interface SerpLocationResult {
@@ -27,18 +28,80 @@ const locationItemSchema = z.object({
   location_type: z.string().nullable().optional(),
 });
 
+const cachedLocationsSchema = z.array(
+  z.object({
+    locationCode: z.number(),
+    locationName: z.string(),
+    locationType: z.string(),
+    displayLabel: z.string(),
+  }),
+);
+
+/** Google refreshes geotargets roughly quarterly; 30 days keeps us current. */
+const R2_TTL_SECONDS = 30 * 24 * 60 * 60;
+/** Per-colo hot layer in front of R2. */
+const COLO_CACHE_TTL_SECONDS = 24 * 60 * 60;
+
+function coloCacheUrl(countryCode: string): string {
+  // Synthetic key for the colo cache; never fetched over the network.
+  return `https://serp-locations.internal/${countryCode}`;
+}
+
+// Named cache instead of caches.default: identical per-colo semantics, and
+// the DOM lib's CacheStorage type (this repo compiles client+server under
+// one tsconfig) has no `.default`.
+function coloCache(): Promise<Cache> {
+  return caches.open("serp-locations");
+}
+
 /**
  * Full sub-country location list for one country. `countryCode` is ISO
  * 3166-1 alpha-2 ("us", "gb") — the endpoint rejects country *names* with a
- * task-level Invalid Field error, which assertOk surfaces. Free endpoint
- * (cost 0), so no billing envelope.
+ * task-level Invalid Field error, which assertOk surfaces.
+ *
+ * The DataForSEO response is ~9.5MB for the US and the endpoint has no search
+ * parameter, so the slimmed list (~1.5MB) is cached: per-colo via
+ * caches.default, then R2 (30d soft TTL), and only on a miss of both do we
+ * pay the origin fetch. The endpoint is free (cost 0), so no billing
+ * envelope.
  */
 export async function fetchSerpLocationsForCountry(
   countryCode: string,
 ): Promise<SerpLocationResult[]> {
-  const response = await serpApi().googleLocationsCountry(
-    countryCode.toLowerCase(),
+  const iso = countryCode.toLowerCase();
+
+  const coloHit = await (await coloCache()).match(coloCacheUrl(iso));
+  if (coloHit) {
+    const parsed = cachedLocationsSchema.safeParse(await coloHit.json());
+    if (parsed.success) return parsed.data;
+  }
+
+  const cacheKey = `serp-locations:${iso}`;
+  const r2Hit = cachedLocationsSchema.safeParse(await getCached(cacheKey));
+  const locations = r2Hit.success
+    ? r2Hit.data
+    : await fetchFromDataforseo(iso).then(async (fresh) => {
+        await setCached(cacheKey, fresh, R2_TTL_SECONDS);
+        return fresh;
+      });
+
+  await (
+    await coloCache()
+  ).put(
+    coloCacheUrl(iso),
+    new Response(JSON.stringify(locations), {
+      headers: {
+        "content-type": "application/json",
+        "cache-control": `max-age=${COLO_CACHE_TTL_SECONDS}`,
+      },
+    }),
   );
+
+  return locations;
+}
+
+async function fetchFromDataforseo(iso: string): Promise<SerpLocationResult[]> {
+  const response = await serpApi().googleLocationsCountry(iso);
   const task = assertOk(response);
   return (task.result ?? [])
     .map((item) => locationItemSchema.safeParse(item))

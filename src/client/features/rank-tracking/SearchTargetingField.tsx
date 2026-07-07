@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import { SerpLocationCombobox } from "@/client/components/SerpLocationCombobox";
+import { prewarmSerpLocations } from "@/serverFunctions/serp-locations";
 
 type TargetingMode = "national" | "local";
 
@@ -15,6 +17,14 @@ export function SearchTargetingField({
   onLocationNameChange: (locationName: string | undefined) => void;
   countryCode: string;
 }) {
+  // Warm the server-side location cache the moment Local targeting is in
+  // play, so the country list is hot before the first keystroke.
+  useEffect(() => {
+    if (mode !== "local") return;
+    prewarmSerpLocations({ data: { countryCode } }).catch(() => {
+      // Best-effort: a failed warm just means the first search is slower.
+    });
+  }, [mode, countryCode]);
   return (
     <div className="form-control">
       <label className="label">
