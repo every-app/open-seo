@@ -1,119 +1,125 @@
 {
-  "id": "d7a0c2f9-269d-44eb-bc3e-c13b4bc3cb47",
-  "prevId": "e9cd1240-6f67-4fef-9999-fc2e15282ca6",
-  "version": "7",
-  "dialect": "postgresql",
+  "version": "6",
+  "dialect": "sqlite",
+  "id": "04f10078-feca-42c4-9158-f1ba8df6091f",
+  "prevId": "90ae87ad-b7e5-46f2-9348-fb7157ea9611",
   "tables": {
-    "public.audit_lighthouse_results": {
+    "audit_lighthouse_results": {
       "name": "audit_lighthouse_results",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "audit_id": {
           "name": "audit_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "page_id": {
           "name": "page_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "strategy": {
           "name": "strategy",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "performance_score": {
           "name": "performance_score",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "accessibility_score": {
           "name": "accessibility_score",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "best_practices_score": {
           "name": "best_practices_score",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "seo_score": {
           "name": "seo_score",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "lcp_ms": {
           "name": "lcp_ms",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "cls": {
           "name": "cls",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "inp_ms": {
           "name": "inp_ms",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "ttfb_ms": {
           "name": "ttfb_ms",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "error_message": {
           "name": "error_message",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "r2_key": {
           "name": "r2_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "payload_size_bytes": {
           "name": "payload_size_bytes",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "audit_lighthouse_results_audit_id_idx": {
           "name": "audit_lighthouse_results_audit_id_idx",
           "columns": [
-            {
-              "expression": "audit_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "audit_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -146,91 +152,101 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.audit_pages": {
+    "audit_pages": {
       "name": "audit_pages",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "audit_id": {
           "name": "audit_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "url": {
           "name": "url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "status_code": {
           "name": "status_code",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "redirect_url": {
           "name": "redirect_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "meta_description": {
           "name": "meta_description",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "canonical_url": {
           "name": "canonical_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "robots_meta": {
           "name": "robots_meta",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "og_title": {
           "name": "og_title",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "og_description": {
           "name": "og_description",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "og_image": {
           "name": "og_image",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "h1_count": {
           "name": "h1_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "h2_count": {
@@ -238,6 +254,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "h3_count": {
@@ -245,6 +262,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "h4_count": {
@@ -252,6 +270,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "h5_count": {
@@ -259,6 +278,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "h6_count": {
@@ -266,19 +286,22 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "heading_order_json": {
           "name": "heading_order_json",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "word_count": {
           "name": "word_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "images_total": {
@@ -286,6 +309,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "images_missing_alt": {
@@ -293,19 +317,22 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "images_json": {
           "name": "images_json",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "internal_link_count": {
           "name": "internal_link_count",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "external_link_count": {
@@ -313,50 +340,47 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "has_structured_data": {
           "name": "has_structured_data",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
         },
         "hreflang_tags_json": {
           "name": "hreflang_tags_json",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "is_indexable": {
           "name": "is_indexable",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": true
         },
         "response_time_ms": {
           "name": "response_time_ms",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "audit_pages_audit_id_idx": {
           "name": "audit_pages_audit_id_idx",
           "columns": [
-            {
-              "expression": "audit_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "audit_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -376,56 +400,60 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.audits": {
+    "audits": {
       "name": "audits",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "started_by_user_id": {
           "name": "started_by_user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "start_url": {
           "name": "start_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "status": {
           "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'running'"
         },
         "workflow_instance_id": {
           "name": "workflow_instance_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "config": {
           "name": "config",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'{}'"
         },
         "pages_crawled": {
@@ -433,6 +461,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "pages_total": {
@@ -440,6 +469,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "lighthouse_total": {
@@ -447,6 +477,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "lighthouse_completed": {
@@ -454,6 +485,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "lighthouse_failed": {
@@ -461,6 +493,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "current_phase": {
@@ -468,6 +501,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": false,
+          "autoincrement": false,
           "default": "'discovery'"
         },
         "started_at": {
@@ -475,45 +509,31 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "completed_at": {
           "name": "completed_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "audits_project_id_idx": {
           "name": "audits_project_id_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "audits_started_by_user_id_idx": {
           "name": "audits_started_by_user_id_idx",
           "columns": [
-            {
-              "expression": "started_by_user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "started_by_user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -533,161 +553,119 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.keyword_metrics": {
+    "keyword_metrics": {
       "name": "keyword_metrics",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "keyword": {
           "name": "keyword",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "location_code": {
           "name": "location_code",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "language_code": {
           "name": "language_code",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'en'"
         },
         "search_volume": {
           "name": "search_volume",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "cpc": {
           "name": "cpc",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "competition": {
           "name": "competition",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "keyword_difficulty": {
           "name": "keyword_difficulty",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "intent": {
           "name": "intent",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "monthly_searches": {
           "name": "monthly_searches",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "fetched_at": {
           "name": "fetched_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "keyword_metrics_unique_project_keyword_location_language": {
           "name": "keyword_metrics_unique_project_keyword_location_language",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "keyword",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "language_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "keyword",
+            "location_code",
+            "language_code"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "keyword_metrics_lookup_idx": {
           "name": "keyword_metrics_lookup_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "keyword",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "language_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "fetched_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "keyword",
+            "location_code",
+            "language_code",
+            "fetched_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -707,43 +685,45 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.projects": {
+    "projects": {
       "name": "projects",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "domain": {
           "name": "domain",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "location_code": {
           "name": "location_code",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 2840
         },
         "language_code": {
@@ -751,6 +731,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'en'"
         },
         "created_at": {
@@ -758,46 +739,32 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "archived_at": {
           "name": "archived_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "projects_one_default_per_organization_idx": {
           "name": "projects_one_default_per_organization_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
           "isUnique": true,
-          "where": "\"projects\".\"name\" = 'Default' AND \"projects\".\"domain\" IS NULL AND \"projects\".\"archived_at\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "where": "\"projects\".\"name\" = 'Default' AND \"projects\".\"domain\" IS NULL AND \"projects\".\"archived_at\" IS NULL"
         },
         "projects_organization_id_idx": {
           "name": "projects_organization_id_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -817,37 +784,38 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.rank_check_runs": {
+    "rank_check_runs": {
       "name": "rank_check_runs",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "config_id": {
           "name": "config_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "status": {
           "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'pending'"
         },
         "keywords_total": {
@@ -855,6 +823,7 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "keywords_checked": {
@@ -862,93 +831,64 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 0
         },
         "is_subset_run": {
           "name": "is_subset_run",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
         },
         "error_message": {
           "name": "error_message",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "started_at": {
           "name": "started_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "completed_at": {
           "name": "completed_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "rank_check_runs_config_idx": {
           "name": "rank_check_runs_config_idx",
           "columns": [
-            {
-              "expression": "config_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "started_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "config_id",
+            "started_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "rank_check_runs_project_idx": {
           "name": "rank_check_runs_project_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "started_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "started_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "rank_check_runs_one_active_per_config_idx": {
           "name": "rank_check_runs_one_active_per_config_idx",
           "columns": [
-            {
-              "expression": "config_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "config_id"
           ],
           "isUnique": true,
-          "where": "\"rank_check_runs\".\"status\" IN ('pending', 'running')",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "where": "\"rank_check_runs\".\"status\" IN ('pending', 'running')"
         }
       },
       "foreignKeys": {
@@ -981,124 +921,94 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.rank_snapshots": {
+    "rank_snapshots": {
       "name": "rank_snapshots",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "serial",
+          "type": "integer",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": true
         },
         "run_id": {
           "name": "run_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "tracking_keyword_id": {
           "name": "tracking_keyword_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "keyword": {
           "name": "keyword",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "device": {
           "name": "device",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "position": {
           "name": "position",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "url": {
           "name": "url",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "serp_features": {
           "name": "serp_features",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "checked_at": {
           "name": "checked_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "rank_snapshots_keyword_device_idx": {
           "name": "rank_snapshots_keyword_device_idx",
           "columns": [
-            {
-              "expression": "tracking_keyword_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "device",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "checked_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "tracking_keyword_id",
+            "device",
+            "checked_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "rank_snapshots_run_keyword_device_idx": {
           "name": "rank_snapshots_run_keyword_device_idx",
           "columns": [
-            {
-              "expression": "run_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "tracking_keyword_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "device",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "run_id",
+            "tracking_keyword_id",
+            "device"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -1118,37 +1028,38 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.rank_tracking_configs": {
+    "rank_tracking_configs": {
       "name": "rank_tracking_configs",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "domain": {
           "name": "domain",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "location_code": {
           "name": "location_code",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 2840
         },
         "language_code": {
@@ -1156,6 +1067,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'en'"
         },
         "devices": {
@@ -1163,122 +1075,90 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'both'"
         },
         "serp_depth": {
           "name": "serp_depth",
           "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "schedule_interval": {
           "name": "schedule_interval",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'weekly'"
         },
         "location_name": {
           "name": "location_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "is_active": {
           "name": "is_active",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": true
         },
         "last_checked_at": {
           "name": "last_checked_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "next_check_at": {
           "name": "next_check_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "last_skip_reason": {
           "name": "last_skip_reason",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "rank_tracking_configs_national_idx": {
           "name": "rank_tracking_configs_national_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "domain",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "domain",
+            "location_code"
           ],
           "isUnique": true,
-          "where": "\"rank_tracking_configs\".\"location_name\" IS NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "where": "\"rank_tracking_configs\".\"location_name\" IS NULL"
         },
         "rank_tracking_configs_local_idx": {
           "name": "rank_tracking_configs_local_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "domain",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "domain",
+            "location_code",
+            "location_name"
           ],
           "isUnique": true,
-          "where": "\"rank_tracking_configs\".\"location_name\" IS NOT NULL",
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "where": "\"rank_tracking_configs\".\"location_name\" IS NOT NULL"
         }
       },
       "foreignKeys": {
@@ -1298,85 +1178,77 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.rank_tracking_keywords": {
+    "rank_tracking_keywords": {
       "name": "rank_tracking_keywords",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "config_id": {
           "name": "config_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "keyword": {
           "name": "keyword",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "search_volume": {
           "name": "search_volume",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "keyword_difficulty": {
           "name": "keyword_difficulty",
           "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "cpc": {
           "name": "cpc",
           "type": "real",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "metrics_fetched_at": {
           "name": "metrics_fetched_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "rank_tracking_keywords_config_keyword_idx": {
           "name": "rank_tracking_keywords_config_keyword_idx",
           "columns": [
-            {
-              "expression": "config_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "keyword",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "config_id",
+            "keyword"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {
@@ -1396,70 +1268,49 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.saved_keyword_tag_assignments": {
+    "saved_keyword_tag_assignments": {
       "name": "saved_keyword_tag_assignments",
-      "schema": "",
       "columns": {
         "saved_keyword_id": {
           "name": "saved_keyword_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "tag_id": {
           "name": "tag_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "saved_keyword_tag_assignments_unique_idx": {
           "name": "saved_keyword_tag_assignments_unique_idx",
           "columns": [
-            {
-              "expression": "saved_keyword_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "tag_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "saved_keyword_id",
+            "tag_id"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "saved_keyword_tag_assignments_tag_idx": {
           "name": "saved_keyword_tag_assignments_tag_idx",
           "columns": [
-            {
-              "expression": "tag_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "tag_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1492,94 +1343,71 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.saved_keyword_tags": {
+    "saved_keyword_tags": {
       "name": "saved_keyword_tags",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "normalized_name": {
           "name": "normalized_name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "color": {
           "name": "color",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "saved_keyword_tags_project_normalized_name_idx": {
           "name": "saved_keyword_tags_project_normalized_name_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "normalized_name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "normalized_name"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "saved_keyword_tags_project_name_idx": {
           "name": "saved_keyword_tags_project_name_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "name",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "name"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1599,37 +1427,38 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.saved_keywords": {
+    "saved_keywords": {
       "name": "saved_keywords",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "keyword": {
           "name": "keyword",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "location_code": {
           "name": "location_code",
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": 2840
         },
         "language_code": {
@@ -1637,6 +1466,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'en'"
         },
         "created_at": {
@@ -1644,63 +1474,28 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "saved_keywords_unique_project_keyword_location_language": {
           "name": "saved_keywords_unique_project_keyword_location_language",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "keyword",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "location_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "language_code",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "keyword",
+            "location_code",
+            "language_code"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "saved_keywords_project_created_idx": {
           "name": "saved_keywords_project_created_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "created_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "created_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1720,99 +1515,99 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.user_onboarding_answers": {
+    "user_onboarding_answers": {
       "name": "user_onboarding_answers",
-      "schema": "",
       "columns": {
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "interested_features": {
           "name": "interested_features",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'[]'"
         },
         "work_for": {
           "name": "work_for",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "client_website_count": {
           "name": "client_website_count",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "found_via": {
           "name": "found_via",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "mcp_setup_intent": {
           "name": "mcp_setup_intent",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "completed_at": {
           "name": "completed_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "gsc_nudge_dismissed_at": {
           "name": "gsc_nudge_dismissed_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "user_onboarding_answers_organization_idx": {
           "name": "user_onboarding_answers_organization_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1845,38 +1640,39 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.sam_project_memory": {
+    "sam_project_memory": {
       "name": "sam_project_memory",
-      "schema": "",
       "columns": {
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "label": {
           "name": "label",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "content": {
           "name": "content",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {},
@@ -1897,45 +1693,46 @@
       },
       "compositePrimaryKeys": {
         "sam_project_memory_project_id_label_pk": {
-          "name": "sam_project_memory_project_id_label_pk",
           "columns": [
             "project_id",
             "label"
-          ]
+          ],
+          "name": "sam_project_memory_project_id_label_pk"
         }
       },
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.sam_sessions": {
+    "sam_sessions": {
       "name": "sam_sessions",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "title": {
           "name": "title",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'New chat'"
         },
         "created_at": {
@@ -1943,43 +1740,33 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "archived_at": {
           "name": "archived_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
         "sam_sessions_project_updated_idx": {
           "name": "sam_sessions_project_updated_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "updated_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id",
+            "updated_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2012,130 +1799,119 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.account": {
+    "account": {
       "name": "account",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "account_id": {
           "name": "account_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "provider_id": {
           "name": "provider_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "access_token": {
           "name": "access_token",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "refresh_token": {
           "name": "refresh_token",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "id_token": {
           "name": "id_token",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "access_token_expires_at": {
           "name": "access_token_expires_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "refresh_token_expires_at": {
           "name": "refresh_token_expires_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "scope": {
           "name": "scope",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "password": {
           "name": "password",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
         "account_userId_idx": {
           "name": "account_userId_idx",
           "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "account_accountId_providerId_idx": {
           "name": "account_accountId_providerId_idx",
           "columns": [
-            {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "provider_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "account_id",
+            "provider_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2155,95 +1931,84 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.invitation": {
+    "invitation": {
       "name": "invitation",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "email": {
           "name": "email",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "role": {
           "name": "role",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "status": {
           "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'pending'"
         },
         "expires_at": {
           "name": "expires_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "inviter_id": {
           "name": "inviter_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
         "invitation_organizationId_idx": {
           "name": "invitation_organizationId_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "invitation_email_idx": {
           "name": "invitation_email_idx",
           "columns": [
-            {
-              "expression": "email",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "email"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2276,76 +2041,62 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.member": {
+    "member": {
       "name": "member",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "role": {
           "name": "role",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": "'member'"
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         }
       },
       "indexes": {
         "member_organizationId_idx": {
           "name": "member_organizationId_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "member_userId_idx": {
           "name": "member_userId_idx",
           "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2378,158 +2129,157 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.organization": {
+    "organization": {
       "name": "organization",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "slug": {
           "name": "slug",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "logo": {
           "name": "logo",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "metadata": {
           "name": "metadata",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
+        "organization_slug_unique": {
+          "name": "organization_slug_unique",
+          "columns": [
+            "slug"
+          ],
+          "isUnique": true
+        },
         "organization_slug_uidx": {
           "name": "organization_slug_uidx",
           "columns": [
-            {
-              "expression": "slug",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "slug"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "organization_slug_unique": {
-          "name": "organization_slug_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.session": {
+    "session": {
       "name": "session",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "expires_at": {
           "name": "expires_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "token": {
           "name": "token",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "ip_address": {
           "name": "ip_address",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "user_agent": {
           "name": "user_agent",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "active_organization_id": {
           "name": "active_organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "columns": [
+            "token"
+          ],
+          "isUnique": true
+        },
         "session_userId_idx": {
           "name": "session_userId_idx",
           "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "user_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2548,227 +2298,216 @@
         }
       },
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "session_token_unique": {
-          "name": "session_token_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.user": {
+    "user": {
       "name": "user",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "name": {
           "name": "name",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "email": {
           "name": "email",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "email_verified": {
           "name": "email_verified",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
         },
         "image": {
           "name": "image",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "analytics_opted_out": {
           "name": "analytics_opted_out",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         }
       },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
+      "indexes": {
         "user_email_unique": {
           "name": "user_email_unique",
-          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ]
+          ],
+          "isUnique": true
         }
       },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
     },
-    "public.verification": {
+    "verification": {
       "name": "verification",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "identifier": {
           "name": "identifier",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "value": {
           "name": "value",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "expires_at": {
           "name": "expires_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         },
         "updated_at": {
           "name": "updated_at",
-          "type": "timestamp with time zone",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "default": "now()"
+          "autoincrement": false,
+          "default": "(cast(unixepoch('subsecond') * 1000 as integer))"
         }
       },
       "indexes": {
         "verification_identifier_idx": {
           "name": "verification_identifier_idx",
           "columns": [
-            {
-              "expression": "identifier",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "identifier"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         },
         "verification_expiresAt_idx": {
           "name": "verification_expiresAt_idx",
           "columns": [
-            {
-              "expression": "expires_at",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "expires_at"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.billing_customer_status": {
+    "billing_customer_status": {
       "name": "billing_customer_status",
-      "schema": "",
       "columns": {
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "is_paying": {
           "name": "is_paying",
-          "type": "boolean",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
+          "autoincrement": false,
           "default": false
         },
         "paid_plan_id": {
           "name": "paid_plan_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "paid_plan_status": {
           "name": "paid_plan_status",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "customer_json": {
           "name": "customer_json",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "synced_at": {
           "name": "synced_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {},
@@ -2789,95 +2528,84 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.gsc_connections": {
+    "gsc_connections": {
       "name": "gsc_connections",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "project_id": {
           "name": "project_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "site_url": {
           "name": "site_url",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "connected_by_user_id": {
           "name": "connected_by_user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "connected_account_email": {
           "name": "connected_account_email",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "gsc_connections_project_idx": {
           "name": "gsc_connections_project_idx",
           "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "project_id"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "gsc_connections_organization_idx": {
           "name": "gsc_connections_organization_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -2910,143 +2638,140 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     },
-    "public.reddit_attributions": {
+    "reddit_attributions": {
       "name": "reddit_attributions",
-      "schema": "",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "user_id": {
           "name": "user_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "organization_id": {
           "name": "organization_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "autoincrement": false
         },
         "click_id": {
           "name": "click_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "uuid": {
           "name": "uuid",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "landing_page": {
           "name": "landing_page",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "referrer": {
           "name": "referrer",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "utm_source": {
           "name": "utm_source",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "utm_medium": {
           "name": "utm_medium",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "utm_campaign": {
           "name": "utm_campaign",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "utm_term": {
           "name": "utm_term",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "utm_content": {
           "name": "utm_content",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "signup_sent_at": {
           "name": "signup_sent_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "purchase_sent_at": {
           "name": "purchase_sent_at",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": false,
+          "autoincrement": false
         },
         "created_at": {
           "name": "created_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         },
         "updated_at": {
           "name": "updated_at",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD\"T\"HH24:MI:SS.MS\"Z\"')"
+          "autoincrement": false,
+          "default": "(current_timestamp)"
         }
       },
       "indexes": {
         "reddit_attributions_user_idx": {
           "name": "reddit_attributions_user_idx",
           "columns": [
-            {
-              "expression": "user_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "user_id"
           ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": true
         },
         "reddit_attributions_organization_idx": {
           "name": "reddit_attributions_organization_idx",
           "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
+            "organization_id"
           ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -3079,20 +2804,17 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
+      "checkConstraints": {}
     }
   },
-  "enums": {},
-  "schemas": {},
-  "sequences": {},
-  "roles": {},
-  "policies": {},
   "views": {},
+  "enums": {},
   "_meta": {
-    "columns": {},
     "schemas": {},
-    "tables": {}
+    "tables": {},
+    "columns": {}
+  },
+  "internal": {
+    "indexes": {}
   }
 }

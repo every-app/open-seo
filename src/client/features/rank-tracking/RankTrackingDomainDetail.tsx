@@ -326,6 +326,7 @@ export function RankTrackingDomainDetail({
               configId={config.id}
               projectId={projectId}
               locationCode={config.locationCode}
+              locationName={config.locationName}
               serpDepth={config.serpDepth}
             />
           )}

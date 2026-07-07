@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Search } from "lucide-react";
 import { searchSerpLocations } from "@/serverFunctions/serp-locations";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import type { SerpLocationResult } from "@/server/lib/dataforseo/serp-locations";
 
 type Props = {
   value: string | undefined;
   onChange: (locationName: string | undefined) => void;
-  countryName: string;
+  /** ISO 3166-1 alpha-2 country code, e.g. "us". */
+  countryCode: string;
   placeholder?: string;
 };
 
@@ -22,11 +24,11 @@ function useDebounce(value: string, delayMs: number): string {
 export function SerpLocationCombobox({
   value,
   onChange,
-  countryName,
+  countryCode,
   placeholder = "Search cities...",
 }: Props) {
   const [inputValue, setInputValue] = useState(
-    value ? value.split(",").join(", ") : "",
+    value ? formatLocationLabel(value) : "",
   );
   const [results, setResults] = useState<SerpLocationResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +37,9 @@ export function SerpLocationCombobox({
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  // Selecting a result sets the input to its display label; that change must
+  // not itself trigger a search for the label text.
+  const skipNextFetchRef = useRef(false);
 
   const debouncedQuery = useDebounce(inputValue, 350);
 
@@ -55,10 +60,14 @@ export function SerpLocationCombobox({
       setOpen(false);
       return;
     }
+    if (skipNextFetchRef.current) {
+      skipNextFetchRef.current = false;
+      return;
+    }
     let cancelled = false;
     setIsLoading(true);
     setIsError(false);
-    searchSerpLocations({ data: { query: trimmed, countryName } })
+    searchSerpLocations({ data: { query: trimmed, countryCode } })
       .then((data) => {
         if (cancelled) return;
         setResults(data);
@@ -76,7 +85,7 @@ export function SerpLocationCombobox({
     return () => {
       cancelled = true;
     };
-  }, [debouncedQuery, countryName]);
+  }, [debouncedQuery, countryCode]);
 
   // Close on outside click
   useEffect(() => {
@@ -103,7 +112,9 @@ export function SerpLocationCombobox({
 
   const select = (loc: SerpLocationResult) => {
     onChange(loc.locationName);
+    skipNextFetchRef.current = true;
     setInputValue(loc.displayLabel);
+    setResults([]);
     setOpen(false);
   };
 

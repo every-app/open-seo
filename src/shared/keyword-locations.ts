@@ -21,6 +21,37 @@
  */
 export const DEFAULT_LOCATION_CODE = 2840;
 
+/**
+ * Human-readable form of a canonical DataForSEO location_name, whose segments
+ * are comma-separated with inconsistent spacing ("Portland-Auburn, ME,United
+ * States"). Trims each segment; `maxSegments` truncates for compact display
+ * ("Enid, Oklahoma").
+ */
+export function formatLocationLabel(
+  locationName: string,
+  maxSegments?: number,
+): string {
+  const parts = locationName.split(",").map((part) => part.trim());
+  return (maxSegments ? parts.slice(0, maxSegments) : parts).join(", ");
+}
+
+/**
+ * shortLabel is a *display* label; the one entry that diverges from ISO
+ * 3166-1 alpha-2 is the United Kingdom ("UK" reads better, ISO is "GB").
+ */
+const ISO_COUNTRY_OVERRIDES: Record<string, string> = { UK: "GB" };
+
+/**
+ * Lowercase ISO 3166-1 alpha-2 code for a country location_code — the format
+ * DataForSEO's per-country endpoints (e.g. SERP locations) require.
+ */
+export function getIsoCountryCode(locationCode: number): string {
+  const shortLabel =
+    LOCATION_OPTIONS.find((option) => option.code === locationCode)
+      ?.shortLabel ?? "US";
+  return (ISO_COUNTRY_OVERRIDES[shortLabel] ?? shortLabel).toLowerCase();
+}
+
 type KeywordDataProvider = "labs" | "google_ads";
 
 type LocationOption = {
