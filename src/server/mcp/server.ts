@@ -22,6 +22,12 @@ import {
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
+import {
+  getAuditIssuesTool,
+  getAuditPagesTool,
+  getAuditStatusTool,
+  runSiteAuditTool,
+} from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
@@ -200,5 +206,25 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       inspectUrlsTool.config.outputSchema,
       inspectUrlsTool.handler,
     ),
+  );
+  server.registerTool(
+    runSiteAuditTool.name,
+    runSiteAuditTool.config,
+    runSiteAuditTool.handler,
+  );
+  server.registerTool(
+    getAuditStatusTool.name,
+    getAuditStatusTool.config,
+    getAuditStatusTool.handler,
+  );
+  server.registerTool(
+    getAuditIssuesTool.name,
+    getAuditIssuesTool.config,
+    getAuditIssuesTool.handler,
+  );
+  server.registerTool(
+    getAuditPagesTool.name,
+    getAuditPagesTool.config,
+    getAuditPagesTool.handler,
   );
 }

@@ -17,10 +17,7 @@ export const startAuditSchema = z.object({
     .max(PAID_MAX_AUDIT_PAGES)
     .optional()
     .default(DEFAULT_AUDIT_PAGES),
-  lighthouseStrategy: z
-    .enum(["auto", "manual", "none"])
-    .optional()
-    .default("auto"),
+  lighthouseStrategy: z.enum(["auto", "none"]).optional().default("auto"),
 });
 
 export const getAuditStatusSchema = z.object({

@@ -22,16 +22,6 @@ describe("audit capacity helpers", () => {
       total: 100,
     });
     expect(
-      getEstimatedAuditCapacity({
-        maxPages: 100,
-        lighthouseStrategy: "manual",
-      }),
-    ).toEqual({
-      pagesTotal: 100,
-      lighthouseTotal: 0,
-      total: 100,
-    });
-    expect(
       getEstimatedAuditCapacity({ maxPages: 100, lighthouseStrategy: "auto" }),
     ).toEqual({
       pagesTotal: 100,

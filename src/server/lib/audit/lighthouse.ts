@@ -1,4 +1,4 @@
-import { detectUrlTemplate } from "./url-utils";
+import { detectUrlTemplate, normalizeUrl } from "./url-utils";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
@@ -127,16 +127,13 @@ export function selectLighthouseSample(
     (p) => p.statusCode >= 200 && p.statusCode < 300,
   );
 
-  if (strategy === "manual") {
-    // manual = user picks after crawl; for now return empty
-    return [];
-  }
-
   // strategy === "auto": homepage + 1 per URL pattern, capped at 10
   const selected = new Set<string>();
 
-  // Always include the start URL / homepage
-  const startPage = validPages.find((p) => p.url === startUrl);
+  // Always include the start URL / homepage. Page URLs are normalized;
+  // normalize the start URL the same way or the comparison silently misses.
+  const normalizedStart = normalizeUrl(startUrl) ?? startUrl;
+  const startPage = validPages.find((p) => p.url === normalizedStart);
   if (startPage) selected.add(startPage.url);
 
   // Group by URL template pattern

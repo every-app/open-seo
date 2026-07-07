@@ -1,14 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { AuditService } from "@/server/features/audit/services/AuditService";
-import type { AuditLimitTier } from "@/server/features/audit/services/audit-capacity";
-import {
-  customerHasManagedAccess,
-  customerHasPaidPlan,
-} from "@/server/billing/subscription";
-import { AppError } from "@/server/lib/errors";
 import { captureServerEvent } from "@/server/lib/posthog";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   deleteAuditSchema,
@@ -23,21 +16,9 @@ export const startAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(startAuditSchema)
   .handler(async ({ data, context }) => {
-    // The crawler runs on our Workers compute and isn't credit-metered, so
-    // plan-tier limits are the abuse bound in hosted mode: free accounts get
-    // one small audit at a time, paid keeps the full limits, and customers
-    // with no Autumn product at all are turned away. Self-hosted isn't gated.
-    let limitTier: AuditLimitTier = "paid";
-    if (await isHostedServerAuthMode()) {
-      const [hasManagedAccess, hasPaidPlan] = await Promise.all([
-        customerHasManagedAccess(context.organizationId),
-        customerHasPaidPlan(context.organizationId),
-      ]);
-      if (!hasManagedAccess) {
-        throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
-      }
-      limitTier = hasPaidPlan ? "paid" : "free";
-    }
+    const limitTier = await AuditService.resolveAuditLimitTier(
+      context.organizationId,
+    );
 
     const result = await AuditService.startAudit({
       actorUserId: context.userId,
