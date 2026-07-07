@@ -1,4 +1,4 @@
-import { detectUrlTemplate, normalizeUrl } from "./url-utils";
+import { detectUrlTemplate, canonicalUrlKey } from "./url-utils";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
@@ -130,10 +130,12 @@ export function selectLighthouseSample(
   // strategy === "auto": homepage + 1 per URL pattern, capped at 10
   const selected = new Set<string>();
 
-  // Always include the start URL / homepage. Page URLs are normalized;
-  // normalize the start URL the same way or the comparison silently misses.
-  const normalizedStart = normalizeUrl(startUrl) ?? startUrl;
-  const startPage = validPages.find((p) => p.url === normalizedStart);
+  // Always include the start URL / homepage. Compare with canonicalUrlKey on
+  // both sides so the match survives the redirects a site uses to reach its
+  // canonical homepage: trailing-slash (/ -> // no, e.g. example.com ->
+  // example.com/), www <-> non-www, and http -> https.
+  const startKey = canonicalUrlKey(startUrl);
+  const startPage = validPages.find((p) => canonicalUrlKey(p.url) === startKey);
   if (startPage) selected.add(startPage.url);
 
   // Group by URL template pattern

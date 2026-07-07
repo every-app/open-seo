@@ -27,6 +27,7 @@ export interface DetectedIssue {
 const TITLE_MAX_CHARS = 60;
 const TITLE_MIN_CHARS = 10;
 const META_DESCRIPTION_MAX_CHARS = 160;
+const META_DESCRIPTION_MIN_CHARS = 70;
 const THIN_CONTENT_WORDS = 150;
 const SLOW_RESPONSE_MS = 1500;
 const DEEP_PAGE_DEPTH = 5;
@@ -92,6 +93,10 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
     report("meta-description-too-long", {
       length: page.metaDescription.length,
     });
+  } else if (page.metaDescription.length < META_DESCRIPTION_MIN_CHARS) {
+    report("meta-description-too-short", {
+      length: page.metaDescription.length,
+    });
   }
 
   // Headings
@@ -138,6 +143,9 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   }
 
   // Structure
+  if (page.isIndexable && page.links.length === 0) {
+    report("no-outgoing-links");
+  }
   if (page.crawlDepth !== null && page.crawlDepth >= DEEP_PAGE_DEPTH) {
     report("deep-page", { crawlDepth: page.crawlDepth });
   }

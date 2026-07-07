@@ -38,15 +38,6 @@ function classifyFetch(
   return "ok";
 }
 
-/** Resolve a Location header against its base without normalizing. */
-function resolveRawUrl(location: string, base: string): string | null {
-  try {
-    return new URL(location, base).toString();
-  } catch {
-    return null;
-  }
-}
-
 /** Parse `Link: <url>; rel="canonical"` response headers. */
 function parseLinkHeaderCanonical(
   linkHeader: string | null,
@@ -72,52 +63,31 @@ export async function crawlPage(
 
   try {
     // Manual redirect handling: each hop is recorded as its own page row and
-    // the target is enqueued by the frontier, so chains/loops are detectable.
-    // Exception: redirects whose target normalizes to this same URL (e.g.
-    // /docs -> /docs/ on slash-canonical sites — our normalizer strips the
-    // slash) are followed inline; recording them would create self-redirect
-    // rows the frontier can never resolve.
-    let fetchUrl = url;
-    let response: Response;
-    let hops = 0;
-    for (;;) {
-      response = await fetch(fetchUrl, {
-        headers: {
-          "User-Agent": CRAWL_USER_AGENT,
-          Accept: "text/html,application/xhtml+xml",
-        },
-        redirect: "manual",
-        signal: AbortSignal.timeout(15_000),
-      });
-
-      if (response.status < 300 || response.status >= 400) break;
-
-      const location = response.headers.get("location");
-      const rawTarget = location ? resolveRawUrl(location, fetchUrl) : null;
-      const normalizedTarget = location
-        ? normalizeUrl(location, fetchUrl)
-        : null;
-      const isSelfAfterNormalization =
-        normalizedTarget === url &&
-        rawTarget !== null &&
-        rawTarget !== fetchUrl;
-      if (!isSelfAfterNormalization || hops >= 3) break;
-
-      fetchUrl = rawTarget;
-      hops += 1;
-    }
+    // its target is enqueued by the frontier, so redirect chains and loops are
+    // detectable from the recorded rows. Trailing-slash redirects (/docs ->
+    // /docs/) need no special handling: normalizeUrl preserves trailing
+    // slashes, so /docs and /docs/ are distinct URLs and the redirect resolves
+    // to its canonical target instead of cycling back to its own source.
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": CRAWL_USER_AGENT,
+        Accept: "text/html,application/xhtml+xml",
+      },
+      redirect: "manual",
+      signal: AbortSignal.timeout(15_000),
+    });
 
     const responseTimeMs = Date.now() - startTime;
     const statusCode = response.status;
     const xRobotsTag = response.headers.get("x-robots-tag");
     const headerCanonicalUrl = parseLinkHeaderCanonical(
       response.headers.get("link"),
-      fetchUrl,
+      url,
     );
 
     if (statusCode >= 300 && statusCode < 400) {
       const location = response.headers.get("location");
-      const redirectUrl = location ? normalizeUrl(location, fetchUrl) : null;
+      const redirectUrl = location ? normalizeUrl(location, url) : null;
       return emptyPageResult({
         url,
         statusCode,
@@ -154,14 +124,12 @@ export async function crawlPage(
       });
     }
 
-    // Resolve links/canonical against the URL that actually served the
-    // content (it may carry a trailing slash the recorded URL doesn't).
     // Dynamic import keeps cheerio (page-analyzer's HTML parser) out of the
     // worker's startup module graph: SiteAuditWorkflow is re-exported from
     // src/server.ts, so a static import would evaluate cheerio in every
     // isolate's baseline heap, not just when an audit actually crawls.
     const { analyzeHtml } = await import("@/server/lib/audit/page-analyzer");
-    const analysis = analyzeHtml(body, fetchUrl, statusCode, responseTimeMs);
+    const analysis = analyzeHtml(body, url, statusCode, responseTimeMs);
     const robotsDirectives = [analysis.robotsMeta, xRobotsTag]
       .filter(Boolean)
       .join(",")
@@ -179,7 +147,7 @@ export async function crawlPage(
       title: analysis.title,
       metaDescription: analysis.metaDescription,
       canonicalUrl: analysis.canonical
-        ? (normalizeUrl(analysis.canonical, fetchUrl) ?? analysis.canonical)
+        ? (normalizeUrl(analysis.canonical, url) ?? analysis.canonical)
         : null,
       robotsMeta: analysis.robotsMeta,
       xRobotsTag,
@@ -187,7 +155,7 @@ export async function crawlPage(
       ogTitle: analysis.ogTitle,
       ogDescription: analysis.ogDescription,
       ogImage: analysis.ogImage,
-      h1Count: analysis.h1s.length,
+      h1Count: analysis.h1s.filter((h) => h.length > 0).length,
       h2Count: headingCount(2),
       h3Count: headingCount(3),
       h4Count: headingCount(4),

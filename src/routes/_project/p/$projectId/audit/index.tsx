@@ -72,7 +72,7 @@ function AuditDetail({
   auditId: string;
   tab: string;
   onBack: () => void;
-  onTabChange: (tab: "pages" | "performance") => void;
+  onTabChange: (tab: "issues" | "pages" | "performance") => void;
 }) {
   const statusQuery = useQuery({
     queryKey: ["audit-status", projectId, auditId],
@@ -128,16 +128,17 @@ function AuditDetail({
           <button className="btn btn-ghost btn-sm px-0" onClick={onBack}>
             &larr; All audits
           </button>
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-semibold">Site Audit</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">
+              {status ? extractHostname(status.startUrl) : "Site Audit"}
+            </h1>
             {status?.status !== "running" && status && (
               <StatusBadge status={status.status} />
             )}
           </div>
           {status && (
-            <p className="text-sm text-base-content/70">
-              {extractHostname(status.startUrl)} &middot; Started{" "}
-              {formatStartedAt(status.startedAt)}
+            <p className="text-sm text-base-content/60">
+              Site audit &middot; Started {formatStartedAt(status.startedAt)}
             </p>
           )}
         </div>

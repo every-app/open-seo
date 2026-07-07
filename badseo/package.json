@@ -1,0 +1,21 @@
+{
+  "name": "badseo",
+  "private": true,
+  "type": "module",
+  "description": "badseo.dev — a deliberately broken website full of SEO mistakes, used as e2e test fixtures for the OpenSEO site audit.",
+  "scripts": {
+    "dev": "wrangler dev",
+    "start": "wrangler dev",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit",
+    "deploy": "npm run build && wrangler deploy --env production",
+    "audit": "tsx scripts/run-audit.ts",
+    "test:e2e": "tsx scripts/run-audit.ts"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "wrangler": "^4.67.0"
+  }
+}

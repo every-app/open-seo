@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022"],
+    "types": ["@cloudflare/workers-types"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  // Only the Worker source is typechecked here. scripts/run-audit.ts imports
+  // the main app via its own path aliases and is run with tsx from the repo
+  // root, so it isn't part of this project's typecheck.
+  "include": ["src/**/*.ts"]
+}

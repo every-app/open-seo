@@ -5,7 +5,14 @@ import {
   findRedirectChainsAndLoops,
   type SlimPage,
 } from "@/server/lib/audit/issues/multipage-checks";
-import type { CrawledPageResult } from "@/server/lib/audit/types";
+import type { CrawledPageResult, PageLink } from "@/server/lib/audit/types";
+
+const HEALTHY_LINK: PageLink = {
+  targetUrl: "https://example.com/catalog",
+  anchor: "Catalog",
+  isInternal: true,
+  isNofollow: false,
+};
 
 function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
   return {
@@ -37,7 +44,7 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
     imagesTotal: 0,
     imagesMissingAlt: 0,
     images: [],
-    links: [],
+    links: [HEALTHY_LINK],
     hasStructuredData: false,
     hreflangTags: [],
     isIndexable: true,
@@ -96,6 +103,17 @@ describe("runPageReporters", () => {
     expect(
       issueTypes(makePage({ metaDescription: "x".repeat(200) })),
     ).toContain("meta-description-too-long");
+    expect(issueTypes(makePage({ metaDescription: "x".repeat(69) }))).toContain(
+      "meta-description-too-short",
+    );
+    expect(
+      issueTypes(makePage({ metaDescription: "x".repeat(70) })),
+    ).not.toContain("meta-description-too-short");
+    expect(
+      runPageReporters(makePage({ metaDescription: "x".repeat(69) })).find(
+        (issue) => issue.issueType === "meta-description-too-short",
+      )?.details,
+    ).toEqual({ length: 69 });
   });
 
   it("checks headings", () => {
@@ -170,6 +188,16 @@ describe("runPageReporters", () => {
     expect(issueTypes(makePage({ crawlDepth: 6 }))).toContain("deep-page");
     expect(issueTypes(makePage({ crawlDepth: null }))).not.toContain(
       "deep-page",
+    );
+  });
+
+  it("flags indexable pages with no outgoing links", () => {
+    expect(issueTypes(makePage({ links: [] }))).toContain("no-outgoing-links");
+    expect(
+      issueTypes(makePage({ links: [], isIndexable: false })),
+    ).not.toContain("no-outgoing-links");
+    expect(issueTypes(makePage({ links: [HEALTHY_LINK] }))).not.toContain(
+      "no-outgoing-links",
     );
   });
 });

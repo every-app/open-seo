@@ -6,7 +6,7 @@
  * of these types by id.
  */
 
-type IssueSeverity = "critical" | "warning" | "info";
+export type IssueSeverity = "critical" | "warning" | "info";
 
 interface AuditIssueDescriptor {
   severity: IssueSeverity;
@@ -152,6 +152,14 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Link to this page from relevant pages (navigation, related content, hub pages), or remove it from the sitemap if it shouldn't be indexed.",
   },
+  "no-outgoing-links": {
+    severity: "warning",
+    title: "Page has no outgoing links",
+    explanation:
+      "The page contains no links at all — a dead end. Link equity that flows into it stops there, crawlers have nowhere to go next, and users have to reach for the back button.",
+    howToFix:
+      "Add links to related pages, the parent category, or the homepage. If the page's navigation is rendered by JavaScript, make sure it also exists in the server-rendered HTML.",
+  },
   "title-too-long": {
     severity: "info",
     title: "Title too long",
@@ -175,6 +183,14 @@ export const AUDIT_ISSUE_TYPES = {
       "The meta description exceeds ~160 characters, so search engines will truncate the snippet.",
     howToFix:
       "Trim the description to roughly 70–160 characters while keeping the core message and call to action.",
+  },
+  "meta-description-too-short": {
+    severity: "info",
+    title: "Meta description too short",
+    explanation:
+      "The meta description is under ~70 characters. Short descriptions waste the snippet space search results give you, and search engines often ignore them in favor of text pulled from the page.",
+    howToFix:
+      "Expand the description to roughly 70–160 characters that summarize the page and give a reason to click.",
   },
   "heading-order-skip": {
     severity: "info",

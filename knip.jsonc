@@ -23,7 +23,14 @@
     // can't trace
     "src/server/lib/dataforseo/sections.ts",
   ],
-  "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
+  // badseo/ is the standalone broken-SEO fixture worker (own deps/config),
+  // like web/ it isn't part of the app's module graph.
+  "project": [
+    "**/*.{js,mjs,ts,tsx}",
+    "!src/routeTree.gen.ts",
+    "!web/**",
+    "!badseo/**",
+  ],
   "ignore": ["drizzle-prod.config.ts"],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,
