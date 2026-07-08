@@ -38,23 +38,25 @@ Constraints that shaped the decision:
 
 ### Phase 1 — kill the 9.5 MB-per-keystroke path (ship with the PR)
 
-Cache the **slim** per-country list in R2 via the existing `getCached`/`setCached`
-helper, keyed `serp-locations:{iso}`, soft TTL 30 days. On cache miss, do today's
-fetch+filter once and store the slim result. Layer `caches.default` (per-colo,
-`max-age=86400`) in front so repeat searches in a region skip R2 entirely.
+Cache the **slim** per-country list in KV, keyed `serp-locations:{iso}`, with a
+30-day `expirationTtl` and hot reads edge-cached via `cacheTtl: 86400`. On cache
+miss, do today's fetch+filter once (coalescing concurrent cold fills) and store
+the slim result.
 
-- First search per country: unchanged (~3 s, once per country per month).
-- Steady state: one small cache read + a ~1.5 MB parse + in-memory filter,
-  tens of ms. No isolate-global retention.
-- Self-host: works day one — R2 binding and DataForSEO creds already required.
-  Lazy fill means no seeding step and no cron required (a quarterly cron refresh
-  is a nice-to-have, not a dependency).
-- Provider-agnostic (no D1/PG schema work).
+- First search per country: unchanged (~3 s, once per country per month) — and
+  hidden by the prewarm below.
+- Steady state: one KV read + a ~1.5 MB parse + in-memory filter, tens of ms.
+  No isolate-global retention.
+- Self-host: works day one — the KV binding and DataForSEO creds are already
+  required, and KV (unlike the Workers Cache API) also functions on
+  workers.dev deployments. Lazy fill means no seeding step and no cron.
+- Provider-agnostic (no D1/PG schema work). Cost is noise: KV bills per
+  operation, so all countries together are ~$0.02/month of storage.
 - Effort: ~30–60 lines. No new bindings, no migrations.
 
-KV is a near-equivalent alternative (25 MiB value limit fits; hot-read latency
-slightly better). R2 wins on "least new code" because the cache helper already
-exists and this is exactly its existing use case (caching DataForSEO JSON).
+An earlier iteration used R2 (existing `r2-cache.ts` helper) plus a per-colo
+Cache API layer; KV replaced both because it is one primitive with the same
+read profile, and the Cache API is a documented no-op on workers.dev.
 
 **Prewarm**: when the user flips targeting to **Local** (or changes country while
 Local), fire a fire-and-forget warm request so the cache is hot before the first

@@ -1,7 +1,7 @@
+import { env } from "cloudflare:workers";
 import { z } from "zod";
 import { serpApi } from "@/server/lib/dataforseo/core";
 import { assertOk } from "@/server/lib/dataforseo/envelope";
-import { getCached, setCached } from "@/server/lib/r2-cache";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 
 export interface SerpLocationResult {
@@ -38,20 +38,12 @@ const cachedLocationsSchema = z.array(
 );
 
 /** Google refreshes geotargets roughly quarterly; 30 days keeps us current. */
-const R2_TTL_SECONDS = 30 * 24 * 60 * 60;
-/** Per-colo hot layer in front of R2. */
-const COLO_CACHE_TTL_SECONDS = 24 * 60 * 60;
+const KV_TTL_SECONDS = 30 * 24 * 60 * 60;
+/** Edge-cache hot reads so repeat searches skip the central KV store. */
+const KV_HOT_READ_TTL_SECONDS = 24 * 60 * 60;
 
-function coloCacheUrl(countryCode: string): string {
-  // Synthetic key for the colo cache; never fetched over the network.
-  return `https://serp-locations.internal/${countryCode}`;
-}
-
-// Named cache instead of caches.default: identical per-colo semantics, and
-// the DOM lib's CacheStorage type (this repo compiles client+server under
-// one tsconfig) has no `.default`.
-function coloCache(): Promise<Cache> {
-  return caches.open("serp-locations");
+function cacheKey(iso: string): string {
+  return `serp-locations:${iso}`;
 }
 
 /**
@@ -60,44 +52,28 @@ function coloCache(): Promise<Cache> {
  * task-level Invalid Field error, which assertOk surfaces.
  *
  * The DataForSEO response is ~9.5MB for the US and the endpoint has no search
- * parameter, so the slimmed list (~1.5MB) is cached: per-colo via
- * caches.default, then R2 (30d soft TTL), and only on a miss of both do we
- * pay the origin fetch. The endpoint is free (cost 0), so no billing
- * envelope.
+ * parameter, so the slimmed list (~1.5MB) is cached in KV (30d TTL, hot reads
+ * edge-cached via cacheTtl); only a miss pays the origin fetch. The endpoint
+ * is free (cost 0), so no billing envelope.
  */
 export async function fetchSerpLocationsForCountry(
   countryCode: string,
 ): Promise<SerpLocationResult[]> {
   const iso = countryCode.toLowerCase();
 
-  const coloHit = await (await coloCache()).match(coloCacheUrl(iso));
-  if (coloHit) {
-    const parsed = cachedLocationsSchema.safeParse(await coloHit.json());
-    if (parsed.success) return parsed.data;
-  }
+  const cached = await env.KV.get(cacheKey(iso), {
+    type: "json",
+    cacheTtl: KV_HOT_READ_TTL_SECONDS,
+  });
+  const hit = cachedLocationsSchema.safeParse(cached);
+  if (hit.success) return hit.data;
 
-  const cacheKey = `serp-locations:${iso}`;
-  const r2Hit = cachedLocationsSchema.safeParse(await getCached(cacheKey));
-  const locations = r2Hit.success ? r2Hit.data : await fillFromOrigin(iso);
-
-  await (
-    await coloCache()
-  ).put(
-    coloCacheUrl(iso),
-    new Response(JSON.stringify(locations), {
-      headers: {
-        "content-type": "application/json",
-        "cache-control": `max-age=${COLO_CACHE_TTL_SECONDS}`,
-      },
-    }),
-  );
-
-  return locations;
+  return fillFromOrigin(iso);
 }
 
 // Coalesce concurrent cold fills within an isolate: the prewarm fired on
 // selecting Local and the user's first debounced search otherwise both miss
-// the caches and each fetch + parse the ~9.5MB origin payload. Entries are
+// the cache and each fetch + parse the ~9.5MB origin payload. Entries are
 // deleted on settle so the parsed array isn't retained past the fill (and a
 // failed fill — e.g. the owning request got cancelled — isn't sticky).
 const inflightFills = new Map<string, Promise<SerpLocationResult[]>>();
@@ -108,7 +84,9 @@ function fillFromOrigin(iso: string): Promise<SerpLocationResult[]> {
 
   const fill = fetchFromDataforseo(iso)
     .then(async (fresh) => {
-      await setCached(`serp-locations:${iso}`, fresh, R2_TTL_SECONDS);
+      await env.KV.put(cacheKey(iso), JSON.stringify(fresh), {
+        expirationTtl: KV_TTL_SECONDS,
+      });
       return fresh;
     })
     .finally(() => inflightFills.delete(iso));
