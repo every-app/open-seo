@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/every-app-open-seo-badge.png)](https://mseep.ai/app/every-app-open-seo)
+
 # OpenSEO
 
 > Open source alternative to Semrush and Ahrefs
