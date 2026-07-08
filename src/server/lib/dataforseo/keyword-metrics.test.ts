@@ -133,24 +133,24 @@ describe("fetchKeywordMetricsForList", () => {
   it("merges city-scoped Ads volume with national Labs KD for local requests", async () => {
     const adsSearchVolume = vi.fn().mockResolvedValue([
       {
-        keyword: "self storage near me",
+        keyword: "plumber near me",
         search_volume: 260,
         cpc: 7.54,
         competition: "MEDIUM",
         competition_index: 55,
         monthly_searches: [],
       },
-      // "rv storage near me" collapsed away by Google Ads normalization.
+      // "emergency plumber near me" collapsed away by Google Ads normalization.
     ]);
     const keywordOverview = vi.fn().mockResolvedValue([
       {
-        keyword: "self storage near me",
+        keyword: "plumber near me",
         keyword_info: { search_volume: 135000, cpc: 11.29 },
         keyword_properties: { keyword_difficulty: 76 },
         search_intent_info: { main_intent: "transactional" },
       },
       {
-        keyword: "rv storage near me",
+        keyword: "emergency plumber near me",
         keyword_info: { search_volume: 135000, cpc: 5.93 },
         keyword_properties: { keyword_difficulty: 17 },
         search_intent_info: { main_intent: "transactional" },
@@ -159,21 +159,21 @@ describe("fetchKeywordMetricsForList", () => {
     const client = fakeClient({ adsSearchVolume, keywordOverview });
 
     const rows = await fetchKeywordMetricsForList(client, {
-      keywords: ["self storage near me", "rv storage near me"],
+      keywords: ["plumber near me", "emergency plumber near me"],
       locationCode: 2840,
       languageCode: "en",
-      locationName: "Pittsburgh,Pennsylvania,United States",
+      locationName: "Springfield,Illinois,United States",
       creditFeature: "rank_tracking",
     });
 
     expect(adsSearchVolume).toHaveBeenCalledWith(
       expect.objectContaining({
-        locationName: "Pittsburgh,Pennsylvania,United States",
+        locationName: "Springfield,Illinois,United States",
       }),
     );
     // Local volume/CPC from Ads, national KD/intent from Labs.
     expect(rows[0]).toMatchObject({
-      keyword: "self storage near me",
+      keyword: "plumber near me",
       searchVolume: 260,
       cpc: 7.54,
       keywordDifficulty: 76,
@@ -182,7 +182,7 @@ describe("fetchKeywordMetricsForList", () => {
     // Keyword Ads dropped: KD/intent survive, but the national volume/CPC
     // must NOT leak into a local request.
     expect(rows[1]).toMatchObject({
-      keyword: "rv storage near me",
+      keyword: "emergency plumber near me",
       searchVolume: null,
       cpc: null,
       keywordDifficulty: 17,

@@ -89,8 +89,8 @@ describe("formatLocationLabel", () => {
   });
 
   it("truncates to maxSegments for compact display", () => {
-    expect(formatLocationLabel("Enid,Oklahoma,United States", 2)).toBe(
-      "Enid, Oklahoma",
+    expect(formatLocationLabel("Springfield,Illinois,United States", 2)).toBe(
+      "Springfield, Illinois",
     );
   });
 });
