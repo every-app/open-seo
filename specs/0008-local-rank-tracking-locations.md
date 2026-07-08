@@ -1,124 +1,78 @@
-# Local Rank Tracking — Locations Data & Search Experience Plan
+# 0008 — Local Rank Tracking: Location Data & Search
 
-Status: Phase 1 implemented (2026-07-07); Phases 2–3 are open proposals. Documents
-the storage decision for DataForSEO's location registry and the roadmap for the
-location picker, following the city/region rank-tracking feature.
+How city/region-level rank tracking stores and searches DataForSEO's location
+registry, and why it works the way it does. Shipped July 2026; future
+directions are listed at the end.
 
-## Context
+## The feature
 
-The Local targeting combobox searches DataForSEO's per-country location registry.
-The registry endpoint (`/v3/serp/google/locations/{iso}`) is **free** but returns the
-full country list per call:
+Rank tracking configs take an optional `location_name` — a canonical DataForSEO
+location string like `Enid,Oklahoma,United States`. Null means the existing
+country-level behavior, unchanged. Uniqueness is enforced by two partial
+indexes: one config per (project, domain, country) for national trackers, one
+per (project, domain, country, location) for local ones.
 
-| Dataset                                        | Entries | Raw JSON | Gzipped |
-| ---------------------------------------------- | ------- | -------- | ------- |
-| US, full response                              | 60,477  | 9.5 MB   | —       |
-| US, slim (City/County/Municipality/DMA/Region) | 22,871  | 1.5 MB   | 200 KB  |
-| US, slim + Postal Code                         | 54,718  | 3.7 MB   | 370 KB  |
+When set, the location flows through verbatim:
 
-Data changes rarely (Google geotarget updates, roughly quarterly). 142 supported
-countries. Today every debounced keystroke re-fetches and re-parses the 9.5 MB
-response on the Worker (~3 s per search, large transient heap on 128 MB isolates
-with an OOM history).
+- **SERP checks** (live and queued task-post) send `location_name` instead of
+  `location_code`, so positions reflect what a searcher in that city sees.
+  SERP pricing is location-independent, so cost estimates are unchanged.
+- **Keyword metrics** come city-scoped: volume / CPC / competition from Google
+  Ads `search_volume` (the only DataForSEO source that accepts sub-country
+  geotargets), merged per keyword with national KD / intent from Labs (which
+  is country-only). This matters: "rv storage near me" is 135K/mo nationally
+  but 70/mo in Pittsburgh — a national number on a local tracker overstates
+  demand by orders of magnitude. Keywords Google Ads collapses away get
+  explicit nulls rather than a leaked national value; the UI column reads
+  "Local volume" and exports name the city. Adds ~$0.09 per metrics refresh.
+- **The picker** is a debounced combobox in the config modal, searching the
+  country's registry and storing the selected canonical name. Local mode
+  requires a selection; switching country clears it.
 
-Constraints that shaped the decision:
+## Location data: how search works
 
-- **Self-host is first-class**: must work on a fresh deploy with only runtime
-  DataForSEO creds — no bespoke build/refresh pipelines.
-- **Two DB providers** (D1 default, Postgres opt-in): DB-backed approaches pay a
-  double implementation tax (schema parity is test-enforced).
-- **Worker memory discipline**: no multi-MB retained globals, bounded per-request
-  parses.
-- **Eager bundle budget**: client additions must be lazy.
-- Existing bindings: general-purpose `KV`, `R2` (with a working JSON cache helper,
-  `src/server/lib/r2-cache.ts`, already used for DataForSEO responses), D1, DOs,
-  cron triggers.
+The registry endpoint (`/v3/serp/google/locations/{iso}`) is free but has no
+search parameter and returns the full country list per call — 9.5 MB / 60k
+entries for the US. Slimmed to the five types users target (City, County,
+Municipality, DMA Region, Region) it is ~23k entries / 1.5 MB. The data
+changes roughly quarterly (Google geotarget updates).
 
-## Decision: phased, R2-cached server search now; UX investment next
+The search path: combobox (350 ms debounce) → `searchSerpLocations` server fn
+→ per-country list from **KV** (`serp-locations:{iso}`, 30-day
+`expirationTtl`, hot reads edge-cached with `cacheTtl: 86400`) → substring
+filter, top 10. A KV miss triggers the origin fetch + slim + store, with
+concurrent cold fills coalesced in-isolate so the prewarm and a fast first
+keystroke can't both download the 9.5 MB payload.
 
-### Phase 1 — kill the 9.5 MB-per-keystroke path (ship with the PR)
+Selecting **Local** in the modal fires `prewarmSerpLocations` (a `useQuery`
+keyed on country, `staleTime: Infinity`), so the one slow cold fill (~3 s)
+usually happens before the first keystroke. Warm searches are tens of ms.
 
-Cache the **slim** per-country list in KV, keyed `serp-locations:{iso}`, with a
-30-day `expirationTtl` and hot reads edge-cached via `cacheTtl: 86400`. On cache
-miss, do today's fetch+filter once (coalescing concurrent cold fills) and store
-the slim result.
+## Why KV
 
-- First search per country: unchanged (~3 s, once per country per month) — and
-  hidden by the prewarm below.
-- Steady state: one KV read + a ~1.5 MB parse + in-memory filter, tens of ms.
-  No isolate-global retention.
-- Self-host: works day one — the KV binding and DataForSEO creds are already
-  required, and KV (unlike the Workers Cache API) also functions on
-  workers.dev deployments. Lazy fill means no seeding step and no cron.
-- Provider-agnostic (no D1/PG schema work). Cost is noise: KV bills per
-  operation, so all countries together are ~$0.02/month of storage.
-- Effort: ~30–60 lines. No new bindings, no migrations.
+| Alternative                  | Why not                                                                                                                                                  |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Workers Cache API layer      | Documented no-op on workers.dev (self-hosters), per-colo only, no persistence guarantees. KV's `cacheTtl` provides the same hot-read caching, managed.   |
+| R2 (+ cache in front)        | Works (an earlier iteration shipped it) but needs a second layer for read latency; KV is one primitive with the same profile.                            |
+| D1 / Postgres table          | Schema + migrations on two providers for quarterly-static reference data; revisit if server-side validation or MCP location search justify a real table. |
+| Durable Object per country   | Pins to its first-request region forever; new binding for self-host; buys coordination this read-only data doesn't need.                                 |
+| Static assets, client search | Refresh requires redeploy — self-hosters would be pinned to release-time snapshots.                                                                      |
+| "Just accept zip codes"      | Doesn't avoid the registry: DataForSEO only accepts canonical values, and zips are registry entries themselves (~32k for the US).                        |
 
-An earlier iteration used R2 (existing `r2-cache.ts` helper) plus a per-colo
-Cache API layer; KV replaced both because it is one primitive with the same
-read profile, and the Cache API is a documented no-op on workers.dev.
+Cost is noise either way: KV bills per operation, so storage for all supported
+countries is ~$0.02/month and each search read is fractions of a cent.
 
-**Prewarm**: when the user flips targeting to **Local** (or changes country while
-Local), fire a fire-and-forget warm request so the cache is hot before the first
-keystroke. This hides the one slow first search almost entirely.
+## Future directions (not built)
 
-### Phase 2 — make the picker good (fast follow, independent of Phase 1)
-
-From the UX design pass:
-
-1. **Ranking with a prominence prior.** The registry has no population data, so
-   naive substring ranking puts "Portland-Auburn, ME (DMA)" above "Portland,
-   Oregon". Join the registry offline against GeoNames/Census once and ship a
-   ~30 KB per-country boost-tier table (metro/+40, city/+20, capital/+15) inside
-   the cached blob. Score = match tier (exact > prefix > token-prefix > substring)
-   - type weight (City +30, DMA +10, County +5) + prominence. Two-line result rows,
-     always disambiguated ("Portland, OR" / "City · Oregon, United States").
-2. **Cities-only default** with a subtle type filter (`Cities | Metro areas |
-Counties`). Google localizes SERPs to the location centroid; city centroids are
-   what reproduce a local prospect's results — DMA is media-buying granularity and
-   is mislabeled jargon for most users (render as "Metro area").
-3. **Suggestions before typing**: recently used locations in this project/org
-   (agencies reuse the same 3–5 metros), then popular metros for the country.
-   Note: **GSC has no city dimension** in Search Analytics — suggestions must come
-   from our own config history, not GSC.
-4. **Selection confirmation line** under the field echoing the canonical stored
-   name ("Tracking in: Enid, Oklahoma, United States · City") — the string is used
-   verbatim in SERP queries, so mis-selection is silent revenue-relevant error.
-5. **Loading UX**: skeleton rows + "Loading US locations…" only on the first
-   search per country; no spinner on warm searches.
-
-### Phase 3 — optional expansions (decide later, demand-driven)
-
-- **ZIP fast path**: numeric query (`^\d{3,5}$`) searches a _separate_ cached
-  postal blob (2.2 MB US), rendered as "73701 · Enid, OK". ZIP targeting beats
-  city only for sub-metro service areas (suburb plumber inside Houston); for
-  single-town businesses the city is the cleaner label. Zips do NOT remove the
-  need for the registry — DataForSEO only accepts canonical location names/codes,
-  and zips are registry entries themselves.
-- **Multi-city fan-out**: multi-select chips in the picker → one config per city
-  cloned with the same keyword set ("Create 4 configs"), capped ~10 with a credit
-  cost warning. Covers the agency 3–5-metro workflow without changing the
-  one-location-per-config data model.
-- **Server-side validation of `location_name`** at config save (against the cached
-  registry) — closes the "any string ≤200 chars reaches the SERP API" gap that
-  currently only client selection prevents.
-
-## Options considered and rejected (for the record)
-
-| Option                                               | Why not                                                                                                                                                                                                                                                                |
-| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Static assets + client-side search** (best raw UX) | Refresh requires redeploy; self-hosters would be pinned to release-time snapshots. Viable later as a _bundled seed_ under the R2 cache, not as the mechanism.                                                                                                          |
-| **D1 table (+ FTS5) / PG parity**                    | FTS5 works on D1, but it means schema + migrations + a second Postgres FTS implementation for a read-only quarterly dataset; `wrangler d1 export` also can't handle virtual tables. Revisit only if server-side validation + MCP location search justify a real table. |
-| **Durable Object per country**                       | Fastest warm path, but DOs pin to first-request region forever (bad for a global base searching foreign countries), add a new binding + migration to self-host, and buy coordination guarantees this read-only data doesn't need.                                      |
-| **KV key-per-location + `list({prefix})`**           | Prefix-only matching, ~3.2M keys to seed/reseed, list ops cost more than reads. Strictly worse than one blob.                                                                                                                                                          |
-| **"Just accept zip codes" instead of the list**      | Doesn't avoid the list: DataForSEO requires canonical registry values, and zips are registry entries. Free-text-plus-validate-at-save has bad discoverability and fails after the fact. Zips return as a Phase 3 _addition_.                                           |
-| **Vectorize / Smart Placement / Cache Reserve**      | Wrong tools: no semantic matching needed; no backend concentration to place near; Cache Reserve is for public zone-level HTTP responses.                                                                                                                               |
-
-## Sequencing recommendation
-
-1. Phase 1 + prewarm ships with the feature branch — it converts the
-   feature from "works but worrying" to "fast and boring".
-2. Phase 2 items 1–2 (ranking + cities default) next; they fix the one visibly
-   wrong behavior (DMA-above-city ordering).
-3. Phase 2 items 3–5 and Phase 3 as demand appears (multi-city fan-out is the one
-   agencies will ask for first).
+- **Picker quality**: prominence-ranked results (offline GeoNames/Census tier
+  table — the registry has no population data, so "Portland" currently ranks
+  the Maine DMA above Portland, OR), cities-first with a type filter,
+  recently-used/suggested locations (must come from our own config history —
+  GSC has no city dimension), and a selection-confirmation line.
+- **ZIP fast path**: numeric queries search a separate cached Postal Code
+  blob; useful for sub-metro service areas inside large cities.
+- **Multi-city fan-out**: multi-select in the picker creating one config per
+  city with a shared keyword set — the agency 3–5-metro workflow.
+- **Server-side `location_name` validation** at config save, closing the gap
+  where a hand-crafted request can store an arbitrary string (fails at
+  DataForSEO at cost 0 today, so client-side validation suffices).
