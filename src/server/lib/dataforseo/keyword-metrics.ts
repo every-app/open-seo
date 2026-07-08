@@ -224,13 +224,11 @@ function mergeLocalAndNationalRows(
     if (covered.has(keyword.toLowerCase())) continue;
     const labs = labsByKeyword.get(keyword.toLowerCase());
     if (!labs) continue;
-    const row = normalizeKeywordOverview(labs, keyword);
-    row.searchVolume = null;
-    row.cpc = null;
-    row.competition = null;
-    row.competitionLevel = null;
-    row.monthlySearches = [];
-    rows.push(row);
+    rows.push({
+      ...nullMetricRow(keyword),
+      keywordDifficulty: labs.keyword_properties?.keyword_difficulty ?? null,
+      intent: labs.search_intent_info?.main_intent ?? null,
+    });
   }
 
   return rows;

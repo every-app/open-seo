@@ -1,9 +1,8 @@
 # Local Rank Tracking — Locations Data & Search Experience Plan
 
-Status: proposal (2026-07-07). Follows PR #62 (city/region rank tracking, external
-contribution) and the fix commits that made it work end-to-end. This plan covers the
-open question: how to store/search DataForSEO's location registry, and what the
-location picker should become.
+Status: Phase 1 implemented (2026-07-07); Phases 2–3 are open proposals. Documents
+the storage decision for DataForSEO's location registry and the roadmap for the
+location picker, following the city/region rank-tracking feature.
 
 ## Context
 
@@ -63,7 +62,7 @@ keystroke. This hides the one slow first search almost entirely.
 
 ### Phase 2 — make the picker good (fast follow, independent of Phase 1)
 
-From the UX design pass (full spec in the PR thread / design notes):
+From the UX design pass:
 
 1. **Ranking with a prominence prior.** The registry has no population data, so
    naive substring ranking puts "Portland-Auburn, ME (DMA)" above "Portland,
@@ -115,7 +114,7 @@ Counties`). Google localizes SERPs to the location centroid; city centroids are
 
 ## Sequencing recommendation
 
-1. Phase 1 + prewarm ships with the PR #62 merge (same branch) — it converts the
+1. Phase 1 + prewarm ships with the feature branch — it converts the
    feature from "works but worrying" to "fast and boring".
 2. Phase 2 items 1–2 (ranking + cities default) next; they fix the one visibly
    wrong behavior (DMA-above-city ordering).

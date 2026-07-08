@@ -63,7 +63,8 @@ export function SerpLocationCombobox({
     }
     if (skipNextFetchRef.current) {
       skipNextFetchRef.current = false;
-      // A superseded in-flight fetch bails without clearing the spinner.
+      // Any fetch this change superseded was cancelled before its own
+      // finally could clear the spinner, so clear it here.
       setIsLoading(false);
       return;
     }
