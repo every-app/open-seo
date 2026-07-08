@@ -32,6 +32,7 @@ async function createConfig(input: {
   domain: string;
   locationCode?: number;
   languageCode?: string;
+  locationName?: string;
   devices?: RankTrackingConfig["devices"];
   serpDepth: number;
   scheduleInterval?: RankTrackingConfig["scheduleInterval"];
@@ -44,11 +45,13 @@ async function createConfig(input: {
     ? computeNextCheckAt(scheduleInterval)
     : null;
 
+  const locationName = input.locationName ?? null;
   const existing =
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
       normalizedDomain,
       locationCode,
+      locationName,
     );
   // The (project, domain, location) row still exists when a domain is
   // archived — archiving only flips isActive to false. So re-adding an
@@ -58,7 +61,9 @@ async function createConfig(input: {
   if (existing?.isActive) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "This domain + country combination is already being tracked",
+      locationName
+        ? "This domain + city combination is already being tracked"
+        : "This domain + country combination is already being tracked",
     );
   }
 
@@ -98,6 +103,7 @@ async function createConfig(input: {
     domain: normalizedDomain,
     locationCode,
     languageCode: input.languageCode ?? "en",
+    locationName,
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,
     scheduleInterval,
@@ -114,6 +120,7 @@ async function updateConfig(
     domain?: string;
     locationCode?: number;
     languageCode?: string;
+    locationName?: string | null;
     devices?: RankTrackingConfig["devices"];
     serpDepth?: number;
     scheduleInterval?: RankTrackingConfig["scheduleInterval"];
@@ -128,6 +135,8 @@ async function updateConfig(
     updates.locationCode = input.locationCode;
   if (input.languageCode !== undefined)
     updates.languageCode = input.languageCode;
+  if (input.locationName !== undefined)
+    updates.locationName = input.locationName;
   if (input.devices !== undefined) updates.devices = input.devices;
   if (input.serpDepth !== undefined) updates.serpDepth = input.serpDepth;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
@@ -280,6 +289,9 @@ async function refreshKeywordMetrics(
     keywords: keywords.map((kw) => kw.keyword),
     locationCode: config.locationCode,
     languageCode: config.languageCode,
+    // Local configs get volume/CPC scoped to the tracked city; national
+    // numbers can overstate local demand by orders of magnitude.
+    locationName: config.locationName ?? undefined,
     creditFeature: "rank_tracking",
   });
   const byKeyword = new Map(

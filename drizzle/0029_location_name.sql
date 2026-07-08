@@ -1,0 +1,4 @@
+DROP INDEX `rank_tracking_configs_project_domain_location_idx`;--> statement-breakpoint
+ALTER TABLE `rank_tracking_configs` ADD `location_name` text;--> statement-breakpoint
+CREATE UNIQUE INDEX `rank_tracking_configs_national_idx` ON `rank_tracking_configs` (`project_id`,`domain`,`location_code`) WHERE "rank_tracking_configs"."location_name" IS NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX `rank_tracking_configs_local_idx` ON `rank_tracking_configs` (`project_id`,`domain`,`location_code`,`location_name`) WHERE "rank_tracking_configs"."location_name" IS NOT NULL;

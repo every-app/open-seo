@@ -30,11 +30,20 @@ export async function fetchAdsSearchVolume(input: {
   keywords: string[];
   locationCode: number;
   languageCode: string;
+  /**
+   * Canonical DataForSEO location_name (e.g. "Pittsburgh,Pennsylvania,United
+   * States"). Google Ads accepts any geotarget, so this scopes volume / CPC /
+   * competition to a city or region instead of the whole country.
+   */
+  locationName?: string;
 }): Promise<DataforseoApiResponse<AdsKeywordItem[]>> {
+  const locationParams = input.locationName
+    ? { location_name: input.locationName }
+    : { location_code: input.locationCode };
   const response = await keywordsDataApi().googleAdsSearchVolumeLive([
     new KeywordsDataGoogleAdsSearchVolumeLiveRequestInfo({
       keywords: input.keywords,
-      location_code: input.locationCode,
+      ...locationParams,
       language_code: input.languageCode,
     }),
   ]);

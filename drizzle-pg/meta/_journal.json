@@ -43,6 +43,13 @@
       "when": 1783117905771,
       "tag": "0005_talented_wild_pack",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783438455708,
+      "tag": "0006_location_name",
+      "breakpoints": true
     }
   ]
 }

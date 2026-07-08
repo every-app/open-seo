@@ -38,6 +38,7 @@ export function RankTrackingTable({
   configId,
   projectId,
   locationCode,
+  locationName,
   serpDepth,
 }: {
   totalCount: number;
@@ -50,6 +51,7 @@ export function RankTrackingTable({
   configId: string;
   projectId: string;
   locationCode: number;
+  locationName?: string | null;
   serpDepth: number;
 }) {
   const queryClient = useQueryClient();
@@ -68,13 +70,14 @@ export function RankTrackingTable({
     [],
   );
 
-  const columns = useRankTrackingColumns(
+  const columns = useRankTrackingColumns({
     showDesktop,
     showMobile,
     domain,
     selectAnchorRef,
-    handleKeywordClick,
-  );
+    onKeywordClick: handleKeywordClick,
+    locationName,
+  });
 
   const table = useAppTable({
     data: rows,
@@ -239,6 +242,7 @@ export function RankTrackingTable({
           configId={configId}
           domain={domain}
           locationCode={locationCode}
+          locationName={locationName ?? undefined}
           serpDepth={serpDepth}
           onClose={() => setTrendTarget(null)}
         />

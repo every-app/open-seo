@@ -270,10 +270,16 @@ export function RankTrackingDomainDetail({
               showDesktop,
               showMobile,
               config.domain,
+              config.locationName,
             )
           }
           onExportToSheets={() =>
-            exportRankTrackingToSheets(filtered, showDesktop, showMobile)
+            exportRankTrackingToSheets(
+              filtered,
+              showDesktop,
+              showMobile,
+              config.locationName,
+            )
           }
           onCopyKeywords={() => {
             void navigator.clipboard.writeText(
@@ -326,6 +332,7 @@ export function RankTrackingDomainDetail({
               configId={config.id}
               projectId={projectId}
               locationCode={config.locationCode}
+              locationName={config.locationName}
               serpDepth={config.serpDepth}
             />
           )}

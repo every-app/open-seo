@@ -59,6 +59,7 @@ async function getConfigByProjectDomainLocation(
   projectId: string,
   domain: string,
   locationCode: number,
+  locationName: string | null,
 ) {
   const rows = await db
     .select()
@@ -68,6 +69,12 @@ async function getConfigByProjectDomainLocation(
         eq(rankTrackingConfigs.projectId, projectId),
         eq(rankTrackingConfigs.domain, domain),
         eq(rankTrackingConfigs.locationCode, locationCode),
+        // National (NULL) and per-city configs are distinct rows — mirrors
+        // the partial unique indexes, so a national config and any number of
+        // city configs can coexist for the same domain.
+        locationName === null
+          ? isNull(rankTrackingConfigs.locationName)
+          : eq(rankTrackingConfigs.locationName, locationName),
       ),
     )
     .limit(1);
@@ -104,6 +111,7 @@ async function getDueConfigsWithOrganization(nowIso: string) {
       domain: rankTrackingConfigs.domain,
       locationCode: rankTrackingConfigs.locationCode,
       languageCode: rankTrackingConfigs.languageCode,
+      locationName: rankTrackingConfigs.locationName,
       devices: rankTrackingConfigs.devices,
       serpDepth: rankTrackingConfigs.serpDepth,
       scheduleInterval: rankTrackingConfigs.scheduleInterval,

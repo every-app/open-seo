@@ -16,6 +16,7 @@ import {
   updateRankTrackingConfig,
 } from "@/serverFunctions/rank-tracking";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import { Modal } from "@/client/components/Modal";
 import {
   applyDomainListFilters,
@@ -205,8 +206,10 @@ function DomainRow({
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[summary.locationCode] ?? "US"} &middot;{" "}
-          {devicesLabel(summary.devices)} &middot;{" "}
+          {summary.locationName
+            ? formatLocationLabel(summary.locationName, 2)
+            : (LOCATIONS[summary.locationCode] ?? "US")}{" "}
+          &middot; {devicesLabel(summary.devices)} &middot;{" "}
           {scheduleLabel(summary.scheduleInterval)}
           {summary.lastRunCompletedAt && (
             <>

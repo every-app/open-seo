@@ -8,6 +8,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { getRankKeywordHistory } from "@/serverFunctions/rank-tracking";
 import type { RankKeywordHistoryPoint } from "@/serverFunctions/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import { csvChange, DeviceRankCell } from "./RankTrackingTableParts";
 import {
   RankTrendChart,
@@ -34,6 +35,7 @@ export function KeywordTrendModal({
   configId,
   domain,
   locationCode,
+  locationName,
   serpDepth,
   onClose,
 }: {
@@ -42,6 +44,7 @@ export function KeywordTrendModal({
   configId: string;
   domain: string;
   locationCode: number;
+  locationName?: string;
   serpDepth: number;
   onClose: () => void;
 }) {
@@ -145,8 +148,11 @@ export function KeywordTrendModal({
             {target.keyword}
           </h3>
           <p className="text-xs text-base-content/60">
-            {domain} &middot; {LOCATIONS[locationCode] ?? "US"} &middot;
-            Position over time
+            {domain} &middot;{" "}
+            {locationName
+              ? formatLocationLabel(locationName, 2)
+              : (LOCATIONS[locationCode] ?? "US")}{" "}
+            &middot; Position over time
           </p>
         </div>
         <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />

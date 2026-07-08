@@ -94,6 +94,14 @@ function normalizeAdsKeyword(
 // Hydrate a keyword list with fresh metrics: route by location (Labs vs Google
 // Ads), batch under the per-call cap, and drop items DataForSEO returns without
 // a keyword. `creditFeature` is required so spend is always attributed.
+//
+// `locationName` (canonical DataForSEO string, e.g. a city) scopes volume /
+// CPC / competition to that location via Google Ads — the only source that
+// accepts sub-country geotargets. Labs is country-only, so for Labs countries
+// a local request runs both calls and merges: local volume from Google Ads,
+// national KD / intent from Labs. National volume is never silently shown for
+// a local request — keywords Google Ads doesn't return keep KD / intent but
+// null volume / CPC.
 export async function fetchKeywordMetricsForList(
   client: KeywordMetricsClient,
   params: {
@@ -102,6 +110,7 @@ export async function fetchKeywordMetricsForList(
     languageCode: string;
     creditFeature: CreditFeature;
     includeClickstreamData?: boolean;
+    locationName?: string;
   },
 ): Promise<KeywordMetricRow[]> {
   const useGoogleAds =
@@ -115,13 +124,44 @@ export async function fetchKeywordMetricsForList(
       const items = await client.keywords.adsSearchVolume({
         keywords,
         locationCode: params.locationCode,
+        locationName: params.locationName,
         languageCode: params.languageCode,
         creditFeature: params.creditFeature,
       });
+      const covered = new Set<string>();
       for (const item of items) {
         if (!item.keyword) continue;
+        covered.add(item.keyword.toLowerCase());
         rows.push(normalizeAdsKeyword(item, item.keyword));
       }
+      if (params.locationName) {
+        // A local request must overwrite whatever scope the stored metrics
+        // had — keywords Ads collapsed away get explicit nulls so stale
+        // (possibly national) numbers can't survive under a local label.
+        rows.push(
+          ...keywords
+            .filter((keyword) => !covered.has(keyword.toLowerCase()))
+            .map(nullMetricRow),
+        );
+      }
+    } else if (params.locationName) {
+      const [adsItems, labsItems] = await Promise.all([
+        client.keywords.adsSearchVolume({
+          keywords,
+          locationCode: params.locationCode,
+          locationName: params.locationName,
+          languageCode: params.languageCode,
+          creditFeature: params.creditFeature,
+        }),
+        client.labs.keywordOverview({
+          keywords,
+          locationCode: params.locationCode,
+          languageCode: params.languageCode,
+          includeClickstreamData: params.includeClickstreamData ?? false,
+          creditFeature: params.creditFeature,
+        }),
+      ]);
+      rows.push(...mergeLocalAndNationalRows(keywords, adsItems, labsItems));
     } else {
       const items = await client.labs.keywordOverview({
         keywords,
@@ -135,6 +175,60 @@ export async function fetchKeywordMetricsForList(
         rows.push(normalizeKeywordOverview(item, item.keyword));
       }
     }
+  }
+
+  return rows;
+}
+
+function nullMetricRow(keyword: string): KeywordMetricRow {
+  return {
+    keyword,
+    searchVolume: null,
+    cpc: null,
+    competition: null,
+    competitionLevel: null,
+    keywordDifficulty: null,
+    intent: null,
+    monthlySearches: [],
+  };
+}
+
+function mergeLocalAndNationalRows(
+  keywords: string[],
+  adsItems: AdsKeywordItem[],
+  labsItems: KeywordOverviewItem[],
+): KeywordMetricRow[] {
+  const labsByKeyword = new Map(
+    labsItems
+      .filter((item) => item.keyword)
+      .map((item) => [item.keyword!.toLowerCase(), item]),
+  );
+  const rows: KeywordMetricRow[] = [];
+  const covered = new Set<string>();
+
+  for (const item of adsItems) {
+    if (!item.keyword) continue;
+    covered.add(item.keyword.toLowerCase());
+    const row = normalizeAdsKeyword(item, item.keyword);
+    const labs = labsByKeyword.get(item.keyword.toLowerCase());
+    row.keywordDifficulty =
+      labs?.keyword_properties?.keyword_difficulty ?? null;
+    row.intent = labs?.search_intent_info?.main_intent ?? null;
+    rows.push(row);
+  }
+
+  // Google Ads occasionally collapses near-duplicate keywords into one item.
+  // Keep the national KD / intent for the missing ones but leave volume / CPC
+  // null rather than substituting the (misleading) national numbers.
+  for (const keyword of keywords) {
+    if (covered.has(keyword.toLowerCase())) continue;
+    const labs = labsByKeyword.get(keyword.toLowerCase());
+    if (!labs) continue;
+    rows.push({
+      ...nullMetricRow(keyword),
+      keywordDifficulty: labs.keyword_properties?.keyword_difficulty ?? null,
+      intent: labs.search_intent_info?.main_intent ?? null,
+    });
   }
 
   return rows;

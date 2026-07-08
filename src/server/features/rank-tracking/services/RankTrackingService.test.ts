@@ -84,6 +84,35 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.createConfig).not.toHaveBeenCalled();
   });
 
+  it("keys the duplicate check on locationName so national and city configs coexist", async () => {
+    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+    mocks.getConfigsForProject.mockResolvedValue([]);
+    mocks.createConfig.mockResolvedValue(undefined);
+    const { RankTrackingService } = await import("./RankTrackingService");
+
+    // Local config: the lookup must be scoped to this exact city, so an
+    // existing national row for the same domain doesn't collide.
+    await RankTrackingService.createConfig({
+      ...baseInput,
+      locationName: "Enid,Oklahoma,United States",
+    });
+    expect(mocks.getConfigByProjectDomainLocation).toHaveBeenCalledWith(
+      "project_1",
+      "acme.com",
+      2840,
+      "Enid,Oklahoma,United States",
+    );
+
+    // National config: the lookup is scoped to NULL locationName.
+    await RankTrackingService.createConfig(baseInput);
+    expect(mocks.getConfigByProjectDomainLocation).toHaveBeenLastCalledWith(
+      "project_1",
+      "acme.com",
+      2840,
+      null,
+    );
+  });
+
   it("rejects reactivating an archived config when the project is at the active-config cap", async () => {
     const { MAX_CONFIGS_PER_PROJECT } = await import("@/shared/rank-tracking");
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);

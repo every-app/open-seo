@@ -2,6 +2,7 @@ import { Monitor, Plus, Settings, Smartphone } from "lucide-react";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import type {
   ComparePeriod,
   RankTrackingConfig,
@@ -45,8 +46,10 @@ export function RankTrackingDetailHeader({
       <div>
         <h2 className="text-lg font-semibold">{config.domain}</h2>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[config.locationCode] ?? "US"} &middot;{" "}
-          {devicesLabel(config.devices)} &middot;{" "}
+          {config.locationName
+            ? formatLocationLabel(config.locationName, 2)
+            : (LOCATIONS[config.locationCode] ?? "US")}{" "}
+          &middot; {devicesLabel(config.devices)} &middot;{" "}
           {scheduleLabel(config.scheduleInterval)}
           {run && (
             <>
