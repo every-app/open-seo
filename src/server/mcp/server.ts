@@ -210,21 +210,37 @@ export function registerOpenSeoMcpTools(server: McpServer) {
   server.registerTool(
     runSiteAuditTool.name,
     runSiteAuditTool.config,
-    runSiteAuditTool.handler,
+    instrumentMcpToolHandler(
+      runSiteAuditTool.name,
+      runSiteAuditTool.config.outputSchema,
+      runSiteAuditTool.handler,
+    ),
   );
   server.registerTool(
     getAuditStatusTool.name,
     getAuditStatusTool.config,
-    getAuditStatusTool.handler,
+    instrumentMcpToolHandler(
+      getAuditStatusTool.name,
+      getAuditStatusTool.config.outputSchema,
+      getAuditStatusTool.handler,
+    ),
   );
   server.registerTool(
     getAuditIssuesTool.name,
     getAuditIssuesTool.config,
-    getAuditIssuesTool.handler,
+    instrumentMcpToolHandler(
+      getAuditIssuesTool.name,
+      getAuditIssuesTool.config.outputSchema,
+      getAuditIssuesTool.handler,
+    ),
   );
   server.registerTool(
     getAuditPagesTool.name,
     getAuditPagesTool.config,
-    getAuditPagesTool.handler,
+    instrumentMcpToolHandler(
+      getAuditPagesTool.name,
+      getAuditPagesTool.config.outputSchema,
+      getAuditPagesTool.handler,
+    ),
   );
 }

@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import {
   OAuthProvider,
   type AuthRequest,
@@ -12,6 +13,7 @@ import {
   MCP_SCOPE,
 } from "@/lib/oauth-resource";
 import { asAppError } from "@/server/lib/errors";
+import { captureServerEvent } from "@/server/lib/posthog";
 import {
   createWorkersOAuthMcpProps,
   MCP_ROUTE,
@@ -363,6 +365,18 @@ async function handleOAuthConsentResponse(
     scope: scopes,
     props,
   });
+
+  waitUntil(
+    captureServerEvent({
+      distinctId: context.userId,
+      event: "mcp:authorize_success",
+      organizationId: context.organizationId,
+      properties: {
+        client_id: authRequest.clientId,
+        scopes: scopes.join(" "),
+      },
+    }),
+  );
 
   return jsonResponse({ redirectTo });
 }
