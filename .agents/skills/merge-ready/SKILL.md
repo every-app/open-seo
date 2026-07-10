@@ -23,12 +23,19 @@ This skill composes with feature work — it is not only a review pass:
 
 ## 2. Multi-axis subagent review
 
-Spawn independent review subagents **in parallel**, one per axis, each given the branch diff scope (`git diff origin/main...HEAD`) and repo access:
+Spawn independent review subagents **in parallel**, one per axis, each given repo access and the complete branch scope:
+
+- committed changes: `git diff origin/main...HEAD`
+- staged changes: `git diff --cached`
+- unstaged changes: `git diff`
+- untracked files: `git status --short`, followed by reading every in-scope untracked file
+
+Do not let an uncommitted or newly created file escape review merely because it is absent from `origin/main...HEAD`.
 
 1. **Unnecessary complexity** — thin wrappers, needless indirection, single-use abstractions, defensive guards for impossible states, dead config. This codebase deliberately stays simple.
 2. **Security** — authz on new endpoints (org/project scoping), SSRF, injection, secrets handling, anything user-input-shaped reaching D1/R2/external APIs.
 3. **Billing & metering** — ways a user could trigger DataForSEO/provider spend without being metered, charged-but-failed paths, retry/loop amplification, endpoints with unexpectedly high per-call user cost. Credits are billed via Autumn; uncounted spend is a revenue leak.
-4. **Library & project idioms** — TanStack (Router/Query/Start) used idiomatically; patterns match how the rest of the codebase already does it (Result-pattern error handling at provider seams, db/schema conventions, existing component patterns). Flag novel patterns where an established one exists.
+4. **Library & project idioms** — TanStack (Router/Query/Start) used idiomatically; patterns match how the rest of the codebase already does it (shared application/provider error boundaries, db/schema conventions, existing component patterns). Flag novel patterns where an established one exists.
 5. **Vibe-coded cruft** — leftover scaffolding, stale comments narrating the edit history, console.logs, TODO-without-owner, copy-pasted near-duplicates, files/exports nothing uses.
 
 Each reviewer returns findings with file:line, severity (`blocker` / `should-fix` / `nitpick`), and a one-line rationale. Tell reviewers explicitly: this is an early-stage product — do not chase theoretical edge cases; mark anything debatable as `nitpick`.
@@ -36,6 +43,14 @@ Each reviewer returns findings with file:line, severity (`blocker` / `should-fix
 ## 3. Verify findings — never blindly accept
 
 For each `blocker` and `should-fix` finding, spawn verification subagents (in parallel) that adversarially check the finding against the actual code and verdict **APPLY / APPLY-MODIFIED / REJECT** with reasoning. Drop rejected findings. Nitpicks don't need verification — they're reported, not necessarily fixed.
+
+### Preserve review learnings
+
+After verification, route durable learnings without forcing every review to change policy:
+
+- If an **APPLY** or **APPLY-MODIFIED** finding reveals a recurring or high-risk repository invariant that existing `.greptile/` context and CI do not capture, use `maintain-greptile-rules` and apply its promotion bar.
+- Keep one-off bugs as code fixes and regression tests. Put deterministic mechanical checks in CI or lint instead of Greptile.
+- When a small tooling, documentation, or workflow frustration occurs, use `papercuts` to append it to `.agents/PAPERCUTS.md`; do not derail merge-ready work to fix it.
 
 ## 4. Fix, check, loop
 
