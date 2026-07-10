@@ -58,12 +58,10 @@ export function renderDocument(opts: DocumentOptions): string {
     head.push(`<link rel="canonical" href="${escapeHtml(opts.canonical)}">`);
   if (opts.robotsMeta)
     head.push(`<meta name="robots" content="${escapeHtml(opts.robotsMeta)}">`);
-  head.push(
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">',
-  );
-  head.push('<link rel="stylesheet" href="/styles.css">');
+  // Version the stylesheet whenever shared chrome changes. The consent UI is
+  // injected by fresh, no-store JavaScript and must never meet stale CSS.
+  head.push('<link rel="stylesheet" href="/styles.css?v=3">');
+  head.push('<script src="/analytics.js" defer></script>');
   if (opts.headExtra) head.push(opts.headExtra);
 
   return `<!doctype html>
@@ -102,6 +100,7 @@ function footerHtml(): string {
     <a href="/catalog">Catalog</a>
     <a href="https://github.com/every-app/open-seo">GitHub</a>
     <a href="https://openseo.so">OpenSEO</a>
+    <a href="/privacy">Privacy</a>
   </span>
 </div></footer>`;
 }

@@ -1,6 +1,5 @@
-// The two non-fixture pages: the homepage and the catalog. Both must audit
-// CLEAN — they're the crawl entry point and the hub that links every fixture,
-// so any accidental issue here would show up in the e2e run.
+// The primary non-fixture content pages. They must audit CLEAN because they
+// are part of the same crawl as the deliberately broken fixtures.
 import { renderShell, escapeHtml } from "./lib";
 import { AUDIT_ISSUE_TYPES } from "../../src/shared/audit-issues";
 import {

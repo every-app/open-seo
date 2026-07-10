@@ -7,7 +7,10 @@
 import { STYLESHEET } from "./styles";
 import { OPENSEO_LOGO_PNG_BASE64 } from "./logo";
 import { renderHome, renderCatalog } from "./pages";
+import { renderPrivacy } from "./privacy";
 import { renderShell, redirect } from "./lib";
+import { analyticsScriptResponse, isValidGa4MeasurementId } from "./analytics";
+import { recordAnalyticsConsent } from "./consent-log";
 import { TRAILING_SLASH_CANONICAL } from "./fixtures/redirects";
 import {
   allFixtures,
@@ -56,7 +59,7 @@ function sitemapXml(origin: string): Response {
   // click-depth — which would propagate down the chain and stop the deep-page
   // fixture from ever reaching depth >= 5. Keeping the catalog link-only means
   // the chain gets real, incrementing depths.
-  const paths = new Set<string>(["/"]);
+  const paths = new Set<string>(["/", "/privacy"]);
   for (const fixture of sitemapFixtures) {
     for (const path of fixturePaths(fixture)) paths.add(path);
   }
@@ -96,7 +99,7 @@ function notFoundPage(): Response {
 }
 
 export default {
-  async fetch(request: Request): Promise<Response> {
+  async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     // Derive the origin from the Host header, not url.origin: under `wrangler
     // dev` with custom-domain routes configured, url.origin resolves to the
@@ -105,6 +108,21 @@ export default {
     const host = request.headers.get("host") ?? url.host;
     const origin = `${url.protocol}//${host}`;
     const path = normalizePath(url.pathname);
+
+    // Consent preferences use origin-scoped browser storage. Keep one
+    // canonical production origin so www and apex can never disagree about a
+    // grant or withdrawal.
+    const requestHostname = host.split(":", 1)[0].toLowerCase();
+    const isProductionHost =
+      requestHostname === "badseo.dev" || requestHostname === "www.badseo.dev";
+    if (
+      isProductionHost &&
+      (requestHostname === "www.badseo.dev" || url.protocol !== "https:")
+    ) {
+      return redirect(`https://badseo.dev${url.pathname}${url.search}`, 308);
+    }
+
+    const analyticsEnabled = String(env.GA4_ADMIN_VERIFIED) === "true";
 
     // Trailing-slash canonical: the non-slash form 301-redirects to the slash
     // form, which is served as the canonical 200 (via the fixture below, since
@@ -116,6 +134,26 @@ export default {
     }
 
     switch (path) {
+      case "/analytics.js":
+        return analyticsScriptResponse(
+          env.GA4_MEASUREMENT_ID,
+          Boolean(
+            analyticsEnabled && env.CONSENT_LOG && env.CONSENT_RATE_LIMITER,
+          ),
+        );
+      case "/analytics-consent":
+        if (
+          !analyticsEnabled ||
+          !isValidGa4MeasurementId(env.GA4_MEASUREMENT_ID) ||
+          !env.CONSENT_LOG ||
+          !env.CONSENT_RATE_LIMITER
+        ) {
+          return new Response(null, {
+            status: 404,
+            headers: { "cache-control": "no-store" },
+          });
+        }
+        return recordAnalyticsConsent(request, url, env);
       case "/styles.css":
         return new Response(STYLESHEET, {
           headers: {
@@ -150,6 +188,8 @@ export default {
         return html(renderHome());
       case "/catalog":
         return html(renderCatalog());
+      case "/privacy":
+        return html(renderPrivacy());
     }
 
     const fixture = routeTable.get(path);
@@ -160,4 +200,4 @@ export default {
 
     return notFoundPage();
   },
-};
+} satisfies ExportedHandler<Env>;

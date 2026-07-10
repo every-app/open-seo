@@ -10,7 +10,8 @@
     "build": "tsc --noEmit",
     "deploy": "npm run build && wrangler deploy --env production",
     "audit": "tsx scripts/run-audit.ts",
-    "test:e2e": "tsx scripts/run-audit.ts"
+    "test:e2e": "tsx scripts/run-audit.ts",
+    "test:consent": "../node_modules/.bin/playwright test --config=playwright.config.ts"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250109.0",

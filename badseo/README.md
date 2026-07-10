@@ -57,12 +57,109 @@ things we're trying to break (it insists on injecting a `<title>`, etc.).
 npx wrangler dev            # serves on http://localhost:8787
 ```
 
+## Google Analytics 4 and consent
+
+The production environment is configured with the public GA4 measurement ID
+`G-7MXV9FH7SS`, but the committed `GA4_ADMIN_VERIFIED` safety gate remains
+`false` until the GA Admin checklist below is complete. Once enabled, analytics
+uses global, opt-in **Basic Consent Mode**: no Google Analytics tag, Analytics
+request, or cookieless ping is loaded before an affirmative choice.
+
+badseo.dev does not need a Google-certified CMP because it uses GA4 only and
+does not use AdSense, Ad Manager, or AdMob. Google permits a custom consent
+solution for Analytics. The first-party implementation here avoids loading a
+second consent vendor while still keeping an operator-accessible audit trail:
+
+1. The browser queues all four Consent Mode v2 defaults as denied.
+2. **Accept analytics** posts a pseudonymous receipt to the same-origin
+   `/analytics-consent` endpoint.
+3. The Worker rate-limits and validates the request, then writes an append-only
+   record to `CONSENT_LOG`. The record contains the server time, exact notice
+   and choices, notice/privacy versions, measurement ID, and grant state. It
+   does not include the visitor's IP address or user agent.
+4. Only a successful KV write lets a newly accepted choice grant
+   `analytics_storage` and load GA. Later page views rely on the unexpired,
+   matching-version, matching-measurement-ID necessary browser receipt. A
+   timeout, quota error, or storage outage during a new grant leaves analytics
+   off and offers a retry. Same-origin tabs synchronize grants and withdrawals.
+5. Withdrawal denies consent and removes `_ga` cookies immediately. Its ledger
+   event is retried on the next page view if the first write fails and the
+   browser can retain the necessary retry marker. If browser storage itself is
+   unavailable, the page still attempts the write immediately and remains
+   analytics-off regardless of its outcome.
+
+The necessary browser receipt is treated as expired after 400 days and removed
+on the next visit. Operator-side consent events expire after 830 days, covering
+that possible grant period plus the configured 14-month GA4 user-level and
+event-level retention window. Do not export those records; update the policy
+and implement an equivalent per-event deletion schedule before introducing any
+separate evidence store. Have privacy counsel revisit the evidence period if
+the analytics retention or legal requirements change. Bump the canonical
+notice version in `src/consent.ts` whenever the vendor, purpose, choices, or
+material wording changes; a measurement-ID change automatically invalidates
+stored grants. Never rewrite an old notice version.
+
+Wrangler automatically provisions separate local and production KV namespaces
+from `wrangler.jsonc`. The root Worker is deliberately named `badseo-dev`; the
+production environment retains its existing implicit identity,
+`badseo-production`, so a plain preview deploy cannot overwrite the production
+Worker or its bindings. Production deploys must use `--env production` because
+bindings and variables do not inherit into named environments.
+
+On the first production deploy, Wrangler writes the provisioned KV namespace ID
+back into `wrangler.jsonc`. Review and commit that generated ID immediately so
+ledger continuity is explicit in later diffs. Monitor consent-endpoint 429/503
+responses and the KV write quota; add an account-level WAF/rate-limit rule for
+`/analytics-consent` if automated abuse appears. To inspect the operator-side
+ledger after deployment:
+
+```bash
+npx wrangler kv key list \
+  --binding CONSENT_LOG \
+  --env production \
+  --remote \
+  --prefix analytics-consent/
+```
+
+Before production deployment, finish these GA Admin settings:
+
+1. Keep all four **Account Data Sharing Settings** off.
+2. In Enhanced Measurement, keep page views, scrolls, and outbound clicks on;
+   turn the other events off.
+3. Set user-level and event-level data retention to 14 months.
+4. Leave Google Signals and advertising personalization off. Do not set a
+   User-ID, link Google Ads, or import user data.
+5. Review the badseo.dev policy at `/privacy`; it deploys with this Worker, so
+   the consent notice and policy cannot drift across separate applications.
+6. Verify the default and update signals with Tag Assistant, then confirm one
+   consented page view in GA Realtime.
+7. Only after steps 1–6 pass, set `GA4_ADMIN_VERIFIED` to `"true"` in the
+   production environment and run the production dry-run again.
+
+For local browser testing, inject a non-production ID without editing the
+Wrangler config:
+
+```bash
+npx wrangler dev \
+  --var GA4_MEASUREMENT_ID:G-TEST123 \
+  --var GA4_ADMIN_VERIFIED:true
+```
+
+The browser consent UI is injected by `/analytics.js`, not included in the raw
+page HTML. This keeps its text and controls out of the crawler fixtures' word
+counts, heading checks, image checks, and duplicate-content hashes.
+
+The Worker fails closed if the GA Admin verification gate is not `"true"`, or
+if the measurement ID, KV binding, or rate-limit binding is absent:
+`/analytics.js` only removes stale choices and `_ga` cookies, and no consent UI
+or Google request is produced.
+
 ## Run the end-to-end audit
 
 The harness drives the **real** OpenSEO crawl + issue-detection functions
 (imported straight from `../src`) against a running badseo.dev, then asserts every
-fixture triggers exactly the issues it declares — and that the homepage, catalog,
-and support pages come back clean.
+fixture triggers exactly the issues it declares — and that the homepage,
+catalog, privacy policy, and support pages come back clean.
 
 ```bash
 # with `wrangler dev` running in another terminal:
@@ -127,6 +224,7 @@ directly.
 
 First-time setup: the `production` env in `wrangler.jsonc` binds the custom
 domains `badseo.dev` and `www.badseo.dev`, so the zone must be on the Cloudflare
-account before the first deploy. (The routes live under `production` so that
-plain `wrangler dev` still serves on localhost.) To preview on a `*.workers.dev`
-URL without the custom domain, deploy the top-level env: `npx wrangler deploy`.
+account before the first deploy. Production disables `workers.dev` and preview
+URLs so the real GA ID is served only on those custom domains. To preview on the
+separate `badseo-dev` `*.workers.dev` Worker without the custom domain or real
+measurement ID, deploy the top-level env with `npx wrangler deploy`.
