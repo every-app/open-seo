@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
@@ -90,10 +91,14 @@ async function getOverview(
   };
 
   if (result.hasData) {
-    void setCached(cacheKey, result, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
-      (error) => {
-        console.error("domain.overview.cache-write failed:", error);
-      },
+    // waitUntil, not void: workerd cancels unregistered pending I/O once the
+    // response is sent, so a fire-and-forget put never persists the cache.
+    waitUntil(
+      setCached(cacheKey, result, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
+        (error) => {
+          console.error("domain.overview.cache-write failed:", error);
+        },
+      ),
     );
   }
 
@@ -174,10 +179,15 @@ async function getSuggestedKeywords(
     }));
 
   if (keywords.length > 0) {
-    void setCached(cacheKey, keywords, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
-      (error) => {
-        console.error("domain.keyword-suggestions.cache-write failed:", error);
-      },
+    waitUntil(
+      setCached(cacheKey, keywords, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
+        (error) => {
+          console.error(
+            "domain.keyword-suggestions.cache-write failed:",
+            error,
+          );
+        },
+      ),
     );
   }
 
