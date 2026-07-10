@@ -1,4 +1,62 @@
+import {
+  KEYWORD_INTENT_ORDER,
+  parseIntentFilter,
+  toggleIntentFilter,
+} from "@/client/features/keywords/keywordResearchTypes";
+import { INTENT_LABELS } from "@/client/features/keywords/components/IntentBadge";
 import type { KeywordResearchControllerState } from "./types";
+
+export function FilterIntentSelect({
+  form,
+}: {
+  form: KeywordResearchControllerState["filtersForm"];
+}) {
+  return (
+    <div
+      role="group"
+      aria-labelledby="keyword-intent-filter-label"
+      className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2"
+    >
+      <p
+        id="keyword-intent-filter-label"
+        className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60"
+      >
+        Intent
+      </p>
+      <form.Field name="intents">
+        {(field) => {
+          const selected = parseIntentFilter(field.state.value);
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {KEYWORD_INTENT_ORDER.map((intent) => {
+                const isActive = selected.includes(intent);
+                return (
+                  <button
+                    key={intent}
+                    type="button"
+                    aria-pressed={isActive}
+                    className={`btn btn-xs ${
+                      isActive
+                        ? "btn-primary"
+                        : "btn-ghost border border-base-300"
+                    }`}
+                    onClick={() =>
+                      field.handleChange(
+                        toggleIntentFilter(field.state.value, intent),
+                      )
+                    }
+                  >
+                    {INTENT_LABELS[intent]}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        }}
+      </form.Field>
+    </div>
+  );
+}
 
 export function FilterTextInput({
   form,
