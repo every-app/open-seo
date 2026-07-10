@@ -9,6 +9,14 @@ interface LighthouseSamplePage {
   statusCode: number;
 }
 
+function canonicalUrlKeyWithoutTrailingSlash(url: string): string {
+  const parsed = new URL(canonicalUrlKey(url));
+  if (parsed.pathname !== "/") {
+    parsed.pathname = parsed.pathname.replace(/\/$/, "");
+  }
+  return parsed.toString();
+}
+
 type LighthouseFetchResult = {
   result: LighthouseResult;
   payloadJson: string | null;
@@ -130,12 +138,17 @@ export function selectLighthouseSample(
   // strategy === "auto": homepage + 1 per URL pattern, capped at 10
   const selected = new Set<string>();
 
-  // Always include the start URL / homepage. Compare with canonicalUrlKey on
-  // both sides so the match survives the redirects a site uses to reach its
-  // canonical homepage: trailing-slash (/ -> // no, e.g. example.com ->
-  // example.com/), www <-> non-www, and http -> https.
+  // Always include the start URL / homepage. Prefer an exact canonical match
+  // so distinct 2xx `/path` and `/path/` pages stay distinct, then tolerate a
+  // trailing-slash redirect when the exact start URL was not crawled as 2xx.
   const startKey = canonicalUrlKey(startUrl);
-  const startPage = validPages.find((p) => canonicalUrlKey(p.url) === startKey);
+  const startPage =
+    validPages.find((p) => canonicalUrlKey(p.url) === startKey) ??
+    validPages.find(
+      (p) =>
+        canonicalUrlKeyWithoutTrailingSlash(p.url) ===
+        canonicalUrlKeyWithoutTrailingSlash(startUrl),
+    );
   if (startPage) selected.add(startPage.url);
 
   // Group by URL template pattern

@@ -40,6 +40,7 @@ describe("subscription billing", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     kvGetMock.mockResolvedValue(null);
+    kvPutMock.mockResolvedValue(undefined);
   });
 
   it("checks the paid plan entitlement", async () => {
@@ -86,5 +87,49 @@ describe("subscription billing", () => {
 
     expect(result).toEqual({ id: "org_123" });
     expect(getOrCreateMock).not.toHaveBeenCalled();
+  });
+
+  it("falls back to Autumn when the customer cache read fails", async () => {
+    const cacheError = new Error("KV read unavailable");
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    kvGetMock.mockRejectedValue(cacheError);
+    getOrCreateMock.mockResolvedValue({ id: "cust_123" });
+
+    await expect(
+      getOrCreateOrganizationCustomer({
+        organizationId: "org_123",
+        userId: "user_123",
+        userEmail: "alice@example.com",
+      }),
+    ).resolves.toEqual({ id: "cust_123" });
+
+    expect(getOrCreateMock).toHaveBeenCalledWith({
+      customerId: "org_123",
+      email: "alice@example.com",
+    });
+    expect(console.warn).toHaveBeenCalledWith(
+      "billing.customer-cache-read failed:",
+      cacheError,
+    );
+  });
+
+  it("returns the resolved customer when the customer cache write fails", async () => {
+    const cacheError = new Error("KV write unavailable");
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    getOrCreateMock.mockResolvedValue({ id: "cust_123" });
+    kvPutMock.mockRejectedValue(cacheError);
+
+    await expect(
+      getOrCreateOrganizationCustomer({
+        organizationId: "org_123",
+        userId: "user_123",
+        userEmail: "alice@example.com",
+      }),
+    ).resolves.toEqual({ id: "cust_123" });
+
+    expect(console.warn).toHaveBeenCalledWith(
+      "billing.customer-cache-write failed:",
+      cacheError,
+    );
   });
 });

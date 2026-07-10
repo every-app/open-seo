@@ -35,8 +35,12 @@ export async function getOrCreateOrganizationCustomer(
   context: BillingCustomerContext,
 ): Promise<{ id: string }> {
   const cacheKey = customerEnsuredKey(context.organizationId);
-  if (await env.KV.get(cacheKey)) {
-    return { id: context.organizationId };
+  try {
+    if (await env.KV.get(cacheKey)) {
+      return { id: context.organizationId };
+    }
+  } catch (error) {
+    console.warn("billing.customer-cache-read failed:", error);
   }
 
   const customer = await autumn.customers.getOrCreate({
@@ -48,9 +52,13 @@ export async function getOrCreateOrganizationCustomer(
     throw new AppError("INTERNAL_ERROR", "Failed to resolve billing customer");
   }
 
-  await env.KV.put(cacheKey, "1", {
-    expirationTtl: CUSTOMER_ENSURED_TTL_SECONDS,
-  });
+  try {
+    await env.KV.put(cacheKey, "1", {
+      expirationTtl: CUSTOMER_ENSURED_TTL_SECONDS,
+    });
+  } catch (error) {
+    console.warn("billing.customer-cache-write failed:", error);
+  }
 
   return { id: customer.id };
 }
