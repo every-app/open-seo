@@ -44,7 +44,7 @@ export function createBaseAuthConfig() {
               "https://accounts.google.com/.well-known/openid-configuration",
             scopes: [...GSC_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
-            prompt: "consent", // force refresh-token issuance on re-consent
+            prompt: "select_account consent",
             pkce: true,
           },
         ],

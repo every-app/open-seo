@@ -218,6 +218,13 @@
       "when": 1783306047190,
       "tag": "0030_legal_reaper",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1783630714621,
+      "tag": "0031_furry_monster_badoon",
+      "breakpoints": true
     }
   ]
 }

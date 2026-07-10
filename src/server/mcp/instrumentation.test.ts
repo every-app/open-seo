@@ -110,9 +110,7 @@ describe("instrumentMcpToolHandler", () => {
       okResult({ items: [] }),
     );
 
-    await runWithMcpToolAuthContext(authContext, () =>
-      wrapped({}, toolExtra),
-    );
+    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
 
     expect(mocks.captureServerEvent).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
@@ -134,9 +132,7 @@ describe("instrumentMcpToolHandler", () => {
       okResult({ items: "not-an-array" }),
     );
 
-    await runWithMcpToolAuthContext(authContext, () =>
-      wrapped({}, toolExtra),
-    );
+    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
 
     expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
       event: "mcp:tool_call",

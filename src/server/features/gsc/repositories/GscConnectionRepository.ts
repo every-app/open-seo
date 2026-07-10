@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { gscConnections } from "@/db/schema";
 
@@ -20,6 +20,7 @@ async function upsert(input: {
   organizationId: string;
   siteUrl: string;
   connectedByUserId: string;
+  gscAccountId: string;
   connectedAccountEmail: string | null;
 }): Promise<GscConnection> {
   const [row] = await db
@@ -31,7 +32,8 @@ async function upsert(input: {
         siteUrl: input.siteUrl,
         organizationId: input.organizationId,
         connectedByUserId: input.connectedByUserId,
-        connectedAccountEmail: input.connectedAccountEmail,
+        gscAccountId: input.gscAccountId,
+        connectedAccountEmail: sql`coalesce(${input.connectedAccountEmail}, ${gscConnections.connectedAccountEmail})`,
         updatedAt: sql`(current_timestamp)`,
       },
     })
@@ -48,12 +50,19 @@ async function deleteByProjectId(projectId: string): Promise<void> {
     .where(eq(gscConnections.projectId, projectId));
 }
 
-/** Whether this user is still the connector for any project's GSC property. */
-async function existsForConnector(userId: string): Promise<boolean> {
+async function existsForConnectorAccount(
+  userId: string,
+  gscAccountId: string,
+): Promise<boolean> {
   const rows = await db
     .select({ id: gscConnections.id })
     .from(gscConnections)
-    .where(eq(gscConnections.connectedByUserId, userId))
+    .where(
+      and(
+        eq(gscConnections.connectedByUserId, userId),
+        eq(gscConnections.gscAccountId, gscAccountId),
+      ),
+    )
     .limit(1);
   return rows.length > 0;
 }
@@ -62,5 +71,5 @@ export const GscConnectionRepository = {
   getByProjectId,
   upsert,
   deleteByProjectId,
-  existsForConnector,
+  existsForConnectorAccount,
 };

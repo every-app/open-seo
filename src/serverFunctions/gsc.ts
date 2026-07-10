@@ -15,6 +15,7 @@ import {
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 const setSiteSchema = projectScopedSchema.extend({
+  accountId: z.string().min(1),
   siteUrl: z.string().min(1),
 });
 const startSelfHostedLinkSchema = z.object({
@@ -59,13 +60,27 @@ export const listGscSites = createServerFn({ method: "POST" })
       GscService.listSitesForUserWithGrantStatus(context.userId),
       GscService.getConnection(context.projectId),
     ]);
+    let legacySelectionMatched = false;
     return {
-      requiresReconnect: siteList.requiresReconnect,
-      sites: siteList.sites.map((s) => ({
-        siteUrl: s.siteUrl,
-        permissionLevel: s.permissionLevel,
-        selectable: s.permissionLevel !== "siteUnverifiedUser",
-        isSelected: s.siteUrl === connection?.siteUrl,
+      accounts: siteList.accounts.map((grant) => ({
+        accountId: grant.accountId,
+        email: grant.email,
+        requiresReconnect: grant.requiresReconnect,
+        sites: grant.sites.map((site) => {
+          const isSelected = connection?.gscAccountId
+            ? connection.gscAccountId === grant.accountId &&
+              connection.siteUrl === site.siteUrl
+            : !legacySelectionMatched && connection?.siteUrl === site.siteUrl;
+          if (!connection?.gscAccountId && isSelected) {
+            legacySelectionMatched = true;
+          }
+          return {
+            siteUrl: site.siteUrl,
+            permissionLevel: site.permissionLevel,
+            selectable: site.permissionLevel !== "siteUnverifiedUser",
+            isSelected,
+          };
+        }),
       })),
     };
   });
@@ -77,9 +92,9 @@ export const setGscSite = createServerFn({ method: "POST" })
     const connection = await GscService.setSite({
       projectId: context.projectId,
       organizationId: context.organizationId,
+      accountId: data.accountId,
       siteUrl: data.siteUrl,
       userId: context.userId,
-      userEmail: context.userEmail,
     });
     waitUntil(
       captureServerEvent({
