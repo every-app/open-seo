@@ -112,10 +112,7 @@ export const auditPages = pgTable(
     // Performance
     responseTimeMs: integer("response_time_ms"),
   },
-  (table) => [
-    index("audit_pages_audit_id_idx").on(table.auditId),
-    index("audit_pages_audit_url_idx").on(table.auditId, table.url),
-  ],
+  (table) => [index("audit_pages_audit_url_idx").on(table.auditId, table.url)],
 );
 
 // One row per unique (source page, target URL) link edge. Currently only
@@ -138,7 +135,6 @@ export const auditLinks = pgTable(
     isNofollow: boolean("is_nofollow").notNull().default(false),
   },
   (table) => [
-    index("audit_links_audit_id_idx").on(table.auditId),
     index("audit_links_audit_target_idx").on(table.auditId, table.targetUrl),
   ],
 );
@@ -163,7 +159,6 @@ export const auditIssues = pgTable(
     detailsJson: text("details_json"),
   },
   (table) => [
-    index("audit_issues_audit_id_idx").on(table.auditId),
     index("audit_issues_audit_type_idx").on(table.auditId, table.issueType),
   ],
 );

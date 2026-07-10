@@ -64,6 +64,13 @@
       "when": 1783630716543,
       "tag": "0008_yummy_annihilus",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783699015488,
+      "tag": "0009_supreme_captain_stacy",
+      "breakpoints": true
     }
   ]
 }

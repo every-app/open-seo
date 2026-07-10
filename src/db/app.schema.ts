@@ -235,6 +235,11 @@ export const rankTrackingConfigs = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
+    index("rank_tracking_configs_project_active_created_idx").on(
+      table.projectId,
+      table.isActive,
+      table.createdAt,
+    ),
     uniqueIndex("rank_tracking_configs_national_idx")
       .on(table.projectId, table.domain, table.locationCode)
       .where(sql`${table.locationName} IS NULL`),

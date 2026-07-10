@@ -225,6 +225,13 @@
       "when": 1783630714621,
       "tag": "0031_furry_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1783699001850,
+      "tag": "0032_public_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }
