@@ -3,7 +3,10 @@ import { DomainService } from "@/server/features/domain/services/DomainService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
-import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  resolveRequestMarket,
+  withMcpProjectAuth,
+} from "@/server/mcp/project-auth";
 import {
   assertLabsLocationCode,
   assertLanguageForLocation,
@@ -50,9 +53,10 @@ export const getDomainOverviewTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const projectMarket = context.project;
-    const locationCode = args.locationCode ?? projectMarket.locationCode;
-    const languageCode = args.languageCode ?? projectMarket.languageCode;
+    const { locationCode, languageCode } = resolveRequestMarket(
+      args,
+      context.project,
+    );
     assertLabsLocationCode(locationCode);
     assertLanguageForLocation(locationCode, languageCode);
     const result = await DomainService.getOverview(

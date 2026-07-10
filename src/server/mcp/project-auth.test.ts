@@ -132,3 +132,49 @@ describe("withMcpProjectAuth", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 });
+
+describe("resolveRequestMarket", () => {
+  const vietnamProject = { locationCode: 2704, languageCode: "vi" };
+
+  it("falls back to the project's pair when nothing is supplied", async () => {
+    const { resolveRequestMarket } = await import("@/server/mcp/project-auth");
+    expect(resolveRequestMarket({}, vietnamProject)).toEqual({
+      locationCode: 2704,
+      languageCode: "vi",
+    });
+  });
+
+  it("snaps the language to a location override instead of borrowing the project's", async () => {
+    const { resolveRequestMarket } = await import("@/server/mcp/project-auth");
+    // A Vietnam project querying Germany must not send Vietnamese.
+    expect(
+      resolveRequestMarket({ locationCode: 2276 }, vietnamProject),
+    ).toEqual({ locationCode: 2276, languageCode: "de" });
+  });
+
+  it("keeps the project language when the override matches the project location", async () => {
+    const { resolveRequestMarket } = await import("@/server/mcp/project-auth");
+    const spanishUs = { locationCode: 2840, languageCode: "es" };
+    expect(resolveRequestMarket({ locationCode: 2840 }, spanishUs)).toEqual({
+      locationCode: 2840,
+      languageCode: "es",
+    });
+  });
+
+  it("applies an explicit language to the project's location", async () => {
+    const { resolveRequestMarket } = await import("@/server/mcp/project-auth");
+    expect(
+      resolveRequestMarket({ languageCode: "en" }, vietnamProject),
+    ).toEqual({ locationCode: 2704, languageCode: "en" });
+  });
+
+  it("uses both overrides verbatim", async () => {
+    const { resolveRequestMarket } = await import("@/server/mcp/project-auth");
+    expect(
+      resolveRequestMarket(
+        { locationCode: 2276, languageCode: "en" },
+        vietnamProject,
+      ),
+    ).toEqual({ locationCode: 2276, languageCode: "en" });
+  });
+});

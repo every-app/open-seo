@@ -3,7 +3,10 @@ import { KeywordResearchService } from "@/server/features/keywords/services/Keyw
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
-import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  resolveRequestMarket,
+  withMcpProjectAuth,
+} from "@/server/mcp/project-auth";
 import {
   languageCodeSchema,
   locationCodeSchema,
@@ -64,9 +67,10 @@ export const saveKeywordsTool = {
       throw new Error("Replacement tags are required when tagMode is replace.");
     }
 
-    const projectMarket = context.project;
-    const locationCode = args.locationCode ?? projectMarket.locationCode;
-    const languageCode = args.languageCode ?? projectMarket.languageCode;
+    const { locationCode, languageCode } = resolveRequestMarket(
+      args,
+      context.project,
+    );
 
     await KeywordResearchService.saveKeywords({
       projectId: args.projectId,

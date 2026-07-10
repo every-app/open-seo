@@ -33,15 +33,19 @@ function mapProject(project: {
 }
 
 /**
- * Resolves a partial market input into a full, valid pair. Changing the
+ * Resolves a partial market input into the columns to write. Changing the
  * location without a language snaps the language to the location's native
  * one; a language DataForSEO doesn't serve for the location is rejected here
  * (cost 0) instead of failing later as a charged provider error.
+ *
+ * A language-only change yields only the language column: echoing the
+ * location from a pre-write read back into the update would let two
+ * concurrent partial updates silently clobber each other's half.
  */
 function resolveMarketInput(
   input: { locationCode?: number; languageCode?: string },
   current?: { locationCode: number; languageCode: string },
-): { locationCode: number; languageCode: string } | undefined {
+): { locationCode?: number; languageCode: string } | undefined {
   if (input.locationCode == null && input.languageCode == null) {
     return undefined;
   }
@@ -67,7 +71,9 @@ function resolveMarketInput(
         .join(", ")}.`,
     );
   }
-  return { locationCode, languageCode };
+  return input.locationCode != null
+    ? { locationCode, languageCode }
+    : { languageCode };
 }
 
 const DEFAULT_PROJECT_LOCATION = 2840;
@@ -133,16 +139,19 @@ export async function updateProject(
   organizationId: string,
   input: UpdateProjectInput,
 ) {
-  let market: { locationCode: number; languageCode: string } | undefined;
+  let market: { locationCode?: number; languageCode: string } | undefined;
   if (input.locationCode != null || input.languageCode != null) {
-    // Half of the pair may be omitted; resolve against the stored row so a
-    // language-only change is validated against the project's location.
-    const current = await ProjectRepository.getProjectForOrganization(
-      input.projectId,
-      organizationId,
-    );
-    if (!current) {
-      throw new AppError("NOT_FOUND");
+    let current: { locationCode: number; languageCode: string } | undefined;
+    if (input.locationCode == null) {
+      // A language-only change is validated against the project's stored
+      // location; a location change carries everything it needs in the input.
+      current = await ProjectRepository.getProjectForOrganization(
+        input.projectId,
+        organizationId,
+      );
+      if (!current) {
+        throw new AppError("NOT_FOUND");
+      }
     }
     market = resolveMarketInput(input, current);
   }

@@ -61,7 +61,9 @@ async function createProject(
   organizationId: string,
   name: string,
   domain?: string,
-  market?: { locationCode: number; languageCode: string },
+  // An absent half keeps the column default; spreading writes only the
+  // provided columns.
+  market?: { locationCode?: number; languageCode: string },
 ) {
   const id = crypto.randomUUID();
   const [row] = await db
@@ -77,7 +79,9 @@ async function updateProject(
   input: {
     name: string;
     domain?: string;
-    market?: { locationCode: number; languageCode: string };
+    // An absent half leaves the column untouched (a language-only change
+    // must not rewrite the location from a pre-read snapshot).
+    market?: { locationCode?: number; languageCode: string };
   },
 ) {
   const [row] = await db

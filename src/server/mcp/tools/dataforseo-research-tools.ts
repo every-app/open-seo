@@ -11,7 +11,10 @@ import {
   looseObjectOutputSchema,
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
-import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  resolveRequestMarket,
+  withMcpProjectAuth,
+} from "@/server/mcp/project-auth";
 import {
   formatMcpTable,
   readPath,
@@ -852,9 +855,10 @@ export const getKeywordMetricsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
-    const projectMarket = context.project;
-    const locationCode = args.locationCode ?? projectMarket.locationCode;
-    const languageCode = args.languageCode ?? projectMarket.languageCode;
+    const { locationCode, languageCode } = resolveRequestMarket(
+      args,
+      context.project,
+    );
     // Assert against the RESOLVED pair: with a non-US default market, an
     // explicit language and an omitted location must validate against the
     // default location, not the hardcoded US fallback.

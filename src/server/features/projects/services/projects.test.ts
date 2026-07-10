@@ -138,7 +138,7 @@ describe("project service", () => {
   });
 
   describe("updateProject", () => {
-    it("validates a language-only change against the stored location", async () => {
+    it("validates a language-only change against the stored location and writes only the language", async () => {
       mocks.getProjectForOrganization.mockResolvedValue({
         ...namedProject,
         locationCode: 2704,
@@ -152,11 +152,32 @@ describe("project service", () => {
         name: "Acme",
         languageCode: "en",
       });
+      // No locationCode: echoing the pre-read location back into the write
+      // would let a concurrent location change be silently overwritten.
       expect(mocks.updateProject).toHaveBeenCalledWith(
         "project_acme",
         "org_1",
         expect.objectContaining({
-          market: { locationCode: 2704, languageCode: "en" },
+          market: { languageCode: "en" },
+        }),
+      );
+    });
+
+    it("snaps the language on a location-only change without reading the stored row", async () => {
+      mocks.updateProject.mockResolvedValue(namedProject);
+      const { updateProject } = await import("./projects");
+
+      await updateProject("org_1", {
+        projectId: "project_acme",
+        name: "Acme",
+        locationCode: 2276,
+      });
+      expect(mocks.getProjectForOrganization).not.toHaveBeenCalled();
+      expect(mocks.updateProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        expect.objectContaining({
+          market: { locationCode: 2276, languageCode: "de" },
         }),
       );
     });

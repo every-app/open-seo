@@ -6,7 +6,10 @@ import {
   looseObjectOutputSchema,
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
-import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import {
+  resolveRequestMarket,
+  withMcpProjectAuth,
+} from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import {
   assertLanguageForLocation,
@@ -107,8 +110,10 @@ export const researchKeywordsTool = {
     const results = await Promise.all(
       args.seeds.map(async (item) => {
         try {
-          const locationCode = item.locationCode ?? projectMarket.locationCode;
-          const languageCode = item.languageCode ?? projectMarket.languageCode;
+          const { locationCode, languageCode } = resolveRequestMarket(
+            item,
+            projectMarket,
+          );
           assertLanguageForLocation(locationCode, languageCode);
           const data = await KeywordResearchService.research(
             {
