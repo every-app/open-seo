@@ -1,8 +1,9 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { usePreferredKeywordLocation } from "@/client/features/keywords/hooks/usePreferredKeywordLocation";
 import { saveKeywords } from "@/serverFunctions/keywords";
+import { getProjects } from "@/serverFunctions/projects";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
@@ -10,8 +11,17 @@ import type { KeywordResearchControllerInput } from "./useKeywordResearchControl
 export function useResolvedKeywordLocation(
   input: KeywordResearchControllerInput,
 ) {
+  // Seed the picker from the project's default market (cached under
+  // ["projects"], shared with the switcher/settings) until the user picks one.
+  const projectsQuery = useQuery({
+    queryKey: ["projects"],
+    queryFn: () => getProjects(),
+  });
+  const projectDefaultLocationCode = projectsQuery.data?.find(
+    (project) => project.id === input.projectId,
+  )?.locationCode;
   const { preferredLocationCode, setPreferredLocationCode } =
-    usePreferredKeywordLocation();
+    usePreferredKeywordLocation(projectDefaultLocationCode);
   const locationCode =
     !input.hasExplicitLocationCode && input.keywordInput === ""
       ? preferredLocationCode

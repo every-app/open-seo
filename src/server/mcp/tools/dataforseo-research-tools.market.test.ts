@@ -4,17 +4,12 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 
 // Market resolution for the Labs-only tools (get_ranked_keywords,
-// find_serp_competitors): the explicit country selector and the server's
-// default-market fallback.
+// find_serp_competitors): the explicit country selector and the project's
+// default-market fallback (projects.locationCode/languageCode).
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
-  getDefaultMarket: vi.fn(async () => ({
-    locationCode: 2840,
-    languageCode: "en",
-    label: "United States",
-  })),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -22,10 +17,6 @@ vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
   fetchKeywordMetricsForList: vi.fn(),
-}));
-
-vi.mock("@/server/lib/market-defaults", () => ({
-  getDefaultMarket: mocks.getDefaultMarket,
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -59,6 +50,16 @@ const toolExtra: ToolExtra = {
   } satisfies AuthInfo,
 };
 
+function setProject(market: { locationCode: number; languageCode: string }) {
+  mocks.getProjectForOrganization.mockResolvedValue({
+    id: "project_1",
+    name: "Test",
+    domain: null,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...market,
+  });
+}
+
 async function runRankedKeywords(args: { market?: { country: "US" } }) {
   const rankedKeywords = vi.fn().mockResolvedValue({
     items: [],
@@ -80,20 +81,11 @@ describe("market resolution for Labs tools", () => {
     vi.resetModules();
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
-    mocks.getDefaultMarket.mockResolvedValue({
-      locationCode: 2840,
-      languageCode: "en",
-      label: "United States",
-    });
+    setProject({ locationCode: 2840, languageCode: "en" });
   });
 
-  it("keeps the US when market is explicit even under a non-US default", async () => {
-    mocks.getDefaultMarket.mockResolvedValue({
-      locationCode: 2704,
-      languageCode: "vi",
-      label: "Vietnam",
-    });
+  it("keeps the US when market is explicit even for a non-US project", async () => {
+    setProject({ locationCode: 2704, languageCode: "vi" });
     const rankedKeywords = await runRankedKeywords({
       market: { country: "US" },
     });
@@ -102,26 +94,18 @@ describe("market resolution for Labs tools", () => {
     );
   });
 
-  it("follows the server's default market when the market object is omitted", async () => {
-    mocks.getDefaultMarket.mockResolvedValue({
-      locationCode: 2704,
-      languageCode: "vi",
-      label: "Vietnam",
-    });
+  it("follows the project's default market when the market object is omitted", async () => {
+    setProject({ locationCode: 2704, languageCode: "vi" });
     const rankedKeywords = await runRankedKeywords({});
     expect(rankedKeywords).toHaveBeenCalledWith(
       expect.objectContaining({ locationCode: 2704, languageCode: "vi" }),
     );
   });
 
-  it("falls back to the US when the default market is not Labs-served", async () => {
+  it("falls back to the US when the project market is not Labs-served", async () => {
     // Iceland (2352) is served from Google Ads data; the Labs-only market
     // tools must not inherit it.
-    mocks.getDefaultMarket.mockResolvedValue({
-      locationCode: 2352,
-      languageCode: "en",
-      label: "Iceland",
-    });
+    setProject({ locationCode: 2352, languageCode: "en" });
     const rankedKeywords = await runRankedKeywords({});
     expect(rankedKeywords).toHaveBeenCalledWith(
       expect.objectContaining({ locationCode: 2840, languageCode: "en" }),

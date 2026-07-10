@@ -12,7 +12,6 @@ import {
   readPath,
   type McpTableColumn,
 } from "@/server/mcp/table";
-import { getDefaultMarket } from "@/server/lib/market-defaults";
 import {
   assertLabsLocationCode,
   assertLanguageForLocation,
@@ -58,9 +57,9 @@ export const getDomainKeywordSuggestionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const defaultMarket = await getDefaultMarket();
-    const locationCode = args.locationCode ?? defaultMarket.locationCode;
-    const languageCode = args.languageCode ?? defaultMarket.languageCode;
+    const projectMarket = context.project;
+    const locationCode = args.locationCode ?? projectMarket.locationCode;
+    const languageCode = args.languageCode ?? projectMarket.languageCode;
     assertLabsLocationCode(locationCode);
     assertLanguageForLocation(locationCode, languageCode);
     const keywords = await DomainService.getSuggestedKeywords(

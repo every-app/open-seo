@@ -9,12 +9,6 @@ services:
       - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
-      # Default market when calls omit locationCode/languageCode (e.g. 2704 + vi
-      # for Vietnam). Language defaults to the location's native language.
-      - OPENSEO_DEFAULT_LOCATION_CODE=${OPENSEO_DEFAULT_LOCATION_CODE:-}
-      - OPENSEO_DEFAULT_LANGUAGE_CODE=${OPENSEO_DEFAULT_LANGUAGE_CODE:-}
-      # Web-UI initial location (inlined at the container's startup build).
-      - VITE_DEFAULT_LOCATION_CODE=${VITE_DEFAULT_LOCATION_CODE:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

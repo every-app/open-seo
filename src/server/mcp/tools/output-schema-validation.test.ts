@@ -99,7 +99,11 @@ const backlinkPage = {
 beforeEach(() => {
   mocks.getProjectForOrganization.mockReset();
   mocks.profileBacklinksPage.mockReset();
-  mocks.getProjectForOrganization.mockResolvedValue({ id: "project_123" });
+  mocks.getProjectForOrganization.mockResolvedValue({
+    id: "project_123",
+    locationCode: 2840,
+    languageCode: "en",
+  });
 });
 
 describe("DataForSEO research tool output schemas", () => {

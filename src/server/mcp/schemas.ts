@@ -20,7 +20,7 @@ export const locationCodeSchema = z
   .int()
   .positive()
   .describe(
-    "DataForSEO location code. Defaults to the server's default market (2840 United States unless the deployment overrides it — check whoami). See dataforseo.com/help-center/locations. Some countries (e.g. Iceland, 2352) are served from Google Ads data: keyword volume/CPC/trends work, but keyword difficulty, search intent, and domain analytics are unavailable.",
+    "DataForSEO location code. Defaults to the project's default market (see list_projects; editable in project settings). See dataforseo.com/help-center/locations. Some countries (e.g. Iceland, 2352) are served from Google Ads data: keyword volume/CPC/trends work, but keyword difficulty, search intent, and domain analytics are unavailable.",
   );
 
 /**
@@ -69,5 +69,5 @@ export const languageCodeSchema = z
       "Unsupported language code. Use a supported code such as 'en', 'es', 'de', or 'fr'.",
   })
   .describe(
-    "Language code (e.g. 'en', 'es', 'vi'). Defaults to the server's default market language (check whoami).",
+    "Language code (e.g. 'en', 'es', 'vi'). Defaults to the project's default market language (see list_projects).",
   );

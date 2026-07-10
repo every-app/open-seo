@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  isSupportedLanguageCode,
+  isSupportedLocationCode,
+} from "@/shared/keyword-locations";
 
 const projectNameField = z
   .string()
@@ -13,15 +17,33 @@ const projectDomainField = z
   .transform((value) => value || undefined)
   .optional();
 
+// Default market for the project's data calls. The location/language PAIR is
+// validated in the service (an update may change one side and needs the
+// stored row for the other).
+const projectLocationCodeField = z
+  .number()
+  .int()
+  .refine(isSupportedLocationCode, "Unsupported DataForSEO location code")
+  .optional();
+
+const projectLanguageCodeField = z
+  .string()
+  .refine(isSupportedLanguageCode, "Unsupported language code")
+  .optional();
+
 export const createProjectSchema = z.object({
   name: projectNameField,
   domain: projectDomainField,
+  locationCode: projectLocationCodeField,
+  languageCode: projectLanguageCodeField,
 });
 
 export const updateProjectSchema = z.object({
   projectId: z.string().min(1),
   name: projectNameField,
   domain: projectDomainField,
+  locationCode: projectLocationCodeField,
+  languageCode: projectLanguageCodeField,
 });
 
 export const archiveProjectSchema = z.object({

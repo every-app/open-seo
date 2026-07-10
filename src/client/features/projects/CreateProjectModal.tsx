@@ -2,9 +2,11 @@ import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { setLastProjectId } from "@/client/lib/active-project";
+import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { createProject } from "@/serverFunctions/projects";
 
 export function CreateProjectModal({ onClose }: { onClose: () => void }) {
@@ -12,11 +14,18 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = React.useState("");
   const [domain, setDomain] = React.useState("");
+  const [locationCode, setLocationCode] = React.useState(DEFAULT_LOCATION_CODE);
 
   const createMutation = useMutation({
     mutationFn: () =>
       createProject({
-        data: { name: name.trim(), domain: domain.trim() || undefined },
+        // Language auto-derives server-side from the location's native
+        // language; the settings page offers the full per-location list.
+        data: {
+          name: name.trim(),
+          domain: domain.trim() || undefined,
+          locationCode,
+        },
       }),
     onSuccess: async (created) => {
       setLastProjectId(created.id);
@@ -85,6 +94,15 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
           <span className="text-xs text-base-content/50">
             You can connect Search Console and set up rank tracking after
             creating the project.
+          </span>
+        </label>
+
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium">Default market</span>
+          <LocationSelect value={locationCode} onChange={setLocationCode} />
+          <span className="text-xs text-base-content/50">
+            Keyword and SERP data defaults to this market when a call doesn't
+            specify one. Change it later in project settings.
           </span>
         </label>
 

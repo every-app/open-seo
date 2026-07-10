@@ -61,11 +61,12 @@ async function createProject(
   organizationId: string,
   name: string,
   domain?: string,
+  market?: { locationCode: number; languageCode: string },
 ) {
   const id = crypto.randomUUID();
   const [row] = await db
     .insert(projects)
-    .values({ id, organizationId, name, domain })
+    .values({ id, organizationId, name, domain, ...market })
     .returning();
   return row;
 }
@@ -73,11 +74,15 @@ async function createProject(
 async function updateProject(
   projectId: string,
   organizationId: string,
-  input: { name: string; domain?: string },
+  input: {
+    name: string;
+    domain?: string;
+    market?: { locationCode: number; languageCode: string };
+  },
 ) {
   const [row] = await db
     .update(projects)
-    .set({ name: input.name, domain: input.domain ?? null })
+    .set({ name: input.name, domain: input.domain ?? null, ...input.market })
     .where(
       and(
         eq(projects.id, projectId),

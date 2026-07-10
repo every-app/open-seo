@@ -6,20 +6,71 @@ import type {
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { AppError } from "@/server/lib/errors";
+import {
+  getKeywordDataProvider,
+  getLanguageCode,
+  getLanguageOptions,
+} from "@/shared/keyword-locations";
 
 function mapProject(project: {
   id: string;
   name: string;
   domain: string | null;
+  locationCode: number;
+  languageCode: string;
   createdAt: string;
 }) {
   return {
     id: project.id,
     name: project.name,
     domain: project.domain,
+    // Default market for the project's data calls (MCP tools and the web UI
+    // fall back to these when a call omits locationCode/languageCode).
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
     createdAt: project.createdAt,
   };
 }
+
+/**
+ * Resolves a partial market input into a full, valid pair. Changing the
+ * location without a language snaps the language to the location's native
+ * one; a language DataForSEO doesn't serve for the location is rejected here
+ * (cost 0) instead of failing later as a charged provider error.
+ */
+function resolveMarketInput(
+  input: { locationCode?: number; languageCode?: string },
+  current?: { locationCode: number; languageCode: string },
+): { locationCode: number; languageCode: string } | undefined {
+  if (input.locationCode == null && input.languageCode == null) {
+    return undefined;
+  }
+  const locationCode =
+    input.locationCode ?? current?.locationCode ?? DEFAULT_PROJECT_LOCATION;
+  const languageCode =
+    input.languageCode ??
+    (input.locationCode != null
+      ? getLanguageCode(locationCode)
+      : (current?.languageCode ?? getLanguageCode(locationCode)));
+  if (
+    getKeywordDataProvider(locationCode) === "labs" &&
+    !getLanguageOptions(locationCode).some(
+      (option) => option.code === languageCode,
+    )
+  ) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Language '${languageCode}' is not available for this location. Available: ${getLanguageOptions(
+        locationCode,
+      )
+        .map((option) => option.code)
+        .join(", ")}.`,
+    );
+  }
+  return { locationCode, languageCode };
+}
+
+const DEFAULT_PROJECT_LOCATION = 2840;
 
 // The projects table's only unique index guards the auto-created ("Default",
 // null) singleton. A UNIQUE violation while writing exactly that name/domain
@@ -67,6 +118,7 @@ export async function createProject(
       organizationId,
       input.name,
       input.domain,
+      resolveMarketInput(input),
     );
     return mapProject(row);
   } catch (error) {
@@ -81,11 +133,24 @@ export async function updateProject(
   organizationId: string,
   input: UpdateProjectInput,
 ) {
+  let market: { locationCode: number; languageCode: string } | undefined;
+  if (input.locationCode != null || input.languageCode != null) {
+    // Half of the pair may be omitted; resolve against the stored row so a
+    // language-only change is validated against the project's location.
+    const current = await ProjectRepository.getProjectForOrganization(
+      input.projectId,
+      organizationId,
+    );
+    if (!current) {
+      throw new AppError("NOT_FOUND");
+    }
+    market = resolveMarketInput(input, current);
+  }
   try {
     const row = await ProjectRepository.updateProject(
       input.projectId,
       organizationId,
-      { name: input.name, domain: input.domain },
+      { name: input.name, domain: input.domain, market },
     );
     return mapProject(row);
   } catch (error) {

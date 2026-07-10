@@ -89,7 +89,38 @@ describe("project service", () => {
         "org_1",
         "Acme",
         "acme.com",
+        undefined,
       );
+    });
+
+    it("derives the native language when only the location is given", async () => {
+      mocks.createProject.mockResolvedValue(namedProject);
+      const { createProject } = await import("./projects");
+
+      await createProject("org_1", {
+        name: "Acme",
+        domain: "acme.com",
+        locationCode: 2704,
+      });
+      expect(mocks.createProject).toHaveBeenCalledWith(
+        "org_1",
+        "Acme",
+        "acme.com",
+        { locationCode: 2704, languageCode: "vi" },
+      );
+    });
+
+    it("rejects a language DataForSEO does not serve for the location", async () => {
+      const { createProject } = await import("./projects");
+
+      await expect(
+        createProject("org_1", {
+          name: "Acme",
+          locationCode: 2840,
+          languageCode: "vi",
+        }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+      expect(mocks.createProject).not.toHaveBeenCalled();
     });
 
     it("maps the reserved Default conflict to a friendly CONFLICT", async () => {
@@ -107,6 +138,29 @@ describe("project service", () => {
   });
 
   describe("updateProject", () => {
+    it("validates a language-only change against the stored location", async () => {
+      mocks.getProjectForOrganization.mockResolvedValue({
+        ...namedProject,
+        locationCode: 2704,
+        languageCode: "vi",
+      });
+      mocks.updateProject.mockResolvedValue(namedProject);
+      const { updateProject } = await import("./projects");
+
+      await updateProject("org_1", {
+        projectId: "project_acme",
+        name: "Acme",
+        languageCode: "en",
+      });
+      expect(mocks.updateProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        expect.objectContaining({
+          market: { locationCode: 2704, languageCode: "en" },
+        }),
+      );
+    });
+
     it("returns the updated project", async () => {
       mocks.updateProject.mockResolvedValue(namedProject);
       const { updateProject } = await import("./projects");

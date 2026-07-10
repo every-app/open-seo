@@ -28,21 +28,31 @@ function savePreferredLocationCode(locationCode: number) {
   }
 }
 
-export function usePreferredKeywordLocation() {
-  const [preferredLocationCode, setPreferredLocationCodeState] = useState(
-    DEFAULT_LOCATION_CODE,
+/**
+ * Preference order: the user's explicit choice (persisted per browser) >
+ * the project's default market (may arrive async from the projects query) >
+ * the US fallback.
+ */
+export function usePreferredKeywordLocation(
+  projectDefaultLocationCode?: number,
+) {
+  const [chosenLocationCode, setChosenLocationCode] = useState<number | null>(
+    null,
   );
 
   useEffect(() => {
     const savedLocationCode = loadPreferredLocationCode();
     if (savedLocationCode != null) {
-      setPreferredLocationCodeState(savedLocationCode);
+      setChosenLocationCode(savedLocationCode);
     }
   }, []);
 
+  const preferredLocationCode =
+    chosenLocationCode ?? projectDefaultLocationCode ?? DEFAULT_LOCATION_CODE;
+
   function setPreferredLocationCode(locationCode: number) {
     if (!isSupportedLocationCode(locationCode)) return;
-    setPreferredLocationCodeState(locationCode);
+    setChosenLocationCode(locationCode);
     savePreferredLocationCode(locationCode);
   }
 

@@ -5,7 +5,6 @@ import {
 } from "@/shared/billing";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { getAuth, type ToolExtra } from "@/server/mcp/context";
-import { getDefaultMarket } from "@/server/lib/market-defaults";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
@@ -24,7 +23,7 @@ export const whoamiTool = {
   config: {
     title: "Who am I",
     description:
-      "Returns the authenticated user, organization, server mode, token scopes, current credit balance, and the server's default market (the location/language used when calls omit locationCode/languageCode). Uses no credits — does not call DataForSEO. Use this first to confirm connection context before choosing a project or running paid tools.",
+      "Returns the authenticated user, organization, server mode, token scopes, and current credit balance. Uses no credits — does not call DataForSEO. Use this first to confirm connection context before choosing a project or running paid tools.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
       userId: z.string(),
@@ -33,13 +32,6 @@ export const whoamiTool = {
       scopes: z.array(z.string()),
       mode: z.enum(["hosted", "self-hosted"]),
       creditsRemaining: z.number().nullable(),
-      defaultMarket: z
-        .object({
-          locationCode: z.number(),
-          languageCode: z.string(),
-          label: z.string(),
-        })
-        .optional(),
       ...optionalMetaOutputSchema,
     },
     annotations: {
@@ -51,7 +43,6 @@ export const whoamiTool = {
   handler: async (_args: Record<string, never>, extra: ToolExtra) => {
     const auth = getAuth(extra);
     const isHosted = await isHostedServerAuthMode();
-    const defaultMarket = await getDefaultMarket();
     let creditsRemaining: number | null = null;
     if (isHosted) {
       const [base, topup] = await Promise.all([
@@ -68,7 +59,6 @@ export const whoamiTool = {
       `Organization: ${auth.organizationId}`,
       `Mode: ${isHosted ? "hosted" : "self-hosted"}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
-      `Default market: ${defaultMarket.label} (locationCode ${defaultMarket.locationCode}, language '${defaultMarket.languageCode}') — used when calls omit locationCode/languageCode`,
     ];
     if (isHosted) {
       lines.push(
@@ -88,7 +78,6 @@ export const whoamiTool = {
         scopes: auth.scopes,
         mode: isHosted ? "hosted" : "self-hosted",
         creditsRemaining,
-        defaultMarket,
       },
     });
   },

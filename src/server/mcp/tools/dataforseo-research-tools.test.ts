@@ -64,12 +64,18 @@ function textOf(result: {
   return first?.type === "text" ? (first.text ?? "") : "";
 }
 
+const usProjectRow = {
+  id: "project_1",
+  locationCode: 2840,
+  languageCode: "en",
+};
+
 describe("DataForSEO research MCP tools", () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue(usProjectRow);
   });
 
   it("searches local businesses without running rankings or Q&A", async () => {
