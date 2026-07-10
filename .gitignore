@@ -28,6 +28,8 @@ dist-sourcemaps/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+/badseo/test-results/
+/badseo/playwright-report/
 .tanstack
 .logs/
 **/.pnpm-store/

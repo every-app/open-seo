@@ -1,10 +1,25 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "badseo",
+  // Keep the root/preview Worker distinct from the production custom-domain
+  // Worker so a plain `wrangler deploy` cannot replace production bindings.
+  "name": "badseo-dev",
   "main": "src/index.ts",
-  "compatibility_date": "2025-06-01",
+  // Latest compatibility date supported by this repo's pinned workerd.
+  "compatibility_date": "2026-07-02",
   "workers_dev": true,
   "preview_urls": true,
+  // Wrangler provisions separate local and production namespaces. Consent
+  // events are append-only and expire after the retention period in code.
+  "kv_namespaces": [{ "binding": "CONSENT_LOG" }],
+  "ratelimits": [
+    {
+      "name": "CONSENT_RATE_LIMITER",
+      "namespace_id": "172901",
+      // Local browser tests share one loopback address and exercise many
+      // consent transitions in a minute. Production keeps the strict limit.
+      "simple": { "limit": 100, "period": 60 },
+    },
+  ],
   "observability": {
     "enabled": true,
   },
@@ -14,8 +29,25 @@
   // Deploy with: wrangler deploy --env production
   "env": {
     "production": {
-      "name": "badseo",
-      "workers_dev": true,
+      // Preserve the Worker identity created by the original implicit
+      // `<top-level-name>-production` environment naming convention.
+      "name": "badseo-production",
+      "workers_dev": false,
+      "preview_urls": false,
+      // Flip the verification gate only after completing and checking every
+      // GA Admin item documented in README.md.
+      "vars": {
+        "GA4_MEASUREMENT_ID": "G-7MXV9FH7SS",
+        "GA4_ADMIN_VERIFIED": "false",
+      },
+      "kv_namespaces": [{ "binding": "CONSENT_LOG" }],
+      "ratelimits": [
+        {
+          "name": "CONSENT_RATE_LIMITER",
+          "namespace_id": "172902",
+          "simple": { "limit": 5, "period": 60 },
+        },
+      ],
       "observability": { "enabled": true },
       "routes": [
         { "pattern": "badseo.dev", "custom_domain": true },
