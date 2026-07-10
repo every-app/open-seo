@@ -2,7 +2,7 @@
   "name": "open-seo",
   "private": true,
   "sideEffects": false,
-  "version": "0.0.24",
+  "version": "0.0.25",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "scripts": {
@@ -32,6 +32,7 @@
     "deploy:postgres": "npm run db:migrate:pg && npm run build && wrangler deploy",
     "knip": "knip",
     "release:notes": "node scripts/release-notes.mjs",
+    "release:publish": "node scripts/publish-release.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ci": "vitest run --reporter=dot",
