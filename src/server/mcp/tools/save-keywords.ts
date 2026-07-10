@@ -4,9 +4,8 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { getDefaultMarket } from "@/server/lib/market-defaults";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -66,8 +65,9 @@ export const saveKeywordsTool = {
       throw new Error("Replacement tags are required when tagMode is replace.");
     }
 
-    const locationCode = args.locationCode ?? DEFAULT_LOCATION_CODE;
-    const languageCode = args.languageCode ?? DEFAULT_LANGUAGE_CODE;
+    const defaultMarket = await getDefaultMarket();
+    const locationCode = args.locationCode ?? defaultMarket.locationCode;
+    const languageCode = args.languageCode ?? defaultMarket.languageCode;
 
     await KeywordResearchService.saveKeywords({
       projectId: args.projectId,

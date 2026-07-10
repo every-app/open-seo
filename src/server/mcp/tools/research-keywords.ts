@@ -8,9 +8,8 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import { getDefaultMarket } from "@/server/lib/market-defaults";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
@@ -105,16 +104,19 @@ export const researchKeywordsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
+    const defaultMarket = await getDefaultMarket();
     const results = await Promise.all(
       args.seeds.map(async (item) => {
         try {
-          assertLanguageForLocation(item.locationCode, item.languageCode);
+          const locationCode = item.locationCode ?? defaultMarket.locationCode;
+          const languageCode = item.languageCode ?? defaultMarket.languageCode;
+          assertLanguageForLocation(locationCode, languageCode);
           const data = await KeywordResearchService.research(
             {
               projectId: args.projectId,
               keywords: [item.seed],
-              locationCode: item.locationCode ?? DEFAULT_LOCATION_CODE,
-              languageCode: item.languageCode ?? DEFAULT_LANGUAGE_CODE,
+              locationCode,
+              languageCode,
               resultLimit: args.resultLimit ?? 150,
               mode: "auto",
               clickstream: args.includeClickstreamData ?? false,
