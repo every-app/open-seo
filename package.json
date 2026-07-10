@@ -44,7 +44,7 @@
     "billing:brand-lookup": "tsx scripts/brand-lookup-cost-profile.ts",
     "cleanup:default-projects:d1": "tsx scripts/d1-default-project-cleanup.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
-    "ci:check": "prettier --check . && knip && tsc --noEmit && oxlint . --type-aware"
+    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware"
   },
   "cloudflare": {
     "bindings": {

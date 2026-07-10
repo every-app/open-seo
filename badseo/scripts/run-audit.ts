@@ -332,7 +332,7 @@ async function main() {
     });
   };
 
-  // Homepage + catalog must be clean.
+  // Non-fixture content pages must be clean.
   check("Homepage", "/", [], false);
   check("Catalog", "/catalog", [], false);
 

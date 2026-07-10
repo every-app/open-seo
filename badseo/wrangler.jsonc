@@ -1,26 +1,21 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "badseo",
-  "main": "src/index.ts",
-  "compatibility_date": "2025-06-01",
+  "compatibility_date": "2026-02-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "assets": {
+    "directory": "./dist/client",
+    "html_handling": "none",
+    "not_found_handling": "none",
+  },
   "workers_dev": true,
   "preview_urls": true,
   "observability": {
     "enabled": true,
   },
-  // Custom-domain routes live under the `production` env so that plain
-  // `wrangler dev` serves on localhost (a top-level custom_domain route makes
-  // dev simulate the production host, which breaks local crawling).
-  // Deploy with: wrangler deploy --env production
-  "env": {
-    "production": {
-      "name": "badseo",
-      "workers_dev": true,
-      "observability": { "enabled": true },
-      "routes": [
-        { "pattern": "badseo.dev", "custom_domain": true },
-        { "pattern": "www.badseo.dev", "custom_domain": true },
-      ],
-    },
-  },
+  "routes": [
+    { "pattern": "badseo.dev", "custom_domain": true },
+    { "pattern": "www.badseo.dev", "custom_domain": true },
+  ],
 }

@@ -36,37 +36,39 @@ Browse them all at `/catalog`.
 
 ## How it's built
 
-A single, dependency-free Cloudflare Worker (`src/index.ts`) that serves
-hand-authored HTML with byte-level control over every SEO signal — status codes,
-redirects, response headers (`X-Robots-Tag`, `Link: …; rel=canonical`), response
-timing, and the raw `<head>`. No framework: SSR machinery tends to _fix_ the very
-things we're trying to break (it insists on injecting a `<title>`, etc.).
+badseo.dev is a TanStack Start app deployed to a Cloudflare Worker, following
+the same Vite and Cloudflare setup as the repository's `web/` app.
 
-- `src/index.ts` — router: fixtures → URLs, plus `robots.txt` and `sitemap.xml`.
-- `src/lib.ts` — page rendering. The shared chrome (nav, footer, the OpenSEO
-  badge, the "what this page tests" panel) is deliberately **SEO-neutral**: it
-  emits no `<h1>`–`<h6>` and no `<img>`, so each fixture fully controls its own
-  headings and images and the audit measures exactly the defect we injected.
+TanStack React routes render the healthy homepage and catalog.
+A TanStack catch-all server route keeps the deliberate fixtures as raw
+responses with byte-level control over status codes, redirects, headers
+(`X-Robots-Tag`, `Link: …; rel=canonical`), timing, and the malformed `<head>`
+states the audit needs to observe.
+
+- `src/routes/` — TanStack pages plus raw server routes for fixtures,
+  `robots.txt`, and `sitemap.xml`.
+- `src/server/badseo.ts` — fixture dispatch and crawler-discovery responses.
+- `src/lib.ts` — raw fixture HTML rendering. Its shared chrome is deliberately
+  **SEO-neutral**: it emits no `<h1>`–`<h6>` and no `<img>`.
 - `src/fixtures/*.ts` — the fixtures, one file per category.
-- `src/pages.ts` — the homepage and catalog (both must audit clean).
 
 ## Run it locally
 
 ```bash
-# from the badseo/ directory (uses the repo's wrangler)
-npx wrangler dev            # serves on http://localhost:8787
+# from the badseo/ directory
+npm run dev                 # serves on http://localhost:8787
 ```
 
 ## Run the end-to-end audit
 
 The harness drives the **real** OpenSEO crawl + issue-detection functions
 (imported straight from `../src`) against a running badseo.dev, then asserts every
-fixture triggers exactly the issues it declares — and that the homepage, catalog,
-and support pages come back clean.
+fixture triggers exactly the issues it declares — and that the homepage,
+catalog, and support pages come back clean.
 
 ```bash
-# with `wrangler dev` running in another terminal:
-npx tsx scripts/run-audit.ts http://localhost:8787
+# with `npm run dev` running in another terminal:
+npm run audit -- http://localhost:8787
 ```
 
 It prints a per-page pass/fail matrix and an issue-type coverage line, and exits
@@ -113,20 +115,13 @@ Guidelines:
 
 ## Deploy
 
-There's no bundling build — wrangler/esbuild bundles `src/index.ts` on deploy.
-The `build` script is a typecheck (`tsc --noEmit`) that runs before the deploy:
+Vite builds the TanStack Start client and Worker bundles, then TypeScript checks
+the project before Wrangler deploys it:
 
 ```bash
-npm run build                          # typecheck the Worker source
-npm run deploy                         # build, then wrangler deploy → badseo.dev
+npm run build                          # Vite build + typecheck
+npm run deploy                         # build + wrangler deploy → badseo.dev
 ```
 
-`npm run deploy` runs `npm run build && wrangler deploy --env production`. To
-deploy without the typecheck gate, run `npx wrangler deploy --env production`
-directly.
-
-First-time setup: the `production` env in `wrangler.jsonc` binds the custom
-domains `badseo.dev` and `www.badseo.dev`, so the zone must be on the Cloudflare
-account before the first deploy. (The routes live under `production` so that
-plain `wrangler dev` still serves on localhost.) To preview on a `*.workers.dev`
-URL without the custom domain, deploy the top-level env: `npx wrangler deploy`.
+The custom-domain routes for `badseo.dev` and `www.badseo.dev` live in
+`wrangler.jsonc`, alongside the TanStack server entry and built asset directory.
