@@ -1,6 +1,6 @@
 import { useMemo, type MutableRefObject } from "react";
 import { ArrowUp, ArrowDown } from "lucide-react";
-import type { ColumnDef, SortingFn } from "@tanstack/react-table";
+import type { ColumnDef } from "@tanstack/react-table";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
 import { formatLocationLabel } from "@/shared/keyword-locations";
@@ -61,22 +61,13 @@ export function SortableHeader({
   );
 }
 
-const nullsLastNumeric: SortingFn<RankTrackingRow> = (rowA, rowB, columnId) => {
-  const a = rowA.getValue<number | null>(columnId);
-  const b = rowB.getValue<number | null>(columnId);
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
-  return a - b;
-};
-
 // Local configs fetch volume scoped to the tracked city, so the header must
 // say which number the user is looking at — national volume can overstate
 // local demand by orders of magnitude.
 function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
   return {
     id: "volume",
-    accessorKey: "searchVolume",
+    accessorFn: (row) => row.searchVolume ?? undefined,
     header: ({ column }) => (
       <SortableHeader
         column={column}
@@ -90,29 +81,35 @@ function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
       />
     ),
     size: 90,
-    cell: ({ getValue }) => <VolumeCell value={getValue<number | null>()} />,
-    sortingFn: nullsLastNumeric,
+    cell: ({ getValue }) => (
+      <VolumeCell value={getValue<number | undefined>() ?? null} />
+    ),
+    sortUndefined: "last",
   };
 }
 
 const kdColumn: ColumnDef<RankTrackingRow> = {
   id: "kd",
-  accessorKey: "keywordDifficulty",
+  accessorFn: (row) => row.keywordDifficulty ?? undefined,
   header: ({ column }) => <SortableHeader column={column} label="KD" id="kd" />,
   size: 70,
-  cell: ({ getValue }) => <DifficultyCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
+  cell: ({ getValue }) => (
+    <DifficultyCell value={getValue<number | undefined>() ?? null} />
+  ),
+  sortUndefined: "last",
 };
 
 const cpcColumn: ColumnDef<RankTrackingRow> = {
   id: "cpc",
-  accessorKey: "cpc",
+  accessorFn: (row) => row.cpc ?? undefined,
   header: ({ column }) => (
     <SortableHeader column={column} label="CPC" id="cpc" />
   ),
   size: 80,
-  cell: ({ getValue }) => <CpcCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
+  cell: ({ getValue }) => (
+    <CpcCell value={getValue<number | undefined>() ?? null} />
+  ),
+  sortUndefined: "last",
 };
 
 function makeKeywordColumn(
@@ -144,14 +141,14 @@ function makeDeviceColumn(
   const id = device === "desktop" ? "desktopPosition" : "mobilePosition";
   return {
     id,
-    accessorFn: (row) => row[device].position,
+    accessorFn: (row) => row[device].position ?? undefined,
     header: ({ column }) => (
       <SortableHeader column={column} label="Position" id={id} />
     ),
     size: 120,
     maxSize: 140,
     cell: ({ row }) => <DeviceRankCell result={row.original[device]} />,
-    sortingFn: nullsLastNumeric,
+    sortUndefined: "last",
   };
 }
 
