@@ -270,16 +270,17 @@ export function RankTrackingDomainDetail({
               showDesktop,
               showMobile,
               config.domain,
-              config.locationName,
+              {
+                locationName: config.locationName,
+                lastCheckedAt: run?.lastCheckedAt,
+              },
             )
           }
           onExportToSheets={() =>
-            exportRankTrackingToSheets(
-              filtered,
-              showDesktop,
-              showMobile,
-              config.locationName,
-            )
+            exportRankTrackingToSheets(filtered, showDesktop, showMobile, {
+              locationName: config.locationName,
+              lastCheckedAt: run?.lastCheckedAt,
+            })
           }
           onCopyKeywords={() => {
             void navigator.clipboard.writeText(
@@ -334,6 +335,7 @@ export function RankTrackingDomainDetail({
               locationCode={config.locationCode}
               locationName={config.locationName}
               serpDepth={config.serpDepth}
+              lastCheckedAt={run?.lastCheckedAt}
             />
           )}
         </div>

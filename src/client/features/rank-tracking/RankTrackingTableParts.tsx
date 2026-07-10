@@ -170,12 +170,42 @@ export function csvChange(
   return previous - current;
 }
 
+type RankTrackingExportMeta = {
+  locationName?: string | null;
+  lastCheckedAt?: string | null;
+};
+
+/**
+ * Formats a run timestamp as a machine-sortable `YYYY-MM-DD` date for exports.
+ *
+ * Timestamps arrive as UTC in two shapes depending on the DB backend: SQLite/D1
+ * `"YYYY-MM-DD HH:MM:SS"` (no zone) and Postgres ISO `"YYYY-MM-DDTHH:MM:SS.sssZ"`.
+ * Both start with the UTC calendar date, so we slice it straight from the string
+ * and report the stored date as-is. Parsing the zone-less D1 string through
+ * `new Date()` would treat it as LOCAL time, and `toISOString()` could then shift
+ * it a day off (e.g. an early-morning-UTC check exporting as the previous day).
+ *
+ * Returns "" for missing or unparseable values so the column stays present but
+ * empty rather than emitting "Invalid Date".
+ */
+export function formatCheckedAtDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const isoDate = /^(\d{4}-\d{2}-\d{2})/.exec(value);
+  if (isoDate) return isoDate[1];
+  // Fallback for any other parseable shape; guard against "Invalid Date".
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+}
+
 export function buildRankTrackingExport(
   sorted: RankTrackingRow[],
   showDesktop: boolean,
   showMobile: boolean,
-  locationName?: string | null,
+  options: RankTrackingExportMeta = {},
 ): { headers: string[]; rows: (string | number)[][] } {
+  const { locationName, lastCheckedAt } = options;
+  const checkedAt = formatCheckedAtDate(lastCheckedAt);
   const headers = [
     "Keyword",
     // Exports lack the table's tooltip, so name the city inline.
@@ -200,6 +230,9 @@ export function buildRankTrackingExport(
           "Mobile SERP Features",
         ]
       : []),
+    // Appended last so existing column indices (e.g. the CPC formatting in
+    // exportRankTrackingCsv keyed on index 3) stay stable.
+    "Last checked at",
   ];
   // Emit empty cells (not "Not ranking" strings) so Sheets infers a numeric
   // column type and the user can sort by position.
@@ -224,6 +257,7 @@ export function buildRankTrackingExport(
           row.mobile.serpFeatures.join(", "),
         ]
       : []),
+    checkedAt,
   ]);
   return { headers, rows };
 }
@@ -232,13 +266,13 @@ export function exportRankTrackingToSheets(
   sorted: RankTrackingRow[],
   showDesktop: boolean,
   showMobile: boolean,
-  locationName?: string | null,
+  meta: RankTrackingExportMeta = {},
 ) {
   const { headers, rows } = buildRankTrackingExport(
     sorted,
     showDesktop,
     showMobile,
-    locationName,
+    meta,
   );
   void exportTableToSheets({ headers, rows, feature: "rank_tracking" });
 }
@@ -248,7 +282,7 @@ export function exportRankTrackingCsv(
   showDesktop: boolean,
   showMobile: boolean,
   domain: string,
-  locationName?: string | null,
+  meta: RankTrackingExportMeta = {},
 ) {
   if (sorted.length === 0) {
     toast.error("No data to export");
@@ -258,7 +292,7 @@ export function exportRankTrackingCsv(
     sorted,
     showDesktop,
     showMobile,
-    locationName,
+    meta,
   );
   // CSV file download keeps cents-formatted CPC for human readability;
   // clipboard/Sheets export uses raw numbers (see buildRankTrackingExport).

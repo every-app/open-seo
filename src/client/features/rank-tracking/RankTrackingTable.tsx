@@ -40,6 +40,7 @@ export function RankTrackingTable({
   locationCode,
   locationName,
   serpDepth,
+  lastCheckedAt,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -53,6 +54,7 @@ export function RankTrackingTable({
   locationCode: number;
   locationName?: string | null;
   serpDepth: number;
+  lastCheckedAt?: string | null;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -100,6 +102,7 @@ export function RankTrackingTable({
       selectedRankRows,
       showDesktop,
       showMobile,
+      { lastCheckedAt },
     );
     void exportTableToSheets({
       headers,
@@ -113,6 +116,7 @@ export function RankTrackingTable({
       selectedRankRows,
       showDesktop,
       showMobile,
+      { lastCheckedAt },
     );
     const csvRows = exportRows.map((row) =>
       row.map((cell, idx) =>
