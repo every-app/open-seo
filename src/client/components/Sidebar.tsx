@@ -32,7 +32,7 @@ interface SidebarProps {
 const navItemBaseClass =
   "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
 
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/50 hover:text-base-content`;
+const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/50 hover:text-base-content my-0.5`;
 
 const navItemActiveProps = {
   className: "bg-base-300/50 font-medium text-base-content",
