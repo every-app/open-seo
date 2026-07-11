@@ -46,7 +46,7 @@ interface CrawlLink {
 
 async function warmup(): Promise<void> {
   // Prime the dev server so healthy pages don't read as slow on a cold start.
-  const paths = new Set<string>(["/", "/catalog"]);
+  const paths = new Set<string>(["/", "/catalog", "/privacy"]);
   for (const f of allFixtures) for (const p of fixturePaths(f)) paths.add(p);
   await Promise.all(
     [...paths].map((p) =>
@@ -335,6 +335,7 @@ async function main() {
   // Non-fixture content pages must be clean.
   check("Homepage", "/", [], false);
   check("Catalog", "/catalog", [], false);
+  check("Privacy policy", "/privacy", [], false);
 
   const byCategory = new Map<string, Fixture[]>();
   for (const f of allFixtures) {

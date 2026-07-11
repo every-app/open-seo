@@ -22,6 +22,14 @@ export function SiteLayout({ children }: { children: ReactNode }) {
             <a href="/catalog">Catalog</a>
             <a href="https://github.com/every-app/open-seo">GitHub</a>
             <a href="https://openseo.so">OpenSEO</a>
+            <a href="/privacy">Privacy</a>
+            <button
+              className="footer-button"
+              type="button"
+              data-cookie-settings
+            >
+              Cookie settings
+            </button>
           </span>
         </div>
       </footer>

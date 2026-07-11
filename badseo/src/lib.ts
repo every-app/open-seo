@@ -7,6 +7,7 @@
 // — not accidental noise from the layout.
 import { AUDIT_ISSUE_TYPES } from "../../src/shared/audit-issues";
 import type { Fixture, IssueId } from "./fixtures/types";
+import { PLAUSIBLE_INIT_SCRIPT, PLAUSIBLE_SCRIPT_SRC } from "./plausible";
 
 export function escapeHtml(input: string): string {
   return input
@@ -44,7 +45,13 @@ interface DocumentOptions {
 
 /** Build a complete HTML document string with exact <head> control. */
 export function renderDocument(opts: DocumentOptions): string {
-  const head: string[] = ['<meta charset="utf-8">'];
+  const head: string[] = [
+    "<!-- Privacy-friendly analytics by Plausible -->",
+    `<script async src="${PLAUSIBLE_SCRIPT_SRC}"></script>`,
+    `<script>${PLAUSIBLE_INIT_SCRIPT}</script>`,
+    '<script defer src="/analytics.js"></script>',
+    '<meta charset="utf-8">',
+  ];
   head.push(
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
   );
@@ -102,6 +109,8 @@ function footerHtml(): string {
     <a href="/catalog">Catalog</a>
     <a href="https://github.com/every-app/open-seo">GitHub</a>
     <a href="https://openseo.so">OpenSEO</a>
+    <a href="/privacy">Privacy</a>
+    <button class="footer-button" type="button" data-cookie-settings>Cookie settings</button>
   </span>
 </div></footer>`;
 }

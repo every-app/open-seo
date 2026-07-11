@@ -79,7 +79,7 @@ Sitemap: ${origin}/sitemap.xml
 export function sitemapResponse(request: Request): Response {
   const url = new URL(request.url);
   const origin = requestOrigin(request, url);
-  const paths = new Set<string>(["/"]);
+  const paths = new Set<string>(["/", "/privacy"]);
   for (const fixture of sitemapFixtures) {
     for (const path of fixturePaths(fixture)) paths.add(path);
   }

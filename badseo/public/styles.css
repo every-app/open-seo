@@ -393,6 +393,115 @@ a:hover {
 .foot-links {
   display: flex;
   gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.footer-button {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink-muted);
+  font: inherit;
+  cursor: pointer;
+}
+.footer-button:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ── analytics consent ── */
+.consent-banner {
+  position: fixed;
+  z-index: 100;
+  bottom: 24px;
+  left: 24px;
+  width: min(350px, calc(100vw - 48px));
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  box-shadow:
+    0 20px 50px rgb(17 17 17 / 14%),
+    0 2px 8px rgb(17 17 17 / 7%);
+  animation: consent-in 180ms ease-out;
+}
+.consent-banner[hidden] {
+  display: none;
+}
+.consent-copy strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.consent-copy p {
+  margin: 0 0 7px;
+  color: var(--ink-muted);
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+.consent-copy a {
+  color: var(--ink-muted);
+  font-size: 12.5px;
+  text-decoration: underline;
+  text-decoration-color: var(--hairline);
+  text-underline-offset: 3px;
+}
+.consent-copy a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+.consent-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+.consent-actions button {
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  min-height: 36px;
+  padding: 7px 12px;
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.consent-actions button:hover {
+  background: var(--surface-2);
+}
+.consent-actions .consent-accept {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+.consent-actions .consent-accept:hover {
+  background: #000000;
+}
+@keyframes consent-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .consent-banner {
+    animation: none;
+  }
+}
+@media (max-width: 640px) {
+  .consent-banner {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    width: auto;
+    padding: 15px;
+  }
 }
 
 .openseo-badge {
