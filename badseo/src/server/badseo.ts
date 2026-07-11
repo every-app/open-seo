@@ -50,7 +50,7 @@ export async function handleFixtureRequest(
       metaDescription: "That URL is not one of the pages on this site.",
       bodyHtml: `<h1>404, not found</h1>
 <p class="lede">This URL is not one of the broken pages on the site. It is just missing.</p>
-<p>Go back to the <a href="/catalog">catalog</a> to see the pages that break on purpose.</p>`,
+<p>Go back to the <a href="/#issues">examples</a> to see the pages that break on purpose.</p>`,
     }),
     {
       status: 404,

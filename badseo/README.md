@@ -32,14 +32,14 @@ Every issue type in the OpenSEO audit engine is exercised by at least one page
 | **Site structure**           | orphan page, deep click-path                                                                                  |
 | **Kitchen sink**             | one page that breaks six ways at once                                                                         |
 
-Browse them all at `/catalog`.
+Browse them all on the homepage at `/#issues`.
 
 ## How it's built
 
 badseo.dev is a TanStack Start app deployed to a Cloudflare Worker, following
 the same Vite and Cloudflare setup as the repository's `web/` app.
 
-TanStack React routes render the healthy homepage, catalog, and privacy policy.
+TanStack React routes render the healthy homepage and privacy policy.
 A TanStack catch-all server route keeps the deliberate fixtures as raw
 responses with byte-level control over status codes, redirects, headers
 (`X-Robots-Tag`, `Link: …; rel=canonical`), timing, and the malformed `<head>`
@@ -76,7 +76,7 @@ npm run dev                 # serves on http://localhost:8787
 The harness drives the **real** OpenSEO crawl + issue-detection functions
 (imported straight from `../src`) against a running badseo.dev, then asserts every
 fixture triggers exactly the issues it declares — and that the homepage,
-catalog, privacy policy, and support pages come back clean.
+privacy policy, and support pages come back clean.
 
 ```bash
 # with `npm run dev` running in another terminal:

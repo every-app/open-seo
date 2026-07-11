@@ -1,7 +1,7 @@
 // Rendering primitives for badseo.dev.
 //
-// Everything the shared chrome emits (nav, footer, the "what this page tests"
-// panel, the OpenSEO badge) is deliberately SEO-NEUTRAL: no <h1>–<h6> and no
+// Everything the shared chrome emits (nav, footer, and the "what this page
+// tests" panel) is deliberately SEO-NEUTRAL: no <h1>–<h6> and no
 // <img>. That way each fixture's headings and images are fully under the
 // fixture's own control, and the audit measures exactly the defect we injected
 // — not accidental noise from the layout.
@@ -68,7 +68,7 @@ export function renderDocument(opts: DocumentOptions): string {
   head.push(
     '<link rel="preconnect" href="https://fonts.googleapis.com">',
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">',
+    '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&display=swap">',
   );
   head.push('<link rel="stylesheet" href="/styles.css">');
   if (opts.headExtra) head.push(opts.headExtra);
@@ -86,27 +86,16 @@ ${opts.bodyHtml}
 
 function navHtml(): string {
   return `<nav class="nav">
-  <a class="brand" href="/">badseo.dev</a>
-  <a class="nav-link" href="/catalog">Catalog</a>
+  <a class="brand" href="/">BADSEO</a>
+  <span class="nav-links"><a href="https://openseo.so">OpenSEO</a><a href="https://github.com/every-app/open-seo">GitHub</a></span>
 </nav>`;
-}
-
-/**
- * The sitewide backlink to openseo.so, pinned bottom-right on every page. The
- * logo is a CSS background-image (not an <img>) so the shared chrome stays
- * image-free and never affects the images-missing-alt check.
- */
-function openseoBadge(): string {
-  return `<a class="openseo-badge" href="https://openseo.so" title="Audit a site with OpenSEO">
-  <span class="openseo-mark" aria-hidden="true"></span><span class="badge-label">Maintained by </span><strong>OpenSEO</strong>
-</a>`;
 }
 
 function footerHtml(): string {
   return `<footer class="foot"><div class="foot-inner">
-  <span>badseo.dev is maintained by OpenSEO. Every page here is broken on purpose.</span>
+  <a class="foot-brand" href="/">BADSEO</a>
   <span class="foot-links">
-    <a href="/catalog">Catalog</a>
+    <a href="/#issues">All issues</a>
     <a href="https://github.com/every-app/open-seo">GitHub</a>
     <a href="https://openseo.so">OpenSEO</a>
     <a href="/privacy">Privacy</a>
@@ -156,8 +145,7 @@ function testPanel(fixture: Fixture): string {
 function withChrome(inner: string): string {
   return `${navHtml()}
 ${inner}
-${footerHtml()}
-${openseoBadge()}`;
+${footerHtml()}`;
 }
 
 interface PageOptions extends DocumentOptions {

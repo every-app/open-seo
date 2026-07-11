@@ -3,23 +3,23 @@ import type { ReactNode } from "react";
 export function SiteLayout({ children }: { children: ReactNode }) {
   return (
     <>
-      <nav className="nav">
+      <nav className="nav" aria-label="BadSEO navigation">
         <a className="brand" href="/">
-          badseo.dev
+          BADSEO
         </a>
-        <a className="nav-link" href="/catalog">
-          Catalog
-        </a>
+        <span className="nav-links">
+          <a href="https://openseo.so">OpenSEO</a>
+          <a href="https://github.com/every-app/open-seo">GitHub</a>
+        </span>
       </nav>
       {children}
       <footer className="foot">
         <div className="foot-inner">
-          <span>
-            badseo.dev is maintained by OpenSEO. Every page here is broken on
-            purpose.
-          </span>
+          <a className="foot-brand" href="/">
+            BADSEO
+          </a>
           <span className="foot-links">
-            <a href="/catalog">Catalog</a>
+            <a href="/#issues">All issues</a>
             <a href="https://github.com/every-app/open-seo">GitHub</a>
             <a href="https://openseo.so">OpenSEO</a>
             <a href="/privacy">Privacy</a>
@@ -33,15 +33,6 @@ export function SiteLayout({ children }: { children: ReactNode }) {
           </span>
         </div>
       </footer>
-      <a
-        className="openseo-badge"
-        href="https://openseo.so"
-        title="Audit a site with OpenSEO"
-      >
-        <span className="openseo-mark" aria-hidden="true" />
-        <span className="badge-label">Maintained by </span>
-        <strong>OpenSEO</strong>
-      </a>
     </>
   );
 }
