@@ -4,6 +4,8 @@ pnpm-lock.yaml
 routeTree.gen.ts
 .opencode/package.json
 
+# vendored skills are hash-pinned in skills-lock.json; don't reformat them
+.agents/skills/
 dist/
 drizzle/
 drizzle-pg/

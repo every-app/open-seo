@@ -5,7 +5,6 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink } from "lucide-react";
 import {
   AppDataTable,
   useAppTable,
@@ -14,151 +13,26 @@ import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import {
   extractPathname,
-  HttpStatusBadge,
   LighthouseScoreBadge,
 } from "@/client/features/audit/shared";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import {
   countActiveFilters,
   EmptyTableMessage,
-  PagesFilterBar,
   PerformanceFilterBar,
   TableFilterToggle,
 } from "@/client/features/audit/results/AuditResultsTableFilters";
 import {
-  EMPTY_PAGES_FILTERS,
   EMPTY_PERFORMANCE_FILTERS,
-  filterPages,
   filterPerformanceRows,
   isLighthouseFailure,
   nullableNumberSort,
   nullableStringSort,
-  type PageRow,
-  type PagesFilters,
   type PerformanceFilters,
   type PerformanceRowData,
 } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 
-const pageColumnHelper = createColumnHelper<PageRow>();
 const performanceColumnHelper = createColumnHelper<PerformanceRowData>();
-
-const pagesColumns: ColumnDef<PageRow>[] = [
-  pageColumnHelper.accessor("url", {
-    header: ({ column }) => <SortableHeader column={column} label="URL" />,
-    cell: ({ getValue }) => {
-      const url = getValue();
-      return (
-        <a
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="link link-primary inline-flex items-center gap-1 text-xs"
-        >
-          <span className="truncate">{extractPathname(url)}</span>
-          <ExternalLink className="size-3 shrink-0" />
-        </a>
-      );
-    },
-    meta: { cellClassName: "max-w-[240px] truncate" },
-  }),
-  pageColumnHelper.accessor("statusCode", {
-    header: ({ column }) => <SortableHeader column={column} label="Status" />,
-    cell: ({ getValue }) => <HttpStatusBadge code={getValue()} />,
-    sortingFn: nullableNumberSort,
-  }),
-  pageColumnHelper.accessor("title", {
-    header: ({ column }) => <SortableHeader column={column} label="Title" />,
-    cell: ({ getValue }) => {
-      const title = getValue();
-      return title ? (
-        <span title={title}>{title}</span>
-      ) : (
-        <span className="text-error text-xs">missing</span>
-      );
-    },
-    sortingFn: nullableStringSort,
-    meta: { cellClassName: "max-w-[220px] truncate" },
-  }),
-  pageColumnHelper.accessor("h1Count", {
-    header: ({ column }) => <SortableHeader column={column} label="H1" />,
-  }),
-  pageColumnHelper.accessor("wordCount", {
-    header: ({ column }) => <SortableHeader column={column} label="Words" />,
-  }),
-  pageColumnHelper.display({
-    id: "images",
-    header: ({ column }) => <SortableHeader column={column} label="Images" />,
-    cell: ({ row }) =>
-      row.original.imagesMissingAlt > 0 ? (
-        <span className="text-warning">
-          {row.original.imagesMissingAlt}/{row.original.imagesTotal}
-        </span>
-      ) : (
-        row.original.imagesTotal
-      ),
-    enableSorting: true,
-    sortingFn: (left, right) =>
-      left.original.imagesMissingAlt - right.original.imagesMissingAlt ||
-      left.original.imagesTotal - right.original.imagesTotal,
-  }),
-  pageColumnHelper.accessor("responseTimeMs", {
-    header: ({ column }) => <SortableHeader column={column} label="Speed" />,
-    cell: ({ getValue }) => {
-      const value = getValue();
-      return value ? (
-        <span className="text-xs">{value}ms</span>
-      ) : (
-        <span className="text-xs text-base-content/40">-</span>
-      );
-    },
-    sortingFn: nullableNumberSort,
-  }),
-];
-
-export function PagesTable({ pages }: { pages: AuditResultsData["pages"] }) {
-  const [filters, setFilters] = useState<PagesFilters>(EMPTY_PAGES_FILTERS);
-  const [showFilters, setShowFilters] = useState(false);
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "statusCode", desc: true },
-  ]);
-  const activeFilterCount = countActiveFilters(filters, EMPTY_PAGES_FILTERS);
-  const filteredPages = useMemo(
-    () => filterPages(pages, filters),
-    [filters, pages],
-  );
-  const table = useAppTable({
-    data: filteredPages,
-    columns: pagesColumns,
-    state: { sorting },
-    onSortingChange: setSorting,
-    withSorting: true,
-  });
-
-  return (
-    <div className="space-y-3">
-      <TableFilterToggle
-        showFilters={showFilters}
-        onToggle={() => setShowFilters((current) => !current)}
-        activeFilterCount={activeFilterCount}
-        resultCount={filteredPages.length}
-        totalCount={pages.length}
-      />
-      {showFilters ? (
-        <PagesFilterBar
-          filters={filters}
-          onChange={setFilters}
-          activeFilterCount={activeFilterCount}
-          onReset={() => setFilters(EMPTY_PAGES_FILTERS)}
-        />
-      ) : null}
-      <AppDataTable
-        table={table}
-        className="table table-sm"
-        empty={<EmptyTableMessage label="No pages match these filters." />}
-      />
-    </div>
-  );
-}
 
 export function PerformanceTable({
   auditId,

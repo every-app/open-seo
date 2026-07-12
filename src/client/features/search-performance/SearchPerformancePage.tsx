@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   keepPreviousData,
   queryOptions,
@@ -190,12 +191,24 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Search Performance</h1>
-          <p className="text-sm text-base-content/70">
-            See your site&apos;s clicks, impressions, CTR, and position from
-            Google Search Console.
-          </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Search Performance</h1>
+            <p className="text-sm text-base-content/70">
+              See your site&apos;s clicks, impressions, CTR, and position from
+              Google Search Console.
+            </p>
+          </div>
+          {report?.connected ? (
+            <Link
+              to="/p/$projectId/settings"
+              params={{ projectId }}
+              hash="search-console"
+              className="link link-hover shrink-0 self-start text-sm font-medium text-base-content/60 transition-colors hover:text-base-content sm:mt-1"
+            >
+              Change property
+            </Link>
+          ) : null}
         </div>
 
         {reportQuery.isPending ? (

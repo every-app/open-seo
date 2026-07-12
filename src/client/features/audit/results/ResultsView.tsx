@@ -1,18 +1,23 @@
-import { useMemo } from "react";
-import { StatCard } from "@/client/features/audit/shared";
+import { useMemo, type ReactNode } from "react";
+import { ShieldAlert } from "lucide-react";
 import {
+  exportIssues,
   exportPages,
   exportPerformance,
 } from "@/client/features/audit/results/export";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import { isLighthouseFailure } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 import {
+  IssuesView,
+  resolveIssueSeverity,
+} from "@/client/features/audit/results/IssuesView";
+import { PagesTable } from "@/client/features/audit/results/PagesTable";
+import {
   ExportDropdown,
-  PagesTable,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
 
-type ResultsTab = "pages" | "performance";
+type ResultsTab = "issues" | "pages" | "performance";
 
 export function ResultsView({
   projectId,
@@ -25,16 +30,39 @@ export function ResultsView({
   tab: string;
   onTabChange: (tab: ResultsTab) => void;
 }) {
-  const { audit, pages, lighthouse } = data;
+  const { audit, pages, lighthouse, issues } = data;
   const hasPerformanceTab = lighthouse.length > 0;
-  const activeTab = hasPerformanceTab ? tab : "pages";
+  const activeTab =
+    tab === "performance" && !hasPerformanceTab ? "issues" : tab;
   const stats = useResultStats(pages, lighthouse);
+  const blockedCount = useMemo(
+    () => pages.filter((page) => page.fetchClass === "blocked").length,
+    [pages],
+  );
 
   return (
     <>
-      <StatsGrid
+      {blockedCount > 0 && (
+        <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" />
+          <p>
+            <span className="font-medium">
+              We were blocked on {blockedCount}{" "}
+              {blockedCount === 1 ? "page" : "pages"}.
+            </span>{" "}
+            <span className="text-base-content/70">
+              The site's bot protection challenged our crawler, so those pages
+              couldn't be audited. If this is your site, allowlist the{" "}
+              <code className="font-mono">OpenSEO-Audit</code> user agent in
+              your WAF or bot-protection settings and re-run the audit.
+            </span>
+          </p>
+        </div>
+      )}
+
+      <StatsStrip
         pagesCrawled={audit.pagesCrawled}
-        totalPages={pages.length}
+        issues={issues}
         totalLighthouse={lighthouse.length}
         averageResponseMs={stats.averageResponseMs}
         lighthouseSummary={stats.lighthouseSummary}
@@ -43,6 +71,7 @@ export function ResultsView({
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body gap-3">
           <ResultsHeader
+            issueCount={issues.length}
             pageCount={pages.length}
             lighthouseCount={lighthouse.length}
             hasPerformanceTab={hasPerformanceTab}
@@ -53,11 +82,22 @@ export function ResultsView({
                 exportPerformance(lighthouse, pages, format);
                 return;
               }
+              if (activeTab === "issues") {
+                exportIssues(issues, format);
+                return;
+              }
               exportPages(pages, format);
             }}
           />
 
-          {activeTab === "pages" && <PagesTable pages={pages} />}
+          {activeTab === "issues" && <IssuesView issues={issues} />}
+          {activeTab === "pages" && (
+            <PagesTable
+              pages={pages}
+              startUrl={audit.startUrl}
+              issues={issues}
+            />
+          )}
           {activeTab === "performance" && lighthouse.length > 0 && (
             <PerformanceTable
               auditId={audit.id}
@@ -117,6 +157,7 @@ function useResultStats(
 }
 
 function ResultsHeader({
+  issueCount,
   pageCount,
   lighthouseCount,
   hasPerformanceTab,
@@ -124,6 +165,7 @@ function ResultsHeader({
   onTabChange,
   onExport,
 }: {
+  issueCount: number;
   pageCount: number;
   lighthouseCount: number;
   hasPerformanceTab: boolean;
@@ -132,49 +174,60 @@ function ResultsHeader({
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   const tabs: Array<{ tab: ResultsTab; label: string }> = [
+    { tab: "issues", label: `Issues (${issueCount})` },
     { tab: "pages", label: `Pages (${pageCount})` },
-    { tab: "performance", label: `Performance (${lighthouseCount})` },
+    ...(hasPerformanceTab
+      ? [
+          {
+            tab: "performance" as const,
+            label: `Performance (${lighthouseCount})`,
+          },
+        ]
+      : []),
   ];
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-      {hasPerformanceTab ? (
-        <div role="tablist" className="tabs tabs-border w-fit">
-          {tabs.map(({ label, tab }) => {
-            const isActive = activeTab === tab;
+      <div role="tablist" className="tabs tabs-border w-fit">
+        {tabs.map(({ label, tab }) => {
+          const isActive = activeTab === tab;
 
-            return (
-              <button
-                key={tab}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                className={`tab ${isActive ? "tab-active" : ""}`}
-                onClick={() => onTabChange(tab)}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
-      ) : (
-        <h3 className="text-base font-medium">Pages ({pageCount})</h3>
-      )}
+          return (
+            <button
+              key={tab}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`tab ${isActive ? "tab-active" : ""}`}
+              onClick={() => onTabChange(tab)}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
 
       <ExportDropdown onExport={onExport} />
     </div>
   );
 }
 
-function StatsGrid({
+interface StatItem {
+  label: string;
+  value: string;
+  valueClass?: string;
+  sub?: ReactNode;
+}
+
+function StatsStrip({
   pagesCrawled,
-  totalPages,
+  issues,
   totalLighthouse,
   averageResponseMs,
   lighthouseSummary,
 }: {
   pagesCrawled: number;
-  totalPages: number;
+  issues: AuditResultsData["issues"];
   totalLighthouse: number;
   averageResponseMs: number;
   lighthouseSummary: {
@@ -184,51 +237,111 @@ function StatsGrid({
     avgAccessibility: number | null;
   };
 }) {
+  const severityCounts = useMemo(() => {
+    const counts = { critical: 0, warning: 0, info: 0 };
+    for (const issue of issues) {
+      counts[resolveIssueSeverity(issue)] += 1;
+    }
+    return counts;
+  }, [issues]);
+
+  const items: StatItem[] = [
+    { label: "Pages crawled", value: String(pagesCrawled) },
+    {
+      label: "Issues found",
+      value: String(issues.length),
+      valueClass: issues.length === 0 ? "text-success" : "",
+      sub: issues.length > 0 && (
+        <span className="flex items-center gap-2.5">
+          <SeverityCount count={severityCounts.critical} dotClass="bg-error" />
+          <SeverityCount count={severityCounts.warning} dotClass="bg-warning" />
+          <SeverityCount
+            count={severityCounts.info}
+            dotClass="bg-base-content/30"
+          />
+        </span>
+      ),
+    },
+    { label: "Avg response", value: `${averageResponseMs}ms` },
+  ];
+
+  if (totalLighthouse > 0) {
+    items.push(
+      { label: "Lighthouse tests", value: String(totalLighthouse) },
+      {
+        label: "Avg Lighthouse perf",
+        value:
+          lighthouseSummary.avgPerformance == null
+            ? "-"
+            : String(lighthouseSummary.avgPerformance),
+        valueClass: scoreClass(lighthouseSummary.avgPerformance),
+      },
+      {
+        label: "Avg Lighthouse SEO",
+        value:
+          lighthouseSummary.avgSeo == null
+            ? "-"
+            : String(lighthouseSummary.avgSeo),
+        valueClass: scoreClass(lighthouseSummary.avgSeo),
+      },
+      {
+        label: "Avg Lighthouse a11y",
+        value:
+          lighthouseSummary.avgAccessibility == null
+            ? "-"
+            : String(lighthouseSummary.avgAccessibility),
+        valueClass: scoreClass(lighthouseSummary.avgAccessibility),
+      },
+      {
+        label: "Lighthouse failures",
+        value: String(lighthouseSummary.failed),
+        valueClass:
+          lighthouseSummary.failed > 0 ? "text-error" : "text-success",
+      },
+    );
+  }
+
+  const columnsClass =
+    items.length === 3
+      ? "grid-cols-1 sm:grid-cols-3"
+      : "grid-cols-2 md:grid-cols-4";
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <StatCard label="Pages Crawled" value={String(pagesCrawled)} />
-      <StatCard label="Total URLs" value={String(totalPages)} />
-      <StatCard label="Lighthouse Tests" value={String(totalLighthouse)} />
-      <StatCard label="Avg Response" value={`${averageResponseMs}ms`} />
-      {totalLighthouse > 0 && (
-        <>
-          <StatCard
-            label="Avg Lighthouse Perf"
-            value={
-              lighthouseSummary.avgPerformance == null
-                ? "-"
-                : String(lighthouseSummary.avgPerformance)
-            }
-            className={scoreClass(lighthouseSummary.avgPerformance)}
-          />
-          <StatCard
-            label="Avg Lighthouse SEO"
-            value={
-              lighthouseSummary.avgSeo == null
-                ? "-"
-                : String(lighthouseSummary.avgSeo)
-            }
-            className={scoreClass(lighthouseSummary.avgSeo)}
-          />
-          <StatCard
-            label="Avg Lighthouse A11y"
-            value={
-              lighthouseSummary.avgAccessibility == null
-                ? "-"
-                : String(lighthouseSummary.avgAccessibility)
-            }
-            className={scoreClass(lighthouseSummary.avgAccessibility)}
-          />
-          <StatCard
-            label="Lighthouse Failures"
-            value={String(lighthouseSummary.failed)}
-            className={
-              lighthouseSummary.failed > 0 ? "text-error" : "text-success"
-            }
-          />
-        </>
-      )}
+    <div
+      className={`grid ${columnsClass} gap-px rounded-lg border border-base-300 bg-base-300/70 overflow-hidden`}
+    >
+      {items.map((item) => (
+        <div key={item.label} className="bg-base-100 px-4 py-3">
+          <p className="text-[11px] uppercase tracking-wider text-base-content/50">
+            {item.label}
+          </p>
+          <p
+            className={`text-xl font-semibold mt-0.5 tabular-nums ${item.valueClass ?? ""}`}
+          >
+            {item.value}
+          </p>
+          {item.sub && (
+            <div className="text-xs text-base-content/60 mt-1">{item.sub}</div>
+          )}
+        </div>
+      ))}
     </div>
+  );
+}
+
+function SeverityCount({
+  count,
+  dotClass,
+}: {
+  count: number;
+  dotClass: string;
+}) {
+  if (count === 0) return null;
+  return (
+    <span className="flex items-center gap-1 tabular-nums">
+      <span className={`size-1.5 rounded-full ${dotClass}`} />
+      {count}
+    </span>
   );
 }
 

@@ -17,10 +17,7 @@ export const startAuditSchema = z.object({
     .max(PAID_MAX_AUDIT_PAGES)
     .optional()
     .default(DEFAULT_AUDIT_PAGES),
-  lighthouseStrategy: z
-    .enum(["auto", "manual", "none"])
-    .optional()
-    .default("auto"),
+  lighthouseStrategy: z.enum(["auto", "none"]).optional().default("auto"),
 });
 
 export const getAuditStatusSchema = z.object({
@@ -49,9 +46,9 @@ export const getCrawlProgressSchema = z.object({
 
 // ─── URL search params schema for /p/$projectId/audit ────────────────────────
 
-const auditTabs = ["pages", "performance"] as const;
+const auditTabs = ["issues", "pages", "performance"] as const;
 
 export const auditSearchSchema = z.object({
   auditId: z.string().optional().catch(undefined),
-  tab: z.enum(auditTabs).catch("pages").default("pages"),
+  tab: z.enum(auditTabs).catch("issues").default("issues"),
 });

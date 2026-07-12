@@ -211,6 +211,27 @@
       "when": 1783438453855,
       "tag": "0029_location_name",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "6",
+      "when": 1783306047190,
+      "tag": "0030_legal_reaper",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "6",
+      "when": 1783630714621,
+      "tag": "0031_furry_monster_badoon",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1783699001850,
+      "tag": "0032_public_shinko_yamashiro",
+      "breakpoints": true
     }
   ]
 }

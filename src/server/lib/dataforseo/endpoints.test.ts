@@ -6,13 +6,13 @@ vi.mock("@/server/lib/runtime-env", () => ({
 
 import { fetchQuestionsAnswers } from "@/server/lib/dataforseo/business";
 import {
-  buildLlmTarget,
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
+import { buildLlmTarget } from "@/server/lib/dataforseo/shared";
 
 function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
   const body = init?.body;

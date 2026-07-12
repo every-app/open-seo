@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Check, Database, KeyRound, User } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
+import { captureClientEvent } from "@/client/lib/posthog";
 
 export const Route = createFileRoute("/_authenticated/oauth-consent")({
   component: OAuthConsentPage,
@@ -27,9 +28,16 @@ function OAuthConsentPage() {
 
   const userEmail = session?.user?.email ?? null;
 
+  useEffect(() => {
+    captureClientEvent("mcp:consent_viewed");
+  }, []);
+
   async function respond(accept: boolean) {
     setError(null);
     setIsSubmitting(true);
+    if (!accept) {
+      captureClientEvent("mcp:consent_denied");
+    }
 
     const response = await fetch("/api/oauth/consent", {
       method: "POST",

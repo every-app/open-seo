@@ -19,8 +19,8 @@ import {
   fetchBacklinksHistory,
   fetchBacklinksRows,
   fetchBacklinksSummary,
-  normalizeBacklinksTarget,
 } from "@/server/lib/dataforseo/backlinks";
+import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
 // A successful DataForSEO task always carries billing metadata (path + cost).
 const billed = {

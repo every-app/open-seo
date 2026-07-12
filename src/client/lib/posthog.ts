@@ -1,4 +1,9 @@
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
+  sanitizePostHogProperties,
+  sanitizePostHogUrl,
+} from "@/client/lib/posthog-sanitize";
 
 // Type-only import: extracts the type at compile time without bundling posthog-js
 // oxlint-disable-next-line typescript/consistent-type-imports -- import() type avoids eagerly bundling posthog-js
@@ -75,25 +80,23 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
             return event;
           },
           capture_pageview: "history_change",
+          mask_personal_data_properties: true,
+          custom_personal_data_properties: [
+            ...POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
+          ],
           respect_dnt: true,
           session_recording: {
             maskAllInputs: true,
             maskTextSelector: "[data-ph-mask], .ph-mask",
+            maskCapturedNetworkRequestFn(request) {
+              return {
+                ...request,
+                name: sanitizePostHogUrl(request.name),
+              };
+            },
           },
-          sanitize_properties(properties, event) {
-            if (event === "$pageview" || event === "$pageleave") {
-              const url: unknown = properties["$current_url"];
-              if (typeof url === "string") {
-                try {
-                  const parsed = new URL(url);
-                  parsed.searchParams.delete("email");
-                  properties["$current_url"] = parsed.toString();
-                } catch {
-                  // leave as-is if URL parsing fails
-                }
-              }
-            }
-            return properties;
+          sanitize_properties(properties) {
+            return sanitizePostHogProperties(properties);
           },
         });
         browserPostHogInitialized = true;

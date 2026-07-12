@@ -2,6 +2,7 @@ import { getAuth } from "@/lib/auth";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
+const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
 /** A GSC REST call returned a non-2xx status. `status` drives user-facing messaging. */
 export class GscApiError extends Error {
@@ -99,7 +100,10 @@ function messageForStatus(status: number, body: string): string {
  *  meter credits — GSC is first-party data with no per-call cost. Access tokens
  *  are minted (and auto-refreshed) by Better Auth from the connector's stored
  *  google-search-console grant. */
-export function createGscClient(opts: { userId: string }) {
+export function createGscClient(opts: {
+  userId: string;
+  gscAccountId?: string;
+}) {
   async function getToken(): Promise<string> {
     let result: { accessToken?: string } | undefined;
     try {
@@ -108,7 +112,11 @@ export function createGscClient(opts: { userId: string }) {
       // Works in every auth mode — self-hosted builds the same Better Auth
       // instance once BETTER_AUTH_SECRET is set.
       result = await getAuth().api.getAccessToken({
-        body: { providerId: GSC_OAUTH_PROVIDER_ID, userId: opts.userId },
+        body: {
+          providerId: GSC_OAUTH_PROVIDER_ID,
+          userId: opts.userId,
+          ...(opts.gscAccountId ? { accountId: opts.gscAccountId } : {}),
+        },
       });
     } catch (error) {
       throw new GscTokenError(
@@ -150,6 +158,11 @@ export function createGscClient(opts: { userId: string }) {
   }
 
   return {
+    async getUserInfoEmail(): Promise<string | null> {
+      const data = await request<{ email?: unknown }>(GOOGLE_USERINFO_URL);
+      return typeof data.email === "string" ? data.email : null;
+    },
+
     /** Webmasters API `sites.list` — the verified properties on the grant. */
     async listSites(): Promise<GscSite[]> {
       const data = await request<{ siteEntry?: GscSite[] }>(
