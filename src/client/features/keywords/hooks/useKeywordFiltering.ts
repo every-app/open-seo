@@ -2,10 +2,13 @@ import { useMemo } from "react";
 import { sortBy } from "remeda";
 import { parseTerms } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
-import type { KeywordFilterValues } from "@/client/features/keywords/keywordResearchTypes";
+import {
+  parseIntentFilter,
+  type KeywordFilterValues,
+} from "@/client/features/keywords/keywordResearchTypes";
 import type { SortDir, SortField } from "@/client/features/keywords/components";
 
-function applyKeywordFiltersAndSort(params: {
+export function applyKeywordFiltersAndSort(params: {
   rows: KeywordResearchRow[];
   filters: KeywordFilterValues;
   sortField: SortField;
@@ -13,6 +16,7 @@ function applyKeywordFiltersAndSort(params: {
 }): KeywordResearchRow[] {
   const includeTerms = parseTerms(params.filters.include);
   const excludeTerms = parseTerms(params.filters.exclude);
+  const selectedIntents = parseIntentFilter(params.filters.intents);
 
   const filtered = params.rows.filter((row) => {
     const haystack = row.keyword.toLowerCase();
@@ -23,6 +27,10 @@ function applyKeywordFiltersAndSort(params: {
       return false;
     }
     if (excludeTerms.some((term) => haystack.includes(term))) {
+      return false;
+    }
+
+    if (selectedIntents.length > 0 && !selectedIntents.includes(row.intent)) {
       return false;
     }
 

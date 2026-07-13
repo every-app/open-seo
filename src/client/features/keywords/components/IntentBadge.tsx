@@ -18,32 +18,41 @@ const SHORT_LABELS: Record<KeywordIntent, string> = {
   unknown: "?",
 };
 
+/** Full intent labels, shared with the keyword filters so both stay in sync. */
+export const INTENT_LABELS: Record<KeywordIntent, string> = {
+  informational: "Informational",
+  commercial: "Commercial",
+  transactional: "Transactional",
+  navigational: "Navigational",
+  unknown: "Unknown",
+};
+
 const DESCRIPTIONS: Record<
   KeywordIntent,
   { label: string; description: string }
 > = {
   informational: {
-    label: "Informational",
+    label: INTENT_LABELS.informational,
     description:
       "The searcher wants information or answers. Use this for educational content, guides, and comparison-light explainers.",
   },
   commercial: {
-    label: "Commercial",
+    label: INTENT_LABELS.commercial,
     description:
       "The searcher is researching options before a purchase. Treat this as buying intent for comparisons, alternatives, and product-led pages.",
   },
   transactional: {
-    label: "Transactional",
+    label: INTENT_LABELS.transactional,
     description:
       "The searcher is ready to complete an action, often a purchase. Prioritize clear offers, pricing, trials, or conversion paths.",
   },
   navigational: {
-    label: "Navigational",
+    label: INTENT_LABELS.navigational,
     description:
       "The searcher is looking for a specific site, brand, or page. These queries usually reward matching the expected destination.",
   },
   unknown: {
-    label: "Unknown",
+    label: INTENT_LABELS.unknown,
     description:
       "Intent was not available for this keyword, so avoid making content strategy decisions from this badge alone.",
   },
