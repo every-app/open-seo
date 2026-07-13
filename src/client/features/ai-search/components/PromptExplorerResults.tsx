@@ -1,3 +1,4 @@
+import { useMemo, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -6,6 +7,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { MarkdownAnswer } from "@/client/features/ai-search/components/MarkdownAnswer";
+import { PromptExplorerCitedPages } from "@/client/features/ai-search/components/PromptExplorerCitedPages";
+import { aggregateCitedPages } from "@/client/features/ai-search/promptExplorerCitedPages";
 import {
   formatModelLabel,
   getModelAccent,
@@ -20,16 +23,59 @@ type Props = {
   result: PromptExplorerResult;
 };
 
+type ResultsView = "responses" | "cited";
+
 export function PromptExplorerResults({ result }: Props) {
+  const [view, setView] = useState<ResultsView>("responses");
+  const citedPages = useMemo(
+    () => aggregateCitedPages(result.results),
+    [result.results],
+  );
+
   return (
-    <div className="space-y-5">
-      {result.results.map((modelResult) => (
-        <ModelResultCard
-          key={modelResult.model}
-          modelResult={modelResult}
+    <div className="space-y-4">
+      <div role="tablist" className="tabs tabs-border w-fit">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "responses"}
+          onClick={() => setView("responses")}
+          className={`tab ${view === "responses" ? "tab-active" : ""}`}
+        >
+          Responses
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === "cited"}
+          onClick={() => setView("cited")}
+          className={`tab ${view === "cited" ? "tab-active" : ""}`}
+        >
+          Cited pages
+          {citedPages.length > 0 ? (
+            <span className="ml-1.5 text-base-content/50">
+              {citedPages.length}
+            </span>
+          ) : null}
+        </button>
+      </div>
+
+      {view === "responses" ? (
+        <div className="space-y-5">
+          {result.results.map((modelResult) => (
+            <ModelResultCard
+              key={modelResult.model}
+              modelResult={modelResult}
+              highlightBrand={result.highlightBrand}
+            />
+          ))}
+        </div>
+      ) : (
+        <PromptExplorerCitedPages
+          pages={citedPages}
           highlightBrand={result.highlightBrand}
         />
-      ))}
+      )}
     </div>
   );
 }
