@@ -173,6 +173,7 @@ async function upsertGrant(input: {
     ctx.options.account?.encryptOAuthTokens
       ? symmetricEncrypt({ key: ctx.secretConfig, data: value })
       : value;
+  const googleAccountId = getGoogleAccountId(input.tokens);
 
   const existing = await db
     .select({ id: account.id, refreshToken: account.refreshToken })
@@ -181,12 +182,13 @@ async function upsertGrant(input: {
       and(
         eq(account.userId, input.user.userId),
         eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+        eq(account.accountId, googleAccountId),
       ),
     )
     .limit(1);
 
   const accountValues = {
-    accountId: getGoogleAccountId(input.tokens),
+    accountId: googleAccountId,
     providerId: GSC_OAUTH_PROVIDER_ID,
     userId: input.user.userId,
     accessToken: await encrypt(input.tokens.access_token),
@@ -274,7 +276,7 @@ export async function createSelfHostedGscAuthorizationUrl(input: {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", GSC_OAUTH_SCOPES.join(" "));
   url.searchParams.set("access_type", "offline");
-  url.searchParams.set("prompt", "consent");
+  url.searchParams.set("prompt", "select_account consent");
   url.searchParams.set("state", state);
 
   return url.toString();

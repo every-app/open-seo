@@ -81,7 +81,7 @@ export function BrandLookupSearchCard({
 
             <button
               type="submit"
-              className="btn btn-primary px-6"
+              className="btn btn-primary shrink-0 px-6"
               disabled={isLoading}
             >
               {isLoading ? "Looking up..." : "Look up"}

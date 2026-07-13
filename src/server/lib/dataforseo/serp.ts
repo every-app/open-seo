@@ -7,6 +7,7 @@ import {
   SerpGoogleOrganicTaskPostRequestInfo,
 } from "dataforseo-client";
 import { serpApi } from "@/server/lib/dataforseo/core";
+import { MAX_TASKS_PER_POST } from "@/server/lib/dataforseo/shared";
 import {
   assertOk,
   buildTaskBilling,
@@ -141,15 +142,19 @@ export async function fetchRankCheckSerp(input: {
   keywordId: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   device: "desktop" | "mobile";
   targetDomain: string;
   depth: number;
 }): Promise<DataforseoApiResponse<RankCheckResult>> {
   const depth = clampSerpDepth(input.depth);
+  const locationParams = input.locationName
+    ? { location_name: input.locationName }
+    : { location_code: input.locationCode };
   const response = await serpApi().googleOrganicLiveAdvanced([
     new SerpGoogleOrganicLiveAdvancedRequestInfo({
       keyword: input.keyword,
-      location_code: input.locationCode,
+      ...locationParams,
       language_code: input.languageCode,
       device: input.device,
       os: input.device === "desktop" ? "windows" : "android",
@@ -180,9 +185,6 @@ export async function fetchRankCheckSerp(input: {
 // stragglers, orchestrated by the rank check workflow.
 // ---------------------------------------------------------------------------
 
-/** Max tasks DataForSEO accepts in a single task_post request. */
-export const MAX_TASKS_PER_POST = 100;
-
 export interface RankCheckTaskInput {
   keyword: string;
   keywordId: string;
@@ -197,6 +199,7 @@ export async function postRankCheckTasks(input: {
   tasks: RankCheckTaskInput[];
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   depth: number;
   targetDomain: string;
 }): Promise<DataforseoApiResponse<PostedRankCheckTask[]>> {
@@ -207,12 +210,15 @@ export async function postRankCheckTasks(input: {
     );
   }
   const depth = clampSerpDepth(input.depth);
+  const locationParams = input.locationName
+    ? { location_name: input.locationName }
+    : { location_code: input.locationCode };
   const response = await serpApi().googleOrganicTaskPost(
     input.tasks.map(
       (task) =>
         new SerpGoogleOrganicTaskPostRequestInfo({
           keyword: task.keyword,
-          location_code: input.locationCode,
+          ...locationParams,
           language_code: input.languageCode,
           device: task.device,
           os: task.device === "desktop" ? "windows" : "android",

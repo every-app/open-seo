@@ -6,6 +6,15 @@ import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
 export function createBaseAuthConfig() {
   return {
     ...baseAuthOptions,
+    advanced: {
+      ipAddress: {
+        // On Cloudflare Workers the client IP arrives in CF-Connecting-IP;
+        // x-forwarded-for (better-auth's default) is absent, so without this
+        // getIp() returns null and rate limiting is silently skipped on every
+        // /api/auth endpoint. Header lookup is case-insensitive.
+        ipAddressHeaders: ["cf-connecting-ip"],
+      },
+    },
     account: {
       // Encrypt OAuth access/refresh tokens at rest in D1. Also covers the
       // google social-login tokens; the key derives from BETTER_AUTH_SECRET.
@@ -35,7 +44,7 @@ export function createBaseAuthConfig() {
               "https://accounts.google.com/.well-known/openid-configuration",
             scopes: [...GSC_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
-            prompt: "consent", // force refresh-token issuance on re-consent
+            prompt: "select_account consent",
             pkce: true,
           },
         ],

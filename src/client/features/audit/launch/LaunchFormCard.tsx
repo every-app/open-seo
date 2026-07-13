@@ -1,17 +1,22 @@
+import { Link } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
-import {
-  MAX_PAGES_LIMIT,
-  MIN_PAGES,
-} from "@/client/features/audit/launch/types";
+import { MIN_PAGES } from "@/client/features/audit/launch/types";
 import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
 import { getFieldError, getFormError } from "@/client/lib/forms";
+import { PAID_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
+import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 type Props = {
   launchForm: ReturnType<typeof useLaunchController>["launchForm"];
   commitMaxPagesInput: () => number;
+  maxPagesLimit: number;
 };
 
-export function LaunchFormCard({ commitMaxPagesInput, launchForm }: Props) {
+export function LaunchFormCard({
+  commitMaxPagesInput,
+  launchForm,
+  maxPagesLimit,
+}: Props) {
   return (
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-4">
@@ -69,6 +74,7 @@ export function LaunchFormCard({ commitMaxPagesInput, launchForm }: Props) {
             <LaunchOptions
               launchForm={launchForm}
               commitMaxPagesInput={commitMaxPagesInput}
+              maxPagesLimit={maxPagesLimit}
             />
             <LighthouseOptions launchForm={launchForm} />
           </div>
@@ -80,7 +86,13 @@ export function LaunchFormCard({ commitMaxPagesInput, launchForm }: Props) {
   );
 }
 
-function LaunchOptions({ launchForm, commitMaxPagesInput }: Props) {
+function LaunchOptions({
+  launchForm,
+  commitMaxPagesInput,
+  maxPagesLimit,
+}: Props) {
+  const isFreeLimited = maxPagesLimit < PAID_MAX_AUDIT_PAGES;
+
   return (
     <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
       <label className="text-xs font-medium uppercase tracking-wide text-base-content/60">
@@ -93,7 +105,7 @@ function LaunchOptions({ launchForm, commitMaxPagesInput }: Props) {
             <input
               type="number"
               min={MIN_PAGES}
-              max={MAX_PAGES_LIMIT}
+              max={maxPagesLimit}
               className="input input-bordered input-sm w-28"
               value={field.state.value}
               onChange={(event) => {
@@ -110,7 +122,20 @@ function LaunchOptions({ launchForm, commitMaxPagesInput }: Props) {
         </launchForm.Field>
       </div>
       <p className="text-xs text-base-content/50">
-        Enter any value from {MIN_PAGES} to {MAX_PAGES_LIMIT}.
+        Enter any value from {MIN_PAGES} to {maxPagesLimit.toLocaleString()}.
+        {isFreeLimited ? (
+          <>
+            {" "}
+            <Link
+              to={SUBSCRIBE_ROUTE}
+              search={{ upgrade: true }}
+              className="link link-primary"
+            >
+              Upgrade
+            </Link>{" "}
+            to crawl up to {PAID_MAX_AUDIT_PAGES.toLocaleString()} pages.
+          </>
+        ) : null}
       </p>
     </div>
   );

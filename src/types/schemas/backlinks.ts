@@ -36,10 +36,6 @@ export const backlinksLookupSchema = z.object({
   scope: backlinksTargetScopeSchema.optional(),
 });
 
-export const backlinksProjectSchema = z.object({
-  projectId: z.string().min(1),
-});
-
 export const backlinksOverviewInputSchema = backlinksLookupSchema.extend({
   projectId: z.string().min(1),
 });

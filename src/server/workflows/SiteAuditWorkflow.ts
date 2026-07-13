@@ -9,11 +9,13 @@ import {
   type WorkflowEvent,
   type WorkflowStep,
 } from "cloudflare:workers";
+import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import type { AuditConfig } from "@/server/lib/audit/types";
-import { captureServerEvent } from "@/server/lib/posthog";
+import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
+import { pgStep } from "@/server/workflows/pgStep";
 
 interface AuditParams {
   auditId: string;
@@ -25,23 +27,38 @@ interface AuditParams {
 
 export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
   async run(event: WorkflowEvent<AuditParams>, step: WorkflowStep) {
+    // Scope a per-request Postgres client for this workflow invocation (no-op in
+    // D1 mode). The socket is reclaimed when the invocation ends, so there is
+    // nothing to tear down here.
+    return withPgClient(() => this.runScoped(event, step));
+  }
+
+  private async runScoped(
+    event: WorkflowEvent<AuditParams>,
+    step: WorkflowStep,
+  ) {
     const { auditId, billingCustomer, projectId, startUrl, config } =
       event.payload;
 
-    const audit = await AuditRepository.getAuditForWorkflow(
-      auditId,
-      event.instanceId,
-    );
-
-    if (!audit) {
-      throw new Error("Audit workflow context mismatch");
-    }
-
-    if (audit.projectId !== projectId) {
-      throw new Error("Audit workflow project mismatch");
-    }
-
     try {
+      // Inside a step so the D1 read is retried and replay-cached; a bare
+      // read here would re-execute on every replay and a transient failure
+      // would kill the instance before the catch below exists.
+      await pgStep(step, "validate-context", undefined, async () => {
+        const audit = await AuditRepository.getAuditForWorkflow(
+          auditId,
+          event.instanceId,
+        );
+
+        if (!audit) {
+          throw new Error("Audit workflow context mismatch");
+        }
+
+        if (audit.projectId !== projectId) {
+          throw new Error("Audit workflow project mismatch");
+        }
+      });
+
       await runAuditPhases(step, {
         auditId,
         workflowInstanceId: event.instanceId,
@@ -52,7 +69,24 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       });
     } catch (error) {
       console.error(`Audit ${auditId} failed:`, error);
-      await step.do("mark-failed", async () => {
+      // Workflow entrypoints run outside the server-function middleware, so
+      // nothing else forwards this throw to PostHog as a $exception. Capture it
+      // here (awaited — Workflows have no ctx.waitUntil) before re-throwing.
+      // Deploy-time resets are expected churn, not actionable errors.
+      const isDeployReset =
+        error instanceof Error &&
+        error.message.includes(
+          "Durable Object reset because its code was updated",
+        );
+      if (!isDeployReset) {
+        await captureServerError(error, {
+          source: "site_audit_workflow",
+          audit_id: auditId,
+          organization_id: billingCustomer.organizationId,
+          project_id: projectId,
+        });
+      }
+      await pgStep(step, "mark-failed", undefined, async () => {
         await AuditRepository.failAudit(auditId, event.instanceId);
 
         const latestAudit = await AuditRepository.getAuditForWorkflow(

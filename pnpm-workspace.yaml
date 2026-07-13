@@ -1,3 +1,44 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+
+# Advisories triaged as not applicable. Re-review when the parent updates.
+# - GHSA-67mh-4wv8-2f99: esbuild <=0.24.2 dev-server CORS. Only reachable via
+#   drizzle-kit's bundled @esbuild-kit loader (dev-time CLI); drizzle-kit never
+#   starts esbuild's serve mode, so the vulnerable path cannot execute.
+auditConfig:
+  ignoreGhsas:
+    - GHSA-67mh-4wv8-2f99
+
+# Security floors (added 2026-07) for transitive deps with published advisories
+# where the parent hasn't shipped a bump yet. Each range sits inside what the
+# parent already declares, so these are lockfile nudges, not forks. Ranges are
+# major-bounded (^) on purpose: an override REPLACES the parent's range, so an
+# open-ended >= floor would let a future major (e.g. hono 5) get forced onto a
+# parent that only supports the current one.
+#
+# To prune once a parent catches up: delete the line, run `pnpm install`, and
+# keep it deleted if `pnpm audit` stays clean.
+overrides:
+  # GHSA-4x5r-pxfx-6jf8 — waiting on @tanstack/devtools-vite
+  "@babel/core": "^7.29.6"
+  # GHSA-737v-mqg7-c878 — waiting on better-auth
+  defu: "^6.1.5"
+  # 13 advisories incl. GHSA-x4vx-rjvf-j5p4, GHSA-gvmj-g25r-r7wr — waiting on posthog-js
+  dompurify: "^3.4.11"
+  # GHSA-hmw2-7cc7-3qxx — waiting on cloudflare
+  form-data: "^4.0.6"
+  # 9 advisories incl. GHSA-88fw-hqm2-52qc (CORS) — waiting on @modelcontextprotocol/sdk
+  hono: "^4.12.25"
+  # GHSA-v6wh-96g9-6wx3 — waiting on @tanstack/devtools-vite
+  launch-editor: "^2.14.1"
+  # GHSA-qx2v-qp2m-jg93 — waiting on vite
+  postcss: "^8.5.10"
+  # GHSA-q8mj-m7cp-5q26 — waiting on @modelcontextprotocol/sdk
+  qs: "^6.15.2"
+  # GHSA-w7jw-789q-3m8p — waiting on @tanstack/devtools-vite
+  shell-quote: "^1.8.4"
+  # GHSA-v3rj-xjv7-4jmq — waiting on knip
+  smol-toml: "^1.6.1"
+  # 7 advisories incl. GHSA-vmh5-mc38-953g — waiting on cheerio + miniflare
+  undici: "^7.28.0"

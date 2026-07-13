@@ -6,6 +6,18 @@
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
   "observability": {
     "enabled": true,
+    // Spans are billed as observability events (free tier 200k/day); add a
+    // traces head_sampling_rate below 1 if span volume becomes a cost concern.
+    "traces": {
+      "enabled": true,
+    },
+  },
+  // Smart Placement relocates only the `fetch` handler (cron + Workflow runs
+  // stay at the edge) toward external subrequests — Postgres via Hyperdrive,
+  // SEO APIs — not D1/KV/R2 bindings, so it's a DB no-op on the D1 default.
+  // Must live here: a dashboard-only toggle is wiped by `wrangler deploy`.
+  "placement": {
+    "mode": "smart",
   },
   // Uncomment when deploying to the openseo.so Cloudflare account. Self-hosters
   // should leave this commented (or replace with their own zone) — otherwise
@@ -35,12 +47,22 @@
         "name": "ONBOARDING_CHAT",
         "class_name": "OnboardingChatAgent",
       },
+      // SAM in-app agent. One instance per chat session; messages persist in the
+      // DO's SQLite. SQLite-backed classes must be declared in `migrations`.
+      {
+        "name": "SAM_CHAT",
+        "class_name": "SamChatAgent",
+      },
     ],
   },
   "migrations": [
     {
       "tag": "v1",
       "new_sqlite_classes": ["OnboardingChatAgent"],
+    },
+    {
+      "tag": "v2",
+      "new_sqlite_classes": ["SamChatAgent"],
     },
   ],
   "triggers": {
@@ -62,6 +84,28 @@
       "database_name": "open-seo",
       "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
       "migrations_dir": "drizzle",
+    },
+  ],
+  // Postgres scale path. Production runs on Postgres: DATABASE_PROVIDER is set as
+  // a worker *secret* (`wrangler secret put DATABASE_PROVIDER` -> "postgres") so it
+  // survives `wrangler deploy` — which resets plain vars/bindings and is what
+  // reverted prod to the D1 default before. This Hyperdrive binding points the
+  // pooled connection at that Postgres. Hyperdrive is the ONLY way the app
+  // connects to Postgres — there is no direct-connection fallback.
+  //
+  // `localConnectionString` is local-dev only (ignored by `wrangler deploy`):
+  // it's the throwaway Docker Postgres from docs/LOCAL_POSTGRES.md, and nothing
+  // connects to it unless DATABASE_PROVIDER=postgres is set in .env.local.
+  //
+  // SELF-HOSTERS on the free D1 default: DELETE this hyperdrive block before
+  // deploying. The id below lives in OpenSEO's Cloudflare account, so `wrangler
+  // deploy` will fail without access to it. D1 stays the default when
+  // DATABASE_PROVIDER is unset.
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      "id": "9d64ccfb559f44449ce52a143912f898",
+      "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
     },
   ],
   "r2_buckets": [

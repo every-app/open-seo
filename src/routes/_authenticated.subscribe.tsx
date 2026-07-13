@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -10,9 +10,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
-import { MANAGED_ACCESS_QUERY_KEY } from "@/client/features/billing/managed-access";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
-import { queryClient } from "@/client/tanstack-db";
 import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
@@ -43,14 +41,6 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
 });
 
 function SubscribePage() {
-  return (
-    <AutumnProvider>
-      <SubscribePageContent />
-    </AutumnProvider>
-  );
-}
-
-function SubscribePageContent() {
   const navigate = useNavigate();
   const { upgrade: isUpgradeFlow, redirect } = Route.useSearch();
   const { data: session } = useSession();
@@ -99,16 +89,11 @@ function SubscribePageContent() {
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
-      // The app layouts gate on this query; make sure they see fresh access
-      // state instead of a cached "no access" that would bounce back here.
-      void queryClient.invalidateQueries({
-        queryKey: MANAGED_ACCESS_QUERY_KEY,
-      });
       const destination = redirect ?? "/";
       const [destinationPath, destinationQuery] = destination.split("?");
-      const destinationSearch = destinationQuery
+      const destinationSearch: Record<string, string> = destinationQuery
         ? Object.fromEntries(new URLSearchParams(destinationQuery))
-        : undefined;
+        : {};
       const goToApp = () =>
         void navigate({
           to: destinationPath,

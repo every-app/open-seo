@@ -1,18 +1,19 @@
 import { AIChatAgent } from "@cloudflare/ai-chat";
 import {
   convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
   stepCountIs,
   streamText,
   type StreamTextOnFinishCallback,
   type ToolSet,
 } from "ai";
 import type { OnChatMessageOptions } from "@cloudflare/ai-chat";
-import { z } from "zod";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildOnboardingTools } from "@/server/features/onboarding/onboardingChatTools";
-import { getOnboardingModel } from "@/server/lib/openrouter";
+import { getChatAgentModel } from "@/server/lib/openrouter";
+import {
+  openRouterCostUsd,
+  staticAssistantResponse,
+} from "@/server/lib/chatAgent";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   customerHasManagedAccess,
@@ -21,17 +22,6 @@ import {
 } from "@/server/billing/subscription";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
-
-// OpenRouter (with usage accounting on) reports the real USD cost of each
-// response under providerMetadata.openrouter.usage.cost.
-const openRouterUsageSchema = z.object({
-  openrouter: z.object({ usage: z.object({ cost: z.number() }) }),
-});
-
-function openRouterCostUsd(providerMetadata: unknown): number {
-  const parsed = openRouterUsageSchema.safeParse(providerMetadata);
-  return parsed.success ? parsed.data.openrouter.usage.cost : 0;
-}
 
 function buildSystemPrompt(domain: string | null): string {
   return [
@@ -69,21 +59,6 @@ function buildSystemPrompt(domain: string | null): string {
   ].join("\n\n");
 }
 
-// A non-LLM assistant turn streamed back over the chat protocol. Used to surface
-// billing gates ("Subscribe to continue") without spending an LLM call — the
-// client renders it as a normal message from Sam.
-function staticAssistantResponse(text: string): Response {
-  const stream = createUIMessageStream({
-    execute: ({ writer }) => {
-      const id = crypto.randomUUID();
-      writer.write({ type: "text-start", id });
-      writer.write({ type: "text-delta", id, delta: text });
-      writer.write({ type: "text-end", id });
-    },
-  });
-  return createUIMessageStreamResponse({ stream });
-}
-
 /**
  * Durable Object backing the onboarding strategy chat. The conversation is
  * persisted automatically in the DO's SQLite (`this.messages`), so it survives
@@ -95,6 +70,28 @@ function staticAssistantResponse(text: string): Response {
 export class OnboardingChatAgent extends AIChatAgent {
   // Cap stored history; the onboarding chat is short and pre-paywall.
   maxPersistedMessages = 60;
+
+  // The base class persists each message as its own bounded SQLite row, so DO
+  // storage occasionally returns a transient internal error (code 10001) that
+  // clears on retry. Retry the message-write path a couple of times before
+  // surfacing the failure, rethrowing on non-transient errors or the last try.
+  async persistMessages(
+    ...args: Parameters<AIChatAgent["persistMessages"]>
+  ): Promise<void> {
+    const maxAttempts = 3;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        await super.persistMessages(...args);
+        return;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const transient =
+          message.includes("internal error") || message.includes("10001");
+        if (!transient || attempt >= maxAttempts) throw error;
+        await new Promise((resolve) => setTimeout(resolve, 50 * attempt));
+      }
+    }
+  }
 
   async onChatMessage(
     onFinish: StreamTextOnFinishCallback<ToolSet>,
@@ -153,7 +150,7 @@ export class OnboardingChatAgent extends AIChatAgent {
       monthlyCreditsRemaining = monthlyRemaining;
     }
 
-    const model = await getOnboardingModel();
+    const model = await getChatAgentModel();
 
     const result = streamText({
       model,

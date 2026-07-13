@@ -4,6 +4,7 @@ import {
   type WorkflowStep,
 } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
+import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
@@ -12,6 +13,7 @@ import {
   runQueuedCheck,
   type QueuedCheckStats,
 } from "@/server/workflows/rankCheckPaths";
+import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
@@ -36,6 +38,7 @@ interface RankCheckParams {
   domain: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   devices: "both" | "desktop" | "mobile";
   serpDepth: number;
   trigger: "manual" | "scheduled";
@@ -249,6 +252,16 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
   RankCheckParams
 > {
   async run(event: WorkflowEvent<RankCheckParams>, step: WorkflowStep) {
+    // Scope a per-request Postgres client for this workflow invocation (no-op in
+    // D1 mode). The socket is reclaimed when the invocation ends, so there is
+    // nothing to tear down here.
+    return withPgClient(() => this.runScoped(event, step));
+  }
+
+  private async runScoped(
+    event: WorkflowEvent<RankCheckParams>,
+    step: WorkflowStep,
+  ) {
     const {
       runId,
       configId,
@@ -257,6 +270,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       domain,
       locationCode,
       languageCode,
+      locationName,
       devices,
       serpDepth,
       trigger,
@@ -266,7 +280,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
     const client = createDataforseoClient(billingCustomer);
 
     // Guard: skip if config was archived after the workflow was triggered
-    const configCheck = await step.do(
+    const configCheck = await pgStep(
+      step,
       "check-active",
       { retries: { limit: 0, delay: "1 second" } },
       async () => {
@@ -287,7 +302,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         `[rank-check] ${runId} starting (trigger=${trigger}, devices=${devices})`,
       );
 
-      const prepareResult = await step.do(
+      const prepareResult = await pgStep(
+        step,
         "prepare",
         { retries: { limit: 0, delay: "1 second" } },
         async () =>
@@ -318,6 +334,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           domain,
           locationCode,
           languageCode,
+          locationName,
           runId,
         };
         // Scheduled checks use DataForSEO's task queue (~30% of live cost);
@@ -334,7 +351,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         console.warn(`[rank-check] ${runId} partial failure: ${batchError}`);
       }
 
-      await step.do("finalize", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
+      await pgStep(step, "finalize", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
         finalizeRankCheckRun({
           runId,
           configId,
@@ -347,7 +364,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       );
     } catch (error) {
       console.error(`Rank check ${runId} failed:`, error);
-      await step.do("mark-failed", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
+      await pgStep(step, "mark-failed", SINGLE_ATTEMPT_STEP_CONFIG, async () =>
         markRankCheckRunFailed({
           runId,
           configId,

@@ -33,8 +33,12 @@ type GscPerformanceResult = {
 };
 
 type GscSiteListResult = {
-  sites: GscSite[];
-  requiresReconnect: boolean;
+  accounts: Array<{
+    accountId: string;
+    email: string | null;
+    requiresReconnect: boolean;
+    sites: GscSite[];
+  }>;
 };
 
 /** Thrown when a project has no connected GSC property. */
@@ -65,15 +69,21 @@ async function userHasGrant(userId: string): Promise<boolean> {
   return rows.length > 0;
 }
 
-/** List verified properties available on a user's google-search-console grant. */
-async function listSitesForUser(userId: string): Promise<GscSite[]> {
-  return createGscClient({ userId }).listSites();
+async function listGrantsForUser(userId: string) {
+  return db
+    .select({ id: account.id, accountId: account.accountId })
+    .from(account)
+    .where(
+      and(
+        eq(account.userId, userId),
+        eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+      ),
+    );
 }
 
 /** Expected ways a stored grant fails to reach Search Console: no token could be
  *  minted (refresh token revoked or expired), or Google rejected the call
- *  (401/403). These surface a reconnect prompt instead of being routed through
- *  error tracking. Other statuses (429, 5xx) are genuine faults and propagate. */
+ *  (401/403). These surface a reconnect prompt without fault logging. */
 export function isExpectedGrantFailure(error: unknown): boolean {
   if (error instanceof GscTokenError) return true;
   return (
@@ -82,30 +92,49 @@ export function isExpectedGrantFailure(error: unknown): boolean {
   );
 }
 
-/** List properties for the picker UI. When the stored grant can't currently
- *  reach GSC, return a reconnect signal instead of throwing, so an expected
- *  external-auth failure doesn't land in error tracking.
- *
- *  Only a GscTokenError unlinks the stored grant — the one unambiguous "this
- *  grant is dead" signal (Better Auth couldn't mint/refresh a token, i.e. the
- *  user revoked access or the refresh token expired). A bare 401/403 from
- *  sites.list is left in place: Search Console also returns 403 for quota/rate
- *  limits, so destroying the grant there would force needless reconnects across
- *  every project on it. Reconnecting re-upserts the grant either way. */
 async function listSitesForUserWithGrantStatus(
   userId: string,
 ): Promise<GscSiteListResult> {
-  try {
-    return { sites: await listSitesForUser(userId), requiresReconnect: false };
-  } catch (error) {
-    if (!isExpectedGrantFailure(error)) {
-      throw error;
-    }
-    if (error instanceof GscTokenError) {
-      await unlinkUserGrant(userId);
-    }
-    return { sites: [], requiresReconnect: true };
-  }
+  const grants = await listGrantsForUser(userId);
+  const accounts = await Promise.all(
+    grants.map(async (grant) => {
+      const client = createGscClient({
+        userId,
+        gscAccountId: grant.accountId,
+      });
+
+      try {
+        const sites = await client.listSites();
+        let email: string | null = null;
+        try {
+          email = await client.getUserInfoEmail();
+        } catch {
+          email = null;
+        }
+        return {
+          accountId: grant.accountId,
+          email,
+          requiresReconnect: false,
+          sites,
+        };
+      } catch (error) {
+        if (!isExpectedGrantFailure(error)) {
+          console.error(
+            "Failed to list Search Console sites for account",
+            grant.accountId,
+            error,
+          );
+        }
+        return {
+          accountId: grant.accountId,
+          email: null,
+          requiresReconnect: true,
+          sites: [],
+        };
+      }
+    }),
+  );
+  return { accounts };
 }
 
 /** Map a verified property to a project. Rejects unverified properties and
@@ -114,10 +143,22 @@ async function setSite(input: {
   projectId: string;
   organizationId: string;
   siteUrl: string;
+  accountId: string;
   userId: string;
-  userEmail: string;
 }): Promise<GscConnection> {
-  const sites = await listSitesForUser(input.userId);
+  const grants = await listGrantsForUser(input.userId);
+  if (!grants.some((grant) => grant.accountId === input.accountId)) {
+    throw new AppError(
+      "NOT_FOUND",
+      "That Google account isn't connected to your OpenSEO account.",
+    );
+  }
+
+  const client = createGscClient({
+    userId: input.userId,
+    gscAccountId: input.accountId,
+  });
+  const sites = await client.listSites();
   const match = sites.find((s) => s.siteUrl === input.siteUrl);
   if (!match) {
     throw new AppError(
@@ -131,23 +172,33 @@ async function setSite(input: {
       "You don't have verified access to that Search Console property.",
     );
   }
+  let connectedAccountEmail: string | null = null;
+  try {
+    connectedAccountEmail = await client.getUserInfoEmail();
+  } catch {
+    connectedAccountEmail = null;
+  }
   return GscConnectionRepository.upsert({
     projectId: input.projectId,
     organizationId: input.organizationId,
     siteUrl: input.siteUrl,
     connectedByUserId: input.userId,
-    connectedAccountEmail: input.userEmail,
+    gscAccountId: input.accountId,
+    connectedAccountEmail,
   });
 }
 
-/** Remove this user's google-search-console grant (stored OAuth tokens). */
-async function unlinkUserGrant(userId: string): Promise<void> {
+async function unlinkUserGrant(
+  userId: string,
+  gscAccountId: string,
+): Promise<void> {
   await db
     .delete(account)
     .where(
       and(
         eq(account.userId, userId),
         eq(account.providerId, GSC_OAUTH_PROVIDER_ID),
+        eq(account.accountId, gscAccountId),
       ),
     );
 }
@@ -160,19 +211,16 @@ async function disconnect(input: {
     input.projectId,
   );
   await GscConnectionRepository.deleteByProjectId(input.projectId);
-  // Clean up the caller's *own* OAuth grant once none of their projects still
-  // use it. Safe by construction: unlinkUserGrant only ever deletes the
-  // caller's account row, never another member's. We skip cleanup only when the
-  // binding we removed belonged to a *different* member, so unbinding their
-  // property never revokes the caller's unrelated grant. A null connection
-  // means the caller linked Google but never picked a property — that dangling
-  // grant is theirs to drop.
-  if (!connection || connection.connectedByUserId === input.userId) {
-    const stillUsed = await GscConnectionRepository.existsForConnector(
+  if (
+    connection?.gscAccountId &&
+    connection.connectedByUserId === input.userId
+  ) {
+    const stillUsed = await GscConnectionRepository.existsForConnectorAccount(
       input.userId,
+      connection.gscAccountId,
     );
     if (!stillUsed) {
-      await unlinkUserGrant(input.userId);
+      await unlinkUserGrant(input.userId, connection.gscAccountId);
     }
   }
 }
@@ -188,7 +236,10 @@ async function getPerformance(
     throw new GscNotConnectedError(input.projectId);
   }
   const request = buildSearchAnalyticsRequest(input);
-  const client = createGscClient({ userId: connection.connectedByUserId });
+  const client = createGscClient({
+    userId: connection.connectedByUserId,
+    gscAccountId: connection.gscAccountId ?? undefined,
+  });
   const rows = await client.querySearchAnalytics(connection.siteUrl, request);
   return {
     siteUrl: connection.siteUrl,
@@ -225,7 +276,10 @@ async function inspectUrls(input: {
   if (!connection) {
     throw new GscNotConnectedError(input.projectId);
   }
-  const client = createGscClient({ userId: connection.connectedByUserId });
+  const client = createGscClient({
+    userId: connection.connectedByUserId,
+    gscAccountId: connection.gscAccountId ?? undefined,
+  });
   const results: GscUrlInspection[] = [];
   for (const url of input.urls) {
     try {

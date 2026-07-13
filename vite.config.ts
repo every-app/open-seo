@@ -5,6 +5,7 @@ import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import { devtools } from "@tanstack/devtools-vite";
+import { leanWorkerBundle } from "./vite-plugin-lean-worker-bundle";
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
@@ -27,6 +28,7 @@ export default defineConfig(({ mode }) => {
       "BYPASS_EMAIL_VERIFICATION",
       "POSTHOG_PUBLIC_KEY",
       "POSTHOG_HOST",
+      "TURNSTILE_SITE_KEY",
     ],
     server: {
       allowedHosts,
@@ -41,6 +43,7 @@ export default defineConfig(({ mode }) => {
       outDir: emitSourcemaps ? "dist-sourcemaps" : "dist",
     },
     plugins: [
+      leanWorkerBundle(),
       showDevtools
         ? devtools({
             consolePiping: {

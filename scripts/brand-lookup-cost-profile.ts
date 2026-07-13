@@ -1,14 +1,16 @@
 import process from "node:process";
 import {
-  buildLlmTarget,
-  CHATGPT_LANGUAGE_CODE,
-  CHATGPT_LOCATION_CODE,
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
   fetchLlmTopPages,
-  type LlmPlatform,
 } from "@/server/lib/dataforseo/ai";
+import {
+  buildLlmTarget,
+  CHATGPT_LANGUAGE_CODE,
+  CHATGPT_LOCATION_CODE,
+  type LlmPlatform,
+} from "@/server/lib/dataforseo/shared";
 import { applyBillingMarkupUsd } from "@/shared/billing";
 import { resolveCompetitorGroups } from "@/server/features/ai-search/services/shareOfVoice";
 import { parseCompetitorList } from "@/types/schemas/ai-search";

@@ -57,7 +57,13 @@ export function Collapsible({
   );
 }
 
-export function CodeBlock({ code }: { code: string }) {
+export function CodeBlock({
+  code,
+  onCopy,
+}: {
+  code: string;
+  onCopy?: () => void;
+}) {
   return (
     <div className="flex items-stretch overflow-hidden rounded-md border border-base-300 bg-base-100">
       <pre className="min-w-0 flex-1 overflow-x-auto p-3 text-xs leading-relaxed text-base-content">
@@ -68,6 +74,7 @@ export function CodeBlock({ code }: { code: string }) {
           value={code}
           successMessage="Copied to clipboard"
           iconOnly
+          onCopy={onCopy}
         />
       </div>
     </div>
@@ -78,10 +85,12 @@ export function CopyButton({
   value,
   successMessage,
   iconOnly = false,
+  onCopy,
 }: {
   value: string;
   successMessage: string;
   iconOnly?: boolean;
+  onCopy?: () => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -95,6 +104,7 @@ export function CopyButton({
       toast.success(successMessage);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+      onCopy?.();
     } catch {
       toast.error("Could not copy to clipboard");
     }

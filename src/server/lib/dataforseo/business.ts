@@ -29,7 +29,10 @@ export async function fetchBusinessListingsSearch(input: {
       limit: input.limit,
     }),
   ]);
-  const task = assertOk(response);
+  // "No Search Results" (40501) is a valid empty result for obscure
+  // businesses/keywords — DataForSEO still charges for it, so treat it as an
+  // empty success instead of surfacing a charged-task error to the user.
+  const task = assertOk(response, { treatNoResultsAsEmpty: true });
   return {
     data: task.result?.[0]?.items ?? [],
     billing: buildTaskBilling(task),
@@ -75,7 +78,10 @@ export async function fetchQuestionsAnswers(input: {
       depth: input.depth,
     }),
   ]);
-  const task = assertOk(response);
+  // "No Search Results" (40501) is a valid empty result for obscure
+  // businesses/keywords — DataForSEO still charges for it, so treat it as an
+  // empty success instead of surfacing a charged-task error to the user.
+  const task = assertOk(response, { treatNoResultsAsEmpty: true });
   return {
     data: combinedQuestionItems(task.result),
     billing: buildTaskBilling(task),

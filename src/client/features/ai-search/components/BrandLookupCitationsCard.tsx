@@ -149,7 +149,7 @@ export function CitationTabsCard({
   return (
     <section className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
       <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-3">
-        <div role="tablist" className="tabs tabs-box w-fit">
+        <div role="tablist" className="tabs tabs-border w-fit">
           <button
             type="button"
             role="tab"

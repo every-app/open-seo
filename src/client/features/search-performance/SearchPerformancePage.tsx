@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   keepPreviousData,
   queryOptions,
@@ -10,6 +11,7 @@ import { toast } from "sonner";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TablePagination } from "@/client/components/table/TablePagination";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
+import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
   DimensionTable,
   exportDimensionRows,
@@ -189,19 +191,28 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
-        <div>
-          <h1 className="text-2xl font-semibold">Search Performance</h1>
-          <p className="text-sm text-base-content/70">
-            See your site&apos;s clicks, impressions, CTR, and position from
-            Google Search Console.
-          </p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold">Search Performance</h1>
+            <p className="text-sm text-base-content/70">
+              See your site&apos;s clicks, impressions, CTR, and position from
+              Google Search Console.
+            </p>
+          </div>
+          {report?.connected ? (
+            <Link
+              to="/p/$projectId/settings"
+              params={{ projectId }}
+              hash="search-console"
+              className="link link-hover shrink-0 self-start text-sm font-medium text-base-content/60 transition-colors hover:text-base-content sm:mt-1"
+            >
+              Change property
+            </Link>
+          ) : null}
         </div>
 
         {reportQuery.isPending ? (
-          <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
-            <Loader2 className="size-4 animate-spin" /> Loading Search Console
-            data…
-          </div>
+          <SearchPerformanceLoadingState />
         ) : reportQuery.isError ? (
           <div className="alert alert-error">
             <span className="text-sm">
@@ -209,12 +220,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
             </span>
           </div>
         ) : !report?.connected ? (
-          <div className="max-w-2xl space-y-4">
-            <p className="text-sm text-base-content/70">
-              Find your striking-distance keywords — queries ranking just off
-              the top of page one, where a small improvement can win the most
-              new clicks. Connect Search Console to see them.
-            </p>
+          <div className="max-w-2xl">
             <SearchConsoleConnectionCard projectId={projectId} />
           </div>
         ) : (
@@ -222,7 +228,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
             <TotalsCards report={report} />
             <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
               <div className="flex flex-col gap-3 border-b border-base-300 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-                <div role="tablist" className="tabs tabs-box w-fit">
+                <div role="tablist" className="tabs tabs-border w-fit">
                   <TabButton
                     active={tab === "striking"}
                     onClick={() => setTab("striking")}

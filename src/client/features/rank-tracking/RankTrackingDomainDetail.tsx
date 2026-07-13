@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import {
   getLatestRankResults,
   getRankPositionMatrix,
@@ -57,20 +57,7 @@ function deviceVisibility(
   };
 }
 
-export function RankTrackingDomainDetail(props: {
-  config: RankTrackingConfig;
-  projectId: string;
-  onBack: () => void;
-  onEdit: () => void;
-}) {
-  return (
-    <AutumnProvider>
-      <RankTrackingDomainDetailInner {...props} />
-    </AutumnProvider>
-  );
-}
-
-function RankTrackingDomainDetailInner({
+export function RankTrackingDomainDetail({
   config,
   projectId,
   onBack,
@@ -283,10 +270,16 @@ function RankTrackingDomainDetailInner({
               showDesktop,
               showMobile,
               config.domain,
+              config.locationName,
             )
           }
           onExportToSheets={() =>
-            exportRankTrackingToSheets(filtered, showDesktop, showMobile)
+            exportRankTrackingToSheets(
+              filtered,
+              showDesktop,
+              showMobile,
+              config.locationName,
+            )
           }
           onCopyKeywords={() => {
             void navigator.clipboard.writeText(
@@ -339,6 +332,7 @@ function RankTrackingDomainDetailInner({
               configId={config.id}
               projectId={projectId}
               locationCode={config.locationCode}
+              locationName={config.locationName}
               serpDepth={config.serpDepth}
             />
           )}

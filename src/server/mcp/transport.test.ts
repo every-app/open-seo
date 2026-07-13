@@ -160,6 +160,28 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     });
   });
 
+  // The OOM came from the GET SSE stream pinning a per-request McpServer, so
+  // GET must 405 without ever building one.
+  it("returns 405 for the standalone GET SSE stream without building a server", async () => {
+    const { handleSelfHostedOpenSeoMcpRequest } =
+      await import("@/server/mcp/transport");
+
+    const response = await handleSelfHostedOpenSeoMcpRequest(
+      new Request("https://open-seo.test/mcp", {
+        method: "GET",
+        headers: { Accept: "text/event-stream" },
+      }),
+      "local_noauth",
+      {},
+      ctx,
+    );
+
+    expect(response.status).toBe(405);
+    expect(response.headers.get("Allow")).toContain("POST");
+    // nextServerId only advances when a server is built — a GET must not.
+    expect(serverMocks.nextServerId).toBe(0);
+  });
+
   it("lets the MCP transport handle OPTIONS without auth context", async () => {
     const { handleSelfHostedOpenSeoMcpRequest } =
       await import("@/server/mcp/transport");

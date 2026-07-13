@@ -22,9 +22,9 @@ const DATAFORSEO_RETRY_BACKOFF_MS = 250;
 
 /**
  * Translates a DataForSEO HTTP/task failure into a product-specific AppError
- * (e.g. "backlinks not enabled", "billing issue"). Returns null when the
- * failure isn't one this classifier recognises, so the caller can fall back to
- * a generic error. See {@link createDataforseoAccessClassifier}.
+ * (e.g. "billing issue"). Returns null when the failure isn't one this
+ * classifier recognises, so the caller can fall back to a generic error. See
+ * {@link createDataforseoBillingClassifier}.
  */
 export type DataforseoErrorClassifier = (
   status: number | undefined,

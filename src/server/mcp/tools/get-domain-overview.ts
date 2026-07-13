@@ -8,6 +8,7 @@ import {
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
   assertLabsLocationCode,
+  assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -52,6 +53,7 @@ export const getDomainOverviewTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     assertLabsLocationCode(args.locationCode);
+    assertLanguageForLocation(args.locationCode, args.languageCode);
     const result = await DomainService.getOverview(
       {
         projectId: args.projectId,

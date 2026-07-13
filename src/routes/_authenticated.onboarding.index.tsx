@@ -10,12 +10,9 @@ import {
   onboardingAnswersQueryOptions,
   restoreOnboardingAnswers,
 } from "@/client/features/onboarding/onboardingModel";
-import { managedAccessQueryOptions } from "@/client/features/billing/managed-access";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { queryClient } from "@/client/tanstack-db";
 import { useSession } from "@/lib/auth-client";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const ONBOARDING_EXISTING_USER_CUTOFF = "2026-05-27T00:00:00.000Z";
@@ -83,16 +80,6 @@ function OnboardingFlow({
   const { step } = Route.useSearch();
   const [answers, setAnswers] = useState<OnboardingAnswers>(initialAnswers);
 
-  // Self-hosted has no paywall. Hosted users now get a short strategy chat
-  // before the subscribe gate, so this only feeds later paid onboarding steps.
-  const isHostedMode = isHostedClientAuthMode();
-  const accessQuery = useQuery({
-    ...managedAccessQueryOptions(),
-    enabled: isHostedMode,
-  });
-  const needsSubscription =
-    isHostedMode && accessQuery.data?.hasManagedAccess === false;
-
   const saveMutation = useMutation({
     mutationFn: (extra: {
       mcpSetupIntent?: "yes" | "no";
@@ -109,27 +96,6 @@ function OnboardingFlow({
   const goToStep = (next: number) =>
     void navigate({ to: "/onboarding", search: { step: clampStep(next) } });
 
-  const advanceFromCurrentStep = () => {
-    // The strategy chat is a hosted-only, pre-paywall surface (it needs the
-    // managed LLM + trial credits). Self-hosted skips it and continues straight
-    // to the GSC/MCP steps.
-    if (step === 2 && isHostedMode) {
-      void navigate({ to: "/onboarding/chat", replace: true });
-      return;
-    }
-
-    const next = clampStep(step + 1);
-    if (step >= 3 && needsSubscription) {
-      void navigate({
-        to: SUBSCRIBE_ROUTE,
-        search: { redirect: `/onboarding?step=${next}` },
-        replace: true,
-      });
-      return;
-    }
-    goToStep(next);
-  };
-
   const handleNext = () => {
     if (step === 0) {
       captureClientEvent("onboarding:interests_selected", {
@@ -138,13 +104,13 @@ function OnboardingFlow({
       });
     }
     saveMutation.mutate({});
-    advanceFromCurrentStep();
+    goToStep(step + 1);
   };
 
   const handleSkip = () => {
     saveMutation.mutate({});
     captureClientEvent("onboarding:step_skipped", { step });
-    advanceFromCurrentStep();
+    goToStep(step + 1);
   };
 
   const handleFinish = async (mcpSetupIntent: "yes" | "no") => {
@@ -185,9 +151,6 @@ function OnboardingFlow({
       onBack={() => goToStep(step - 1)}
       onSkip={handleSkip}
       onFinish={handleFinish}
-      onUpgradeAcknowledged={() =>
-        void navigate({ to: "/onboarding", search: { step }, replace: true })
-      }
       isSaving={saveMutation.isPending}
       accountMenu={<OnboardingAccountMenu email={email} />}
     />

@@ -32,7 +32,7 @@ const ahrefsResponseSchema = z.object({
 
 export const getAhrefsDomainRatings = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => domainRatingsInputSchema.parse(data))
+  .validator(domainRatingsInputSchema)
   .handler(async ({ data }) => {
     const result: Record<string, number | null> = {};
 

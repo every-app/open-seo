@@ -55,6 +55,12 @@ Migrate local DB:
 pnpm run db:migrate:local
 ```
 
+## Postgres backend (optional)
+
+D1 (SQLite) is the default. To run against Postgres locally instead — the opt-in
+backend for installs that outgrow D1 — see
+[`LOCAL_POSTGRES.md`](./LOCAL_POSTGRES.md).
+
 ## Auth Modes
 
 - `AUTH_MODE=cloudflare_access` (default): validates Cloudflare Access JWTs (`cf-access-jwt-assertion`) using `TEAM_DOMAIN` + `POLICY_AUD`.

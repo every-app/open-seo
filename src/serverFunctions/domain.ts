@@ -18,7 +18,7 @@ async function getDomainE2eFixtures() {
 
 export const getDomainOverview = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => domainOverviewSchema.parse(data))
+  .validator(domainOverviewSchema)
   .handler(async ({ data, context }) => {
     if (shouldUseDomainE2eFixtures()) {
       const fixtures = await getDomainE2eFixtures();
@@ -36,7 +36,7 @@ export const getDomainOverview = createServerFn({ method: "POST" })
 
 export const getDomainKeywordSuggestions = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => domainKeywordSuggestionsSchema.parse(data))
+  .validator(domainKeywordSuggestionsSchema)
   .handler(async ({ data, context }) =>
     DomainService.getSuggestedKeywords(
       {
@@ -50,9 +50,7 @@ export const getDomainKeywordSuggestions = createServerFn({ method: "POST" })
 
 export const getDomainKeywordsPage = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) =>
-    domainKeywordsPageRequestSchema.parse(data),
-  )
+  .validator(domainKeywordsPageRequestSchema)
   .handler(async ({ data, context }) => {
     if (shouldUseDomainE2eFixtures()) {
       const fixtures = await getDomainE2eFixtures();
@@ -70,7 +68,7 @@ export const getDomainKeywordsPage = createServerFn({ method: "POST" })
 
 export const getDomainPagesPage = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => domainPagesPageRequestSchema.parse(data))
+  .validator(domainPagesPageRequestSchema)
   .handler(async ({ data, context }) => {
     if (shouldUseDomainE2eFixtures()) {
       const fixtures = await getDomainE2eFixtures();

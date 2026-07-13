@@ -1,5 +1,4 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AutumnProvider } from "autumn-js/react";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
@@ -57,9 +56,7 @@ export function OnboardingChat() {
       {!domain ? (
         <SiteForm projectId={projectId} />
       ) : (
-        <AutumnProvider>
-          <OnboardingChatConversation projectId={projectId} domain={domain} />
-        </AutumnProvider>
+        <OnboardingChatConversation projectId={projectId} domain={domain} />
       )}
     </StrategyShell>
   );

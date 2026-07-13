@@ -53,7 +53,7 @@ export function AuthMethodChooser({
 
       <button
         type="button"
-        className="btn btn-soft w-full"
+        className="btn w-full"
         onClick={onContinueWithEmail}
         disabled={disabled || isBusy}
       >

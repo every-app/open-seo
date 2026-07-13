@@ -138,6 +138,10 @@ Search Console is optional and works in self-hosted deployments using your own
 Google OAuth client. It takes ~10 minutes of one-time setup — see
 [`docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md`](./docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md).
 
+## AI Features (SAM)
+
+AI features like SAM, the in-app SEO agent, are optional — set the `OPENROUTER_API_KEY` environment variable to enable them (create a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys)).
+
 ## Self-hosting
 
 OpenSEO supports two self-hosting paths:

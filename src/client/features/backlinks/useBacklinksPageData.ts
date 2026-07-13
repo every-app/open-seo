@@ -1,10 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type {
   BacklinksPageProps,
   BacklinksSearchState,
 } from "./backlinksPageTypes";
-import { useAccessGate } from "@/client/features/access-gate/useAccessGate";
 import {
   getErrorCode,
   getStandardErrorMessage,
@@ -15,7 +14,6 @@ import {
   getBacklinksRows,
   getBacklinksTopPages,
 } from "@/serverFunctions/backlinks";
-import { getBacklinksAccessSetupStatus } from "@/serverFunctions/backlinksAccess";
 import {
   BACKLINKS_DEFAULT_SORT,
   backlinksRowsSortFieldSchema,
@@ -76,13 +74,6 @@ export function useBacklinksPageData({
   searchState,
   filters,
 }: UseBacklinksPageDataArgs) {
-  const accessGate = useAccessGate({
-    queryKey: ["backlinksAccessStatus", projectId],
-    queryFn: () => getBacklinksAccessSetupStatus({ data: { projectId } }),
-    statusErrorFallback: "Could not load Backlinks setup status.",
-  });
-  const backlinksEnabled = accessGate.enabled;
-  const retryAccessGate = accessGate.onRetry;
   const searchCardInitialValues = useMemo(
     () => ({
       target: searchState.target,
@@ -93,7 +84,7 @@ export function useBacklinksPageData({
 
   const { target, scope, tab, page, pageSize, sort, order, view } = searchState;
   const rowsMode = view === "all" ? "as_is" : "one_per_domain";
-  const targetReady = backlinksEnabled && Boolean(target);
+  const targetReady = Boolean(target);
   const baseQueryKeyParts = [projectId, scope, target] as const;
   const pageInputBase = { projectId, target, scope, page, pageSize };
 
@@ -209,8 +200,6 @@ export function useBacklinksPageData({
     overviewQuery.error,
     "Could not load backlinks data.",
   );
-  const backlinksDisabledByError =
-    getErrorCode(overviewQuery.error) === "BACKLINKS_NOT_ENABLED";
   const activeTabQuery =
     tab === "backlinks"
       ? rowsQuery
@@ -221,28 +210,10 @@ export function useBacklinksPageData({
     activeTabQuery.error,
     "Could not load this tab.",
   );
-  const backlinksDisabledByTabError =
-    getErrorCode(activeTabQuery.error) === "BACKLINKS_NOT_ENABLED";
-
-  useEffect(() => {
-    if (
-      (backlinksDisabledByError || backlinksDisabledByTabError) &&
-      backlinksEnabled
-    ) {
-      retryAccessGate();
-    }
-  }, [
-    backlinksDisabledByError,
-    backlinksDisabledByTabError,
-    backlinksEnabled,
-    retryAccessGate,
-  ]);
 
   return {
-    accessGate,
     activeTabErrorMessage,
     activeTabQuery,
-    backlinksDisabledByError,
     overviewErrorMessage,
     overviewQuery,
     referringDomainsQuery,

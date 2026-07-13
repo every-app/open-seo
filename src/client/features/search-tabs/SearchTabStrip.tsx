@@ -179,7 +179,6 @@ function getSearchTabQueryConfig(
             projectId,
             target: input.target,
             scope: input.scope,
-            hideSpam: false,
           },
         }),
     };

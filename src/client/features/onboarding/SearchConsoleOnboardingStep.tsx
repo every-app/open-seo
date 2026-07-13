@@ -4,7 +4,10 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
 import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
-import { SitePicker } from "@/client/features/gsc/SitePicker";
+import {
+  SitePicker,
+  type GscSiteSelection,
+} from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -14,6 +17,8 @@ import {
   setGscSite,
 } from "@/serverFunctions/gsc";
 import { getProjects } from "@/serverFunctions/projects";
+
+const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
 /**
  * Onboarding step for connecting Google Search Console: link the account-level
@@ -47,7 +52,9 @@ export function SearchConsoleOnboardingStep() {
 /** Connect + pick-a-property flow, scoped to a known project. */
 function GscConnect({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
-  const [selectedSiteUrl, setSelectedSiteUrl] = React.useState("");
+  const [selection, setSelection] = React.useState<GscSiteSelection | null>(
+    null,
+  );
 
   const connectionKey = ["gscConnection", projectId];
   const connectionQuery = useQuery({
@@ -65,7 +72,13 @@ function GscConnect({ projectId }: { projectId: string }) {
     queryFn: () => listGscSites({ data: { projectId } }),
     enabled: hasGrant && !connected && !needsSetup,
   });
-  const requiresReconnect = Boolean(sitesQuery.data?.requiresReconnect);
+  const accounts = React.useMemo(
+    () => sitesQuery.data?.accounts ?? [],
+    [sitesQuery.data?.accounts],
+  );
+  const requiresReconnect = accounts.some(
+    (account) => account.requiresReconnect,
+  );
 
   React.useEffect(() => {
     if (!requiresReconnect) return;
@@ -73,11 +86,12 @@ function GscConnect({ projectId }: { projectId: string }) {
     void queryClient.invalidateQueries({
       queryKey: ["gscConnection", projectId],
     });
+    void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
   }, [requiresReconnect, queryClient, projectId]);
 
   const setSiteMutation = useMutation({
-    mutationFn: (siteUrl: string) =>
-      setGscSite({ data: { projectId, siteUrl } }),
+    mutationFn: (selected: GscSiteSelection) =>
+      setGscSite({ data: { projectId, ...selected } }),
     onSuccess: () => {
       captureClientEvent("gsc:property_select");
       void queryClient.invalidateQueries({ queryKey: connectionKey });
@@ -113,14 +127,13 @@ function GscConnect({ projectId }: { projectId: string }) {
     return (
       <SitePicker
         loading={sitesQuery.isLoading}
-        error={sitesQuery.isError || requiresReconnect}
-        sites={sitesQuery.data?.sites ?? []}
-        selectedSiteUrl={selectedSiteUrl}
-        onSelect={setSelectedSiteUrl}
-        onSave={() =>
-          selectedSiteUrl && setSiteMutation.mutate(selectedSiteUrl)
-        }
+        error={sitesQuery.isError}
+        accounts={accounts}
+        selection={selection}
+        onSelect={setSelection}
+        onSave={() => selection && setSiteMutation.mutate(selection)}
         saving={setSiteMutation.isPending}
+        onRetry={() => void sitesQuery.refetch()}
         onReconnect={handleConnect}
       />
     );

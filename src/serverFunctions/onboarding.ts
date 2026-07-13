@@ -66,7 +66,7 @@ export const getOnboardingAnswers = createServerFn({ method: "GET" })
 
 export const saveOnboardingAnswers = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => onboardingAnswersSchema.parse(data))
+  .validator(onboardingAnswersSchema)
   .handler(async ({ data, context }) => {
     const now = new Date().toISOString();
     const completedAt = data.completed ? now : undefined;

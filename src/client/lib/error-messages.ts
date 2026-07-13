@@ -1,3 +1,4 @@
+import { FREE_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
 
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
@@ -12,14 +13,13 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
     "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
+  AUDIT_PAGE_LIMIT_EXCEEDED: `Free plan audits are limited to ${FREE_MAX_AUDIT_PAGES} pages. Upgrade to run larger audits.`,
+  AUDIT_ALREADY_RUNNING:
+    "You already have an audit running. Wait for it to finish or delete it before starting another.",
   VALIDATION_ERROR: "Please check your input and try again.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
-  BACKLINKS_NOT_ENABLED:
-    "Backlinks is not enabled for the connected DataForSEO account yet.",
   BACKLINKS_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
-  AI_SEARCH_NOT_ENABLED:
-    "AI Optimization is not enabled for the connected DataForSEO account yet.",
   AI_SEARCH_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
   DATAFORSEO_AUTH_FAILED:

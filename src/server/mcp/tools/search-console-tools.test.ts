@@ -167,7 +167,7 @@ describe("search console MCP tools", () => {
     const first = result.content[0];
     expect(first.type).toBe("text");
     expect(first.type === "text" && first.text).toContain(
-      "/p/project_1/settings",
+      "/p/project_1/search-performance",
     );
   });
 
@@ -189,7 +189,7 @@ describe("search console MCP tools", () => {
     });
     const first = result.content[0];
     expect(first.type === "text" && first.text).toContain(
-      "/p/project_1/settings",
+      "/p/project_1/search-performance",
     );
   });
 

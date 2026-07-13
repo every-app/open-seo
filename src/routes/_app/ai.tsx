@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
 import {
@@ -59,7 +60,11 @@ function AiPage() {
               <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
                 MCP server URL
               </p>
-              <CopyButton value={mcpUrl} successMessage="MCP URL copied" />
+              <CopyButton
+                value={mcpUrl}
+                successMessage="MCP URL copied"
+                onCopy={() => captureClientEvent("mcp:setup_url_copy")}
+              />
             </div>
             <code className="mt-2 block break-all font-mono text-sm text-base-content">
               {mcpUrl}
@@ -89,6 +94,11 @@ function AiPage() {
               </p>
               <CodeBlock
                 code={`claude mcp add --transport http --scope user openseo ${mcpUrl}`}
+                onCopy={() =>
+                  captureClientEvent("mcp:setup_command_copy", {
+                    agent: "claude-code",
+                  })
+                }
               />
               <p className="text-sm text-base-content/70">
                 Approve the login when prompted.
@@ -141,7 +151,14 @@ function AiPage() {
               <p className="text-sm text-base-content/70">
                 Run this in your terminal:
               </p>
-              <CodeBlock code={`codex mcp add openseo --url ${mcpUrl}`} />
+              <CodeBlock
+                code={`codex mcp add openseo --url ${mcpUrl}`}
+                onCopy={() =>
+                  captureClientEvent("mcp:setup_command_copy", {
+                    agent: "codex",
+                  })
+                }
+              />
               <p className="text-sm text-base-content/70">
                 Approve the login when prompted.
               </p>

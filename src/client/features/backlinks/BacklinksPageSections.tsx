@@ -106,7 +106,7 @@ export function BacklinksResultsCard({
     <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
         <div className="space-y-2">
-          <div role="tablist" className="tabs tabs-box w-fit">
+          <div role="tablist" className="tabs tabs-border w-fit">
             {BACKLINKS_RESULTS_TABS.map(({ label, tab }) => (
               <TabLink
                 key={tab}
@@ -157,7 +157,7 @@ export function BacklinksResultsCard({
           <div
             role="tablist"
             aria-label="Backlinks view"
-            className="ml-auto tabs tabs-box tabs-xs w-fit"
+            className="ml-auto tabs tabs-border tabs-xs w-fit"
           >
             <button
               type="button"

@@ -72,18 +72,18 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
           onClick={() => {
             void router.invalidate();
           }}
-          className="btn btn-neutral btn-sm uppercase"
+          className="btn btn-primary btn-sm"
         >
           Try Again
         </button>
         {isRoot ? (
-          <Link to="/" className="btn btn-neutral btn-sm uppercase">
+          <Link to="/" className="btn btn-sm">
             Home
           </Link>
         ) : (
           <Link
             to="/"
-            className="btn btn-neutral btn-sm uppercase"
+            className="btn btn-sm"
             onClick={(e) => {
               e.preventDefault();
               window.history.back();

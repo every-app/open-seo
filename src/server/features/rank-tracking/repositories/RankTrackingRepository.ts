@@ -8,6 +8,7 @@ import {
   rankTrackingKeywords,
   projects,
 } from "@/db/schema";
+import { executeInBatches } from "@/db/runBatch";
 import {
   getLatestSnapshotsForKeywords,
   getSnapshotsBeforeDate,
@@ -16,21 +17,6 @@ import {
   getConfigTrend,
   getPositionMatrix,
 } from "./snapshotQueries";
-
-const DB_BATCH_SIZE = 100;
-type BatchStatement = Parameters<typeof db.batch>[0][number];
-
-async function executeInBatches<T>(
-  items: T[],
-  buildStatement: (item: T) => BatchStatement,
-) {
-  for (let i = 0; i < items.length; i += DB_BATCH_SIZE) {
-    const chunk = items.slice(i, i + DB_BATCH_SIZE).map(buildStatement);
-    const [first, ...rest] = chunk;
-    if (!first) continue;
-    await db.batch([first, ...rest]);
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Config CRUD
@@ -73,6 +59,7 @@ async function getConfigByProjectDomainLocation(
   projectId: string,
   domain: string,
   locationCode: number,
+  locationName: string | null,
 ) {
   const rows = await db
     .select()
@@ -82,6 +69,12 @@ async function getConfigByProjectDomainLocation(
         eq(rankTrackingConfigs.projectId, projectId),
         eq(rankTrackingConfigs.domain, domain),
         eq(rankTrackingConfigs.locationCode, locationCode),
+        // National (NULL) and per-city configs are distinct rows — mirrors
+        // the partial unique indexes, so a national config and any number of
+        // city configs can coexist for the same domain.
+        locationName === null
+          ? isNull(rankTrackingConfigs.locationName)
+          : eq(rankTrackingConfigs.locationName, locationName),
       ),
     )
     .limit(1);
@@ -118,6 +111,7 @@ async function getDueConfigsWithOrganization(nowIso: string) {
       domain: rankTrackingConfigs.domain,
       locationCode: rankTrackingConfigs.locationCode,
       languageCode: rankTrackingConfigs.languageCode,
+      locationName: rankTrackingConfigs.locationName,
       devices: rankTrackingConfigs.devices,
       serpDepth: rankTrackingConfigs.serpDepth,
       scheduleInterval: rankTrackingConfigs.scheduleInterval,
@@ -216,8 +210,23 @@ async function insertSnapshots(
     Omit<InferInsertModel<typeof rankSnapshots>, "id" | "checkedAt">
   >,
 ) {
-  await executeInBatches(snapshots, (snapshot) =>
-    db.insert(rankSnapshots).values(snapshot).onConflictDoNothing(),
+  // Target the (run, keyword, device) unique index explicitly. An UNtargeted
+  // ON CONFLICT DO NOTHING also swallows a primary-key collision, which would
+  // silently drop every row if the `id` serial sequence ever drifts behind
+  // max(id) (e.g. after a data import that copied explicit ids). Scoping the
+  // clause to the intended dedupe index keeps re-runs idempotent while letting
+  // a pk collision surface as a loud duplicate-key error instead of data loss.
+  await executeInBatches(snapshots, (tx, snapshot) =>
+    tx
+      .insert(rankSnapshots)
+      .values(snapshot)
+      .onConflictDoNothing({
+        target: [
+          rankSnapshots.runId,
+          rankSnapshots.trackingKeywordId,
+          rankSnapshots.device,
+        ],
+      }),
   );
 }
 
@@ -240,8 +249,8 @@ async function getKeywordsForConfig(configId: string) {
 async function addKeywordsToConfig(
   keywords: Array<{ id: string; configId: string; keyword: string }>,
 ) {
-  await executeInBatches(keywords, (kw) =>
-    db.insert(rankTrackingKeywords).values(kw).onConflictDoNothing(),
+  await executeInBatches(keywords, (tx, kw) =>
+    tx.insert(rankTrackingKeywords).values(kw).onConflictDoNothing(),
   );
 }
 
@@ -340,8 +349,8 @@ async function updateKeywordMetrics(
     metricsFetchedAt: string;
   }>,
 ) {
-  await executeInBatches(updates, (u) =>
-    db
+  await executeInBatches(updates, (tx, u) =>
+    tx
       .update(rankTrackingKeywords)
       .set({
         searchVolume: u.searchVolume,

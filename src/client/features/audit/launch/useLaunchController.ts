@@ -8,7 +8,7 @@ import {
 } from "@/serverFunctions/audit";
 import {
   DEFAULT_LAUNCH_FORM_VALUES,
-  MAX_PAGES_LIMIT,
+  getMaxPagesLimit,
   MIN_PAGES,
   type LaunchFormValues,
 } from "@/client/features/audit/launch/types";
@@ -39,11 +39,14 @@ function getLaunchValidationErrors(
 
 export function useLaunchController({
   projectId,
+  isFreePlan,
   onAuditStarted,
 }: {
   projectId: string;
+  isFreePlan: boolean;
   onAuditStarted: (auditId: string) => void;
 }) {
+  const maxPagesLimit = getMaxPagesLimit(isFreePlan);
   const historyQuery = useQuery({
     queryKey: ["audit-history", projectId],
     queryFn: () => getAuditHistory({ data: { projectId } }),
@@ -64,7 +67,7 @@ export function useLaunchController({
       onSubmit: ({ value }) => getLaunchValidationErrors(value, true),
     },
     onSubmit: async ({ formApi, value }) => {
-      const effectiveMaxPages = commitMaxPagesInput(launchForm);
+      const effectiveMaxPages = commitMaxPagesInput(launchForm, maxPagesLimit);
       formApi.setErrorMap({ onSubmit: undefined });
 
       if (effectiveMaxPages > 500) {
@@ -98,7 +101,8 @@ export function useLaunchController({
   return {
     launchForm,
     historyQuery,
-    commitMaxPagesInput: () => commitMaxPagesInput(launchForm),
+    maxPagesLimit,
+    commitMaxPagesInput: () => commitMaxPagesInput(launchForm, maxPagesLimit),
     deleteAudit: (auditId: string) => deleteMutation.mutate(auditId),
   };
 }
@@ -131,14 +135,17 @@ function useLaunchMutations({
   return { startMutation, deleteMutation };
 }
 
-function commitMaxPagesInput(launchForm: {
-  state: { values: { maxPagesInput: string } };
-  setFieldValue: (field: "maxPagesInput", value: string) => void;
-}) {
+function commitMaxPagesInput(
+  launchForm: {
+    state: { values: { maxPagesInput: string } };
+    setFieldValue: (field: "maxPagesInput", value: string) => void;
+  },
+  maxPagesLimit: number,
+) {
   const maxPagesInput = launchForm.state.values.maxPagesInput;
   const value = maxPagesInput ? Number.parseInt(maxPagesInput, 10) : MIN_PAGES;
   const safeValue = Number.isFinite(value)
-    ? Math.max(MIN_PAGES, Math.min(MAX_PAGES_LIMIT, Math.round(value)))
+    ? Math.max(MIN_PAGES, Math.min(maxPagesLimit, Math.round(value)))
     : MIN_PAGES;
   launchForm.setFieldValue("maxPagesInput", String(safeValue));
   return safeValue;

@@ -36,8 +36,11 @@ export const SECONDS_PER_BATCH = 6;
 /** Maximum keywords allowed per rank tracking config */
 export const MAX_KEYWORDS_PER_CONFIG = 1000;
 
+/** Maximum length of a single tracked keyword */
+export const MAX_TRACKED_KEYWORD_LENGTH = 200;
+
 /** Maximum configs (domain+location combos) per project */
-export const MAX_CONFIGS_PER_PROJECT = 20;
+export const MAX_CONFIGS_PER_PROJECT = 500;
 
 // ---------------------------------------------------------------------------
 // Cost estimation

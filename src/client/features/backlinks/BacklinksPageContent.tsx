@@ -5,7 +5,6 @@ import { BacklinksResultsCard } from "./BacklinksPageSections";
 import {
   BacklinksErrorState,
   BacklinksLoadingState,
-  BacklinksSetupGate,
 } from "./BacklinksPageStates";
 import { BacklinksHistorySection } from "./BacklinksHistorySection";
 import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
@@ -17,8 +16,6 @@ import type {
   BacklinksTabRows,
   BacklinksTopPagesData,
 } from "./backlinksPageTypes";
-import type { UseAccessGateResult } from "@/client/features/access-gate/useAccessGate";
-import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
 import { buildSummaryStats } from "./backlinksPageUtils";
 import type { BacklinksDomainExpansion } from "./useBacklinksDomainExpansion";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
@@ -29,8 +26,6 @@ import {
 
 type BacklinksBodyProps = {
   projectId: string;
-  accessGate: UseAccessGateResult;
-  backlinksDisabledByError: boolean;
   history: BacklinksSearchHistoryItem[];
   historyLoaded: boolean;
   overviewData: BacklinksOverviewData | undefined;
@@ -64,8 +59,6 @@ type BacklinksBodyProps = {
 
 export function BacklinksBody({
   projectId,
-  accessGate,
-  backlinksDisabledByError,
   history,
   historyLoaded,
   overviewData,
@@ -118,29 +111,6 @@ export function BacklinksBody({
       onViewed={searchTabs.onViewed}
     />
   ) : null;
-
-  if (accessGate.isLoading) {
-    return <AccessGateLoadingState />;
-  }
-
-  if (accessGate.statusErrorMessage) {
-    return (
-      <BacklinksErrorState
-        errorMessage={accessGate.statusErrorMessage}
-        onRetry={accessGate.onRetry}
-      />
-    );
-  }
-
-  if (!accessGate.enabled || backlinksDisabledByError) {
-    return (
-      <BacklinksSetupGate
-        errorMessage={accessGate.errorMessage}
-        isRefetching={accessGate.isRefetching}
-        onRetry={accessGate.onRetry}
-      />
-    );
-  }
 
   if (!searchState.target) {
     return (

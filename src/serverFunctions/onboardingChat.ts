@@ -39,7 +39,7 @@ const saveSiteSchema = z.object({
 // Persists the site + default location for the onboarding project.
 export const saveOnboardingSite = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => saveSiteSchema.parse(data))
+  .validator(saveSiteSchema)
   .handler(async ({ data, context }) => {
     const project = await ProjectRepository.getProjectForOrganization(
       data.projectId,

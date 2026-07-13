@@ -3,7 +3,7 @@ import {
   CHATGPT_LANGUAGE_CODE,
   CHATGPT_LOCATION_CODE,
   type LlmPlatform,
-} from "@/server/lib/dataforseo/ai";
+} from "@/server/lib/dataforseo/shared";
 import type {
   LlmAggregatedTotal,
   LlmMentionItem,

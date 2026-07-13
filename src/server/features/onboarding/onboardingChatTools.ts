@@ -1,11 +1,7 @@
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
-import {
-  MAX_PAGES,
-  readPages,
-  readSite,
-} from "@/server/features/onboarding/scrape";
+import { MAX_PAGES, readPages, readSite } from "@/server/lib/scrape";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { createDataforseoClient } from "@/server/lib/dataforseo";

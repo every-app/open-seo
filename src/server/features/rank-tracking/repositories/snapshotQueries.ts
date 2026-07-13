@@ -229,6 +229,7 @@ export async function getEarliestSnapshotsForKeywords(
 
   // D1 caps bound parameters at 100 per statement. The query binds N keyword
   // IDs plus 4 params from the completedRunIds subquery (referenced twice).
+  // (Postgres allows far more, but the chunking is harmless there.)
   const CHUNK_SIZE = 90;
   const allResults: Awaited<ReturnType<typeof getSnapshotsForConfig>> = [];
 
