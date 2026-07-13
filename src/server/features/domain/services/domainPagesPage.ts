@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
@@ -193,10 +194,14 @@ export async function getPagesPage(
     fetchedAt: new Date().toISOString(),
   };
 
-  void setCached(cacheKey, result, DOMAIN_PAGES_PAGE_TTL_SECONDS).catch(
-    (error) => {
-      console.error("domain.pages-page.cache-write failed:", error);
-    },
+  // waitUntil, not void: workerd cancels unregistered pending I/O once the
+  // response is sent, so a fire-and-forget put never persists the cache.
+  waitUntil(
+    setCached(cacheKey, result, DOMAIN_PAGES_PAGE_TTL_SECONDS).catch(
+      (error) => {
+        console.error("domain.pages-page.cache-write failed:", error);
+      },
+    ),
   );
 
   return result;
