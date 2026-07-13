@@ -3,7 +3,10 @@ import {
   formatModelLabel,
   getModelAccent,
 } from "@/client/features/ai-search/platformLabels";
-import { formatUrlForDisplay } from "@/client/components/table/url";
+import {
+  formatUrlForDisplay,
+  getSafeExternalUrl,
+} from "@/client/components/table/url";
 import type { CitedPage } from "@/client/features/ai-search/promptExplorerCitedPages";
 
 type Props = {
@@ -65,26 +68,54 @@ function SourceCell({
   page: CitedPage;
   highlightBrand: string | null;
 }) {
-  return (
-    <a href={page.url} target="_blank" rel="noreferrer" className="group block">
-      <span className="inline-flex items-center gap-1.5">
-        <span
-          className={`font-medium group-hover:underline ${
-            page.matchedBrand ? "text-primary" : "text-base-content"
-          }`}
-        >
-          {page.title || formatUrlForDisplay(page.url)}
+  // Citation URLs come from LLM/provider responses, so only render a clickable
+  // link when the scheme is a safe http(s) URL; otherwise fall back to plain
+  // text (per the repo's safe-external-links policy).
+  const safeUrl = getSafeExternalUrl(page.url);
+
+  const title = (
+    <span
+      className={`font-medium group-hover:underline ${
+        page.matchedBrand ? "text-primary" : "text-base-content"
+      }`}
+    >
+      {page.title || formatUrlForDisplay(page.url)}
+    </span>
+  );
+
+  const heading = (
+    <span className="inline-flex items-center gap-1.5">
+      {title}
+      {page.matchedBrand ? (
+        <span className="badge badge-primary badge-xs border-0">
+          {highlightBrand ?? "Brand"}
         </span>
-        {page.matchedBrand ? (
-          <span className="badge badge-primary badge-xs border-0">
-            {highlightBrand ?? "Brand"}
-          </span>
-        ) : null}
+      ) : null}
+      {safeUrl ? (
         <ExternalLink className="size-3 shrink-0 text-base-content/40" />
-      </span>
-      <span className="block truncate text-xs text-base-content/50">
-        {page.domain ?? formatUrlForDisplay(page.url)}
-      </span>
+      ) : null}
+    </span>
+  );
+
+  const domain = (
+    <span className="block truncate text-xs text-base-content/50">
+      {page.domain ?? formatUrlForDisplay(page.url)}
+    </span>
+  );
+
+  if (!safeUrl) {
+    return (
+      <div className="group block">
+        {heading}
+        {domain}
+      </div>
+    );
+  }
+
+  return (
+    <a href={safeUrl} target="_blank" rel="noreferrer" className="group block">
+      {heading}
+      {domain}
     </a>
   );
 }
