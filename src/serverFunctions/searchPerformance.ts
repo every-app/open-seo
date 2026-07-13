@@ -14,11 +14,23 @@ import {
   sumSearchTotals,
   toDimensionRows,
 } from "@/server/features/gsc/searchPerformanceReport";
+import {
+  filterDimensionRowsByMetrics,
+  filterStrikingDistanceByMetrics,
+  normalizePagePathFilter,
+  paginateRows,
+  toPagePathGscFilter,
+} from "@/server/features/gsc/searchPerformanceFilters";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
+  hasActiveMetricFilters,
   searchPerformanceInputSchema,
   searchPerformanceTableExportInputSchema,
   searchPerformanceTableInputSchema,
+  SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT,
+  type SearchPerformanceDateRange,
+  type SearchPerformanceMetricFilters,
+  type SearchPerformanceTableDimension,
 } from "@/types/schemas/search-performance";
 
 // query x page fan-out needs more rows to find the 5..20 band.
@@ -28,25 +40,57 @@ const DAILY_ROW_LIMIT = 200;
 const COUNTRY_ROW_LIMIT = 25;
 // Export pulls the whole dimension in one shot, capped at GSC's per-call max
 // (GSC_MAX_ROW_LIMIT). Large stores get everything up to this ceiling.
-const EXPORT_ROW_LIMIT = 1000;
+const EXPORT_ROW_LIMIT = SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT;
 
 /** Build GSC filter groups shared by every call. Device applies everywhere;
  *  country applies everywhere except the country breakdown itself (so the
- *  dropdown keeps every option visible while one country is selected). */
-function buildGscFilters(data: { device?: string; country?: string }): {
+ *  dropdown keeps every option visible while one country is selected).
+ *  Page path applies as a `page` contains filter when set. */
+function buildGscFilters(data: {
+  device?: string;
+  country?: string;
+  pagePath?: string;
+}): {
   deviceFilters: GscPerformanceFilter[];
   filters: GscPerformanceFilter[];
 } {
   const deviceFilters: GscPerformanceFilter[] = data.device
     ? [{ dimension: "device", operator: "equals", expression: data.device }]
     : [];
+  const pagePath = normalizePagePathFilter(data.pagePath);
+  const pageFilters: GscPerformanceFilter[] = pagePath
+    ? [toPagePathGscFilter(pagePath)]
+    : [];
   const filters: GscPerformanceFilter[] = data.country
     ? [
         ...deviceFilters,
+        ...pageFilters,
         { dimension: "country", operator: "equals", expression: data.country },
       ]
-    : deviceFilters;
+    : [...deviceFilters, ...pageFilters];
   return { deviceFilters, filters };
+}
+
+async function fetchFilteredDimensionRows(
+  data: SearchPerformanceMetricFilters & {
+    dateRange: SearchPerformanceDateRange;
+    dimension: SearchPerformanceTableDimension;
+  },
+  contextProjectId: string,
+) {
+  const { startDate, endDate } = resolveDateRange({
+    dateRange: data.dateRange,
+  });
+  const { filters } = buildGscFilters(data);
+  const result = await GscService.getPerformance({
+    projectId: contextProjectId,
+    startDate,
+    endDate,
+    dimensions: [data.dimension],
+    filters,
+    rowLimit: EXPORT_ROW_LIMIT,
+  });
+  return filterDimensionRowsByMetrics(toDimensionRows(result.rows), data);
 }
 
 /** Not connected, or a dead/denied grant (token failure or 401/403): the page
@@ -72,6 +116,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
     const prev = previousPeriod(startDate, endDate);
     const projectId = context.projectId;
     const { deviceFilters, filters } = buildGscFilters(data);
+    const metricFiltersActive = hasActiveMetricFilters(data);
 
     try {
       const [current, previous, queryPages, countries] = await Promise.all([
@@ -111,6 +156,7 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
 
       return {
         connected: true as const,
+        metricFiltersActive,
         range: {
           startDate,
           endDate,
@@ -119,7 +165,10 @@ export const getSearchPerformanceReport = createServerFn({ method: "POST" })
         },
         totals: sumSearchTotals(current.rows),
         prevTotals: sumSearchTotals(previous.rows),
-        strikingDistance: buildStrikingDistanceRows(queryPages.rows),
+        strikingDistance: filterStrikingDistanceByMetrics(
+          buildStrikingDistanceRows(queryPages.rows),
+          data,
+        ),
         countries: toDimensionRows(countries.rows),
       };
     } catch (error) {
@@ -143,9 +192,31 @@ export const getSearchPerformanceTable = createServerFn({ method: "POST" })
       dateRange: data.dateRange,
     });
     const { filters } = buildGscFilters(data);
-    const offset = (data.page - 1) * data.pageSize;
 
     try {
+      if (hasActiveMetricFilters(data)) {
+        const filteredRows = await fetchFilteredDimensionRows(
+          data,
+          context.projectId,
+        );
+        const { rows, hasNextPage } = paginateRows(
+          filteredRows,
+          data.page,
+          data.pageSize,
+        );
+
+        return {
+          connected: true as const,
+          dimension: data.dimension,
+          page: data.page,
+          pageSize: data.pageSize,
+          hasNextPage,
+          rows,
+        };
+      }
+
+      const offset = (data.page - 1) * data.pageSize;
+
       const result = await GscService.getPerformance({
         projectId: context.projectId,
         startDate,
@@ -185,22 +256,13 @@ export const exportSearchPerformanceTable = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(searchPerformanceTableExportInputSchema)
   .handler(async ({ data, context }) => {
-    const { startDate, endDate } = resolveDateRange({
-      dateRange: data.dateRange,
-    });
-    const { filters } = buildGscFilters(data);
-
-    const result = await GscService.getPerformance({
-      projectId: context.projectId,
-      startDate,
-      endDate,
-      dimensions: [data.dimension],
-      filters,
-      rowLimit: EXPORT_ROW_LIMIT,
-    });
+    const filteredRows = await fetchFilteredDimensionRows(
+      data,
+      context.projectId,
+    );
 
     return {
       dimension: data.dimension,
-      rows: toDimensionRows(result.rows),
+      rows: filteredRows,
     };
   });
