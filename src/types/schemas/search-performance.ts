@@ -79,15 +79,13 @@ const searchPerformanceFilterShape = {
   ...searchPerformanceMetricFilterShape,
 };
 
-export type SearchPerformanceMetricFilters = {
-  pagePath?: string;
-  minImpressions?: number;
-  maxImpressions?: number;
-  minClicks?: number;
-  maxClicks?: number;
-  minPosition?: number;
-  maxPosition?: number;
-};
+const searchPerformanceMetricFilterSchema = z.object(
+  searchPerformanceMetricFilterShape,
+);
+
+export type SearchPerformanceMetricFilters = z.infer<
+  typeof searchPerformanceMetricFilterSchema
+>;
 
 export function hasActiveMetricFilters(
   filters: SearchPerformanceMetricFilters,

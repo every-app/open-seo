@@ -155,6 +155,8 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   }, [tab, range, device, country, pageSize, advancedFilters]);
 
   const filterInput = buildFilterInput(range, device, country, advancedFilters);
+  const compiledAdvancedFilters =
+    compileAdvancedSearchPerformanceFilters(advancedFilters);
   const metricFiltersActive = hasActiveMetricFilters(filterInput);
 
   const reportQuery = useQuery({
@@ -164,7 +166,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
       range,
       device,
       country,
-      advancedFilters,
+      compiledAdvancedFilters,
     ],
     queryFn: () =>
       getSearchPerformanceReport({ data: { projectId, ...filterInput } }),
@@ -193,18 +195,10 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         "query",
         1,
         SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
-        buildFilterInput(range, device, country, advancedFilters),
+        filterInput,
       ),
     );
-  }, [
-    report?.connected,
-    projectId,
-    range,
-    device,
-    country,
-    advancedFilters,
-    queryClient,
-  ]);
+  }, [report?.connected, projectId, filterInput, queryClient]);
 
   const handleExport = async (target: ExportTarget) => {
     if (!report?.connected) return;

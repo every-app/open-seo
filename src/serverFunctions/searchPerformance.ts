@@ -75,6 +75,8 @@ async function fetchFilteredDimensionRows(
   data: SearchPerformanceMetricFilters & {
     dateRange: SearchPerformanceDateRange;
     dimension: SearchPerformanceTableDimension;
+    device?: string;
+    country?: string;
   },
   contextProjectId: string,
 ) {
