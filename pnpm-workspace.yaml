@@ -1,6 +1,11 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+  # TEMPORARY (remove after 2026-07-16): alchemy 2.0.0-beta.61 and its
+  # matching @distilled.cloud/*@0.28.2 published 2026-07-08 — 2 days shy of
+  # the window. Exact-pinned in package.json.
+  - "alchemy"
+  - "@distilled.cloud/*"
 
 # Advisories triaged as not applicable. Re-review when the parent updates.
 # - GHSA-67mh-4wv8-2f99: esbuild <=0.24.2 dev-server CORS. Only reachable via

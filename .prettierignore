@@ -1,6 +1,8 @@
 **/build
 **/public
 pnpm-lock.yaml
+# no parser for dotenv files; explicit `prettier <file>` aborts without this
+.env*
 routeTree.gen.ts
 .opencode/package.json
 
