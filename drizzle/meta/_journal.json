@@ -232,6 +232,13 @@
       "when": 1783699001850,
       "tag": "0032_public_shinko_yamashiro",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1784069998475,
+      "tag": "0033_first_rick_jones",
+      "breakpoints": true
     }
   ]
 }

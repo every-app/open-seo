@@ -71,6 +71,13 @@
       "when": 1783699015488,
       "tag": "0009_supreme_captain_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784070000325,
+      "tag": "0010_overrated_amazoness",
+      "breakpoints": true
     }
   ]
 }
