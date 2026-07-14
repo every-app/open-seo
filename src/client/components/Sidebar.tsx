@@ -32,10 +32,16 @@ interface SidebarProps {
 const navItemBaseClass =
   "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
 
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/50 hover:text-base-content`;
+// Hover uses a lighter tint than the active background (bg-base-300/50) so a
+// hovered item next to the active one stays visually distinct instead of
+// merging into a single block.
+const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30 hover:text-base-content`;
 
 const navItemActiveProps = {
-  className: "bg-base-300/50 font-medium text-base-content",
+  // Keep the active tint on hover so the active item does not fall back to the
+  // lighter hover background of navItemClass.
+  className:
+    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
 };
 
 function SidebarNavLink({
