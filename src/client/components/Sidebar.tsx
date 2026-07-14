@@ -40,7 +40,8 @@ const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30
 const navItemActiveProps = {
   // Keep the active tint on hover so the active item does not fall back to the
   // lighter hover background of navItemClass.
-  className: "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
+  className:
+    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
 };
 
 function SidebarNavLink({
