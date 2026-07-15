@@ -56,6 +56,7 @@ interface ImportMetaEnv {
   readonly TURNSTILE_SITE_KEY?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;
+  readonly VITE_E2E_PROMPT_EXPLORER_FIXTURES?: string;
 }
 
 interface ImportMeta {
