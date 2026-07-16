@@ -12,8 +12,7 @@ export function useSaveKeywordsMutation({
     mutationFn: (data: {
       projectId: string;
       keywords: string[];
-      locationCode: number;
-      languageCode: string;
+      locationCode?: number;
       metrics?: Array<{
         keyword: string;
         searchVolume?: number | null;

@@ -61,9 +61,8 @@ async function createProject(
   organizationId: string,
   name: string,
   domain?: string,
-  // An absent half keeps the column default; spreading writes only the
-  // provided columns.
-  market?: { locationCode?: number; languageCode: string },
+  // Omitted keeps the column defaults.
+  market?: { locationCode: number; languageCode: string },
 ) {
   const id = crypto.randomUUID();
   const [row] = await db
@@ -79,9 +78,8 @@ async function updateProject(
   input: {
     name: string;
     domain?: string;
-    // An absent half leaves the column untouched (a language-only change
-    // must not rewrite the location from a pre-read snapshot).
-    market?: { locationCode?: number; languageCode: string };
+    // Omitted leaves the market columns untouched.
+    market?: { locationCode: number; languageCode: string };
   },
 ) {
   const [row] = await db
@@ -91,6 +89,34 @@ async function updateProject(
       and(
         eq(projects.id, projectId),
         eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .returning();
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  return row;
+}
+
+// Writes only the market columns. Onboarding sets the project's market before
+// the user has named the project or picked a domain, so it must not go through
+// updateProject, whose `domain: input.domain ?? null` would clear the domain.
+async function updateProjectMarket(
+  projectId: string,
+  organizationId: string,
+  market: { locationCode: number; languageCode: string },
+) {
+  const [row] = await db
+    .update(projects)
+    .set(market)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
       ),
     )
     .returning();
@@ -171,6 +197,7 @@ export const ProjectRepository = {
   getProjectById,
   createProject,
   updateProject,
+  updateProjectMarket,
   tryCreateDefaultProject,
   archiveProject,
   restoreProject,

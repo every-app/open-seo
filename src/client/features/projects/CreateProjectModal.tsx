@@ -2,11 +2,14 @@ import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { LocationSelect } from "@/client/components/LocationSelect";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { setLastProjectId } from "@/client/lib/active-project";
-import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
+import {
+  DEFAULT_LOCATION_CODE,
+  getLanguageCode,
+} from "@/client/features/keywords/locations";
+import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { createProject } from "@/serverFunctions/projects";
 
 export function CreateProjectModal({ onClose }: { onClose: () => void }) {
@@ -14,17 +17,18 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = React.useState("");
   const [domain, setDomain] = React.useState("");
-  const [locationCode, setLocationCode] = React.useState(DEFAULT_LOCATION_CODE);
+  const [market, setMarket] = React.useState({
+    locationCode: DEFAULT_LOCATION_CODE,
+    languageCode: getLanguageCode(DEFAULT_LOCATION_CODE),
+  });
 
   const createMutation = useMutation({
     mutationFn: () =>
       createProject({
-        // Language auto-derives server-side from the location's native
-        // language; the settings page offers the full per-location list.
         data: {
           name: name.trim(),
           domain: domain.trim() || undefined,
-          locationCode,
+          ...market,
         },
       }),
     onSuccess: async (created) => {
@@ -97,14 +101,14 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
           </span>
         </label>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Default market</span>
-          <LocationSelect value={locationCode} onChange={setLocationCode} />
+        <div className="flex flex-col gap-1.5">
+          <ProjectMarketFields value={market} onChange={setMarket} />
           <span className="text-xs text-base-content/50">
-            Keyword and SERP data defaults to this market when a call doesn't
-            specify one. Change it later in project settings.
+            Keyword, SERP, and domain data uses this country and language unless
+            a call asks for a different one. Change it later in project
+            settings.
           </span>
-        </label>
+        </div>
 
         <div className="flex justify-end gap-2">
           <button

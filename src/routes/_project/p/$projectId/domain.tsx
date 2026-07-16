@@ -8,8 +8,8 @@ import {
   DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
   domainSearchSchema,
 } from "@/types/schemas/domain";
-import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { getDomainRouteState } from "@/client/features/domain/domainRouteState";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 
 const DEFAULT_DOMAIN_SEARCH = {
   domain: "",
@@ -17,7 +17,6 @@ const DEFAULT_DOMAIN_SEARCH = {
   sort: "traffic",
   order: undefined,
   tab: "keywords",
-  loc: DEFAULT_LOCATION_CODE,
   page: 1,
   size: DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
   include: "",
@@ -52,7 +51,8 @@ function DomainOverviewRoute() {
   const { projectId } = Route.useParams();
   const navigate = useNavigate({ from: Route.fullPath });
   const search = Route.useSearch();
-  const routeState = getDomainRouteState(search);
+  const projectMarket = useProjectMarket(projectId);
+  const routeState = getDomainRouteState(search, projectMarket);
 
   return (
     <DomainOverviewPage

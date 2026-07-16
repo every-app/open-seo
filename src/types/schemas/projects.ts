@@ -31,19 +31,49 @@ const projectLanguageCodeField = z
   .refine(isSupportedLanguageCode, "Unsupported language code")
   .optional();
 
-export const createProjectSchema = z.object({
-  name: projectNameField,
-  domain: projectDomainField,
-  locationCode: projectLocationCodeField,
-  languageCode: projectLanguageCodeField,
-});
+// A language on its own has no location to validate against, and would force a
+// read of the stored row to resolve. Callers set the market as a pair, or send
+// a location alone and let the service derive its language.
+const hasLocationForLanguage = (input: {
+  locationCode?: number;
+  languageCode?: string;
+}) => input.locationCode != null || input.languageCode == null;
 
-export const updateProjectSchema = z.object({
+const marketPairMessage = {
+  message: "A language requires a location.",
+  path: ["languageCode"],
+};
+
+export const createProjectSchema = z
+  .object({
+    name: projectNameField,
+    domain: projectDomainField,
+    locationCode: projectLocationCodeField,
+    languageCode: projectLanguageCodeField,
+  })
+  .refine(hasLocationForLanguage, marketPairMessage);
+
+export const updateProjectSchema = z
+  .object({
+    projectId: z.string().min(1),
+    name: projectNameField,
+    domain: projectDomainField,
+    locationCode: projectLocationCodeField,
+    languageCode: projectLanguageCodeField,
+  })
+  .refine(hasLocationForLanguage, marketPairMessage);
+
+// Market-only update (onboarding). Both halves are required: the caller picks
+// them together, so the service can validate the pair without a stored row.
+export const setProjectMarketSchema = z.object({
   projectId: z.string().min(1),
-  name: projectNameField,
-  domain: projectDomainField,
-  locationCode: projectLocationCodeField,
-  languageCode: projectLanguageCodeField,
+  locationCode: z
+    .number()
+    .int()
+    .refine(isSupportedLocationCode, "Unsupported DataForSEO location code"),
+  languageCode: z
+    .string()
+    .refine(isSupportedLanguageCode, "Unsupported language code"),
 });
 
 export const archiveProjectSchema = z.object({
@@ -59,5 +89,6 @@ export const restoreProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type SetProjectMarketInput = z.infer<typeof setProjectMarketSchema>;
 export type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
 export type RestoreProjectInput = z.infer<typeof restoreProjectSchema>;

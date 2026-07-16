@@ -6,13 +6,11 @@ import {
   looseObjectOutputSchema,
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
-import {
-  resolveRequestMarket,
-  withMcpProjectAuth,
-} from "@/server/mcp/project-auth";
+import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveMarket } from "@/shared/keyword-locations";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import { assertLanguageForLocation } from "@/server/lib/market";
 import {
-  assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -106,13 +104,12 @@ export const researchKeywordsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const projectMarket = context.project;
     const results = await Promise.all(
       args.seeds.map(async (item) => {
         try {
-          const { locationCode, languageCode } = resolveRequestMarket(
+          const { locationCode, languageCode } = resolveMarket(
             item,
-            projectMarket,
+            context.project,
           );
           assertLanguageForLocation(locationCode, languageCode);
           const data = await KeywordResearchService.research(

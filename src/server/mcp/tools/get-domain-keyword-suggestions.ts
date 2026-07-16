@@ -6,10 +6,8 @@ import {
   looseObjectOutputSchema,
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
-import {
-  resolveRequestMarket,
-  withMcpProjectAuth,
-} from "@/server/mcp/project-auth";
+import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveLabsMarket } from "@/shared/keyword-locations";
 import {
   formatMcpTable,
   readPath,
@@ -18,6 +16,8 @@ import {
 import {
   assertLabsLocationCode,
   assertLanguageForLocation,
+} from "@/server/lib/market";
+import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -60,7 +60,7 @@ export const getDomainKeywordSuggestionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const { locationCode, languageCode } = resolveRequestMarket(
+    const { locationCode, languageCode } = resolveLabsMarket(
       args,
       context.project,
     );

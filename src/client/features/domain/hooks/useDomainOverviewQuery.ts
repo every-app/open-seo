@@ -5,8 +5,7 @@ type Input = {
   projectId: string;
   domain: string;
   includeSubdomains: boolean;
-  locationCode: number;
-  languageCode: string;
+  locationCode: number | undefined;
 };
 
 export function useDomainOverviewQuery(input: Input) {
@@ -20,7 +19,6 @@ export function useDomainOverviewQuery(input: Input) {
       trimmedDomain,
       input.includeSubdomains,
       input.locationCode,
-      input.languageCode,
     ],
     queryFn: () =>
       getDomainOverview({
@@ -29,7 +27,6 @@ export function useDomainOverviewQuery(input: Input) {
           domain: trimmedDomain,
           includeSubdomains: input.includeSubdomains,
           locationCode: input.locationCode,
-          languageCode: input.languageCode,
         },
       }),
     staleTime: 5 * 60_000,

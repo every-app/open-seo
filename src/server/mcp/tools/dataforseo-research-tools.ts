@@ -11,19 +11,16 @@ import {
   looseObjectOutputSchema,
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
-import {
-  resolveRequestMarket,
-  withMcpProjectAuth,
-} from "@/server/mcp/project-auth";
+import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import {
   formatMcpTable,
   readPath,
   type McpTableColumn,
 } from "@/server/mcp/table";
-import { getKeywordDataProvider } from "@/shared/keyword-locations";
+import { resolveLabsMarket, resolveMarket } from "@/shared/keyword-locations";
+import { assertLanguageForLocation } from "@/server/lib/market";
 import {
   DEFAULT_LOCATION_CODE,
-  assertLanguageForLocation,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -353,11 +350,10 @@ const QUESTIONS_ANSWERS_MAX_RADIUS = 199999;
 
 /**
  * Resolves the market selector to a Labs location + language. An explicit
- * country wins; omitted falls back to the project's default market, but only
- * when that default is Labs-served (these two tools are Labs-only - an
- * Ads-provider project market like Iceland must not silently break them).
+ * country wins; omitted inherits the project's default via resolveLabsMarket,
+ * which keeps these Labs-only tools off an Ads-served project market.
  */
-function resolveMarket(
+function resolveMarketSelector(
   market: Market | undefined,
   project: { locationCode: number; languageCode: string },
 ): { locationCode: number; languageCode: string } {
@@ -365,13 +361,7 @@ function resolveMarket(
     // The Zod enum already restricts explicit values to United States variants.
     return { locationCode: DEFAULT_LOCATION_CODE, languageCode: "en" };
   }
-  if (getKeywordDataProvider(project.locationCode) !== "labs") {
-    return { locationCode: DEFAULT_LOCATION_CODE, languageCode: "en" };
-  }
-  return {
-    locationCode: project.locationCode,
-    languageCode: project.languageCode,
-  };
+  return resolveLabsMarket({}, project);
 }
 
 function formatCoordinate(value: number): string {
@@ -618,7 +608,7 @@ export const getRankedKeywordsTool = {
   handler: withMcpProjectAuth(async (args: GetRankedKeywordsArgs, context) => {
     const client = createDataforseoClient(context.billing);
     const targetIsPage = /^https?:\/\//.test(args.target);
-    const market = resolveMarket(args.market, context.project);
+    const market = resolveMarketSelector(args.market, context.project);
     const keywords = await client.domain.rankedKeywords({
       target: args.target,
       locationCode: market.locationCode,
@@ -798,7 +788,7 @@ export const findSerpCompetitorsTool = {
   handler: withMcpProjectAuth(
     async (args: FindSerpCompetitorsArgs, context) => {
       const client = createDataforseoClient(context.billing);
-      const market = resolveMarket(args.market, context.project);
+      const market = resolveMarketSelector(args.market, context.project);
       const competitors = await client.labs.serpCompetitors({
         keywords: args.keywords,
         locationCode: market.locationCode,
@@ -855,13 +845,9 @@ export const getKeywordMetricsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
-    const { locationCode, languageCode } = resolveRequestMarket(
-      args,
-      context.project,
-    );
-    // Assert against the RESOLVED pair: with a non-US default market, an
-    // explicit language and an omitted location must validate against the
-    // default location, not the hardcoded US fallback.
+    const { locationCode, languageCode } = resolveMarket(args, context.project);
+    // Assert against the RESOLVED pair: an explicit language with an omitted
+    // location must validate against the project's default location.
     assertLanguageForLocation(locationCode, languageCode);
     const client = createDataforseoClient(context.billing);
     const metrics = await fetchKeywordMetricsForList(client, {

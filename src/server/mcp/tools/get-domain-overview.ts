@@ -3,13 +3,13 @@ import { DomainService } from "@/server/features/domain/services/DomainService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
-import {
-  resolveRequestMarket,
-  withMcpProjectAuth,
-} from "@/server/mcp/project-auth";
+import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveLabsMarket } from "@/shared/keyword-locations";
 import {
   assertLabsLocationCode,
   assertLanguageForLocation,
+} from "@/server/lib/market";
+import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -53,7 +53,7 @@ export const getDomainOverviewTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const { locationCode, languageCode } = resolveRequestMarket(
+    const { locationCode, languageCode } = resolveLabsMarket(
       args,
       context.project,
     );

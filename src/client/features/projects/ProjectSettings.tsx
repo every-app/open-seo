@@ -3,12 +3,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
-import { LocationSelect } from "@/client/components/LocationSelect";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
-import {
-  getLanguageCode,
-  getLanguageOptions,
-} from "@/client/features/keywords/locations";
+import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   clearLastProjectId,
@@ -74,17 +70,10 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
   const queryClient = useQueryClient();
   const [name, setName] = React.useState(project.name);
   const [domain, setDomain] = React.useState(project.domain ?? "");
-  const [locationCode, setLocationCode] = React.useState(project.locationCode);
-  const [languageCode, setLanguageCode] = React.useState(project.languageCode);
-
-  const languageOptions = getLanguageOptions(locationCode);
-
-  const handleLocationChange = (code: number) => {
-    setLocationCode(code);
-    // Snap to the new location's native language; the select below still
-    // offers the location's full served list.
-    setLanguageCode(getLanguageCode(code));
-  };
+  const [market, setMarket] = React.useState({
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
+  });
 
   const updateMutation = useMutation({
     mutationFn: () =>
@@ -93,8 +82,7 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
           projectId: project.id,
           name: name.trim(),
           domain: domain.trim() || undefined,
-          locationCode,
-          languageCode,
+          ...market,
         },
       }),
     onSuccess: async () => {
@@ -108,8 +96,8 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
   const isDirty =
     name.trim() !== project.name ||
     (domain.trim() || "") !== (project.domain ?? "") ||
-    locationCode !== project.locationCode ||
-    languageCode !== project.languageCode;
+    market.locationCode !== project.locationCode ||
+    market.languageCode !== project.languageCode;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -150,31 +138,11 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">Default market</span>
-            <LocationSelect
-              value={locationCode}
-              onChange={handleLocationChange}
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium">Language</span>
-            <select
-              value={languageCode}
-              onChange={(event) => setLanguageCode(event.target.value)}
-              className="select select-bordered w-full"
-            >
-              {languageOptions.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <span className="col-span-full text-xs text-base-content/50">
-            Keyword, SERP, and domain data defaults to this market when a call
-            doesn't specify one.
+        <div className="flex flex-col gap-1.5">
+          <ProjectMarketFields value={market} onChange={setMarket} />
+          <span className="text-xs text-base-content/50">
+            Keyword, SERP, and domain data uses this country and language unless
+            a call asks for a different one.
           </span>
         </div>
 

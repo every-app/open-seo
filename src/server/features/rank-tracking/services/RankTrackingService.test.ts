@@ -29,6 +29,7 @@ const archivedConfig = {
 
 const baseInput = {
   projectId: "project_1",
+  projectMarket: { locationCode: 2704, languageCode: "vi" },
   domain: "acme.com",
   locationCode: 2840,
   languageCode: "es",
@@ -152,6 +153,43 @@ describe("RankTrackingService.createConfig", () => {
         serpDepth: 40,
         scheduleInterval: "daily",
       }),
+    );
+  });
+
+  it("uses the project's market when location and language are omitted", async () => {
+    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+    mocks.getConfigsForProject.mockResolvedValue([]);
+    mocks.createConfig.mockResolvedValue(undefined);
+    const { RankTrackingService } = await import("./RankTrackingService");
+
+    await RankTrackingService.createConfig({
+      projectId: "project_1",
+      projectMarket: { locationCode: 2704, languageCode: "vi" },
+      domain: "acme.com",
+      serpDepth: 40,
+    });
+
+    expect(mocks.createConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ locationCode: 2704, languageCode: "vi" }),
+    );
+  });
+
+  it("snaps the language when only location overrides the project market", async () => {
+    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+    mocks.getConfigsForProject.mockResolvedValue([]);
+    mocks.createConfig.mockResolvedValue(undefined);
+    const { RankTrackingService } = await import("./RankTrackingService");
+
+    await RankTrackingService.createConfig({
+      projectId: "project_1",
+      projectMarket: { locationCode: 2704, languageCode: "vi" },
+      domain: "acme.com",
+      locationCode: 2276,
+      serpDepth: 40,
+    });
+
+    expect(mocks.createConfig).toHaveBeenCalledWith(
+      expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
     );
   });
 });

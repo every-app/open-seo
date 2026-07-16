@@ -1,33 +1,26 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { usePreferredKeywordLocation } from "@/client/features/keywords/hooks/usePreferredKeywordLocation";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { saveKeywords } from "@/serverFunctions/keywords";
-import { getProjects } from "@/serverFunctions/projects";
 import type { SaveKeywordsInput } from "@/types/schemas/keywords";
 import type { KeywordResearchRow } from "@/types/keywords";
-import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
 
-export function useResolvedKeywordLocation(
-  input: KeywordResearchControllerInput,
-) {
-  // Seed the picker from the project's default market (cached under
-  // ["projects"], shared with the switcher/settings) until the user picks one.
-  const projectsQuery = useQuery({
-    queryKey: ["projects"],
-    queryFn: () => getProjects(),
-  });
-  const projectDefaultLocationCode = projectsQuery.data?.find(
-    (project) => project.id === input.projectId,
-  )?.locationCode;
-  const { preferredLocationCode, setPreferredLocationCode } =
-    usePreferredKeywordLocation(projectDefaultLocationCode);
-  const locationCode =
-    !input.hasExplicitLocationCode && input.keywordInput === ""
-      ? preferredLocationCode
-      : input.locationCode;
+export function useResolvedKeywordLocation(input: {
+  projectId: string;
+  locationCode?: number;
+}) {
+  const projectMarket = useProjectMarket(input.projectId);
+  const {
+    preferredLocationCode,
+    selectedLocationCode,
+    setPreferredLocationCode,
+  } = usePreferredKeywordLocation(input.projectId, projectMarket?.locationCode);
+  const locationCode = input.locationCode ?? selectedLocationCode;
+  const displayedLocationCode = input.locationCode ?? preferredLocationCode;
 
-  return { locationCode, setPreferredLocationCode };
+  return { locationCode, displayedLocationCode, setPreferredLocationCode };
 }
 
 export function useKeywordUiState(initialShowFilters: boolean) {

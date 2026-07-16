@@ -3,9 +3,9 @@ import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 
-// Market resolution for the Labs-only tools (get_ranked_keywords,
-// find_serp_competitors): the explicit country selector and the project's
-// default-market fallback (projects.locationCode/languageCode).
+// Market resolution for get_ranked_keywords: the explicit country selector and
+// the project's default-market fallback (projects.locationCode/languageCode).
+// find_serp_competitors resolves through the same resolveMarketSelector.
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),

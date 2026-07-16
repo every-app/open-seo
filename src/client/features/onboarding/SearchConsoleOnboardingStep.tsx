@@ -11,12 +11,14 @@ import {
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
+import type { ProjectMarket } from "@/client/features/projects/types";
 import {
   getGscConnection,
   listGscSites,
   setGscSite,
 } from "@/serverFunctions/gsc";
-import { getProjects } from "@/serverFunctions/projects";
+import { getProjects, setProjectMarket } from "@/serverFunctions/projects";
 
 const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
@@ -31,19 +33,66 @@ export function SearchConsoleOnboardingStep() {
     queryKey: ["projects"],
     queryFn: () => getProjects(),
   });
-  const projectId = projectsQuery.data?.[0]?.id;
+  const project = projectsQuery.data?.[0];
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        Connect with Google Search Console now?
-      </h2>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">
+          Connect with Google Search Console now?
+        </h2>
 
-      {projectId ? <GscConnect projectId={projectId} /> : <Checking />}
+        {project ? <GscConnect projectId={project.id} /> : <Checking />}
 
+        <p className="text-xs leading-relaxed text-base-content/55">
+          For now, Search Console data flows through the OpenSEO MCP. We're
+          building it into the OpenSEO app soon too.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Choose country &amp; language</h2>
+        {project ? <DefaultMarketPicker project={project} /> : <Checking />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Sets the project's default market during onboarding, so keyword, SERP, and
+ * domain data lands on the user's market from their first search instead of
+ * defaulting to the US. Saves on change — the step's Continue button belongs
+ * to the wizard, so a separate Save here would be easy to walk past.
+ */
+function DefaultMarketPicker({
+  project,
+}: {
+  project: { id: string; locationCode: number; languageCode: string };
+}) {
+  const queryClient = useQueryClient();
+  const [market, setMarket] = React.useState<ProjectMarket>({
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (next: ProjectMarket) =>
+      setProjectMarket({ data: { projectId: project.id, ...next } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+    onError: (error) => toast.error(getStandardErrorMessage(error)),
+  });
+
+  const handleChange = (next: ProjectMarket) => {
+    setMarket(next);
+    saveMutation.mutate(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <ProjectMarketFields value={market} onChange={handleChange} />
       <p className="text-xs leading-relaxed text-base-content/55">
-        For now, Search Console data flows through the OpenSEO MCP. We're
-        building it into the OpenSEO app soon too.
+        We'll use this country and language for keyword, SERP, and domain data
+        unless you pick a different one. You can change it in project settings.
       </p>
     </div>
   );
