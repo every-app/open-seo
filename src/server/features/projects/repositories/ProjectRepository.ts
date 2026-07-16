@@ -61,11 +61,13 @@ async function createProject(
   organizationId: string,
   name: string,
   domain?: string,
+  // Omitted keeps the column defaults.
+  market?: { locationCode: number; languageCode: string },
 ) {
   const id = crypto.randomUUID();
   const [row] = await db
     .insert(projects)
-    .values({ id, organizationId, name, domain })
+    .values({ id, organizationId, name, domain, ...market })
     .returning();
   return row;
 }
@@ -73,15 +75,48 @@ async function createProject(
 async function updateProject(
   projectId: string,
   organizationId: string,
-  input: { name: string; domain?: string },
+  input: {
+    name: string;
+    domain?: string;
+    // Omitted leaves the market columns untouched.
+    market?: { locationCode: number; languageCode: string };
+  },
 ) {
   const [row] = await db
     .update(projects)
-    .set({ name: input.name, domain: input.domain ?? null })
+    .set({ name: input.name, domain: input.domain ?? null, ...input.market })
     .where(
       and(
         eq(projects.id, projectId),
         eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .returning();
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  return row;
+}
+
+// Writes only the market columns. Onboarding sets the project's market before
+// the user has named the project or picked a domain, so it must not go through
+// updateProject, whose `domain: input.domain ?? null` would clear the domain.
+async function updateProjectMarket(
+  projectId: string,
+  organizationId: string,
+  market: { locationCode: number; languageCode: string },
+) {
+  const [row] = await db
+    .update(projects)
+    .set(market)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
       ),
     )
     .returning();
@@ -162,6 +197,7 @@ export const ProjectRepository = {
   getProjectById,
   createProject,
   updateProject,
+  updateProjectMarket,
   tryCreateDefaultProject,
   archiveProject,
   restoreProject,

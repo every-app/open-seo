@@ -2,23 +2,48 @@ import type {
   ArchiveProjectInput,
   CreateProjectInput,
   RestoreProjectInput,
+  SetProjectMarketInput,
   UpdateProjectInput,
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { AppError } from "@/server/lib/errors";
+import { assertLanguageForLocation } from "@/server/lib/market";
+import { getLanguageCode } from "@/shared/keyword-locations";
 
 function mapProject(project: {
   id: string;
   name: string;
   domain: string | null;
+  locationCode: number;
+  languageCode: string;
   createdAt: string;
 }) {
   return {
     id: project.id,
     name: project.name,
     domain: project.domain,
+    // Default market for the project's data calls (MCP tools and the web UI
+    // fall back to these when a call omits locationCode/languageCode).
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
     createdAt: project.createdAt,
   };
+}
+
+/**
+ * Resolves a market input into the columns to write. A location with no
+ * language snaps to that location's native language; the schemas forbid the
+ * reverse, so the pair is always resolvable without reading the stored row.
+ */
+function resolveMarketInput(input: {
+  locationCode?: number;
+  languageCode?: string;
+}): { locationCode: number; languageCode: string } | undefined {
+  if (input.locationCode == null) return undefined;
+  const locationCode = input.locationCode;
+  const languageCode = input.languageCode ?? getLanguageCode(locationCode);
+  assertLanguageForLocation(locationCode, languageCode);
+  return { locationCode, languageCode };
 }
 
 // The projects table's only unique index guards the auto-created ("Default",
@@ -67,6 +92,7 @@ export async function createProject(
       organizationId,
       input.name,
       input.domain,
+      resolveMarketInput(input),
     );
     return mapProject(row);
   } catch (error) {
@@ -85,7 +111,11 @@ export async function updateProject(
     const row = await ProjectRepository.updateProject(
       input.projectId,
       organizationId,
-      { name: input.name, domain: input.domain },
+      {
+        name: input.name,
+        domain: input.domain,
+        market: resolveMarketInput(input),
+      },
     );
     return mapProject(row);
   } catch (error) {
@@ -94,6 +124,24 @@ export async function updateProject(
     }
     throw error;
   }
+}
+
+/**
+ * Sets a project's default market on its own, for surfaces that only ask for
+ * the market (onboarding). Writing just these two columns keeps the write from
+ * echoing a name/domain the caller never edited.
+ */
+export async function setProjectMarket(
+  organizationId: string,
+  input: SetProjectMarketInput,
+) {
+  assertLanguageForLocation(input.locationCode, input.languageCode);
+  const row = await ProjectRepository.updateProjectMarket(
+    input.projectId,
+    organizationId,
+    { locationCode: input.locationCode, languageCode: input.languageCode },
+  );
+  return mapProject(row);
 }
 
 export async function archiveProject(

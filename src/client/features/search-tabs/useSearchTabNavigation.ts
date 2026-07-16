@@ -9,7 +9,7 @@ type UseSearchTabNavigationArgs = {
   navigateToInput: (input: SearchTabInput | null) => void;
 };
 
-function tabInputKey(input: SearchTabInput | null) {
+export function tabInputKey(input: SearchTabInput | null) {
   return input ? JSON.stringify(input) : "";
 }
 

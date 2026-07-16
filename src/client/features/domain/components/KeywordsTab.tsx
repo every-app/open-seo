@@ -65,7 +65,6 @@ const KEYWORD_RANGE_FILTERS = [
 type Props = {
   projectId: string;
   domain: string;
-  languageCode: string;
   routeState: DomainOverviewRouteState;
   canSaveKeywords: boolean;
   setSearchParams: (updates: SearchUpdate) => void;
@@ -77,7 +76,6 @@ type Props = {
 export function KeywordsTab({
   projectId,
   domain,
-  languageCode,
   routeState,
   canSaveKeywords,
   setSearchParams,
@@ -106,8 +104,7 @@ export function KeywordsTab({
     projectId,
     domain,
     includeSubdomains: routeState.subdomains,
-    locationCode: routeState.locationCode,
-    languageCode,
+    locationCode: routeState.sentLocationCode,
     page: routeState.page,
     pageSize: routeState.pageSize,
     sortMode: routeState.sort,
@@ -159,13 +156,11 @@ export function KeywordsTab({
       filteredKeywords: rows,
       save: saveMutation.mutate,
       projectId,
-      locationCode: routeState.locationCode,
-      languageCode,
+      locationCode: routeState.sentLocationCode,
     });
   }, [
-    languageCode,
     projectId,
-    routeState.locationCode,
+    routeState.sentLocationCode,
     rows,
     saveMutation.mutate,
     selectedKeywords,

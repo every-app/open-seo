@@ -4,11 +4,12 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveLabsMarket } from "@/shared/keyword-locations";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   assertLabsLocationCode,
   assertLanguageForLocation,
+} from "@/server/lib/market";
+import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -52,15 +53,19 @@ export const getDomainOverviewTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    assertLabsLocationCode(args.locationCode);
-    assertLanguageForLocation(args.locationCode, args.languageCode);
+    const { locationCode, languageCode } = resolveLabsMarket(
+      args,
+      context.project,
+    );
+    assertLabsLocationCode(locationCode);
+    assertLanguageForLocation(locationCode, languageCode);
     const result = await DomainService.getOverview(
       {
         projectId: args.projectId,
         domain: args.domain,
         includeSubdomains: args.includeSubdomains,
-        locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+        locationCode,
+        languageCode,
       },
       context.billing,
     );

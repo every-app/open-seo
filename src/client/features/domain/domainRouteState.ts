@@ -6,6 +6,7 @@ import {
   DEFAULT_LOCATION_CODE,
   isLabsLocationCode,
 } from "@/client/features/keywords/locations";
+import type { ProjectMarket } from "@/client/features/projects/types";
 import {
   EMPTY_DOMAIN_FILTERS,
   type DomainActiveTab,
@@ -28,7 +29,9 @@ export type DomainOverviewRouteState = {
   sort: DomainSortMode;
   order: SortOrder;
   tab: DomainActiveTab;
+  defaultLocationCode: number;
   locationCode: number;
+  sentLocationCode: number | undefined;
   page: number;
   pageSize: number;
   appliedFilters: DomainFilterValues;
@@ -44,13 +47,18 @@ function numberToFilterString(value: number | undefined): string {
 
 export function getDomainRouteState(
   search: DomainSearchParams,
+  projectMarket?: ProjectMarket,
 ): DomainOverviewRouteState {
   const normalizedSort = toSortMode(search.sort ?? null) ?? "traffic";
+  const defaultLocationCode =
+    projectMarket && isLabsLocationCode(projectMarket.locationCode)
+      ? projectMarket.locationCode
+      : DEFAULT_LOCATION_CODE;
   // Domain analytics is Labs-backed; Google-Ads-only countries aren't valid.
   const normalizedLocationCode =
     search.loc != null && isLabsLocationCode(search.loc)
       ? search.loc
-      : DEFAULT_LOCATION_CODE;
+      : defaultLocationCode;
 
   return {
     domain: search.domain ?? "",
@@ -58,7 +66,9 @@ export function getDomainRouteState(
     sort: normalizedSort,
     order: resolveSortOrder(normalizedSort, toSortOrder(search.order ?? null)),
     tab: search.tab ?? "keywords",
+    defaultLocationCode,
     locationCode: normalizedLocationCode,
+    sentLocationCode: search.loc,
     page: search.page != null && search.page > 0 ? search.page : 1,
     pageSize: search.size ?? DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE,
     appliedFilters: {

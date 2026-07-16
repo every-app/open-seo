@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   archiveProject: vi.fn(),
   restoreProject: vi.fn(),
   countProjects: vi.fn(),
+  updateProjectMarket: vi.fn(),
   getProjectForOrganization: vi.fn(),
   listProjects: vi.fn(),
   listArchivedProjects: vi.fn(),
@@ -89,7 +90,38 @@ describe("project service", () => {
         "org_1",
         "Acme",
         "acme.com",
+        undefined,
       );
+    });
+
+    it("derives the native language when only the location is given", async () => {
+      mocks.createProject.mockResolvedValue(namedProject);
+      const { createProject } = await import("./projects");
+
+      await createProject("org_1", {
+        name: "Acme",
+        domain: "acme.com",
+        locationCode: 2704,
+      });
+      expect(mocks.createProject).toHaveBeenCalledWith(
+        "org_1",
+        "Acme",
+        "acme.com",
+        { locationCode: 2704, languageCode: "vi" },
+      );
+    });
+
+    it("rejects a language DataForSEO does not serve for the location", async () => {
+      const { createProject } = await import("./projects");
+
+      await expect(
+        createProject("org_1", {
+          name: "Acme",
+          locationCode: 2840,
+          languageCode: "vi",
+        }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+      expect(mocks.createProject).not.toHaveBeenCalled();
     });
 
     it("maps the reserved Default conflict to a friendly CONFLICT", async () => {
@@ -107,6 +139,37 @@ describe("project service", () => {
   });
 
   describe("updateProject", () => {
+    it("leaves the market columns untouched when neither half is given", async () => {
+      mocks.updateProject.mockResolvedValue(namedProject);
+      const { updateProject } = await import("./projects");
+
+      await updateProject("org_1", { projectId: "project_acme", name: "Acme" });
+      expect(mocks.updateProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        expect.objectContaining({ market: undefined }),
+      );
+    });
+
+    it("snaps the language on a location-only change without reading the stored row", async () => {
+      mocks.updateProject.mockResolvedValue(namedProject);
+      const { updateProject } = await import("./projects");
+
+      await updateProject("org_1", {
+        projectId: "project_acme",
+        name: "Acme",
+        locationCode: 2276,
+      });
+      expect(mocks.getProjectForOrganization).not.toHaveBeenCalled();
+      expect(mocks.updateProject).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        expect.objectContaining({
+          market: { locationCode: 2276, languageCode: "de" },
+        }),
+      );
+    });
+
     it("returns the updated project", async () => {
       mocks.updateProject.mockResolvedValue(namedProject);
       const { updateProject } = await import("./projects");
@@ -142,6 +205,45 @@ describe("project service", () => {
         "org_1",
         { name: "Acme", domain: undefined },
       );
+    });
+  });
+
+  describe("setProjectMarket", () => {
+    it("writes only the market columns, leaving name and domain untouched", async () => {
+      // Onboarding sets the market before the project is named or given a
+      // domain; going through updateProject would clear the domain.
+      mocks.updateProjectMarket.mockResolvedValue({
+        ...namedProject,
+        locationCode: 2704,
+        languageCode: "vi",
+      });
+      const { setProjectMarket } = await import("./projects");
+
+      await setProjectMarket("org_1", {
+        projectId: "project_acme",
+        locationCode: 2704,
+        languageCode: "vi",
+      });
+
+      expect(mocks.updateProjectMarket).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        { locationCode: 2704, languageCode: "vi" },
+      );
+      expect(mocks.updateProject).not.toHaveBeenCalled();
+    });
+
+    it("rejects a language the location does not serve before any write", async () => {
+      const { setProjectMarket } = await import("./projects");
+
+      await expect(
+        setProjectMarket("org_1", {
+          projectId: "project_acme",
+          locationCode: 2840,
+          languageCode: "vi",
+        }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+      expect(mocks.updateProjectMarket).not.toHaveBeenCalled();
     });
   });
 

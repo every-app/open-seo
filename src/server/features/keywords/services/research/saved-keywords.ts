@@ -5,7 +5,7 @@ import type {
   ExportSavedKeywordsInput,
   GetSavedKeywordsInput,
   RemoveSavedKeywordsInput,
-  SaveKeywordsInput,
+  ResolvedSaveKeywordsInput,
   UpdateSavedKeywordTagInput,
   UpdateSavedKeywordTagsInput,
 } from "@/types/schemas/keywords";
@@ -31,7 +31,7 @@ function parseMonthlySearches(payload: string | null): MonthlySearch[] {
   return result.success ? result.data : [];
 }
 
-export async function saveKeywords(input: SaveKeywordsInput) {
+export async function saveKeywords(input: ResolvedSaveKeywordsInput) {
   const normalizedKeywords = [
     ...new Set(
       input.keywords.map(normalizeKeyword).filter((kw) => kw.length > 0),

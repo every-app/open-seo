@@ -13,7 +13,7 @@ export const listProjectsTool = {
   config: {
     title: "List projects",
     description:
-      "Lists all projects in the user's organization. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain}; pass the `id` value as `projectId`.",
+      "Lists all projects in the user's organization. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain, locationCode, languageCode}; pass the `id` value as `projectId`. locationCode/languageCode are the project's default market — tools fall back to them when a call omits location/language args.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
       projects: z.array(
@@ -22,6 +22,8 @@ export const listProjectsTool = {
             id: z.string(),
             name: z.string(),
             domain: z.string().nullable().optional(),
+            locationCode: z.number(),
+            languageCode: z.string(),
             url: z.string(),
           })
           .passthrough(),
@@ -41,7 +43,8 @@ export const listProjectsTool = {
       projects.length === 0
         ? ["No projects yet. Create one in the dashboard."]
         : projects.map(
-            (p) => `- ${p.id}  ${p.name}${p.domain ? ` (${p.domain})` : ""}`,
+            (p) =>
+              `- ${p.id}  ${p.name}${p.domain ? ` (${p.domain})` : ""}  market:${p.locationCode}/${p.languageCode}`,
           );
     return mcpResponse({
       text: `Projects (${projects.length}):\n${lines.join("\n")}`,
@@ -54,6 +57,8 @@ export const listProjectsTool = {
           id: p.id,
           name: p.name,
           domain: p.domain,
+          locationCode: p.locationCode,
+          languageCode: p.languageCode,
           url: buildDashboardUrl(baseUrl, `/p/${p.id}`),
         })),
       },
