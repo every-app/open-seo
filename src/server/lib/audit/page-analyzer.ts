@@ -7,7 +7,7 @@
  */
 import * as cheerio from "cheerio";
 import { normalizeUrl, isSameOrigin } from "./url-utils";
-import type { PageAnalysis } from "./types";
+import type { PageAnalysis, PageLink } from "./types";
 
 /**
  * Analyze an HTML string and extract all SEO-relevant data.
@@ -71,9 +71,8 @@ export function analyzeHtml(
     });
   });
 
-  // --- Links ---
-  const internalLinks: string[] = [];
-  const externalLinks: string[] = [];
+  // --- Links (deduped by target URL; first anchor wins) ---
+  const linksByTarget = new Map<string, PageLink>();
 
   $("a[href]").each((_, el) => {
     const href = $(el).attr("href");
@@ -84,13 +83,18 @@ export function analyzeHtml(
 
     const resolved = normalizeUrl(href, pageUrl);
     if (!resolved) return;
+    if (linksByTarget.has(resolved)) return;
 
-    if (isSameOrigin(resolved, pageUrl)) {
-      internalLinks.push(resolved);
-    } else {
-      externalLinks.push(resolved);
-    }
+    const anchor = $(el).text().replace(/\s+/g, " ").trim().slice(0, 200);
+    const rel = $(el).attr("rel")?.toLowerCase() ?? "";
+    linksByTarget.set(resolved, {
+      targetUrl: resolved,
+      anchor: anchor || null,
+      isInternal: isSameOrigin(resolved, pageUrl),
+      isNofollow: rel.split(/\s+/).includes("nofollow"),
+    });
   });
+  const links = Array.from(linksByTarget.values());
 
   // --- Structured data (JSON-LD) ---
   let hasStructuredData = false;
@@ -119,9 +123,9 @@ export function analyzeHtml(
     h1s,
     headingOrder,
     wordCount,
+    bodyText,
     images,
-    internalLinks,
-    externalLinks,
+    links,
     hasStructuredData,
     hreflangTags,
   };

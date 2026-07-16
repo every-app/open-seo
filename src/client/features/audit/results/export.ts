@@ -1,7 +1,61 @@
 import type { AuditResultsData } from "@/client/features/audit/results/types";
+import { getIssueDescriptor } from "@/shared/audit-issues";
 import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import { downloadFile } from "@/client/lib/download";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
+
+const ISSUES_HEADERS = ["Severity", "Issue", "URL", "Details", "How To Fix"];
+
+function issuesRows(issues: AuditResultsData["issues"]): CsvValue[][] {
+  return issues.map((issue) => {
+    const descriptor = getIssueDescriptor(issue.issueType);
+    return [
+      issue.severity,
+      descriptor?.title ?? issue.issueType,
+      issue.pageUrl,
+      issue.detailsJson ?? "",
+      descriptor?.howToFix ?? "",
+    ];
+  });
+}
+
+export function exportIssues(
+  issues: AuditResultsData["issues"],
+  format: "csv" | "json" | "sheets",
+) {
+  if (format === "json") {
+    const rows = issues.map((issue) => {
+      const descriptor = getIssueDescriptor(issue.issueType);
+      return {
+        severity: issue.severity,
+        issueType: issue.issueType,
+        issue: descriptor?.title ?? issue.issueType,
+        url: issue.pageUrl,
+        details: issue.detailsJson
+          ? (JSON.parse(issue.detailsJson) as unknown)
+          : null,
+        howToFix: descriptor?.howToFix ?? null,
+      };
+    });
+    downloadFile(
+      JSON.stringify(rows, null, 2),
+      "audit-issues.json",
+      "application/json",
+    );
+    return;
+  }
+
+  if (format === "sheets") {
+    void exportTableToSheets({
+      headers: ISSUES_HEADERS,
+      rows: issuesRows(issues),
+      feature: "audit_issues",
+    });
+    return;
+  }
+
+  downloadCsv("audit-issues.csv", buildCsv(ISSUES_HEADERS, issuesRows(issues)));
+}
 
 const PAGES_HEADERS = [
   "URL",

@@ -1,5 +1,6 @@
 /**
- * Build-time stand-in for `just-bash`, wired up via the vite.config.ts alias.
+ * Build-time stand-in for `just-bash`, wired up via the leanWorkerBundle
+ * plugin's alias (vite-plugin-lean-worker-bundle.ts).
  *
  * `@cloudflare/think` eagerly imports just-bash (~21 MB of source, plus
  * turndown and the 8.6 MB @mixmark-io/domino DOM implementation) at module
@@ -14,7 +15,8 @@
  * @cloudflare/think loads just-bash lazily.
  */
 const STUBBED_MESSAGE =
-  "just-bash is stubbed out of the worker bundle (see vite.config.ts); " +
+  "just-bash is stubbed out of the worker bundle (see " +
+  "vite-plugin-lean-worker-bundle.ts); " +
   "the workspace bash tool is disabled for this deployment";
 
 // Covers every named import in the dependency graph: `Bash` (Think's

@@ -186,6 +186,26 @@ async function hostnameResolvesToBlockedAddress(
   }
 }
 
+/**
+ * Synchronous SSRF check for URLs discovered mid-crawl (links, redirect
+ * targets, sitemap entries). Blocks non-http(s) schemes, private/loopback IP
+ * literals, and internal hostnames. DNS resolution is only performed for the
+ * start URL (see normalizeAndValidateStartUrl); per-link DoH lookups would be
+ * prohibitively slow.
+ */
+export function isCrawlableUrl(url: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return false;
+  }
+  return !isBlockedHost(parsed.hostname);
+}
+
 export async function normalizeAndValidateStartUrl(
   input: string,
 ): Promise<string> {

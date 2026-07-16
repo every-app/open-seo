@@ -1,0 +1,171 @@
+{
+  "files": [
+    {
+      "path": "specs/0001-project-scoping-for-server-functions.md",
+      "description": "Canonical server-function project-scoping design and exceptions.",
+      "scope": [
+        "src/serverFunctions/**",
+        "src/server/mcp/**",
+        "src/middleware/**"
+      ]
+    },
+    {
+      "path": "src/serverFunctions/middleware.ts",
+      "description": "Established authenticated and active-project context middleware.",
+      "scope": ["src/serverFunctions/**"]
+    },
+    {
+      "path": "src/server/mcp/project-auth.ts",
+      "description": "Canonical project authorization wrapper for MCP handlers.",
+      "scope": ["src/server/mcp/**"]
+    },
+    {
+      "path": "src/db/schema-parity.test.ts",
+      "description": "Cross-dialect structural guarantees and mechanical DB guards. Coverage includes only explicitly registered schema modules, so verify that every affected module participates; passing this test does not prove semantic query or migration portability.",
+      "scope": [
+        "src/db/**",
+        "drizzle/**",
+        "drizzle-pg/**",
+        "src/lib/auth.ts",
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/middleware/**"
+      ]
+    },
+    {
+      "path": "src/db/schema.ts",
+      "description": "Provider-aware schema export surface for SQLite and Postgres.",
+      "scope": [
+        "src/db/**",
+        "src/lib/auth.ts",
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/middleware/**"
+      ]
+    },
+    {
+      "path": "scripts/migrate-d1-to-postgres.ts",
+      "description": "Operational D1-to-Postgres copy and transformation assumptions.",
+      "scope": [
+        "src/db/**",
+        "drizzle/**",
+        "drizzle-pg/**",
+        "scripts/migrate-d1-to-postgres.ts"
+      ]
+    },
+    {
+      "path": "src/db/runBatch.ts",
+      "description": "Provider-aware atomic batch and chunked batch semantics.",
+      "scope": ["src/server/**", "src/serverFunctions/**", "src/middleware/**"]
+    },
+    {
+      "path": "src/server/workflows/pgStep.ts",
+      "description": "Required Postgres request scope for database-touching Workflow steps.",
+      "scope": ["src/server/workflows/**"]
+    },
+    {
+      "path": "src/db/pg/client.ts",
+      "description": "Request-scoped Postgres client and withPgClient contract for Worker and Durable Object entrypoints.",
+      "scope": [
+        "src/server.ts",
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/routes/api/**",
+        "src/middleware/**"
+      ]
+    },
+    {
+      "path": "src/server/lib/dataforseo/client.ts",
+      "description": "Single authenticated and metered DataForSEO consumer seam, including hosted and self-hosted behavior.",
+      "scope": [
+        "src/server/lib/dataforseo/**",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**",
+        "src/serverFunctions/**"
+      ]
+    },
+    {
+      "path": "src/server/lib/dataforseo/envelope.ts",
+      "description": "Provider response validation and billed-failure metadata semantics. Known existing gap: parseTaskItems can currently discard billing metadata when a billed payload fails item validation; do not treat that path as precedent.",
+      "scope": [
+        "src/server/lib/dataforseo/**",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**"
+      ]
+    },
+    {
+      "path": "src/server/billing/subscription.ts",
+      "description": "Canonical hosted credit checks, balance reads, spend ordering, and usage tracking.",
+      "scope": [
+        "src/shared/billing*.ts",
+        "src/shared/rank-tracking.ts",
+        "src/server.ts",
+        "src/server/billing/**",
+        "src/server/lib/chatAgent.ts",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/lib/openrouter.ts",
+        "src/server/lib/audit/lighthouse.ts",
+        "src/server/lib/dataforseo/**",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**",
+        "src/serverFunctions/**",
+        "src/routes/api/autumn/**"
+      ]
+    },
+    {
+      "path": "src/server/billing/autumn.ts",
+      "description": "Single lazy Autumn client and the restricted retry policy for non-idempotent track calls.",
+      "scope": [
+        "src/shared/billing*.ts",
+        "src/shared/rank-tracking.ts",
+        "src/server.ts",
+        "src/server/billing/**",
+        "src/server/lib/chatAgent.ts",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/lib/openrouter.ts",
+        "src/server/lib/audit/lighthouse.ts",
+        "src/server/lib/dataforseo/**",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**",
+        "src/serverFunctions/**",
+        "src/routes/api/autumn/**"
+      ]
+    },
+    {
+      "path": "src/server/lib/audit/url-policy.ts",
+      "description": "Shared SSRF, hostname, and crawlable-URL policy.",
+      "scope": ["src/server/**", "src/serverFunctions/**", "src/routes/api/**"]
+    },
+    {
+      "path": "src/server/mcp/output-schemas.ts",
+      "description": "MCP structured-output schemas, including the SDK-class passthrough constraint.",
+      "scope": ["src/server/mcp/**"]
+    },
+    {
+      "path": "src/server/mcp/instrumentation.ts",
+      "description": "Required MCP handler instrumentation for error capture, timing, metadata, and output validation.",
+      "scope": ["src/server/mcp/**"]
+    },
+    {
+      "path": "src/client/components/table/url.tsx",
+      "description": "Canonical client-side external URL sanitization and rendering helpers.",
+      "scope": ["src/client/**", "src/routes/**/*.tsx"]
+    },
+    {
+      "path": "src/client/components/SafeExternalLink.tsx",
+      "description": "Shared safe renderer for untrusted external links outside table cells.",
+      "scope": ["src/client/**", "src/routes/**/*.tsx"]
+    },
+    {
+      "path": "src/client/components/Markdown.tsx",
+      "description": "Shared Markdown renderer with safe handling for untrusted links.",
+      "scope": ["src/client/**", "src/routes/**/*.tsx"]
+    }
+  ]
+}

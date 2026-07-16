@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { version } from "../../../package.json";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -112,7 +113,17 @@ function SettingsPage() {
               />
             </div>
           </section>
-        ) : null}
+        ) : (
+          <section className="space-y-3">
+            <h2 className="text-sm font-medium text-base-content/50">About</h2>
+            <div className="flex items-center justify-between gap-6">
+              <span className="text-sm">Version</span>
+              <span className="font-mono text-sm text-base-content/60">
+                v{version}
+              </span>
+            </div>
+          </section>
+        )}
       </div>
     </div>
   );

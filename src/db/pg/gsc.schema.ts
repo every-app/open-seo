@@ -25,6 +25,7 @@ export const gscConnections = pgTable(
     siteUrl: text("site_url").notNull(),
     // Whose google-search-console grant getAccessToken should use.
     connectedByUserId: text("connected_by_user_id").notNull(),
+    gscAccountId: text("gsc_account_id"),
     connectedAccountEmail: text("connected_account_email"),
     createdAt: text("created_at").notNull().default(isoNow),
     updatedAt: text("updated_at").notNull().default(isoNow),

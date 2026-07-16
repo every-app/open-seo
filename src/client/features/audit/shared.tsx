@@ -78,24 +78,3 @@ export function LighthouseScoreBadge({ score }: { score: number | null }) {
     score >= 90 ? "text-success" : score >= 50 ? "text-warning" : "text-error";
   return <span className={`font-medium text-sm ${color}`}>{score}</span>;
 }
-
-export function StatCard({
-  label,
-  value,
-  className = "",
-}: {
-  label: string;
-  value: string;
-  className?: string;
-}) {
-  return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body p-4">
-        <p className="text-xs uppercase tracking-wide text-base-content/60">
-          {label}
-        </p>
-        <p className={`text-2xl font-semibold ${className}`}>{value}</p>
-      </div>
-    </div>
-  );
-}

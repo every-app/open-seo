@@ -8,45 +8,9 @@ import {
   trackUsageCreditSpend,
 } from "@/server/billing/subscription";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import {
-  fetchBusinessListingsSearch,
-  fetchQuestionsAnswers,
-} from "@/server/lib/dataforseo/business";
-import {
-  fetchBacklinksHistory,
-  fetchBacklinksRows,
-  fetchBacklinksSummary,
-  fetchDomainPagesSummary,
-  fetchReferringDomains,
-} from "@/server/lib/dataforseo/backlinks";
-import {
-  fetchDomainRankOverview,
-  fetchKeywordIdeas,
-  fetchKeywordOverview,
-  fetchKeywordSuggestions,
-  fetchRankedKeywords,
-  fetchRelatedKeywords,
-  fetchRelevantPages,
-  fetchSerpCompetitors,
-} from "@/server/lib/dataforseo/labs";
-import {
-  fetchAdsKeywordIdeas,
-  fetchAdsSearchVolume,
-} from "@/server/lib/dataforseo/google-ads";
-import {
-  fetchLiveSerp,
-  fetchLocalSerp,
-  fetchRankCheckSerp,
-  postRankCheckTasks,
-} from "@/server/lib/dataforseo/serp";
-import { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
-import {
-  fetchLlmAggregatedMetrics,
-  fetchLlmCrossAggregatedMetrics,
-  fetchLlmMentionsSearch,
-  fetchLlmResponse,
-  fetchLlmTopPages,
-} from "@/server/lib/dataforseo/ai";
+// Type-only namespace import: erased at compile, so the section modules (and
+// the SDK they pull in) still only load through loadDataforseoSections below.
+import type * as sections from "@/server/lib/dataforseo/sections";
 import {
   DataforseoChargedTaskError,
   type DataforseoApiCallCost,
@@ -57,10 +21,24 @@ import { AppError } from "@/server/lib/errors";
 
 export { mapDataforseoPathToCreditFeature };
 
+/** The section-fetcher barrel (sections.ts), as a type for `meter` pickers. */
+export type DataforseoSections = typeof sections;
+
+let sectionsPromise: Promise<DataforseoSections> | undefined;
+
+/** Single lazy boundary for the DataForSEO subtree: the section fetchers and
+ * the ~3 MB dataforseo-client SDK they statically import stay out of the
+ * eager isolate startup graph and load once, on the first API call. */
+export function loadDataforseoSections(): Promise<DataforseoSections> {
+  return (sectionsPromise ??= import("@/server/lib/dataforseo/sections"));
+}
+
 /**
  * Wraps a section fetcher with billing metering. Each entry on the client is
- * `meter(customer, fetcher, defaultFeature?)`, which returns a function with the
- * fetcher's own input type and resolves to its unwrapped `.data`.
+ * `meter(customer, (s) => s.fetchX, defaultFeature?)`, which returns a function
+ * with the fetcher's own input type and resolves to its unwrapped `.data`. The
+ * picker indirection (rather than the fetcher itself) keeps the section
+ * modules behind loadDataforseoSections.
  *
  * `defaultFeature` is the fallback credit feature; a caller can override it per
  * call by passing `creditFeature` in the input (e.g. an MCP tool attributing
@@ -69,13 +47,15 @@ export { mapDataforseoPathToCreditFeature };
  */
 function meter<I, T>(
   customer: BillingCustomerContext,
-  fetcher: (input: I) => Promise<DataforseoApiResponse<T>>,
+  pick: (
+    sections: DataforseoSections,
+  ) => (input: I) => Promise<DataforseoApiResponse<T>>,
   defaultFeature?: CreditFeature,
 ): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
   return (input) =>
     meterDataforseoCall(
       customer,
-      () => fetcher(input),
+      async () => pick(await loadDataforseoSections())(input),
       input.creditFeature ?? defaultFeature,
     );
 }
@@ -85,56 +65,71 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
     business: {
       businessListings: meter(
         customer,
-        fetchBusinessListingsSearch,
+        (s) => s.fetchBusinessListingsSearch,
         "local_seo",
       ),
-      questionsAnswers: meter(customer, fetchQuestionsAnswers, "local_seo"),
+      questionsAnswers: meter(
+        customer,
+        (s) => s.fetchQuestionsAnswers,
+        "local_seo",
+      ),
     },
     backlinks: {
-      summary: meter(customer, fetchBacklinksSummary),
-      rows: meter(customer, fetchBacklinksRows),
-      referringDomains: meter(customer, fetchReferringDomains),
-      domainPages: meter(customer, fetchDomainPagesSummary),
-      history: meter(customer, fetchBacklinksHistory),
+      summary: meter(customer, (s) => s.fetchBacklinksSummary),
+      rows: meter(customer, (s) => s.fetchBacklinksRows),
+      referringDomains: meter(customer, (s) => s.fetchReferringDomains),
+      domainPages: meter(customer, (s) => s.fetchDomainPagesSummary),
+      history: meter(customer, (s) => s.fetchBacklinksHistory),
     },
     keywords: {
-      related: meter(customer, fetchRelatedKeywords),
-      suggestions: meter(customer, fetchKeywordSuggestions),
-      ideas: meter(customer, fetchKeywordIdeas),
+      related: meter(customer, (s) => s.fetchRelatedKeywords),
+      suggestions: meter(customer, (s) => s.fetchKeywordSuggestions),
+      ideas: meter(customer, (s) => s.fetchKeywordIdeas),
       // Google Ads endpoints for countries Labs doesn't support.
-      adsIdeas: meter(customer, fetchAdsKeywordIdeas),
-      adsSearchVolume: meter(customer, fetchAdsSearchVolume),
+      adsIdeas: meter(customer, (s) => s.fetchAdsKeywordIdeas),
+      adsSearchVolume: meter(customer, (s) => s.fetchAdsSearchVolume),
     },
     domain: {
-      rankOverview: meter(customer, fetchDomainRankOverview),
-      rankedKeywords: meter(customer, fetchRankedKeywords),
-      relevantPages: meter(customer, fetchRelevantPages),
+      rankOverview: meter(customer, (s) => s.fetchDomainRankOverview),
+      rankedKeywords: meter(customer, (s) => s.fetchRankedKeywords),
+      relevantPages: meter(customer, (s) => s.fetchRelevantPages),
     },
     serp: {
-      live: meter(customer, fetchLiveSerp),
-      rankCheck: meter(customer, fetchRankCheckSerp, "rank_tracking"),
+      live: meter(customer, (s) => s.fetchLiveSerp),
+      rankCheck: meter(customer, (s) => s.fetchRankCheckSerp, "rank_tracking"),
       // Posts up to 100 queued rank check tasks; one metered charge covers the
       // whole batch (DataForSEO bills task_post at post time, collection is
       // free).
-      rankCheckTaskPost: meter(customer, postRankCheckTasks, "rank_tracking"),
-      local: meter(customer, fetchLocalSerp, "local_seo"),
+      rankCheckTaskPost: meter(
+        customer,
+        (s) => s.postRankCheckTasks,
+        "rank_tracking",
+      ),
+      local: meter(customer, (s) => s.fetchLocalSerp, "local_seo"),
     },
     labs: {
       // Callers (e.g. the keyword-metrics MCP tool) can attribute the spend to
       // their own feature by passing `creditFeature` in the input; defaults to
       // rank_tracking when omitted.
-      keywordOverview: meter(customer, fetchKeywordOverview, "rank_tracking"),
-      serpCompetitors: meter(customer, fetchSerpCompetitors),
+      keywordOverview: meter(
+        customer,
+        (s) => s.fetchKeywordOverview,
+        "rank_tracking",
+      ),
+      serpCompetitors: meter(customer, (s) => s.fetchSerpCompetitors),
     },
     lighthouse: {
-      live: meter(customer, fetchLighthouseResult),
+      live: meter(customer, (s) => s.fetchLighthouseResult),
     },
     aiSearch: {
-      mentionsSearch: meter(customer, fetchLlmMentionsSearch),
-      aggregatedMetrics: meter(customer, fetchLlmAggregatedMetrics),
-      topPages: meter(customer, fetchLlmTopPages),
-      crossAggregatedMetrics: meter(customer, fetchLlmCrossAggregatedMetrics),
-      llmResponse: meter(customer, fetchLlmResponse),
+      mentionsSearch: meter(customer, (s) => s.fetchLlmMentionsSearch),
+      aggregatedMetrics: meter(customer, (s) => s.fetchLlmAggregatedMetrics),
+      topPages: meter(customer, (s) => s.fetchLlmTopPages),
+      crossAggregatedMetrics: meter(
+        customer,
+        (s) => s.fetchLlmCrossAggregatedMetrics,
+      ),
+      llmResponse: meter(customer, (s) => s.fetchLlmResponse),
     },
   } as const;
 }

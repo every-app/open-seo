@@ -1,6 +1,6 @@
 import type { WorkflowStep } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { discoverUrls, fetchRobotsTxt } from "@/server/lib/audit/discovery";
+import { discoverUrls, parseRobotsTxt } from "@/server/lib/audit/discovery";
 import {
   fetchAndStoreLighthouseResult,
   selectLighthouseSample,
@@ -8,13 +8,14 @@ import {
 import { getOrigin } from "@/server/lib/audit/url-utils";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
-import type {
-  AuditConfig,
-  LighthouseResult,
-  StepPageResult,
-} from "@/server/lib/audit/types";
+import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
+import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerEvent } from "@/server/lib/posthog";
-import { runCrawlPhase } from "@/server/workflows/siteAuditWorkflowCrawl";
+import {
+  runCrawlPhase,
+  type CrawledPageSummary,
+  type CrawlPhaseResult,
+} from "@/server/workflows/siteAuditWorkflowCrawl";
 import { pgStep } from "@/server/workflows/pgStep";
 
 const LIGHTHOUSE_URL_BATCH_SIZE = 10;
@@ -33,22 +34,6 @@ function capSitemapSeeds(urls: string[], maxPages: number): string[] {
     seeds.push(url);
   }
   return seeds;
-}
-
-function countLighthouseBatchResults(results: LighthouseResult[]): {
-  completed: number;
-  failed: number;
-} {
-  let completed = 0;
-  let failed = 0;
-  for (const result of results) {
-    if (result.errorMessage) {
-      failed += 1;
-      continue;
-    }
-    completed += 1;
-  }
-  return { completed, failed };
 }
 
 type AuditPhasesParams = {
@@ -82,8 +67,11 @@ export async function runAuditPhases(
     origin,
     maxPages,
   );
-  const robots = await fetchRobotsTxt(origin);
-  const allPages = await runCrawlPhase(step, {
+  // Parsed outside the step from checkpointed text, so replays see the exact
+  // robots rules the original run used (a live re-fetch could differ and
+  // desync the frontier from already-persisted crawl batches).
+  const robots = parseRobotsTxt(origin, discovery.robotsText);
+  const crawl = await runCrawlPhase(step, {
     auditId,
     workflowInstanceId,
     origin,
@@ -92,14 +80,14 @@ export async function runAuditPhases(
     robots,
     sitemapUrls: discovery.sitemapUrls,
   });
-  const lighthouseResults = await runLighthousePhase(step, {
+  await runLighthousePhase(step, {
     auditId,
     workflowInstanceId,
     billingCustomer,
     projectId,
     startUrl,
     config,
-    allPages,
+    pages: crawl.pages,
   });
   await finalizeAudit({
     step,
@@ -107,9 +95,9 @@ export async function runAuditPhases(
     workflowInstanceId,
     billingCustomer,
     projectId,
+    startUrl,
     config,
-    allPages,
-    lighthouseResults,
+    crawl,
   });
 }
 
@@ -126,7 +114,10 @@ async function runDiscoveryPhase(
       pagesTotal: Math.min(result.urls.length + 1, maxPages),
       currentPhase: "crawling",
     });
-    return { sitemapUrls: capSitemapSeeds(result.urls, maxPages) };
+    return {
+      sitemapUrls: capSitemapSeeds(result.urls, maxPages),
+      robotsText: result.robotsText,
+    };
   });
 }
 
@@ -137,13 +128,13 @@ type LighthousePhaseParams = {
   projectId: string;
   startUrl: string;
   config: AuditConfig;
-  allPages: StepPageResult[];
+  pages: CrawledPageSummary[];
 };
 
 async function runLighthousePhase(
   step: WorkflowStep,
   params: LighthousePhaseParams,
-): Promise<LighthouseResult[]> {
+) {
   const {
     auditId,
     workflowInstanceId,
@@ -151,20 +142,19 @@ async function runLighthousePhase(
     projectId,
     startUrl,
     config,
-    allPages,
+    pages,
   } = params;
-  if (config.lighthouseStrategy === "none") return [];
+  if (config.lighthouseStrategy === "none") return;
 
   const lighthouseWork = await selectLighthousePages({
     step,
     auditId,
     workflowInstanceId,
-    allPages,
+    pages,
     startUrl,
     strategy: config.lighthouseStrategy,
   });
 
-  const lighthouseResults: LighthouseResult[] = [];
   let completedChecks = 0;
   let failedChecks = 0;
   let lighthouseBatchIndex = 0;
@@ -172,47 +162,69 @@ async function runLighthousePhase(
   for (let i = 0; i < lighthouseWork.length; i += LIGHTHOUSE_URL_BATCH_SIZE) {
     const batch = lighthouseWork.slice(i, i + LIGHTHOUSE_URL_BATCH_SIZE);
     lighthouseBatchIndex += 1;
-    const lighthouseBatchResults = await runLighthouseBatch({
-      step,
-      lighthouseBatchIndex,
-      batch,
-      billingCustomer,
-      projectId,
-      auditId,
-    });
+    const priorCompleted = completedChecks;
+    const priorFailed = failedChecks;
 
-    lighthouseResults.push(...lighthouseBatchResults);
-    const counts = countLighthouseBatchResults(lighthouseBatchResults);
-    failedChecks += counts.failed;
-    completedChecks += counts.completed;
-    await pgStep(
+    // Fetch, store (R2 + D1) and update progress inside one step. The step
+    // returns only counts; full results live in D1.
+    const counts = await pgStep(
       step,
-      `lighthouse-progress-batch-${lighthouseBatchIndex}`,
+      `lighthouse-batch-${lighthouseBatchIndex}`,
       undefined,
       async () => {
+        const perUrlResults = await Promise.all(
+          batch.map(async ({ url, pageId }) => {
+            const [mobileResult, desktopResult] = await Promise.all([
+              fetchAndStoreLighthouseResult({
+                url,
+                pageId,
+                strategy: "mobile",
+                billingCustomer,
+                projectId,
+                auditId,
+              }),
+              fetchAndStoreLighthouseResult({
+                url,
+                pageId,
+                strategy: "desktop",
+                billingCustomer,
+                projectId,
+                auditId,
+              }),
+            ]);
+            return [mobileResult, desktopResult];
+          }),
+        );
+        const results = perUrlResults.flat();
+        await AuditRepository.insertLighthouseResults(auditId, results);
+
+        const failed = results.filter((result) => result.errorMessage).length;
+        const completed = results.length - failed;
         await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
-          lighthouseCompleted: completedChecks,
-          lighthouseFailed: failedChecks,
+          lighthouseCompleted: priorCompleted + completed,
+          lighthouseFailed: priorFailed + failed,
         });
+        return { completed, failed };
       },
     );
-  }
 
-  return lighthouseResults;
+    completedChecks += counts.completed;
+    failedChecks += counts.failed;
+  }
 }
 
 async function selectLighthousePages(params: {
   step: WorkflowStep;
   auditId: string;
   workflowInstanceId: string;
-  allPages: StepPageResult[];
+  pages: CrawledPageSummary[];
   startUrl: string;
   strategy: AuditConfig["lighthouseStrategy"];
 }) {
-  const { step, auditId, workflowInstanceId, allPages, startUrl, strategy } =
+  const { step, auditId, workflowInstanceId, pages, startUrl, strategy } =
     params;
   return pgStep(step, "select-lighthouse-sample", undefined, async () => {
-    const sample = selectLighthouseSample(allPages, startUrl, strategy);
+    const sample = selectLighthouseSample(pages, startUrl, strategy);
     const selectedUrls = new Set(sample);
 
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
@@ -221,54 +233,9 @@ async function selectLighthousePages(params: {
       lighthouseCompleted: 0,
       lighthouseFailed: 0,
     });
-    return allPages.flatMap((page) =>
+    return pages.flatMap((page) =>
       selectedUrls.has(page.url) ? [{ url: page.url, pageId: page.id }] : [],
     );
-  });
-}
-
-async function runLighthouseBatch(params: {
-  step: WorkflowStep;
-  lighthouseBatchIndex: number;
-  batch: Array<{ url: string; pageId: string }>;
-  billingCustomer: BillingCustomerContext;
-  projectId: string;
-  auditId: string;
-}) {
-  const {
-    step,
-    lighthouseBatchIndex,
-    batch,
-    billingCustomer,
-    projectId,
-    auditId,
-  } = params;
-  return step.do(`lighthouse-batch-${lighthouseBatchIndex}`, async () => {
-    const perUrlResults = await Promise.all(
-      batch.map(async ({ url, pageId }) => {
-        const [mobileResult, desktopResult] = await Promise.all([
-          fetchAndStoreLighthouseResult({
-            url,
-            pageId,
-            strategy: "mobile",
-            billingCustomer,
-            projectId,
-            auditId,
-          }),
-          fetchAndStoreLighthouseResult({
-            url,
-            pageId,
-            strategy: "desktop",
-            billingCustomer,
-            projectId,
-            auditId,
-          }),
-        ]);
-        return [mobileResult, desktopResult];
-      }),
-    );
-
-    return perUrlResults.flat();
   });
 }
 
@@ -278,9 +245,9 @@ async function finalizeAudit(args: {
   workflowInstanceId: string;
   billingCustomer: BillingCustomerContext;
   projectId: string;
+  startUrl: string;
   config: AuditConfig;
-  allPages: StepPageResult[];
-  lighthouseResults: LighthouseResult[];
+  crawl: CrawlPhaseResult;
 }) {
   const {
     step,
@@ -288,23 +255,42 @@ async function finalizeAudit(args: {
     workflowInstanceId,
     billingCustomer,
     projectId,
+    startUrl,
     config,
-    allPages,
-    lighthouseResults,
+    crawl,
   } = args;
 
-  await pgStep(step, "finalize", undefined, async () => {
+  await pgStep(step, "multipage-checks", undefined, async () => {
     await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
       currentPhase: "finalizing",
     });
-    await AuditRepository.batchWriteResults(
+
+    // Integrity guard: pages are persisted inside crawl-batch steps. If the
+    // crawl claims pages but D1 has none (e.g. an instance started under the
+    // pre-incremental-persistence code was replayed under this code), fail
+    // loudly instead of completing with an empty audit.
+    if (
+      crawl.pages.length > 0 &&
+      !(await AuditRepository.hasPagesForAudit(auditId))
+    ) {
+      throw new Error(
+        `Audit ${auditId}: crawl reported ${crawl.pages.length} pages but none were persisted`,
+      );
+    }
+
+    const issues = await runMultipageChecks({
       auditId,
-      allPages,
-      lighthouseResults,
-    );
+      startUrl,
+      crawlCompleted: crawl.completed,
+    });
+    await AuditRepository.insertIssues(auditId, issues);
+    return { issueCount: issues.length };
+  });
+
+  await pgStep(step, "finalize", undefined, async () => {
     await AuditRepository.completeAudit(auditId, workflowInstanceId, {
-      pagesCrawled: allPages.length,
-      pagesTotal: allPages.length,
+      pagesCrawled: crawl.pages.length,
+      pagesTotal: crawl.pages.length,
     });
     await captureServerEvent({
       distinctId: billingCustomer.userId,
@@ -313,8 +299,12 @@ async function finalizeAudit(args: {
       properties: {
         project_id: projectId,
         status: "completed",
-        pages_crawled: allPages.length,
-        pages_total: allPages.length,
+        pages_crawled: crawl.pages.length,
+        pages_total: crawl.pages.length,
+        crawl_completed: crawl.completed,
+        pages_blocked: crawl.pages.filter(
+          (page) => page.fetchClass === "blocked",
+        ).length,
         run_lighthouse: config.lighthouseStrategy !== "none",
       },
     });

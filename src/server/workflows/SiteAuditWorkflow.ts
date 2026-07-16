@@ -40,20 +40,25 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
     const { auditId, billingCustomer, projectId, startUrl, config } =
       event.payload;
 
-    const audit = await AuditRepository.getAuditForWorkflow(
-      auditId,
-      event.instanceId,
-    );
-
-    if (!audit) {
-      throw new Error("Audit workflow context mismatch");
-    }
-
-    if (audit.projectId !== projectId) {
-      throw new Error("Audit workflow project mismatch");
-    }
-
     try {
+      // Inside a step so the D1 read is retried and replay-cached; a bare
+      // read here would re-execute on every replay and a transient failure
+      // would kill the instance before the catch below exists.
+      await pgStep(step, "validate-context", undefined, async () => {
+        const audit = await AuditRepository.getAuditForWorkflow(
+          auditId,
+          event.instanceId,
+        );
+
+        if (!audit) {
+          throw new Error("Audit workflow context mismatch");
+        }
+
+        if (audit.projectId !== projectId) {
+          throw new Error("Audit workflow project mismatch");
+        }
+      });
+
       await runAuditPhases(step, {
         auditId,
         workflowInstanceId: event.instanceId,

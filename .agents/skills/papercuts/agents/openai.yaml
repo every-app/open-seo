@@ -1,0 +1,4 @@
+interface:
+  display_name: "Papercuts"
+  short_description: "Log and resolve recurring repository friction"
+  default_prompt: "Use $papercuts to log, review, or resolve small recurring workflow friction in this repository."

@@ -1,6 +1,6 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["web/**/*"],
+  "exclude": ["web/**/*", "badseo/**/*"],
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
@@ -9,6 +9,7 @@
     "moduleResolution": "Bundler",
     "lib": ["DOM", "DOM.Iterable", "ES2023"],
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "target": "ES2022",

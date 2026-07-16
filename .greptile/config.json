@@ -1,0 +1,136 @@
+{
+  "strictness": 2,
+  "commentTypes": ["logic", "syntax"],
+  "triggerOnUpdates": true,
+  "ignorePatterns": "src/routeTree.gen.ts\nweb/src/routeTree.gen.ts\nworker-configuration.d.ts\ndrizzle/meta/**\ndrizzle-pg/meta/**",
+  "rules": [
+    {
+      "id": "tenant-resource-scope",
+      "rule": "At each external trust boundary, establish the appropriate authorization before dispatch: session middleware for user endpoints, withMcpProjectAuth for project-scoped MCP handlers, signed state or verified provider signatures for callbacks and webhooks, and an explicit documented decision for public routes. Active project-scoped server functions use requireProjectContext with a validated projectId. Reads and mutations keyed by caller-controlled resource IDs must include the verified project, organization, or user in the query, or first authorize through a canonical parent lookup. Never trust a client-supplied organization, user, or billing identity. Archived or lifecycle resources may use requireAuthenticatedContext plus an explicit organization-scoped lookup. Bare-ID lookups are acceptable in trusted internal Workflow or Durable Object paths only when the upstream authorization invariant is explicit.",
+      "scope": [
+        "src/lib/auth*.ts",
+        "src/server.ts",
+        "src/server/features/**",
+        "src/serverFunctions/**",
+        "src/server/mcp/**",
+        "src/routes/api/**",
+        "src/middleware/**",
+        "web/src/routes/api/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "normalized-product-data",
+      "rule": "Store relationships and independently queried, constrained, or evolving product concepts in normalized tables with foreign keys and join tables. Do not put relational IDs in JSON or delimited text to avoid joins. JSON or text is acceptable for opaque provider payloads, immutable history, caches, or bounded non-relational value arrays when the reason is clear.",
+      "scope": [
+        "src/db/**",
+        "drizzle/**",
+        "drizzle-pg/**",
+        "src/server/**/repositories/**",
+        "src/server/**/*Repository.ts"
+      ],
+      "severity": "medium"
+    },
+    {
+      "id": "dual-dialect-persistence",
+      "rule": "A change to hand-authored application schema must update the SQLite and Postgres definitions and generated migrations for both providers. Preserve equivalent table, column, nullability, default, constraint, index, and foreign-key semantics while allowing intentional dialect-native representations and Better Auth exceptions. Queries, raw SQL, timestamp comparisons, conflict handling, and database-error classification must work on both providers or branch explicitly. Review provider-aware exports, schema-parity coverage, and D1-to-Postgres migration code when affected.",
+      "scope": [
+        "src/db/**",
+        "drizzle/**",
+        "drizzle-pg/**",
+        "drizzle.config.ts",
+        "drizzle-prod.config.ts",
+        "drizzle-pg.config.ts",
+        "src/lib/auth.ts",
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/middleware/**",
+        "scripts/migrate-d1-to-postgres.ts"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "postgres-entrypoint-scope",
+      "rule": "Every Worker, scheduled handler, Durable Object method or callback, or other entry point that can reach provider-aware Drizzle db from @/db without a guaranteed ambient request scope must establish withPgClient. Durable Object ctx.storage and framework-managed agent message persistence are not @/db access and do not need this wrapper. Every Cloudflare Workflow step uses pgStep; raw step.do is confined to the pgStep helper. Do not assume AsyncLocalStorage scope survives across Workflow steps or Durable Object callbacks.",
+      "scope": [
+        "src/server.ts",
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/routes/api/**",
+        "src/middleware/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "atomic-multi-write",
+      "rule": "When partial completion would violate an invariant, use runBatch and build every statement from its tx callback. executeInBatches is only for work where each committed chunk is independently safe or idempotent; it is not an all-or-nothing transaction. Hard concurrency or capacity admission must use a database constraint, transactional conditional write, or rollback-safe insert-first admission rather than count-then-act. Bound large inArray and bulk-value parameter lists for D1. Retryable Workflow writes need deterministic IDs, stable unique keys, or conflict-safe upserts.",
+      "scope": [
+        "src/server/**",
+        "src/serverFunctions/**",
+        "src/middleware/**",
+        "src/db/runBatch.ts"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "billable-dataforseo-seam",
+      "rule": "Every billable hosted DataForSEO call uses createDataforseoClient with organization billing context. Preserve provider billing path and cost metadata when a billed response later fails parsing or validation so metering still occurs. Do not charge cache hits or provider-unbilled failures. Self-hosted calls, free location data, tests using SDK models, and queued task_get collection are intentional exceptions.",
+      "scope": [
+        "src/server/lib/dataforseo/**",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**",
+        "src/serverFunctions/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "billing-fails-closed",
+      "rule": "Every billable hosted provider path must check organization credits before paid execution and meter provider-reported spend through the established shared credit-spend helper after execution. A failed gate prevents the paid call. A bounded partial-success API may surface a failed billing check as an explicit item-level error, but it must not present the paid operation as successful. Authorization failures terminate the request. Never use a stale-positive cache that can authorize access or spend that a live check would deny, and ensure retries or Workflow replays cannot omit metering or double-charge.",
+      "scope": [
+        "src/shared/billing*.ts",
+        "src/shared/rank-tracking.ts",
+        "src/server.ts",
+        "src/server/billing/**",
+        "src/server/lib/chatAgent.ts",
+        "src/server/lib/dataforseoBillingClassification.ts",
+        "src/server/lib/openrouter.ts",
+        "src/server/lib/audit/lighthouse.ts",
+        "src/server/lib/dataforseo/**",
+        "src/server/features/**",
+        "src/server/mcp/**",
+        "src/server/workflows/**",
+        "src/serverFunctions/**",
+        "src/routes/api/autumn/**"
+      ],
+      "severity": "high"
+    },
+    {
+      "id": "untrusted-outbound-url",
+      "rule": "Before fetching a user-derived initial target, call normalizeAndValidateStartUrl and use manual redirect handling. A redirect followed directly must be revalidated with normalizeAndValidateStartUrl before the next fetch. The audit crawler may record a redirect and enqueue its target instead; every discovered link, sitemap entry, or redirect target admitted to that crawl frontier must pass isCrawlableUrl plus the crawl's same-origin and robots policy before fetch. Never use automatic redirect following for an untrusted URL. Fixed provider URLs are exempt from SSRF screening but still follow their shared client's timeout, retry, and error policy.",
+      "scope": ["src/server/**", "src/serverFunctions/**", "src/routes/api/**"],
+      "severity": "high"
+    },
+    {
+      "id": "safe-external-links",
+      "rule": "A clickable URL from API, crawl, LLM, or provider data must use getSafeExternalUrl, ExternalUrlCell, SafeExternalLink, or the shared Markdown and MARKDOWN_COMPONENTS renderer. Do not render untrusted values through a raw href or a new ad hoc scheme-check regex. Static developer-authored URLs are exempt.",
+      "scope": ["src/client/**", "src/routes/**/*.tsx"],
+      "severity": "high"
+    },
+    {
+      "id": "behavior-evidence",
+      "rule": "A change that alters authentication or authorization, billing or metering, persistence or query behavior, schema or migrations, provider serialization, Workflow retry or state transitions, or URL, search, and query behavior must include a focused behavioral test unless an existing test directly covers the changed branch or failure mode. A bug fix should reproduce the old failure. Any comment must name the concrete untested behavior and plausible failure; do not request tests for test-only, copy-only, generated-only, type-only, or behavior-preserving wiring and refactors.",
+      "scope": [
+        "src/**",
+        "drizzle/**",
+        "drizzle-pg/**",
+        "drizzle.config.ts",
+        "drizzle-prod.config.ts",
+        "drizzle-pg.config.ts",
+        "scripts/migrate-d1-to-postgres.ts"
+      ],
+      "severity": "medium"
+    }
+  ]
+}

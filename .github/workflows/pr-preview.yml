@@ -1,0 +1,145 @@
+name: PR Preview
+
+# Alchemy preview stage per private-repo PR: deploy on open/update, destroy on
+# close (stage pr-<n>). Full model in docs/PREVIEW_DEPLOYMENTS.md.
+#
+# Public-mirror (every-app/open-seo) PRs NEVER deploy from CI — fork code must
+# not run with deploy secrets. Preview those locally from a worktree instead
+# (docs/PREVIEW_DEPLOYMENTS.md, "Public-mirror PRs"). The repository gate
+# below keeps the synced copy of this file inert on the mirror.
+#
+# Required repo secrets: CLOUDFLARE_API_TOKEN (Workers Scripts/KV/D1/R2/
+# Workflows write + Secrets Store read + Account Settings read — the last two
+# are how alchemy fetches its state-store token via an edge-preview worker),
+# CLOUDFLARE_ACCOUNT_ID, ENV_PREVIEW (.env.preview contents).
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    # Skip PRs that can't change the deployed worker. Filters see the PR's
+    # full file list, so deploy and close-time destroy stay consistent.
+    paths-ignore:
+      - "**/*.md"
+      - docs/**
+      - runbooks/**
+      - .agents/**
+      - web/**
+      - badseo/**
+
+# A newer push supersedes any in-flight deploy for the same PR (alchemy's
+# per-resource state reconciles cleanly on the next run); a close-triggered
+# destroy never cancels — it queues behind whatever is running.
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: ${{ github.event.action != 'closed' }}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+env:
+  STAGE: pr-${{ github.event.pull_request.number }}
+  CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+  CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+jobs:
+  preview:
+    if: >-
+      github.repository == 'bensenescu/open-seo' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Write .env.preview
+        run: printf '%s' "$ENV_PREVIEW" > .env.preview
+        env:
+          ENV_PREVIEW: ${{ secrets.ENV_PREVIEW }}
+
+      # Derive the preview URL once, before spending a deploy on a broken
+      # secret. Destroy runs don't need it.
+      - name: Derive preview URL
+        if: github.event.action != 'closed'
+        run: |
+          subdomain=$(grep '^WORKERS_SUBDOMAIN=' .env.preview | cut -d= -f2-)
+          case "$subdomain" in
+            *.workers.dev) ;;
+            *) echo "::error::ENV_PREVIEW secret is missing a valid WORKERS_SUBDOMAIN (needed to derive and verify the preview URL)"; exit 1 ;;
+          esac
+          echo "PREVIEW_URL=https://open-seo-${STAGE}.${subdomain}" >> "$GITHUB_ENV"
+
+      # Same command as a local preview deploy: vite build, alchemy deploy.
+      # State lives in the account's Cloudflare state store; CI resolves its
+      # auth token from the Secrets Store each run. The Access gate protecting
+      # previews is one-time local setup (pnpm preview:access) — the verify
+      # step below fails the job if it's ever missing.
+      - name: Deploy preview stage
+        if: github.event.action != 'closed'
+        run: pnpm deploy:preview --stage "$STAGE" --yes
+        env:
+          NODE_OPTIONS: --max-old-space-size=4096
+
+      # Fail the job (and skip the URL comment) if the deployed preview
+      # answers without a Cloudflare Access login redirect. A definitive app
+      # response (2xx/3xx, no Access redirect) fails immediately — the
+      # preview is public; retries are only for propagation-era errors.
+      # (Cloudflare version preview URLs sit outside this wildcard, but alchemy
+      # uploads versions with no preview provisioned, so none are served — see
+      # docs/PREVIEW_DEPLOYMENTS.md.)
+      - name: Verify Access protection
+        if: github.event.action != 'closed'
+        run: |
+          for attempt in 1 2 3 4 5 6 7 8; do
+            response=$(curl -sS -o /dev/null -m 10 -w '%{http_code} %{redirect_url}' "$PREVIEW_URL") || response=""
+            code="${response%% *}"
+            location="${response#* }"
+            case "$location" in
+              https://*.cloudflareaccess.com/cdn-cgi/access/login*)
+                exit 0 ;;
+            esac
+            if [ -n "$code" ] && [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then
+              echo "::error::$PREVIEW_URL responded (HTTP $code) WITHOUT a Cloudflare Access challenge — the preview is public; destroy the stage (pnpm destroy:preview --stage $STAGE --yes)"
+              exit 1
+            fi
+            echo "attempt $attempt: not up yet (${response:-no response})"
+            sleep 5
+          done
+          echo "::error::$PREVIEW_URL is unreachable (likely workers.dev propagation) — it still sits behind the wildcard Access app; re-run this job or verify manually"
+          exit 1
+
+      - name: Destroy preview stage
+        if: github.event.action == 'closed'
+        run: pnpm destroy:preview --stage "$STAGE" --yes
+
+      # PREVIEW_URL comes from the derive step's $GITHUB_ENV write; this step
+      # only runs after verify succeeds (no `if:`, so default success() gating).
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "${{ github.event.action }}" = "closed" ]; then
+            body=$(printf '**Preview destroyed** (stage `%s`).' "$STAGE")
+          else
+            body=$(printf '**Preview deployed** (stage `%s`): %s\n_Updated for %s. Torn down automatically when this PR closes._' \
+              "$STAGE" "$PREVIEW_URL" "${{ github.event.pull_request.head.sha }}")
+          fi
+          gh pr comment "$PR" --repo "${{ github.repository }}" \
+            --body "$body" --edit-last --create-if-none

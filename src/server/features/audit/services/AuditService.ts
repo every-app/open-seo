@@ -1,5 +1,9 @@
 import { env } from "cloudflare:workers";
-import type { BillingCustomerContext } from "@/server/billing/subscription";
+import {
+  customerHasManagedAccess,
+  customerHasPaidPlan,
+  type BillingCustomerContext,
+} from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import {
   AUDIT_LIMITS,
@@ -15,6 +19,24 @@ import {
   type LighthouseStrategy,
 } from "@/server/lib/audit/types";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+
+// Plan-tier limits are the abuse bound in hosted mode: free accounts get one
+// small audit at a time, paid keeps the full limits, and customers with no
+// Autumn product at all are turned away. Self-hosted isn't gated.
+async function resolveAuditLimitTier(
+  organizationId: string,
+): Promise<AuditLimitTier> {
+  if (!(await isHostedServerAuthMode())) return "paid";
+  const [hasManagedAccess, hasPaidPlan] = await Promise.all([
+    customerHasManagedAccess(organizationId),
+    customerHasPaidPlan(organizationId),
+  ]);
+  if (!hasManagedAccess) {
+    throw new AppError("PAYMENT_REQUIRED", "Subscribe to run site audits");
+  }
+  return hasPaidPlan ? "paid" : "free";
+}
 
 async function startAudit(input: {
   actorUserId: string;
@@ -98,8 +120,29 @@ async function startAudit(input: {
 }
 
 async function getStatus(auditId: string, projectId: string) {
-  const audit = await AuditRepository.getAuditForProject(auditId, projectId);
-  if (!audit) throw new AppError("NOT_FOUND");
+  let audit = await AuditRepository.getAuditForProject(auditId, projectId);
+  if (!audit)
+    throw new AppError("NOT_FOUND", "Audit not found in this project.");
+
+  // Self-heal audits whose workflow died without reaching the mark-failed
+  // step (instance terminated, mark-failed itself failed, deploys, ...).
+  // Without this they stay "running" forever and hold capacity.
+  if (audit.status === "running" && audit.workflowInstanceId) {
+    try {
+      const instance = await env.SITE_AUDIT_WORKFLOW.get(
+        audit.workflowInstanceId,
+      );
+      const { status } = await instance.status();
+      if (status === "errored" || status === "terminated") {
+        await AuditRepository.failAudit(audit.id, audit.workflowInstanceId);
+        audit =
+          (await AuditRepository.getAuditForProject(auditId, projectId)) ??
+          audit;
+      }
+    } catch {
+      // Instance not found or status unavailable — leave the audit as-is.
+    }
+  }
 
   return {
     id: audit.id,
@@ -117,7 +160,7 @@ async function getStatus(auditId: string, projectId: string) {
 }
 
 async function getResults(auditId: string, projectId: string) {
-  const { audit, pages, lighthouse } =
+  const { audit, pages, lighthouse, issues } =
     await AuditRepository.getAuditResultsForProject(auditId, projectId);
 
   if (!audit) throw new AppError("NOT_FOUND");
@@ -140,6 +183,7 @@ async function getResults(auditId: string, projectId: string) {
     },
     pages,
     lighthouse,
+    issues,
   };
 }
 
@@ -216,6 +260,7 @@ async function remove(auditId: string, projectId: string) {
 }
 
 export const AuditService = {
+  resolveAuditLimitTier,
   startAudit,
   getStatus,
   getCrawlProgress,

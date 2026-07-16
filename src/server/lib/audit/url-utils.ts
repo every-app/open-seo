@@ -8,7 +8,12 @@
  * - Strip fragments (#...)
  * - Sort query parameters
  * - Lowercase the hostname
- * - Remove trailing slash (except for root path "/")
+ * - Preserve trailing slashes. A trailing slash is the canonical form on most
+ *   CMS platforms (WordPress etc.), which 301-redirect the non-slash version to
+ *   it. Stripping it here would rewrite the canonical URL into its own redirect
+ *   source, so the crawler would follow /path -> /path/ and strip back to /path
+ *   forever — a 508 loop. Keeping /path and /path/ distinct lets the redirect
+ *   resolve normally.
  */
 export function normalizeUrl(url: string, base?: string): string | null {
   try {
@@ -28,15 +33,35 @@ export function normalizeUrl(url: string, base?: string): string | null {
     // Lowercase hostname
     parsed.hostname = parsed.hostname.toLowerCase();
 
-    // Remove trailing slash (but keep "/" for root)
-    let normalized = parsed.toString();
-    if (normalized.endsWith("/") && parsed.pathname !== "/") {
-      normalized = normalized.slice(0, -1);
-    }
-
-    return normalized;
+    return parsed.toString();
   } catch {
     return null;
+  }
+}
+
+/**
+ * A canonical key for URL equality checks that should survive the common
+ * redirect patterns a site uses to reach its canonical form:
+ *   - trailing-slash redirects   (/services -> /services/)
+ *   - www <-> non-www            (www.example.com -> example.com)
+ *   - http -> https upgrades
+ *
+ * Forces https, drops a leading "www.", lowercases the hostname, sorts query
+ * params, and strips the fragment. Trailing slashes are intentionally left
+ * intact so two genuinely different paths never collapse together; this key is
+ * only for "is this effectively the same page as the start URL" comparisons
+ * (e.g. picking the homepage for the Lighthouse sample), not for crawl dedup.
+ */
+export function canonicalUrlKey(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.protocol = "https:";
+    parsed.hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
+    parsed.hash = "";
+    parsed.searchParams.sort();
+    return parsed.toString();
+  } catch {
+    return url.toLowerCase();
   }
 }
 
