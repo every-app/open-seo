@@ -9,6 +9,7 @@ import {
   buildKeywordResearchRequest,
   keywordResearchQueryFn,
 } from "@/client/features/keywords/hooks/useKeywordResearchData";
+import { getLanguageCode } from "@/client/features/keywords/locations";
 import { getBacklinksOverview } from "@/serverFunctions/backlinks";
 import { getDomainOverview } from "@/serverFunctions/domain";
 export type { SearchTab } from "./types";
@@ -43,6 +44,7 @@ export function SearchTabStrip({
     <div className="rounded-xl border border-base-300 bg-base-100 p-1">
       <div
         role="tablist"
+        aria-label="Search tabs"
         className="flex min-w-0 items-stretch gap-1 overflow-x-auto"
       >
         {tabs.map((tab) => {
@@ -186,6 +188,7 @@ function getSearchTabQueryConfig(
   if (tab.input.type === "domain") {
     const input = tab.input;
     const trimmedDomain = input.domain.trim();
+    const languageCode = getLanguageCode(input.locationCode);
 
     return {
       queryKey: [
@@ -194,6 +197,7 @@ function getSearchTabQueryConfig(
         trimmedDomain,
         input.subdomains,
         input.locationCode,
+        languageCode,
       ],
       queryFn: () =>
         getDomainOverview({
@@ -202,6 +206,7 @@ function getSearchTabQueryConfig(
             domain: trimmedDomain,
             includeSubdomains: input.subdomains,
             locationCode: input.locationCode,
+            languageCode,
           },
         }),
       staleTime: 5 * 60_000,
