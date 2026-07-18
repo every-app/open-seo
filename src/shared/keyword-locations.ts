@@ -295,6 +295,13 @@ export const LOCATION_OPTIONS: readonly LocationOption[] = [
     googleAdsOnly: true,
   },
   {
+    code: 2446,
+    label: "Macao",
+    shortLabel: "MO",
+    languageCode: "zh-TW",
+    googleAdsOnly: true,
+  },
+  {
     code: 2450,
     label: "Madagascar",
     shortLabel: "MG",

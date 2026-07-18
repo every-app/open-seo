@@ -17,6 +17,10 @@ describe("keyword locations", () => {
   it("routes Labs-supported countries to labs", () => {
     expect(getKeywordDataProvider(2840)).toBe("labs"); // US
     expect(getKeywordDataProvider(2826)).toBe("labs"); // UK
+    expect(getKeywordDataProvider(2344)).toBe("labs"); // Hong Kong
+    expect(isSupportedLocationCode(2344)).toBe(true);
+    expect(isLabsLocationCode(2344)).toBe(true);
+    expect(getLanguageCode(2344)).toBe("zh-TW");
   });
 
   it("routes Google-Ads-only countries to google_ads", () => {
@@ -24,6 +28,10 @@ describe("keyword locations", () => {
     expect(isSupportedLocationCode(2352)).toBe(true);
     expect(isLabsLocationCode(2352)).toBe(false);
     expect(getLanguageCode(2352)).toBe("is");
+    expect(getKeywordDataProvider(2446)).toBe("google_ads"); // Macao
+    expect(isSupportedLocationCode(2446)).toBe(true);
+    expect(isLabsLocationCode(2446)).toBe(false);
+    expect(getLanguageCode(2446)).toBe("zh-TW");
   });
 
   it("falls back to labs for unknown codes (Labs rejects them upstream)", () => {
@@ -72,6 +80,8 @@ describe("getIsoCountryCode", () => {
   it("lowercases the shortLabel for standard countries", () => {
     expect(getIsoCountryCode(2840)).toBe("us");
     expect(getIsoCountryCode(2036)).toBe("au");
+    expect(getIsoCountryCode(2344)).toBe("hk");
+    expect(getIsoCountryCode(2446)).toBe("mo");
   });
 
   it("maps the UK display label to its ISO code gb", () => {

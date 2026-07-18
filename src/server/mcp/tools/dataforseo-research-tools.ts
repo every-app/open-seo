@@ -460,7 +460,11 @@ function toMcpKeywordMetricRow(row: KeywordMetricRow) {
     keyword: row.keyword,
     search_volume: row.searchVolume,
     keyword_difficulty: row.keywordDifficulty,
+    keyword_difficulty_status:
+      row.keywordDifficulty == null ? "not_available" : "available",
     main_intent: row.intent,
+    main_intent_status:
+      row.intent == null || row.intent === "" ? "not_available" : "available",
     cpc: row.cpc,
     competition: row.competition,
     competition_level: row.competitionLevel,
@@ -581,10 +585,19 @@ const SERP_COMPETITOR_COLUMNS: McpTableColumn<unknown>[] = [
 const KEYWORD_METRIC_COLUMNS: McpTableColumn<unknown>[] = [
   { header: "keyword", value: (row) => readPath(row, "keyword") },
   { header: "volume", value: (row) => readPath(row, "search_volume") },
-  { header: "KD", value: (row) => readPath(row, "keyword_difficulty") },
+  {
+    header: "KD",
+    value: (row) =>
+      readPath(row, "keyword_difficulty") ??
+      readPath(row, "keyword_difficulty_status"),
+  },
   { header: "CPC", value: (row) => readPath(row, "cpc") },
   { header: "competition", value: (row) => readPath(row, "competition") },
-  { header: "intent", value: (row) => readPath(row, "main_intent") },
+  {
+    header: "intent",
+    value: (row) =>
+      readPath(row, "main_intent") ?? readPath(row, "main_intent_status"),
+  },
 ];
 
 export const getRankedKeywordsTool = {
@@ -868,7 +881,7 @@ export const getKeywordMetricsTool = {
         : row,
     );
 
-    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
+    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); not_available = unsupported by this provider.`;
     return mcpResponse({
       text:
         rows.length === 0

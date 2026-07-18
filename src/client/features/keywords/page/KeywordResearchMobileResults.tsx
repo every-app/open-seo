@@ -14,7 +14,10 @@ import {
 } from "@/client/features/keywords/state/keywordControllerActions";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { SerpAnalysisCard } from "@/client/features/keywords/components";
+import {
+  GoogleAdsAvailabilityNotice,
+  SerpAnalysisCard,
+} from "@/client/features/keywords/components";
 import { FilterIntentSelect } from "./keywordResearchFilters";
 import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
 import {
@@ -136,6 +139,11 @@ function MobileKeywordResults({ controller }: Props) {
           No exact match for{" "}
           <span className="font-medium">"{controller.searchedKeyword}"</span>.
           Showing closest related keywords.
+        </div>
+      ) : null}
+      {controller.lastResultSource === "google_ads" ? (
+        <div className="mx-4 mt-2">
+          <GoogleAdsAvailabilityNotice />
         </div>
       ) : null}
 
