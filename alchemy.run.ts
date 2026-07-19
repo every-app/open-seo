@@ -247,6 +247,10 @@ export default Alchemy.Stack(
         date: wrangler.compatibility_date,
         flags: wrangler.compatibility_flags,
       },
+      // Site audits parse and persist batches of HTML inside Workflow steps.
+      // Paid Workers permit up to five minutes; keep headroom for unusually
+      // link-heavy sites after bounding page bodies and bulk-writing links.
+      limits: { cpuMs: 300_000 },
       observability: {
         enabled: wrangler.observability?.enabled ?? true,
         traces: { enabled: wrangler.observability?.traces?.enabled ?? false },
