@@ -1,0 +1,10 @@
+{
+  "title": "Self-Hosting",
+  "pages": [
+    "[Overview](/docs/self-hosting)",
+    "[Docker](/docs/self-hosting/docker)",
+    "[Cloudflare](/docs/self-hosting/cloudflare)",
+    "[Google Search Console](/docs/self-hosting/google-search-console)",
+    "[API Costs](/docs/self-hosting/costs)"
+  ]
+}
