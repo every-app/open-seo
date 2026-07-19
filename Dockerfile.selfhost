@@ -20,4 +20,4 @@ EXPOSE 3001
 # self-hoster only chooses AUTH_MODE at runtime via Compose. Building here lets
 # that runtime value bake into the bundle. NODE_OPTIONS raises the V8 heap ceiling
 # so the SSR build of ~7400 modules doesn't OOM under Node's ~2GB default.
-CMD ["sh", "-c", "pnpm run db:migrate:local && NODE_OPTIONS=--max-old-space-size=4096 pnpm run build && pnpm exec vite preview --host 0.0.0.0 --port ${PORT:-3001}"]
+CMD ["sh", "-c", "echo 'OpenSEO sends an anonymous daily usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry' && pnpm run db:migrate:local && NODE_OPTIONS=--max-old-space-size=4096 pnpm run build && pnpm exec vite preview --host 0.0.0.0 --port ${PORT:-3001}"]

@@ -128,6 +128,12 @@ Screenshots from the setup flow:
 After saving, teammates can open your OpenSEO URL and sign in through Cloudflare
 Access. OpenSEO will use a shared workspace for everyone allowed by the policy.
 
+## Telemetry
+
+OpenSEO collects anonymized telemetry for core usage events: a single daily heartbeat with aggregate counts (installs, users, projects, feature usage) tied to a random install ID. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+
+To disable it, add `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) as a Worker variable under **Settings → Variables & Secrets**, then redeploy or restart the Worker.
+
 ## Manual deploy with Wrangler
 
 Use this flow if the Deploy to Cloudflare button fails with `Cannot provision a KV Namespace with the title "open-seo" because it already exists`. The reliable path is to create Cloudflare resources yourself, put their IDs into `wrangler.jsonc`, then deploy with Wrangler.

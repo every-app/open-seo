@@ -11,6 +11,7 @@ import { asAppError } from "@/server/lib/errors";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { getAuth, type ToolExtra } from "@/server/mcp/context";
+import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 
 type ToolHandler<TArgs> = (
   args: TArgs,
@@ -29,6 +30,8 @@ function captureMcpToolCall(
   extra: ToolExtra,
   outcome: { success: boolean; errorCode?: string },
 ) {
+  waitUntil(incrementSelfHostMcpToolCallCount());
+
   try {
     const auth = getAuth(extra);
     waitUntil(

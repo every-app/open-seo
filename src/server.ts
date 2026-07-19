@@ -22,6 +22,7 @@ import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
 } from "@/server/billing/autumn-webhook";
+import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
@@ -137,6 +138,8 @@ function handleFetch(
   env: Env,
   ctx: ExecutionContext,
 ): Response | Promise<Response> {
+  ctx.waitUntil(maybeSendSelfHostHeartbeat());
+
   const authMode = getAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
   const pathname = new URL(publicRequest.url).pathname;

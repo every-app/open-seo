@@ -2,12 +2,15 @@ services:
   open-seo:
     image: ${OPEN_SEO_IMAGE:-ghcr.io/every-app/open-seo:latest}
     restart: unless-stopped
+    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER.md#telemetry
     environment:
       # Required for local Docker self-hosting: exposes Compose env vars to cloudflare:workers bindings.
       - CLOUDFLARE_INCLUDE_PROCESS_ENV=true
       - PORT=${PORT:-3001}
       - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
+      - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
+      - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
