@@ -59,7 +59,7 @@ function getMobileNavItems(githubStarCount: string) {
       label: "Resources",
       links: [
         { label: "Blog", href: "/blogs" },
-        { label: "Why Open Source?", href: "/open-source-seo" },
+        { label: "Docs", href: "/docs" },
         { label: "MCP Setup", href: "/docs/mcp" },
         { label: "Skills", href: "/docs/skills" },
       ],
@@ -273,9 +273,9 @@ function ResourcesDropdown() {
       description: "SEO articles and guides.",
     },
     {
-      label: "Why Open Source?",
-      href: "/open-source-seo",
-      description: "Open source puts the power in user's hands.",
+      label: "Docs",
+      href: "/docs",
+      description: "Setup, MCP, skills, and self-hosting guides.",
     },
     {
       label: "MCP",

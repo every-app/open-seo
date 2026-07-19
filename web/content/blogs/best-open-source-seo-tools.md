@@ -27,7 +27,7 @@ _Star counts are updated monthly. Last updated June 5, 2026._
 
 OpenSEO is an open source alternative to Semrush and Ahrefs, built to be the only SEO tool that companies or small agencies need. It covers keyword research, rank tracking, backlinks, site audits, AI brand visibility, and an AI search prompt explorer. See them all on the [features page](/features).
 
-It relies on [DataForSEO](https://dataforseo.com), a paid service, which is the gold standard for SEO data with pay-as-you-go pricing. Many features cost money to run, but far less than a legacy SaaS seat, and the [pricing is published in the repo](https://github.com/every-app/open-seo#seo-api-cost-reference).
+It relies on [DataForSEO](https://dataforseo.com), a paid service, which is the gold standard for SEO data with pay-as-you-go pricing. Many features cost money to run, but far less than a legacy SaaS seat, and the [costs are documented](/pricing).
 
 OpenSEO also has an [MCP server](/docs/mcp) and AI skills, so you can use Claude Code, Codex, or OpenClaw to handle tedious SEO work like a first pass of keyword research, then dig into the results in the OpenSEO UI. That is different from pointing an agent at DataForSEO's MCP directly. You can save data to your OpenSEO account through the MCP, like tags for clustering keywords, and you can ask the agent for a link to view its research in OpenSEO instead of trusting whatever it reports back.
 

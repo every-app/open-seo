@@ -1,8 +1,11 @@
-# Docker Self-Hosting
+---
+title: "Docker Self-Hosting"
+description: "Run OpenSEO locally with Docker Compose using the published GHCR image."
+---
 
 Run OpenSEO locally with Docker.
 
-In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network.
+In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network. For internet-facing self-hosting, use [Cloudflare](/docs/self-hosting/cloudflare) instead.
 
 The default `compose.yaml` uses the published GHCR image:
 
@@ -10,12 +13,16 @@ The default `compose.yaml` uses the published GHCR image:
 
 ## Prerequisites
 
-- Docker Desktop (or Docker Engine + Docker Compose)
-- A DataForSEO API key (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md))
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (or Docker Engine + Docker Compose)
+- A [DataForSEO API key](/docs/self-hosting#dataforseo-api-key-setup)
 
 ## Quickstart
 
+Clone the repo, then:
+
 ```bash
+git clone https://github.com/every-app/open-seo.git
+cd open-seo
 cp .env.example .env
 docker compose up -d
 ```
@@ -65,25 +72,25 @@ OPEN_SEO_IMAGE=open-seo:local docker compose up -d
 
 ## Common commands
 
-- Restart service after env changes:
+Restart service after env changes:
 
 ```bash
 docker compose up -d open-seo
 ```
 
-- Pull latest published image and restart:
+Pull latest published image and restart:
 
 ```bash
 docker compose pull && docker compose up -d
 ```
 
-- Stop:
+Stop:
 
 ```bash
 docker compose down
 ```
 
-- Stop and remove volumes:
+Stop and remove volumes:
 
 ```bash
 docker compose down -v
@@ -97,9 +104,7 @@ To confirm Docker Compose is using the expected environment variables:
 docker compose config
 ```
 
-Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64
-encoded value of your DataForSEO email and API password in this format:
-`email:password`.
+Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64 encoded value of your DataForSEO email and API password in this format: `email:password`.
 
 If you changed `.env`, recreate the container so Compose reapplies it:
 
