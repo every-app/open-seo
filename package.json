@@ -46,6 +46,7 @@
     "test:e2e:keywords": "playwright test e2e/keyword-research-navigation.spec.ts",
     "billing:backlinks": "tsx scripts/backlinks-cost-profile.ts",
     "billing:brand-lookup": "tsx scripts/brand-lookup-cost-profile.ts",
+    "billing:usage": "tsx scripts/dataforseo-account-usage.ts",
     "cleanup:default-projects:d1": "tsx scripts/d1-default-project-cleanup.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware"

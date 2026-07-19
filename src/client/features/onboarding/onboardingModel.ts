@@ -37,10 +37,17 @@ export const SOURCE_OPTIONS = [
   "Reddit",
   "X / Twitter",
   "GitHub",
-  "ChatGPT",
-  "Claude",
+  "AI (Claude, ChatGPT, etc)",
   "Friend or colleague",
   "Other",
+] as const;
+
+// Keep the mobile list short: these still count as known options, they just
+// aren't shown on small screens.
+export const SOURCE_OPTIONS_HIDDEN_ON_MOBILE = [
+  "Reddit",
+  "X / Twitter",
+  "AI (Claude, ChatGPT, etc)",
 ] as const;
 
 /** In-progress form state. Step is tracked separately in the URL. */

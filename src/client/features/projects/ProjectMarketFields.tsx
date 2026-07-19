@@ -14,9 +14,11 @@ import type { ProjectMarket } from "@/client/features/projects/types";
 export function ProjectMarketFields({
   value,
   onChange,
+  hideLanguageOnMobile = false,
 }: {
   value: ProjectMarket;
   onChange: (market: ProjectMarket) => void;
+  hideLanguageOnMobile?: boolean;
 }) {
   const languageOptions = getLanguageOptions(value.locationCode);
 
@@ -34,7 +36,9 @@ export function ProjectMarketFields({
           }
         />
       </label>
-      <label className="flex flex-col gap-1.5 text-sm">
+      <label
+        className={`${hideLanguageOnMobile ? "hidden sm:flex" : "flex"} flex-col gap-1.5 text-sm`}
+      >
         <span className="font-medium">Language</span>
         <select
           value={value.languageCode}

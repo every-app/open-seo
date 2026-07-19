@@ -44,7 +44,7 @@ export function SearchConsoleOnboardingStep() {
 
         {project ? <GscConnect projectId={project.id} /> : <Checking />}
 
-        <p className="text-xs leading-relaxed text-base-content/55">
+        <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
           For now, Search Console data flows through the OpenSEO MCP. We're
           building it into the OpenSEO app soon too.
         </p>
@@ -89,8 +89,12 @@ function DefaultMarketPicker({
 
   return (
     <div className="space-y-2">
-      <ProjectMarketFields value={market} onChange={handleChange} />
-      <p className="text-xs leading-relaxed text-base-content/55">
+      <ProjectMarketFields
+        value={market}
+        onChange={handleChange}
+        hideLanguageOnMobile
+      />
+      <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
         We'll use this country and language for keyword, SERP, and domain data
         unless you pick a different one. You can change it in project settings.
       </p>

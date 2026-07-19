@@ -8,6 +8,7 @@ import {
   ONBOARDING_LAST_STEP,
   type OnboardingAnswers,
   SOURCE_OPTIONS,
+  SOURCE_OPTIONS_HIDDEN_ON_MOBILE,
   WORK_FOR_OPTIONS,
 } from "@/client/features/onboarding/onboardingModel";
 import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/SearchConsoleOnboardingStep";
@@ -121,6 +122,7 @@ export function PostSignupOnboarding({
             onToggle={(source) => updateAnswers({ source })}
             otherValue={answers.sourceOther}
             onOtherChange={(sourceOther) => updateAnswers({ sourceOther })}
+            hiddenOnMobile={[...SOURCE_OPTIONS_HIDDEN_ON_MOBILE]}
           />
         ) : (
           <SearchConsoleOnboardingStep />
@@ -183,6 +185,7 @@ function OnboardingChoiceGroup({
   multiple = false,
   maxSelections,
   followUp,
+  hiddenOnMobile,
 }: {
   title: string;
   description?: string;
@@ -193,6 +196,7 @@ function OnboardingChoiceGroup({
   onOtherChange: (value: string) => void;
   multiple?: boolean;
   maxSelections?: number;
+  hiddenOnMobile?: string[];
   followUp?: {
     showForValue: string;
     label: string;
@@ -222,12 +226,14 @@ function OnboardingChoiceGroup({
           const disabled = atLimit && !selected;
           const showFollowUpHere =
             showFollowUp && followUp?.showForValue === option;
+          // Selected options stay visible so a restored answer never vanishes.
+          const mobileHidden = hiddenOnMobile?.includes(option) && !selected;
 
           return (
             <Fragment key={option}>
               <button
                 type="button"
-                className={`flex min-h-11 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
+                className={`${mobileHidden ? "hidden sm:flex" : "flex"} min-h-11 items-center justify-between rounded-lg border px-3 py-2 text-left text-sm transition-colors ${
                   selected
                     ? "border-base-content bg-base-200 text-base-content"
                     : disabled

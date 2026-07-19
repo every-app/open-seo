@@ -216,7 +216,10 @@ function Hero() {
           </span>
         </p>
         <div className="itc-hero-ctas">
-          <ArrowCta size="lg" />
+          <div className="itc-hero-cta-group">
+            <ArrowCta size="lg" />
+            <p className="itc-hero-cta-note">No credit card required</p>
+          </div>
         </div>
       </Container>
     </section>
