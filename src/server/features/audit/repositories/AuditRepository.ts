@@ -12,6 +12,7 @@ import {
   auditLinks,
   auditPages,
 } from "@/db/schema";
+import { getDatabaseProvider } from "@/db/provider";
 import { executeInBatches } from "@/db/runBatch";
 import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
@@ -28,6 +29,7 @@ import type {
 // checks. Mega-menu/footer-heavy sites can carry 1000+ links per page; cap
 // what we store so a 10k-page crawl can't write tens of millions of link rows.
 const MAX_STORED_LINKS_PER_PAGE = 500;
+const POSTGRES_LINK_INSERT_SIZE = 500;
 
 async function createAudit(data: {
   id: string;
@@ -207,9 +209,20 @@ async function insertCrawledBatch(
         })),
     ),
   );
-  await executeInBatches(linkRows, (tx, row) =>
-    tx.insert(auditLinks).values(row).onConflictDoNothing(),
-  );
+  if (getDatabaseProvider() === "postgres") {
+    // A Postgres transaction executes runBatch statements sequentially. Bulk
+    // values avoid thousands of Hyperdrive round trips on link-heavy pages.
+    for (let i = 0; i < linkRows.length; i += POSTGRES_LINK_INSERT_SIZE) {
+      await db
+        .insert(auditLinks)
+        .values(linkRows.slice(i, i + POSTGRES_LINK_INSERT_SIZE))
+        .onConflictDoNothing();
+    }
+  } else {
+    await executeInBatches(linkRows, (tx, row) =>
+      tx.insert(auditLinks).values(row).onConflictDoNothing(),
+    );
+  }
 
   await insertIssues(auditId, issues);
 }

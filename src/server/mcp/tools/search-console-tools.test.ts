@@ -76,7 +76,11 @@ const toolExtra: ToolExtra = {
 describe("search console MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    });
     mocks.isHostedServerAuthMode.mockReset();
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.hasSelfHostedGscConfig.mockReset();

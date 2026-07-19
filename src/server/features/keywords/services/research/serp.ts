@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import { type SerpLiveItem } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { SerpResultItem } from "@/types/keywords";
@@ -91,9 +92,13 @@ async function getSerpLiveAnalysis(
     result.reason = "no_organic_results";
   }
 
-  void setCached(cacheKey, result, SERP_CACHE_TTL_SECONDS).catch((error) => {
-    console.error("keywords.serp.cache-write failed:", error);
-  });
+  // waitUntil, not void: workerd cancels unregistered pending I/O once the
+  // response is sent, so a fire-and-forget put never persists the cache.
+  waitUntil(
+    setCached(cacheKey, result, SERP_CACHE_TTL_SECONDS).catch((error) => {
+      console.error("keywords.serp.cache-write failed:", error);
+    }),
+  );
 
   return result;
 }

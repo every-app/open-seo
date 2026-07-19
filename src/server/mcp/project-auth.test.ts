@@ -46,6 +46,8 @@ describe("withMcpProjectAuth", () => {
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_123",
       name: "Test",
+      locationCode: 2840,
+      languageCode: "en",
     });
   });
 
@@ -64,7 +66,7 @@ describe("withMcpProjectAuth", () => {
     );
   });
 
-  it("passes auth, baseUrl, and billing context to the wrapped handler", async () => {
+  it("passes auth, baseUrl, billing, and project context to the wrapped handler", async () => {
     const { withMcpProjectAuth } = await import("@/server/mcp/project-auth");
     const handler = vi.fn().mockReturnValue("ok");
 
@@ -89,6 +91,12 @@ describe("withMcpProjectAuth", () => {
           userEmail: "alice@example.com",
           organizationId: "org_123",
           projectId: "project_123",
+        },
+        project: {
+          id: "project_123",
+          name: "Test",
+          locationCode: 2840,
+          languageCode: "en",
         },
       },
     );

@@ -28,6 +28,9 @@ async function requireProjectAccess(extra: ToolExtra, projectId: string) {
     auth,
     baseUrl,
     billing: buildBillingCustomer(auth, projectId),
+    // The row is already fetched for the auth gate; exposing it lets tools
+    // fall back to the project's default market without another query.
+    project,
   };
 }
 

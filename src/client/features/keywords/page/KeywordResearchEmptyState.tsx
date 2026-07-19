@@ -1,6 +1,5 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, Globe, History, Search, X } from "lucide-react";
-import { DEFAULT_LOCATION_CODE } from "@/client/features/keywords/locations";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
@@ -89,10 +88,7 @@ function SearchHistoryState({
                   params={{ projectId }}
                   search={{
                     q: item.keyword,
-                    loc:
-                      item.locationCode === DEFAULT_LOCATION_CODE
-                        ? undefined
-                        : item.locationCode,
+                    loc: item.locationCode,
                   }}
                   replace
                   className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"

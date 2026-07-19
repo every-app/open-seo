@@ -78,8 +78,12 @@ function DomainPagesTableComponent({
     ],
     [currentSortOrder, domain, onSortClick, sortMode],
   );
+  // Memoized on purpose: a fresh slice every render defeats TanStack Table's
+  // data-keyed memo, so _autoResetPageIndex fires each render and its setState
+  // schedules another one — an unbounded render loop that freezes the tab.
+  const tableData = useMemo(() => rows.slice(0, 100), [rows]);
   const table = useAppTable({
-    data: rows.slice(0, 100),
+    data: tableData,
     columns,
   });
   useDomainRenderDebug("DomainPagesTable", {

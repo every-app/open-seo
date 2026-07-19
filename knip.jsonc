@@ -1,9 +1,11 @@
 {
   "entry": [
+    // Alchemy deploy stack (run by the alchemy CLI, not imported by the app)
+    "alchemy.run.ts",
+    "alchemy.preview-access.run.ts",
     // Detect Tanstack Start Routes
     "cli-auth.ts",
     "src/start.ts",
-    "src/server.ts",
     "src/router.tsx",
     "src/routes/**/*.ts",
     "src/routes/**/*.tsx",
@@ -29,6 +31,8 @@
     "**/*.{js,mjs,ts,tsx}",
     "!src/routeTree.gen.ts",
     "!web/**",
+    // Alchemy state/bundle artifacts (gitignored)
+    "!.alchemy/**",
     "!badseo/**",
   ],
   "ignore": ["drizzle-prod.config.ts"],

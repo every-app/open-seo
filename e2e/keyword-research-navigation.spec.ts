@@ -115,6 +115,10 @@ test.describe("Keyword Research navigation", () => {
     await expect(
       page.locator(`[data-search-tab-id="${closedTabId}"]`),
     ).toHaveCount(0);
-    await expect(page.getByRole("tab")).toHaveCount(2);
+    // Count only search tabs: the app shell has grown other tablists
+    // (Browse/Chat), so a bare role=tab count would include them.
+    await expect(
+      page.getByRole("tablist", { name: "Search tabs" }).getByRole("tab"),
+    ).toHaveCount(2);
   });
 });

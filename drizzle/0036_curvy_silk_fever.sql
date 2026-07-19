@@ -1,0 +1,1 @@
+ALTER TABLE `telemetry_state` ADD `installed_at` integer;

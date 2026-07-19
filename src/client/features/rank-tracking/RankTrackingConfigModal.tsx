@@ -10,12 +10,13 @@ import {
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
 import {
-  DEFAULT_LOCATION_CODE,
   getLanguageCode,
   getLanguageOptions,
 } from "@/client/features/keywords/locations";
 import { getIsoCountryCode } from "@/shared/keyword-locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
+import type { ProjectMarket } from "@/client/features/projects/types";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { SearchTargetingField } from "./SearchTargetingField";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 import { useSaveConfigMutations } from "./useSaveConfigMutations";
@@ -35,6 +36,45 @@ export function RankTrackingConfigModal({
   onSaved,
   onConfigCreated,
 }: Props) {
+  const projectMarket = useProjectMarket(projectId);
+
+  if (!existingConfig && !projectMarket) {
+    return (
+      <Modal
+        maxWidth="max-w-lg"
+        onClose={onClose}
+        labelledBy="rank-config-modal-title"
+      >
+        <h2 id="rank-config-modal-title" className="sr-only">
+          Add Domain
+        </h2>
+        <div className="flex min-h-40 items-center justify-center">
+          <Loader2 className="size-5 animate-spin text-base-content/50" />
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <RankTrackingConfigModalContent
+      projectId={projectId}
+      existingConfig={existingConfig}
+      initialMarket={existingConfig ?? projectMarket!}
+      onClose={onClose}
+      onSaved={onSaved}
+      onConfigCreated={onConfigCreated}
+    />
+  );
+}
+
+function RankTrackingConfigModalContent({
+  projectId,
+  existingConfig,
+  initialMarket,
+  onClose,
+  onSaved,
+  onConfigCreated,
+}: Props & { initialMarket: ProjectMarket }) {
   const isEdit = !!existingConfig;
   const [step, setStep] = useState<"config" | "keywords">("config");
   const [domain, setDomain] = useState(existingConfig?.domain ?? "");
@@ -42,11 +82,10 @@ export function RankTrackingConfigModal({
     existingConfig?.devices ?? "mobile",
   );
   const [locationCode, setLocationCode] = useState(
-    existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
+    existingConfig?.locationCode ?? initialMarket.locationCode,
   );
   const [languageCode, setLanguageCode] = useState(
-    existingConfig?.languageCode ??
-      getLanguageCode(existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE),
+    existingConfig?.languageCode ?? initialMarket.languageCode,
   );
   const languageOptions = useMemo(
     () => getLanguageOptions(locationCode),

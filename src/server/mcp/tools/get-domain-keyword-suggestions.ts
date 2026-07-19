@@ -7,16 +7,17 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveLabsMarket } from "@/shared/keyword-locations";
 import {
   formatMcpTable,
   readPath,
   type McpTableColumn,
 } from "@/server/mcp/table";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   assertLabsLocationCode,
   assertLanguageForLocation,
+} from "@/server/lib/market";
+import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -59,13 +60,17 @@ export const getDomainKeywordSuggestionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    assertLabsLocationCode(args.locationCode);
-    assertLanguageForLocation(args.locationCode, args.languageCode);
+    const { locationCode, languageCode } = resolveLabsMarket(
+      args,
+      context.project,
+    );
+    assertLabsLocationCode(locationCode);
+    assertLanguageForLocation(locationCode, languageCode);
     const keywords = await DomainService.getSuggestedKeywords(
       {
         domain: args.domain,
-        locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+        locationCode,
+        languageCode,
         organizationId: context.auth.organizationId,
         projectId: args.projectId,
       },

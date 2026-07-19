@@ -9,6 +9,11 @@ copies the data into a freshly-migrated Postgres database using
 `scripts/migrate-d1-to-postgres.ts`. For the condensed happy path see
 [d1-to-postgres-simple.md](./d1-to-postgres-simple.md).
 
+> **Scope:** this runbook is for the OpenSEO production deployment —
+> `pnpm deploy:postgres` is hardwired to alchemy stage `hosted-prod`, its domains, and
+> `.env.production`. The alchemy self-host path (non-`prod` stages) has no
+> Hyperdrive wiring, so Postgres is not currently available to self-hosters.
+
 The script reads **each table directly from D1 over the Cloudflare REST API** and
 writes to Postgres — there is no SQL dump to download or reimport. (An earlier
 dump-based approach was dropped after a `wrangler d1 export` download silently

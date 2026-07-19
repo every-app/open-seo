@@ -11,3 +11,4 @@ Dockerfile
 .env
 .env.*
 !.env.example
+.alchemy/

@@ -12,8 +12,7 @@ type DomainKeywordsQueryInput = {
   projectId: string;
   domain: string;
   includeSubdomains: boolean;
-  locationCode: number;
-  languageCode: string;
+  locationCode: number | undefined;
   page: number;
   pageSize: number;
   sortMode: DomainSortMode;
@@ -60,7 +59,6 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
       input.domain,
       input.includeSubdomains,
       input.locationCode,
-      input.languageCode,
       input.page,
       input.pageSize,
       input.sortMode,
@@ -71,7 +69,6 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
       filtersPayload,
       input.domain,
       input.includeSubdomains,
-      input.languageCode,
       input.locationCode,
       input.page,
       input.pageSize,
@@ -98,7 +95,6 @@ export function useDomainKeywordsQuery(input: DomainKeywordsQueryInput) {
           domain: input.domain,
           includeSubdomains: input.includeSubdomains,
           locationCode: input.locationCode,
-          languageCode: input.languageCode,
           page: input.page,
           pageSize: input.pageSize,
           sortMode: input.sortMode,

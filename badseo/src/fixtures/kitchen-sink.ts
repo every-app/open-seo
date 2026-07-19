@@ -12,7 +12,7 @@ const kitchenSink: Fixture = {
   category: "Kitchen sink",
   name: "Kitchen sink (everything at once)",
   summary:
-    "One page, six problems: a title that is too long, no meta description, two H1s, a skipped heading level, an image with no alt, and a slow response.",
+    "A title that is too long, no meta description, two H1s, a skipped heading level, an image with no alt, and a slow response.",
   lesson:
     "Real broken pages usually have more than one problem. An audit should report every one of these, not stop at the first.",
   expectedIssues: [

@@ -30,7 +30,7 @@ export function ProjectSwitcher({
     if (project.id === activeProjectId) return;
     setLastProjectId(project.id);
     void navigate({
-      to: "/p/$projectId/keywords",
+      to: "/p/$projectId",
       params: { projectId: project.id },
     });
   };

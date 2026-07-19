@@ -181,7 +181,7 @@ test.describe("Domain Overview filters", () => {
     );
     await applyFilters(page, "pMinTraffic", "20");
 
-    const domainInput = page.getByPlaceholder("Enter a domain").nth(1);
+    const domainInput = page.getByPlaceholder("Enter a domain").first();
     await domainInput.click();
     await domainInput.press(
       process.platform === "darwin" ? "Meta+A" : "Control+A",

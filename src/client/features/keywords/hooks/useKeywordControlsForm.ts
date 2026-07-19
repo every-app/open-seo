@@ -13,7 +13,7 @@ import { parseKeywordInput } from "@/client/features/keywords/state/keywordContr
 
 type KeywordTabValidationInput = {
   keyword: string;
-  locationCode: number;
+  locationCode: number | undefined;
   resultLimit: ResultLimit;
   mode: KeywordMode;
   clickstream: boolean;
