@@ -196,24 +196,15 @@ function Hero() {
           className="itc-display-xl itc-hero-title"
           style={{ maxWidth: 1180, margin: "0 auto" }}
         >
-          Say goodbye to{" "}
-          <span className="itc-hero-title-accent">bloated,</span>{" "}
-          <br className="itc-h1-br" />
-          <span className="itc-hero-title-accent">overpriced SEO tools.</span>
+          The modern, open source SEO platform.
         </h1>
         <p
           className="itc-subhead itc-muted itc-hero-subtitle"
           style={{ maxWidth: 640, margin: "24px auto 0" }}
         >
-          Speed up strategy decisions with quality SEO data for every workflow,
-          all in one place.{" "}
-          <span className="itc-hero-subtitle-counter">
-            Don&apos;t put SEO on autopilot
-          </span>
-          ,{" "}
-          <span className="itc-hero-subtitle-win">
-            work with your AI agent to actually win.
-          </span>
+          Without quality data, AI gives generic advice. OpenSEO is built for
+          you and your AI agent to work together on SEO strategy + content
+          tailored to your business.
         </p>
         <div className="itc-hero-ctas">
           <div className="itc-hero-cta-group">
@@ -237,7 +228,7 @@ function Testimonial() {
             className="itc-display-md itc-testimonials-title"
             style={{ margin: "0 auto 32px" }}
           >
-            Trusted by customers all over the world
+            Trusted by hundreds of customers worldwide
           </h2>
           <div className="itc-quote-grid">
             {TESTIMONIALS.map((t) => (

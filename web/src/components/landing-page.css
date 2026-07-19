@@ -97,22 +97,6 @@
   margin: 0;
   text-wrap: balance;
 }
-/* Desktop keeps the headline on two lines via a forced break; mobile wraps
-   naturally (the break is removed below the tablet breakpoint). */
-.itc-h1-br {
-  display: inline;
-}
-@media (max-width: 767px) {
-  .itc-h1-br {
-    display: none;
-  }
-}
-@media (min-width: 768px) {
-  /* Let the forced <br> own the break; don't let balance re-split into 3 lines. */
-  .itc-display-xl {
-    text-wrap: wrap;
-  }
-}
 .itc-display-lg {
   font-size: clamp(32px, 4.4vw, 52px);
   font-weight: 500;
@@ -318,33 +302,11 @@
   color: var(--ink);
   transition: color 0.18s ease;
 }
-.itc-hero-title-accent {
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-}
 .itc-hero-subtitle {
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease;
-}
-.itc-hero-subtitle-counter,
-.itc-hero-subtitle-win {
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  font-style: italic;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    text-decoration-color 0.18s ease;
-}
-.itc-hero-subtitle-counter {
-  color: #7a746d;
-}
-.itc-hero-subtitle-win {
-  color: var(--orange);
-  font-weight: 500;
 }
 @media (max-width: 767px) {
   .itc-hero {
