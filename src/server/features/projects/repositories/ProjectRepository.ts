@@ -101,6 +101,31 @@ async function updateProject(
   return row;
 }
 
+// Writes only the domain column, for the dashboard's inline domain input.
+async function updateProjectDomain(
+  projectId: string,
+  organizationId: string,
+  domain: string,
+) {
+  const [row] = await db
+    .update(projects)
+    .set({ domain })
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNull(projects.archivedAt),
+      ),
+    )
+    .returning();
+
+  if (!row) {
+    throw new AppError("NOT_FOUND");
+  }
+
+  return row;
+}
+
 // Writes only the market columns. Onboarding sets the project's market before
 // the user has named the project or picked a domain, so it must not go through
 // updateProject, whose `domain: input.domain ?? null` would clear the domain.
@@ -197,6 +222,7 @@ export const ProjectRepository = {
   getProjectById,
   createProject,
   updateProject,
+  updateProjectDomain,
   updateProjectMarket,
   tryCreateDefaultProject,
   archiveProject,

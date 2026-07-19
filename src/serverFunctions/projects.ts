@@ -8,6 +8,7 @@ import {
   archiveProjectSchema,
   createProjectSchema,
   restoreProjectSchema,
+  setProjectDomainSchema,
   setProjectMarketSchema,
   updateProjectSchema,
 } from "@/types/schemas/projects";
@@ -33,6 +34,13 @@ export const updateProject = createServerFn({ method: "POST" })
   .validator(updateProjectSchema)
   .handler(async ({ data, context }) =>
     ProjectService.updateProject(context.organizationId, data),
+  );
+
+export const setProjectDomain = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(setProjectDomainSchema)
+  .handler(async ({ data, context }) =>
+    ProjectService.setProjectDomain(context.organizationId, data),
   );
 
 export const setProjectMarket = createServerFn({ method: "POST" })

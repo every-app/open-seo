@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
   updateProject: vi.fn(),
+  updateProjectDomain: vi.fn(),
   archiveProject: vi.fn(),
   restoreProject: vi.fn(),
   countProjects: vi.fn(),
@@ -205,6 +206,51 @@ describe("project service", () => {
         "org_1",
         { name: "Acme", domain: undefined },
       );
+    });
+  });
+
+  describe("setProjectDomain", () => {
+    it("canonicalizes a pasted URL to the bare host before writing", async () => {
+      mocks.updateProjectDomain.mockResolvedValue(namedProject);
+      const { setProjectDomain } = await import("./projects");
+
+      await setProjectDomain("org_1", {
+        projectId: "project_acme",
+        domain: "https://www.Acme.com/pricing?ref=x",
+      });
+
+      expect(mocks.updateProjectDomain).toHaveBeenCalledWith(
+        "project_acme",
+        "org_1",
+        "acme.com",
+      );
+    });
+
+    it("rejects junk that the backlink fetch would later refuse", async () => {
+      const { setProjectDomain } = await import("./projects");
+
+      await expect(
+        setProjectDomain("org_1", {
+          projectId: "project_acme",
+          domain: "not a domain",
+        }),
+      ).rejects.toThrow("Enter a valid domain");
+      expect(mocks.updateProjectDomain).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("updateProject domain validation", () => {
+    it("rejects a junk domain instead of storing it", async () => {
+      const { updateProject } = await import("./projects");
+
+      await expect(
+        updateProject("org_1", {
+          projectId: "project_acme",
+          name: "Acme",
+          domain: "999.999.999.999",
+        }),
+      ).rejects.toThrow("Enter a valid domain");
+      expect(mocks.updateProject).not.toHaveBeenCalled();
     });
   });
 

@@ -57,9 +57,9 @@ function SidebarNavLink({
 }) {
   return (
     <Link
-      {...linkProps}
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
+      {...linkProps}
       className={navItemClass}
       activeProps={navItemActiveProps}
     >
@@ -109,6 +109,15 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
     }
   };
 
+  // Coming back from Chat, land on the dashboard rather than leaving the
+  // conversation filling the content panel next to a Browse nav.
+  const openBrowse = () => {
+    setView("browse");
+    if (!projectId || !onSamRoute) return;
+    void navigate({ to: "/p/$projectId", params: { projectId } });
+    onNavigate?.();
+  };
+
   return (
     <div className="flex h-full w-60 flex-col bg-base-200">
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
@@ -147,7 +156,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
               icon={LayoutGrid}
               label="Browse"
               active={view === "browse"}
-              onClick={() => setView("browse")}
+              onClick={openBrowse}
             />
             <SidebarViewTab
               icon={MessageCircle}

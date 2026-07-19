@@ -85,6 +85,13 @@
       "when": 1784410131656,
       "tag": "0011_friendly_morlun",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784423181488,
+      "tag": "0012_dashboard",
+      "breakpoints": true
     }
   ]
 }

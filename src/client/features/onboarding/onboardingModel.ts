@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getOnboardingAnswers } from "@/serverFunctions/onboarding";
 
-export const ONBOARDING_LAST_STEP = 4;
+export const ONBOARDING_LAST_STEP = 3;
 
 export const INTEREST_OPTIONS = [
   "AI workflows with Claude or Codex (MCP)",
@@ -32,6 +32,7 @@ export const CLIENT_WEBSITE_COUNT_OPTIONS = [
 ] as const;
 
 export const SOURCE_OPTIONS = [
+  "Product Hunt",
   "Google",
   "Reddit",
   "X / Twitter",
@@ -110,7 +111,7 @@ export function restoreOnboardingAnswers(
 export function buildOnboardingPayload(
   answers: OnboardingAnswers,
   step: number,
-  extra: { mcpSetupIntent?: "yes" | "no"; completed?: boolean } = {},
+  extra: { completed?: boolean } = {},
 ) {
   const interestedFeatures = answers.selectedInterests.map((value) =>
     value === "Other" && answers.interestOther.trim()

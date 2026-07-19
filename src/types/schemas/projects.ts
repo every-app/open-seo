@@ -63,6 +63,13 @@ export const updateProjectSchema = z
   })
   .refine(hasLocationForLanguage, marketPairMessage);
 
+// Domain on its own, for the dashboard hero's inline input. Same loose shape
+// as updateProjectSchema's domain field, but required.
+export const setProjectDomainSchema = z.object({
+  projectId: z.string().min(1),
+  domain: z.string().trim().min(1).max(255),
+});
+
 // Market-only update (onboarding). Both halves are required: the caller picks
 // them together, so the service can validate the pair without a stored row.
 export const setProjectMarketSchema = z.object({
@@ -89,6 +96,7 @@ export const restoreProjectSchema = z.object({
 
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
+export type SetProjectDomainInput = z.infer<typeof setProjectDomainSchema>;
 export type SetProjectMarketInput = z.infer<typeof setProjectMarketSchema>;
 export type ArchiveProjectInput = z.infer<typeof archiveProjectSchema>;
 export type RestoreProjectInput = z.infer<typeof restoreProjectSchema>;
