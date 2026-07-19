@@ -23,12 +23,35 @@ const SELF_HOST_POSTHOG_KEY =
   "REDACTED";
 const SELF_HOST_POSTHOG_HOST = "https://us.i.posthog.com";
 
-const HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
-const CHECK_INTERVAL_MS = 15 * 60 * 1000;
+const DAILY_HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
+// During the first two hours after install, heartbeat every 5 minutes so the
+// day-0 snapshots show how far onboarding got before an install went quiet.
+const ONBOARDING_WINDOW_MS = 2 * 60 * 60 * 1000;
+const ONBOARDING_HEARTBEAT_INTERVAL_MS = 5 * 60 * 1000;
+// In-memory DB-check throttle. During onboarding this must divide the
+// 5-minute heartbeat interval cleanly — a coarser value (e.g. 4 minutes)
+// aliases against it and stretches the effective cadence to 8+ minutes.
+// An unknown age (fresh isolate) checks immediately to populate the cache.
+const ONBOARDING_CHECK_INTERVAL_MS = 60 * 1000;
+const STEADY_CHECK_INTERVAL_MS = 15 * 60 * 1000;
 const TELEMETRY_STATE_ID = 1;
+
+export function getHeartbeatIntervalMs(installAgeMs: number) {
+  return installAgeMs < ONBOARDING_WINDOW_MS
+    ? ONBOARDING_HEARTBEAT_INTERVAL_MS
+    : DAILY_HEARTBEAT_INTERVAL_MS;
+}
+
+export function getCheckIntervalMs(installAgeMs: number | null) {
+  if (installAgeMs === null) return 0;
+  return installAgeMs < ONBOARDING_WINDOW_MS
+    ? ONBOARDING_CHECK_INTERVAL_MS
+    : STEADY_CHECK_INTERVAL_MS;
+}
 
 type ClaimedHeartbeat = {
   installId: string;
+  installedAt: Date | null;
   lastHeartbeatAt: Date | null;
   lastVersion: string | null;
   mcpToolCallCount: number;
@@ -50,6 +73,7 @@ type HeartbeatProperties = HeartbeatCounts & {
   version: string;
   prevVersion?: string;
   firstRun: boolean;
+  minutesSinceInstall?: number;
   mcpToolCalls: number;
   $process_person_profile: false;
 };
@@ -78,6 +102,9 @@ type SelfHostTelemetryOptions = {
 };
 
 let lastCheckedAt: number | null = null;
+// Populated by claimHeartbeat so the memory throttle can pick the right
+// check interval without a DB read. Epoch 0 marks "old install, age unknown".
+let cachedInstalledAt: Date | null = null;
 
 // Only production builds report: this excludes `vite dev`, vitest, and
 // preview deployments (`vite build --mode preview`), whose per-PR databases
@@ -94,25 +121,42 @@ async function telemetryIsDisabled() {
 }
 
 async function claimHeartbeat(now: Date): Promise<ClaimedHeartbeat | null> {
-  await db
-    .insert(telemetryState)
-    .values({ id: TELEMETRY_STATE_ID, installId: crypto.randomUUID() })
-    .onConflictDoNothing();
+  const selectState = () =>
+    db
+      .select({
+        installId: telemetryState.installId,
+        installedAt: telemetryState.installedAt,
+        lastHeartbeatAt: telemetryState.lastHeartbeatAt,
+        lastVersion: telemetryState.lastVersion,
+        mcpToolCallCount: telemetryState.mcpToolCallCount,
+      })
+      .from(telemetryState)
+      .where(eq(telemetryState.id, TELEMETRY_STATE_ID))
+      .limit(1);
 
-  const [previous] = await db
-    .select({
-      installId: telemetryState.installId,
-      lastHeartbeatAt: telemetryState.lastHeartbeatAt,
-      lastVersion: telemetryState.lastVersion,
-      mcpToolCallCount: telemetryState.mcpToolCallCount,
-    })
-    .from(telemetryState)
-    .where(eq(telemetryState.id, TELEMETRY_STATE_ID))
-    .limit(1);
+  let [previous] = await selectState();
+  if (!previous) {
+    await db
+      .insert(telemetryState)
+      .values({
+        id: TELEMETRY_STATE_ID,
+        installId: crypto.randomUUID(),
+        installedAt: now,
+      })
+      .onConflictDoNothing();
+    [previous] = await selectState();
+  }
 
   if (!previous) return null;
 
-  const cutoff = new Date(now.getTime() - HEARTBEAT_INTERVAL_MS);
+  cachedInstalledAt = previous.installedAt ?? new Date(0);
+
+  // Rows created before the installedAt column existed (or with a wiped
+  // value) fall back to the daily cadence.
+  const installAgeMs = previous.installedAt
+    ? now.getTime() - previous.installedAt.getTime()
+    : Number.POSITIVE_INFINITY;
+  const cutoff = new Date(now.getTime() - getHeartbeatIntervalMs(installAgeMs));
   const [claimed] = await db
     .update(telemetryState)
     .set({ lastHeartbeatAt: now })
@@ -229,10 +273,13 @@ export async function maybeSendSelfHostHeartbeat(
     if (dependencies.isNonProductionBuild()) return;
 
     const now = dependencies.now();
+    const checkIntervalMs = getCheckIntervalMs(
+      cachedInstalledAt ? now.getTime() - cachedInstalledAt.getTime() : null,
+    );
     if (
       !options.skipMemoryThrottle &&
       lastCheckedAt !== null &&
-      now.getTime() - lastCheckedAt < CHECK_INTERVAL_MS
+      now.getTime() - lastCheckedAt < checkIntervalMs
     ) {
       return;
     }
@@ -248,12 +295,17 @@ export async function maybeSendSelfHostHeartbeat(
         ? state.lastVersion
         : undefined;
 
+    const minutesSinceInstall = state.installedAt
+      ? Math.round((now.getTime() - state.installedAt.getTime()) / 60_000)
+      : undefined;
+
     await dependencies.sendHeartbeat(state.installId, {
       deployTarget: authMode === "local_noauth" ? "docker" : "cloudflare",
       dbBackend: dependencies.getDbBackend(),
       version: dependencies.version,
       ...(prevVersion ? { prevVersion } : {}),
       firstRun: state.lastHeartbeatAt === null,
+      ...(minutesSinceInstall === undefined ? {} : { minutesSinceInstall }),
       ...counts,
       mcpToolCalls: state.mcpToolCallCount,
       $process_person_profile: false,
@@ -277,6 +329,7 @@ export async function incrementSelfHostMcpToolCallCount() {
       .values({
         id: TELEMETRY_STATE_ID,
         installId: crypto.randomUUID(),
+        installedAt: new Date(),
         mcpToolCallCount: 1,
       })
       .onConflictDoUpdate({

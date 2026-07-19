@@ -3,6 +3,10 @@ import { integer, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 export const telemetryState = pgTable("telemetry_state", {
   id: integer("id").primaryKey().default(1),
   installId: text("install_id").notNull(),
+  installedAt: timestamp("installed_at", {
+    mode: "date",
+    withTimezone: true,
+  }),
   lastHeartbeatAt: timestamp("last_heartbeat_at", {
     mode: "date",
     withTimezone: true,

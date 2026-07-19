@@ -1,11 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { SelfHostTelemetryDependencies } from "./self-host-telemetry";
+import {
+  getCheckIntervalMs,
+  getHeartbeatIntervalMs,
+} from "./self-host-telemetry";
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/db", () => ({ db: {} }));
 
 type StoredState = {
   installId: string;
+  installedAt: Date | null;
   lastHeartbeatAt: Date | null;
   lastVersion: string | null;
   mcpToolCallCount: number;
@@ -29,6 +34,7 @@ function createHarness(
 ) {
   const state: StoredState = {
     installId: "install-1",
+    installedAt: new Date(NOW.getTime() - 3 * 60 * 60 * 1000),
     lastHeartbeatAt: null,
     lastVersion: null,
     mcpToolCallCount: 0,
@@ -78,6 +84,39 @@ async function runHeartbeat(harness: ReturnType<typeof createHarness>) {
     skipMemoryThrottle: true,
   });
 }
+
+describe("getHeartbeatIntervalMs", () => {
+  const MINUTE = 60 * 1000;
+  const HOUR = 60 * MINUTE;
+
+  it("uses the 5-minute onboarding cadence during the first two hours", () => {
+    expect(getHeartbeatIntervalMs(0)).toBe(5 * MINUTE);
+    expect(getHeartbeatIntervalMs(2 * HOUR - 1)).toBe(5 * MINUTE);
+  });
+
+  it("uses the daily cadence from two hours onward", () => {
+    expect(getHeartbeatIntervalMs(2 * HOUR)).toBe(24 * HOUR);
+    expect(getHeartbeatIntervalMs(Number.POSITIVE_INFINITY)).toBe(24 * HOUR);
+  });
+});
+
+describe("getCheckIntervalMs", () => {
+  const MINUTE = 60 * 1000;
+  const HOUR = 60 * MINUTE;
+
+  it("checks immediately when the install age is unknown", () => {
+    expect(getCheckIntervalMs(null)).toBe(0);
+  });
+
+  it("polls every minute during onboarding so 5-minute beats don't alias", () => {
+    expect(getCheckIntervalMs(0)).toBe(MINUTE);
+    expect(getCheckIntervalMs(2 * HOUR - 1)).toBe(MINUTE);
+  });
+
+  it("polls every 15 minutes once onboarding is over", () => {
+    expect(getCheckIntervalMs(2 * HOUR)).toBe(15 * MINUTE);
+  });
+});
 
 describe("maybeSendSelfHostHeartbeat", () => {
   beforeEach(() => {
@@ -169,6 +208,28 @@ describe("maybeSendSelfHostHeartbeat", () => {
     });
     expect(harness.state.mcpToolCallCount).toBe(0);
     expect(harness.markHeartbeatSent).toHaveBeenCalledTimes(1);
+  });
+
+  it("reports minutesSinceInstall from the stored install time", async () => {
+    const harness = createHarness({
+      installedAt: new Date(NOW.getTime() - 25 * 60 * 1000),
+    });
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat.mock.calls[0]?.[1]).toMatchObject({
+      minutesSinceInstall: 25,
+    });
+  });
+
+  it("omits minutesSinceInstall when the install time is unknown", async () => {
+    const harness = createHarness({ installedAt: null });
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat.mock.calls[0]?.[1]).not.toHaveProperty(
+      "minutesSinceInstall",
+    );
   });
 
   it("includes prevVersion only when the version changes", async () => {

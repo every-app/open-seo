@@ -40,7 +40,7 @@ You can also persist it in `.env`.
 
 ## Telemetry
 
-OpenSEO collects anonymized telemetry for core usage events: a single daily heartbeat with aggregate counts (installs, users, projects, feature usage) tied to a random install ID. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID — every 5 minutes during the first two hours after install, then at most once daily. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
 
 To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
 
