@@ -32,4 +32,8 @@ Search Console is optional and works in self-hosted deployments using your own G
 
 ### AI features (SAM)
 
-AI features like SAM, the in-app SEO agent, are optional. Set the `OPENROUTER_API_KEY` environment variable to enable them. Create a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+AI features like SAM, the in-app SEO agent, are optional. OpenRouter is the
+default: set `OPENROUTER_API_KEY` and optionally `OPENROUTER_MODEL`. To use
+[AI Pass](https://aipass.one/) instead, set `AI_PROVIDER=aipass`,
+`AIPASS_API_KEY`, and `AIPASS_MODEL`. DataForSEO remains separately required
+for SEO data.

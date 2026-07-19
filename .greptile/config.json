@@ -95,7 +95,7 @@
         "src/server/billing/**",
         "src/server/lib/chatAgent.ts",
         "src/server/lib/dataforseoBillingClassification.ts",
-        "src/server/lib/openrouter.ts",
+        "src/server/lib/chatAgentModel.ts",
         "src/server/lib/audit/lighthouse.ts",
         "src/server/lib/dataforseo/**",
         "src/server/features/**",
