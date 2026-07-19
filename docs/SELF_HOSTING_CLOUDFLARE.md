@@ -33,6 +33,20 @@ In the Cloudflare dashboard:
    - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
    - `DATAFORSEO_API_KEY` (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md) for how to get one)
 
+DataForSEO remains separately required for SEO data. To also enable onboarding
+chat and SAM, configure one AI provider under `Variables & Secrets`:
+
+- OpenRouter (default): add the `OPENROUTER_API_KEY` secret. You may add
+  `OPENROUTER_MODEL` as a variable; otherwise OpenSEO uses
+  `minimax/minimax-m3`. `AI_PROVIDER` may be omitted or set to `openrouter`.
+- AI Pass: set `AI_PROVIDER` to `aipass`, add the `AIPASS_API_KEY` secret, and
+  set `AIPASS_MODEL` to a model ID supported by your AI Pass account.
+
+The managed hosted service (`AUTH_MODE=hosted`) always uses OpenRouter because
+its shared credit accounting depends on OpenRouter's usage-cost metadata. The
+AI Pass option is for self-hosted `cloudflare_access` and `local_noauth`
+deployments.
+
 ## 3) Optional: add an R2 lifecycle rule
 
 DataForSEO API responses are cached in R2 under the `dataforseo-cache/` prefix. This step is optional, but recommended to automatically clean up expired cache objects:

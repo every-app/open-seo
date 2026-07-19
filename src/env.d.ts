@@ -40,10 +40,16 @@ declare namespace Cloudflare {
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
+    // AI provider for in-app chat agents. Unset defaults to OpenRouter.
+    AI_PROVIDER?: "openrouter" | "aipass";
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
-    // Optional OpenRouter model slug override (defaults in openrouter.ts).
+    // Optional OpenRouter model slug override (defaults in chatAgentModel.ts).
     OPENROUTER_MODEL?: string;
+    // Self-hosted AI Pass requires both its API key and an explicit model ID.
+    // AUTH_MODE=hosted stays on OpenRouter for usage-cost credit metering.
+    AIPASS_API_KEY?: string;
+    AIPASS_MODEL?: string;
   }
 }
 

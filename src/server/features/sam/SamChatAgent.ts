@@ -18,7 +18,10 @@ import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemo
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamMcpTools } from "@/server/features/sam/samChatTools";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
+import {
+  buildChatAgentModel,
+  getChatAgentProviderConfig,
+} from "@/server/lib/chatAgentModel";
 import {
   getEnvValueSync,
   isHostedServerAuthMode,
@@ -107,14 +110,15 @@ export class SamChatAgent extends Think {
   }
 
   getModel() {
-    const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
-    }
-    return buildChatAgentModel(
-      apiKey,
-      getEnvValueSync(this.env, "OPENROUTER_MODEL"),
-    );
+    const config = getChatAgentProviderConfig({
+      AUTH_MODE: getEnvValueSync(this.env, "AUTH_MODE"),
+      AI_PROVIDER: getEnvValueSync(this.env, "AI_PROVIDER"),
+      OPENROUTER_API_KEY: getEnvValueSync(this.env, "OPENROUTER_API_KEY"),
+      OPENROUTER_MODEL: getEnvValueSync(this.env, "OPENROUTER_MODEL"),
+      AIPASS_API_KEY: getEnvValueSync(this.env, "AIPASS_API_KEY"),
+      AIPASS_MODEL: getEnvValueSync(this.env, "AIPASS_MODEL"),
+    });
+    return buildChatAgentModel(config);
   }
 
   configureSession(session: Session): Session {

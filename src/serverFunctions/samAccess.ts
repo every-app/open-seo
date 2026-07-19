@@ -4,10 +4,8 @@ import {
   getOptionalEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
+import { getChatAgentSetupStatus } from "@/server/lib/chatAgentModel";
 import { requireProjectContext } from "@/serverFunctions/middleware";
-
-const OPENROUTER_KEY_MISSING_MESSAGE =
-  "OPENROUTER_API_KEY is not set for this deployment yet. Add it to your environment, restart OpenSEO, then confirm here.";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 
@@ -16,20 +14,26 @@ type SamAccessStatus = {
   errorMessage: string | null;
 };
 
-// Gates the in-app AI agent (SAM) on an OpenRouter key being configured, the
+// Gates the in-app AI agent (SAM) on the selected provider being configured, the
 // same way backlinks/AI-search gate on their DataForSEO subscriptions. Hosted
-// deployments always have the key provisioned, so only self-hosted is checked.
+// deployments always keep their provisioned OpenRouter key and shared credit
+// metering, so only self-hosted provider configuration is checked here.
 export const getSamAccessSetupStatus = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async (): Promise<SamAccessStatus> => {
+    const authMode = await getOptionalEnvValue("AUTH_MODE");
+    const provider = await getOptionalEnvValue("AI_PROVIDER");
     if (await isHostedServerAuthMode()) {
       return { enabled: true, errorMessage: null };
     }
 
-    const enabled = Boolean(await getOptionalEnvValue("OPENROUTER_API_KEY"));
-    return {
-      enabled,
-      errorMessage: enabled ? null : OPENROUTER_KEY_MISSING_MESSAGE,
-    };
+    return getChatAgentSetupStatus({
+      AUTH_MODE: authMode,
+      AI_PROVIDER: provider,
+      OPENROUTER_API_KEY: await getOptionalEnvValue("OPENROUTER_API_KEY"),
+      OPENROUTER_MODEL: await getOptionalEnvValue("OPENROUTER_MODEL"),
+      AIPASS_API_KEY: await getOptionalEnvValue("AIPASS_API_KEY"),
+      AIPASS_MODEL: await getOptionalEnvValue("AIPASS_MODEL"),
+    });
   });

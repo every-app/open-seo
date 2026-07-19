@@ -22,6 +22,9 @@ docker compose up -d
 
 Set `DATAFORSEO_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
 
+DataForSEO remains separately required for SEO data even if you configure an
+AI provider for onboarding and SAM.
+
 Docker Compose passes `.env` values into the container, and `compose.yaml` enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings during local self-hosting.
 
 Optional env values:
@@ -30,6 +33,32 @@ Optional env values:
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+
+### AI provider (optional)
+
+OpenRouter is the default. To enable onboarding chat and SAM with it, set:
+
+```dotenv
+AI_PROVIDER=openrouter
+OPENROUTER_API_KEY=replace-with-your-openrouter-api-key
+# Optional; defaults to minimax/minimax-m3
+OPENROUTER_MODEL=minimax/minimax-m3
+```
+
+To use [AI Pass](https://aipass.one/) instead, choose a model supported by your
+AI Pass account and set both required values:
+
+```dotenv
+AI_PROVIDER=aipass
+AIPASS_API_KEY=replace-with-your-aipass-api-key
+AIPASS_MODEL=replace-with-an-aipass-model-id
+```
+
+Recreate the container after changing provider settings:
+
+```bash
+docker compose up -d --force-recreate open-seo
+```
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
