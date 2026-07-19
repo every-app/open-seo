@@ -13,7 +13,6 @@ import {
   AuditHealthCard,
   BacklinkPulseCard,
   GscCard,
-  RankMovementCard,
 } from "@/client/features/dashboard/DashboardCards";
 import { McpConnectCard } from "@/client/features/dashboard/McpConnectCard";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -33,7 +32,7 @@ const HERO_COPY: Record<
 > = {
   domain: {
     title: "What site are you working on?",
-    body: "Set your project's domain and every card on this page starts working for it — backlinks, audits, rank tracking.",
+    body: "Set your project's domain and every card on this page starts working for it — backlinks and audits.",
     cta: "Save",
   },
   mcp: {
@@ -327,16 +326,6 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               key: "gsc",
               hasData: gscConnected,
               node: <GscCard projectId={projectId} connected={gscConnected} />,
-            },
-            {
-              key: "rank",
-              hasData: overview?.rank != null,
-              node: (
-                <RankMovementCard
-                  projectId={projectId}
-                  rank={overview?.rank ?? null}
-                />
-              ),
             },
             {
               key: "audit",

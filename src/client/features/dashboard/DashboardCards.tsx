@@ -22,7 +22,6 @@ import {
 import type {
   DashboardAuditSummary,
   DashboardBacklinkSummary,
-  DashboardRankSummary,
 } from "@/server/features/dashboard/services/DashboardService";
 
 // Plain string-keyed view of the registry: issue types from the DB are not
@@ -112,68 +111,6 @@ export function GscCard({
           />
         </div>
       ) : null}
-    </CardShell>
-  );
-}
-
-export function RankMovementCard({
-  projectId,
-  rank,
-}: {
-  projectId: string;
-  rank: DashboardRankSummary | null;
-}) {
-  if (!rank) {
-    return (
-      <CardShell title="Rank tracking">
-        <EmptyCardBody
-          message="Track your money keywords and watch your ranking improve over time."
-          cta={
-            <Link
-              to="/p/$projectId/rank-tracking"
-              params={{ projectId }}
-              className="btn btn-primary btn-sm"
-            >
-              Track your first keyword
-            </Link>
-          }
-        />
-      </CardShell>
-    );
-  }
-
-  return (
-    <CardShell
-      title="Rank movement"
-      stamp={
-        rank.lastCheckedAt
-          ? `Rank data · checked ${formatDay(rank.lastCheckedAt)} · vs 7 days ago`
-          : "Rank data · no completed checks yet"
-      }
-      action={
-        <Link
-          to="/p/$projectId/rank-tracking"
-          params={{ projectId }}
-          className={moreDetailsClass}
-        >
-          More details
-        </Link>
-      }
-    >
-      <div className="grid grid-cols-2 gap-3">
-        <Stat label="Tracked" value={String(rank.trackedKeywords)} />
-        <Stat
-          label="Improved"
-          value={`▲ ${rank.improved}`}
-          tone={rank.improved > 0 ? "success" : undefined}
-        />
-        <Stat
-          label="Declined"
-          value={`▼ ${rank.declined}`}
-          tone={rank.declined > 0 ? "error" : undefined}
-        />
-        <Stat label="Top 10" value={String(rank.top10)} />
-      </div>
     </CardShell>
   );
 }
