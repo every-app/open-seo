@@ -17,7 +17,7 @@ import {
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   customerHasManagedAccess,
-  getUsageCreditsRemaining,
+  checkUsageCreditsDepleted,
   trackUsageCreditSpend,
 } from "@/server/billing/subscription";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
@@ -139,9 +139,9 @@ export class OnboardingChatAgent extends AIChatAgent {
         );
       }
 
-      const { monthlyRemaining, topupRemaining } =
-        await getUsageCreditsRemaining(organizationId);
-      if (monthlyRemaining + topupRemaining <= 0) {
+      const { depleted, monthlyRemaining } =
+        await checkUsageCreditsDepleted(billingCustomer);
+      if (depleted) {
         return staticAssistantResponse(
           "You've used your onboarding credits. Subscribe to continue.",
         );
