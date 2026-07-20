@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts";
 import { getRankConfigTrend } from "@/serverFunctions/rank-tracking";
+import { parseTimestampMs } from "@/client/lib/timestamps";
 import {
   formatDateTick,
   TrendRangeToggle,
@@ -52,7 +53,7 @@ export function RankTrackingOverview({
   const chartData = useMemo(
     () =>
       (trend ?? []).map((p) => ({
-        checkedAt: new Date(p.checkedAt).getTime(),
+        checkedAt: parseTimestampMs(p.checkedAt),
         top3: p.top3,
         top4to10: p.top4to10,
         top11to20: p.top11to20,

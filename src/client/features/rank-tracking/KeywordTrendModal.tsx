@@ -5,6 +5,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Modal } from "@/client/components/Modal";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { captureClientEvent } from "@/client/lib/posthog";
+import {
+  formatTimestampDate,
+  formatTimestampIso,
+  parseTimestampMs,
+} from "@/client/lib/timestamps";
 import { getRankKeywordHistory } from "@/serverFunctions/rank-tracking";
 import type { RankKeywordHistoryPoint } from "@/serverFunctions/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
@@ -104,7 +109,7 @@ export function KeywordTrendModal({
     const keys = new Set<string>();
     for (const p of points) {
       if (p.position === null) {
-        keys.add(`${new Date(p.checkedAt).getTime()}:${p.device}`);
+        keys.add(`${parseTimestampMs(p.checkedAt)}:${p.device}`);
       }
     }
     return keys;
@@ -114,7 +119,7 @@ export function KeywordTrendModal({
 
   const exportRows = () =>
     historyRows.map((r) => [
-      new Date(r.checkedAt).toISOString(),
+      formatTimestampIso(r.checkedAt),
       DEVICE_STYLE[r.device].label,
       r.position ?? "",
       csvChange(r.position, r.previousPosition),
@@ -216,7 +221,7 @@ export function KeywordTrendModal({
                   return (
                     <tr key={`${r.device}-${r.checkedAt}-${idx}`}>
                       <td className="whitespace-nowrap text-xs">
-                        {new Date(r.checkedAt).toLocaleDateString()}
+                        {formatTimestampDate(r.checkedAt)}
                       </td>
                       {devices.length > 1 && (
                         <td className="text-xs">
@@ -358,7 +363,7 @@ function buildChartData(
 ): ChartRow[] {
   const byTime = new Map<number, ChartRow>();
   for (const p of points) {
-    const ts = new Date(p.checkedAt).getTime();
+    const ts = parseTimestampMs(p.checkedAt);
     const row = byTime.get(ts) ?? { checkedAt: ts };
     row[p.device] = p.position === null ? serpDepth : p.position;
     byTime.set(ts, row);
