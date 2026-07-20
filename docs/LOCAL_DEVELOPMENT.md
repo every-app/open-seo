@@ -3,17 +3,23 @@
 ## Prerequisites
 
 - Node.js 20+
-- [pnpm](https://pnpm.io/)
+- [Corepack](https://nodejs.org/api/corepack.html) (bundled through Node.js 24; install it separately on Node.js 25+)
 - A DataForSEO account/API credentials
 
 ## Local Development Workflow
 
 ```sh
-pnpm install
+# Activates the exact pnpm version declared in package.json.
+corepack enable
+pnpm install --frozen-lockfile
 
 # Run once per fresh local DB
 pnpm run db:migrate:local
 ```
+
+Verify that `pnpm --version` reports the version declared by the
+`packageManager` field in `package.json`. An older global pnpm may reject
+the repository's lockfile as incompatible.
 
 Configure `.env.local`:
 
