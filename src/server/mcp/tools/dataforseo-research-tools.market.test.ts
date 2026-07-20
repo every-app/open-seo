@@ -60,7 +60,13 @@ function setProject(market: { locationCode: number; languageCode: string }) {
   });
 }
 
-async function runRankedKeywords(args: { market?: { country: "US" } }) {
+type MarketArgs = {
+  market?: { country: "US" };
+  locationCode?: number;
+  languageCode?: string;
+};
+
+async function runRankedKeywords(args: MarketArgs) {
   const rankedKeywords = vi.fn().mockResolvedValue({
     items: [],
     totalCount: 0,
@@ -74,6 +80,20 @@ async function runRankedKeywords(args: { market?: { country: "US" } }) {
     toolExtra,
   );
   return rankedKeywords;
+}
+
+async function runSerpCompetitors(args: MarketArgs) {
+  const serpCompetitors = vi.fn().mockResolvedValue([]);
+  mocks.createDataforseoClient.mockReturnValue({
+    labs: { serpCompetitors },
+  });
+  const { findSerpCompetitorsTool } =
+    await import("./dataforseo-research-tools");
+  await findSerpCompetitorsTool.handler(
+    { projectId: "project_1", keywords: ["seo"], ...args },
+    toolExtra,
+  );
+  return serpCompetitors;
 }
 
 describe("market resolution for Labs tools", () => {
@@ -92,6 +112,54 @@ describe("market resolution for Labs tools", () => {
     expect(rankedKeywords).toHaveBeenCalledWith(
       expect.objectContaining({ locationCode: 2840, languageCode: "en" }),
     );
+  });
+
+  it("exposes explicit location and language selectors on both tool schemas", async () => {
+    const { findSerpCompetitorsTool, getRankedKeywordsTool } =
+      await import("./dataforseo-research-tools");
+
+    expect(getRankedKeywordsTool.config.inputSchema.locationCode).toBeDefined();
+    expect(getRankedKeywordsTool.config.inputSchema.languageCode).toBeDefined();
+    expect(
+      findSerpCompetitorsTool.config.inputSchema.locationCode,
+    ).toBeDefined();
+    expect(
+      findSerpCompetitorsTool.config.inputSchema.languageCode,
+    ).toBeDefined();
+  });
+
+  it("passes an explicit non-US market to both Labs tools", async () => {
+    setProject({ locationCode: 2704, languageCode: "vi" });
+
+    const rankedKeywords = await runRankedKeywords({
+      locationCode: 2756,
+      languageCode: "de",
+    });
+    expect(rankedKeywords).toHaveBeenCalledWith(
+      expect.objectContaining({ locationCode: 2756, languageCode: "de" }),
+    );
+
+    const serpCompetitors = await runSerpCompetitors({
+      locationCode: 2756,
+      languageCode: "de",
+    });
+    expect(serpCompetitors).toHaveBeenCalledWith(
+      expect.objectContaining({ locationCode: 2756, languageCode: "de" }),
+    );
+  });
+
+  it("uses the selected location's default language when only locationCode is explicit", async () => {
+    setProject({ locationCode: 2704, languageCode: "vi" });
+    const rankedKeywords = await runRankedKeywords({ locationCode: 2276 });
+    expect(rankedKeywords).toHaveBeenCalledWith(
+      expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
+    );
+  });
+
+  it("rejects an explicit non-Labs country before making a paid call", async () => {
+    await expect(
+      runRankedKeywords({ locationCode: 2352, languageCode: "is" }),
+    ).rejects.toThrow("Domain analytics is not available for this country");
   });
 
   it("follows the project's default market when the market object is omitted", async () => {
