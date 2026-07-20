@@ -3,6 +3,7 @@ import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { formatLocationLabel } from "@/shared/keyword-locations";
+import { parseStoredTimestamp } from "@/shared/stored-timestamps";
 import type {
   ComparePeriod,
   RankTrackingConfig,
@@ -54,7 +55,9 @@ export function RankTrackingDetailHeader({
           {run && (
             <>
               {" "}
-              &middot; Last: {new Date(run.lastCheckedAt).toLocaleDateString()}
+              &middot; Last:{" "}
+              {parseStoredTimestamp(run.lastCheckedAt)?.toLocaleDateString() ??
+                run.lastCheckedAt}
             </>
           )}
           {costEstimate && costEstimate.keywordCount > 0 && (

@@ -1,3 +1,5 @@
+import { parseStoredTimestamp } from "@/shared/stored-timestamps";
+
 // Shared building blocks for the dashboard cards. Same visual language as
 // the GSC IntegrationCard (rounded-xl, shadow-sm, header row + divider) so
 // the embedded SearchConsoleConnectionCard doesn't read as a different
@@ -96,16 +98,10 @@ export function newLost(value: number | null): string {
 }
 
 export function formatDay(timestamp: string): string {
-  const ms = Date.parse(
-    // SQLite's current_timestamp default has no timezone marker; treat it as
-    // UTC rather than letting the browser parse it as local time.
-    /^\d{4}-\d{2}-\d{2} /.test(timestamp)
-      ? `${timestamp.replace(" ", "T")}Z`
-      : timestamp,
+  return (
+    parseStoredTimestamp(timestamp)?.toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+    }) ?? timestamp
   );
-  if (Number.isNaN(ms)) return timestamp;
-  return new Date(ms).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
 }

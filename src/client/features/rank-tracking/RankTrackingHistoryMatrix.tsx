@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
+import { parseStoredTimestamp } from "@/shared/stored-timestamps";
 
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
@@ -138,8 +139,10 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
 }
 
 function formatDate(value: string): string {
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-  });
+  return (
+    parseStoredTimestamp(value)?.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    }) ?? value
+  );
 }

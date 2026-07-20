@@ -9,6 +9,7 @@ import { getRankKeywordHistory } from "@/serverFunctions/rank-tracking";
 import type { RankKeywordHistoryPoint } from "@/serverFunctions/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
+import { parseStoredTimestamp } from "@/shared/stored-timestamps";
 import { csvChange, DeviceRankCell } from "./RankTrackingTableParts";
 import {
   RankTrendChart,
@@ -104,7 +105,8 @@ export function KeywordTrendModal({
     const keys = new Set<string>();
     for (const p of points) {
       if (p.position === null) {
-        keys.add(`${new Date(p.checkedAt).getTime()}:${p.device}`);
+        const checkedAt = parseStoredTimestamp(p.checkedAt);
+        if (checkedAt) keys.add(`${checkedAt.getTime()}:${p.device}`);
       }
     }
     return keys;
@@ -114,7 +116,7 @@ export function KeywordTrendModal({
 
   const exportRows = () =>
     historyRows.map((r) => [
-      new Date(r.checkedAt).toISOString(),
+      parseStoredTimestamp(r.checkedAt)?.toISOString() ?? r.checkedAt,
       DEVICE_STYLE[r.device].label,
       r.position ?? "",
       csvChange(r.position, r.previousPosition),
@@ -216,7 +218,9 @@ export function KeywordTrendModal({
                   return (
                     <tr key={`${r.device}-${r.checkedAt}-${idx}`}>
                       <td className="whitespace-nowrap text-xs">
-                        {new Date(r.checkedAt).toLocaleDateString()}
+                        {parseStoredTimestamp(
+                          r.checkedAt,
+                        )?.toLocaleDateString() ?? r.checkedAt}
                       </td>
                       {devices.length > 1 && (
                         <td className="text-xs">
@@ -358,7 +362,8 @@ function buildChartData(
 ): ChartRow[] {
   const byTime = new Map<number, ChartRow>();
   for (const p of points) {
-    const ts = new Date(p.checkedAt).getTime();
+    const ts = parseStoredTimestamp(p.checkedAt)?.getTime();
+    if (ts === undefined) continue;
     const row = byTime.get(ts) ?? { checkedAt: ts };
     row[p.device] = p.position === null ? serpDepth : p.position;
     byTime.set(ts, row);
