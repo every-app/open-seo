@@ -6,6 +6,7 @@ import {
   getDatabaseProvider,
   getPostgresConnectionString,
 } from "@/db/provider";
+import { withQueryRetries } from "./retry";
 import * as schema from "./schema";
 
 // Postgres on Cloudflare Workers requires a PER-REQUEST client: the runtime
@@ -70,9 +71,15 @@ export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
   if (pgClientStore.getStore()) {
     return fn();
   }
-  const sql = postgres(getPostgresConnectionString(), {
-    max: 1,
-    fetch_types: false,
-  });
+  const sql = withQueryRetries(
+    postgres(getPostgresConnectionString(), {
+      max: 1,
+      fetch_types: false,
+      // Bound connect stalls (seconds) so the per-query retry in
+      // withQueryRetries gets its turn within the request's lifetime instead
+      // of hanging on postgres.js's 30s default during a failover.
+      connect_timeout: 10,
+    }),
+  );
   return pgClientStore.run({ sql, db: createPgDb(sql) }, fn);
 }
