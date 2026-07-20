@@ -52,13 +52,15 @@ export function RankTrackingOverview({
 
   const chartData = useMemo(
     () =>
-      (trend ?? []).map((p) => ({
-        checkedAt: parseTimestampMs(p.checkedAt),
-        top3: p.top3,
-        top4to10: p.top4to10,
-        top11to20: p.top11to20,
-        notRanking: p.notRanking,
-      })),
+      (trend ?? [])
+        .map((p) => ({
+          checkedAt: parseTimestampMs(p.checkedAt),
+          top3: p.top3,
+          top4to10: p.top4to10,
+          top11to20: p.top11to20,
+          notRanking: p.notRanking,
+        }))
+        .filter((p) => !Number.isNaN(p.checkedAt)),
     [trend],
   );
 

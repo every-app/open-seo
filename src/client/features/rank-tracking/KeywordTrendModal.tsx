@@ -109,7 +109,10 @@ export function KeywordTrendModal({
     const keys = new Set<string>();
     for (const p of points) {
       if (p.position === null) {
-        keys.add(`${parseTimestampMs(p.checkedAt)}:${p.device}`);
+        const ts = parseTimestampMs(p.checkedAt);
+        if (!Number.isNaN(ts)) {
+          keys.add(`${ts}:${p.device}`);
+        }
       }
     }
     return keys;
@@ -364,6 +367,9 @@ function buildChartData(
   const byTime = new Map<number, ChartRow>();
   for (const p of points) {
     const ts = parseTimestampMs(p.checkedAt);
+    if (Number.isNaN(ts)) {
+      continue;
+    }
     const row = byTime.get(ts) ?? { checkedAt: ts };
     row[p.device] = p.position === null ? serpDepth : p.position;
     byTime.set(ts, row);

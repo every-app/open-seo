@@ -23,5 +23,10 @@ export function formatTimestampDate(
 ): string {
   const ms = parseTimestampMs(timestamp);
   if (Number.isNaN(ms)) return timestamp;
-  return new Date(ms).toLocaleDateString(locales, options);
+  // Default to UTC so date labels never shift with the browser timezone
+  // (#94); callers can still override via options.timeZone.
+  return new Date(ms).toLocaleDateString(locales, {
+    timeZone: "UTC",
+    ...options,
+  });
 }

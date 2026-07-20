@@ -54,6 +54,34 @@ describe("formatTimestampIso", () => {
 });
 
 describe("formatTimestampDate", () => {
+  it("renders UTC date labels by default so they do not shift with the browser timezone", () => {
+    // Adversarial-zone repros from the PR review: before the UTC default,
+    // 00:30 rendered as Jul 19 under TZ=America/Los_Angeles and 23:30 as
+    // Jul 21 under TZ=Europe/Lisbon. Both must be Jul 20 on any machine.
+    expect(
+      formatTimestampDate("2026-07-20 00:30:00", "en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+    ).toBe("Jul 20");
+    expect(
+      formatTimestampDate("2026-07-20 23:30:00", "en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+    ).toBe("Jul 20");
+  });
+
+  it("lets callers override the default UTC time zone", () => {
+    expect(
+      formatTimestampDate("2026-07-20 00:30:00", "en-US", {
+        timeZone: "America/Los_Angeles",
+        month: "short",
+        day: "numeric",
+      }),
+    ).toBe("Jul 19");
+  });
+
   it("keeps the UTC calendar date for SQLite timestamps just after midnight", () => {
     expect(
       formatTimestampDate("2026-07-20 00:30:00", "en-US", {
