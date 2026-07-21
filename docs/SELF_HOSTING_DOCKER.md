@@ -39,6 +39,24 @@ ALLOWED_HOST=yourdomain.com docker compose up -d
 
 You can also persist it in `.env`.
 
+## Startup time and build caching
+
+The first container start builds the client bundle (~90s on typical hardware)
+because env like `AUTH_MODE` and `VITE_*` is inlined into the bundle at build
+time. The result is kept in the `open_seo_build` volume, so later starts and
+restarts reuse it and reach first HTTP response in seconds.
+
+A rebuild happens automatically only when:
+
+- the image changes (update or tag pin), or
+- a build-inlined env value changes (`AUTH_MODE`, `VITE_*`,
+  `POSTHOG_PUBLIC_KEY`, `POSTHOG_HOST`, `TURNSTILE_SITE_KEY`,
+  `BYPASS_EMAIL_VERIFICATION`).
+
+Other env changes (for example `DATAFORSEO_API_KEY` or `PORT`) never trigger a
+rebuild. `docker compose down -v` removes the cached build along with the data
+volume.
+
 ## Telemetry
 
 OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.

@@ -13,12 +13,17 @@ RUN pnpm install --frozen-lockfile
 
 COPY . .
 
+# Feeds the client-build fingerprint so a dist/ carried over in a volume from an
+# older image is rebuilt once instead of being served stale.
+RUN date +%s%N >.image-build-id
+
 EXPOSE 3001
 
 # The build MUST run at container start, not image-build time: AUTH_MODE (and the
 # other client envs) are inlined into the client bundle by `vite build`, and the
-# self-hoster only chooses AUTH_MODE at runtime via Compose. Building here lets
-# that runtime value bake into the bundle. The repo .npmrc raises the V8 heap
-# ceiling (node-options) so the ~7400-module SSR build doesn't OOM under Node's
-# ~2GB default.
-CMD ["sh", "-c", "echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry' && pnpm run db:migrate:local && pnpm run build && pnpm exec vite preview --host 0.0.0.0 --port ${PORT:-3001}"]
+# self-hoster only chooses AUTH_MODE at runtime via Compose. The start script
+# fingerprints those envs and reuses the previous build when they are unchanged,
+# so only the first start (or an env/image change) pays for the build. The repo
+# .npmrc raises the V8 heap ceiling (node-options) so the ~7400-module SSR build
+# doesn't OOM under Node's ~2GB default.
+CMD ["sh", "scripts/docker-selfhost-start.sh"]

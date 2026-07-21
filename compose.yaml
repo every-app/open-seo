@@ -22,5 +22,9 @@ services:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
     volumes:
       - open_seo_data:/app/.wrangler
+      # Keeps the built client bundle across container recreation so restarts
+      # skip the ~90s vite build when build-relevant env is unchanged.
+      - open_seo_build:/app/dist
 volumes:
   open_seo_data:
+  open_seo_build:
