@@ -137,6 +137,9 @@ function mockDataforseoResult(costUsd: number) {
 describe("meterDataforseoCall with split balances", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("DATAFORSEO_API_KEY", "test-api-key");
+    vi.stubEnv("OPENSEO_ENABLE_DATAFORSEO", "1");
+    vi.stubEnv("OPENSEO_DATAFORSEO_BUDGET_USD", "100");
   });
 
   it("skips billing in non-hosted mode", async () => {

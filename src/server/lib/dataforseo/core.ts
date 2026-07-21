@@ -10,6 +10,7 @@ import {
 } from "dataforseo-client";
 import { AppError } from "@/server/lib/errors";
 import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import { assertDataforseoConfigured } from "@/server/lib/provider-config";
 import type { ErrorCode } from "@/shared/error-codes";
 
 const API_BASE = "https://api.dataforseo.com";
@@ -67,6 +68,7 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
  */
 function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
+    await assertDataforseoConfigured();
     const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${apiKey}`);

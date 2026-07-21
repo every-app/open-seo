@@ -5,6 +5,8 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
   AUTH_CONFIG_MISSING:
     "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
+  PROVIDER_NOT_CONFIGURED:
+    "This feature's data provider is not configured. In this LedgerPe fork, paid providers stay disabled until explicitly enabled with a non-zero budget.",
   PAYMENT_REQUIRED:
     "An active hosted subscription is required before you can use OpenSEO.",
   INSUFFICIENT_CREDITS:

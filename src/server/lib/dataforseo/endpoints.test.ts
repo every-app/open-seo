@@ -25,6 +25,9 @@ function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
 describe("DataForSEO SDK-backed endpoints", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv("DATAFORSEO_API_KEY", "test-api-key");
+    vi.stubEnv("OPENSEO_ENABLE_DATAFORSEO", "1");
+    vi.stubEnv("OPENSEO_DATAFORSEO_BUDGET_USD", "100");
   });
 
   it("uses the live endpoint for Google Business Q&A and returns items + billing", async () => {

@@ -20,6 +20,9 @@ function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
 describe("rank check task queue", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv("DATAFORSEO_API_KEY", "test-api-key");
+    vi.stubEnv("OPENSEO_ENABLE_DATAFORSEO", "1");
+    vi.stubEnv("OPENSEO_DATAFORSEO_BUDGET_USD", "100");
   });
 
   it("posts queued tasks, maps ids by tag, and sums cost over all entries", async () => {

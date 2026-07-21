@@ -7,6 +7,7 @@ describe("shouldCaptureAppErrorCode", () => {
     "NOT_FOUND",
     "PAYMENT_REQUIRED",
     "VALIDATION_ERROR",
+    "PROVIDER_NOT_CONFIGURED",
     "AUDIT_CAPACITY_REACHED",
     "AUDIT_PAGE_LIMIT_EXCEEDED",
     "AUDIT_ALREADY_RUNNING",

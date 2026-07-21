@@ -18,6 +18,7 @@ import {
 } from "@/server/lib/dataforseo/envelope";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
+import { assertDataforseoConfigured } from "@/server/lib/provider-config";
 
 export { mapDataforseoPathToCreditFeature };
 
@@ -139,6 +140,7 @@ async function meterDataforseoCall<T>(
   execute: () => Promise<DataforseoApiResponse<T>>,
   creditFeature?: CreditFeature,
 ): Promise<T> {
+  await assertDataforseoConfigured();
   const isHostedMode = await isHostedServerAuthMode();
 
   if (!isHostedMode) {

@@ -96,6 +96,9 @@ describe("normalizeBacklinksTarget", () => {
 describe("fetchBacklinksSummary", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
+    vi.stubEnv("DATAFORSEO_API_KEY", "test-api-key");
+    vi.stubEnv("OPENSEO_ENABLE_DATAFORSEO", "1");
+    vi.stubEnv("OPENSEO_DATAFORSEO_BUDGET_USD", "100");
   });
 
   afterEach(() => {
