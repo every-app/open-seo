@@ -15,7 +15,7 @@ type SearchPerformanceTotals = {
   position: number;
 };
 
-type SearchPerformanceDimensionRow = {
+export type SearchPerformanceDimensionRow = {
   key: string;
   clicks: number;
   impressions: number;
