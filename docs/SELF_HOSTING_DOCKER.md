@@ -11,7 +11,7 @@ The default `compose.yaml` uses the published GHCR image:
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
-- A DataForSEO API key (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md))
+- A DataForSEO API key (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md)). Optionally, [`RANKPARSE_API_KEY.md`](./RANKPARSE_API_KEY.md) instead for the Backlinks feature.
 
 ## Quickstart
 

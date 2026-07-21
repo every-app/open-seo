@@ -40,6 +40,13 @@ declare namespace Cloudflare {
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
+    // Optional alternative backlinks-data provider. DataForSEO remains the
+    // default in all cases — set BACKLINKS_PROVIDER=rankparse to opt in, and
+    // RANKPARSE_API_KEY (from rankparse.com) to authenticate. See
+    // docs/RANKPARSE_API_KEY.md for what's different from DataForSEO.
+    BACKLINKS_PROVIDER?: "dataforseo" | "rankparse";
+    RANKPARSE_API_KEY?: string;
+
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).

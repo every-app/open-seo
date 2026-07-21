@@ -19,11 +19,13 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   VALIDATION_ERROR: "Please check your input and try again.",
   CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
   BACKLINKS_BILLING_ISSUE:
-    "The connected DataForSEO account has a billing or balance issue.",
+    "The connected backlinks data provider (DataForSEO or RankParse) has a billing or balance issue.",
   AI_SEARCH_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
   DATAFORSEO_AUTH_FAILED:
     "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
+  RANKPARSE_AUTH_FAILED:
+    "RankParse rejected the API key. Check that RANKPARSE_API_KEY is set to a valid key from your RankParse dashboard.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
     "The data provider is temporarily unavailable. Please retry in a moment.",

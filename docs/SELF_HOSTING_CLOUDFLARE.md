@@ -32,6 +32,7 @@ In the Cloudflare dashboard:
    - `POLICY_AUD` (from Access setup)
    - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
    - `DATAFORSEO_API_KEY` (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md) for how to get one)
+   - Optionally `RANKPARSE_API_KEY` + `BACKLINKS_PROVIDER=rankparse` to use RankParse instead of DataForSEO for the Backlinks feature (see [`RANKPARSE_API_KEY.md`](./RANKPARSE_API_KEY.md))
 
 ## 3) Optional: add an R2 lifecycle rule
 

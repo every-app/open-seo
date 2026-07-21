@@ -11,16 +11,29 @@ interface TrackCallArg {
   customerId: string;
   featureId: string;
   value: number;
-  properties?: { balanceFeatureId: string };
+  properties?: { balanceFeatureId: string; provider?: string };
 }
 
-const { checkMock, trackMock, getOrCreateMock, isHostedServerAuthModeMock } =
-  vi.hoisted(() => ({
-    checkMock: vi.fn(),
-    trackMock: vi.fn<(arg: TrackCallArg) => void>(),
-    getOrCreateMock: vi.fn(),
-    isHostedServerAuthModeMock: vi.fn(),
-  }));
+const {
+  checkMock,
+  trackMock,
+  getOrCreateMock,
+  isHostedServerAuthModeMock,
+  getOptionalEnvValueMock,
+} = vi.hoisted(() => ({
+  checkMock: vi.fn(),
+  trackMock: vi.fn<(arg: TrackCallArg) => void>(),
+  getOrCreateMock: vi.fn(),
+  isHostedServerAuthModeMock: vi.fn(),
+  // Defaults BACKLINKS_PROVIDER (and any other env lookup) to unset, so
+  // resolveBacklinksProvider() falls through to "dataforseo" — every existing
+  // test below assumes the DataForSEO fetcher is what gets called. mockClear
+  // (used by this file's `vi.clearAllMocks()`) does not remove this default
+  // implementation, only call history, so it survives across tests.
+  getOptionalEnvValueMock: vi.fn(
+    async (_name: string): Promise<string | undefined> => undefined,
+  ),
+}));
 
 vi.mock("cloudflare:workers", () => ({
   waitUntil: vi.fn(),
@@ -47,6 +60,7 @@ vi.mock("@/server/billing/subscription", async (importOriginal) => {
 
 vi.mock("@/server/lib/runtime-env", () => ({
   isHostedServerAuthMode: isHostedServerAuthModeMock,
+  getOptionalEnvValue: getOptionalEnvValueMock,
 }));
 
 vi.mock("@/server/lib/posthog", () => ({
@@ -82,6 +96,13 @@ vi.mock("@/server/lib/dataforseo/backlinks", () => ({
   fetchDomainPagesSummary: vi.fn(),
   fetchBacklinksHistory: vi.fn(),
 }));
+vi.mock("@/server/lib/rankparse/backlinks", () => ({
+  fetchBacklinksSummary: vi.fn(),
+  fetchBacklinksRows: vi.fn(),
+  fetchReferringDomains: vi.fn(),
+  fetchDomainPagesSummary: vi.fn(),
+  fetchBacklinksHistory: vi.fn(),
+}));
 vi.mock("@/server/lib/dataforseo/lighthouse", () => ({
   fetchLighthouseResult: vi.fn(),
 }));
@@ -99,6 +120,7 @@ import {
 } from "@/server/lib/dataforseo/client";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { fetchBacklinksSummary } from "@/server/lib/dataforseo/backlinks";
+import { fetchBacklinksSummary as fetchRankparseBacklinksSummary } from "@/server/lib/rankparse/backlinks";
 
 const billingCustomer = {
   organizationId: "org_123",
@@ -527,5 +549,78 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "live",
       ]),
     ).toBe("keyword_research");
+  });
+});
+
+describe("backlinks provider selection", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isHostedServerAuthModeMock.mockResolvedValue(false);
+  });
+
+  it("defaults to DataForSEO when BACKLINKS_PROVIDER is unset, even with a RankParse key present", async () => {
+    getOptionalEnvValueMock.mockImplementation(async (name: string) =>
+      name === "RANKPARSE_API_KEY" ? "rp_test_key" : undefined,
+    );
+    vi.mocked(fetchBacklinksSummary).mockResolvedValue({
+      data: { rank: 10 },
+      billing: { costUsd: 0.02, path: ["v3", "backlinks", "summary", "live"] },
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    const result = await client.backlinks.summary(backlinksInput);
+
+    expect(result).toEqual({ rank: 10 });
+    expect(fetchBacklinksSummary).toHaveBeenCalledTimes(1);
+    expect(fetchRankparseBacklinksSummary).not.toHaveBeenCalled();
+  });
+
+  it("routes to RankParse only when BACKLINKS_PROVIDER=rankparse is explicitly set", async () => {
+    getOptionalEnvValueMock.mockImplementation(async (name: string) => {
+      if (name === "BACKLINKS_PROVIDER") return "rankparse";
+      if (name === "RANKPARSE_API_KEY") return "rp_test_key";
+      return undefined;
+    });
+    vi.mocked(fetchRankparseBacklinksSummary).mockResolvedValue({
+      data: { rank: 55 },
+      billing: {
+        costUsd: 0.01,
+        path: ["v3", "backlinks", "rankparse", "site_explorer"],
+      },
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    const result = await client.backlinks.summary(backlinksInput);
+
+    expect(result).toEqual({ rank: 55 });
+    expect(fetchRankparseBacklinksSummary).toHaveBeenCalledTimes(1);
+    expect(fetchBacklinksSummary).not.toHaveBeenCalled();
+  });
+
+  it("tags tracked usage with the active provider", async () => {
+    isHostedServerAuthModeMock.mockResolvedValue(true);
+    getOrCreateMock.mockResolvedValue({ id: "org_123" });
+    checkMock.mockResolvedValue({
+      allowed: true,
+      balance: { remaining: 5000 },
+    });
+    getOptionalEnvValueMock.mockImplementation(async (name: string) => {
+      if (name === "BACKLINKS_PROVIDER") return "rankparse";
+      if (name === "RANKPARSE_API_KEY") return "rp_test_key";
+      return undefined;
+    });
+    vi.mocked(fetchRankparseBacklinksSummary).mockResolvedValue({
+      data: { rank: 55 },
+      billing: {
+        costUsd: 0.01,
+        path: ["v3", "backlinks", "rankparse", "site_explorer"],
+      },
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    await client.backlinks.summary(backlinksInput);
+
+    const [call] = trackMock.mock.calls;
+    expect(call[0].properties?.provider).toBe("rankparse");
   });
 });

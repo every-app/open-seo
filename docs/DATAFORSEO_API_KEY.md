@@ -17,3 +17,5 @@ Set the value as `DATAFORSEO_API_KEY`:
 - **Docker self-hosting:** in `.env` (see [`SELF_HOSTING_DOCKER.md`](./SELF_HOSTING_DOCKER.md)).
 - **Cloudflare self-hosting:** as a Worker secret in the dashboard under `Settings` -> `Variables & Secrets`, or with `pnpm exec wrangler secret put DATAFORSEO_API_KEY` (see [`SELF_HOSTING_CLOUDFLARE.md`](./SELF_HOSTING_CLOUDFLARE.md)).
 - **Local development:** in `.env.local` (see [`LOCAL_DEVELOPMENT.md`](./LOCAL_DEVELOPMENT.md)).
+
+For the Backlinks feature specifically, [RankParse](./RANKPARSE_API_KEY.md) is an optional, cheaper alternative you can opt into instead.

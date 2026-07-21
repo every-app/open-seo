@@ -22,6 +22,8 @@ Configure `.env.local`:
 
    `printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64`
 
+   Optionally, add `RANKPARSE_API_KEY` + `BACKLINKS_PROVIDER=rankparse` to use RankParse instead for the Backlinks feature (see [`RANKPARSE_API_KEY.md`](./RANKPARSE_API_KEY.md)).
+
 Run locally:
 
 ```sh

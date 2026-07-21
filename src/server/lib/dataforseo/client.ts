@@ -16,8 +16,12 @@ import {
   type DataforseoApiCallCost,
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
+import {
+  getOptionalEnvValue,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
+import * as rankparseBacklinks from "@/server/lib/rankparse/backlinks";
 
 export { mapDataforseoPathToCreditFeature };
 
@@ -60,6 +64,60 @@ function meter<I, T>(
     );
 }
 
+type BacklinksProvider = "dataforseo" | "rankparse";
+
+/**
+ * Backlinks provider is purely additive/opt-in: DataForSEO is used unless a
+ * self-hoster explicitly sets BACKLINKS_PROVIDER=rankparse. Merely setting
+ * RANKPARSE_API_KEY does nothing by itself — that would let someone silently
+ * lose history/spam-filtering/page-scope lookups just from adding a key,
+ * without ever touching a provider flag. See docs/RANKPARSE_API_KEY.md.
+ */
+async function resolveBacklinksProvider(): Promise<BacklinksProvider> {
+  const configured = await getOptionalEnvValue("BACKLINKS_PROVIDER");
+  return configured === "rankparse" ? "rankparse" : "dataforseo";
+}
+
+/**
+ * Backlinks-specific variant of `meter()`: resolves the configured provider
+ * before picking a fetcher, so `BacklinksService` and the MCP tools stay
+ * provider-agnostic. `rankparsePick` mirrors `dataforseoPick` 1:1 against
+ * rankparse/backlinks.ts, which exports the same 5 fetcher names with the
+ * same DataforseoApiResponse<T> shape (reusing dataforseo/backlinks.ts's Zod
+ * schemas) so no downstream mapping code needs to know which provider ran.
+ * If RANKPARSE_API_KEY is missing while opted in, the RankParse fetcher
+ * itself throws a clear RANKPARSE_AUTH_FAILED error (see rankparse/client.ts)
+ * rather than silently falling back — this is an explicit opt-in, so failing
+ * loudly on misconfiguration is correct.
+ */
+function meterBacklinks<I, T>(
+  customer: BillingCustomerContext,
+  dataforseoPick: (
+    sections: DataforseoSections,
+  ) => (input: I) => Promise<DataforseoApiResponse<T>>,
+  rankparsePick: (
+    mod: typeof rankparseBacklinks,
+  ) => (input: I) => Promise<DataforseoApiResponse<T>>,
+): (input: I & { creditFeature?: CreditFeature }) => Promise<T> {
+  return async (input) => {
+    const provider = await resolveBacklinksProvider();
+    if (provider === "rankparse") {
+      return meterDataforseoCall(
+        customer,
+        async () => rankparsePick(rankparseBacklinks)(input),
+        input.creditFeature,
+        "rankparse",
+      );
+    }
+    return meterDataforseoCall(
+      customer,
+      async () => dataforseoPick(await loadDataforseoSections())(input),
+      input.creditFeature,
+      "dataforseo",
+    );
+  };
+}
+
 export function createDataforseoClient(customer: BillingCustomerContext) {
   return {
     business: {
@@ -75,11 +133,31 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       ),
     },
     backlinks: {
-      summary: meter(customer, (s) => s.fetchBacklinksSummary),
-      rows: meter(customer, (s) => s.fetchBacklinksRows),
-      referringDomains: meter(customer, (s) => s.fetchReferringDomains),
-      domainPages: meter(customer, (s) => s.fetchDomainPagesSummary),
-      history: meter(customer, (s) => s.fetchBacklinksHistory),
+      summary: meterBacklinks(
+        customer,
+        (s) => s.fetchBacklinksSummary,
+        (r) => r.fetchBacklinksSummary,
+      ),
+      rows: meterBacklinks(
+        customer,
+        (s) => s.fetchBacklinksRows,
+        (r) => r.fetchBacklinksRows,
+      ),
+      referringDomains: meterBacklinks(
+        customer,
+        (s) => s.fetchReferringDomains,
+        (r) => r.fetchReferringDomains,
+      ),
+      domainPages: meterBacklinks(
+        customer,
+        (s) => s.fetchDomainPagesSummary,
+        (r) => r.fetchDomainPagesSummary,
+      ),
+      history: meterBacklinks(
+        customer,
+        (s) => s.fetchBacklinksHistory,
+        (r) => r.fetchBacklinksHistory,
+      ),
     },
     keywords: {
       related: meter(customer, (s) => s.fetchRelatedKeywords),
@@ -138,6 +216,7 @@ async function meterDataforseoCall<T>(
   customer: BillingCustomerContext,
   execute: () => Promise<DataforseoApiResponse<T>>,
   creditFeature?: CreditFeature,
+  provider: BacklinksProvider = "dataforseo",
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
@@ -171,6 +250,7 @@ async function meterDataforseoCall<T>(
         billing: error.billing,
         monthlyRemaining,
         creditFeature,
+        provider,
       });
     }
     throw error;
@@ -182,6 +262,7 @@ async function meterDataforseoCall<T>(
     billing: result.billing,
     monthlyRemaining,
     creditFeature,
+    provider,
   });
 
   return result.data;
@@ -193,6 +274,7 @@ async function trackDataforseoCost(args: {
   billing: DataforseoApiCallCost;
   monthlyRemaining: number;
   creditFeature?: CreditFeature;
+  provider?: BacklinksProvider;
 }) {
   await trackUsageCreditSpend({
     customer: args.customer,
@@ -202,7 +284,7 @@ async function trackDataforseoCost(args: {
     costUsd: args.billing.costUsd,
     monthlyRemaining: args.monthlyRemaining,
     properties: {
-      provider: "dataforseo",
+      provider: args.provider ?? "dataforseo",
       paths: [args.billing.path.join("/")],
       fromCache: false,
     },
