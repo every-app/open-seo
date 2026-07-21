@@ -48,8 +48,15 @@ declare namespace Cloudflare {
 
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
-    // Optional OpenRouter model slug override (defaults in openrouter.ts).
+    // Optional model slug/id override for the chat agents (defaults in
+    // openrouter.ts). With CHAT_BASE_URL this is the local model id, e.g.
+    // "qwen3.5-9b" (vLLM) or "llama3.1" (Ollama).
     OPENROUTER_MODEL?: string;
+    // Optional base URL of a self-hosted, OpenAI-compatible chat endpoint
+    // (vLLM, Ollama, LiteLLM, …), e.g. "http://localhost:11434/v1". When set,
+    // the chat agents route there instead of OpenRouter and OPENROUTER_API_KEY
+    // becomes optional. See docs/SELF_HOSTING_LOCAL_CHAT_MODEL.md.
+    CHAT_BASE_URL?: string;
   }
 }
 

@@ -122,13 +122,17 @@ export class SamChatAgent extends Think {
   }
 
   getModel() {
+    const baseURL = getEnvValueSync(this.env, "CHAT_BASE_URL");
     const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
-    if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
+    if (!apiKey && !baseURL) {
+      throw new Error(
+        "OPENROUTER_API_KEY or CHAT_BASE_URL is required for the SAM agent",
+      );
     }
     return buildChatAgentModel(
-      apiKey,
+      apiKey ?? "",
       getEnvValueSync(this.env, "OPENROUTER_MODEL"),
+      baseURL,
     );
   }
 

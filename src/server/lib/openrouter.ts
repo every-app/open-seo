@@ -34,21 +34,40 @@ const DEFAULT_CHAT_AGENT_MODEL = "minimax/minimax-m3";
  * is configured.
  */
 export async function getChatAgentModel(): Promise<LanguageModelV3> {
-  const apiKey = await getRequiredEnvValue("OPENROUTER_API_KEY");
+  const baseURL = await getOptionalEnvValue("CHAT_BASE_URL");
+  // A self-hosted / OpenAI-compatible endpoint (CHAT_BASE_URL) usually needs no
+  // key; OpenRouter still requires one.
+  const apiKey = baseURL
+    ? ((await getOptionalEnvValue("OPENROUTER_API_KEY")) ?? "")
+    : await getRequiredEnvValue("OPENROUTER_API_KEY");
   const modelId = await getOptionalEnvValue("OPENROUTER_MODEL");
-  return buildChatAgentModel(apiKey, modelId);
+  return buildChatAgentModel(apiKey, modelId, baseURL);
 }
 
 /**
  * Synchronous variant for callers that already hold the env values. Think's
  * `getModel()` hook is sync and runs on every turn, so the SAM agent reads the
  * key/model from its DO env and builds the model here.
+ *
+ * When `baseURL` (CHAT_BASE_URL) is set, the model is served from a self-hosted,
+ * OpenAI-compatible endpoint (vLLM, Ollama, LiteLLM, …). In that mode we point
+ * the provider at the custom base URL and drop the OpenRouter-only request
+ * options (usage accounting, provider routing/ZDR, the reasoning channel) that
+ * a generic endpoint doesn't understand — cost metering then falls back to 0
+ * because there's no OpenRouter usage metadata to read. The API key is optional
+ * for local endpoints; a placeholder is sent so the SDK still builds an auth
+ * header (vLLM/Ollama ignore it).
  */
 export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
+  baseURL?: string,
 ): LanguageModelV3 {
-  return createOpenRouter({ apiKey })(modelId ?? DEFAULT_CHAT_AGENT_MODEL, {
+  const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
+  if (baseURL) {
+    return createOpenRouter({ apiKey: apiKey || "local", baseURL })(model);
+  }
+  return createOpenRouter({ apiKey })(model, {
     usage: { include: true },
     reasoning: { effort: "medium" },
     provider: {
