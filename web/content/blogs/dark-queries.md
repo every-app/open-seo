@@ -7,7 +7,7 @@ date: "2026-07-20"
 
 Open any page report in Google Search Console. It will tell you, confidently, that this page earned 100 clicks last month. Scroll to the query table underneath, and Google will name maybe seven to fourteen of the searches that drove them. The other 86 clicks came from searches Google won't show you, anonymized away under privacy thresholds.
 
-Those are *dark queries*: real searches, from real people, that turned into real visits, and you have no idea what they were.
+Those are _dark queries_: real searches, from real people, that turned into real visits, and you have no idea what they were.
 
 You can't force Google to hand them over. But you can reconstruct most of them, and the data you need is already sitting in three tools you probably already use. If you want an agent to do the heavy lifting, connect [OpenSEO MCP](/docs/mcp) first so it can pull live keyword, ranking, SERP, and Search Console data. New to this? Start with the [SEO coach](/docs/skills/seo-coach).
 
@@ -33,7 +33,7 @@ For her clients, the gap isn't an academic annoyance. It's the difference betwee
 
 ## Why the gap is getting worse, not better
 
-Here's the part that should worry you: dark queries are the *old* version of this problem. The new one is that entire channels are going dark.
+Here's the part that should worry you: dark queries are the _old_ version of this problem. The new one is that entire channels are going dark.
 
 When a prospect asks ChatGPT for "an affordable keyword tool for a freelance SEO" and your brand gets recommended, that lead can arrive with no referrer, no query, and no row in any dashboard. Search Console at least admits it's hiding data from you. The AI answer layer doesn't even do that.
 
@@ -47,47 +47,52 @@ So we're living with two layers of dark data now: the queries Search Console wit
 
 No single dataset can rebuild your dark queries. But you already hold three partial views of the same page, and each one knows something the others don't:
 
-- **Search Console** gives you *positioning*: the ~14 named queries, their average rank, impressions, and CTR.
-- **Google Analytics** gives you the *real organic traffic* and behavior for the landing page: sessions, engagement, conversions.
-- **Rank tracking** gives you the *rough rankings* for the broader keyword cluster the page could plausibly be catching.
+- **Search Console** gives you _positioning_: the ~14 named queries, their average rank, impressions, and CTR.
+- **Google Analytics** gives you the _real organic traffic_ and behavior for the landing page: sessions, engagement, conversions.
+- **Rank tracking** gives you the _rough rankings_ for the broader keyword cluster the page could plausibly be catching.
 
-Line those three up against a single URL and the shape of the missing 86% starts to emerge. If a page shows 100 clicks, ranks on page one for a cluster of twenty related terms, and Analytics confirms a wave of engaged organic sessions, you can reasonably *infer* which unnamed queries are doing the work, even though Google never spelled them out. It isn't certainty. It's triangulation: a defensible suggestion instead of a finger in the air.
+Line those three up against a single URL and the shape of the missing 86% starts to emerge. If a page shows 100 clicks, ranks on page one for a cluster of twenty related terms, and Analytics confirms a wave of engaged organic sessions, you can reasonably _infer_ which unnamed queries are doing the work, even though Google never spelled them out. It isn't certainty. It's triangulation: a defensible suggestion instead of a finger in the air.
 
 ## Do it with OpenSEO
 
-This is exactly the workflow the [OpenSEO MCP](/docs/mcp) was built for. Because the Google Search Console connection runs *through* OpenSEO, you don't have to wire up a separate integration. Connect it once and query all three sources from the same agent.
+This is exactly the workflow the [OpenSEO MCP](/docs/mcp) was built for. Because the Google Search Console connection runs _through_ OpenSEO, you don't have to wire up a separate integration. Connect it once and query all three sources from the same agent.
 
 ### 1. Pull the honest positioning picture
 
 Ask your agent to grab the Search Console performance for one URL and flag the click-to-named-query gap.
 
-```text
-Look at example.com/<page> in Search Console for the last 90 days.
-List total clicks vs. the sum of clicks in the named-query table, and
-show me the gap. Then give me the ranked keywords and their average
-position for this exact URL.
-```
-
 ### 2. Widen the keyword cluster
 
 Use OpenSEO's ranked-keywords and keyword-research tools to find every term the page could plausibly be catching, not just the fourteen Google admitted to. The [keyword research skill](/docs/skills/keyword-research) makes this repeatable.
 
+### 3. Confirm against real traffic
+
+Bring in Google Analytics (or your choice tool) to check the inference against actual organic behavior for the landing page.
+
+### Full Prompt: See Dark Queries
+
 ```text
+1. Pull the positioning picture
+
+Look at [yourwebsite.com/page] in Search Console for the last 90 days.
+List total clicks vs. the sum of clicks in the named-query table, and
+show me the gap. Then give me the ranked keywords and their average
+position for this exact URL.
+
+2. Widen the keyword cluster
+
 For that same URL, pull all keywords it ranks for in positions 1-20.
 Cluster them by intent, then flag which clusters are NOT represented
 in the named Search Console queries. Those are my likely dark-query
 candidates.
-```
 
-### 3. Confirm against real traffic
+3. Confirm against real traffic
 
-Bring in Google Analytics to check the inference against actual organic behavior for the landing page.
-
-```text
 Pull organic sessions and engagement for this landing page over the
 same window. Where engaged-session volume is far higher than the named
 clicks can explain, tell me which inferred query clusters most likely
 account for the difference. Output as a document I can review.
+
 ```
 
 The output isn't a magic list of the exact hidden searches, that data genuinely doesn't exist on your side of Google's wall. What you get instead is a ranked, evidence-backed shortlist of what those dark queries almost certainly are, assembled from three sources that individually would have left you guessing. That's the difference between "I got a hundred clicks" and "here are the twelve topics actually pulling people to this page, and here's the one I should build the next article around."
