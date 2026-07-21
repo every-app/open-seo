@@ -5,17 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@babel/core': ^7.29.6
-  defu: ^6.1.5
-  dompurify: ^3.4.11
-  form-data: ^4.0.6
-  hono: ^4.12.25
-  launch-editor: ^2.14.1
-  postcss: ^8.5.10
-  qs: ^6.15.2
-  shell-quote: ^1.8.4
-  smol-toml: ^1.6.1
-  undici: ^7.28.0
+  brace-expansion: '>=5.0.7'
 
 importers:
 
@@ -407,7 +397,7 @@ packages:
     resolution: {integrity: sha512-++t3ZktzlLmASAxIlxeXQK9Z2YwUafYGYcvGBFevqOqt16HozVHStUoQvWD09fzAZOb/uJGpUTBuGK41AJAuOA==}
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^8.0.0
 
   '@babel/helper-globals@7.29.7':
     resolution: {integrity: sha512-3nQVUAtvkKH9zahfWgw96Jc/uFOmjACE1kQz82E2lqWmHBgjzbNlsC22nuQTfahmWeQtTq5nQ/4Nnd2A1wj4zA==}
@@ -429,7 +419,7 @@ packages:
     resolution: {integrity: sha512-UPUVSyXbOh627KiCIGQSgwWzGeBKLkaJ9PJEdrngIwMSzxLR4jS4+f1f1jb7VzBbg8nFLaYotvVPFCTqdrmTAg==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^7.0.0
 
   '@babel/helper-optimise-call-expression@8.0.0':
     resolution: {integrity: sha512-3W6satvtPuCUkUx63S2jMoW9EQNYkADgs1HTfufmL7gCmAulHMKupA/12WNz4A0GMMFn/YnWWwqOT9IZrJHQjg==}
@@ -443,13 +433,13 @@ packages:
     resolution: {integrity: sha512-3PKFgjTyPlhFhorfP+SjKQxLViIL++zWjFOO4hGriYU+Bsm983DxEM1JmDRJVWXV0O9npu+xXRqz7Pbd3mh70g==}
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^8.0.0
 
   '@babel/helper-replace-supers@8.0.1':
     resolution: {integrity: sha512-B1SZADIcy3tmH8CmWvj4SHi/oAPom4UL3uknTc2QRNsPVLFk/sPnZvQL/8kj7Y5omvjMqie0vklvs6XM4OLW5Q==}
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^8.0.0
 
   '@babel/helper-skip-transparent-expression-wrappers@8.0.0':
     resolution: {integrity: sha512-xmCA9kP3IhySsqhzwIdWGlDN/1A4cCKNBO/uwZx/3YzmDoMePwno2Q5/Bq0q+tYaKbeF940YiKV/kaW8Mzvpjw==}
@@ -493,25 +483,25 @@ packages:
     resolution: {integrity: sha512-+C6O6KKXU7BBq1GNaIkFJxrALUVGRcr+WeWm4OcuRl3h+l/CmNfcTLMrT2Lm3uvGBimBH/8pEBRrXJFLoO67Gg==}
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^8.0.0
 
   '@babel/plugin-syntax-decorators@8.0.1':
     resolution: {integrity: sha512-NI+0S/6MvR6GlcQFwjDZ+WIc2qvG6TXN534lYs9llNldwW4b7Dh6KTtk030FA0xWdYGs4t1lWo+OEWN8wGB+Nw==}
     engines: {node: ^22.18.0 || >=24.11.0}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^8.0.0
 
   '@babel/plugin-transform-react-jsx-self@7.27.1':
     resolution: {integrity: sha512-6UzkCs+ejGdZ5mFFC/OCUrv028ab2fp1znZmCZjAOBKiBK2jXD1O+BPSfX8X2qjJ75fZBMSnQn3Rq2mrBJK2mw==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^7.0.0-0
 
   '@babel/plugin-transform-react-jsx-source@7.27.1':
     resolution: {integrity: sha512-zbwoTsBruTeKB9hSq73ha66iFeJHuaFkUbwvqElnygoNbj/jHRsSeokowZFN3CZ64IvEqcmmkVe89OPXc7ldAw==}
     engines: {node: '>=6.9.0'}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^7.0.0-0
 
   '@babel/runtime-corejs3@7.29.2':
     resolution: {integrity: sha512-Lc94FOD5+0aXhdb0Tdg3RUtqT6yWbI/BbFWvlaSJ3gAb9Ks+99nHRDKADVqC37er4eCB0fHyWT+y+K3QOvJKbw==}
@@ -1352,7 +1342,7 @@ packages:
     resolution: {integrity: sha512-GwtvgtXxnWsucXvbQXkRgqksiH2Qed37H9xHZocE5sA3N8O8O8/8FA3uclQXxXVzc9XBZuEOMK7+r02FmSpHtw==}
     engines: {node: '>=18.14.1'}
     peerDependencies:
-      hono: ^4.12.25
+      hono: ^4
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -2223,7 +2213,7 @@ packages:
     resolution: {integrity: sha512-+zEk16yGlz1F9STiRr6uG9hmIXb6nprjLczV/htGptYuLoCuxb+itZ03RKCEeOhBpDDd1NU7qF6x1VLMUp62bw==}
     engines: {node: '>=22.12.0 || ^24.0.0'}
     peerDependencies:
-      '@babel/core': ^7.29.6
+      '@babel/core': ^7.29.0 || ^8.0.0-rc.1
       '@babel/plugin-transform-runtime': ^7.29.0 || ^8.0.0-rc.1
       '@babel/runtime': ^7.27.0 || ^8.0.0-rc.1
       rolldown: ^1.0.0-rc.5
@@ -3136,7 +3126,7 @@ packages:
       better-auth: ^1.6.0
       better-call: ^1.0.12
       express: ^5.2.1
-      hono: ^4.12.25
+      hono: ^4.0.0
       next: ^14.0.0 || ^15.0.0 || ^16.0.0
       react: ^18.0.0 || ^19.0.0
     peerDependenciesMeta:
@@ -3275,8 +3265,8 @@ packages:
   bowser@2.14.1:
     resolution: {integrity: sha512-tzPjzCxygAKWFOJP011oxFHs57HzIhOEracIgAePE4pqB3LikALKnSzUyU4MGs9/iCEUuHlAJTjTc5M+u7YEGg==}
 
-  brace-expansion@5.0.6:
-    resolution: {integrity: sha512-kLpxurY4Z4r9sgMsyG0Z9uzsBlgiU/EFKhj/h91/8yHu0edo7XuixOIH3VcJ8kkxs6/jPzoI6U9Vj3WqbMQ94g==}
+  brace-expansion@5.0.7:
+    resolution: {integrity: sha512-7oFy703dxfY3/NLxC1fh2SUCQ0H9rmAY+5EpDVfXjUTTs+HEwR2nYaqLv+GWcTsumwxPfiz6CzCNkwXwBUwqCA==}
     engines: {node: 18 || 20 || >=22}
 
   braces@3.0.3:
@@ -5686,6 +5676,10 @@ packages:
     resolution: {integrity: sha512-cRZYrTDwWznlnRiPjggAGxZXanty6M8RV1ff8Wm4LWXBp7/IG8v5DnOm74DtUBp9OONpK75YlPnIjQqX0dBDtA==}
     engines: {node: '>=20.18.1'}
 
+  undici@8.7.0:
+    resolution: {integrity: sha512-N7iQtfyLhIMOFgQubvmLV26svHpO0bqKnAiWotTQCVKCmWrcGbBotPuW1x+xwYZ2VHdSTVUfPQQnlEt1/LouTQ==}
+    engines: {node: '>=22.19.0'}
+
   unenv@2.0.0-rc.24:
     resolution: {integrity: sha512-i7qRCmY42zmCwnYlh9H2SvLEypEFGye5iRmEMKjcGi7zk9UquigRjFtTLz0TYqr0ZGLZhaMHl/foy1bZR+Cwlw==}
 
@@ -6780,7 +6774,7 @@ snapshots:
       effect: 4.0.0-beta.93
       ioredis: 5.11.1
       mime: 4.1.0
-      undici: 7.28.0
+      undici: 8.7.0
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -8815,7 +8809,7 @@ snapshots:
 
   bowser@2.14.1: {}
 
-  brace-expansion@5.0.6:
+  brace-expansion@5.0.7:
     dependencies:
       balanced-match: 4.0.4
 
@@ -10432,7 +10426,7 @@ snapshots:
 
   minimatch@10.2.5:
     dependencies:
-      brace-expansion: 5.0.6
+      brace-expansion: 5.0.7
 
   minimist@1.2.8: {}
 
@@ -11491,6 +11485,8 @@ snapshots:
   undici-types@6.21.0: {}
 
   undici@7.28.0: {}
+
+  undici@8.7.0: {}
 
   unenv@2.0.0-rc.24:
     dependencies:
