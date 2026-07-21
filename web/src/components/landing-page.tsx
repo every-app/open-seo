@@ -7,11 +7,14 @@
 
 import { type ReactNode, type SVGProps } from "react";
 import { NewsletterSignup } from "@/components/newsletter-signup";
+import { ProductHuntLaurel } from "@/components/product-hunt-laurel";
 import { SiteFooter } from "@/components/site-footer";
 import { featurePages } from "@/lib/feature-pages";
 import "./landing-page.css";
 
 const SIGNUP_URL = "https://app.openseo.so/sign-up";
+const PRODUCT_HUNT_URL =
+  "https://www.producthunt.com/products/openseo?launch=openseo";
 const GITHUB_URL = "https://github.com/every-app/open-seo";
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 
@@ -179,7 +182,10 @@ function ArrowCta({
   size?: "md" | "lg";
 }) {
   return (
-    <a href={href} className={`${className}${size === "lg" ? " itc-btn-lg" : ""}`}>
+    <a
+      href={href}
+      className={`${className}${size === "lg" ? " itc-btn-lg" : ""}`}
+    >
       {children}
       <IconArrowRight size={size === "lg" ? 18 : 16} className="itc-arrow" />
     </a>
@@ -192,6 +198,15 @@ function Hero() {
   return (
     <section className="itc-hero">
       <Container>
+        <a
+          href={PRODUCT_HUNT_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="itc-hero-ph-laurel"
+          aria-label="Number 1 Product of the Day on Product Hunt"
+        >
+          <ProductHuntLaurel />
+        </a>
         <h1
           className="itc-display-xl itc-hero-title"
           style={{ maxWidth: 1180, margin: "0 auto" }}
@@ -370,7 +385,10 @@ function ProductSection() {
               <p style={{ margin: 0, fontSize: 16, fontWeight: 500 }}>
                 {page.eyebrow}
               </p>
-              <p className="itc-body-sm itc-muted" style={{ margin: "8px 0 0" }}>
+              <p
+                className="itc-body-sm itc-muted"
+                style={{ margin: "8px 0 0" }}
+              >
                 {blurb}
               </p>
             </a>
@@ -457,8 +475,7 @@ function McpSection() {
             <pre>
               <code>
                 <span className="t-orange">›</span> find and cluster keywords
-                for{" "}
-                <span className="t-bright">openseo.so</span>
+                for <span className="t-bright">openseo.so</span>
                 {"\n\n"}
                 <span className="t-dim">
                   ⏺ openseo.keyword_research(seed: &quot;open source seo&quot;)
@@ -630,22 +647,10 @@ function GeminiIcon(props: SVGProps<SVGSVGElement>) {
           <ellipse cx="163" cy="149" fill="#3689FF" rx="196" ry="159" />
         </g>
         <g filter="url(#intercom-gemini-c)">
-          <ellipse
-            cx="33.5"
-            cy="142.5"
-            fill="#F6C013"
-            rx="68.5"
-            ry="72.5"
-          />
+          <ellipse cx="33.5" cy="142.5" fill="#F6C013" rx="68.5" ry="72.5" />
         </g>
         <g filter="url(#intercom-gemini-d)">
-          <ellipse
-            cx="19.5"
-            cy="148.5"
-            fill="#F6C013"
-            rx="68.5"
-            ry="72.5"
-          />
+          <ellipse cx="19.5" cy="148.5" fill="#F6C013" rx="68.5" ry="72.5" />
         </g>
         <g filter="url(#intercom-gemini-e)">
           <path
@@ -824,8 +829,7 @@ function OpenSourceSection() {
             Star on GitHub
           </a>
           <a href="/open-source-seo" className="itc-textlink">
-            Why Open Source?{" "}
-            <IconArrowRight size={15} className="itc-arrow" />
+            Why Open Source? <IconArrowRight size={15} className="itc-arrow" />
           </a>
         </div>
       </Container>
