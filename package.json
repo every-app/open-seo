@@ -5,6 +5,11 @@
   "version": "0.1.3",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
+  "pnpm": {
+    "overrides": {
+      "brace-expansion": ">=5.0.7"
+    }
+  },
   "scripts": {
     "dev": "vite dev",
     "dev:clear-chat": "rm -rf .wrangler/state/v3/do/open-seo-OnboardingChatAgent",
