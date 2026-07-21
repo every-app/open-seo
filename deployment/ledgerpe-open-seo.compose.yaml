@@ -1,0 +1,51 @@
+services:
+  ledgerpe-open-seo:
+    image: ${OPEN_SEO_IMAGE:-ghcr.io/every-app/open-seo:latest}
+    container_name: ledgerpe-open-seo
+    restart: unless-stopped
+    environment:
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
+      PORT: ${PORT:-3001}
+      ALLOWED_HOST: ${ALLOWED_HOST:-127.0.0.1}
+      AUTH_MODE: ${AUTH_MODE:-local_noauth}
+      OPENSEO_TELEMETRY_DISABLED: ${OPENSEO_TELEMETRY_DISABLED:-1}
+      DO_NOT_TRACK: ${DO_NOT_TRACK:-1}
+      OPENSEO_ENABLE_DATAFORSEO: ${OPENSEO_ENABLE_DATAFORSEO:-0}
+      OPENSEO_DATAFORSEO_BUDGET_USD: ${OPENSEO_DATAFORSEO_BUDGET_USD:-0}
+      DATAFORSEO_API_KEY: ${DATAFORSEO_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+      VITE_SHOW_DEVTOOLS: "false"
+      NODE_ENV: production
+    ports:
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
+    volumes:
+      - ledgerpe_open_seo_data:/app/.wrangler
+    tmpfs:
+      - /tmp:size=256m,mode=1777
+    healthcheck:
+      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || '3001') + '/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 45s
+    mem_limit: 1500m
+    mem_reservation: 768m
+    cpus: 1.25
+    pids_limit: 512
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+    networks:
+      - ledgerpe_open_seo_private
+
+networks:
+  ledgerpe_open_seo_private:
+    name: ledgerpe_open_seo_private
+
+volumes:
+  ledgerpe_open_seo_data:
+    name: ledgerpe_open_seo_data
