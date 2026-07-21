@@ -2,6 +2,10 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
+import {
+  getCompetitorChangesTool,
+  listCompetitorPagesTool,
+} from "@/server/mcp/tools/competitor-content-tools";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
@@ -63,6 +67,24 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       findSeoOpportunitiesTool.name,
       findSeoOpportunitiesTool.config.outputSchema,
       findSeoOpportunitiesTool.handler,
+    ),
+  );
+  server.registerTool(
+    listCompetitorPagesTool.name,
+    listCompetitorPagesTool.config,
+    instrumentMcpToolHandler(
+      listCompetitorPagesTool.name,
+      listCompetitorPagesTool.config.outputSchema,
+      listCompetitorPagesTool.handler,
+    ),
+  );
+  server.registerTool(
+    getCompetitorChangesTool.name,
+    getCompetitorChangesTool.config,
+    instrumentMcpToolHandler(
+      getCompetitorChangesTool.name,
+      getCompetitorChangesTool.config.outputSchema,
+      getCompetitorChangesTool.handler,
     ),
   );
   server.registerTool(
