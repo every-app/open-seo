@@ -8,9 +8,11 @@ import {
   type ZodRawShapeCompat,
 } from "@modelcontextprotocol/sdk/server/zod-compat.js";
 import { asAppError } from "@/server/lib/errors";
+import { recordExternalMcpToolCall } from "@/server/features/activation/mcpActivation";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { shouldCaptureAppErrorCode } from "@/shared/error-codes";
 import { getAuth, type ToolExtra } from "@/server/mcp/context";
+import { incrementSelfHostMcpToolCallCount } from "@/server/lib/self-host-telemetry";
 
 type ToolHandler<TArgs> = (
   args: TArgs,
@@ -29,6 +31,8 @@ function captureMcpToolCall(
   extra: ToolExtra,
   outcome: { success: boolean; errorCode?: string },
 ) {
+  waitUntil(incrementSelfHostMcpToolCallCount());
+
   try {
     const auth = getAuth(extra);
     waitUntil(
@@ -111,6 +115,21 @@ export function instrumentMcpToolHandler<TArgs>(
           ? { success: false, errorCode: "MCP_OUTPUT_VALIDATION" }
           : { success: !result.isError },
       );
+      // Dashboard activation milestone: a successful call from an external
+      // MCP client (OAuth clientId; SAM and the self-hosted transport are
+      // first-party with clientId null). Awaited so the write stays inside
+      // the request's DB scope; a per-isolate memo keeps this off the hot
+      // path after the first call.
+      if (!result.isError && !outputValidationFailed) {
+        try {
+          const auth = getAuth(extra);
+          if (auth.clientId) {
+            await recordExternalMcpToolCall(auth.organizationId);
+          }
+        } catch {
+          // no auth context — skip milestone tracking
+        }
+      }
       return result;
     } catch (error) {
       const appError = asAppError(error);

@@ -350,3 +350,71 @@ export const rankSnapshots = sqliteTable(
     ),
   ],
 );
+
+// Dashboard activation milestones. Organization-scoped: MCP OAuth grants are
+// user-level, so any member connecting an external MCP client satisfies the
+// milestone for the whole organization. Timestamps are first-occurrence only
+// and never move once set.
+export const organizationActivationState = sqliteTable(
+  "organization_activation_state",
+  {
+    organizationId: text("organization_id")
+      .primaryKey()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    firstMcpAuthorizedAt: text("first_mcp_authorized_at"),
+    firstMcpToolCallAt: text("first_mcp_tool_call_at"),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+);
+
+// Per-project state for the dashboard's onboarding checklist. Most steps
+// complete via real product state (projects.domain, gsc_connections, MCP
+// activation); the competitor step completes on click-through.
+export const projectActivationState = sqliteTable("project_activation_state", {
+  projectId: text("project_id")
+    .primaryKey()
+    .references(() => projects.id, { onDelete: "cascade" }),
+  competitorStepClickedAt: text("competitor_step_clicked_at"),
+  // "I already connected" on the MCP card: hides the card for this project
+  // without faking the org-level first-tool-call milestone, which stays
+  // truthful and self-heals when a real external call lands.
+  mcpCardDismissedAt: text("mcp_card_dismissed_at"),
+  updatedAt: text("updated_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});
+
+// Point-in-time backlink profile summaries for the project's own domain,
+// written by the dashboard's visit-triggered refresh. DataForSEO's summary
+// already carries new/lost counts, so one snapshot renders a full card;
+// rows accumulate into history for future trend views. The domain is stored
+// per row so a later project-domain change doesn't rewrite history.
+export const backlinkSnapshots = sqliteTable(
+  "backlink_snapshots",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull(),
+    rank: integer("rank"),
+    backlinks: integer("backlinks"),
+    referringDomains: integer("referring_domains"),
+    brokenBacklinks: integer("broken_backlinks"),
+    newBacklinks: integer("new_backlinks"),
+    lostBacklinks: integer("lost_backlinks"),
+    newReferringDomains: integer("new_referring_domains"),
+    lostReferringDomains: integer("lost_referring_domains"),
+    capturedAt: text("captured_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    index("backlink_snapshots_project_captured_idx").on(
+      table.projectId,
+      table.capturedAt,
+    ),
+  ],
+);

@@ -50,7 +50,7 @@ export async function handleFixtureRequest(
       metaDescription: "That URL is not one of the pages on this site.",
       bodyHtml: `<h1>404, not found</h1>
 <p class="lede">This URL is not one of the broken pages on the site. It is just missing.</p>
-<p>Go back to the <a href="/catalog">catalog</a> to see the pages that break on purpose.</p>`,
+<p>Go back to the <a href="/#issues">examples</a> to see the pages that break on purpose.</p>`,
     }),
     {
       status: 404,
@@ -79,7 +79,7 @@ Sitemap: ${origin}/sitemap.xml
 export function sitemapResponse(request: Request): Response {
   const url = new URL(request.url);
   const origin = requestOrigin(request, url);
-  const paths = new Set<string>(["/"]);
+  const paths = new Set<string>(["/", "/privacy"]);
   for (const fixture of sitemapFixtures) {
     for (const path of fixturePaths(fixture)) paths.add(path);
   }

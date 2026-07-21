@@ -55,7 +55,6 @@ const PAGE_RANGE_FILTERS = [
 type Props = {
   projectId: string;
   domain: string;
-  languageCode: string;
   routeState: DomainOverviewRouteState;
   setSearchParams: (updates: SearchUpdate) => void;
   onSortClick: (sort: DomainSortMode) => void;
@@ -66,7 +65,6 @@ type Props = {
 export function PagesTab({
   projectId,
   domain,
-  languageCode,
   routeState,
   setSearchParams,
   onSortClick,
@@ -98,8 +96,7 @@ export function PagesTab({
     projectId,
     domain,
     includeSubdomains: routeState.subdomains,
-    locationCode: routeState.locationCode,
-    languageCode,
+    locationCode: routeState.sentLocationCode,
     page: routeState.page,
     pageSize: routeState.pageSize,
     sortMode: routeState.sort,

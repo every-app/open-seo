@@ -2,23 +2,50 @@ import type {
   ArchiveProjectInput,
   CreateProjectInput,
   RestoreProjectInput,
+  SetProjectDomainInput,
+  SetProjectMarketInput,
   UpdateProjectInput,
 } from "@/types/schemas/projects";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
+import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 import { AppError } from "@/server/lib/errors";
+import { assertLanguageForLocation } from "@/server/lib/market";
+import { getLanguageCode } from "@/shared/keyword-locations";
 
 function mapProject(project: {
   id: string;
   name: string;
   domain: string | null;
+  locationCode: number;
+  languageCode: string;
   createdAt: string;
 }) {
   return {
     id: project.id,
     name: project.name,
     domain: project.domain,
+    // Default market for the project's data calls (MCP tools and the web UI
+    // fall back to these when a call omits locationCode/languageCode).
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
     createdAt: project.createdAt,
   };
+}
+
+/**
+ * Resolves a market input into the columns to write. A location with no
+ * language snaps to that location's native language; the schemas forbid the
+ * reverse, so the pair is always resolvable without reading the stored row.
+ */
+function resolveMarketInput(input: {
+  locationCode?: number;
+  languageCode?: string;
+}): { locationCode: number; languageCode: string } | undefined {
+  if (input.locationCode == null) return undefined;
+  const locationCode = input.locationCode;
+  const languageCode = input.languageCode ?? getLanguageCode(locationCode);
+  assertLanguageForLocation(locationCode, languageCode);
+  return { locationCode, languageCode };
 }
 
 // The projects table's only unique index guards the auto-created ("Default",
@@ -58,6 +85,24 @@ export async function listProjectsEnsuringOne(organizationId: string) {
   return listProjects(organizationId);
 }
 
+/**
+ * Validates and canonicalizes a project domain (lowercase bare host, www and
+ * protocol/path stripped) with the same rules the backlink fetch will apply
+ * later, so junk fails at save time instead of at the first paid call.
+ * Undefined passes through — updateProject uses that to clear the domain.
+ */
+function normalizeProjectDomain(domain: string | undefined) {
+  if (domain === undefined) return undefined;
+  try {
+    return normalizeBacklinksTarget(domain, { scope: "domain" }).apiTarget;
+  } catch {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Enter a valid domain, like acme.com.",
+    );
+  }
+}
+
 export async function createProject(
   organizationId: string,
   input: CreateProjectInput,
@@ -66,7 +111,8 @@ export async function createProject(
     const row = await ProjectRepository.createProject(
       organizationId,
       input.name,
-      input.domain,
+      normalizeProjectDomain(input.domain),
+      resolveMarketInput(input),
     );
     return mapProject(row);
   } catch (error) {
@@ -85,7 +131,11 @@ export async function updateProject(
     const row = await ProjectRepository.updateProject(
       input.projectId,
       organizationId,
-      { name: input.name, domain: input.domain },
+      {
+        name: input.name,
+        domain: normalizeProjectDomain(input.domain),
+        market: resolveMarketInput(input),
+      },
     );
     return mapProject(row);
   } catch (error) {
@@ -94,6 +144,45 @@ export async function updateProject(
     }
     throw error;
   }
+}
+
+/**
+ * Sets a project's domain on its own, for the dashboard hero's inline input.
+ * Writing just this column keeps the write from echoing a name/market the
+ * caller never edited.
+ */
+export async function setProjectDomain(
+  organizationId: string,
+  input: SetProjectDomainInput,
+) {
+  const domain = normalizeProjectDomain(input.domain);
+  if (domain === undefined) {
+    throw new AppError("VALIDATION_ERROR", "Enter a valid domain.");
+  }
+  const row = await ProjectRepository.updateProjectDomain(
+    input.projectId,
+    organizationId,
+    domain,
+  );
+  return mapProject(row);
+}
+
+/**
+ * Sets a project's default market on its own, for surfaces that only ask for
+ * the market (onboarding). Writing just these two columns keeps the write from
+ * echoing a name/domain the caller never edited.
+ */
+export async function setProjectMarket(
+  organizationId: string,
+  input: SetProjectMarketInput,
+) {
+  assertLanguageForLocation(input.locationCode, input.languageCode);
+  const row = await ProjectRepository.updateProjectMarket(
+    input.projectId,
+    organizationId,
+    { locationCode: input.locationCode, languageCode: input.languageCode },
+  );
+  return mapProject(row);
 }
 
 export async function archiveProject(

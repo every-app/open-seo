@@ -141,6 +141,9 @@ export const auditLinks = sqliteTable(
   },
   (table) => [
     index("audit_links_audit_target_idx").on(table.auditId, table.targetUrl),
+    // Cascade path from audit_pages deletes; without this every page delete
+    // seq-scans the (large) links table.
+    index("audit_links_source_page_id_idx").on(table.sourcePageId),
   ],
 );
 
@@ -165,6 +168,7 @@ export const auditIssues = sqliteTable(
   },
   (table) => [
     index("audit_issues_audit_type_idx").on(table.auditId, table.issueType),
+    index("audit_issues_page_id_idx").on(table.pageId),
   ],
 );
 
@@ -192,5 +196,8 @@ export const auditLighthouseResults = sqliteTable(
     r2Key: text("r2_key"),
     payloadSizeBytes: integer("payload_size_bytes"),
   },
-  (table) => [index("audit_lighthouse_results_audit_id_idx").on(table.auditId)],
+  (table) => [
+    index("audit_lighthouse_results_audit_id_idx").on(table.auditId),
+    index("audit_lighthouse_results_page_id_idx").on(table.pageId),
+  ],
 );

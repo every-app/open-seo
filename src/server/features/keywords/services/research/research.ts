@@ -9,7 +9,7 @@ import {
 } from "@/server/lib/r2-cache";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import type { KeywordResearchRow } from "@/types/keywords";
-import type { ResearchKeywordsInput } from "@/types/schemas/keywords";
+import type { ResolvedResearchKeywordsInput } from "@/types/schemas/keywords";
 import { z } from "zod";
 import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { type EnrichedKeyword, normalizeKeyword } from "./helpers";
@@ -93,7 +93,7 @@ const CACHE_VERSION = 3;
 
 async function fetchRowsFromSource(
   source: KeywordSource,
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
@@ -113,7 +113,7 @@ async function fetchRowsFromSource(
 }
 
 async function fetchAutoRows(
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
@@ -175,7 +175,7 @@ async function fetchAutoRows(
 }
 
 async function fetchGoogleAdsRows(
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
@@ -211,7 +211,7 @@ async function fetchGoogleAdsRows(
 
 async function fetchManualRows(
   mode: Exclude<KeywordMode, "auto">,
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   seedKeyword: string,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
@@ -242,7 +242,7 @@ async function fetchManualRows(
 }
 
 async function buildResearchCacheKey(
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   normalizedKeywords: string[],
   mode: KeywordMode,
   billingCustomer: BillingCustomerContext,
@@ -261,7 +261,10 @@ async function buildResearchCacheKey(
   });
 }
 
-function persistRows(input: ResearchKeywordsInput, rows: EnrichedKeyword[]) {
+function persistRows(
+  input: ResolvedResearchKeywordsInput,
+  rows: EnrichedKeyword[],
+) {
   void Promise.all(
     rows.map((row) =>
       KeywordResearchRepository.upsertKeywordMetric({
@@ -283,7 +286,7 @@ function persistRows(input: ResearchKeywordsInput, rows: EnrichedKeyword[]) {
 }
 
 export async function research(
-  input: ResearchKeywordsInput,
+  input: ResolvedResearchKeywordsInput,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
 ): Promise<ResearchResult> {
@@ -300,7 +303,7 @@ export async function research(
   // Labs source modes and clickstream refinement don't exist for
   // Google-Ads-served countries; collapse both so equivalent requests share
   // one cache entry.
-  const effectiveInput: ResearchKeywordsInput =
+  const effectiveInput: ResolvedResearchKeywordsInput =
     provider === "google_ads"
       ? { ...input, mode: "auto", clickstream: false }
       : input;

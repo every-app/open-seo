@@ -1,5 +1,5 @@
 import type { KeywordResearchRow } from "@/types/keywords";
-import type { ResearchKeywordsInput } from "@/types/schemas/keywords";
+import type { ResolvedResearchKeywordsInput } from "@/types/schemas/keywords";
 
 const MONTHLY_SEARCHES = [
   { year: 2025, month: 4, searchVolume: 1200 },
@@ -33,7 +33,7 @@ function makeRow(
   };
 }
 
-export function getKeywordResearchFixture(data: ResearchKeywordsInput) {
+export function getKeywordResearchFixture(data: ResolvedResearchKeywordsInput) {
   const seedKeyword = data.keywords[0] ?? "keyword research";
   const rows = [
     makeRow(seedKeyword, 0, {

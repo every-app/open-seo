@@ -255,7 +255,11 @@ export function useSearchTabs(key: string) {
         let activeTabId = current.activeTabId;
         if (current.activeTabId === tabId) {
           closedActive = true;
-          const neighbor = tabs[index - 1] ?? tabs[index] ?? null;
+          // Post-removal array: tabs[index] is the tab that slid into the
+          // closed tab's slot (its right-hand neighbor). Select it first —
+          // browser-tab convention and the documented e2e contract — and fall
+          // back to the left neighbor only when the last tab was closed.
+          const neighbor = tabs[index] ?? tabs[index - 1] ?? null;
           activeTabId = neighbor?.id ?? null;
           nextActiveTab = neighbor;
         }

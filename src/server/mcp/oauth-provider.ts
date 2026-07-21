@@ -13,6 +13,7 @@ import {
   MCP_SCOPE,
 } from "@/lib/oauth-resource";
 import { asAppError } from "@/server/lib/errors";
+import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
 import { captureServerEvent } from "@/server/lib/posthog";
 import {
   createWorkersOAuthMcpProps,
@@ -365,6 +366,8 @@ async function handleOAuthConsentResponse(
     scope: scopes,
     props,
   });
+
+  await recordMcpAuthorized(context.organizationId);
 
   waitUntil(
     captureServerEvent({

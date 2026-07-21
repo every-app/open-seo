@@ -47,17 +47,14 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                   <textarea
                     className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
                     rows={rows}
-                    placeholder="Enter keywords, one per line"
+                    placeholder="Enter a keyword"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onKeyDown={(event) => {
-                      // Cmd/Ctrl+Enter submits without leaving a stray newline.
-                      // Bare Enter stays as the textarea default (insert newline)
-                      // so multi-keyword input remains discoverable.
-                      if (
-                        event.key === "Enter" &&
-                        (event.metaKey || event.ctrlKey)
-                      ) {
+                      // Enter submits. Shift+Enter inserts a newline, so
+                      // researching several keywords at once means adding a
+                      // line per keyword (or pasting newline-separated ones).
+                      if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
                         void controlsForm.handleSubmit();
                       }

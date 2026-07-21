@@ -18,8 +18,8 @@ const sortDirs = ["asc", "desc"] as const;
 export const researchKeywordsSchema = z.object({
   projectId: z.string().min(1),
   keywords: z.array(z.string().min(1)).min(1).max(200),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
   resultLimit: z
     .union([z.literal(150), z.literal(300), z.literal(500)])
     .default(150),
@@ -35,8 +35,8 @@ export const saveKeywordsSchema = z
   .object({
     projectId: z.string().min(1),
     keywords: z.array(z.string().min(1)).min(1).max(500),
-    locationCode: z.number().int().positive().default(2840),
-    languageCode: z.string().min(2).max(8).default("en"),
+    locationCode: z.number().int().positive().optional(),
+    languageCode: z.string().min(2).max(8).optional(),
     tags: z.array(savedKeywordTagSchema).max(20).optional(),
     tagMode: z.enum(["append", "replace"]).optional(),
     metrics: z
@@ -149,6 +149,17 @@ export const refreshSavedKeywordMetricsSchema = z.object({
 
 export type ResearchKeywordsInput = z.infer<typeof researchKeywordsSchema>;
 export type SaveKeywordsInput = z.infer<typeof saveKeywordsSchema>;
+type ResolvedMarket = { locationCode: number; languageCode: string };
+export type ResolvedResearchKeywordsInput = Omit<
+  ResearchKeywordsInput,
+  keyof ResolvedMarket
+> &
+  ResolvedMarket;
+export type ResolvedSaveKeywordsInput = Omit<
+  SaveKeywordsInput,
+  keyof ResolvedMarket
+> &
+  ResolvedMarket;
 export type RemoveSavedKeywordsInput = z.infer<
   typeof removeSavedKeywordsSchema
 >;
@@ -172,8 +183,8 @@ export type RefreshSavedKeywordMetricsInput = z.infer<
 export const serpAnalysisSchema = z.object({
   projectId: z.string().min(1),
   keyword: z.string().min(1),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
 });
 
 /* ------------------------------------------------------------------ */

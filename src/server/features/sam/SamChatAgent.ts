@@ -24,7 +24,7 @@ import {
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import {
-  getUsageCreditsRemaining,
+  checkUsageCreditsDepleted,
   trackUsageCreditSpend,
 } from "@/server/billing/subscription";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
@@ -233,12 +233,18 @@ export class SamChatAgent extends Think {
       // Gate every turn on credits in hosted mode: SAM is open to every plan
       // (including free), and LLM tokens plus DataForSEO tool calls all draw
       // down the org's credit balance. Self-hosted brings its own provider
-      // keys and has no Autumn balance, so it's ungated.
+      // keys and has no Autumn balance, so it's ungated. Depletion is
+      // confirmed against a second Autumn read path before refusing — a
+      // stale check reading here once locked a paying customer out of chat.
       const { organizationId } = ctx.project;
       if (await isHostedServerAuthMode()) {
-        const { monthlyRemaining, topupRemaining } =
-          await getUsageCreditsRemaining(organizationId);
-        if (monthlyRemaining + topupRemaining <= 0) {
+        const { depleted, monthlyRemaining } = await checkUsageCreditsDepleted({
+          userId: ctx.row.userId,
+          userEmail: ctx.userEmail,
+          organizationId,
+          projectId: ctx.project.id,
+        });
+        if (depleted) {
           return this.refusalTurn(
             "You're out of credits. Top up to keep using SAM.",
           );
