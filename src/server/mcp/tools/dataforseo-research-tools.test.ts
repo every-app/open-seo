@@ -8,6 +8,7 @@ import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  getDataforseoProviderStatus: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
@@ -30,6 +31,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
     getProjectForOrganization: mocks.getProjectForOrganization,
   },
+}));
+
+vi.mock("@/server/lib/provider-config", () => ({
+  getDataforseoProviderStatus: mocks.getDataforseoProviderStatus,
 }));
 
 const authContext = {
@@ -75,7 +80,16 @@ describe("DataForSEO research MCP tools", () => {
     vi.resetModules();
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
+    mocks.getDataforseoProviderStatus.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue(usProjectRow);
+    mocks.getDataforseoProviderStatus.mockResolvedValue({
+      provider: "dataforseo",
+      configured: false,
+      enabled: false,
+      hasApiKey: false,
+      budgetUsd: 0,
+      reason: "DataForSEO is disabled by default for this self-hosted deployment.",
+    });
   });
 
   it("searches local businesses without running rankings or Q&A", async () => {
@@ -423,5 +437,42 @@ describe("DataForSEO research MCP tools", () => {
       .passthrough()
       .parse(result.structuredContent).keywords;
     expect(rows[0]).not.toHaveProperty("monthly_searches");
+  });
+
+  it("returns a structured provider_not_configured response when paid DataForSEO is disabled", async () => {
+    const { AppError } = await import("@/server/lib/errors");
+    mocks.createDataforseoClient.mockReturnValue({
+      domain: {
+        rankedKeywords: vi
+          .fn()
+          .mockRejectedValue(
+            new AppError("PROVIDER_NOT_CONFIGURED", "provider disabled", {
+              provider: "dataforseo",
+            }),
+          ),
+      },
+    });
+
+    const { getRankedKeywordsTool } = await import("./dataforseo-research-tools");
+
+    const result = await getRankedKeywordsTool.handler(
+      {
+        projectId: "project_1",
+        target: "example.com",
+      },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      ok: false,
+      reason: "provider_not_configured",
+      provider: "dataforseo",
+      providerStatus: {
+        configured: false,
+        enabled: false,
+        budgetUsd: 0,
+      },
+    });
+    expect(textOf(result)).toContain("disabled by default");
   });
 });

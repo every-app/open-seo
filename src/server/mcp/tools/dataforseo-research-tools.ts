@@ -19,6 +19,8 @@ import {
 } from "@/server/mcp/table";
 import { resolveLabsMarket, resolveMarket } from "@/shared/keyword-locations";
 import { assertLanguageForLocation } from "@/server/lib/market";
+import { AppError, asAppError } from "@/server/lib/errors";
+import { getDataforseoProviderStatus } from "@/server/lib/provider-config";
 import {
   DEFAULT_LOCATION_CODE,
   languageCodeSchema,
@@ -498,9 +500,50 @@ function hostMatchesDomain(host: string, domain: string): boolean {
   );
 }
 
-// Provider rows ship in full in structuredContent; these tables render every
-// row into the text content block so text-only MCP clients see the data, not
-// just a count. Loose rows are read positionally via readPath.
+async function dataforseoNotConfiguredResponse(
+  projectId: string,
+  context: Parameters<typeof buildProjectMeta>[0],
+) {
+  const status = await getDataforseoProviderStatus();
+  return mcpResponse({
+    text:
+      status.reason ??
+      "DataForSEO is not configured for this deployment. Paid provider calls are disabled.",
+    meta: buildProjectMeta(context, projectId, `/p/${projectId}`),
+    structuredContent: {
+      ok: false,
+      reason: "provider_not_configured",
+      provider: "dataforseo",
+      providerStatus: {
+        configured: status.configured,
+        enabled: status.enabled,
+        budgetUsd: status.budgetUsd,
+        hasApiKey: status.hasApiKey,
+        reason: status.reason,
+      },
+    },
+  });
+}
+
+async function handleDataforseoTool<TArgs>(
+  args: TArgs & { projectId: string },
+  context: Parameters<typeof buildProjectMeta>[0],
+  run: () => Promise<ReturnType<typeof mcpResponse>>,
+) {
+  try {
+    return await run();
+  } catch (error) {
+    const appError = asAppError(error);
+    if (
+      appError &&
+      appError.code === "PROVIDER_NOT_CONFIGURED" &&
+      appError.details?.provider === "dataforseo"
+    ) {
+      return dataforseoNotConfiguredResponse(args.projectId, context);
+    }
+    throw error;
+  }
+}
 
 type RankedKeywordRow = {
   keyword: unknown;
@@ -605,44 +648,46 @@ export const getRankedKeywordsTool = {
       destructiveHint: false,
     },
   },
-  handler: withMcpProjectAuth(async (args: GetRankedKeywordsArgs, context) => {
-    const client = createDataforseoClient(context.billing);
-    const targetIsPage = /^https?:\/\//.test(args.target);
-    const market = resolveMarketSelector(args.market, context.project);
-    const keywords = await client.domain.rankedKeywords({
-      target: args.target,
-      locationCode: market.locationCode,
-      languageCode: market.languageCode,
-      limit: args.limit ?? 50,
-      offset: args.offset,
-      orderBy: sortOrderByRankedMode(args.sortBy),
-      filters: buildRankedKeywordFilters({
-        minSearchVolume: args.minSearchVolume,
-        maxRank: args.maxRank,
-        excludeBrandTerms: args.excludeBrandTerms,
-      }),
-      itemTypes: args.resultTypes,
-      includeSubdomains: args.includeSubdomains ?? !targetIsPage,
-    });
+  handler: withMcpProjectAuth(async (args: GetRankedKeywordsArgs, context) =>
+    handleDataforseoTool(args, context, async () => {
+      const client = createDataforseoClient(context.billing);
+      const targetIsPage = /^https?:\/\//.test(args.target);
+      const market = resolveMarketSelector(args.market, context.project);
+      const keywords = await client.domain.rankedKeywords({
+        target: args.target,
+        locationCode: market.locationCode,
+        languageCode: market.languageCode,
+        limit: args.limit ?? 50,
+        offset: args.offset,
+        orderBy: sortOrderByRankedMode(args.sortBy),
+        filters: buildRankedKeywordFilters({
+          minSearchVolume: args.minSearchVolume,
+          maxRank: args.maxRank,
+          excludeBrandTerms: args.excludeBrandTerms,
+        }),
+        itemTypes: args.resultTypes,
+        includeSubdomains: args.includeSubdomains ?? !targetIsPage,
+      });
 
-    const rankedRows = keywords.items.map(toRankedKeywordRow);
-    const text =
-      rankedRows.length === 0
-        ? `No ranked keyword rows for ${args.target}.`
-        : `Found ${rankedRows.length} ranked keyword rows for ${args.target}${keywords.totalCount != null ? ` (of ${keywords.totalCount} total)` : ""}:\n${formatMcpTable(rankedRows, RANKED_KEYWORD_COLUMNS)}`;
-    return mcpResponse({
-      text,
-      meta: buildProjectMeta(
-        context,
-        args.projectId,
-        `/p/${args.projectId}/domain`,
-      ),
-      structuredContent: {
-        keywords: keywords.items,
-        totalCount: keywords.totalCount,
-      },
-    });
-  }),
+      const rankedRows = keywords.items.map(toRankedKeywordRow);
+      const text =
+        rankedRows.length === 0
+          ? `No ranked keyword rows for ${args.target}.`
+          : `Found ${rankedRows.length} ranked keyword rows for ${args.target}${keywords.totalCount != null ? ` (of ${keywords.totalCount} total)` : ""}:\n${formatMcpTable(rankedRows, RANKED_KEYWORD_COLUMNS)}`;
+      return mcpResponse({
+        text,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/domain`,
+        ),
+        structuredContent: {
+          keywords: keywords.items,
+          totalCount: keywords.totalCount,
+        },
+      });
+    }),
+  ),
 };
 
 export const searchLocalBusinessesTool = {
@@ -663,25 +708,26 @@ export const searchLocalBusinessesTool = {
     },
   },
   handler: withMcpProjectAuth(
-    async (args: SearchLocalBusinessesArgs, context) => {
-      const client = createDataforseoClient(context.billing);
-      const businesses = await client.business.businessListings({
-        categories: args.categories,
-        title: args.query,
-        locationCoordinate: formatBusinessLocationCoordinate(args.near),
-        limit: args.limit ?? 20,
-      });
+    async (args: SearchLocalBusinessesArgs, context) =>
+      handleDataforseoTool(args, context, async () => {
+        const client = createDataforseoClient(context.billing);
+        const businesses = await client.business.businessListings({
+          categories: args.categories,
+          title: args.query,
+          locationCoordinate: formatBusinessLocationCoordinate(args.near),
+          limit: args.limit ?? 20,
+        });
 
-      const header = `Found ${businesses.length} local business rows${args.query ? ` for ${args.query}` : ""}.`;
-      return mcpResponse({
-        text:
-          businesses.length === 0
-            ? header
-            : `${header}\n${formatMcpTable(businesses, LOCAL_BUSINESS_COLUMNS)}`,
-        meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
-        structuredContent: { businesses },
-      });
-    },
+        const header = `Found ${businesses.length} local business rows${args.query ? ` for ${args.query}` : ""}.`;
+        return mcpResponse({
+          text:
+            businesses.length === 0
+              ? header
+              : `${header}\n${formatMcpTable(businesses, LOCAL_BUSINESS_COLUMNS)}`,
+          meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
+          structuredContent: { businesses },
+        });
+      }),
   ),
 };
 
@@ -703,28 +749,29 @@ export const getLocalSerpResultsTool = {
     },
   },
   handler: withMcpProjectAuth(
-    async (args: GetLocalSerpResultsArgs, context) => {
-      const client = createDataforseoClient(context.billing);
-      const results = await client.serp.local({
-        keyword: args.keyword,
-        locationCoordinate: formatLocalSerpCoordinate(args.near),
-        languageCode: args.languageCode ?? context.project.languageCode,
-        searchType: args.searchType ?? "maps",
-        device: args.device ?? "desktop",
-        depth: args.depth ?? 20,
-        searchPlaces: false,
-      });
+    async (args: GetLocalSerpResultsArgs, context) =>
+      handleDataforseoTool(args, context, async () => {
+        const client = createDataforseoClient(context.billing);
+        const results = await client.serp.local({
+          keyword: args.keyword,
+          locationCoordinate: formatLocalSerpCoordinate(args.near),
+          languageCode: args.languageCode ?? context.project.languageCode,
+          searchType: args.searchType ?? "maps",
+          device: args.device ?? "desktop",
+          depth: args.depth ?? 20,
+          searchPlaces: false,
+        });
 
-      const header = `Fetched ${results.length} local SERP rows for "${args.keyword}".`;
-      return mcpResponse({
-        text:
-          results.length === 0
-            ? header
-            : `${header}\n${formatMcpTable(results, LOCAL_SERP_COLUMNS)}`,
-        meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
-        structuredContent: { results },
-      });
-    },
+        const header = `Fetched ${results.length} local SERP rows for "${args.keyword}".`;
+        return mcpResponse({
+          text:
+            results.length === 0
+              ? header
+              : `${header}\n${formatMcpTable(results, LOCAL_SERP_COLUMNS)}`,
+          meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
+          structuredContent: { results },
+        });
+      }),
   ),
 };
 
@@ -746,25 +793,26 @@ export const getGoogleBusinessQuestionsTool = {
     },
   },
   handler: withMcpProjectAuth(
-    async (args: GetGoogleBusinessQuestionsArgs, context) => {
-      const client = createDataforseoClient(context.billing);
-      const questions = await client.business.questionsAnswers({
-        keyword: args.keyword,
-        locationCoordinate: formatQuestionsAnswersCoordinate(args.near),
-        languageCode: args.languageCode ?? context.project.languageCode,
-        depth: args.depth ?? 20,
-      });
+    async (args: GetGoogleBusinessQuestionsArgs, context) =>
+      handleDataforseoTool(args, context, async () => {
+        const client = createDataforseoClient(context.billing);
+        const questions = await client.business.questionsAnswers({
+          keyword: args.keyword,
+          locationCoordinate: formatQuestionsAnswersCoordinate(args.near),
+          languageCode: args.languageCode ?? context.project.languageCode,
+          depth: args.depth ?? 20,
+        });
 
-      const header = `Fetched ${questions.length} Google Business Q&A rows for ${args.keyword}.`;
-      return mcpResponse({
-        text:
-          questions.length === 0
-            ? header
-            : `${header}\n${formatMcpTable(questions, BUSINESS_QUESTION_COLUMNS)}`,
-        meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
-        structuredContent: { questions },
-      });
-    },
+        const header = `Fetched ${questions.length} Google Business Q&A rows for ${args.keyword}.`;
+        return mcpResponse({
+          text:
+            questions.length === 0
+              ? header
+              : `${header}\n${formatMcpTable(questions, BUSINESS_QUESTION_COLUMNS)}`,
+          meta: buildProjectMeta(context, args.projectId, `/p/${args.projectId}`),
+          structuredContent: { questions },
+        });
+      }),
   ),
 };
 
@@ -786,44 +834,45 @@ export const findSerpCompetitorsTool = {
     },
   },
   handler: withMcpProjectAuth(
-    async (args: FindSerpCompetitorsArgs, context) => {
-      const client = createDataforseoClient(context.billing);
-      const market = resolveMarketSelector(args.market, context.project);
-      const competitors = await client.labs.serpCompetitors({
-        keywords: args.keywords,
-        locationCode: market.locationCode,
-        languageCode: market.languageCode,
-        itemTypes: args.resultTypes ?? ["organic", "local_pack"],
-        includeSubdomains: args.includeSubdomains,
-        limit: args.limit ?? 50,
-        offset: args.offset,
-      });
-      const excludedDomains = args.excludeDomains ?? [];
-      const filtered =
-        excludedDomains.length === 0
-          ? competitors
-          : competitors.filter((item) => {
-              const domain = typeof item.domain === "string" ? item.domain : "";
-              return !excludedDomains.some((excludedDomain) =>
-                hostMatchesDomain(domain, excludedDomain),
-              );
-            });
-      const sorted = sortCompetitors(filtered, args.sortBy ?? "visibility");
+    async (args: FindSerpCompetitorsArgs, context) =>
+      handleDataforseoTool(args, context, async () => {
+        const client = createDataforseoClient(context.billing);
+        const market = resolveMarketSelector(args.market, context.project);
+        const competitors = await client.labs.serpCompetitors({
+          keywords: args.keywords,
+          locationCode: market.locationCode,
+          languageCode: market.languageCode,
+          itemTypes: args.resultTypes ?? ["organic", "local_pack"],
+          includeSubdomains: args.includeSubdomains,
+          limit: args.limit ?? 50,
+          offset: args.offset,
+        });
+        const excludedDomains = args.excludeDomains ?? [];
+        const filtered =
+          excludedDomains.length === 0
+            ? competitors
+            : competitors.filter((item) => {
+                const domain = typeof item.domain === "string" ? item.domain : "";
+                return !excludedDomains.some((excludedDomain) =>
+                  hostMatchesDomain(domain, excludedDomain),
+                );
+              });
+        const sorted = sortCompetitors(filtered, args.sortBy ?? "visibility");
 
-      const header = `Found ${sorted.length} SERP competitors across ${args.keywords.length} keywords.`;
-      return mcpResponse({
-        text:
-          sorted.length === 0
-            ? header
-            : `${header}\n${formatMcpTable(sorted, SERP_COMPETITOR_COLUMNS)}`,
-        meta: buildProjectMeta(
-          context,
-          args.projectId,
-          `/p/${args.projectId}/domain`,
-        ),
-        structuredContent: { competitors: sorted },
-      });
-    },
+        const header = `Found ${sorted.length} SERP competitors across ${args.keywords.length} keywords.`;
+        return mcpResponse({
+          text:
+            sorted.length === 0
+              ? header
+              : `${header}\n${formatMcpTable(sorted, SERP_COMPETITOR_COLUMNS)}`,
+          meta: buildProjectMeta(
+            context,
+            args.projectId,
+            `/p/${args.projectId}/domain`,
+          ),
+          structuredContent: { competitors: sorted },
+        });
+      }),
   ),
 };
 
@@ -844,42 +893,44 @@ export const getKeywordMetricsTool = {
       destructiveHint: false,
     },
   },
-  handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) => {
-    const { locationCode, languageCode } = resolveMarket(args, context.project);
-    // Assert against the RESOLVED pair: an explicit language with an omitted
-    // location must validate against the project's default location.
-    assertLanguageForLocation(locationCode, languageCode);
-    const client = createDataforseoClient(context.billing);
-    const metrics = await fetchKeywordMetricsForList(client, {
-      keywords: args.keywords,
-      locationCode,
-      languageCode,
-      includeClickstreamData: args.includeClickstreamData ?? false,
-      creditFeature: "keyword_research",
-    });
-    const rows = sortKeywordMetricRows(
-      metrics.map(toMcpKeywordMetricRow),
-      args.sortBy ?? "search_volume",
-    ).map((row) =>
-      args.includeMonthlyTrends === false
-        ? Object.fromEntries(
-            Object.entries(row).filter(([key]) => key !== "monthly_searches"),
-          )
-        : row,
-    );
+  handler: withMcpProjectAuth(async (args: GetKeywordMetricsArgs, context) =>
+    handleDataforseoTool(args, context, async () => {
+      const { locationCode, languageCode } = resolveMarket(args, context.project);
+      // Assert against the RESOLVED pair: an explicit language with an omitted
+      // location must validate against the project's default location.
+      assertLanguageForLocation(locationCode, languageCode);
+      const client = createDataforseoClient(context.billing);
+      const metrics = await fetchKeywordMetricsForList(client, {
+        keywords: args.keywords,
+        locationCode,
+        languageCode,
+        includeClickstreamData: args.includeClickstreamData ?? false,
+        creditFeature: "keyword_research",
+      });
+      const rows = sortKeywordMetricRows(
+        metrics.map(toMcpKeywordMetricRow),
+        args.sortBy ?? "search_volume",
+      ).map((row) =>
+        args.includeMonthlyTrends === false
+          ? Object.fromEntries(
+              Object.entries(row).filter(([key]) => key !== "monthly_searches"),
+            )
+          : row,
+      );
 
-    const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
-    return mcpResponse({
-      text:
-        rows.length === 0
-          ? header
-          : `${header}\n${formatMcpTable(rows, KEYWORD_METRIC_COLUMNS)}`,
-      meta: buildProjectMeta(
-        context,
-        args.projectId,
-        `/p/${args.projectId}/keywords`,
-      ),
-      structuredContent: { keywords: rows },
-    });
-  }),
+      const header = `Fetched metrics for ${rows.length} keywords. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
+      return mcpResponse({
+        text:
+          rows.length === 0
+            ? header
+            : `${header}\n${formatMcpTable(rows, KEYWORD_METRIC_COLUMNS)}`,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/keywords`,
+        ),
+        structuredContent: { keywords: rows },
+      });
+    }),
+  ),
 };
