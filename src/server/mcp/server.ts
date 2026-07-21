@@ -53,6 +53,10 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import {
+  getIndexNowKeyTool,
+  submitUrlsIndexNowTool,
+} from "@/server/mcp/tools/indexnow-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -102,6 +106,24 @@ function registerOpenSeoTool<Input extends ToolSchema>(
     (args, context) =>
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- args were validated against the tool's own inputSchema just above
       handler(args as ToolArgs<Input>, createMcpToolContext(context)),
+  );
+  server.registerTool(
+    getIndexNowKeyTool.name,
+    getIndexNowKeyTool.config,
+    instrumentMcpToolHandler(
+      getIndexNowKeyTool.name,
+      getIndexNowKeyTool.config.outputSchema,
+      getIndexNowKeyTool.handler,
+    ),
+  );
+  server.registerTool(
+    submitUrlsIndexNowTool.name,
+    submitUrlsIndexNowTool.config,
+    instrumentMcpToolHandler(
+      submitUrlsIndexNowTool.name,
+      submitUrlsIndexNowTool.config.outputSchema,
+      submitUrlsIndexNowTool.handler,
+    ),
   );
 }
 
