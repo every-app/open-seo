@@ -93,8 +93,6 @@ jobs:
       - name: Deploy preview stage
         if: github.event.action != 'closed'
         run: pnpm deploy:preview --stage "$STAGE" --yes
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
 
       # Fail the job (and skip the URL comment) if the deployed preview
       # answers without a Cloudflare Access login redirect. A definitive app

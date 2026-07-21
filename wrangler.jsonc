@@ -94,16 +94,17 @@
   // docs/LOCAL_POSTGRES.md, and nothing connects to it unless
   // DATABASE_PROVIDER=postgres is set in .env.local.
   //
-  // Running raw `wrangler deploy` against another account? DELETE this block —
-  // the id lives in OpenSEO's account and the deploy fails without access to
-  // it. (Alchemy deploys and the Docker image never read it.)
-  "hyperdrive": [
-    {
-      "binding": "HYPERDRIVE",
-      "id": "9d64ccfb559f44449ce52a143912f898",
-      "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
-    },
-  ],
+  // Kept commented out: an active hyperdrive block makes the "Deploy to
+  // Cloudflare" button demand a Postgres connection string, and the id lives in
+  // OpenSEO's account anyway (Alchemy deploys and the Docker image never read
+  // it). Uncomment when running local Postgres dev per docs/LOCAL_POSTGRES.md.
+  // "hyperdrive": [
+  //   {
+  //     "binding": "HYPERDRIVE",
+  //     "id": "9d64ccfb559f44449ce52a143912f898",
+  //     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
+  //   },
+  // ],
   "r2_buckets": [
     {
       "bucket_name": "open-seo",
