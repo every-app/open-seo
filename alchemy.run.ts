@@ -143,6 +143,11 @@ const dataEnv = {
   // AUTH_MODE, DATABASE_PROVIDER, BETTER_AUTH_URL, TEAM_DOMAIN, and
   // POLICY_AUD are stage-dependent and set in the stack body below.
   DATAFORSEO_API_KEY: Config.redacted("DATAFORSEO_API_KEY"),
+  // Optional: when set, site-audit Lighthouse runs go through the free Google
+  // PageSpeed Insights API instead of the metered DataForSEO path. Omitted on a
+  // hosted deploy, audits silently fall back to DataForSEO, so it must be
+  // forwarded here explicitly (env-file values never reach process.env).
+  PAGESPEED_API_KEY: optionalSecret("PAGESPEED_API_KEY"),
   BYPASS_EMAIL_VERIFICATION: optionalVar("BYPASS_EMAIL_VERIFICATION"),
   BETTER_AUTH_SECRET: optionalSecret("BETTER_AUTH_SECRET"),
   GOOGLE_CLIENT_ID: optionalVar("GOOGLE_CLIENT_ID"),

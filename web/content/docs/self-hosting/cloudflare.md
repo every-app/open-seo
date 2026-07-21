@@ -30,6 +30,7 @@ In the Cloudflare dashboard:
    - `POLICY_AUD` (from Access setup)
    - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
    - `DATAFORSEO_API_KEY` (see [DataForSEO API key setup](/docs/self-hosting#dataforseo-api-key-setup))
+   - `PAGESPEED_API_KEY` (optional) — a free [Google PageSpeed Insights API key](https://developers.google.com/speed/docs/insights/v5/get-started#APIKey). When set, site-audit Lighthouse runs use the free PageSpeed Insights API; without it, they fall back to the metered DataForSEO path.
 
 ## 3) Optional: add an R2 lifecycle rule
 
