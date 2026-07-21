@@ -271,6 +271,7 @@ export function RankTrackingDomainDetail({
               showMobile,
               config.domain,
               config.locationName,
+              latestRun?.lastCheckedAt,
             )
           }
           onExportToSheets={() =>
@@ -279,6 +280,7 @@ export function RankTrackingDomainDetail({
               showDesktop,
               showMobile,
               config.locationName,
+              latestRun?.lastCheckedAt,
             )
           }
           onCopyKeywords={() => {
