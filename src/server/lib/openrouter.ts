@@ -48,13 +48,21 @@ export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
 ): LanguageModelV3 {
-  return createOpenRouter({ apiKey })(modelId ?? DEFAULT_CHAT_AGENT_MODEL, {
+  const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
+  // The provider order/ZDR block above is MiniMax-specific: Together/Atlas
+  // don't serve first-party models like anthropic/*, and pinning them would
+  // just burn a routing attempt. Overridden models route on OpenRouter
+  // defaults instead.
+  const isDefaultMiniMax = model === DEFAULT_CHAT_AGENT_MODEL;
+  return createOpenRouter({ apiKey })(model, {
     usage: { include: true },
     reasoning: { effort: "medium" },
-    provider: {
-      order: ["together", "atlas-cloud/fp8"],
-      zdr: true,
-      allow_fallbacks: true,
-    },
+    ...(isDefaultMiniMax && {
+      provider: {
+        order: ["together", "atlas-cloud/fp8"],
+        zdr: true,
+        allow_fallbacks: true,
+      },
+    }),
   });
 }
