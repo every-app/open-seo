@@ -253,8 +253,7 @@ export function exportRankTrackingCsv(
   showDesktop: boolean,
   showMobile: boolean,
   domain: string,
-  locationName?: string | null,
-  lastCheckedAt?: string | null,
+  opts?: { locationName?: string | null; lastCheckedAt?: string | null },
 ) {
   if (sorted.length === 0) {
     toast.error("No data to export");
@@ -264,8 +263,8 @@ export function exportRankTrackingCsv(
     sorted,
     showDesktop,
     showMobile,
-    locationName,
-    lastCheckedAt,
+    opts?.locationName,
+    opts?.lastCheckedAt,
   );
   // CSV file download keeps cents-formatted CPC for human readability;
   // clipboard/Sheets export uses raw numbers (see buildRankTrackingExport).
