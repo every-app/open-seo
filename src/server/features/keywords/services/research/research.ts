@@ -19,6 +19,7 @@ import {
 } from "./research-data";
 import {
   AUTO_KEYWORD_SOURCES,
+  filterTopicallyRelevantRows,
   MIN_NON_SEED_FOR_AUTO,
   countNonSeedKeywords,
   hasSufficientCoverage,
@@ -87,9 +88,9 @@ const cachedResultSchema = z.object({
   }),
 });
 
-// v3: research volumes are no longer clickstream-refined, and Google-Ads-only
-// locations route to keywords_for_keywords.
-const CACHE_VERSION = 3;
+// v4: Labs expansion rows must overlap the full seed topic rather than only a
+// single distinctive token.
+const CACHE_VERSION = 4;
 
 async function fetchRowsFromSource(
   source: KeywordSource,
@@ -98,17 +99,20 @@ async function fetchRowsFromSource(
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
 ): Promise<EnrichedKeyword[]> {
-  return fetchResearchRowsBySource(
-    {
-      source,
-      seedKeyword,
-      locationCode: input.locationCode,
-      languageCode: input.languageCode,
-      resultLimit: input.resultLimit,
-      includeClickstreamData: input.clickstream,
-      creditFeature,
-    },
-    billingCustomer,
+  return filterTopicallyRelevantRows(
+    await fetchResearchRowsBySource(
+      {
+        source,
+        seedKeyword,
+        locationCode: input.locationCode,
+        languageCode: input.languageCode,
+        resultLimit: input.resultLimit,
+        includeClickstreamData: input.clickstream,
+        creditFeature,
+      },
+      billingCustomer,
+    ),
+    seedKeyword,
   );
 }
 
