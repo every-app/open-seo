@@ -16,6 +16,67 @@ export const AUTO_KEYWORD_SOURCES: KeywordSource[] = [
 
 export const MIN_NON_SEED_FOR_AUTO = 5;
 
+const RESEARCH_STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "at",
+  "for",
+  "from",
+  "in",
+  "near",
+  "of",
+  "on",
+  "or",
+  "the",
+  "to",
+  "with",
+]);
+
+function tokenizeKeyword(keyword: string): Set<string> {
+  return new Set(
+    (keyword.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []).filter(
+      (token) => !RESEARCH_STOP_WORDS.has(token),
+    ),
+  );
+}
+
+function hasTopicalOverlap(keyword: string, seedTokens: Set<string>): boolean {
+  const keywordTokens = tokenizeKeyword(keyword);
+  const requiredOverlap = seedTokens.size === 1 ? 1 : 2;
+  let overlap = 0;
+
+  for (const token of keywordTokens) {
+    if (!seedTokens.has(token)) continue;
+    overlap += 1;
+    if (overlap >= requiredOverlap) return true;
+  }
+
+  return false;
+}
+
+export function filterTopicallyRelevantRows(
+  rows: EnrichedKeyword[],
+  seedKeyword: string,
+): EnrichedKeyword[] {
+  const normalizedSeed = seedKeyword.trim().toLowerCase();
+  const seedTokens = tokenizeKeyword(normalizedSeed);
+  const filteredRows = rows.filter(
+    (row) =>
+      row.keyword === normalizedSeed ||
+      hasTopicalOverlap(row.keyword, seedTokens),
+  );
+  const hasRelevantExpansion = filteredRows.some(
+    (row) => row.keyword !== normalizedSeed,
+  );
+
+  if (hasRelevantExpansion) return filteredRows;
+
+  return filteredRows.filter(
+    (row) => row.keyword === normalizedSeed && (row.searchVolume ?? 0) > 0,
+  );
+}
+
 export function countNonSeedKeywords(
   rows: EnrichedKeyword[],
   seedKeyword: string,
