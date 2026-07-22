@@ -140,7 +140,6 @@ export function KeywordSuggestionStep({
   projectId,
   domain,
   locationCode,
-  languageCode,
   onDone,
   onClose,
 }: Props) {
@@ -163,16 +162,10 @@ export function KeywordSuggestionStep({
   // Ads keyword data (e.g. Iceland) have no ranking data to suggest from.
   const labsSupported = isLabsLocationCode(locationCode);
   const suggestionsQuery = useQuery({
-    queryKey: [
-      "domainKeywordSuggestions",
-      projectId,
-      domain,
-      locationCode,
-      languageCode,
-    ],
+    queryKey: ["domainKeywordSuggestions", projectId, domain, locationCode],
     queryFn: () =>
       getDomainKeywordSuggestions({
-        data: { projectId, domain, locationCode, languageCode },
+        data: { projectId, domain, locationCode },
       }),
     enabled: labsSupported,
   });

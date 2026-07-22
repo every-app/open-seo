@@ -1,4 +1,4 @@
-export { LOCATIONS, getLanguageCode } from "./locations";
+export { LOCATIONS } from "./locations";
 
 export function scoreTierClass(value: number | null): string {
   if (value == null) return "score-tier-na";

@@ -14,13 +14,13 @@ export type DomainSearchTabInput = {
   type: "domain";
   domain: string;
   subdomains: boolean;
-  locationCode: number;
+  locationCode?: number;
 };
 
 export type KeywordSearchTabInput = {
   type: "keyword";
   keyword: string;
-  locationCode: number;
+  locationCode?: number;
   resultLimit: ResultLimit;
   mode: KeywordMode;
   clickstream: boolean;

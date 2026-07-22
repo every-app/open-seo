@@ -8,9 +8,7 @@ import {
   type DomainSearchParams,
 } from "@/types/schemas/domain";
 import {
-  DEFAULT_LOCATION_CODE,
   LOCATIONS,
-  getLanguageCode,
   isLabsLocationCode,
 } from "@/client/features/keywords/locations";
 import { useDomainSearchHistory } from "@/client/hooks/useDomainSearchHistory";
@@ -80,10 +78,13 @@ function getSortSearchUpdate(
   };
 }
 
-function getLocationSearchUpdate(nextLocationCode: number): DomainSearchUpdate {
+function getLocationSearchUpdate(
+  nextLocationCode: number,
+  defaultLocationCode: number,
+): DomainSearchUpdate {
   return {
     loc:
-      nextLocationCode === DEFAULT_LOCATION_CODE ? undefined : nextLocationCode,
+      nextLocationCode === defaultLocationCode ? undefined : nextLocationCode,
     page: undefined,
   };
 }
@@ -122,11 +123,12 @@ function getTabSearchUpdate(
 
 function getHistorySearchUpdate(
   item: DomainSearchHistoryItem,
+  defaultLocationCode: number,
 ): DomainSearchUpdate {
   const historyLocation =
     item.locationCode != null && isLabsLocationCode(item.locationCode)
       ? item.locationCode
-      : DEFAULT_LOCATION_CODE;
+      : defaultLocationCode;
 
   return {
     ...buildDomainFiltersClearSearchUpdate(),
@@ -135,8 +137,7 @@ function getHistorySearchUpdate(
     sort: toSortSearchParam(item.sort),
     order: undefined,
     tab: item.tab === "keywords" ? undefined : item.tab,
-    loc:
-      historyLocation === DEFAULT_LOCATION_CODE ? undefined : historyLocation,
+    loc: historyLocation === defaultLocationCode ? undefined : historyLocation,
     size: undefined,
   };
 }
@@ -148,6 +149,7 @@ function getSearchSubmitUpdate({
   locationCode,
   currentOrder,
   activeTab,
+  defaultLocationCode,
 }: {
   domain: string;
   subdomains: boolean;
@@ -155,6 +157,7 @@ function getSearchSubmitUpdate({
   locationCode: number;
   currentOrder: SortOrder;
   activeTab: DomainActiveTab;
+  defaultLocationCode: number;
 }): DomainSearchUpdate {
   return {
     ...buildDomainFiltersClearSearchUpdate(),
@@ -163,7 +166,7 @@ function getSearchSubmitUpdate({
     sort: toSortSearchParam(sort),
     order: toSortOrderSearchParam(sort, currentOrder),
     tab: activeTab === "keywords" ? undefined : activeTab,
-    loc: locationCode === DEFAULT_LOCATION_CODE ? undefined : locationCode,
+    loc: locationCode === defaultLocationCode ? undefined : locationCode,
     size: undefined,
   };
 }
@@ -205,9 +208,14 @@ function useDomainOverviewState({
 
   const applyLocationChange = useCallback(
     (nextLocationCode: number) => {
-      setSearchParams(getLocationSearchUpdate(nextLocationCode));
+      setSearchParams(
+        getLocationSearchUpdate(
+          nextLocationCode,
+          routeState.defaultLocationCode,
+        ),
+      );
     },
-    [setSearchParams],
+    [routeState.defaultLocationCode, setSearchParams],
   );
 
   const handleSortColumnClick = useCallback(
@@ -246,21 +254,21 @@ function useDomainOverviewState({
 
   const handleHistorySelect = useCallback(
     (item: DomainSearchHistoryItem) => {
-      setSearchParams(getHistorySearchUpdate(item));
+      setSearchParams(
+        getHistorySearchUpdate(item, routeState.defaultLocationCode),
+      );
     },
-    [setSearchParams],
+    [routeState.defaultLocationCode, setSearchParams],
   );
 
-  const languageCode = getLanguageCode(routeState.locationCode);
   const overviewQuery = useDomainOverviewQuery({
     projectId,
     domain: routeState.domain,
     includeSubdomains: routeState.subdomains,
-    locationCode: routeState.locationCode,
-    languageCode,
+    locationCode: routeState.sentLocationCode,
   });
   const overview = overviewQuery.data ?? null;
-  const isLoading = overviewQuery.isLoading;
+  const isLoading = routeState.domain.trim() !== "" && overviewQuery.isLoading;
 
   const controlsForm = useForm({
     defaultValues: {
@@ -290,6 +298,7 @@ function useDomainOverviewState({
           locationCode: value.locationCode,
           currentOrder: routeState.order,
           activeTab: routeState.tab,
+          defaultLocationCode: routeState.defaultLocationCode,
         }),
       );
     },
@@ -389,7 +398,6 @@ function useDomainOverviewState({
     history,
     historyLoaded,
     removeHistoryItem,
-    languageCode,
     setSearchParams,
     applySort,
     applyLocationChange,
@@ -412,16 +420,20 @@ export function DomainOverviewPage({
   navigate,
   onShowRecentSearches,
 }: Props) {
-  const state = useDomainOverviewState({ navigate, routeState, projectId });
+  const state = useDomainOverviewState({
+    navigate,
+    routeState,
+    projectId,
+  });
   const urlTabInput = useMemo<SearchTabInput | null>(() => {
     if (routeState.domain.trim() === "") return null;
     return {
       type: "domain",
       domain: routeState.domain,
       subdomains: routeState.subdomains,
-      locationCode: routeState.locationCode,
+      locationCode: routeState.sentLocationCode,
     };
-  }, [routeState.domain, routeState.locationCode, routeState.subdomains]);
+  }, [routeState.domain, routeState.sentLocationCode, routeState.subdomains]);
 
   const navigateToSearchTab = useCallback(
     (input: SearchTabInput | null) => {
@@ -443,10 +455,7 @@ export function DomainOverviewPage({
           order: undefined,
           tab: undefined,
           page: undefined,
-          loc:
-            input.locationCode === DEFAULT_LOCATION_CODE
-              ? undefined
-              : input.locationCode,
+          loc: input.locationCode,
           size: undefined,
         }),
         replace: true,
@@ -458,14 +467,18 @@ export function DomainOverviewPage({
   const searchTabs = useSearchTabNavigation({
     storageKey: `domain:${projectId}`,
     urlInput: urlTabInput,
-    getLabel: useCallback((input) => {
-      if (input.type !== "domain") return "";
-      const locationSuffix =
-        input.locationCode === DEFAULT_LOCATION_CODE
-          ? ""
-          : ` ${LOCATIONS[input.locationCode] ?? input.locationCode}`;
-      return `${input.domain}${locationSuffix}`;
-    }, []),
+    getLabel: useCallback(
+      (input) => {
+        if (input.type !== "domain") return "";
+        const locationSuffix =
+          input.locationCode == null ||
+          input.locationCode === routeState.defaultLocationCode
+            ? ""
+            : ` ${LOCATIONS[input.locationCode] ?? input.locationCode}`;
+        return `${input.domain}${locationSuffix}`;
+      },
+      [routeState.defaultLocationCode],
+    ),
     navigateToInput: navigateToSearchTab,
   });
 
@@ -623,7 +636,6 @@ export function DomainOverviewPage({
                   key="keywords"
                   projectId={projectId}
                   domain={state.overview.domain}
-                  languageCode={state.languageCode}
                   routeState={routeState}
                   canSaveKeywords={state.canSaveKeywords}
                   setSearchParams={state.setSearchParams}
@@ -636,7 +648,6 @@ export function DomainOverviewPage({
                   key="pages"
                   projectId={projectId}
                   domain={state.overview.domain}
-                  languageCode={state.languageCode}
                   routeState={routeState}
                   setSearchParams={state.setSearchParams}
                   onSortClick={state.handleSortColumnClick}

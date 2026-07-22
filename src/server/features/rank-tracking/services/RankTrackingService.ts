@@ -22,6 +22,7 @@ import {
   MAX_KEYWORDS_PER_CONFIG,
   MAX_CONFIGS_PER_PROJECT,
 } from "@/shared/rank-tracking";
+import { resolveMarket } from "@/shared/keyword-locations";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -29,6 +30,7 @@ import {
 
 async function createConfig(input: {
   projectId: string;
+  projectMarket: { locationCode: number; languageCode: string };
   domain: string;
   locationCode?: number;
   languageCode?: string;
@@ -39,7 +41,10 @@ async function createConfig(input: {
 }) {
   const normalizedDomain = normalizeDomain(input.domain);
 
-  const locationCode = input.locationCode ?? 2840;
+  const { locationCode, languageCode } = resolveMarket(
+    input,
+    input.projectMarket,
+  );
   const scheduleInterval = input.scheduleInterval ?? "weekly";
   const nextCheckAt = isScheduledRankTrackingInterval(scheduleInterval)
     ? computeNextCheckAt(scheduleInterval)
@@ -82,7 +87,7 @@ async function createConfig(input: {
   if (existing) {
     await RankTrackingRepository.updateConfig(existing.id, input.projectId, {
       isActive: true,
-      languageCode: input.languageCode ?? "en",
+      languageCode,
       devices: input.devices ?? "both",
       serpDepth: input.serpDepth,
       scheduleInterval,
@@ -102,7 +107,7 @@ async function createConfig(input: {
     projectId: input.projectId,
     domain: normalizedDomain,
     locationCode,
-    languageCode: input.languageCode ?? "en",
+    languageCode,
     locationName,
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,

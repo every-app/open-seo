@@ -7,6 +7,7 @@ import {
   EMPTY_DOMAIN_LIST_FILTERS,
   EMPTY_FILTERS,
   getDomainListFilterOptions,
+  matchesMetricRangeFilter,
   matchesPositionFilter,
   type DomainListFilters,
   type Filters,
@@ -23,13 +24,18 @@ function makeRow(
   keyword: string,
   desktopPosition: number | null,
   mobilePosition: number | null,
+  metrics: {
+    volume?: number | null;
+    kd?: number | null;
+    cpc?: number | null;
+  } = {},
 ): RankTrackingRow {
   return {
     trackingKeywordId: keyword,
     keyword,
-    searchVolume: null,
-    keywordDifficulty: null,
-    cpc: null,
+    searchVolume: metrics.volume ?? null,
+    keywordDifficulty: metrics.kd ?? null,
+    cpc: metrics.cpc ?? null,
     desktop: {
       position: desktopPosition,
       previousPosition: null,
@@ -208,5 +214,69 @@ describe("countActiveDomainListFilters", () => {
         }),
       ),
     ).toBe(3);
+  });
+});
+
+describe("matchesMetricRangeFilter", () => {
+  it("matches everything when no bounds are set", () => {
+    expect(matchesMetricRangeFilter(null, "", "")).toBe(true);
+    expect(matchesMetricRangeFilter(500, "", "")).toBe(true);
+  });
+
+  it("excludes null values once a bound is set", () => {
+    expect(matchesMetricRangeFilter(null, "10", "")).toBe(false);
+    expect(matchesMetricRangeFilter(null, "", "100")).toBe(false);
+  });
+
+  it("treats zero as a real value, not 'no data'", () => {
+    expect(matchesMetricRangeFilter(0, "0", "10")).toBe(true);
+    expect(matchesMetricRangeFilter(0, "1", "10")).toBe(false);
+  });
+
+  it("respects min-only and max-only bounds", () => {
+    expect(matchesMetricRangeFilter(50, "20", "")).toBe(true);
+    expect(matchesMetricRangeFilter(10, "20", "")).toBe(false);
+    expect(matchesMetricRangeFilter(50, "", "40")).toBe(false);
+    expect(matchesMetricRangeFilter(50, "", "60")).toBe(true);
+  });
+});
+
+describe("applyFilters metric ranges", () => {
+  const rows = [
+    makeRow("high volume", 3, 6, { volume: 5000, kd: 40, cpc: 2.5 }),
+    makeRow("low volume", 3, 6, { volume: 10, kd: 80, cpc: 0.1 }),
+    makeRow("no data", 3, 6, {}),
+  ];
+
+  it("filters by volume range", () => {
+    expect(
+      applyFilters(rows, withFilters({ minVolume: "100" })).map(
+        (row) => row.keyword,
+      ),
+    ).toEqual(["high volume"]);
+  });
+
+  it("filters by KD range", () => {
+    expect(
+      applyFilters(rows, withFilters({ maxKd: "50" })).map(
+        (row) => row.keyword,
+      ),
+    ).toEqual(["high volume"]);
+  });
+
+  it("filters by CPC range", () => {
+    expect(
+      applyFilters(rows, withFilters({ minCpc: "1" })).map(
+        (row) => row.keyword,
+      ),
+    ).toEqual(["high volume"]);
+  });
+
+  it("excludes rows without metric data once a metric filter is active", () => {
+    expect(
+      applyFilters(rows, withFilters({ minVolume: "0" })).map(
+        (row) => row.keyword,
+      ),
+    ).toEqual(["high volume", "low volume"]);
   });
 });

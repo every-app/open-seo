@@ -1,5 +1,6 @@
 import {
   AiOptimizationApi,
+  AppendixApi,
   BacklinksApi,
   BusinessDataApi,
   DataforseoLabsApi,
@@ -126,6 +127,9 @@ export const keywordsDataApi = () => new KeywordsDataApi(API_BASE, http());
 export const serpApi = () => new SerpApi(API_BASE, http());
 export const businessDataApi = () => new BusinessDataApi(API_BASE, http());
 export const onPageApi = () => new OnPageApi(API_BASE, http());
+// Account/appendix data (spend, balance, rates). userData() is FREE ($0) and
+// read-only — do NOT wire it through metering.
+export const appendixApi = () => new AppendixApi(API_BASE, http());
 export const backlinksApi = (classify?: DataforseoErrorClassifier) =>
   new BacklinksApi(API_BASE, http(classify));
 export const aiOptimizationApi = (classify?: DataforseoErrorClassifier) =>

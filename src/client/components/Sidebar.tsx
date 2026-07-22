@@ -32,10 +32,16 @@ interface SidebarProps {
 const navItemBaseClass =
   "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
 
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/50 hover:text-base-content`;
+// Hover uses a lighter tint than the active background (bg-base-300/50) so a
+// hovered item next to the active one stays visually distinct instead of
+// merging into a single block.
+const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30 hover:text-base-content`;
 
 const navItemActiveProps = {
-  className: "bg-base-300/50 font-medium text-base-content",
+  // Keep the active tint on hover so the active item does not fall back to the
+  // lighter hover background of navItemClass.
+  className:
+    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
 };
 
 function SidebarNavLink({
@@ -51,9 +57,9 @@ function SidebarNavLink({
 }) {
   return (
     <Link
-      {...linkProps}
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
+      {...linkProps}
       className={navItemClass}
       activeProps={navItemActiveProps}
     >
@@ -103,6 +109,15 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
     }
   };
 
+  // Coming back from Chat, land on the dashboard rather than leaving the
+  // conversation filling the content panel next to a Browse nav.
+  const openBrowse = () => {
+    setView("browse");
+    if (!projectId || !onSamRoute) return;
+    void navigate({ to: "/p/$projectId", params: { projectId } });
+    onNavigate?.();
+  };
+
   return (
     <div className="flex h-full w-60 flex-col bg-base-200">
       <div className="flex items-center justify-between px-4 pb-2 pt-3">
@@ -141,7 +156,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
               icon={LayoutGrid}
               label="Browse"
               active={view === "browse"}
-              onClick={() => setView("browse")}
+              onClick={openBrowse}
             />
             <SidebarViewTab
               icon={MessageCircle}

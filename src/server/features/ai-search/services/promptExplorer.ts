@@ -207,7 +207,7 @@ function extractText(response: LlmResponseResult): string {
   return textParts.join("\n\n").trim();
 }
 
-function extractCitations(
+export function extractCitations(
   response: LlmResponseResult,
 ): PromptExplorerCitation[] {
   const seen = new Set<string>();
@@ -217,10 +217,10 @@ function extractCitations(
     if (item.type !== "message") continue;
     for (const section of item.sections ?? []) {
       for (const annotation of section.annotations ?? []) {
-        if (annotation.type !== "citation") continue;
-        // Drop non-http(s) URLs — LLMs can be coaxed into emitting
-        // `javascript:` payloads as "citations" and we render these as
-        // <a href> in the UI.
+        // DataForSEO annotations are untyped `{ title, url }` reference
+        // objects (AnnotationInfo) — there is no citation-type discriminator
+        // to filter on. Guard on URL safety only: LLMs can be coaxed into
+        // emitting `javascript:` payloads, and we render these as <a href>.
         const safeUrl = safeHttpUrl(annotation.url);
         if (!safeUrl || seen.has(safeUrl)) continue;
         seen.add(safeUrl);

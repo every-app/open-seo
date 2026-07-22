@@ -6,6 +6,7 @@ import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 
 const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
+const MAX_HTML_BYTES = 2 * 1024 * 1024;
 
 /**
  * Markers of a bot-mitigation challenge page. We classify these honestly as
@@ -103,7 +104,10 @@ export async function crawlPage(
 
     const contentType = response.headers.get("content-type") ?? "";
     const isHtml = contentType.includes("text/html");
-    const body = isHtml ? await response.text() : "";
+    // Large pages make Cheerio disproportionately expensive and can exhaust a
+    // crawl step's CPU or isolate memory. The first 2 MiB still contains the
+    // SEO metadata and navigation needed by the audit in normal documents.
+    const body = isHtml ? await readTextUpTo(response, MAX_HTML_BYTES) : "";
     const fetchClass = classifyFetch(
       statusCode,
       response.headers,
@@ -196,6 +200,38 @@ export async function crawlPage(
       inSitemap,
     });
   }
+}
+
+async function readTextUpTo(response: Response, maxBytes: number) {
+  if (!response.body) return "";
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const parts: string[] = [];
+  let bytesRead = 0;
+
+  try {
+    while (bytesRead < maxBytes) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const remaining = maxBytes - bytesRead;
+      const chunk =
+        value.byteLength > remaining ? value.subarray(0, remaining) : value;
+      bytesRead += chunk.byteLength;
+      parts.push(decoder.decode(chunk, { stream: true }));
+
+      if (bytesRead >= maxBytes) {
+        await reader.cancel();
+        break;
+      }
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  parts.push(decoder.decode());
+  return parts.join("");
 }
 
 function emptyPageResult(input: {

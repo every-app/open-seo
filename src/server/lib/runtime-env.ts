@@ -26,7 +26,7 @@ export function getEnvValueSync(
     return processValue;
   }
   const value: unknown = Reflect.get(env, name);
-  return typeof value === "string" ? value : undefined;
+  return typeof value === "string" && value !== "" ? value : undefined;
 }
 
 export async function getRequiredEnvValue(name: string): Promise<string> {

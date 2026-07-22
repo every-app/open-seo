@@ -13,8 +13,7 @@ type DomainPagesQueryInput = {
   projectId: string;
   domain: string;
   includeSubdomains: boolean;
-  locationCode: number;
-  languageCode: string;
+  locationCode: number | undefined;
   page: number;
   pageSize: number;
   sortMode: DomainSortMode;
@@ -32,7 +31,6 @@ export function useDomainPagesQuery(input: DomainPagesQueryInput) {
       input.domain,
       input.includeSubdomains,
       input.locationCode,
-      input.languageCode,
       input.page,
       input.pageSize,
       pageSortMode,
@@ -43,7 +41,6 @@ export function useDomainPagesQuery(input: DomainPagesQueryInput) {
       input.appliedFilters,
       input.domain,
       input.includeSubdomains,
-      input.languageCode,
       input.locationCode,
       input.page,
       input.pageSize,
@@ -70,7 +67,6 @@ export function useDomainPagesQuery(input: DomainPagesQueryInput) {
           domain: input.domain,
           includeSubdomains: input.includeSubdomains,
           locationCode: input.locationCode,
-          languageCode: input.languageCode,
           page: input.page,
           pageSize: input.pageSize,
           sortMode: pageSortMode,

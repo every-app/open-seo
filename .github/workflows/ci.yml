@@ -43,8 +43,6 @@ jobs:
       # worker's eager startup graph. See vite-plugin-lean-worker-bundle.ts.
       - name: Build worker (eager-bundle guard)
         run: pnpm vite build
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
 
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile

@@ -32,14 +32,14 @@ Every issue type in the OpenSEO audit engine is exercised by at least one page
 | **Site structure**           | orphan page, deep click-path                                                                                  |
 | **Kitchen sink**             | one page that breaks six ways at once                                                                         |
 
-Browse them all at `/catalog`.
+Browse them all on the homepage at `/#issues`.
 
 ## How it's built
 
 badseo.dev is a TanStack Start app deployed to a Cloudflare Worker, following
 the same Vite and Cloudflare setup as the repository's `web/` app.
 
-TanStack React routes render the healthy homepage and catalog.
+TanStack React routes render the healthy homepage and privacy policy.
 A TanStack catch-all server route keeps the deliberate fixtures as raw
 responses with byte-level control over status codes, redirects, headers
 (`X-Robots-Tag`, `Link: …; rel=canonical`), timing, and the malformed `<head>`
@@ -51,6 +51,18 @@ states the audit needs to observe.
 - `src/lib.ts` — raw fixture HTML rendering. Its shared chrome is deliberately
   **SEO-neutral**: it emits no `<h1>`–`<h6>` and no `<img>`.
 - `src/fixtures/*.ts` — the fixtures, one file per category.
+
+## Analytics
+
+Plausible Analytics loads on every page using the site-specific script supplied
+for badseo.dev. It provides the cookieless aggregate baseline without changing
+the Google Analytics consent choice.
+
+Google Analytics uses measurement ID `G-7MXV9FH7SS`. The small consent script in
+`public/analytics.js` is shared by TanStack pages and raw fixture documents. It
+does not request Google's tag or set analytics cookies until a visitor accepts.
+The visitor can reject analytics or revisit the choice from **Cookie settings**
+in the footer. The choice is stored only in the visitor's browser.
 
 ## Run it locally
 
@@ -64,7 +76,7 @@ npm run dev                 # serves on http://localhost:8787
 The harness drives the **real** OpenSEO crawl + issue-detection functions
 (imported straight from `../src`) against a running badseo.dev, then asserts every
 fixture triggers exactly the issues it declares — and that the homepage,
-catalog, and support pages come back clean.
+privacy policy, and support pages come back clean.
 
 ```bash
 # with `npm run dev` running in another terminal:

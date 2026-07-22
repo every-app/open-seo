@@ -90,7 +90,11 @@ describe("MCP tool text output (service-backed tools)", () => {
   beforeEach(() => {
     vi.resetModules();
     for (const mock of Object.values(mocks)) mock.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    });
   });
 
   it("research_keywords renders every keyword row in the text table", async () => {

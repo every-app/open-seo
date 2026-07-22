@@ -62,7 +62,11 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
     vi.resetModules();
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    });
   });
 
   it("serves Iceland from adsSearchVolume without KD/intent", async () => {

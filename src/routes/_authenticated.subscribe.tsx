@@ -22,7 +22,7 @@ const SUPPORT_EMAIL = "ben@openseo.so";
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
   "MCP server and agent skills for Claude, Cursor, and ChatGPT",
-  "Search Console integration that never uses credits",
+  "Google Search Console Integration",
   "Includes $10.00 of Usage Credits each month",
 ];
 
@@ -251,6 +251,21 @@ function SubscribePage() {
               {item}
             </li>
           ))}
+          {/* Sub-bullet of the Usage Credits line above. */}
+          <li className="-mt-1 pl-6 text-xs">
+            <a
+              className="text-base-content/60 underline decoration-base-content/40 decoration-dotted underline-offset-4 transition-colors hover:text-base-content"
+              href="https://openseo.so/pricing"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() =>
+                captureClientEvent("billing:pricing_estimator_click")
+              }
+            >
+              How far do usage credits go?{" "}
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          </li>
         </ul>
 
         {error ? <p className="text-sm text-error">{error}</p> : null}
@@ -278,11 +293,7 @@ function SubscribePage() {
 
       <div className="text-center space-y-2">
         <p className="text-sm text-base-content/60">
-          Questions?{" "}
-          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
-            Email {SUPPORT_EMAIL}
-          </a>
-          .
+          Questions? Email {SUPPORT_EMAIL}.
         </p>
         {isUpgradeFlow ? (
           <button

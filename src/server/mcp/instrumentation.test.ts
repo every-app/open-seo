@@ -11,6 +11,8 @@ import { AppError } from "@/server/lib/errors";
 const mocks = vi.hoisted(() => ({
   captureServerError: vi.fn(),
   captureServerEvent: vi.fn(),
+  recordExternalMcpToolCall: vi.fn(),
+  incrementSelfHostMcpToolCallCount: vi.fn(),
 }));
 
 // waitUntil runs the capture promise inline so assertions see the call.
@@ -21,6 +23,16 @@ vi.mock("cloudflare:workers", () => ({
 vi.mock("@/server/lib/posthog", () => ({
   captureServerError: mocks.captureServerError,
   captureServerEvent: mocks.captureServerEvent,
+}));
+
+// The real module pulls in @/db (cloudflare:workers env) — mock it out and
+// assert the milestone hook at this boundary instead.
+vi.mock("@/server/features/activation/mcpActivation", () => ({
+  recordExternalMcpToolCall: mocks.recordExternalMcpToolCall,
+}));
+
+vi.mock("@/server/lib/self-host-telemetry", () => ({
+  incrementSelfHostMcpToolCallCount: mocks.incrementSelfHostMcpToolCallCount,
 }));
 
 const toolExtra: ToolExtra = {
@@ -51,6 +63,8 @@ describe("instrumentMcpToolHandler", () => {
   beforeEach(() => {
     mocks.captureServerError.mockReset();
     mocks.captureServerEvent.mockReset();
+    mocks.recordExternalMcpToolCall.mockReset();
+    mocks.incrementSelfHostMcpToolCallCount.mockReset();
   });
 
   it("passes a valid result through without reporting", async () => {
@@ -113,6 +127,7 @@ describe("instrumentMcpToolHandler", () => {
     await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
 
     expect(mocks.captureServerEvent).toHaveBeenCalledTimes(1);
+    expect(mocks.incrementSelfHostMcpToolCallCount).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
       distinctId: "user-1",
       event: "mcp:tool_call",
@@ -165,5 +180,45 @@ describe("instrumentMcpToolHandler", () => {
     await wrapped({}, toolExtra);
 
     expect(mocks.captureServerEvent).not.toHaveBeenCalled();
+    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
+  });
+
+  it("records the activation milestone for a successful external call", async () => {
+    const { instrumentMcpToolHandler } = await import("./instrumentation");
+    const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
+      okResult({ items: [] }),
+    );
+
+    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
+
+    expect(mocks.recordExternalMcpToolCall).toHaveBeenCalledExactlyOnceWith(
+      "org-1",
+    );
+  });
+
+  it("skips the activation milestone for first-party (null clientId) calls", async () => {
+    const { instrumentMcpToolHandler } = await import("./instrumentation");
+    const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
+      okResult({ items: [] }),
+    );
+
+    await runWithMcpToolAuthContext({ ...authContext, clientId: null }, () =>
+      wrapped({}, toolExtra),
+    );
+
+    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
+  });
+
+  it("skips the activation milestone when the call fails", async () => {
+    const { instrumentMcpToolHandler } = await import("./instrumentation");
+    const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
+      throw new AppError("NOT_FOUND");
+    });
+
+    await expect(
+      runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra)),
+    ).rejects.toThrow("NOT_FOUND");
+
+    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
   });
 });

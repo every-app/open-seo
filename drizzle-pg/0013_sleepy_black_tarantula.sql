@@ -1,0 +1,1 @@
+ALTER TABLE "telemetry_state" ADD COLUMN "installed_at" timestamp with time zone;

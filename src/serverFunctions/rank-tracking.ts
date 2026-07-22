@@ -77,6 +77,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const result = await RankTrackingService.createConfig({
       projectId: context.projectId,
+      projectMarket: context.project,
       domain: data.domain,
       locationCode: data.locationCode,
       languageCode: data.languageCode,

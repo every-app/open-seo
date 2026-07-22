@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { getOnboardingAnswers } from "@/serverFunctions/onboarding";
 
-export const ONBOARDING_LAST_STEP = 4;
+export const ONBOARDING_LAST_STEP = 3;
 
 export const INTEREST_OPTIONS = [
   "AI workflows with Claude or Codex (MCP)",
@@ -32,14 +32,22 @@ export const CLIENT_WEBSITE_COUNT_OPTIONS = [
 ] as const;
 
 export const SOURCE_OPTIONS = [
+  "Product Hunt",
   "Google",
   "Reddit",
   "X / Twitter",
   "GitHub",
-  "ChatGPT",
-  "Claude",
+  "AI (Claude, ChatGPT, etc)",
   "Friend or colleague",
   "Other",
+] as const;
+
+// Keep the mobile list short: these still count as known options, they just
+// aren't shown on small screens.
+export const SOURCE_OPTIONS_HIDDEN_ON_MOBILE = [
+  "Reddit",
+  "X / Twitter",
+  "AI (Claude, ChatGPT, etc)",
 ] as const;
 
 /** In-progress form state. Step is tracked separately in the URL. */
@@ -110,7 +118,7 @@ export function restoreOnboardingAnswers(
 export function buildOnboardingPayload(
   answers: OnboardingAnswers,
   step: number,
-  extra: { mcpSetupIntent?: "yes" | "no"; completed?: boolean } = {},
+  extra: { completed?: boolean } = {},
 ) {
   const interestedFeatures = answers.selectedInterests.map((value) =>
     value === "Other" && answers.interestOther.trim()
