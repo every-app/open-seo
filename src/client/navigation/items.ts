@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Link2,
   MessageSquare,
+  ScanSearch,
   Search,
   Sparkles,
   TrendingUp,
@@ -46,6 +47,11 @@ const projectNavItems = [
     to: "/p/$projectId/domain" as const,
     label: "Domain Overview",
     icon: Globe,
+  },
+  {
+    to: "/p/$projectId/content-optimization" as const,
+    label: "Content Optimization",
+    icon: ScanSearch,
   },
   {
     to: "/p/$projectId/backlinks" as const,
@@ -108,6 +114,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/keywords"),
         byPath("/p/$projectId/domain"),
+        byPath("/p/$projectId/content-optimization"),
         byPath("/p/$projectId/backlinks"),
         byPath("/p/$projectId/brand-lookup"),
         byPath("/p/$projectId/prompt-explorer"),

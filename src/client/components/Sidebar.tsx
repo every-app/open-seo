@@ -1,5 +1,6 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState, type ComponentType } from "react";
 import {
   CircleHelp,
@@ -15,6 +16,7 @@ import {
   connectNavGroup,
   getProjectNavGroups,
 } from "@/client/navigation/items";
+import { getContentOptimizationStatus } from "@/serverFunctions/contentOptimization";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -77,10 +79,25 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
+  // The Content Optimization module can be switched off (Settings → Features);
+  // hide its nav item so a disabled module leaves no trace in the sidebar.
+  // Defaults to visible while loading since enabled is the default state.
+  const { data: contentOptimizationStatus } = useQuery({
+    queryKey: ["contentOptimizationModule"],
+    queryFn: () => getContentOptimizationStatus(),
+    enabled: projectId !== null,
+    staleTime: 60_000,
+  });
+  const hideContentOptimization = contentOptimizationStatus?.enabled === false;
   const navGroups = [
     ...(projectId ? getProjectNavGroups(projectId) : []),
     connectNavGroup,
-  ];
+  ].map((group) => ({
+    ...group,
+    items: hideContentOptimization
+      ? group.items.filter((item) => !item.to.endsWith("/content-optimization"))
+      : group.items,
+  }));
   const navigate = useNavigate();
   const location = useLocation();
   const onSamRoute = location.pathname.includes("/sam");

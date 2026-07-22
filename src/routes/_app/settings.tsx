@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -6,6 +7,10 @@ import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  getContentOptimizationStatus,
+  setContentOptimizationEnabled,
+} from "@/serverFunctions/contentOptimization";
 import { version } from "../../../package.json";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -90,6 +95,8 @@ function SettingsPage() {
           </div>
         </section>
 
+        <FeaturesSection />
+
         {isHosted ? (
           <>
             <ApiKeySettings />
@@ -131,5 +138,61 @@ function SettingsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+/**
+ * Deployment-wide feature switches. Content Optimization is the optional
+ * On-Page.ai module: turning it off removes its sidebar item everywhere, so
+ * installs that don't want a bring-your-own-key feature keep a clean nav.
+ */
+function FeaturesSection() {
+  const queryClient = useQueryClient();
+  const { data: moduleStatus } = useQuery({
+    queryKey: ["contentOptimizationModule"],
+    queryFn: () => getContentOptimizationStatus(),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setContentOptimizationEnabled({ data: { enabled } }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["contentOptimizationModule"],
+      });
+      toast.success(
+        result.enabled
+          ? "Content Optimization enabled"
+          : "Content Optimization disabled",
+      );
+    },
+    onError: () => {
+      toast.error("We couldn't update the Content Optimization setting.");
+    },
+  });
+
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-medium text-base-content/50">Features</h2>
+      <div className="flex items-start justify-between gap-6">
+        <div>
+          <p className="text-sm">Content Optimization</p>
+          <p className="mt-1 text-sm text-base-content/60">
+            Page scans via your own On-Page.ai account. Turning this off hides
+            the module everywhere.
+          </p>
+        </div>
+        <input
+          type="checkbox"
+          className="toggle toggle-primary"
+          checked={moduleStatus?.enabled ?? true}
+          disabled={moduleStatus === undefined || toggleMutation.isPending}
+          onChange={(event) => {
+            toggleMutation.mutate(event.currentTarget.checked);
+          }}
+          aria-label="Enable the Content Optimization module"
+        />
+      </div>
+    </section>
   );
 }

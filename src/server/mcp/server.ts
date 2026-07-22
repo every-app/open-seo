@@ -68,6 +68,10 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import {
+  getContentScanTool,
+  runContentScanTool,
+} from "@/server/mcp/tools/content-optimization-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -122,6 +126,24 @@ function registerOpenSeoTool<Input extends ToolSchema>(
         createMcpToolContext(context, authProps),
       );
     },
+  );
+  server.registerTool(
+    runContentScanTool.name,
+    runContentScanTool.config,
+    instrumentMcpToolHandler(
+      runContentScanTool.name,
+      runContentScanTool.config.outputSchema,
+      runContentScanTool.handler,
+    ),
+  );
+  server.registerTool(
+    getContentScanTool.name,
+    getContentScanTool.config,
+    instrumentMcpToolHandler(
+      getContentScanTool.name,
+      getContentScanTool.config.outputSchema,
+      getContentScanTool.handler,
+    ),
   );
 }
 
