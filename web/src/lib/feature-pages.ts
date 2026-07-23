@@ -29,6 +29,19 @@ export type FeaturePage = {
     question: string;
     answer: string;
   }>;
+  guides?: {
+    title: string;
+    description: string;
+    items: Array<{
+      label: string;
+      description: string;
+      href: string;
+    }>;
+    cta: {
+      label: string;
+      href: string;
+    };
+  };
 };
 
 export const featurePages = {
@@ -107,6 +120,41 @@ export const featurePages = {
           "Yes. Keyword research can be paired with SERP inspection so you can see ranking pages alongside the metrics.",
       },
     ],
+    guides: {
+      title: "The Keyword Research Strategy Library",
+      description:
+        "Practitioner plays that treat keyword research as demand discovery, not a volume spreadsheet. Each guide is a full walkthrough with the copy-paste MCP prompt that runs it.",
+      items: [
+        {
+          label: "Seed from conversation, not a volume report",
+          description:
+            "Harvest seed keywords from sales calls and support tickets.",
+          href: "/library/keyword-research/seed-from-conversation",
+        },
+        {
+          label: "What are long-tail keywords — and how to mine them",
+          description:
+            "PAA fan-out, autocomplete harvesting, and your own GSC queries.",
+          href: "/library/keyword-research/long-tail-question-mining",
+        },
+        {
+          label: "Search-intent mapping (hot / warm / cold)",
+          description:
+            "Label every keyword by buying temperature before you write.",
+          href: "/library/keyword-research/search-intent-mapping",
+        },
+        {
+          label: "Cluster keywords into topical hubs",
+          description:
+            "One page per intent — plus the keyword cannibalization fix.",
+          href: "/library/keyword-research/cluster-topical-hubs",
+        },
+      ],
+      cta: {
+        label: "Browse the full Strategy Library",
+        href: "/library/keyword-research",
+      },
+    },
   },
   siteAudit: {
     slug: FEATURE_PAGE_SLUGS.siteAudit,
