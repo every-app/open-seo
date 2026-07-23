@@ -1,6 +1,8 @@
 ---
 name: merge-ready
 description: Take a branch from "code exists (or is about to)" to "ready for the maintainer's final review" — multi-axis subagent review with verified findings, fixes, ci:check, checkpoint commits, and an updated PR. Use whenever the user says a feature/fix/branch should be "merge ready", asks to get changes ready for review, or appends this to a build request ("build X and make it merge-ready").
+metadata:
+  internal: true
 ---
 
 # Merge ready

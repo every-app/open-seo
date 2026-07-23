@@ -1,6 +1,8 @@
 ---
 name: deslop
 description: Remove AI writing patterns from prose. Use this skill when writing, drafting, editing, reviewing, or revising any text to eliminate predictable AI tells, slop, and formulaic patterns. Trigger this skill whenever the user asks to "deslop", "de-AI", "make it sound human," "remove AI patterns," "remove AI tropes," "clean up AI writing," fix "slop," "deslop" text, or review prose for authenticity. Also use when the user asks you to write or draft anything and wants it to sound natural rather than AI-generated. Common use cases include scientific writing (manuscripts, abstracts, cover letters, grant narratives, discussion sections, peer review responses), blog posts, newsletters, memos, reports, and any other substantial prose.
+metadata:
+  internal: true
 ---
 
 # Deslop: Remove AI Writing Patterns from Prose
