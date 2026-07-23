@@ -5,6 +5,7 @@ import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput } from "@/server/lib/domainUtils";
 import { mapKeywordItem } from "@/server/features/domain/services/domainKeywordMapper";
+import { computeHasMore } from "@/server/features/domain/services/pagination";
 import {
   buildKeywordFilters,
   buildOrderBy,
@@ -99,10 +100,12 @@ export async function getKeywordsPage(
     );
 
   const totalCount = response.totalCount;
-  const hasMore =
-    totalCount != null
-      ? offset + keywords.length < totalCount
-      : keywords.length === input.pageSize;
+  const hasMore = computeHasMore(
+    offset,
+    response.items.length,
+    totalCount,
+    input.pageSize,
+  );
 
   const result: DomainKeywordsPageResult = {
     domain,

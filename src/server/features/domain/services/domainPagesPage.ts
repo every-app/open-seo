@@ -5,6 +5,7 @@ import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput, toRelativePath } from "@/server/lib/domainUtils";
 import type { RelevantPagesItem } from "@/server/lib/dataforseo";
+import { computeHasMore } from "@/server/features/domain/services/pagination";
 import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
 const DOMAIN_PAGES_PAGE_TTL_SECONDS = 12 * 60 * 60;
@@ -179,10 +180,12 @@ export async function getPagesPage(
     );
 
   const totalCount = response.totalCount;
-  const hasMore =
-    totalCount != null
-      ? offset + pages.length < totalCount
-      : pages.length === input.pageSize;
+  const hasMore = computeHasMore(
+    offset,
+    response.items.length,
+    totalCount,
+    input.pageSize,
+  );
 
   const result: DomainPagesPageResult = {
     domain,
