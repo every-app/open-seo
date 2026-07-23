@@ -153,6 +153,12 @@ export function selectLighthouseSample(
 
   // Group by URL template pattern
   const templateGroups = new Map<string, LighthouseSamplePage>();
+  if (startPage) {
+    templateGroups.set(
+      detectUrlTemplate(new URL(startPage.url).pathname),
+      startPage,
+    );
+  }
   for (const page of validPages) {
     if (selected.has(page.url)) continue;
     const template = detectUrlTemplate(new URL(page.url).pathname);
