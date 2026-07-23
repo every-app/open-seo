@@ -6,6 +6,7 @@ import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-k
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
+import { createProjectTool } from "@/server/mcp/tools/create-project";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import {
@@ -52,6 +53,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       listProjectsTool.name,
       listProjectsTool.config.outputSchema,
       listProjectsTool.handler,
+    ),
+  );
+  server.registerTool(
+    createProjectTool.name,
+    createProjectTool.config,
+    instrumentMcpToolHandler(
+      createProjectTool.name,
+      createProjectTool.config.outputSchema,
+      createProjectTool.handler,
     ),
   );
   server.registerTool(
