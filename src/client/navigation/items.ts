@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Search,
   Sparkles,
+  Swords,
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
@@ -75,10 +76,16 @@ const aiNavItem = linkOptions({
   icon: Bot,
 });
 
+const warRoomNavItem = linkOptions({
+  to: "/war-room" as const,
+  label: "War Room",
+  icon: Swords,
+});
+
 // Always-visible sidebar group (not project-scoped, unlike the groups below).
 export const connectNavGroup = {
   label: "Connect",
-  items: [aiNavItem],
+  items: [aiNavItem, warRoomNavItem],
 };
 
 function getProjectNavItems(projectId: string) {
