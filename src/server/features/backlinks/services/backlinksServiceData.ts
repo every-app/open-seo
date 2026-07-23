@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
+import { buildBacklinksDateRange } from "@/server/features/backlinks/services/backlinksDateRange";
 import {
   createDataforseoClient,
   normalizeBacklinksTarget,
@@ -63,11 +64,6 @@ export type BacklinksCache = {
 
 type BacklinksOverviewProfile = {
   overview: BacklinksOverviewResult;
-};
-
-type BacklinksDateRange = {
-  dateFrom: string;
-  dateTo: string;
 };
 
 export async function profileBacklinksOverview(
@@ -249,22 +245,6 @@ function buildPageResult<TRow>(
     page: input.page,
     pageSize: input.pageSize,
     fetchedAt: new Date().toISOString(),
-  };
-}
-
-function buildBacklinksDateRange(now: Date): BacklinksDateRange {
-  const todayUtc = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-  const dateToUtc = new Date(todayUtc);
-  dateToUtc.setUTCDate(dateToUtc.getUTCDate() - 1);
-
-  const dateFromUtc = new Date(dateToUtc);
-  dateFromUtc.setUTCFullYear(dateFromUtc.getUTCFullYear() - 1);
-
-  return {
-    dateFrom: dateFromUtc.toISOString().slice(0, 10),
-    dateTo: dateToUtc.toISOString().slice(0, 10),
   };
 }
 
