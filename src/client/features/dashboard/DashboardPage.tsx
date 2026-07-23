@@ -276,7 +276,10 @@ export function DashboardPage({ projectId }: { projectId: string }) {
     );
   }
 
-  if (!activation) {
+  // Wait for the overview too: rendering cards from `overview === undefined`
+  // flashes their empty states (and reshuffles the data-first sort) once the
+  // real data lands. An overview error falls through so the page still loads.
+  if (!activation || overviewQuery.isPending) {
     return (
       <div
         className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-4 md:px-6 md:py-6"

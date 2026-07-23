@@ -50,7 +50,7 @@ export function RankTrackingDomainList({
   const [filters, setFilters] = useState<DomainListFilters>(
     EMPTY_DOMAIN_LIST_FILTERS,
   );
-  const { data: summaries } = useQuery({
+  const { data: summaries, isPending } = useQuery({
     queryKey: ["rankTrackingConfigSummaries", projectId],
     queryFn: () => getRankTrackingConfigSummaries({ data: { projectId } }),
   });
@@ -106,7 +106,16 @@ export function RankTrackingDomainList({
           />
         )}
         <div className="divide-y divide-base-300 border-t border-base-300">
-          {allSummaries.length === 0 ? (
+          {isPending ? (
+            <div className="space-y-4 px-5 py-4" aria-busy>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="skeleton h-4 w-48" />
+                  <div className="skeleton h-3 w-72" />
+                </div>
+              ))}
+            </div>
+          ) : allSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-2">
               <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
                 <Globe className="size-5 text-base-content/40" />
