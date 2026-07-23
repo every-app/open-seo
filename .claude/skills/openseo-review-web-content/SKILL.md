@@ -59,7 +59,7 @@ Attribution rule: the free discovery surfaces in the guides — autocomplete, Pe
 
 UI-affordance rule: before copy instructs the reader to click, sort, or filter something ("sort by word count"), confirm that control exists in the client code. Known past miss: the keyword research table has no word-count column.
 
-Claims about named third parties (a customer, an interviewee's employer, a competitor) need a source or softening — "legally-mandated" about a specific company is a legal claim, not copy. And when a post is adapted from a source (podcast, talk), spot-check quotes against the source for quiet edits, like a competitor's name being scrubbed.
+Claims about named third parties (a customer, an interviewee's employer, a competitor) need a source or softening — "legally-mandated" about a specific company is a legal claim, not copy. When a post is adapted from a source (podcast, talk), check quotes against the source so they stay accurate.
 
 ## Pricing framing
 
@@ -76,19 +76,12 @@ Rules:
 - Verify any number ($10/month, page limits, credit amounts) against code or the live pricing page before shipping it.
 - FAQ answers on marketing pages also ship inside FAQPage JSON-LD — a false claim there is served to Google as structured data, which makes FAQ accuracy the highest-stakes copy on the page.
 
-## External contributions (consultants, guest authors)
-
-Extra checks when the content comes from outside the team:
-
-- **Outbound links are currency.** Every external link gets justified: who owns the domain, is there an undisclosed relationship, does the anchor deserve a dofollow editorial link from openseo.so? A link to a third-party SEO agency with no stated connection is a red flag. Attribution links should point at the specific article, not a homepage.
-- **Bylines must render.** If frontmatter carries an `author`, confirm the site actually displays it — a guest post publishing as first-party editorial while linking the author's own properties edges into Google's guest-post link-spam territory.
-- **Self-promotion in assets.** Check PDFs and images for the contributor's own branding; decide deliberately whether it stays.
-- **Binary assets get inspected**, not waved through: `strings` over PDFs for embedded links, screenshots checked against their captions.
-
 ## Beyond the prose
 
 - **Sitemap:** `web/scripts/generate-sitemap.js` uses a hardcoded `STATIC_PATHS` list and only scans `content/blogs` and `content/docs` — new marketing/library pages must be added explicitly or they're invisible to crawlers. Verify by building and grepping the sitemap output.
 - **Screenshots:** must show real product output that reproduces the article's own example (capture via the app, seeded through the MCP if needed), the caption/alt text must match what's visible, and theme should be consistent across a page's image set.
+- **Outbound links:** every external link earns its place — link the specific article rather than a homepage, and disclose any relationship to the linked site in the post.
+- **Bylines:** if a post's frontmatter names an `author`, confirm the site actually renders the byline so authorship is visible to readers.
 
 ## Review workflow
 
