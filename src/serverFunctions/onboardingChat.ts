@@ -1,23 +1,43 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "@/db";
-import { projects } from "@/db/schema";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
 import { AppError } from "@/server/lib/errors";
-import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
-import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { normalizeDomainInput } from "@/server/lib/domainUtils";
 import {
   getLanguageCode,
   isSupportedLocationCode,
 } from "@/shared/keyword-locations";
 
+async function loadOnboardingChatPersistence() {
+  const dbSpecifier = "@/db";
+  const schemaSpecifier = "@/db/schema";
+  const projectRepositorySpecifier =
+    "@/server/features/projects/repositories/ProjectRepository";
+  const projectServiceSpecifier =
+    "@/server/features/projects/services/ProjectService";
+
+  const [
+    { db },
+    { projects },
+    { ProjectRepository },
+    { ProjectService },
+  ] = await Promise.all([
+    import(/* @vite-ignore */ dbSpecifier),
+    import(/* @vite-ignore */ schemaSpecifier),
+    import(/* @vite-ignore */ projectRepositorySpecifier),
+    import(/* @vite-ignore */ projectServiceSpecifier),
+  ]);
+
+  return { db, projects, ProjectRepository, ProjectService };
+}
+
 // Returns the onboarding project (id + domain). Uses the org's default project;
 // onboarding targets a single project in v1.
 export const getOnboardingChatState = createServerFn({ method: "GET" })
   .middleware(requireAuthenticatedContext)
   .handler(async ({ context }) => {
+    const { ProjectService } = await loadOnboardingChatPersistence();
     const [project] = await ProjectService.listProjectsEnsuringOne(
       context.organizationId,
     );
@@ -41,6 +61,8 @@ export const saveOnboardingSite = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(saveSiteSchema)
   .handler(async ({ data, context }) => {
+    const { db, projects, ProjectRepository } =
+      await loadOnboardingChatPersistence();
     const project = await ProjectRepository.getProjectForOrganization(
       data.projectId,
       context.organizationId,

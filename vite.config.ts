@@ -41,6 +41,24 @@ export default defineConfig(({ mode }) => {
     build: {
       sourcemap: emitSourcemaps,
       outDir: emitSourcemaps ? "dist-sourcemaps" : "dist",
+      rollupOptions: {
+        external: [
+          "cloudflare:workers",
+          "node:async_hooks",
+          "node:stream",
+          "node:stream/web",
+          "node:fs",
+          "node:readline",
+          "path",
+          "os",
+          "fs",
+          "net",
+          "tls",
+          "crypto",
+          "stream",
+          "perf_hooks",
+        ],
+      },
     },
     plugins: [
       leanWorkerBundle(),

@@ -5,8 +5,25 @@ import {
   requireProjectContext,
 } from "@/serverFunctions/middleware";
 import { AppError } from "@/server/lib/errors";
-import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
-import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
+import type { SamSessionRepository as SamSessionRepositoryType } from "@/server/features/sam/SamSessionRepository";
+import type { ProjectRepository as ProjectRepositoryType } from "@/server/features/projects/repositories/ProjectRepository";
+
+async function loadSamRepositories(): Promise<{
+  SamSessionRepository: typeof SamSessionRepositoryType;
+  ProjectRepository: typeof ProjectRepositoryType;
+}> {
+  const samSessionRepositorySpecifier =
+    "@/server/features/sam/SamSessionRepository";
+  const projectRepositorySpecifier =
+    "@/server/features/projects/repositories/ProjectRepository";
+
+  const [{ SamSessionRepository }, { ProjectRepository }] = await Promise.all([
+    import(/* @vite-ignore */ samSessionRepositorySpecifier),
+    import(/* @vite-ignore */ projectRepositorySpecifier),
+  ]);
+
+  return { SamSessionRepository, ProjectRepository };
+}
 
 // The ensure-user middleware authorizes `projectId` against the caller's org
 // (ADR 0001); requireProjectContext exposes the verified project.
@@ -17,6 +34,7 @@ export const listSamSessions = createServerFn({ method: "GET" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
+    const { SamSessionRepository } = await loadSamRepositories();
     return SamSessionRepository.listSessionsForProject(
       context.projectId,
       context.userId,
@@ -29,6 +47,7 @@ export const createSamSession = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
+    const { SamSessionRepository } = await loadSamRepositories();
     const session = await SamSessionRepository.createSession({
       projectId: context.projectId,
       userId: context.userId,
@@ -48,6 +67,8 @@ export const archiveSamSession = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(archiveSchema)
   .handler(async ({ data, context }) => {
+    const { SamSessionRepository, ProjectRepository } =
+      await loadSamRepositories();
     // Authorize against the session's project (the canonical project-access
     // path), not the caller's org directly.
     const session = await SamSessionRepository.getActiveSession(

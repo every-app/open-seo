@@ -1,13 +1,9 @@
 /* oxlint-disable typescript/no-unsafe-return, typescript/no-unsafe-type-assertion -- The proxy resolves the request-scoped Postgres client from AsyncLocalStorage. */
-import { AsyncLocalStorage } from "node:async_hooks";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import {
   getDatabaseProvider,
   getPostgresConnectionString,
 } from "@/db/provider";
 import { withQueryRetries } from "./retry";
-import * as schema from "./schema";
 
 // Postgres on Cloudflare Workers requires a PER-REQUEST client: the runtime
 // forbids using a socket created by one request from a different request
@@ -16,22 +12,70 @@ import * as schema from "./schema";
 // the handler, never in global scope. So we keep the active client in
 // AsyncLocalStorage, seeded by `withPgClient` at each entrypoint. In D1 mode
 // (the default) none of this runs.
-type Sql = ReturnType<typeof postgres>;
+type PgStore = {
+  sql: unknown;
+  db: Record<PropertyKey, unknown>;
+};
 
-function createPgDb(sql: Sql) {
-  return drizzle(sql, { schema });
+type PgClientStore = {
+  getStore(): PgStore | undefined;
+  run<T>(store: PgStore, callback: () => Promise<T>): Promise<T>;
+};
+
+type AsyncLocalStorageCtor = new () => PgClientStore;
+
+let pgClientStore: PgClientStore | null = null;
+
+async function getPgClientStore(): Promise<PgClientStore> {
+  if (pgClientStore) {
+    return pgClientStore;
+  }
+
+  const asyncHooksSpecifier = "node:async_hooks";
+  const { AsyncLocalStorage } = (await import(
+    /* @vite-ignore */ asyncHooksSpecifier
+  )) as { AsyncLocalStorage: AsyncLocalStorageCtor };
+  const store = new AsyncLocalStorage();
+  pgClientStore = store;
+  return store;
 }
 
-const pgClientStore = new AsyncLocalStorage<{
-  sql: Sql;
-  db: ReturnType<typeof createPgDb>;
-}>();
+async function createPgStore(): Promise<PgStore> {
+  const drizzleSpecifier = "drizzle-orm/postgres-js";
+  const postgresSpecifier = "postgres";
+  const schemaSpecifier = "./schema";
+  const [
+    { drizzle },
+    { default: postgres },
+    schema,
+  ] = await Promise.all([
+    import(/* @vite-ignore */ drizzleSpecifier),
+    import(/* @vite-ignore */ postgresSpecifier),
+    import(/* @vite-ignore */ schemaSpecifier),
+  ]);
+
+  const sql = withQueryRetries(
+    postgres(getPostgresConnectionString(), {
+      max: 1,
+      fetch_types: false,
+      // Bound connect stalls (seconds) so the per-query retry in
+      // withQueryRetries gets its turn within the request's lifetime instead
+      // of hanging on postgres.js's 30s default during a failover.
+      connect_timeout: 10,
+    }),
+  );
+
+  return {
+    sql,
+    db: drizzle(sql, { schema }) as unknown as Record<PropertyKey, unknown>,
+  };
+}
 
 export const pgDb = new Proxy(
   {},
   {
     get(_target, prop, receiver) {
-      const store = pgClientStore.getStore();
+      const store = pgClientStore?.getStore();
       if (!store) {
         throw new Error(
           "Postgres database accessed outside a request scope. Entrypoints " +
@@ -41,7 +85,7 @@ export const pgDb = new Proxy(
       return Reflect.get(store.db, prop, receiver);
     },
   },
-) as ReturnType<typeof createPgDb>;
+) as Record<PropertyKey, unknown>;
 
 /**
  * Run `fn` with a request-scoped Postgres client in scope.
@@ -64,22 +108,14 @@ export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
   if (getDatabaseProvider() !== "postgres") {
     return fn();
   }
+  const storeApi = await getPgClientStore();
   // Reentrant: nested scopes (e.g. a DO hook calling helpers that defensively
   // scope themselves) reuse the ambient client instead of opening another
   // connection. Workflow steps are unaffected — ALS never crosses step.do, so
   // each step's own wrap still creates its client.
-  if (pgClientStore.getStore()) {
+  if (storeApi.getStore()) {
     return fn();
   }
-  const sql = withQueryRetries(
-    postgres(getPostgresConnectionString(), {
-      max: 1,
-      fetch_types: false,
-      // Bound connect stalls (seconds) so the per-query retry in
-      // withQueryRetries gets its turn within the request's lifetime instead
-      // of hanging on postgres.js's 30s default during a failover.
-      connect_timeout: 10,
-    }),
-  );
-  return pgClientStore.run({ sql, db: createPgDb(sql) }, fn);
+  const store = await createPgStore();
+  return storeApi.run(store, fn);
 }

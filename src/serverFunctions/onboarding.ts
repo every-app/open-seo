@@ -1,9 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import { user, userOnboardingAnswers } from "@/db/schema";
-import { db } from "@/db";
 import { requireAuthenticatedContext } from "@/serverFunctions/middleware";
+
+async function loadOnboardingDb() {
+  const dbSpecifier = "@/db";
+  const schemaSpecifier = "@/db/schema";
+  const [{ db }, { user, userOnboardingAnswers }] = await Promise.all([
+    import(/* @vite-ignore */ dbSpecifier),
+    import(/* @vite-ignore */ schemaSpecifier),
+  ]);
+
+  return { db, user, userOnboardingAnswers };
+}
 
 const onboardingAnswersSchema = z.object({
   interestedFeatures: z.array(z.string()).optional(),
@@ -17,6 +26,7 @@ const onboardingAnswersSchema = z.object({
 export const getOnboardingAnswers = createServerFn({ method: "GET" })
   .middleware(requireAuthenticatedContext)
   .handler(async ({ context }) => {
+    const { db, user, userOnboardingAnswers } = await loadOnboardingDb();
     const answers = await db.query.userOnboardingAnswers.findFirst({
       columns: {
         completedAt: true,
@@ -68,6 +78,7 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .validator(onboardingAnswersSchema)
   .handler(async ({ data, context }) => {
+    const { db, userOnboardingAnswers } = await loadOnboardingDb();
     const now = new Date().toISOString();
     const completedAt = data.completed ? now : undefined;
     const set = {
@@ -82,9 +93,6 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
       ...(data.mcpSetupIntent !== undefined
         ? { mcpSetupIntent: data.mcpSetupIntent }
         : {}),
-      // Completing onboarding means the user passed the Search Console step, so
-      // resolve the GSC prompt — the legacy re-engagement nudge must not fire
-      // for anyone who already saw that step.
       ...(completedAt !== undefined
         ? { completedAt, gscNudgeDismissedAt: completedAt }
         : {}),
@@ -113,11 +121,10 @@ export const saveOnboardingAnswers = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Records that the one-time "connect Search Console" nudge has been shown and
-// resolved (dismissed or acted on) so it never reappears for this user.
 export const dismissGscNudge = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
   .handler(async ({ context }) => {
+    const { db, userOnboardingAnswers } = await loadOnboardingDb();
     const now = new Date().toISOString();
     await db
       .insert(userOnboardingAnswers)

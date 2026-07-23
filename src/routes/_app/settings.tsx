@@ -1,11 +1,15 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
+import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { getProviderStatus } from "@/serverFunctions/config";
 import { version } from "../../../package.json";
+import { buildDataCapabilitiesModel } from "./-data-capabilities-model";
 
 export const Route = createFileRoute("/_app/settings")({
   component: SettingsPage,
@@ -26,6 +30,13 @@ function SettingsPage() {
   const { themePreference, setThemePreference } = useThemePreference();
   const { data: session, isPending: isSessionPending } = useSession();
   const [isSaving, setIsSaving] = useState(false);
+  const providerStatusQuery = useQuery({
+    queryKey: ["providerStatus"],
+    queryFn: () => getProviderStatus(),
+  });
+  const capabilityRows = buildDataCapabilitiesModel(
+    providerStatusQuery.data?.capabilities ?? [],
+  );
 
   const analyticsEnabled = session?.user?.analyticsOptedOut !== true;
 
@@ -87,6 +98,54 @@ function SettingsPage() {
               })}
             </div>
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <div>
+            <h2 className="text-sm font-medium text-base-content/50">
+              Data capabilities
+            </h2>
+            <p className="mt-1 text-xs text-base-content/60">
+              Availability reflects this deployment&rsquo;s connected providers.
+            </p>
+          </div>
+          {providerStatusQuery.isPending ? (
+            <span className="loading loading-spinner loading-sm" />
+          ) : providerStatusQuery.isError ? (
+            <p className="text-sm text-error">Couldn&rsquo;t load capabilities.</p>
+          ) : (
+            <ul className="divide-y divide-base-300 rounded-lg border border-base-300">
+              {capabilityRows.map((capability) => (
+                <li key={capability.id} className="space-y-1 px-3 py-2.5">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium">{capability.label}</span>
+                    <span
+                      className={`badge badge-sm ${
+                        capability.enabled ? "badge-success" : "badge-ghost"
+                      }`}
+                    >
+                      {capability.status}
+                    </span>
+                  </div>
+                  <p className="text-xs text-base-content/60">
+                    {capability.providerCopy}
+                    {capability.reason ? ` — ${capability.reason}` : ""}
+                    {capability.showPaidProviderHelp ? (
+                      <>
+                        {" · "}
+                        <Link
+                          {...dataforseoHelpLinkOptions}
+                          className="link link-primary"
+                        >
+                          Configure
+                        </Link>
+                      </>
+                    ) : null}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         {isHosted ? (
