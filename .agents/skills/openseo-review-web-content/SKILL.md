@@ -23,6 +23,8 @@ The reader is an indie founder or SEO freelancer. Write like a practitioner expl
 
 Ben's own drafts are final copy, not a brief. Fill marked gaps and flag factual problems; do not rewrite his sentences into conversion copy.
 
+Guides are tips first, product second. Mid-article product plugs get **deleted, not reworded** — the pitch belongs in the cost-question FAQ and the CTA, and the guide should read as useful without OpenSEO. Don't get into the weeds about OpenSEO inside a how-to.
+
 ## Deslop pass
 
 The tells, in order of how often they appear:
@@ -53,7 +55,11 @@ Every capability claim gets verified against code, not memory. Canonical sources
 - GSC capabilities → `src/server/features/gsc/` and `src/server/mcp/tools/search-console-tools.ts`
 - Feature inventory → `web/src/lib/feature-pages.ts` workflows sections (already reviewed copy; reuse its concrete lists)
 
-Attribution rule: the free discovery surfaces in the guides — autocomplete, People Also Ask, "related searches" — are **Google's**, and conversations and Search Console data are **the user's**. Say so explicitly ("Google's autocomplete", "your Search Console"). OpenSEO's role is the paid-data half: validating and expanding with volume, difficulty, and SERP data. Copy that lists those surfaces without attribution reads as OpenSEO features; that's a bug.
+Attribution rule: the free discovery surfaces in the guides — autocomplete, People Also Ask, "related searches" — are **Google's**, and conversations and Search Console data are **the user's**. Say so explicitly ("Google's autocomplete", "your Search Console"). OpenSEO's role is the paid-data half: validating and expanding with volume, difficulty, and SERP data. Copy that lists those surfaces without attribution reads as OpenSEO features; that's a bug. Known absences that have shipped as overclaims before: OpenSEO does **not** harvest autocomplete or People Also Ask (of those surfaces only Search Console is integrated), and never claim it "wraps" workflows it doesn't.
+
+UI-affordance rule: before copy instructs the reader to click, sort, or filter something ("sort by word count"), confirm that control exists in the client code. Known past miss: the keyword research table has no word-count column.
+
+Claims about named third parties (a customer, an interviewee's employer, a competitor) need a source or softening — "legally-mandated" about a specific company is a legal claim, not copy. And when a post is adapted from a source (podcast, talk), spot-check quotes against the source for quiet edits, like a competitor's name being scrubbed.
 
 ## Pricing framing
 
@@ -66,7 +72,23 @@ Rules:
 - Use the full framing once per page (the main pricing-adjacent FAQ); shorter variants elsewhere ("you can start for free; paid plans start at $10/month") so the identical paragraph doesn't repeat across pages.
 - "Is X free?" questions get an honest verdict first: "Not unlimited", or "For smaller sites, yes" when a real free limit covers it (e.g. audits up to `FREE_MAX_AUDIT_PAGES` pages). "Open source" is true but is not an answer to "is it free".
 - Self-hosting is free software, not free data: self-hosters bring their own DataForSEO account.
+- Free-tier facts (verify against `src/shared/billing.ts` and the pricing page before repeating): signup is card-free with a small trial-credit grant ($0.50 at time of writing); top-ups are paid-plan only; keyword research is credit-metered, so "the clustering pass is free" is only true for keywords already researched.
 - Verify any number ($10/month, page limits, credit amounts) against code or the live pricing page before shipping it.
+- FAQ answers on marketing pages also ship inside FAQPage JSON-LD — a false claim there is served to Google as structured data, which makes FAQ accuracy the highest-stakes copy on the page.
+
+## External contributions (consultants, guest authors)
+
+Extra checks when the content comes from outside the team:
+
+- **Outbound links are currency.** Every external link gets justified: who owns the domain, is there an undisclosed relationship, does the anchor deserve a dofollow editorial link from openseo.so? A link to a third-party SEO agency with no stated connection is a red flag. Attribution links should point at the specific article, not a homepage.
+- **Bylines must render.** If frontmatter carries an `author`, confirm the site actually displays it — a guest post publishing as first-party editorial while linking the author's own properties edges into Google's guest-post link-spam territory.
+- **Self-promotion in assets.** Check PDFs and images for the contributor's own branding; decide deliberately whether it stays.
+- **Binary assets get inspected**, not waved through: `strings` over PDFs for embedded links, screenshots checked against their captions.
+
+## Beyond the prose
+
+- **Sitemap:** `web/scripts/generate-sitemap.js` uses a hardcoded `STATIC_PATHS` list and only scans `content/blogs` and `content/docs` — new marketing/library pages must be added explicitly or they're invisible to crawlers. Verify by building and grepping the sitemap output.
+- **Screenshots:** must show real product output that reproduces the article's own example (capture via the app, seeded through the MCP if needed), the caption/alt text must match what's visible, and theme should be consistent across a page's image set.
 
 ## Review workflow
 
