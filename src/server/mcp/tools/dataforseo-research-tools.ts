@@ -18,7 +18,10 @@ import {
   type McpTableColumn,
 } from "@/server/mcp/table";
 import { resolveLabsMarket, resolveMarket } from "@/shared/keyword-locations";
-import { assertLanguageForLocation } from "@/server/lib/market";
+import {
+  assertLabsLocationCode,
+  assertLanguageForLocation,
+} from "@/server/lib/market";
 import {
   DEFAULT_LOCATION_CODE,
   languageCodeSchema,
@@ -52,7 +55,7 @@ const marketSchema = z
   })
   .optional()
   .describe(
-    "Optional market object. Omitted = the project's default market (United States unless the project overrides it).",
+    "Legacy US selector. Prefer locationCode/languageCode for any Labs market. Explicit locationCode takes precedence; otherwise omitted = the project's default market.",
   );
 
 const nearSchema = z
@@ -126,6 +129,16 @@ const getRankedKeywordsInputSchema = {
     "Domain (no protocol/www) or absolute page URL to list ranked keywords for.",
   ),
   market: marketSchema,
+  locationCode: locationCodeSchema
+    .optional()
+    .describe(
+      "Country-level DataForSEO Labs location code. Defaults to the project's market; takes precedence over the legacy market object.",
+    ),
+  languageCode: languageCodeSchema
+    .optional()
+    .describe(
+      "Language for locationCode. Defaults to that location's primary language when locationCode overrides the project market.",
+    ),
   resultTypes: z
     .array(rankedResultTypeSchema)
     .min(1)
@@ -256,6 +269,16 @@ const findSerpCompetitorsInputSchema = {
     .max(100)
     .describe("Keywords whose SERPs are compared (1-100)."),
   market: marketSchema,
+  locationCode: locationCodeSchema
+    .optional()
+    .describe(
+      "Country-level DataForSEO Labs location code. Defaults to the project's market; takes precedence over the legacy market object.",
+    ),
+  languageCode: languageCodeSchema
+    .optional()
+    .describe(
+      "Language for locationCode. Defaults to that location's primary language when locationCode overrides the project market.",
+    ),
   resultTypes: z
     .array(serpCompetitorResultTypeSchema)
     .min(1)
@@ -349,19 +372,37 @@ const QUESTIONS_ANSWERS_MIN_RADIUS = 200;
 const QUESTIONS_ANSWERS_MAX_RADIUS = 199999;
 
 /**
- * Resolves the market selector to a Labs location + language. An explicit
- * country wins; omitted inherits the project's default via resolveLabsMarket,
- * which keeps these Labs-only tools off an Ads-served project market.
+ * Resolves a Labs location + language. Explicit location/language fields win,
+ * followed by the legacy explicit-US selector; omitted fields inherit the
+ * project's default via resolveLabsMarket, which keeps these Labs-only tools
+ * off an Ads-served project market. Validate before starting a paid request.
  */
 function resolveMarketSelector(
-  market: Market | undefined,
+  selector: {
+    market?: Market;
+    locationCode?: number;
+    languageCode?: string;
+  },
   project: { locationCode: number; languageCode: string },
 ): { locationCode: number; languageCode: string } {
-  if (market?.country != null) {
+  let resolved: { locationCode: number; languageCode: string };
+  if (selector.locationCode != null || selector.languageCode != null) {
+    resolved = resolveLabsMarket(
+      {
+        locationCode: selector.locationCode,
+        languageCode: selector.languageCode,
+      },
+      project,
+    );
+  } else if (selector.market?.country != null) {
     // The Zod enum already restricts explicit values to United States variants.
-    return { locationCode: DEFAULT_LOCATION_CODE, languageCode: "en" };
+    resolved = { locationCode: DEFAULT_LOCATION_CODE, languageCode: "en" };
+  } else {
+    resolved = resolveLabsMarket({}, project);
   }
-  return resolveLabsMarket({}, project);
+  assertLabsLocationCode(resolved.locationCode);
+  assertLanguageForLocation(resolved.locationCode, resolved.languageCode);
+  return resolved;
 }
 
 function formatCoordinate(value: number): string {
@@ -592,7 +633,7 @@ export const getRankedKeywordsTool = {
   config: {
     title: "Get ranked keywords",
     description:
-      "Returns exact keyword, URL, rank, search volume, CPC, intent, and traffic rows for a domain or page. Use this for strategy evidence; use get_domain_overview for aggregate domain footprint. Charges credits.",
+      "Returns market-specific keyword, URL, rank, search volume, CPC, intent, and traffic rows for a domain or page. Accepts country-level DataForSEO Labs location/language codes. Use this for strategy evidence; use get_domain_overview for aggregate domain footprint. Charges credits.",
     inputSchema: getRankedKeywordsInputSchema,
     outputSchema: {
       keywords: z.array(looseObjectOutputSchema),
@@ -608,7 +649,7 @@ export const getRankedKeywordsTool = {
   handler: withMcpProjectAuth(async (args: GetRankedKeywordsArgs, context) => {
     const client = createDataforseoClient(context.billing);
     const targetIsPage = /^https?:\/\//.test(args.target);
-    const market = resolveMarketSelector(args.market, context.project);
+    const market = resolveMarketSelector(args, context.project);
     const keywords = await client.domain.rankedKeywords({
       target: args.target,
       locationCode: market.locationCode,
@@ -773,7 +814,7 @@ export const findSerpCompetitorsTool = {
   config: {
     title: "Find SERP competitors",
     description:
-      "Compares domains competing in Google results for a supplied keyword set. Useful for market and search-intelligence reports; not radius-based local SEO. Charges credits.",
+      "Compares domains competing in Google results for a supplied keyword set in a country-level DataForSEO Labs market. Accepts location/language codes; not radius-based local SEO. Charges credits.",
     inputSchema: findSerpCompetitorsInputSchema,
     outputSchema: {
       competitors: z.array(looseObjectOutputSchema),
@@ -788,7 +829,7 @@ export const findSerpCompetitorsTool = {
   handler: withMcpProjectAuth(
     async (args: FindSerpCompetitorsArgs, context) => {
       const client = createDataforseoClient(context.billing);
-      const market = resolveMarketSelector(args.market, context.project);
+      const market = resolveMarketSelector(args, context.project);
       const competitors = await client.labs.serpCompetitors({
         keywords: args.keywords,
         locationCode: market.locationCode,
