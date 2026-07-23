@@ -46,6 +46,23 @@ describe("resolveDateRange", () => {
     );
     expect(startDate).toBe("2026-01-01");
   });
+
+  it("subtracts calendar months without overflowing short months", () => {
+    const { startDate, endDate } = resolveDateRange(
+      { dateRange: "last_3_months" },
+      new Date("2026-06-03T00:00:00Z"),
+    );
+    expect(startDate).toBe("2026-02-28");
+    expect(endDate).toBe("2026-05-31");
+  });
+
+  it("clamps the 16-month floor to the last valid day of a short month", () => {
+    const { startDate } = resolveDateRange(
+      { dateRange: "last_16_months" },
+      new Date("2026-06-30T00:00:00Z"),
+    );
+    expect(startDate).toBe("2025-02-28");
+  });
 });
 
 describe("buildSearchAnalyticsRequest", () => {
