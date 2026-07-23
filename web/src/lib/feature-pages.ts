@@ -30,22 +30,14 @@ export type FeaturePage = {
     answer: string;
   }>;
   guides?: {
-    eyebrow: string;
     title: string;
     description: string;
     items: Array<{
       label: string;
-      by: string;
-      href?: string;
+      description: string;
+      href: string;
     }>;
     cta: {
-      label: string;
-      href: string;
-    };
-    download: {
-      eyebrow: string;
-      title: string;
-      description: string;
       label: string;
       href: string;
     };
@@ -129,59 +121,38 @@ export const featurePages = {
       },
     ],
     guides: {
-      eyebrow: "The practitioner playbook",
       title: "The Keyword Research Strategy Library",
       description:
-        "Eight field-tested plays for finding demand that converts, each drawn from a working SEO on the Unscripted podcast, with the workflow and who endorses it. Free, and built to be run inside OpenSEO.",
+        "Practitioner plays that treat keyword research as demand discovery, not a volume spreadsheet. Each guide is a full walkthrough with the copy-paste MCP prompt that runs it.",
       items: [
         {
           label: "Seed from conversation, not a volume report",
-          by: "Slaymaker · Bajayo · Digneo",
+          description:
+            "Harvest seed keywords from sales calls and support tickets.",
           href: "/library/keyword-research/seed-from-conversation",
         },
         {
-          label: "Long-tail & question mining (PAA, query fan-out)",
-          by: "Baterina · Moser · Barnard",
+          label: "What are long-tail keywords, and how to mine them",
+          description:
+            "PAA fan-out, autocomplete harvesting, and your own GSC queries.",
           href: "/library/keyword-research/long-tail-question-mining",
         },
         {
           label: "Search-intent mapping (hot / warm / cold)",
-          by: "Merrilees · Ashford",
+          description:
+            "Label every keyword by buying temperature before you write.",
           href: "/library/keyword-research/search-intent-mapping",
         },
         {
-          label: "Opportunity sizing & forecasting",
-          by: "Rivera · Berkowitz · Baterina",
-        },
-        {
-          label: "Programmatic & data-driven discovery (GSC)",
-          by: "Rivera · Simmons",
-        },
-        {
           label: "Cluster keywords into topical hubs",
-          by: "Simmons · Homer",
+          description:
+            "One page per intent, plus the keyword cannibalization fix.",
           href: "/library/keyword-research/cluster-topical-hubs",
-        },
-        {
-          label: "Intent beyond Google (Pinterest, AI, LinkedIn)",
-          by: "Bocchese · Alfon · Popp",
-        },
-        {
-          label: "Make positioning map to real demand",
-          by: "Little · Popp · Homer",
         },
       ],
       cta: {
-        label: "Open the full library",
+        label: "Browse the full Strategy Library",
         href: "/library/keyword-research",
-      },
-      download: {
-        eyebrow: "Free download",
-        title: "The Keyword Research Playbook",
-        description:
-          "All 8 plays in one designed PDF: workflows, the practitioner quotes behind them, and a seed-to-brief checklist.",
-        label: "Download the PDF",
-        href: "/library/keyword-research/keyword-research-playbook.pdf",
       },
     },
   },

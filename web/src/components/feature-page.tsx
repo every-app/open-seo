@@ -190,94 +190,41 @@ function GuidesSection({
 }) {
   return (
     <section className="mt-12">
-      <div className="rounded-[20px] bg-neutral-950 p-7 text-white md:p-12">
-        <p className="text-sm font-medium text-[#c9c4bd]">{guides.eyebrow}</p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-white">
-          {guides.title}
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#c9c4bd]">
-          {guides.description}
-        </p>
-        <div className="mt-8 grid gap-3 md:grid-cols-2">
-          {guides.items.map((item) => {
-            const body = (
-              <>
-                <div className="flex items-start justify-between gap-2 text-[15px] font-semibold text-white">
-                  <span>{item.label}</span>
-                  {item.href ? (
-                    <span
-                      aria-hidden="true"
-                      className="text-[var(--color-brand-accent)]"
-                    >
-                      &rarr;
-                    </span>
-                  ) : (
-                    <span className="shrink-0 rounded-full border border-[#2e2e2e] px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider text-[#8f8a83]">
-                      Next up
-                    </span>
-                  )}
-                </div>
-                <p className="mt-1.5 font-mono text-[11px] text-[#8f8a83]">
-                  {item.by}
-                </p>
-              </>
-            );
-            return item.href ? (
-              <a
-                key={item.label}
-                href={item.href}
-                className="block rounded-[10px] border border-[#2e2e2e] bg-[#1c1c1c] px-[18px] py-3.5 transition-colors hover:border-[var(--color-brand-accent)] hover:bg-[#212121]"
+      <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+        {guides.title}
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
+        {guides.description}
+      </p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {guides.items.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-base font-semibold text-neutral-950">
+              {item.label}
+              <span
+                aria-hidden="true"
+                className="ml-1 text-[var(--color-brand-accent)]"
               >
-                {body}
-              </a>
-            ) : (
-              <div
-                key={item.label}
-                className="rounded-[10px] border border-[#2e2e2e] bg-[#1c1c1c] px-[18px] py-3.5"
-              >
-                {body}
-              </div>
-            );
-          })}
-        </div>
+                &rarr;
+              </span>
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
+              {item.description}
+            </p>
+          </a>
+        ))}
+      </div>
+      <div className="mt-4">
         <a
           href={guides.cta.href}
-          className="mt-8 inline-flex h-11 items-center rounded-lg border border-[#444] px-5 text-sm font-medium text-white transition-colors hover:border-[var(--color-brand-accent)]"
+          className="text-sm font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
         >
           {guides.cta.label}
-          <span aria-hidden="true" className="ml-2">
-            &rarr;
-          </span>
-        </a>
-      </div>
-
-      <div className="mt-4 flex flex-wrap items-center gap-8 rounded-xl border border-[var(--color-border-subtle)] bg-white p-7">
-        <div
-          aria-hidden="true"
-          className="relative h-[90px] w-[72px] shrink-0 rounded-md border border-[var(--color-border-subtle)] bg-gradient-to-br from-white to-[#f5f1ec]"
-        >
-          <span className="absolute left-[9px] right-[9px] top-[9px] h-[3px] bg-[var(--color-brand-accent)] shadow-[0_7px_0_#e7e0d7,0_14px_0_#e7e0d7,0_21px_0_#e7e0d7]" />
-          <span className="absolute bottom-[7px] left-[7px] rounded-[3px] bg-[var(--color-brand-accent)] px-[5px] py-[2px] font-mono text-[9px] text-white">
-            PDF
-          </span>
-        </div>
-        <div className="min-w-[240px] flex-1">
-          <p className="text-sm font-medium text-[var(--color-brand-accent)]">
-            {guides.download.eyebrow}
-          </p>
-          <h3 className="mt-2 text-[19px] font-semibold text-neutral-950">
-            {guides.download.title}
-          </h3>
-          <p className="mt-1.5 text-sm leading-6 text-[var(--color-brand-muted)]">
-            {guides.download.description}
-          </p>
-        </div>
-        <a
-          href={guides.download.href}
-          className="inline-flex h-11 items-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-        >
-          {guides.download.label}
-          <span aria-hidden="true" className="ml-2">
+          <span aria-hidden="true" className="ml-1">
             &rarr;
           </span>
         </a>
