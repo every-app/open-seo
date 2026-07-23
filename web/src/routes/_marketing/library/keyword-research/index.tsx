@@ -59,7 +59,7 @@ const faqs = [
   {
     question: "How do you do keyword research for free?",
     answer:
-      "The discovery half runs on free surfaces: conversations, autocomplete, People Also Ask, Search Console. Quality SEO data (volume, difficulty, live SERPs) is difficult to get, which is why SaaS tools run $100/month and up. OpenSEO is the most affordable option, starting at $10/month, and you can start for free.",
+      "The discovery half runs on sources you already have: customer conversations, Google's autocomplete and People Also Ask, and your Search Console. Quality SEO data (volume, difficulty, live SERPs) is difficult to get, which is why SaaS tools run $100/month and up. OpenSEO is the most affordable option, starting at $10/month, and you can start for free.",
   },
   {
     question: "Can you do keyword research without Google Keyword Planner?",
@@ -202,8 +202,8 @@ function KeywordResearchLibraryPage() {
           Free keyword research tools for every play
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          The free surfaces (autocomplete, People Also Ask, your Search Console)
-          do the discovery. Every play then runs in{" "}
+          Google's free surfaces (autocomplete, People Also Ask) plus your own
+          Search Console do the discovery. Every play then runs in{" "}
           <a
             href="/features/keyword-research"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
