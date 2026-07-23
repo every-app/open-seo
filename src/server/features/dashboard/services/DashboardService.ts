@@ -3,6 +3,7 @@ import { ActivationRepository } from "@/server/features/activation/repositories/
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { getIssueTypePageCountsForAudit } from "@/server/features/audit/repositories/auditSummaryQueries";
 import { BacklinkSnapshotRepository } from "@/server/features/dashboard/repositories/BacklinkSnapshotRepository";
+import { summarizeRankRows } from "@/server/features/dashboard/services/rankSummary";
 import { GscConnectionRepository } from "@/server/features/gsc/repositories/GscConnectionRepository";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
@@ -125,23 +126,17 @@ async function getRankSummary(
   };
 
   for (const result of results) {
-    summary.trackedKeywords += result.rows.length;
+    const counts = summarizeRankRows(result.rows);
+    summary.trackedKeywords += counts.trackedKeywords;
+    summary.improved += counts.improved;
+    summary.declined += counts.declined;
+    summary.top10 += counts.top10;
     if (
       result.run &&
       (!summary.lastCheckedAt ||
         result.run.lastCheckedAt > summary.lastCheckedAt)
     ) {
       summary.lastCheckedAt = result.run.lastCheckedAt;
-    }
-    for (const row of result.rows) {
-      for (const device of ["desktop", "mobile"] as const) {
-        const { position, previousPosition } = row[device];
-        if (position !== null && position <= 10) summary.top10 += 1;
-        if (position === null || previousPosition === null) continue;
-        // Lower position number = better ranking.
-        if (position < previousPosition) summary.improved += 1;
-        else if (position > previousPosition) summary.declined += 1;
-      }
     }
   }
 
