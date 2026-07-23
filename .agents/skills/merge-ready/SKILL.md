@@ -1,13 +1,15 @@
 ---
 name: merge-ready
-description: Take a branch from "code exists (or is about to)" to "ready for Ben's final review" — multi-axis subagent review with verified findings, fixes, ci:check, checkpoint commits, and an updated PR. Use whenever the user says a feature/fix/branch should be "merge ready", asks to get changes ready for review, or appends this to a build request ("build X and make it merge-ready").
+description: Take a branch from "code exists (or is about to)" to "ready for the maintainer's final review" — multi-axis subagent review with verified findings, fixes, ci:check, checkpoint commits, and an updated PR. Use whenever the user says a feature/fix/branch should be "merge ready", asks to get changes ready for review, or appends this to a build request ("build X and make it merge-ready").
+metadata:
+  internal: true
 ---
 
 # Merge ready
 
-Drive the current work to the point where the only remaining step is Ben's own review and merge. The deliverable is a pushed branch with a clean `pnpm ci:check`, checkpoint commits along the way, and an open PR with a high-level description plus review instructions.
+Drive the current work to the point where the only remaining step is the maintainer's own review and merge. The deliverable is a pushed branch with a clean `pnpm ci:check`, checkpoint commits along the way, and an open PR with a high-level description plus review instructions.
 
-**Never merge the PR. Ben always reviews last.**
+**Never merge the PR. The maintainer always reviews last.**
 
 ## 0. Figure out the starting point
 
@@ -54,7 +56,7 @@ After verification, route durable learnings without forcing every review to chan
 
 ## 4. Fix, check, loop
 
-- Apply verified `blocker`/`should-fix` fixes. Apply nitpicks only when trivial and clearly right; otherwise list them in the PR for Ben to judge.
+- Apply verified `blocker`/`should-fix` fixes. Apply nitpicks only when trivial and clearly right; otherwise list them in the PR for the maintainer to judge.
 - **Checkpoint:** commit fixes in logical groups (e.g. one commit per axis or per concern) so the fix history is reviewable on its own.
 - Run `pnpm ci:check` (prettier, knip, tsc, oxlint). Fix failures and re-run until clean. If a fix was substantial (not formatting/lint), run a quick re-review of just that change.
 - Loop until ci:check passes and no verified findings remain unaddressed.
@@ -66,4 +68,4 @@ After verification, route durable learnings without forcing every review to chan
   - **High-level** — what changed and why, written for a human skimming. No file paths, no per-file changelog.
   - **How to review** — a short ordered guide: what to look at first, what the risky/judgment-call areas are, what was deliberately left out of scope.
   - **Review notes** — unfixed nitpicks and any REJECT verdicts worth a second opinion, clearly labeled as such.
-- Report back to Ben: PR link, one-paragraph summary, and anything that still needs his judgment. Do not merge.
+- Report back: PR link, one-paragraph summary, and anything that still needs the maintainer's judgment. Do not merge.
