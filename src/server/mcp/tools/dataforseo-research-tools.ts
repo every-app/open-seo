@@ -345,8 +345,8 @@ type GetGoogleBusinessQuestionsArgs = z.infer<
   z.ZodObject<typeof getGoogleBusinessQuestionsInputSchema>
 >;
 
-const QUESTIONS_ANSWERS_MIN_RADIUS = 200;
-const QUESTIONS_ANSWERS_MAX_RADIUS = 199999;
+const BUSINESS_DATA_MIN_RADIUS_METERS = 200;
+const BUSINESS_DATA_MAX_RADIUS_METERS = 199999;
 
 /**
  * Resolves the market selector to a Labs location + language. An explicit
@@ -368,16 +368,12 @@ function formatCoordinate(value: number): string {
   return Number(value.toFixed(7)).toString();
 }
 
-function formatBusinessLocationCoordinate(near: z.infer<typeof nearSchema>) {
-  return `${formatCoordinate(near.latitude)},${formatCoordinate(near.longitude)},${near.radiusKm}`;
-}
-
-function formatQuestionsAnswersCoordinate(near: z.infer<typeof nearSchema>) {
-  const radius = Math.min(
-    QUESTIONS_ANSWERS_MAX_RADIUS,
-    Math.max(QUESTIONS_ANSWERS_MIN_RADIUS, Math.round(near.radiusKm * 1000)),
+function formatBusinessDataCoordinate(near: z.infer<typeof nearSchema>) {
+  const radiusMeters = Math.min(
+    BUSINESS_DATA_MAX_RADIUS_METERS,
+    Math.max(BUSINESS_DATA_MIN_RADIUS_METERS, Math.round(near.radiusKm * 1000)),
   );
-  return `${formatCoordinate(near.latitude)},${formatCoordinate(near.longitude)},${radius}`;
+  return `${formatCoordinate(near.latitude)},${formatCoordinate(near.longitude)},${radiusMeters}`;
 }
 
 function formatLocalSerpCoordinate(near: z.infer<typeof localSerpNearSchema>) {
@@ -668,7 +664,7 @@ export const searchLocalBusinessesTool = {
       const businesses = await client.business.businessListings({
         categories: args.categories,
         title: args.query,
-        locationCoordinate: formatBusinessLocationCoordinate(args.near),
+        locationCoordinate: formatBusinessDataCoordinate(args.near),
         limit: args.limit ?? 20,
       });
 
@@ -750,7 +746,7 @@ export const getGoogleBusinessQuestionsTool = {
       const client = createDataforseoClient(context.billing);
       const questions = await client.business.questionsAnswers({
         keyword: args.keyword,
-        locationCoordinate: formatQuestionsAnswersCoordinate(args.near),
+        locationCoordinate: formatBusinessDataCoordinate(args.near),
         languageCode: args.languageCode ?? context.project.languageCode,
         depth: args.depth ?? 20,
       });
