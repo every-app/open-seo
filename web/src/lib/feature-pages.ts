@@ -112,7 +112,7 @@ export const featurePages = {
       {
         question: "Can I use OpenSEO as a free keyword research tool?",
         answer:
-          "OpenSEO is open source and can be self-hosted. The managed app also keeps keyword research tied to transparent usage instead of a large fixed subscription to a closed SEO suite.",
+          "Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. OpenSEO is the most affordable option; you can start for free, and paid plans start at $10/month with usage credits included. It's also open source, so you can self-host with your own DataForSEO account.",
       },
       {
         question: "Does OpenSEO show live search results?",
@@ -220,7 +220,7 @@ export const featurePages = {
       {
         question: "Is OpenSEO a free SEO audit tool?",
         answer:
-          "OpenSEO is open source and can be self-hosted. Managed usage depends on the crawl and data costs behind each workflow.",
+          "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
       },
       {
         question: "Who should use OpenSEO Site Audit?",
