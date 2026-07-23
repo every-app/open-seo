@@ -51,11 +51,11 @@ function LibrarySpokeCta() {
   return (
     <section className="mt-14 rounded-xl border border-[var(--color-border-subtle)] bg-white p-6">
       <p className="text-xl font-semibold tracking-tight text-neutral-950">
-        Run every play in this guide, free
+        Run every play in this guide
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-        OpenSEO connects your Search Console and expands your seeds — open
-        source, no credit card.
+        OpenSEO connects your Search Console and expands your seeds. Open
+        source, free to try, no credit card.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a

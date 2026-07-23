@@ -7,11 +7,11 @@ const plays = [
   {
     title: "Seed from conversation, not a volume report",
     description:
-      "Harvest seed keywords from sales calls and support tickets — the phrasings tools never surface.",
+      "Harvest seed keywords from sales calls and support tickets: the phrasings tools never surface.",
     href: "/library/keyword-research/seed-from-conversation",
   },
   {
-    title: "What are long-tail keywords — and how to mine them",
+    title: "What are long-tail keywords, and how to mine them",
     description:
       "PAA fan-out, autocomplete harvesting, and the GSC queries you already half-rank for.",
     href: "/library/keyword-research/long-tail-question-mining",
@@ -19,29 +19,29 @@ const plays = [
   {
     title: "Search-intent mapping (hot / warm / cold)",
     description:
-      "Label every keyword by buying temperature before you write — build the hot pages first.",
+      "Label every keyword by buying temperature before you write. Build the hot pages first.",
     href: "/library/keyword-research/search-intent-mapping",
   },
   {
     title: "Cluster keywords into topical hubs",
     description:
-      "One page per intent, one hub per topic — plus the cannibalization fix your rankings are waiting for.",
+      "One page per intent, one hub per topic, plus the fix for keyword cannibalization.",
     href: "/library/keyword-research/cluster-topical-hubs",
   },
   {
     title: "Programmatic discovery with Search Console",
     description:
-      "Query-mine your own GSC by MCP — striking-distance keywords, zero-click pages, dark queries.",
+      "Query-mine your own GSC by MCP: striking-distance keywords, zero-click pages, dark queries.",
   },
   {
     title: "Opportunity sizing & forecasting",
     description:
-      "Size a cluster before you invest — difficulty, traffic ceiling, and honest payback windows.",
+      "Size a cluster before you invest: difficulty, traffic ceiling, and honest payback windows.",
   },
   {
     title: "Intent beyond Google (Pinterest, AI, LinkedIn)",
     description:
-      "Where queries happen when they don't happen in a search box — AI assistants included.",
+      "Where queries happen when they don't happen in a search box, AI assistants included.",
   },
   {
     title: "Map positioning to real demand",
@@ -59,12 +59,12 @@ const faqs = [
   {
     question: "How do you do keyword research for free?",
     answer:
-      "The entire workflow runs on free surfaces — conversations, autocomplete, People Also Ask, Search Console — and OpenSEO itself is free and open source. Paid suites add convenience, not access.",
+      "The entire workflow runs on free surfaces: conversations, autocomplete, People Also Ask, Search Console. OpenSEO itself is open source and free to try.",
   },
   {
     question: "Can you do keyword research without Google Keyword Planner?",
     answer:
-      "Yes — and for SEO you should. Planner groups variants and hides zero-ad-demand queries. Use it to sanity-check commercial value, not to discover topics.",
+      "Yes, and for SEO you should. Planner groups variants and hides zero-ad-demand queries. Use it to sanity-check commercial value, not to discover topics.",
   },
   {
     question: "What are the 3 types of keywords?",
@@ -93,7 +93,7 @@ export const Route = createFileRoute("/_marketing/library/keyword-research/")({
     buildPageSeo({
       title: "How to Do Keyword Research: The Strategy Library",
       description:
-        "Eight practitioner plays that treat keyword research as demand discovery — sourced from real interviews with working SEOs, executable inside OpenSEO, free.",
+        "Eight practitioner plays that treat keyword research as demand discovery, sourced from real interviews with working SEOs, executable inside OpenSEO.",
       path: PATH,
       titleSuffix: "OpenSEO",
     }),
@@ -112,8 +112,8 @@ function KeywordResearchLibraryPage() {
         </h1>
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
           Eight practitioner plays that treat keyword research as demand
-          discovery — sourced from real interviews with working SEOs, executable
-          inside OpenSEO, free.
+          discovery, sourced from real interviews with working SEOs, executable
+          inside OpenSEO.
         </p>
       </header>
 
@@ -123,11 +123,10 @@ function KeywordResearchLibraryPage() {
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Most guides teach you to export a volume report and sort descending.
-          These plays start earlier — where demand actually originates: customer
-          language, question mining, your own Search Console — and end with
-          pages mapped to intent, not keywords stuffed into paragraphs. Each
-          play is a full walkthrough with the copy-paste MCP prompt that runs
-          it.
+          These plays start earlier, where demand originates: customer language,
+          question mining, your own Search Console. They end with pages mapped
+          to intent, not keywords stuffed into paragraphs. Each play is a full
+          walkthrough with the copy-paste MCP prompt that runs it.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {plays.map((play, index) => {
@@ -187,15 +186,14 @@ function KeywordResearchLibraryPage() {
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-700">
           Keyword Planner is an ads tool wearing an SEO costume: it buckets
           close variants into one number, rounds volumes into bands, and hides
-          everything with no ad demand. That's fine for bidding — it's blinding
+          everything with no ad demand. That's fine for bidding. It's blinding
           for content strategy.
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-700">
           The plays in this library replace it with three honest sources: your
           customers' language (play 01), Google's own question surfaces (play
           02), and your Search Console reality (play 05). Volume data still
-          matters — OpenSEO gives it to you free — but it's the <em>last</em>{" "}
-          filter, not the first.
+          matters, but it's the <em>last</em> filter, not the first.
         </p>
       </section>
 
@@ -204,15 +202,16 @@ function KeywordResearchLibraryPage() {
           Free keyword research tools for every play
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          Every play runs in{" "}
+          The free surfaces (autocomplete, People Also Ask, your Search Console)
+          do the discovery. Every play then runs in{" "}
           <a
             href="/features/keyword-research"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
             OpenSEO's keyword research
           </a>
-          , connected to your live Search Console — open source, self-hostable,
-          and scriptable through the{" "}
+          , connected to your live Search Console. Open source, free to try,
+          self-hostable, and scriptable through the{" "}
           <a
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
@@ -247,7 +246,7 @@ function KeywordResearchLibraryPage() {
             The Keyword Research Playbook
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            The plays as a working PDF — checklists, the MCP prompts, and the
+            The plays as a working PDF: checklists, the MCP prompts, and the
             keyword-map template. Ungated.
           </p>
         </div>

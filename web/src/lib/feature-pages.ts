@@ -132,7 +132,7 @@ export const featurePages = {
       eyebrow: "The practitioner playbook",
       title: "The Keyword Research Strategy Library",
       description:
-        "Eight field-tested plays for finding demand that converts — each drawn from a working SEO on the Unscripted podcast, with the workflow and who endorses it. Free, and built to be run inside OpenSEO.",
+        "Eight field-tested plays for finding demand that converts, each drawn from a working SEO on the Unscripted podcast, with the workflow and who endorses it. Free, and built to be run inside OpenSEO.",
       items: [
         {
           label: "Seed from conversation, not a volume report",
@@ -179,7 +179,7 @@ export const featurePages = {
         eyebrow: "Free download",
         title: "The Keyword Research Playbook",
         description:
-          "All 8 plays in one designed PDF — workflows, the practitioner quotes behind them, and a seed-to-brief checklist.",
+          "All 8 plays in one designed PDF: workflows, the practitioner quotes behind them, and a seed-to-brief checklist.",
         label: "Download the PDF",
         href: "/library/keyword-research/keyword-research-playbook.pdf",
       },
