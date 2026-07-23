@@ -29,6 +29,27 @@ export type FeaturePage = {
     question: string;
     answer: string;
   }>;
+  guides?: {
+    eyebrow: string;
+    title: string;
+    description: string;
+    items: Array<{
+      label: string;
+      by: string;
+      href?: string;
+    }>;
+    cta: {
+      label: string;
+      href: string;
+    };
+    download: {
+      eyebrow: string;
+      title: string;
+      description: string;
+      label: string;
+      href: string;
+    };
+  };
 };
 
 export const featurePages = {
@@ -107,6 +128,62 @@ export const featurePages = {
           "Yes. Keyword research can be paired with SERP inspection so you can see ranking pages alongside the metrics.",
       },
     ],
+    guides: {
+      eyebrow: "The practitioner playbook",
+      title: "The Keyword Research Strategy Library",
+      description:
+        "Eight field-tested plays for finding demand that converts, each drawn from a working SEO on the Unscripted podcast, with the workflow and who endorses it. Free, and built to be run inside OpenSEO.",
+      items: [
+        {
+          label: "Seed from conversation, not a volume report",
+          by: "Slaymaker · Bajayo · Digneo",
+          href: "/library/keyword-research/seed-from-conversation",
+        },
+        {
+          label: "Long-tail & question mining (PAA, query fan-out)",
+          by: "Baterina · Moser · Barnard",
+          href: "/library/keyword-research/long-tail-question-mining",
+        },
+        {
+          label: "Search-intent mapping (hot / warm / cold)",
+          by: "Merrilees · Ashford",
+          href: "/library/keyword-research/search-intent-mapping",
+        },
+        {
+          label: "Opportunity sizing & forecasting",
+          by: "Rivera · Berkowitz · Baterina",
+        },
+        {
+          label: "Programmatic & data-driven discovery (GSC)",
+          by: "Rivera · Simmons",
+        },
+        {
+          label: "Cluster keywords into topical hubs",
+          by: "Simmons · Homer",
+          href: "/library/keyword-research/cluster-topical-hubs",
+        },
+        {
+          label: "Intent beyond Google (Pinterest, AI, LinkedIn)",
+          by: "Bocchese · Alfon · Popp",
+        },
+        {
+          label: "Make positioning map to real demand",
+          by: "Little · Popp · Homer",
+        },
+      ],
+      cta: {
+        label: "Open the full library",
+        href: "/library/keyword-research",
+      },
+      download: {
+        eyebrow: "Free download",
+        title: "The Keyword Research Playbook",
+        description:
+          "All 8 plays in one designed PDF: workflows, the practitioner quotes behind them, and a seed-to-brief checklist.",
+        label: "Download the PDF",
+        href: "/library/keyword-research/keyword-research-playbook.pdf",
+      },
+    },
   },
   siteAudit: {
     slug: FEATURE_PAGE_SLUGS.siteAudit,

@@ -1,0 +1,49 @@
+---
+title: "One page per intent, one hub per topic"
+description: "A 500-row keyword list isn't a strategy. Keyword clustering turns it into a site structure and fixes the cannibalization that's splitting your rankings."
+---
+
+## What is keyword clustering?
+
+Keyword clustering is grouping keywords that deserve the _same page_ because they share one intent. "Keyword clustering", "keyword grouping", and "cluster keywords for seo" are one cluster, so they get one page. "Best keyword clustering tool" is a different intent, so it gets a different page. The unit of SEO is the cluster, not the individual keyword.
+
+## How to cluster keywords into topical hubs (without a $99/mo tool)
+
+1. **Start from your expanded list.** [Seeds](/library/keyword-research/seed-from-conversation) → [expansion](/library/keyword-research/long-tail-question-mining) → [intent labels](/library/keyword-research/search-intent-mapping). You want 100+ rows before clustering is worth it.
+2. **Group by SERP overlap, not word similarity.** Two keywords belong together when Google already ranks the same pages for both. Word-match clustering ("keyword tool" + "keyword tool io") produces false groups.
+3. **Name each cluster by its intent.** The name becomes the page's working title. If you can't name the intent in one line, the cluster is two.
+4. **Arrange clusters into a hub.** The head-term cluster is the pillar page; each subtopic cluster is a spoke that links up. Internal links follow intent adjacency, not chronology.
+5. **Map every cluster to one URL, and record it.** The keyword map (a simple sheet: cluster → URL → status) is the artifact that prevents future cannibalization.
+
+![Keyword map table showing clusters mapped to primary keywords, intent, and one target URL each, the structure that prevents keyword cannibalization](/library/keyword-research/keyword-clustering-topical-hub-openseo.png)
+
+## How to fix keyword cannibalization
+
+Cannibalization is the opposite problem: two of your pages compete for one intent, Google alternates between them, and both rank worse than either would alone.
+
+- **Find it:** in [Search Console](/google-search-console-mcp), group by query + page. Any query with 2+ of your URLs swapping impressions is a candidate.
+- **Fix it:** merge the weaker page into the stronger (301), or re-point the weaker page at a genuinely different intent and re-title it.
+- **Prevent it:** the keyword map from step 5. No new page ships without checking which cluster it claims.
+
+Run this play with the [OpenSEO MCP](/docs/mcp):
+
+```text
+Using the OpenSEO MCP + Search Console: pull my queries grouped by
+query and page, flag queries where two of my URLs alternate, and
+propose merge/redirect fixes. Then cluster my researched keywords
+by shared intent and output a cluster → URL keyword map.
+```
+
+## Keyword clustering FAQ
+
+### What's the best keyword clustering tool?
+
+For SERP-overlap clustering at scale, paid tools exist, but for most sites, OpenSEO's research + an intent-grouping pass (the MCP prompt above) covers it. Judge tools by whether they cluster on SERP overlap; word-similarity clustering is a toy.
+
+### Is there a free keyword clustering tool?
+
+This workflow is the closest thing: the clustering pass runs through the MCP on keywords you've already researched, so there's no separate clustering tool to buy. OpenSEO itself is open source.
+
+### What is a keyword mapping template?
+
+A sheet with one row per cluster: primary keyword, supporting keywords, intent, target URL, status. The keyword map above is the working example; copy the structure.
