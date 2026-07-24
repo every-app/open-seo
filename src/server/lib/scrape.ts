@@ -229,13 +229,18 @@ export async function discoverSiteUrls(
   if (apiKey && !breaker.tripped) {
     try {
       const mapped = await firecrawlMapUrls(apiKey, rootUrl, limit);
-      // Keep same-origin URLs other than the homepage itself (compared by a
-      // canonical key so a trailing-slash / www / http variant of the homepage
-      // isn't scraped twice).
-      const rootKey = canonicalUrlKey(rootUrl);
-      const sameOrigin = (mapped ?? []).filter(
-        (url) => isSameOrigin(url, origin) && canonicalUrlKey(url) !== rootKey,
-      );
+      // Keep same-origin URLs, deduped against each other and the homepage by
+      // canonical key, so equivalent variants of one page (www vs apex, http
+      // vs https, query order) don't get scraped twice. isSameOrigin treats
+      // www/apex as one site, so the dedup must too.
+      const seenKeys = new Set([canonicalUrlKey(rootUrl)]);
+      const sameOrigin = (mapped ?? []).filter((url) => {
+        if (!isSameOrigin(url, origin)) return false;
+        const key = canonicalUrlKey(url);
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      });
       // Only take the map result when it actually adds pages; otherwise fall
       // through so a map that yields nothing usable doesn't shadow the sitemap.
       if (sameOrigin.length > 0) {
