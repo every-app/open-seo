@@ -1,5 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
+import {
+  getAiSearchCitedSourcesTool,
+  getAiSearchVisibilityTool,
+} from "@/server/mcp/tools/ai-search-tools";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -251,6 +255,24 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getAuditPagesTool.name,
       getAuditPagesTool.config.outputSchema,
       getAuditPagesTool.handler,
+    ),
+  );
+  server.registerTool(
+    getAiSearchVisibilityTool.name,
+    getAiSearchVisibilityTool.config,
+    instrumentMcpToolHandler(
+      getAiSearchVisibilityTool.name,
+      getAiSearchVisibilityTool.config.outputSchema,
+      getAiSearchVisibilityTool.handler,
+    ),
+  );
+  server.registerTool(
+    getAiSearchCitedSourcesTool.name,
+    getAiSearchCitedSourcesTool.config,
+    instrumentMcpToolHandler(
+      getAiSearchCitedSourcesTool.name,
+      getAiSearchCitedSourcesTool.config.outputSchema,
+      getAiSearchCitedSourcesTool.handler,
     ),
   );
 }

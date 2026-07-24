@@ -28,7 +28,8 @@ export const lookupBrand = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(brandLookupInputSchema)
   .handler(async ({ data, context }) => {
-    await assertPaidPlan(context.organizationId);
+    // getBrandLookup self-gates on the paid plan so MCP callers inherit the
+    // same check; no need to duplicate it here.
     return getBrandLookup({ ...data, projectId: context.projectId }, context);
   });
 
