@@ -2,10 +2,19 @@
 // (onboarding + SAM): discover URLs from the sitemap (falling back to the
 // homepage) and extract readable text from each page via plain fetch. This is
 // enough to let the model infer what a site does. JS-heavy sites degrade
-// gracefully (less text); a Browser Rendering upgrade can slot in behind this
-// same interface later.
+// gracefully (less text).
+//
+// When FIRECRAWL_API_KEY is configured, page reads and URL discovery are routed
+// through Firecrawl (JS rendering + clean markdown, and /map for discovery)
+// behind this same interface, with the plain-fetch path as the fallback. See
+// firecrawl.ts.
 
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
+import {
+  firecrawlMapUrls,
+  firecrawlScrapePage,
+  getFirecrawlApiKey,
+} from "@/server/lib/firecrawl";
 
 export const MAX_PAGES = 5;
 const PER_PAGE_CHAR_LIMIT = 4000;
@@ -163,6 +172,7 @@ export async function readPages(
   urls: string[],
   maxPages: number = MAX_PAGES,
 ): Promise<SiteReadResult> {
+  const apiKey = await getFirecrawlApiKey();
   const pages: ScrapedPage[] = [];
   for (const rawUrl of urls.slice(0, maxPages)) {
     let url: string;
@@ -172,7 +182,14 @@ export async function readPages(
     } catch {
       continue; // blocked or unparseable URL
     }
-    const page = await scrapePage(url);
+    // Prefer Firecrawl when configured; fall back to plain fetch if it's
+    // unavailable or returns nothing for this URL.
+    let page: ScrapedPage | null = apiKey
+      ? await firecrawlScrapePage(apiKey, url, PER_PAGE_CHAR_LIMIT)
+      : null;
+    if (!page) {
+      page = await scrapePage(url);
+    }
     if (page) {
       pages.push(page);
     }
@@ -198,6 +215,17 @@ export async function discoverSiteUrls(
     return { urls: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
+
+  // Firecrawl's /map discovers more than the sitemap when configured; fall back
+  // to sitemap parsing if it's unavailable or returns nothing.
+  const apiKey = await getFirecrawlApiKey();
+  if (apiKey) {
+    const mapped = await firecrawlMapUrls(apiKey, rootUrl, limit);
+    if (mapped && mapped.length > 0) {
+      const urls = [rootUrl, ...mapped.filter((url) => url !== rootUrl)];
+      return { urls: urls.slice(0, limit), blocked: false };
+    }
+  }
 
   const sitemap = await fetchText(`${origin}/sitemap.xml`);
   const discovered = sitemap ? parseSitemapUrls(sitemap, origin) : [];

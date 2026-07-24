@@ -50,6 +50,10 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
+
+    // Optional Firecrawl API key. When set, the chat agents' site reader routes
+    // page reads + URL discovery through Firecrawl (see server/lib/firecrawl.ts).
+    FIRECRAWL_API_KEY?: string;
   }
 }
 
