@@ -15,6 +15,7 @@
 // Docs: https://docs.firecrawl.dev
 
 import { z } from "zod";
+import { readBoundedText } from "@/server/lib/bounded-response";
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 
 const FIRECRAWL_API_BASE = "https://api.firecrawl.dev/v2";
@@ -22,10 +23,6 @@ const FIRECRAWL_API_BASE = "https://api.firecrawl.dev/v2";
 // return its own timeout response before we give up and fall back.
 const FIRECRAWL_API_TIMEOUT_MS = 20_000;
 const FIRECRAWL_ABORT_MS = 25_000;
-// Cap the body we buffer before parsing, mirroring scrape.ts's plain-reader
-// guard so an oversized markdown/document response can't be fully buffered in
-// the Worker.
-const MAX_RESPONSE_BYTES = 5_000_000;
 // This is a website reader, not a document reader. Firecrawl auto-parses PDFs
 // and bills one credit per page, so bound the pages parsed to keep an arbitrary
 // (possibly huge) document URL from burning unbounded credits.
@@ -37,61 +34,45 @@ export function getFirecrawlApiKey(): Promise<string | undefined> {
 }
 
 /**
- * Thrown when Firecrawl is unusable at the transport level — unreachable,
- * timed out, non-2xx, or an oversized/unparseable body. Callers use it to trip
- * a per-batch circuit breaker and stop hammering a failing service. A
- * well-formed response that simply has no useful content is NOT an error: those
- * return `null` so the caller falls back for just that URL.
+ * Thrown when Firecrawl is unusable in a way that's likely systemic — the
+ * service is unreachable, timed out, returned a non-2xx, sent an
+ * oversized/unparseable body, or returned a payload whose shape no longer
+ * matches the API contract. Callers use it to trip a circuit breaker and stop
+ * hammering a failing service. A well-formed response that merely reports
+ * failure or has no usable content for one URL is NOT an error: those return
+ * `null` so the caller falls back for just that URL.
  */
 export class FirecrawlUnavailableError extends Error {}
 
 const scrapeResponseSchema = z.object({
-  success: z.literal(true),
-  data: z.object({
-    markdown: z.string().optional(),
-    metadata: z.object({ title: z.string().nullish() }).optional(),
-  }),
+  success: z.boolean(),
+  data: z
+    .object({
+      markdown: z.string().optional(),
+      metadata: z.object({ title: z.string().nullish() }).optional(),
+    })
+    .optional(),
 });
 
 const mapResponseSchema = z.object({
-  success: z.literal(true),
-  links: z.array(z.object({ url: z.string().optional() })),
+  success: z.boolean(),
+  links: z.array(z.object({ url: z.string().optional() })).optional(),
 });
-
-/** Reads the body up to a byte cap, returning null if it overflows. */
-async function readBoundedText(response: Response): Promise<string | null> {
-  const reader = response.body?.getReader();
-  if (!reader) return null;
-  const decoder = new TextDecoder();
-  let result = "";
-  let bytesRead = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytesRead += value.byteLength;
-    if (bytesRead > MAX_RESPONSE_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    result += decoder.decode(value, { stream: true });
-  }
-  result += decoder.decode();
-  return result;
-}
 
 /**
  * POSTs to Firecrawl and returns the parsed JSON as `unknown` for the caller to
- * validate. Throws FirecrawlUnavailableError on any transport-level failure so
- * the caller can trip its circuit breaker.
+ * validate. Throws FirecrawlUnavailableError on any transport-level failure
+ * (including a body-stream error or an oversized/unparseable body) so the
+ * caller can trip its circuit breaker.
  */
 async function postFirecrawl(
   apiKey: string,
   path: string,
   body: unknown,
 ): Promise<unknown> {
-  let response: Response;
+  let text: string | null;
   try {
-    response = await fetch(`${FIRECRAWL_API_BASE}${path}`, {
+    const response = await fetch(`${FIRECRAWL_API_BASE}${path}`, {
       method: "POST",
       headers: {
         authorization: `Bearer ${apiKey}`,
@@ -100,13 +81,18 @@ async function postFirecrawl(
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(FIRECRAWL_ABORT_MS),
     });
-  } catch {
+    if (!response.ok) {
+      throw new FirecrawlUnavailableError(
+        `unexpected status ${response.status}`,
+      );
+    }
+    // Body read stays inside the try so an abort/reset mid-stream surfaces as
+    // FirecrawlUnavailableError rather than a raw AbortError.
+    text = await readBoundedText(response);
+  } catch (error) {
+    if (error instanceof FirecrawlUnavailableError) throw error;
     throw new FirecrawlUnavailableError("request failed");
   }
-  if (!response.ok) {
-    throw new FirecrawlUnavailableError(`unexpected status ${response.status}`);
-  }
-  const text = await readBoundedText(response);
   if (text === null) {
     throw new FirecrawlUnavailableError("response exceeded size limit");
   }
@@ -119,9 +105,10 @@ async function postFirecrawl(
 
 /**
  * Scrapes one (already-validated) URL to clean markdown. Returns a page shaped
- * for scrape.ts, or null when the response is well-formed but has no usable
- * content (the caller then falls back to plain fetch for this URL). Throws
- * FirecrawlUnavailableError when Firecrawl itself is unreachable.
+ * for scrape.ts, or null when Firecrawl reports failure / no usable content for
+ * this URL (the caller then falls back to plain fetch for it). Throws
+ * FirecrawlUnavailableError when Firecrawl is unreachable or its response shape
+ * no longer matches the contract.
  */
 export async function firecrawlScrapePage(
   apiKey: string,
@@ -135,7 +122,10 @@ export async function firecrawlScrapePage(
     parsers: [{ type: "pdf", maxPages: PDF_MAX_PAGES }],
   });
   const parsed = scrapeResponseSchema.safeParse(json);
-  if (!parsed.success) return null;
+  if (!parsed.success) {
+    throw new FirecrawlUnavailableError("unexpected scrape response shape");
+  }
+  if (!parsed.data.success || !parsed.data.data) return null;
   const text = (parsed.data.data.markdown ?? "").trim().slice(0, charLimit);
   if (text.length === 0) return null;
   return { url, title: parsed.data.data.metadata?.title ?? null, text };
@@ -143,9 +133,9 @@ export async function firecrawlScrapePage(
 
 /**
  * Discovers a site's page URLs via Firecrawl's /map, scoped to the origin (no
- * subdomains, matching the sitemap path's exact-origin contract). Returns the
- * URLs, or null when none resolve. Throws FirecrawlUnavailableError when
- * Firecrawl itself is unreachable.
+ * subdomains). Returns the URLs (possibly empty), or null when Firecrawl reports
+ * failure. Throws FirecrawlUnavailableError when Firecrawl is unreachable or its
+ * response shape no longer matches the contract.
  */
 export async function firecrawlMapUrls(
   apiKey: string,
@@ -158,7 +148,10 @@ export async function firecrawlMapUrls(
     includeSubdomains: false,
   });
   const parsed = mapResponseSchema.safeParse(json);
-  if (!parsed.success) return null;
+  if (!parsed.success) {
+    throw new FirecrawlUnavailableError("unexpected map response shape");
+  }
+  if (!parsed.data.success || !parsed.data.links) return null;
   return parsed.data.links
     .map((link) => link.url)
     .filter((value): value is string => typeof value === "string");
