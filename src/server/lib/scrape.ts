@@ -119,6 +119,16 @@ function parseSitemapUrls(xml: string, origin: string): string[] {
   return urls;
 }
 
+/** True when `url` parses and shares `origin`; used to keep discovery
+ * same-origin regardless of the discovery source. */
+function isSameOrigin(url: string, origin: string): boolean {
+  try {
+    return new URL(url).origin === origin;
+  } catch {
+    return false;
+  }
+}
+
 function extractTitle(html: string): string | null {
   const match = /<title[^>]*>([^<]*)<\/title>/i.exec(html);
   return match ? decodeEntities(match[1].trim()) : null;
@@ -173,6 +183,10 @@ export async function readPages(
   maxPages: number = MAX_PAGES,
 ): Promise<SiteReadResult> {
   const apiKey = await getFirecrawlApiKey();
+  // Circuit breaker: once Firecrawl fails at the transport level, stop trying it
+  // for the rest of this batch and read the remaining pages with plain fetch —
+  // otherwise a Firecrawl outage would burn a full request timeout per page.
+  let firecrawlUnavailable = false;
   const pages: ScrapedPage[] = [];
   for (const rawUrl of urls.slice(0, maxPages)) {
     let url: string;
@@ -184,9 +198,14 @@ export async function readPages(
     }
     // Prefer Firecrawl when configured; fall back to plain fetch if it's
     // unavailable or returns nothing for this URL.
-    let page: ScrapedPage | null = apiKey
-      ? await firecrawlScrapePage(apiKey, url, PER_PAGE_CHAR_LIMIT)
-      : null;
+    let page: ScrapedPage | null = null;
+    if (apiKey && !firecrawlUnavailable) {
+      try {
+        page = await firecrawlScrapePage(apiKey, url, PER_PAGE_CHAR_LIMIT);
+      } catch {
+        firecrawlUnavailable = true; // trip the breaker for the rest of the batch
+      }
+    }
     if (!page) {
       page = await scrapePage(url);
     }
@@ -220,10 +239,18 @@ export async function discoverSiteUrls(
   // to sitemap parsing if it's unavailable or returns nothing.
   const apiKey = await getFirecrawlApiKey();
   if (apiKey) {
-    const mapped = await firecrawlMapUrls(apiKey, rootUrl, limit);
-    if (mapped && mapped.length > 0) {
-      const urls = [rootUrl, ...mapped.filter((url) => url !== rootUrl)];
-      return { urls: urls.slice(0, limit), blocked: false };
+    try {
+      const mapped = await firecrawlMapUrls(apiKey, rootUrl, limit);
+      if (mapped && mapped.length > 0) {
+        // Keep only same-origin URLs, matching the sitemap path's contract.
+        const sameOrigin = mapped.filter(
+          (url) => url !== rootUrl && isSameOrigin(url, origin),
+        );
+        const urls = [rootUrl, ...sameOrigin];
+        return { urls: urls.slice(0, limit), blocked: false };
+      }
+    } catch {
+      // Firecrawl unreachable — fall through to sitemap parsing below.
     }
   }
 

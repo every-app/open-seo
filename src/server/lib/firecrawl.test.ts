@@ -1,5 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { firecrawlMapUrls, firecrawlScrapePage } from "@/server/lib/firecrawl";
+import {
+  FirecrawlUnavailableError,
+  firecrawlMapUrls,
+  firecrawlScrapePage,
+} from "@/server/lib/firecrawl";
 
 const URL = "https://example.com";
 
@@ -42,16 +46,25 @@ describe("firecrawlScrapePage", () => {
     expect(await firecrawlScrapePage("fc-key", URL, 100)).toBeNull();
   });
 
-  it("returns null on a non-ok response so the caller falls back", async () => {
-    vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 500));
+  it("returns null on a malformed but successful response", async () => {
+    // Wrong shape (data missing) must fall back gracefully, not throw.
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ success: true }));
 
     expect(await firecrawlScrapePage("fc-key", URL, 100)).toBeNull();
   });
 
-  it("returns null on a network error", async () => {
+  it("throws when the response is non-ok", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 500));
+
+    const call = firecrawlScrapePage("fc-key", URL, 100);
+    await expect(call).rejects.toBeInstanceOf(FirecrawlUnavailableError);
+  });
+
+  it("throws on a network error", async () => {
     vi.mocked(fetch).mockRejectedValue(new Error("boom"));
 
-    expect(await firecrawlScrapePage("fc-key", URL, 100)).toBeNull();
+    const call = firecrawlScrapePage("fc-key", URL, 100);
+    await expect(call).rejects.toBeInstanceOf(FirecrawlUnavailableError);
   });
 });
 
@@ -80,9 +93,25 @@ describe("firecrawlMapUrls", () => {
     expect(urls).toEqual([`${URL}/a`, `${URL}/b`]);
   });
 
+  it("returns null when links is not an array", async () => {
+    // Malformed success payload must fall back gracefully, not throw.
+    vi.mocked(fetch).mockResolvedValue(
+      jsonResponse({ success: true, links: {} }),
+    );
+
+    expect(await firecrawlMapUrls("fc-key", URL, 10)).toBeNull();
+  });
+
   it("returns null when Firecrawl reports failure", async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ success: false }));
 
     expect(await firecrawlMapUrls("fc-key", URL, 10)).toBeNull();
+  });
+
+  it("throws when the response is non-ok", async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({}, 500));
+
+    const call = firecrawlMapUrls("fc-key", URL, 10);
+    await expect(call).rejects.toBeInstanceOf(FirecrawlUnavailableError);
   });
 });
