@@ -21,7 +21,7 @@ import { projectIdSchema } from "@/server/mcp/schemas";
 const BRAND_LOOKUP_LOCATION_CODE = 2840;
 const BRAND_LOOKUP_LANGUAGE_CODE = "en";
 
-const inputSchema = {
+const baseInputSchema = {
   projectId: projectIdSchema,
   query: z
     .string()
@@ -31,16 +31,22 @@ const inputSchema = {
     .describe(
       "Brand name, keyword, or domain to look up (e.g. 'Semrush' or 'semrush.com').",
     ),
+} as const;
+
+type BaseArgs = z.infer<z.ZodObject<typeof baseInputSchema>>;
+
+const visibilityInputSchema = {
+  ...baseInputSchema,
   competitors: z
     .array(z.string().trim().min(1).max(BRAND_LOOKUP_MAX_INPUT_LENGTH))
     .max(5)
     .optional()
     .describe(
-      "Up to 5 competitor brands/domains to compare Share of Voice against. Omit for mention counts only, with no comparison.",
+      "Up to 5 competitor brands/domains to compare Share of Voice against. Omit for mention counts only, with no comparison. Each named competitor runs an extra paid cross-aggregated lookup per platform.",
     ),
 } as const;
 
-type Args = z.infer<z.ZodObject<typeof inputSchema>>;
+type VisibilityArgs = z.infer<z.ZodObject<typeof visibilityInputSchema>>;
 
 /**
  * Both tools below read the same underlying Brand Lookup result (shared
@@ -49,8 +55,16 @@ type Args = z.infer<z.ZodObject<typeof inputSchema>>;
  * mirroring the split the dashboard doesn't need but two focused MCP tools
  * do, so an agent asking only "who's winning share of voice" doesn't also
  * have to receive every cited URL.
+ *
+ * `competitors` is only accepted by get_ai_search_visibility: passing it adds
+ * a paid cross-aggregated Share-of-Voice call per platform, and
+ * get_ai_search_cited_sources has nowhere to surface that data — accepting it
+ * there would silently spend credits on a result the caller never sees.
  */
-async function fetchBrandLookup(args: Args, billing: BillingCustomerContext) {
+async function fetchBrandLookup(
+  args: BaseArgs & { competitors?: string[] },
+  billing: BillingCustomerContext,
+) {
   const input = brandLookupInputSchema.parse({
     projectId: args.projectId,
     query: args.query,
@@ -79,7 +93,7 @@ export const getAiSearchVisibilityTool = {
     title: "Get AI Search visibility",
     description:
       "Brand mention counts and AI search volume for a brand, keyword, or domain across ChatGPT and Google AI Overview, plus Share of Voice against up to 5 named competitors. Fixed to the US/en market, matching the dashboard's Brand Lookup page. Calls DataForSEO's LLM Mentions API — charges credits on a cache miss, then cached 24h per project/query/competitor set. For the URLs cited as sources, use get_ai_search_cited_sources instead.",
-    inputSchema,
+    inputSchema: visibilityInputSchema,
     outputSchema: brandLookupResultSchema
       .omit({ topPages: true, topQueries: true })
       .extend(optionalMetaOutputSchema)
@@ -90,7 +104,7 @@ export const getAiSearchVisibilityTool = {
       destructiveHint: false,
     },
   },
-  handler: withMcpProjectAuth(async (args: Args, context) => {
+  handler: withMcpProjectAuth(async (args: VisibilityArgs, context) => {
     const result = await fetchBrandLookup(args, context.billing);
     const lines = [
       `Query: ${result.query} (detected ${result.detectedTargetType}: ${result.resolvedTarget})`,
@@ -162,8 +176,8 @@ export const getAiSearchCitedSourcesTool = {
   config: {
     title: "Get AI Search cited sources",
     description:
-      "Which URLs get cited as sources in ChatGPT and Google AI Overview answers about a brand, keyword, or domain, plus the underlying prompts/questions and the other brands mentioned alongside each one. Fixed to the US/en market, matching the dashboard's Brand Lookup page. Calls DataForSEO's LLM Mentions API — charges credits on a cache miss, then cached 24h per project/query/competitor set. For mention counts and Share of Voice, use get_ai_search_visibility instead.",
-    inputSchema,
+      "Which URLs get cited as sources in ChatGPT and Google AI Overview answers about a brand, keyword, or domain, plus the underlying prompts/questions and the other brands mentioned alongside each one. Fixed to the US/en market, matching the dashboard's Brand Lookup page. Takes no competitors — it doesn't report Share of Voice, so it never runs the paid competitor comparison; use get_ai_search_visibility for that. Calls DataForSEO's LLM Mentions API — charges credits on a cache miss, then cached 24h per project/query.",
+    inputSchema: baseInputSchema,
     outputSchema: brandLookupResultSchema
       .pick({
         query: true,
@@ -182,7 +196,7 @@ export const getAiSearchCitedSourcesTool = {
       destructiveHint: false,
     },
   },
-  handler: withMcpProjectAuth(async (args: Args, context) => {
+  handler: withMcpProjectAuth(async (args: BaseArgs, context) => {
     const result = await fetchBrandLookup(args, context.billing);
     const lines = [
       `Query: ${result.query} (detected ${result.detectedTargetType}: ${result.resolvedTarget})`,
@@ -211,7 +225,7 @@ export const getAiSearchCitedSourcesTool = {
         context,
         args.projectId,
         `/p/${args.projectId}/brand-lookup`,
-        { q: args.query, c: args.competitors?.join(",") },
+        { q: args.query },
       ),
       structuredContent: {
         query: result.query,
