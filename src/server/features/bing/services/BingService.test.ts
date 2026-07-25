@@ -32,6 +32,17 @@ const mocks = vi.hoisted(() => {
   const listSites = vi.fn<(opts: BingClientOptions) => Promise<BingSite[]>>();
   const getRankAndTrafficStats =
     vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
+  type BingStatRow = {
+    key: string;
+    clicks: number;
+    impressions: number;
+    date: string | null;
+    avgImpressionPosition: number;
+  };
+  const getQueryStats =
+    vi.fn<(opts: BingClientOptions) => Promise<BingStatRow[]>>();
+  const getPageStats =
+    vi.fn<(opts: BingClientOptions) => Promise<BingStatRow[]>>();
   const getConnectedEmail =
     vi.fn<(opts: BingClientOptions) => Promise<string | null>>();
   const deleteWhere = vi
@@ -55,10 +66,14 @@ const mocks = vi.hoisted(() => {
     dbDelete: vi.fn(() => ({ where: deleteWhere })),
     listSites,
     getRankAndTrafficStats,
+    getQueryStats,
+    getPageStats,
     getConnectedEmail,
     createBingClient: vi.fn((opts: BingClientOptions) => ({
       listSites: () => listSites(opts),
       getRankAndTrafficStats: () => getRankAndTrafficStats(opts),
+      getQueryStats: () => getQueryStats(opts),
+      getPageStats: () => getPageStats(opts),
       getConnectedEmail: () => getConnectedEmail(opts),
     })),
     upsert: vi.fn(),

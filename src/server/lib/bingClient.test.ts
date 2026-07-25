@@ -200,6 +200,74 @@ describe("bingClient", () => {
     ).rejects.toBeInstanceOf(BingTokenError);
   });
 
+  describe("getQueryStats / getPageStats", () => {
+    const sampleRow = {
+      __type: "QueryStats:#Microsoft.Bing.Webmaster.Api",
+      Query: "open seo",
+      Clicks: 12,
+      Impressions: 340,
+      Date: "/Date(1445558400000-0700)/",
+      AvgClickPosition: -1,
+      AvgImpressionPosition: 7.4,
+    };
+
+    it("encodes the siteUrl and maps sampled query rows, key from Query", async () => {
+      mocks.fetch.mockResolvedValue(jsonResponse({ d: [sampleRow] }));
+      const { createBingClient } = await import("./bingClient");
+      const rows = await createBingClient({ userId: "u1" }).getQueryStats(
+        "https://example.com/",
+      );
+
+      expect(mocks.fetch.mock.calls[0][0]).toBe(
+        "https://ssl.bing.com/webmaster/api.svc/json/GetQueryStats?siteUrl=https%3A%2F%2Fexample.com%2F",
+      );
+      expect(rows).toEqual([
+        {
+          key: "open seo",
+          clicks: 12,
+          impressions: 340,
+          date: new Date(1445558400000).toISOString(),
+          avgImpressionPosition: 7.4,
+        },
+      ]);
+    });
+
+    it("getPageStats hits GetPageStats and carries the page URL in key", async () => {
+      mocks.fetch.mockResolvedValue(
+        jsonResponse({
+          d: [{ ...sampleRow, Query: "https://example.com/pricing" }],
+        }),
+      );
+      const { createBingClient } = await import("./bingClient");
+      const rows = await createBingClient({ userId: "u1" }).getPageStats(
+        "https://example.com/",
+      );
+
+      expect(mocks.fetch.mock.calls[0][0]).toBe(
+        "https://ssl.bing.com/webmaster/api.svc/json/GetPageStats?siteUrl=https%3A%2F%2Fexample.com%2F",
+      );
+      expect(rows[0].key).toBe("https://example.com/pricing");
+    });
+
+    it("treats a null `d` payload as an empty result", async () => {
+      mocks.fetch.mockResolvedValue(jsonResponse({ d: null }));
+      const { createBingClient } = await import("./bingClient");
+      await expect(
+        createBingClient({ userId: "u1" }).getQueryStats(
+          "https://example.com/",
+        ),
+      ).resolves.toEqual([]);
+    });
+
+    it("treats a 200 response missing `d` as a BingApiError", async () => {
+      mocks.fetch.mockResolvedValue(jsonResponse({ notD: [] }));
+      const { createBingClient, BingApiError } = await import("./bingClient");
+      await expect(
+        createBingClient({ userId: "u1" }).getPageStats("https://example.com/"),
+      ).rejects.toBeInstanceOf(BingApiError);
+    });
+  });
+
   describe("getConnectedEmail", () => {
     it("reads the email claim off the access token without a network call", async () => {
       mocks.getAccessToken.mockResolvedValue({

@@ -1,6 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
-import { getBingPerformanceTool } from "@/server/mcp/tools/bing-tools";
+import {
+  getBingPerformanceTool,
+  getBingQueriesTool,
+} from "@/server/mcp/tools/bing-tools";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -216,6 +219,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getBingPerformanceTool.name,
       getBingPerformanceTool.config.outputSchema,
       getBingPerformanceTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingQueriesTool.name,
+    getBingQueriesTool.config,
+    instrumentMcpToolHandler(
+      getBingQueriesTool.name,
+      getBingQueriesTool.config.outputSchema,
+      getBingQueriesTool.handler,
     ),
   );
   server.registerTool(

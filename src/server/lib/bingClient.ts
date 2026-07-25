@@ -48,6 +48,18 @@ type BingSite = {
  *  against the live API on 2026-07-25: `Date` (WCF, carrying a timezone
  *  offset), `Clicks`, `Impressions`, plus the `__type` marker every WCF
  *  payload has. Extra fields are tolerated and ignored. */
+/** One sampled row from GetQueryStats/GetPageStats. `key` is the query text,
+ *  or the page URL for GetPageStats. */
+type BingStatRow = {
+  key: string;
+  clicks: number;
+  impressions: number;
+  /** ISO 8601 sample date, or null if unparseable. Informational only —
+   *  samples are too sparse for date slicing. */
+  date: string | null;
+  avgImpressionPosition: number;
+};
+
 type BingRankAndTrafficStatsRow = {
   /** ISO 8601, or null if Bing sent something unparseable. */
   date: string | null;
@@ -96,6 +108,20 @@ const rankAndTrafficStatsRowSchema = z.looseObject({
   Date: z.unknown(),
   Clicks: z.number(),
   Impressions: z.number(),
+});
+
+/** GetQueryStats and GetPageStats share one row shape (verified live
+ *  2026-07-25): GetPageStats reuses the QueryStats type and puts the page URL
+ *  in `Query`. `AvgClickPosition` is -1 when nothing was clicked, so it is
+ *  ignored here; `AvgImpressionPosition` is the usable position signal. Rows
+ *  are SAMPLED (~16 distinct dates over ~5 months) — callers must aggregate
+ *  over the whole window, never slice by date. */
+const queryStatsRowSchema = z.looseObject({
+  Query: z.string(),
+  Clicks: z.number(),
+  Impressions: z.number(),
+  Date: z.unknown(),
+  AvgImpressionPosition: z.number(),
 });
 
 const bingSiteSchema = z.looseObject({
@@ -214,5 +240,36 @@ export function createBingClient(opts: {
         impressions: row.Impressions,
       }));
     },
+
+    /** GetQueryStats — sampled per-query rows over Bing's fixed ~6-month
+     *  window. */
+    async getQueryStats(siteUrl: string): Promise<BingStatRow[]> {
+      return fetchStatRows("GetQueryStats", siteUrl);
+    },
+
+    /** GetPageStats — sampled per-page rows; the page URL arrives in the
+     *  `Query` field and is exposed as `key`. */
+    async getPageStats(siteUrl: string): Promise<BingStatRow[]> {
+      return fetchStatRows("GetPageStats", siteUrl);
+    },
   };
+
+  async function fetchStatRows(
+    method: "GetQueryStats" | "GetPageStats",
+    siteUrl: string,
+  ): Promise<BingStatRow[]> {
+    const payload = await request(
+      `${BING_API_BASE}/${method}?siteUrl=${encodeURIComponent(siteUrl)}`,
+    );
+    const rows = z.array(queryStatsRowSchema).parse(payload ?? []);
+    return rows.map((row) => ({
+      key: row.Query,
+      clicks: row.Clicks,
+      impressions: row.Impressions,
+      date: parseWcfDate(row.Date)?.toISOString() ?? null,
+      avgImpressionPosition: row.AvgImpressionPosition,
+    }));
+  }
 }
+
+export type { BingStatRow };

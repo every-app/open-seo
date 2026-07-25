@@ -12,12 +12,25 @@ import {
   BingConnectionRepository,
   type BingConnection,
 } from "@/server/features/bing/repositories/BingConnectionRepository";
+import {
+  aggregateBingStatRows,
+  buildBingStrikingRows,
+  type BingAggregateRow,
+} from "@/server/features/bing/bingQueryReport";
 
 type BingClient = ReturnType<typeof createBingClient>;
 type BingSite = Awaited<ReturnType<BingClient["listSites"]>>[number];
 type BingRankAndTrafficStatsRow = Awaited<
   ReturnType<BingClient["getRankAndTrafficStats"]>
 >[number];
+
+type BingQueryReportResult = {
+  siteUrl: string;
+  connectedBy: string | null;
+  queries: BingAggregateRow[];
+  pages: BingAggregateRow[];
+  striking: BingAggregateRow[];
+};
 
 type BingPerformanceResult = {
   siteUrl: string;
@@ -236,11 +249,24 @@ async function disconnect(input: {
 async function getPerformance(input: {
   projectId: string;
 }): Promise<BingPerformanceResult> {
-  const connection = await BingConnectionRepository.getByProjectId(
-    input.projectId,
-  );
+  const { connection, client } = await resolveOauthClient(input.projectId);
+  const rows = await client.getRankAndTrafficStats(connection.siteUrl);
+  return {
+    siteUrl: connection.siteUrl,
+    connectedBy: connection.connectedAccountEmail,
+    rows,
+  };
+}
+
+/** Resolve a project's connection to a ready OAuth client, or throw the same
+ *  errors getPerformance always has (not connected / api_key unsupported). */
+async function resolveOauthClient(projectId: string): Promise<{
+  connection: BingConnection;
+  client: BingClient;
+}> {
+  const connection = await BingConnectionRepository.getByProjectId(projectId);
   if (!connection) {
-    throw new BingNotConnectedError(input.projectId);
+    throw new BingNotConnectedError(projectId);
   }
   if (connection.authMode === "api_key") {
     throw new AppError(
@@ -252,11 +278,27 @@ async function getPerformance(input: {
     userId: connection.connectedByUserId,
     bingAccountId: connection.bingAccountId ?? undefined,
   });
-  const rows = await client.getRankAndTrafficStats(connection.siteUrl);
+  return { connection, client };
+}
+
+/** Aggregated query/page report from Bing's sampled GetQueryStats and
+ *  GetPageStats windows (~16 sample dates over ~5 months). Whole-window
+ *  totals only — Bing offers no date range, paging, or dimensions. */
+async function getQueryReport(input: {
+  projectId: string;
+}): Promise<BingQueryReportResult> {
+  const { connection, client } = await resolveOauthClient(input.projectId);
+  const [queryRows, pageRows] = await Promise.all([
+    client.getQueryStats(connection.siteUrl),
+    client.getPageStats(connection.siteUrl),
+  ]);
+  const queries = aggregateBingStatRows(queryRows);
   return {
     siteUrl: connection.siteUrl,
     connectedBy: connection.connectedAccountEmail,
-    rows,
+    queries,
+    pages: aggregateBingStatRows(pageRows),
+    striking: buildBingStrikingRows(queries),
   };
 }
 
@@ -267,4 +309,5 @@ export const BingService = {
   setSite,
   disconnect,
   getPerformance,
+  getQueryReport,
 };
