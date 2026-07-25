@@ -142,14 +142,16 @@ rather than something Bing will grow out of.
   - `GetCrawlIssues(siteUrl)` — 200 with 0 rows on a healthy site; the row
     shape is UNPINNED (never observed non-empty). Re-probe against a site
     with real crawl errors before building anything on it.
-  - `GetLinkCounts(siteUrl)` — single object `{ Links: [], TotalPages }`,
-    not an array of rows. Inner `Links` shape unpinned (the probed site had
-    no inbound links in Bing's index).
-  - `GetUrlLinks(siteUrl, link)` — the URL parameter is named `link`, not
-    `url` or `page` (`url` → 400 InvalidUrl; `page` → 400 format error,
-    suggesting Bing parses `page` as an integer pager here). Returns a
-    single `LinkDetails` object `{ Details: [], TotalPages }`; inner
-    `Details` shape unpinned for the same reason.
+  - `GetLinkCounts(siteUrl)` and `GetUrlLinks(siteUrl, link)` are DEAD
+    ENDS: both return 200 with empty payloads (`{ Links: [], TotalPages: 0 }`
+    / `{ Details: [], TotalPages: 0 }`, with or without the integer `page`
+    pager) for a site whose portal Backlinks tool shows 27 referring
+    domains and 85 referring pages. The 2020 portal's Backlinks data is not
+    served by the legacy JSON API, and Microsoft Q&A carries the same
+    unresolved report from other users. Do not build on these; Bing
+    backlink data would need the portal's private API, which we will not
+    touch. (`GetUrlLinks` param name is `link`; `url` → 400 InvalidUrl,
+    `page` → 400 format error.)
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per
