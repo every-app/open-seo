@@ -13,6 +13,17 @@ function jsonResponse(body: unknown, status = 200) {
   return Response.json(body, { status });
 }
 
+/** Base64url-encoded JSON, the shape Bing's access tokens actually take. */
+function accessToken(claims: Record<string, unknown>) {
+  const bytes = new TextEncoder().encode(JSON.stringify(claims));
+  let binary = "";
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary)
+    .replaceAll("+", "-")
+    .replaceAll("/", "_")
+    .replaceAll("=", "");
+}
+
 describe("bingClient", () => {
   beforeEach(() => {
     mocks.getAccessToken.mockReset();
@@ -209,5 +220,43 @@ describe("parseWcfDate", () => {
     expect(parseWcfDate(1445558400000)).toBeNull();
     expect(parseWcfDate(null)).toBeNull();
     expect(parseWcfDate(undefined)).toBeNull();
+  });
+
+  describe("getConnectedEmail", () => {
+    it("reads the email claim off the access token without a network call", async () => {
+      mocks.getAccessToken.mockResolvedValue({
+        accessToken: accessToken({
+          webmasteruid: "uid-1",
+          webmasteremail: "owner@example.com",
+        }),
+      });
+      const { createBingClient } = await import("./bingClient");
+
+      await expect(
+        createBingClient({ userId: "u1" }).getConnectedEmail(),
+      ).resolves.toBe("owner@example.com");
+      // Bing has no userinfo endpoint — nothing should be fetched.
+      expect(mocks.fetch).not.toHaveBeenCalled();
+    });
+
+    it("returns null when the token carries no email claim", async () => {
+      mocks.getAccessToken.mockResolvedValue({
+        accessToken: accessToken({ webmasteruid: "uid-1" }),
+      });
+      const { createBingClient } = await import("./bingClient");
+
+      await expect(
+        createBingClient({ userId: "u1" }).getConnectedEmail(),
+      ).resolves.toBeNull();
+    });
+
+    it("returns null when the token cannot be decoded", async () => {
+      mocks.getAccessToken.mockResolvedValue({ accessToken: "opaque-token" });
+      const { createBingClient } = await import("./bingClient");
+
+      await expect(
+        createBingClient({ userId: "u1" }).getConnectedEmail(),
+      ).resolves.toBeNull();
+    });
   });
 });

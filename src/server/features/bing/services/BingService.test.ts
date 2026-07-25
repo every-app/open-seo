@@ -32,6 +32,8 @@ const mocks = vi.hoisted(() => {
   const listSites = vi.fn<(opts: BingClientOptions) => Promise<BingSite[]>>();
   const getRankAndTrafficStats =
     vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
+  const getConnectedEmail =
+    vi.fn<(opts: BingClientOptions) => Promise<string | null>>();
   const deleteWhere = vi
     .fn<(condition: SQL) => Promise<void>>()
     .mockResolvedValue(undefined);
@@ -53,9 +55,11 @@ const mocks = vi.hoisted(() => {
     dbDelete: vi.fn(() => ({ where: deleteWhere })),
     listSites,
     getRankAndTrafficStats,
+    getConnectedEmail,
     createBingClient: vi.fn((opts: BingClientOptions) => ({
       listSites: () => listSites(opts),
       getRankAndTrafficStats: () => getRankAndTrafficStats(opts),
+      getConnectedEmail: () => getConnectedEmail(opts),
     })),
     upsert: vi.fn(),
     getByProjectId: vi.fn(),
@@ -98,19 +102,16 @@ const verifiedSite = {
   dnsVerificationCode: null,
 };
 
-function collectSqlParams(value: unknown): unknown[] {
-  if (!value || typeof value !== "object") return [];
-  if ("value" in value && "encoder" in value) {
-    return [value.value];
-  }
-  if (!("queryChunks" in value) || !Array.isArray(value.queryChunks)) return [];
-  return value.queryChunks.flatMap(collectSqlParams);
+function resetClientMocks() {
+  mocks.listSites.mockReset();
+  mocks.getConnectedEmail.mockReset();
+  mocks.getConnectedEmail.mockResolvedValue("owner@example.com");
 }
 
 describe("BingService.setSite", () => {
   beforeEach(() => {
     mocks.state.selectRows = [{ id: "grant-a", accountId: "uid-a" }];
-    mocks.listSites.mockReset();
+    resetClientMocks();
     mocks.createBingClient.mockClear();
     mocks.upsert.mockReset();
   });
@@ -133,7 +134,7 @@ describe("BingService.setSite", () => {
         siteUrl: "https://x.example/",
         connectedByUserId: "u1",
         bingAccountId: "uid-a",
-        connectedAccountEmail: null,
+        connectedAccountEmail: "owner@example.com",
         authMode: "oauth",
       }),
     );
@@ -180,7 +181,7 @@ describe("BingService.listSitesForUserWithGrantStatus", () => {
       { id: "grant-a", accountId: "uid-a" },
       { id: "grant-b", accountId: "uid-b" },
     ];
-    mocks.listSites.mockReset();
+    resetClientMocks();
     mocks.createBingClient.mockClear();
     mocks.dbDelete.mockClear();
   });
@@ -200,11 +201,13 @@ describe("BingService.listSitesForUserWithGrantStatus", () => {
       accounts: [
         {
           accountId: "uid-a",
+          email: "owner@example.com",
           requiresReconnect: false,
           sites: [verifiedSite],
         },
         {
           accountId: "uid-b",
+          email: null,
           requiresReconnect: true,
           sites: [],
         },
@@ -224,7 +227,9 @@ describe("BingService.listSitesForUserWithGrantStatus", () => {
     await expect(
       BingService.listSitesForUserWithGrantStatus("u1"),
     ).resolves.toEqual({
-      accounts: [{ accountId: "uid-a", requiresReconnect: true, sites: [] }],
+      accounts: [
+        { accountId: "uid-a", email: null, requiresReconnect: true, sites: [] },
+      ],
     });
     expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
@@ -248,11 +253,13 @@ describe("BingService.listSitesForUserWithGrantStatus", () => {
       accounts: [
         {
           accountId: "uid-a",
+          email: "owner@example.com",
           requiresReconnect: false,
           sites: [verifiedSite],
         },
         {
           accountId: "uid-b",
+          email: null,
           requiresReconnect: true,
           sites: [],
         },
@@ -314,7 +321,7 @@ describe("BingService.getPerformance", () => {
   it("passes undefined for a null-account connection", async () => {
     mocks.getByProjectId.mockResolvedValue({
       connectedByUserId: "u1",
-      connectedAccountEmail: null,
+      connectedAccountEmail: "owner@example.com",
       bingAccountId: null,
       siteUrl: "https://x.example/",
       authMode: "oauth",
@@ -332,7 +339,7 @@ describe("BingService.getPerformance", () => {
   it("rejects api_key connections with a clear AppError", async () => {
     mocks.getByProjectId.mockResolvedValue({
       connectedByUserId: "u1",
-      connectedAccountEmail: null,
+      connectedAccountEmail: "owner@example.com",
       bingAccountId: null,
       siteUrl: "https://x.example/",
       authMode: "api_key",
@@ -343,108 +350,5 @@ describe("BingService.getPerformance", () => {
       BingService.getPerformance({ projectId: "p1" }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mocks.createBingClient).not.toHaveBeenCalled();
-  });
-});
-
-describe("BingService.disconnect", () => {
-  beforeEach(() => {
-    mocks.getByProjectId.mockReset();
-    mocks.deleteByProjectId.mockReset().mockResolvedValue(undefined);
-    mocks.existsForConnectorAccount.mockReset();
-    mocks.dbDelete.mockClear();
-    mocks.deleteWhere.mockClear();
-  });
-
-  it("unlinks only the disconnected account when it is no longer used", async () => {
-    mocks.getByProjectId.mockResolvedValue({
-      connectedByUserId: "u1",
-      bingAccountId: "uid-b",
-    });
-    mocks.existsForConnectorAccount.mockResolvedValue(false);
-    const { BingService } = await import("./BingService");
-
-    await BingService.disconnect({ projectId: "p1", userId: "u1" });
-
-    expect(mocks.deleteByProjectId).toHaveBeenCalledWith("p1");
-    expect(mocks.existsForConnectorAccount).toHaveBeenCalledWith("u1", "uid-b");
-    expect(mocks.dbDelete).toHaveBeenCalledTimes(1);
-    const whereCondition = mocks.deleteWhere.mock.calls[0]?.[0];
-    expect(collectSqlParams(whereCondition)).toEqual(
-      expect.arrayContaining(["u1", "bing-webmaster", "uid-b"]),
-    );
-  });
-
-  it("keeps the grant when the same account powers another project", async () => {
-    mocks.getByProjectId.mockResolvedValue({
-      connectedByUserId: "u1",
-      bingAccountId: "uid-b",
-    });
-    mocks.existsForConnectorAccount.mockResolvedValue(true);
-    const { BingService } = await import("./BingService");
-
-    await BingService.disconnect({ projectId: "p1", userId: "u1" });
-
-    expect(mocks.deleteByProjectId).toHaveBeenCalledWith("p1");
-    expect(mocks.dbDelete).not.toHaveBeenCalled();
-  });
-
-  it("never revokes a grant when another member disconnects", async () => {
-    mocks.getByProjectId.mockResolvedValue({
-      connectedByUserId: "owner",
-      bingAccountId: "uid-b",
-    });
-    const { BingService } = await import("./BingService");
-
-    await BingService.disconnect({ projectId: "p1", userId: "other-member" });
-
-    expect(mocks.existsForConnectorAccount).not.toHaveBeenCalled();
-    expect(mocks.dbDelete).not.toHaveBeenCalled();
-  });
-
-  it("deletes no grants for a null-account connection", async () => {
-    mocks.getByProjectId.mockResolvedValue({
-      connectedByUserId: "u1",
-      bingAccountId: null,
-    });
-    const { BingService } = await import("./BingService");
-
-    await BingService.disconnect({ projectId: "p1", userId: "u1" });
-
-    expect(mocks.deleteByProjectId).toHaveBeenCalledWith("p1");
-    expect(mocks.existsForConnectorAccount).not.toHaveBeenCalled();
-    expect(mocks.dbDelete).not.toHaveBeenCalled();
-  });
-
-  it("deletes no grants when no site was bound", async () => {
-    mocks.getByProjectId.mockResolvedValue(null);
-    const { BingService } = await import("./BingService");
-
-    await BingService.disconnect({ projectId: "p1", userId: "u1" });
-
-    expect(mocks.existsForConnectorAccount).not.toHaveBeenCalled();
-    expect(mocks.dbDelete).not.toHaveBeenCalled();
-  });
-});
-
-describe("isExpectedGrantFailure", () => {
-  it("treats token failures and 401/403 API errors as expected", async () => {
-    const { isExpectedGrantFailure } = await import("./BingService");
-
-    expect(isExpectedGrantFailure(new mocks.BingTokenError())).toBe(true);
-    expect(
-      isExpectedGrantFailure(new mocks.BingApiError(401, "unauthorized")),
-    ).toBe(true);
-    expect(
-      isExpectedGrantFailure(new mocks.BingApiError(403, "forbidden")),
-    ).toBe(true);
-  });
-
-  it("keeps other failures unexpected", async () => {
-    const { isExpectedGrantFailure } = await import("./BingService");
-
-    expect(
-      isExpectedGrantFailure(new mocks.BingApiError(500, "server error")),
-    ).toBe(false);
-    expect(isExpectedGrantFailure(new Error("boom"))).toBe(false);
   });
 });

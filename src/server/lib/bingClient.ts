@@ -1,7 +1,11 @@
 import { z } from "zod";
 
 import { getAuth } from "@/lib/auth";
-import { BING_API_BASE, BING_OAUTH_PROVIDER_ID } from "@/shared/bing";
+import {
+  BING_API_BASE,
+  BING_OAUTH_PROVIDER_ID,
+  decodeBingAccessToken,
+} from "@/shared/bing";
 
 /** A Bing Webmaster REST call returned a non-2xx status, or a 2xx body that
  *  wasn't the expected WCF `d` envelope. `status` drives user-facing messaging;
@@ -175,6 +179,15 @@ export function createBingClient(opts: {
   }
 
   return {
+    /** The connected Bing account's email. Bing publishes no userinfo
+     *  endpoint, so unlike GSC this is read from a claim on the access token
+     *  rather than fetched — no network call beyond minting the token. Returns
+     *  null when the token carries no email claim. */
+    async getConnectedEmail(): Promise<string | null> {
+      const claims = decodeBingAccessToken(await getToken());
+      return claims?.webmasteremail ?? null;
+    },
+
     /** GetUserSites — the verified/unverified properties on the grant. */
     async listSites(): Promise<BingSite[]> {
       const payload = await request(`${BING_API_BASE}/GetUserSites`);

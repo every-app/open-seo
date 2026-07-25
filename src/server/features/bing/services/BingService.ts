@@ -28,6 +28,7 @@ type BingPerformanceResult = {
 type BingSiteListResult = {
   accounts: Array<{
     accountId: string;
+    email: string | null;
     requiresReconnect: boolean;
     sites: BingSite[];
   }>;
@@ -99,8 +100,17 @@ async function listSitesForUserWithGrantStatus(
 
       try {
         const sites = await client.listSites();
+        // Best-effort: the account list must still render if the email claim
+        // is missing, so this never fails the whole grant.
+        let email: string | null = null;
+        try {
+          email = await client.getConnectedEmail();
+        } catch {
+          email = null;
+        }
         return {
           accountId: grant.accountId,
+          email,
           requiresReconnect: false,
           sites,
         };
@@ -114,6 +124,7 @@ async function listSitesForUserWithGrantStatus(
         }
         return {
           accountId: grant.accountId,
+          email: null,
           requiresReconnect: true,
           sites: [],
         };
@@ -158,15 +169,22 @@ async function setSite(input: {
       "That Bing Webmaster site isn't verified yet.",
     );
   }
+  // Read from the access token's claims, not a userinfo endpoint (Bing has
+  // none). A failure here must not block connecting — the repository coalesce
+  // keeps any previously stored value.
+  let connectedAccountEmail: string | null = null;
+  try {
+    connectedAccountEmail = await client.getConnectedEmail();
+  } catch {
+    connectedAccountEmail = null;
+  }
   return BingConnectionRepository.upsert({
     projectId: input.projectId,
     organizationId: input.organizationId,
     siteUrl: input.siteUrl,
     connectedByUserId: input.userId,
     bingAccountId: input.accountId,
-    // Bing exposes no userinfo endpoint and the client surfaces no email, so
-    // nothing is written here; the repository coalesce keeps any prior value.
-    connectedAccountEmail: null,
+    connectedAccountEmail,
     authMode: "oauth",
   });
 }
