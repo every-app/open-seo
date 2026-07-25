@@ -35,7 +35,9 @@ Two auth questions blocked the design and were settled by a live spike:
 - **Stable account identity.** Bing has no userinfo endpoint and issues no
   `id_token`. **Resolved:** the access token is base64url-encoded JSON carrying
   `webmasteruid` (the account id, also surfaced as `AuthenticationCode` on
-  every site) and `webmasteremail`.
+  every site) and `webmasteremail`. `webmasteruid` held its value across a
+  fresh grant issued after the OAuth client secret was regenerated, so it
+  identifies the Bing account rather than the grant or the client.
 
 ## Decision
 
@@ -101,9 +103,13 @@ rather than something Bing will grow out of.
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per environment
   (local, preview, production).
-- The refresh-token finding rests on a short observation window.
-  `scripts/bing-oauth-spike.ts` is retained so it can be re-checked; if Bing
-  ever starts rotating, `genericOAuth` becomes unsafe and the API-key mode
-  becomes the primary path.
+- The refresh-token finding was replicated on 2026-07-25 across two
+  independent grants, before and after regenerating the OAuth client secret:
+  Bing returned no `refresh_token` on refresh in either, and the original
+  survived repeated reuse. What remains untested is the multi-day complaint in
+  the public reports — that an original token eventually expires
+  unpredictably. `scripts/bing-oauth-spike.ts` is retained so this can be
+  re-checked; if Bing ever starts rotating, `genericOAuth` becomes unsafe and
+  API-key mode becomes the primary path.
 - `webmasteruid` doubles as the site verification code. It is an identifier,
   not a secret to be hashed, but it should not be rendered in the UI.
