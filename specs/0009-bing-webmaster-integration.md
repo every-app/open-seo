@@ -48,16 +48,25 @@ Bing publishes no OIDC discovery document — and a custom `getUserInfo` that
 decodes the access token to `{ id: webmasteruid, email: webmasteremail }`
 rather than making a network call. Scope `webmaster.read` for v1.
 
-An API-key mode is planned but **not implemented in this change**. It is not
-merely a convenience: Bing rejects `localhost` redirect URIs and permits one
-redirect URI per registered client, so a self-hoster cannot complete an OAuth
-flow locally. When it lands the key will be stored encrypted at rest with the
-same `symmetricEncrypt`/`BETTER_AUTH_SECRET` approach used in
-`gsc/selfHostedOAuth.ts`, in a dedicated column — not in the `account` table,
-whose refresh machinery does not apply to a non-expiring key. Today
-`bing_connections.auth_mode` is always written `"oauth"`; the column exists so
-that lane needs no migration, and `getPerformance` rejects any `"api_key"` row
-it encounters rather than silently building an OAuth client for it.
+Self-hosted deployments (`cloudflare_access`, `local_noauth`) cannot use
+Better Auth's `oauth2.link`, which needs a Better Auth session they do not
+have, so they get a hand-rolled authorize/callback pair mirroring
+`gsc/selfHostedOAuth.ts` — HMAC-signed state, code exchange, and an `account`
+row encrypted exactly as `setTokenUtil` would write it. Verified end to end on
+a `cloudflare_access` deployment 2026-07-25. The redirect URI is
+`{origin}/api/bing/oauth/callback`; Bing permits one per registered client, so
+each environment needs its own.
+
+An API-key mode is planned but **not implemented in this change**. Its
+remaining use is local development: Bing rejects `localhost` redirect URIs
+outright, so a dev server cannot complete an OAuth flow at all without a
+public tunnel. When it lands the key will be stored encrypted at rest with the
+same `symmetricEncrypt`/`BETTER_AUTH_SECRET` approach, in a dedicated column —
+not in the `account` table, whose refresh machinery does not apply to a
+non-expiring key. Today `bing_connections.auth_mode` is always written
+`"oauth"`; the column exists so that lane needs no migration, and
+`getPerformance` rejects any `"api_key"` row rather than silently building an
+OAuth client for it.
 
 **Scoping.** `bing_connections` maps one verified site to one project, unique
 per project, mirroring `gsc_connections`: `projectId`, `organizationId`,
@@ -106,8 +115,9 @@ rather than something Bing will grow out of.
   fields are tolerated and ignored.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
-- One redirect URI per OAuth client means one registered client per environment
-  (local, preview, production).
+- One redirect URI per OAuth client means one registered client per
+  environment, and `localhost` is refused outright — local development needs a
+  public tunnel or the deferred API-key mode.
 - The refresh-token finding was replicated on 2026-07-25 across two
   independent grants, before and after regenerating the OAuth client secret:
   Bing returned no `refresh_token` on refresh in either, and the original

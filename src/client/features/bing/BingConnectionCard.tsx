@@ -194,14 +194,22 @@ function SetupWarning() {
         <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
           BING_CLIENT_ID
         </code>{" "}
-        and{" "}
+        ,{" "}
         <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
           BING_CLIENT_SECRET
         </code>
-        .
+        , and a{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          BETTER_AUTH_SECRET
+        </code>{" "}
+        of at least 32 characters, which keys token encryption.
       </p>
       <p className="text-xs text-base-content/55">
-        Bing allows one redirect URI per client and rejects localhost, so each
+        The redirect URI is this deployment's{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          /api/bing/oauth/callback
+        </code>
+        . Bing allows one redirect URI per client and rejects localhost, so each
         deployment needs its own registered client.
       </p>
     </div>
