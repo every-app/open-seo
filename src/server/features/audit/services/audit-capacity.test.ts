@@ -47,4 +47,23 @@ describe("audit capacity helpers", () => {
     expect(freeAudit.pagesTotal).toBe(AUDIT_LIMITS.free.maxPagesPerAudit);
     expect(freeAudit.total).toBeLessThan(AUDIT_LIMITS.free.maxCapacityUnits);
   });
+
+  it("caps cumulative capacity on hosted tiers but not on self-hosted", () => {
+    // maxCapacityUnits is summed over every audit the user has ever started,
+    // so a finite bound is a lifetime budget. That's intended for the hosted
+    // tiers and wrong for a self-hosted operator's own compute.
+    expect(Number.isFinite(AUDIT_LIMITS.free.maxCapacityUnits)).toBe(true);
+    expect(Number.isFinite(AUDIT_LIMITS.paid.maxCapacityUnits)).toBe(true);
+    expect(AUDIT_LIMITS.self_hosted.maxCapacityUnits).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+  });
+
+  it("keeps the per-audit page ceiling identical for paid and self-hosted", () => {
+    // Unlike the capacity budget, this one is a technical ceiling (Workflow
+    // step budget, D1 row writes) and must not be lifted for self-hosted.
+    expect(AUDIT_LIMITS.self_hosted.maxPagesPerAudit).toBe(
+      AUDIT_LIMITS.paid.maxPagesPerAudit,
+    );
+  });
 });
