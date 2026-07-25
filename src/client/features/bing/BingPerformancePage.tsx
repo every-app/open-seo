@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
+import { formatBingDay } from "@/client/features/bing/formatBingDay";
 import { getBingPerformance } from "@/serverFunctions/bing";
 
 type BingRow = {
@@ -99,7 +100,7 @@ function PerformanceTable({ rows }: { rows: BingRow[] }) {
         <tbody>
           {rows.map((row, index) => (
             <tr key={row.date ?? `row-${index}`}>
-              <td className="whitespace-nowrap">{formatDate(row.date)}</td>
+              <td className="whitespace-nowrap">{formatBingDay(row.date)}</td>
               <td className="text-right tabular-nums">
                 {row.clicks.toLocaleString()}
               </td>
@@ -112,19 +113,6 @@ function PerformanceTable({ rows }: { rows: BingRow[] }) {
       </table>
     </div>
   );
-}
-
-/** Bing sends WCF dates; the client already converts them to ISO. A null means
- *  Bing sent something unparseable — show that rather than a fake date. */
-function formatDate(value: string | null) {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 function LoadingState() {
