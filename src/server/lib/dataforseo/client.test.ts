@@ -92,6 +92,14 @@ vi.mock("@/server/lib/dataforseo/ai", () => ({
   fetchLlmCrossAggregatedMetrics: vi.fn(),
   fetchLlmResponse: vi.fn(),
 }));
+// Not wrapped by the client, but re-exported from the sections barrel that
+// loadDataforseoSections() pulls in — so leaving it unmocked is what drags the
+// ~3 MB dataforseo-client SDK into the run and makes the first test that
+// touches the client take seconds instead of milliseconds.
+vi.mock("@/server/lib/dataforseo/google-ads", () => ({
+  fetchAdsKeywordIdeas: vi.fn(),
+  fetchAdsSearchVolume: vi.fn(),
+}));
 
 import {
   createDataforseoClient,
