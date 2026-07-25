@@ -1,10 +1,17 @@
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { getBrandLookup } from "@/server/features/ai-search/services/brandLookup";
+import { explorePrompt } from "@/server/features/ai-search/services/promptExplorer";
 import {
   BRAND_LOOKUP_MAX_INPUT_LENGTH,
   brandLookupInputSchema,
   brandLookupResultSchema,
+  promptExplorerInputSchema,
+  promptExplorerModelSchema,
+  promptExplorerResultSchema,
+  PROMPT_EXPLORER_MAX_PROMPT_LENGTH,
+  webSearchCountryCodeSchema,
+  type PromptExplorerModel,
 } from "@/types/schemas/ai-search";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
@@ -236,6 +243,147 @@ export const getAiSearchCitedSourcesTool = {
         topPages: result.topPages,
         topQueries: result.topQueries,
       },
+    });
+  }),
+};
+
+const promptResultsInputSchema = {
+  projectId: projectIdSchema,
+  prompt: z
+    .string()
+    .trim()
+    .min(1)
+    .max(PROMPT_EXPLORER_MAX_PROMPT_LENGTH)
+    .describe("The prompt/question to ask each model, verbatim."),
+  models: z
+    .array(promptExplorerModelSchema)
+    .min(1)
+    .max(4)
+    .optional()
+    .describe(
+      "Which LLMs to ask: 'chat_gpt', 'claude', 'gemini', 'perplexity' (1-4, deduped). Each model is a separate paid call. Defaults to just 'chat_gpt' to keep an unspecified call cheap.",
+    ),
+  highlightBrand: z
+    .string()
+    .trim()
+    .min(1)
+    .max(BRAND_LOOKUP_MAX_INPUT_LENGTH)
+    .optional()
+    .describe(
+      "Brand to check for in each answer and its citations. Sets brandMentioned per model result; omit to leave it null.",
+    ),
+  webSearch: z
+    .boolean()
+    .optional()
+    .describe("Allow each model to use web search. Defaults to true."),
+  webSearchCountryCode: webSearchCountryCodeSchema
+    .optional()
+    .describe(
+      "ISO-2 country code for the web-search component of the answer (e.g. 'US', 'GB'). Affects results when webSearch is true.",
+    ),
+} as const;
+
+type PromptResultsArgs = z.infer<z.ZodObject<typeof promptResultsInputSchema>>;
+
+const DEFAULT_PROMPT_EXPLORER_MODELS: PromptExplorerModel[] = ["chat_gpt"];
+
+async function fetchPromptResults(
+  args: PromptResultsArgs,
+  billing: BillingCustomerContext,
+) {
+  const input = promptExplorerInputSchema.parse({
+    projectId: args.projectId,
+    prompt: args.prompt,
+    models: args.models ?? DEFAULT_PROMPT_EXPLORER_MODELS,
+    highlightBrand: args.highlightBrand,
+    webSearch: args.webSearch,
+    webSearchCountryCode: args.webSearchCountryCode,
+  });
+  return explorePrompt(input, billing);
+}
+
+type ModelSummaryRow = {
+  model: string;
+  status: string;
+  brandMentioned: string;
+  citations: number | string;
+  outputTokens: number | string | null;
+};
+
+const MODEL_SUMMARY_COLUMNS: McpTableColumn<ModelSummaryRow>[] = [
+  { header: "model", value: (row) => row.model },
+  { header: "status", value: (row) => row.status },
+  { header: "brand mentioned", value: (row) => row.brandMentioned },
+  { header: "citations", value: (row) => row.citations },
+  { header: "output tokens", value: (row) => row.outputTokens },
+];
+
+export const getAiSearchPromptResultsTool = {
+  name: "get_ai_search_prompt_results",
+  config: {
+    title: "Get AI Search prompt results",
+    description:
+      "Ask one prompt across up to 4 LLMs (ChatGPT, Claude, Gemini, Perplexity) and return each model's raw answer, citations, and follow-up fan-out queries — for inspecting exactly what an AI assistant says in response to a specific question, rather than aggregate visibility. For brand mention counts and Share of Voice, use get_ai_search_visibility instead. Each requested model is a separate paid DataForSEO call, cached 7 days per (model, prompt, web search settings) tuple; defaults to just 'chat_gpt' when models is omitted to keep an unspecified call cheap.",
+    inputSchema: promptResultsInputSchema,
+    outputSchema: promptExplorerResultSchema
+      .extend(optionalMetaOutputSchema)
+      .passthrough(),
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: PromptResultsArgs, context) => {
+    const result = await fetchPromptResults(args, context.billing);
+    const summaryRows: ModelSummaryRow[] = result.results.map((r) =>
+      r.status === "success"
+        ? {
+            model: r.model,
+            status: "success",
+            brandMentioned:
+              r.brandMentioned == null ? "—" : r.brandMentioned ? "yes" : "no",
+            citations: r.citations.length,
+            outputTokens: r.outputTokens,
+          }
+        : {
+            model: r.model,
+            status: "error",
+            brandMentioned: "—",
+            citations: "—",
+            outputTokens: "—",
+          },
+    );
+    const lines = [
+      `Prompt: ${result.prompt}`,
+      `Highlight brand: ${result.highlightBrand ?? "none"}`,
+      "",
+      formatMcpTable(summaryRows, MODEL_SUMMARY_COLUMNS),
+    ];
+    for (const modelResult of result.results) {
+      lines.push("", `--- ${modelResult.model} ---`);
+      if (modelResult.status === "error") {
+        lines.push(`Error: ${modelResult.message}`);
+        continue;
+      }
+      lines.push(modelResult.text || "(empty response)");
+      if (modelResult.citations.length > 0) {
+        lines.push(
+          "Citations: " +
+            modelResult.citations
+              .map((c) => `${c.url} (${c.domain ?? "?"})`)
+              .join(", "),
+        );
+      }
+    }
+    return mcpResponse({
+      text: lines.join("\n"),
+      meta: buildProjectMeta(
+        context,
+        args.projectId,
+        `/p/${args.projectId}/prompt-explorer`,
+      ),
+      structuredContent: result,
     });
   }),
 };

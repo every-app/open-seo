@@ -2,11 +2,15 @@ import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolExtra } from "@/server/mcp/context";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
-import type { BrandLookupResult } from "@/types/schemas/ai-search";
+import type {
+  BrandLookupResult,
+  PromptExplorerResult,
+} from "@/types/schemas/ai-search";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   getBrandLookup: vi.fn(),
+  explorePrompt: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -17,6 +21,9 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
 }));
 vi.mock("@/server/features/ai-search/services/brandLookup", () => ({
   getBrandLookup: mocks.getBrandLookup,
+}));
+vi.mock("@/server/features/ai-search/services/promptExplorer", () => ({
+  explorePrompt: mocks.explorePrompt,
 }));
 
 const authContext = {
@@ -99,6 +106,38 @@ const baseResult: BrandLookupResult = {
   monthlyVolume: [{ year: 2026, month: 7, volume: 1200 }],
 };
 
+const basePromptResult: PromptExplorerResult = {
+  prompt: "what is acme",
+  highlightBrand: "acme",
+  fetchedAt: "2026-07-25T00:00:00.000Z",
+  results: [
+    {
+      status: "success",
+      model: "chat_gpt",
+      modelName: "gpt-5",
+      text: "Acme is a widget company.",
+      citations: [
+        {
+          url: "https://acme.com",
+          domain: "acme.com",
+          title: "Acme",
+          matchedBrand: true,
+        },
+      ],
+      fanOutQueries: ["what does acme sell"],
+      brandMentioned: true,
+      outputTokens: 128,
+      webSearch: true,
+    },
+    {
+      status: "error",
+      model: "claude",
+      errorCode: "UPSTREAM_ERROR",
+      message: "This model is temporarily unavailable. Please try again.",
+    },
+  ],
+};
+
 describe("AI Search MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockReset();
@@ -108,6 +147,7 @@ describe("AI Search MCP tools", () => {
       languageCode: "en",
     });
     mocks.getBrandLookup.mockReset();
+    mocks.explorePrompt.mockReset();
   });
 
   it("get_ai_search_visibility returns mentions, share of voice, and no citation fields", async () => {
@@ -218,5 +258,99 @@ describe("AI Search MCP tools", () => {
       "No cited pages found.",
     );
     expect(text?.type === "text" && text.text).toContain("No prompts found.");
+  });
+
+  it("get_ai_search_prompt_results defaults to chat_gpt and renders per-model text and errors", async () => {
+    mocks.explorePrompt.mockResolvedValue(basePromptResult);
+    const { getAiSearchPromptResultsTool } = await import("./ai-search-tools");
+
+    const result = await getAiSearchPromptResultsTool.handler(
+      { projectId: "project_1", prompt: "what is acme" },
+      toolExtra,
+    );
+
+    expect(mocks.explorePrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        projectId: "project_1",
+        prompt: "what is acme",
+        models: ["chat_gpt"],
+      }),
+      expect.objectContaining({ organizationId: "org_123" }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      prompt: "what is acme",
+      results: [
+        expect.objectContaining({ model: "chat_gpt", status: "success" }),
+        expect.objectContaining({ model: "claude", status: "error" }),
+      ],
+    });
+    const text = result.content?.[0];
+    expect(text?.type === "text" && text.text).toContain(
+      "Acme is a widget company.",
+    );
+    expect(text?.type === "text" && text.text).toContain(
+      "Citations: https://acme.com (acme.com)",
+    );
+    expect(text?.type === "text" && text.text).toContain(
+      "Error: This model is temporarily unavailable. Please try again.",
+    );
+    expect(text?.type === "text" && text.text).toContain(
+      "chat_gpt | success | yes | 1 | 128",
+    );
+  });
+
+  it("get_ai_search_prompt_results forwards explicit models and options", async () => {
+    mocks.explorePrompt.mockResolvedValue(basePromptResult);
+    const { getAiSearchPromptResultsTool } = await import("./ai-search-tools");
+
+    await getAiSearchPromptResultsTool.handler(
+      {
+        projectId: "project_1",
+        prompt: "what is acme",
+        models: ["claude", "gemini"],
+        highlightBrand: "acme",
+        webSearch: false,
+        webSearchCountryCode: "GB",
+      },
+      toolExtra,
+    );
+
+    expect(mocks.explorePrompt).toHaveBeenCalledWith(
+      expect.objectContaining({
+        models: ["claude", "gemini"],
+        highlightBrand: "acme",
+        webSearch: false,
+        webSearchCountryCode: "GB",
+      }),
+      expect.anything(),
+    );
+  });
+
+  it("get_ai_search_prompt_results reports an empty response as such", async () => {
+    mocks.explorePrompt.mockResolvedValue({
+      ...basePromptResult,
+      results: [
+        {
+          status: "success",
+          model: "chat_gpt",
+          modelName: "gpt-5",
+          text: "",
+          citations: [],
+          fanOutQueries: [],
+          brandMentioned: null,
+          outputTokens: null,
+          webSearch: true,
+        },
+      ],
+    });
+    const { getAiSearchPromptResultsTool } = await import("./ai-search-tools");
+
+    const result = await getAiSearchPromptResultsTool.handler(
+      { projectId: "project_1", prompt: "what is acme" },
+      toolExtra,
+    );
+
+    const text = result.content?.[0];
+    expect(text?.type === "text" && text.text).toContain("(empty response)");
   });
 });
