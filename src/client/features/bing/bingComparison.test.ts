@@ -67,14 +67,56 @@ describe("splitDailySeries", () => {
     expect(splitDailySeries([])).toBeNull();
   });
 
-  it("reports 0 ctr for an impression-less half", () => {
+  it("trims leading all-zero days before splitting", () => {
+    // Bing pads the window back before the site existed; those rows must not
+    // count as the baseline.
     const result = splitDailySeries([
-      day("2026-07-01", 0, 0),
-      day("2026-07-02", 0, 0),
-      day("2026-07-03", 1, 10),
-      day("2026-07-04", 1, 10),
+      day("2026-02-01", 0, 0),
+      day("2026-02-02", 0, 0),
+      day("2026-02-03", 0, 0),
+      day("2026-02-04", 0, 0),
+      day("2026-07-01", 1, 10),
+      day("2026-07-02", 2, 20),
+      day("2026-07-03", 3, 30),
+      day("2026-07-04", 4, 40),
     ]);
-    expect(result?.previous.ctr).toBe(0);
+    expect(result?.previous.startDate).toBe("2026-07-01");
+    expect(result?.previous.clicks).toBe(3);
+    expect(result?.current.clicks).toBe(7);
+  });
+
+  it("keeps interior zero days after the first active day", () => {
+    const result = splitDailySeries([
+      day("2026-07-01", 1, 10),
+      day("2026-07-02", 0, 0),
+      day("2026-07-03", 3, 30),
+      day("2026-07-04", 4, 40),
+    ]);
+    expect(result?.previous.clicks).toBe(1);
+    expect(result?.current.clicks).toBe(7);
+  });
+
+  it("returns null when the previous half's volume is a negligible baseline", () => {
+    // 1 impression vs 20,000 — a delta against noise is not information.
+    expect(
+      splitDailySeries([
+        day("2026-07-01", 0, 1),
+        day("2026-07-02", 0, 0),
+        day("2026-07-03", 100, 10000),
+        day("2026-07-04", 100, 10000),
+      ]),
+    ).toBeNull();
+  });
+
+  it("returns null for an all-zero series", () => {
+    expect(
+      splitDailySeries([
+        day("2026-07-01", 0, 0),
+        day("2026-07-02", 0, 0),
+        day("2026-07-03", 0, 0),
+        day("2026-07-04", 0, 0),
+      ]),
+    ).toBeNull();
   });
 });
 
