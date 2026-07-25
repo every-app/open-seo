@@ -25,22 +25,44 @@ function totalsOf(rows: Array<DailyRow & { date: string }>): PeriodTotals {
   };
 }
 
+/** A previous half carrying less than this share of the current half's
+ *  impressions is noise, not a baseline — a ratio against it would print
+ *  four-digit percentages that mean nothing. */
+const MIN_BASELINE_RATIO = 0.01;
+
 /**
  * Split Bing's daily series into two equal halves for a "vs prior period"
  * delta. Bing decides the reporting window (no date-range parameter exists),
  * so the honest comparison is the latest half of whatever it sent against the
- * preceding equal-length half. Rows with unparseable (null) dates are dropped;
- * fewer than 4 dated rows yields null (no meaningful comparison).
+ * preceding equal-length half.
+ *
+ * Leading all-zero days are trimmed first: Bing pads the window back before a
+ * site had any presence, and those rows mean "nothing to report", not "earned
+ * zero" — left in, they gut the previous half and inflate every delta.
+ *
+ * Returns null (no delta shown) for: rows with unparseable dates only, fewer
+ * than 4 dated rows after trimming, or a previous half with negligible volume
+ * relative to the current half.
  */
 export function splitDailySeries(rows: DailyRow[]): BingComparison | null {
   const dated = rows
     .filter((row): row is DailyRow & { date: string } => row.date !== null)
     .toSorted((a, b) => a.date.localeCompare(b.date));
-  const half = Math.floor(dated.length / 2);
+  const firstActive = dated.findIndex(
+    (row) => row.clicks > 0 || row.impressions > 0,
+  );
+  if (firstActive === -1) return null;
+  const active = dated.slice(firstActive);
+  const half = Math.floor(active.length / 2);
   if (half < 2) return null;
-  const current = dated.slice(dated.length - half);
-  const previous = dated.slice(dated.length - 2 * half, dated.length - half);
-  return { current: totalsOf(current), previous: totalsOf(previous) };
+  const current = totalsOf(active.slice(active.length - half));
+  const previous = totalsOf(
+    active.slice(active.length - 2 * half, active.length - half),
+  );
+  if (previous.impressions < current.impressions * MIN_BASELINE_RATIO) {
+    return null;
+  }
+  return { current, previous };
 }
 
 export type Delta = { text: string; improved: boolean } | null;
