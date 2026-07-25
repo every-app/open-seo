@@ -19,9 +19,6 @@ export const BING_TOKEN_URL = "https://www.bing.com/webmasters/oauth/token";
  *  2026-07-25); the API reference uses this one. */
 export const BING_API_BASE = "https://ssl.bing.com/webmaster/api.svc/json";
 
-export const BING_SELF_HOSTED_SETUP_DOCS_URL =
-  "https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_BING_WEBMASTER.md";
-
 /** Claims carried by a Bing access token. Bing exposes no userinfo endpoint and
  *  issues no id_token, so this is the only source of account identity. Unknown
  *  claims are preserved — the wire shape is richer than what we consume. */
@@ -37,7 +34,7 @@ const bingAccessTokenClaimsSchema = z.looseObject({
   scope: z.string().optional(),
 });
 
-export type BingAccessTokenClaims = z.infer<typeof bingAccessTokenClaimsSchema>;
+type BingAccessTokenClaims = z.infer<typeof bingAccessTokenClaimsSchema>;
 
 function base64UrlToString(value: string): string {
   const padded = `${value}${"=".repeat((4 - (value.length % 4)) % 4)}`;
