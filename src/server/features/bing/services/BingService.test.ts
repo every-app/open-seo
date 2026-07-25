@@ -266,8 +266,8 @@ describe("BingService.listSitesForUserWithGrantStatus", () => {
       ],
     });
     expect(consoleError).toHaveBeenCalledWith(
-      "Failed to list Bing Webmaster sites for account",
-      "uid-b",
+      "Failed to list Bing Webmaster sites for grant",
+      "grant-b",
       rateLimit,
     );
     expect(mocks.dbDelete).not.toHaveBeenCalled();

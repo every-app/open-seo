@@ -2,8 +2,8 @@
 
 ## Status
 
-Proposed (July 2026) — auth and identity verified against the live API by
-`scripts/bing-oauth-spike.ts`; data endpoints not yet exercised.
+Proposed (July 2026) — auth, identity, and `GetRankAndTrafficStats` all
+verified against the live API by `scripts/bing-oauth-spike.ts`.
 
 ## Context
 
@@ -30,8 +30,7 @@ Two auth questions blocked the design and were settled by a live spike:
   (`dist/api/routes/account.mjs`), so a grant would die within one token
   lifetime. **Not reproduced.** Bing returns no `refresh_token` on refresh at
   all, so Better Auth's fallback preserves the original, which survived
-  repeated reuse. This is ~10 minutes of observation and does not rule out the
-  slower "original token expires after days" complaint in the same threads.
+  repeated reuse (replicated across two independent grants — see Consequences).
 - **Stable account identity.** Bing has no userinfo endpoint and issues no
   `id_token`. **Resolved:** the access token is base64url-encoded JSON carrying
   `webmasteruid` (the account id, also surfaced as `AuthenticationCode` on
@@ -43,18 +42,22 @@ Two auth questions blocked the design and were settled by a live spike:
 
 Add a Bing connection modelled on the GSC feature, plus read-only MCP tools.
 
-**Auth (OAuth first, API key as fallback).** A Better Auth `genericOAuth`
+**Auth (OAuth; API key deferred).** A Better Auth `genericOAuth`
 provider `bing-webmaster` with explicit `authorizationUrl` and `tokenUrl` —
 Bing publishes no OIDC discovery document — and a custom `getUserInfo` that
 decodes the access token to `{ id: webmasteruid, email: webmasteremail }`
 rather than making a network call. Scope `webmaster.read` for v1.
 
-An API-key mode is also supported, and is not merely a convenience: Bing
-rejects `localhost` redirect URIs and permits one redirect URI per registered
-client, so a self-hoster cannot complete an OAuth flow locally. The key is
-stored encrypted at rest with the same `symmetricEncrypt`/`BETTER_AUTH_SECRET`
-approach used in `gsc/selfHostedOAuth.ts`, in a dedicated column — not in the
-`account` table, whose refresh machinery does not apply to a non-expiring key.
+An API-key mode is planned but **not implemented in this change**. It is not
+merely a convenience: Bing rejects `localhost` redirect URIs and permits one
+redirect URI per registered client, so a self-hoster cannot complete an OAuth
+flow locally. When it lands the key will be stored encrypted at rest with the
+same `symmetricEncrypt`/`BETTER_AUTH_SECRET` approach used in
+`gsc/selfHostedOAuth.ts`, in a dedicated column — not in the `account` table,
+whose refresh machinery does not apply to a non-expiring key. Today
+`bing_connections.auth_mode` is always written `"oauth"`; the column exists so
+that lane needs no migration, and `getPerformance` rejects any `"api_key"` row
+it encounters rather than silently building an OAuth client for it.
 
 **Scoping.** `bing_connections` maps one verified site to one project, unique
 per project, mirroring `gsc_connections`: `projectId`, `organizationId`,
@@ -62,14 +65,16 @@ per project, mirroring `gsc_connections`: `projectId`, `organizationId`,
 `connectedAccountEmail`, `authMode`. Mirrored across `src/db/` and
 `src/db/pg/`, with migrations for both dialects.
 
-**Surface.** Bing gets its own panel — site totals, top queries, top pages,
-crawl issues — not a source toggle on the existing Search Performance page.
+**Surface.** Bing gets its own page — daily clicks and impressions in v1, with
+top queries, top pages and crawl issues left for later — rather than a source
+toggle on the existing Search Performance page.
 Bing cannot honour that page's date range, device or country controls, and
 cannot paginate, so sharing the surface would mean either misrepresenting
 Bing's capabilities or degrading the Google page.
 
 **MCP tools** — read-only, free (no Autumn metering), project-scoped, matching
-the GSC tools' contract: `get_bing_performance` and `get_bing_crawl_issues`.
+the GSC tools' contract. v1 ships `get_bing_performance`; a crawl-issues tool
+is deferred with the endpoint itself.
 
 **Write operations deferred.** `SubmitUrl` / `SubmitUrlBatch` need
 `webmaster.manage` and are a separate consent decision; they are not in v1.

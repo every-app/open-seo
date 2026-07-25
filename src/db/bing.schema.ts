@@ -5,7 +5,7 @@ import { projects } from "./app.schema";
 
 // Connected Bing Webmaster Tools site per project.
 // OAuth tokens live in the better-auth `account` table under providerId
-// "bing-webmaster" (or an encrypted API key in API-key mode); this row only
+// "bing-webmaster"; this row only
 // records which verified site maps to a project and whose grant to use when
 // calling the Bing Webmaster API.
 export const bingConnections = sqliteTable(
@@ -26,7 +26,8 @@ export const bingConnections = sqliteTable(
     // Bing's `webmasteruid`, the stable per-account identifier.
     bingAccountId: text("bing_account_id"),
     connectedAccountEmail: text("connected_account_email"),
-    // Either "oauth" or "api_key".
+    // Always "oauth" today; "api_key" is reserved for the deferred
+    // self-hosted lane (see specs/0009).
     authMode: text("auth_mode").notNull(),
     createdAt: text("created_at")
       .notNull()
