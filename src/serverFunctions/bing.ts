@@ -1,7 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
-import { BingService } from "@/server/features/bing/services/BingService";
+import {
+  BingNotConnectedError,
+  BingService,
+  isExpectedGrantFailure,
+} from "@/server/features/bing/services/BingService";
 import { hasSelfHostedBingConfig } from "@/server/features/bing/oauth-config";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -110,4 +114,40 @@ export const disconnectBing = createServerFn({ method: "POST" })
       }),
     );
     return { connected: false as const };
+  });
+
+/**
+ * Daily clicks/impressions for the project's connected Bing site.
+ *
+ * Bing's GetRankAndTrafficStats takes no date range, no dimensions, and no
+ * paging — it returns whatever window Bing decides to give. That is why this
+ * has none of the filter arguments the Search Console report takes, and why
+ * the Bing surface is separate rather than a source toggle on it.
+ *
+ * Not connected, or a dead grant, resolves to { connected: false } so the page
+ * renders the connect card instead of an error boundary.
+ */
+export const getBingPerformance = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(projectScopedSchema)
+  .handler(async ({ context }) => {
+    try {
+      const result = await BingService.getPerformance({
+        projectId: context.projectId,
+      });
+      return {
+        connected: true as const,
+        siteUrl: result.siteUrl,
+        connectedBy: result.connectedBy,
+        rows: result.rows,
+      };
+    } catch (error) {
+      if (
+        error instanceof BingNotConnectedError ||
+        isExpectedGrantFailure(error)
+      ) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
   });
