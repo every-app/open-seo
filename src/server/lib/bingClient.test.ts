@@ -200,6 +200,64 @@ describe("bingClient", () => {
     ).rejects.toBeInstanceOf(BingTokenError);
   });
 
+  describe("getCrawlStats", () => {
+    it("maps the daily crawl row shape and tolerates extra fields", async () => {
+      mocks.fetch.mockResolvedValue(
+        jsonResponse({
+          d: [
+            {
+              __type: "CrawlStats:#Microsoft.Bing.Webmaster.Api",
+              Date: "/Date(1769414400000-0800)/",
+              CrawledPages: 174,
+              InIndex: 53,
+              InLinks: 150,
+              CrawlErrors: 2,
+              Code2xx: 119,
+              Code301: 0,
+              Code302: 0,
+              Code4xx: 1,
+              Code5xx: 0,
+              AllOtherCodes: 0,
+              BlockedByRobotsTxt: 0,
+              ConnectionTimeout: 0,
+              ContainsMalware: 0,
+              DnsFailures: 0,
+            },
+          ],
+        }),
+      );
+      const { createBingClient } = await import("./bingClient");
+      const rows = await createBingClient({ userId: "u1" }).getCrawlStats(
+        "https://example.com/",
+      );
+
+      expect(mocks.fetch.mock.calls[0][0]).toBe(
+        "https://ssl.bing.com/webmaster/api.svc/json/GetCrawlStats?siteUrl=https%3A%2F%2Fexample.com%2F",
+      );
+      expect(rows).toEqual([
+        {
+          date: new Date(1769414400000).toISOString(),
+          crawledPages: 174,
+          inIndex: 53,
+          inLinks: 150,
+          crawlErrors: 2,
+          code4xx: 1,
+          code5xx: 0,
+        },
+      ]);
+    });
+
+    it("treats a null `d` payload as an empty result", async () => {
+      mocks.fetch.mockResolvedValue(jsonResponse({ d: null }));
+      const { createBingClient } = await import("./bingClient");
+      await expect(
+        createBingClient({ userId: "u1" }).getCrawlStats(
+          "https://example.com/",
+        ),
+      ).resolves.toEqual([]);
+    });
+  });
+
   describe("getQueryStats / getPageStats", () => {
     const sampleRow = {
       __type: "QueryStats:#Microsoft.Bing.Webmaster.Api",
