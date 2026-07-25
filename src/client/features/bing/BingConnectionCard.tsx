@@ -1,56 +1,47 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
-import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
+import { BingGlyph } from "@/client/features/bing/BingGlyph";
 import {
-  SitePicker,
-  type GscSiteSelection,
-} from "@/client/features/gsc/SitePicker";
-import { startGscLink } from "@/client/features/gsc/startGscLink";
+  BingSitePicker,
+  type BingSiteSelection,
+} from "@/client/features/bing/BingSitePicker";
+import { startBingLink } from "@/client/features/bing/startBingLink";
 import {
   ConnectedState,
   IntegrationCard,
 } from "@/client/features/integrations/integrationCardParts";
 import {
-  disconnectGsc,
-  getGscConnection,
-  listGscSites,
-  setGscSite,
-} from "@/serverFunctions/gsc";
+  disconnectBing,
+  getBingConnection,
+  listBingSites,
+  setBingSite,
+} from "@/serverFunctions/bing";
 
-const GRANT_STATUS_KEY = ["gscGrantStatus"];
-
-export function SearchConsoleConnectionCard({
-  projectId,
-}: {
-  projectId: string;
-}) {
-  const hosted = isHostedClientAuthMode();
+export function BingConnectionCard({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [picking, setPicking] = React.useState(false);
-  const [selection, setSelection] = React.useState<GscSiteSelection | null>(
+  const [selection, setSelection] = React.useState<BingSiteSelection | null>(
     null,
   );
 
-  const connectionKey = ["gscConnection", projectId];
+  const connectionKey = ["bingConnection", projectId];
   const connectionQuery = useQuery({
     queryKey: connectionKey,
-    queryFn: () => getGscConnection({ data: { projectId } }),
+    queryFn: () => getBingConnection({ data: { projectId } }),
   });
   const connection = connectionQuery.data;
   const connected = Boolean(connection?.connected);
-  const selfHostedNeedsSetup =
-    !hosted && connectionQuery.isSuccess && !connection?.googleOAuthConfigured;
+  const needsSetup =
+    connectionQuery.isSuccess && !connection?.bingOAuthConfigured;
 
   const showPicker = picking || (connection?.currentUserHasGrant && !connected);
   const sitesQuery = useQuery({
-    queryKey: ["gscSites", projectId],
-    queryFn: () => listGscSites({ data: { projectId } }),
-    enabled: Boolean(showPicker && !selfHostedNeedsSetup),
+    queryKey: ["bingSites", projectId],
+    queryFn: () => listBingSites({ data: { projectId } }),
+    enabled: Boolean(showPicker && !needsSetup),
   });
   const accounts = React.useMemo(
     () => sitesQuery.data?.accounts ?? [],
@@ -64,9 +55,8 @@ export function SearchConsoleConnectionCard({
     if (!requiresReconnect) return;
 
     void queryClient.invalidateQueries({
-      queryKey: ["gscConnection", projectId],
+      queryKey: ["bingConnection", projectId],
     });
-    void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
   }, [requiresReconnect, queryClient, projectId]);
 
   React.useEffect(() => {
@@ -83,70 +73,47 @@ export function SearchConsoleConnectionCard({
     }
   }, [accounts, selection]);
 
+  const invalidateConnectionCaches = () => {
+    void queryClient.invalidateQueries({ queryKey: connectionKey });
+    // The performance page caches a not-connected result; refresh it so it
+    // shows data straight after connecting rather than the stale connect card.
+    void queryClient.invalidateQueries({
+      queryKey: ["bingPerformance", projectId],
+    });
+  };
+
   const setSiteMutation = useMutation({
-    mutationFn: (selected: GscSiteSelection) =>
-      setGscSite({ data: { projectId, ...selected } }),
+    mutationFn: (selected: BingSiteSelection) =>
+      setBingSite({ data: { projectId, ...selected } }),
     onSuccess: () => {
-      captureClientEvent("gsc:property_select");
-      toast.success("Search Console connected");
+      captureClientEvent("bing:site_select");
+      toast.success("Bing Webmaster connected");
       setPicking(false);
-      void queryClient.invalidateQueries({ queryKey: connectionKey });
-      void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
-      // The Search Performance report caches {connected:false}; refresh it so
-      // the page shows data right after connecting instead of the stale card.
-      void queryClient.invalidateQueries({
-        queryKey: ["searchPerformance", projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["searchPerformanceTable", projectId],
-      });
-      // The dashboard embeds this card and swaps it for the Search
-      // performance stats card once activation reports the connection.
-      void queryClient.invalidateQueries({
-        queryKey: ["dashboardActivation", projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["dashboardGscReport", projectId],
-      });
+      invalidateConnectionCaches();
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: () => disconnectGsc({ data: { projectId } }),
+    mutationFn: () => disconnectBing({ data: { projectId } }),
     onSuccess: () => {
-      toast.success("Search Console disconnected");
+      toast.success("Bing Webmaster disconnected");
       setPicking(false);
       setSelection(null);
-      void queryClient.invalidateQueries({ queryKey: connectionKey });
-      // Disconnect can drop the account-level grant server-side; keep the
-      // shared grant-status cache (onboarding step + re-engagement nudge) honest.
-      void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
-      void queryClient.invalidateQueries({
-        queryKey: ["searchPerformance", projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["searchPerformanceTable", projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["dashboardActivation", projectId],
-      });
-      void queryClient.invalidateQueries({
-        queryKey: ["dashboardGscReport", projectId],
-      });
+      invalidateConnectionCaches();
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
 
-  const handleConnect = () => void startGscLink(window.location.href);
+  const handleConnect = () => void startBingLink(window.location.href);
 
   return (
     <IntegrationCard
-      title="Google Search Console"
+      title="Bing Webmaster Tools"
       status={
         connectionQuery.isLoading
           ? undefined
-          : selfHostedNeedsSetup
+          : needsSetup
             ? "setup_required"
             : connected
               ? "connected"
@@ -158,12 +125,12 @@ export function SearchConsoleConnectionCard({
           <span className="loading loading-spinner loading-sm" />
           Checking…
         </div>
-      ) : selfHostedNeedsSetup ? (
-        <SelfHostedSetupWarning />
+      ) : needsSetup ? (
+        <SetupWarning />
       ) : connected && !picking ? (
         <ConnectedState
-          glyph={<GoogleGlyph className="size-[18px]" />}
-          changeLabel="Change property"
+          glyph={<BingGlyph className="size-[18px]" />}
+          changeLabel="Change site"
           siteUrl={connection?.siteUrl ?? ""}
           connectedByEmail={connection?.connectedByEmail ?? null}
           onChange={() => {
@@ -174,7 +141,7 @@ export function SearchConsoleConnectionCard({
           disconnecting={disconnectMutation.isPending}
         />
       ) : showPicker ? (
-        <SitePicker
+        <BingSitePicker
           loading={sitesQuery.isLoading}
           error={sitesQuery.isError}
           accounts={accounts}
@@ -198,19 +165,53 @@ export function SearchConsoleConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Connect GSC to see how your website is actually performing in Google
-            Search.
+            Connect Bing Webmaster Tools to see clicks and impressions from Bing
+            — the index behind Copilot and ChatGPT search.
           </p>
           <button
             type="button"
             onClick={handleConnect}
             className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
-            <GoogleGlyph className="size-[18px]" />
-            Connect with Google
+            <BingGlyph className="size-[18px]" />
+            Connect with Bing
           </button>
         </div>
       )}
     </IntegrationCard>
+  );
+}
+
+/** Bing rejects localhost redirect URIs and allows one redirect URI per OAuth
+ *  client, so self-hosters need their own registered client rather than a
+ *  local flow. Say that plainly instead of offering a button that cannot work. */
+function SetupWarning() {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-base-content/70">
+        Bing Webmaster isn't configured on this deployment. Register an OAuth
+        client under Bing Webmaster Tools → Settings → API Access, then set{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          BING_CLIENT_ID
+        </code>{" "}
+        ,{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          BING_CLIENT_SECRET
+        </code>
+        , and a{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          BETTER_AUTH_SECRET
+        </code>{" "}
+        of at least 32 characters, which keys token encryption.
+      </p>
+      <p className="text-xs text-base-content/55">
+        The redirect URI is this deployment's{" "}
+        <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
+          /api/bing/oauth/callback
+        </code>
+        . Bing allows one redirect URI per client and rejects localhost, so each
+        deployment needs its own registered client.
+      </p>
+    </div>
   );
 }
