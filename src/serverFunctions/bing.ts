@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import {
@@ -7,11 +8,19 @@ import {
   isExpectedGrantFailure,
 } from "@/server/features/bing/services/BingService";
 import { hasSelfHostedBingConfig } from "@/server/features/bing/oauth-config";
+import { createSelfHostedBingAuthorizationUrl } from "@/server/features/bing/selfHostedOAuth";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { requireProjectContext } from "@/serverFunctions/middleware";
+import { getPublicOrigin } from "@/server/mcp/public-origin";
+import {
+  requireAuthenticatedContext,
+  requireProjectContext,
+} from "@/serverFunctions/middleware";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
+const startSelfHostedLinkSchema = z.object({
+  callbackURL: z.string().min(1),
+});
 const setSiteSchema = projectScopedSchema.extend({
   accountId: z.string().min(1),
   siteUrl: z.string().min(1),
@@ -138,4 +147,25 @@ export const getBingPerformance = createServerFn({ method: "POST" })
       }
       throw error;
     }
+  });
+
+/**
+ * Begin the Bing OAuth grant on a self-hosted deployment.
+ *
+ * Better Auth's `oauth2.link` requires a Better Auth session, which does not
+ * exist under `cloudflare_access` or `local_noauth`; those modes use this
+ * hand-rolled flow instead, exactly as Search Console does.
+ */
+export const startSelfHostedBingLink = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(startSelfHostedLinkSchema)
+  .handler(async ({ data, context }) => {
+    const publicOrigin = getPublicOrigin(getRequest());
+    const url = await createSelfHostedBingAuthorizationUrl({
+      user: { userId: context.userId, userEmail: context.userEmail },
+      callbackURL: data.callbackURL,
+      publicOrigin,
+    });
+
+    return { url };
   });

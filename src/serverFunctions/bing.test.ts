@@ -25,7 +25,9 @@ vi.mock("@tanstack/react-start", () => ({
     return builder;
   },
 }));
-vi.mock("cloudflare:workers", () => ({ waitUntil: mocks.waitUntil }));
+// `env` too, not just waitUntil: the module graph now reaches d1/client.ts
+// via the self-hosted OAuth flow, which reads env.DB at import time.
+vi.mock("cloudflare:workers", () => ({ waitUntil: mocks.waitUntil, env: {} }));
 vi.mock("@/serverFunctions/middleware", () => ({
   requireAuthenticatedContext: [],
   requireProjectContext: [],
