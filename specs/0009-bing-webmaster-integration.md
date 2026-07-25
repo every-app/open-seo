@@ -142,3 +142,29 @@ rather than something Bing will grow out of.
   API-key mode becomes the primary path.
 - `webmasteruid` doubles as the site verification code. It is an identifier,
   not a secret to be hashed, but it should not be rendered in the UI.
+
+## Future directions (not built)
+
+`GetQueryStats` and `GetPageStats` were probed live on 2026-07-25 (shapes under
+Consequences) and put most of the Search Performance page within reach for
+Bing:
+
+- **Striking distance** — queries at positions 5–20 by impressions. The most
+  actionable panel and the obvious first one: 840 of 1,119 query rows for one
+  test site already sit in that band.
+- **Queries and Pages tables**, plus **average position** and **CTR** tiles.
+  Position comes from `AvgImpressionPosition`; CTR is derived; period
+  comparison for clicks/impressions/CTR can be computed client-side from the
+  daily series that already exists.
+- Optionally a `get_bing_queries` MCP tool alongside `get_bing_performance`.
+
+What still cannot be built, and should not be faked: device and country
+filters (Bing exposes no such dimension) and a date-range control. Query and
+page rows are SAMPLED at roughly 16 dates across five months, so a "last 28
+days" slice can come back nearly empty — a date picker there would promise
+precision the data does not have. Only site-level daily totals are dense.
+
+Probe any further endpoint with `scripts/bing-oauth-spike.ts --step=call
+--method=<Method> --site=<url>` before coding against it. Every shape recorded
+here was pinned that way, and Microsoft's documentation has been wrong more
+than once on this integration.
