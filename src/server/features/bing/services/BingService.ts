@@ -116,9 +116,12 @@ async function listSitesForUserWithGrantStatus(
         };
       } catch (error) {
         if (!isExpectedGrantFailure(error)) {
+          // grant.id, never grant.accountId: the latter is the webmasteruid,
+          // which doubles as Bing's site verification code. Logs and Sentry are
+          // a lower-trust store than the database.
           console.error(
-            "Failed to list Bing Webmaster sites for account",
-            grant.accountId,
+            "Failed to list Bing Webmaster sites for grant",
+            grant.id,
             error,
           );
         }
@@ -226,9 +229,10 @@ async function disconnect(input: {
   }
 }
 
-/** Pass-through of Bing `GetRankAndTrafficStats` for a project's connected
- *  site. Rows are surfaced as-is (Record<string, unknown>) — Bing's field
- *  names are unverified, so nothing is reshaped here. */
+/** Bing `GetRankAndTrafficStats` for a project's connected site: one row per
+ *  day, typed by bingClient as { date, clicks, impressions }. Bing accepts no
+ *  date range, dimensions, or paging here, which is why this takes only a
+ *  projectId. */
 async function getPerformance(input: {
   projectId: string;
 }): Promise<BingPerformanceResult> {

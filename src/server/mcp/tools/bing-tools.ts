@@ -15,25 +15,20 @@ import {
   isExpectedGrantFailure,
 } from "@/server/features/bing/services/BingService";
 
-type BingPerfRow = Record<string, unknown>;
+/** One daily row from GetRankAndTrafficStats. Field names verified against the
+ *  live API on 2026-07-25 and typed in bingClient, so the columns are fixed —
+ *  same shape as every other MCP tool's table. */
+type BingPerfRow = {
+  date: string | null;
+  clicks: number;
+  impressions: number;
+};
 
-/** Bing's GetRankAndTrafficStats field names aren't verified against the live
- *  API, so derive the table columns from the keys actually present across the
- *  returned rows (union, first-seen order) rather than hard-coding any. */
-function deriveColumns(
-  rows: readonly BingPerfRow[],
-): McpTableColumn<BingPerfRow>[] {
-  const keys: string[] = [];
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (!keys.includes(key)) keys.push(key);
-    }
-  }
-  return keys.map((key) => ({
-    header: key,
-    value: (row: BingPerfRow) => row[key],
-  }));
-}
+const BING_PERF_COLUMNS: McpTableColumn<BingPerfRow>[] = [
+  { header: "date", value: (row) => row.date ?? "(unknown)" },
+  { header: "clicks", value: (row) => row.clicks },
+  { header: "impressions", value: (row) => row.impressions },
+];
 
 const perfInputSchema = {
   projectId: projectIdSchema,
@@ -50,7 +45,7 @@ export const getBingPerformanceTool = {
   config: {
     title: "Get Bing Webmaster performance",
     description:
-      "Read the connected Bing Webmaster site's rank and traffic stats (GetRankAndTrafficStats) for a project: daily totals as Bing returns them. The row shape follows Bing's response fields, which vary by site, so columns are derived from the data. Read-only; uses no credits.",
+      "Read the connected Bing Webmaster site's daily clicks and impressions from Bing Webmaster Tools (GetRankAndTrafficStats). One row per day. Bing accepts no date range, dimensions, or paging on this endpoint, so it returns whatever window Bing decides to report. Read-only; uses no credits.",
     inputSchema: perfInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -82,7 +77,7 @@ export const getBingPerformanceTool = {
       const { siteUrl, rows } = result;
 
       if (rows.length === 0) {
-        const text = `No Bing Webmaster performance data for ${siteUrl}. Connect or verify a site in project settings, or try a different date range.`;
+        const text = `No Bing Webmaster performance data for ${siteUrl}. Bing may not have reported traffic for this site yet. Note that Bing accepts no date range on this endpoint, so there is no window to widen.`;
         return mcpResponse({
           text,
           meta,
@@ -95,9 +90,8 @@ export const getBingPerformanceTool = {
         });
       }
 
-      const columns = deriveColumns(rows);
       const header = `${siteUrl} · ${rows.length} row${rows.length === 1 ? "" : "s"}`;
-      const text = `${header}\n${formatMcpTable(rows, columns)}`;
+      const text = `${header}\n${formatMcpTable(rows, BING_PERF_COLUMNS)}`;
       return mcpResponse({
         text,
         meta,

@@ -90,13 +90,13 @@ describe("bing MCP tools", () => {
     mocks.BingService.getConnection.mockReset();
   });
 
-  it("renders rows whose columns come from the keys present on the data", async () => {
+  it("renders the daily rows as a table", async () => {
     mocks.BingService.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
       connectedBy: "alice@example.com",
       rows: [
-        { Page: "/a", Clicks: 10, Impressions: 200 },
-        { Page: "/b", Clicks: 5, Impressions: 50 },
+        { date: "2026-01-01T00:00:00.000Z", clicks: 10, impressions: 200 },
+        { date: "2026-01-02T00:00:00.000Z", clicks: 5, impressions: 50 },
       ],
     });
     const { getBingPerformanceTool } = await import("./bing-tools");
@@ -116,20 +116,18 @@ describe("bing MCP tools", () => {
     });
     const first = result.content[0];
     expect(first.type === "text" && first.text).toContain(
-      "Page | Clicks | Impressions",
+      "date | clicks | impressions",
     );
-    expect(first.type === "text" && first.text).toContain("/a");
-    expect(first.type === "text" && first.text).toContain("10");
+    expect(first.type === "text" && first.text).toContain("2026-01-01");
+    expect(first.type === "text" && first.text).toContain("200");
   });
 
-  it("derives columns from the union of keys across rows", async () => {
+  it("renders an unparseable date without inventing one", async () => {
+    // bingClient maps a WCF date it cannot parse to null rather than guessing.
     mocks.BingService.getPerformance.mockResolvedValue({
       siteUrl: "https://example.com/",
       connectedBy: null,
-      rows: [
-        { Date: "2026-01-01", Clicks: 1 },
-        { Date: "2026-01-02", Impressions: 3 },
-      ],
+      rows: [{ date: null, clicks: 1, impressions: 3 }],
     });
     const { getBingPerformanceTool } = await import("./bing-tools");
 
@@ -139,9 +137,7 @@ describe("bing MCP tools", () => {
     );
 
     const first = result.content[0];
-    expect(first.type === "text" && first.text).toContain(
-      "Date | Clicks | Impressions",
-    );
+    expect(first.type === "text" && first.text).toContain("(unknown)");
   });
 
   it("returns a friendly connect message for a not-connected project", async () => {

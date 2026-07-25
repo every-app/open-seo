@@ -5,21 +5,25 @@ import { loadLocalEnv, parseArgs } from "./cli-utils";
 loadLocalEnv();
 
 /**
- * Throwaway probe for the two Bing Webmaster OAuth unknowns that block a
- * design decision (see the Bing integration spike):
+ * Probe for the Bing Webmaster API questions that shaped specs/0009. Retained
+ * (not throwaway) because the spec calls for the refresh-token behaviour to be
+ * re-checked periodically — see its Consequences section.
  *
- *  1. Does the refresh flow actually work the way better-auth assumes?
- *     better-auth overwrites the stored refresh token with whatever the
- *     provider returns on refresh (dist/api/routes/account.mjs). Multiple
- *     public reports say Bing rotates the refresh token but issues rotated
- *     tokens that immediately fail with `invalid_grant`, while the ORIGINAL
- *     one keeps working. If that reproduces, `genericOAuth` cannot hold a
- *     Bing grant alive and we need the API-key path instead.
+ * The two questions that originally blocked the design, both since answered:
+ *
+ *  1. Does the refresh flow work the way better-auth assumes? better-auth
+ *     overwrites the stored refresh token with whatever the provider returns
+ *     on refresh (dist/api/routes/account.mjs), and public reports claimed
+ *     Bing issues rotated tokens that immediately fail with `invalid_grant`.
+ *     ANSWERED 2026-07-25 on two independent grants: Bing returns no
+ *     refresh_token on refresh at all, so the original is preserved and
+ *     genericOAuth is safe. Re-run --step=refresh-rotation to re-check.
  *
  *  2. Is there a stable per-account identifier? Bing has no userinfo endpoint
- *     and returns no id_token, but the access token appears to be base64url
- *     JSON carrying a `webmasteruid`. We need one to key the `account` row
- *     and to support more than one Bing account per user.
+ *     and returns no id_token. ANSWERED: the access token is base64url JSON
+ *     carrying `webmasteruid` and `webmasteremail`; webmasteruid survived a
+ *     client-secret regeneration, so it keys the Bing account rather than the
+ *     grant. Now decoded by src/shared/bing.ts.
  *
  * Nothing here touches app code or the database — it only talks to Bing.
  *
@@ -33,6 +37,7 @@ loadLocalEnv();
  *   pnpm tsx scripts/bing-oauth-spike.ts --step=exchange --code=<code>
  *   pnpm tsx scripts/bing-oauth-spike.ts --step=refresh-rotation
  *   pnpm tsx scripts/bing-oauth-spike.ts --step=sites
+ *   pnpm tsx scripts/bing-oauth-spike.ts --step=call --method=<Method> [--site=<url>]
  */
 
 const AUTHORIZE_URL = "https://www.bing.com/webmasters/oauth/authorize";
@@ -342,11 +347,11 @@ async function stepSites() {
 /**
  * Step 5 — call an arbitrary read endpoint and REPORT ITS FIELD NAMES.
  *
- * This is what pins the response shape the app codes against. Bing publishes
- * no schema for these rows, so `bingClient.getRankAndTrafficStats` currently
- * surfaces them as Record<string, unknown> and the MCP tool derives its
- * columns from whatever keys turn up. Running this against a real site is how
- * those keys stop being a guess.
+ * This is how the response shape the app codes against gets pinned. Bing
+ * publishes no schema for these rows, so the only way to know a field set is
+ * to call the endpoint against a real verified site and read what comes back.
+ * GetRankAndTrafficStats was pinned this way on 2026-07-25; use this step
+ * before coding against any further Bing endpoint.
  *
  * Uses the API key (no OAuth needed for a read).
  *
