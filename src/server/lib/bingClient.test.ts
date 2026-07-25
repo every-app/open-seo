@@ -199,31 +199,6 @@ describe("bingClient", () => {
       createBingClient({ userId: "u1" }).listSites(),
     ).rejects.toBeInstanceOf(BingTokenError);
   });
-});
-
-describe("parseWcfDate", () => {
-  it("parses a real WCF /Date(ms)/ value", async () => {
-    const { parseWcfDate } = await import("./bingClient");
-    const date = parseWcfDate("/Date(1445558400000)/");
-    expect(date).toBeInstanceOf(Date);
-    expect(date?.getTime()).toBe(1445558400000);
-  });
-
-  it("parses a WCF value carrying a timezone offset", async () => {
-    const { parseWcfDate } = await import("./bingClient");
-    const date = parseWcfDate("/Date(1445558400000+0000)/");
-    expect(date?.getTime()).toBe(1445558400000);
-  });
-
-  it("returns null for junk and non-string input", async () => {
-    const { parseWcfDate } = await import("./bingClient");
-    expect(parseWcfDate("not a date")).toBeNull();
-    expect(parseWcfDate("/Date(abc)/")).toBeNull();
-    expect(parseWcfDate("2026-01-01")).toBeNull();
-    expect(parseWcfDate(1445558400000)).toBeNull();
-    expect(parseWcfDate(null)).toBeNull();
-    expect(parseWcfDate(undefined)).toBeNull();
-  });
 
   describe("getConnectedEmail", () => {
     it("reads the email claim off the access token without a network call", async () => {
@@ -261,5 +236,30 @@ describe("parseWcfDate", () => {
         createBingClient({ userId: "u1" }).getConnectedEmail(),
       ).resolves.toBeNull();
     });
+  });
+});
+
+describe("parseWcfDate", () => {
+  it("parses a real WCF /Date(ms)/ value", async () => {
+    const { parseWcfDate } = await import("./bingClient");
+    const date = parseWcfDate("/Date(1445558400000)/");
+    expect(date).toBeInstanceOf(Date);
+    expect(date?.getTime()).toBe(1445558400000);
+  });
+
+  it("parses a WCF value carrying a timezone offset", async () => {
+    const { parseWcfDate } = await import("./bingClient");
+    const date = parseWcfDate("/Date(1445558400000+0000)/");
+    expect(date?.getTime()).toBe(1445558400000);
+  });
+
+  it("returns null for junk and non-string input", async () => {
+    const { parseWcfDate } = await import("./bingClient");
+    expect(parseWcfDate("not a date")).toBeNull();
+    expect(parseWcfDate("/Date(abc)/")).toBeNull();
+    expect(parseWcfDate("2026-01-01")).toBeNull();
+    expect(parseWcfDate(1445558400000)).toBeNull();
+    expect(parseWcfDate(null)).toBeNull();
+    expect(parseWcfDate(undefined)).toBeNull();
   });
 });
