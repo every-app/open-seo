@@ -20,3 +20,5 @@ data, or sensitive paths.
 ## Resolved
 
 Move fixed entries here, mark them checked, and append the resolving date or commit.
+
+- [x] `2026-07-25T08:15:00Z` — `claude` — `npm run ci:check` failed on a clean checkout of `main`: `cf-selfhost-deploy.sh` writes `cf-resources.json` as a single line of JSON, that file was tracked, and `prettier --check .` rejected it — and because `ci:check` chains with `&&`, knip/tsc/oxlint never ran, so the failure looked unrelated to formatting. Fixed by gitignoring and untracking the generated file rather than reformatting it (a reformat would be undone by the next deploy). Resolved 2026-07-25 in `ce164d7`.
