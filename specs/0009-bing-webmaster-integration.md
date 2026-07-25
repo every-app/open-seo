@@ -112,7 +112,21 @@ rather than something Bing will grow out of.
 - `GetRankAndTrafficStats` returns one row per day carrying exactly `Date`,
   `Clicks`, and `Impressions` (plus the `__type` marker). Verified live
   2026-07-25, so rows are typed rather than passed through; unknown extra
-  fields are tolerated and ignored.
+  fields are tolerated and ignored. The window is Bing's choice and varies by
+  site — 34 rows for one site and 165 for another on the same day.
+- Its `Date` is a day BUCKET at midnight in Bing's reporting timezone (US
+  Pacific; the offset moves with daylight saving), not an instant. Render it in
+  UTC — formatting in the viewer's timezone labels every row a day early west
+  of UTC-8.
+- `GetQueryStats` and `GetPageStats` (verified live 2026-07-25, not yet used)
+  share one row shape: `Query`, `Clicks`, `Impressions`, `Date`,
+  `AvgClickPosition`, `AvgImpressionPosition`. `GetPageStats` reuses the
+  `QueryStats` type and puts the page URL in `Query`. `AvgClickPosition` is
+  `-1` when nothing was clicked. So average position and a striking-distance
+  view ARE reachable — but these rows are SAMPLED, roughly 16 distinct dates
+  across five months, so query-level trends are lumpy and a "last 28 days"
+  slice can come back empty. Site-level daily totals remain the only dense
+  series.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per
