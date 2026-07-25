@@ -127,6 +127,12 @@ rather than something Bing will grow out of.
   across five months, so query-level trends are lumpy and a "last 28 days"
   slice can come back empty. Site-level daily totals remain the only dense
   series.
+- `GetPageQueryStats` (verified live 2026-07-25): takes `siteUrl` plus a
+  `page` query parameter (that exact name — the docs disagree with
+  themselves) and returns the same `QueryStats` row shape, filtered to
+  queries for that one page. The filter is real: 902 rows for one page, 100
+  for another, 0 for a nonexistent URL. Same sampling caveats as
+  `GetQueryStats`.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per

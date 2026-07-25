@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
 import {
   BingDimensionTable,
+  BingPageQueriesPanel,
   BingStrikingTable,
   type BingQueryReport,
 } from "@/client/features/bing/BingTables";
@@ -36,6 +37,12 @@ type Tab = "striking" | "queries" | "pages" | "daily";
  */
 export function BingPerformancePage({ projectId }: { projectId: string }) {
   const [tab, setTab] = useState<Tab>("striking");
+  // Pages-tab drill-down: which page's queries are open, if any.
+  const [drillDownPage, setDrillDownPage] = useState<string | null>(null);
+  const switchTab = (next: Tab) => {
+    setDrillDownPage(null);
+    setTab(next);
+  };
   const performanceQuery = useQuery({
     queryKey: ["bingPerformance", projectId],
     queryFn: () => getBingPerformance({ data: { projectId } }),
@@ -142,22 +149,22 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
             <div role="tablist" className="tabs tabs-border">
               <TabButton
                 active={tab === "striking"}
-                onClick={() => setTab("striking")}
+                onClick={() => switchTab("striking")}
                 label="Striking distance"
               />
               <TabButton
                 active={tab === "queries"}
-                onClick={() => setTab("queries")}
+                onClick={() => switchTab("queries")}
                 label="Queries"
               />
               <TabButton
                 active={tab === "pages"}
-                onClick={() => setTab("pages")}
+                onClick={() => switchTab("pages")}
                 label="Pages"
               />
               <TabButton
                 active={tab === "daily"}
-                onClick={() => setTab("daily")}
+                onClick={() => switchTab("daily")}
                 label="Daily"
               />
             </div>
@@ -186,8 +193,18 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
                 />
               ) : tab === "queries" ? (
                 <BingDimensionTable rows={report.queries} keyLabel="Query" />
+              ) : drillDownPage ? (
+                <BingPageQueriesPanel
+                  projectId={projectId}
+                  pageUrl={drillDownPage}
+                  onBack={() => setDrillDownPage(null)}
+                />
               ) : (
-                <BingDimensionTable rows={report.pages} keyLabel="Page" />
+                <BingDimensionTable
+                  rows={report.pages}
+                  keyLabel="Page"
+                  onDrillDown={setDrillDownPage}
+                />
               )}
             </div>
 

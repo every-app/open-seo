@@ -10,12 +10,16 @@ const mocks = vi.hoisted(() => {
   };
   const getQueryStats = vi.fn<() => Promise<BingStatRow[]>>();
   const getPageStats = vi.fn<() => Promise<BingStatRow[]>>();
+  const getPageQueryStats =
+    vi.fn<(siteUrl: string, pageUrl: string) => Promise<BingStatRow[]>>();
   return {
     getQueryStats,
     getPageStats,
+    getPageQueryStats,
     createBingClient: vi.fn(() => ({
       getQueryStats,
       getPageStats,
+      getPageQueryStats,
     })),
     getByProjectId: vi.fn(),
   };
@@ -122,5 +126,64 @@ describe("BingService.getQueryReport", () => {
       userId: "u1",
       bingAccountId: "uid-a",
     });
+  });
+});
+
+describe("BingService.getPageQueries", () => {
+  beforeEach(() => {
+    mocks.getByProjectId.mockReset();
+    mocks.getPageQueryStats.mockReset().mockResolvedValue([]);
+    mocks.createBingClient.mockClear();
+  });
+
+  it("throws BingNotConnectedError when the project has no connection", async () => {
+    mocks.getByProjectId.mockResolvedValue(null);
+    const { BingService, BingNotConnectedError } =
+      await import("./BingService");
+
+    await expect(
+      BingService.getPageQueries({ projectId: "p1", pageUrl: "https://x/" }),
+    ).rejects.toBeInstanceOf(BingNotConnectedError);
+  });
+
+  it("fetches queries for the page against the connected site and aggregates", async () => {
+    mocks.getByProjectId.mockResolvedValue(oauthConnection);
+    mocks.getPageQueryStats.mockResolvedValue([
+      statRow("doi lookup", 1, 100, 7),
+      statRow("doi lookup", 2, 100, 9),
+    ]);
+    const { BingService } = await import("./BingService");
+
+    const result = await BingService.getPageQueries({
+      projectId: "p1",
+      pageUrl: "https://x.example/tools/doi-lookup",
+    });
+
+    expect(mocks.getPageQueryStats).toHaveBeenCalledWith(
+      "https://x.example/",
+      "https://x.example/tools/doi-lookup",
+    );
+    expect(result.pageUrl).toBe("https://x.example/tools/doi-lookup");
+    expect(result.queries).toEqual([
+      {
+        key: "doi lookup",
+        clicks: 3,
+        impressions: 200,
+        ctr: 0.015,
+        position: 8,
+      },
+    ]);
+  });
+
+  it("returns an empty list for a page Bing has not sampled", async () => {
+    mocks.getByProjectId.mockResolvedValue(oauthConnection);
+    const { BingService } = await import("./BingService");
+
+    await expect(
+      BingService.getPageQueries({
+        projectId: "p1",
+        pageUrl: "https://x.example/nope",
+      }),
+    ).resolves.toMatchObject({ queries: [] });
   });
 });

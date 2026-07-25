@@ -369,6 +369,9 @@ async function stepCall() {
   const url = new URL(`${API_HOSTS[0]}/webmaster/api.svc/json/${method}`);
   url.searchParams.set("apikey", apiKey);
   if (args.site) url.searchParams.set("siteUrl", args.site);
+  // Per-page methods (GetPageQueryStats) take a page URL. The docs disagree
+  // with themselves on the parameter name, so it is overridable.
+  if (args.page) url.searchParams.set(args.pageParam ?? "page", args.page);
 
   const response = await fetch(url);
   const text = await response.text();

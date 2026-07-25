@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createColumnHelper, type ColumnDef } from "@tanstack/react-table";
 import { Copy, Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -24,7 +24,10 @@ import { normalizeExportValue } from "@/client/lib/csv";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { SEARCH_PERFORMANCE_PAGE_SIZES } from "@/types/schemas/search-performance";
-import type { getBingQueryReport } from "@/serverFunctions/bing";
+import {
+  getBingPageQueries,
+  type getBingQueryReport,
+} from "@/serverFunctions/bing";
 import { saveKeywords } from "@/serverFunctions/keywords";
 
 export type BingQueryReport = Extract<
@@ -104,18 +107,38 @@ function keyColumn(keyLabel: string): ColumnDef<BingAggregateRow> {
   });
 }
 
-/** Sortable whole-window queries or pages table, client-side pagination. */
+/** Sortable whole-window queries or pages table, client-side pagination.
+ *  `onDrillDown` adds a per-row action (used by the Pages tab to open the
+ *  queries-for-this-page view). */
 export function BingDimensionTable({
   rows,
   keyLabel,
+  onDrillDown,
 }: {
   rows: BingAggregateRow[];
   keyLabel: "Query" | "Page";
+  onDrillDown?: (key: string) => void;
 }) {
-  const columns = useMemo(
-    () => [keyColumn(keyLabel), ...metricColumns()],
-    [keyLabel],
-  );
+  const columns = useMemo(() => {
+    const base = [keyColumn(keyLabel), ...metricColumns()];
+    if (!onDrillDown) return base;
+    return [
+      ...base,
+      helper.display({
+        id: "drilldown",
+        header: () => null,
+        cell: ({ row }) => (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs whitespace-nowrap"
+            onClick={() => onDrillDown(row.original.key)}
+          >
+            Queries →
+          </button>
+        ),
+      }),
+    ];
+  }, [keyLabel, onDrillDown]);
   const table = useAppTable({
     data: rows,
     columns,
@@ -151,6 +174,66 @@ export function BingDimensionTable({
           onPageSizeChange={(nextSize) => table.setPageSize(nextSize)}
         />
       ) : null}
+    </>
+  );
+}
+
+/** Queries driving one page (GetPageQueryStats) — the drill-down opened from
+ *  the Pages tab. Fetches on mount; same sampled-window aggregation as the
+ *  site-wide tables. */
+export function BingPageQueriesPanel({
+  projectId,
+  pageUrl,
+  onBack,
+}: {
+  projectId: string;
+  pageUrl: string;
+  onBack: () => void;
+}) {
+  const query = useQuery({
+    queryKey: ["bingPageQueries", projectId, pageUrl],
+    queryFn: () => getBingPageQueries({ data: { projectId, pageUrl } }),
+  });
+  const rows = query.data?.connected ? query.data.queries : [];
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2 p-4 pb-0">
+        <button type="button" className="btn btn-ghost btn-xs" onClick={onBack}>
+          ← All pages
+        </button>
+        <span
+          className="truncate font-mono text-sm text-base-content/70"
+          title={pageUrl}
+        >
+          {pageUrl}
+        </span>
+      </div>
+      {query.isLoading ? (
+        <div className="flex items-center gap-2 p-6 text-sm text-base-content/50">
+          <span className="loading loading-spinner loading-sm" />
+          Loading queries for this page…
+        </div>
+      ) : query.isError || (query.data && !query.data.connected) ? (
+        <div className="space-y-3 p-6">
+          <p className="text-sm text-error">
+            Couldn't load queries for this page.
+          </p>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => void query.refetch()}
+          >
+            Try again
+          </button>
+        </div>
+      ) : rows.length === 0 ? (
+        <p className="p-6 text-sm text-base-content/60">
+          Bing hasn't sampled any queries for this page yet.
+        </p>
+      ) : (
+        <BingDimensionTable rows={rows} keyLabel="Query" />
+      )}
     </>
   );
 }

@@ -14,6 +14,7 @@ import {
   BingService,
   isExpectedGrantFailure,
 } from "@/server/features/bing/services/BingService";
+import { buildBingStrikingRows } from "@/server/features/bing/bingQueryReport";
 
 /** One daily row from GetRankAndTrafficStats. Field names verified against the
  *  live API on 2026-07-25 and typed in bingClient, so the columns are fixed —
@@ -162,7 +163,14 @@ const queriesInputSchema = {
     .boolean()
     .default(false)
     .describe(
-      "Only queries at average position 5-20, sorted by impressions (query dimension only).",
+      "Only queries at average position 5-20, sorted by impressions (query rows only).",
+    ),
+  pageUrl: z
+    .string()
+    .url()
+    .optional()
+    .describe(
+      "Drill down to the queries driving one specific page (GetPageQueryStats). Ignores dimension; an unknown page returns 0 rows.",
     ),
   limit: z.number().int().min(1).max(500).default(100),
 } as const;
@@ -174,7 +182,7 @@ export const getBingQueriesTool = {
   config: {
     title: "Get Bing Webmaster queries",
     description:
-      "Read the connected Bing Webmaster site's top queries or pages (GetQueryStats/GetPageStats), aggregated over Bing's whole sampled window (~5 months, ~16 sample dates). Columns: clicks, impressions, CTR, and impression-weighted average position. Bing accepts no date range or paging here, so rows are whole-window totals. Set strikingDistanceOnly to get queries at positions 5-20 by impressions. Read-only; uses no credits.",
+      "Read the connected Bing Webmaster site's top queries or pages (GetQueryStats/GetPageStats), aggregated over Bing's whole sampled window (~5 months, ~16 sample dates). Columns: clicks, impressions, CTR, and impression-weighted average position. Bing accepts no date range or paging here, so rows are whole-window totals. Set strikingDistanceOnly to get queries at positions 5-20 by impressions. Set pageUrl to drill down to the queries driving one specific page. Read-only; uses no credits.",
     inputSchema: queriesInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -200,47 +208,65 @@ export const getBingQueriesTool = {
     );
 
     try {
-      const report = await BingService.getQueryReport({
-        projectId: args.projectId,
-      });
-      const source =
-        args.dimension === "page"
-          ? report.pages
-          : args.strikingDistanceOnly
-            ? report.striking
-            : report.queries;
+      let siteUrl: string;
+      let source: BingQueryRow[];
+      let label: string;
+      if (args.pageUrl) {
+        const pageReport = await BingService.getPageQueries({
+          projectId: args.projectId,
+          pageUrl: args.pageUrl,
+        });
+        siteUrl = pageReport.siteUrl;
+        source = args.strikingDistanceOnly
+          ? buildBingStrikingRows(pageReport.queries)
+          : pageReport.queries;
+        label = `queries for ${args.pageUrl}`;
+      } else {
+        const report = await BingService.getQueryReport({
+          projectId: args.projectId,
+        });
+        siteUrl = report.siteUrl;
+        source =
+          args.dimension === "page"
+            ? report.pages
+            : args.strikingDistanceOnly
+              ? report.striking
+              : report.queries;
+        label =
+          args.dimension === "page"
+            ? "pages"
+            : args.strikingDistanceOnly
+              ? "striking-distance queries (position 5-20)"
+              : "queries";
+      }
       const rows = source.slice(0, args.limit);
-      const label =
-        args.dimension === "page"
-          ? "pages"
-          : args.strikingDistanceOnly
-            ? "striking-distance queries (position 5-20)"
-            : "queries";
 
       if (rows.length === 0) {
         return mcpResponse({
-          text: `No Bing ${label} for ${report.siteUrl}. Bing may not have sampled data for this site yet.`,
+          text: `No Bing ${label} for ${siteUrl}. Bing may not have sampled data for ${args.pageUrl ? "this page" : "this site"} yet.`,
           meta,
           structuredContent: {
             ok: true,
-            siteUrl: report.siteUrl,
+            siteUrl,
             rowCount: 0,
             rows: [],
           },
         });
       }
 
-      const header = `${report.siteUrl} · top ${rows.length} of ${source.length} ${label} · whole-window aggregate of Bing's sampled data`;
+      const header = `${siteUrl} · top ${rows.length} of ${source.length} ${label} · whole-window aggregate of Bing's sampled data`;
       const text = `${header}\n${formatMcpTable(
         rows,
-        buildQueryColumns(args.dimension === "page" ? "page" : "query"),
+        buildQueryColumns(
+          args.dimension === "page" && !args.pageUrl ? "page" : "query",
+        ),
       )}`;
       return mcpResponse({
         text,
         meta,
         structuredContent: {
           ok: true,
-          siteUrl: report.siteUrl,
+          siteUrl,
           rowCount: rows.length,
           rows,
         },
