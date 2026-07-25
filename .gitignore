@@ -47,3 +47,6 @@ dist-sourcemaps/
 # Cloudflare resource IDs written by cf-selfhost-deploy.sh — per-deployment,
 # account-specific, and regenerated on every run.
 cf-resources.json
+
+# Live tokens written by scripts/bing-oauth-spike.ts
+.bing-spike.json
