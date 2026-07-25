@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
+import { BingCrawlPanel } from "@/client/features/bing/BingCrawlPanel";
 import {
   BingDimensionTable,
   BingPageQueriesPanel,
@@ -26,7 +27,7 @@ type BingRow = {
   impressions: number;
 };
 
-type Tab = "striking" | "queries" | "pages" | "daily";
+type Tab = "striking" | "queries" | "pages" | "daily" | "crawl";
 
 /**
  * Bing performance. Deliberately NOT a source toggle on the Search Console
@@ -167,10 +168,17 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
                 onClick={() => switchTab("daily")}
                 label="Daily"
               />
+              <TabButton
+                active={tab === "crawl"}
+                onClick={() => switchTab("crawl")}
+                label="Crawl"
+              />
             </div>
 
             <div className="mt-4 rounded-xl border border-base-300 bg-base-100 shadow-sm">
-              {tab === "daily" ? (
+              {tab === "crawl" ? (
+                <BingCrawlPanel projectId={projectId} />
+              ) : tab === "daily" ? (
                 rows.length === 0 ? (
                   <EmptyState />
                 ) : (
@@ -208,7 +216,7 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
               )}
             </div>
 
-            {tab !== "daily" ? (
+            {tab !== "daily" && tab !== "crawl" ? (
               <p className="mt-2 text-xs text-base-content/50">
                 Aggregated from Bing's sampled data (~5 months). Bing provides
                 no date range.

@@ -48,6 +48,18 @@ type BingSite = {
  *  against the live API on 2026-07-25: `Date` (WCF, carrying a timezone
  *  offset), `Clicks`, `Impressions`, plus the `__type` marker every WCF
  *  payload has. Extra fields are tolerated and ignored. */
+/** One daily row from GetCrawlStats. */
+type BingCrawlStatsRow = {
+  /** ISO 8601, or null if Bing sent something unparseable. */
+  date: string | null;
+  crawledPages: number;
+  inIndex: number;
+  inLinks: number;
+  crawlErrors: number;
+  code4xx: number;
+  code5xx: number;
+};
+
 /** One sampled row from GetQueryStats/GetPageStats. `key` is the query text,
  *  or the page URL for GetPageStats. */
 type BingStatRow = {
@@ -108,6 +120,21 @@ const rankAndTrafficStatsRowSchema = z.looseObject({
   Date: z.unknown(),
   Clicks: z.number(),
   Impressions: z.number(),
+});
+
+/** GetCrawlStats row (verified live 2026-07-25): a DENSE daily series like
+ *  GetRankAndTrafficStats — one row per day over Bing's fixed ~6-month
+ *  window. Fields beyond these six exist (Code301/302, ConnectionTimeout,
+ *  DnsFailures, ContainsMalware, AllOtherCodes, BlockedByRobotsTxt) and are
+ *  tolerated but unused. */
+const crawlStatsRowSchema = z.looseObject({
+  Date: z.unknown(),
+  CrawledPages: z.number(),
+  InIndex: z.number(),
+  InLinks: z.number(),
+  CrawlErrors: z.number(),
+  Code4xx: z.number(),
+  Code5xx: z.number(),
 });
 
 /** GetQueryStats and GetPageStats share one row shape (verified live
@@ -238,6 +265,24 @@ export function createBingClient(opts: {
         date: parseWcfDate(row.Date)?.toISOString() ?? null,
         clicks: row.Clicks,
         impressions: row.Impressions,
+      }));
+    },
+
+    /** GetCrawlStats — daily Bingbot crawl/index/link counts. Dense like
+     *  getRankAndTrafficStats, not sampled. */
+    async getCrawlStats(siteUrl: string): Promise<BingCrawlStatsRow[]> {
+      const payload = await request(
+        `${BING_API_BASE}/GetCrawlStats?siteUrl=${encodeURIComponent(siteUrl)}`,
+      );
+      const rows = z.array(crawlStatsRowSchema).parse(payload ?? []);
+      return rows.map((row) => ({
+        date: parseWcfDate(row.Date)?.toISOString() ?? null,
+        crawledPages: row.CrawledPages,
+        inIndex: row.InIndex,
+        inLinks: row.InLinks,
+        crawlErrors: row.CrawlErrors,
+        code4xx: row.Code4xx,
+        code5xx: row.Code5xx,
       }));
     },
 
