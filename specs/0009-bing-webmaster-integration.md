@@ -133,6 +133,23 @@ rather than something Bing will grow out of.
   queries for that one page. The filter is real: 902 rows for one page, 100
   for another, 0 for a nonexistent URL. Same sampling caveats as
   `GetQueryStats`.
+- Crawl and link methods (probed live 2026-07-25, none used yet):
+  - `GetCrawlStats(siteUrl)` — one row per day, ~169 rows, a DENSE daily
+    series unlike the sampled query data: `Date` (WCF), `CrawledPages`,
+    `InIndex`, `InLinks`, `CrawlErrors`, `Code2xx`/`Code301`/`Code302`/
+    `Code4xx`/`Code5xx`/`AllOtherCodes`, `BlockedByRobotsTxt`,
+    `ConnectionTimeout`, `DnsFailures`, `ContainsMalware`.
+  - `GetCrawlIssues(siteUrl)` — 200 with 0 rows on a healthy site; the row
+    shape is UNPINNED (never observed non-empty). Re-probe against a site
+    with real crawl errors before building anything on it.
+  - `GetLinkCounts(siteUrl)` — single object `{ Links: [], TotalPages }`,
+    not an array of rows. Inner `Links` shape unpinned (the probed site had
+    no inbound links in Bing's index).
+  - `GetUrlLinks(siteUrl, link)` — the URL parameter is named `link`, not
+    `url` or `page` (`url` → 400 InvalidUrl; `page` → 400 format error,
+    suggesting Bing parses `page` as an integer pager here). Returns a
+    single `LinkDetails` object `{ Details: [], TotalPages }`; inner
+    `Details` shape unpinned for the same reason.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per
