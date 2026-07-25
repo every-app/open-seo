@@ -9,25 +9,13 @@ import {
 import { hasSelfHostedBingConfig } from "@/server/features/bing/oauth-config";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import {
-  requireAuthenticatedContext,
-  requireProjectContext,
-} from "@/serverFunctions/middleware";
+import { requireProjectContext } from "@/serverFunctions/middleware";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 const setSiteSchema = projectScopedSchema.extend({
   accountId: z.string().min(1),
   siteUrl: z.string().min(1),
 });
-
-// Account-level grant check (no project needed) for surfaces like onboarding
-// where the user hasn't picked a project yet. The OAuth grant is per-account;
-// binding a site to a project happens later in Integrations.
-export const getBingGrantStatus = createServerFn({ method: "GET" })
-  .middleware(requireAuthenticatedContext)
-  .handler(async ({ context }) => {
-    return { connected: await BingService.userHasGrant(context.userId) };
-  });
 
 export const getBingConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)

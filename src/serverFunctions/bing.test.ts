@@ -52,7 +52,6 @@ vi.mock("@/server/lib/runtime-env", () => ({
 import {
   disconnectBing,
   getBingConnection,
-  getBingGrantStatus,
   listBingSites,
   setBingSite,
 } from "./bing";
@@ -61,14 +60,12 @@ import {
 // with the context (and data) the middleware would have injected. These are
 // pre-declared variables — not object literals — so the extra `context` field
 // is accepted against the fetcher's declared options type.
-const authContext = { userId: "u1", userEmail: "u1@example.com" };
 const projectContext = {
   userId: "u1",
   userEmail: "u1@example.com",
   organizationId: "org1",
   projectId: "p1",
 };
-const grantOpts = { data: undefined, context: authContext };
 const projectOpts = { data: { projectId: "p1" }, context: projectContext };
 
 beforeEach(() => {
@@ -79,17 +76,6 @@ beforeEach(() => {
   mocks.getConnection.mockResolvedValue(null);
   mocks.listSitesForUserWithGrantStatus.mockResolvedValue({ accounts: [] });
   mocks.captureServerEvent.mockResolvedValue(undefined);
-});
-
-describe("getBingGrantStatus", () => {
-  it("reports the account-level grant from BingService.userHasGrant", async () => {
-    mocks.userHasGrant.mockResolvedValue(true);
-
-    await expect(getBingGrantStatus(grantOpts)).resolves.toEqual({
-      connected: true,
-    });
-    expect(mocks.userHasGrant).toHaveBeenCalledWith("u1");
-  });
 });
 
 describe("getBingConnection", () => {
