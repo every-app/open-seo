@@ -1,7 +1,23 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
+import {
+  BingDimensionTable,
+  BingStrikingTable,
+  type BingQueryReport,
+} from "@/client/features/bing/BingTables";
+import {
+  percentDelta,
+  splitDailySeries,
+  type Delta,
+} from "@/client/features/bing/bingComparison";
 import { formatBingDay } from "@/client/features/bing/formatBingDay";
-import { getBingPerformance } from "@/serverFunctions/bing";
+import {
+  formatCtr,
+  formatPosition,
+} from "@/client/features/search-performance/SearchPerformanceColumns";
+import { TabButton } from "@/client/features/search-performance/SearchPerformanceParts";
+import { getBingPerformance, getBingQueryReport } from "@/serverFunctions/bing";
 
 type BingRow = {
   date: string | null;
@@ -9,20 +25,31 @@ type BingRow = {
   impressions: number;
 };
 
+type Tab = "striking" | "queries" | "pages" | "daily";
+
 /**
  * Bing performance. Deliberately NOT a source toggle on the Search Console
- * report: Bing's GetRankAndTrafficStats accepts no date range, no device or
- * country filter, and no paging, so sharing that page's chrome would advertise
- * controls Bing cannot honour. See specs/0009.
+ * report: Bing's endpoints accept no date range, no device or country filter,
+ * and no paging, so sharing that page's chrome would advertise controls Bing
+ * cannot honour. Query/page rows are additionally SAMPLED (~16 dates over ~5
+ * months), so they are aggregated over the whole window. See specs/0009.
  */
 export function BingPerformancePage({ projectId }: { projectId: string }) {
+  const [tab, setTab] = useState<Tab>("striking");
   const performanceQuery = useQuery({
     queryKey: ["bingPerformance", projectId],
     queryFn: () => getBingPerformance({ data: { projectId } }),
   });
+  const reportQuery = useQuery({
+    queryKey: ["bingQueryReport", projectId],
+    queryFn: () => getBingQueryReport({ data: { projectId } }),
+  });
 
   const data = performanceQuery.data;
   const rows: BingRow[] = data?.connected ? (data.rows ?? []) : [];
+  const report: BingQueryReport | null = reportQuery.data?.connected
+    ? reportQuery.data
+    : null;
   const totals = rows.reduce(
     (acc, row) => ({
       clicks: acc.clicks + row.clicks,
@@ -30,13 +57,19 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
     }),
     { clicks: 0, impressions: 0 },
   );
+  const ctr = totals.impressions > 0 ? totals.clicks / totals.impressions : 0;
+  const comparison = splitDailySeries(rows);
+  const deltaTitle = comparison
+    ? `${comparison.current.startDate} to ${comparison.current.endDate} vs ${comparison.previous.startDate} to ${comparison.previous.endDate}`
+    : undefined;
+  const avgPosition = weightedAveragePosition(report);
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
         <h1 className="text-xl font-semibold">Bing performance</h1>
         <p className="mt-1 text-sm text-base-content/60">
-          Daily clicks and impressions from Bing Webmaster Tools.
+          Clicks, impressions, queries and pages from Bing Webmaster Tools.
         </p>
       </div>
 
@@ -57,38 +90,171 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
             ) : null}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:max-w-xl">
-            <StatTile label="Clicks" value={totals.clicks} />
-            <StatTile label="Impressions" value={totals.impressions} />
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile
+              label="Clicks"
+              value={totals.clicks.toLocaleString()}
+              delta={
+                comparison
+                  ? percentDelta(
+                      comparison.current.clicks,
+                      comparison.previous.clicks,
+                    )
+                  : null
+              }
+              deltaTitle={deltaTitle}
+            />
+            <StatTile
+              label="Impressions"
+              value={totals.impressions.toLocaleString()}
+              delta={
+                comparison
+                  ? percentDelta(
+                      comparison.current.impressions,
+                      comparison.previous.impressions,
+                    )
+                  : null
+              }
+              deltaTitle={deltaTitle}
+            />
+            <StatTile
+              label="CTR"
+              value={formatCtr(ctr)}
+              delta={
+                comparison
+                  ? percentDelta(
+                      comparison.current.ctr,
+                      comparison.previous.ctr,
+                    )
+                  : null
+              }
+              deltaTitle={deltaTitle}
+            />
+            <StatTile
+              label="Avg position"
+              value={avgPosition === null ? "–" : formatPosition(avgPosition)}
+              delta={null}
+              deltaTitle="From Bing's sampled query data — no comparison available"
+            />
           </div>
 
-          {rows.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <PerformanceTable rows={rows} />
-          )}
+          <div>
+            <div role="tablist" className="tabs tabs-border">
+              <TabButton
+                active={tab === "striking"}
+                onClick={() => setTab("striking")}
+                label="Striking distance"
+              />
+              <TabButton
+                active={tab === "queries"}
+                onClick={() => setTab("queries")}
+                label="Queries"
+              />
+              <TabButton
+                active={tab === "pages"}
+                onClick={() => setTab("pages")}
+                label="Pages"
+              />
+              <TabButton
+                active={tab === "daily"}
+                onClick={() => setTab("daily")}
+                label="Daily"
+              />
+            </div>
+
+            <div className="mt-4 rounded-xl border border-base-300 bg-base-100 shadow-sm">
+              {tab === "daily" ? (
+                rows.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <PerformanceTable rows={rows} />
+                )
+              ) : reportQuery.isLoading ? (
+                <div className="p-6">
+                  <LoadingState label="Loading Bing queries…" />
+                </div>
+              ) : reportQuery.isError ? (
+                <div className="p-6">
+                  <ErrorState onRetry={() => void reportQuery.refetch()} />
+                </div>
+              ) : !report ? (
+                <EmptyState />
+              ) : tab === "striking" ? (
+                <BingStrikingTable
+                  projectId={projectId}
+                  rows={report.striking}
+                />
+              ) : tab === "queries" ? (
+                <BingDimensionTable rows={report.queries} keyLabel="Query" />
+              ) : (
+                <BingDimensionTable rows={report.pages} keyLabel="Page" />
+              )}
+            </div>
+
+            {tab !== "daily" ? (
+              <p className="mt-2 text-xs text-base-content/50">
+                Aggregated from Bing's sampled data (~5 months). Bing provides
+                no date range.
+              </p>
+            ) : null}
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function StatTile({ label, value }: { label: string; value: number }) {
+/** Impression-weighted average position across the aggregated query rows —
+ *  the sampled data supports one whole-window number, not a trend. */
+function weightedAveragePosition(
+  report: BingQueryReport | null,
+): number | null {
+  if (!report) return null;
+  let weight = 0;
+  let weighted = 0;
+  for (const row of report.queries) {
+    if (row.position !== null && row.impressions > 0) {
+      weight += row.impressions;
+      weighted += row.position * row.impressions;
+    }
+  }
+  return weight > 0 ? weighted / weight : null;
+}
+
+function StatTile({
+  label,
+  value,
+  delta,
+  deltaTitle,
+}: {
+  label: string;
+  value: string;
+  delta: Delta;
+  deltaTitle?: string;
+}) {
   return (
     <div className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
       <p className="text-xs font-medium uppercase tracking-wide text-base-content/55">
         {label}
       </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">
-        {value.toLocaleString()}
-      </p>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="text-2xl font-semibold tabular-nums">{value}</span>
+        {delta ? (
+          <span
+            className={`text-xs ${delta.improved ? "text-success" : "text-error"}`}
+            title={deltaTitle}
+          >
+            {delta.text}
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
 
 function PerformanceTable({ rows }: { rows: BingRow[] }) {
   return (
-    <div className="overflow-x-auto rounded-xl border border-base-300 bg-base-100 shadow-sm">
+    <div className="overflow-x-auto">
       <table className="table table-sm">
         <thead>
           <tr>
@@ -115,20 +281,20 @@ function PerformanceTable({ rows }: { rows: BingRow[] }) {
   );
 }
 
-function LoadingState() {
+function LoadingState({ label }: { label?: string }) {
   return (
     <div className="flex items-center gap-2 text-sm text-base-content/50">
       <span className="loading loading-spinner loading-sm" />
-      Loading Bing performance…
+      {label ?? "Loading Bing performance…"}
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="rounded-xl border border-dashed border-base-300 p-8 text-center">
+    <div className="p-8 text-center">
       <p className="text-sm text-base-content/60">
-        Bing hasn't reported any traffic for this site yet.
+        Bing hasn't reported any data for this site yet.
       </p>
     </div>
   );

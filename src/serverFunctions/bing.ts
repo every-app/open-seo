@@ -150,6 +150,44 @@ export const getBingPerformance = createServerFn({ method: "POST" })
   });
 
 /**
+ * Aggregated query and page report for the project's connected Bing site.
+ *
+ * Backed by GetQueryStats/GetPageStats, whose rows are SAMPLED at roughly 16
+ * dates over ~5 months — so rows are aggregated over the whole window and no
+ * date range is offered. Striking distance is the query rows at positions
+ * 5–20 sorted by impressions.
+ *
+ * Separate from getBingPerformance so the (dense, fast) daily tiles render
+ * without waiting on the two sampled-stats calls.
+ */
+export const getBingQueryReport = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(projectScopedSchema)
+  .handler(async ({ context }) => {
+    try {
+      const result = await BingService.getQueryReport({
+        projectId: context.projectId,
+      });
+      return {
+        connected: true as const,
+        siteUrl: result.siteUrl,
+        connectedBy: result.connectedBy,
+        queries: result.queries,
+        pages: result.pages,
+        striking: result.striking,
+      };
+    } catch (error) {
+      if (
+        error instanceof BingNotConnectedError ||
+        isExpectedGrantFailure(error)
+      ) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
+  });
+
+/**
  * Begin the Bing OAuth grant on a self-hosted deployment.
  *
  * Better Auth's `oauth2.link` requires a Better Auth session, which does not

@@ -129,3 +129,146 @@ export const getBingPerformanceTool = {
     }
   }),
 };
+
+/** Aggregated query/page row exposed by get_bing_queries. */
+type BingQueryRow = {
+  key: string;
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number | null;
+};
+
+function buildQueryColumns(keyHeader: string): McpTableColumn<BingQueryRow>[] {
+  return [
+    { header: keyHeader, value: (row) => row.key },
+    { header: "clicks", value: (row) => row.clicks },
+    { header: "impressions", value: (row) => row.impressions },
+    { header: "ctr", value: (row) => `${(row.ctr * 100).toFixed(1)}%` },
+    {
+      header: "position",
+      value: (row) => (row.position === null ? "-" : row.position.toFixed(1)),
+    },
+  ];
+}
+
+const queriesInputSchema = {
+  projectId: projectIdSchema,
+  dimension: z
+    .enum(["query", "page"])
+    .default("query")
+    .describe("Group rows by search query or by page URL."),
+  strikingDistanceOnly: z
+    .boolean()
+    .default(false)
+    .describe(
+      "Only queries at average position 5-20, sorted by impressions (query dimension only).",
+    ),
+  limit: z.number().int().min(1).max(500).default(100),
+} as const;
+
+type QueriesArgs = z.infer<z.ZodObject<typeof queriesInputSchema>>;
+
+export const getBingQueriesTool = {
+  name: "get_bing_queries",
+  config: {
+    title: "Get Bing Webmaster queries",
+    description:
+      "Read the connected Bing Webmaster site's top queries or pages (GetQueryStats/GetPageStats), aggregated over Bing's whole sampled window (~5 months, ~16 sample dates). Columns: clicks, impressions, CTR, and impression-weighted average position. Bing accepts no date range or paging here, so rows are whole-window totals. Set strikingDistanceOnly to get queries at positions 5-20 by impressions. Read-only; uses no credits.",
+    inputSchema: queriesInputSchema,
+    outputSchema: {
+      ok: z.boolean(),
+      reason: z.string().optional(),
+      connectUrl: z.string().optional(),
+      siteUrl: z.string().optional(),
+      rowCount: z.number().optional(),
+      rows: z.array(looseObjectOutputSchema).optional(),
+      ...optionalMetaOutputSchema,
+    },
+    annotations: {
+      readOnlyHint: true,
+      openWorldHint: true,
+      destructiveHint: false,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: QueriesArgs, context) => {
+    const connectUrl = bingConnectUrl(context.baseUrl, args.projectId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      `/p/${args.projectId}/settings`,
+    );
+
+    try {
+      const report = await BingService.getQueryReport({
+        projectId: args.projectId,
+      });
+      const source =
+        args.dimension === "page"
+          ? report.pages
+          : args.strikingDistanceOnly
+            ? report.striking
+            : report.queries;
+      const rows = source.slice(0, args.limit);
+      const label =
+        args.dimension === "page"
+          ? "pages"
+          : args.strikingDistanceOnly
+            ? "striking-distance queries (position 5-20)"
+            : "queries";
+
+      if (rows.length === 0) {
+        return mcpResponse({
+          text: `No Bing ${label} for ${report.siteUrl}. Bing may not have sampled data for this site yet.`,
+          meta,
+          structuredContent: {
+            ok: true,
+            siteUrl: report.siteUrl,
+            rowCount: 0,
+            rows: [],
+          },
+        });
+      }
+
+      const header = `${report.siteUrl} · top ${rows.length} of ${source.length} ${label} · whole-window aggregate of Bing's sampled data`;
+      const text = `${header}\n${formatMcpTable(
+        rows,
+        buildQueryColumns(args.dimension === "page" ? "page" : "query"),
+      )}`;
+      return mcpResponse({
+        text,
+        meta,
+        structuredContent: {
+          ok: true,
+          siteUrl: report.siteUrl,
+          rowCount: rows.length,
+          rows,
+        },
+      });
+    } catch (error) {
+      if (error instanceof BingNotConnectedError) {
+        return mcpResponse({
+          text: `Bing Webmaster is not connected for this project. Connect it in project settings: ${connectUrl}`,
+          meta,
+          structuredContent: {
+            ok: false,
+            reason: "not_connected",
+            connectUrl,
+          },
+        });
+      }
+      if (isExpectedGrantFailure(error)) {
+        return mcpResponse({
+          text: `The Bing Webmaster connection has expired or was revoked. Reconnect it in project settings: ${connectUrl}`,
+          meta,
+          structuredContent: {
+            ok: false,
+            reason: "api_error",
+            connectUrl,
+          },
+        });
+      }
+      throw error;
+    }
+  }),
+};
