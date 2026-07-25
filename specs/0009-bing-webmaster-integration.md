@@ -90,8 +90,13 @@ rather than something Bing will grow out of.
 - Bing data cannot be filtered or date-ranged the way GSC data can. Comparisons
   between the two are directional, not like-for-like.
 - Every response is wrapped in a WCF `d` envelope and must be unwrapped before
-  validation; dates are expected in `/Date(ms)/` form on the stats endpoints
-  (unconfirmed — `GetUserSites` carries no date fields).
+  validation. Dates arrive as `/Date(ms±HHMM)/` — the offset is informational,
+  the milliseconds are already UTC. Confirmed on `GetRankAndTrafficStats`
+  2026-07-25; `GetUserSites` carries no date fields.
+- `GetRankAndTrafficStats` returns one row per day carrying exactly `Date`,
+  `Clicks`, and `Impressions` (plus the `__type` marker). Verified live
+  2026-07-25, so rows are typed rather than passed through; unknown extra
+  fields are tolerated and ignored.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per environment

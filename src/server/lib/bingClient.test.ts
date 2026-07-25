@@ -118,12 +118,15 @@ describe("bingClient", () => {
     ).rejects.toBeInstanceOf(BingApiError);
   });
 
-  it("encodes the siteUrl and converts WCF dates in rank/traffic stats", async () => {
+  it("encodes the siteUrl and maps the verified rank/traffic row shape", async () => {
     mocks.fetch.mockResolvedValue(
       jsonResponse({
         d: [
           {
-            Date: "/Date(1445558400000)/",
+            // Exactly what the live API returned on 2026-07-25, including the
+            // __type marker and the timezone offset on the date.
+            __type: "RankAndTrafficStats:#Microsoft.Bing.Webmaster.Api",
+            Date: "/Date(1445558400000-0700)/",
             Clicks: 42,
             Impressions: 1000,
           },
@@ -140,9 +143,9 @@ describe("bingClient", () => {
     );
     expect(rows).toEqual([
       {
-        Date: new Date(1445558400000).toISOString(),
-        Clicks: 42,
-        Impressions: 1000,
+        date: new Date(1445558400000).toISOString(),
+        clicks: 42,
+        impressions: 1000,
       },
     ]);
   });

@@ -73,9 +73,11 @@ async function main() {
       return stepRefreshRotation();
     case "sites":
       return stepSites();
+    case "call":
+      return stepCall();
     default:
       return fail(
-        "Unknown --step. Expected: authorize | exchange | refresh-rotation | sites",
+        "Unknown --step. Expected: authorize | exchange | refresh-rotation | sites | call",
       );
   }
 }
@@ -335,4 +337,71 @@ async function stepSites() {
     console.log(`\n[API key] ${host} → ${response.status}`);
     console.log(text.slice(0, 600));
   }
+}
+
+/**
+ * Step 5 — call an arbitrary read endpoint and REPORT ITS FIELD NAMES.
+ *
+ * This is what pins the response shape the app codes against. Bing publishes
+ * no schema for these rows, so `bingClient.getRankAndTrafficStats` currently
+ * surfaces them as Record<string, unknown> and the MCP tool derives its
+ * columns from whatever keys turn up. Running this against a real site is how
+ * those keys stop being a guess.
+ *
+ * Uses the API key (no OAuth needed for a read).
+ *
+ * Usage:
+ *   pnpm tsx scripts/bing-oauth-spike.ts --step=call \
+ *     --method=GetRankAndTrafficStats --site=https://example.com/
+ */
+async function stepCall() {
+  const apiKey = requireEnv("BING_API_KEY");
+  const method = args.method;
+  if (!method) {
+    fail("Missing --method=<GetRankAndTrafficStats|GetCrawlStats|...>.");
+  }
+
+  const url = new URL(`${API_HOSTS[0]}/webmaster/api.svc/json/${method}`);
+  url.searchParams.set("apikey", apiKey);
+  if (args.site) url.searchParams.set("siteUrl", args.site);
+
+  const response = await fetch(url);
+  const text = await response.text();
+  console.log(`${method} → ${response.status}`);
+  if (!response.ok) {
+    console.log(text.slice(0, 800));
+    return;
+  }
+
+  const parsed: unknown = JSON.parse(text);
+  const payload =
+    parsed && typeof parsed === "object" && "d" in parsed
+      ? (parsed as { d: unknown }).d
+      : fail(
+          "Response has no `d` envelope — the client's assumption is wrong.",
+        );
+
+  const rows = Array.isArray(payload) ? payload : [payload];
+  console.log(`rows: ${rows.length}`);
+  if (rows.length === 0) return;
+
+  console.log("\n--- field names, types, and sample values ---");
+  const keys = new Set<string>();
+  for (const row of rows) {
+    if (row && typeof row === "object") {
+      for (const key of Object.keys(row)) keys.add(key);
+    }
+  }
+  const first = rows[0] as Record<string, unknown>;
+  for (const key of [...keys].sort()) {
+    const value = first[key];
+    const isWcfDate =
+      typeof value === "string" && /^\/Date\(-?\d+/u.test(value);
+    console.log(
+      `  ${key.padEnd(28)} ${typeof value}${isWcfDate ? "  << WCF date" : ""}  e.g. ${JSON.stringify(value)?.slice(0, 60)}`,
+    );
+  }
+
+  console.log("\n--- first row verbatim ---");
+  console.log(JSON.stringify(rows[0], null, 2).slice(0, 1200));
 }

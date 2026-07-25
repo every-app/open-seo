@@ -44,11 +44,16 @@ type BingSite = {
   dnsVerificationCode: string | null;
 };
 
-/** GetRankAndTrafficStats returns daily site totals. Bing does not publish a
- *  stable, documented field set here and the exact PascalCase keys were not
- *  verified for this lane, so rows are surfaced as-is with any WCF `/Date(ms)/`
- *  values converted to ISO strings. See fix-summary.md (Assumptions). */
-type BingRankAndTrafficStatsRow = Record<string, unknown>;
+/** GetRankAndTrafficStats returns one row per day. Field names verified
+ *  against the live API on 2026-07-25: `Date` (WCF, carrying a timezone
+ *  offset), `Clicks`, `Impressions`, plus the `__type` marker every WCF
+ *  payload has. Extra fields are tolerated and ignored. */
+type BingRankAndTrafficStatsRow = {
+  /** ISO 8601, or null if Bing sent something unparseable. */
+  date: string | null;
+  clicks: number;
+  impressions: number;
+};
 
 /** WCF serialises dates as the literal string "/Date(1445558400000)/" —
  *  milliseconds since epoch, optionally with a "+HHMM"/"-HHMM" timezone offset
@@ -65,19 +70,6 @@ export function parseWcfDate(value: unknown): Date | null {
   if (!Number.isFinite(ms)) return null;
   const date = new Date(ms);
   return Number.isNaN(date.getTime()) ? null : date;
-}
-
-/** Replace any WCF `/Date(ms)/` string values in a row with ISO strings so the
- *  row is plain, serialisable JSON. Non-date values pass through untouched. */
-function convertWcfDates(
-  row: Record<string, unknown>,
-): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(row)) {
-    const date = parseWcfDate(value);
-    out[key] = date ? date.toISOString() : value;
-  }
-  return out;
 }
 
 function messageForStatus(status: number, body: string): string {
@@ -99,6 +91,12 @@ function messageForStatus(status: number, body: string): string {
 const bingEnvelopeSchema = z
   .looseObject({ d: z.unknown() })
   .refine((value) => "d" in value, { message: "missing `d` envelope" });
+
+const rankAndTrafficStatsRowSchema = z.looseObject({
+  Date: z.unknown(),
+  Clicks: z.number(),
+  Impressions: z.number(),
+});
 
 const bingSiteSchema = z.looseObject({
   Url: z.string(),
@@ -209,8 +207,12 @@ export function createBingClient(opts: {
       const payload = await request(
         `${BING_API_BASE}/GetRankAndTrafficStats?siteUrl=${encodeURIComponent(siteUrl)}`,
       );
-      const rows = z.array(z.looseObject({})).parse(payload);
-      return rows.map((row) => convertWcfDates(row));
+      const rows = z.array(rankAndTrafficStatsRowSchema).parse(payload);
+      return rows.map((row) => ({
+        date: parseWcfDate(row.Date)?.toISOString() ?? null,
+        clicks: row.Clicks,
+        impressions: row.Impressions,
+      }));
     },
   };
 }
