@@ -43,3 +43,7 @@ dist-sourcemaps/
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
+
+# Cloudflare resource IDs written by cf-selfhost-deploy.sh — per-deployment,
+# account-specific, and regenerated on every run.
+cf-resources.json
