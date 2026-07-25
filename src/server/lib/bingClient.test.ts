@@ -249,6 +249,20 @@ describe("bingClient", () => {
       expect(rows[0].key).toBe("https://example.com/pricing");
     });
 
+    it("getPageQueryStats passes the page as the `page` query param", async () => {
+      mocks.fetch.mockResolvedValue(jsonResponse({ d: [sampleRow] }));
+      const { createBingClient } = await import("./bingClient");
+      const rows = await createBingClient({ userId: "u1" }).getPageQueryStats(
+        "https://example.com/",
+        "https://example.com/pricing?x=1",
+      );
+
+      expect(mocks.fetch.mock.calls[0][0]).toBe(
+        "https://ssl.bing.com/webmaster/api.svc/json/GetPageQueryStats?siteUrl=https%3A%2F%2Fexample.com%2F&page=https%3A%2F%2Fexample.com%2Fpricing%3Fx%3D1",
+      );
+      expect(rows[0].key).toBe("open seo");
+    });
+
     it("treats a null `d` payload as an empty result", async () => {
       mocks.fetch.mockResolvedValue(jsonResponse({ d: null }));
       const { createBingClient } = await import("./bingClient");

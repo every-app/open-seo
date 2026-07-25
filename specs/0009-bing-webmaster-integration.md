@@ -127,6 +127,31 @@ rather than something Bing will grow out of.
   across five months, so query-level trends are lumpy and a "last 28 days"
   slice can come back empty. Site-level daily totals remain the only dense
   series.
+- `GetPageQueryStats` (verified live 2026-07-25): takes `siteUrl` plus a
+  `page` query parameter (that exact name — the docs disagree with
+  themselves) and returns the same `QueryStats` row shape, filtered to
+  queries for that one page. The filter is real: 902 rows for one page, 100
+  for another, 0 for a nonexistent URL. Same sampling caveats as
+  `GetQueryStats`.
+- Crawl and link methods (probed live 2026-07-25, none used yet):
+  - `GetCrawlStats(siteUrl)` — one row per day, ~169 rows, a DENSE daily
+    series unlike the sampled query data: `Date` (WCF), `CrawledPages`,
+    `InIndex`, `InLinks`, `CrawlErrors`, `Code2xx`/`Code301`/`Code302`/
+    `Code4xx`/`Code5xx`/`AllOtherCodes`, `BlockedByRobotsTxt`,
+    `ConnectionTimeout`, `DnsFailures`, `ContainsMalware`.
+  - `GetCrawlIssues(siteUrl)` — 200 with 0 rows on a healthy site; the row
+    shape is UNPINNED (never observed non-empty). Re-probe against a site
+    with real crawl errors before building anything on it.
+  - `GetLinkCounts(siteUrl)` and `GetUrlLinks(siteUrl, link)` are DEAD
+    ENDS: both return 200 with empty payloads (`{ Links: [], TotalPages: 0 }`
+    / `{ Details: [], TotalPages: 0 }`, with or without the integer `page`
+    pager) for a site whose portal Backlinks tool shows 27 referring
+    domains and 85 referring pages. The 2020 portal's Backlinks data is not
+    served by the legacy JSON API, and Microsoft Q&A carries the same
+    unresolved report from other users. Do not build on these; Bing
+    backlink data would need the portal's private API, which we will not
+    touch. (`GetUrlLinks` param name is `link`; `url` → 400 InvalidUrl,
+    `page` → 400 format error.)
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per

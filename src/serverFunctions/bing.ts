@@ -21,6 +21,9 @@ const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 const startSelfHostedLinkSchema = z.object({
   callbackURL: z.string().min(1),
 });
+const pageQueriesSchema = projectScopedSchema.extend({
+  pageUrl: z.string().url(),
+});
 const setSiteSchema = projectScopedSchema.extend({
   accountId: z.string().min(1),
   siteUrl: z.string().min(1),
@@ -175,6 +178,37 @@ export const getBingQueryReport = createServerFn({ method: "POST" })
         queries: result.queries,
         pages: result.pages,
         striking: result.striking,
+      };
+    } catch (error) {
+      if (
+        error instanceof BingNotConnectedError ||
+        isExpectedGrantFailure(error)
+      ) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
+  });
+
+/**
+ * Queries driving one specific page (GetPageQueryStats) — the drill-down
+ * from the Pages tab. Same sampled-window aggregation and connection
+ * handling as getBingQueryReport.
+ */
+export const getBingPageQueries = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(pageQueriesSchema)
+  .handler(async ({ data, context }) => {
+    try {
+      const result = await BingService.getPageQueries({
+        projectId: context.projectId,
+        pageUrl: data.pageUrl,
+      });
+      return {
+        connected: true as const,
+        siteUrl: result.siteUrl,
+        pageUrl: result.pageUrl,
+        queries: result.queries,
       };
     } catch (error) {
       if (

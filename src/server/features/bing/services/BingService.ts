@@ -302,6 +302,30 @@ async function getQueryReport(input: {
   };
 }
 
+/** Queries driving one specific page, from GetPageQueryStats — the join
+ *  Bing's per-site methods can't express. Same sampled window and
+ *  whole-window aggregation as getQueryReport; an unknown page yields an
+ *  empty list, not an error. */
+async function getPageQueries(input: {
+  projectId: string;
+  pageUrl: string;
+}): Promise<{
+  siteUrl: string;
+  pageUrl: string;
+  queries: BingAggregateRow[];
+}> {
+  const { connection, client } = await resolveOauthClient(input.projectId);
+  const rows = await client.getPageQueryStats(
+    connection.siteUrl,
+    input.pageUrl,
+  );
+  return {
+    siteUrl: connection.siteUrl,
+    pageUrl: input.pageUrl,
+    queries: aggregateBingStatRows(rows),
+  };
+}
+
 export const BingService = {
   getConnection,
   userHasGrant,
@@ -310,4 +334,5 @@ export const BingService = {
   disconnect,
   getPerformance,
   getQueryReport,
+  getPageQueries,
 };

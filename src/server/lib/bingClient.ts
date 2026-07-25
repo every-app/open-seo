@@ -252,14 +252,27 @@ export function createBingClient(opts: {
     async getPageStats(siteUrl: string): Promise<BingStatRow[]> {
       return fetchStatRows("GetPageStats", siteUrl);
     },
+
+    /** GetPageQueryStats — sampled query rows filtered to one page. The
+     *  parameter is named `page` (verified live 2026-07-25 — the docs
+     *  disagree with themselves); an unknown page returns 0 rows, not an
+     *  error. */
+    async getPageQueryStats(
+      siteUrl: string,
+      pageUrl: string,
+    ): Promise<BingStatRow[]> {
+      return fetchStatRows("GetPageQueryStats", siteUrl, pageUrl);
+    },
   };
 
   async function fetchStatRows(
-    method: "GetQueryStats" | "GetPageStats",
+    method: "GetQueryStats" | "GetPageStats" | "GetPageQueryStats",
     siteUrl: string,
+    pageUrl?: string,
   ): Promise<BingStatRow[]> {
+    const pageParam = pageUrl ? `&page=${encodeURIComponent(pageUrl)}` : "";
     const payload = await request(
-      `${BING_API_BASE}/${method}?siteUrl=${encodeURIComponent(siteUrl)}`,
+      `${BING_API_BASE}/${method}?siteUrl=${encodeURIComponent(siteUrl)}${pageParam}`,
     );
     const rows = z.array(queryStatsRowSchema).parse(payload ?? []);
     return rows.map((row) => ({
