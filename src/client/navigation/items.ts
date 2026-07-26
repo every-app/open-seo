@@ -1,4 +1,5 @@
 import {
+  Activity,
   Bookmark,
   Bot,
   ClipboardCheck,
@@ -47,6 +48,11 @@ const projectNavItems = [
     to: "/p/$projectId/bing" as const,
     label: "Bing Insights",
     icon: BingGlyphMuted,
+  },
+  {
+    to: "/p/$projectId/traffic" as const,
+    label: "Traffic",
+    icon: Activity,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -124,6 +130,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/bing"),
+        byPath("/p/$projectId/traffic"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
