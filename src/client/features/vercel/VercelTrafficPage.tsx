@@ -19,6 +19,7 @@ import {
   isAiReferrer,
   referrerLabel,
 } from "@/client/features/vercel/referrerKind";
+import { trimTrailingPartialDay } from "@/client/features/vercel/trimPartialDay";
 import { getVercelTraffic } from "@/serverFunctions/vercel";
 
 type AggRow = { key: string; visitors: number; pageviews: number };
@@ -160,13 +161,13 @@ type TooltipEntry = {
 function TrafficChart({ daily }: { daily: AggRow[] }) {
   const { containerRef, width } = useChartWidth();
   const height = 224;
-  const data = daily
-    .filter((row) => row.key)
-    .map((row) => ({
-      day: new Date(row.key).getTime(),
-      visitors: row.visitors,
-      pageviews: row.pageviews,
-    }));
+  // Tiles include today; the chart doesn't — the always-partial current day
+  // renders as a misleading cliff to zero at the right edge.
+  const data = trimTrailingPartialDay(daily, new Date()).map((row) => ({
+    day: new Date(row.key).getTime(),
+    visitors: row.visitors,
+    pageviews: row.pageviews,
+  }));
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-base-content/60">
