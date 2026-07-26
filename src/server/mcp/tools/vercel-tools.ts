@@ -16,6 +16,7 @@ import {
 import { isExpectedVercelFailure } from "@/server/lib/vercelAnalytics";
 
 type TrafficRow = { key: string; visitors: number; pageviews: number };
+type EventRow = { key: string; visitors: number; count: number };
 
 function buildColumns(keyHeader: string): McpTableColumn<TrafficRow>[] {
   return [
@@ -28,13 +29,28 @@ function buildColumns(keyHeader: string): McpTableColumn<TrafficRow>[] {
   ];
 }
 
+function buildEventColumns(keyHeader: string): McpTableColumn<EventRow>[] {
+  return [
+    { header: keyHeader, value: (row) => row.key },
+    { header: "visitors", value: (row) => row.visitors },
+    { header: "events", value: (row) => row.count },
+  ];
+}
+
 const trafficInputSchema = {
   projectId: projectIdSchema,
   dimension: z
-    .enum(["referrer", "page", "day"])
+    .enum(["referrer", "page", "day", "event"])
     .default("referrer")
     .describe(
-      "Group visits by referrer hostname, page path, or day (last 30 days).",
+      "Group visits by referrer hostname, page path, or day, or list custom events by name (last 30 days).",
+    ),
+  eventName: z
+    .string()
+    .min(1)
+    .optional()
+    .describe(
+      "Drill down to one custom event's daily trend (overrides dimension).",
     ),
   limit: z.number().int().min(1).max(50).default(25),
 } as const;
@@ -46,7 +62,7 @@ export const getVercelTrafficTool = {
   config: {
     title: "Get Vercel Web Analytics traffic",
     description:
-      "Read the connected Vercel project's Web Analytics for the last 30 days: total visitors/pageviews with an exact prior-30-day comparison, plus rows grouped by referrer hostname (spot search engines and AI assistants like claude.ai or chatgpt.com), page path, or day. A '(direct)' row is direct traffic and 'Others' is Vercel's tail bucket. Read-only; uses no credits.",
+      "Read the connected Vercel project's Web Analytics for the last 30 days: total visitors/pageviews with an exact prior-30-day comparison, plus rows grouped by referrer hostname (spot search engines and AI assistants like claude.ai or chatgpt.com), page path, day, or custom event name (dimension 'event'). Pass eventName to get one event's daily trend (e.g. conversions). A '(direct)' row is direct traffic and 'Others' is Vercel's tail bucket. Read-only; uses no credits.",
     inputSchema: trafficInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -77,9 +93,53 @@ export const getVercelTrafficTool = {
     );
 
     try {
+      if (args.eventName) {
+        const trend = await VercelAnalyticsService.getEventTrend({
+          projectId: args.projectId,
+          eventName: args.eventName,
+        });
+        const rows = trend.daily.slice(0, args.limit);
+        const total = trend.daily.reduce((sum, row) => sum + row.count, 0);
+        const header = `${trend.vercelProjectName} · '${trend.eventName}' · ${trend.range.since} to ${trend.range.until} · ${total} events`;
+        const text =
+          rows.length === 0
+            ? `${header}\nNo occurrences of this event in the window.`
+            : `${header}\n${formatMcpTable(rows, buildEventColumns("day"))}`;
+        return mcpResponse({
+          text,
+          meta,
+          structuredContent: {
+            ok: true,
+            vercelProjectName: trend.vercelProjectName,
+            rowCount: rows.length,
+            rows,
+          },
+        });
+      }
+
       const report = await VercelAnalyticsService.getTraffic({
         projectId: args.projectId,
       });
+
+      if (args.dimension === "event") {
+        const rows = report.events.slice(0, args.limit);
+        const summary = `${report.vercelProjectName} · custom events · ${report.range.since} to ${report.range.until}`;
+        const text =
+          rows.length === 0
+            ? `${summary}\nNo custom events recorded. Events are sent from the site with Vercel's track().`
+            : `${summary}\n${formatMcpTable(rows, buildEventColumns("event"))}`;
+        return mcpResponse({
+          text,
+          meta,
+          structuredContent: {
+            ok: true,
+            vercelProjectName: report.vercelProjectName,
+            rowCount: rows.length,
+            rows,
+          },
+        });
+      }
+
       const source =
         args.dimension === "page"
           ? report.pages

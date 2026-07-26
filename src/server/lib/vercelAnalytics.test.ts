@@ -152,6 +152,43 @@ describe("vercelAnalytics client", () => {
     ]);
   });
 
+  it("maps event rows with count and escapes the eventName filter", async () => {
+    mocks.fetch.mockResolvedValue(
+      jsonResponse({
+        data: [{ eventName: "audit_completed", visitors: 5, count: 11 }],
+      }),
+    );
+    const { createVercelAnalyticsClient } = await import("./vercelAnalytics");
+
+    const rows = await createVercelAnalyticsClient().getEventAggregate({
+      vercelProjectId: "prj_1",
+      vercelTeamId: "team_1",
+      since: "2026-06-27",
+      until: "2026-07-27",
+      by: "eventName",
+    });
+    expect(rows).toEqual([{ key: "audit_completed", visitors: 5, count: 11 }]);
+    expect(fetchUrl(mocks.fetch.mock.calls[0][0])).toContain(
+      "/v1/query/web-analytics/events/aggregate?",
+    );
+
+    mocks.fetch.mockResolvedValue(jsonResponse({ data: [] }));
+    await createVercelAnalyticsClient().getEventAggregate({
+      vercelProjectId: "prj_1",
+      vercelTeamId: null,
+      since: "2026-06-27",
+      until: "2026-07-27",
+      by: "day",
+      eventName: "user's event",
+    });
+    // URLSearchParams encodes spaces as "+"; decode both forms.
+    const href = decodeURIComponent(
+      fetchUrl(mocks.fetch.mock.calls[1][0]).replaceAll("+", " "),
+    );
+    // OData single quotes double up inside the literal.
+    expect(href).toContain("filter=eventName eq 'user''s event'");
+  });
+
   it("maps 401 to a VercelApiError that reads as an expected failure", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ error: "nope" }, 401));
     const {

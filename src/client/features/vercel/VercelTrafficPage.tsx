@@ -14,6 +14,7 @@ import {
 } from "@/client/features/rank-tracking/RankTrackingTrendChart";
 import { formatCount } from "@/client/features/search-performance/SearchPerformanceColumns";
 import { VercelConnectionCard } from "@/client/features/vercel/VercelConnectionCard";
+import { VercelEventsTable } from "@/client/features/vercel/VercelEventsTable";
 import {
   isSearchReferrer,
   isAiReferrer,
@@ -110,6 +111,18 @@ export function VercelTrafficPage({ projectId }: { projectId: string }) {
               <PagesTable rows={data.pages} />
             </section>
           </div>
+
+          {data.events.length > 0 ? (
+            <section className="rounded-xl border border-base-300 bg-base-100 shadow-sm lg:max-w-2xl">
+              <h2 className="border-b border-base-300 p-4 text-sm font-semibold">
+                Events
+              </h2>
+              <VercelEventsTable
+                rows={data.events}
+                prevRows={data.prevEvents}
+              />
+            </section>
+          ) : null}
         </div>
       )}
     </div>
