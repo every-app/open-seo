@@ -50,6 +50,13 @@ type VercelAggregateRow = {
 
 type VercelTotals = { visitors: number; pageviews: number };
 
+/** One row from events/aggregate — custom events sent with track(). */
+type VercelEventRow = {
+  key: string;
+  visitors: number;
+  count: number;
+};
+
 const projectsResponseSchema = z.looseObject({
   projects: z.array(z.looseObject({ id: z.string(), name: z.string() })),
 });
@@ -61,6 +68,11 @@ const countResponseSchema = z.looseObject({
 const aggregateRowSchema = z.looseObject({
   visitors: z.number(),
   pageviews: z.number(),
+});
+
+const eventRowSchema = z.looseObject({
+  visitors: z.number(),
+  count: z.number(),
 });
 
 const aggregateResponseSchema = z.looseObject({
@@ -84,6 +96,7 @@ function messageForStatus(status: number, body: string): string {
  *  VERCEL_TOKEN secret (like DATAFORSEO_API_KEY) — there is no per-user
  *  grant. Endpoint shapes verified live 2026-07-26; see specs/0010. */
 function analyticsQuery(
+  dataset: "visits" | "events",
   endpoint: "count" | "aggregate",
   opts: {
     vercelProjectId: string;
@@ -92,6 +105,7 @@ function analyticsQuery(
     until?: string;
     by?: string;
     limit?: number;
+    filter?: string;
   },
 ): string {
   const params = new URLSearchParams({ projectId: opts.vercelProjectId });
@@ -100,7 +114,13 @@ function analyticsQuery(
   if (opts.until) params.set("until", opts.until);
   if (opts.by) params.set("by", opts.by);
   if (opts.limit) params.set("limit", String(opts.limit));
-  return `/v1/query/web-analytics/visits/${endpoint}?${params}`;
+  if (opts.filter) params.set("filter", opts.filter);
+  return `/v1/query/web-analytics/${dataset}/${endpoint}?${params}`;
+}
+
+/** Escape a string for use inside an OData single-quoted literal. */
+function odataString(value: string): string {
+  return `'${value.replaceAll("'", "''")}'`;
 }
 
 export function createVercelAnalyticsClient() {
@@ -167,7 +187,7 @@ export function createVercelAnalyticsClient() {
       since?: string;
       until?: string;
     }): Promise<VercelTotals> {
-      const raw = await request(analyticsQuery("count", opts));
+      const raw = await request(analyticsQuery("visits", "count", opts));
       return countResponseSchema.parse(raw).data;
     },
 
@@ -181,7 +201,7 @@ export function createVercelAnalyticsClient() {
       by: string;
       limit?: number;
     }): Promise<VercelAggregateRow[]> {
-      const raw = await request(analyticsQuery("aggregate", opts));
+      const raw = await request(analyticsQuery("visits", "aggregate", opts));
       const rows = aggregateResponseSchema.parse(raw).data;
       return rows.map((row) => {
         const metrics = aggregateRowSchema.parse(row);
@@ -193,7 +213,41 @@ export function createVercelAnalyticsClient() {
         };
       });
     },
+
+    /** Custom-event rows grouped by one dimension (usually eventName, or
+     *  day when narrowed to one event). Event rows carry `count`, not
+     *  `pageviews` — a sibling shape to visits, verified live 2026-07-26. */
+    async getEventAggregate(opts: {
+      vercelProjectId: string;
+      vercelTeamId: string | null;
+      since: string;
+      until: string;
+      by: string;
+      limit?: number;
+      /** Narrow to one event; escaped into an OData eventName filter. */
+      eventName?: string;
+    }): Promise<VercelEventRow[]> {
+      const { eventName, ...rest } = opts;
+      const raw = await request(
+        analyticsQuery("events", "aggregate", {
+          ...rest,
+          ...(eventName
+            ? { filter: `eventName eq ${odataString(eventName)}` }
+            : {}),
+        }),
+      );
+      const rows = aggregateResponseSchema.parse(raw).data;
+      return rows.map((row) => {
+        const metrics = eventRowSchema.parse(row);
+        const rawKey = opts.by === "day" ? row["timestamp"] : row[opts.by];
+        return {
+          key: typeof rawKey === "string" ? rawKey : "",
+          visitors: metrics.visitors,
+          count: metrics.count,
+        };
+      });
+    },
   };
 }
 
-export type { VercelAggregateRow, VercelTotals };
+export type { VercelAggregateRow, VercelEventRow, VercelTotals };

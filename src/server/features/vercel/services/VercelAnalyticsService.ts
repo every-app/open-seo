@@ -2,6 +2,7 @@ import { AppError } from "@/server/lib/errors";
 import {
   createVercelAnalyticsClient,
   type VercelAggregateRow,
+  type VercelEventRow,
   type VercelTotals,
 } from "@/server/lib/vercelAnalytics";
 import {
@@ -30,6 +31,8 @@ type VercelTrafficReport = {
   daily: VercelAggregateRow[];
   referrers: VercelAggregateRow[];
   pages: VercelAggregateRow[];
+  events: VercelEventRow[];
+  prevEvents: VercelEventRow[];
 };
 
 function isoDay(date: Date): string {
@@ -125,23 +128,36 @@ async function getTraffic(input: {
     vercelTeamId: connection.vercelTeamId,
   };
   const { range, prevRange } = trafficRanges(new Date());
-  const [totals, prevTotals, daily, referrers, pages] = await Promise.all([
-    client.getVisitTotals({ ...target, ...range }),
-    client.getVisitTotals({ ...target, ...prevRange }),
-    client.getVisitAggregate({ ...target, ...range, by: "day" }),
-    client.getVisitAggregate({
-      ...target,
-      ...range,
-      by: "referrerHostname",
-      limit: 25,
-    }),
-    client.getVisitAggregate({
-      ...target,
-      ...range,
-      by: "requestPath",
-      limit: 50,
-    }),
-  ]);
+  const [totals, prevTotals, daily, referrers, pages, events, prevEvents] =
+    await Promise.all([
+      client.getVisitTotals({ ...target, ...range }),
+      client.getVisitTotals({ ...target, ...prevRange }),
+      client.getVisitAggregate({ ...target, ...range, by: "day" }),
+      client.getVisitAggregate({
+        ...target,
+        ...range,
+        by: "referrerHostname",
+        limit: 25,
+      }),
+      client.getVisitAggregate({
+        ...target,
+        ...range,
+        by: "requestPath",
+        limit: 50,
+      }),
+      client.getEventAggregate({
+        ...target,
+        ...range,
+        by: "eventName",
+        limit: 25,
+      }),
+      client.getEventAggregate({
+        ...target,
+        ...prevRange,
+        by: "eventName",
+        limit: 25,
+      }),
+    ]);
   return {
     vercelProjectName: connection.vercelProjectName,
     range,
@@ -151,6 +167,41 @@ async function getTraffic(input: {
     daily,
     referrers,
     pages,
+    events,
+    prevEvents,
+  };
+}
+
+/** Daily series for one custom event over the last 30 days — the MCP
+ *  drill-down behind "how is audit_completed trending". */
+async function getEventTrend(input: {
+  projectId: string;
+  eventName: string;
+}): Promise<{
+  vercelProjectName: string;
+  range: TrafficRange;
+  eventName: string;
+  daily: VercelEventRow[];
+}> {
+  const connection = await VercelConnectionRepository.getByProjectId(
+    input.projectId,
+  );
+  if (!connection) {
+    throw new VercelNotConnectedError(input.projectId);
+  }
+  const { range } = trafficRanges(new Date());
+  const daily = await createVercelAnalyticsClient().getEventAggregate({
+    vercelProjectId: connection.vercelProjectId,
+    vercelTeamId: connection.vercelTeamId,
+    ...range,
+    by: "day",
+    eventName: input.eventName,
+  });
+  return {
+    vercelProjectName: connection.vercelProjectName,
+    range,
+    eventName: input.eventName,
+    daily,
   };
 }
 
@@ -160,4 +211,5 @@ export const VercelAnalyticsService = {
   setProject,
   disconnect,
   getTraffic,
+  getEventTrend,
 };

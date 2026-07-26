@@ -6,6 +6,7 @@ import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   getTraffic: vi.fn(),
+  getEventTrend: vi.fn(),
 }));
 
 class VercelNotConnectedError extends Error {
@@ -37,7 +38,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 vi.mock("@/server/features/vercel/services/VercelAnalyticsService", () => ({
-  VercelAnalyticsService: { getTraffic: mocks.getTraffic },
+  VercelAnalyticsService: {
+    getTraffic: mocks.getTraffic,
+    getEventTrend: mocks.getEventTrend,
+  },
   VercelNotConnectedError,
 }));
 vi.mock("@/server/lib/vercelAnalytics", () => ({
@@ -83,6 +87,11 @@ const report = {
     { key: "claude.ai", visitors: 43, pageviews: 45 },
   ],
   pages: [{ key: "/tools/doi-lookup", visitors: 130, pageviews: 148 }],
+  events: [
+    { key: "audit_completed", visitors: 5, count: 11 },
+    { key: "checkout_completed", visitors: 1, count: 1 },
+  ],
+  prevEvents: [{ key: "audit_completed", visitors: 3, count: 6 }],
 };
 
 describe("get_vercel_traffic", () => {
@@ -179,6 +188,56 @@ describe("get_vercel_traffic", () => {
       ok: false,
       reason: "api_error",
     });
+  });
+
+  it("lists custom events for the event dimension", async () => {
+    const { getVercelTrafficTool } = await import("./vercel-tools");
+
+    const result = await getVercelTrafficTool.handler(
+      { projectId: "project_1", dimension: "event", limit: 25 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({ ok: true, rowCount: 2 });
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain(
+      "event | visitors | events",
+    );
+    expect(first.type === "text" && first.text).toContain("audit_completed");
+    expect(first.type === "text" && first.text).toContain("checkout_completed");
+  });
+
+  it("drills into one event's daily trend when eventName is set", async () => {
+    mocks.getEventTrend.mockResolvedValue({
+      vercelProjectName: "scholar-sidekick",
+      range: { since: "2026-06-27", until: "2026-07-27" },
+      eventName: "audit_completed",
+      daily: [
+        { key: "2026-07-22T00:00:00.000Z", visitors: 1, count: 5 },
+        { key: "2026-07-25T00:00:00.000Z", visitors: 1, count: 3 },
+      ],
+    });
+    const { getVercelTrafficTool } = await import("./vercel-tools");
+
+    const result = await getVercelTrafficTool.handler(
+      {
+        projectId: "project_1",
+        dimension: "referrer",
+        eventName: "audit_completed",
+        limit: 25,
+      },
+      toolExtra,
+    );
+
+    expect(mocks.getEventTrend).toHaveBeenCalledWith({
+      projectId: "project_1",
+      eventName: "audit_completed",
+    });
+    expect(mocks.getTraffic).not.toHaveBeenCalled();
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain("'audit_completed'");
+    expect(first.type === "text" && first.text).toContain("8 events");
+    expect(first.type === "text" && first.text).toContain("2026-07-22");
   });
 
   it("propagates unexpected errors rather than masking them", async () => {
