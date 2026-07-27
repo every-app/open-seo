@@ -139,9 +139,14 @@ rather than something Bing will grow out of.
     `InIndex`, `InLinks`, `CrawlErrors`, `Code2xx`/`Code301`/`Code302`/
     `Code4xx`/`Code5xx`/`AllOtherCodes`, `BlockedByRobotsTxt`,
     `ConnectionTimeout`, `DnsFailures`, `ContainsMalware`.
-  - `GetCrawlIssues(siteUrl)` — 200 with 0 rows on a healthy site; the row
-    shape is UNPINNED (never observed non-empty). Re-probe against a site
-    with real crawl errors before building anything on it.
+  - `GetCrawlIssues(siteUrl)` is a DEAD END too (concluded 2026-07-27):
+    it returned 200 with 0 rows for a site whose own `GetCrawlStats` shows
+    errors on essentially every day of the window (27 crawl errors, 14 4xx,
+    1 5xx, 178 robots-blocked over 37 days) and whose portal shows crawl
+    issues. Probed across https/http/www/trailing-slash variants. The
+    portal's crawl-issues detail lives in the private 2020-portal API, like
+    Backlinks. The legacy API's only usable crawl-error signal is the
+    aggregate daily counts in `GetCrawlStats`.
   - `GetLinkCounts(siteUrl)` and `GetUrlLinks(siteUrl, link)` are DEAD
     ENDS: both return 200 with empty payloads (`{ Links: [], TotalPages: 0 }`
     / `{ Details: [], TotalPages: 0 }`, with or without the integer `page`
