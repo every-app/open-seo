@@ -23,6 +23,9 @@ type BingSite = Awaited<ReturnType<BingClient["listSites"]>>[number];
 type BingRankAndTrafficStatsRow = Awaited<
   ReturnType<BingClient["getRankAndTrafficStats"]>
 >[number];
+type BingCrawlStatsRow = Awaited<
+  ReturnType<BingClient["getCrawlStats"]>
+>[number];
 
 type BingQueryReportResult = {
   siteUrl: string;
@@ -326,6 +329,25 @@ async function getPageQueries(input: {
   };
 }
 
+/** Daily Bingbot crawl/index/link counts from GetCrawlStats — dense like
+ *  getPerformance's series, over the same fixed Bing-chosen window. Rows are
+ *  sorted by date ascending; undated rows are dropped. */
+async function getCrawlStats(input: { projectId: string }): Promise<{
+  siteUrl: string;
+  rows: BingCrawlStatsRow[];
+}> {
+  const { connection, client } = await resolveOauthClient(input.projectId);
+  const rows = await client.getCrawlStats(connection.siteUrl);
+  return {
+    siteUrl: connection.siteUrl,
+    rows: rows
+      .filter(
+        (row): row is BingCrawlStatsRow & { date: string } => row.date !== null,
+      )
+      .toSorted((a, b) => a.date.localeCompare(b.date)),
+  };
+}
+
 export const BingService = {
   getConnection,
   userHasGrant,
@@ -335,4 +357,5 @@ export const BingService = {
   getPerformance,
   getQueryReport,
   getPageQueries,
+  getCrawlStats,
 };
