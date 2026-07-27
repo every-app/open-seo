@@ -6,6 +6,8 @@ export type BingCrawlRow = {
   crawlErrors: number;
   code4xx: number;
   code5xx: number;
+  blockedByRobotsTxt: number;
+  allOtherCodes: number;
 };
 
 export type CrawlTile = {

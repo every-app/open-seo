@@ -58,6 +58,11 @@ type BingCrawlStatsRow = {
   crawlErrors: number;
   code4xx: number;
   code5xx: number;
+  /** Fetches robots.txt forbade — deliberate for private paths, but a rising
+   *  line means Bingbot wants something it's being denied. */
+  blockedByRobotsTxt: number;
+  /** Responses outside the 2xx/301/302/4xx/5xx buckets — typically 429s. */
+  allOtherCodes: number;
 };
 
 /** One sampled row from GetQueryStats/GetPageStats. `key` is the query text,
@@ -135,6 +140,8 @@ const crawlStatsRowSchema = z.looseObject({
   CrawlErrors: z.number(),
   Code4xx: z.number(),
   Code5xx: z.number(),
+  BlockedByRobotsTxt: z.number(),
+  AllOtherCodes: z.number(),
 });
 
 /** GetQueryStats and GetPageStats share one row shape (verified live
@@ -283,6 +290,8 @@ export function createBingClient(opts: {
         crawlErrors: row.CrawlErrors,
         code4xx: row.Code4xx,
         code5xx: row.Code5xx,
+        blockedByRobotsTxt: row.BlockedByRobotsTxt,
+        allOtherCodes: row.AllOtherCodes,
       }));
     },
 
