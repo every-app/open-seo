@@ -5,6 +5,7 @@ import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profil
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
+import { runRankTrackerTool } from "@/server/mcp/tools/run-rank-tracker";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import { createProjectTool } from "@/server/mcp/tools/create-project";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
@@ -143,6 +144,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getRankTrackerTool.name,
       getRankTrackerTool.config.outputSchema,
       getRankTrackerTool.handler,
+    ),
+  );
+  server.registerTool(
+    runRankTrackerTool.name,
+    runRankTrackerTool.config,
+    instrumentMcpToolHandler(
+      runRankTrackerTool.name,
+      runRankTrackerTool.config.outputSchema,
+      runRankTrackerTool.handler,
     ),
   );
   server.registerTool(

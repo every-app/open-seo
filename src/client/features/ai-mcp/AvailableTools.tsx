@@ -24,6 +24,11 @@ const toolCategories: ToolCategory[] = [
         description: "Read tracked keyword positions.",
       },
       {
+        name: "run_rank_tracker",
+        title: "Run a rank check",
+        description: "Check a tracker's keywords now, off-schedule.",
+      },
+      {
         name: "get_keyword_metrics",
         title: "Get keyword metrics",
         description:
