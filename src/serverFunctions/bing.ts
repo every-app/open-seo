@@ -222,6 +222,34 @@ export const getBingPageQueries = createServerFn({ method: "POST" })
   });
 
 /**
+ * Daily Bingbot crawl/index/link counts (GetCrawlStats) — dense daily
+ * series over Bing's fixed window, powering the Crawl tab.
+ */
+export const getBingCrawlStats = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(projectScopedSchema)
+  .handler(async ({ context }) => {
+    try {
+      const result = await BingService.getCrawlStats({
+        projectId: context.projectId,
+      });
+      return {
+        connected: true as const,
+        siteUrl: result.siteUrl,
+        rows: result.rows,
+      };
+    } catch (error) {
+      if (
+        error instanceof BingNotConnectedError ||
+        isExpectedGrantFailure(error)
+      ) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
+  });
+
+/**
  * Begin the Bing OAuth grant on a self-hosted deployment.
  *
  * Better Auth's `oauth2.link` requires a Better Auth session, which does not

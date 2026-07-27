@@ -12,14 +12,18 @@ const mocks = vi.hoisted(() => {
   const getPageStats = vi.fn<() => Promise<BingStatRow[]>>();
   const getPageQueryStats =
     vi.fn<(siteUrl: string, pageUrl: string) => Promise<BingStatRow[]>>();
+  const getCrawlStats =
+    vi.fn<(siteUrl: string) => Promise<Record<string, unknown>[]>>();
   return {
     getQueryStats,
     getPageStats,
     getPageQueryStats,
+    getCrawlStats,
     createBingClient: vi.fn(() => ({
       getQueryStats,
       getPageStats,
       getPageQueryStats,
+      getCrawlStats,
     })),
     getByProjectId: vi.fn(),
   };
@@ -185,5 +189,48 @@ describe("BingService.getPageQueries", () => {
         pageUrl: "https://x.example/nope",
       }),
     ).resolves.toMatchObject({ queries: [] });
+  });
+});
+
+const crawlRow = (date: string | null, inIndex: number) => ({
+  date,
+  crawledPages: 100,
+  inIndex,
+  inLinks: 120,
+  crawlErrors: 0,
+  code4xx: 0,
+  code5xx: 0,
+});
+
+describe("BingService.getCrawlStats", () => {
+  beforeEach(() => {
+    mocks.getByProjectId.mockReset();
+    mocks.getCrawlStats.mockReset().mockResolvedValue([]);
+    mocks.createBingClient.mockClear();
+  });
+
+  it("throws BingNotConnectedError when the project has no connection", async () => {
+    mocks.getByProjectId.mockResolvedValue(null);
+    const { BingService, BingNotConnectedError } =
+      await import("./BingService");
+
+    await expect(
+      BingService.getCrawlStats({ projectId: "p1" }),
+    ).rejects.toBeInstanceOf(BingNotConnectedError);
+  });
+
+  it("sorts rows by date ascending and drops undated rows", async () => {
+    mocks.getByProjectId.mockResolvedValue(oauthConnection);
+    mocks.getCrawlStats.mockResolvedValue([
+      crawlRow("2026-07-02T00:00:00.000Z", 51),
+      crawlRow(null, 999),
+      crawlRow("2026-07-01T00:00:00.000Z", 50),
+    ]);
+    const { BingService } = await import("./BingService");
+
+    const result = await BingService.getCrawlStats({ projectId: "p1" });
+
+    expect(result.siteUrl).toBe("https://x.example/");
+    expect(result.rows.map((row) => row.inIndex)).toEqual([50, 51]);
   });
 });
