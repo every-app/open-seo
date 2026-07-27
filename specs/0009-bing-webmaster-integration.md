@@ -168,20 +168,32 @@ rather than something Bing will grow out of.
 - `webmasteruid` doubles as the site verification code. It is an identifier,
   not a secret to be hashed, but it should not be rendered in the UI.
 
-## Future directions (not built)
+## Future directions
 
-`GetQueryStats` and `GetPageStats` were probed live on 2026-07-25 (shapes under
-Consequences) and put most of the Search Performance page within reach for
-Bing:
+The v2 surface originally sketched here is BUILT (July 2026, fork PRs
+#3–#6/#10): striking distance (positions 5–20 by impressions, with
+copy/save-as-keywords and export), Queries and Pages tables with CTR and
+impression-weighted average-position tiles, the page → queries drill-down
+(`GetPageQueryStats`), the Crawl tab (`GetCrawlStats` — including
+robots-blocked and other-codes series), and the `get_bing_queries` MCP tool
+(dimension, strikingDistanceOnly, pageUrl, limit). Tile period comparisons
+half-split the dense daily series after trimming leading all-zero days, and
+suppress the delta when the prior half carries under 1% of current
+impressions (PR #4).
 
-- **Striking distance** — queries at positions 5–20 by impressions. The most
-  actionable panel and the obvious first one: 840 of 1,119 query rows for one
-  test site already sit in that band.
-- **Queries and Pages tables**, plus **average position** and **CTR** tiles.
-  Position comes from `AvgImpressionPosition`; CTR is derived; period
-  comparison for clicks/impressions/CTR can be computed client-side from the
-  daily series that already exists.
-- Optionally a `get_bing_queries` MCP tool alongside `get_bing_performance`.
+Still genuinely future:
+
+- **API-key connection mode** — `bing_connections.auth_mode = "api_key"` is
+  reserved but unimplemented. It is the local-dev/self-hosted lane (Bing
+  rejects localhost redirect URIs) and becomes the PRIMARY path if the
+  refresh-token re-check ever shows Bing rotating tokens.
+- **URL submission** — `SubmitUrl`/`SubmitUrlBatch` need `webmaster.manage`
+  and re-consent on every grant. IndexNow (key file, no OAuth, also covers
+  Yandex/Seznam/Naver) is the better-shaped alternative if submission is
+  ever wanted.
+- A crawl-issues DETAIL view is NOT reachable — `GetCrawlIssues` is a dead
+  end (see Consequences), as are the link-detail endpoints. The aggregate
+  daily counts on the Crawl tab are the ceiling.
 
 What still cannot be built, and should not be faked: device and country
 filters (Bing exposes no such dimension) and a date-range control. Query and
