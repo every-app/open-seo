@@ -45,8 +45,8 @@ export function VercelTrafficPage({ projectId }: { projectId: string }) {
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-xl font-semibold">Traffic</h1>
-        <p className="mt-1 text-sm text-base-content/60">
+        <h1 className="text-2xl font-semibold">Traffic</h1>
+        <p className="text-sm text-base-content/70">
           Visitors, referrers, and top pages from Vercel Web Analytics.
         </p>
       </div>
