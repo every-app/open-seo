@@ -10,14 +10,20 @@ const mocks = vi.hoisted(() => {
   const getVisitTotals = vi.fn();
   const getVisitAggregate =
     vi.fn<(opts: AggregateOpts) => Promise<unknown[]>>();
+  const getEventAggregate =
+    vi.fn<
+      (opts: AggregateOpts & { eventName?: string }) => Promise<unknown[]>
+    >();
   return {
     listProjects,
     getVisitTotals,
     getVisitAggregate,
+    getEventAggregate,
     createVercelAnalyticsClient: vi.fn(() => ({
       listProjects,
       getVisitTotals,
       getVisitAggregate,
+      getEventAggregate,
     })),
     getByProjectId: vi.fn(),
     upsert: vi.fn(),
@@ -128,12 +134,19 @@ describe("VercelAnalyticsService.getTraffic", () => {
     ).rejects.toBeInstanceOf(VercelNotConnectedError);
   });
 
-  it("fans out totals, prior totals, daily, referrers, and pages", async () => {
+  it("fans out totals, prior totals, daily, referrers, pages, and events", async () => {
     mocks.getByProjectId.mockResolvedValue(connection);
     mocks.getVisitTotals
       .mockResolvedValueOnce({ visitors: 100, pageviews: 200 })
       .mockResolvedValueOnce({ visitors: 50, pageviews: 90 });
     mocks.getVisitAggregate.mockResolvedValue([]);
+    mocks.getEventAggregate
+      .mockResolvedValueOnce([
+        { key: "audit_completed", visitors: 5, count: 11 },
+      ])
+      .mockResolvedValueOnce([
+        { key: "audit_completed", visitors: 3, count: 6 },
+      ]);
     const { VercelAnalyticsService } = await import("./VercelAnalyticsService");
 
     const report = await VercelAnalyticsService.getTraffic({
@@ -143,9 +156,19 @@ describe("VercelAnalyticsService.getTraffic", () => {
     expect(report.vercelProjectName).toBe("scholar-sidekick");
     expect(report.totals).toEqual({ visitors: 100, pageviews: 200 });
     expect(report.prevTotals).toEqual({ visitors: 50, pageviews: 90 });
+    expect(report.events).toEqual([
+      { key: "audit_completed", visitors: 5, count: 11 },
+    ]);
+    expect(report.prevEvents).toEqual([
+      { key: "audit_completed", visitors: 3, count: 6 },
+    ]);
     expect(mocks.getVisitAggregate).toHaveBeenCalledTimes(3);
     const dims = mocks.getVisitAggregate.mock.calls.map((call) => call[0].by);
     expect(dims).toEqual(["day", "referrerHostname", "requestPath"]);
+    // Both event calls group by eventName, one per range.
+    expect(
+      mocks.getEventAggregate.mock.calls.map((call) => call[0].by),
+    ).toEqual(["eventName", "eventName"]);
     // Every call targets the connected Vercel project + team.
     for (const call of mocks.getVisitAggregate.mock.calls) {
       expect(call[0]).toMatchObject({
@@ -153,5 +176,44 @@ describe("VercelAnalyticsService.getTraffic", () => {
         vercelTeamId: "team_1",
       });
     }
+  });
+});
+
+describe("VercelAnalyticsService.getEventTrend", () => {
+  beforeEach(() => {
+    mocks.getByProjectId.mockReset();
+    mocks.getEventAggregate.mockReset().mockResolvedValue([]);
+  });
+
+  it("throws VercelNotConnectedError when the project has no connection", async () => {
+    mocks.getByProjectId.mockResolvedValue(null);
+    const { VercelAnalyticsService, VercelNotConnectedError } =
+      await import("./VercelAnalyticsService");
+
+    await expect(
+      VercelAnalyticsService.getEventTrend({
+        projectId: "p1",
+        eventName: "audit_completed",
+      }),
+    ).rejects.toBeInstanceOf(VercelNotConnectedError);
+  });
+
+  it("requests a by-day series narrowed to the event", async () => {
+    mocks.getByProjectId.mockResolvedValue(connection);
+    const { VercelAnalyticsService } = await import("./VercelAnalyticsService");
+
+    const trend = await VercelAnalyticsService.getEventTrend({
+      projectId: "p1",
+      eventName: "audit_completed",
+    });
+
+    expect(trend.eventName).toBe("audit_completed");
+    expect(mocks.getEventAggregate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        by: "day",
+        eventName: "audit_completed",
+        vercelProjectId: "prj_1",
+      }),
+    );
   });
 });
