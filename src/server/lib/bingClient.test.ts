@@ -243,6 +243,8 @@ describe("bingClient", () => {
           crawlErrors: 2,
           code4xx: 1,
           code5xx: 0,
+          blockedByRobotsTxt: 0,
+          allOtherCodes: 0,
         },
       ]);
     });

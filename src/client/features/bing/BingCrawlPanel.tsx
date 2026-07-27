@@ -30,6 +30,18 @@ const SERIES = [
     color: "#ef4444",
     strokeDasharray: "4 3",
   },
+  {
+    dataKey: "blockedByRobotsTxt",
+    name: "Robots-blocked",
+    color: "#f59e0b",
+    strokeDasharray: "4 3",
+  },
+  {
+    dataKey: "allOtherCodes",
+    name: "Other codes",
+    color: "#6b7280",
+    strokeDasharray: "2 3",
+  },
 ] as const;
 
 /**
@@ -84,6 +96,8 @@ export function BingCrawlPanel({ projectId }: { projectId: string }) {
       inIndex: row.inIndex,
       inLinks: row.inLinks,
       errors: totalErrors(row),
+      blockedByRobotsTxt: row.blockedByRobotsTxt,
+      allOtherCodes: row.allOtherCodes,
     }));
 
   return (
@@ -110,7 +124,8 @@ export function BingCrawlPanel({ projectId }: { projectId: string }) {
 
       <p className="text-xs text-base-content/50">
         Daily Bingbot activity over Bing's fixed reporting window. Errors =
-        crawl errors + 4xx + 5xx.
+        crawl errors + 4xx + 5xx. Robots-blocked fetches are often deliberate;
+        other codes are responses outside the usual buckets (typically 429s).
       </p>
     </div>
   );
@@ -167,6 +182,8 @@ type ChartRow = {
   inIndex: number;
   inLinks: number;
   errors: number;
+  blockedByRobotsTxt: number;
+  allOtherCodes: number;
 };
 
 function CrawlChart({ data }: { data: ChartRow[] }) {

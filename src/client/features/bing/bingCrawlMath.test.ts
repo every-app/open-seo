@@ -14,6 +14,8 @@ function row(overrides: Partial<BingCrawlRow> = {}): BingCrawlRow {
     crawlErrors: 0,
     code4xx: 0,
     code5xx: 0,
+    blockedByRobotsTxt: 0,
+    allOtherCodes: 0,
     ...overrides,
   };
 }

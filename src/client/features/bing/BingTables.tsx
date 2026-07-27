@@ -10,6 +10,7 @@ import {
   useSelectionAnchor,
 } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
+import { BingExportMenu } from "@/client/features/bing/BingExportMenu";
 import {
   TableBulkActionBar,
   TableBulkActionButton,
@@ -152,6 +153,15 @@ export function BingDimensionTable({
   const pagination = table.getState().pagination;
   return (
     <>
+      {rows.length > 0 ? (
+        <div className="flex justify-end px-4 pt-3">
+          <BingExportMenu
+            label={keyLabel === "Page" ? "pages" : "queries"}
+            keyHeader={keyLabel}
+            rows={rows}
+          />
+        </div>
+      ) : null}
       <AppDataTable
         table={table}
         className="table table-zebra table-sm"
@@ -328,10 +338,17 @@ export function BingStrikingTable({
   return (
     <>
       <div className="p-4">
-        <p className="mb-3 text-sm text-base-content/60">
-          Queries at average positions 5 to 20, sorted by impressions. Improve
-          the ranking pages to move them into the top results.
-        </p>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+          <p className="text-sm text-base-content/60">
+            Queries at average positions 5 to 20, sorted by impressions. Improve
+            the ranking pages to move them into the top results.
+          </p>
+          <BingExportMenu
+            label="striking-distance"
+            keyHeader="Query"
+            rows={rows}
+          />
+        </div>
         <AppDataTable
           table={table}
           className="table table-zebra table-sm"
