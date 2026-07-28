@@ -1,5 +1,23 @@
 # OpenSEO
 
+> [!NOTE]
+> **This fork adds an optional Content Optimization module** on top of upstream
+> [OpenSEO](https://github.com/every-app/open-seo): entity coverage, structure
+> benchmarks, competitor term gaps, and content suggestions for any URL and
+> keyword, scored against the live SERP. It runs through your own
+> [On-Page.ai](https://api.on-page.ai) account (bring-your-own-key, like
+> DataForSEO) and adds zero new npm dependencies. Without a connected account
+> the module stays dormant, and it can be switched off entirely in Settings.
+>
+> **Quick start:** clone this repo and run it like upstream, then open
+> **Content Optimization** in the sidebar and click **Connect your On-Page.ai
+> account**. New accounts include free trial credits.
+>
+> Everything else is unchanged OpenSEO, kept current with
+> [every-app/open-seo](https://github.com/every-app/open-seo).
+
+<img alt="Content Optimization report in OpenSEO: optimization score, structure vs page-1 average, entity coverage" src=".github/content-optimization.png" width="100%" />
+
 > Open source alternative to Semrush and Ahrefs
 
 OpenSEO is an SEO tool for _the people_. If tools like Semrush or Ahrefs are too expensive or bloated, OpenSEO is a pay-as-you-go alternative that you actually control.
