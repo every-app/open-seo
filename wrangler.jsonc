@@ -81,19 +81,19 @@
 	// local and self-hosted database. Leave them as-is.
 	"kv_namespaces": [
 		{
-			"binding": "KV",
-			"id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+			"binding": "open-seo-carloscarmo",
+			"id": "5b591dfa95244b7eacce332793f8547a",
 		},
 		{
-			"binding": "OAUTH_KV",
-			"id": "bd1759494309474a9b423b029967b0db",
+			"binding": "open-seo-oauth-carloscarmo",
+			"id": "186ce31f321c4c7d8e78dd5d27adbb48",
 		},
 	],
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "open-seo",
-			"database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+			"database_name": "open-seo-carloscarmo",
+			"database_id": "ed969523-7993-4eb1-9012-03f21b5e7896",
 			"migrations_dir": "drizzle",
 		},
 	],
