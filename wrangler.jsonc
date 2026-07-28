@@ -1,114 +1,124 @@
 {
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "open-seo",
-  "main": "src/server.ts",
-  "compatibility_date": "2025-09-02",
-  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
-  "observability": {
-    "enabled": true,
-    // Spans are billed as observability events (free tier 200k/day); add a
-    // traces head_sampling_rate below 1 if span volume becomes a cost concern.
-    "traces": {
-      "enabled": true,
-    },
-  },
-  // Smart Placement relocates only the `fetch` handler (cron + Workflow runs
-  // stay at the edge) toward external subrequests — Postgres via Hyperdrive,
-  // SEO APIs — not D1/KV/R2 bindings, so it's a DB no-op on the D1 default.
-  // Must live here: a dashboard-only toggle is wiped by `wrangler deploy`.
-  "placement": {
-    "mode": "smart",
-  },
-  "workflows": [
-    {
-      "name": "site-audit-workflow",
-      "binding": "SITE_AUDIT_WORKFLOW",
-      "class_name": "SiteAuditWorkflow",
-    },
-    {
-      "name": "rank-check-workflow",
-      "binding": "RANK_CHECK_WORKFLOW",
-      "class_name": "RankCheckWorkflow",
-    },
-  ],
-  // Durable Object backing the onboarding strategy chat (Agents SDK
-  // AIChatAgent). One instance per project; messages persist in the DO's
-  // SQLite. SQLite-backed classes must be declared in `migrations` below.
-  "durable_objects": {
-    "bindings": [
-      {
-        "name": "ONBOARDING_CHAT",
-        "class_name": "OnboardingChatAgent",
-      },
-      // SAM in-app agent. One instance per chat session; messages persist in the
-      // DO's SQLite. SQLite-backed classes must be declared in `migrations`.
-      {
-        "name": "SAM_CHAT",
-        "class_name": "SamChatAgent",
-      },
-    ],
-  },
-  "migrations": [
-    {
-      "tag": "v1",
-      "new_sqlite_classes": ["OnboardingChatAgent"],
-    },
-    {
-      "tag": "v2",
-      "new_sqlite_classes": ["SamChatAgent"],
-    },
-  ],
-  "triggers": {
-    "crons": ["*/15 * * * *"],
-  },
-  // This config serves local dev and Docker self-host only. All Cloudflare
-  // deployments — previews, prod, self-host — go through Alchemy
-  // (alchemy.run.ts), which provisions real resources per stage and never
-  // reads these ids.
-  //
-  // The ids below are NOT dead config: miniflare derives its on-disk storage
-  // filenames (.wrangler/state, a persistent volume in Docker self-hosts)
-  // from an HMAC of `id`/`database_id`. Changing them orphans every existing
-  // local and self-hosted database. Leave them as-is.
-  "kv_namespaces": [
-    {
-      "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
-    },
-    {
-      "binding": "OAUTH_KV",
-      "id": "bd1759494309474a9b423b029967b0db",
-    },
-  ],
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
-      "migrations_dir": "drizzle",
-    },
-  ],
-  // Postgres scale path (opt-in; D1 is the default). Hyperdrive is the ONLY way
-  // the app connects to Postgres — there is no direct-connection fallback. For
-  // local dev, `localConnectionString` is the throwaway Docker Postgres from
-  // docs/LOCAL_POSTGRES.md, and nothing connects to it unless
-  // DATABASE_PROVIDER=postgres is set in .env.local.
-  //
-  // Kept commented out: an active hyperdrive block makes the "Deploy to
-  // Cloudflare" button demand a Postgres connection string, and the id lives in
-  // OpenSEO's account anyway (Alchemy deploys and the Docker image never read
-  // it). Uncomment when running local Postgres dev per docs/LOCAL_POSTGRES.md.
-  // "hyperdrive": [
-  //   {
-  //     "binding": "HYPERDRIVE",
-  //     "id": "9d64ccfb559f44449ce52a143912f898",
-  //     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
-  //   },
-  // ],
-  "r2_buckets": [
-    {
-      "bucket_name": "open-seo",
-      "binding": "R2",
-    },
-  ],
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "open-seo",
+	"main": "src/server.ts",
+	"compatibility_date": "2025-09-02",
+	"compatibility_flags": [
+		"nodejs_compat",
+		"global_fetch_strictly_public"
+	],
+	"observability": {
+		"enabled": true,
+		// Spans are billed as observability events (free tier 200k/day); add a
+		// traces head_sampling_rate below 1 if span volume becomes a cost concern.
+		"traces": {
+			"enabled": true,
+		},
+	},
+	// Smart Placement relocates only the `fetch` handler (cron + Workflow runs
+	// stay at the edge) toward external subrequests — Postgres via Hyperdrive,
+	// SEO APIs — not D1/KV/R2 bindings, so it's a DB no-op on the D1 default.
+	// Must live here: a dashboard-only toggle is wiped by `wrangler deploy`.
+	"placement": {
+		"mode": "smart",
+	},
+	"workflows": [
+		{
+			"name": "site-audit-workflow",
+			"binding": "SITE_AUDIT_WORKFLOW",
+			"class_name": "SiteAuditWorkflow",
+		},
+		{
+			"name": "rank-check-workflow",
+			"binding": "RANK_CHECK_WORKFLOW",
+			"class_name": "RankCheckWorkflow",
+		},
+	],
+	// Durable Object backing the onboarding strategy chat (Agents SDK
+	// AIChatAgent). One instance per project; messages persist in the DO's
+	// SQLite. SQLite-backed classes must be declared in `migrations` below.
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "ONBOARDING_CHAT",
+				"class_name": "OnboardingChatAgent",
+			},
+			// SAM in-app agent. One instance per chat session; messages persist in the
+			// DO's SQLite. SQLite-backed classes must be declared in `migrations`.
+			{
+				"name": "SAM_CHAT",
+				"class_name": "SamChatAgent",
+			},
+		],
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"OnboardingChatAgent"
+			],
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [
+				"SamChatAgent"
+			],
+		},
+	],
+	"triggers": {
+		"crons": [
+			"*/15 * * * *"
+		],
+	},
+	// This config serves local dev and Docker self-host only. All Cloudflare
+	// deployments — previews, prod, self-host — go through Alchemy
+	// (alchemy.run.ts), which provisions real resources per stage and never
+	// reads these ids.
+	//
+	// The ids below are NOT dead config: miniflare derives its on-disk storage
+	// filenames (.wrangler/state, a persistent volume in Docker self-hosts)
+	// from an HMAC of `id`/`database_id`. Changing them orphans every existing
+	// local and self-hosted database. Leave them as-is.
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+		},
+		{
+			"binding": "OAUTH_KV",
+			"id": "bd1759494309474a9b423b029967b0db",
+		},
+	],
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "open-seo",
+			"database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+			"migrations_dir": "drizzle",
+		},
+	],
+	// Postgres scale path (opt-in; D1 is the default). Hyperdrive is the ONLY way
+	// the app connects to Postgres — there is no direct-connection fallback. For
+	// local dev, `localConnectionString` is the throwaway Docker Postgres from
+	// docs/LOCAL_POSTGRES.md, and nothing connects to it unless
+	// DATABASE_PROVIDER=postgres is set in .env.local.
+	//
+	// Kept commented out: an active hyperdrive block makes the "Deploy to
+	// Cloudflare" button demand a Postgres connection string, and the id lives in
+	// OpenSEO's account anyway (Alchemy deploys and the Docker image never read
+	// it). Uncomment when running local Postgres dev per docs/LOCAL_POSTGRES.md.
+	// "hyperdrive": [
+	//   {
+	//     "binding": "HYPERDRIVE",
+	//     "id": "9d64ccfb559f44449ce52a143912f898",
+	//     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
+	//   },
+	// ],
+	"r2_buckets": [
+		{
+			"bucket_name": "open-seo-carloscarmo",
+			"binding": "open_seo_carloscarmo",
+			"remote": true
+		},
+	],
 }
