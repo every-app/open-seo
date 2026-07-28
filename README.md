@@ -49,6 +49,7 @@ OpenSEO supports these self-hosting paths:
 - **Railway** for one-click cloud Docker hosting with a persistent volume (community template). See [`docs/SELF_HOSTING_RAILWAY.md`](./docs/SELF_HOSTING_RAILWAY.md).
 
   [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/openseo)
+
 - **Advanced: Cloudflare** for internet-facing self-hosting across multiple devices or with your team (works on the free plan). See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 
 Either way, you need a DataForSEO API key to get SEO data. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
