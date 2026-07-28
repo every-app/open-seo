@@ -20,10 +20,10 @@ export function SamSetupGate({
           <div className="max-w-3xl space-y-1.5">
             <h2 className="text-xl font-semibold">Enable AI Features</h2>
             <div className="text-sm text-base-content/68">
-              SAM, OpenSEO's in-app AI agent, needs an OpenRouter API key.
-              Create a key on OpenRouter, set it as the{" "}
-              <code>OPENROUTER_API_KEY</code> environment variable, restart
-              OpenSEO, then confirm here.
+              SAM, OpenSEO's in-app AI agent, needs an LLM API key. Set either{" "}
+              <code>OPENROUTER_API_KEY</code> for OpenRouter or{" "}
+              <code>LLM_API_KEY</code> for an OpenAI-compatible gateway (LLMTR
+              by default), restart OpenSEO, then confirm here.
             </div>
             <div className="text-xs text-base-content/50">
               Step-by-step instructions for every deployment are in the{" "}
@@ -31,7 +31,7 @@ export function SamSetupGate({
                 className="underline underline-offset-2 hover:text-base-content/70"
                 to="/help/openrouter-api-key"
               >
-                OpenRouter API key setup guide
+                AI provider setup guide
               </Link>
               .
             </div>
@@ -53,6 +53,14 @@ export function SamSetupGate({
             rel="noreferrer"
           >
             Open OpenRouter Keys
+          </a>
+          <a
+            className="btn"
+            href="https://llmtr.com"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Open LLMTR
           </a>
         </div>
 

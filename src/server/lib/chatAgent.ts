@@ -27,6 +27,8 @@ subscribe("chat", (event) => {
 // OpenRouter (with usage accounting on) reports the real USD cost of each
 // response under providerMetadata.openrouter.usage.cost. Shared by the chat
 // agents (onboarding + SAM) that meter LLM spend against the credit pool.
+// Plain OpenAI-compatible gateways have no equivalent field — those responses
+// fall through to 0, so a deployment on that path meters no LLM spend.
 const openRouterUsageSchema = z.object({
   openrouter: z.object({ usage: z.object({ cost: z.number() }) }),
 });

@@ -9,7 +9,10 @@ import {
 import type { OnChatMessageOptions } from "@cloudflare/ai-chat";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildOnboardingTools } from "@/server/features/onboarding/onboardingChatTools";
-import { getChatAgentModel } from "@/server/lib/openrouter";
+import {
+  buildChatAgentModel,
+  loadChatAgentProvider,
+} from "@/server/lib/chatAgentModel";
 import {
   openRouterCostUsd,
   staticAssistantResponse,
@@ -162,10 +165,10 @@ export class OnboardingChatAgent extends AIChatAgent {
       monthlyCreditsRemaining = monthlyRemaining;
     }
 
-    const model = await getChatAgentModel();
+    const provider = await loadChatAgentProvider();
 
     const result = streamText({
-      model,
+      model: buildChatAgentModel(provider),
       system: buildSystemPrompt(project.domain),
       messages: await convertToModelMessages(this.messages),
       // Cancel the (billable) LLM call if the user aborts/navigates away.
@@ -179,6 +182,7 @@ export class OnboardingChatAgent extends AIChatAgent {
       stopWhen: stepCountIs(5),
       // Meter LLM spend against the same credit pool as DataForSEO: sum the real
       // per-step cost OpenRouter reports and deduct it. Best-effort, hosted-only.
+      // OpenAI-compatible gateways report no cost, so those deployments meter 0.
       onFinish: async (event) => {
         if (creditCustomerId !== null) {
           const costUsd = event.steps.reduce(
@@ -191,7 +195,7 @@ export class OnboardingChatAgent extends AIChatAgent {
             creditFeature: "onboarding",
             costUsd,
             monthlyRemaining: monthlyCreditsRemaining,
-            properties: { provider: "openrouter" },
+            properties: { provider: provider.kind },
           });
         }
         // Persist the assistant turn to this.messages (DO SQLite).

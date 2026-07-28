@@ -32,4 +32,9 @@ Search Console is optional and works in self-hosted deployments using your own G
 
 ### AI features (SAM)
 
-AI features like SAM, the in-app SEO agent, are optional. Set the `OPENROUTER_API_KEY` environment variable to enable them. Create a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+AI features like SAM, the in-app SEO agent, are optional. Set one of these environment variables to enable them:
+
+- `OPENROUTER_API_KEY` — create a key at [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys).
+- `LLM_API_KEY` — an API key for any endpoint that speaks the OpenAI chat-completions API, if you would rather not route through OpenRouter. It defaults to [LLMTR](https://llmtr.com); set `LLM_BASE_URL` to point at a different gateway or your own vLLM/Ollama server, and `LLM_MODEL` to pick a model (default `minimax/minimax-m3`). Whichever model you pick has to support tool calling — SAM does its research through tools.
+
+Both are paid, pay-as-you-go third-party services unaffiliated with OpenSEO, and you pay them directly for token usage. If both keys are set, `LLM_API_KEY` is the one used.

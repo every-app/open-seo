@@ -74,6 +74,7 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/openai-compatible": "^2.0.62",
     "@ai-sdk/react": "^3.0.211",
     "@better-auth/api-key": "1.6.22",
     "@cloudflare/ai-chat": "^0.10.1",
