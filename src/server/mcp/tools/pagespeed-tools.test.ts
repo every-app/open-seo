@@ -52,6 +52,17 @@ const toolExtra: ToolExtra = {
   } satisfies AuthInfo,
 };
 
+/** Narrow the tool's content union down to its leading text block. */
+function toolText(result: { content: readonly unknown[] }): string {
+  const first = result.content[0];
+  return first &&
+    typeof first === "object" &&
+    "text" in first &&
+    typeof first.text === "string"
+    ? first.text
+    : "";
+}
+
 function snapshot(
   overrides: Partial<PagespeedSnapshotLike> & {
     id: string;
@@ -153,7 +164,7 @@ describe("get_pagespeed_insights", () => {
       strategy: "mobile",
       rowCount: 2,
     });
-    const text = result.content[0]?.text ?? "";
+    const text = toolText(result);
     // 92 now vs 89 before.
     expect(text).toContain("92 (+3)");
     // Unchanged scores carry no delta.
@@ -170,7 +181,7 @@ describe("get_pagespeed_insights", () => {
       toolExtra,
     );
 
-    expect(result.content[0]?.text).toContain("SLOW (origin)");
+    expect(toolText(result)).toContain("SLOW (origin)");
   });
 
   it("does not mix strategies", async () => {
@@ -182,7 +193,7 @@ describe("get_pagespeed_insights", () => {
     );
 
     expect(result.structuredContent).toMatchObject({ rowCount: 1 });
-    expect(result.content[0]?.text).toContain("99");
+    expect(toolText(result)).toContain("99");
   });
 
   it("filters to a matching URL", async () => {
@@ -194,8 +205,8 @@ describe("get_pagespeed_insights", () => {
     );
 
     expect(result.structuredContent).toMatchObject({ rowCount: 1 });
-    expect(result.content[0]?.text).toContain("/pricing");
-    expect(result.content[0]?.text).not.toContain("92 (+3)");
+    expect(toolText(result)).toContain("/pricing");
+    expect(toolText(result)).not.toContain("92 (+3)");
   });
 
   it("reports a run failure rather than stale numbers", async () => {
@@ -218,7 +229,7 @@ describe("get_pagespeed_insights", () => {
       toolExtra,
     );
 
-    expect(result.content[0]?.text).toContain("run failed");
+    expect(toolText(result)).toContain("run failed");
   });
 
   it("returns a setup prompt, not a throw, when the key is missing", async () => {
@@ -235,7 +246,7 @@ describe("get_pagespeed_insights", () => {
       reason: "not_configured",
       connectUrl: "https://open-seo.test/p/project_1/settings",
     });
-    expect(result.content[0]?.text).toContain("PAGESPEED_API_KEY");
+    expect(toolText(result)).toContain("PAGESPEED_API_KEY");
   });
 
   it("points at the page when nothing has been run yet", async () => {
@@ -248,7 +259,7 @@ describe("get_pagespeed_insights", () => {
     );
 
     expect(result.structuredContent).toMatchObject({ ok: true, rowCount: 0 });
-    expect(result.content[0]?.text).toContain("/p/project_1/pagespeed");
+    expect(toolText(result)).toContain("/p/project_1/pagespeed");
   });
 
   it("is annotated read-only and closed-world", async () => {
