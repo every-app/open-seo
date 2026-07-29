@@ -1,4 +1,10 @@
 import { AppError } from "@/server/lib/errors";
+import { getJsonFromR2, putTextToR2 } from "@/server/lib/r2";
+import {
+  readStoredPagespeedPayload,
+  type StoredPagespeedPayload,
+} from "@/server/lib/pagespeedStoredPayload";
+import type { PagespeedTrigger } from "@/shared/pagespeed";
 import {
   createPagespeedClient,
   hasPagespeedApiKey,
@@ -170,6 +176,7 @@ async function removeUrl(input: {
 async function runForUrl(input: {
   projectId: string;
   urlId: string;
+  trigger?: PagespeedTrigger;
 }): Promise<PsiSnapshot[]> {
   await requireConfigured();
 
@@ -191,13 +198,31 @@ async function runForUrl(input: {
         urlId: target.id,
         projectId: input.projectId,
         strategy,
+        trigger: input.trigger ?? "manual",
       };
       try {
-        const result = await client.runPagespeed({
+        const { result, payloadJson } = await client.runPagespeed({
           url: target.url,
           strategy,
         });
-        return { ...base, ...result, errorMessage: null };
+        // Store the drill-down payload before the row, so a row never
+        // advertises an r2Key that isn't there. A failed upload costs the
+        // drill-down, not the metrics.
+        const stored = payloadJson
+          ? await storePayload({
+              projectId: input.projectId,
+              urlId: target.id,
+              strategy,
+              payloadJson,
+            })
+          : null;
+        return {
+          ...base,
+          ...result,
+          errorMessage: null,
+          r2Key: stored?.key ?? null,
+          payloadSizeBytes: stored?.sizeBytes ?? null,
+        };
       } catch (error) {
         return {
           ...base,
@@ -208,6 +233,28 @@ async function runForUrl(input: {
   );
 
   return PagespeedSnapshotRepository.insertMany(results);
+}
+
+/**
+ * Upload one run's drill-down payload. A failure here must not lose the run:
+ * the metric columns are independently useful, so this logs and returns null
+ * rather than throwing and turning a good run into an error row.
+ */
+async function storePayload(input: {
+  projectId: string;
+  urlId: string;
+  strategy: string;
+  payloadJson: string;
+}): Promise<{ key: string; sizeBytes: number } | null> {
+  // Mirrors the site-audit key convention:
+  // <feature>/<projectId>/<runId>/<entity>-<variant>.json
+  const key = `pagespeed/${input.projectId}/${input.urlId}/${input.strategy}-${Date.now()}.json`;
+  try {
+    return await putTextToR2(key, input.payloadJson);
+  } catch (error) {
+    console.error(`[psi] Failed to store payload ${key}:`, error);
+    return null;
+  }
 }
 
 /** Failure text stored on an error snapshot row. Expected failures already
@@ -224,9 +271,31 @@ function describeRunFailure(error: unknown): string {
     : "PageSpeed Insights run failed";
 }
 
+/**
+ * The stored drill-down for one run: the Lighthouse opportunities and
+ * diagnostics behind a score. Runs from before payload storage — and runs whose
+ * upload failed — have no r2Key, which the caller surfaces as "re-run to see
+ * details" rather than an error.
+ */
+async function getSnapshotIssues(input: {
+  projectId: string;
+  snapshotId: string;
+}): Promise<StoredPagespeedPayload | null> {
+  const snapshot = await PagespeedSnapshotRepository.getByIdForProject(
+    input.snapshotId,
+    input.projectId,
+  );
+  if (!snapshot) {
+    throw new AppError("NOT_FOUND", "That PageSpeed run does not exist");
+  }
+  if (!snapshot.r2Key) return null;
+  return readStoredPagespeedPayload(await getJsonFromR2(snapshot.r2Key));
+}
+
 export const PagespeedService = {
   getOverview,
   addUrl,
   removeUrl,
   runForUrl,
+  getSnapshotIssues,
 };

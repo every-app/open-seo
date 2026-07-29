@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { psiSnapshots } from "@/db/schema";
 
@@ -31,7 +31,21 @@ async function listByProjectId(
     .limit(limit);
 }
 
+/** Scoped by project so a snapshot id from another project is unreachable. */
+async function getByIdForProject(
+  id: string,
+  projectId: string,
+): Promise<PsiSnapshot | null> {
+  const rows = await db
+    .select()
+    .from(psiSnapshots)
+    .where(and(eq(psiSnapshots.id, id), eq(psiSnapshots.projectId, projectId)))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export const PagespeedSnapshotRepository = {
   insertMany,
   listByProjectId,
+  getByIdForProject,
 };

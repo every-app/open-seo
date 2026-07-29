@@ -15,6 +15,9 @@ const urlScopedSchema = projectScopedSchema.extend({
 const addUrlSchema = projectScopedSchema.extend({
   url: z.string().min(1).max(2048),
 });
+const snapshotScopedSchema = projectScopedSchema.extend({
+  snapshotId: z.string().min(1),
+});
 
 /**
  * Monitored URLs plus recent snapshots. A missing PAGESPEED_API_KEY resolves
@@ -95,4 +98,22 @@ export const runPagespeedForUrl = createServerFn({ method: "POST" })
       }
       throw error;
     }
+  });
+
+/**
+ * The stored Lighthouse issues behind one run — which opportunities to fix,
+ * not just the score. Resolves to `{ available: false }` for runs stored before
+ * payloads were kept, or whose upload failed, so the panel can say "re-run to
+ * see details" instead of erroring.
+ */
+export const getPagespeedIssues = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(snapshotScopedSchema)
+  .handler(async ({ data, context }) => {
+    const payload = await PagespeedService.getSnapshotIssues({
+      projectId: context.projectId,
+      snapshotId: data.snapshotId,
+    });
+    if (!payload) return { available: false as const };
+    return { available: true as const, payload };
   });

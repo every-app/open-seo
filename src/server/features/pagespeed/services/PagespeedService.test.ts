@@ -11,9 +11,24 @@ const mocks = vi.hoisted(() => ({
   insertMany: vi.fn((values: unknown[]) => Promise.resolve(values)),
   listSnapshotsByProjectId: vi.fn(() => Promise.resolve([])),
   listByUrlId: vi.fn(() => Promise.resolve([])),
+  getSnapshotByIdForProject: vi.fn(),
+  putTextToR2:
+    vi.fn<
+      (key: string, body: string) => Promise<{ key: string; sizeBytes: number }>
+    >(),
+  getJsonFromR2: vi.fn(() => Promise.resolve('{"issues":[]}')),
+  readStoredPagespeedPayload: vi.fn(() => ({ issues: [] })),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
+
+vi.mock("@/server/lib/r2", () => ({
+  putTextToR2: mocks.putTextToR2,
+  getJsonFromR2: mocks.getJsonFromR2,
+}));
+vi.mock("@/server/lib/pagespeedStoredPayload", () => ({
+  readStoredPagespeedPayload: mocks.readStoredPagespeedPayload,
+}));
 
 vi.mock("@/server/lib/pagespeedClient", () => ({
   hasPagespeedApiKey: mocks.hasPagespeedApiKey,
@@ -40,6 +55,7 @@ vi.mock(
       insertMany: mocks.insertMany,
       listByProjectId: mocks.listSnapshotsByProjectId,
       listByUrlId: mocks.listByUrlId,
+      getByIdForProject: mocks.getSnapshotByIdForProject,
     },
   }),
 );
@@ -90,6 +106,11 @@ describe("PagespeedService", () => {
       Promise.resolve(values),
     );
     mocks.listSnapshotsByProjectId.mockResolvedValue([]);
+    mocks.putTextToR2.mockResolvedValue({
+      key: "pagespeed/p/u/mobile-1.json",
+      sizeBytes: 1234,
+    });
+    mocks.getJsonFromR2.mockResolvedValue('{"issues":[]}');
   });
 
   it("refuses to do anything without an API key", async () => {
@@ -179,7 +200,10 @@ describe("PagespeedService", () => {
       id: "u1",
       url: "https://a.com/",
     });
-    mocks.runPagespeed.mockResolvedValue({ performanceScore: 90 });
+    mocks.runPagespeed.mockResolvedValue({
+      result: { performanceScore: 90 },
+      payloadJson: '{"issues":[]}',
+    });
     const { PagespeedService } = await import("./PagespeedService");
 
     await PagespeedService.runForUrl({ projectId: "proj_1", urlId: "u1" });
@@ -198,7 +222,10 @@ describe("PagespeedService", () => {
     });
     mocks.isExpectedPagespeedFailure.mockReturnValue(true);
     mocks.runPagespeed
-      .mockResolvedValueOnce({ performanceScore: 90 })
+      .mockResolvedValueOnce({
+        result: { performanceScore: 90 },
+        payloadJson: null,
+      })
       .mockRejectedValueOnce(new Error("quota reached"));
     const { PagespeedService } = await import("./PagespeedService");
 
@@ -214,6 +241,99 @@ describe("PagespeedService", () => {
       strategy: "desktop",
       errorMessage: "quota reached",
     });
+  });
+
+  it("stores the drill-down payload and records its key and size", async () => {
+    mocks.getByIdForProject.mockResolvedValue({
+      id: "u1",
+      url: "https://a.com/",
+    });
+    mocks.runPagespeed.mockResolvedValue({
+      result: { performanceScore: 90 },
+      payloadJson: '{"issues":[]}',
+    });
+    const { PagespeedService } = await import("./PagespeedService");
+
+    await PagespeedService.runForUrl({ projectId: "proj_1", urlId: "u1" });
+
+    expect(mocks.putTextToR2).toHaveBeenCalledTimes(2);
+    expect(mocks.putTextToR2.mock.calls[0]?.[0]).toMatch(
+      /^pagespeed\/proj_1\/u1\/(mobile|desktop)-\d+\.json$/,
+    );
+    const rows = mocks.insertMany.mock.calls[0]?.[0] ?? [];
+    expect(rows[0]).toMatchObject({
+      r2Key: "pagespeed/p/u/mobile-1.json",
+      payloadSizeBytes: 1234,
+    });
+  });
+
+  it("keeps the metrics row when the payload upload fails", async () => {
+    mocks.getByIdForProject.mockResolvedValue({
+      id: "u1",
+      url: "https://a.com/",
+    });
+    mocks.runPagespeed.mockResolvedValue({
+      result: { performanceScore: 90 },
+      payloadJson: '{"issues":[]}',
+    });
+    mocks.putTextToR2.mockRejectedValue(new Error("R2 down"));
+    const { PagespeedService } = await import("./PagespeedService");
+
+    await PagespeedService.runForUrl({ projectId: "proj_1", urlId: "u1" });
+
+    const rows = mocks.insertMany.mock.calls[0]?.[0] ?? [];
+    // A lost drill-down must not turn a good run into an error row.
+    expect(rows[0]).toMatchObject({
+      performanceScore: 90,
+      errorMessage: null,
+      r2Key: null,
+      payloadSizeBytes: null,
+    });
+  });
+
+  it("writes no payload when the response carried no lighthouseResult", async () => {
+    mocks.getByIdForProject.mockResolvedValue({
+      id: "u1",
+      url: "https://a.com/",
+    });
+    mocks.runPagespeed.mockResolvedValue({
+      result: { performanceScore: 90 },
+      payloadJson: null,
+    });
+    const { PagespeedService } = await import("./PagespeedService");
+
+    await PagespeedService.runForUrl({ projectId: "proj_1", urlId: "u1" });
+
+    expect(mocks.putTextToR2).not.toHaveBeenCalled();
+  });
+
+  it("reports no stored detail for a run without an r2 key", async () => {
+    mocks.getSnapshotByIdForProject.mockResolvedValue({
+      id: "s1",
+      r2Key: null,
+    });
+    const { PagespeedService } = await import("./PagespeedService");
+
+    const payload = await PagespeedService.getSnapshotIssues({
+      projectId: "proj_1",
+      snapshotId: "s1",
+    });
+
+    expect(payload).toBeNull();
+    expect(mocks.getJsonFromR2).not.toHaveBeenCalled();
+  });
+
+  it("refuses to read a snapshot belonging to another project", async () => {
+    mocks.getSnapshotByIdForProject.mockResolvedValue(null);
+    const { PagespeedService } = await import("./PagespeedService");
+
+    await expect(
+      PagespeedService.getSnapshotIssues({
+        projectId: "proj_1",
+        snapshotId: "other",
+      }),
+    ).rejects.toThrow(/does not exist/);
+    expect(mocks.getJsonFromR2).not.toHaveBeenCalled();
   });
 
   it("refuses to run a URL belonging to another project", async () => {
