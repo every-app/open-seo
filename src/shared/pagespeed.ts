@@ -1,6 +1,37 @@
 export const PAGESPEED_STRATEGY_VALUES = ["mobile", "desktop"] as const;
 export type PagespeedStrategyValue = (typeof PAGESPEED_STRATEGY_VALUES)[number];
 
+export type PagespeedTrigger = "manual" | "scheduled";
+
+/** The sweep runs each monitored URL once a day. Deliberately not
+ *  configurable: PSI has a daily quota, and finer granularity buys nothing
+ *  when CrUX field data only moves on a 28-day rolling window. */
+const PAGESPEED_SCHEDULE_INTERVAL_HOURS = 24;
+
+/**
+ * When a URL should next be swept.
+ *
+ * Anchored to the previous due time rather than to now, so a sweep that fires
+ * late keeps its daily slot instead of walking later every day. The anchor is
+ * advanced in whole intervals until it lands in the future, which preserves
+ * the slot without emitting a past timestamp that would make the URL due again
+ * on the very next tick — so a deploy gap or a paused instance costs missed
+ * runs, never a backlog of catch-up runs.
+ */
+export function computeNextPagespeedRunAt(
+  now: Date,
+  previousNextRunAt: string | null,
+): string {
+  const stepMs = PAGESPEED_SCHEDULE_INTERVAL_HOURS * 60 * 60 * 1000;
+  const anchor = previousNextRunAt ? Date.parse(previousNextRunAt) : Number.NaN;
+  if (!Number.isFinite(anchor)) {
+    return new Date(now.getTime() + stepMs).toISOString();
+  }
+  // At least one step, so a future anchor still moves forward.
+  const steps = Math.max(1, Math.floor((now.getTime() - anchor) / stepMs) + 1);
+  return new Date(anchor + steps * stepMs).toISOString();
+}
+
 /** The snapshot fields shared code reads. Structural rather than the Drizzle
  *  row type so this module stays importable from the client. */
 export type PagespeedSnapshotLike = {

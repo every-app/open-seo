@@ -281,6 +281,13 @@
       "when": 1785328380497,
       "tag": "0039_keen_inertia",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1785364199496,
+      "tag": "0040_magical_lyja",
+      "breakpoints": true
     }
   ]
 }

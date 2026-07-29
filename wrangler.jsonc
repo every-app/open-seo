@@ -30,6 +30,11 @@
       "binding": "RANK_CHECK_WORKFLOW",
       "class_name": "RankCheckWorkflow",
     },
+    {
+      "name": "pagespeed-sweep-workflow",
+      "binding": "PAGESPEED_SWEEP_WORKFLOW",
+      "class_name": "PagespeedSweepWorkflow",
+    },
   ],
   // Durable Object backing the onboarding strategy chat (Agents SDK
   // AIChatAgent). One instance per project; messages persist in the DO's

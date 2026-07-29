@@ -1,4 +1,5 @@
 import { AppError } from "@/server/lib/errors";
+import type { PagespeedTrigger } from "@/shared/pagespeed";
 import {
   createPagespeedClient,
   hasPagespeedApiKey,
@@ -170,6 +171,7 @@ async function removeUrl(input: {
 async function runForUrl(input: {
   projectId: string;
   urlId: string;
+  trigger?: PagespeedTrigger;
 }): Promise<PsiSnapshot[]> {
   await requireConfigured();
 
@@ -191,6 +193,7 @@ async function runForUrl(input: {
         urlId: target.id,
         projectId: input.projectId,
         strategy,
+        trigger: input.trigger ?? "manual",
       };
       try {
         const result = await client.runPagespeed({

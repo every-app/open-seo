@@ -7,6 +7,7 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import { runScheduledPagespeedRuns } from "@/server/features/pagespeed/services/scheduledPagespeedRuns";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
@@ -173,6 +174,7 @@ function handleFetch(
 // Export Workflow classes as named exports
 export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
+export { PagespeedSweepWorkflow } from "./server/workflows/PagespeedSweepWorkflow";
 // Durable Object class for the onboarding strategy chat (Agents SDK).
 export { OnboardingChatAgent } from "./server/features/onboarding/OnboardingChatAgent";
 // Durable Object class for the SAM in-app agent (Agents SDK).
@@ -186,6 +188,18 @@ export default {
     _ctx: ExecutionContext,
   ) {
     // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
-    await withPgClient(() => runScheduledRankChecks(env));
+    // Each sweep is isolated: a failure in one must not stop the other from
+    // running on this tick.
+    await withPgClient(async () => {
+      const results = await Promise.allSettled([
+        runScheduledRankChecks(env),
+        runScheduledPagespeedRuns(env.PAGESPEED_SWEEP_WORKFLOW),
+      ]);
+      for (const result of results) {
+        if (result.status === "rejected") {
+          console.error("[cron] Scheduled sweep failed:", result.reason);
+        }
+      }
+    });
   },
 };

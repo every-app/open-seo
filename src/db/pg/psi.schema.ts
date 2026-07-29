@@ -33,11 +33,16 @@ export const psiUrls = pgTable(
     // True for the row auto-seeded from projects.domain.
     isHomepage: boolean("is_homepage").notNull().default(false),
     createdByUserId: text("created_by_user_id").notNull(),
+    // When the daily sweep should next run this URL. Null means "never run by
+    // the sweep yet", which the due query treats as due immediately.
+    nextRunAt: text("next_run_at"),
     createdAt: text("created_at").notNull().default(isoNow),
   },
   (table) => [
     uniqueIndex("psi_urls_project_url_idx").on(table.projectId, table.url),
     index("psi_urls_organization_idx").on(table.organizationId),
+    // Drives the cron's due-URL query across all projects.
+    index("psi_urls_next_run_at_idx").on(table.nextRunAt),
   ],
 );
 
@@ -58,6 +63,11 @@ export const psiSnapshots = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     strategy: text("strategy", { enum: ["mobile", "desktop"] }).notNull(),
+    // What started this run. Existing rows predate the sweep, so "manual" is
+    // the correct backfill value.
+    trigger: text("trigger", { enum: ["manual", "scheduled"] })
+      .notNull()
+      .default("manual"),
     // Lighthouse category scores, 0-100 (API returns 0-1 floats).
     performanceScore: integer("performance_score"),
     accessibilityScore: integer("accessibility_score"),

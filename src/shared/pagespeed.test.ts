@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeNextPagespeedRunAt,
   CWV_THRESHOLDS,
   formatCls,
   formatMs,
@@ -86,6 +87,46 @@ describe("scoreDelta", () => {
     expect(scoreDelta(90, 80)).toBe(10);
     expect(scoreDelta(90, null)).toBeNull();
     expect(scoreDelta(null, 80)).toBeNull();
+  });
+});
+
+describe("computeNextPagespeedRunAt", () => {
+  const now = new Date("2026-07-30T12:00:00.000Z");
+
+  it("keeps the daily slot when a sweep fires late", () => {
+    // Due at 11:40, actually ran at 12:00. Tomorrow must still be 11:40, not
+    // 12:00 — otherwise the slot walks later every single day.
+    expect(computeNextPagespeedRunAt(now, "2026-07-30T11:40:00.000Z")).toBe(
+      "2026-07-31T11:40:00.000Z",
+    );
+  });
+
+  it("keeps the slot even when a whole day was missed", () => {
+    // Anchor is yesterday's 11:40 slot: stepping once lands at today 11:40,
+    // already past, so it must step again rather than emit a past time.
+    expect(computeNextPagespeedRunAt(now, "2026-07-29T11:40:00.000Z")).toBe(
+      "2026-07-31T11:40:00.000Z",
+    );
+  });
+
+  it("schedules a day out when there is no anchor", () => {
+    expect(computeNextPagespeedRunAt(now, null)).toBe(
+      "2026-07-31T12:00:00.000Z",
+    );
+  });
+
+  it("does not queue catch-up runs after a long outage", () => {
+    // A two-month-stale anchor must land once in the future, not once per
+    // missed day.
+    const next = computeNextPagespeedRunAt(now, "2026-06-01T00:00:00.000Z");
+    expect(next).toBe("2026-07-31T00:00:00.000Z");
+    expect(Date.parse(next)).toBeGreaterThan(now.getTime());
+  });
+
+  it("ignores an unparseable anchor", () => {
+    expect(computeNextPagespeedRunAt(now, "not a date")).toBe(
+      "2026-07-31T12:00:00.000Z",
+    );
   });
 });
 
