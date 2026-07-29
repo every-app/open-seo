@@ -7,6 +7,21 @@ import {
   isScheduledRankTrackingInterval,
 } from "@/shared/rank-tracking";
 
+async function advanceNextCheckAt(config: {
+  id: string;
+  projectId: string;
+  scheduleInterval: string | null;
+  nextCheckAt: string | null;
+}) {
+  const interval = isScheduledRankTrackingInterval(config.scheduleInterval)
+    ? config.scheduleInterval
+    : null;
+  if (!interval) return;
+  await RankTrackingRepository.updateConfig(config.id, config.projectId, {
+    nextCheckAt: computeNextCheckAt(interval, config.nextCheckAt),
+  });
+}
+
 // Cron body for the `scheduled` Worker handler: start a rank-check run for every
 // config that's due. Wrapped in `withPgClient` at the entrypoint (server.ts).
 export async function runScheduledRankChecks(env: Env) {
@@ -18,8 +33,13 @@ export async function runScheduledRankChecks(env: Env) {
 
   for (const config of dueConfigs) {
     try {
-      // Skip configs whose org doesn't have a paid plan
+      // Skip unpaid orgs, but still advance nextCheckAt. Leaving unpaid rows
+      // due forever fills the 50-config cron limit and starves paying orgs.
       if (isHosted && !(await customerHasPaidPlan(config.organizationId))) {
+        console.log(
+          `[cron] Skipping config ${config.id} (${config.domain}) — unpaid plan`,
+        );
+        await advanceNextCheckAt(config);
         continue;
       }
 
@@ -31,33 +51,12 @@ export async function runScheduledRankChecks(env: Env) {
         console.log(
           `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
         );
-        // Still advance schedule so this config doesn't stay due forever
-        const skipInterval = isScheduledRankTrackingInterval(
-          config.scheduleInterval,
-        )
-          ? config.scheduleInterval
-          : null;
-        if (skipInterval) {
-          await RankTrackingRepository.updateConfig(
-            config.id,
-            config.projectId,
-            {
-              nextCheckAt: computeNextCheckAt(skipInterval, config.nextCheckAt),
-            },
-          );
-        }
+        await advanceNextCheckAt(config);
         continue;
       }
 
       // Advance nextCheckAt immediately to prevent retry storms if the run fails
-      const interval = isScheduledRankTrackingInterval(config.scheduleInterval)
-        ? config.scheduleInterval
-        : null;
-      if (interval) {
-        await RankTrackingRepository.updateConfig(config.id, config.projectId, {
-          nextCheckAt: computeNextCheckAt(interval, config.nextCheckAt),
-        });
-      }
+      await advanceNextCheckAt(config);
 
       const result = await beginRankCheckRun({
         workflow: env.RANK_CHECK_WORKFLOW,
