@@ -2,9 +2,10 @@ import { AppError } from "@/server/lib/errors";
 import { getJsonFromR2, putTextToR2 } from "@/server/lib/r2";
 import {
   readStoredPagespeedPayload,
+  type StoredPagespeedIssue,
   type StoredPagespeedPayload,
 } from "@/server/lib/pagespeedStoredPayload";
-import type { PagespeedTrigger } from "@/shared/pagespeed";
+import { latestByUrl, type PagespeedTrigger } from "@/shared/pagespeed";
 import {
   createPagespeedClient,
   hasPagespeedApiKey,
@@ -292,10 +293,80 @@ async function getSnapshotIssues(input: {
   return readStoredPagespeedPayload(await getJsonFromR2(snapshot.r2Key));
 }
 
+/** One monitored URL's latest run, with its stored issues if any were kept. */
+export type LatestIssuesForUrl = {
+  url: string;
+  snapshotId: string;
+  runAt: string;
+  /** False when the run predates detail capture, failed, or lost its upload. */
+  available: boolean;
+  issues: StoredPagespeedIssue[];
+};
+
+/**
+ * The stored issues for the latest run of each monitored URL.
+ *
+ * Resolves snapshots itself so callers never need a snapshot id — an agent
+ * asking "what should I fix" has a URL, not an id. Each URL's payload is read
+ * independently and a failed read degrades that URL to `available: false`
+ * rather than failing the whole call.
+ */
+async function getLatestIssues(input: {
+  projectId: string;
+  organizationId: string;
+  userId: string;
+  domain: string | null;
+  strategy: string;
+  urlFilter?: string;
+}): Promise<LatestIssuesForUrl[]> {
+  const overview = await getOverview(input);
+  const filter = input.urlFilter?.toLowerCase();
+  const urls = filter
+    ? overview.urls.filter((row) => row.url.toLowerCase().includes(filter))
+    : overview.urls;
+
+  const latest = latestByUrl(overview.snapshots, input.strategy);
+
+  return Promise.all(
+    urls.flatMap((url) => {
+      const entry = latest.get(url.id);
+      if (!entry) return [];
+      const { snapshot } = entry;
+      const base = {
+        url: url.url,
+        snapshotId: snapshot.id,
+        runAt: snapshot.createdAt,
+      };
+      if (!snapshot.r2Key) {
+        return [
+          Promise.resolve({
+            ...base,
+            available: false,
+            issues: [] as StoredPagespeedIssue[],
+          }),
+        ];
+      }
+      return [
+        getJsonFromR2(snapshot.r2Key)
+          .then((json) => ({
+            ...base,
+            available: true,
+            issues: readStoredPagespeedPayload(json).issues,
+          }))
+          .catch((error: unknown) => {
+            console.error(`[psi] Failed to read ${snapshot.r2Key}:`, error);
+            return { ...base, available: false, issues: [] };
+          }),
+      ];
+    }),
+  );
+}
+
 export const PagespeedService = {
   getOverview,
   addUrl,
   removeUrl,
   runForUrl,
   getSnapshotIssues,
+  getLatestIssues,
 };

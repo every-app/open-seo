@@ -7,6 +7,7 @@ import type { PagespeedSnapshotLike } from "@/shared/pagespeed";
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   getOverview: vi.fn(),
+  getLatestIssues: vi.fn(),
 }));
 
 class PagespeedNotConfiguredError extends Error {
@@ -23,7 +24,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 vi.mock("@/server/features/pagespeed/services/PagespeedService", () => ({
-  PagespeedService: { getOverview: mocks.getOverview },
+  PagespeedService: {
+    getOverview: mocks.getOverview,
+    getLatestIssues: mocks.getLatestIssues,
+  },
   PagespeedNotConfiguredError,
 }));
 
@@ -94,8 +98,18 @@ function snapshot(
 }
 
 const urls = [
-  { id: "u1", url: "https://example.com/", isHomepage: true },
-  { id: "u2", url: "https://example.com/pricing", isHomepage: false },
+  {
+    id: "u1",
+    url: "https://example.com/",
+    isHomepage: true,
+    nextRunAt: "2026-07-31T10:00:00.000Z",
+  },
+  {
+    id: "u2",
+    url: "https://example.com/pricing",
+    isHomepage: false,
+    nextRunAt: null,
+  },
 ];
 
 const snapshots = [
@@ -103,6 +117,7 @@ const snapshots = [
     id: "s_now",
     urlId: "u1",
     createdAt: "2026-07-29T10:00:00.000Z",
+    trigger: "scheduled",
     performanceScore: 92,
     accessibilityScore: 88,
     bestPracticesScore: 100,
@@ -155,7 +170,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile" },
+      { projectId: "project_1", strategy: "mobile", history: 1 },
       toolExtra,
     );
 
@@ -177,7 +192,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile" },
+      { projectId: "project_1", strategy: "mobile", history: 1 },
       toolExtra,
     );
 
@@ -188,7 +203,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "desktop" },
+      { projectId: "project_1", strategy: "desktop", history: 1 },
       toolExtra,
     );
 
@@ -200,7 +215,12 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile", url: "/pricing" },
+      {
+        projectId: "project_1",
+        strategy: "mobile",
+        url: "/pricing",
+        history: 1,
+      },
       toolExtra,
     );
 
@@ -225,7 +245,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile" },
+      { projectId: "project_1", strategy: "mobile", history: 1 },
       toolExtra,
     );
 
@@ -237,7 +257,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile" },
+      { projectId: "project_1", strategy: "mobile", history: 1 },
       toolExtra,
     );
 
@@ -254,7 +274,7 @@ describe("get_pagespeed_insights", () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     const result = await getPagespeedInsightsTool.handler(
-      { projectId: "project_1", strategy: "mobile" },
+      { projectId: "project_1", strategy: "mobile", history: 1 },
       toolExtra,
     );
 
@@ -262,10 +282,167 @@ describe("get_pagespeed_insights", () => {
     expect(toolText(result)).toContain("/p/project_1/pagespeed");
   });
 
+  it("returns several runs per URL when history is raised", async () => {
+    const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedInsightsTool.handler(
+      { projectId: "project_1", strategy: "mobile", history: 5 },
+      toolExtra,
+    );
+
+    // u1 has two mobile runs, u2 has one.
+    expect(result.structuredContent).toMatchObject({ rowCount: 3 });
+    expect(toolText(result)).toContain("up to 5 run(s) each");
+  });
+
+  it("reports the trigger and next scheduled run", async () => {
+    const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedInsightsTool.handler(
+      { projectId: "project_1", strategy: "mobile", history: 1 },
+      toolExtra,
+    );
+
+    const text = toolText(result);
+    expect(text).toContain("trigger");
+    expect(text).toContain("scheduled");
+    expect(text).toContain("2026-07-31T10:00:00.000Z");
+  });
+
   it("is annotated read-only and closed-world", async () => {
     const { getPagespeedInsightsTool } = await import("./pagespeed-tools");
 
     expect(getPagespeedInsightsTool.config.annotations).toMatchObject({
+      readOnlyHint: true,
+      openWorldHint: false,
+    });
+  });
+});
+
+function issue(overrides: Record<string, unknown>) {
+  return {
+    category: "performance",
+    auditKey: "unused-javascript",
+    title: "Reduce unused JavaScript",
+    description: "…",
+    score: 0.5,
+    scoreDisplayMode: "metricSavings",
+    displayValue: "Potential savings of 40 KiB",
+    impactMs: null,
+    impactBytes: 41000,
+    severity: "warning",
+    items: [],
+    ...overrides,
+  };
+}
+
+describe("get_pagespeed_issues", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      domain: "example.com",
+    });
+  });
+
+  it("lists issues worst-first across URLs", async () => {
+    mocks.getLatestIssues.mockResolvedValue([
+      {
+        url: "https://example.com/",
+        snapshotId: "s1",
+        runAt: "2026-07-30T10:00:00.000Z",
+        available: true,
+        issues: [
+          issue({ severity: "info", title: "Minor thing", impactBytes: 10 }),
+          issue({ severity: "critical", title: "Big problem", impactMs: 900 }),
+        ],
+      },
+    ]);
+    const { getPagespeedIssuesTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedIssuesTool.handler(
+      { projectId: "project_1", strategy: "mobile", limit: 30 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({ ok: true, rowCount: 2 });
+    const text = toolText(result);
+    expect(text.indexOf("Big problem")).toBeLessThan(
+      text.indexOf("Minor thing"),
+    );
+  });
+
+  it("filters to one Lighthouse category", async () => {
+    mocks.getLatestIssues.mockResolvedValue([
+      {
+        url: "https://example.com/",
+        snapshotId: "s1",
+        runAt: "2026-07-30T10:00:00.000Z",
+        available: true,
+        issues: [
+          issue({ category: "performance", title: "Perf thing" }),
+          issue({ category: "seo", title: "SEO thing" }),
+        ],
+      },
+    ]);
+    const { getPagespeedIssuesTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedIssuesTool.handler(
+      {
+        projectId: "project_1",
+        strategy: "mobile",
+        category: "seo",
+        limit: 30,
+      },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({ rowCount: 1 });
+    expect(toolText(result)).toContain("SEO thing");
+    expect(toolText(result)).not.toContain("Perf thing");
+  });
+
+  it("names URLs whose detail was never stored", async () => {
+    mocks.getLatestIssues.mockResolvedValue([
+      {
+        url: "https://example.com/old",
+        snapshotId: "s0",
+        runAt: "2026-07-01T10:00:00.000Z",
+        available: false,
+        issues: [],
+      },
+    ]);
+    const { getPagespeedIssuesTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedIssuesTool.handler(
+      { projectId: "project_1", strategy: "mobile", limit: 30 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      urlsWithoutDetail: ["https://example.com/old"],
+    });
+    expect(toolText(result)).toContain("re-run to collect it");
+  });
+
+  it("returns a setup prompt, not a throw, when the key is missing", async () => {
+    mocks.getLatestIssues.mockRejectedValue(new PagespeedNotConfiguredError());
+    const { getPagespeedIssuesTool } = await import("./pagespeed-tools");
+
+    const result = await getPagespeedIssuesTool.handler(
+      { projectId: "project_1", strategy: "mobile", limit: 30 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      ok: false,
+      reason: "not_configured",
+    });
+  });
+
+  it("is annotated read-only and closed-world", async () => {
+    const { getPagespeedIssuesTool } = await import("./pagespeed-tools");
+    expect(getPagespeedIssuesTool.config.annotations).toMatchObject({
       readOnlyHint: true,
       openWorldHint: false,
     });
