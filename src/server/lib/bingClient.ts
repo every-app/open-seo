@@ -65,6 +65,19 @@ type BingCrawlStatsRow = {
   allOtherCodes: number;
 };
 
+/** Per-URL crawl evidence from GetUrlInfo. `known: false` means Bing has
+ *  never discovered the URL (sentinel dates mapped to null). */
+type BingUrlInfo = {
+  url: string;
+  known: boolean;
+  discoveredAt: string | null;
+  lastCrawledAt: string | null;
+  documentSize: number;
+  isPage: boolean;
+  anchorCount: number;
+  totalChildUrlCount: number;
+};
+
 /** One sampled row from GetQueryStats/GetPageStats. `key` is the query text,
  *  or the page URL for GetPageStats. */
 type BingStatRow = {
@@ -156,6 +169,18 @@ const queryStatsRowSchema = z.looseObject({
   Impressions: z.number(),
   Date: z.unknown(),
   AvgImpressionPosition: z.number(),
+});
+
+/** GetUrlInfo response (verified live 2026-07-30) — a single object, not an
+ *  array. */
+const urlInfoSchema = z.looseObject({
+  Url: z.string(),
+  DiscoveryDate: z.unknown(),
+  LastCrawledDate: z.unknown(),
+  DocumentSize: z.number(),
+  IsPage: z.boolean(),
+  AnchorCount: z.number(),
+  TotalChildUrlCount: z.number(),
 });
 
 const bingSiteSchema = z.looseObject({
@@ -317,6 +342,34 @@ export function createBingClient(opts: {
     ): Promise<BingStatRow[]> {
       return fetchStatRows("GetPageQueryStats", siteUrl, pageUrl);
     },
+
+    /** GetUrlInfo — per-URL crawl evidence (verified live 2026-07-30). A URL
+     *  Bing has never discovered still returns 200, with sentinel year-0001
+     *  dates — surfaced here as known=false with null dates, never as a
+     *  rendered date. HttpStatus is NOT mapped: it came back 0 in probing
+     *  and cannot be trusted. */
+    async getUrlInfo(siteUrl: string, url: string): Promise<BingUrlInfo> {
+      const payload = await request(
+        `${BING_API_BASE}/GetUrlInfo?siteUrl=${encodeURIComponent(siteUrl)}&url=${encodeURIComponent(url)}`,
+      );
+      const info = urlInfoSchema.parse(payload);
+      const discovered = parseWcfDate(info.DiscoveryDate);
+      const lastCrawled = parseWcfDate(info.LastCrawledDate);
+      const known = Boolean(discovered && discovered.getTime() > 0);
+      return {
+        url: info.Url,
+        known,
+        discoveredAt: known ? (discovered?.toISOString() ?? null) : null,
+        lastCrawledAt:
+          known && lastCrawled && lastCrawled.getTime() > 0
+            ? lastCrawled.toISOString()
+            : null,
+        documentSize: info.DocumentSize,
+        isPage: info.IsPage,
+        anchorCount: info.AnchorCount,
+        totalChildUrlCount: info.TotalChildUrlCount,
+      };
+    },
   };
 
   async function fetchStatRows(
@@ -339,4 +392,4 @@ export function createBingClient(opts: {
   }
 }
 
-export type { BingStatRow };
+export type { BingStatRow, BingUrlInfo };

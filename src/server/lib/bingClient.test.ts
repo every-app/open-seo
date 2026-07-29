@@ -342,6 +342,76 @@ describe("bingClient", () => {
     });
   });
 
+  describe("getUrlInfo", () => {
+    it("maps a known URL with real dates", async () => {
+      mocks.fetch.mockResolvedValue(
+        jsonResponse({
+          d: {
+            __type: "UrlInfo:#Microsoft.Bing.Webmaster.Api",
+            Url: "https://example.com/pricing",
+            DiscoveryDate: "/Date(1777446000000-0700)/",
+            LastCrawledDate: "/Date(1785362025000)/",
+            DocumentSize: 127674,
+            HttpStatus: 0,
+            IsPage: true,
+            AnchorCount: 3,
+            TotalChildUrlCount: 0,
+          },
+        }),
+      );
+      const { createBingClient } = await import("./bingClient");
+
+      const info = await createBingClient({ userId: "u1" }).getUrlInfo(
+        "https://example.com/",
+        "https://example.com/pricing",
+      );
+
+      expect(mocks.fetch.mock.calls[0][0]).toBe(
+        "https://ssl.bing.com/webmaster/api.svc/json/GetUrlInfo?siteUrl=https%3A%2F%2Fexample.com%2F&url=https%3A%2F%2Fexample.com%2Fpricing",
+      );
+      expect(info).toEqual({
+        url: "https://example.com/pricing",
+        known: true,
+        discoveredAt: new Date(1777446000000).toISOString(),
+        lastCrawledAt: new Date(1785362025000).toISOString(),
+        documentSize: 127674,
+        isPage: true,
+        anchorCount: 3,
+        totalChildUrlCount: 0,
+      });
+    });
+
+    it("maps Bing's year-0001 sentinel to known=false with null dates", async () => {
+      // A URL Bing never discovered still returns 200 — with DateTime.MinValue
+      // dates (verified live 2026-07-30). Must never render as a real date.
+      mocks.fetch.mockResolvedValue(
+        jsonResponse({
+          d: {
+            Url: "https://example.com/never-seen",
+            DiscoveryDate: "/Date(-62135568000000-0800)/",
+            LastCrawledDate: "/Date(-62135568000000-0800)/",
+            DocumentSize: 0,
+            IsPage: false,
+            AnchorCount: 0,
+            TotalChildUrlCount: 0,
+          },
+        }),
+      );
+      const { createBingClient } = await import("./bingClient");
+
+      const info = await createBingClient({ userId: "u1" }).getUrlInfo(
+        "https://example.com/",
+        "https://example.com/never-seen",
+      );
+
+      expect(info).toMatchObject({
+        known: false,
+        discoveredAt: null,
+        lastCrawledAt: null,
+      });
+    });
+  });
+
   describe("getConnectedEmail", () => {
     it("reads the email claim off the access token without a network call", async () => {
       mocks.getAccessToken.mockResolvedValue({

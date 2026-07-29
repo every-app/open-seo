@@ -14,16 +14,20 @@ const mocks = vi.hoisted(() => {
     vi.fn<(siteUrl: string, pageUrl: string) => Promise<BingStatRow[]>>();
   const getCrawlStats =
     vi.fn<(siteUrl: string) => Promise<Record<string, unknown>[]>>();
+  const getUrlInfo =
+    vi.fn<(siteUrl: string, url: string) => Promise<Record<string, unknown>>>();
   return {
     getQueryStats,
     getPageStats,
     getPageQueryStats,
     getCrawlStats,
+    getUrlInfo,
     createBingClient: vi.fn(() => ({
       getQueryStats,
       getPageStats,
       getPageQueryStats,
       getCrawlStats,
+      getUrlInfo,
     })),
     getByProjectId: vi.fn(),
   };
@@ -232,5 +236,64 @@ describe("BingService.getCrawlStats", () => {
 
     expect(result.siteUrl).toBe("https://x.example/");
     expect(result.rows.map((row) => row.inIndex)).toEqual([50, 51]);
+  });
+});
+
+describe("BingService.inspectUrls", () => {
+  const urlInfo = (url: string) => ({
+    url,
+    known: true,
+    discoveredAt: "2026-04-25T07:00:00.000Z",
+    lastCrawledAt: "2026-07-29T09:13:45.000Z",
+    documentSize: 1000,
+    isPage: true,
+    anchorCount: 0,
+    totalChildUrlCount: 0,
+  });
+
+  beforeEach(() => {
+    mocks.getByProjectId.mockReset();
+    mocks.getUrlInfo.mockReset();
+    mocks.createBingClient.mockClear();
+  });
+
+  it("throws BingNotConnectedError when the project has no connection", async () => {
+    mocks.getByProjectId.mockResolvedValue(null);
+    const { BingService, BingNotConnectedError } =
+      await import("./BingService");
+
+    await expect(
+      BingService.inspectUrls({ projectId: "p1", urls: ["https://x/"] }),
+    ).rejects.toBeInstanceOf(BingNotConnectedError);
+  });
+
+  it("inspects each URL against the connected site and tolerates per-URL failures", async () => {
+    mocks.getByProjectId.mockResolvedValue(oauthConnection);
+    mocks.getUrlInfo.mockImplementation((_site: string, url: string) => {
+      if (url.includes("boom")) {
+        return Promise.reject(new Error("Bing Webmaster API error (500)"));
+      }
+      return Promise.resolve(urlInfo(url));
+    });
+    const { BingService } = await import("./BingService");
+
+    const { siteUrl, results } = await BingService.inspectUrls({
+      projectId: "p1",
+      urls: ["https://x.example/a", "https://x.example/boom"],
+    });
+
+    expect(siteUrl).toBe("https://x.example/");
+    expect(results[0]).toMatchObject({
+      url: "https://x.example/a",
+      known: true,
+    });
+    expect(results[1]).toMatchObject({
+      url: "https://x.example/boom",
+      error: expect.stringContaining("500"),
+    });
+    expect(mocks.getUrlInfo).toHaveBeenCalledWith(
+      "https://x.example/",
+      "https://x.example/a",
+    );
   });
 });
