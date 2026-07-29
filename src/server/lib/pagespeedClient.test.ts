@@ -102,7 +102,7 @@ describe("pagespeed client", () => {
     mocks.fetch.mockResolvedValue(jsonResponse(fullResponse()));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
-    const result = await createPagespeedClient().runPagespeed({
+    const { result } = await createPagespeedClient().runPagespeed({
       url: "https://example.com/",
       strategy: "mobile",
     });
@@ -134,7 +134,7 @@ describe("pagespeed client", () => {
     mocks.fetch.mockResolvedValue(jsonResponse(body));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
-    const result = await createPagespeedClient().runPagespeed({
+    const { result } = await createPagespeedClient().runPagespeed({
       url: "https://example.com/",
       strategy: "mobile",
     });
@@ -157,7 +157,7 @@ describe("pagespeed client", () => {
     mocks.fetch.mockResolvedValue(jsonResponse(body));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
-    const result = await createPagespeedClient().runPagespeed({
+    const { result } = await createPagespeedClient().runPagespeed({
       url: "https://example.com/deep-page",
       strategy: "mobile",
     });
@@ -175,7 +175,7 @@ describe("pagespeed client", () => {
     mocks.fetch.mockResolvedValue(jsonResponse(body));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
-    const result = await createPagespeedClient().runPagespeed({
+    const { result } = await createPagespeedClient().runPagespeed({
       url: "https://example.com/",
       strategy: "mobile",
     });
@@ -192,7 +192,7 @@ describe("pagespeed client", () => {
     mocks.fetch.mockResolvedValue(jsonResponse(body));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
-    const result = await createPagespeedClient().runPagespeed({
+    const { result } = await createPagespeedClient().runPagespeed({
       url: "https://example.com/",
       strategy: "mobile",
     });

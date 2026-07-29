@@ -93,6 +93,11 @@ export const psiSnapshots = sqliteTable(
     // lighthouseResult.fetchTime — when Google ran the audit.
     fetchTime: text("fetch_time"),
     errorMessage: text("error_message"),
+    // Compacted Lighthouse payload in R2 (issues + metrics), not the raw
+    // ~350KB vendor response. Null when the run failed or carried no
+    // lighthouseResult. See specs/0011.
+    r2Key: text("r2_key"),
+    payloadSizeBytes: integer("payload_size_bytes"),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),

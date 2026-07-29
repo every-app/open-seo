@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { PagespeedConnectionCard } from "@/client/features/pagespeed/PagespeedConnectionCard";
 import { PagespeedExportMenu } from "@/client/features/pagespeed/PagespeedExportMenu";
+import { PagespeedIssuesPanel } from "@/client/features/pagespeed/PagespeedIssuesPanel";
 import { PagespeedRunDetail } from "@/client/features/pagespeed/PagespeedRunDetail";
 import { PagespeedTrendChart } from "@/client/features/pagespeed/PagespeedTrendChart";
 import {
@@ -116,6 +117,7 @@ export function PagespeedPage({ projectId }: { projectId: string }) {
 
   const activeUrl =
     urls.find((url) => url.id === selectedUrlId) ?? urls[0] ?? null;
+  const activeEntry = activeUrl ? latest.get(activeUrl.id) : undefined;
   const activeSnapshots = React.useMemo(
     () =>
       activeUrl
@@ -230,6 +232,12 @@ export function PagespeedPage({ projectId }: { projectId: string }) {
                 url={activeUrl.url}
                 entry={latest.get(activeUrl.id)}
               />
+              {activeEntry && !activeEntry.snapshot.errorMessage ? (
+                <PagespeedIssuesPanel
+                  projectId={projectId}
+                  snapshotId={activeEntry.snapshot.id}
+                />
+              ) : null}
               <section className="rounded-xl border border-base-300 bg-base-100 p-4 shadow-sm">
                 <h2 className="mb-3 truncate text-sm font-semibold">
                   Trend · {activeUrl.url}

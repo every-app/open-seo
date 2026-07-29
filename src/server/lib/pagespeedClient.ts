@@ -5,6 +5,7 @@ import {
   getRequiredEnvValue,
 } from "@/server/lib/runtime-env";
 import { LIGHTHOUSE_CATEGORIES } from "@/shared/lighthouse";
+import { buildStoredPagespeedPayload } from "@/server/lib/pagespeedStoredPayload";
 
 const PAGESPEED_API_URL =
   "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
@@ -63,6 +64,13 @@ type PagespeedResult = {
   fetchTime: string | null;
 };
 
+/** One run: the snapshot columns plus the compacted payload bound for R2.
+ *  `payloadJson` is null when the response carried no lighthouseResult. */
+export type PagespeedRun = {
+  result: PagespeedResult;
+  payloadJson: string | null;
+};
+
 const metricSchema = z.looseObject({
   percentile: z.number().optional(),
   category: z.string().optional(),
@@ -83,9 +91,15 @@ const categorySchema = z.looseObject({
   score: z.number().nullish(),
 });
 
+// `looseObject` keeps unrecognized keys, which is what makes the stored
+// payload possible: `audits` entries retain title/description/details and
+// `categories` retain auditRefs even though only the fields below are declared.
 const responseSchema = z.looseObject({
   lighthouseResult: z
     .looseObject({
+      requestedUrl: z.string().optional(),
+      finalUrl: z.string().optional(),
+      lighthouseVersion: z.string().optional(),
       fetchTime: z.string().optional(),
       audits: z.record(z.string(), auditSchema).optional(),
       categories: z.record(z.string(), categorySchema).optional(),
@@ -185,7 +199,7 @@ export function createPagespeedClient() {
     async runPagespeed(opts: {
       url: string;
       strategy: PagespeedStrategy;
-    }): Promise<PagespeedResult> {
+    }): Promise<PagespeedRun> {
       const key = await getRequiredEnvValue("PAGESPEED_API_KEY");
       const params = new URLSearchParams({
         url: opts.url,
@@ -223,7 +237,7 @@ export function createPagespeedClient() {
       // CrUX reports CLS percentiles multiplied by 100 (5 => 0.05).
       const fieldClsPercentile = fieldPercentile(FIELD_METRIC_KEYS.cls);
 
-      return {
+      const result: PagespeedResult = {
         performanceScore: toScore(categories["performance"]?.score),
         accessibilityScore: toScore(categories["accessibility"]?.score),
         bestPracticesScore: toScore(categories["best-practices"]?.score),
@@ -242,6 +256,20 @@ export function createPagespeedClient() {
         fieldSource: field ? (field.origin_fallback ? "origin" : "url") : null,
         fetchTime: parsed.lighthouseResult?.fetchTime ?? null,
       };
+
+      // No lighthouseResult means there is nothing to drill into; the metric
+      // row still stands on its own, so this is not treated as a failure.
+      const payloadJson = parsed.lighthouseResult
+        ? JSON.stringify(
+            buildStoredPagespeedPayload({
+              lighthouseResult: parsed.lighthouseResult,
+              strategy: opts.strategy,
+              url: opts.url,
+            }),
+          )
+        : null;
+
+      return { result, payloadJson };
     },
   };
 }

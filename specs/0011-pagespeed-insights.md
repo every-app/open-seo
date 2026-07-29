@@ -103,14 +103,27 @@ INTERACTION_TO_NEXT_PAINT | CUMULATIVE_LAYOUT_SHIFT_SCORE].percentile` plus
   and the page, never an error boundary — the Vercel pattern.
 - 400/403 (bad or restricted key) and 429 (quota) are expected failures: they
   surface as a setup prompt or a plain-language quota message, not a fault.
-- Full Lighthouse payloads are **not** stored. The metric columns cover every
-  v1 surface, and unread blobs in R2 would be cost without a reader. Adding
-  `r2Key`/`payloadSizeBytes` later is a purely additive migration, and the
-  audit pipeline (`src/server/lib/audit/lighthouse.ts`) already shows the
-  shape if a per-run drill-down viewer is ever wanted.
-- Scheduled runs are out of scope for v1; runs are user-initiated. A future
-  scheduled sweep would follow `SiteAuditWorkflow`'s Cloudflare Workflow
-  pattern rather than extending the server function.
+- **Drill-down payloads (added after v1).** Each run stores its extracted
+  Lighthouse issues in R2 (`r2Key`, `payloadSizeBytes`), which is what the
+  "What to fix" panel reads. The **raw** vendor response is deliberately not
+  kept: a live response measured 347,642 bytes, and at daily-sweep cadence
+  that is ~7 MB per project per day of mostly-unread JSON. The compacted
+  envelope holds the issues and scores only — lab metrics are already snapshot
+  columns. Issue extraction is shared with the DataForSEO audit path
+  (`buildStoredLighthouseIssues`), since PSI returns the same Lighthouse
+  `audits`/`categories` shapes including `auditRefs`. A run whose upload fails
+  still stores its metric row with a null `r2Key`; the panel then says to
+  re-run rather than erroring.
+- **Scheduled runs (added after v1).** A daily sweep rides the existing `*/15`
+  cron: the handler only dispatches, and `PagespeedSweepWorkflow` does the slow
+  work with one durable step per URL. `psi_urls.nextRunAt` is advanced before
+  the workflow starts, so a crash costs a missed day rather than a retry storm,
+  and `computeNextPagespeedRunAt` steps in whole intervals from the previous due
+  time so a late sweep keeps its daily slot. `psi_snapshots.trigger` separates
+  manual from scheduled runs. On hosted, sweeps are gated to paid plans — the
+  quota belongs to the instance operator and is shared across tenants. Cron
+  does not fire in the Docker self-host path, where "Run all" is the manual
+  equivalent.
 - The MCP tool reads only the local database, so unlike the Vercel tool it is
   `openWorldHint: false` and cannot itself burn PSI quota.
 - The trend chart needs at least two runs before it shows anything; the page
