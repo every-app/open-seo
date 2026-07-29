@@ -93,4 +93,6 @@ export const {
   gscConnections,
   redditAttributions,
   telemetryState,
+  brandMonitorConfigs,
+  brandMentions,
 } = schema;

@@ -418,3 +418,69 @@ export const backlinkSnapshots = sqliteTable(
     ),
   ],
 );
+
+// ============================================================================
+// Brand & Media Monitoring tables
+// ============================================================================
+
+// One config per project+query — defines what brand/keyword phrase to monitor.
+export const brandMonitorConfigs = sqliteTable(
+  "brand_monitor_configs",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    query: text("query").notNull(),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+    lastCheckedAt: text("last_checked_at"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("brand_monitor_configs_project_query_idx").on(
+      table.projectId,
+      table.query,
+    ),
+    index("brand_monitor_configs_project_active_idx").on(
+      table.projectId,
+      table.isActive,
+    ),
+  ],
+);
+
+// Ingested mentions from free public sources (GDELT news index to start).
+// Deduped by (source, sourceId).
+export const brandMentions = sqliteTable(
+  "brand_mentions",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    configId: text("config_id")
+      .notNull()
+      .references(() => brandMonitorConfigs.id, { onDelete: "cascade" }),
+    source: text("source", { enum: ["gdelt"] }).notNull(),
+    sourceId: text("source_id").notNull(),
+    title: text("title"),
+    url: text("url"),
+    snippet: text("snippet"),
+    publishedAt: text("published_at"),
+    sentimentScore: real("sentiment_score"),
+    sentimentLabel: text("sentiment_label", {
+      enum: ["positive", "neutral", "negative"],
+    }),
+    fetchedAt: text("fetched_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("brand_mentions_source_unique_idx").on(
+      table.source,
+      table.sourceId,
+    ),
+    index("brand_mentions_config_published_idx").on(
+      table.configId,
+      table.publishedAt,
+    ),
+  ],
+);

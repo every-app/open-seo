@@ -405,3 +405,62 @@ export const backlinkSnapshots = pgTable(
     ),
   ],
 );
+
+// ============================================================================
+// Brand & Media Monitoring tables
+// ============================================================================
+
+export const brandMonitorConfigs = pgTable(
+  "brand_monitor_configs",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    query: text("query").notNull(),
+    isActive: boolean("is_active").notNull().default(true),
+    lastCheckedAt: timestampColumn("last_checked_at"),
+    createdAt: timestampColumn("created_at").notNull().default(isoNow),
+  },
+  (table) => [
+    uniqueIndex("brand_monitor_configs_project_query_idx").on(
+      table.projectId,
+      table.query,
+    ),
+    index("brand_monitor_configs_project_active_idx").on(
+      table.projectId,
+      table.isActive,
+    ),
+  ],
+);
+
+export const brandMentions = pgTable(
+  "brand_mentions",
+  {
+    id: serial("id").primaryKey(),
+    configId: text("config_id")
+      .notNull()
+      .references(() => brandMonitorConfigs.id, { onDelete: "cascade" }),
+    source: text("source", { enum: ["gdelt"] }).notNull(),
+    sourceId: text("source_id").notNull(),
+    title: text("title"),
+    url: text("url"),
+    snippet: text("snippet"),
+    publishedAt: timestampColumn("published_at"),
+    sentimentScore: real("sentiment_score"),
+    sentimentLabel: text("sentiment_label", {
+      enum: ["positive", "neutral", "negative"],
+    }),
+    fetchedAt: timestampColumn("fetched_at").notNull().default(isoNow),
+  },
+  (table) => [
+    uniqueIndex("brand_mentions_source_unique_idx").on(
+      table.source,
+      table.sourceId,
+    ),
+    index("brand_mentions_config_published_idx").on(
+      table.configId,
+      table.publishedAt,
+    ),
+  ],
+);
