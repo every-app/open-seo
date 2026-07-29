@@ -9,7 +9,10 @@ const mocks = vi.hoisted(() => ({
   insert: vi.fn(),
   deleteByIdForProject: vi.fn(),
   insertMany: vi.fn((values: unknown[]) => Promise.resolve(values)),
-  listSnapshotsByProjectId: vi.fn(() => Promise.resolve([])),
+  listSnapshotsByProjectId:
+    vi.fn<
+      (projectId: string, limit: number) => Promise<Record<string, unknown>[]>
+    >(),
   listByUrlId: vi.fn(() => Promise.resolve([])),
   getSnapshotByIdForProject: vi.fn(),
   putTextToR2:
@@ -17,7 +20,8 @@ const mocks = vi.hoisted(() => ({
       (key: string, body: string) => Promise<{ key: string; sizeBytes: number }>
     >(),
   getJsonFromR2: vi.fn(() => Promise.resolve('{"issues":[]}')),
-  readStoredPagespeedPayload: vi.fn(() => ({ issues: [] })),
+  readStoredPagespeedPayload:
+    vi.fn<(json: string) => { issues: Record<string, unknown>[] }>(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -321,6 +325,92 @@ describe("PagespeedService", () => {
 
     expect(payload).toBeNull();
     expect(mocks.getJsonFromR2).not.toHaveBeenCalled();
+  });
+
+  it("resolves the latest run per URL and reads its stored issues", async () => {
+    mocks.listByProjectId.mockResolvedValue([
+      { id: "u1", url: "https://a.com/" },
+      { id: "u2", url: "https://a.com/pricing" },
+    ]);
+    mocks.listSnapshotsByProjectId.mockResolvedValue([
+      {
+        id: "s_new",
+        urlId: "u1",
+        strategy: "mobile",
+        createdAt: "2026-07-30T10:00:00.000Z",
+        errorMessage: null,
+        r2Key: "pagespeed/p/u1/mobile-2.json",
+      },
+      {
+        id: "s_old",
+        urlId: "u1",
+        strategy: "mobile",
+        createdAt: "2026-07-29T10:00:00.000Z",
+        errorMessage: null,
+        r2Key: "pagespeed/p/u1/mobile-1.json",
+      },
+      {
+        id: "s_none",
+        urlId: "u2",
+        strategy: "mobile",
+        createdAt: "2026-07-30T10:00:00.000Z",
+        errorMessage: null,
+        r2Key: null,
+      },
+    ]);
+    mocks.readStoredPagespeedPayload.mockReturnValue({
+      issues: [{ auditKey: "unused-javascript" }],
+    });
+    const { PagespeedService } = await import("./PagespeedService");
+
+    const results = await PagespeedService.getLatestIssues({
+      ...CONTEXT,
+      domain: "a.com",
+      strategy: "mobile",
+    });
+
+    // Only the newest run per URL is read, not every historical one.
+    expect(mocks.getJsonFromR2).toHaveBeenCalledTimes(1);
+    expect(mocks.getJsonFromR2).toHaveBeenCalledWith(
+      "pagespeed/p/u1/mobile-2.json",
+    );
+    expect(results).toHaveLength(2);
+    expect(results[0]).toMatchObject({
+      url: "https://a.com/",
+      available: true,
+    });
+    // A URL with no stored payload degrades rather than failing the call.
+    expect(results[1]).toMatchObject({
+      url: "https://a.com/pricing",
+      available: false,
+      issues: [],
+    });
+  });
+
+  it("degrades one URL to unavailable when its R2 read fails", async () => {
+    mocks.listByProjectId.mockResolvedValue([
+      { id: "u1", url: "https://a.com/" },
+    ]);
+    mocks.listSnapshotsByProjectId.mockResolvedValue([
+      {
+        id: "s1",
+        urlId: "u1",
+        strategy: "mobile",
+        createdAt: "2026-07-30T10:00:00.000Z",
+        errorMessage: null,
+        r2Key: "pagespeed/p/u1/mobile-1.json",
+      },
+    ]);
+    mocks.getJsonFromR2.mockRejectedValue(new Error("R2 miss"));
+    const { PagespeedService } = await import("./PagespeedService");
+
+    const results = await PagespeedService.getLatestIssues({
+      ...CONTEXT,
+      domain: "a.com",
+      strategy: "mobile",
+    });
+
+    expect(results[0]).toMatchObject({ available: false, issues: [] });
   });
 
   it("refuses to read a snapshot belonging to another project", async () => {

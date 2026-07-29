@@ -56,6 +56,8 @@ export type PagespeedSnapshotLike = {
   fetchTime: string | null;
   errorMessage: string | null;
   createdAt: string;
+  /** Optional so client fixtures and older rows need not supply it. */
+  trigger?: string | null;
 };
 
 /** Lighthouse's own score banding: 90+ good, 50-89 needs work, below poor. */
@@ -101,29 +103,32 @@ export function formatScore(value: number | null | undefined): string {
   return typeof value === "number" ? String(value) : "—";
 }
 
-/** A snapshot paired with the run before it, for the same URL and strategy. */
-export type SnapshotWithPrevious = {
-  snapshot: PagespeedSnapshotLike;
-  previous: PagespeedSnapshotLike | null;
+/**
+ * A snapshot paired with the run before it, for the same URL and strategy.
+ * Generic so server callers keep the full database row (they need `r2Key`)
+ * while the client keeps the structural type.
+ */
+export type SnapshotWithPrevious<
+  T extends PagespeedSnapshotLike = PagespeedSnapshotLike,
+> = {
+  snapshot: T;
+  previous: T | null;
 };
 
-function sortNewestFirst(
-  snapshots: readonly PagespeedSnapshotLike[],
-): PagespeedSnapshotLike[] {
-  return snapshots.toSorted((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
-
 /**
- * The most recent snapshot per URL for one strategy, each paired with the run
- * before it so callers can show a delta. Error rows count as runs — a failed
- * run is the latest thing that happened to that URL and hiding it would show
- * stale numbers as current.
+ * Every snapshot per URL for one strategy, newest first, each paired with the
+ * next older run that actually scored.
+ *
+ * Error rows are kept: a failed run is the latest thing that happened to that
+ * URL, and hiding it would present stale numbers as current. They are skipped
+ * when choosing the comparison run, though — a delta against a failed run
+ * would be meaningless.
  */
-export function latestByUrl(
-  snapshots: readonly PagespeedSnapshotLike[],
+export function historyByUrl<T extends PagespeedSnapshotLike>(
+  snapshots: readonly T[],
   strategy: string,
-): Map<string, SnapshotWithPrevious> {
-  const byUrl = new Map<string, PagespeedSnapshotLike[]>();
+): Map<string, SnapshotWithPrevious<T>[]> {
+  const byUrl = new Map<string, T[]>();
   for (const snapshot of snapshots) {
     if (snapshot.strategy !== strategy) continue;
     const bucket = byUrl.get(snapshot.urlId);
@@ -131,16 +136,33 @@ export function latestByUrl(
     else byUrl.set(snapshot.urlId, [snapshot]);
   }
 
-  const out = new Map<string, SnapshotWithPrevious>();
+  const out = new Map<string, SnapshotWithPrevious<T>[]>();
   for (const [urlId, bucket] of byUrl) {
-    const ordered = sortNewestFirst(bucket);
-    const snapshot = ordered[0];
-    if (!snapshot) continue;
-    // Compare against the last run that produced a score; comparing a real
-    // score to a failed run would render a meaningless delta.
-    const previous =
-      ordered.slice(1).find((row) => row.errorMessage === null) ?? null;
-    out.set(urlId, { snapshot, previous });
+    const ordered = bucket.toSorted((a, b) =>
+      b.createdAt.localeCompare(a.createdAt),
+    );
+    out.set(
+      urlId,
+      ordered.map((snapshot, index) => ({
+        snapshot,
+        previous:
+          ordered.slice(index + 1).find((row) => row.errorMessage === null) ??
+          null,
+      })),
+    );
+  }
+  return out;
+}
+
+/** The most recent snapshot per URL for one strategy, with its comparison run. */
+export function latestByUrl<T extends PagespeedSnapshotLike>(
+  snapshots: readonly T[],
+  strategy: string,
+): Map<string, SnapshotWithPrevious<T>> {
+  const out = new Map<string, SnapshotWithPrevious<T>>();
+  for (const [urlId, entries] of historyByUrl(snapshots, strategy)) {
+    const first = entries[0];
+    if (first) out.set(urlId, first);
   }
   return out;
 }
