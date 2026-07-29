@@ -3,6 +3,7 @@ import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
+import { checkContentQualityTool } from "@/server/mcp/tools/check-content-quality";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
@@ -98,6 +99,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getDomainOverviewTool.name,
       getDomainOverviewTool.config.outputSchema,
       getDomainOverviewTool.handler,
+    ),
+  );
+  server.registerTool(
+    checkContentQualityTool.name,
+    checkContentQualityTool.config,
+    instrumentMcpToolHandler(
+      checkContentQualityTool.name,
+      checkContentQualityTool.config.outputSchema,
+      checkContentQualityTool.handler,
     ),
   );
   server.registerTool(
