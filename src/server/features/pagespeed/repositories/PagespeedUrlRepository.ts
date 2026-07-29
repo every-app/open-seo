@@ -11,9 +11,7 @@ async function listByProjectId(projectId: string): Promise<PsiUrl[]> {
     .from(psiUrls)
     .where(eq(psiUrls.projectId, projectId))
     .orderBy(asc(psiUrls.createdAt));
-  return rows.toSorted(
-    (a, b) => Number(b.isHomepage) - Number(a.isHomepage),
-  );
+  return rows.toSorted((a, b) => Number(b.isHomepage) - Number(a.isHomepage));
 }
 
 /** Scoped by project so a URL id from another project can never be reached. */

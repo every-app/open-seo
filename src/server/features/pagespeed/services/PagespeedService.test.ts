@@ -94,9 +94,8 @@ describe("PagespeedService", () => {
 
   it("refuses to do anything without an API key", async () => {
     mocks.hasPagespeedApiKey.mockResolvedValue(false);
-    const { PagespeedService, PagespeedNotConfiguredError } = await import(
-      "./PagespeedService"
-    );
+    const { PagespeedService, PagespeedNotConfiguredError } =
+      await import("./PagespeedService");
 
     await expect(
       PagespeedService.getOverview({ ...CONTEXT, domain: "example.com" }),
@@ -115,7 +114,10 @@ describe("PagespeedService", () => {
     });
 
     expect(mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ url: "https://example.com/", isHomepage: true }),
+      expect.objectContaining({
+        url: "https://example.com/",
+        isHomepage: true,
+      }),
     );
     expect(overview.urls).toHaveLength(1);
   });
@@ -148,9 +150,8 @@ describe("PagespeedService", () => {
   });
 
   it("enforces the per-project URL cap", async () => {
-    const { PagespeedService, MAX_URLS_PER_PROJECT } = await import(
-      "./PagespeedService"
-    );
+    const { PagespeedService, MAX_URLS_PER_PROJECT } =
+      await import("./PagespeedService");
     mocks.listByProjectId.mockResolvedValue(
       Array.from({ length: MAX_URLS_PER_PROJECT }, (_, i) => ({
         url: `https://a.com/${i}`,
@@ -192,9 +193,7 @@ describe("PagespeedService", () => {
 
     await PagespeedService.runForUrl({ projectId: "proj_1", urlId: "u1" });
 
-    const [rows] = mocks.insertMany.mock.calls[0] as [
-      Array<Record<string, unknown>>,
-    ];
+    const rows = mocks.insertMany.mock.calls[0]?.[0] ?? [];
     expect(rows[0]).toMatchObject({
       strategy: "mobile",
       performanceScore: 90,

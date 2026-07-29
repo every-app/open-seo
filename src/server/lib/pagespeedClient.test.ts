@@ -150,7 +150,10 @@ describe("pagespeed client", () => {
 
   it("marks origin_fallback data as origin-sourced", async () => {
     const body = fullResponse();
-    body.loadingExperience = { ...body.loadingExperience, origin_fallback: true };
+    body.loadingExperience = {
+      ...body.loadingExperience,
+      origin_fallback: true,
+    };
     mocks.fetch.mockResolvedValue(jsonResponse(body));
     const { createPagespeedClient } = await import("./pagespeedClient");
 
@@ -199,8 +202,11 @@ describe("pagespeed client", () => {
   });
 
   it("maps quota and key failures to expected errors", async () => {
-    const { createPagespeedClient, isExpectedPagespeedFailure, PagespeedApiError } =
-      await import("./pagespeedClient");
+    const {
+      createPagespeedClient,
+      isExpectedPagespeedFailure,
+      PagespeedApiError,
+    } = await import("./pagespeedClient");
 
     for (const status of [400, 403, 429]) {
       mocks.fetch.mockResolvedValue(
@@ -217,9 +223,8 @@ describe("pagespeed client", () => {
 
   it("treats a server error as unexpected", async () => {
     mocks.fetch.mockResolvedValue(jsonResponse({ error: {} }, 503));
-    const { createPagespeedClient, isExpectedPagespeedFailure } = await import(
-      "./pagespeedClient"
-    );
+    const { createPagespeedClient, isExpectedPagespeedFailure } =
+      await import("./pagespeedClient");
 
     const error = await createPagespeedClient()
       .runPagespeed({ url: "https://example.com/", strategy: "mobile" })

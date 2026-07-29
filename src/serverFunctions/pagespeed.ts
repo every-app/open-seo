@@ -96,15 +96,3 @@ export const runPagespeedForUrl = createServerFn({ method: "POST" })
       throw error;
     }
   });
-
-/** Snapshot history for one URL — the trend chart's source. */
-export const getPagespeedUrlHistory = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(urlScopedSchema)
-  .handler(async ({ data, context }) => {
-    const snapshots = await PagespeedService.getUrlHistory({
-      projectId: context.projectId,
-      urlId: data.urlId,
-    });
-    return { snapshots };
-  });

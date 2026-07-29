@@ -28,7 +28,7 @@ Probed live 2026-07-29:
 
 - **A key is mandatory.** A keyless call returned HTTP 429 in 0.55 s with
   `quota_limit_value: "0"` and `quota_limit: "defaultPerDayPerProject"` —
-  the anonymous tier is not "low quota", it is *zero* quota. The historical
+  the anonymous tier is not "low quota", it is _zero_ quota. The historical
   advice that PSI works keyless no longer holds, so the integration treats a
   missing key as an unconfigured state, never as a degraded-but-working one.
 - Calls take 10–30 s. Two strategies per URL run concurrently, so a single
@@ -44,7 +44,7 @@ Response shape used (parsed leniently with `z.looseObject`):
   `speed-index`, `server-response-time`.
 - `lighthouseResult.fetchTime`.
 - `loadingExperience.metrics[LARGEST_CONTENTFUL_PAINT_MS |
-  INTERACTION_TO_NEXT_PAINT | CUMULATIVE_LAYOUT_SHIFT_SCORE].percentile` plus
+INTERACTION_TO_NEXT_PAINT | CUMULATIVE_LAYOUT_SHIFT_SCORE].percentile` plus
   `loadingExperience.overall_category`. **CLS percentiles arrive ×100**
   (percentile `5` means CLS `0.05`) — the one unit trap in the response.
 - `loadingExperience.origin_fallback: true` means Google had no URL-level

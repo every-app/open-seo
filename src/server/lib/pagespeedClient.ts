@@ -44,7 +44,7 @@ export async function hasPagespeedApiKey(): Promise<boolean> {
 }
 
 /** One PSI run, flattened to the columns psi_snapshots stores. */
-export type PagespeedResult = {
+type PagespeedResult = {
   performanceScore: number | null;
   accessibilityScore: number | null;
   bestPracticesScore: number | null;
@@ -179,8 +179,8 @@ export function createPagespeedClient() {
 
       const labMetric = (id: string): number | null =>
         audits[id]?.numericValue ?? null;
-      const fieldPercentile = (key: string): number | null =>
-        fieldMetrics[key]?.percentile ?? null;
+      const fieldPercentile = (metric: string): number | null =>
+        fieldMetrics[metric]?.percentile ?? null;
 
       // CrUX reports CLS percentiles multiplied by 100 (5 => 0.05).
       const fieldClsPercentile = fieldPercentile(FIELD_METRIC_KEYS.cls);

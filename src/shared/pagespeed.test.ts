@@ -91,10 +91,30 @@ describe("scoreDelta", () => {
 
 describe("latestByUrl", () => {
   const rows = [
-    snapshot({ id: "a1", urlId: "u1", createdAt: "2026-07-01", performanceScore: 70 }),
-    snapshot({ id: "a3", urlId: "u1", createdAt: "2026-07-03", performanceScore: 90 }),
-    snapshot({ id: "a2", urlId: "u1", createdAt: "2026-07-02", performanceScore: 80 }),
-    snapshot({ id: "b1", urlId: "u2", createdAt: "2026-07-01", performanceScore: 50 }),
+    snapshot({
+      id: "a1",
+      urlId: "u1",
+      createdAt: "2026-07-01",
+      performanceScore: 70,
+    }),
+    snapshot({
+      id: "a3",
+      urlId: "u1",
+      createdAt: "2026-07-03",
+      performanceScore: 90,
+    }),
+    snapshot({
+      id: "a2",
+      urlId: "u1",
+      createdAt: "2026-07-02",
+      performanceScore: 80,
+    }),
+    snapshot({
+      id: "b1",
+      urlId: "u2",
+      createdAt: "2026-07-01",
+      performanceScore: 50,
+    }),
     snapshot({
       id: "d1",
       urlId: "u1",

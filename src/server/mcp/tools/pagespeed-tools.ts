@@ -61,7 +61,10 @@ const COLUMNS: McpTableColumn<PagespeedRow>[] = [
 
 function buildRow(
   url: string,
-  entry: { snapshot: PagespeedSnapshotLike; previous: PagespeedSnapshotLike | null },
+  entry: {
+    snapshot: PagespeedSnapshotLike;
+    previous: PagespeedSnapshotLike | null;
+  },
 ): PagespeedRow {
   const { snapshot, previous } = entry;
   const fieldVerdict = snapshot.fieldOverallCategory
@@ -183,7 +186,12 @@ export const getPagespeedInsightsTool = {
       return mcpResponse({
         text,
         meta,
-        structuredContent: { ok: true, strategy: args.strategy, rowCount: 0, rows: [] },
+        structuredContent: {
+          ok: true,
+          strategy: args.strategy,
+          rowCount: 0,
+          rows: [],
+        },
       });
     }
 

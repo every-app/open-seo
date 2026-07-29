@@ -1,6 +1,5 @@
 export const PAGESPEED_STRATEGY_VALUES = ["mobile", "desktop"] as const;
-export type PagespeedStrategyValue =
-  (typeof PAGESPEED_STRATEGY_VALUES)[number];
+export type PagespeedStrategyValue = (typeof PAGESPEED_STRATEGY_VALUES)[number];
 
 /** The snapshot fields shared code reads. Structural rather than the Drizzle
  *  row type so this module stays importable from the client. */

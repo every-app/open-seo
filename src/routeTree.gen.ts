@@ -44,6 +44,7 @@ import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/
 import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$projectId/sam'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
+import { Route as ProjectPProjectIdPagespeedRouteImport } from './routes/_project/p/$projectId/pagespeed'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
@@ -235,6 +236,12 @@ const ProjectPProjectIdPromptExplorerRoute =
     path: '/prompt-explorer',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdPagespeedRoute =
+  ProjectPProjectIdPagespeedRouteImport.update({
+    id: '/pagespeed',
+    path: '/pagespeed',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -321,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/pagespeed': typeof ProjectPProjectIdPagespeedRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -362,6 +370,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/pagespeed': typeof ProjectPProjectIdPagespeedRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
@@ -409,6 +418,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/pagespeed': typeof ProjectPProjectIdPagespeedRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/pagespeed'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/sam'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/pagespeed'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/sam'
     | '/p/$projectId/saved'
@@ -541,6 +553,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/brand-lookup'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/pagespeed'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/sam'
@@ -819,6 +832,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdPromptExplorerRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/pagespeed': {
+      id: '/_project/p/$projectId/pagespeed'
+      path: '/pagespeed'
+      fullPath: '/p/$projectId/pagespeed'
+      preLoaderRoute: typeof ProjectPProjectIdPagespeedRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/keywords': {
       id: '/_project/p/$projectId/keywords'
       path: '/keywords'
@@ -960,6 +980,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdPagespeedRoute: typeof ProjectPProjectIdPagespeedRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
   ProjectPProjectIdSamRoute: typeof ProjectPProjectIdSamRoute
@@ -978,6 +999,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdPagespeedRoute: ProjectPProjectIdPagespeedRoute,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,

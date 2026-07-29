@@ -24,7 +24,7 @@ export class PagespeedNotConfiguredError extends Error {
 }
 
 /** Both strategies run for every URL, so each run costs 2 API calls. */
-export const PAGESPEED_STRATEGIES: readonly PagespeedStrategy[] = [
+const PAGESPEED_STRATEGIES: readonly PagespeedStrategy[] = [
   "mobile",
   "desktop",
 ];
@@ -32,13 +32,11 @@ export const PAGESPEED_STRATEGIES: readonly PagespeedStrategy[] = [
 /** Bounds quota use and how long a "run all" takes. */
 export const MAX_URLS_PER_PROJECT = 10;
 
-/** How much history the overview loads. 10 URLs x 2 strategies x ~25 runs. */
+/** How much history the overview loads — the page's charts read from this,
+ *  so it must cover every monitored URL, not just the selected one. */
 const PROJECT_SNAPSHOT_LIMIT = 500;
 
-/** Trend history per URL, both strategies interleaved. */
-const URL_SNAPSHOT_LIMIT = 120;
-
-export type PagespeedOverview = {
+type PagespeedOverview = {
   urls: PsiUrl[];
   snapshots: PsiSnapshot[];
 };
@@ -56,7 +54,10 @@ export function normalizePagespeedUrl(input: string): string {
     );
   }
   if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-    throw new AppError("VALIDATION_ERROR", "Only http and https URLs can be tested");
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Only http and https URLs can be tested",
+    );
   }
   parsed.hash = "";
   return parsed.toString();
@@ -172,7 +173,10 @@ async function runForUrl(input: {
     input.projectId,
   );
   if (!target) {
-    throw new AppError("NOT_FOUND", "That URL is not monitored by this project");
+    throw new AppError(
+      "NOT_FOUND",
+      "That URL is not monitored by this project",
+    );
   }
 
   const client = createPagespeedClient();
@@ -215,25 +219,9 @@ function describeRunFailure(error: unknown): string {
     : "PageSpeed Insights run failed";
 }
 
-/** Recent snapshots for one URL, newest first — the trend chart's source. */
-async function getUrlHistory(input: {
-  projectId: string;
-  urlId: string;
-}): Promise<PsiSnapshot[]> {
-  const target = await PagespeedUrlRepository.getByIdForProject(
-    input.urlId,
-    input.projectId,
-  );
-  if (!target) {
-    throw new AppError("NOT_FOUND", "That URL is not monitored by this project");
-  }
-  return PagespeedSnapshotRepository.listByUrlId(target.id, URL_SNAPSHOT_LIMIT);
-}
-
 export const PagespeedService = {
   getOverview,
   addUrl,
   removeUrl,
   runForUrl,
-  getUrlHistory,
 };

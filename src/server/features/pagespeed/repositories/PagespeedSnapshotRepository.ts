@@ -8,28 +8,12 @@ export type PsiSnapshotInsert = Omit<
   "id" | "createdAt"
 >;
 
-async function insertMany(
-  values: PsiSnapshotInsert[],
-): Promise<PsiSnapshot[]> {
+async function insertMany(values: PsiSnapshotInsert[]): Promise<PsiSnapshot[]> {
   if (values.length === 0) return [];
   return db
     .insert(psiSnapshots)
     .values(values.map((value) => ({ id: crypto.randomUUID(), ...value })))
     .returning();
-}
-
-/** Newest-first history for one URL, both strategies. `limit` bounds the
- *  trend window; the page charts far fewer points than it fetches. */
-async function listByUrlId(
-  urlId: string,
-  limit: number,
-): Promise<PsiSnapshot[]> {
-  return db
-    .select()
-    .from(psiSnapshots)
-    .where(eq(psiSnapshots.urlId, urlId))
-    .orderBy(desc(psiSnapshots.createdAt))
-    .limit(limit);
 }
 
 /** Newest-first snapshots for a whole project. Callers reduce this in JS to
@@ -49,6 +33,5 @@ async function listByProjectId(
 
 export const PagespeedSnapshotRepository = {
   insertMany,
-  listByUrlId,
   listByProjectId,
 };
