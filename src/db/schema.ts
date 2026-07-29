@@ -7,6 +7,7 @@ import * as sqliteBilling from "./billing.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteBing from "./bing.schema";
 import * as sqliteVercel from "./vercel.schema";
+import * as sqlitePsi from "./psi.schema";
 import * as sqliteReddit from "./reddit-attribution.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
@@ -17,6 +18,7 @@ import * as pgBilling from "./pg/billing.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgBing from "./pg/bing.schema";
 import * as pgVercel from "./pg/vercel.schema";
+import * as pgPsi from "./pg/psi.schema";
 import * as pgReddit from "./pg/reddit-attribution.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
@@ -38,6 +40,7 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteGsc &
   typeof sqliteBing &
   typeof sqliteVercel &
+  typeof sqlitePsi &
   typeof sqliteReddit &
   typeof sqliteTelemetry;
 
@@ -52,6 +55,7 @@ const runtimeSchema =
         ...pgGsc,
         ...pgBing,
         ...pgVercel,
+        ...pgPsi,
         ...pgReddit,
         ...pgTelemetry,
       }
@@ -64,6 +68,7 @@ const runtimeSchema =
         ...sqliteGsc,
         ...sqliteBing,
         ...sqliteVercel,
+        ...sqlitePsi,
         ...sqliteReddit,
         ...sqliteTelemetry,
       };
@@ -103,6 +108,8 @@ export const {
   gscConnections,
   bingConnections,
   vercelConnections,
+  psiUrls,
+  psiSnapshots,
   redditAttributions,
   telemetryState,
 } = schema;
