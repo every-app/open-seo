@@ -124,7 +124,46 @@ function normalizeCategory(
     : null;
 }
 
+/** Google's error envelope: { error: { message, errors: [{ reason }] } }. */
+const errorBodySchema = z.looseObject({
+  error: z
+    .looseObject({
+      message: z.string().optional(),
+      errors: z
+        .array(z.looseObject({ reason: z.string().optional() }))
+        .optional(),
+    })
+    .optional(),
+});
+
+function parseErrorBody(body: string): {
+  reason: string | null;
+  message: string | null;
+} {
+  try {
+    const parsed = errorBodySchema.parse(JSON.parse(body));
+    return {
+      reason: parsed.error?.errors?.[0]?.reason ?? null,
+      message: parsed.error?.message ?? null,
+    };
+  } catch {
+    return { reason: null, message: null };
+  }
+}
+
 export function messageForStatus(status: number, body: string): string {
+  const { reason, message } = parseErrorBody(body);
+
+  // 400 is overloaded. "Lighthouse could not load the page" and "your key is
+  // bad" both arrive as 400; only `reason` separates them (verified live
+  // 2026-07-29). Blaming the key for an unreachable page would send every
+  // user off to regenerate a working credential.
+  if (reason === "lighthouseUserError") {
+    return (
+      message?.slice(0, 400) ??
+      "PageSpeed Insights could not load the page. Check the URL is publicly reachable."
+    );
+  }
   if (status === 400 || status === 403) {
     return "Google rejected the PageSpeed Insights API key (missing, invalid, or restricted). Update PAGESPEED_API_KEY to continue.";
   }
@@ -132,7 +171,6 @@ export function messageForStatus(status: number, body: string): string {
     return "PageSpeed Insights daily quota reached. Retry tomorrow, or raise the quota on the key's Google Cloud project.";
   }
   if (status === 404 || status === 500) {
-    // PSI returns these when Lighthouse itself could not load the page.
     return `PageSpeed Insights could not analyze the URL (${status}). Check the page is publicly reachable.`;
   }
   return `PageSpeed Insights API error (${status}): ${body.slice(0, 300)}`;

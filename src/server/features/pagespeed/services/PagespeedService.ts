@@ -139,13 +139,18 @@ async function addUrl(input: {
     );
   }
 
-  return PagespeedUrlRepository.insert({
+  const created = await PagespeedUrlRepository.insert({
     projectId: input.projectId,
     organizationId: input.organizationId,
     url,
     isHomepage: false,
     createdByUserId: input.userId,
   });
+  if (!created) {
+    // A concurrent add claimed this URL between the check above and the write.
+    throw new AppError("CONFLICT", "That URL is already being monitored");
+  }
+  return created;
 }
 
 async function removeUrl(input: {

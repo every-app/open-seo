@@ -239,4 +239,37 @@ describe("pagespeed client", () => {
     expect(messageForStatus(403, "")).toContain("PAGESPEED_API_KEY");
     expect(messageForStatus(429, "")).toContain("quota");
   });
+
+  it("blames the page, not the key, when Lighthouse could not load it", async () => {
+    const { messageForStatus } = await import("./pagespeedClient");
+    // Verbatim body from a live 400 on an unreachable URL (2026-07-29).
+    const body = JSON.stringify({
+      error: {
+        code: 400,
+        message:
+          "Lighthouse returned error: FAILED_DOCUMENT_REQUEST. Lighthouse was unable to reliably load the page you requested. (Details: net::ERR_CONNECTION_FAILED)",
+        errors: [{ reason: "lighthouseUserError" }],
+      },
+    });
+
+    const message = messageForStatus(400, body);
+
+    expect(message).toContain("unable to reliably load the page");
+    // The key is fine here — saying otherwise sends users to regenerate a
+    // credential that works.
+    expect(message).not.toContain("PAGESPEED_API_KEY");
+  });
+
+  it("still blames the key on a 400 that is not a Lighthouse page error", async () => {
+    const { messageForStatus } = await import("./pagespeedClient");
+    const body = JSON.stringify({
+      error: {
+        code: 400,
+        message: "API key not valid",
+        errors: [{ reason: "badRequest" }],
+      },
+    });
+
+    expect(messageForStatus(400, body)).toContain("PAGESPEED_API_KEY");
+  });
 });

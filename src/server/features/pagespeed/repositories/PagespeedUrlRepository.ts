@@ -33,15 +33,16 @@ async function insert(input: {
   url: string;
   isHomepage: boolean;
   createdByUserId: string;
-}): Promise<PsiUrl> {
+}): Promise<PsiUrl | null> {
+  // The homepage is seeded lazily on read, so two concurrent overview loads
+  // can race for the same (projectId, url). Losing that race is not an error
+  // — the row the winner wrote is the one we wanted.
   const [row] = await db
     .insert(psiUrls)
     .values({ id: crypto.randomUUID(), ...input })
+    .onConflictDoNothing({ target: [psiUrls.projectId, psiUrls.url] })
     .returning();
-  if (!row) {
-    throw new Error("Failed to insert psi_url");
-  }
-  return row;
+  return row ?? null;
 }
 
 async function deleteByIdForProject(

@@ -34,6 +34,13 @@ Probed live 2026-07-29:
 - Calls take 10–30 s. Two strategies per URL run concurrently, so a single
   URL's run is bounded by the slower of the two, not their sum.
 - `category` is a repeated query parameter, not a comma list.
+- **HTTP 400 is overloaded.** A valid key testing an unreachable URL returns
+  400 with `errors[0].reason: "lighthouseUserError"` and a specific message
+  (`FAILED_DOCUMENT_REQUEST … net::ERR_CONNECTION_FAILED`), which is
+  indistinguishable by status alone from a rejected key. The client branches
+  on `reason` and passes Google's own message through, because telling
+  someone their key is broken when the page is simply down would send them
+  to regenerate a working credential.
 
 Response shape used (parsed leniently with `z.looseObject`):
 

@@ -149,6 +149,17 @@ describe("PagespeedService", () => {
     ).rejects.toThrow(/already being monitored/);
   });
 
+  it("reports a conflict when a concurrent add wins the race", async () => {
+    mocks.listByProjectId.mockResolvedValue([]);
+    // onConflictDoNothing returned no row: someone else inserted it first.
+    mocks.insert.mockResolvedValue(null);
+    const { PagespeedService } = await import("./PagespeedService");
+
+    await expect(
+      PagespeedService.addUrl({ ...CONTEXT, url: "https://a.com/p" }),
+    ).rejects.toThrow(/already being monitored/);
+  });
+
   it("enforces the per-project URL cap", async () => {
     const { PagespeedService, MAX_URLS_PER_PROJECT } =
       await import("./PagespeedService");
