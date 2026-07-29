@@ -1,6 +1,7 @@
 import { detectUrlTemplate, canonicalUrlKey } from "./url-utils";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
 import { putTextToR2 } from "@/server/lib/r2";
 
@@ -64,6 +65,11 @@ async function fetchLighthouseResult(
         `Lighthouse attempt ${attempt + 1} failed for ${url}:`,
         lastError.message,
       );
+      // Already billed by DataForSEO (and metered). Retrying would call again
+      // and charge a second time — soft-fail with null scores instead.
+      if (error instanceof DataforseoChargedTaskError) {
+        break;
+      }
     }
   }
 

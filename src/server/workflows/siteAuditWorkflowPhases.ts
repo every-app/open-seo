@@ -20,6 +20,15 @@ import { pgStep } from "@/server/workflows/pgStep";
 
 const LIGHTHOUSE_URL_BATCH_SIZE = 10;
 
+// Metered DataForSEO calls live inside this step. Default Workflow retries
+// (limit 5) would re-fetch every URL in the batch after a mid-step failure
+// (e.g. R2/D1 write), double-billing the customer. Rank-check uses the same
+// single-attempt pattern for metered posts.
+const LIGHTHOUSE_BATCH_STEP_CONFIG = {
+  retries: { limit: 0, delay: "1 second" as const },
+  timeout: "15 minutes" as const,
+};
+
 // Workflows rejects step outputs over 1MiB; keep the sitemap seed list well
 // under that. The crawl visits at most maxPages URLs, so extra seeds are moot.
 const SITEMAP_SEED_BYTE_BUDGET = 768 * 1024;
@@ -170,7 +179,7 @@ async function runLighthousePhase(
     const counts = await pgStep(
       step,
       `lighthouse-batch-${lighthouseBatchIndex}`,
-      undefined,
+      LIGHTHOUSE_BATCH_STEP_CONFIG,
       async () => {
         const perUrlResults = await Promise.all(
           batch.map(async ({ url, pageId }) => {

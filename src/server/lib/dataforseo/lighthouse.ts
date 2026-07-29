@@ -9,6 +9,7 @@ import { onPageApi } from "@/server/lib/dataforseo/core";
 import {
   assertOk,
   buildTaskBilling,
+  DataforseoChargedTaskError,
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 
@@ -25,8 +26,15 @@ export async function fetchLighthouseResult(input: {
   ]);
 
   // assertOk handles status / charged-task billing; parse extracts the scores.
+  // Build billing before parse so a post-charge parse failure still meters via
+  // DataforseoChargedTaskError (plain Error would skip metering and get retried).
   const task = assertOk(response);
-  const data = parseDataforseoLighthousePayload(response, input);
-
-  return { data, billing: buildTaskBilling(task) };
+  const billing = buildTaskBilling(task);
+  try {
+    const data = parseDataforseoLighthousePayload(response, input);
+    return { data, billing };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new DataforseoChargedTaskError(message, billing);
+  }
 }
