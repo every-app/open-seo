@@ -23,19 +23,20 @@ import {
   MAX_CONFIGS_PER_PROJECT,
 } from "@/shared/rank-tracking";
 
-type ScheduledInterval = "daily" | "weekly";
+type ScheduledInterval = "daily" | "weekly" | "monthly";
 export type RankTrackingKeywordScheduleInterval =
   | "inherit"
-  | ScheduledInterval
+  | "daily"
+  | "weekly"
   | "manual-paused";
 export type EffectiveKeywordScheduleInterval =
   | RankTrackingConfig["scheduleInterval"]
   | "manual-paused";
 
-type ScheduleConfig = Pick<
-  RankTrackingConfig,
-  "scheduleInterval" | "nextCheckAt"
->;
+type ScheduleConfig = {
+  scheduleInterval: ScheduledInterval | "manual";
+  nextCheckAt: string | null;
+};
 type ScheduleKeyword = Pick<
   Awaited<ReturnType<typeof RankTrackingRepository.getKeywordsForConfig>>[0],
   "id" | "scheduleIntervalOverride" | "nextCheckAt"
@@ -204,7 +205,9 @@ async function removeKeywords(
 export function isScheduledInterval(
   interval: string | null | undefined,
 ): interval is ScheduledInterval {
-  return interval === "daily" || interval === "weekly";
+  return (
+    interval === "daily" || interval === "weekly" || interval === "monthly"
+  );
 }
 
 export function getEffectiveKeywordScheduleInterval(
@@ -257,7 +260,11 @@ export function getNextKeywordCheckAt(
     "scheduleIntervalOverride" | "nextCheckAt"
   >,
 ): string | null {
-  if (!isScheduledInterval(keyword.scheduleIntervalOverride)) return null;
+  if (
+    keyword.scheduleIntervalOverride !== "daily" &&
+    keyword.scheduleIntervalOverride !== "weekly"
+  )
+    return null;
   return computeNextCheckAt(
     keyword.scheduleIntervalOverride,
     keyword.nextCheckAt,

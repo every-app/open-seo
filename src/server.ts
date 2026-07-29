@@ -14,6 +14,7 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import {
+  isScheduledInterval,
   RankTrackingService,
   type RankTrackingKeywordScheduleInterval,
 } from "@/server/features/rank-tracking/services/RankTrackingService";
@@ -325,8 +326,7 @@ export default {
           // Still advance schedule so this config doesn't stay due forever
           // (manual configs have no interval, so they are never auto-advanced).
           const skipInterval =
-            (config.scheduleInterval === "daily" ||
-              config.scheduleInterval === "weekly") &&
+            isScheduledInterval(config.scheduleInterval) &&
             RankTrackingService.isConfigScheduleDue(config, nowIso)
               ? config.scheduleInterval
               : null;
@@ -354,13 +354,16 @@ export default {
           console.log(
             `[cron] Skipping config ${config.id} (${config.domain}) — no due keywords`,
           );
-          if (RankTrackingService.isConfigScheduleDue(config, nowIso)) {
+          if (
+            isScheduledInterval(config.scheduleInterval) &&
+            RankTrackingService.isConfigScheduleDue(config, nowIso)
+          ) {
             await RankTrackingRepository.updateConfig(
               config.id,
               config.projectId,
               {
                 nextCheckAt: computeNextCheckAt(
-                  config.scheduleInterval as "daily" | "weekly",
+                  config.scheduleInterval,
                   config.nextCheckAt,
                 ),
               },
@@ -372,8 +375,7 @@ export default {
         // Advance nextCheckAt immediately to prevent retry storms if the run fails
         // (manual configs have no interval, so they are never auto-advanced).
         const interval =
-          (config.scheduleInterval === "daily" ||
-            config.scheduleInterval === "weekly") &&
+          isScheduledInterval(config.scheduleInterval) &&
           RankTrackingService.isConfigScheduleDue(config, nowIso)
             ? config.scheduleInterval
             : null;

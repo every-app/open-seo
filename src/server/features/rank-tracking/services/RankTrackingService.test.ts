@@ -123,4 +123,14 @@ describe("RankTrackingService keyword scheduling", () => {
       ),
     ).toEqual([]);
   });
+
+  it("keeps inherited keywords due on monthly configurations", () => {
+    expect(
+      getDueKeywordsForScheduledRun(
+        { scheduleInterval: "monthly", nextCheckAt: nowIso },
+        [keyword("inherited")],
+        nowIso,
+      ).map((kw) => kw.id),
+    ).toEqual(["inherited"]);
+  });
 });
