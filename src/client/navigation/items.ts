@@ -3,6 +3,7 @@ import {
   Bookmark,
   Bot,
   ClipboardCheck,
+  Gauge,
   Globe,
   LayoutDashboard,
   Link2,
@@ -53,6 +54,11 @@ const projectNavItems = [
     to: "/p/$projectId/traffic" as const,
     label: "Traffic",
     icon: Activity,
+  },
+  {
+    to: "/p/$projectId/pagespeed" as const,
+    label: "PageSpeed",
+    icon: Gauge,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -131,6 +137,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/bing"),
         byPath("/p/$projectId/traffic"),
+        byPath("/p/$projectId/pagespeed"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

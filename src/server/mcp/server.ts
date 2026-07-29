@@ -5,6 +5,7 @@ import {
   getBingQueriesTool,
 } from "@/server/mcp/tools/bing-tools";
 import { getVercelTrafficTool } from "@/server/mcp/tools/vercel-tools";
+import { getPagespeedInsightsTool } from "@/server/mcp/tools/pagespeed-tools";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -238,6 +239,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getVercelTrafficTool.name,
       getVercelTrafficTool.config.outputSchema,
       getVercelTrafficTool.handler,
+    ),
+  );
+  server.registerTool(
+    getPagespeedInsightsTool.name,
+    getPagespeedInsightsTool.config,
+    instrumentMcpToolHandler(
+      getPagespeedInsightsTool.name,
+      getPagespeedInsightsTool.config.outputSchema,
+      getPagespeedInsightsTool.handler,
     ),
   );
   server.registerTool(

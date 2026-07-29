@@ -5,6 +5,7 @@ import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
 import { VercelConnectionCard } from "@/client/features/vercel/VercelConnectionCard";
+import { PagespeedConnectionCard } from "@/client/features/pagespeed/PagespeedConnectionCard";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -71,6 +72,11 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
       <section id="vercel" className="space-y-3 scroll-mt-6">
         <h2 className="text-sm font-medium text-base-content/50">Vercel</h2>
         <VercelConnectionCard projectId={projectId} />
+      </section>
+
+      <section id="pagespeed" className="space-y-3 scroll-mt-6">
+        <h2 className="text-sm font-medium text-base-content/50">PageSpeed</h2>
+        <PagespeedConnectionCard projectId={projectId} />
       </section>
 
       <DangerSection project={project} canArchive={projects.length > 1} />
