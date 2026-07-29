@@ -157,6 +157,18 @@ rather than something Bing will grow out of.
     backlink data would need the portal's private API, which we will not
     touch. (`GetUrlLinks` param name is `link`; `url` → 400 InvalidUrl,
     `page` → 400 format error.)
+- URL-level methods (probed live 2026-07-30):
+  - `GetUrlInfo(siteUrl, url)` is ALIVE: returns a single `UrlInfo` object —
+    `Url`, `DiscoveryDate` and `LastCrawledDate` (WCF dates; LastCrawled was
+    yesterday for an active page, so the data is fresh), `DocumentSize`,
+    `IsPage`, `AnchorCount`, `TotalChildUrlCount`. `HttpStatus` came back 0
+    and must not be trusted for per-URL error diagnosis. A URL Bing has
+    never discovered returns 200 with SENTINEL dates of year 0001
+    (`/Date(-62135568000000-0800)/`) — detect "unknown to Bing" as
+    parsed ms <= 0, never render the sentinel as a date.
+  - `GetUrlTrafficInfo` is DEAD: consistent 503 across retries.
+  - `GetChildrenUrlInfo` returns 405 on GET — it is a POST-style WCF
+    method; unprobed via POST, so its status is unknown.
 - Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per

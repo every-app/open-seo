@@ -7,6 +7,7 @@ import {
   createBingClient,
   BingApiError,
   BingTokenError,
+  type BingUrlInfo,
 } from "@/server/lib/bingClient";
 import {
   BingConnectionRepository,
@@ -261,6 +262,37 @@ async function getPerformance(input: {
   };
 }
 
+/** Per-URL crawl evidence (GetUrlInfo) for up to 10 URLs of the connected
+ *  site. Per-URL failures are reported inline rather than failing the batch,
+ *  except expected grant failures which abort the whole call (every URL
+ *  would fail identically). */
+async function inspectUrls(input: {
+  projectId: string;
+  urls: string[];
+}): Promise<{
+  siteUrl: string;
+  results: Array<
+    | ({ url: string; error?: undefined } & BingUrlInfo)
+    | { url: string; error: string }
+  >;
+}> {
+  const { connection, client } = await resolveOauthClient(input.projectId);
+  const results = await Promise.all(
+    input.urls.map(async (url) => {
+      try {
+        return await client.getUrlInfo(connection.siteUrl, url);
+      } catch (error) {
+        if (isExpectedGrantFailure(error)) throw error;
+        return {
+          url,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }),
+  );
+  return { siteUrl: connection.siteUrl, results };
+}
+
 /** Resolve a project's connection to a ready OAuth client, or throw the same
  *  errors getPerformance always has (not connected / api_key unsupported). */
 async function resolveOauthClient(projectId: string): Promise<{
@@ -358,4 +390,5 @@ export const BingService = {
   getQueryReport,
   getPageQueries,
   getCrawlStats,
+  inspectUrls,
 };
