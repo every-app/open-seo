@@ -15,6 +15,10 @@ const urlScopedSchema = projectScopedSchema.extend({
 const addUrlSchema = projectScopedSchema.extend({
   url: z.string().min(1).max(2048),
 });
+const setScheduleSchema = projectScopedSchema.extend({
+  urlId: z.string().min(1),
+  enabled: z.boolean(),
+});
 const snapshotScopedSchema = projectScopedSchema.extend({
   snapshotId: z.string().min(1),
 });
@@ -66,6 +70,19 @@ export const removePagespeedUrl = createServerFn({ method: "POST" })
       urlId: data.urlId,
     });
     return { removed: true as const };
+  });
+
+/** Pause or resume the daily sweep for one URL. */
+export const setPagespeedUrlSchedule = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(setScheduleSchema)
+  .handler(async ({ data, context }) => {
+    await PagespeedService.setUrlSchedule({
+      projectId: context.projectId,
+      urlId: data.urlId,
+      enabled: data.enabled,
+    });
+    return { enabled: data.enabled };
   });
 
 /**

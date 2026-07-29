@@ -33,8 +33,13 @@ function snapshot(
 }
 
 const urls = [
-  { id: "u1", url: "https://a.com/", isHomepage: true },
-  { id: "u2", url: "https://a.com/pricing", isHomepage: false },
+  { id: "u1", url: "https://a.com/", isHomepage: true, scheduleEnabled: true },
+  {
+    id: "u2",
+    url: "https://a.com/pricing",
+    isHomepage: false,
+    scheduleEnabled: false,
+  },
 ];
 
 function latestOf(
@@ -70,11 +75,12 @@ describe("buildPagespeedExportTable", () => {
     const row = rows[0] ?? [];
     expect(row[0]).toBe("https://a.com/");
     expect(row[1]).toBe("yes");
-    expect(row[2]).toBe("mobile");
-    expect(row[3]).toBe(95);
+    expect(row[2]).toBe("yes");
+    expect(row[3]).toBe("mobile");
+    expect(row[4]).toBe(95);
     // Milliseconds stay numeric — no "2.4 s".
-    expect(row[7]).toBe(2400.5);
-    expect(row[8]).toBe(0.05);
+    expect(row[8]).toBe(2400.5);
+    expect(row[9]).toBe(0.05);
   });
 
   it("keeps a row for a URL that has never run", () => {
@@ -83,7 +89,19 @@ describe("buildPagespeedExportTable", () => {
     expect(rows).toHaveLength(2);
     expect(rows[1]?.[0]).toBe("https://a.com/pricing");
     // Every metric blank rather than zero — never-run is not a score of 0.
-    expect(rows[1]?.slice(3)).toEqual(Array.from({ length: 17 }, () => null));
+    expect(rows[1]?.slice(4)).toEqual(Array.from({ length: 17 }, () => null));
+  });
+
+  it("records whether each URL is on the daily schedule", () => {
+    const { headers, rows } = buildPagespeedExportTable(
+      urls,
+      new Map(),
+      "mobile",
+    );
+    const index = headers.indexOf("Daily run");
+
+    expect(rows[0]?.[index]).toBe("yes");
+    expect(rows[1]?.[index]).toBe("paused");
   });
 
   it("records the field source so origin data is never read as page data", () => {

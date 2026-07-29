@@ -7,11 +7,13 @@ export type PagespeedExportUrl = {
   id: string;
   url: string;
   isHomepage: boolean;
+  scheduleEnabled: boolean;
 };
 
 const HEADERS = [
   "URL",
   "Homepage",
+  "Daily run",
   "Strategy",
   "Performance",
   "Accessibility",
@@ -51,6 +53,7 @@ export function buildPagespeedExportTable(
     return [
       url.url,
       url.isHomepage ? "yes" : "no",
+      url.scheduleEnabled ? "yes" : "paused",
       strategy,
       snapshot?.performanceScore ?? null,
       snapshot?.accessibilityScore ?? null,

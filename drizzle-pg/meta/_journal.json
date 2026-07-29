@@ -134,6 +134,13 @@
       "when": 1785365783099,
       "tag": "0018_flat_eddie_brock",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785368674334,
+      "tag": "0019_nice_the_captain",
+      "breakpoints": true
     }
   ]
 }

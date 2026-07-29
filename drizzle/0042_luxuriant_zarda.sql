@@ -1,0 +1,1 @@
+ALTER TABLE `psi_urls` ADD `schedule_enabled` integer DEFAULT true NOT NULL;
