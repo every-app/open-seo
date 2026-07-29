@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { PagespeedConnectionCard } from "@/client/features/pagespeed/PagespeedConnectionCard";
+import { PagespeedExportMenu } from "@/client/features/pagespeed/PagespeedExportMenu";
 import { PagespeedRunDetail } from "@/client/features/pagespeed/PagespeedRunDetail";
 import { PagespeedTrendChart } from "@/client/features/pagespeed/PagespeedTrendChart";
 import {
@@ -205,6 +206,11 @@ export function PagespeedPage({ projectId }: { projectId: string }) {
                 >
                   {addMutation.isPending ? "Adding…" : "Add URL"}
                 </button>
+                <PagespeedExportMenu
+                  urls={urls}
+                  latest={latest}
+                  strategy={strategy}
+                />
               </form>
             </div>
             <PagespeedUrlTable
