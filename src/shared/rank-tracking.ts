@@ -43,6 +43,38 @@ export const MAX_TRACKED_KEYWORD_LENGTH = 200;
 export const MAX_CONFIGS_PER_PROJECT = 500;
 
 // ---------------------------------------------------------------------------
+// Stored position semantics
+// ---------------------------------------------------------------------------
+
+/**
+ * Which DataForSEO field a stored `rank_snapshots.position` came from.
+ *
+ * #429 switched new checks from `rank_absolute` (counts SERP features) to
+ * `rank_group` (organic-only), which is what users mean by "my ranking". The
+ * two are not comparable: for the same result, `rank_absolute` is worse by the
+ * number of SERP features above it.
+ *
+ * Snapshots written before that switch carry no basis and read back as `null`,
+ * which means `rank_absolute`. They cannot be converted — the raw SERP items
+ * are not stored, so there is nothing to recompute `rank_group` from.
+ */
+type PositionBasis = "rank_group" | "rank_absolute";
+
+/** The basis every check written by this version uses. */
+export const CURRENT_POSITION_BASIS: PositionBasis = "rank_group";
+
+/**
+ * Basis of a stored snapshot, resolving the pre-#429 `null` to what those rows
+ * actually hold. Use this rather than reading the column directly, so the
+ * legacy meaning stays in one place.
+ */
+export function resolvePositionBasis(
+  stored: string | null | undefined,
+): PositionBasis {
+  return stored === "rank_group" ? "rank_group" : "rank_absolute";
+}
+
+// ---------------------------------------------------------------------------
 // Cost estimation
 // ---------------------------------------------------------------------------
 

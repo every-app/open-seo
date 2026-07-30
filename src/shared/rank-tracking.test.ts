@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { computeNextCheckAt, scheduleLabel } from "./rank-tracking";
+import {
+  computeNextCheckAt,
+  CURRENT_POSITION_BASIS,
+  resolvePositionBasis,
+  scheduleLabel,
+} from "./rank-tracking";
 
 describe("rank tracking schedules", () => {
   afterEach(() => {
@@ -42,5 +47,27 @@ describe("rank tracking schedules", () => {
     expect(computeNextCheckAt("monthly", "2026-01-31T05:30:00.000Z")).toBe(
       "2026-03-31T05:30:00.000Z",
     );
+  });
+});
+
+describe("stored position semantics", () => {
+  it("writes new checks as rank_group", () => {
+    expect(CURRENT_POSITION_BASIS).toBe("rank_group");
+  });
+
+  it("reads a missing basis as the pre-#429 rank_absolute", () => {
+    // Rows written before the switch carry no basis. Treating them as
+    // rank_group would silently compare two different scales.
+    expect(resolvePositionBasis(null)).toBe("rank_absolute");
+    expect(resolvePositionBasis(undefined)).toBe("rank_absolute");
+  });
+
+  it("passes a stored basis through", () => {
+    expect(resolvePositionBasis("rank_group")).toBe("rank_group");
+    expect(resolvePositionBasis("rank_absolute")).toBe("rank_absolute");
+  });
+
+  it("falls back to rank_absolute for an unrecognised value", () => {
+    expect(resolvePositionBasis("something_else")).toBe("rank_absolute");
   });
 });

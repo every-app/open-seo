@@ -329,6 +329,13 @@ export const rankSnapshots = sqliteTable(
     keyword: text("keyword").notNull(),
     device: text("device", { enum: ["desktop", "mobile"] }).notNull(),
     position: integer("position"), // null = not found in top 20
+    // Which DataForSEO field `position` came from. Null on rows written before
+    // #429, which hold rank_absolute — see resolvePositionBasis in
+    // shared/rank-tracking.ts. Deliberately not backfilled: the raw SERP items
+    // are not stored, so rank_group cannot be recomputed for old rows.
+    positionBasis: text("position_basis", {
+      enum: ["rank_group", "rank_absolute"],
+    }),
     url: text("url"),
     serpFeatures: text("serp_features"), // JSON array of feature type strings
     checkedAt: text("checked_at")

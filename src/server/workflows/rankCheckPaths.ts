@@ -11,7 +11,10 @@ import type {
   RankCheckTaskInput,
 } from "@/server/lib/dataforseo";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
-import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
+import {
+  CURRENT_POSITION_BASIS,
+  KEYWORDS_PER_BATCH,
+} from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
 
 const SINGLE_ATTEMPT_STEP_CONFIG = {
@@ -34,6 +37,10 @@ function mapResultsToSnapshotRows(
     keyword: r.keyword,
     device: r.device,
     position: r.position,
+    // Record which field `position` came from, so a later reader can tell
+    // rank_group rows apart from the pre-#429 rank_absolute ones instead of
+    // comparing the two as if they were the same scale.
+    positionBasis: CURRENT_POSITION_BASIS,
     url: r.url,
     serpFeatures:
       r.serpFeatures.length > 0 ? JSON.stringify(r.serpFeatures) : null,
