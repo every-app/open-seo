@@ -182,6 +182,23 @@ export async function readPages(
 }
 
 /**
+ * Reads one page's raw HTML rather than its text — for callers that need the
+ * markup itself, such as pulling `ld+json` out of a live page. Goes through the
+ * same SSRF guard and byte bound as every other read here; returns null when
+ * the URL is blocked, unreachable, or oversized.
+ */
+export async function readPageHtml(rawUrl: string): Promise<string | null> {
+  let url: string;
+  try {
+    // Re-validates host, blocks private/metadata IPs, does DoH DNS resolution.
+    url = await normalizeAndValidateStartUrl(rawUrl);
+  } catch {
+    return null;
+  }
+  return await fetchText(url);
+}
+
+/**
  * Lists a site's page URLs without reading them: the homepage plus what the
  * sitemap declares, capped at `limit`. Lets an agent see what a site has and
  * choose which pages to read (readPages) instead of blindly taking the first N.
