@@ -3,7 +3,6 @@ import {
   describeLocation,
   groupFindingsBySeverity,
   summaryLine,
-  typesWithoutRules,
   type FindingView,
   type ValidationView,
 } from "@/client/features/structured-data/structuredDataView";
@@ -27,6 +26,7 @@ function view(overrides: Partial<ValidationView> = {}): ValidationView {
     nodeCount: 1,
     types: [],
     features: [],
+    notCheckedTypes: [],
     findings: [],
     errorCount: 0,
     warningCount: 0,
@@ -89,46 +89,6 @@ describe("groupFindingsBySeverity", () => {
 
   it("returns nothing for a clean result", () => {
     expect(groupFindingsBySeverity([])).toEqual([]);
-  });
-});
-
-describe("typesWithoutRules", () => {
-  it("names types no rich-result rule covered", () => {
-    const result = view({
-      types: ["Recipe", "Person", "WebSite"],
-      features: [
-        {
-          feature: "Recipe",
-          type: "Recipe",
-          eligible: true,
-          missingRequired: [],
-          missingRecommended: [],
-          docsUrl: "https://example.com/recipe",
-          checkedOn: "2026-07-30",
-        },
-      ],
-    });
-    expect(typesWithoutRules(result)).toEqual(["Person", "WebSite"]);
-  });
-
-  it("matches on the feature name as well as the type", () => {
-    // A Restaurant matches the "Local business" feature; neither label should
-    // then be reported as unruled.
-    const result = view({
-      types: ["Restaurant"],
-      features: [
-        {
-          feature: "Local business",
-          type: "Restaurant",
-          eligible: false,
-          missingRequired: ["address"],
-          missingRecommended: [],
-          docsUrl: "https://example.com/local",
-          checkedOn: "2026-07-30",
-        },
-      ],
-    });
-    expect(typesWithoutRules(result)).toEqual([]);
   });
 });
 

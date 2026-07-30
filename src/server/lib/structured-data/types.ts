@@ -94,6 +94,10 @@ export type ValidationResult = {
   /** Distinct Schema.org types found, in first-seen order. */
   types: string[];
   features: FeatureVerdict[];
+  /** Types that could have carried a rich result but that this validator holds
+   *  no Google rules for. Reported explicitly so absence from `features` is
+   *  never read as a pass (spec 0012). */
+  notCheckedTypes: string[];
   findings: Finding[];
   errorCount: number;
   warningCount: number;

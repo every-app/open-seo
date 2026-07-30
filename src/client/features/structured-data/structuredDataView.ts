@@ -60,17 +60,6 @@ export function groupFindingsBySeverity(
   })).filter((group) => group.findings.length > 0);
 }
 
-/**
- * Types found on the page that no rich-result rule covers. Surfaced explicitly
- * so silence is not read as a pass (spec 0012).
- */
-export function typesWithoutRules(result: ValidationView): string[] {
-  const ruled = new Set(
-    result.features.flatMap((feature) => [feature.feature, feature.type]),
-  );
-  return result.types.filter((type) => !ruled.has(type));
-}
-
 /** Where a finding sits: the JSON pointer, prefixed by its block when there is
  *  more than one. */
 export function describeLocation(

@@ -3,7 +3,6 @@ import {
   groupFindingsBySeverity,
   SEVERITY_LABEL,
   summaryLine,
-  typesWithoutRules,
   type FeatureView,
   type FindingSeverity,
   type FindingView,
@@ -105,7 +104,7 @@ export function StructuredDataResults({
   }
 
   const groups = groupFindingsBySeverity(result.findings);
-  const unruled = typesWithoutRules(result);
+  const unruled = result.notCheckedTypes;
 
   return (
     <div className="flex flex-col gap-4">
@@ -134,10 +133,10 @@ export function StructuredDataResults({
 
       {unruled.length > 0 && (
         <p className="text-xs text-base-content/70">
-          <span className="font-medium">Not checked:</span>{" "}
-          {unruled.join(", ")}. These types are recognised, but Google feature
-          validation for them is not implemented here — so this is not a pass.
-          Some of them do have Google rich results.
+          <span className="font-medium">Not checked:</span> {unruled.join(", ")}
+          . These types are recognised, but Google feature validation for them
+          is not implemented here — so this is not a pass. Some of them do have
+          Google rich results.
         </p>
       )}
 

@@ -272,6 +272,61 @@ describe("vocabulary layer", () => {
   });
 });
 
+describe("notCheckedTypes", () => {
+  it("names types no rich-result rule covered", () => {
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          { "@type": "Person", name: "Jane" },
+          { "@type": "WebSite", name: "Site", url: "https://example.com" },
+        ],
+      }),
+    );
+    expect(result.notCheckedTypes).toEqual(["Person", "WebSite"]);
+  });
+
+  it("counts a type as checked when its feature matched under another name", () => {
+    // A Restaurant matches the "Local business" feature; neither label should
+    // then be reported as unchecked.
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        name: "Cafe",
+      }),
+    );
+    expect(result.notCheckedTypes).toEqual([]);
+  });
+
+  it("ignores nested types that were never candidates for a verdict", () => {
+    // ListItem only ever appears inside itemListElement, so Google rules are
+    // never applied to it. Listing it would dilute the types that genuinely
+    // went unchecked.
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Tools",
+                item: "https://example.com/tools",
+              },
+            ],
+          },
+          { "@type": "SoftwareApplication", name: "App" },
+        ],
+      }),
+    );
+    expect(result.types).toContain("ListItem");
+    expect(result.notCheckedTypes).toEqual(["SoftwareApplication"]);
+  });
+});
+
 describe("google layer", () => {
   it("reports a missing required property", () => {
     const result = validateJsonLdText(
