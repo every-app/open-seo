@@ -1,3 +1,4 @@
+/* eslint-disable max-lines, max-lines-per-function */
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ToolExtra } from "@/server/mcp/context";
@@ -313,6 +314,122 @@ describe("search console MCP tools", () => {
     const first = result.content[0];
     expect(first.type === "text" && first.text).toContain("PASS");
     expect(first.type === "text" && first.text).toContain("error:");
+  });
+
+  it("surfaces Google's rich-result issues and the crawl date behind them", async () => {
+    mocks.GscService.inspectUrls.mockResolvedValue({
+      siteUrl: "sc-domain:example.com",
+      connectedBy: "alice@example.com",
+      results: [
+        {
+          url: "https://example.com/recipe",
+          result: {
+            indexStatusResult: {
+              verdict: "PASS",
+              coverageState: "Indexed",
+              lastCrawlTime: "2026-07-12T04:11:00Z",
+            },
+            richResultsResult: {
+              verdict: "FAIL",
+              detectedItems: [
+                {
+                  richResultType: "Recipes",
+                  items: [
+                    {
+                      name: "Pavlova",
+                      issues: [
+                        {
+                          issueMessage: "Missing field 'image'",
+                          severity: "ERROR",
+                        },
+                        {
+                          issueMessage: "Missing field 'name' (in 'author')",
+                          severity: "WARNING",
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+        },
+      ],
+    });
+    const { inspectUrlsTool } = await import("./search-console-tools");
+
+    const result = await inspectUrlsTool.handler(
+      { projectId: "project_1", urls: ["https://example.com/recipe"] },
+      toolExtra,
+    );
+
+    const first = result.content[0];
+    const text = first.type === "text" ? first.text : "";
+    expect(text).toContain("rich results: FAIL (Recipes)");
+    // A stale FAIL must never read as current.
+    expect(text).toContain("as of Google's last crawl: 2026-07-12T04:11:00Z");
+    expect(text).toContain(
+      "ERROR · Recipes \"Pavlova\": Missing field 'image'",
+    );
+    expect(text).toContain("WARNING · Recipes");
+  });
+
+  it("does not date-stamp a passing rich-results verdict", async () => {
+    mocks.GscService.inspectUrls.mockResolvedValue({
+      siteUrl: "sc-domain:example.com",
+      connectedBy: "alice@example.com",
+      results: [
+        {
+          url: "https://example.com/ok",
+          result: {
+            indexStatusResult: {
+              verdict: "PASS",
+              coverageState: "Indexed",
+              lastCrawlTime: "2026-07-12T04:11:00Z",
+            },
+            richResultsResult: {
+              verdict: "PASS",
+              detectedItems: [{ richResultType: "Breadcrumbs", items: [] }],
+            },
+          },
+        },
+      ],
+    });
+    const { inspectUrlsTool } = await import("./search-console-tools");
+
+    const result = await inspectUrlsTool.handler(
+      { projectId: "project_1", urls: ["https://example.com/ok"] },
+      toolExtra,
+    );
+
+    const first = result.content[0];
+    const text = first.type === "text" ? first.text : "";
+    expect(text).toContain("rich results: PASS (Breadcrumbs)");
+    expect(text).not.toContain("last crawl");
+  });
+
+  it("stays quiet when Google reports no rich results at all", async () => {
+    mocks.GscService.inspectUrls.mockResolvedValue({
+      siteUrl: "sc-domain:example.com",
+      connectedBy: "alice@example.com",
+      results: [
+        {
+          url: "https://example.com/plain",
+          result: {
+            indexStatusResult: { verdict: "PASS", coverageState: "Indexed" },
+          },
+        },
+      ],
+    });
+    const { inspectUrlsTool } = await import("./search-console-tools");
+
+    const result = await inspectUrlsTool.handler(
+      { projectId: "project_1", urls: ["https://example.com/plain"] },
+      toolExtra,
+    );
+
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).not.toContain("rich results");
   });
 
   it("surfaces a not-connected message from inspect_urls", async () => {

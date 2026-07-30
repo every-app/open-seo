@@ -39,6 +39,7 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import { validateStructuredDataTool } from "@/server/mcp/tools/structured-data-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
@@ -279,6 +280,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       inspectUrlsTool.name,
       inspectUrlsTool.config.outputSchema,
       inspectUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    validateStructuredDataTool.name,
+    validateStructuredDataTool.config,
+    instrumentMcpToolHandler(
+      validateStructuredDataTool.name,
+      validateStructuredDataTool.config.outputSchema,
+      validateStructuredDataTool.handler,
     ),
   );
   server.registerTool(

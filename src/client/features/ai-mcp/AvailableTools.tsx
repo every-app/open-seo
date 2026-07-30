@@ -114,7 +114,18 @@ const toolCategories: ToolCategory[] = [
         name: "inspect_urls",
         title: "Inspect URLs",
         description:
-          "Check index status, crawl, and canonical for up to 10 URLs.",
+          "Check index status, crawl, canonical, and Google's rich-results verdict for up to 10 URLs.",
+      },
+    ],
+  },
+  {
+    label: "Structured data",
+    tools: [
+      {
+        name: "validate_structured_data",
+        title: "Validate structured data",
+        description:
+          "Check JSON-LD against Schema.org and Google's rich-result requirements — before or after publishing.",
       },
     ],
   },

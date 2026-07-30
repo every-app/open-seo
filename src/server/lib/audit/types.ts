@@ -82,9 +82,37 @@ export interface PageAnalysis {
 
   // Structured data
   hasStructuredData: boolean;
+  structuredData: PageStructuredData | null;
 
   // Hreflang
   hreflangTags: string[];
+}
+
+/**
+ * What a page's JSON-LD validation leaves behind for the issue reporters.
+ *
+ * A projection, not the full `ValidationResult`: only the counters are
+ * persisted (spec 0012), and the reporters only need enough to write a useful
+ * issue detail. Broken markup and rich-result ineligibility are kept apart
+ * because they are different problems with different severities — one is a
+ * defect, the other is an incomplete opportunity.
+ */
+export interface PageStructuredData {
+  /** `ld+json` blocks found on the page. */
+  blockCount: number;
+  /** Schema.org types found, first-seen order. */
+  types: string[];
+  /** Parse and vocabulary errors: markup that is broken. */
+  errorCount: number;
+  warningCount: number;
+  /** Messages for those errors, capped for the issue detail. */
+  errorMessages: string[];
+  /** Features whose required properties are unmet. */
+  ineligibleFeatures: Array<{
+    feature: string;
+    missing: string[];
+    docsUrl: string;
+  }>;
 }
 
 /** Lighthouse result for a single URL+strategy. */
@@ -144,6 +172,11 @@ export interface CrawledPageResult {
   images: Array<{ src: string | null; alt: string | null }>;
   links: PageLink[];
   hasStructuredData: boolean;
+  /**
+   * JSON-LD validation for this page. Transient — only the two counters reach
+   * D1; the messages exist so the issue reporters can name what is wrong.
+   */
+  structuredData: PageStructuredData | null;
   hreflangTags: string[];
   isIndexable: boolean;
   responseTimeMs: number;
