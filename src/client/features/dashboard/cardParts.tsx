@@ -2,6 +2,8 @@
 // the GSC IntegrationCard (rounded-xl, shadow-sm, header row + divider) so
 // the embedded SearchConsoleConnectionCard doesn't read as a different
 // design system.
+import { formatTimestampDate } from "@/client/lib/timestamps";
+
 export function CardShell({
   title,
   stamp,
@@ -96,15 +98,7 @@ export function newLost(value: number | null): string {
 }
 
 export function formatDay(timestamp: string): string {
-  const ms = Date.parse(
-    // SQLite's current_timestamp default has no timezone marker; treat it as
-    // UTC rather than letting the browser parse it as local time.
-    /^\d{4}-\d{2}-\d{2} /.test(timestamp)
-      ? `${timestamp.replace(" ", "T")}Z`
-      : timestamp,
-  );
-  if (Number.isNaN(ms)) return timestamp;
-  return new Date(ms).toLocaleDateString(undefined, {
+  return formatTimestampDate(timestamp, undefined, {
     month: "short",
     day: "numeric",
   });

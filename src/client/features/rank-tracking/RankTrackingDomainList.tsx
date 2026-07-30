@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { LOCATIONS } from "@/client/features/keywords/locations";
+import { formatTimestampDate } from "@/client/lib/timestamps";
 import {
   AlertTriangle,
   Archive,
@@ -223,8 +224,7 @@ function DomainRow({
           {summary.lastRunCompletedAt && (
             <>
               {" "}
-              &middot; Last:{" "}
-              {new Date(summary.lastRunCompletedAt).toLocaleDateString()}
+              &middot; Last: {formatTimestampDate(summary.lastRunCompletedAt)}
             </>
           )}
         </p>
