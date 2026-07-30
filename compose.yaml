@@ -22,6 +22,9 @@ services:
       # Optional: AI features (SAM, onboarding chat). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      # Optional rank-tracking cost controls: docs/SELF_HOSTING_CLOUDFLARE.md
+      - RANK_CHECK_MANUAL_METHOD=${RANK_CHECK_MANUAL_METHOD:-}
+      - RANK_CHECK_QUEUE_LIVE_FALLBACK=${RANK_CHECK_QUEUE_LIVE_FALLBACK:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
