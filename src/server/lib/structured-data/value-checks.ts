@@ -230,6 +230,10 @@ export function checkPropertyValue(
   }
 
   if (ranges.datatypes.length === 0 && ranges.classes.length > 0) {
+    // An absolute URL is the string form of `{"@id": "…"}` — a reference to an
+    // entity rather than a range violation. Google documents exactly this for
+    // BreadcrumbList `item`, so flagging it contradicts the spec we check.
+    if (isAbsoluteHttpUrl(value)) return;
     collector.push(
       "range-mismatch",
       `"${property}" expects a nested ${ranges.classes.join(" or ")} object; got a bare value.`,
