@@ -59,15 +59,17 @@ function summarize(result: ValidationResult, source: string): string {
     lines.push(`${feature.feature} — ${verdict} (${feature.docsUrl})`);
   }
 
-  // Types we found but hold no rules for: say so rather than let silence read
-  // as a pass.
+  // Types we found but hold no rules for. "No eligibility rules for X" reads as
+  // a fact about Google — that X has no rich result — when it is a fact about
+  // this validator. Several uncovered types (SoftwareApplication among them) do
+  // have Google features, so name the gap as ours.
   const ruled = new Set(
     result.features.flatMap((feature) => [feature.feature, feature.type]),
   );
   const unruled = result.types.filter((type) => !ruled.has(type));
   if (unruled.length > 0) {
     lines.push(
-      `no rich-result eligibility rules for: ${unruled.join(", ")} (covered features: ${COVERED_FEATURES})`,
+      `not checked — recognised, but Google feature validation is not implemented here: ${unruled.join(", ")}. This is not a pass. Validated features: ${COVERED_FEATURES}`,
     );
   }
 

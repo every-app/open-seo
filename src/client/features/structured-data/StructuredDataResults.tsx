@@ -133,9 +133,11 @@ export function StructuredDataResults({
       )}
 
       {unruled.length > 0 && (
-        <p className="text-xs text-base-content/50">
-          No rich-result eligibility rules held for: {unruled.join(", ")}. That
-          is not a pass — those types simply are not covered here.
+        <p className="text-xs text-base-content/70">
+          <span className="font-medium">Not checked:</span>{" "}
+          {unruled.join(", ")}. These types are recognised, but Google feature
+          validation for them is not implemented here — so this is not a pass.
+          Some of them do have Google rich results.
         </p>
       )}
 
