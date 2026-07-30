@@ -260,6 +260,9 @@ type PagespeedIssueRow = {
   severity: string;
   issue: string;
   detail: string;
+  /** The audit's own evidence rows — the exact offending line, URL or node.
+   *  `displayValue` only counts them ("1 error found"), which is not actionable. */
+  evidence: string[];
   impactMs: number | null;
   impactBytes: number | null;
   auditKey: string;
@@ -271,6 +274,7 @@ const ISSUE_COLUMNS: McpTableColumn<PagespeedIssueRow>[] = [
   { header: "severity", value: (row) => row.severity },
   { header: "issue", value: (row) => row.issue },
   { header: "detail", value: (row) => row.detail },
+  { header: "evidence", value: (row) => row.evidence.join(" | ") || "—" },
   { header: "audit", value: (row) => row.auditKey },
 ];
 
@@ -375,6 +379,7 @@ export const getPagespeedIssuesTool = {
             severity: issue.severity,
             issue: issue.title,
             detail: issue.displayValue ?? "—",
+            evidence: issue.items.slice(0, 3),
             impactMs: issue.impactMs,
             impactBytes: issue.impactBytes,
             auditKey: issue.auditKey,

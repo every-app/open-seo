@@ -122,6 +122,103 @@ describe("lighthouse stored payload classification", () => {
     expect(issues.issues).toEqual([]);
   });
 
+  it("ranks weighted audits by their share of the category score", () => {
+    // A real SEO/a11y category: binary audits, all scoring 0 on failure, so
+    // only the weight separates "costs a tenth of the score" from "costs 2%".
+    const failing = { score: 0, scoreDisplayMode: "binary" };
+    const issues = buildStoredLighthouseIssues({
+      audits: {
+        heavy: { title: "Heavy", ...failing },
+        middling: { title: "Middling", ...failing },
+        light: { title: "Light", ...failing },
+      },
+      categories: {
+        performance: { auditRefs: [] },
+        accessibility: {
+          auditRefs: [
+            { id: "heavy", weight: 10 },
+            { id: "middling", weight: 4 },
+            { id: "light", weight: 1 },
+            { id: "passing", weight: 85 },
+          ],
+        },
+        "best-practices": { auditRefs: [] },
+        seo: { auditRefs: [] },
+      },
+    });
+
+    const bySeverity = Object.fromEntries(
+      issues.issues.map((issue) => [issue.auditKey, issue.severity]),
+    );
+    expect(bySeverity).toEqual({
+      heavy: "critical", // 10/100
+      middling: "warning", // 4/100
+      light: "info", // 1/100
+    });
+  });
+
+  it("keeps measured savings as the severity for unweighted opportunities", () => {
+    // Performance Opportunities are all weight 0 — only the five metrics carry
+    // weight, and those are numeric and skipped. Reading weight 0 as "harmless"
+    // would empty the performance list entirely.
+    const issues = buildStoredLighthouseIssues({
+      audits: {
+        "unused-javascript": {
+          title: "Reduce unused JavaScript",
+          score: 0.5,
+          scoreDisplayMode: "metricSavings",
+          details: { overallSavingsBytes: 232886 },
+        },
+      },
+      categories: {
+        performance: {
+          auditRefs: [
+            { id: "largest-contentful-paint", weight: 25 },
+            { id: "unused-javascript", weight: 0 },
+          ],
+        },
+        accessibility: { auditRefs: [] },
+        "best-practices": { auditRefs: [] },
+        seo: { auditRefs: [] },
+      },
+    });
+
+    expect(issues.issues).toHaveLength(1);
+    expect(issues.issues[0]?.severity).toBe("critical");
+  });
+
+  it("keeps the exact parse error for robots.txt", () => {
+    const issues = buildStoredLighthouseIssues({
+      audits: {
+        "robots-txt": {
+          title: "robots.txt is not valid",
+          score: 0,
+          scoreDisplayMode: "binary",
+          displayValue: "1 error found",
+          details: {
+            items: [
+              {
+                index: 4,
+                line: "Disalow: /admin",
+                message: "Unknown directive",
+              },
+            ],
+          },
+        },
+      },
+      categories: {
+        performance: { auditRefs: [] },
+        accessibility: { auditRefs: [] },
+        "best-practices": { auditRefs: [] },
+        seo: { auditRefs: [{ id: "robots-txt", weight: 1 }] },
+      },
+    });
+
+    expect(issues.issues[0]?.items[0]).toBe(
+      '{"line":"Disalow: /admin","message":"Unknown directive"}',
+    );
+  });
+
   it("compacts affected items and caps them at ten entries", () => {
     const items = Array.from({ length: 12 }, (_, index) => ({
       url: `https://cdn.example.com/script-${index}.js`,

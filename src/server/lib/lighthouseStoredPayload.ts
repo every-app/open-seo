@@ -19,6 +19,8 @@ export type RawLighthouseCategory = {
   score?: number | null;
   auditRefs?: Array<{
     id?: string;
+    /** How much this audit's score contributes to the category score. */
+    weight?: number;
   }>;
 };
 
@@ -122,6 +124,11 @@ function compactItem(item: Record<string, unknown>): string {
     "source",
     "nodeLabel",
     "snippet",
+    // `robots-txt` reports each parse failure as {index, line, message}; without
+    // these the exact offending line only survived by falling through to the
+    // positional fallback below.
+    "line",
+    "message",
     "totalBytes",
     "wastedBytes",
     "wastedMs",
@@ -145,6 +152,26 @@ function compactItem(item: Record<string, unknown>): string {
   return JSON.stringify(output);
 }
 
+/**
+ * Severity for an audit Lighthouse actually scores, taken from what failing it
+ * costs: the audit's share of its category's total weight.
+ *
+ * Binary audits — most of accessibility, SEO and best-practices — score 0 or
+ * 100 with no magnitude, so a score threshold reads every failure as equally
+ * severe. Weight is Lighthouse's own ranking and says how much is at stake.
+ */
+function getWeightedSeverity(share: number): "critical" | "warning" | "info" {
+  if (share >= 0.1) return "critical";
+  if (share >= 0.03) return "warning";
+  return "info";
+}
+
+/**
+ * Severity for an audit Lighthouse leaves unweighted. Performance
+ * Opportunities and Diagnostics are all weight 0 — only the five metrics carry
+ * weight there, and those are numeric and skipped — so measured savings are
+ * the only magnitude on offer.
+ */
 function getSeverity(input: {
   score: number | null;
   impactMs: number | null;
@@ -181,9 +208,12 @@ export function buildStoredLighthouseIssues(input: {
 
   for (const category of LIGHTHOUSE_CATEGORIES) {
     const refs = input.categories[category]?.auditRefs ?? [];
+    const totalWeight = refs.reduce((sum, ref) => sum + (ref.weight ?? 0), 0);
+
     for (const ref of refs) {
       const auditKey = ref.id;
       if (!auditKey) continue;
+      const weight = ref.weight ?? 0;
 
       const audit = input.audits[auditKey];
       if (!audit) continue;
@@ -226,7 +256,10 @@ export function buildStoredLighthouseIssues(input: {
         displayValue: audit.displayValue ?? null,
         impactMs,
         impactBytes,
-        severity: getSeverity({ score, impactMs, impactBytes }),
+        severity:
+          weight > 0 && totalWeight > 0
+            ? getWeightedSeverity(weight / totalWeight)
+            : getSeverity({ score, impactMs, impactBytes }),
         items,
       });
     }
