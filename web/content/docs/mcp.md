@@ -87,6 +87,9 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Check backlink and referring-domain overview data.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
+- Read AI Search visibility: brand mention counts and Share of Voice vs. named competitors across ChatGPT and Google AI Overview.
+- Read AI Search cited sources: which URLs get cited as sources in AI answers, and the prompts that cited them.
+- Ask one prompt across up to 4 LLMs (ChatGPT, Claude, Gemini, Perplexity) and read each model's raw answer and citations.
 
 ## What to do after setup
 

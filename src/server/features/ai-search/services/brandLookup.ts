@@ -1,5 +1,8 @@
 import { waitUntil } from "cloudflare:workers";
-import type { BillingCustomerContext } from "@/server/billing/subscription";
+import {
+  customerHasPaidPlan,
+  type BillingCustomerContext,
+} from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import {
   buildLlmTarget,
@@ -9,6 +12,7 @@ import {
 } from "@/server/lib/dataforseo";
 import type { LlmCrossAggregatedItem } from "@/server/lib/dataforseoLlmSchemas";
 import { AppError } from "@/server/lib/errors";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import {
   resolveCompetitorGroups,
@@ -48,6 +52,8 @@ export async function getBrandLookup(
   input: BrandLookupInput,
   billingCustomer: BillingCustomerContext,
 ): Promise<BrandLookupResult> {
+  await assertAiSearchPaidPlan(billingCustomer.organizationId);
+
   const detected = detectTarget(input.query);
   const competitorGroups = resolveCompetitorGroups(
     detected.value,
@@ -149,6 +155,18 @@ export async function getBrandLookup(
   }
 
   return result;
+}
+
+// Gated here, not only in the server function, so every caller — the UI's
+// server function and MCP tools alike — inherits the paid-plan check before
+// any DataForSEO spend. Mirrors AuditService's resolveAuditLimitTier.
+async function assertAiSearchPaidPlan(organizationId: string): Promise<void> {
+  if (!(await isHostedServerAuthMode())) return;
+  if (await customerHasPaidPlan(organizationId)) return;
+  throw new AppError(
+    "PAYMENT_REQUIRED",
+    "Upgrade to the paid plan to use AI Visibility",
+  );
 }
 
 async function settle<T>(
