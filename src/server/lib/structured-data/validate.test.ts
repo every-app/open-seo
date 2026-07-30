@@ -224,6 +224,32 @@ describe("vocabulary layer", () => {
     expect(find(result, "range-mismatch")?.message).toContain("author");
   });
 
+  it("accepts a breadcrumb item given as an absolute URL", () => {
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Books",
+            item: "https://example.com/books",
+          },
+          { "@type": "ListItem", position: 2, name: "Fiction" },
+        ],
+      }),
+    );
+    expect(codes(result)).not.toContain("range-mismatch");
+  });
+
+  it("still warns when a bare string is not a URL reference", () => {
+    const result = validateJsonLdText(
+      JSON.stringify({ ...ARTICLE, publisher: "Example Media" }),
+    );
+    expect(find(result, "range-mismatch")?.property).toBe("publisher");
+  });
+
   it("leaves @id references alone", () => {
     const result = validateJsonLdText(
       JSON.stringify({
