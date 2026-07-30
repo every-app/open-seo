@@ -18,7 +18,7 @@ import {
   RICH_RESULT_RULES,
   type RichResultRule,
 } from "./google-rules";
-import { ancestorChain, isTypeOrSubtypeOf } from "./vocabulary";
+import { ancestorChain } from "./vocabulary";
 
 /** Resolves a dotted path, stepping through arrays. */
 function hasPath(node: unknown, path: string): boolean {
@@ -88,15 +88,20 @@ function checkBreadcrumbItems(
   });
 }
 
+/**
+ * Retirement applies to the declared type, not to its subtypes.
+ *
+ * `Recipe` is a subclass of `HowTo` in Schema.org, and Recipe rich results are
+ * very much alive — matching subtypes reported "Google retired How-to" on every
+ * recipe on the internet.
+ */
 function reportRetiredFeatures(
   knownTypes: string[],
   path: string,
   collector: FindingCollector,
 ): void {
   for (const retired of RETIRED_FEATURES) {
-    if (!knownTypes.some((type) => isTypeOrSubtypeOf(type, retired.type))) {
-      continue;
-    }
+    if (!knownTypes.includes(retired.type)) continue;
     collector.push("retired-feature", retired.note, path, {
       feature: retired.feature,
       type: retired.type,

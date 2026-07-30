@@ -395,6 +395,31 @@ describe("google layer", () => {
     expect(result.features[0]?.eligible).toBe(true);
   });
 
+  it("does not report How-to retirement for a Recipe", () => {
+    // Recipe is a subclass of HowTo in Schema.org, and Recipe rich results are
+    // alive: matching subtypes flagged every recipe on the internet.
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Recipe",
+        name: "Pavlova",
+        image: "https://example.com/pavlova.jpg",
+      }),
+    );
+    expect(codes(result)).not.toContain("retired-feature");
+  });
+
+  it("still reports How-to retirement for an actual HowTo", () => {
+    const result = validateJsonLdText(
+      JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: "Change a tyre",
+      }),
+    );
+    expect(find(result, "retired-feature")?.feature).toBe("How-to");
+  });
+
   it("reports retired features as info, not failure", () => {
     const result = validateJsonLdText(
       JSON.stringify({
