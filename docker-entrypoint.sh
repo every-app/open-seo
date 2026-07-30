@@ -1,17 +1,10 @@
 #!/bin/sh
-# Self-host container entrypoint.
-#
-# vite build inlines runtime-chosen client envs (the envPrefix list in
-# vite.config.ts) into the client bundle, so the build has to run at container
-# start rather than image-build time. But re-running it on *every* start — restarts,
-# host reboots, Watchtower cycles — costs ~90s of downtime and a CPU spike for
-# no benefit when nothing that affects the bundle changed.
-#
-# So: fingerprint the build-relevant env, and reuse dist/ when the fingerprint
-# matches the last successful build. First start still builds; restarts with an
-# unchanged env skip straight to serving. An image update lands a fresh
-# container with no dist/, so it rebuilds as expected. Changing any inlined env
-# (e.g. AUTH_MODE) changes the fingerprint and forces a rebuild.
+# Self-host container entrypoint. vite build inlines the envPrefix'd client
+# envs (see vite.config.ts) into the bundle, so the build must run at container
+# start — but the output stays valid until those envs or the image change.
+# Fingerprint them and skip the build when the last start's output matches; an
+# image update lands a fresh container with no build output, so new code always
+# rebuilds.
 set -e
 
 echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry'
@@ -22,24 +15,23 @@ pnpm exec tsx scripts/selfhost-preflight.ts
 
 pnpm run db:migrate:local
 
-FP_FILE="dist/.openseo-build-env"
-# Only the envs vite inlines into the client bundle affect build output. This
-# list must match envPrefix in vite.config.ts.
-BASE_ENV="AUTH_MODE=${AUTH_MODE:-}
-BYPASS_EMAIL_VERIFICATION=${BYPASS_EMAIL_VERIFICATION:-}
-POSTHOG_PUBLIC_KEY=${POSTHOG_PUBLIC_KEY:-}
-POSTHOG_HOST=${POSTHOG_HOST:-}
-TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}"
-VITE_ENV="$(env | grep '^VITE_' | sort || true)"
-FINGERPRINT="$(printf '%s\n%s\n' "$BASE_ENV" "$VITE_ENV" | sha256sum | cut -d' ' -f1)"
-# An empty fingerprint (e.g. sha256sum missing) would make every start "match"
-# and silently serve stale builds — fail loudly instead.
+# POSTHOG_SOURCEMAPS (CI sourcemap uploads) moves vite's outDir; keep the
+# fingerprint marker beside the output it describes.
+if [ "${POSTHOG_SOURCEMAPS:-}" = "true" ]; then OUT_DIR=dist-sourcemaps; else OUT_DIR=dist; fi
+FP_FILE="$OUT_DIR/.openseo-build-env"
+
+# Everything that changes build output: the envPrefix prefixes from
+# vite.config.ts (keep in sync) plus POSTHOG_SOURCEMAPS.
+FINGERPRINT="$(env | grep -E '^(VITE_|AUTH_MODE|BYPASS_EMAIL_VERIFICATION|POSTHOG_PUBLIC_KEY|POSTHOG_HOST|TURNSTILE_SITE_KEY|POSTHOG_SOURCEMAPS)' | sort | sha256sum | cut -d' ' -f1)"
+# A missing sha256sum would yield an empty, always-matching fingerprint and
+# silently disable rebuilds — fail loudly instead.
 test -n "$FINGERPRINT"
 
-if [ -d dist ] && [ -f "$FP_FILE" ] && [ "$(cat "$FP_FILE")" = "$FINGERPRINT" ]; then
+if [ -f "$FP_FILE" ] && [ "$(cat "$FP_FILE")" = "$FINGERPRINT" ]; then
   echo "Reusing existing build (build-relevant env unchanged)."
 else
   echo "Building client + server (first start, changed build env, or new image)..."
+  rm -f "$FP_FILE"
   pnpm run build
   printf '%s' "$FINGERPRINT" > "$FP_FILE"
 fi
