@@ -21,6 +21,14 @@ const clampStep = (step: number) =>
   Math.min(Math.max(0, Math.trunc(step)), ONBOARDING_LAST_STEP);
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
+  // Client-only, for the same reason the project subtree is: the page renders
+  // inside `ClientOnly`, so SSR would only produce empty chrome — and the guard
+  // below must not run on the server. `queryClient` is module scope, which a
+  // worker isolate reuses across requests, and `["onboardingAnswers"]` carries
+  // no user id, so a server-side `ensureQueryData` can answer from the previous
+  // request's rows inside the 5-minute staleTime and decide this visitor's
+  // redirect from another account's `completedAt`.
+  ssr: false,
   // Step lives in the URL so it survives refresh and works with back/forward.
   validateSearch: (search: Record<string, unknown>): { step: number } => {
     const raw = Number(search.step);
