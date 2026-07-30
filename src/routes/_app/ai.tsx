@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { getAuthMode } from "@/lib/auth-mode";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
@@ -53,6 +54,24 @@ function AiPage() {
           Connect your AI agent to OpenSEO. Run keyword research, SERP analysis,
           domain lookups, and backlink reviews from your editor or chat.
         </p>
+
+        {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
+          <div className="alert alert-warning mt-6 text-sm" role="alert">
+            <ShieldAlert className="size-4 shrink-0" />
+            <span>
+              This instance is behind Cloudflare Access. MCP clients cannot
+              connect until Managed OAuth is enabled on your Access application.{" "}
+              <a
+                href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
+                target="_blank"
+                rel="noreferrer"
+                className="link font-medium"
+              >
+                Setup guide
+              </a>
+            </span>
+          </div>
+        ) : null}
 
         <section className="mt-8">
           <div className="rounded-lg border border-base-300 bg-base-200 px-4 py-3.5">

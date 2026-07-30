@@ -18,6 +18,8 @@ import {
   getOptionalEnvValue,
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
+import { getSetupIssueSummary } from "@/server/lib/setup-status";
+import { isTelemetryOptOutValue } from "@/shared/selfhost-checks";
 
 const SELF_HOST_POSTHOG_KEY =
   "phc_xaXj4vE4LikxfvR7q6EHemAYNBSZW4hQkqor7fpf8aGT";
@@ -75,6 +77,9 @@ type HeartbeatProperties = HeartbeatCounts & {
   firstRun: boolean;
   minutesSinceInstall?: number;
   mcpToolCalls: number;
+  // Unhealthy setup checks as "check:status" pairs (e.g. "dataforseo:error").
+  // Enumerable values only — never free-text detail.
+  setupIssues: string[];
   $process_person_profile: false;
 };
 
@@ -83,6 +88,7 @@ export type SelfHostTelemetryDependencies = {
   isNonProductionBuild: () => boolean;
   claimHeartbeat: (now: Date) => Promise<ClaimedHeartbeat | null>;
   collectCounts: () => Promise<HeartbeatCounts>;
+  collectSetupIssues: () => Promise<string[]>;
   sendHeartbeat: (
     installId: string,
     properties: HeartbeatProperties,
@@ -115,8 +121,16 @@ function isNonProductionBuild() {
 
 async function telemetryIsDisabled() {
   if (await isHostedServerAuthMode()) return true;
-  if (await getOptionalEnvValue("OPENSEO_TELEMETRY_DISABLED")) return true;
-  if (await getOptionalEnvValue("DO_NOT_TRACK")) return true;
+  if (
+    isTelemetryOptOutValue(
+      await getOptionalEnvValue("OPENSEO_TELEMETRY_DISABLED"),
+    )
+  ) {
+    return true;
+  }
+  if (isTelemetryOptOutValue(await getOptionalEnvValue("DO_NOT_TRACK"))) {
+    return true;
+  }
   return false;
 }
 
@@ -254,6 +268,7 @@ const productionDependencies: SelfHostTelemetryDependencies = {
   isNonProductionBuild,
   claimHeartbeat,
   collectCounts,
+  collectSetupIssues: getSetupIssueSummary,
   sendHeartbeat,
   markHeartbeatSent,
   getDbBackend: getDatabaseProvider,
@@ -290,6 +305,7 @@ export async function maybeSendSelfHostHeartbeat(
 
     const authMode = getAuthMode(await getOptionalEnvValue("AUTH_MODE"));
     const counts = await dependencies.collectCounts();
+    const setupIssues = await dependencies.collectSetupIssues();
     const prevVersion =
       state.lastVersion && state.lastVersion !== dependencies.version
         ? state.lastVersion
@@ -308,6 +324,7 @@ export async function maybeSendSelfHostHeartbeat(
       ...(minutesSinceInstall === undefined ? {} : { minutesSinceInstall }),
       ...counts,
       mcpToolCalls: state.mcpToolCallCount,
+      setupIssues,
       $process_person_profile: false,
     });
     await dependencies.markHeartbeatSent(

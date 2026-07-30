@@ -6,19 +6,39 @@ import {
 
 const TODAY = new Date("2026-05-28T00:00:00Z");
 
+/** GSC counts startDate and endDate inclusively, so the window a range asks
+ *  for must match the days GSC will actually bill it for. */
+function inclusiveDays(startDate: string, endDate: string): number {
+  const dayMs = 24 * 60 * 60 * 1000;
+  const start = Date.parse(`${startDate}T00:00:00Z`);
+  const end = Date.parse(`${endDate}T00:00:00Z`);
+  return (end - start) / dayMs + 1;
+}
+
 describe("resolveDateRange", () => {
   it("ends convenience ranges 3 days back for GSC data lag", () => {
     const { endDate } = resolveDateRange({ dateRange: "last_28_days" }, TODAY);
     expect(endDate).toBe("2026-05-25");
   });
 
-  it("computes a 28-day window from the lagged end", () => {
+  it("spans 28 inclusive days from the lagged end", () => {
     const { startDate, endDate } = resolveDateRange(
       { dateRange: "last_28_days" },
       TODAY,
     );
-    expect(startDate).toBe("2026-04-27");
+    expect(startDate).toBe("2026-04-28");
     expect(endDate).toBe("2026-05-25");
+    expect(inclusiveDays(startDate, endDate)).toBe(28);
+  });
+
+  it("spans 7 inclusive days from the lagged end", () => {
+    const { startDate, endDate } = resolveDateRange(
+      { dateRange: "last_7_days" },
+      TODAY,
+    );
+    expect(startDate).toBe("2026-05-19");
+    expect(endDate).toBe("2026-05-25");
+    expect(inclusiveDays(startDate, endDate)).toBe(7);
   });
 
   it("clamps the start to the 16-month floor", () => {
@@ -52,7 +72,9 @@ describe("resolveDateRange", () => {
       { dateRange: "last_3_months" },
       new Date("2026-06-03T00:00:00Z"),
     );
-    expect(startDate).toBe("2026-02-28");
+    // Feb 28 is the clamped subtraction; the window starts the day after it so
+    // Mar 1 - May 31 covers three whole months rather than three months plus a day.
+    expect(startDate).toBe("2026-03-01");
     expect(endDate).toBe("2026-05-31");
   });
 

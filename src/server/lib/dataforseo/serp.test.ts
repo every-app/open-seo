@@ -168,7 +168,7 @@ describe("rank check task queue", () => {
       result: {
         keywordId: "kw-1",
         keyword: "alpha",
-        position: 4,
+        position: 3,
         url: "https://www.example.com/page",
         serpFeatures: ["organic"],
       },

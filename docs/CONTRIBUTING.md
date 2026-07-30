@@ -16,4 +16,18 @@ See [LOCAL_DEVELOPMENT.md](./LOCAL_DEVELOPMENT.md) for how to run the app locall
 
 - Keep PRs focused: one feature or fix per PR.
 - For larger features, open an issue first so we can align on the approach before you invest time.
-- Make sure `pnpm ci:check` passes before requesting review.
+- Before requesting review, run the same root checks used by CI:
+
+  ```sh
+  pnpm ci:check
+  pnpm test:ci
+  pnpm vite build
+  ```
+
+- If you changed the website under `web/`, also run:
+
+  ```sh
+  pnpm --dir web install --frozen-lockfile
+  pnpm --dir web run types:check
+  pnpm --dir web run build
+  ```
