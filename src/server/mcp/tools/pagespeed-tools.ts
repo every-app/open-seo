@@ -8,6 +8,11 @@ import {
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import {
+  byWorstFirst,
+  ISSUE_COLUMNS,
+  type PagespeedIssueRow,
+} from "@/server/mcp/tools/pagespeedIssueRows";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { LIGHTHOUSE_CATEGORIES } from "@/shared/lighthouse";
 import {
@@ -253,38 +258,6 @@ export const getPagespeedInsightsTool = {
   }),
 };
 
-/** One Lighthouse issue, flattened for the table and structured payload. */
-type PagespeedIssueRow = {
-  url: string;
-  category: string;
-  severity: string;
-  issue: string;
-  detail: string;
-  /** The audit's own evidence rows — the exact offending line, URL or node.
-   *  `displayValue` only counts them ("1 error found"), which is not actionable. */
-  evidence: string[];
-  impactMs: number | null;
-  impactBytes: number | null;
-  auditKey: string;
-};
-
-const ISSUE_COLUMNS: McpTableColumn<PagespeedIssueRow>[] = [
-  { header: "url", value: (row) => row.url },
-  { header: "category", value: (row) => row.category },
-  { header: "severity", value: (row) => row.severity },
-  { header: "issue", value: (row) => row.issue },
-  { header: "detail", value: (row) => row.detail },
-  { header: "evidence", value: (row) => row.evidence.join(" | ") || "—" },
-  { header: "audit", value: (row) => row.auditKey },
-];
-
-/** Worst first, so a truncated list still leads with what matters. */
-const SEVERITY_RANK: Record<string, number> = {
-  critical: 0,
-  warning: 1,
-  info: 2,
-};
-
 const issuesInputSchema = {
   projectId: projectIdSchema,
   strategy: z
@@ -385,17 +358,7 @@ export const getPagespeedIssuesTool = {
             auditKey: issue.auditKey,
           })),
       )
-      .toSorted((a, b) => {
-        const bySeverity =
-          (SEVERITY_RANK[a.severity] ?? 3) - (SEVERITY_RANK[b.severity] ?? 3);
-        if (bySeverity !== 0) return bySeverity;
-        // Then by measured impact, so the biggest win leads its severity band.
-        return (
-          (b.impactMs ?? 0) +
-          (b.impactBytes ?? 0) / 1000 -
-          ((a.impactMs ?? 0) + (a.impactBytes ?? 0) / 1000)
-        );
-      })
+      .toSorted(byWorstFirst)
       .slice(0, args.limit);
 
     if (results.length === 0) {

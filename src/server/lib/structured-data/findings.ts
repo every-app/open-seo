@@ -49,6 +49,10 @@ export class FindingCollector {
   readonly findings: Finding[] = [];
   readonly features: FeatureVerdict[] = [];
   readonly types: string[] = [];
+  /** Types seen at a position where Google rules are applied — top level, or
+   *  under mainEntity/mainEntityOfPage. A nested ListItem is not one of these,
+   *  so reporting it as unchecked would be noise: it was never a candidate. */
+  readonly primaryTypes: string[] = [];
   nodeCount = 0;
 
   constructor(private scriptIndex = 0) {}
@@ -57,8 +61,11 @@ export class FindingCollector {
     this.scriptIndex = index;
   }
 
-  seeType(type: string): void {
+  seeType(type: string, primary = false): void {
     if (!this.types.includes(type)) this.types.push(type);
+    if (primary && !this.primaryTypes.includes(type)) {
+      this.primaryTypes.push(type);
+    }
   }
 
   push(

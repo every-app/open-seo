@@ -262,7 +262,7 @@ function walkNode(
 
   const referenceNode = isReferenceNode(node);
   const types = readTypes(node);
-  for (const type of types) collector.seeType(type);
+  for (const type of types) collector.seeType(type, primary);
 
   if (!referenceNode && types.length === 0) {
     collector.push(
@@ -323,12 +323,19 @@ function toResult(
   collector: FindingCollector,
   scriptCount: number,
 ): ValidationResult {
+  const ruled = new Set(
+    collector.features.flatMap((feature) => [feature.feature, feature.type]),
+  );
   return {
     schemaVersion: SCHEMA_VERSION,
     scriptCount,
     nodeCount: collector.nodeCount,
     types: collector.types,
     features: collector.features,
+    // Computed here so every surface reports the same set. Primary types only:
+    // a nested ListItem under a validated BreadcrumbList never had a verdict to
+    // miss, and listing it dilutes the types that genuinely went unchecked.
+    notCheckedTypes: collector.primaryTypes.filter((type) => !ruled.has(type)),
     findings: collector.findings,
     errorCount: collector.findings.filter((f) => f.severity === "error").length,
     warningCount: collector.findings.filter((f) => f.severity === "warning")
