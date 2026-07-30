@@ -41,7 +41,7 @@ function mapOrganicSerpItems(items: SerpLiveItem[]): SerpResultItem[] {
   return items
     .filter((item) => item.type === "organic")
     .map((item) => ({
-      rank: item.rank_absolute ?? item.rank_group ?? 0,
+      rank: item.rank_group ?? item.rank_absolute ?? 0,
       title: item.title ?? "",
       url: item.url ?? "",
       domain: item.domain ?? "",

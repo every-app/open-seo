@@ -151,6 +151,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20260611.1
         version: 4.20260611.1
+      '@distilled.cloud/cloudflare':
+        specifier: 0.28.2
+        version: 0.28.2(effect@4.0.0-beta.93)
       '@effect/platform-node':
         specifier: 4.0.0-beta.93
         version: 4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1)
@@ -187,6 +190,9 @@ importers:
       alchemy:
         specifier: 2.0.0-beta.61
         version: 2.0.0-beta.61(@effect/platform-node@4.0.0-beta.93(effect@4.0.0-beta.93)(ioredis@5.11.1))(@types/node@22.19.11)(@types/react@19.2.14)(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260611.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.22.6(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(effect@4.0.0-beta.93)(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(vitest@3.2.6(@types/debug@4.1.13)(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(ws@8.21.0)
+      chalk:
+        specifier: ^5.6.2
+        version: 5.6.2
       drizzle-kit:
         specifier: ^0.31.10
         version: 0.31.10

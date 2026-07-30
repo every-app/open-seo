@@ -87,7 +87,7 @@ export function marketTools(ctx: ToolContext): ToolSet {
                   .filter((item) => item.type === "organic")
                   .slice(0, 10)
                   .map((item) => ({
-                    rank: item.rank_absolute ?? item.rank_group ?? null,
+                    rank: item.rank_group ?? item.rank_absolute ?? null,
                     domain: item.domain ?? null,
                     title: item.title ?? null,
                     url: item.url ?? null,

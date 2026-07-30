@@ -3,53 +3,66 @@ title: "Cloudflare Self-Hosting"
 description: "Deploy OpenSEO to your own Cloudflare account for internet-facing, multi-device, or team use."
 ---
 
-Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. It works on Cloudflare's free plan.
+Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan.
 
-## 1) Deploy from GitHub
+## Prerequisites
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/every-app/open-seo)
+- **Node 22.6 or newer** and **pnpm** (`corepack enable` sets it up).
+- **A Cloudflare account with R2 enabled.** Activating R2 requires a payment method on file, even within its free tier — if you have never used R2, open `R2` in the Cloudflare dashboard once.
+- **A DataForSEO account** — see [DataForSEO API key setup](/docs/self-hosting#dataforseo-api-key-setup).
 
-Click the deploy button. There are lots of fields on the deploy form, but you only need to do the below steps.
+## 1) Clone your OpenSEO repo
 
-1. Connect your Git provider (GitHub/GitLab).
-2. Leave the resource naming fields as default unless you have a reason to change them.
-3. Click `Create and Deploy`.
-4. Wait 1-2 minutes for deployment to finish.
-
-If deploy fails with `Cannot provision a KV Namespace with the title "open-seo" because it already exists`, use the [manual deploy with Wrangler guide on GitHub](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_MANUAL.md) instead.
-
-## 2) Configure authentication and secrets
-
-In the Cloudflare dashboard:
-
-1. Go to `Compute` -> `Workers & Pages` -> your OpenSEO Worker.
-2. Open `Settings`.
-3. In `Domains & Routes`, enable `Cloudflare Access` for the `workers.dev` route.
-4. Save the values shown by Cloudflare Access.
-5. In `Variables & Secrets`, add:
-   - `POLICY_AUD` (from Access setup)
-   - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
-   - `DATAFORSEO_API_KEY` (see [DataForSEO API key setup](/docs/self-hosting#dataforseo-api-key-setup))
-
-## 3) Optional: add an R2 lifecycle rule
-
-DataForSEO API responses are cached in R2 under the `dataforseo-cache/` prefix. This step is optional, but recommended to automatically clean up expired cache objects:
+Fork `every-app/open-seo` on GitHub if you want a repo you control, then clone it locally:
 
 ```bash
-npx wrangler r2 bucket lifecycle add open-seo dataforseo-cache-expiry dataforseo-cache/ --expire-days 7
+git clone https://github.com/YOUR_GITHUB_USER/open-seo.git
+cd open-seo
+corepack enable
+pnpm install
 ```
 
-If you changed the R2 bucket name during deploy, replace `open-seo` with your bucket name.
+If you do not need a fork, clone the upstream repo instead:
 
-Without a lifecycle rule, cached objects under `dataforseo-cache/` will accumulate indefinitely and increase storage costs over time.
+```bash
+git clone https://github.com/every-app/open-seo.git
+cd open-seo
+corepack enable
+pnpm install
+```
 
-## 4) Validate setup
+## 2) Log in to Cloudflare (once)
 
-1. Open your Worker URL again.
+```bash
+pnpm alchemy login                # answer yes to "Customize OAuth scopes?" and enable access:write
+pnpm alchemy cloudflare bootstrap # deploys alchemy's state-store Worker to your account
+```
+
+Already logged in from before without the `access:write` scope? Run `pnpm alchemy login --configure` — a plain repeat login doesn't re-ask about scopes.
+
+## 3) Create `.env.selfhost`
+
+Copy the template and fill in the required values:
+
+```bash
+cp .env.selfhost.example .env.selfhost
+```
+
+## 4) Deploy
+
+```bash
+pnpm deploy:selfhost --yes
+```
+
+This provisions the D1 database, KV namespaces, and R2 bucket, applies the database migrations, deploys the Worker, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
+
+## 5) Validate setup
+
+1. Open the Worker URL printed at the end of the deploy.
 2. Sign in with Cloudflare Access.
 3. OpenSEO should load after login.
 
-If login fails, re-check the three secrets and Access toggle.
+If login fails, re-check `ACCESS_ALLOWED_EMAILS` and redeploy.
 
 ## Connect the MCP server through Cloudflare Access
 
@@ -74,16 +87,17 @@ https://YOUR_WORKER_HOSTNAME/mcp
 
 ## Give teammates access to OpenSEO
 
-1. Open Cloudflare Zero Trust.
-2. Go to Access -> Applications.
-3. Open your OpenSEO application.
-4. Edit the `Allow` policy.
-5. Add teammate emails (or your company email domain / group).
-6. Save.
+Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Everyone allowed through shares one OpenSEO workspace.
 
-After saving, teammates can open your OpenSEO URL and sign in through Cloudflare Access. OpenSEO will use a shared workspace for everyone allowed by the policy.
+## Updating to the latest OpenSEO version
 
-## Advanced guides on GitHub
+```bash
+git pull        # or: git fetch upstream && git merge upstream/main, if you forked
+pnpm install
+pnpm deploy:selfhost --yes
+```
 
-- [Manual deploy with Wrangler](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_MANUAL.md): create the Cloudflare resources yourself and deploy with the CLI.
-- [Operations](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): update to the latest OpenSEO version and manage telemetry.
+## More guides on GitHub
+
+- [Operations](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): telemetry and other day-to-day tasks.
+- [Legacy deployments](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.

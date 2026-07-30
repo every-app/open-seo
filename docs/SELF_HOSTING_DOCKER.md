@@ -17,12 +17,15 @@ The default `compose.yaml` uses the published GHCR image:
 
 ```bash
 cp .env.example .env
+```
+
+Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md), then start OpenSEO:
+
+```bash
 docker compose up -d
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
-
-Docker Compose reads `.env` and forwards the keys listed under `environment:` in `compose.yaml` into the container, and `compose.yaml` enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings during local self-hosting. Setting a key in `.env` that `compose.yaml` does not list has no effect — add it there as well.
+Open `http://localhost:<PORT>` (default `3001`). Each container start builds the app and may take 1-2 minutes; follow progress with `docker compose logs -f`.
 
 Optional env values:
 
@@ -42,7 +45,7 @@ You can also persist it in `.env`.
 
 ## Telemetry
 
-OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
 
 To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
 
@@ -84,11 +87,9 @@ docker compose pull && docker compose up -d
 docker compose down
 ```
 
-- Stop and remove volumes:
+## Health and troubleshooting
 
-```bash
-docker compose down -v
-```
+Startup checks appear in `docker compose logs` before the build. Once running, `/api/health` reports configuration and database status, and `docker compose ps` reports container health.
 
 ## Troubleshooting environment variables
 

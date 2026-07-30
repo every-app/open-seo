@@ -6,6 +6,7 @@ import {
   getAuditLighthouseIssues,
 } from "@/serverFunctions/lighthouse";
 import { downloadFile } from "@/client/lib/download";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { CategoryTab, ExportPayload, LighthouseIssue } from "./types";
 import { categoryLabel, issuesToCsv, issuesToTable } from "./utils";
@@ -69,10 +70,10 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
     allIssues: issuesQuery.data?.issues ?? [],
   });
 
-  const issuesErrorMessage =
-    issuesQuery.error instanceof Error
-      ? issuesQuery.error.message
-      : "Failed to load Lighthouse issues.";
+  const issuesErrorMessage = getStandardErrorMessage(
+    issuesQuery.error,
+    "Failed to load Lighthouse issues.",
+  );
   const showsLegacyPayloadNotice =
     issuesQuery.data != null && !issuesQuery.data.hasIssueDetails;
   const emptyMessage = showsLegacyPayloadNotice

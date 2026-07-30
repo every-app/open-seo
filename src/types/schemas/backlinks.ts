@@ -136,7 +136,7 @@ export const topPagesSortFieldSchema = z.enum([
 /** Single source for each tab's default sort, shared by the request-schema
  * defaults and the client's header indicators / query fallbacks. */
 export const BACKLINKS_DEFAULT_SORT = {
-  backlinks: { field: "rank", order: "desc" },
+  backlinks: { field: "firstSeen", order: "desc" },
   domains: { field: "backlinks", order: "desc" },
   pages: { field: "backlinks", order: "desc" },
 } as const satisfies Record<

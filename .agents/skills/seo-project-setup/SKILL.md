@@ -134,6 +134,7 @@ Ask for or discover:
 
 After intake, recommend one next OpenSEO workflow:
 
+- `seo-audit`: when the site already exists and the user wants to know what to fix or do first, especially if they are new to SEO
 - `keyword-research`: when the user needs ideas from seed topics
 - `keyword-clustering`: when they have keywords or GSC data to map to pages
 - `competitive-landscape`: when the market is unclear

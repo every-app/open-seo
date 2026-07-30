@@ -63,9 +63,7 @@ DATABASE_PROVIDER=postgres
 ```
 
 The connection string comes from the `HYPERDRIVE` binding. The `hyperdrive`
-block in `wrangler.jsonc` ships commented out (an active block makes the
-"Deploy to Cloudflare" button demand a Postgres connection string), so
-uncomment it first. Miniflare then resolves the binding to its
+block in `wrangler.jsonc` ships commented out, so uncomment it first. Miniflare then resolves the binding to its
 `localConnectionString`, which already points at the Docker container from
 step 1. (In deployed Workers the same binding resolves to real Hyperdrive —
 the app never connects to Postgres except through this binding.) If your local

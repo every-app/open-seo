@@ -22,6 +22,8 @@ Configure `.env.local`:
 
    `printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64`
 
+3. Set `AUTH_MODE=local_noauth` for normal local development.
+
 Run locally:
 
 ```sh
@@ -67,7 +69,6 @@ backend for installs that outgrow D1 — see
 - `AUTH_MODE=local_noauth`: local trusted mode, no auth check, injects `admin@localhost`.
 - `AUTH_MODE=hosted`: Better Auth-backed email/password mode. Requires Better Auth schema generation plus `BETTER_AUTH_SECRET` and `BETTER_AUTH_URL`.
 
-Local scripts (`pnpm dev` and `pnpm dev:agents`) set `AUTH_MODE=local_noauth` automatically.
-Use `AUTH_MODE=cloudflare_access pnpm dev` when you specifically want to test Access validation locally.
+Dev scripts do not set `AUTH_MODE`, so you can test another mode by changing it in `.env.local`.
 
 For Cloudflare deployments, ensure Cloudflare Access is enabled on your Worker route/domain and provide `TEAM_DOMAIN` + `POLICY_AUD` in environment variables.
