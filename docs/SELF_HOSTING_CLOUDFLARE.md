@@ -50,6 +50,11 @@ Copy the template and fill in the required values:
 cp .env.selfhost.example .env.selfhost
 ```
 
+Optional rank-tracking cost controls (also work as Worker variables):
+
+- `RANK_CHECK_MANUAL_METHOD` — set to `queued` to route manual rank checks ("Check now") through DataForSEO's standard task queue (~30% of the live endpoint's cost). Results then arrive within ~5-15 minutes instead of seconds. Scheduled checks always use the queue.
+- `RANK_CHECK_QUEUE_LIVE_FALLBACK` — set to `off` to never re-check queued stragglers via the live endpoint. The run then polls the queue for ~2 hours instead of ~15 minutes; keywords still missing afterwards are reported as unchecked rather than billed at live prices.
+
 ## 4) Deploy
 
 ```bash

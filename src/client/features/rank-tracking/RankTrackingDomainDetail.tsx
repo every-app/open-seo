@@ -344,6 +344,7 @@ export function RankTrackingDomainDetail({
           keywordCount={pendingCheck.count}
           devices={config.devices}
           serpDepth={config.serpDepth}
+          method={costEstimate?.method}
           isPending={isPending}
           onRunNow={() =>
             startCheck({

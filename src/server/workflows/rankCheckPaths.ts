@@ -50,6 +50,12 @@ interface CheckContext {
   languageCode: string;
   locationName?: string;
   runId: string;
+  /**
+   * Whether queued stragglers may be re-checked via the live endpoint. When
+   * false, the queue is polled for ~2 hours instead and anything still
+   * missing stays unchecked (never billed at live prices).
+   */
+  queueLiveFallback: boolean;
 }
 
 /** Expand keywords into one task input per keyword/device pair. */
@@ -161,6 +167,19 @@ const QUEUED_POLL_INTERVALS = [
   "2 minutes",
   "2 minutes",
   "3 minutes",
+] as const;
+
+// With the live fallback disabled there is no safety net after the polling
+// window, so keep polling far longer — cumulative waits continue at
+// 30 / 45 / 60 / 75 / 105 / 135 minutes — before giving up on stragglers.
+const QUEUED_POLL_INTERVALS_NO_FALLBACK = [
+  ...QUEUED_POLL_INTERVALS,
+  "15 minutes",
+  "15 minutes",
+  "15 minutes",
+  "15 minutes",
+  "30 minutes",
+  "30 minutes",
 ] as const;
 
 /** Concurrent task_get requests within a collect step. */
@@ -327,16 +346,20 @@ export async function runQueuedCheck(
     fallbackChecked: 0,
   };
 
-  // Poll until everything is collected or the ~15 minute window closes. A
-  // collect failure (past its retries) leaves that round's tasks pending for
-  // the next round — or the live fallback — instead of failing the run; the
-  // posted tasks are already paid for.
+  // Poll until everything is collected or the polling window closes (~15
+  // minutes normally, ~2 hours when the live fallback is disabled). A collect
+  // failure (past its retries) leaves that round's tasks pending for the next
+  // round — or the live fallback — instead of failing the run; the posted
+  // tasks are already paid for.
+  const pollIntervals = ctx.queueLiveFallback
+    ? QUEUED_POLL_INTERVALS
+    : QUEUED_POLL_INTERVALS_NO_FALLBACK;
   for (
     let round = 0;
-    round < QUEUED_POLL_INTERVALS.length && pending.length > 0;
+    round < pollIntervals.length && pending.length > 0;
     round++
   ) {
-    await step.sleep(`wait-${round}`, QUEUED_POLL_INTERVALS[round]);
+    await step.sleep(`wait-${round}`, pollIntervals[round]);
 
     // Cap task_gets per round so one collect step stays well inside the
     // per-invocation subrequest limit at the 1000-keyword config ceiling.
@@ -369,6 +392,15 @@ export async function runQueuedCheck(
   const stragglers: RankCheckTaskInput[] = [...fallback, ...pending];
   stats.fallbackTasks = stragglers.length;
   if (stragglers.length === 0) return stats;
+
+  if (!ctx.queueLiveFallback) {
+    // RANK_CHECK_QUEUE_LIVE_FALLBACK=off: never bill live prices. Finalize
+    // reports the stragglers as "could not be checked" instead.
+    console.log(
+      `[rank-check] ${ctx.runId} live fallback disabled, leaving ${stragglers.length} task(s) unchecked`,
+    );
+    return stats;
+  }
 
   console.log(
     `[rank-check] ${ctx.runId} live fallback for ${stragglers.length} task(s)`,

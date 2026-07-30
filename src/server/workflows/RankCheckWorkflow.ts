@@ -13,6 +13,10 @@ import {
   runQueuedCheck,
   type QueuedCheckStats,
 } from "@/server/workflows/rankCheckPaths";
+import {
+  resolveQueueLiveFallback,
+  resolveRankCheckMethod,
+} from "@/server/workflows/rankCheckMethod";
 import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -80,15 +84,21 @@ async function prepareRankCheckKeywords(input: {
     throw new AppError("INTERNAL_ERROR", "No keywords to track");
   }
 
+  // Resolved inside this durable step so the live/queued decision and the
+  // fallback policy survive workflow replays even if the env toggles change
+  // mid-run.
+  const method = await resolveRankCheckMethod(input.trigger);
+  const queueLiveFallback = await resolveQueueLiveFallback();
+
   // Verify the user has enough credits for the full check before starting.
-  // Scheduled checks go through the cheaper task queue, so estimate at queued
+  // Queued checks go through the cheaper task queue, so estimate at queued
   // pricing — a live-price estimate would skip checks the user can afford.
   if (await isHostedServerAuthMode()) {
     const { costCredits } = estimateRankCheckCredits(
       trackingKeywords.length,
       input.devices,
       input.serpDepth,
-      input.trigger === "scheduled" ? "queued" : "live",
+      method,
     );
     const [monthlyCheck, topupCheck] = await Promise.all([
       autumn.check({
@@ -120,6 +130,8 @@ async function prepareRankCheckKeywords(input: {
       id: kw.id,
       keyword: kw.keyword,
     })),
+    method,
+    queueLiveFallback,
   };
 }
 
@@ -336,10 +348,13 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           languageCode,
           locationName,
           runId,
+          queueLiveFallback: prepareResult.queueLiveFallback,
         };
-        // Scheduled checks use DataForSEO's task queue (~30% of live cost);
-        // manual checks stay on the live endpoint for instant results.
-        if (trigger === "scheduled") {
+        // Queued checks use DataForSEO's task queue (~30% of live cost).
+        // Scheduled runs always take it; manual runs stay on the live
+        // endpoint for instant results unless RANK_CHECK_MANUAL_METHOD=queued
+        // opts them into the queue too.
+        if (prepareResult.method === "queued") {
           queueStats = await runQueuedCheck(step, checkContext);
         } else {
           await runLiveCheck(step, checkContext);

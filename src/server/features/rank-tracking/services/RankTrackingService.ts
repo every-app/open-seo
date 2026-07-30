@@ -14,6 +14,7 @@ import {
   beginRankCheckRun,
   reconcileActiveRankCheckRun,
 } from "./rankCheckRunGuards";
+import { resolveRankCheckMethod } from "@/server/workflows/rankCheckMethod";
 import {
   estimateRankCheckCredits,
   computeNextCheckAt,
@@ -332,18 +333,22 @@ async function estimateCost(configId: string, projectId: string) {
   const config = await getValidatedConfig(configId, projectId);
   const keywordCount =
     await RankTrackingRepository.getKeywordCountForConfig(configId);
-  // Estimates the cost of a manual "check now", which always runs live.
+  // Estimates the cost of a manual "check now". That runs live by default,
+  // but RANK_CHECK_MANUAL_METHOD=queued routes it through the cheaper task
+  // queue — the estimate (and the confirm dialog fed by it) must match.
+  const method = await resolveRankCheckMethod("manual");
   const { costUsd, costCredits } = estimateRankCheckCredits(
     keywordCount,
     config.devices,
     config.serpDepth,
-    "live",
+    method,
   );
   return {
     costUsd,
     costCredits,
     keywordCount,
     devicesCount: devicesCount(config.devices),
+    method,
   };
 }
 
