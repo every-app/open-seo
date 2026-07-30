@@ -31,6 +31,10 @@ function RankTrackingConfigRoute() {
     void queryClient.invalidateQueries({
       queryKey: ["rankTrackingConfigSummaries", projectId],
     });
+    // Depth/device edits change the per-check price shown in the header.
+    void queryClient.invalidateQueries({
+      queryKey: ["rankTrackingCostEstimate", projectId],
+    });
   };
 
   const handleBack = () => {

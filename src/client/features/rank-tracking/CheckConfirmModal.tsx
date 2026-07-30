@@ -6,12 +6,14 @@ import {
   devicesCount,
   KEYWORDS_PER_BATCH,
   SECONDS_PER_BATCH,
+  type RankCheckMethod,
 } from "@/shared/rank-tracking";
 
 export function CheckConfirmModal({
   keywordCount,
   devices,
   serpDepth,
+  method = "live",
   isPending,
   onRunNow,
   onCancel,
@@ -19,6 +21,8 @@ export function CheckConfirmModal({
   keywordCount: number;
   devices: RankTrackingConfig["devices"];
   serpDepth: number;
+  /** Live by default; "queued" when RANK_CHECK_MANUAL_METHOD routes manual checks through the task queue. */
+  method?: RankCheckMethod;
   isPending: boolean;
   onRunNow: () => void;
   onCancel: () => void;
@@ -27,12 +31,18 @@ export function CheckConfirmModal({
     keywordCount,
     devices,
     serpDepth,
-    "live",
+    method,
   );
   const dc = devicesCount(devices);
   const totalChecks = keywordCount * dc;
   const liveTime =
     Math.ceil(totalChecks / KEYWORDS_PER_BATCH) * SECONDS_PER_BATCH;
+  const timeLabel =
+    method === "queued"
+      ? "~5-15 min"
+      : liveTime < 60
+        ? `~${liveTime}s`
+        : `~${Math.ceil(liveTime / 60)} min`;
 
   return (
     <Modal
@@ -62,8 +72,8 @@ export function CheckConfirmModal({
         <div className="flex-1">
           <p className="font-medium">Run Now</p>
           <p className="text-xs text-base-content/60">
-            Results in ~
-            {liveTime < 60 ? `${liveTime}s` : `${Math.ceil(liveTime / 60)} min`}
+            Results in {timeLabel}
+            {method === "queued" && " (task queue)"}
           </p>
         </div>
         <div className="text-right">
