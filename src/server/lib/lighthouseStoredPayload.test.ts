@@ -187,6 +187,80 @@ describe("lighthouse stored payload classification", () => {
     expect(issues.issues[0]?.severity).toBe("critical");
   });
 
+  it("lifts the offending element out of an accessibility node blob", () => {
+    const issues = buildStoredLighthouseIssues({
+      audits: {
+        "label-content-name-mismatch": {
+          title: "Visible text labels do not match accessible names.",
+          score: 0,
+          scoreDisplayMode: "binary",
+          details: {
+            items: [
+              {
+                node: {
+                  type: "node",
+                  nodeLabel: "MCP on npm",
+                  snippet: '<a href="https://npmjs.com/p" aria-label="…">',
+                  selector: "div.mx-auto > a.hover",
+                  explanation: "Text inside the element is not in the name",
+                  path: "1,HTML,1,BODY,4,FOOTER",
+                  lhId: "1-0-A",
+                  boundingRect: { height: 20, width: 84, top: 5585 },
+                },
+              },
+            ],
+          },
+        },
+      },
+      categories: {
+        performance: { auditRefs: [] },
+        accessibility: {
+          auditRefs: [{ id: "label-content-name-mismatch", weight: 7 }],
+        },
+        "best-practices": { auditRefs: [] },
+        seo: { auditRefs: [] },
+      },
+    });
+
+    const evidence = issues.issues[0]?.items[0] ?? "";
+    expect(JSON.parse(evidence)).toEqual({
+      nodeLabel: "MCP on npm",
+      snippet: '<a href="https://npmjs.com/p" aria-label="…">',
+      selector: "div.mx-auto > a.hover",
+      explanation: "Text inside the element is not in the name",
+    });
+    // The parts nobody can act on stay out.
+    expect(evidence).not.toContain("boundingRect");
+    expect(evidence).not.toContain("lhId");
+  });
+
+  it("truncates an evidence value too long to be a hint", () => {
+    const issues = buildStoredLighthouseIssues({
+      audits: {
+        "label-content-name-mismatch": {
+          title: "Visible text labels do not match accessible names.",
+          score: 0,
+          scoreDisplayMode: "binary",
+          details: {
+            items: [{ node: { explanation: "x".repeat(500) } }],
+          },
+        },
+      },
+      categories: {
+        performance: { auditRefs: [] },
+        accessibility: {
+          auditRefs: [{ id: "label-content-name-mismatch", weight: 7 }],
+        },
+        "best-practices": { auditRefs: [] },
+        seo: { auditRefs: [] },
+      },
+    });
+
+    const evidence = issues.issues[0]?.items[0] ?? "";
+    expect(evidence).toContain(`${"x".repeat(200)}…`);
+    expect(evidence).not.toContain("x".repeat(201));
+  });
+
   it("keeps the exact parse error for robots.txt", () => {
     const issues = buildStoredLighthouseIssues({
       audits: {
