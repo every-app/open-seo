@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
+import { GBP_OAUTH_PROVIDER_ID, GBP_OAUTH_SCOPES } from "@/shared/gbp";
 
 export function createBaseAuthConfig() {
   return {
@@ -44,6 +45,17 @@ export function createBaseAuthConfig() {
               "https://accounts.google.com/.well-known/openid-configuration",
             scopes: [...GSC_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
+            prompt: "select_account consent",
+            pkce: true,
+          },
+          {
+            providerId: GBP_OAUTH_PROVIDER_ID,
+            clientId: env.GOOGLE_CLIENT_ID?.trim() ?? "",
+            clientSecret: env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
+            discoveryUrl:
+              "https://accounts.google.com/.well-known/openid-configuration",
+            scopes: [...GBP_OAUTH_SCOPES],
+            accessType: "offline",
             prompt: "select_account consent",
             pkce: true,
           },
