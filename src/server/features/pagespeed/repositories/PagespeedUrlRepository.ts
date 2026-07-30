@@ -55,16 +55,23 @@ async function deleteByIdForProject(
 }
 
 /**
- * Every monitored URL due for a scheduled run, across all projects. A null
- * `nextRunAt` means the URL predates the sweep or was just added, and is due
- * immediately. Ordered by due time so the oldest-waiting URLs go first if a
- * tick can only get through part of the backlog.
+ * Every monitored URL due for a scheduled run, across all projects. Paused
+ * URLs are excluded here rather than skipped later, so a paused URL costs
+ * nothing per tick. A null `nextRunAt` means the URL predates the sweep or was
+ * just added, and is due immediately. Ordered by due time so the
+ * oldest-waiting URLs go first if a tick only gets through part of the
+ * backlog.
  */
 async function listDueForSweep(nowIso: string): Promise<PsiUrl[]> {
   return db
     .select()
     .from(psiUrls)
-    .where(or(isNull(psiUrls.nextRunAt), lte(psiUrls.nextRunAt, nowIso)))
+    .where(
+      and(
+        eq(psiUrls.scheduleEnabled, true),
+        or(isNull(psiUrls.nextRunAt), lte(psiUrls.nextRunAt, nowIso)),
+      ),
+    )
     .orderBy(asc(psiUrls.nextRunAt));
 }
 
@@ -72,6 +79,18 @@ async function listDueForSweep(nowIso: string): Promise<PsiUrl[]> {
  *  failing URL cannot leave it permanently due and retrying every tick. */
 async function updateNextRunAt(id: string, nextRunAt: string): Promise<void> {
   await db.update(psiUrls).set({ nextRunAt }).where(eq(psiUrls.id, id));
+}
+
+/** Pause or resume automatic runs for one URL. */
+async function setScheduleEnabled(
+  id: string,
+  projectId: string,
+  enabled: boolean,
+): Promise<void> {
+  await db
+    .update(psiUrls)
+    .set({ scheduleEnabled: enabled })
+    .where(and(eq(psiUrls.id, id), eq(psiUrls.projectId, projectId)));
 }
 
 async function countByProjectId(projectId: string): Promise<number> {
@@ -90,4 +109,5 @@ export const PagespeedUrlRepository = {
   countByProjectId,
   listDueForSweep,
   updateNextRunAt,
+  setScheduleEnabled,
 };

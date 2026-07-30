@@ -102,12 +102,14 @@ const urls = [
     id: "u1",
     url: "https://example.com/",
     isHomepage: true,
+    scheduleEnabled: true,
     nextRunAt: "2026-07-31T10:00:00.000Z",
   },
   {
     id: "u2",
     url: "https://example.com/pricing",
     isHomepage: false,
+    scheduleEnabled: false,
     nextRunAt: null,
   },
 ];
@@ -307,6 +309,8 @@ describe("get_pagespeed_insights", () => {
     expect(text).toContain("trigger");
     expect(text).toContain("scheduled");
     expect(text).toContain("2026-07-31T10:00:00.000Z");
+    // A paused URL must be visibly paused, not silently absent.
+    expect(text).toContain("paused");
   });
 
   it("is annotated read-only and closed-world", async () => {

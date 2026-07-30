@@ -16,6 +16,7 @@ import {
   getPagespeedOverview,
   removePagespeedUrl,
   runPagespeedForUrl,
+  setPagespeedUrlSchedule,
 } from "@/serverFunctions/pagespeed";
 import {
   latestByUrl,
@@ -105,6 +106,18 @@ export function PagespeedPage({ projectId }: { projectId: string }) {
       removePagespeedUrl({ data: { projectId, urlId } }),
     onSuccess: () => {
       toast.success("URL removed");
+      void invalidate();
+    },
+    onError: (error) => toast.error(getStandardErrorMessage(error)),
+  });
+
+  const scheduleMutation = useMutation({
+    mutationFn: (vars: { urlId: string; enabled: boolean }) =>
+      setPagespeedUrlSchedule({ data: { projectId, ...vars } }),
+    onSuccess: (result) => {
+      toast.success(
+        result.enabled ? "Daily runs resumed" : "Daily runs paused",
+      );
       void invalidate();
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
@@ -223,6 +236,9 @@ export function PagespeedPage({ projectId }: { projectId: string }) {
               onSelect={setSelectedUrlId}
               onRun={(urlId) => void runUrl(urlId)}
               onRemove={(urlId) => removeMutation.mutate(urlId)}
+              onToggleSchedule={(urlId, enabled) =>
+                scheduleMutation.mutate({ urlId, enabled })
+              }
             />
           </section>
 

@@ -32,6 +32,9 @@ export const psiUrls = pgTable(
     url: text("url").notNull(),
     // True for the row auto-seeded from projects.domain.
     isHomepage: boolean("is_homepage").notNull().default(false),
+    // Whether the daily sweep runs this URL. The URL stays monitored and
+    // keeps its history when paused; only automatic runs stop.
+    scheduleEnabled: boolean("schedule_enabled").notNull().default(true),
     createdByUserId: text("created_by_user_id").notNull(),
     // When the daily sweep should next run this URL. Null means "never run by
     // the sweep yet", which the due query treats as due immediately.

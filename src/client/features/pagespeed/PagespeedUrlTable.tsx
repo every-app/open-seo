@@ -5,7 +5,12 @@ import type {
   SnapshotWithPrevious,
 } from "@/shared/pagespeed";
 
-export type PsiUrlRow = { id: string; url: string; isHomepage: boolean };
+export type PsiUrlRow = {
+  id: string;
+  url: string;
+  isHomepage: boolean;
+  scheduleEnabled: boolean;
+};
 
 /** Monitored URLs with their latest scores, each row runnable on its own. */
 export function PagespeedUrlTable({
@@ -16,6 +21,7 @@ export function PagespeedUrlTable({
   onSelect,
   onRun,
   onRemove,
+  onToggleSchedule,
 }: {
   urls: PsiUrlRow[];
   latest: Map<string, SnapshotWithPrevious>;
@@ -24,6 +30,7 @@ export function PagespeedUrlTable({
   onSelect: (urlId: string) => void;
   onRun: (urlId: string) => void;
   onRemove: (urlId: string) => void;
+  onToggleSchedule: (urlId: string, enabled: boolean) => void;
 }) {
   if (urls.length === 0) {
     return (
@@ -44,6 +51,7 @@ export function PagespeedUrlTable({
             <th>Best pr.</th>
             <th>SEO</th>
             <th>Field CWV</th>
+            <th>Daily</th>
             <th />
           </tr>
         </thead>
@@ -96,6 +104,23 @@ export function PagespeedUrlTable({
                 </td>
                 <td>
                   <FieldVerdict snapshot={snapshot} />
+                </td>
+                <td>
+                  <input
+                    type="checkbox"
+                    className="toggle toggle-sm"
+                    checked={url.scheduleEnabled}
+                    aria-label={`Run ${url.url} daily`}
+                    title={
+                      url.scheduleEnabled
+                        ? "Runs automatically once a day"
+                        : "Paused — only runs when you click Run"
+                    }
+                    onClick={(event) => event.stopPropagation()}
+                    onChange={(event) =>
+                      onToggleSchedule(url.id, event.target.checked)
+                    }
+                  />
                 </td>
                 <td className="whitespace-nowrap text-right">
                   <button

@@ -36,8 +36,10 @@ const PAGESPEED_STRATEGIES: readonly PagespeedStrategy[] = [
   "desktop",
 ];
 
-/** Bounds quota use and how long a "run all" takes. */
-export const MAX_URLS_PER_PROJECT = 10;
+/** Bounds quota use and how long a "run all" takes. At 2 API calls per URL
+ *  per run, a full project sweeps in 40 calls a day — comfortably inside the
+ *  25k/day key quota. */
+export const MAX_URLS_PER_PROJECT = 20;
 
 /** How much history the overview loads — the page's charts read from this,
  *  so it must cover every monitored URL, not just the selected one. */
@@ -168,6 +170,33 @@ async function removeUrl(input: {
   await PagespeedUrlRepository.deleteByIdForProject(
     input.urlId,
     input.projectId,
+  );
+}
+
+/**
+ * Pause or resume the daily sweep for one URL. Paused URLs stay monitored and
+ * keep their history — only automatic runs stop, and "Run" still works. This is
+ * the per-URL control over a shared daily API quota.
+ */
+async function setUrlSchedule(input: {
+  projectId: string;
+  urlId: string;
+  enabled: boolean;
+}): Promise<void> {
+  const target = await PagespeedUrlRepository.getByIdForProject(
+    input.urlId,
+    input.projectId,
+  );
+  if (!target) {
+    throw new AppError(
+      "NOT_FOUND",
+      "That URL is not monitored by this project",
+    );
+  }
+  await PagespeedUrlRepository.setScheduleEnabled(
+    input.urlId,
+    input.projectId,
+    input.enabled,
   );
 }
 
@@ -367,6 +396,7 @@ export const PagespeedService = {
   addUrl,
   removeUrl,
   runForUrl,
+  setUrlSchedule,
   getSnapshotIssues,
   getLatestIssues,
 };

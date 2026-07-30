@@ -43,6 +43,7 @@ type PagespeedRow = {
   runAt: string;
   trigger: string;
   nextRun: string | null;
+  dailyRun: string;
   error: string | null;
 };
 
@@ -62,6 +63,7 @@ const COLUMNS: McpTableColumn<PagespeedRow>[] = [
   { header: "run at", value: (row) => row.runAt },
   { header: "trigger", value: (row) => row.trigger },
   { header: "next run", value: (row) => row.nextRun ?? "—" },
+  { header: "daily", value: (row) => row.dailyRun },
 ];
 
 function buildRow(
@@ -71,6 +73,7 @@ function buildRow(
     previous: PagespeedSnapshotLike | null;
   },
   nextRunAt: string | null,
+  scheduleEnabled: boolean,
 ): PagespeedRow {
   const { snapshot, previous } = entry;
   const fieldVerdict = snapshot.fieldOverallCategory
@@ -106,6 +109,7 @@ function buildRow(
     runAt: snapshot.createdAt,
     trigger: snapshot.trigger ?? "manual",
     nextRun: nextRunAt,
+    dailyRun: scheduleEnabled ? "on" : "paused",
     error: snapshot.errorMessage,
   };
 }
@@ -143,7 +147,7 @@ export const getPagespeedInsightsTool = {
   config: {
     title: "Get PageSpeed Insights results",
     description:
-      "Read stored Google PageSpeed Insights results for the project's monitored URLs: Lighthouse scores (performance, accessibility, best practices, SEO) with the change since the previous run, lab metrics (LCP, CLS, TBT), and — the part that matters for ranking — CrUX field data from real Chrome users (LCP, INP, CLS and a FAST/AVERAGE/SLOW verdict). Pass history>1 to get several past runs per URL instead of just the latest, for trends. Each row says whether that run was triggered manually or by the daily sweep, and when the URL is next due. Field values marked '(origin)' are origin-wide because Google had no data for that specific URL; 'no field data' means the page has too little traffic. For the specific Lighthouse problems behind a score, use get_pagespeed_issues. Returns stored results only and never triggers a new run, so it uses no PageSpeed quota. Read-only; uses no credits.",
+      "Read stored Google PageSpeed Insights results for the project's monitored URLs: Lighthouse scores (performance, accessibility, best practices, SEO) with the change since the previous run, lab metrics (LCP, CLS, TBT), and — the part that matters for ranking — CrUX field data from real Chrome users (LCP, INP, CLS and a FAST/AVERAGE/SLOW verdict). Pass history>1 to get several past runs per URL instead of just the latest, for trends. Each row says whether that run was triggered manually or by the daily sweep, whether the URL is on the daily schedule at all (paused URLs only run on request), and when it is next due. Field values marked '(origin)' are origin-wide because Google had no data for that specific URL; 'no field data' means the page has too little traffic. For the specific Lighthouse problems behind a score, use get_pagespeed_issues. Returns stored results only and never triggers a new run, so it uses no PageSpeed quota. Read-only; uses no credits.",
     inputSchema: pagespeedInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -218,7 +222,9 @@ export const getPagespeedInsightsTool = {
     const rows = urls.flatMap((url) =>
       (history.get(url.id) ?? [])
         .slice(0, args.history)
-        .map((entry) => buildRow(url.url, entry, url.nextRunAt)),
+        .map((entry) =>
+          buildRow(url.url, entry, url.nextRunAt, url.scheduleEnabled),
+        ),
     );
 
     const urlsWithResults = urls.filter(

@@ -78,8 +78,10 @@ INTERACTION_TO_NEXT_PAINT | CUMULATIVE_LAYOUT_SHIFT_SCORE].percentile` plus
   seeded lazily as an ordinary row (flagged `isHomepage`) the first time the
   overview loads with an empty list and a non-null `projects.domain`. An
   ordinary row rather than an implicit virtual entry keeps every query, chart,
-  and foreign key uniform. Capped at 10 URLs per project to bound quota use
-  and "run all" duration.
+  and foreign key uniform. Capped at 20 URLs per project to bound quota use and "run all"
+  duration — at 2 calls per URL per run that is 40 calls a day, well inside
+  the 25k/day key quota. Each URL has a `scheduleEnabled` toggle: a paused URL
+  stays monitored and keeps its history, but only runs on request.
 - **`psi_snapshots`** — one row per URL × strategy × run, holding the four
   category scores, six lab metrics, and the three field metrics plus their
   verdict and source. History is the point: two runs of the same URL make a
