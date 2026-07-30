@@ -19,6 +19,9 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: AI features (SAM, onboarding chat). Without this the setup
+      # gate in the app asks for the key, but nothing here would forward it.
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
