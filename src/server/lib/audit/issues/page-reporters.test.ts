@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { describe, expect, it } from "vitest";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
 import {
@@ -46,6 +47,7 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
     images: [],
     links: [HEALTHY_LINK],
     hasStructuredData: false,
+    structuredData: null,
     hreflangTags: [],
     isIndexable: true,
     responseTimeMs: 200,
@@ -199,6 +201,117 @@ describe("runPageReporters", () => {
     expect(issueTypes(makePage({ links: [HEALTHY_LINK] }))).not.toContain(
       "no-outgoing-links",
     );
+  });
+
+  it("raises nothing for a page with no structured data", () => {
+    const types = issueTypes(makePage({ structuredData: null }));
+    expect(types).not.toContain("invalid-structured-data");
+    expect(types).not.toContain("incomplete-rich-result");
+  });
+
+  it("raises nothing for structured data that validates cleanly", () => {
+    const types = issueTypes(
+      makePage({
+        hasStructuredData: true,
+        structuredData: {
+          blockCount: 1,
+          types: ["Article"],
+          errorCount: 0,
+          warningCount: 2,
+          errorMessages: [],
+          ineligibleFeatures: [],
+        },
+      }),
+    );
+    expect(types).not.toContain("invalid-structured-data");
+    expect(types).not.toContain("incomplete-rich-result");
+  });
+
+  it("reports broken markup with the messages that explain it", () => {
+    const issues = runPageReporters(
+      makePage({
+        hasStructuredData: true,
+        structuredData: {
+          blockCount: 2,
+          types: ["Recipe"],
+          errorCount: 2,
+          warningCount: 1,
+          errorMessages: [
+            "Not valid JSON, so nothing in this block is read by anything",
+            '/datePublished: "datePublished" must be an ISO 8601 date',
+          ],
+          ineligibleFeatures: [],
+        },
+      }),
+    );
+    const issue = issues.find((i) => i.issueType === "invalid-structured-data");
+    expect(issue?.details).toMatchObject({
+      errorCount: 2,
+      warningCount: 1,
+      types: ["Recipe"],
+    });
+    expect(issue?.details?.messages).toHaveLength(2);
+  });
+
+  it("reports one incomplete-rich-result issue per feature", () => {
+    const issues = runPageReporters(
+      makePage({
+        hasStructuredData: true,
+        structuredData: {
+          blockCount: 1,
+          types: ["Recipe", "VideoObject"],
+          errorCount: 0,
+          warningCount: 0,
+          errorMessages: [],
+          ineligibleFeatures: [
+            {
+              feature: "Recipe",
+              missing: ["image"],
+              docsUrl: "https://example.com/recipe",
+            },
+            {
+              feature: "Video",
+              missing: ["thumbnailUrl", "uploadDate"],
+              docsUrl: "https://example.com/video",
+            },
+          ],
+        },
+      }),
+    );
+    const incomplete = issues.filter(
+      (i) => i.issueType === "incomplete-rich-result",
+    );
+    expect(incomplete).toHaveLength(2);
+    // Distinct dedupe keys keep both rows through a step retry.
+    expect(incomplete.map((i) => i.dedupeKey)).toEqual(["Recipe", "Video"]);
+    expect(incomplete[0]?.details).toMatchObject({
+      feature: "Recipe",
+      missing: ["image"],
+    });
+  });
+
+  it("keeps broken markup and rich-result gaps as separate issues", () => {
+    const types = issueTypes(
+      makePage({
+        hasStructuredData: true,
+        structuredData: {
+          blockCount: 1,
+          types: ["Recipe"],
+          errorCount: 1,
+          warningCount: 0,
+          errorMessages: ['"Recipie" is not a Schema.org type'],
+          ineligibleFeatures: [
+            {
+              feature: "Recipe",
+              missing: ["image"],
+              docsUrl: "https://example.com/recipe",
+            },
+          ],
+        },
+      }),
+    );
+    expect(types).toContain("invalid-structured-data");
+    expect(types).toContain("incomplete-rich-result");
   });
 });
 

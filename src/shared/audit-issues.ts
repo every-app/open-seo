@@ -232,6 +232,22 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Add links from higher-level pages (hubs, category pages, navigation) to flatten the path to this page.",
   },
+  "invalid-structured-data": {
+    severity: "warning",
+    title: "Invalid structured data",
+    explanation:
+      "The page's JSON-LD is broken: unparseable JSON, a type or property that does not exist in Schema.org, or a value in the wrong format. Broken markup is silently ignored — the page still works, but the structured data does nothing. This is our own reading of the markup as served; Search Console's URL Inspection reports Google's verdict on the version it crawled.",
+    howToFix:
+      "Fix the specific errors listed on the issue. Then confirm with Search Console's URL Inspection, whose rich-results verdict is the authoritative one.",
+  },
+  "incomplete-rich-result": {
+    severity: "info",
+    title: "Structured data misses a rich result's required properties",
+    explanation:
+      "The markup is valid Schema.org but does not carry everything Google documents as required for this rich result, so the page is unlikely to be eligible for it. Nothing here is broken — this is an opportunity that is not fully taken.",
+    howToFix:
+      "Add the missing properties listed on the issue, following the linked Google documentation for that feature.",
+  },
 } as const satisfies Record<string, AuditIssueDescriptor>;
 
 export type AuditIssueType = keyof typeof AUDIT_ISSUE_TYPES;

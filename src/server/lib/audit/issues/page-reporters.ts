@@ -150,5 +150,33 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
     report("deep-page", { crawlDepth: page.crawlDepth });
   }
 
+  // Structured data. A page with no JSON-LD raises nothing: markup is optional,
+  // and "you could add schema" is advice, not an issue found on the page.
+  const structuredData = page.structuredData;
+  if (structuredData) {
+    if (structuredData.errorCount > 0) {
+      report("invalid-structured-data", {
+        errorCount: structuredData.errorCount,
+        warningCount: structuredData.warningCount,
+        types: structuredData.types,
+        messages: structuredData.errorMessages,
+      });
+    }
+    for (const feature of structuredData.ineligibleFeatures) {
+      issues.push({
+        issueType: "incomplete-rich-result",
+        pageId: page.id,
+        pageUrl: page.url,
+        details: {
+          feature: feature.feature,
+          missing: feature.missing,
+          docsUrl: feature.docsUrl,
+        },
+        // One issue per feature on the same page.
+        dedupeKey: feature.feature,
+      });
+    }
+  }
+
   return issues;
 }
