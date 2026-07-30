@@ -258,14 +258,19 @@ async function removeKeywordsFromConfig(
   keywordIds: string[],
   configId: string,
 ) {
-  await db
-    .delete(rankTrackingKeywords)
-    .where(
-      and(
-        inArray(rankTrackingKeywords.id, keywordIds),
-        eq(rankTrackingKeywords.configId, configId),
+  // Batched one-per-id: a single `inArray(id, keywordIds)` delete binds one
+  // parameter per keyword and breaks D1's ~100-bound-params limit when many
+  // keywords are selected at once.
+  await executeInBatches(keywordIds, (tx, id) =>
+    tx
+      .delete(rankTrackingKeywords)
+      .where(
+        and(
+          eq(rankTrackingKeywords.id, id),
+          eq(rankTrackingKeywords.configId, configId),
+        ),
       ),
-    );
+  );
 }
 
 async function getConfigSummaries(projectId: string) {
