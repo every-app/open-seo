@@ -15,6 +15,7 @@
     "lint:fix": "oxlint . --type-aware --fix",
     "preview": "npm run build && vite preview --port 3001",
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy",
+    "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && npm run build && pnpm alchemy deploy --env-file .env.selfhost --stage selfhost",
     "deploy:postgres": "npm run db:migrate:pg && npm run build && pnpm alchemy deploy --env-file .env.production --stage hosted-prod --adopt",
     "deploy:preview": "vite build --mode preview && pnpm alchemy deploy --env-file .env.preview",
     "preview:access": "pnpm alchemy deploy alchemy.preview-access.run.ts --env-file .env.preview --stage preview-access --adopt",
@@ -117,6 +118,7 @@
   "devDependencies": {
     "@cloudflare/vite-plugin": "^1.42.3",
     "@cloudflare/workers-types": "^4.20260611.1",
+    "@distilled.cloud/cloudflare": "0.28.2",
     "@effect/platform-node": "4.0.0-beta.93",
     "@libsql/client": "^0.15.15",
     "@playwright/test": "^1.59.1",
@@ -129,6 +131,7 @@
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.6.0",
     "alchemy": "2.0.0-beta.61",
+    "chalk": "^5.6.2",
     "drizzle-kit": "^0.31.10",
     "effect": "4.0.0-beta.93",
     "knip": "^5.88.1",

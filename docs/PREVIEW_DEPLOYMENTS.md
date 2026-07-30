@@ -197,7 +197,13 @@ The first Alchemy prod deploy adopts live resources. Before running it:
 
 ## Self-hosting on Cloudflare
 
-Self-hosters deploy through wrangler (`wrangler.jsonc`) — see
-docs/SELF_HOSTING_CLOUDFLARE.md. An alchemy-based self-host path (fresh
-stage-suffixed resources plus a derived Cloudflare Access application) is a
-planned fast-follow on top of this stack.
+Self-hosters deploy the same stack under the fixed `selfhost` stage (via
+`pnpm deploy:selfhost` — no stage to pass) with their own env file: Alchemy
+provisions fresh D1/KV/R2/workflows by name (D1 is the database — no
+Postgres/Hyperdrive), plus the Cloudflare Access application
+gating the worker (`AUTH_MODE=cloudflare_access` +
+`ACCESS_ALLOWED_EMAILS`; `resolveSelfHostAccess` in alchemy.run.ts derives
+`TEAM_DOMAIN`/`POLICY_AUD`, or accepts them explicitly for a hand-managed
+application). The preview Access wildcard and PR workflow are
+OpenSEO-specific and not required. The walkthrough lives in
+docs/SELF_HOSTING_CLOUDFLARE.md.
