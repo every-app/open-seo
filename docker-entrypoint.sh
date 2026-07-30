@@ -1,9 +1,9 @@
 #!/bin/sh
 # Self-host container entrypoint.
 #
-# vite build inlines runtime-chosen client envs (AUTH_MODE, DATABASE_PROVIDER,
-# VITE_*) into the client bundle, so the build has to run at container start
-# rather than image-build time. But re-running it on *every* start — restarts,
+# vite build inlines runtime-chosen client envs (the envPrefix list in
+# vite.config.ts) into the client bundle, so the build has to run at container
+# start rather than image-build time. But re-running it on *every* start — restarts,
 # host reboots, Watchtower cycles — costs ~90s of downtime and a CPU spike for
 # no benefit when nothing that affects the bundle changed.
 #
@@ -23,11 +23,18 @@ pnpm exec tsx scripts/selfhost-preflight.ts
 pnpm run db:migrate:local
 
 FP_FILE="dist/.openseo-build-env"
-# Only the envs vite inlines into the client bundle affect build output.
+# Only the envs vite inlines into the client bundle affect build output. This
+# list must match envPrefix in vite.config.ts.
 BASE_ENV="AUTH_MODE=${AUTH_MODE:-}
-DATABASE_PROVIDER=${DATABASE_PROVIDER:-}"
+BYPASS_EMAIL_VERIFICATION=${BYPASS_EMAIL_VERIFICATION:-}
+POSTHOG_PUBLIC_KEY=${POSTHOG_PUBLIC_KEY:-}
+POSTHOG_HOST=${POSTHOG_HOST:-}
+TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}"
 VITE_ENV="$(env | grep '^VITE_' | sort || true)"
 FINGERPRINT="$(printf '%s\n%s\n' "$BASE_ENV" "$VITE_ENV" | sha256sum | cut -d' ' -f1)"
+# An empty fingerprint (e.g. sha256sum missing) would make every start "match"
+# and silently serve stale builds — fail loudly instead.
+test -n "$FINGERPRINT"
 
 if [ -d dist ] && [ -f "$FP_FILE" ] && [ "$(cat "$FP_FILE")" = "$FINGERPRINT" ]; then
   echo "Reusing existing build (build-relevant env unchanged)."
