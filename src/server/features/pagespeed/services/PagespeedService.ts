@@ -323,7 +323,7 @@ async function getSnapshotIssues(input: {
 }
 
 /** One monitored URL's latest run, with its stored issues if any were kept. */
-export type LatestIssuesForUrl = {
+type LatestIssuesForUrl = {
   url: string;
   snapshotId: string;
   runAt: string;
