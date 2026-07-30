@@ -118,12 +118,43 @@ const DIAGNOSTIC_AUDIT_KEYS = new Set([
   "resource-summary",
 ]);
 
-function compactItem(item: Record<string, unknown>): string {
+/** Longest a single evidence value is worth carrying. Lighthouse explanations
+ *  and DOM snippets run to paragraphs; past this they stop being a hint. */
+const MAX_VALUE_CHARS = 200;
+
+/**
+ * Accessibility audits report `{node: {…}, subItems: {…}}`, so the fields worth
+ * showing — snippet, selector, explanation — sit a level below where flat key
+ * matching can see them, and the positional fallback grabs the whole DOM node
+ * blob instead. Lift `node` up so those fields are reachable. Top-level keys
+ * still win, so nothing that already matched changes.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function liftNode(item: Record<string, unknown>): Record<string, unknown> {
+  const node = item["node"];
+  return isRecord(node) ? { ...node, ...item } : item;
+}
+
+function truncate(value: unknown): unknown {
+  if (typeof value !== "string" || value.length <= MAX_VALUE_CHARS) {
+    return value;
+  }
+  return `${value.slice(0, MAX_VALUE_CHARS)}…`;
+}
+
+function compactItem(rawItem: Record<string, unknown>): string {
+  const item = liftNode(rawItem);
   const preferredKeys = [
     "url",
     "source",
     "nodeLabel",
     "snippet",
+    // Accessibility audits: which element, and Lighthouse's own reason.
+    "selector",
+    "explanation",
     // `robots-txt` reports each parse failure as {index, line, message}; without
     // these the exact offending line only survived by falling through to the
     // positional fallback below.
@@ -139,13 +170,13 @@ function compactItem(item: Record<string, unknown>): string {
   const output: Record<string, unknown> = {};
   for (const key of preferredKeys) {
     if (item[key] != null) {
-      output[key] = item[key];
+      output[key] = truncate(item[key]);
     }
   }
 
   if (Object.keys(output).length === 0) {
     for (const [key, value] of Object.entries(item).slice(0, 6)) {
-      output[key] = value;
+      output[key] = truncate(value);
     }
   }
 
