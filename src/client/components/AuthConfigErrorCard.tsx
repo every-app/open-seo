@@ -1,7 +1,8 @@
 import { ShieldAlert } from "lucide-react";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
-const README_CLOUDFLARE_ACCESS_URL =
-  "https://github.com/every-app/open-seo#cloudflare-deployment--access-setup";
+const CLOUDFLARE_SETUP_GUIDE_URL =
+  "https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE.md#2-configure-authentication-and-secrets";
 
 type AuthConfigErrorCardProps = {
   message: string;
@@ -12,6 +13,8 @@ export function AuthConfigErrorCard({
   message,
   onRetry,
 }: AuthConfigErrorCardProps) {
+  const isHostedMode = isHostedClientAuthMode();
+
   return (
     <div className="card w-full max-w-2xl bg-base-100 border border-base-300 shadow-xl">
       <div className="card-body gap-4">
@@ -24,14 +27,21 @@ export function AuthConfigErrorCard({
           <span>{message}</span>
         </div>
 
-        <p className="text-sm text-base-content/70">
-          Check the auth environment variables for your selected
-          <code className="mx-1">AUTH_MODE</code>. Cloudflare Access requires
-          <code className="mx-1">TEAM_DOMAIN</code> and
-          <code className="mx-1">POLICY_AUD</code>. Hosted mode requires
-          <code className="mx-1">BETTER_AUTH_SECRET</code> and
-          <code className="ml-1">BETTER_AUTH_URL</code>.
-        </p>
+        {isHostedMode ? (
+          <p className="text-sm text-base-content/70">
+            Hosted mode requires{" "}
+            <code className="mx-1">BETTER_AUTH_SECRET</code>
+            (32+ characters), <code className="mx-1">BETTER_AUTH_URL</code>, and
+            Google OAuth credentials on the deployment.
+          </p>
+        ) : (
+          <p className="text-sm text-base-content/70">
+            Cloudflare Access mode requires
+            <code className="mx-1">TEAM_DOMAIN</code> (a full https URL) and
+            <code className="mx-1">POLICY_AUD</code> set on the deployment, with
+            an Access application protecting this hostname.
+          </p>
+        )}
 
         <div className="card-actions justify-end">
           {onRetry ? (
@@ -41,7 +51,7 @@ export function AuthConfigErrorCard({
           ) : null}
           <a
             className="btn btn-primary btn-sm"
-            href={README_CLOUDFLARE_ACCESS_URL}
+            href={CLOUDFLARE_SETUP_GUIDE_URL}
             target="_blank"
             rel="noreferrer"
           >

@@ -22,16 +22,31 @@ If deploy fails with `Cannot provision a KV Namespace with the title "open-seo" 
 
 ## 2) Configure authentication and secrets
 
-In the Cloudflare dashboard:
+### Create the Access application
 
-1. Go to `Compute` -> `Workers & Pages` -> your OpenSEO Worker.
-2. Open `Settings`.
-3. In `Domains & Routes`, enable `Cloudflare Access` for the `workers.dev` route.
-4. Save the values shown by Cloudflare Access.
-5. In `Variables & Secrets`, add:
-   - `POLICY_AUD` (from Access setup)
-   - `TEAM_DOMAIN` (domain from `JWKS_URL`, for example `https://your-team.cloudflareaccess.com`)
-   - `DATAFORSEO_API_KEY` (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md) for how to get one)
+1. In the main Cloudflare dashboard, go to `Compute` -> `Workers & Pages` -> your OpenSEO Worker -> `Settings` -> `Domains & Routes`. Copy the `workers.dev` hostname. It looks like `open-seo.<your-subdomain>.workers.dev`.
+2. Open [Cloudflare Zero Trust](https://one.dash.cloudflare.com/).
+3. Go to `Access controls` -> `Applications` -> `Create new application` -> `Self-hosted and private`.
+4. Name the application `OpenSEO`.
+5. Under `Destinations` -> `Public hostnames`, click `Switch to custom input` and paste the exact `workers.dev` hostname from step 1. Enter only the hostname, without `https://` or a path.
+6. Under `Access policies`, click `Create new policy` and configure:
+   - `Policy name`: `Allow OpenSEO users`
+   - `Action`: `Allow`
+   - `Include` selector: `Emails`
+   - Value: your Cloudflare account email
+7. Do not choose `Everyone`; it allows anyone to reach the application.
+8. Leave the other policy settings at their defaults, save the policy, then save the application.
+
+### Collect the values
+
+- `POLICY_AUD`: in `Access controls` -> `Applications`, select `Configure` on your application, then copy the `Application Audience (AUD) Tag` from `Additional settings`.
+- `TEAM_DOMAIN`: `https://<team-name>.cloudflareaccess.com`. Your team name is shown in Zero Trust `Settings`. Include the `https://` prefix.
+- `DATAFORSEO_API_KEY`: follow [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md).
+
+### Set them on the Worker
+
+1. Go to `Compute` -> `Workers & Pages` -> your OpenSEO Worker -> `Settings` -> `Variables & Secrets`.
+2. Add `TEAM_DOMAIN`, `POLICY_AUD`, and `DATAFORSEO_API_KEY`.
 
 ## 3) Optional: add an R2 lifecycle rule
 
@@ -51,7 +66,11 @@ Without a lifecycle rule, cached objects under `dataforseo-cache/` will accumula
 2. Sign in with Cloudflare Access.
 3. OpenSEO should load after login.
 
-If login fails, re-check the three secrets and Access toggle.
+If it doesn't, see Troubleshooting below.
+
+## Troubleshooting
+
+`https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status. For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`.
 
 ## Next steps
 

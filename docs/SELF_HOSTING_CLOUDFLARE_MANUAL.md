@@ -87,22 +87,13 @@ pnpm run deploy
 
 ## 6) Configure authentication and secrets
 
-In the Cloudflare dashboard:
-
-1. Go to `Compute` -> `Workers & Pages` -> your OpenSEO Worker.
-2. Open `Settings`.
-3. In `Domains & Routes`, enable `Cloudflare Access` for the `workers.dev` route.
-4. Save the values shown by Cloudflare Access.
-
-Then set the same values as Worker secrets with Wrangler:
+Follow [Configure authentication and secrets](./SELF_HOSTING_CLOUDFLARE.md#2-configure-authentication-and-secrets), then set the values with Wrangler:
 
 ```bash
 pnpm exec wrangler secret put TEAM_DOMAIN
 pnpm exec wrangler secret put POLICY_AUD
 pnpm exec wrangler secret put DATAFORSEO_API_KEY
 ```
-
-Use the domain from `JWKS_URL` for `TEAM_DOMAIN`, for example `https://your-team.cloudflareaccess.com`. Use the Access application audience value for `POLICY_AUD`. See [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md) for how to get a DataForSEO key.
 
 ## 7) Optional: add an R2 lifecycle rule
 
@@ -118,7 +109,7 @@ pnpm exec wrangler r2 bucket lifecycle add open-seo-YOUR_SUFFIX dataforseo-cache
 2. Sign in with Cloudflare Access.
 3. OpenSEO should load after login.
 
-If login fails, re-check the three secrets, the Access toggle, and the binding values in `wrangler.jsonc`.
+If login fails, check `/api/health`, the Worker logs, and the binding values in `wrangler.jsonc`.
 
 ## Next steps
 
