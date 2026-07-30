@@ -27,7 +27,7 @@ import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 async function resolveAuditLimitTier(
   organizationId: string,
 ): Promise<AuditLimitTier> {
-  if (!(await isHostedServerAuthMode())) return "paid";
+  if (!(await isHostedServerAuthMode())) return "self_hosted";
   const [hasManagedAccess, hasPaidPlan] = await Promise.all([
     customerHasManagedAccess(organizationId),
     customerHasPaidPlan(organizationId),

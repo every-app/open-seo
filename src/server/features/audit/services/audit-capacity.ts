@@ -6,13 +6,24 @@ import {
   PAID_MAX_AUDIT_PAGES,
 } from "@/shared/audit-limits";
 
-export type AuditLimitTier = "free" | "paid";
+export type AuditLimitTier = "free" | "paid" | "self_hosted";
 
 // The crawler runs on our Workers compute and isn't credit-metered, so these
 // per-tier bounds are the abuse control: free accounts cost nothing to create,
 // so they get one small audit at a time and a modest total budget. Paid gets
 // bounds sized for real sites rather than abuse (a payment method on file is
-// the deterrent). Self-hosted deployments resolve to the paid tier.
+// the deterrent).
+//
+// `maxCapacityUnits` is cumulative, not concurrent: getAuditUsageForUser sums
+// pagesTotal + lighthouseTotal over every audit row the user has ever started,
+// with no status filter and no time window. That's the intended shape for a
+// hosted abuse bound, but on a self-hosted deploy it's a lifetime budget on the
+// operator's own compute — ~10 full-size audits before AUDIT_CAPACITY_REACHED,
+// with deleting old audits as the only reset. Self-hosted therefore gets its
+// own tier with the bound lifted, matching how every other hosted-only gate
+// (credits, plan checks, DataForSEO metering) already skips self-hosted.
+// maxPagesPerAudit stays at the paid value: that one is a real technical
+// ceiling (Workflow step budget, D1 row writes), not a plan limit.
 export const AUDIT_LIMITS: Record<
   AuditLimitTier,
   {
@@ -29,6 +40,11 @@ export const AUDIT_LIMITS: Record<
   paid: {
     maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
     maxCapacityUnits: 100_000,
+    maxRunningAudits: Number.POSITIVE_INFINITY,
+  },
+  self_hosted: {
+    maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
+    maxCapacityUnits: Number.POSITIVE_INFINITY,
     maxRunningAudits: Number.POSITIVE_INFINITY,
   },
 };
