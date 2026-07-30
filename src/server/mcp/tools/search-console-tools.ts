@@ -376,7 +376,7 @@ export const inspectUrlsTool = {
   config: {
     title: "Inspect URLs in Google Search Console",
     description:
-      "Run Google Search Console's URL Inspection on up to 10 URLs of the connected property: index/coverage state, last crawl time, Google-selected vs declared canonical, and rich-results verdicts with Google's own per-item issue messages. Use it to answer 'is this page indexed? why not?' and 'what does Google think is wrong with my structured data?'. Reflects Google's last crawl, not the page as it is right now — for unpublished or uncrawled markup use validate_structured_data. Per-URL failures are reported inline. Read-only; uses no credits.",
+      "Run Google Search Console's URL Inspection on up to 10 URLs of the connected property: index/coverage state, last crawl time, Google-selected vs declared canonical, and rich-results verdicts with Google's own per-item issue messages. Use it to answer 'is this page indexed? why not?' and 'what does Google think is wrong with my structured data?'. Reflects Google's last crawl, not the page as it is right now — for unpublished or uncrawled markup use validate_structured_data. This is URL-by-URL and is not a property-wide indexation picture: Search Console's API does not expose the aggregate Page Indexing report, Crawl Stats, manual actions, or security issues, so clean verdicts here are not evidence the property as a whole is healthy — check those four in the Search Console UI. Per-URL failures are reported inline. Read-only; uses no credits.",
     inputSchema: inspectInputSchema,
     outputSchema: {
       ok: z.boolean(),
