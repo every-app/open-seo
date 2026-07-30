@@ -127,6 +127,28 @@ describe("inspect_bing_urls", () => {
     expect(text).toContain("error: Bing API error (500)");
   });
 
+  it("reports an errored URL even when the message is empty", async () => {
+    // An Error with no message makes `error` falsy, which used to fall through
+    // to the crawl-evidence branch and describe a failed lookup as a URL Bing
+    // had never discovered.
+    mocks.inspectUrls.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      results: [{ url: "https://example.com/boom", error: "" }],
+    });
+    const { inspectBingUrlsTool } = await import("./bing-inspect-tools");
+
+    const result = await inspectBingUrlsTool.handler(
+      { projectId: "project_1", urls: ["https://example.com/boom"] },
+      toolExtra,
+    );
+
+    const first = result.content[0];
+    const text = first.type === "text" ? first.text : "";
+    expect(text).toContain("error:");
+    expect(text).not.toContain("unknown to Bing");
+    expect(text).not.toContain("last crawled");
+  });
+
   it("returns the connect message for a not-connected project", async () => {
     mocks.inspectUrls.mockRejectedValue(new BingNotConnectedError("p1"));
     const { inspectBingUrlsTool } = await import("./bing-inspect-tools");

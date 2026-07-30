@@ -66,7 +66,7 @@ type PagespeedResult = {
 
 /** One run: the snapshot columns plus the compacted payload bound for R2.
  *  `payloadJson` is null when the response carried no lighthouseResult. */
-export type PagespeedRun = {
+type PagespeedRun = {
   result: PagespeedResult;
   payloadJson: string | null;
 };

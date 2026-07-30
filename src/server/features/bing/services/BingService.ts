@@ -285,7 +285,12 @@ async function inspectUrls(input: {
         if (isExpectedGrantFailure(error)) throw error;
         return {
           url,
-          error: error instanceof Error ? error.message : String(error),
+          // Never an empty string: an Error carrying no message would otherwise
+          // report as a URL with no problem at all.
+          error:
+            error instanceof Error && error.message
+              ? error.message
+              : "Bing did not return URL info for this URL.",
         };
       }
     }),

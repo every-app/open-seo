@@ -239,18 +239,18 @@ describe("BingService.getCrawlStats", () => {
   });
 });
 
-describe("BingService.inspectUrls", () => {
-  const urlInfo = (url: string) => ({
-    url,
-    known: true,
-    discoveredAt: "2026-04-25T07:00:00.000Z",
-    lastCrawledAt: "2026-07-29T09:13:45.000Z",
-    documentSize: 1000,
-    isPage: true,
-    anchorCount: 0,
-    totalChildUrlCount: 0,
-  });
+const urlInfo = (url: string) => ({
+  url,
+  known: true,
+  discoveredAt: "2026-04-25T07:00:00.000Z",
+  lastCrawledAt: "2026-07-29T09:13:45.000Z",
+  documentSize: 1000,
+  isPage: true,
+  anchorCount: 0,
+  totalChildUrlCount: 0,
+});
 
+describe("BingService.inspectUrls", () => {
   beforeEach(() => {
     mocks.getByProjectId.mockReset();
     mocks.getUrlInfo.mockReset();
@@ -287,13 +287,26 @@ describe("BingService.inspectUrls", () => {
       url: "https://x.example/a",
       known: true,
     });
-    expect(results[1]).toMatchObject({
-      url: "https://x.example/boom",
-      error: expect.stringContaining("500"),
-    });
+    expect(results[1]).toMatchObject({ url: "https://x.example/boom" });
+    expect(results[1].error).toContain("500");
     expect(mocks.getUrlInfo).toHaveBeenCalledWith(
       "https://x.example/",
       "https://x.example/a",
     );
+  });
+
+  it("never reports a per-URL failure with an empty message", async () => {
+    // An empty `error` reads as "no error" to every consumer downstream.
+    mocks.getByProjectId.mockResolvedValue(oauthConnection);
+    mocks.getUrlInfo.mockRejectedValue(new Error(""));
+    const { BingService } = await import("./BingService");
+
+    const { results } = await BingService.inspectUrls({
+      projectId: "p1",
+      urls: ["https://x.example/boom"],
+    });
+
+    expect(results[0]).toMatchObject({ url: "https://x.example/boom" });
+    expect(results[0].error).toBeTruthy();
   });
 });

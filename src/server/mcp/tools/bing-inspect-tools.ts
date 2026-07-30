@@ -81,7 +81,12 @@ export const inspectBingUrlsTool = {
       });
 
       const lines = results.map((r) => {
-        if (r.error) return `  ${r.url} — error: ${r.error}`;
+        // `!== undefined`, not truthiness: the failure arm's `error` is a
+        // string, so an empty message is falsy and would fall through to the
+        // crawl-evidence branch — reporting a URL that errored as one Bing has
+        // never discovered. It also leaves the union un-narrowed, which is why
+        // `r.known` below does not typecheck under a truthiness test.
+        if (r.error !== undefined) return `  ${r.url} — error: ${r.error}`;
         if (!r.known) return `  ${r.url} — unknown to Bing (never discovered)`;
         const crawled = isoDay(r.lastCrawledAt);
         return `  ${r.url} — discovered ${isoDay(r.discoveredAt)}, last crawled ${crawled ?? "never"}`;
