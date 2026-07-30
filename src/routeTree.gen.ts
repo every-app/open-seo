@@ -38,6 +38,7 @@ import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as ApiBingOauthCallbackRouteImport } from './routes/api/bing/oauth/callback'
 import { Route as ProjectPProjectIdTrafficRouteImport } from './routes/_project/p/$projectId/traffic'
+import { Route as ProjectPProjectIdStructuredDataRouteImport } from './routes/_project/p/$projectId/structured-data'
 import { Route as ProjectPProjectIdSettingsRouteImport } from './routes/_project/p/$projectId/settings'
 import { Route as ProjectPProjectIdSearchPerformanceRouteImport } from './routes/_project/p/$projectId/search-performance'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
@@ -202,6 +203,12 @@ const ProjectPProjectIdTrafficRoute =
     path: '/traffic',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdStructuredDataRoute =
+  ProjectPProjectIdStructuredDataRouteImport.update({
+    id: '/structured-data',
+    path: '/structured-data',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdSettingsRoute =
   ProjectPProjectIdSettingsRouteImport.update({
     id: '/settings',
@@ -335,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/p/$projectId/structured-data': typeof ProjectPProjectIdStructuredDataRoute
   '/p/$projectId/traffic': typeof ProjectPProjectIdTrafficRoute
   '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
@@ -376,6 +384,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/p/$projectId/structured-data': typeof ProjectPProjectIdStructuredDataRoute
   '/p/$projectId/traffic': typeof ProjectPProjectIdTrafficRoute
   '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
@@ -425,6 +434,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/_project/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/_project/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/_project/p/$projectId/structured-data': typeof ProjectPProjectIdStructuredDataRoute
   '/_project/p/$projectId/traffic': typeof ProjectPProjectIdTrafficRoute
   '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
@@ -471,6 +481,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
+    | '/p/$projectId/structured-data'
     | '/p/$projectId/traffic'
     | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
+    | '/p/$projectId/structured-data'
     | '/p/$projectId/traffic'
     | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
@@ -560,6 +572,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/saved'
     | '/_project/p/$projectId/search-performance'
     | '/_project/p/$projectId/settings'
+    | '/_project/p/$projectId/structured-data'
     | '/_project/p/$projectId/traffic'
     | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
@@ -790,6 +803,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdTrafficRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/structured-data': {
+      id: '/_project/p/$projectId/structured-data'
+      path: '/structured-data'
+      fullPath: '/p/$projectId/structured-data'
+      preLoaderRoute: typeof ProjectPProjectIdStructuredDataRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/settings': {
       id: '/_project/p/$projectId/settings'
       path: '/settings'
@@ -987,6 +1007,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdSavedRoute: typeof ProjectPProjectIdSavedRoute
   ProjectPProjectIdSearchPerformanceRoute: typeof ProjectPProjectIdSearchPerformanceRoute
   ProjectPProjectIdSettingsRoute: typeof ProjectPProjectIdSettingsRoute
+  ProjectPProjectIdStructuredDataRoute: typeof ProjectPProjectIdStructuredDataRoute
   ProjectPProjectIdTrafficRoute: typeof ProjectPProjectIdTrafficRoute
   ProjectPProjectIdIndexRoute: typeof ProjectPProjectIdIndexRoute
 }
@@ -1008,6 +1029,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdSearchPerformanceRoute:
       ProjectPProjectIdSearchPerformanceRoute,
     ProjectPProjectIdSettingsRoute: ProjectPProjectIdSettingsRoute,
+    ProjectPProjectIdStructuredDataRoute: ProjectPProjectIdStructuredDataRoute,
     ProjectPProjectIdTrafficRoute: ProjectPProjectIdTrafficRoute,
     ProjectPProjectIdIndexRoute: ProjectPProjectIdIndexRoute,
   }

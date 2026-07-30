@@ -2,6 +2,7 @@ import {
   Activity,
   Bookmark,
   Bot,
+  Braces,
   ClipboardCheck,
   Gauge,
   Globe,
@@ -76,6 +77,11 @@ const projectNavItems = [
     icon: ClipboardCheck,
   },
   {
+    to: "/p/$projectId/structured-data" as const,
+    label: "Structured Data",
+    icon: Braces,
+  },
+  {
     to: "/p/$projectId/brand-lookup" as const,
     label: "Brand Lookup",
     icon: Sparkles,
@@ -141,6 +147,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
+        byPath("/p/$projectId/structured-data"),
       ],
     },
   ];

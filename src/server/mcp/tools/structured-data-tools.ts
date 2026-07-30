@@ -7,17 +7,29 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { readPageHtml } from "@/server/lib/scrape";
-import { RICH_RESULT_RULES } from "@/server/lib/structured-data/google-rules";
 import {
-  validateHtml,
-  validateMarkup,
-} from "@/server/lib/structured-data/validate";
+  StructuredDataService,
+  type StructuredDataFailureReason,
+} from "@/server/features/structured-data/services/StructuredDataService";
+import { RICH_RESULT_RULES } from "@/server/lib/structured-data/google-rules";
 import type { ValidationResult } from "@/server/lib/structured-data/types";
 
 /** Findings named in the text summary before it trails off. The full list is
  *  always in structuredContent. */
 const SUMMARY_FINDINGS = 25;
+
+/** One message per failure mode the service can report. */
+const FAILURE_TEXT: Record<
+  StructuredDataFailureReason,
+  (source?: string) => string
+> = {
+  no_input: () =>
+    "Pass either `markup` (JSON-LD or HTML to validate) or `url` (a page to fetch and validate).",
+  ambiguous_input: () =>
+    "Pass `markup` or `url`, not both — validating a snippet and a live page are different questions.",
+  fetch_failed: (source) =>
+    `Could not read ${source ?? "that URL"}. It may be unreachable, blocking crawlers, oversized, or not a public address.`,
+};
 
 const COVERED_FEATURES = RICH_RESULT_RULES.map((rule) => rule.feature).join(
   ", ",
@@ -145,44 +157,24 @@ export const validateStructuredDataTool = {
       `/p/${args.projectId}`,
     );
 
-    if (!args.markup && !args.url) {
+    const validation = await StructuredDataService.validate({
+      markup: args.markup,
+      url: args.url,
+    });
+
+    if (!validation.ok) {
       return mcpResponse({
-        text: "Pass either `markup` (JSON-LD or HTML to validate) or `url` (a page to fetch and validate).",
+        text: FAILURE_TEXT[validation.reason](validation.source),
         meta,
-        structuredContent: { ok: false, reason: "no_input" },
+        structuredContent: {
+          ok: false,
+          reason: validation.reason,
+          ...(validation.source ? { source: validation.source } : {}),
+        },
       });
     }
-    if (args.markup && args.url) {
-      return mcpResponse({
-        text: "Pass `markup` or `url`, not both — validating a snippet and a live page are different questions.",
-        meta,
-        structuredContent: { ok: false, reason: "ambiguous_input" },
-      });
-    }
 
-    let result: ValidationResult;
-    let source: string;
-
-    if (args.url) {
-      const html = await readPageHtml(args.url);
-      if (html === null) {
-        return mcpResponse({
-          text: `Could not read ${args.url}. It may be unreachable, blocking crawlers, oversized, or not a public address.`,
-          meta,
-          structuredContent: {
-            ok: false,
-            reason: "fetch_failed",
-            source: args.url,
-          },
-        });
-      }
-      result = await validateHtml(html);
-      source = args.url;
-    } else {
-      result = await validateMarkup(args.markup ?? "");
-      source = "supplied markup";
-    }
-
+    const { result, source } = validation;
     return mcpResponse({
       text: summarize(result, source),
       meta,
