@@ -88,6 +88,19 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
 
+## What Search Console's API cannot tell you
+
+Search Console's API is narrower than the Search Console interface, and the gap matters most where you are likely to want it least — diagnosing indexation. Four reports have no API at all:
+
+- **Page Indexing** — the aggregate breakdown of which pages are indexed and why the rest are not
+- **Crawl Stats** — request volume, response codes, and crawl budget over time
+- **Manual actions**
+- **Security issues**
+
+OpenSEO reads what Google exposes: Search Analytics performance, and URL Inspection one URL at a time, ten per call. That answers "is this page indexed, and what does Google think of it?" It does not answer "how many of my pages are indexed?", and inspecting a handful of URLs that all come back clean is not evidence the property is healthy — you have sampled, not surveyed.
+
+For those four reports, open Search Console. No tool can proxy them, and any tool claiming to has either guessed or scraped.
+
 ## What to do after setup
 
 Once OpenSEO MCP is connected, [set up OpenSEO Agent Skills](/docs/skills/setup). MCP gives your agent access to OpenSEO data. Skills are separate `SKILL.md` files that tell your agent how to use that data for specific SEO jobs.
