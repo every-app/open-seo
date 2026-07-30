@@ -35,6 +35,22 @@ const COVERED_FEATURES = RICH_RESULT_RULES.map((rule) => rule.feature).join(
   ", ",
 );
 
+/**
+ * Types present in the markup that this validator holds no Google rules for.
+ *
+ * Reported in both the summary and structuredContent, because omission is not
+ * a statement: a caller comparing `types` against `features` sees a type
+ * missing and cannot tell whether Google has no feature for it or whether we
+ * simply have not implemented the check. Several uncovered types
+ * (SoftwareApplication among them) do have Google features.
+ */
+function notCheckedTypes(result: ValidationResult): string[] {
+  const ruled = new Set(
+    result.features.flatMap((feature) => [feature.feature, feature.type]),
+  );
+  return result.types.filter((type) => !ruled.has(type));
+}
+
 function summarize(result: ValidationResult, source: string): string {
   if (result.scriptCount === 0) {
     return `${source}: no JSON-LD found. Nothing to validate — this page has no application/ld+json block.`;
@@ -59,14 +75,7 @@ function summarize(result: ValidationResult, source: string): string {
     lines.push(`${feature.feature} — ${verdict} (${feature.docsUrl})`);
   }
 
-  // Types we found but hold no rules for. "No eligibility rules for X" reads as
-  // a fact about Google — that X has no rich result — when it is a fact about
-  // this validator. Several uncovered types (SoftwareApplication among them) do
-  // have Google features, so name the gap as ours.
-  const ruled = new Set(
-    result.features.flatMap((feature) => [feature.feature, feature.type]),
-  );
-  const unruled = result.types.filter((type) => !ruled.has(type));
+  const unruled = notCheckedTypes(result);
   if (unruled.length > 0) {
     lines.push(
       `not checked — recognised, but Google feature validation is not implemented here: ${unruled.join(", ")}. This is not a pass. Validated features: ${COVERED_FEATURES}`,
@@ -142,6 +151,9 @@ export const validateStructuredDataTool = {
       warningCount: z.number().optional(),
       types: z.array(z.string()).optional(),
       features: z.array(looseObjectOutputSchema).optional(),
+      /** Types recognised but not validated against any Google feature.
+       *  Present so absence from `features` is never read as a pass. */
+      notChecked: z.array(z.string()).optional(),
       findings: z.array(looseObjectOutputSchema).optional(),
       ...optionalMetaOutputSchema,
     },
@@ -190,6 +202,7 @@ export const validateStructuredDataTool = {
         warningCount: result.warningCount,
         types: result.types,
         features: result.features,
+        notChecked: notCheckedTypes(result),
         findings: result.findings,
       },
     });
