@@ -112,7 +112,7 @@ describe("validate_structured_data", () => {
     expect(text).toContain("inspect_urls");
   });
 
-  it("reports types it holds no eligibility rules for", async () => {
+  it("names an unchecked type as this validator's gap, not a pass", async () => {
     const text = toolText(
       await callTool({
         markup: JSON.stringify({
@@ -122,7 +122,10 @@ describe("validate_structured_data", () => {
         }),
       }),
     );
-    expect(text).toContain("no rich-result eligibility rules for: Person");
+    expect(text).toContain(
+      "not checked — recognised, but Google feature validation is not implemented here: Person",
+    );
+    expect(text).toContain("This is not a pass");
   });
 
   it("fetches and validates a live URL", async () => {
