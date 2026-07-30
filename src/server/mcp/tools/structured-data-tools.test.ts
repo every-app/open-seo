@@ -113,19 +113,21 @@ describe("validate_structured_data", () => {
   });
 
   it("names an unchecked type as this validator's gap, not a pass", async () => {
-    const text = toolText(
-      await callTool({
-        markup: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "Person",
-          name: "Jane",
-        }),
+    const result = await callTool({
+      markup: JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "Person",
+        name: "Jane",
       }),
-    );
-    expect(text).toContain(
+    });
+
+    expect(toolText(result)).toContain(
       "not checked — recognised, but Google feature validation is not implemented here: Person",
     );
-    expect(text).toContain("This is not a pass");
+    expect(toolText(result)).toContain("This is not a pass");
+    // Also in structuredContent: a caller diffing `types` against `features`
+    // would otherwise have to read the omission as a pass.
+    expect(result.structuredContent?.notChecked).toEqual(["Person"]);
   });
 
   it("fetches and validates a live URL", async () => {
