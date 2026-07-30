@@ -42,4 +42,21 @@ describe("selectLighthouseSample", () => {
 
     expect(selected[0]).toBe("https://example.com/services");
   });
+
+  it("does not sample another page that shares the start page's URL pattern", () => {
+    const selected = selectLighthouseSample(
+      [
+        { url: "https://example.com/products/123", statusCode: 200 },
+        { url: "https://example.com/products/456", statusCode: 200 },
+        { url: "https://example.com/about", statusCode: 200 },
+      ],
+      "https://example.com/products/123",
+      "auto",
+    );
+
+    expect(selected).toEqual([
+      "https://example.com/products/123",
+      "https://example.com/about",
+    ]);
+  });
 });
