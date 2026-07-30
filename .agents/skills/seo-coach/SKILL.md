@@ -29,6 +29,7 @@ I can coach you through this. Are you new to SEO, or do you mostly want help usi
 
 Good starting points:
 - Set up SEO project context
+- Get a one-page audit of your site
 - Find keyword opportunities
 - Map keywords to pages
 - Study a competitor
@@ -38,6 +39,7 @@ Good starting points:
 ## What each workflow does
 
 - `seo-project-setup`: sets up the workspace, verifies MCP, captures goals and positioning, and connects Google Search Console (or imports GSC exports).
+- `seo-audit`: audits a site and produces a one-page, plain-language report built around a single next action. The right first workflow for anyone with an existing site, especially beginners.
 - `keyword-research`: finds search opportunities from seed topics and evaluates volume, difficulty, CPC, intent, and SERPs.
 - `keyword-clustering`: groups keywords by intent and maps clusters to existing or proposed pages.
 - `competitive-landscape`: identifies who wins across a market and what content/backlink patterns are working.
@@ -93,6 +95,7 @@ When the user asks for execution:
 Offer concise options based on context:
 
 - "Let's set up project context first."
+- "Let's audit your site and find the one thing to do first."
 - "Let's research keywords from your seed topics."
 - "Let's cluster your GSC/query export into page targets."
 - "Let's map the competitive landscape before choosing pages."
