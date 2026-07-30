@@ -5,6 +5,7 @@ import {
   ISSUE_SEVERITY_ORDER,
   type IssueSeverity,
 } from "@/shared/audit-issues";
+import { formatIssueDetails } from "@/client/features/audit/results/issueDetails";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 
 type AuditIssueRow = AuditResultsData["issues"][number];
@@ -227,45 +228,50 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
   );
 }
 
-function parseDetails(detailsJson: string): Array<[string, unknown]> | null {
-  try {
-    const parsed: unknown = JSON.parse(detailsJson);
-    if (
-      typeof parsed === "object" &&
-      parsed !== null &&
-      !Array.isArray(parsed)
-    ) {
-      return Object.entries(parsed);
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 function IssueDetails({ detailsJson }: { detailsJson: string | null }) {
-  const details = useMemo(
-    () => (detailsJson ? parseDetails(detailsJson) : null),
-    [detailsJson],
-  );
+  const details = useMemo(() => formatIssueDetails(detailsJson), [detailsJson]);
 
   if (!details) return null;
 
-  const entries = details.filter(
-    ([, value]) => value !== null && value !== undefined,
-  );
-  if (entries.length === 0) return null;
-
   return (
-    <span className="text-xs text-base-content/50 truncate">
-      {entries
-        .map(([key, value]) => {
-          const rendered = Array.isArray(value)
-            ? value.join(" → ")
-            : String(value);
-          return `${key}: ${rendered}`;
-        })
-        .join(" · ")}
-    </span>
+    <div className="text-xs text-base-content/50 flex flex-col gap-1">
+      {details.inline && (
+        // Still one compact line, and still clipped — but now the title carries
+        // the whole thing for the cases that do overflow.
+        <span className="truncate" title={details.inline}>
+          {details.inline}
+        </span>
+      )}
+      {details.lists.map((list) => (
+        <ul key={list.label} className="flex flex-col gap-0.5">
+          {list.items.map((item, index) => (
+            <li
+              key={`${list.label}-${index}`}
+              className="flex gap-1.5 wrap-break-word"
+            >
+              <span aria-hidden="true" className="text-base-content/30">
+                –
+              </span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      ))}
+      {details.links.map((link) => (
+        // Keeps the `key: value` shape of the inline summary, with the value
+        // clickable — the URL is the useful part, not the field name.
+        <span key={link.label} className="truncate">
+          {link.label}:{" "}
+          <a
+            className="link link-hover text-base-content/60"
+            href={link.href}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {link.href}
+          </a>
+        </span>
+      ))}
+    </div>
   );
 }
