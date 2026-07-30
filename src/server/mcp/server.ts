@@ -4,7 +4,9 @@ import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overv
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
+import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-tracking-keywords";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
+import { removeRankTrackingKeywordsTool } from "@/server/mcp/tools/remove-rank-tracking-keywords";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
 import { createProjectTool } from "@/server/mcp/tools/create-project";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
@@ -143,6 +145,24 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getRankTrackerTool.name,
       getRankTrackerTool.config.outputSchema,
       getRankTrackerTool.handler,
+    ),
+  );
+  server.registerTool(
+    addRankTrackingKeywordsTool.name,
+    addRankTrackingKeywordsTool.config,
+    instrumentMcpToolHandler(
+      addRankTrackingKeywordsTool.name,
+      addRankTrackingKeywordsTool.config.outputSchema,
+      addRankTrackingKeywordsTool.handler,
+    ),
+  );
+  server.registerTool(
+    removeRankTrackingKeywordsTool.name,
+    removeRankTrackingKeywordsTool.config,
+    instrumentMcpToolHandler(
+      removeRankTrackingKeywordsTool.name,
+      removeRankTrackingKeywordsTool.config.outputSchema,
+      removeRankTrackingKeywordsTool.handler,
     ),
   );
   server.registerTool(
