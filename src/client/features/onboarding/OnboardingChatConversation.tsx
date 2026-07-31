@@ -1,13 +1,14 @@
 import { useAgent } from "agents/react";
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useCustomer } from "autumn-js/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ChatMessage,
   messageHasVisibleContent,
   type ResolveToolLabel,
 } from "@/client/components/chat/ChatMessage";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { useStickToBottom } from "@/client/hooks/useStickToBottom";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
 import {
@@ -131,11 +132,10 @@ export function OnboardingChatConversation({
 
   // Pin to the bottom while the user is following along; the strategy doc plus
   // a streaming reply quickly grows past the viewport.
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollRef, onScroll, stickToBottom } = useStickToBottom();
   useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
+    stickToBottom();
+  }, [messages, status, stickToBottom]);
 
   const lastMessage = messages[messages.length - 1];
   const suggestionPool = [
@@ -172,7 +172,11 @@ export function OnboardingChatConversation({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="flex-1 overflow-y-auto px-5 py-6"
+        >
           <div className="mx-auto max-w-2xl space-y-6">
             <WelcomeMessage
               domain={domain}

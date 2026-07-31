@@ -5,6 +5,7 @@ import { useAgentChat } from "@cloudflare/think/react";
 import { useEffect, useRef } from "react";
 import { ChatComposer } from "@/client/features/onboarding/OnboardingChatParts";
 import { invalidateSamSessions } from "@/client/features/sam/samQueries";
+import { useStickToBottom } from "@/client/hooks/useStickToBottom";
 import {
   ChatMessage,
   humanizeToolLabel,
@@ -74,11 +75,10 @@ export function SamConversation({
   }, [isBusy, projectId]);
 
   // Pin to the bottom while the user follows along.
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const { scrollRef, onScroll, stickToBottom } = useStickToBottom();
   useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
+    stickToBottom();
+  }, [messages, status, stickToBottom]);
 
   const lastMessage = messages[messages.length - 1];
   const showTyping =
@@ -101,7 +101,11 @@ export function SamConversation({
           Clear history (dev)
         </button>
       ) : null}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto px-5 py-6"
+      >
         <div className="mx-auto max-w-2xl space-y-6">
           {messages.length === 0 ? (
             <div className="space-y-2 text-sm text-base-content/80">
