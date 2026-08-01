@@ -32,6 +32,7 @@ const plays = [
     title: "Programmatic discovery with Search Console",
     description:
       "Query-mine your own GSC by MCP: striking-distance keywords, zero-click pages, dark queries.",
+    href: "/library/keyword-research/gsc-programmatic-discovery",
   },
   {
     title: "Opportunity sizing & forecasting",

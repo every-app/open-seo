@@ -39,6 +39,7 @@ import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './rout
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
 import { Route as MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport } from './routes/_marketing/library/keyword-research/long-tail-question-mining'
+import { Route as MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport } from './routes/_marketing/library/keyword-research/gsc-programmatic-discovery'
 import { Route as MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport } from './routes/_marketing/library/keyword-research/cluster-topical-hubs'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
@@ -203,6 +204,12 @@ const MarketingLibraryKeywordResearchLongTailQuestionMiningRoute =
     path: '/library/keyword-research/long-tail-question-mining',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute =
+  MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport.update({
+    id: '/library/keyword-research/gsc-programmatic-discovery',
+    path: '/library/keyword-research/gsc-programmatic-discovery',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibraryKeywordResearchClusterTopicalHubsRoute =
   MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport.update({
     id: '/library/keyword-research/cluster-topical-hubs',
@@ -237,6 +244,7 @@ export interface FileRoutesByFullPath {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features/': typeof MarketingFeaturesIndexRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
@@ -269,6 +277,7 @@ export interface FileRoutesByTo {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features': typeof MarketingFeaturesIndexRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
@@ -303,6 +312,7 @@ export interface FileRoutesById {
   '/_marketing/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/_marketing/features/': typeof MarketingFeaturesIndexRoute
   '/_marketing/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/_marketing/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/_marketing/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
@@ -337,6 +347,7 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features/'
     | '/library/keyword-research/cluster-topical-hubs'
+    | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/long-tail-question-mining'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features'
     | '/library/keyword-research/cluster-topical-hubs'
+    | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/long-tail-question-mining'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
@@ -402,6 +414,7 @@ export interface FileRouteTypes {
     | '/_marketing/features/site-audit'
     | '/_marketing/features/'
     | '/_marketing/library/keyword-research/cluster-topical-hubs'
+    | '/_marketing/library/keyword-research/gsc-programmatic-discovery'
     | '/_marketing/library/keyword-research/long-tail-question-mining'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
@@ -635,6 +648,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/keyword-research/gsc-programmatic-discovery': {
+      id: '/_marketing/library/keyword-research/gsc-programmatic-discovery'
+      path: '/library/keyword-research/gsc-programmatic-discovery'
+      fullPath: '/library/keyword-research/gsc-programmatic-discovery'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/cluster-topical-hubs': {
       id: '/_marketing/library/keyword-research/cluster-topical-hubs'
       path: '/library/keyword-research/cluster-topical-hubs'
@@ -661,6 +681,7 @@ interface MarketingRouteChildren {
   MarketingFeaturesSiteAuditRoute: typeof MarketingFeaturesSiteAuditRoute
   MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute: typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
@@ -685,6 +706,8 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingFeaturesIndexRoute: MarketingFeaturesIndexRoute,
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute:
     MarketingLibraryKeywordResearchClusterTopicalHubsRoute,
+  MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute:
+    MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute,
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute:
     MarketingLibraryKeywordResearchLongTailQuestionMiningRoute,
   MarketingLibraryKeywordResearchSearchIntentMappingRoute:
