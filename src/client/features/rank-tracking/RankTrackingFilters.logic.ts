@@ -114,10 +114,12 @@ export function getDomainListFilterOptions(configs: DomainFilterableConfig[]): {
   return { devices, locations };
 }
 
-export function applyFilters(
-  rows: RankTrackingRow[],
+// Generic in the row type so callers that pass a wider row (e.g. rows carrying
+// per-keyword schedule fields) get that same type back instead of RankTrackingRow.
+export function applyFilters<TRow extends RankTrackingRow>(
+  rows: TRow[],
   filters: Filters,
-): RankTrackingRow[] {
+): TRow[] {
   const includeTerms = filters.include
     ? filters.include
         .toLowerCase()

@@ -23,6 +23,14 @@ import {
   MAX_CONFIGS_PER_PROJECT,
 } from "@/shared/rank-tracking";
 import { resolveMarket } from "@/shared/keyword-locations";
+import { getValidatedConfig } from "./rankTrackingConfigAccess";
+import {
+  advanceKeywordSchedulesForScheduledRun,
+  getDueKeywordsForScheduledRun,
+  getKeywordSchedules,
+  isConfigScheduleDue,
+  updateKeywordScheduleOverride,
+} from "./keywordScheduling";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -216,10 +224,6 @@ async function removeKeywords(
   await RankTrackingRepository.removeKeywordsFromConfig(keywordIds, configId);
 }
 
-// ---------------------------------------------------------------------------
-// Trigger a manual check
-// ---------------------------------------------------------------------------
-
 async function triggerCheck(input: {
   configId: string;
   projectId: string;
@@ -351,17 +355,6 @@ async function estimateCost(configId: string, projectId: string) {
 // Helpers
 // ---------------------------------------------------------------------------
 
-async function getValidatedConfig(configId: string, projectId: string) {
-  const config = await RankTrackingRepository.getConfigById({
-    configId,
-    projectId,
-  });
-  if (!config) {
-    throw new AppError("INTERNAL_ERROR", "Rank tracking config not found");
-  }
-  return config;
-}
-
 function normalizeDomain(domain: string): string {
   let d = domain.trim().toLowerCase();
   // Strip protocol
@@ -405,6 +398,11 @@ export const RankTrackingService = {
   updateConfig,
   addKeywords,
   removeKeywords,
+  getKeywordSchedules,
+  updateKeywordScheduleOverride,
+  getDueKeywordsForScheduledRun,
+  isConfigScheduleDue,
+  advanceKeywordSchedulesForScheduledRun,
   triggerCheck,
   getLatestRun,
   estimateCost,

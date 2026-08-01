@@ -1,4 +1,5 @@
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -23,11 +24,12 @@ export async function runScheduledRankChecks(env: Env) {
         continue;
       }
 
-      // Skip configs with no keywords before advancing the schedule
-      const kwCount = await RankTrackingRepository.getKeywordCountForConfig(
+      // Fetch the keywords themselves, not just a count: each one can carry its
+      // own interval override, so which keywords are due is a per-keyword question.
+      const keywords = await RankTrackingRepository.getKeywordsForConfig(
         config.id,
       );
-      if (kwCount === 0) {
+      if (keywords.length === 0) {
         console.log(
           `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
         );
@@ -49,6 +51,30 @@ export async function runScheduledRankChecks(env: Env) {
         continue;
       }
 
+      const dueKeywords = RankTrackingService.getDueKeywordsForScheduledRun(
+        config,
+        keywords,
+        nowIso,
+      );
+      if (dueKeywords.length === 0) {
+        console.log(
+          `[cron] Skipping config ${config.id} (${config.domain}) — no due keywords`,
+        );
+        if (isScheduledRankTrackingInterval(config.scheduleInterval)) {
+          await RankTrackingRepository.updateConfig(
+            config.id,
+            config.projectId,
+            {
+              nextCheckAt: computeNextCheckAt(
+                config.scheduleInterval,
+                config.nextCheckAt,
+              ),
+            },
+          );
+        }
+        continue;
+      }
+
       // Advance nextCheckAt immediately to prevent retry storms if the run fails
       const interval = isScheduledRankTrackingInterval(config.scheduleInterval)
         ? config.scheduleInterval
@@ -58,6 +84,17 @@ export async function runScheduledRankChecks(env: Env) {
           nextCheckAt: computeNextCheckAt(interval, config.nextCheckAt),
         });
       }
+
+      await RankTrackingService.advanceKeywordSchedulesForScheduledRun(
+        dueKeywords,
+      );
+
+      // Only pass keywordIds when running a subset, so a full run keeps its
+      // existing "all keywords" shape.
+      const keywordIds =
+        dueKeywords.length === keywords.length
+          ? undefined
+          : dueKeywords.map((keyword) => keyword.id);
 
       const result = await beginRankCheckRun({
         workflow: env.RANK_CHECK_WORKFLOW,
@@ -69,7 +106,8 @@ export async function runScheduledRankChecks(env: Env) {
           organizationId: config.organizationId,
           projectId: config.projectId,
         },
-        keywordsTotal: kwCount,
+        keywordsTotal: keywordIds ? keywordIds.length : keywords.length,
+        keywordIds,
         trigger: "scheduled",
         workflowStartErrorMessage: "Failed to start scheduled workflow",
       });

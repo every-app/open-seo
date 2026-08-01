@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useKeywordSchedules } from "./useKeywordSchedules";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCustomer } from "autumn-js/react";
@@ -19,14 +20,17 @@ import {
   countMatrixRuns,
   RankTrackingHistoryMatrix,
 } from "./RankTrackingHistoryMatrix";
-import { RankTrackingTableToolbar } from "./RankTrackingTableToolbar";
+import {
+  RankTrackingTableToolbar,
+  rankTrackingKeywordSchedulesQueryKey,
+} from "./RankTrackingTableToolbar";
 import {
   exportRankTrackingCsv,
   exportRankTrackingToSheets,
 } from "./RankTrackingTableParts";
 import type {
-  RankTrackingConfig,
   ComparePeriod,
+  RankTrackingConfig,
 } from "@/types/schemas/rank-tracking";
 import { AddKeywordsPanel } from "./AddKeywordsPanel";
 import {
@@ -99,6 +103,7 @@ export function RankTrackingDomainDetail({
         data: { projectId, configId: config.id, comparePeriod },
       }),
   });
+  const resultRows = resultsData?.rows ?? [];
 
   const latestRun = useRankRunPolling(projectId, config.id);
 
@@ -133,6 +138,9 @@ export function RankTrackingDomainDetail({
     });
     void queryClient.invalidateQueries({
       queryKey: ["rankTrackingResults", projectId, config.id],
+    });
+    void queryClient.invalidateQueries({
+      queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
     });
     void queryClient.invalidateQueries({
       queryKey: ["rankTrackingLatestRun", projectId, config.id],
@@ -170,16 +178,23 @@ export function RankTrackingDomainDetail({
     setPendingCheck({ count, keywordIds });
   };
 
-  const rows = resultsData?.rows;
+  const rows = resultRows;
   const run = resultsData?.run;
   const hasBothDevices = config.devices === "both";
   const { showDesktop, showMobile } = deviceVisibility(
     config.devices,
     activeDevice,
   );
+  const { rowsWithSchedules, setKeywordIntervals, intervalUpdatePending } =
+    useKeywordSchedules({
+      projectId,
+      config,
+      rows,
+      enabled: resultRows.length > 0,
+    });
   const filtered = useMemo(
-    () => applyFilters(rows ?? [], filters),
-    [rows, filters],
+    () => applyFilters(rowsWithSchedules, filters),
+    [rowsWithSchedules, filters],
   );
   const activeFilterCount = countActiveFilters(filters);
   const defaultSortId = showDesktop ? "desktopPosition" : "mobilePosition";
@@ -245,7 +260,7 @@ export function RankTrackingDomainDetail({
         )}
 
         {/* Portfolio overview */}
-        {(rows?.length ?? 0) > 0 && (
+        {rows.length > 0 && (
           <RankTrackingOverview
             device={activeDevice}
             projectId={projectId}
@@ -288,11 +303,18 @@ export function RankTrackingDomainDetail({
             toast.success("Keywords copied to clipboard");
           }}
           onCheckNow={() => {
-            const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
+            const count = costEstimate?.keywordCount ?? rows.length;
             if (count > 0) requestCheck(count);
           }}
           onRefreshMetrics={refreshMetrics}
           metricsRefreshing={metricsRefreshing}
+          onSetKeywordInterval={(interval) =>
+            setKeywordIntervals(
+              filtered.map((row) => row.trackingKeywordId),
+              interval,
+            )
+          }
+          intervalBusy={intervalUpdatePending}
           checkBusy={isBusy}
           checkDisabled={isFreePlan}
           hasData={filtered.length > 0}
@@ -322,9 +344,10 @@ export function RankTrackingDomainDetail({
           ) : (
             <RankTrackingTable
               key={defaultSortId}
-              totalCount={rows?.length ?? 0}
+              totalCount={rows.length}
               rows={filtered}
               resultsLoading={resultsLoading}
+              intervalUpdatePending={intervalUpdatePending}
               showDesktop={showDesktop}
               showMobile={showMobile}
               defaultSortId={defaultSortId}
@@ -334,6 +357,7 @@ export function RankTrackingDomainDetail({
               locationCode={config.locationCode}
               locationName={config.locationName}
               serpDepth={config.serpDepth}
+              onSetKeywordInterval={setKeywordIntervals}
             />
           )}
         </div>

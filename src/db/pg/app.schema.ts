@@ -263,12 +263,22 @@ export const rankTrackingKeywords = pgTable(
     keywordDifficulty: integer("keyword_difficulty"),
     cpc: real("cpc"),
     metricsFetchedAt: timestampColumn("metrics_fetched_at"),
+    scheduleIntervalOverride: text("schedule_interval_override", {
+      enum: ["inherit", "daily", "weekly", "manual-paused"],
+    })
+      .notNull()
+      .default("inherit"),
+    nextCheckAt: timestampColumn("next_check_at"),
     createdAt: timestampColumn("created_at").notNull().default(isoNow),
   },
   (table) => [
     uniqueIndex("rank_tracking_keywords_config_keyword_idx").on(
       table.configId,
       table.keyword,
+    ),
+    index("rank_tracking_keywords_config_next_check_idx").on(
+      table.configId,
+      table.nextCheckAt,
     ),
   ],
 );

@@ -18,7 +18,10 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { removeTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import type {
+  RankTrackingKeywordScheduleInterval,
+  RankTrackingScheduledRow,
+} from "@/types/schemas/rank-tracking";
 import { useRankTrackingColumns } from "./RankTrackingColumns";
 import { buildRankTrackingExport } from "./RankTrackingTableParts";
 import {
@@ -26,11 +29,16 @@ import {
   type KeywordTrendTarget,
 } from "./KeywordTrendModal";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
+import {
+  KeywordIntervalMenu,
+  rankTrackingKeywordSchedulesQueryKey,
+} from "./RankTrackingTableToolbar";
 
 export function RankTrackingTable({
   totalCount,
   rows,
   resultsLoading,
+  intervalUpdatePending,
   showDesktop,
   showMobile,
   defaultSortId,
@@ -40,10 +48,12 @@ export function RankTrackingTable({
   locationCode,
   locationName,
   serpDepth,
+  onSetKeywordInterval,
 }: {
   totalCount: number;
-  rows: RankTrackingRow[];
+  rows: RankTrackingScheduledRow[];
   resultsLoading: boolean;
+  intervalUpdatePending: boolean;
   showDesktop: boolean;
   showMobile: boolean;
   defaultSortId: string;
@@ -53,6 +63,10 @@ export function RankTrackingTable({
   locationCode: number;
   locationName?: string | null;
   serpDepth: number;
+  onSetKeywordInterval: (
+    keywordIds: string[],
+    interval: RankTrackingKeywordScheduleInterval,
+  ) => void;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -62,7 +76,7 @@ export function RankTrackingTable({
   const selectAnchorRef = useRef<SelectionAnchor | null>(null);
 
   const handleKeywordClick = useCallback(
-    (row: RankTrackingRow) =>
+    (row: RankTrackingScheduledRow) =>
       setTrendTarget({
         trackingKeywordId: row.trackingKeywordId,
         keyword: row.keyword,
@@ -77,6 +91,9 @@ export function RankTrackingTable({
     selectAnchorRef,
     onKeywordClick: handleKeywordClick,
     locationName,
+    onSetKeywordInterval: (row, interval) =>
+      onSetKeywordInterval([row.trackingKeywordId], interval),
+    intervalUpdatePending,
   });
 
   const table = useAppTable({
@@ -138,6 +155,9 @@ export function RankTrackingTable({
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingCostEstimate", projectId, configId],
       });
+      void queryClient.invalidateQueries({
+        queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, configId),
+      });
       toast.success(
         `${result.removed} keyword${result.removed !== 1 ? "s" : ""} removed`,
       );
@@ -172,6 +192,20 @@ export function RankTrackingTable({
         onClear={() => table.resetRowSelection()}
         actions={
           <div className="flex items-center px-1.5">
+            <KeywordIntervalMenu
+              onSelect={(interval) =>
+                onSetKeywordInterval(
+                  selectedRankRows.map((row) => row.trackingKeywordId),
+                  interval,
+                )
+              }
+              busy={intervalUpdatePending}
+              disabled={selectedCount === 0}
+              title="Set schedule for selected keywords"
+              dropdownClassName="dropdown dropdown-top dropdown-end"
+              buttonClassName="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-base-content/85 hover:bg-base-content/10 disabled:opacity-50"
+              menuClassName="dropdown-content menu z-10 mb-2 w-60 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
+            />
             <TableBulkActionButton
               icon={<Trash2 className="size-3.5" />}
               onClick={() => setShowConfirm(true)}

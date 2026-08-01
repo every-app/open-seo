@@ -8,6 +8,9 @@ import { ProjectRepository } from "@/server/features/projects/repositories/Proje
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
+import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import type { RankTrackingKeywordScheduleInterval } from "@/types/schemas/rank-tracking";
+import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
 import {
@@ -26,6 +29,134 @@ import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
+const KEYWORD_INTERVALS_API_PATH = "/api/rank-tracking/keyword-intervals";
+const KEYWORD_INTERVALS: ReadonlySet<string> =
+  new Set<RankTrackingKeywordScheduleInterval>([
+    "inherit",
+    "daily",
+    "weekly",
+    "manual-paused",
+  ]);
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "content-type": "application/json" },
+  });
+}
+
+function getStringField(data: Record<string, unknown>, field: string): string {
+  const value = data[field];
+  if (typeof value !== "string" || value.length === 0) {
+    throw new AppError("VALIDATION_ERROR", `${field} is required`);
+  }
+  return value;
+}
+
+function isKeywordInterval(
+  value: unknown,
+): value is RankTrackingKeywordScheduleInterval {
+  return typeof value === "string" && KEYWORD_INTERVALS.has(value);
+}
+
+function getKeywordInterval(
+  data: Record<string, unknown>,
+): RankTrackingKeywordScheduleInterval {
+  const value = data.scheduleIntervalOverride;
+  if (!isKeywordInterval(value)) {
+    throw new AppError("VALIDATION_ERROR", "Invalid keyword interval");
+  }
+  return value;
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+async function readJsonObject(
+  request: Request,
+): Promise<Record<string, unknown>> {
+  const body: unknown = await request.json().catch(() => null);
+  if (!isJsonObject(body)) {
+    throw new AppError("VALIDATION_ERROR", "Invalid JSON body");
+  }
+  return body;
+}
+
+async function authorizeProjectApiRequest(request: Request, projectId: string) {
+  let context;
+  try {
+    context = await resolveUserContextFromHeaders(request.headers);
+  } catch {
+    throw new AppError("UNAUTHENTICATED", "Unauthorized");
+  }
+
+  const project = await ProjectRepository.getProjectForOrganization(
+    projectId,
+    context.organizationId,
+  );
+  if (!project) {
+    throw new AppError("FORBIDDEN", "Forbidden");
+  }
+}
+
+async function handleKeywordIntervalsApiRequest(
+  request: Request,
+): Promise<Response> {
+  if (request.method !== "GET" && request.method !== "PATCH") {
+    return jsonResponse({ error: "Method not allowed" }, 405);
+  }
+
+  try {
+    const url = new URL(request.url);
+    const data =
+      request.method === "GET"
+        ? Object.fromEntries(url.searchParams)
+        : await readJsonObject(request);
+    const projectId = getStringField(data, "projectId");
+    const configId = getStringField(data, "configId");
+
+    await authorizeProjectApiRequest(request, projectId);
+
+    if (request.method === "GET") {
+      return jsonResponse(
+        await RankTrackingService.getKeywordSchedules(configId, projectId),
+      );
+    }
+
+    const keywordIds = data.keywordIds;
+    if (
+      !Array.isArray(keywordIds) ||
+      keywordIds.length === 0 ||
+      !keywordIds.every((id) => typeof id === "string")
+    ) {
+      throw new AppError("VALIDATION_ERROR", "Select at least one keyword");
+    }
+
+    const result = await RankTrackingService.updateKeywordScheduleOverride(
+      configId,
+      projectId,
+      keywordIds,
+      getKeywordInterval(data),
+    );
+    return jsonResponse(result);
+  } catch (error) {
+    if (error instanceof AppError) {
+      const status =
+        error.code === "UNAUTHENTICATED"
+          ? 401
+          : error.code === "FORBIDDEN"
+            ? 403
+            : error.code === "VALIDATION_ERROR"
+              ? 400
+              : 500;
+      return jsonResponse({ error: error.message }, status);
+    }
+
+    console.error("[rank-tracking] keyword interval API error:", error);
+    return jsonResponse({ error: "Internal server error" }, 500);
+  }
+}
 
 // Authorize an onboarding-chat connection in the Worker, before it reaches the
 // Durable Object. The DO instance name is the projectId (set client-side); we
@@ -146,6 +277,10 @@ function handleFetch(
 
   if (pathname.startsWith("/agents/")) {
     return routeChatAgents(publicRequest, env);
+  }
+
+  if (pathname === KEYWORD_INTERVALS_API_PATH) {
+    return handleKeywordIntervalsApiRequest(publicRequest);
   }
 
   if (isHostedAuthMode(authMode)) {
