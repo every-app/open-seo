@@ -38,6 +38,8 @@ import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
+import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
+import { Route as MarketingLibraryKeywordResearchOpportunitySizingForecastingRouteImport } from './routes/_marketing/library/keyword-research/opportunity-sizing-forecasting'
 import { Route as MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport } from './routes/_marketing/library/keyword-research/long-tail-question-mining'
 import { Route as MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport } from './routes/_marketing/library/keyword-research/gsc-programmatic-discovery'
 import { Route as MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport } from './routes/_marketing/library/keyword-research/cluster-topical-hubs'
@@ -198,6 +200,20 @@ const MarketingLibraryKeywordResearchSearchIntentMappingRoute =
     path: '/library/keyword-research/search-intent-mapping',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryKeywordResearchPositioningToDemandRoute =
+  MarketingLibraryKeywordResearchPositioningToDemandRouteImport.update({
+    id: '/library/keyword-research/positioning-to-demand',
+    path: '/library/keyword-research/positioning-to-demand',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute =
+  MarketingLibraryKeywordResearchOpportunitySizingForecastingRouteImport.update(
+    {
+      id: '/library/keyword-research/opportunity-sizing-forecasting',
+      path: '/library/keyword-research/opportunity-sizing-forecasting',
+      getParentRoute: () => MarketingRoute,
+    } as any,
+  )
 const MarketingLibraryKeywordResearchLongTailQuestionMiningRoute =
   MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport.update({
     id: '/library/keyword-research/long-tail-question-mining',
@@ -246,6 +262,8 @@ export interface FileRoutesByFullPath {
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
+  '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
@@ -279,6 +297,8 @@ export interface FileRoutesByTo {
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
+  '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
@@ -314,6 +334,8 @@ export interface FileRoutesById {
   '/_marketing/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/_marketing/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   '/_marketing/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/_marketing/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
+  '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
@@ -349,6 +371,8 @@ export interface FileRouteTypes {
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/long-tail-question-mining'
+    | '/library/keyword-research/opportunity-sizing-forecasting'
+    | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
     | '/library/keyword-research/'
@@ -382,6 +406,8 @@ export interface FileRouteTypes {
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
     | '/library/keyword-research/long-tail-question-mining'
+    | '/library/keyword-research/opportunity-sizing-forecasting'
+    | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
     | '/library/keyword-research'
@@ -416,6 +442,8 @@ export interface FileRouteTypes {
     | '/_marketing/library/keyword-research/cluster-topical-hubs'
     | '/_marketing/library/keyword-research/gsc-programmatic-discovery'
     | '/_marketing/library/keyword-research/long-tail-question-mining'
+    | '/_marketing/library/keyword-research/opportunity-sizing-forecasting'
+    | '/_marketing/library/keyword-research/positioning-to-demand'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
     | '/_marketing/library/keyword-research/'
@@ -641,6 +669,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/keyword-research/positioning-to-demand': {
+      id: '/_marketing/library/keyword-research/positioning-to-demand'
+      path: '/library/keyword-research/positioning-to-demand'
+      fullPath: '/library/keyword-research/positioning-to-demand'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/keyword-research/opportunity-sizing-forecasting': {
+      id: '/_marketing/library/keyword-research/opportunity-sizing-forecasting'
+      path: '/library/keyword-research/opportunity-sizing-forecasting'
+      fullPath: '/library/keyword-research/opportunity-sizing-forecasting'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/long-tail-question-mining': {
       id: '/_marketing/library/keyword-research/long-tail-question-mining'
       path: '/library/keyword-research/long-tail-question-mining'
@@ -683,6 +725,8 @@ interface MarketingRouteChildren {
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute: typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute: typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
+  MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
@@ -710,6 +754,10 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute,
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute:
     MarketingLibraryKeywordResearchLongTailQuestionMiningRoute,
+  MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute:
+    MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute,
+  MarketingLibraryKeywordResearchPositioningToDemandRoute:
+    MarketingLibraryKeywordResearchPositioningToDemandRoute,
   MarketingLibraryKeywordResearchSearchIntentMappingRoute:
     MarketingLibraryKeywordResearchSearchIntentMappingRoute,
   MarketingLibraryKeywordResearchSeedFromConversationRoute:

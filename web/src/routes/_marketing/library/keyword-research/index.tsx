@@ -38,6 +38,7 @@ const plays = [
     title: "Opportunity sizing & forecasting",
     description:
       "Size a cluster before you invest: difficulty, traffic ceiling, and honest payback windows.",
+    href: "/library/keyword-research/opportunity-sizing-forecasting",
   },
   {
     title: "Intent beyond Google (Pinterest, AI, LinkedIn)",
@@ -48,6 +49,7 @@ const plays = [
     title: "Map positioning to real demand",
     description:
       "Competitor keyword gaps as a positioning instrument, not a copying exercise.",
+    href: "/library/keyword-research/positioning-to-demand",
   },
 ];
 
