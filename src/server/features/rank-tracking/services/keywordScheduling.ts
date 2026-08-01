@@ -21,13 +21,12 @@ type ScheduleConfig = {
   nextCheckAt: string | null;
 };
 
-export type ScheduleKeyword = Pick<
+type ScheduleKeyword = Pick<
   Awaited<ReturnType<typeof RankTrackingRepository.getKeywordsForConfig>>[0],
   "id" | "scheduleIntervalOverride" | "nextCheckAt"
 >;
 
-
-export function isScheduledInterval(
+function isScheduledInterval(
   interval: string | null | undefined,
 ): interval is ScheduledInterval {
   return (
@@ -35,7 +34,7 @@ export function isScheduledInterval(
   );
 }
 
-export function getEffectiveKeywordScheduleInterval(
+function getEffectiveKeywordScheduleInterval(
   keyword: Pick<ScheduleKeyword, "scheduleIntervalOverride">,
   configScheduleInterval: RankTrackingConfig["scheduleInterval"],
 ): EffectiveKeywordScheduleInterval {
@@ -70,20 +69,15 @@ export function getDueKeywordsForScheduledRun<TKeyword extends ScheduleKeyword>(
     if (keyword.scheduleIntervalOverride === "manual-paused") return false;
 
     if (isScheduledInterval(keyword.scheduleIntervalOverride)) {
-      return (
-        keyword.nextCheckAt === null || keyword.nextCheckAt <= nowIso
-      );
+      return keyword.nextCheckAt === null || keyword.nextCheckAt <= nowIso;
     }
 
     return configDue && isScheduledInterval(config.scheduleInterval);
   });
 }
 
-export function getNextKeywordCheckAt(
-  keyword: Pick<
-    ScheduleKeyword,
-    "scheduleIntervalOverride" | "nextCheckAt"
-  >,
+function getNextKeywordCheckAt(
+  keyword: Pick<ScheduleKeyword, "scheduleIntervalOverride" | "nextCheckAt">,
 ): string | null {
   if (
     keyword.scheduleIntervalOverride !== "daily" &&

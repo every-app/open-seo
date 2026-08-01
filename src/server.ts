@@ -8,7 +8,8 @@ import { ProjectRepository } from "@/server/features/projects/repositories/Proje
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
-import { RankTrackingService, type RankTrackingKeywordScheduleInterval } from "@/server/features/rank-tracking/services/RankTrackingService";
+import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
+import type { RankTrackingKeywordScheduleInterval } from "@/types/schemas/rank-tracking";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
@@ -29,9 +30,13 @@ import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
 const KEYWORD_INTERVALS_API_PATH = "/api/rank-tracking/keyword-intervals";
-const KEYWORD_INTERVALS: ReadonlySet<string> = new Set<
-  RankTrackingKeywordScheduleInterval
->(["inherit", "daily", "weekly", "manual-paused"]);
+const KEYWORD_INTERVALS: ReadonlySet<string> =
+  new Set<RankTrackingKeywordScheduleInterval>([
+    "inherit",
+    "daily",
+    "weekly",
+    "manual-paused",
+  ]);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -40,10 +45,7 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
-function getStringField(
-  data: Record<string, unknown>,
-  field: string,
-): string {
+function getStringField(data: Record<string, unknown>, field: string): string {
   const value = data[field];
   if (typeof value !== "string" || value.length === 0) {
     throw new AppError("VALIDATION_ERROR", `${field} is required`);
@@ -81,10 +83,7 @@ async function readJsonObject(
   return body;
 }
 
-async function authorizeProjectApiRequest(
-  request: Request,
-  projectId: string,
-) {
+async function authorizeProjectApiRequest(request: Request, projectId: string) {
   let context;
   try {
     context = await resolveUserContextFromHeaders(request.headers);
@@ -158,7 +157,6 @@ async function handleKeywordIntervalsApiRequest(
     return jsonResponse({ error: "Internal server error" }, 500);
   }
 }
-
 
 // Authorize an onboarding-chat connection in the Worker, before it reaches the
 // Durable Object. The DO instance name is the projectId (set client-side); we

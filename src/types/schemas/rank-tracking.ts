@@ -10,9 +10,7 @@ import { domainField } from "@/types/schemas/domain";
 // ---------------------------------------------------------------------------
 
 export type RankTrackingConfig = InferSelectModel<typeof rankTrackingConfigs>;
-export type RankTrackingKeyword = InferSelectModel<
-  typeof rankTrackingKeywords
->;
+export type RankTrackingKeyword = InferSelectModel<typeof rankTrackingKeywords>;
 
 // ---------------------------------------------------------------------------
 // API / UI types

@@ -49,7 +49,7 @@ const baseInput = {
 import {
   advanceKeywordSchedulesForScheduledRun,
   getDueKeywordsForScheduledRun,
-} from "./RankTrackingService";
+} from "./keywordScheduling";
 
 describe("RankTrackingService.createConfig", () => {
   beforeEach(() => {
@@ -215,8 +215,7 @@ type TestKeyword = {
 
 function keyword(
   id: string,
-  scheduleIntervalOverride: TestKeyword["scheduleIntervalOverride"] =
-    "inherit",
+  scheduleIntervalOverride: TestKeyword["scheduleIntervalOverride"] = "inherit",
   nextCheckAt: string | null = null,
 ): TestKeyword {
   return { id, scheduleIntervalOverride, nextCheckAt };

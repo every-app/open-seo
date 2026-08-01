@@ -27,30 +27,10 @@ import { getValidatedConfig } from "./rankTrackingConfigAccess";
 import {
   advanceKeywordSchedulesForScheduledRun,
   getDueKeywordsForScheduledRun,
-  getEffectiveKeywordScheduleInterval,
   getKeywordSchedules,
   isConfigScheduleDue,
-  isScheduledInterval,
   updateKeywordScheduleOverride,
 } from "./keywordScheduling";
-
-export {
-  advanceKeywordSchedulesForScheduledRun,
-  getDueKeywordsForScheduledRun,
-  getEffectiveKeywordScheduleInterval,
-  isConfigScheduleDue,
-  isScheduledInterval,
-};
-
-export type RankTrackingKeywordScheduleInterval =
-  | "inherit"
-  | "daily"
-  | "weekly"
-  | "manual-paused";
-export type EffectiveKeywordScheduleInterval =
-  | RankTrackingConfig["scheduleInterval"]
-  | "manual-paused";
-
 
 // ---------------------------------------------------------------------------
 // Config
