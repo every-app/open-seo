@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "geo_grid_runs_active_idx" ON "geo_grid_runs" USING btree ("config_id") WHERE "geo_grid_runs"."status" IN ('pending', 'running');--> statement-breakpoint
+ALTER TABLE "geo_grid_configs" DROP COLUMN "next_check_at";

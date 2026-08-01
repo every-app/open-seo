@@ -5,6 +5,7 @@ import {
   Globe,
   LayoutDashboard,
   Link2,
+  Map,
   MessageSquare,
   Search,
   Sparkles,
@@ -36,6 +37,11 @@ const projectNavItems = [
     to: "/p/$projectId/rank-tracking" as const,
     label: "Rank Tracking",
     icon: TrendingUp,
+  },
+  {
+    to: "/p/$projectId/geo-grid" as const,
+    label: "Geo Grid Tracking",
+    icon: Map,
   },
   {
     to: "/p/$projectId/search-performance" as const,
@@ -118,12 +124,14 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
+        byPath("/p/$projectId/geo-grid"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
       ],
     },
   ];
 }
+
 
 export const dataforseoHelpLinkOptions = linkOptions({
   to: "/help/dataforseo-api-key",

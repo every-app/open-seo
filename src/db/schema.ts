@@ -93,4 +93,9 @@ export const {
   gscConnections,
   redditAttributions,
   telemetryState,
+  geoGridConfigs,
+  geoGridKeywords,
+  geoGridRuns,
+  geoGridSnapshots,
 } = schema;
+
