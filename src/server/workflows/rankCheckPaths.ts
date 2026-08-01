@@ -12,6 +12,7 @@ import type {
 } from "@/server/lib/dataforseo";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
+import { pgStep } from "@/server/workflows/pgStep";
 
 const SINGLE_ATTEMPT_STEP_CONFIG = {
   retries: { limit: 0, delay: "1 second" as const },
@@ -47,6 +48,7 @@ interface CheckContext {
   domain: string;
   locationCode: number;
   languageCode: string;
+  locationName?: string;
   runId: string;
 }
 
@@ -89,6 +91,7 @@ async function checkBatchLive(
           keywordId: task.keywordId,
           locationCode: ctx.locationCode,
           languageCode: ctx.languageCode,
+          locationName: ctx.locationName,
           device: task.device,
           targetDomain: ctx.domain,
           depth: ctx.serpDepth,
@@ -131,7 +134,8 @@ export async function runLiveCheck(
     const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
     const keywordsChecked = i + keywordBatch.length;
 
-    await step.do(
+    await pgStep(
+      step,
       `live-batch-${batchIndex}`,
       SINGLE_ATTEMPT_STEP_CONFIG,
       async () => {
@@ -283,7 +287,8 @@ export async function runQueuedCheck(
     const postIndex = Math.floor(i / MAX_TASKS_PER_POST);
     let posted: PostedRankCheckTask[];
     try {
-      posted = await step.do(
+      posted = await pgStep(
+        step,
         `post-tasks-${postIndex}`,
         SINGLE_ATTEMPT_STEP_CONFIG,
         async () =>
@@ -291,6 +296,7 @@ export async function runQueuedCheck(
             tasks: chunk,
             locationCode: ctx.locationCode,
             languageCode: ctx.languageCode,
+            locationName: ctx.locationName,
             depth: ctx.serpDepth,
             targetDomain: ctx.domain,
           }),
@@ -339,8 +345,11 @@ export async function runQueuedCheck(
 
     let outcome: CollectRoundOutcome;
     try {
-      outcome = await step.do(`collect-${round}`, COLLECT_STEP_CONFIG, () =>
-        collectQueuedRound(ctx, batch),
+      outcome = await pgStep(
+        step,
+        `collect-${round}`,
+        COLLECT_STEP_CONFIG,
+        () => collectQueuedRound(ctx, batch),
       );
     } catch (error) {
       console.warn(`[rank-check] ${ctx.runId} collect-${round} failed:`, error);
@@ -369,7 +378,8 @@ export async function runQueuedCheck(
     const batch = stragglers.slice(i, i + KEYWORDS_PER_BATCH);
     const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
 
-    stats.fallbackChecked += await step.do(
+    stats.fallbackChecked += await pgStep(
+      step,
       `fallback-batch-${batchIndex}`,
       SINGLE_ATTEMPT_STEP_CONFIG,
       () => checkBatchLive(ctx, batch),

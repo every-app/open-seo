@@ -7,6 +7,11 @@ import {
   authRedirectSearchSchema,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
+import {
+  TURNSTILE_SITE_KEY,
+  TurnstileWidget,
+  useTurnstileCaptcha,
+} from "@/client/features/auth/TurnstileWidget";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -49,8 +54,11 @@ function SignUpPage() {
   const { redirectTo, isHostedMode } = useAuthPageState(search.redirect);
   const postSignupRedirect = redirectTo === "/" ? "/onboarding" : redirectTo;
   const [showEmailForm, setShowEmailForm] = useState(false);
-  const [isStartingGoogle, setIsStartingGoogle] = useState(false);
-  const [socialError, setSocialError] = useState<string | null>(null);
+  const google = useGoogleSignUp({ redirectTo, postSignupRedirect });
+
+  // Turnstile is active only in hosted mode with a configured site key.
+  const isTurnstileEnabled = isHostedMode && Boolean(TURNSTILE_SITE_KEY);
+  const captcha = useTurnstileCaptcha();
 
   const form = useForm({
     defaultValues: {
@@ -63,6 +71,16 @@ function SignUpPage() {
       onSubmit: signUpSchema,
     },
     onSubmit: async ({ formApi, value }) => {
+      const captchaToken = captcha.tokenRef.current;
+      if (isTurnstileEnabled && !captchaToken) {
+        formApi.setErrorMap({
+          onSubmit: {
+            form: "Please complete the captcha to continue.",
+            fields: {},
+          },
+        });
+        return;
+      }
       try {
         const email = value.email.trim();
         captureClientEvent("auth:sign_up_submit", {
@@ -89,9 +107,18 @@ function SignUpPage() {
           email,
           password: value.password,
           callbackURL: verificationCallbackURL.toString(),
+          ...(isTurnstileEnabled && captchaToken
+            ? {
+                fetchOptions: {
+                  headers: { "x-captcha-response": captchaToken },
+                },
+              }
+            : {}),
         });
 
         if (result.error) {
+          // Turnstile tokens are single-use; re-challenge so a retry can succeed.
+          if (isTurnstileEnabled) captcha.reset();
           formApi.setErrorMap({
             onSubmit: {
               form: result.error.message || "Unable to create account.",
@@ -110,6 +137,7 @@ function SignUpPage() {
           replace: true,
         });
       } catch {
+        if (isTurnstileEnabled) captcha.reset();
         formApi.setErrorMap({
           onSubmit: {
             form: "Unable to create account right now. Please try again.",
@@ -119,33 +147,6 @@ function SignUpPage() {
       }
     },
   });
-
-  async function handleContinueWithGoogle() {
-    setSocialError(null);
-    setIsStartingGoogle(true);
-
-    try {
-      captureClientEvent("auth:sign_up_google_start", {
-        redirect_to: redirectTo,
-      });
-      const result = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: redirectTo,
-        newUserCallbackURL: postSignupRedirect,
-        requestSignUp: true,
-      });
-
-      if (result.error) {
-        setSocialError(
-          result.error.message || "Google sign up is not available right now.",
-        );
-        setIsStartingGoogle(false);
-      }
-    } catch {
-      setSocialError("Google sign up is not available right now.");
-      setIsStartingGoogle(false);
-    }
-  }
 
   return (
     <AuthPageCard
@@ -158,7 +159,7 @@ function SignUpPage() {
               className="text-sm text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
               onClick={() => {
                 setShowEmailForm(false);
-                setSocialError(null);
+                google.clearError();
               }}
             >
               Back to signup
@@ -207,17 +208,17 @@ function SignUpPage() {
           <AuthMethodChooser
             googleLabel="Continue with Google"
             disabled={!isHostedMode}
-            isBusy={isStartingGoogle}
+            isBusy={google.isStarting}
             onContinueWithGoogle={() => {
-              void handleContinueWithGoogle();
+              void google.start();
             }}
             onContinueWithEmail={() => {
               setShowEmailForm(true);
-              setSocialError(null);
+              google.clearError();
             }}
           />
-          {socialError ? (
-            <p className="text-sm text-error">{socialError}</p>
+          {google.error ? (
+            <p className="text-sm text-error">{google.error}</p>
           ) : null}
         </>
       ) : (
@@ -327,6 +328,13 @@ function SignUpPage() {
             }}
           </form.Field>
 
+          {isTurnstileEnabled ? (
+            <TurnstileWidget
+              onToken={captcha.onToken}
+              resetNonce={captcha.resetNonce}
+            />
+          ) : null}
+
           <form.Subscribe
             selector={(state) => ({
               submitError: state.errorMap.onSubmit,
@@ -342,7 +350,11 @@ function SignUpPage() {
                   ) : null}
                   <button
                     className="btn btn-soft w-full"
-                    disabled={!isHostedMode || isSubmitting}
+                    disabled={
+                      !isHostedMode ||
+                      isSubmitting ||
+                      (isTurnstileEnabled && !captcha.hasToken)
+                    }
                   >
                     {isSubmitting ? "Creating account..." : "Create account"}
                   </button>
@@ -354,4 +366,50 @@ function SignUpPage() {
       )}
     </AuthPageCard>
   );
+}
+
+// Google sign-up: kicks off the social OAuth redirect and surfaces its error.
+function useGoogleSignUp({
+  redirectTo,
+  postSignupRedirect,
+}: {
+  redirectTo: string;
+  postSignupRedirect: string;
+}) {
+  const [isStarting, setIsStarting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const start = async () => {
+    setError(null);
+    setIsStarting(true);
+
+    try {
+      captureClientEvent("auth:sign_up_google_start", {
+        redirect_to: redirectTo,
+      });
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: redirectTo,
+        newUserCallbackURL: postSignupRedirect,
+        requestSignUp: true,
+      });
+
+      if (result.error) {
+        setError(
+          result.error.message || "Google sign up is not available right now.",
+        );
+        setIsStarting(false);
+      }
+    } catch {
+      setError("Google sign up is not available right now.");
+      setIsStarting(false);
+    }
+  };
+
+  return {
+    isStarting,
+    error,
+    start,
+    clearError: () => setError(null),
+  };
 }

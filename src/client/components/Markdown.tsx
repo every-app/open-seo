@@ -13,7 +13,7 @@ type Props = {
  *
  * OpenSEO doesn't ship `@tailwindcss/typography`, so `prose` classes are
  * no-ops — every block element is styled here instead. Tables use daisyUI's
- * `table table-xs` so model- and strategy-generated tables stay readable.
+ * `table table-sm` so model- and strategy-generated tables stay readable.
  *
  * Anchor URLs are sanitized to http(s) only — LLMs can be coaxed into
  * emitting `javascript:` payloads.
@@ -122,7 +122,7 @@ export const MARKDOWN_COMPONENTS = {
   ),
   table: ({ children }: { children?: ReactNode }) => (
     <div className="my-3 overflow-x-auto">
-      <table className="table table-xs border border-base-300">
+      <table className="table table-sm border border-base-300">
         {children}
       </table>
     </div>

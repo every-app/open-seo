@@ -15,6 +15,7 @@ import {
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { SerpAnalysisCard } from "@/client/features/keywords/components";
+import { FilterIntentSelect } from "./keywordResearchFilters";
 import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
 import {
   KeywordResearchPagination,
@@ -322,6 +323,8 @@ function MobileFilters({ controller }: Props) {
           placeholder="Max difficulty"
         />
       </div>
+
+      <FilterIntentSelect form={filtersForm} />
     </div>
   );
 }

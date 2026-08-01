@@ -1,32 +1,40 @@
 {
   "entry": [
+    // Alchemy deploy stack (run by the alchemy CLI, not imported by the app)
+    "alchemy.run.ts",
+    "alchemy.preview-access.run.ts",
     // Detect Tanstack Start Routes
     "cli-auth.ts",
     "src/start.ts",
-    "src/server.ts",
     "src/router.tsx",
     "src/routes/**/*.ts",
     "src/routes/**/*.tsx",
     // Drizzle config (plugin disabled due to cloudflare:workers import issues)
     "drizzle.config.ts",
-    // Package script entrypoints
-    "scripts/backlinks-cost-profile.ts",
-    "scripts/brand-lookup-cost-profile.ts",
-    "scripts/d1-default-project-cleanup.ts",
-    "scripts/release-notes.mjs",
-    "scripts/seed-rank-tracking.ts",
+    "drizzle-pg.config.ts",
     // DB schema — exports consumed via `import * as schema` / drizzle()
     "src/db/index.ts",
+    "src/db/schema.ts",
     "src/db/app.schema.ts",
     "src/db/better-auth-schema.ts",
-    // Package scripts and one-off maintenance utilities
-    "scripts/backlinks-cost-profile.ts",
-    "scripts/brand-lookup-cost-profile.ts",
-    "scripts/d1-default-project-cleanup.ts",
-    "scripts/release-notes.mjs",
-    "scripts/seed-rank-tracking.ts",
+    "src/db/pg/schema.ts",
+    // Standalone CLI/dev scripts, invoked via package.json scripts
+    "scripts/**",
+    // DataForSEO section barrel — consumed via the dynamic import in
+    // client.ts (loadDataforseoSections) + property access, which knip
+    // can't trace
+    "src/server/lib/dataforseo/sections.ts",
   ],
-  "project": ["**/*.{js,mjs,ts,tsx}", "!src/routeTree.gen.ts", "!web/**"],
+  // badseo/ is the standalone broken-SEO fixture worker (own deps/config),
+  // like web/ it isn't part of the app's module graph.
+  "project": [
+    "**/*.{js,mjs,ts,tsx}",
+    "!src/routeTree.gen.ts",
+    "!web/**",
+    // Alchemy state/bundle artifacts (gitignored)
+    "!.alchemy/**",
+    "!badseo/**",
+  ],
   "ignore": ["drizzle-prod.config.ts"],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,

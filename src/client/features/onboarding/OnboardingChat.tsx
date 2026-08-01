@@ -1,11 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AutumnProvider } from "autumn-js/react";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import {
-  DEFAULT_LOCATION_CODE,
-  LOCATION_OPTIONS,
-} from "@/shared/keyword-locations";
+import { DEFAULT_LOCATION_CODE } from "@/shared/keyword-locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import { useSession } from "@/lib/auth-client";
 import { saveOnboardingSite } from "@/serverFunctions/onboardingChat";
 import { OnboardingAccountMenu } from "./OnboardingAccountMenu";
@@ -59,9 +56,7 @@ export function OnboardingChat() {
       {!domain ? (
         <SiteForm projectId={projectId} />
       ) : (
-        <AutumnProvider>
-          <OnboardingChatConversation projectId={projectId} domain={domain} />
-        </AutumnProvider>
+        <OnboardingChatConversation projectId={projectId} domain={domain} />
       )}
     </StrategyShell>
   );
@@ -116,17 +111,7 @@ function SiteForm({ projectId }: { projectId: string }) {
             <span className="text-sm font-medium">
               This is the country we will use when getting SEO data.
             </span>
-            <select
-              className="select select-bordered w-full"
-              value={locationCode}
-              onChange={(event) => setLocationCode(Number(event.target.value))}
-            >
-              {LOCATION_OPTIONS.map((option) => (
-                <option key={option.code} value={option.code}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <LocationSelect value={locationCode} onChange={setLocationCode} />
           </label>
 
           <button

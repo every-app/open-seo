@@ -11,7 +11,7 @@ const conversionInputSchema = z.object({
 
 export const captureRedditConversionEvent = createServerFn({ method: "POST" })
   .middleware(requireAuthenticatedContext)
-  .inputValidator((data: unknown) => conversionInputSchema.parse(data))
+  .validator(conversionInputSchema)
   .handler(async ({ data, context }) => {
     const status = await captureRedditConversion({
       attribution: data.attribution,

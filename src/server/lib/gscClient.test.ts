@@ -39,6 +39,52 @@ describe("gscClient", () => {
     expect(init?.headers).toMatchObject({ Authorization: "Bearer tok_123" });
   });
 
+  it("targets the selected Better Auth grant by Google sub", async () => {
+    mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
+    const { createGscClient } = await import("./gscClient");
+
+    await createGscClient({
+      userId: "u1",
+      gscAccountId: "google-sub-a",
+    }).listSites();
+
+    expect(mocks.getAccessToken).toHaveBeenCalledWith({
+      body: {
+        providerId: "google-search-console",
+        userId: "u1",
+        accountId: "google-sub-a",
+      },
+    });
+  });
+
+  it("omits accountId for the legacy null-account fallback", async () => {
+    mocks.fetch.mockResolvedValue(jsonResponse({ siteEntry: [] }));
+    const { createGscClient } = await import("./gscClient");
+
+    await createGscClient({ userId: "u1" }).listSites();
+
+    expect(mocks.getAccessToken).toHaveBeenCalledWith({
+      body: { providerId: "google-search-console", userId: "u1" },
+    });
+  });
+
+  it("fetches the Google account email from userinfo", async () => {
+    mocks.fetch.mockResolvedValue(
+      jsonResponse({ email: "client@example.com" }),
+    );
+    const { createGscClient } = await import("./gscClient");
+
+    const email = await createGscClient({
+      userId: "u1",
+      gscAccountId: "google-sub-a",
+    }).getUserInfoEmail();
+
+    expect(email).toBe("client@example.com");
+    const [url, init] = mocks.fetch.mock.calls[0];
+    expect(url).toBe("https://openidconnect.googleapis.com/v1/userinfo");
+    expect(init?.headers).toMatchObject({ Authorization: "Bearer tok_123" });
+  });
+
   it("encodes the siteUrl in the searchAnalytics path (both property forms)", async () => {
     mocks.fetch.mockImplementation(async () => jsonResponse({ rows: [] }));
     const { createGscClient } = await import("./gscClient");

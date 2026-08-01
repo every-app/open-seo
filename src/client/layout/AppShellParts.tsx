@@ -58,45 +58,29 @@ function SeoApiStatusBanners({
   );
 }
 
-function AppContent({
-  drawerOpen,
+function MobileSidebarDrawer({
+  open,
   projectId,
-  onCloseDrawer,
-  children,
+  onClose,
 }: {
-  drawerOpen: boolean;
+  open: boolean;
   projectId: string | null;
-  onCloseDrawer: () => void;
-  children: React.ReactNode;
+  onClose: () => void;
 }) {
+  if (!open) return null;
+
   return (
-    <>
-      <div className="flex-1 min-h-0 md:hidden">
-        <div className="h-full overflow-auto">{children}</div>
-
-        {drawerOpen && projectId ? (
-          <div className="fixed inset-0 z-50">
-            <button
-              type="button"
-              aria-label="Close sidebar"
-              className="absolute inset-0 bg-black/45"
-              onClick={onCloseDrawer}
-            />
-            <div className="absolute left-0 top-0 h-full">
-              <Sidebar
-                projectId={projectId}
-                onNavigate={onCloseDrawer}
-                onClose={onCloseDrawer}
-              />
-            </div>
-          </div>
-        ) : null}
+    <div className="fixed inset-0 z-50 md:hidden">
+      <button
+        type="button"
+        aria-label="Close sidebar"
+        className="absolute inset-0 bg-black/45"
+        onClick={onClose}
+      />
+      <div className="absolute left-0 top-0 h-full shadow-xl">
+        <Sidebar projectId={projectId} onNavigate={onClose} onClose={onClose} />
       </div>
-
-      <div className="hidden md:block flex-1 min-h-0 overflow-auto">
-        {children}
-      </div>
-    </>
+    </div>
   );
 }
 
@@ -160,4 +144,4 @@ const MissingSeoSetupModal = React.forwardRef<
 
 MissingSeoSetupModal.displayName = "MissingSeoSetupModal";
 
-export { AppContent, MissingSeoSetupModal, SeoApiStatusBanners };
+export { MissingSeoSetupModal, MobileSidebarDrawer, SeoApiStatusBanners };

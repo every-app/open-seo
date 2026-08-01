@@ -1,5 +1,5 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -10,9 +10,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
-import { MANAGED_ACCESS_QUERY_KEY } from "@/client/features/billing/managed-access";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
-import { queryClient } from "@/client/tanstack-db";
 import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
@@ -24,8 +22,8 @@ const SUPPORT_EMAIL = "ben@openseo.so";
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
   "MCP server and agent skills for Claude, Cursor, and ChatGPT",
-  "Search Console integration that never uses credits",
-  "Includes $20.00 of Usage Credits each month",
+  "Google Search Console Integration",
+  "Includes $10.00 of Usage Credits each month",
 ];
 
 export const Route = createFileRoute("/_authenticated/subscribe")({
@@ -43,14 +41,6 @@ export const Route = createFileRoute("/_authenticated/subscribe")({
 });
 
 function SubscribePage() {
-  return (
-    <AutumnProvider>
-      <SubscribePageContent />
-    </AutumnProvider>
-  );
-}
-
-function SubscribePageContent() {
   const navigate = useNavigate();
   const { upgrade: isUpgradeFlow, redirect } = Route.useSearch();
   const { data: session } = useSession();
@@ -99,16 +89,11 @@ function SubscribePageContent() {
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
-      // The app layouts gate on this query; make sure they see fresh access
-      // state instead of a cached "no access" that would bounce back here.
-      void queryClient.invalidateQueries({
-        queryKey: MANAGED_ACCESS_QUERY_KEY,
-      });
       const destination = redirect ?? "/";
       const [destinationPath, destinationQuery] = destination.split("?");
-      const destinationSearch = destinationQuery
+      const destinationSearch: Record<string, string> = destinationQuery
         ? Object.fromEntries(new URLSearchParams(destinationQuery))
-        : undefined;
+        : {};
       const goToApp = () =>
         void navigate({
           to: destinationPath,
@@ -251,7 +236,7 @@ function SubscribePageContent() {
       <div className="rounded-lg border border-base-300 p-5 space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <span className="font-semibold">Base Plan</span>
-          <span className="text-lg font-semibold tabular-nums">$20/month</span>
+          <span className="text-lg font-semibold tabular-nums">$10/month</span>
         </div>
 
         <ul className="space-y-2">
@@ -266,6 +251,21 @@ function SubscribePageContent() {
               {item}
             </li>
           ))}
+          {/* Sub-bullet of the Usage Credits line above. */}
+          <li className="-mt-1 pl-6 text-xs">
+            <a
+              className="text-base-content/60 underline decoration-base-content/40 decoration-dotted underline-offset-4 transition-colors hover:text-base-content"
+              href="https://openseo.so/pricing"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() =>
+                captureClientEvent("billing:pricing_estimator_click")
+              }
+            >
+              How far do usage credits go?{" "}
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          </li>
         </ul>
 
         {error ? <p className="text-sm text-error">{error}</p> : null}
@@ -293,11 +293,7 @@ function SubscribePageContent() {
 
       <div className="text-center space-y-2">
         <p className="text-sm text-base-content/60">
-          Questions?{" "}
-          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
-            Email {SUPPORT_EMAIL}
-          </a>
-          .
+          Questions? Email {SUPPORT_EMAIL}.
         </p>
         {isUpgradeFlow ? (
           <button

@@ -59,8 +59,8 @@ export const domainOverviewSchema = z.object({
   projectId: z.string().uuid(),
   domain: z.string().min(1, "Domain is required").max(255),
   includeSubdomains: z.boolean().default(true),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
 });
 
 /* ------------------------------------------------------------------ */
@@ -74,8 +74,8 @@ const domainTabs = ["keywords", "pages"] as const;
 export const domainKeywordSuggestionsSchema = z.object({
   projectId: z.string().uuid(),
   domain: domainField,
-  locationCode: z.number().int().positive(),
-  languageCode: z.string().min(2).max(8),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
 });
 
 export const DOMAIN_KEYWORDS_PAGE_SIZES = [50, 100, 200] as const;
@@ -119,8 +119,8 @@ export const domainKeywordsPageRequestSchema = z.object({
   projectId: z.string().uuid(),
   domain: z.string().min(1).max(255),
   includeSubdomains: z.boolean().default(true),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
   page: z.number().int().positive().default(1),
   pageSize: z
     .number()
@@ -141,8 +141,8 @@ export const domainPagesPageRequestSchema = z.object({
   projectId: z.string().uuid(),
   domain: z.string().min(1).max(255),
   includeSubdomains: z.boolean().default(true),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
   page: z.number().int().positive().default(1),
   pageSize: z
     .number()

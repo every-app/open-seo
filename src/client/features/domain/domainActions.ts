@@ -6,8 +6,7 @@ import type { KeywordRow } from "@/client/features/domain/types";
 type SaveMutation = (payload: {
   projectId: string;
   keywords: string[];
-  locationCode: number;
-  languageCode: string;
+  locationCode?: number;
   metrics?: Array<{
     keyword: string;
     searchVolume?: number | null;
@@ -27,14 +26,12 @@ export function saveSelectedKeywords({
   save,
   projectId,
   locationCode,
-  languageCode,
 }: {
   selectedKeywords: Set<string>;
   filteredKeywords: KeywordRow[];
   save: (payload: Parameters<SaveMutation>[0], opts?: SaveOptions) => void;
   projectId: string;
-  locationCode: number;
-  languageCode: string;
+  locationCode?: number;
 }) {
   if (selectedKeywords.size === 0) {
     toast.error("Select at least one keyword first");
@@ -49,7 +46,6 @@ export function saveSelectedKeywords({
       projectId,
       keywords: [...selectedKeywords],
       locationCode,
-      languageCode,
       metrics: selectedRows.map((row) => ({
         keyword: row.keyword,
         searchVolume: row.searchVolume,

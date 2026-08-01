@@ -1,10 +1,9 @@
 import { env } from "cloudflare:workers";
-import { and, eq, inArray } from "drizzle-orm";
-import { db } from "@/db";
-import { rankTrackingKeywords } from "@/db/schema";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
-import { getKeywordDataProvider } from "@/shared/keyword-locations";
+import {
+  createDataforseoClient,
+  fetchKeywordMetricsForList,
+} from "@/server/lib/dataforseo";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { AppError } from "@/server/lib/errors";
 import type {
@@ -19,11 +18,30 @@ import {
   estimateRankCheckCredits,
   computeNextCheckAt,
   devicesCount,
+  isScheduledRankTrackingInterval,
   MAX_KEYWORDS_PER_CONFIG,
   MAX_CONFIGS_PER_PROJECT,
 } from "@/shared/rank-tracking";
+import { resolveMarket } from "@/shared/keyword-locations";
+import { getValidatedConfig } from "./rankTrackingConfigAccess";
+import {
+  advanceKeywordSchedulesForScheduledRun,
+  getDueKeywordsForScheduledRun,
+  getEffectiveKeywordScheduleInterval,
+  getKeywordSchedules,
+  isConfigScheduleDue,
+  isScheduledInterval,
+  updateKeywordScheduleOverride,
+} from "./keywordScheduling";
 
-type ScheduledInterval = "daily" | "weekly" | "monthly";
+export {
+  advanceKeywordSchedulesForScheduledRun,
+  getDueKeywordsForScheduledRun,
+  getEffectiveKeywordScheduleInterval,
+  isConfigScheduleDue,
+  isScheduledInterval,
+};
+
 export type RankTrackingKeywordScheduleInterval =
   | "inherit"
   | "daily"
@@ -33,14 +51,6 @@ export type EffectiveKeywordScheduleInterval =
   | RankTrackingConfig["scheduleInterval"]
   | "manual-paused";
 
-type ScheduleConfig = {
-  scheduleInterval: ScheduledInterval | "manual";
-  nextCheckAt: string | null;
-};
-type ScheduleKeyword = Pick<
-  Awaited<ReturnType<typeof RankTrackingRepository.getKeywordsForConfig>>[0],
-  "id" | "scheduleIntervalOverride" | "nextCheckAt"
->;
 
 // ---------------------------------------------------------------------------
 // Config
@@ -48,29 +58,50 @@ type ScheduleKeyword = Pick<
 
 async function createConfig(input: {
   projectId: string;
+  projectMarket: { locationCode: number; languageCode: string };
   domain: string;
   locationCode?: number;
   languageCode?: string;
+  locationName?: string;
   devices?: RankTrackingConfig["devices"];
   serpDepth: number;
   scheduleInterval?: RankTrackingConfig["scheduleInterval"];
 }) {
   const normalizedDomain = normalizeDomain(input.domain);
 
-  const locationCode = input.locationCode ?? 2840;
+  const { locationCode, languageCode } = resolveMarket(
+    input,
+    input.projectMarket,
+  );
+  const scheduleInterval = input.scheduleInterval ?? "weekly";
+  const nextCheckAt = isScheduledRankTrackingInterval(scheduleInterval)
+    ? computeNextCheckAt(scheduleInterval)
+    : null;
+
+  const locationName = input.locationName ?? null;
   const existing =
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
       normalizedDomain,
       locationCode,
+      locationName,
     );
-  if (existing) {
+  // The (project, domain, location) row still exists when a domain is
+  // archived — archiving only flips isActive to false. So re-adding an
+  // archived domain reactivates that row (keeping its keyword/ranking
+  // history) with the freshly chosen settings, rather than colliding with
+  // the unique index. An already-active row is a genuine duplicate.
+  if (existing?.isActive) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "This domain + country combination is already being tracked",
+      locationName
+        ? "This domain + city combination is already being tracked"
+        : "This domain + country combination is already being tracked",
     );
   }
 
+  // Enforced for reactivations too, not just new rows — otherwise archiving
+  // and re-adding domains would push a project past the active-config cap.
   const allConfigs = await RankTrackingRepository.getConfigsForProject(
     input.projectId,
   );
@@ -81,19 +112,31 @@ async function createConfig(input: {
     );
   }
 
+  if (existing) {
+    await RankTrackingRepository.updateConfig(existing.id, input.projectId, {
+      isActive: true,
+      languageCode,
+      devices: input.devices ?? "both",
+      serpDepth: input.serpDepth,
+      scheduleInterval,
+      nextCheckAt,
+      // Drop any stale skip reason from before it was archived so the
+      // re-added domain doesn't surface an outdated warning.
+      lastSkipReason: null,
+    });
+
+    return { configId: existing.id };
+  }
+
   const configId = crypto.randomUUID();
-  const scheduleInterval = input.scheduleInterval ?? "weekly";
-  const nextCheckAt =
-    scheduleInterval === "daily" || scheduleInterval === "weekly"
-      ? computeNextCheckAt(scheduleInterval)
-      : null;
 
   await RankTrackingRepository.createConfig({
     id: configId,
     projectId: input.projectId,
     domain: normalizedDomain,
     locationCode,
-    languageCode: input.languageCode ?? "en",
+    languageCode,
+    locationName,
     devices: input.devices ?? "both",
     serpDepth: input.serpDepth,
     scheduleInterval,
@@ -110,6 +153,7 @@ async function updateConfig(
     domain?: string;
     locationCode?: number;
     languageCode?: string;
+    locationName?: string | null;
     devices?: RankTrackingConfig["devices"];
     serpDepth?: number;
     scheduleInterval?: RankTrackingConfig["scheduleInterval"];
@@ -124,6 +168,8 @@ async function updateConfig(
     updates.locationCode = input.locationCode;
   if (input.languageCode !== undefined)
     updates.languageCode = input.languageCode;
+  if (input.locationName !== undefined)
+    updates.locationName = input.locationName;
   if (input.devices !== undefined) updates.devices = input.devices;
   if (input.serpDepth !== undefined) updates.serpDepth = input.serpDepth;
   if (input.isActive !== undefined) updates.isActive = input.isActive;
@@ -198,152 +244,6 @@ async function removeKeywords(
   await RankTrackingRepository.removeKeywordsFromConfig(keywordIds, configId);
 }
 
-// ---------------------------------------------------------------------------
-// Keyword schedule overrides
-// ---------------------------------------------------------------------------
-
-export function isScheduledInterval(
-  interval: string | null | undefined,
-): interval is ScheduledInterval {
-  return (
-    interval === "daily" || interval === "weekly" || interval === "monthly"
-  );
-}
-
-export function getEffectiveKeywordScheduleInterval(
-  keyword: Pick<ScheduleKeyword, "scheduleIntervalOverride">,
-  configScheduleInterval: RankTrackingConfig["scheduleInterval"],
-): EffectiveKeywordScheduleInterval {
-  if (keyword.scheduleIntervalOverride === "manual-paused") {
-    return "manual-paused";
-  }
-  if (isScheduledInterval(keyword.scheduleIntervalOverride)) {
-    return keyword.scheduleIntervalOverride;
-  }
-  return configScheduleInterval;
-}
-
-export function isConfigScheduleDue(
-  config: ScheduleConfig,
-  nowIso: string,
-): boolean {
-  return (
-    isScheduledInterval(config.scheduleInterval) &&
-    config.nextCheckAt !== null &&
-    config.nextCheckAt <= nowIso
-  );
-}
-
-export function getDueKeywordsForScheduledRun<TKeyword extends ScheduleKeyword>(
-  config: ScheduleConfig,
-  keywords: TKeyword[],
-  nowIso: string,
-): TKeyword[] {
-  const configDue = isConfigScheduleDue(config, nowIso);
-
-  return keywords.filter((keyword) => {
-    if (keyword.scheduleIntervalOverride === "manual-paused") return false;
-
-    if (isScheduledInterval(keyword.scheduleIntervalOverride)) {
-      return (
-        keyword.nextCheckAt === null || keyword.nextCheckAt <= nowIso
-      );
-    }
-
-    return configDue && isScheduledInterval(config.scheduleInterval);
-  });
-}
-
-export function getNextKeywordCheckAt(
-  keyword: Pick<
-    ScheduleKeyword,
-    "scheduleIntervalOverride" | "nextCheckAt"
-  >,
-): string | null {
-  if (
-    keyword.scheduleIntervalOverride !== "daily" &&
-    keyword.scheduleIntervalOverride !== "weekly"
-  )
-    return null;
-  return computeNextCheckAt(
-    keyword.scheduleIntervalOverride,
-    keyword.nextCheckAt,
-  );
-}
-
-async function getKeywordSchedules(configId: string, projectId: string) {
-  const config = await getValidatedConfig(configId, projectId);
-  const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);
-
-  return {
-    configScheduleInterval: config.scheduleInterval,
-    keywords: keywords.map((keyword) => ({
-      trackingKeywordId: keyword.id,
-      keyword: keyword.keyword,
-      scheduleIntervalOverride: keyword.scheduleIntervalOverride,
-      effectiveInterval: getEffectiveKeywordScheduleInterval(
-        keyword,
-        config.scheduleInterval,
-      ),
-      nextCheckAt: keyword.nextCheckAt,
-    })),
-  };
-}
-
-async function updateKeywordScheduleOverride(
-  configId: string,
-  projectId: string,
-  keywordIds: string[],
-  scheduleIntervalOverride: RankTrackingKeywordScheduleInterval,
-) {
-  await getValidatedConfig(configId, projectId);
-  const uniqueIds = [...new Set(keywordIds)];
-  if (uniqueIds.length === 0) {
-    throw new AppError("VALIDATION_ERROR", "Select at least one keyword");
-  }
-
-  const existing = await RankTrackingRepository.getKeywordsForConfig(configId);
-  const existingIds = new Set(existing.map((keyword) => keyword.id));
-  const selectedIds = uniqueIds.filter((id) => existingIds.has(id));
-  if (selectedIds.length !== uniqueIds.length) {
-    throw new AppError("VALIDATION_ERROR", "Keyword not found");
-  }
-
-  const nextCheckAt = isScheduledInterval(scheduleIntervalOverride)
-    ? computeNextCheckAt(scheduleIntervalOverride)
-    : null;
-
-  await db
-    .update(rankTrackingKeywords)
-    .set({ scheduleIntervalOverride, nextCheckAt })
-    .where(
-      and(
-        eq(rankTrackingKeywords.configId, configId),
-        inArray(rankTrackingKeywords.id, selectedIds),
-      ),
-    );
-
-  return { updated: selectedIds.length };
-}
-
-async function advanceKeywordSchedulesForScheduledRun(
-  keywords: ScheduleKeyword[],
-) {
-  for (const keyword of keywords) {
-    const nextCheckAt = getNextKeywordCheckAt(keyword);
-    if (nextCheckAt === null) continue;
-
-    await db
-      .update(rankTrackingKeywords)
-      .set({ nextCheckAt })
-      .where(eq(rankTrackingKeywords.id, keyword.id));
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Trigger a manual check
-// ---------------------------------------------------------------------------
-
 async function triggerCheck(input: {
   configId: string;
   projectId: string;
@@ -402,88 +302,50 @@ async function getLatestRun(configId: string, projectId: string) {
 // Keyword metrics (volume, difficulty, CPC)
 // ---------------------------------------------------------------------------
 
-const KEYWORD_OVERVIEW_BATCH_SIZE = 700;
-
 async function refreshKeywordMetrics(
   configId: string,
   projectId: string,
   billingCustomer: BillingCustomerContext,
 ): Promise<{ updated: number }> {
-  const config = await getValidatedConfig(configId, projectId);
-  const keywords = await RankTrackingRepository.getKeywordsForConfig(configId);
+  const [config, keywords] = await Promise.all([
+    getValidatedConfig(configId, projectId),
+    RankTrackingRepository.getKeywordsForConfig(configId),
+  ]);
   if (keywords.length === 0) return { updated: 0 };
 
   const client = createDataforseoClient(billingCustomer);
+  const metrics = await fetchKeywordMetricsForList(client, {
+    keywords: keywords.map((kw) => kw.keyword),
+    locationCode: config.locationCode,
+    languageCode: config.languageCode,
+    // Local configs get volume/CPC scoped to the tracked city; national
+    // numbers can overstate local demand by orders of magnitude.
+    locationName: config.locationName ?? undefined,
+    creditFeature: "rank_tracking",
+  });
+  const byKeyword = new Map(
+    metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),
+  );
+
   const now = new Date().toISOString();
-  let updated = 0;
+  const updates = keywords
+    .map((kw) => {
+      const metric = byKeyword.get(kw.keyword.toLowerCase());
+      if (!metric) return null;
+      // Rank tracking only tracks volume / difficulty / CPC.
+      return {
+        id: kw.id,
+        searchVolume: metric.searchVolume,
+        keywordDifficulty: metric.keywordDifficulty,
+        cpc: metric.cpc,
+        metricsFetchedAt: now,
+      };
+    })
+    .filter((u): u is NonNullable<typeof u> => u !== null);
 
-  // Countries Labs doesn't cover get volume/CPC from Google Ads (no KD).
-  const useGoogleAds =
-    getKeywordDataProvider(config.locationCode) === "google_ads";
-
-  for (let i = 0; i < keywords.length; i += KEYWORD_OVERVIEW_BATCH_SIZE) {
-    const batch = keywords.slice(i, i + KEYWORD_OVERVIEW_BATCH_SIZE);
-    const request = {
-      keywords: batch.map((kw) => kw.keyword),
-      locationCode: config.locationCode,
-      languageCode: config.languageCode,
-    };
-
-    // Build a lookup by lowercase keyword
-    const metricsMap = new Map<
-      string,
-      {
-        searchVolume: number | null;
-        keywordDifficulty: number | null;
-        cpc: number | null;
-      }
-    >();
-    if (useGoogleAds) {
-      const adsItems = await client.keywords.adsSearchVolume({
-        ...request,
-        creditFeature: "rank_tracking",
-      });
-      for (const item of adsItems) {
-        if (!item.keyword) continue;
-        metricsMap.set(item.keyword.toLowerCase(), {
-          searchVolume: item.search_volume ?? null,
-          keywordDifficulty: null,
-          cpc: item.cpc ?? null,
-        });
-      }
-    } else {
-      for (const item of await client.labs.keywordOverview(request)) {
-        if (!item.keyword) continue;
-        metricsMap.set(item.keyword.toLowerCase(), {
-          searchVolume: item.keyword_info?.search_volume ?? null,
-          keywordDifficulty:
-            item.keyword_properties?.keyword_difficulty ?? null,
-          cpc: item.keyword_info?.cpc ?? null,
-        });
-      }
-    }
-
-    const updates = batch
-      .map((kw) => {
-        const metrics = metricsMap.get(kw.keyword.toLowerCase());
-        if (!metrics) return null;
-        return {
-          id: kw.id,
-          searchVolume: metrics.searchVolume,
-          keywordDifficulty: metrics.keywordDifficulty,
-          cpc: metrics.cpc,
-          metricsFetchedAt: now,
-        };
-      })
-      .filter((u): u is NonNullable<typeof u> => u !== null);
-
-    if (updates.length > 0) {
-      await RankTrackingRepository.updateKeywordMetrics(updates);
-      updated += updates.length;
-    }
-  }
-
-  return { updated };
+  if (updates.length === 0) return { updated: 0 };
+  await RankTrackingRepository.updateKeywordMetrics(updates);
+  return { updated: updates.length };
 }
 
 // ---------------------------------------------------------------------------
@@ -512,17 +374,6 @@ async function estimateCost(configId: string, projectId: string) {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-async function getValidatedConfig(configId: string, projectId: string) {
-  const config = await RankTrackingRepository.getConfigById({
-    configId,
-    projectId,
-  });
-  if (!config) {
-    throw new AppError("INTERNAL_ERROR", "Rank tracking config not found");
-  }
-  return config;
-}
 
 function normalizeDomain(domain: string): string {
   let d = domain.trim().toLowerCase();

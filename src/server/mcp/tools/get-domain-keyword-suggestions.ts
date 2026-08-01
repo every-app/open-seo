@@ -7,14 +7,28 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveLabsMarket } from "@/shared/keyword-locations";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
+  formatMcpTable,
+  readPath,
+  type McpTableColumn,
+} from "@/server/mcp/table";
+import {
   assertLabsLocationCode,
+  assertLanguageForLocation,
+} from "@/server/lib/market";
+import {
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
+
+const SUGGESTION_COLUMNS: McpTableColumn<unknown>[] = [
+  { header: "keyword", value: (row) => readPath(row, "keyword") },
+  { header: "position", value: (row) => readPath(row, "position") },
+  { header: "volume", value: (row) => readPath(row, "searchVolume") },
+  { header: "KD", value: (row) => readPath(row, "keywordDifficulty") },
+];
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -46,26 +60,26 @@ export const getDomainKeywordSuggestionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    assertLabsLocationCode(args.locationCode);
+    const { locationCode, languageCode } = resolveLabsMarket(
+      args,
+      context.project,
+    );
+    assertLabsLocationCode(locationCode);
+    assertLanguageForLocation(locationCode, languageCode);
     const keywords = await DomainService.getSuggestedKeywords(
       {
         domain: args.domain,
-        locationCode: args.locationCode ?? DEFAULT_LOCATION_CODE,
-        languageCode: args.languageCode ?? DEFAULT_LANGUAGE_CODE,
+        locationCode,
+        languageCode,
         organizationId: context.auth.organizationId,
         projectId: args.projectId,
       },
       context.billing,
     );
-    const text = [
-      `Top keywords for ${args.domain} (${keywords.length}):`,
-      ...keywords
-        .slice(0, 25)
-        .map(
-          (kw) =>
-            `- "${kw.keyword}" #${kw.position ?? "?"} vol:${kw.searchVolume ?? "?"} kd:${kw.keywordDifficulty ?? "?"}`,
-        ),
-    ].join("\n");
+    const text =
+      keywords.length === 0
+        ? `No ranked keywords found for ${args.domain}.`
+        : `Keywords for ${args.domain} (${keywords.length}):\n${formatMcpTable(keywords, SUGGESTION_COLUMNS)}`;
     return mcpResponse({
       text,
       meta: buildProjectMeta(

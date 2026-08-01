@@ -1,14 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { useMutation } from "@tanstack/react-query";
-import {
-  createRankTrackingConfig,
-  updateRankTrackingConfig,
-} from "@/serverFunctions/rank-tracking";
 import { Info, Loader2, X } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { domainField, normalizeDomain } from "@/types/schemas/domain";
 import {
@@ -17,11 +10,16 @@ import {
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
 import {
-  LOCATION_OPTIONS,
-  DEFAULT_LOCATION_CODE,
   getLanguageCode,
+  getLanguageOptions,
 } from "@/client/features/keywords/locations";
+import { getIsoCountryCode } from "@/shared/keyword-locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
+import type { ProjectMarket } from "@/client/features/projects/types";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
+import { SearchTargetingField } from "./SearchTargetingField";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
+import { useSaveConfigMutations } from "./useSaveConfigMutations";
 
 type Props = {
   projectId: string;
@@ -38,6 +36,45 @@ export function RankTrackingConfigModal({
   onSaved,
   onConfigCreated,
 }: Props) {
+  const projectMarket = useProjectMarket(projectId);
+
+  if (!existingConfig && !projectMarket) {
+    return (
+      <Modal
+        maxWidth="max-w-lg"
+        onClose={onClose}
+        labelledBy="rank-config-modal-title"
+      >
+        <h2 id="rank-config-modal-title" className="sr-only">
+          Add Domain
+        </h2>
+        <div className="flex min-h-40 items-center justify-center">
+          <Loader2 className="size-5 animate-spin text-base-content/50" />
+        </div>
+      </Modal>
+    );
+  }
+
+  return (
+    <RankTrackingConfigModalContent
+      projectId={projectId}
+      existingConfig={existingConfig}
+      initialMarket={existingConfig ?? projectMarket!}
+      onClose={onClose}
+      onSaved={onSaved}
+      onConfigCreated={onConfigCreated}
+    />
+  );
+}
+
+function RankTrackingConfigModalContent({
+  projectId,
+  existingConfig,
+  initialMarket,
+  onClose,
+  onSaved,
+  onConfigCreated,
+}: Props & { initialMarket: ProjectMarket }) {
   const isEdit = !!existingConfig;
   const [step, setStep] = useState<"config" | "keywords">("config");
   const [domain, setDomain] = useState(existingConfig?.domain ?? "");
@@ -45,61 +82,50 @@ export function RankTrackingConfigModal({
     existingConfig?.devices ?? "mobile",
   );
   const [locationCode, setLocationCode] = useState(
-    existingConfig?.locationCode ?? DEFAULT_LOCATION_CODE,
+    existingConfig?.locationCode ?? initialMarket.locationCode,
+  );
+  const [languageCode, setLanguageCode] = useState(
+    existingConfig?.languageCode ?? initialMarket.languageCode,
+  );
+  const languageOptions = useMemo(
+    () => getLanguageOptions(locationCode),
+    [locationCode],
   );
   const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
-  const [schedule, setSchedule] = useState<"daily" | "weekly" | "manual">(
-    existingConfig?.scheduleInterval ?? "weekly",
+  const [schedule, setSchedule] = useState<
+    RankTrackingConfig["scheduleInterval"]
+  >(existingConfig?.scheduleInterval ?? "weekly");
+  const [targetingMode, setTargetingMode] = useState<"national" | "local">(
+    existingConfig?.locationName ? "local" : "national",
+  );
+  const [locationName, setLocationName] = useState<string | undefined>(
+    existingConfig?.locationName ?? undefined,
   );
   const [createdConfigId, setCreatedConfigId] = useState<string | null>(null);
 
-  const createMutation = useMutation({
-    mutationFn: (normalizedDomain: string) =>
-      createRankTrackingConfig({
-        data: {
-          projectId,
-          domain: normalizedDomain,
-          devices,
-          serpDepth,
-          locationCode,
-          languageCode: getLanguageCode(locationCode),
-          scheduleInterval: schedule,
-        },
-      }),
-    onSuccess: (result) => {
-      captureClientEvent("rank_tracking:config_create");
-      toast.success("Domain added for rank tracking");
-      setCreatedConfigId(result.configId);
+  const selectedCountryCode = useMemo(
+    () => getIsoCountryCode(locationCode),
+    [locationCode],
+  );
+
+  const { createMutation, updateMutation } = useSaveConfigMutations({
+    projectId,
+    existingConfig,
+    fields: {
+      devices,
+      serpDepth,
+      locationCode,
+      languageCode,
+      targetingMode,
+      locationName,
+      schedule,
+    },
+    onCreated: (configId) => {
+      setCreatedConfigId(configId);
       onConfigCreated?.();
       setStep("keywords");
     },
-    onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to save config"));
-    },
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (normalizedDomain: string) =>
-      updateRankTrackingConfig({
-        data: {
-          projectId,
-          configId: existingConfig!.id,
-          domain: normalizedDomain,
-          devices,
-          serpDepth,
-          locationCode,
-          languageCode: getLanguageCode(locationCode),
-          scheduleInterval: schedule,
-        },
-      }),
-    onSuccess: () => {
-      captureClientEvent("rank_tracking:config_update");
-      toast.success("Configuration updated");
-      onSaved();
-    },
-    onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to update config"));
-    },
+    onUpdated: () => onSaved(),
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -107,6 +133,10 @@ export function RankTrackingConfigModal({
     if (isPending) return;
     if (!domain.trim()) {
       toast.error("Please enter a domain");
+      return;
+    }
+    if (targetingMode === "local" && !locationName) {
+      toast.error("Please select a city or region for local targeting");
       return;
     }
     const parsedDomain = domainField.safeParse(domain);
@@ -146,7 +176,7 @@ export function RankTrackingConfigModal({
           projectId={projectId}
           domain={domain}
           locationCode={locationCode}
-          languageCode={getLanguageCode(locationCode)}
+          languageCode={languageCode}
           onDone={(id) => onSaved(id)}
           onClose={closeKeywordStep}
         />
@@ -188,14 +218,38 @@ export function RankTrackingConfigModal({
           <label className="label">
             <span className="label-text font-medium">Country</span>
           </label>
+          <LocationSelect
+            value={locationCode}
+            onChange={(newLocationCode) => {
+              setLocationCode(newLocationCode);
+              setLanguageCode(getLanguageCode(newLocationCode));
+              // A picked city belongs to the previous country.
+              setLocationName(undefined);
+            }}
+          />
+        </div>
+
+        <SearchTargetingField
+          mode={targetingMode}
+          onModeChange={setTargetingMode}
+          locationName={locationName}
+          onLocationNameChange={setLocationName}
+          countryCode={selectedCountryCode}
+        />
+
+        <div className="form-control">
+          <label className="label">
+            <span className="label-text font-medium">Language</span>
+          </label>
           <select
             className="select select-bordered w-full"
-            value={locationCode}
-            onChange={(e) => setLocationCode(Number(e.target.value))}
+            value={languageCode}
+            onChange={(e) => setLanguageCode(e.target.value)}
+            disabled={languageOptions.length <= 1}
           >
-            {LOCATION_OPTIONS.map((loc) => (
-              <option key={loc.code} value={loc.code}>
-                {loc.label}
+            {languageOptions.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label}
               </option>
             ))}
           </select>
@@ -249,6 +303,7 @@ export function RankTrackingConfigModal({
               if (
                 value === "daily" ||
                 value === "weekly" ||
+                value === "monthly" ||
                 value === "manual"
               ) {
                 setSchedule(value);
@@ -257,6 +312,7 @@ export function RankTrackingConfigModal({
           >
             <option value="daily">Daily</option>
             <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly (end of month)</option>
             <option value="manual">Manual only</option>
           </select>
           {schedule === "daily" && (
@@ -297,7 +353,8 @@ export function RankTrackingConfigModal({
             serpDepth,
             schedule === "manual" ? "live" : "queued",
           );
-          const checksPerMonth = schedule === "daily" ? 30 : 4;
+          const checksPerMonth =
+            schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
           return (
             <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
               <div>

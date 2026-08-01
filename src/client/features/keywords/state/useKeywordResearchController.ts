@@ -25,13 +25,12 @@ import {
   useKeywordSaveMutation,
   useKeywordSearchParams,
   useKeywordUiState,
-  useResolvedKeywordLocation,
 } from "./keywordControllerInternals";
 import { useKeywordOverviewState } from "./useKeywordOverviewState";
 
 type OpenKeywordTabInput = {
   keyword: string;
-  locationCode: number;
+  locationCode: number | undefined;
   resultLimit: ResultLimit;
   mode: KeywordMode;
   clickstream: boolean;
@@ -40,8 +39,9 @@ type OpenKeywordTabInput = {
 export type KeywordResearchControllerInput = {
   projectId: string;
   keywordInput: string;
-  locationCode: number;
-  hasExplicitLocationCode: boolean;
+  locationCode: number | undefined;
+  displayedLocationCode: number;
+  setPreferredLocationCode: (locationCode: number) => void;
   resultLimit: ResultLimit;
   keywordMode: KeywordMode;
   clickstream: boolean;
@@ -60,8 +60,8 @@ export type KeywordResearchControllerInput = {
 export function useKeywordResearchController(
   input: KeywordResearchControllerInput,
 ) {
-  const { locationCode, setPreferredLocationCode } =
-    useResolvedKeywordLocation(input);
+  const { displayedLocationCode, locationCode, setPreferredLocationCode } =
+    input;
   const {
     filtersForm,
     values: filterValues,
@@ -115,6 +115,7 @@ export function useKeywordResearchController(
       projectId: input.projectId,
       keywordInput: input.keywordInput,
       locationCode,
+      displayedLocationCode,
       resultLimit: input.resultLimit,
       mode: input.keywordMode,
       clickstream: input.clickstream,
@@ -148,7 +149,7 @@ export function useKeywordResearchController(
   const controlsForm = useKeywordControlsForm(
     {
       ...input,
-      locationCode,
+      locationCode: displayedLocationCode,
       getOpenKeywordTabs: input.getOpenKeywordTabs,
       keywordTabsLimit: input.keywordTabsLimit,
     },

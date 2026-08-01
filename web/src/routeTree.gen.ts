@@ -35,6 +35,11 @@ import { Route as MarketingFeaturesDomainOverviewRouteImport } from './routes/_m
 import { Route as MarketingFeaturesBacklinkCheckerRouteImport } from './routes/_marketing/features/backlink-checker'
 import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
+import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
+import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
+import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
+import { Route as MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport } from './routes/_marketing/library/keyword-research/long-tail-question-mining'
+import { Route as MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport } from './routes/_marketing/library/keyword-research/cluster-topical-hubs'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -174,6 +179,36 @@ const MarketingFeaturesAiBrandVisibilityRoute =
     path: '/features/ai-brand-visibility',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryKeywordResearchIndexRoute =
+  MarketingLibraryKeywordResearchIndexRouteImport.update({
+    id: '/library/keyword-research/',
+    path: '/library/keyword-research/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryKeywordResearchSeedFromConversationRoute =
+  MarketingLibraryKeywordResearchSeedFromConversationRouteImport.update({
+    id: '/library/keyword-research/seed-from-conversation',
+    path: '/library/keyword-research/seed-from-conversation',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryKeywordResearchSearchIntentMappingRoute =
+  MarketingLibraryKeywordResearchSearchIntentMappingRouteImport.update({
+    id: '/library/keyword-research/search-intent-mapping',
+    path: '/library/keyword-research/search-intent-mapping',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryKeywordResearchLongTailQuestionMiningRoute =
+  MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport.update({
+    id: '/library/keyword-research/long-tail-question-mining',
+    path: '/library/keyword-research/long-tail-question-mining',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryKeywordResearchClusterTopicalHubsRoute =
+  MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport.update({
+    id: '/library/keyword-research/cluster-topical-hubs',
+    path: '/library/keyword-research/cluster-topical-hubs',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -201,6 +236,11 @@ export interface FileRoutesByFullPath {
   '/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features/': typeof MarketingFeaturesIndexRoute
+  '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
+  '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -228,6 +268,11 @@ export interface FileRoutesByTo {
   '/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features': typeof MarketingFeaturesIndexRoute
+  '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
+  '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -257,6 +302,11 @@ export interface FileRoutesById {
   '/_marketing/features/saved-keywords': typeof MarketingFeaturesSavedKeywordsRoute
   '/_marketing/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/_marketing/features/': typeof MarketingFeaturesIndexRoute
+  '/_marketing/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  '/_marketing/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
+  '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -286,6 +336,11 @@ export interface FileRouteTypes {
     | '/features/saved-keywords'
     | '/features/site-audit'
     | '/features/'
+    | '/library/keyword-research/cluster-topical-hubs'
+    | '/library/keyword-research/long-tail-question-mining'
+    | '/library/keyword-research/search-intent-mapping'
+    | '/library/keyword-research/seed-from-conversation'
+    | '/library/keyword-research/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -313,6 +368,11 @@ export interface FileRouteTypes {
     | '/features/saved-keywords'
     | '/features/site-audit'
     | '/features'
+    | '/library/keyword-research/cluster-topical-hubs'
+    | '/library/keyword-research/long-tail-question-mining'
+    | '/library/keyword-research/search-intent-mapping'
+    | '/library/keyword-research/seed-from-conversation'
+    | '/library/keyword-research'
   id:
     | '__root__'
     | '/_marketing'
@@ -341,6 +401,11 @@ export interface FileRouteTypes {
     | '/_marketing/features/saved-keywords'
     | '/_marketing/features/site-audit'
     | '/_marketing/features/'
+    | '/_marketing/library/keyword-research/cluster-topical-hubs'
+    | '/_marketing/library/keyword-research/long-tail-question-mining'
+    | '/_marketing/library/keyword-research/search-intent-mapping'
+    | '/_marketing/library/keyword-research/seed-from-conversation'
+    | '/_marketing/library/keyword-research/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -542,6 +607,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingFeaturesAiBrandVisibilityRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/keyword-research/': {
+      id: '/_marketing/library/keyword-research/'
+      path: '/library/keyword-research'
+      fullPath: '/library/keyword-research/'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/keyword-research/seed-from-conversation': {
+      id: '/_marketing/library/keyword-research/seed-from-conversation'
+      path: '/library/keyword-research/seed-from-conversation'
+      fullPath: '/library/keyword-research/seed-from-conversation'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/keyword-research/search-intent-mapping': {
+      id: '/_marketing/library/keyword-research/search-intent-mapping'
+      path: '/library/keyword-research/search-intent-mapping'
+      fullPath: '/library/keyword-research/search-intent-mapping'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/keyword-research/long-tail-question-mining': {
+      id: '/_marketing/library/keyword-research/long-tail-question-mining'
+      path: '/library/keyword-research/long-tail-question-mining'
+      fullPath: '/library/keyword-research/long-tail-question-mining'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/keyword-research/cluster-topical-hubs': {
+      id: '/_marketing/library/keyword-research/cluster-topical-hubs'
+      path: '/library/keyword-research/cluster-topical-hubs'
+      fullPath: '/library/keyword-research/cluster-topical-hubs'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport
+      parentRoute: typeof MarketingRoute
+    }
   }
 }
 
@@ -560,6 +660,11 @@ interface MarketingRouteChildren {
   MarketingFeaturesSavedKeywordsRoute: typeof MarketingFeaturesSavedKeywordsRoute
   MarketingFeaturesSiteAuditRoute: typeof MarketingFeaturesSiteAuditRoute
   MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
+  MarketingLibraryKeywordResearchClusterTopicalHubsRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
+  MarketingLibraryKeywordResearchLongTailQuestionMiningRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
+  MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
+  MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
@@ -578,6 +683,16 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingFeaturesSavedKeywordsRoute: MarketingFeaturesSavedKeywordsRoute,
   MarketingFeaturesSiteAuditRoute: MarketingFeaturesSiteAuditRoute,
   MarketingFeaturesIndexRoute: MarketingFeaturesIndexRoute,
+  MarketingLibraryKeywordResearchClusterTopicalHubsRoute:
+    MarketingLibraryKeywordResearchClusterTopicalHubsRoute,
+  MarketingLibraryKeywordResearchLongTailQuestionMiningRoute:
+    MarketingLibraryKeywordResearchLongTailQuestionMiningRoute,
+  MarketingLibraryKeywordResearchSearchIntentMappingRoute:
+    MarketingLibraryKeywordResearchSearchIntentMappingRoute,
+  MarketingLibraryKeywordResearchSeedFromConversationRoute:
+    MarketingLibraryKeywordResearchSeedFromConversationRoute,
+  MarketingLibraryKeywordResearchIndexRoute:
+    MarketingLibraryKeywordResearchIndexRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="360" viewBox="0 0 720 360" role="img" aria-label="placeholder">
+  <rect width="720" height="360" fill="#ebe7e1"/>
+  <path d="M1 359 L719 1 M1 1 L719 359" stroke="#d8d1c8" stroke-width="1"/>
+  <rect x="0.5" y="0.5" width="719" height="359" fill="none" stroke="#d8d1c8"/>
+  <text x="360" y="188" text-anchor="middle" font-family="ui-monospace, monospace" font-size="24" fill="#7b7b78">placeholder image</text>
+</svg>

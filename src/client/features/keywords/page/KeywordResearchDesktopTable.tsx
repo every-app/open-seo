@@ -19,7 +19,7 @@ import {
 import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
 import { formatNumber } from "@/client/features/keywords/utils";
 import type { KeywordResearchRow } from "@/types/keywords";
-import { EmptyFilterResults } from "./keywordResearchDesktopFilters";
+import { EmptyFilterResults } from "./keywordResearchFilters";
 
 type Props = {
   activeFilterCount: number;

@@ -6,7 +6,10 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
 import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
-import { SitePicker } from "@/client/features/gsc/SitePicker";
+import {
+  SitePicker,
+  type GscSiteSelection,
+} from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import {
   disconnectGsc,
@@ -25,7 +28,9 @@ export function SearchConsoleConnectionCard({
   const hosted = isHostedClientAuthMode();
   const queryClient = useQueryClient();
   const [picking, setPicking] = React.useState(false);
-  const [selectedSiteUrl, setSelectedSiteUrl] = React.useState<string>("");
+  const [selection, setSelection] = React.useState<GscSiteSelection | null>(
+    null,
+  );
 
   const connectionKey = ["gscConnection", projectId];
   const connectionQuery = useQuery({
@@ -43,7 +48,13 @@ export function SearchConsoleConnectionCard({
     queryFn: () => listGscSites({ data: { projectId } }),
     enabled: Boolean(showPicker && !selfHostedNeedsSetup),
   });
-  const requiresReconnect = Boolean(sitesQuery.data?.requiresReconnect);
+  const accounts = React.useMemo(
+    () => sitesQuery.data?.accounts ?? [],
+    [sitesQuery.data?.accounts],
+  );
+  const requiresReconnect = accounts.some(
+    (account) => account.requiresReconnect,
+  );
 
   React.useEffect(() => {
     if (!requiresReconnect) return;
@@ -54,15 +65,45 @@ export function SearchConsoleConnectionCard({
     void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
   }, [requiresReconnect, queryClient, projectId]);
 
+  React.useEffect(() => {
+    if (selection) return;
+    for (const account of accounts) {
+      const selectedSite = account.sites.find((site) => site.isSelected);
+      if (selectedSite) {
+        setSelection({
+          accountId: account.accountId,
+          siteUrl: selectedSite.siteUrl,
+        });
+        return;
+      }
+    }
+  }, [accounts, selection]);
+
   const setSiteMutation = useMutation({
-    mutationFn: (siteUrl: string) =>
-      setGscSite({ data: { projectId, siteUrl } }),
+    mutationFn: (selected: GscSiteSelection) =>
+      setGscSite({ data: { projectId, ...selected } }),
     onSuccess: () => {
       captureClientEvent("gsc:property_select");
       toast.success("Search Console connected");
       setPicking(false);
       void queryClient.invalidateQueries({ queryKey: connectionKey });
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
+      // The Search Performance report caches {connected:false}; refresh it so
+      // the page shows data right after connecting instead of the stale card.
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformance", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
+      });
+      // The dashboard embeds this card and swaps it for the Search
+      // performance stats card once activation reports the connection.
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboardActivation", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboardGscReport", projectId],
+      });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
@@ -72,10 +113,23 @@ export function SearchConsoleConnectionCard({
     onSuccess: () => {
       toast.success("Search Console disconnected");
       setPicking(false);
+      setSelection(null);
       void queryClient.invalidateQueries({ queryKey: connectionKey });
       // Disconnect can drop the account-level grant server-side; keep the
       // shared grant-status cache (onboarding step + re-engagement nudge) honest.
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformance", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["searchPerformanceTable", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboardActivation", projectId],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["dashboardGscReport", projectId],
+      });
     },
     onError: (error) => toast.error(getStandardErrorMessage(error)),
   });
@@ -106,7 +160,7 @@ export function SearchConsoleConnectionCard({
           siteUrl={connection?.siteUrl ?? ""}
           connectedByEmail={connection?.connectedByEmail ?? null}
           onChange={() => {
-            setSelectedSiteUrl(connection?.siteUrl ?? "");
+            setSelection(null);
             setPicking(true);
           }}
           onDisconnect={() => disconnectMutation.mutate()}
@@ -115,14 +169,13 @@ export function SearchConsoleConnectionCard({
       ) : showPicker ? (
         <SitePicker
           loading={sitesQuery.isLoading}
-          error={sitesQuery.isError || requiresReconnect}
-          sites={sitesQuery.data?.sites ?? []}
-          selectedSiteUrl={selectedSiteUrl}
-          onSelect={setSelectedSiteUrl}
-          onSave={() =>
-            selectedSiteUrl && setSiteMutation.mutate(selectedSiteUrl)
-          }
+          error={sitesQuery.isError}
+          accounts={accounts}
+          selection={selection}
+          onSelect={setSelection}
+          onSave={() => selection && setSiteMutation.mutate(selection)}
           saving={setSiteMutation.isPending}
+          onRetry={() => void sitesQuery.refetch()}
           onReconnect={handleConnect}
           secondaryAction={
             connected
@@ -138,7 +191,8 @@ export function SearchConsoleConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Real clicks, impressions, and rankings. No credits used.
+            Connect GSC to see how your website is actually performing in Google
+            Search.
           </p>
           <button
             type="button"
@@ -168,14 +222,9 @@ function IntegrationCard({
   return (
     <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
       <div className="flex items-start justify-between gap-4 p-5 sm:p-6">
-        <div>
-          <h2 className="text-base font-semibold leading-tight">
-            Google Search Console
-          </h2>
-          <p className="mt-0.5 text-sm text-base-content/55">
-            Your search data, straight from Google.
-          </p>
-        </div>
+        <h2 className="text-base font-semibold leading-tight">
+          Google Search Console
+        </h2>
         {status ? <StatusPill status={status} /> : null}
       </div>
       <div className="border-t border-base-300 p-5 sm:p-6">{children}</div>

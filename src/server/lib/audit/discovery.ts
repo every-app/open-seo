@@ -22,39 +22,39 @@ export interface RobotsResult {
 }
 
 /**
- * Fetch and parse robots.txt for a given origin.
- * Returns a helper to check if URLs are allowed + discovered sitemap URLs.
+ * Fetch the raw robots.txt body (null = missing/unreachable). Kept separate
+ * from parsing so Workflows can checkpoint the text as durable step state and
+ * re-derive the parsed result deterministically on replay.
  */
-export async function fetchRobotsTxt(origin: string): Promise<RobotsResult> {
-  const robotsUrl = `${origin}/robots.txt`;
+async function fetchRobotsTxtText(origin: string): Promise<string | null> {
   try {
-    const response = await fetch(robotsUrl, {
+    const response = await fetch(`${origin}/robots.txt`, {
       headers: { "User-Agent": "OpenSEO-Audit/1.0" },
       signal: AbortSignal.timeout(10_000),
     });
 
-    if (!response.ok) {
-      // No robots.txt = everything allowed
-      return {
-        isAllowed: () => true,
-        sitemapUrls: [],
-      };
-    }
-
-    const text = await response.text();
-    const robots = robotsParser(robotsUrl, text);
-
-    return {
-      isAllowed: (url: string) => robots.isAllowed(url) ?? true,
-      sitemapUrls: robots.getSitemaps(),
-    };
+    if (!response.ok) return null;
+    return await response.text();
   } catch (error) {
     console.warn("Failed to fetch robots.txt:", error);
-    return {
-      isAllowed: () => true,
-      sitemapUrls: [],
-    };
+    return null;
   }
+}
+
+/** Deterministic: same text in, same result out. Null = everything allowed. */
+export function parseRobotsTxt(
+  origin: string,
+  text: string | null,
+): RobotsResult {
+  if (text === null) {
+    return { isAllowed: () => true, sitemapUrls: [] };
+  }
+
+  const robots = robotsParser(`${origin}/robots.txt`, text);
+  return {
+    isAllowed: (url: string) => robots.isAllowed(url) ?? true,
+    sitemapUrls: robots.getSitemaps(),
+  };
 }
 
 /**
@@ -184,8 +184,9 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
 export async function discoverUrls(
   origin: string,
   maxPages = 50,
-): Promise<{ urls: string[]; robots: RobotsResult; sitemapUrls: Set<string> }> {
-  const robots = await fetchRobotsTxt(origin);
+): Promise<{ urls: string[]; robotsText: string | null }> {
+  const robotsText = await fetchRobotsTxtText(origin);
+  const robots = parseRobotsTxt(origin, robotsText);
 
   // Collect sitemap URLs: from robots.txt + default location
   const sitemapSources = new Set(robots.sitemapUrls);
@@ -262,9 +263,10 @@ export async function discoverUrls(
     );
   }
 
+  // Cap at the crawl's page budget: these are seeds, the crawl can never use
+  // more — and an uncapped list can blow the ~1MiB Workflow step-state limit.
   return {
-    urls: Array.from(allUrls),
-    robots,
-    sitemapUrls: allUrls,
+    urls: Array.from(allUrls).slice(0, maxPages),
+    robotsText,
   };
 }

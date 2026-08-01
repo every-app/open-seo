@@ -19,6 +19,17 @@ const mcpMetaOutputSchema = z
 // shape, so it validates both plain rows and typed instances.
 export const looseObjectOutputSchema = z.object({}).passthrough();
 
+export const backlinksProfileOutputSchema = z
+  .object({
+    rows: z.array(looseObjectOutputSchema),
+    totalCount: z.number().nullable(),
+    hasMore: z.boolean(),
+    page: z.number(),
+    pageSize: z.number(),
+    fetchedAt: z.string().optional(),
+  })
+  .passthrough();
+
 export const optionalMetaOutputSchema = {
   meta: mcpMetaOutputSchema.optional(),
 } as const;

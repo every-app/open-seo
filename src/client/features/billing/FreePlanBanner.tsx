@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useSession } from "@/lib/auth-client";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import {
@@ -12,14 +12,6 @@ import {
 } from "@/shared/billing";
 
 export function FreePlanBanner() {
-  return (
-    <AutumnProvider>
-      <FreePlanBannerContent />
-    </AutumnProvider>
-  );
-}
-
-function FreePlanBannerContent() {
   const { data: session } = useSession();
   const customerQuery = useCustomer({
     queryOptions: {

@@ -74,7 +74,15 @@ export const account = sqliteTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("account_userId_idx").on(table.userId)],
+  (table) => [
+    index("account_userId_idx").on(table.userId),
+    // better-auth looks up accounts by (accountId, providerId) on every
+    // credential/OAuth sign-in; without this it seq-scans the account table.
+    index("account_accountId_providerId_idx").on(
+      table.accountId,
+      table.providerId,
+    ),
+  ],
 );
 
 export const verification = sqliteTable(
@@ -92,7 +100,12 @@ export const verification = sqliteTable(
       .$onUpdate(() => /* @__PURE__ */ new Date())
       .notNull(),
   },
-  (table) => [index("verification_identifier_idx").on(table.identifier)],
+  (table) => [
+    index("verification_identifier_idx").on(table.identifier),
+    // better-auth's periodic cleanup deletes rows via `expires_at < now()`,
+    // a range scan that seq-scans the whole table without this index.
+    index("verification_expiresAt_idx").on(table.expiresAt),
+  ],
 );
 
 export const organization = sqliteTable(

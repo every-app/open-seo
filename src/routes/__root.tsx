@@ -9,6 +9,7 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools";
 import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { AutumnProvider } from "autumn-js/react";
 import * as React from "react";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { ExportToSheetsModal } from "@/client/components/table/ExportToSheetsModal";
@@ -47,6 +48,15 @@ export const Route = createRootRoute({
       {
         name: "viewport",
         content: "width=device-width, initial-scale=1, viewport-fit=cover",
+      },
+      // Disable browser auto-translate (Google Translate) app-wide. It rewrites
+      // text nodes into <font> wrappers, which React then can't remove/insert,
+      // crashing render with NotFoundError ("removeChild"/"insertBefore"). The
+      // product UI is data-dense (keywords, domains, metrics) and not meaningful
+      // to machine-translate; the marketing site is a separate app and unaffected.
+      {
+        name: "google",
+        content: "notranslate",
       },
       {
         name: "apple-mobile-web-app-capable",
@@ -155,7 +165,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
 
   return (
-    <html suppressHydrationWarning>
+    <html suppressHydrationWarning translate="no">
       <head>
         <script
           dangerouslySetInnerHTML={{ __html: themePreferenceInitScript }}
@@ -164,27 +174,37 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       </head>
       <body>
         <ClientOnly>
-          <QueryClientProvider client={queryClient}>
-            <>
-              <PostHogBootstrap />
-              {children}
-              <ExportToSheetsModal />
-              <Toaster position="bottom-right" mobileOffset={{ bottom: 100 }} />
-              {showDevtools ? (
-                <TanStackDevtools
-                  config={{ position: "bottom-right" }}
-                  eventBusConfig={{ connectToServerBus: true }}
-                  plugins={[
-                    {
-                      name: "TanStack Router",
-                      render: <TanStackRouterDevtoolsPanel />,
-                      defaultOpen: true,
-                    },
-                  ]}
+          {/* Keep this the ONLY AutumnProvider. Each provider creates its own
+              customer cache (autumn-js bundles a private react-query, so it
+              never shares the app QueryClient), and every extra provider mount
+              pays its own ~1s getOrCreateCustomer round trip. It only provides
+              context — nothing fetches until a useCustomer consumer mounts. */}
+          <AutumnProvider>
+            <QueryClientProvider client={queryClient}>
+              <>
+                <PostHogBootstrap />
+                {children}
+                <ExportToSheetsModal />
+                <Toaster
+                  position="bottom-right"
+                  mobileOffset={{ bottom: 100 }}
                 />
-              ) : null}
-            </>
-          </QueryClientProvider>
+                {showDevtools ? (
+                  <TanStackDevtools
+                    config={{ position: "bottom-right" }}
+                    eventBusConfig={{ connectToServerBus: true }}
+                    plugins={[
+                      {
+                        name: "TanStack Router",
+                        render: <TanStackRouterDevtoolsPanel />,
+                        defaultOpen: true,
+                      },
+                    ]}
+                  />
+                ) : null}
+              </>
+            </QueryClientProvider>
+          </AutumnProvider>
         </ClientOnly>
         <Scripts />
       </body>

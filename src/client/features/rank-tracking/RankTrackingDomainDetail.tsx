@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
+import { useKeywordSchedules } from "./useKeywordSchedules";
 import { toast } from "sonner";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCustomer } from "autumn-js/react";
 import {
   getLatestRankResults,
   getRankPositionMatrix,
@@ -21,9 +22,7 @@ import {
 } from "./RankTrackingHistoryMatrix";
 import {
   RankTrackingTableToolbar,
-  fetchRankTrackingKeywordSchedules,
   rankTrackingKeywordSchedulesQueryKey,
-  updateRankTrackingKeywordSchedules,
 } from "./RankTrackingTableToolbar";
 import {
   exportRankTrackingCsv,
@@ -32,8 +31,6 @@ import {
 import type {
   ComparePeriod,
   RankTrackingConfig,
-  RankTrackingKeywordScheduleInterval,
-  RankTrackingScheduledRow,
 } from "@/types/schemas/rank-tracking";
 import { AddKeywordsPanel } from "./AddKeywordsPanel";
 import {
@@ -47,7 +44,6 @@ import { CheckConfirmModal } from "./CheckConfirmModal";
 import { useMetricsRefresh } from "./useMetricsRefresh";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
-import { getStandardErrorMessage } from "@/client/lib/error-messages";
 
 function deviceVisibility(
   devices: RankTrackingConfig["devices"],
@@ -65,20 +61,7 @@ function deviceVisibility(
   };
 }
 
-export function RankTrackingDomainDetail(props: {
-  config: RankTrackingConfig;
-  projectId: string;
-  onBack: () => void;
-  onEdit: () => void;
-}) {
-  return (
-    <AutumnProvider>
-      <RankTrackingDomainDetailInner {...props} />
-    </AutumnProvider>
-  );
-}
-
-function RankTrackingDomainDetailInner({
+export function RankTrackingDomainDetail({
   config,
   projectId,
   onBack,
@@ -102,7 +85,11 @@ function RankTrackingDomainDetailInner({
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [comparePeriod, setComparePeriod] = useState<ComparePeriod>(
-    config.scheduleInterval === "daily" ? "1d" : "7d",
+    config.scheduleInterval === "daily"
+      ? "1d"
+      : config.scheduleInterval === "monthly"
+        ? "30d"
+        : "7d",
   );
   const [activeDevice, setActiveDevice] = useState<"desktop" | "mobile">(
     config.devices === "mobile" ? "mobile" : "desktop",
@@ -117,13 +104,6 @@ function RankTrackingDomainDetailInner({
       }),
   });
   const resultRows = resultsData?.rows ?? [];
-
-  const { data: keywordSchedules } = useQuery({
-    queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
-    queryFn: () =>
-      fetchRankTrackingKeywordSchedules({ projectId, configId: config.id }),
-    enabled: resultRows.length > 0,
-  });
 
   const latestRun = useRankRunPolling(projectId, config.id);
 
@@ -188,39 +168,6 @@ function RankTrackingDomainDetailInner({
   const { refresh: refreshMetrics, isRefreshing: metricsRefreshing } =
     useMetricsRefresh(projectId, config.id);
 
-  const intervalMutation = useMutation({
-    mutationFn: (input: {
-      keywordIds: string[];
-      scheduleIntervalOverride: RankTrackingKeywordScheduleInterval;
-    }) =>
-      updateRankTrackingKeywordSchedules({
-        projectId,
-        configId: config.id,
-        ...input,
-      }),
-    onSuccess: (result) => {
-      void queryClient.invalidateQueries({
-        queryKey: rankTrackingKeywordSchedulesQueryKey(projectId, config.id),
-      });
-      toast.success(
-        `${result.updated} keyword schedule${result.updated !== 1 ? "s" : ""} updated`,
-      );
-    },
-    onError: (error) => {
-      toast.error(
-        getStandardErrorMessage(error, "Failed to update keyword schedules"),
-      );
-    },
-  });
-
-  const setKeywordIntervals = (
-    keywordIds: string[],
-    scheduleIntervalOverride: RankTrackingKeywordScheduleInterval,
-  ) => {
-    if (keywordIds.length === 0) return;
-    intervalMutation.mutate({ keywordIds, scheduleIntervalOverride });
-  };
-
   const requestCheck = (count: number, keywordIds?: string[]) => {
     if (count < 50) {
       startCheck({ keywordIds });
@@ -238,47 +185,13 @@ function RankTrackingDomainDetailInner({
     config.devices,
     activeDevice,
   );
-  const schedulesById = useMemo(
-    () =>
-      new Map(
-        (keywordSchedules?.keywords ?? []).map((schedule) => [
-          schedule.trackingKeywordId,
-          schedule,
-        ]),
-      ),
-    [keywordSchedules],
-  );
-  const rowsWithSchedules = useMemo<RankTrackingScheduledRow[]>(
-    () =>
-      rows.map((row) => {
-        const schedule = schedulesById.get(row.trackingKeywordId);
-        const scheduleIntervalOverride =
-          schedule?.scheduleIntervalOverride ?? "inherit";
-        const effectiveInterval =
-          schedule?.effectiveInterval ??
-          keywordSchedules?.configScheduleInterval ??
-          config.scheduleInterval;
-        const nextCheckAt = schedule?.nextCheckAt ?? null;
-
-        return {
-          ...row,
-          scheduleIntervalOverride,
-          effectiveInterval,
-          nextCheckAt,
-          effectiveNextCheckAt:
-            scheduleIntervalOverride === "inherit"
-              ? config.nextCheckAt
-              : nextCheckAt,
-        };
-      }),
-    [
+  const { rowsWithSchedules, setKeywordIntervals, intervalUpdatePending } =
+    useKeywordSchedules({
+      projectId,
+      config,
       rows,
-      schedulesById,
-      keywordSchedules?.configScheduleInterval,
-      config.scheduleInterval,
-      config.nextCheckAt,
-    ],
-  );
+      enabled: resultRows.length > 0,
+    });
   const filtered = useMemo(
     () => applyFilters(rowsWithSchedules, filters),
     [rowsWithSchedules, filters],
@@ -372,10 +285,16 @@ function RankTrackingDomainDetailInner({
               showDesktop,
               showMobile,
               config.domain,
+              config.locationName,
             )
           }
           onExportToSheets={() =>
-            exportRankTrackingToSheets(filtered, showDesktop, showMobile)
+            exportRankTrackingToSheets(
+              filtered,
+              showDesktop,
+              showMobile,
+              config.locationName,
+            )
           }
           onCopyKeywords={() => {
             void navigator.clipboard.writeText(
@@ -395,7 +314,7 @@ function RankTrackingDomainDetailInner({
               interval,
             )
           }
-          intervalBusy={intervalMutation.isPending}
+          intervalBusy={intervalUpdatePending}
           checkBusy={isBusy}
           checkDisabled={isFreePlan}
           hasData={filtered.length > 0}
@@ -428,7 +347,7 @@ function RankTrackingDomainDetailInner({
               totalCount={rows.length}
               rows={filtered}
               resultsLoading={resultsLoading}
-              intervalUpdatePending={intervalMutation.isPending}
+              intervalUpdatePending={intervalUpdatePending}
               showDesktop={showDesktop}
               showMobile={showMobile}
               defaultSortId={defaultSortId}
@@ -436,6 +355,7 @@ function RankTrackingDomainDetailInner({
               configId={config.id}
               projectId={projectId}
               locationCode={config.locationCode}
+              locationName={config.locationName}
               serpDepth={config.serpDepth}
               onSetKeywordInterval={setKeywordIntervals}
             />

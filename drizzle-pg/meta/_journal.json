@@ -1,0 +1,111 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1780611624042,
+      "tag": "0000_fixed_nico_minoru",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781809009342,
+      "tag": "0001_striped_bulldozer",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781902417326,
+      "tag": "0002_clean_moira_mactaggert",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1782833725049,
+      "tag": "0003_sturdy_may_parker",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782851683039,
+      "tag": "0004_dashing_betty_ross",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1783117905771,
+      "tag": "0005_talented_wild_pack",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1783438455708,
+      "tag": "0006_location_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1783306049167,
+      "tag": "0007_same_marvel_zombies",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1783630716543,
+      "tag": "0008_yummy_annihilus",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1783699015488,
+      "tag": "0009_supreme_captain_stacy",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784070000325,
+      "tag": "0010_overrated_amazoness",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1784410131656,
+      "tag": "0011_friendly_morlun",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784423181488,
+      "tag": "0012_dashboard",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784426969390,
+      "tag": "0013_sleepy_black_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1785558763613,
+      "tag": "0014_blushing_vermin",
+      "breakpoints": true
+    }
+  ]
+}

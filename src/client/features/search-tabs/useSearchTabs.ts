@@ -44,18 +44,33 @@ function parseTabInput(value: unknown): SearchTabInput | null {
   if (value.type === "domain") {
     if (typeof value.domain !== "string" || value.domain === "") return null;
     if (typeof value.subdomains !== "boolean") return null;
-    if (typeof value.locationCode !== "number") return null;
+    // locationCode is optional in DomainSearchTabInput: tabs opened at the
+    // default location persist no loc param, so accept a missing key.
+    if (
+      value.locationCode !== undefined &&
+      typeof value.locationCode !== "number"
+    ) {
+      return null;
+    }
     return {
       type: "domain",
       domain: value.domain,
       subdomains: value.subdomains,
-      locationCode: value.locationCode,
+      locationCode:
+        typeof value.locationCode === "number" ? value.locationCode : undefined,
     };
   }
 
   if (value.type === "keyword") {
     if (typeof value.keyword !== "string" || value.keyword === "") return null;
-    if (typeof value.locationCode !== "number") return null;
+    // locationCode is optional in KeywordSearchTabInput: tabs opened at the
+    // default location persist no loc param, so accept a missing key.
+    if (
+      value.locationCode !== undefined &&
+      typeof value.locationCode !== "number"
+    ) {
+      return null;
+    }
     if (
       value.resultLimit !== 150 &&
       value.resultLimit !== 300 &&
@@ -74,7 +89,8 @@ function parseTabInput(value: unknown): SearchTabInput | null {
     return {
       type: "keyword",
       keyword: value.keyword,
-      locationCode: value.locationCode,
+      locationCode:
+        typeof value.locationCode === "number" ? value.locationCode : undefined,
       resultLimit: value.resultLimit,
       mode: value.mode,
       // Tabs persisted before the clickstream toggle existed default to off.
@@ -93,7 +109,8 @@ function tabInputKey(value: unknown): string {
   return JSON.stringify(value);
 }
 
-function parseStoredState(value: unknown): TabsState {
+// Exported for unit tests.
+export function parseStoredState(value: unknown): TabsState {
   if (!isRecord(value)) return EMPTY_STATE;
   if (!Array.isArray(value.tabs)) return EMPTY_STATE;
   const tabs = value.tabs
@@ -255,7 +272,11 @@ export function useSearchTabs(key: string) {
         let activeTabId = current.activeTabId;
         if (current.activeTabId === tabId) {
           closedActive = true;
-          const neighbor = tabs[index - 1] ?? tabs[index] ?? null;
+          // Post-removal array: tabs[index] is the tab that slid into the
+          // closed tab's slot (its right-hand neighbor). Select it first —
+          // browser-tab convention and the documented e2e contract — and fall
+          // back to the left neighbor only when the last tab was closed.
+          const neighbor = tabs[index] ?? tabs[index - 1] ?? null;
           activeTabId = neighbor?.id ?? null;
           nextActiveTab = neighbor;
         }

@@ -11,17 +11,21 @@ The default `compose.yaml` uses the published GHCR image:
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
+- A DataForSEO API key (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md))
 
 ## Quickstart
 
 ```bash
 cp .env.example .env
+```
+
+Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md), then start OpenSEO:
+
+```bash
 docker compose up -d
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env`, then open `http://localhost:<PORT>` (default `3001`).
-
-Docker Compose passes `.env` values into the container, and `compose.yaml` enables `CLOUDFLARE_INCLUDE_PROCESS_ENV=true` so the Cloudflare Vite runtime can read them as Worker bindings during local self-hosting.
+Open `http://localhost:<PORT>` (default `3001`). The first start builds the app and may take 1-2 minutes; follow progress with `docker compose logs -f`.
 
 Optional env values:
 
@@ -29,6 +33,7 @@ Optional env values:
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+- `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
@@ -37,6 +42,12 @@ ALLOWED_HOST=yourdomain.com docker compose up -d
 ```
 
 You can also persist it in `.env`.
+
+## Telemetry
+
+OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+
+To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
 
 ## Pin to a specific image tag
 
@@ -76,11 +87,9 @@ docker compose pull && docker compose up -d
 docker compose down
 ```
 
-- Stop and remove volumes:
+## Health and troubleshooting
 
-```bash
-docker compose down -v
-```
+Startup checks appear in `docker compose logs` before the build. Once running, `/api/health` reports configuration and database status, and `docker compose ps` reports container health.
 
 ## Troubleshooting environment variables
 

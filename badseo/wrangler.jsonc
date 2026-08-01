@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "badseo",
+  "compatibility_date": "2026-02-19",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "assets": {
+    "directory": "./dist/client",
+    "html_handling": "none",
+    "not_found_handling": "none",
+  },
+  "workers_dev": true,
+  "preview_urls": true,
+  "observability": {
+    "enabled": true,
+  },
+  "routes": [
+    { "pattern": "badseo.dev", "custom_domain": true },
+    { "pattern": "www.badseo.dev", "custom_domain": true },
+  ],
+}

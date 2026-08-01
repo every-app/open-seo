@@ -29,6 +29,13 @@ export class DataforseoChargedTaskError extends AppError {
   constructor(
     message: string,
     public readonly billing: DataforseoApiCallCost,
+    /**
+     * True when the task failed because OUR request was malformed (DataForSEO
+     * "Invalid Field: ..."). The customer got no value, so — when the task
+     * wasn't billed — meterDataforseoCall skips the charge and rethrows this as
+     * a non-reportable VALIDATION_ERROR.
+     */
+    public readonly isInvalidField = false,
   ) {
     super("INTERNAL_ERROR", message);
     this.name = "DataforseoChargedTaskError";
@@ -82,11 +89,37 @@ export function buildTaskBilling(
   return billing;
 }
 
-/** DataForSEO's "No Search Results" (40501) — a successful empty result, not a failure. */
+const INVALID_FIELD_MESSAGE_RE = /Invalid Field:\s*'([^']+)'/i;
+
+/**
+ * DataForSEO echoes the posted request params back on `task.data`. Its
+ * validation rejections are opaque ("Invalid Field: 'target'.") and name the
+ * field but not the value we sent — and these tasks are charged, so we want to
+ * know exactly what tripped them. Append the offending value so the charged
+ * failure is diagnosable from the captured message alone.
+ */
+function describeInvalidField(
+  message: string,
+  task: DataforseoTaskLike,
+): string {
+  const match = message.match(INVALID_FIELD_MESSAGE_RE);
+  if (!match) return message;
+  const field = match[1];
+  if (!isRecord(task.data)) return message;
+  const value = task.data[field];
+  if (value === undefined) return message;
+  return `${message} (sent ${field}=${JSON.stringify(value)})`;
+}
+
+/**
+ * DataForSEO's "No Search Results" (40501) — a successful empty result, not a
+ * failure. Match on the status message, not the code alone: 40501 also covers
+ * validation rejections like "Invalid Field: 'target'.", which are real charged
+ * failures we must surface rather than mask as empty results.
+ */
 export function isNoResultsTask(task: DataforseoTaskLike): boolean {
   return (
-    task.status_code === 40501 ||
-    (task.status_message?.toLowerCase().includes("no search results") ?? false)
+    task.status_message?.toLowerCase().includes("no search results") ?? false
   );
 }
 
@@ -139,10 +172,16 @@ export function assertOk<T extends DataforseoTaskLike>(
     const classified = classify?.(task.status_code, message, path);
     if (classified) throw classified;
 
+    const detailedMessage = describeInvalidField(message, task);
     const billing = tryBuildTaskBilling(task);
-    if (billing) throw new DataforseoChargedTaskError(message, billing);
+    if (billing)
+      throw new DataforseoChargedTaskError(
+        detailedMessage,
+        billing,
+        INVALID_FIELD_MESSAGE_RE.test(message),
+      );
 
-    throw new AppError("INTERNAL_ERROR", message);
+    throw new AppError("INTERNAL_ERROR", detailedMessage);
   }
 
   return task;

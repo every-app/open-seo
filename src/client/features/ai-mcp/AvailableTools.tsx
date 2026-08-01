@@ -74,6 +74,11 @@ const toolCategories: ToolCategory[] = [
         title: "Get backlinks overview",
         description: "Check backlink and referring-domain stats.",
       },
+      {
+        name: "get_backlinks_profile",
+        title: "Get backlinks profile",
+        description: "Fetch paginated link-level backlink rows.",
+      },
     ],
   },
   {

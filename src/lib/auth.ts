@@ -1,11 +1,22 @@
 import { env } from "cloudflare:workers";
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { captcha } from "better-auth/plugins";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
-import { db } from "@/db";
+import { isDisposableEmailDomain } from "@/server/auth/disposable-email";
+import * as d1Schema from "@/db/d1/schema";
+import { d1Db } from "@/db/d1/client";
+import { pgDb } from "@/db/pg/client";
+import * as pgSchema from "@/db/pg/schema";
+import { getDatabaseProvider } from "@/db/provider";
 import { z } from "zod";
 import { isHostedAuthMode } from "@/lib/auth-mode";
 import { createBaseAuthConfig } from "@/lib/auth-config";
+import {
+  getHostedTurnstileSecretKey,
+  hasHostedTurnstileConfig,
+} from "@/lib/auth-turnstile";
 import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
 import {
   sendHostedPasswordResetEmail,
@@ -33,6 +44,24 @@ function createAuth() {
     : "http://localhost";
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
   const baseAuthConfig = createBaseAuthConfig();
+
+  // Turnstile captcha on signup — hosted only. Enforcement is driven by the
+  // server-side secret alone so a client build/runtime site-key mismatch cannot
+  // silently omit the Better Auth captcha plugin. Hosted deployments that expose
+  // the client widget without the matching server secret fail configuration
+  // checks instead of presenting a bypassable captcha.
+  const turnstileSecretKey = getHostedTurnstileSecretKey(env);
+
+  const database =
+    getDatabaseProvider() === "postgres"
+      ? drizzleAdapter(pgDb, {
+          provider: "pg",
+          schema: pgSchema,
+        })
+      : drizzleAdapter(d1Db, {
+          provider: "sqlite",
+          schema: d1Schema,
+        });
 
   const auth = betterAuth({
     baseURL: baseUrl,
@@ -64,13 +93,37 @@ function createAuth() {
         },
     socialProviders: getSocialProviders(),
     trustedOrigins: getTrustedOrigins(baseUrl),
-    database: drizzleAdapter(db, {
-      provider: "sqlite",
-    }),
-    plugins: [...baseAuthConfig.plugins, tanstackStartCookies()],
+    database,
+    plugins: [
+      ...baseAuthConfig.plugins,
+      ...(turnstileSecretKey
+        ? [
+            captcha({
+              provider: "cloudflare-turnstile",
+              secretKey: turnstileSecretKey,
+              endpoints: ["/sign-up/email"],
+            }),
+          ]
+        : []),
+      tanstackStartCookies(),
+    ],
     databaseHooks: {
       user: {
         create: {
+          // Hosted only: keep cheap mass-signups off the free plan by rejecting
+          // throwaway-inbox domains before the user row is created. Self-hosted
+          // has no shared credit pool to protect, so it's left untouched.
+          before: async (user) => {
+            if (
+              isHostedAuthMode(env.AUTH_MODE) &&
+              isDisposableEmailDomain(user.email)
+            ) {
+              throw new APIError("BAD_REQUEST", {
+                message: "Please sign up with a non-disposable email address.",
+              });
+            }
+            return { data: user };
+          },
           after: async (user) => {
             await syncHostedSignupContact(user);
           },
@@ -220,8 +273,9 @@ export function hasHostedAuthConfig() {
     getHostedSecret();
     getGoogleSocialProviderConfig();
     return (
-      Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
-      hasHostedAuthEmailConfig()
+      hasHostedTurnstileConfig(env) &&
+      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
+        hasHostedAuthEmailConfig())
     );
   } catch {
     return false;

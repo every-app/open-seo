@@ -108,14 +108,14 @@ export function BacklinksSearchCard({
           }}
         >
           <div className="space-y-3">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+            <div className="flex flex-col gap-3 lg:flex-row">
               <form.Field name="target">
                 {(field) => {
                   const targetError = getFieldError(field.state.meta.errors);
 
                   return (
                     <label
-                      className={`input input-bordered lg:col-span-10 flex items-center gap-2 ${targetError ? "input-error" : ""}`}
+                      className={`input input-bordered flex flex-1 items-center gap-2 ${targetError ? "input-error" : ""}`}
                     >
                       <Search className="size-4 text-base-content/60" />
                       <input
@@ -141,7 +141,7 @@ export function BacklinksSearchCard({
                 {(isSubmitting) => (
                   <button
                     type="submit"
-                    className="btn btn-primary lg:col-span-2"
+                    className="btn btn-primary shrink-0 px-6"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Loading..." : "Search"}

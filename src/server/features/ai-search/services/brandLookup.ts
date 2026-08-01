@@ -305,7 +305,6 @@ function rethrowIfBlockingAiSearchError(
       result.status === "rejected" &&
       result.reason instanceof AppError &&
       (result.reason.code === "INSUFFICIENT_CREDITS" ||
-        result.reason.code === "AI_SEARCH_NOT_ENABLED" ||
         result.reason.code === "AI_SEARCH_BILLING_ISSUE")
     ) {
       throw result.reason;

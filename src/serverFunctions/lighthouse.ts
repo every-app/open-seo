@@ -45,7 +45,7 @@ async function getAuditLighthouseData(input: {
 
 export const getAuditLighthouseIssues = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => lighthouseAuditIssueSchema.parse(data))
+  .validator(lighthouseAuditIssueSchema)
   .handler(async ({ data, context }) => {
     const lighthouse = await getAuditLighthouseData({
       projectId: context.projectId,
@@ -68,7 +68,7 @@ export const getAuditLighthouseIssues = createServerFn({ method: "POST" })
 
 export const exportAuditLighthouseIssues = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => lighthouseAuditExportSchema.parse(data))
+  .validator(lighthouseAuditExportSchema)
   .handler(async ({ data, context }) => {
     const lighthouse = await getAuditLighthouseData({
       projectId: context.projectId,

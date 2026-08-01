@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -9,17 +9,32 @@ import {
   Globe,
   Plus,
   ChevronRight,
+  Search,
 } from "lucide-react";
 import {
   getRankTrackingConfigSummaries,
   updateRankTrackingConfig,
 } from "@/serverFunctions/rank-tracking";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import { Modal } from "@/client/components/Modal";
+import {
+  applyDomainListFilters,
+  countActiveDomainListFilters,
+  DomainListFilterBar,
+  EMPTY_DOMAIN_LIST_FILTERS,
+  getDomainListFilterOptions,
+  type DomainListFilters,
+} from "./RankTrackingFilters";
 
 type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
 >[number];
+
+// Below this many domains the list is short enough to scan by eye, so the
+// filter controls are more chrome than help. Still shown if filters are active
+// (e.g. archiving dropped the count) so they never get orphaned.
+const FILTER_BAR_MIN_DOMAINS = 6;
 
 export function RankTrackingDomainList({
   projectId,
@@ -32,10 +47,23 @@ export function RankTrackingDomainList({
   const [archiveTarget, setArchiveTarget] = useState<ConfigSummary | null>(
     null,
   );
-  const { data: summaries } = useQuery({
+  const [filters, setFilters] = useState<DomainListFilters>(
+    EMPTY_DOMAIN_LIST_FILTERS,
+  );
+  const { data: summaries, isPending } = useQuery({
     queryKey: ["rankTrackingConfigSummaries", projectId],
     queryFn: () => getRankTrackingConfigSummaries({ data: { projectId } }),
   });
+  const allSummaries = useMemo(() => summaries ?? [], [summaries]);
+  const filteredSummaries = useMemo(
+    () => applyDomainListFilters(allSummaries, filters),
+    [allSummaries, filters],
+  );
+  const filterOptions = useMemo(
+    () => getDomainListFilterOptions(allSummaries),
+    [allSummaries],
+  );
+  const activeFilterCount = countActiveDomainListFilters(filters);
 
   const archiveMutation = useMutation({
     mutationFn: (configId: string) =>
@@ -67,8 +95,27 @@ export function RankTrackingDomainList({
             Add Domain
           </button>
         </div>
-        <div className="divide-y divide-base-300">
-          {(summaries ?? []).length === 0 ? (
+        {(allSummaries.length >= FILTER_BAR_MIN_DOMAINS ||
+          activeFilterCount > 0) && (
+          <DomainListFilterBar
+            filters={filters}
+            options={filterOptions}
+            activeFilterCount={activeFilterCount}
+            onChange={setFilters}
+            onReset={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
+          />
+        )}
+        <div className="divide-y divide-base-300 border-t border-base-300">
+          {isPending ? (
+            <div className="space-y-4 px-5 py-4" aria-busy>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="skeleton h-4 w-48" />
+                  <div className="skeleton h-3 w-72" />
+                </div>
+              ))}
+            </div>
+          ) : allSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-2">
               <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
                 <Globe className="size-5 text-base-content/40" />
@@ -80,8 +127,29 @@ export function RankTrackingDomainList({
                 Add a domain to start monitoring keyword rankings over time.
               </p>
             </div>
+          ) : filteredSummaries.length === 0 ? (
+            <div className="px-5 py-10 text-center space-y-3">
+              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
+                <Search className="size-5 text-base-content/40" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-base-content/70">
+                  No matching tracked domains
+                </p>
+                <p className="text-xs text-base-content/40">
+                  Try clearing search or adjusting filters.
+                </p>
+              </div>
+              <button
+                className="btn btn-ghost btn-xs"
+                onClick={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
+                disabled={activeFilterCount === 0}
+              >
+                Clear filters
+              </button>
+            </div>
           ) : (
-            (summaries ?? []).map((summary) => (
+            filteredSummaries.map((summary) => (
               <DomainRow
                 key={summary.id}
                 projectId={projectId}
@@ -147,8 +215,10 @@ function DomainRow({
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
         <p className="text-xs text-base-content/60">
-          {LOCATIONS[summary.locationCode] ?? "US"} &middot;{" "}
-          {devicesLabel(summary.devices)} &middot;{" "}
+          {summary.locationName
+            ? formatLocationLabel(summary.locationName, 2)
+            : (LOCATIONS[summary.locationCode] ?? "US")}{" "}
+          &middot; {devicesLabel(summary.devices)} &middot;{" "}
           {scheduleLabel(summary.scheduleInterval)}
           {summary.lastRunCompletedAt && (
             <>

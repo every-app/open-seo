@@ -29,11 +29,11 @@
   --color-base-200: oklch(97% 0 0);
   --color-base-300: oklch(92% 0 0);
   --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(55% 0.18 260);
+  --color-primary: oklch(50% 0.12 262);
   --color-primary-content: oklch(100% 0 0);
   --color-secondary: oklch(55% 0.15 145);
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(55% 0.18 260);
+  --color-accent: oklch(50% 0.12 262);
   --color-accent-content: oklch(100% 0 0);
   --color-neutral: oklch(25% 0 0);
   --color-neutral-content: oklch(100% 0 0);
@@ -61,14 +61,14 @@
   prefersdark: true;
   color-scheme: dark;
   --color-base-100: oklch(18% 0 0);
-  --color-base-200: oklch(14% 0 0);
-  --color-base-300: oklch(22% 0 0);
+  --color-base-200: oklch(12% 0 0);
+  --color-base-300: oklch(27% 0 0);
   --color-base-content: oklch(92% 0 0);
-  --color-primary: oklch(60% 0.18 260);
+  --color-primary: oklch(66% 0.12 262);
   --color-primary-content: oklch(100% 0 0);
   --color-secondary: oklch(60% 0.15 145);
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(60% 0.18 260);
+  --color-accent: oklch(66% 0.12 262);
   --color-accent-content: oklch(100% 0 0);
   --color-neutral: oklch(85% 0 0);
   --color-neutral-content: oklch(20% 0 0);
@@ -146,6 +146,45 @@ select {
   body {
     touch-action: pan-x pan-y;
   }
+}
+
+/* Dark mode: neutral interactive surfaces should lift above the panel, not
+   sink below it. DaisyUI derives default buttons and the tabs-box well from
+   base-200, which is darker than the base-100 content panel in dark mode,
+   so they read as sunken/disabled. Colored variants (primary, error, ...)
+   set their own --btn-color and are excluded. */
+html[data-theme="openseo-dark"]
+  .btn:not(
+    .btn-primary,
+    .btn-error,
+    .btn-neutral,
+    .btn-ghost,
+    .btn-outline,
+    .btn-soft
+  ) {
+  --btn-color: oklch(25% 0 0);
+}
+
+/* Light mode: the base-200 default button is nearly invisible on the
+   base-100 content panel; use a white surface with a visible border,
+   matching inputs/selects. */
+html[data-theme="openseo"]
+  .btn:not(
+    .btn-primary,
+    .btn-error,
+    .btn-neutral,
+    .btn-ghost,
+    .btn-outline,
+    .btn-soft
+  ) {
+  --btn-color: var(--color-base-100);
+  --btn-border: var(--color-base-300);
+}
+
+/* Underline tabs: DaisyUI's tabs-border underlines the active tab with
+   currentColor; use the primary accent instead (PostHog-style). */
+.tabs-border > .tab.tab-active::before {
+  --tab-border-color: var(--color-primary);
 }
 
 /* Custom alert styling with darker borders and transparent background */

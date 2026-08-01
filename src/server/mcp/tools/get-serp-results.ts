@@ -4,13 +4,29 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveMarket } from "@/shared/keyword-locations";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
+
+type SerpItem = {
+  type?: string | null;
+  rank: number | null;
+  title: string | null;
+  url: string | null;
+  domain: string | null;
+  description: string | null;
+};
+
+const SERP_ITEM_COLUMNS: McpTableColumn<SerpItem>[] = [
+  { header: "rank", value: (item) => item.rank },
+  { header: "domain", value: (item) => item.domain },
+  { header: "title", value: (item) => item.title },
+  { header: "url", value: (item) => item.url },
+];
 
 const querySchema = z.object({
   keyword: z.string().min(1).describe("Search query to fetch the SERP for."),
@@ -78,14 +94,12 @@ export const getSerpResultsTool = {
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
     const client = createDataforseoClient(context.billing);
-
     const results = await Promise.all(
       args.queries.map(async (q) => {
         try {
           const items = await client.serp.live({
             keyword: q.keyword,
-            locationCode: q.locationCode ?? DEFAULT_LOCATION_CODE,
-            languageCode: q.languageCode ?? DEFAULT_LANGUAGE_CODE,
+            ...resolveMarket(q, context.project),
           });
           // Trim noise — return only essentials per item.
           const trimmed = items.slice(0, 20).map((item) => ({
@@ -111,16 +125,13 @@ export const getSerpResultsTool = {
     const text =
       results
         .map((r) => {
-          if (r.ok) {
-            const top = r.items.slice(0, 3);
-            return `"${r.keyword}" (${r.items.length} results):\n${top
-              .map(
-                (it) =>
-                  `  #${it.rank ?? "?"}  ${it.domain ?? "?"} — ${it.title ?? "?"}`,
-              )
-              .join("\n")}`;
+          if (!r.ok) {
+            return `"${r.keyword}": FAILED — ${r.error}`;
           }
-          return `"${r.keyword}": FAILED — ${r.error}`;
+          if (r.items.length === 0) {
+            return `"${r.keyword}" (0 results)`;
+          }
+          return `"${r.keyword}" (${r.items.length} results):\n${formatMcpTable(r.items, SERP_ITEM_COLUMNS)}`;
         })
         .join("\n\n") +
       `\n\n${okCount} of ${results.length} queries succeeded.`;

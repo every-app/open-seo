@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "c2d95520-6cbb-4440-bc0f-673852163c28",
+  "id": "165e3c0c-dc17-46cb-94a9-ba97e87892ce",
   "prevId": "b005f3e9-f1b2-4406-8abd-6ca8f606f6ef",
   "tables": {
     "audit_lighthouse_results": {
@@ -758,6 +758,13 @@
           ],
           "isUnique": true,
           "where": "\"projects\".\"name\" = 'Default' AND \"projects\".\"domain\" IS NULL AND \"projects\".\"archived_at\" IS NULL"
+        },
+        "projects_organization_id_idx": {
+          "name": "projects_organization_id_idx",
+          "columns": [
+            "organization_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1213,21 +1220,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "schedule_interval_override": {
-          "name": "schedule_interval_override",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'inherit'"
-        },
-        "next_check_at": {
-          "name": "next_check_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "created_at": {
           "name": "created_at",
           "type": "text",
@@ -1245,14 +1237,6 @@
             "keyword"
           ],
           "isUnique": true
-        },
-        "rank_tracking_keywords_config_next_check_idx": {
-          "name": "rank_tracking_keywords_config_next_check_idx",
-          "columns": [
-            "config_id",
-            "next_check_at"
-          ],
-          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -1754,6 +1738,14 @@
           "name": "account_userId_idx",
           "columns": [
             "user_id"
+          ],
+          "isUnique": false
+        },
+        "account_accountId_providerId_idx": {
+          "name": "account_accountId_providerId_idx",
+          "columns": [
+            "account_id",
+            "provider_id"
           ],
           "isUnique": false
         }
@@ -2275,6 +2267,13 @@
           "name": "verification_identifier_idx",
           "columns": [
             "identifier"
+          ],
+          "isUnique": false
+        },
+        "verification_expiresAt_idx": {
+          "name": "verification_expiresAt_idx",
+          "columns": [
+            "expires_at"
           ],
           "isUnique": false
         }

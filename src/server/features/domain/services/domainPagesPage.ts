@@ -1,9 +1,11 @@
+import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput, toRelativePath } from "@/server/lib/domainUtils";
 import type { RelevantPagesItem } from "@/server/lib/dataforseo";
+import { computeHasMore } from "@/server/features/domain/services/pagination";
 import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
 const DOMAIN_PAGES_PAGE_TTL_SECONDS = 12 * 60 * 60;
@@ -178,10 +180,12 @@ export async function getPagesPage(
     );
 
   const totalCount = response.totalCount;
-  const hasMore =
-    totalCount != null
-      ? offset + pages.length < totalCount
-      : pages.length === input.pageSize;
+  const hasMore = computeHasMore(
+    offset,
+    response.items.length,
+    totalCount,
+    input.pageSize,
+  );
 
   const result: DomainPagesPageResult = {
     domain,
@@ -193,10 +197,14 @@ export async function getPagesPage(
     fetchedAt: new Date().toISOString(),
   };
 
-  void setCached(cacheKey, result, DOMAIN_PAGES_PAGE_TTL_SECONDS).catch(
-    (error) => {
-      console.error("domain.pages-page.cache-write failed:", error);
-    },
+  // waitUntil, not void: workerd cancels unregistered pending I/O once the
+  // response is sent, so a fire-and-forget put never persists the cache.
+  waitUntil(
+    setCached(cacheKey, result, DOMAIN_PAGES_PAGE_TTL_SECONDS).catch(
+      (error) => {
+        console.error("domain.pages-page.cache-write failed:", error);
+      },
+    ),
   );
 
   return result;

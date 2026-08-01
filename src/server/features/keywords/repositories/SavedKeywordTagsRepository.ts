@@ -1,5 +1,6 @@
 import { and, asc, count, eq, inArray, notInArray } from "drizzle-orm";
 import { db } from "@/db";
+import { runBatch } from "@/db/runBatch";
 import {
   savedKeywordTagAssignments,
   savedKeywordTags,
@@ -257,18 +258,19 @@ async function upsertSavedKeywordTags(
   const normalizedTags = normalizeSavedKeywordTags(tagNames);
   if (normalizedTags.length === 0) return [];
 
-  const [first, ...rest] = normalizedTags.map((tag) =>
-    db
-      .insert(savedKeywordTags)
-      .values({
-        id: crypto.randomUUID(),
-        projectId,
-        name: tag.name,
-        normalizedName: tag.normalizedName,
-      })
-      .onConflictDoNothing(),
+  await runBatch((tx) =>
+    normalizedTags.map((tag) =>
+      tx
+        .insert(savedKeywordTags)
+        .values({
+          id: crypto.randomUUID(),
+          projectId,
+          name: tag.name,
+          normalizedName: tag.normalizedName,
+        })
+        .onConflictDoNothing(),
+    ),
   );
-  await db.batch([first, ...rest]);
 
   return db
     .select()

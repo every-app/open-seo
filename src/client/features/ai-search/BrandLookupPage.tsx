@@ -19,9 +19,6 @@ import { BrandLookupSearchCard } from "@/client/features/ai-search/components/Br
 import { BrandLookupHistorySection } from "@/client/features/ai-search/components/BrandLookupHistorySection";
 import { AiSearchLoadingState } from "@/client/features/ai-search/components/AiSearchLoadingState";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
-import { AiSearchSetupGate } from "@/client/features/ai-search/components/AiSearchSetupGate";
-import { AccessGateLoadingState } from "@/client/features/access-gate/AccessGate";
-import { useAiSearchAccess } from "@/client/features/ai-search/useAiSearchAccess";
 import { useBrandLookupSearchHistory } from "@/client/hooks/useBrandLookupSearchHistory";
 import {
   BRAND_LOOKUP_MAX_INPUT_LENGTH,
@@ -80,8 +77,6 @@ function BrandLookupPageInner({
     message: string;
   } | null>(null);
 
-  const access = useAiSearchAccess(projectId);
-
   const trimmedInitialQuery = initialQuery.trim();
   const hasActiveQuery = trimmedInitialQuery.length > 0;
   // The URL `c` param is the source of truth for the active lookup; the local
@@ -101,7 +96,10 @@ function BrandLookupPageInner({
           languageCode: "en",
         },
       }),
-    enabled: hasActiveQuery && !planGate.isFreePlan && access.enabled,
+    // Client-side gate is a UX optimization only; the paywall is enforced
+    // server-side (lookupBrand → assertPaidPlan) before any DataForSEO spend,
+    // so a stale free-plan window here just yields a rejected request, not cost.
+    enabled: hasActiveQuery && !planGate.isFreePlan,
     staleTime: 5 * 60 * 1000,
     retry: false,
   });
@@ -200,8 +198,6 @@ function BrandLookupPageInner({
       : null;
   const resultData = hasActiveQuery ? lookupQuery.data : undefined;
 
-  if (planGate.isLoading) return null;
-
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -212,15 +208,7 @@ function BrandLookupPageInner({
           </p>
         </div>
 
-        {access.isLoading ? (
-          <AccessGateLoadingState />
-        ) : !access.enabled ? (
-          <AiSearchSetupGate
-            errorMessage={access.errorMessage ?? access.statusErrorMessage}
-            isRefetching={access.isRefetching}
-            onRetry={access.onRetry}
-          />
-        ) : planGate.isFreePlan ? (
+        {planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
             feature="Brand Lookup"
             description="See how ChatGPT and Google AI Overview cite any brand or domain — total mentions, sample prompts where it appears, and the pages cited alongside it."

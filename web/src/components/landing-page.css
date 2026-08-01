@@ -34,7 +34,12 @@
   --feat-bg: #221f1b;
   --feat-text: #ffffff;
   --term-bg: #221f1b;
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--canvas);
   color: var(--ink);
   font-size: 16px;
@@ -96,22 +101,6 @@
   letter-spacing: -0.028em;
   margin: 0;
   text-wrap: balance;
-}
-/* Desktop keeps the headline on two lines via a forced break; mobile wraps
-   naturally (the break is removed below the tablet breakpoint). */
-.itc-h1-br {
-  display: inline;
-}
-@media (max-width: 767px) {
-  .itc-h1-br {
-    display: none;
-  }
-}
-@media (min-width: 768px) {
-  /* Let the forced <br> own the break; don't let balance re-split into 3 lines. */
-  .itc-display-xl {
-    text-wrap: wrap;
-  }
 }
 .itc-display-lg {
   font-size: clamp(32px, 4.4vw, 52px);
@@ -314,37 +303,42 @@
   position: relative;
   z-index: 1;
 }
+/* Out of flow so the hero's vertical centering ignores the laurel and the
+   headline block sits exactly where it did without it. */
+.itc-hero-ph-laurel {
+  color: var(--ink);
+  display: inline-flex;
+  position: absolute;
+  bottom: calc(100% + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+.itc-hero-ph-laurel:hover {
+  opacity: 1;
+}
+.itc-hero-ph-laurel svg {
+  height: 44px;
+  width: auto;
+}
+@media (max-width: 767px) {
+  .itc-hero-ph-laurel {
+    bottom: calc(100% + 20px);
+  }
+  .itc-hero-ph-laurel svg {
+    height: 38px;
+  }
+}
 .itc-hero-title {
   color: var(--ink);
   transition: color 0.18s ease;
-}
-.itc-hero-title-accent {
-  color: inherit;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
 }
 .itc-hero-subtitle {
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
     color 0.18s ease;
-}
-.itc-hero-subtitle-counter,
-.itc-hero-subtitle-win {
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
-  font-style: italic;
-  transition:
-    background-color 0.18s ease,
-    color 0.18s ease,
-    text-decoration-color 0.18s ease;
-}
-.itc-hero-subtitle-counter {
-  color: #7a746d;
-}
-.itc-hero-subtitle-win {
-  color: var(--orange);
-  font-weight: 500;
 }
 @media (max-width: 767px) {
   .itc-hero {
@@ -360,10 +354,28 @@
   gap: 12px;
   margin-top: 32px;
 }
+.itc-hero-cta-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.itc-hero-cta-note {
+  margin: 0;
+  color: var(--ink-subtle);
+  font-size: 13px;
+  line-height: 1.4;
+}
 @media (max-width: 479px) {
   .itc-hero-ctas {
     flex-direction: column;
     align-items: stretch;
+  }
+  .itc-hero-cta-group {
+    align-items: stretch;
+  }
+  .itc-hero-cta-note {
+    text-align: center;
   }
 }
 

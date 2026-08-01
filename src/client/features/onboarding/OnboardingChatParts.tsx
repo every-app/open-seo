@@ -12,17 +12,17 @@ const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
 
 export function SuggestedQuestions({
   questions,
-  primaryQuestion,
+  primaryQuestions = [],
   onSelect,
 }: {
   questions: string[];
-  primaryQuestion?: string;
+  primaryQuestions?: string[];
   onSelect: (question: string) => void;
 }) {
   return (
     <div className="ml-10 flex flex-wrap gap-2">
       {questions.map((question) =>
-        question === primaryQuestion ? (
+        primaryQuestions.includes(question) ? (
           <button
             key={question}
             type="button"
@@ -52,17 +52,11 @@ export function WelcomeMessage({
   checkoutError,
   isStartingCheckout,
   onUpgrade,
-  onAskAboutOpenSeo,
-  onProposeStrategy,
-  disableActions,
 }: {
   domain: string;
   checkoutError: string | null;
   isStartingCheckout: boolean;
   onUpgrade: () => void;
-  onAskAboutOpenSeo: () => void;
-  onProposeStrategy: () => void;
-  disableActions: boolean;
 }) {
   return (
     <div className="flex gap-3">
@@ -95,27 +89,9 @@ export function WelcomeMessage({
           <p>
             Want me to analyze{" "}
             <span className="font-medium text-base-content">{domain}</span> and
-            draft a strategy, or do you have questions first?
+            draft a strategy, or do you have questions first? Pick one below to
+            get started.
           </p>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="btn btn-soft btn-sm"
-            disabled={disableActions}
-            onClick={onAskAboutOpenSeo}
-          >
-            Ask about OpenSEO
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            disabled={disableActions}
-            onClick={onProposeStrategy}
-          >
-            Show my strategy
-          </button>
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-200/50 p-3 text-xs lg:hidden">
@@ -180,11 +156,11 @@ export function UpgradeSidebar({
       <div className="flex flex-1 flex-col gap-5 px-6 py-6">
         <div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-semibold tracking-tight">$20</span>
+            <span className="text-3xl font-semibold tracking-tight">$10</span>
             <span className="text-sm text-base-content/55">/month</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-base-content/55">
-            Includes $20 of usage credits every month, plus a 30-day money-back
+            Includes $10 of usage credits every month, plus a 30-day money-back
             guarantee.
           </p>
         </div>
@@ -276,9 +252,11 @@ export function ChatGate({
 export function ChatComposer({
   busy,
   onSend,
+  placeholder = "Ask Sam about your strategy or OpenSEO…",
 }: {
   busy: boolean;
   onSend: (text: string) => void;
+  placeholder?: string;
 }) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -322,7 +300,7 @@ export function ChatComposer({
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKey}
         rows={1}
-        placeholder="Ask Sam about your strategy or OpenSEO…"
+        placeholder={placeholder}
         className="max-h-40 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-sm leading-relaxed outline-none placeholder:text-base-content/50 focus:outline-none"
       />
       <button

@@ -1,5 +1,6 @@
 import {
   AiOptimizationApi,
+  AppendixApi,
   BacklinksApi,
   BusinessDataApi,
   DataforseoLabsApi,
@@ -22,9 +23,9 @@ const DATAFORSEO_RETRY_BACKOFF_MS = 250;
 
 /**
  * Translates a DataForSEO HTTP/task failure into a product-specific AppError
- * (e.g. "backlinks not enabled", "billing issue"). Returns null when the
- * failure isn't one this classifier recognises, so the caller can fall back to
- * a generic error. See {@link createDataforseoAccessClassifier}.
+ * (e.g. "billing issue"). Returns null when the failure isn't one this
+ * classifier recognises, so the caller can fall back to a generic error. See
+ * {@link createDataforseoBillingClassifier}.
  */
 export type DataforseoErrorClassifier = (
   status: number | undefined,
@@ -96,7 +97,9 @@ function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
           ? "UPSTREAM_UNAVAILABLE"
           : response.status === 429
             ? "RATE_LIMITED"
-            : "INTERNAL_ERROR";
+            : response.status === 401
+              ? "DATAFORSEO_AUTH_FAILED"
+              : "INTERNAL_ERROR";
       const error = new AppError(
         code,
         `DataForSEO HTTP ${response.status} on ${path}`,
@@ -124,6 +127,9 @@ export const keywordsDataApi = () => new KeywordsDataApi(API_BASE, http());
 export const serpApi = () => new SerpApi(API_BASE, http());
 export const businessDataApi = () => new BusinessDataApi(API_BASE, http());
 export const onPageApi = () => new OnPageApi(API_BASE, http());
+// Account/appendix data (spend, balance, rates). userData() is FREE ($0) and
+// read-only — do NOT wire it through metering.
+export const appendixApi = () => new AppendixApi(API_BASE, http());
 export const backlinksApi = (classify?: DataforseoErrorClassifier) =>
   new BacklinksApi(API_BASE, http(classify));
 export const aiOptimizationApi = (classify?: DataforseoErrorClassifier) =>

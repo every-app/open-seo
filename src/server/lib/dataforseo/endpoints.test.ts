@@ -6,13 +6,13 @@ vi.mock("@/server/lib/runtime-env", () => ({
 
 import { fetchQuestionsAnswers } from "@/server/lib/dataforseo/business";
 import {
-  buildLlmTarget,
   fetchLlmAggregatedMetrics,
   fetchLlmCrossAggregatedMetrics,
   fetchLlmMentionsSearch,
   fetchLlmResponse,
   fetchLlmTopPages,
 } from "@/server/lib/dataforseo/ai";
+import { buildLlmTarget } from "@/server/lib/dataforseo/shared";
 
 function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
   const body = init?.body;
@@ -354,5 +354,27 @@ describe("DataForSEO SDK-backed endpoints", () => {
         web_search_country_iso_code: "US",
       },
     ]);
+  });
+});
+
+describe("fetchLlmResponse model_name validation", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("rejects an unknown model_name before dispatching a paid LLM task", async () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      fetchLlmResponse({
+        userPrompt: "What is OpenSEO?",
+        modelSlug: "claude",
+        // DataForSEO dropped this from its catalog; it must never be dispatched.
+        modelName: "claude-sonnet-4-0",
+      }),
+    ).rejects.toThrow(/Unsupported DataForSEO model_name/);
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

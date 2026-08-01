@@ -23,9 +23,10 @@ import {
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { KeywordResearchControllerState } from "./types";
 import {
+  FilterIntentSelect,
   FilterRangeInputs,
   FilterTextInput,
-} from "./keywordResearchDesktopFilters";
+} from "./keywordResearchFilters";
 import { KeywordResearchDesktopTable } from "./KeywordResearchDesktopTable";
 import {
   KeywordResearchPagination,
@@ -330,6 +331,8 @@ function DesktopFilters({ controller }: Props) {
           maxName="maxKd"
         />
       </div>
+
+      <FilterIntentSelect form={filtersForm} />
     </div>
   );
 }

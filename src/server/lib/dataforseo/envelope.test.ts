@@ -60,11 +60,35 @@ describe("assertOk", () => {
     }
   });
 
-  it("uses the classifier for non-charged (no-cost) failures", () => {
-    const classify = vi.fn(() => new AppError("BACKLINKS_NOT_ENABLED", "nope"));
+  it("appends the echoed request value to opaque 'Invalid Field' failures", () => {
     const task = {
-      status_code: 40204,
-      status_message: "subscription required",
+      status_code: 40501,
+      status_message: "Invalid Field: 'target'.",
+      path: ["v3", "dataforseo_labs", "google", "domain_rank_overview", "live"],
+      cost: 0.02,
+      result_count: 0,
+      data: { target: "not a valid domain", language_code: "en" },
+    };
+    try {
+      assertOk({ status_code: 20000, tasks: [task] });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.message).toBe(
+          `Invalid Field: 'target'. (sent target="not a valid domain")`,
+        );
+      }
+    }
+  });
+
+  it("uses the classifier for non-charged (no-cost) failures", () => {
+    const classify = vi.fn(
+      () => new AppError("BACKLINKS_BILLING_ISSUE", "nope"),
+    );
+    const task = {
+      status_code: 40200,
+      status_message: "balance is too low",
     };
     expect(() =>
       assertOk(
@@ -73,16 +97,16 @@ describe("assertOk", () => {
       ),
     ).toThrow("nope");
     expect(classify).toHaveBeenCalledWith(
-      40204,
-      "subscription required",
+      40200,
+      "balance is too low",
       "/v3/backlinks/summary/live",
     );
   });
 
   it.each([
-    [40204, "BACKLINKS_NOT_ENABLED"],
-    [403, "BACKLINKS_NOT_ENABLED"],
     [40200, "BACKLINKS_BILLING_ISSUE"],
+    [40210, "BACKLINKS_BILLING_ISSUE"],
+    [402, "BACKLINKS_BILLING_ISSUE"],
   ] as const)(
     "uses the classifier for account failure %s before charging billed task metadata",
     (status, code) => {
@@ -91,7 +115,7 @@ describe("assertOk", () => {
       );
       const task = {
         status_code: status,
-        status_message: "Backlinks subscription required",
+        status_message: "Account balance is too low",
         path: ["v3", "backlinks", "summary", "live"],
         cost: 0.05,
         result_count: 0,
@@ -106,7 +130,7 @@ describe("assertOk", () => {
       }
       expect(classify).toHaveBeenCalledWith(
         status,
-        "Backlinks subscription required",
+        "Account balance is too low",
         "/v3/backlinks/summary/live",
       );
     },
@@ -125,5 +149,30 @@ describe("assertOk", () => {
         { treatNoResultsAsEmpty: true },
       ),
     ).toBe(task);
+  });
+
+  it("still surfaces a charged 40501 'Invalid Field' failure even with treatNoResultsAsEmpty", () => {
+    // 40501 is not unique to no-results — it also covers validation rejections,
+    // which are real charged failures we must not mask as empty results.
+    const task = {
+      status_code: 40501,
+      status_message: "Invalid Field: 'categories'.",
+      path: ["v3", "business_data", "business_listings", "search", "live"],
+      cost: 0.02,
+      result_count: 0,
+      data: { categories: ["not_a_real_category"] },
+    };
+    try {
+      assertOk(
+        { status_code: 20000, tasks: [task] },
+        { treatNoResultsAsEmpty: true },
+      );
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.billing).toEqual({ path: task.path, costUsd: 0.02 });
+      }
+    }
   });
 });

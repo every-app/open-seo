@@ -1,0 +1,4 @@
+interface:
+  display_name: "Maintain Greptile Rules"
+  short_description: "Promote verified review gaps into Greptile"
+  default_prompt: "Use $maintain-greptile-rules to evaluate verified review findings and update the repository Greptile configuration."

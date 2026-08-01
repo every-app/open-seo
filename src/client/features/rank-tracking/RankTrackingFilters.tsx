@@ -1,22 +1,11 @@
 import { RotateCcw } from "lucide-react";
-import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
+import type { DomainListFilters, Filters } from "./RankTrackingFilters.logic";
 
-export type Filters = {
-  include: string;
-  exclude: string;
-  minDesktopPos: string;
-  maxDesktopPos: string;
-  minMobilePos: string;
-  maxMobilePos: string;
-};
+export * from "./RankTrackingFilters.logic";
 
-export const EMPTY_FILTERS: Filters = {
-  include: "",
-  exclude: "",
-  minDesktopPos: "",
-  maxDesktopPos: "",
-  minMobilePos: "",
-  maxMobilePos: "",
+type DomainListFilterOption = {
+  value: string;
+  label: string;
 };
 
 export function FilterPanel({
@@ -93,6 +82,124 @@ export function FilterPanel({
           onMaxChange={(v) => update("maxMobilePos", v)}
         />
       </div>
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+        <RangeFilter
+          title="Volume"
+          minValue={filters.minVolume}
+          maxValue={filters.maxVolume}
+          onMinChange={(v) => update("minVolume", v)}
+          onMaxChange={(v) => update("maxVolume", v)}
+        />
+        <RangeFilter
+          title="Keyword difficulty"
+          minValue={filters.minKd}
+          maxValue={filters.maxKd}
+          onMinChange={(v) => update("minKd", v)}
+          onMaxChange={(v) => update("maxKd", v)}
+        />
+        <RangeFilter
+          title="CPC"
+          minValue={filters.minCpc}
+          maxValue={filters.maxCpc}
+          onMinChange={(v) => update("minCpc", v)}
+          onMaxChange={(v) => update("maxCpc", v)}
+        />
+      </div>
+    </div>
+  );
+}
+
+export function DomainListFilterBar({
+  filters,
+  options,
+  activeFilterCount,
+  onChange,
+  onReset,
+}: {
+  filters: DomainListFilters;
+  options: {
+    devices: DomainListFilterOption[];
+    locations: DomainListFilterOption[];
+  };
+  activeFilterCount: number;
+  onChange: (filters: DomainListFilters) => void;
+  onReset: () => void;
+}) {
+  return (
+    <div className="border-t border-base-300 px-5 py-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
+        <label className="form-control flex-1 gap-1.5">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Search
+          </span>
+          <input
+            className="input input-bordered input-sm w-full bg-base-100"
+            placeholder="Domain or website"
+            value={filters.query}
+            onChange={(event) =>
+              onChange({ ...filters, query: event.target.value })
+            }
+          />
+        </label>
+        <label className="form-control gap-1.5 lg:w-44">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Device
+          </span>
+          <select
+            className="select select-bordered select-sm w-full bg-base-100"
+            value={filters.device}
+            onChange={(event) => {
+              const value = event.target.value;
+              if (
+                value === "all" ||
+                value === "both" ||
+                value === "desktop" ||
+                value === "mobile"
+              ) {
+                onChange({ ...filters, device: value });
+              }
+            }}
+          >
+            <option value="all">All devices</option>
+            {options.devices.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="form-control gap-1.5 lg:w-52">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+            Country
+          </span>
+          <select
+            className="select select-bordered select-sm w-full bg-base-100"
+            value={filters.locationCode}
+            onChange={(event) =>
+              onChange({ ...filters, locationCode: event.target.value })
+            }
+          >
+            <option value="all">All countries</option>
+            {options.locations.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        {activeFilterCount > 0 && (
+          <button
+            className="btn btn-ghost btn-sm gap-1.5 self-start lg:self-auto"
+            onClick={onReset}
+          >
+            <RotateCcw className="size-3" />
+            Clear
+            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+              {activeFilterCount}
+            </span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -133,78 +240,4 @@ function RangeFilter({
       </div>
     </div>
   );
-}
-
-export function applyFilters<TRow extends RankTrackingRow>(
-  rows: TRow[],
-  filters: Filters,
-): TRow[] {
-  const includeTerms = filters.include
-    ? filters.include
-        .toLowerCase()
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-    : [];
-  const excludeTerms = filters.exclude
-    ? filters.exclude
-        .toLowerCase()
-        .split(",")
-        .map((t) => t.trim())
-        .filter(Boolean)
-    : [];
-
-  return rows.filter((row) => {
-    const kw = row.keyword.toLowerCase();
-
-    if (includeTerms.length > 0 && !includeTerms.some((t) => kw.includes(t)))
-      return false;
-
-    if (excludeTerms.some((t) => kw.includes(t))) return false;
-
-    if (
-      !matchesPositionFilter(
-        row.desktop.position,
-        filters.minDesktopPos,
-        filters.maxDesktopPos,
-      )
-    )
-      return false;
-
-    if (
-      !matchesPositionFilter(
-        row.mobile.position,
-        filters.minMobilePos,
-        filters.maxMobilePos,
-      )
-    )
-      return false;
-
-    return true;
-  });
-}
-
-export function matchesPositionFilter(
-  position: number | null,
-  minValue: string,
-  maxValue: string,
-): boolean {
-  if (!minValue && !maxValue) return true;
-
-  const max = maxValue === "" ? Infinity : Number(maxValue);
-  if (max === 0) return position === null;
-
-  if (position === null) return false;
-
-  const min = minValue === "" ? 0 : Number(minValue);
-  return position >= min && position <= max;
-}
-
-export function countActiveFilters(filters: Filters): number {
-  let count = 0;
-  if (filters.include) count++;
-  if (filters.exclude) count++;
-  if (filters.minDesktopPos || filters.maxDesktopPos) count++;
-  if (filters.minMobilePos || filters.maxMobilePos) count++;
-  return count;
 }

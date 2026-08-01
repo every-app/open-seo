@@ -7,9 +7,10 @@ import {
   optionalMetaOutputSchema,
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
+import { resolveMarket } from "@/shared/keyword-locations";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
+import { assertLanguageForLocation } from "@/server/lib/market";
 import {
-  DEFAULT_LANGUAGE_CODE,
-  DEFAULT_LOCATION_CODE,
   languageCodeSchema,
   locationCodeSchema,
   projectIdSchema,
@@ -44,6 +45,27 @@ const inputSchema = {
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
 
+type ResearchRow = {
+  keyword: string;
+  searchVolume: number | null;
+  keywordDifficulty: number | null;
+  cpc: number | null;
+  competition: number | null;
+  intent: string;
+};
+
+// The full rows (including trend data) still ship in structuredContent; this
+// table exists so MCP clients that surface only text content see every keyword
+// and its metrics, not just the count summary.
+const RESEARCH_COLUMNS: McpTableColumn<ResearchRow>[] = [
+  { header: "keyword", value: (row) => row.keyword },
+  { header: "volume", value: (row) => row.searchVolume },
+  { header: "KD", value: (row) => row.keywordDifficulty },
+  { header: "CPC", value: (row) => row.cpc },
+  { header: "competition", value: (row) => row.competition },
+  { header: "intent", value: (row) => row.intent },
+];
+
 export const researchKeywordsTool = {
   name: "research_keywords",
   config: {
@@ -61,7 +83,7 @@ export const researchKeywordsTool = {
               rowCount: z.number(),
               source: z.string(),
               usedFallback: z.boolean(),
-              topRows: z.array(looseObjectOutputSchema),
+              rows: z.array(looseObjectOutputSchema),
             })
             .passthrough(),
           z
@@ -85,12 +107,17 @@ export const researchKeywordsTool = {
     const results = await Promise.all(
       args.seeds.map(async (item) => {
         try {
+          const { locationCode, languageCode } = resolveMarket(
+            item,
+            context.project,
+          );
+          assertLanguageForLocation(locationCode, languageCode);
           const data = await KeywordResearchService.research(
             {
               projectId: args.projectId,
               keywords: [item.seed],
-              locationCode: item.locationCode ?? DEFAULT_LOCATION_CODE,
-              languageCode: item.languageCode ?? DEFAULT_LANGUAGE_CODE,
+              locationCode,
+              languageCode,
               resultLimit: args.resultLimit ?? 150,
               mode: "auto",
               clickstream: args.includeClickstreamData ?? false,
@@ -103,7 +130,7 @@ export const researchKeywordsTool = {
             rowCount: data.rows.length,
             source: data.source,
             usedFallback: data.usedFallback,
-            topRows: data.rows.slice(0, 20),
+            rows: data.rows,
           };
         } catch (error) {
           return {
@@ -120,13 +147,17 @@ export const researchKeywordsTool = {
     const text =
       results
         .map((r) => {
-          if (r.ok) {
-            return `- "${r.seed}": ${r.rowCount} keywords (source: ${r.source})`;
+          if (!r.ok) {
+            return `## "${r.seed}" — FAILED\n${r.error}`;
           }
-          return `- "${r.seed}": FAILED — ${r.error}`;
+          const header = `## "${r.seed}" — ${r.rowCount} keywords (source: ${r.source}${r.usedFallback ? ", fallback" : ""})`;
+          if (r.rowCount === 0) {
+            return `${header}\n(no keywords returned)`;
+          }
+          return `${header}\n${formatMcpTable(r.rows, RESEARCH_COLUMNS)}`;
         })
-        .join("\n") +
-      `\n\nResearched ${okCount} of ${results.length} seeds${failCount > 0 ? ` (${failCount} failed)` : ""}.`;
+        .join("\n\n") +
+      `\n\nResearched ${okCount} of ${results.length} seeds${failCount > 0 ? ` (${failCount} failed)` : ""}. Columns: volume = monthly searches, KD = keyword difficulty (0-100), CPC in USD, competition = paid competition (0-1); "—" = unavailable.`;
 
     return mcpResponse({
       text,

@@ -1,6 +1,4 @@
-import { asc, eq } from "drizzle-orm";
-import { db } from "@/db";
-import { member, user as authUser } from "@/db/better-auth-schema";
+import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { slugify, toHex } from "./org-slug";
 
 type HostedUser = {
@@ -31,26 +29,8 @@ function getDefaultHostedOrganizationSlug(user: HostedUser) {
   return `${slugify(slugSource)}-${suffix}`;
 }
 
-async function findFirstOrganizationIdForUser(userId: string) {
-  const [existingMembership] = await db
-    .select({ organizationId: member.organizationId })
-    .from(member)
-    .where(eq(member.userId, userId))
-    .orderBy(asc(member.createdAt))
-    .limit(1);
-
-  return existingMembership?.organizationId ?? null;
-}
-
 async function getHostedUser(userId: string) {
-  const hostedUser = await db.query.user.findFirst({
-    columns: {
-      id: true,
-      email: true,
-      name: true,
-    },
-    where: eq(authUser.id, userId),
-  });
+  const hostedUser = await AuthRepository.getHostedUser(userId);
 
   if (!hostedUser?.email) {
     throw new Error("Failed to resolve hosted user for session setup");
@@ -72,7 +52,9 @@ async function createDefaultHostedOrganization(
 
     return createdOrganization.id;
   } catch (error) {
-    const organizationId = await findFirstOrganizationIdForUser(user.id);
+    const organizationId = await AuthRepository.findFirstOrganizationIdForUser(
+      user.id,
+    );
 
     if (organizationId) {
       return organizationId;
@@ -86,7 +68,8 @@ export async function getOrCreateDefaultHostedOrganization(
   userId: string,
   createOrganization: HostedOrganizationCreator,
 ) {
-  const existingOrganizationId = await findFirstOrganizationIdForUser(userId);
+  const existingOrganizationId =
+    await AuthRepository.findFirstOrganizationIdForUser(userId);
 
   if (existingOrganizationId) {
     return existingOrganizationId;

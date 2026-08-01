@@ -1,4 +1,9 @@
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
+  sanitizePostHogProperties,
+  sanitizePostHogUrl,
+} from "@/client/lib/posthog-sanitize";
 
 // Type-only import: extracts the type at compile time without bundling posthog-js
 // oxlint-disable-next-line typescript/consistent-type-imports -- import() type avoids eagerly bundling posthog-js
@@ -8,6 +13,37 @@ let browserPostHogClientPromise: Promise<BrowserPostHogClient | null> | null =
   null;
 let browserPostHogInitialized = false;
 let analyticsCaptureEnabled = true;
+
+type ExceptionEntry = {
+  value?: unknown;
+  mechanism?: { synthetic?: boolean };
+  stacktrace?: { frames?: unknown[] };
+};
+
+// Unactionable exceptions we don't want polluting error tracking. They share
+// the trait of not being our code: browser extensions inject promise rejections
+// and cross-origin scripts surface as a detail-less "Script error.", while the
+// global onerror handler synthesizes a stackless "undefined" when it fires
+// without a real Error object. Real app errors always carry a stack, so the
+// "undefined" rule is gated on synthetic + no frames to avoid false drops.
+function isIgnorableException(
+  properties: Record<string, unknown> | undefined,
+): boolean {
+  const list = properties?.["$exception_list"];
+  if (!Array.isArray(list) || list.length === 0) return false;
+  return list.every((entry: ExceptionEntry) => {
+    const value = typeof entry?.value === "string" ? entry.value : "";
+    if (value.includes("Object Not Found Matching Id")) return true;
+    if (value === "Script error.") return true;
+    if (value.includes("signal is aborted without reason")) return true;
+    const frames = entry?.stacktrace?.frames;
+    return (
+      value === "undefined" &&
+      entry?.mechanism?.synthetic === true &&
+      (!Array.isArray(frames) || frames.length === 0)
+    );
+  });
+}
 
 function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
   if (typeof window === "undefined" || !isHostedClientAuthMode()) {
@@ -34,26 +70,33 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
           api_host: host,
           defaults: "2026-01-30",
           capture_exceptions: true,
+          before_send(event) {
+            if (
+              event?.event === "$exception" &&
+              isIgnorableException(event.properties)
+            ) {
+              return null;
+            }
+            return event;
+          },
           capture_pageview: "history_change",
+          mask_personal_data_properties: true,
+          custom_personal_data_properties: [
+            ...POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
+          ],
           respect_dnt: true,
           session_recording: {
             maskAllInputs: true,
             maskTextSelector: "[data-ph-mask], .ph-mask",
+            maskCapturedNetworkRequestFn(request) {
+              return {
+                ...request,
+                name: sanitizePostHogUrl(request.name),
+              };
+            },
           },
-          sanitize_properties(properties, event) {
-            if (event === "$pageview" || event === "$pageleave") {
-              const url: unknown = properties["$current_url"];
-              if (typeof url === "string") {
-                try {
-                  const parsed = new URL(url);
-                  parsed.searchParams.delete("email");
-                  properties["$current_url"] = parsed.toString();
-                } catch {
-                  // leave as-is if URL parsing fails
-                }
-              }
-            }
-            return properties;
+          sanitize_properties(properties) {
+            return sanitizePostHogProperties(properties);
           },
         });
         browserPostHogInitialized = true;

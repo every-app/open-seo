@@ -76,7 +76,11 @@ const toolExtra: ToolExtra = {
 describe("search console MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    });
     mocks.isHostedServerAuthMode.mockReset();
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.hasSelfHostedGscConfig.mockReset();
@@ -140,6 +144,12 @@ describe("search console MCP tools", () => {
       siteUrl: "https://example.com/",
       rowCount: 1,
     });
+    const text = result.content?.[0];
+    expect(text?.type === "text" && text.text).toContain(
+      "key | clicks | impressions | CTR | position",
+    );
+    expect(text?.type === "text" && text.text).toContain("seo tools");
+    expect(text?.type === "text" && text.text).toContain("4.0%");
   });
 
   it("surfaces a not-connected message with a connect URL", async () => {
@@ -161,7 +171,7 @@ describe("search console MCP tools", () => {
     const first = result.content[0];
     expect(first.type).toBe("text");
     expect(first.type === "text" && first.text).toContain(
-      "/p/project_1/settings",
+      "/p/project_1/search-performance",
     );
   });
 
@@ -183,7 +193,7 @@ describe("search console MCP tools", () => {
     });
     const first = result.content[0];
     expect(first.type === "text" && first.text).toContain(
-      "/p/project_1/settings",
+      "/p/project_1/search-performance",
     );
   });
 

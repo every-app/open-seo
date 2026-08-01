@@ -1,6 +1,8 @@
 import type { InferSelectModel } from "drizzle-orm";
 import { z } from "zod";
-import { rankTrackingConfigs, rankTrackingKeywords } from "@/db/app.schema";
+import { rankTrackingConfigs } from "@/db/schema";
+import type { rankTrackingKeywords } from "@/db/schema";
+import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { domainField } from "@/types/schemas/domain";
 
 // ---------------------------------------------------------------------------
@@ -83,6 +85,7 @@ export const createConfigSchema = z.object({
   domain: domainField,
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
+  locationName: z.string().min(1).max(200).optional(),
   devices: devicesEnum.optional(),
   serpDepth: z.number().int().min(10).max(100).multipleOf(10),
   scheduleInterval: scheduleEnum.optional(),
@@ -94,6 +97,7 @@ export const updateConfigSchema = z.object({
   domain: domainField.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().max(10).optional(),
+  locationName: z.string().min(1).max(200).nullable().optional(),
   devices: devicesEnum.optional(),
   serpDepth: z.number().int().min(10).max(100).multipleOf(10).optional(),
   scheduleInterval: scheduleEnum.optional(),
@@ -128,7 +132,10 @@ export const estimateCostSchema = z.object({
 export const addKeywordsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
-  keywords: z.array(z.string().min(1).max(200)).min(1).max(2000),
+  keywords: z
+    .array(z.string().min(1).max(MAX_TRACKED_KEYWORD_LENGTH))
+    .min(1)
+    .max(2000),
 });
 
 export const removeKeywordsSchema = z.object({

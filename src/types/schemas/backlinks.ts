@@ -36,10 +36,6 @@ export const backlinksLookupSchema = z.object({
   scope: backlinksTargetScopeSchema.optional(),
 });
 
-export const backlinksProjectSchema = z.object({
-  projectId: z.string().min(1),
-});
-
 export const backlinksOverviewInputSchema = backlinksLookupSchema.extend({
   projectId: z.string().min(1),
 });
@@ -88,7 +84,7 @@ export const backlinksRowsFiltersSchema = z.object({
  * each referring domain's strongest link (the default, denoised view);
  * `as_is` returns every individual backlink.
  */
-const backlinksRowsModeSchema = z.enum(["one_per_domain", "as_is"]);
+export const backlinksRowsModeSchema = z.enum(["one_per_domain", "as_is"]);
 
 export const referringDomainsFiltersSchema = z.object({
   include: z.string().optional(),
@@ -140,7 +136,7 @@ export const topPagesSortFieldSchema = z.enum([
 /** Single source for each tab's default sort, shared by the request-schema
  * defaults and the client's header indicators / query fallbacks. */
 export const BACKLINKS_DEFAULT_SORT = {
-  backlinks: { field: "rank", order: "desc" },
+  backlinks: { field: "firstSeen", order: "desc" },
   domains: { field: "backlinks", order: "desc" },
   pages: { field: "backlinks", order: "desc" },
 } as const satisfies Record<

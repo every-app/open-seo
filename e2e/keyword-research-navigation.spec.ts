@@ -2,11 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function getProjectId(page: Page) {
   await page.goto("/");
-  await page.waitForURL(/\/p\/([^/]+)\/keywords(?:\?.*)?$/, {
+  await page.waitForURL(/\/p\/([^/]+)\/?$/, {
     timeout: 30_000,
   });
 
-  const match = page.url().match(/\/p\/([^/]+)\/keywords/);
+  const match = page.url().match(/\/p\/([^/]+)/);
   if (!match) throw new Error(`Could not read project id from ${page.url()}`);
   return match[1];
 }
@@ -115,6 +115,10 @@ test.describe("Keyword Research navigation", () => {
     await expect(
       page.locator(`[data-search-tab-id="${closedTabId}"]`),
     ).toHaveCount(0);
-    await expect(page.getByRole("tab")).toHaveCount(2);
+    // Count only search tabs: the app shell has grown other tablists
+    // (Browse/Chat), so a bare role=tab count would include them.
+    await expect(
+      page.getByRole("tablist", { name: "Search tabs" }).getByRole("tab"),
+    ).toHaveCount(2);
   });
 });

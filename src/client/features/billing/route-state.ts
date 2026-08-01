@@ -38,8 +38,8 @@ export function getSubscribeRouteState(args: {
     return "redirectToApp" as const;
   }
 
-  // Grandfathered free-plan users landing here outside the upgrade flow
-  // belong in the app, not on the paywall.
+  // Free-plan users landing here outside the upgrade flow belong in the app,
+  // not on the paywall.
   if (args.hasManagedAccess && !args.isUpgradeFlow) {
     return "redirectToApp" as const;
   }

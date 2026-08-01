@@ -1,3 +1,4 @@
+import { waitUntil } from "cloudflare:workers";
 import {
   OAuthProvider,
   type AuthRequest,
@@ -12,6 +13,8 @@ import {
   MCP_SCOPE,
 } from "@/lib/oauth-resource";
 import { asAppError } from "@/server/lib/errors";
+import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
+import { captureServerEvent } from "@/server/lib/posthog";
 import {
   createWorkersOAuthMcpProps,
   MCP_ROUTE,
@@ -109,7 +112,20 @@ function oauthErrorResponse(error: {
   status: number;
   headers: Record<string, string>;
 }) {
-  console.warn(`[oauth] ${error.status} ${error.code}: ${error.description}`);
+  // 401s here are the standard OAuth discovery handshake, not failures: an
+  // unauthenticated /mcp hit returns `invalid_token` (which triggers the
+  // client's .well-known discovery), and the DCR client_secret_post shim makes
+  // a client's first token attempt return `invalid_client` before it retries
+  // with the secret. Log those at debug so they stop masquerading as errors;
+  // keep 5xx at error and everything else (bad client metadata, etc.) at warn.
+  const line = `[oauth] ${error.status} ${error.code}: ${error.description}`;
+  if (error.status === 401) {
+    console.debug(line);
+  } else if (error.status >= 500) {
+    console.error(line);
+  } else {
+    console.warn(line);
+  }
 
   const headers = new Headers(error.headers);
   headers.set("Content-Type", "application/json");
@@ -350,6 +366,20 @@ async function handleOAuthConsentResponse(
     scope: scopes,
     props,
   });
+
+  await recordMcpAuthorized(context.organizationId);
+
+  waitUntil(
+    captureServerEvent({
+      distinctId: context.userId,
+      event: "mcp:authorize_success",
+      organizationId: context.organizationId,
+      properties: {
+        client_id: authRequest.clientId,
+        scopes: scopes.join(" "),
+      },
+    }),
+  );
 
   return jsonResponse({ redirectTo });
 }

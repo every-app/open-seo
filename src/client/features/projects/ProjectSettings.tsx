@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
+import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   clearLastProjectId,
@@ -69,6 +70,10 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
   const queryClient = useQueryClient();
   const [name, setName] = React.useState(project.name);
   const [domain, setDomain] = React.useState(project.domain ?? "");
+  const [market, setMarket] = React.useState({
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
+  });
 
   const updateMutation = useMutation({
     mutationFn: () =>
@@ -77,6 +82,7 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
           projectId: project.id,
           name: name.trim(),
           domain: domain.trim() || undefined,
+          ...market,
         },
       }),
     onSuccess: async () => {
@@ -89,7 +95,9 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
   const isDirty =
     name.trim() !== project.name ||
-    (domain.trim() || "") !== (project.domain ?? "");
+    (domain.trim() || "") !== (project.domain ?? "") ||
+    market.locationCode !== project.locationCode ||
+    market.languageCode !== project.languageCode;
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
@@ -129,6 +137,14 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
             className="input input-bordered w-full"
           />
         </label>
+
+        <div className="flex flex-col gap-1.5">
+          <ProjectMarketFields value={market} onChange={setMarket} />
+          <span className="text-xs text-base-content/50">
+            Keyword, SERP, and domain data uses this country and language unless
+            a call asks for a different one.
+          </span>
+        </div>
 
         <div className="flex justify-end">
           <button

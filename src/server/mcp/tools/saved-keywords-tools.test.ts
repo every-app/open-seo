@@ -51,7 +51,11 @@ describe("saved keyword MCP tools", () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.getProjectForOrganization.mockReset();
-    mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
+    mocks.getProjectForOrganization.mockResolvedValue({
+      id: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+    });
     mocks.getSavedKeywords.mockReset();
     mocks.saveKeywords.mockReset();
   });

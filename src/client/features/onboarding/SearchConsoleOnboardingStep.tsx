@@ -4,16 +4,23 @@ import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
 import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
-import { SitePicker } from "@/client/features/gsc/SitePicker";
+import {
+  SitePicker,
+  type GscSiteSelection,
+} from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
+import type { ProjectMarket } from "@/client/features/projects/types";
 import {
   getGscConnection,
   listGscSites,
   setGscSite,
 } from "@/serverFunctions/gsc";
-import { getProjects } from "@/serverFunctions/projects";
+import { getProjects, setProjectMarket } from "@/serverFunctions/projects";
+
+const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
 /**
  * Onboarding step for connecting Google Search Console: link the account-level
@@ -26,19 +33,70 @@ export function SearchConsoleOnboardingStep() {
     queryKey: ["projects"],
     queryFn: () => getProjects(),
   });
-  const projectId = projectsQuery.data?.[0]?.id;
+  const project = projectsQuery.data?.[0];
 
   return (
-    <div className="space-y-4">
-      <h2 className="text-lg font-semibold">
-        Connect with Google Search Console now?
-      </h2>
+    <div className="space-y-8">
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">
+          Connect with Google Search Console now?
+        </h2>
 
-      {projectId ? <GscConnect projectId={projectId} /> : <Checking />}
+        {project ? <GscConnect projectId={project.id} /> : <Checking />}
 
-      <p className="text-xs leading-relaxed text-base-content/55">
-        For now, Search Console data flows through the OpenSEO MCP. We're
-        building it into the OpenSEO app soon too.
+        <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
+          For now, Search Console data flows through the OpenSEO MCP. We're
+          building it into the OpenSEO app soon too.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-lg font-semibold">Choose country &amp; language</h2>
+        {project ? <DefaultMarketPicker project={project} /> : <Checking />}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Sets the project's default market during onboarding, so keyword, SERP, and
+ * domain data lands on the user's market from their first search instead of
+ * defaulting to the US. Saves on change — the step's Continue button belongs
+ * to the wizard, so a separate Save here would be easy to walk past.
+ */
+function DefaultMarketPicker({
+  project,
+}: {
+  project: { id: string; locationCode: number; languageCode: string };
+}) {
+  const queryClient = useQueryClient();
+  const [market, setMarket] = React.useState<ProjectMarket>({
+    locationCode: project.locationCode,
+    languageCode: project.languageCode,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: (next: ProjectMarket) =>
+      setProjectMarket({ data: { projectId: project.id, ...next } }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["projects"] }),
+    onError: (error) => toast.error(getStandardErrorMessage(error)),
+  });
+
+  const handleChange = (next: ProjectMarket) => {
+    setMarket(next);
+    saveMutation.mutate(next);
+  };
+
+  return (
+    <div className="space-y-2">
+      <ProjectMarketFields
+        value={market}
+        onChange={handleChange}
+        hideLanguageOnMobile
+      />
+      <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
+        We'll use this country and language for keyword, SERP, and domain data
+        unless you pick a different one. You can change it in project settings.
       </p>
     </div>
   );
@@ -47,7 +105,9 @@ export function SearchConsoleOnboardingStep() {
 /** Connect + pick-a-property flow, scoped to a known project. */
 function GscConnect({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
-  const [selectedSiteUrl, setSelectedSiteUrl] = React.useState("");
+  const [selection, setSelection] = React.useState<GscSiteSelection | null>(
+    null,
+  );
 
   const connectionKey = ["gscConnection", projectId];
   const connectionQuery = useQuery({
@@ -65,7 +125,13 @@ function GscConnect({ projectId }: { projectId: string }) {
     queryFn: () => listGscSites({ data: { projectId } }),
     enabled: hasGrant && !connected && !needsSetup,
   });
-  const requiresReconnect = Boolean(sitesQuery.data?.requiresReconnect);
+  const accounts = React.useMemo(
+    () => sitesQuery.data?.accounts ?? [],
+    [sitesQuery.data?.accounts],
+  );
+  const requiresReconnect = accounts.some(
+    (account) => account.requiresReconnect,
+  );
 
   React.useEffect(() => {
     if (!requiresReconnect) return;
@@ -73,11 +139,12 @@ function GscConnect({ projectId }: { projectId: string }) {
     void queryClient.invalidateQueries({
       queryKey: ["gscConnection", projectId],
     });
+    void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
   }, [requiresReconnect, queryClient, projectId]);
 
   const setSiteMutation = useMutation({
-    mutationFn: (siteUrl: string) =>
-      setGscSite({ data: { projectId, siteUrl } }),
+    mutationFn: (selected: GscSiteSelection) =>
+      setGscSite({ data: { projectId, ...selected } }),
     onSuccess: () => {
       captureClientEvent("gsc:property_select");
       void queryClient.invalidateQueries({ queryKey: connectionKey });
@@ -113,14 +180,13 @@ function GscConnect({ projectId }: { projectId: string }) {
     return (
       <SitePicker
         loading={sitesQuery.isLoading}
-        error={sitesQuery.isError || requiresReconnect}
-        sites={sitesQuery.data?.sites ?? []}
-        selectedSiteUrl={selectedSiteUrl}
-        onSelect={setSelectedSiteUrl}
-        onSave={() =>
-          selectedSiteUrl && setSiteMutation.mutate(selectedSiteUrl)
-        }
+        error={sitesQuery.isError}
+        accounts={accounts}
+        selection={selection}
+        onSelect={setSelection}
+        onSave={() => selection && setSiteMutation.mutate(selection)}
         saving={setSiteMutation.isPending}
+        onRetry={() => void sitesQuery.refetch()}
         onReconnect={handleConnect}
       />
     );

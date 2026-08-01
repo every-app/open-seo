@@ -8,10 +8,8 @@ import {
   MAX_KEYWORDS_PER_SUBMIT,
   RESULT_LIMITS,
 } from "@/client/features/keywords/keywordResearchTypes";
-import {
-  LOCATION_OPTIONS,
-  isLabsLocationCode,
-} from "@/client/features/keywords/locations";
+import { isLabsLocationCode } from "@/client/features/keywords/locations";
+import { LocationSelect } from "@/client/components/LocationSelect";
 import type { KeywordResearchControllerState } from "./types";
 
 type Props = {
@@ -49,17 +47,14 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                   <textarea
                     className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
                     rows={rows}
-                    placeholder="Enter keywords, one per line"
+                    placeholder="Enter a keyword"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onKeyDown={(event) => {
-                      // Cmd/Ctrl+Enter submits without leaving a stray newline.
-                      // Bare Enter stays as the textarea default (insert newline)
-                      // so multi-keyword input remains discoverable.
-                      if (
-                        event.key === "Enter" &&
-                        (event.metaKey || event.ctrlKey)
-                      ) {
+                      // Enter submits. Shift+Enter inserts a newline, so
+                      // researching several keywords at once means adding a
+                      // line per keyword (or pasting newline-separated ones).
+                      if (event.key === "Enter" && !event.shiftKey) {
                         event.preventDefault();
                         void controlsForm.handleSubmit();
                       }
@@ -73,19 +68,11 @@ export function KeywordResearchSearchBar({ controller }: Props) {
           <div className="grid grid-cols-2 gap-2 lg:contents">
             <controlsForm.Field name="locationCode">
               {(field) => (
-                <select
-                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                <LocationSelect
                   value={field.state.value}
-                  onChange={(event) =>
-                    field.handleChange(Number(event.target.value))
-                  }
-                >
-                  {LOCATION_OPTIONS.map((option) => (
-                    <option key={option.code} value={option.code}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(code) => field.handleChange(code)}
+                  className="w-full lg:w-44 lg:shrink-0"
+                />
               )}
             </controlsForm.Field>
 
@@ -127,7 +114,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
             <button
               type="submit"
-              className="btn btn-primary w-full px-6 font-semibold lg:w-auto lg:shrink-0"
+              className="btn btn-primary w-full px-6 lg:w-auto lg:shrink-0"
             >
               Search
             </button>

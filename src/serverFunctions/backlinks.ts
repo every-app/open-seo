@@ -16,7 +16,7 @@ export const getBacklinksOverview = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => backlinksOverviewInputSchema.parse(data))
+  .validator(backlinksOverviewInputSchema)
   .handler(async ({ data, context }) => {
     const profile = await BacklinksService.profileOverview(
       {
@@ -32,7 +32,7 @@ export const getBacklinksRows = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => backlinksRowsPageRequestSchema.parse(data))
+  .validator(backlinksRowsPageRequestSchema)
   .handler(({ data, context }) =>
     BacklinksService.profileBacklinksPage(data, context, WEB_SPAM_OPTIONS),
   );
@@ -41,9 +41,7 @@ export const getBacklinksReferringDomains = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) =>
-    referringDomainsPageRequestSchema.parse(data),
-  )
+  .validator(referringDomainsPageRequestSchema)
   .handler(({ data, context }) =>
     BacklinksService.profileReferringDomainsPage(
       data,
@@ -56,7 +54,7 @@ export const getBacklinksTopPages = createServerFn({
   method: "POST",
 })
   .middleware(requireProjectContext)
-  .inputValidator((data: unknown) => topPagesPageRequestSchema.parse(data))
+  .validator(topPagesPageRequestSchema)
   .handler(({ data, context }) =>
     BacklinksService.profileTopPagesPage(data, context),
   );

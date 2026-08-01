@@ -1,10 +1,12 @@
 import { useAgent } from "agents/react";
 import { useAgentChat } from "@cloudflare/ai-chat/react";
-import { type UIMessage } from "ai";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Loader2, Check, AlertTriangle } from "lucide-react";
-import { Markdown } from "@/client/components/Markdown";
+import {
+  ChatMessage,
+  messageHasVisibleContent,
+  type ResolveToolLabel,
+} from "@/client/components/chat/ChatMessage";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
@@ -15,17 +17,6 @@ import {
   UpgradeSidebar,
   WelcomeMessage,
 } from "./OnboardingChatParts";
-
-// Whether an assistant message already shows something — visible text or a tool
-// badge. Used to decide when the standalone typing indicator is still needed: a
-// running tool badge already reads as progress, so the dots would double up.
-function messageHasVisibleContent(message: UIMessage): boolean {
-  return message.parts.some(
-    (part) =>
-      (part.type === "text" && part.text.trim().length > 0) ||
-      part.type.startsWith("tool-"),
-  );
-}
 
 // Friendly labels for each tool Sam can run, so the chat shows what it's doing
 // rather than going silent while it gathers site data. `running` shows while the
@@ -40,86 +31,46 @@ const TOOL_LABELS: Record<string, { running: string; done: string }> = {
     running: "Researching keywords",
     done: "Keyword research",
   },
+  "tool-get_domain_overview": {
+    running: "Analyzing domain",
+    done: "Domain overview",
+  },
+  "tool-get_serp_results": {
+    running: "Checking search results",
+    done: "Search results",
+  },
+  "tool-find_serp_competitors": {
+    running: "Finding competitors",
+    done: "Competitors",
+  },
+  "tool-get_competitor_keywords": {
+    running: "Analyzing competitor",
+    done: "Competitor keywords",
+  },
+  "tool-get_backlinks_overview": {
+    running: "Checking backlinks",
+    done: "Backlinks overview",
+  },
 };
 
-// A small inline badge for one tool call, rendered in document order inside the
-// assistant bubble so the sequence of work stays visible after it completes.
-function ToolBadge({ part }: { part: UIMessage["parts"][number] }) {
-  const labels = TOOL_LABELS[part.type];
-  if (!labels) return null;
-  const state = "state" in part ? part.state : undefined;
-  const isError = state === "output-error";
-  const isDone = state === "output-available";
-  const isRunning = !isError && !isDone;
-  return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
-        isError ? "bg-error/10 text-error" : "bg-base-200 text-base-content/70"
-      }`}
-    >
-      {isRunning ? (
-        <Loader2 className="size-3 animate-spin" />
-      ) : isError ? (
-        <AlertTriangle className="size-3" />
-      ) : (
-        <Check className="size-3" />
-      )}
-      <span>{isRunning ? `${labels.running}…` : labels.done}</span>
-    </span>
-  );
-}
-
-function ChatBubble({ message }: { message: UIMessage }) {
-  const isUser = message.role === "user";
-
-  if (isUser) {
-    return (
-      <div className="flex justify-end pl-8 sm:pl-16">
-        <div className="rounded-box rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-content">
-          {message.parts.map((part, index) =>
-            part.type === "text" ? (
-              <span key={index} className="whitespace-pre-wrap">
-                {part.text}
-              </span>
-            ) : null,
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex gap-3">
-      <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <Sparkles className="size-4" />
-      </div>
-      <div className="min-w-0 flex-1 space-y-2 pt-0.5 text-sm">
-        {message.parts.map((part, index) => {
-          if (part.type === "text") {
-            return part.text.trim() ? (
-              <Markdown key={index}>{part.text}</Markdown>
-            ) : null;
-          }
-          if (part.type.startsWith("tool-")) {
-            return <ToolBadge key={index} part={part} />;
-          }
-          return null;
-        })}
-      </div>
-    </div>
-  );
-}
+// Onboarding curates a label per tool and hides any tool it hasn't named, so
+// the pre-paywall preview only shows the handful it means to surface.
+const resolveToolLabel: ResolveToolLabel = (partType) =>
+  TOOL_LABELS[partType] ?? null;
 
 const SUGGESTED_QUESTIONS = [
-  "How does OpenSEO help me get more traffic?",
-  "Why is OpenSEO better than Claude?",
+  "How will OpenSEO help me get more traffic?",
+  "Compare OpenSEO and Claude",
   "What do I get after I upgrade?",
-  "How does Google Search Console work in OpenSEO?",
+  "How does the Google Search Console integration work?",
+  "Right fit for consultants and agencies?",
 ];
 
-// Offered as a highlighted chip only when the user hasn't already asked for
-// their strategy via the welcome CTA. Clicking it prompts Sam to draft/show it.
+// Highlighted (primary) chips shown first, before the general questions.
+// STRATEGY_SUGGESTION drops out once the user has asked for their strategy.
 const STRATEGY_SUGGESTION = "What do you recommend for my site?";
+const COMPETITOR_SUGGESTION = "Compare against my competitors";
+const PRIMARY_SUGGESTIONS = [STRATEGY_SUGGESTION, COMPETITOR_SUGGESTION];
 
 export function OnboardingChatConversation({
   projectId,
@@ -187,9 +138,11 @@ export function OnboardingChatConversation({
   }, [messages, status]);
 
   const lastMessage = messages[messages.length - 1];
-  const suggestionPool = strategyRequested
-    ? SUGGESTED_QUESTIONS
-    : [STRATEGY_SUGGESTION, ...SUGGESTED_QUESTIONS];
+  const suggestionPool = [
+    ...(strategyRequested ? [] : [STRATEGY_SUGGESTION]),
+    COMPETITOR_SUGGESTION,
+    ...SUGGESTED_QUESTIONS,
+  ];
   const remainingSuggestions = suggestionPool.filter(
     (question) => !usedSuggestions.includes(question),
   );
@@ -202,11 +155,12 @@ export function OnboardingChatConversation({
     isBusy &&
     (lastMessage?.role !== "assistant" ||
       !messageHasVisibleContent(lastMessage));
+  // Show the chips up front (before the first message) and after each assistant
+  // reply, but not while a reply is mid-flight.
   const showSuggestions =
     remainingSuggestions.length > 0 &&
     !isBusy &&
-    messages.length > 0 &&
-    lastMessage?.role === "assistant";
+    (messages.length === 0 || lastMessage?.role === "assistant");
 
   return (
     <div className="flex min-h-0 flex-1">
@@ -225,55 +179,44 @@ export function OnboardingChatConversation({
               checkoutError={checkoutError}
               isStartingCheckout={isStartingCheckout}
               onUpgrade={() => void startCheckout()}
-              onAskAboutOpenSeo={() =>
-                sendText("I have questions about OpenSEO before I upgrade.")
-              }
-              onProposeStrategy={() => {
-                setStrategyRequested(true);
-                sendText(
-                  `Please analyze ${domain} and show me my SEO strategy.`,
-                );
-              }}
-              disableActions={isBusy || messages.length > 0}
             />
 
-            {messages.map((message) => (
-              <ChatBubble key={message.id} message={message} />
+            {messages.map((message, index) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                resolveToolLabel={resolveToolLabel}
+                streaming={
+                  isBusy &&
+                  index === messages.length - 1 &&
+                  message.role === "assistant"
+                }
+              />
             ))}
 
             {showTyping ? (
-              <div className="flex gap-3">
-                <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Sparkles className="size-4" />
-                </div>
-                <div className="flex items-center gap-2 pt-2 text-base-content/40">
-                  <span className="flex items-center gap-1.5">
-                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
-                    <span className="size-1.5 animate-bounce rounded-full bg-current" />
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 pt-1 text-base-content/40">
+                <span className="flex items-center gap-1.5">
+                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
+                  <span className="size-1.5 animate-bounce rounded-full bg-current" />
+                </span>
               </div>
             ) : null}
 
             {status === "error" ? (
-              <div className="flex gap-3">
-                <div className="flex size-7 flex-shrink-0 items-center justify-center rounded-full bg-error/10 text-error">
-                  <Sparkles className="size-4" />
-                </div>
-                <p className="pt-1 text-sm text-error">
-                  {/* Billing gates (free-question cap / out-of-credits) come
-                      back as normal assistant messages now, so this only covers
-                      genuine failures. */}
-                  Something went wrong. Please refresh and try again.
-                </p>
-              </div>
+              <p className="text-sm text-error">
+                {/* Billing gates (free-question cap / out-of-credits) come
+                    back as normal assistant messages now, so this only covers
+                    genuine failures. */}
+                Something went wrong. Please refresh and try again.
+              </p>
             ) : null}
 
             {showSuggestions ? (
               <SuggestedQuestions
                 questions={remainingSuggestions}
-                primaryQuestion={STRATEGY_SUGGESTION}
+                primaryQuestions={PRIMARY_SUGGESTIONS}
                 onSelect={(question) => {
                   setUsedSuggestions((current) =>
                     current.includes(question)

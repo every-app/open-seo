@@ -6,6 +6,7 @@ import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/proto
 import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { getMcpResource } from "@/lib/oauth-resource";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 
 type McpAuth = {
@@ -32,7 +33,7 @@ const mcpToolAuthContextSchema = z.object({
   baseUrl: z.string().url(),
 });
 
-type McpToolAuthContext = z.infer<typeof mcpToolAuthContextSchema>;
+export type McpToolAuthContext = z.infer<typeof mcpToolAuthContextSchema>;
 
 export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
 
@@ -41,6 +42,31 @@ export const workersOAuthMcpPropsSchema = z.object({
 });
 
 const mcpToolAuthContextStorage = new AsyncLocalStorage<McpToolAuthContext>();
+
+/**
+ * Auth context for first-party (non-OAuth) callers — the self-hosted MCP
+ * transport and the SAM agent. Centralizes the invariants both sites relied
+ * on by convention: `subject` is the user id, `clientId` is null, and the
+ * audience derives from the base URL.
+ */
+export function buildFirstPartyMcpAuthContext(input: {
+  userId: string;
+  userEmail: string;
+  organizationId: string;
+  baseUrl: string;
+  scopes?: string[];
+}): McpToolAuthContext {
+  return {
+    userId: input.userId,
+    userEmail: input.userEmail,
+    organizationId: input.organizationId,
+    clientId: null,
+    scopes: input.scopes ?? [],
+    audience: getMcpResource(input.baseUrl),
+    subject: input.userId,
+    baseUrl: input.baseUrl,
+  };
+}
 
 export function createWorkersOAuthMcpProps(
   context: McpToolAuthContext,

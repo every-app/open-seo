@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { getAuthMode } from "@/lib/auth-mode";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
 import {
@@ -53,13 +55,35 @@ function AiPage() {
           domain lookups, and backlink reviews from your editor or chat.
         </p>
 
+        {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
+          <div className="alert alert-warning mt-6 text-sm" role="alert">
+            <ShieldAlert className="size-4 shrink-0" />
+            <span>
+              This instance is behind Cloudflare Access. MCP clients cannot
+              connect until Managed OAuth is enabled on your Access application.{" "}
+              <a
+                href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
+                target="_blank"
+                rel="noreferrer"
+                className="link font-medium"
+              >
+                Setup guide
+              </a>
+            </span>
+          </div>
+        ) : null}
+
         <section className="mt-8">
           <div className="rounded-lg border border-base-300 bg-base-200 px-4 py-3.5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
                 MCP server URL
               </p>
-              <CopyButton value={mcpUrl} successMessage="MCP URL copied" />
+              <CopyButton
+                value={mcpUrl}
+                successMessage="MCP URL copied"
+                onCopy={() => captureClientEvent("mcp:setup_url_copy")}
+              />
             </div>
             <code className="mt-2 block break-all font-mono text-sm text-base-content">
               {mcpUrl}
@@ -89,6 +113,11 @@ function AiPage() {
               </p>
               <CodeBlock
                 code={`claude mcp add --transport http --scope user openseo ${mcpUrl}`}
+                onCopy={() =>
+                  captureClientEvent("mcp:setup_command_copy", {
+                    agent: "claude-code",
+                  })
+                }
               />
               <p className="text-sm text-base-content/70">
                 Approve the login when prompted.
@@ -141,7 +170,14 @@ function AiPage() {
               <p className="text-sm text-base-content/70">
                 Run this in your terminal:
               </p>
-              <CodeBlock code={`codex mcp add openseo --url ${mcpUrl}`} />
+              <CodeBlock
+                code={`codex mcp add openseo --url ${mcpUrl}`}
+                onCopy={() =>
+                  captureClientEvent("mcp:setup_command_copy", {
+                    agent: "codex",
+                  })
+                }
+              />
               <p className="text-sm text-base-content/70">
                 Approve the login when prompted.
               </p>

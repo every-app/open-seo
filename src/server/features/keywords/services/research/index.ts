@@ -9,3 +9,4 @@ export {
   deleteSavedKeywordTag,
   removeSavedKeywords,
 } from "./saved-keywords";
+export { refreshSavedKeywordMetrics } from "./refresh-metrics";

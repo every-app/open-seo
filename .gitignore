@@ -13,8 +13,12 @@ dist-sourcemaps/
 .DS_Store
 .cache
 .env
-.env.local
-.env.production
+.env.
+.env.*
+!.env.example
+!.env.preview.example
+!.env.production.example
+!.env.selfhost.example
 .vercel
 .output
 .nitro
@@ -37,3 +41,6 @@ dist-sourcemaps/
 # Local Claude config (skills are shared)
 .claude/*
 !.claude/skills/
+
+# Alchemy local state + bundle artifacts (SaaS deploys)
+.alchemy/

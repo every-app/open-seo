@@ -46,6 +46,7 @@ export function RankTrackingTable({
   configId,
   projectId,
   locationCode,
+  locationName,
   serpDepth,
   onSetKeywordInterval,
 }: {
@@ -60,6 +61,7 @@ export function RankTrackingTable({
   configId: string;
   projectId: string;
   locationCode: number;
+  locationName?: string | null;
   serpDepth: number;
   onSetKeywordInterval: (
     keywordIds: string[],
@@ -82,16 +84,17 @@ export function RankTrackingTable({
     [],
   );
 
-  const columns = useRankTrackingColumns(
+  const columns = useRankTrackingColumns({
     showDesktop,
     showMobile,
     domain,
     selectAnchorRef,
-    handleKeywordClick,
-    (row, interval) =>
+    onKeywordClick: handleKeywordClick,
+    locationName,
+    onSetKeywordInterval: (row, interval) =>
       onSetKeywordInterval([row.trackingKeywordId], interval),
     intervalUpdatePending,
-  );
+  });
 
   const table = useAppTable({
     data: rows,
@@ -273,6 +276,7 @@ export function RankTrackingTable({
           configId={configId}
           domain={domain}
           locationCode={locationCode}
+          locationName={locationName ?? undefined}
           serpDepth={serpDepth}
           onClose={() => setTrendTarget(null)}
         />

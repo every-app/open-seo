@@ -7,6 +7,7 @@ import type {
   RankTrackingKeywordScheduleInterval,
   RankTrackingScheduledRow,
 } from "@/types/schemas/rank-tracking";
+import { formatLocationLabel } from "@/shared/keyword-locations";
 import {
   CpcCell,
   DeviceRankCell,
@@ -68,19 +69,6 @@ export function SortableHeader({
   );
 }
 
-const nullsLastNumeric: SortingFn<RankTrackingScheduledRow> = (
-  rowA,
-  rowB,
-  columnId,
-) => {
-  const a = rowA.getValue<number | null>(columnId);
-  const b = rowB.getValue<number | null>(columnId);
-  if (a == null && b == null) return 0;
-  if (a == null) return 1;
-  if (b == null) return -1;
-  return a - b;
-};
-
 const nullsLastIsoDate: SortingFn<RankTrackingScheduledRow> = (
   rowA,
   rowB,
@@ -94,35 +82,57 @@ const nullsLastIsoDate: SortingFn<RankTrackingScheduledRow> = (
   return a.localeCompare(b);
 };
 
-const volumeColumn: ColumnDef<RankTrackingScheduledRow> = {
-  id: "volume",
-  accessorKey: "searchVolume",
-  header: ({ column }) => (
-    <SortableHeader column={column} label="Volume" id="volume" />
-  ),
-  size: 90,
-  cell: ({ getValue }) => <VolumeCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
-};
+// Local configs fetch volume scoped to the tracked city, so the header must
+// say which number the user is looking at — national volume can overstate
+// local demand by orders of magnitude.
+function makeVolumeColumn(
+  locationLabel?: string,
+): ColumnDef<RankTrackingScheduledRow> {
+  return {
+    id: "volume",
+    accessorFn: (row) => row.searchVolume ?? undefined,
+    header: ({ column }) => (
+      <SortableHeader
+        column={column}
+        label={locationLabel ? "Local volume" : "Volume"}
+        id="volume"
+        tooltip={
+          locationLabel
+            ? `Estimated monthly searches in ${locationLabel} from Google Ads`
+            : undefined
+        }
+      />
+    ),
+    size: 90,
+    cell: ({ getValue }) => (
+      <VolumeCell value={getValue<number | undefined>() ?? null} />
+    ),
+    sortUndefined: "last",
+  };
+}
 
 const kdColumn: ColumnDef<RankTrackingScheduledRow> = {
   id: "kd",
-  accessorKey: "keywordDifficulty",
+  accessorFn: (row) => row.keywordDifficulty ?? undefined,
   header: ({ column }) => <SortableHeader column={column} label="KD" id="kd" />,
   size: 70,
-  cell: ({ getValue }) => <DifficultyCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
+  cell: ({ getValue }) => (
+    <DifficultyCell value={getValue<number | undefined>() ?? null} />
+  ),
+  sortUndefined: "last",
 };
 
 const cpcColumn: ColumnDef<RankTrackingScheduledRow> = {
   id: "cpc",
-  accessorKey: "cpc",
+  accessorFn: (row) => row.cpc ?? undefined,
   header: ({ column }) => (
     <SortableHeader column={column} label="CPC" id="cpc" />
   ),
   size: 80,
-  cell: ({ getValue }) => <CpcCell value={getValue<number | null>()} />,
-  sortingFn: nullsLastNumeric,
+  cell: ({ getValue }) => (
+    <CpcCell value={getValue<number | undefined>() ?? null} />
+  ),
+  sortUndefined: "last",
 };
 
 function makeKeywordColumn(
@@ -277,14 +287,14 @@ function makeDeviceColumn(
   const id = device === "desktop" ? "desktopPosition" : "mobilePosition";
   return {
     id,
-    accessorFn: (row) => row[device].position,
+    accessorFn: (row) => row[device].position ?? undefined,
     header: ({ column }) => (
       <SortableHeader column={column} label="Position" id={id} />
     ),
     size: 120,
     maxSize: 140,
     cell: ({ row }) => <DeviceRankCell result={row.original[device]} />,
-    sortingFn: nullsLastNumeric,
+    sortUndefined: "last",
   };
 }
 
@@ -332,18 +342,32 @@ function makeSerpColumn(
   };
 }
 
-export function useRankTrackingColumns(
-  showDesktop: boolean,
-  showMobile: boolean,
-  domain: string,
-  selectAnchorRef: MutableRefObject<SelectionAnchor | null>,
-  onKeywordClick: (row: RankTrackingScheduledRow) => void,
-  onKeywordIntervalChange?: (
+export function useRankTrackingColumns(options: {
+  showDesktop: boolean;
+  showMobile: boolean;
+  domain: string;
+  selectAnchorRef: MutableRefObject<SelectionAnchor | null>;
+  onKeywordClick: (row: RankTrackingScheduledRow) => void;
+  locationName?: string | null;
+  onSetKeywordInterval?: (
     row: RankTrackingScheduledRow,
     interval: RankTrackingKeywordScheduleInterval,
-  ) => void,
-  intervalActionBusy?: boolean,
-): ColumnDef<RankTrackingScheduledRow>[] {
+  ) => void;
+  intervalUpdatePending?: boolean;
+}): ColumnDef<RankTrackingScheduledRow>[] {
+  const {
+    showDesktop,
+    showMobile,
+    domain,
+    selectAnchorRef,
+    onKeywordClick,
+    locationName,
+    onSetKeywordInterval: onKeywordIntervalChange,
+    intervalUpdatePending: intervalActionBusy,
+  } = options;
+  const locationLabel = locationName
+    ? formatLocationLabel(locationName, 2)
+    : undefined;
   return useMemo(() => {
     const cols: ColumnDef<RankTrackingScheduledRow>[] = [
       makeSelectionColumn<RankTrackingScheduledRow>(selectAnchorRef),
@@ -359,7 +383,7 @@ export function useRankTrackingColumns(
       cols.push(makeDeviceColumn("mobile"));
       cols.push(makeUrlColumn("mobile", domain));
     }
-    cols.push(volumeColumn, kdColumn, cpcColumn);
+    cols.push(makeVolumeColumn(locationLabel), kdColumn, cpcColumn);
     if (showDesktop) {
       cols.push(makeSerpColumn("desktop"));
     }
@@ -373,6 +397,7 @@ export function useRankTrackingColumns(
     domain,
     selectAnchorRef,
     onKeywordClick,
+    locationLabel,
     onKeywordIntervalChange,
     intervalActionBusy,
   ]);

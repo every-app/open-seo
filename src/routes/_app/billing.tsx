@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { AutumnProvider, useCustomer } from "autumn-js/react";
+import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -31,14 +31,6 @@ export const Route = createFileRoute("/_app/billing")({
 });
 
 function BillingPage() {
-  return (
-    <AutumnProvider>
-      <BillingPageContent />
-    </AutumnProvider>
-  );
-}
-
-function BillingPageContent() {
   const { data: session, isPending: isSessionPending } = useSession();
   const [topUpAmount, setTopUpAmount] = useState("20");
   const [isPending, setIsPending] = useState(false);
@@ -173,7 +165,7 @@ function BillingPageContent() {
               <p className="mt-2 text-xs text-amber-600">
                 You&rsquo;re running low on credits.{" "}
                 {isFreePlan
-                  ? "Upgrade to get $20/month."
+                  ? "Upgrade to get $10/month."
                   : "Buy more credits below."}
               </p>
             ) : null}
@@ -191,13 +183,13 @@ function BillingPageContent() {
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-sm font-medium">Base Plan</span>
                 <span className="text-sm font-medium tabular-nums">
-                  $20/month
+                  $10/month
                 </span>
               </div>
               <ul className="space-y-1.5">
                 {[
                   "Access to all OpenSEO features",
-                  "Includes $20.00 of Usage Credits each month",
+                  "Includes $10.00 of Usage Credits each month",
                 ].map((item) => (
                   <li
                     key={item}

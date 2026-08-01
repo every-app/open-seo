@@ -3,26 +3,12 @@ import {
   defaultStreamHandler,
 } from "@tanstack/react-start/server";
 import { routeAgentRequest } from "agents";
-import { and, eq, isNull, lte, or, sql } from "drizzle-orm";
-import { db } from "@/db";
-import {
-  projects,
-  rankTrackingConfigs,
-  rankTrackingKeywords,
-} from "@/db/schema";
 import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
-import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
-import {
-  isScheduledInterval,
-  RankTrackingService,
-  type RankTrackingKeywordScheduleInterval,
-} from "@/server/features/rank-tracking/services/RankTrackingService";
-import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
-import {
-  customerHasPaidPlan,
-  getOrCreateOrganizationCustomer,
-} from "@/server/billing/subscription";
+import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
+import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
+import { RankTrackingService, type RankTrackingKeywordScheduleInterval } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getAuthMode, isHostedAuthMode } from "@/lib/auth-mode";
@@ -33,21 +19,19 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
-import { computeNextCheckAt } from "@/shared/rank-tracking";
+import { withPgClient } from "@/db";
 import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
 } from "@/server/billing/autumn-webhook";
+import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
 const KEYWORD_INTERVALS_API_PATH = "/api/rank-tracking/keyword-intervals";
-const KEYWORD_INTERVALS = new Set<RankTrackingKeywordScheduleInterval>([
-  "inherit",
-  "daily",
-  "weekly",
-  "manual-paused",
-]);
+const KEYWORD_INTERVALS: ReadonlySet<string> = new Set<
+  RankTrackingKeywordScheduleInterval
+>(["inherit", "daily", "weekly", "manual-paused"]);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -67,24 +51,34 @@ function getStringField(
   return value;
 }
 
+function isKeywordInterval(
+  value: unknown,
+): value is RankTrackingKeywordScheduleInterval {
+  return typeof value === "string" && KEYWORD_INTERVALS.has(value);
+}
+
 function getKeywordInterval(
   data: Record<string, unknown>,
 ): RankTrackingKeywordScheduleInterval {
   const value = data.scheduleIntervalOverride;
-  if (typeof value !== "string" || !KEYWORD_INTERVALS.has(value as never)) {
+  if (!isKeywordInterval(value)) {
     throw new AppError("VALIDATION_ERROR", "Invalid keyword interval");
   }
-  return value as RankTrackingKeywordScheduleInterval;
+  return value;
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 async function readJsonObject(
   request: Request,
 ): Promise<Record<string, unknown>> {
-  const body = await request.json().catch(() => null);
-  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+  const body: unknown = await request.json().catch(() => null);
+  if (!isJsonObject(body)) {
     throw new AppError("VALIDATION_ERROR", "Invalid JSON body");
   }
-  return body as Record<string, unknown>;
+  return body;
 }
 
 async function authorizeProjectApiRequest(
@@ -165,43 +159,6 @@ async function handleKeywordIntervalsApiRequest(
   }
 }
 
-async function getDueRankTrackingConfigs(nowIso: string) {
-  return db
-    .select({
-      id: rankTrackingConfigs.id,
-      projectId: rankTrackingConfigs.projectId,
-      domain: rankTrackingConfigs.domain,
-      locationCode: rankTrackingConfigs.locationCode,
-      languageCode: rankTrackingConfigs.languageCode,
-      devices: rankTrackingConfigs.devices,
-      serpDepth: rankTrackingConfigs.serpDepth,
-      scheduleInterval: rankTrackingConfigs.scheduleInterval,
-      nextCheckAt: rankTrackingConfigs.nextCheckAt,
-      organizationId: projects.organizationId,
-    })
-    .from(rankTrackingConfigs)
-    .innerJoin(projects, eq(rankTrackingConfigs.projectId, projects.id))
-    .where(
-      and(
-        eq(rankTrackingConfigs.isActive, true),
-        isNull(projects.archivedAt),
-        or(
-          lte(rankTrackingConfigs.nextCheckAt, nowIso),
-          sql`exists (
-            select 1
-            from ${rankTrackingKeywords}
-            where ${rankTrackingKeywords.configId} = ${rankTrackingConfigs.id}
-              and ${rankTrackingKeywords.scheduleIntervalOverride} in ('daily', 'weekly')
-              and (
-                ${rankTrackingKeywords.nextCheckAt} is null
-                or ${rankTrackingKeywords.nextCheckAt} <= ${nowIso}
-              )
-          )`,
-        ),
-      ),
-    )
-    .limit(50);
-}
 
 // Authorize an onboarding-chat connection in the Worker, before it reaches the
 // Durable Object. The DO instance name is the projectId (set client-side); we
@@ -234,16 +191,67 @@ async function authorizeOnboardingChat(
   return undefined;
 }
 
-// Route /agents/* to the onboarding chat DO. Auth happens here (both the WS
-// upgrade and any HTTP message-history fetch), keeping it off the OAuth wrapper
-// and TanStack route guard below.
-async function routeOnboardingChatAgent(
+// Authorize a SAM agent connection in the Worker, before it reaches the Durable
+// Object. The DO instance name is the sessionId (set client-side); we resolve
+// the session here and authorize the caller against the session's project via
+// the same canonical project-access check the rest of the app uses, so the DO
+// can trust its `name` and derive org/project/user from the session row.
+async function authorizeSamChat(
   request: Request,
-  env: Env,
-): Promise<Response> {
+  sessionId: string,
+): Promise<Response | undefined> {
+  let context;
+  try {
+    context = await resolveUserContextFromHeaders(request.headers);
+  } catch {
+    return new Response("Unauthorized", { status: 401 });
+  }
+  const session = await SamSessionRepository.getActiveSession(
+    sessionId,
+    context.userId,
+  );
+  const project = session
+    ? await ProjectRepository.getProjectForOrganization(
+        session.projectId,
+        context.organizationId,
+      )
+    : null;
+  if (!session || !project) {
+    return new Response("Forbidden", { status: 403 });
+  }
+  // Same as onboarding above: make sure the Autumn customer (and its default
+  // free-plan credits) exists before the DO's balance gate runs, or a brand-new
+  // org's first message hits a false "out of credits".
+  if (await isHostedServerAuthMode()) {
+    await getOrCreateOrganizationCustomer(context);
+  }
+  return undefined;
+}
+
+// Both chat DOs live behind /agents/*. Dispatch on the DO binding partyserver
+// resolved for the request (rather than re-parsing the path), and fail closed
+// on anything unrecognized.
+function authorizeChatAgent(
+  request: Request,
+  lobby: { className: string; name: string },
+): Promise<Response | undefined> | Response {
+  switch (lobby.className) {
+    case "SAM_CHAT":
+      return authorizeSamChat(request, lobby.name);
+    case "ONBOARDING_CHAT":
+      return authorizeOnboardingChat(request, lobby.name);
+    default:
+      return new Response("Forbidden", { status: 403 });
+  }
+}
+
+// Route /agents/* to the onboarding and SAM chat DOs. Auth happens here (both
+// the WS upgrade and any HTTP message-history fetch), keeping it off the OAuth
+// wrapper and TanStack route guard below.
+async function routeChatAgents(request: Request, env: Env): Promise<Response> {
   const response = await routeAgentRequest(request, env, {
-    onBeforeConnect: (req, lobby) => authorizeOnboardingChat(req, lobby.name),
-    onBeforeRequest: (req, lobby) => authorizeOnboardingChat(req, lobby.name),
+    onBeforeConnect: (req, lobby) => authorizeChatAgent(req, lobby),
+    onBeforeRequest: (req, lobby) => authorizeChatAgent(req, lobby),
   });
   return response ?? new Response("Not found", { status: 404 });
 }
@@ -252,13 +260,25 @@ function fetch(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
+): Promise<Response> {
+  // Scope a per-request Postgres client (no-op in D1 mode). The client isn't
+  // closed here — the Workers↔Hyperdrive socket is reclaimed at invocation end.
+  return withPgClient(() => Promise.resolve(handleFetch(request, env, ctx)));
+}
+
+function handleFetch(
+  request: Request,
+  env: Env,
+  ctx: ExecutionContext,
 ): Response | Promise<Response> {
+  ctx.waitUntil(maybeSendSelfHostHeartbeat());
+
   const authMode = getAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
   const pathname = new URL(publicRequest.url).pathname;
 
   if (pathname.startsWith("/agents/")) {
-    return routeOnboardingChatAgent(publicRequest, env);
+    return routeChatAgents(publicRequest, env);
   }
 
   if (pathname === KEYWORD_INTERVALS_API_PATH) {
@@ -292,6 +312,8 @@ export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
 // Durable Object class for the onboarding strategy chat (Agents SDK).
 export { OnboardingChatAgent } from "./server/features/onboarding/OnboardingChatAgent";
+// Durable Object class for the SAM in-app agent (Agents SDK).
+export { SamChatAgent } from "./server/features/sam/SamChatAgent";
 
 export default {
   fetch,
@@ -300,134 +322,7 @@ export default {
     env: Env,
     _ctx: ExecutionContext,
   ) {
-    const nowIso = new Date().toISOString();
-    const dueConfigs = await getDueRankTrackingConfigs(nowIso);
-
-    const isHosted = await isHostedServerAuthMode();
-
-    for (const config of dueConfigs) {
-      try {
-        // Skip configs whose org doesn't have a paid plan
-        if (isHosted && !(await customerHasPaidPlan(config.organizationId))) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — org ${config.organizationId} no longer has access`,
-          );
-          continue;
-        }
-
-        // Skip configs with no keywords before advancing the schedule
-        const keywords = await RankTrackingRepository.getKeywordsForConfig(
-          config.id,
-        );
-        if (keywords.length === 0) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — no keywords`,
-          );
-          // Still advance schedule so this config doesn't stay due forever
-          // (manual configs have no interval, so they are never auto-advanced).
-          const skipInterval =
-            isScheduledInterval(config.scheduleInterval) &&
-            RankTrackingService.isConfigScheduleDue(config, nowIso)
-              ? config.scheduleInterval
-              : null;
-          if (skipInterval) {
-            await RankTrackingRepository.updateConfig(
-              config.id,
-              config.projectId,
-              {
-                nextCheckAt: computeNextCheckAt(
-                  skipInterval,
-                  config.nextCheckAt,
-                ),
-              },
-            );
-          }
-          continue;
-        }
-
-        const dueKeywords = RankTrackingService.getDueKeywordsForScheduledRun(
-          config,
-          keywords,
-          nowIso,
-        );
-        if (dueKeywords.length === 0) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — no due keywords`,
-          );
-          if (
-            isScheduledInterval(config.scheduleInterval) &&
-            RankTrackingService.isConfigScheduleDue(config, nowIso)
-          ) {
-            await RankTrackingRepository.updateConfig(
-              config.id,
-              config.projectId,
-              {
-                nextCheckAt: computeNextCheckAt(
-                  config.scheduleInterval,
-                  config.nextCheckAt,
-                ),
-              },
-            );
-          }
-          continue;
-        }
-
-        // Advance nextCheckAt immediately to prevent retry storms if the run fails
-        // (manual configs have no interval, so they are never auto-advanced).
-        const interval =
-          isScheduledInterval(config.scheduleInterval) &&
-          RankTrackingService.isConfigScheduleDue(config, nowIso)
-            ? config.scheduleInterval
-            : null;
-        if (interval) {
-          await RankTrackingRepository.updateConfig(
-            config.id,
-            config.projectId,
-            {
-              nextCheckAt: computeNextCheckAt(interval, config.nextCheckAt),
-            },
-          );
-        }
-        await RankTrackingService.advanceKeywordSchedulesForScheduledRun(
-          dueKeywords,
-        );
-
-        const keywordIds =
-          dueKeywords.length === keywords.length
-            ? undefined
-            : dueKeywords.map((keyword) => keyword.id);
-
-        const result = await beginRankCheckRun({
-          workflow: env.RANK_CHECK_WORKFLOW,
-          config,
-          projectId: config.projectId,
-          billingCustomer: {
-            userId: "system",
-            userEmail: "system@openseo.so",
-            organizationId: config.organizationId,
-            projectId: config.projectId,
-          },
-          keywordsTotal: keywordIds ? keywordIds.length : keywords.length,
-          keywordIds,
-          trigger: "scheduled",
-          workflowStartErrorMessage: "Failed to start scheduled workflow",
-        });
-
-        if (!result.ok) {
-          console.log(
-            `[cron] Skipping config ${config.id} (${config.domain}) — run already active`,
-          );
-        } else {
-          console.log(
-            `[cron] Started scheduled rank check ${result.runId} for config ${config.id} (${config.domain})`,
-          );
-        }
-      } catch (err) {
-        console.error(
-          `[cron] Error processing config ${config.id} (${config.domain}):`,
-          err,
-        );
-      }
-    }
+    // Scope a per-request Postgres client for the cron run (no-op in D1 mode).
+    await withPgClient(() => runScheduledRankChecks(env));
   },
 };

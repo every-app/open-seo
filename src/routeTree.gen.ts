@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as ProjectRouteRouteImport } from './routes/_project/route'
 import { Route as AppRouteRouteImport } from './routes/_app/route'
 import { Route as AppIndexRouteImport } from './routes/_app/index'
+import { Route as ApiHealthRouteImport } from './routes/api/health'
 import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authenticated.subscribe'
 import { Route as AuthenticatedOauthConsentRouteImport } from './routes/_authenticated.oauth-consent'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
@@ -31,12 +32,15 @@ import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_auth
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
+import { Route as AppHelpOpenrouterApiKeyRouteImport } from './routes/_app/help/openrouter-api-key'
 import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/dataforseo-api-key'
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
 import { Route as ProjectPProjectIdSettingsRouteImport } from './routes/_project/p/$projectId/settings'
+import { Route as ProjectPProjectIdSearchPerformanceRouteImport } from './routes/_project/p/$projectId/search-performance'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
+import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$projectId/sam'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
@@ -84,6 +88,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRouteRoute,
+} as any)
+const ApiHealthRoute = ApiHealthRouteImport.update({
+  id: '/api/health',
+  path: '/api/health',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSubscribeRoute = AuthenticatedSubscribeRouteImport.update({
   id: '/subscribe',
@@ -159,6 +168,11 @@ const AuthenticatedOnboardingChatRoute =
     path: '/onboarding/chat',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AppHelpOpenrouterApiKeyRoute = AppHelpOpenrouterApiKeyRouteImport.update({
+  id: '/help/openrouter-api-key',
+  path: '/help/openrouter-api-key',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppHelpDataforseoApiKeyRoute = AppHelpDataforseoApiKeyRouteImport.update({
   id: '/help/dataforseo-api-key',
   path: '/help/dataforseo-api-key',
@@ -185,9 +199,20 @@ const ProjectPProjectIdSettingsRoute =
     path: '/settings',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdSearchPerformanceRoute =
+  ProjectPProjectIdSearchPerformanceRouteImport.update({
+    id: '/search-performance',
+    path: '/search-performance',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdSavedRoute = ProjectPProjectIdSavedRouteImport.update({
   id: '/saved',
   path: '/saved',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
+const ProjectPProjectIdSamRoute = ProjectPProjectIdSamRouteImport.update({
+  id: '/sam',
+  path: '/sam',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
 const ProjectPProjectIdRankTrackingRoute =
@@ -270,8 +295,10 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
+  '/api/health': typeof ApiHealthRoute
   '/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -283,7 +310,9 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
+  '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
@@ -307,7 +336,9 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/subscribe': typeof AuthenticatedSubscribeRoute
+  '/api/health': typeof ApiHealthRoute
   '/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -317,7 +348,9 @@ export interface FileRoutesByTo {
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
+  '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
@@ -345,9 +378,11 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_authenticated/oauth-consent': typeof AuthenticatedOauthConsentRoute
   '/_authenticated/subscribe': typeof AuthenticatedSubscribeRoute
+  '/api/health': typeof ApiHealthRoute
   '/_app/': typeof AppIndexRoute
   '/_project/p/$projectId': typeof ProjectPProjectIdRouteRouteWithChildren
   '/_app/help/dataforseo-api-key': typeof AppHelpDataforseoApiKeyRoute
+  '/_app/help/openrouter-api-key': typeof AppHelpOpenrouterApiKeyRoute
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
@@ -359,7 +394,9 @@ export interface FileRoutesById {
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
+  '/_project/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
+  '/_project/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/_project/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
@@ -385,8 +422,10 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/oauth-consent'
     | '/subscribe'
+    | '/api/health'
     | '/p/$projectId'
     | '/help/dataforseo-api-key'
+    | '/help/openrouter-api-key'
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -398,7 +437,9 @@ export interface FileRouteTypes {
     | '/p/$projectId/keywords'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
+    | '/p/$projectId/sam'
     | '/p/$projectId/saved'
+    | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
@@ -422,7 +463,9 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/oauth-consent'
     | '/subscribe'
+    | '/api/health'
     | '/help/dataforseo-api-key'
+    | '/help/openrouter-api-key'
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -432,7 +475,9 @@ export interface FileRouteTypes {
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
     | '/p/$projectId/prompt-explorer'
+    | '/p/$projectId/sam'
     | '/p/$projectId/saved'
+    | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
@@ -459,9 +504,11 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_authenticated/oauth-consent'
     | '/_authenticated/subscribe'
+    | '/api/health'
     | '/_app/'
     | '/_project/p/$projectId'
     | '/_app/help/dataforseo-api-key'
+    | '/_app/help/openrouter-api-key'
     | '/_authenticated/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
@@ -473,7 +520,9 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/keywords'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
+    | '/_project/p/$projectId/sam'
     | '/_project/p/$projectId/saved'
+    | '/_project/p/$projectId/search-performance'
     | '/_project/p/$projectId/settings'
     | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/'
@@ -492,6 +541,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
+  ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
@@ -554,6 +604,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRouteRoute
+    }
+    '/api/health': {
+      id: '/api/health'
+      path: '/api/health'
+      fullPath: '/api/health'
+      preLoaderRoute: typeof ApiHealthRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/subscribe': {
       id: '/_authenticated/subscribe'
@@ -653,6 +710,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOnboardingChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_app/help/openrouter-api-key': {
+      id: '/_app/help/openrouter-api-key'
+      path: '/help/openrouter-api-key'
+      fullPath: '/help/openrouter-api-key'
+      preLoaderRoute: typeof AppHelpOpenrouterApiKeyRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/help/dataforseo-api-key': {
       id: '/_app/help/dataforseo-api-key'
       path: '/help/dataforseo-api-key'
@@ -688,11 +752,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdSettingsRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/search-performance': {
+      id: '/_project/p/$projectId/search-performance'
+      path: '/search-performance'
+      fullPath: '/p/$projectId/search-performance'
+      preLoaderRoute: typeof ProjectPProjectIdSearchPerformanceRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/saved': {
       id: '/_project/p/$projectId/saved'
       path: '/saved'
       fullPath: '/p/$projectId/saved'
       preLoaderRoute: typeof ProjectPProjectIdSavedRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/sam': {
+      id: '/_project/p/$projectId/sam'
+      path: '/sam'
+      fullPath: '/p/$projectId/sam'
+      preLoaderRoute: typeof ProjectPProjectIdSamRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
     '/_project/p/$projectId/rank-tracking': {
@@ -783,6 +861,7 @@ interface AppRouteRouteChildren {
   AppSupportRoute: typeof AppSupportRoute
   AppIndexRoute: typeof AppIndexRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
+  AppHelpOpenrouterApiKeyRoute: typeof AppHelpOpenrouterApiKeyRoute
 }
 
 const AppRouteRouteChildren: AppRouteRouteChildren = {
@@ -793,6 +872,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppSupportRoute: AppSupportRoute,
   AppIndexRoute: AppIndexRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,
+  AppHelpOpenrouterApiKeyRoute: AppHelpOpenrouterApiKeyRoute,
 }
 
 const AppRouteRouteWithChildren = AppRouteRoute._addFileChildren(
@@ -842,7 +922,9 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
+  ProjectPProjectIdSamRoute: typeof ProjectPProjectIdSamRoute
   ProjectPProjectIdSavedRoute: typeof ProjectPProjectIdSavedRoute
+  ProjectPProjectIdSearchPerformanceRoute: typeof ProjectPProjectIdSearchPerformanceRoute
   ProjectPProjectIdSettingsRoute: typeof ProjectPProjectIdSettingsRoute
   ProjectPProjectIdIndexRoute: typeof ProjectPProjectIdIndexRoute
 }
@@ -857,7 +939,10 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,
+    ProjectPProjectIdSamRoute: ProjectPProjectIdSamRoute,
     ProjectPProjectIdSavedRoute: ProjectPProjectIdSavedRoute,
+    ProjectPProjectIdSearchPerformanceRoute:
+      ProjectPProjectIdSearchPerformanceRoute,
     ProjectPProjectIdSettingsRoute: ProjectPProjectIdSettingsRoute,
     ProjectPProjectIdIndexRoute: ProjectPProjectIdIndexRoute,
   }
@@ -919,6 +1004,7 @@ const rootRouteChildren: RootRouteChildren = {
   VerifyEmailRoute: VerifyEmailRoute,
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute:
     Char91DotwellKnownChar93OpenaiAppsChallengeRoute,
+  ApiHealthRoute: ApiHealthRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,

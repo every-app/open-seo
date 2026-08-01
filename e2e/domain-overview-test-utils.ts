@@ -7,8 +7,11 @@ import {
   type TestInfo,
 } from "@playwright/test";
 
-export const PRIMARY_TEST_DOMAIN = "primary.example";
-export const SECONDARY_TEST_DOMAIN = "secondary.example";
+// Real .com suffix on purpose: form-submit validation (isValidDomainHost via
+// tldts) rejects the reserved .example TLD, and these constants reach the one
+// test that submits through the real form instead of URL navigation.
+export const PRIMARY_TEST_DOMAIN = "primary.example.com";
+export const SECONDARY_TEST_DOMAIN = "secondary.example.com";
 const RESPONSIVE_TIMEOUT_MS = 1_500;
 const INPUT_LATENCY_BUDGET_MS = 8_000;
 
@@ -178,11 +181,11 @@ export async function openDomainOverview(page: Page, tab: DomainTab) {
     window.sessionStorage.setItem("domain-overview-e2e-cleared", "1");
   });
   await page.goto("/");
-  await page.waitForURL(/\/p\/([^/]+)\/keywords(?:\?.*)?$/, {
+  await page.waitForURL(/\/p\/([^/]+)\/?$/, {
     timeout: 30_000,
   });
 
-  const match = page.url().match(/\/p\/([^/]+)\/keywords/);
+  const match = page.url().match(/\/p\/([^/]+)/);
   if (!match) throw new Error(`Could not read project id from ${page.url()}`);
 
   const params = new URLSearchParams({
