@@ -44,6 +44,7 @@ const plays = [
     title: "Intent beyond Google (Pinterest, AI, LinkedIn)",
     description:
       "Where queries happen when they don't happen in a search box, AI assistants included.",
+    href: "/library/keyword-research/intent-beyond-google",
   },
   {
     title: "Map positioning to real demand",

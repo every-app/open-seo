@@ -41,6 +41,7 @@ import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport 
 import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
 import { Route as MarketingLibraryKeywordResearchOpportunitySizingForecastingRouteImport } from './routes/_marketing/library/keyword-research/opportunity-sizing-forecasting'
 import { Route as MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport } from './routes/_marketing/library/keyword-research/long-tail-question-mining'
+import { Route as MarketingLibraryKeywordResearchIntentBeyondGoogleRouteImport } from './routes/_marketing/library/keyword-research/intent-beyond-google'
 import { Route as MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport } from './routes/_marketing/library/keyword-research/gsc-programmatic-discovery'
 import { Route as MarketingLibraryKeywordResearchClusterTopicalHubsRouteImport } from './routes/_marketing/library/keyword-research/cluster-topical-hubs'
 
@@ -220,6 +221,12 @@ const MarketingLibraryKeywordResearchLongTailQuestionMiningRoute =
     path: '/library/keyword-research/long-tail-question-mining',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryKeywordResearchIntentBeyondGoogleRoute =
+  MarketingLibraryKeywordResearchIntentBeyondGoogleRouteImport.update({
+    id: '/library/keyword-research/intent-beyond-google',
+    path: '/library/keyword-research/intent-beyond-google',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute =
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRouteImport.update({
     id: '/library/keyword-research/gsc-programmatic-discovery',
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/features/': typeof MarketingFeaturesIndexRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
+  '/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
@@ -296,6 +304,7 @@ export interface FileRoutesByTo {
   '/features': typeof MarketingFeaturesIndexRoute
   '/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
+  '/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
   '/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/_marketing/features/': typeof MarketingFeaturesIndexRoute
   '/_marketing/library/keyword-research/cluster-topical-hubs': typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   '/_marketing/library/keyword-research/gsc-programmatic-discovery': typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
+  '/_marketing/library/keyword-research/intent-beyond-google': typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
   '/_marketing/library/keyword-research/long-tail-question-mining': typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   '/_marketing/library/keyword-research/opportunity-sizing-forecasting': typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
   '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
@@ -370,6 +380,7 @@ export interface FileRouteTypes {
     | '/features/'
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
+    | '/library/keyword-research/intent-beyond-google'
     | '/library/keyword-research/long-tail-question-mining'
     | '/library/keyword-research/opportunity-sizing-forecasting'
     | '/library/keyword-research/positioning-to-demand'
@@ -405,6 +416,7 @@ export interface FileRouteTypes {
     | '/features'
     | '/library/keyword-research/cluster-topical-hubs'
     | '/library/keyword-research/gsc-programmatic-discovery'
+    | '/library/keyword-research/intent-beyond-google'
     | '/library/keyword-research/long-tail-question-mining'
     | '/library/keyword-research/opportunity-sizing-forecasting'
     | '/library/keyword-research/positioning-to-demand'
@@ -441,6 +453,7 @@ export interface FileRouteTypes {
     | '/_marketing/features/'
     | '/_marketing/library/keyword-research/cluster-topical-hubs'
     | '/_marketing/library/keyword-research/gsc-programmatic-discovery'
+    | '/_marketing/library/keyword-research/intent-beyond-google'
     | '/_marketing/library/keyword-research/long-tail-question-mining'
     | '/_marketing/library/keyword-research/opportunity-sizing-forecasting'
     | '/_marketing/library/keyword-research/positioning-to-demand'
@@ -690,6 +703,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/keyword-research/intent-beyond-google': {
+      id: '/_marketing/library/keyword-research/intent-beyond-google'
+      path: '/library/keyword-research/intent-beyond-google'
+      fullPath: '/library/keyword-research/intent-beyond-google'
+      preLoaderRoute: typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/gsc-programmatic-discovery': {
       id: '/_marketing/library/keyword-research/gsc-programmatic-discovery'
       path: '/library/keyword-research/gsc-programmatic-discovery'
@@ -724,6 +744,7 @@ interface MarketingRouteChildren {
   MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
   MarketingLibraryKeywordResearchClusterTopicalHubsRoute: typeof MarketingLibraryKeywordResearchClusterTopicalHubsRoute
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute: typeof MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute
+  MarketingLibraryKeywordResearchIntentBeyondGoogleRoute: typeof MarketingLibraryKeywordResearchIntentBeyondGoogleRoute
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute: typeof MarketingLibraryKeywordResearchLongTailQuestionMiningRoute
   MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute: typeof MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute
   MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
@@ -752,6 +773,8 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchClusterTopicalHubsRoute,
   MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute:
     MarketingLibraryKeywordResearchGscProgrammaticDiscoveryRoute,
+  MarketingLibraryKeywordResearchIntentBeyondGoogleRoute:
+    MarketingLibraryKeywordResearchIntentBeyondGoogleRoute,
   MarketingLibraryKeywordResearchLongTailQuestionMiningRoute:
     MarketingLibraryKeywordResearchLongTailQuestionMiningRoute,
   MarketingLibraryKeywordResearchOpportunitySizingForecastingRoute:
