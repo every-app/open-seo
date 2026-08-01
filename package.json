@@ -145,5 +145,13 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.6",
     "wrangler": "^4.105.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp",
+      "msgpackr-extract"
+    ]
   }
 }
