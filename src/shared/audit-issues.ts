@@ -224,6 +224,14 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "If this page should rank on its own, set its canonical to itself. Otherwise no action is needed.",
   },
+  "missing-structured-data": {
+    severity: "info",
+    title: "No structured data",
+    explanation:
+      "The page carries no structured data (JSON-LD, Microdata, or RDFa). Structured data is what makes a page eligible for rich results — review stars, prices, FAQs, breadcrumbs — and it gives AI search engines an unambiguous description of the page instead of leaving them to infer one from prose.",
+    howToFix:
+      "Add JSON-LD in the page head, matching the page's actual content: Product with offers and price on product pages, Article on posts, LocalBusiness with NAP on contact pages, BreadcrumbList on any page inside a hierarchy. Validate the result with Google's Rich Results Test.",
+  },
   "deep-page": {
     severity: "info",
     title: "Page is deep in the site structure",

@@ -142,6 +142,12 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
     });
   }
 
+  // Rich-result eligibility. Only meaningful for pages that are allowed in the
+  // index — a noindex page can't earn a rich result in the first place.
+  if (page.isIndexable && !page.hasStructuredData) {
+    report("missing-structured-data");
+  }
+
   // Structure
   if (page.isIndexable && page.links.length === 0) {
     report("no-outgoing-links");
