@@ -286,7 +286,7 @@ const dataEnv = {
   ),
   TURNSTILE_SECRET_KEY: optionalSecret("TURNSTILE_SECRET_KEY"),
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
-  // Revenue page (specs/0013): Stripe + RapidAPI Platform API access.
+  // Revenue page (specs/0014): Stripe + RapidAPI Platform API access.
   STRIPE_SECRET_KEY: optionalSecret("STRIPE_SECRET_KEY"),
   RAPIDAPI_KEY: optionalSecret("RAPIDAPI_KEY"),
   RAPIDAPI_GRAPHQL_URL: optionalVar("RAPIDAPI_GRAPHQL_URL"),

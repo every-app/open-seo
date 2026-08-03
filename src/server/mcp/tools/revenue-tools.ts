@@ -34,7 +34,7 @@ type RecentRow = {
 };
 
 // Subscriber identity is the opaque entity id only — names and emails are
-// never fetched from RapidAPI, so they can't leak here. See specs/0013.
+// never fetched from RapidAPI, so they can't leak here. See specs/0014.
 const recentColumns: McpTableColumn<RecentRow>[] = [
   { header: "entityId", value: (row) => row.entityId ?? "—" },
   { header: "type", value: (row) => row.entityType ?? "—" },

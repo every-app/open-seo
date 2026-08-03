@@ -9,7 +9,7 @@ import { getStripeRevenue } from "@/serverFunctions/stripe";
  * subscriptions and Stripe (a subscription product and/or a one-off purchase
  * product). Each panel connects independently; both compare the last 30 days
  * to the prior 30. Deliberately PII-free — subscriber identities are opaque
- * ids only. See specs/0013.
+ * ids only. See specs/0014.
  */
 export function RevenuePage({ projectId }: { projectId: string }) {
   return (

@@ -18,7 +18,7 @@ import {
  * instance-level env secrets (RAPIDAPI_KEY, RAPIDAPI_GRAPHQL_URL), so
  * connecting is just entering which API listing's subscribers belong to this
  * project. The Platform API has no "list my APIs" query usable here, hence a
- * text field instead of a picker. See specs/0013.
+ * text field instead of a picker. See specs/0014.
  */
 export function RapidapiConnectionCard({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();

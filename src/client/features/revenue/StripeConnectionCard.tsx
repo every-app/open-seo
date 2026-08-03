@@ -19,7 +19,7 @@ const NONE = "";
 /**
  * Stripe revenue connection. The API key is an instance-level env secret
  * (STRIPE_SECRET_KEY), so connecting is picking which Stripe products count
- * as this project's subscription and one-off offerings. See specs/0013.
+ * as this project's subscription and one-off offerings. See specs/0014.
  */
 export function StripeConnectionCard({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();

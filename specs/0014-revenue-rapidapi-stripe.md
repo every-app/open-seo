@@ -1,4 +1,4 @@
-# 0013 — Revenue page: RapidAPI subscriptions + Stripe
+# 0014 — Revenue page: RapidAPI subscriptions + Stripe
 
 ## Problem
 

@@ -9,7 +9,7 @@ const isoNow = sql`to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS
 // Revenue integrations per OpenSEO project (Revenue page). Like the Vercel
 // connection, the credentials are instance-level env secrets (RAPIDAPI_KEY +
 // RAPIDAPI_GRAPHQL_URL, STRIPE_SECRET_KEY), never stored here — these rows
-// only map an OpenSEO project to identifiers. See specs/0013.
+// only map an OpenSEO project to identifiers. See specs/0014.
 
 // Which RapidAPI listing's subscriptions belong to this project.
 export const rapidapiConnections = pgTable(
