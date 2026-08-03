@@ -128,11 +128,21 @@ function messageForStatus(status: number, body: string): string {
   return `Stripe API error (${status}): ${body.slice(0, 300)}`;
 }
 
+// Pinned API version. Newer Stripe accounts have no account-default version
+// and reject requests without this header ("You did not provide an API
+// version"); older accounts just get this version explicitly. Verified live
+// 2026-08-03. Bump deliberately — response shapes are parsed loosely, but
+// field semantics can change between versions.
+const STRIPE_API_VERSION = "2026-07-29.dahlia";
+
 export function createStripeClient() {
   async function request(path: string): Promise<unknown> {
     const key = await getRequiredEnvValue("STRIPE_SECRET_KEY");
     const response = await fetch(`${STRIPE_API_BASE}${path}`, {
-      headers: { Authorization: `Bearer ${key}` },
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Stripe-Version": STRIPE_API_VERSION,
+      },
     });
     if (!response.ok) {
       const body = await response.text().catch(() => "");
