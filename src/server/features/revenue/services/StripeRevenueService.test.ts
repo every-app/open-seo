@@ -1,10 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import type {
   StripeOneOffPurchase,
+  StripeRefund,
   StripeSubscription,
 } from "@/server/lib/stripeClient";
 import {
+  attributeRefundsToProduct,
   computeStripeOneOffMetrics,
+  computeStripeRefundMetrics,
   computeStripeSubscriptionMetrics,
 } from "./StripeRevenueService";
 
@@ -129,7 +132,20 @@ function purchase(
     created: NOW_S - 5 * DAY_S,
     amountTotal: 4900,
     currency: "usd",
+    paymentIntent: `pi_${crypto.randomUUID()}`,
     productIds: [ONE_OFF],
+    ...overrides,
+  };
+}
+
+function refund(overrides: Partial<StripeRefund> = {}): StripeRefund {
+  return {
+    id: crypto.randomUUID(),
+    created: NOW_S - 3 * DAY_S,
+    amount: 900,
+    currency: "usd",
+    paymentIntent: "pi_known",
+    status: "succeeded",
     ...overrides,
   };
 }
@@ -157,5 +173,59 @@ describe("computeStripeOneOffMetrics", () => {
     expect(metrics.purchasesLast30).toBe(0);
     expect(metrics.revenueLast30).toBe(0);
     expect(metrics.currency).toBeNull();
+  });
+});
+
+describe("computeStripeRefundMetrics", () => {
+  it("windows refund counts and amounts", () => {
+    const metrics = computeStripeRefundMetrics(
+      [refund(), refund({ created: NOW_S - 45 * DAY_S, amount: 500 })],
+      NOW,
+    );
+    expect(metrics.refundsLast30).toBe(1);
+    expect(metrics.refundAmountLast30).toBe(900);
+    expect(metrics.refundsPrev30).toBe(1);
+    expect(metrics.refundAmountPrev30).toBe(500);
+  });
+});
+
+describe("attributeRefundsToProduct", () => {
+  it("matches via fetched sessions and falls back to per-refund lookup", async () => {
+    const purchases = [purchase({ paymentIntent: "pi_known" })];
+    const oldPurchase = purchase({
+      paymentIntent: "pi_old",
+      created: NOW_S - 90 * DAY_S,
+    });
+    const lookup = vi.fn(async (paymentIntent: string) =>
+      paymentIntent === "pi_old" ? oldPurchase : null,
+    );
+    const matched = await attributeRefundsToProduct(
+      [
+        refund({ paymentIntent: "pi_known" }),
+        // Purchase predates the sessions window → resolved via lookup.
+        refund({ paymentIntent: "pi_old" }),
+        // Lookup finds nothing → dropped.
+        refund({ paymentIntent: "pi_unknown" }),
+        // No PaymentIntent at all → dropped.
+        refund({ paymentIntent: null }),
+      ],
+      purchases,
+      ONE_OFF,
+      lookup,
+    );
+    expect(matched).toHaveLength(2);
+    expect(lookup).toHaveBeenCalledTimes(2);
+  });
+
+  it("drops refunds whose purchase belongs to another product", async () => {
+    const matched = await attributeRefundsToProduct(
+      [refund({ paymentIntent: "pi_other" })],
+      [purchase({ paymentIntent: "pi_other", productIds: ["prod_other"] })],
+      ONE_OFF,
+      vi.fn(async () =>
+        purchase({ paymentIntent: "pi_other", productIds: ["prod_other"] }),
+      ),
+    );
+    expect(matched).toHaveLength(0);
   });
 });

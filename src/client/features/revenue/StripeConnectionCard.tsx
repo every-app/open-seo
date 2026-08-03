@@ -271,8 +271,8 @@ function SetupWarning() {
   return (
     <p className="text-sm text-base-content/70">
       Stripe isn't configured on this deployment. Create a restricted API key
-      with read access to Products, Subscriptions, and Checkout Sessions, then
-      set{" "}
+      with read access to Products, Subscriptions, Checkout Sessions, and
+      Refunds, then set{" "}
       <code className="rounded bg-base-200 px-1 py-0.5 text-xs">
         STRIPE_SECRET_KEY
       </code>{" "}

@@ -18,7 +18,8 @@ panels, mirroring the Vercel Web Analytics integration (specs/0010) exactly:
 
 - Credentials are **instance-level env secrets**, never stored in the DB:
   - `STRIPE_SECRET_KEY` — a restricted key with read access to Products,
-    Subscriptions, and Checkout Sessions. An organization-level key works
+    Subscriptions, Checkout Sessions, and Refunds (refund/net tiles degrade
+    gracefully without the Refunds grant). An organization-level key works
     across projects on different Stripe accounts: each connection stores its
     target account (`acct_…`, an identifier, not a secret) and the client
     sends it as `Stripe-Context`. Requests always pin `Stripe-Version` —
@@ -73,6 +74,12 @@ past_due`. Churned = `canceled_at` in window. MRR = active items'
   product. Revenue sums the session `amount_total`, so a multi-product cart
   counts in full toward the matched product — acceptable for a
   single-product store, noted in the code.
+- Refunds: `/v1/refunds?created[gte]=60d` (succeeded only), attributed to
+  the product via the refund's PaymentIntent → the session's
+  `payment_intent`. A refund whose purchase predates the sessions window is
+  resolved with a per-refund session lookup (capped at 20). Refund and net
+  tiles report the refund's _created_ window — a July refund of a June
+  purchase counts as a July refund.
 
 ## Failure surfacing
 

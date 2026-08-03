@@ -65,7 +65,20 @@ export type StripeOneOffPurchase = {
   created: number;
   amountTotal: number | null;
   currency: string | null;
+  /** The session's PaymentIntent id — the join key for refunds. */
+  paymentIntent: string | null;
   productIds: string[];
+};
+
+/** One succeeded refund. Refunds reference a PaymentIntent, not a product —
+ *  product attribution goes through the Checkout Session's paymentIntent. */
+export type StripeRefund = {
+  id: string;
+  created: number;
+  amount: number;
+  currency: string | null;
+  paymentIntent: string | null;
+  status: string | null;
 };
 
 const listResponseSchema = z.looseObject({
@@ -111,6 +124,7 @@ const checkoutSessionSchema = z.looseObject({
   payment_status: z.string().nullish(),
   amount_total: z.number().nullish(),
   currency: z.string().nullish(),
+  payment_intent: z.string().nullish(),
   line_items: z
     .looseObject({
       data: z.array(
@@ -121,6 +135,38 @@ const checkoutSessionSchema = z.looseObject({
     })
     .nullish(),
 });
+
+const refundSchema = z.looseObject({
+  id: z.string(),
+  created: z.number(),
+  amount: z.number(),
+  currency: z.string().nullish(),
+  payment_intent: z.string().nullish(),
+  status: z.string().nullish(),
+});
+
+/** Paid one-off sessions from raw session rows; non-payment or unpaid
+ *  sessions drop out. */
+function toOneOffPurchases(
+  rows: Array<Record<string, unknown>>,
+): StripeOneOffPurchase[] {
+  return rows
+    .map((row) => checkoutSessionSchema.parse(row))
+    .filter(
+      (session) =>
+        session.mode === "payment" && session.payment_status === "paid",
+    )
+    .map((session) => ({
+      id: session.id,
+      created: session.created,
+      amountTotal: session.amount_total ?? null,
+      currency: session.currency ?? null,
+      paymentIntent: session.payment_intent ?? null,
+      productIds: (session.line_items?.data ?? [])
+        .map((item) => item.price?.product)
+        .filter((product): product is string => Boolean(product)),
+    }));
+}
 
 function messageForStatus(status: number, body: string): string {
   if (status === 401 || status === 403) {
@@ -241,21 +287,40 @@ export function createStripeClient(stripeAccountId?: string | null) {
         "expand[]": "data.line_items",
       });
       const rows = await listAll("/v1/checkout/sessions", params);
-      return rows
-        .map((row) => checkoutSessionSchema.parse(row))
-        .filter(
-          (session) =>
-            session.mode === "payment" && session.payment_status === "paid",
-        )
-        .map((session) => ({
-          id: session.id,
-          created: session.created,
-          amountTotal: session.amount_total ?? null,
-          currency: session.currency ?? null,
-          productIds: (session.line_items?.data ?? [])
-            .map((item) => item.price?.product)
-            .filter((product): product is string => Boolean(product)),
-        }));
+      return toOneOffPurchases(rows);
+    },
+
+    /** The paid one-off session behind one PaymentIntent, or null. Used to
+     *  attribute a refund whose purchase predates the sessions window. */
+    async getOneOffPurchaseByPaymentIntent(
+      paymentIntent: string,
+    ): Promise<StripeOneOffPurchase | null> {
+      const params = new URLSearchParams({
+        payment_intent: paymentIntent,
+        "expand[]": "data.line_items",
+        limit: "1",
+      });
+      const raw = await request(`/v1/checkout/sessions?${params}`);
+      return toOneOffPurchases(listResponseSchema.parse(raw).data)[0] ?? null;
+    },
+
+    /** Refunds created since `createdGte` (epoch seconds), any status. */
+    async listRefunds(createdGte: number): Promise<StripeRefund[]> {
+      const params = new URLSearchParams({
+        "created[gte]": String(createdGte),
+      });
+      const rows = await listAll("/v1/refunds", params);
+      return rows.map((row) => {
+        const refund = refundSchema.parse(row);
+        return {
+          id: refund.id,
+          created: refund.created,
+          amount: refund.amount,
+          currency: refund.currency ?? null,
+          paymentIntent: refund.payment_intent ?? null,
+          status: refund.status ?? null,
+        };
+      });
     },
   };
 }
