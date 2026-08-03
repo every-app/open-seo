@@ -9,6 +9,7 @@ import * as sqliteBing from "./bing.schema";
 import * as sqliteVercel from "./vercel.schema";
 import * as sqlitePsi from "./psi.schema";
 import * as sqliteReddit from "./reddit-attribution.schema";
+import * as sqliteRevenue from "./revenue.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgAudit from "./pg/audit.schema";
@@ -20,6 +21,7 @@ import * as pgBing from "./pg/bing.schema";
 import * as pgVercel from "./pg/vercel.schema";
 import * as pgPsi from "./pg/psi.schema";
 import * as pgReddit from "./pg/reddit-attribution.schema";
+import * as pgRevenue from "./pg/revenue.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
@@ -42,6 +44,7 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteVercel &
   typeof sqlitePsi &
   typeof sqliteReddit &
+  typeof sqliteRevenue &
   typeof sqliteTelemetry;
 
 const runtimeSchema =
@@ -57,6 +60,7 @@ const runtimeSchema =
         ...pgVercel,
         ...pgPsi,
         ...pgReddit,
+        ...pgRevenue,
         ...pgTelemetry,
       }
     : {
@@ -70,6 +74,7 @@ const runtimeSchema =
         ...sqliteVercel,
         ...sqlitePsi,
         ...sqliteReddit,
+        ...sqliteRevenue,
         ...sqliteTelemetry,
       };
 
@@ -111,5 +116,7 @@ export const {
   psiUrls,
   psiSnapshots,
   redditAttributions,
+  rapidapiConnections,
+  stripeConnections,
   telemetryState,
 } = schema;

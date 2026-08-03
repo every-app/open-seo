@@ -8,4 +8,5 @@ export * from "./bing.schema";
 export * from "./vercel.schema";
 export * from "./psi.schema";
 export * from "./reddit-attribution.schema";
+export * from "./revenue.schema";
 export * from "./telemetry.schema";
