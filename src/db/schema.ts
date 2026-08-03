@@ -116,7 +116,7 @@ export const {
   psiUrls,
   psiSnapshots,
   redditAttributions,
-  rapidapiConnections,
+  rapidapiSnapshots,
   stripeConnections,
   telemetryState,
 } = schema;

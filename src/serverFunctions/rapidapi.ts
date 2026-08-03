@@ -1,84 +1,47 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import {
-  RapidapiService,
-  RapidapiNotConnectedError,
-} from "@/server/features/revenue/services/RapidapiService";
-import {
-  hasRapidapiConfig,
-  isExpectedRapidapiFailure,
-} from "@/server/lib/rapidapiClient";
+import { RapidapiService } from "@/server/features/revenue/services/RapidapiService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
-const setApiSchema = projectScopedSchema.extend({
-  rapidapiApiId: z.string().min(1).max(200),
+const logSnapshotSchema = projectScopedSchema.extend({
+  capturedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  activeSubscribers: z.number().int().min(0).max(1_000_000),
+  payingSubscribers: z.number().int().min(0).max(1_000_000).nullable(),
+});
+const deleteSnapshotSchema = projectScopedSchema.extend({
+  id: z.string().min(1),
 });
 
-export const getRapidapiConnection = createServerFn({ method: "POST" })
+export const getRapidapiSnapshots = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
-    const [connection, configConfigured] = await Promise.all([
-      RapidapiService.getConnection(context.projectId),
-      hasRapidapiConfig(),
-    ]);
-    return {
-      connected: Boolean(connection),
-      configConfigured,
-      rapidapiApiId: connection?.rapidapiApiId ?? null,
-      rapidapiApiName: connection?.rapidapiApiName ?? null,
-      connectedAt: connection?.createdAt ?? null,
-    };
+    return RapidapiService.listSnapshots(context.projectId);
   });
 
-export const setRapidapiApi = createServerFn({ method: "POST" })
+export const logRapidapiSnapshot = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(setApiSchema)
+  .validator(logSnapshotSchema)
   .handler(async ({ data, context }) => {
-    const connection = await RapidapiService.setApi({
+    const snapshot = await RapidapiService.logSnapshot({
       projectId: context.projectId,
       organizationId: context.organizationId,
-      rapidapiApiId: data.rapidapiApiId,
+      capturedOn: data.capturedOn,
+      activeSubscribers: data.activeSubscribers,
+      payingSubscribers: data.payingSubscribers,
       userId: context.userId,
     });
-    return {
-      connected: true as const,
-      rapidapiApiId: connection.rapidapiApiId,
-      rapidapiApiName: connection.rapidapiApiName,
-    };
+    return { snapshot };
   });
 
-export const disconnectRapidapi = createServerFn({ method: "POST" })
+export const deleteRapidapiSnapshot = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(projectScopedSchema)
-  .handler(async ({ context }) => {
-    await RapidapiService.disconnect(context.projectId);
-    return { connected: false as const };
-  });
-
-/**
- * Subscriber metrics for the connected RapidAPI listing: active and paying
- * counts plus 30-day new/churn with a prior-30-day comparison. Not connected
- * — or a rejected key — resolves to { connected: false } so the page renders
- * the setup card instead of an error boundary.
- */
-export const getRapidapiSubscriptions = createServerFn({ method: "POST" })
-  .middleware(requireProjectContext)
-  .validator(projectScopedSchema)
-  .handler(async ({ context }) => {
-    try {
-      const report = await RapidapiService.getSubscriptionReport({
-        projectId: context.projectId,
-      });
-      return { connected: true as const, ...report };
-    } catch (error) {
-      if (
-        error instanceof RapidapiNotConnectedError ||
-        isExpectedRapidapiFailure(error)
-      ) {
-        return { connected: false as const };
-      }
-      throw error;
-    }
+  .validator(deleteSnapshotSchema)
+  .handler(async ({ data, context }) => {
+    await RapidapiService.deleteSnapshot({
+      projectId: context.projectId,
+      id: data.id,
+    });
+    return { deleted: true as const };
   });

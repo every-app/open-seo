@@ -162,6 +162,20 @@
       "when": 1785749907804,
       "tag": "0022_lyrical_spencer_smythe",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785774051842,
+      "tag": "0023_empty_kitty_pryde",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785774063411,
+      "tag": "0024_glossy_excalibur",
+      "breakpoints": true
     }
   ]
 }

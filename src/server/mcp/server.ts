@@ -7,7 +7,7 @@ import {
 import { inspectBingUrlsTool } from "@/server/mcp/tools/bing-inspect-tools";
 import { getVercelTrafficTool } from "@/server/mcp/tools/vercel-tools";
 import {
-  getRapidapiSubscriptionsTool,
+  getRapidapiSnapshotsTool,
   getStripeRevenueTool,
 } from "@/server/mcp/tools/revenue-tools";
 import {
@@ -260,12 +260,12 @@ export function registerOpenSeoMcpTools(server: McpServer) {
     ),
   );
   server.registerTool(
-    getRapidapiSubscriptionsTool.name,
-    getRapidapiSubscriptionsTool.config,
+    getRapidapiSnapshotsTool.name,
+    getRapidapiSnapshotsTool.config,
     instrumentMcpToolHandler(
-      getRapidapiSubscriptionsTool.name,
-      getRapidapiSubscriptionsTool.config.outputSchema,
-      getRapidapiSubscriptionsTool.handler,
+      getRapidapiSnapshotsTool.name,
+      getRapidapiSnapshotsTool.config.outputSchema,
+      getRapidapiSnapshotsTool.handler,
     ),
   );
   server.registerTool(

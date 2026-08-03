@@ -7,7 +7,7 @@ import {
   PercentDelta,
   Stat,
 } from "@/client/features/dashboard/cardParts";
-import { formatMoney } from "@/client/features/revenue/RevenuePage";
+import { formatMoney } from "@/client/features/revenue/revenueParts";
 import { getStripeRevenue } from "@/serverFunctions/stripe";
 
 export function RevenueCard({ projectId }: { projectId: string }) {
