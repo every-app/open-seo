@@ -21,7 +21,12 @@ const mocks = vi.hoisted(() => ({
   getLatestResults: vi.fn(),
 }));
 
-vi.mock("cloudflare:workers", () => ({ env: {} }));
+// waitUntil backs get_backlinks_overview's fire-and-forget snapshot sync;
+// running the work inline keeps the test deterministic.
+vi.mock("cloudflare:workers", () => ({
+  env: {},
+  waitUntil: (promise: Promise<unknown>) => void promise.catch(() => {}),
+}));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
 }));

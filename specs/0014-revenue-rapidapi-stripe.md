@@ -1,65 +1,63 @@
-# 0014 — Revenue page: RapidAPI subscriptions + Stripe
+# 0014 — Revenue page: Stripe + RapidAPI snapshots
 
 ## Problem
 
 OpenSEO doubles as a personal product dashboard. Two revenue sources matter
 and neither is visible in the app:
 
-- **RapidAPI marketplace subscriptions** to an API listing (e.g. Scholar
-  Sidekick): how many subscribers, how many pay, and how new/churn is
-  trending.
 - **Stripe**: a recurring subscription product and a one-off purchase product
   (e.g. Agent Ready): active subscribers, MRR, churn, and one-off sales.
+- **RapidAPI marketplace subscriptions** to an API listing (e.g. Scholar
+  Sidekick): how many subscribers, how many pay, and the trend.
 
 ## Decision
 
 A per-project **Revenue** page (`/p/$projectId/revenue`) with two independent
-panels, mirroring the Vercel Web Analytics integration (specs/0010) exactly:
+panels:
 
-- Credentials are **instance-level env secrets**, never stored in the DB:
-  - `STRIPE_SECRET_KEY` — a restricted key with read access to Products,
-    Subscriptions, Checkout Sessions, and Refunds (refund/net tiles degrade
-    gracefully without the Refunds grant). An organization-level key works
-    across projects on different Stripe accounts: each connection stores its
-    target account (`acct_…`, an identifier, not a secret) and the client
-    sends it as `Stripe-Context`. Requests always pin `Stripe-Version` —
-    newer accounts have no default version and reject versionless requests
-    (both verified live 2026-08-03).
-  - `RAPIDAPI_KEY` + `RAPIDAPI_GRAPHQL_URL` — the GraphQL Platform API lives
-    at a per-hub URL (`https://graphql-<hub>.p.rapidapi.com/`), so the
-    endpoint is config, not a constant. Auth is `x-rapidapi-key` plus an
-    `x-rapidapi-host` header derived from the URL.
-- The DB stores only **identifier mappings** (`rapidapi_connections`,
-  `stripe_connections`): which RapidAPI listing (`api_…` id, entered by hand
-  and verified by running the subscriptions query — the Platform API has no
-  usable "list my APIs" query) and which Stripe account + products (picked
-  from `/v1/products`, either product slot nullable) belong to a project.
-- Data is **fetch-on-demand** — no snapshots, no cron. Metrics windows are
-  the last 30 days vs the prior 30, computed in pure functions
-  (`computeRapidapiMetrics`, `computeStripeSubscriptionMetrics`,
-  `computeStripeOneOffMetrics`) so they're unit-testable.
-- Two MCP tools: `get_rapidapi_subscriptions`, `get_stripe_revenue`.
+- **Stripe** mirrors the Vercel Web Analytics integration (specs/0010):
+  the credential is an **instance-level env secret**, never stored in the DB.
+  `STRIPE_SECRET_KEY` is a restricted key with read access to Products,
+  Subscriptions, Checkout Sessions, and Refunds (refund/net tiles degrade
+  gracefully without the Refunds grant). An organization-level key works
+  across projects on different Stripe accounts: each connection stores its
+  target account (`acct_…`, an identifier, not a secret) and the client
+  sends it as `Stripe-Context`. Requests always pin `Stripe-Version` —
+  newer accounts have no default version and reject versionless requests
+  (both verified live 2026-08-03). The DB stores only the identifier
+  mapping (`stripe_connections`): account + products picked from
+  `/v1/products` (archived products included — a retired one-off product's
+  history still matters), either product slot nullable.
+- **RapidAPI is manual snapshots** (`rapidapi_snapshots`): date + active
+  subscribers + optional paying count, logged by hand from Studio →
+  Analytics, one row per project per day (re-logging a day replaces it).
+  The panel shows the latest numbers with the change since the previous
+  snapshot, a log form, and the history.
+- Stripe data is **fetch-on-demand** — no snapshots, no cron. Metric
+  windows are the last 30 days vs the prior 30, computed in pure functions
+  (`computeStripeSubscriptionMetrics`, `computeStripeOneOffMetrics`,
+  `computeStripeRefundMetrics`, `buildSnapshotReport`) so they're
+  unit-testable.
+- Two MCP tools: `get_stripe_revenue`, `get_rapidapi_snapshots`.
+
+## Why RapidAPI is manual
+
+A live integration was built first against the GraphQL Platform API and
+verified end-to-end — then RapidAPI support confirmed (2026-08-04) that
+**no platform APIs exist for public-marketplace Hub data**: the
+`subscriptions` query is Enterprise Hub / Environment Admin only, on the
+public marketplace it returns only the _calling account's own_
+subscriptions (silently ignoring an unknown `where.apiId`), and the
+accidentally-public test endpoint we used was retired to private.
+Subscriber data for public listings exists solely in the Studio Analytics
+dashboards. Manual snapshots are the honest fallback; the live client was
+removed (see git history of `src/server/lib/rapidapiClient.ts`).
 
 ## No PII, by construction
 
-Subscriber identity is the opaque RapidAPI entity id only. The GraphQL query
-**does not request** `entity.name` or `entity.email`, so names and emails
-never enter the app, its logs, or MCP output. The Stripe client parses no
-customer fields (no `customer`, `customer_details`) — only product ids,
-amounts, statuses, and timestamps.
-
-## RapidAPI metric semantics
-
-- The documented subscriptions query guarantees `id/status/createdAt/
-canceledAt/entity/api`; **plan info is not guaranteed** on Subscription
-  nodes. The client tries a plan-aware query (`billingPlanVersion { name
-price }`) first and falls back to the basic shape on a GraphQL error;
-  "paying subscribers" is `null` when plan info is unavailable, and the UI
-  says so instead of guessing.
-- Active = not canceled (`canceledAt` null and status not matching
-  /cancel/i). New/churned = `createdAt`/`canceledAt` inside the window.
-- No pagination is documented for the query; the panel reads the returned
-  nodes and reports `totalCount` from the API.
+Snapshots are counts only. The Stripe client parses no customer fields (no
+`customer`, `customer_details`) — only product ids, amounts, statuses, and
+timestamps.
 
 ## Stripe metric semantics
 
@@ -83,9 +81,11 @@ past_due`. Churned = `canceled_at` in window. MRR = active items'
 
 ## Failure surfacing
 
-Same shape as Vercel: missing secrets → `setup_required` card with the exact
-`wrangler secret put` commands; 401/403 (`isExpected*Failure`) and
-not-connected collapse to `{ connected: false }` in the page server function
-so the page renders the connection card instead of an error boundary; MCP
-tools return `{ ok: false, reason: "not_connected" | "api_error",
-connectUrl }`.
+Stripe, same shape as Vercel: a missing secret → `setup_required` card with
+the exact `wrangler secret put` command; 401/403
+(`isExpectedStripeFailure`) and not-connected collapse to
+`{ connected: false }` in the page server function so the page renders the
+connection card instead of an error boundary; the MCP tool returns
+`{ ok: false, reason: "not_connected" | "api_error", connectUrl }`. The
+RapidAPI snapshot panel has no external dependency to fail — an empty
+history just prompts for the first log.

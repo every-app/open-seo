@@ -313,7 +313,8 @@ async function recordBacklinkSnapshotFromOverview(input: {
 
   const fetchedMs = Date.parse(overview.fetchedAt);
   if (Number.isNaN(fetchedMs)) return;
-  const latest = await BacklinkSnapshotRepository.getLatestForProject(projectId);
+  const latest =
+    await BacklinkSnapshotRepository.getLatestForProject(projectId);
   if (
     latest &&
     latest.domain === domain &&

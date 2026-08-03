@@ -1,16 +1,24 @@
-import { sqliteTable, text, uniqueIndex, index } from "drizzle-orm/sqlite-core";
+import {
+  integer,
+  sqliteTable,
+  text,
+  uniqueIndex,
+  index,
+} from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { organization } from "./better-auth-schema";
 import { projects } from "./app.schema";
 
-// Revenue integrations per OpenSEO project (Revenue page). Like the Vercel
-// connection, the credentials are instance-level env secrets (RAPIDAPI_KEY +
-// RAPIDAPI_GRAPHQL_URL, STRIPE_SECRET_KEY), never stored here — these rows
-// only map an OpenSEO project to identifiers. See specs/0014.
+// Revenue integrations per OpenSEO project (Revenue page). The Stripe
+// credential is an instance-level env secret (STRIPE_SECRET_KEY), never
+// stored here — rows only map an OpenSEO project to identifiers.
+// See specs/0014.
 
-// Which RapidAPI listing's subscriptions belong to this project.
-export const rapidapiConnections = sqliteTable(
-  "rapidapi_connections",
+// Manually-logged RapidAPI subscriber counts, copied from Studio Analytics.
+// RapidAPI has no platform API for public-marketplace subscriber data
+// (confirmed by support 2026-08-04), so snapshots replace the live query.
+export const rapidapiSnapshots = sqliteTable(
+  "rapidapi_snapshots",
   {
     id: text("id").primaryKey(),
     projectId: text("project_id")
@@ -19,11 +27,12 @@ export const rapidapiConnections = sqliteTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
-    // RapidAPI API id, e.g. "api_0123abcd-…".
-    rapidapiApiId: text("rapidapi_api_id").notNull(),
-    // Display name resolved at connect time; null when the API didn't report one.
-    rapidapiApiName: text("rapidapi_api_name"),
-    connectedByUserId: text("connected_by_user_id").notNull(),
+    // The day the numbers were read off the dashboard, "YYYY-MM-DD".
+    capturedOn: text("captured_on").notNull(),
+    activeSubscribers: integer("active_subscribers").notNull(),
+    // Null when the paying split wasn't recorded.
+    payingSubscribers: integer("paying_subscribers"),
+    createdByUserId: text("created_by_user_id").notNull(),
     createdAt: text("created_at")
       .notNull()
       .default(sql`(current_timestamp)`),
@@ -32,9 +41,12 @@ export const rapidapiConnections = sqliteTable(
       .default(sql`(current_timestamp)`),
   },
   (table) => [
-    // One RapidAPI listing per OpenSEO project; switching replaces it.
-    uniqueIndex("rapidapi_connections_project_idx").on(table.projectId),
-    index("rapidapi_connections_organization_idx").on(table.organizationId),
+    // One snapshot per project per day; re-logging a day replaces it.
+    uniqueIndex("rapidapi_snapshots_project_day_idx").on(
+      table.projectId,
+      table.capturedOn,
+    ),
+    index("rapidapi_snapshots_organization_idx").on(table.organizationId),
   ],
 );
 

@@ -1,0 +1,1 @@
+DROP TABLE "rapidapi_connections" CASCADE;

@@ -66,12 +66,6 @@ declare namespace Cloudflare {
     // Optional: missing renders the setup card.
     STRIPE_SECRET_KEY?: string;
 
-    // RapidAPI Platform API access for the Revenue page and the
-    // get_rapidapi_subscriptions MCP tool. The GraphQL endpoint is per-hub,
-    // so both are config. Optional: missing renders the setup card.
-    RAPIDAPI_KEY?: string;
-    RAPIDAPI_GRAPHQL_URL?: string;
-
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).

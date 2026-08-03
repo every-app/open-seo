@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
 import { VercelConnectionCard } from "@/client/features/vercel/VercelConnectionCard";
 import { PagespeedConnectionCard } from "@/client/features/pagespeed/PagespeedConnectionCard";
-import { RapidapiConnectionCard } from "@/client/features/revenue/RapidapiConnectionCard";
 import { StripeConnectionCard } from "@/client/features/revenue/StripeConnectionCard";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
@@ -84,11 +83,6 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
       <section id="stripe" className="space-y-3 scroll-mt-6">
         <h2 className="text-sm font-medium text-base-content/50">Stripe</h2>
         <StripeConnectionCard projectId={projectId} />
-      </section>
-
-      <section id="rapidapi" className="space-y-3 scroll-mt-6">
-        <h2 className="text-sm font-medium text-base-content/50">RapidAPI</h2>
-        <RapidapiConnectionCard projectId={projectId} />
       </section>
 
       <DangerSection project={project} canArchive={projects.length > 1} />

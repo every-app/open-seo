@@ -47,7 +47,9 @@ function totalsOf(rows: Array<DailyRow & { date: string }>): PeriodTotals {
 export function last28DayReport(rows: DailyRow[]): BingTrafficReport | null {
   const dated = rows
     .flatMap((row) =>
-      row.date === null ? [] : [{ ...row, date: row.date, ms: Date.parse(row.date) }],
+      row.date === null
+        ? []
+        : [{ ...row, date: row.date, ms: Date.parse(row.date) }],
     )
     .filter((row) => Number.isFinite(row.ms))
     .toSorted((a, b) => a.ms - b.ms);

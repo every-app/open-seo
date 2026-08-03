@@ -9,39 +9,27 @@ import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
-import {
-  RapidapiService,
-  RapidapiNotConnectedError,
-} from "@/server/features/revenue/services/RapidapiService";
+import { RapidapiService } from "@/server/features/revenue/services/RapidapiService";
 import {
   StripeRevenueService,
   StripeNotConnectedError,
 } from "@/server/features/revenue/services/StripeRevenueService";
-import { isExpectedRapidapiFailure } from "@/server/lib/rapidapiClient";
 import { isExpectedStripeFailure } from "@/server/lib/stripeClient";
 
 const revenueInputSchema = { projectId: projectIdSchema } as const;
 
 type RevenueArgs = z.infer<z.ZodObject<typeof revenueInputSchema>>;
 
-type RecentRow = {
-  entityId: string | null;
-  entityType: string | null;
-  planName: string | null;
-  status: string | null;
-  createdAt: string | null;
-  canceledAt: string | null;
+type SnapshotRow = {
+  capturedOn: string;
+  activeSubscribers: number;
+  payingSubscribers: number | null;
 };
 
-// Subscriber identity is the opaque entity id only — names and emails are
-// never fetched from RapidAPI, so they can't leak here. See specs/0014.
-const recentColumns: McpTableColumn<RecentRow>[] = [
-  { header: "entityId", value: (row) => row.entityId ?? "—" },
-  { header: "type", value: (row) => row.entityType ?? "—" },
-  { header: "plan", value: (row) => row.planName ?? "—" },
-  { header: "status", value: (row) => row.status ?? "—" },
-  { header: "started", value: (row) => row.createdAt?.slice(0, 10) ?? "—" },
-  { header: "canceled", value: (row) => row.canceledAt?.slice(0, 10) ?? "—" },
+const snapshotColumns: McpTableColumn<SnapshotRow>[] = [
+  { header: "date", value: (row) => row.capturedOn },
+  { header: "active", value: (row) => row.activeSubscribers },
+  { header: "paying", value: (row) => row.payingSubscribers ?? "—" },
 ];
 
 function notConnectedResponse(
@@ -56,20 +44,21 @@ function notConnectedResponse(
   });
 }
 
-export const getRapidapiSubscriptionsTool = {
-  name: "get_rapidapi_subscriptions",
+export const getRapidapiSnapshotsTool = {
+  name: "get_rapidapi_snapshots",
   config: {
-    title: "Get RapidAPI subscription metrics",
+    title: "Get RapidAPI subscriber snapshots",
     description:
-      "Subscriber metrics for the project's connected RapidAPI listing: active and paying subscriber counts, new subscriptions and churn over the last 30 days with a prior-30-day comparison, and the most recent subscription events. Subscribers are identified by opaque entity ids only (no names or emails). Read-only; uses no credits.",
+      "Manually-logged RapidAPI subscriber snapshots for this project (RapidAPI exposes no API for public-marketplace subscriber data, so numbers are logged by hand from Studio Analytics on the Revenue page): latest active/paying counts with the change since the previous snapshot, plus the snapshot history. Counts only — no subscriber identities. Read-only; uses no credits.",
     inputSchema: revenueInputSchema,
     outputSchema: {
       ok: z.boolean(),
-      reason: z.string().optional(),
-      connectUrl: z.string().optional(),
-      apiName: z.string().nullable().optional(),
-      metrics: looseObjectOutputSchema.optional(),
-      recent: z.array(looseObjectOutputSchema).optional(),
+      latest: looseObjectOutputSchema.nullable().optional(),
+      activeDelta: z.number().nullable().optional(),
+      payingDelta: z.number().nullable().optional(),
+      snapshotCount: z.number().optional(),
+      snapshots: z.array(looseObjectOutputSchema).optional(),
+      logUrl: z.string().optional(),
       ...optionalMetaOutputSchema,
     },
     annotations: {
@@ -79,52 +68,49 @@ export const getRapidapiSubscriptionsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: RevenueArgs, context) => {
-    const connectUrl = buildDashboardUrl(
+    const logUrl = buildDashboardUrl(
       context.baseUrl,
-      `/p/${args.projectId}/settings`,
+      `/p/${args.projectId}/revenue`,
     );
     const meta = buildProjectMeta(
       context,
       args.projectId,
-      `/p/${args.projectId}/settings`,
+      `/p/${args.projectId}/revenue`,
     );
-    try {
-      const report = await RapidapiService.getSubscriptionReport({
-        projectId: args.projectId,
-      });
-      const { metrics } = report;
-      const paying =
-        metrics.payingSubscribers === null
-          ? "unknown (plan prices not exposed)"
-          : String(metrics.payingSubscribers);
-      const summary = `${report.apiName ?? report.rapidapiApiId} · ${metrics.activeSubscribers} active subscribers (${paying} paying) · last 30d: +${metrics.newLast30} new / -${metrics.churnedLast30} churned (prev 30d: +${metrics.newPrev30} / -${metrics.churnedPrev30})`;
-      const text =
-        report.recent.length === 0
-          ? summary
-          : `${summary}\n${formatMcpTable(report.recent, recentColumns)}`;
+    const { snapshots, report } = await RapidapiService.listSnapshots(
+      args.projectId,
+    );
+    if (!report.latest) {
       return mcpResponse({
-        text,
+        text: `No RapidAPI snapshots logged yet. Log the current subscriber numbers on the Revenue page: ${logUrl}`,
         meta,
-        structuredContent: {
-          ok: true,
-          apiName: report.apiName,
-          metrics,
-          recent: report.recent,
-        },
+        structuredContent: { ok: true, latest: null, snapshotCount: 0, logUrl },
       });
-    } catch (error) {
-      if (error instanceof RapidapiNotConnectedError) {
-        return notConnectedResponse(meta, connectUrl, "RapidAPI");
-      }
-      if (isExpectedRapidapiFailure(error)) {
-        return mcpResponse({
-          text: "The RapidAPI key was rejected (revoked or missing Platform API access). Update RAPIDAPI_KEY / RAPIDAPI_GRAPHQL_URL on this deployment.",
-          meta,
-          structuredContent: { ok: false, reason: "api_error", connectUrl },
-        });
-      }
-      throw error;
     }
+    const latest = report.latest;
+    const deltas =
+      report.activeDelta === null
+        ? ""
+        : ` (${report.activeDelta >= 0 ? "+" : ""}${report.activeDelta} active${
+            report.payingDelta === null
+              ? ""
+              : `, ${report.payingDelta >= 0 ? "+" : ""}${report.payingDelta} paying`
+          } since ${report.previous?.capturedOn})`;
+    const summary = `Latest snapshot ${latest.capturedOn}: ${latest.activeSubscribers} active / ${latest.payingSubscribers ?? "—"} paying${deltas}`;
+    const rows = snapshots.slice(0, 24);
+    return mcpResponse({
+      text: `${summary}\n${formatMcpTable(rows, snapshotColumns)}`,
+      meta,
+      structuredContent: {
+        ok: true,
+        latest,
+        activeDelta: report.activeDelta,
+        payingDelta: report.payingDelta,
+        snapshotCount: snapshots.length,
+        snapshots: rows,
+        logUrl,
+      },
+    });
   }),
 };
 

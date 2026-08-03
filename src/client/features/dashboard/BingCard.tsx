@@ -48,7 +48,9 @@ export function BingCard({ projectId }: { projectId: string }) {
   return (
     <CardShell
       title="Bing performance"
-      stamp={data?.connected ? "Bing Webmaster Tools · last 28 days" : undefined}
+      stamp={
+        data?.connected ? "Bing Webmaster Tools · last 28 days" : undefined
+      }
       action={
         <Link
           to="/p/$projectId/bing"
