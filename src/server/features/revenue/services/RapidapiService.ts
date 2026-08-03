@@ -31,9 +31,25 @@ export type RapidapiMetrics = {
   churnedPrev30: number;
 };
 
+// Live statuses observed 2026-08-03: ACTIVE, plus DELETED for both canceled
+// and plan-switched rows (DELETED can appear with canceledAt null), so only
+// an explicit ACTIVE counts. A null status is trusted as active.
 function isActive(sub: RapidapiSubscription): boolean {
   if (sub.canceledAt) return false;
-  return !sub.status || !/cancel/i.test(sub.status);
+  return !sub.status || sub.status.toUpperCase() === "ACTIVE";
+}
+
+/** Keep only nodes that belong to the requested API. The Platform API
+ *  silently ignores an unrecognized where.apiId and returns the caller's own
+ *  subscriptions (verified live 2026-08-03) — trusting the filter would show
+ *  the wrong data. Nodes without an api id (older schema variants) are kept. */
+export function scopeToApi(
+  subscriptions: RapidapiSubscription[],
+  apiId: string,
+): RapidapiSubscription[] {
+  return subscriptions.filter(
+    (sub) => sub.apiId === null || sub.apiId === apiId,
+  );
 }
 
 function inWindow(iso: string | null, since: number, until: number): boolean {
@@ -81,7 +97,9 @@ async function getConnection(
 
 /** Map a RapidAPI listing to an OpenSEO project. Validated by running the
  *  subscriptions query — a bad apiId fails here instead of creating a dead
- *  connection. */
+ *  connection. A wrong id doesn't error upstream (the filter is silently
+ *  ignored), so the check is that the returned nodes actually belong to the
+ *  requested API. */
 async function setApi(input: {
   projectId: string;
   organizationId: string;
@@ -93,11 +111,19 @@ async function setApi(input: {
     const result = await createRapidapiClient().getSubscriptions(
       input.rapidapiApiId,
     );
-    apiName = result.apiName;
-  } catch {
+    const scoped = scopeToApi(result.subscriptions, input.rapidapiApiId);
+    if (result.subscriptions.length > 0 && scoped.length === 0) {
+      throw new AppError(
+        "NOT_FOUND",
+        "That API id didn't match any of the returned subscriptions — RapidAPI ignores unknown ids instead of erroring. Check it against your provider dashboard (the id starting with 'api_').",
+      );
+    }
+    apiName = scoped.map((sub) => sub.apiName).find((name) => name) ?? null;
+  } catch (error) {
+    if (error instanceof AppError) throw error;
     throw new AppError(
       "NOT_FOUND",
-      "RapidAPI rejected that API id. Check it against your provider dashboard (Products → your API → the id starting with 'api_').",
+      "RapidAPI rejected that API id. Check it against your provider dashboard (the id starting with 'api_').",
     );
   }
   return RapidapiConnectionRepository.upsert({
@@ -125,19 +151,22 @@ async function getSubscriptionReport(input: { projectId: string }) {
   const result = await createRapidapiClient().getSubscriptions(
     connection.rapidapiApiId,
   );
+  const scoped = scopeToApi(result.subscriptions, connection.rapidapiApiId);
   const metrics = computeRapidapiMetrics(
-    result.subscriptions,
+    scoped,
     result.planInfoAvailable,
     new Date(),
   );
-  const recent = result.subscriptions
+  const recent = scoped
     .toSorted((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
     .slice(0, 10);
   return {
     rapidapiApiId: connection.rapidapiApiId,
-    apiName: result.apiName ?? connection.rapidapiApiName,
+    apiName:
+      scoped.map((sub) => sub.apiName).find((name) => name) ??
+      connection.rapidapiApiName,
     planInfoAvailable: result.planInfoAvailable,
-    totalCount: result.totalCount,
+    totalCount: scoped.length,
     metrics,
     recent,
   };
