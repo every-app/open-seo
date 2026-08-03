@@ -39,7 +39,7 @@ export async function hasStripeKey(): Promise<boolean> {
   return Boolean(await getOptionalEnvValue("STRIPE_SECRET_KEY"));
 }
 
-export type StripeProduct = { id: string; name: string };
+export type StripeProduct = { id: string; name: string; active: boolean };
 
 /** One subscription flattened to the fields the revenue metrics need. Times
  *  are epoch seconds, amounts are minor currency units — both as Stripe
@@ -73,7 +73,11 @@ const listResponseSchema = z.looseObject({
   has_more: z.boolean().optional(),
 });
 
-const productSchema = z.looseObject({ id: z.string(), name: z.string() });
+const productSchema = z.looseObject({
+  id: z.string(),
+  name: z.string(),
+  active: z.boolean(),
+});
 
 const subscriptionSchema = z.looseObject({
   id: z.string(),
@@ -188,13 +192,17 @@ export function createStripeClient(stripeAccountId?: string | null) {
   }
 
   return {
-    /** Active products, for the product picker. */
+    /** All products — archived ones included, because a retired one-off
+     *  product's purchase history is still worth tracking. */
     async listProducts(): Promise<StripeProduct[]> {
-      const params = new URLSearchParams({ active: "true" });
-      const rows = await listAll("/v1/products", params);
+      const rows = await listAll("/v1/products", new URLSearchParams());
       return rows.map((row) => {
         const product = productSchema.parse(row);
-        return { id: product.id, name: product.name };
+        return {
+          id: product.id,
+          name: product.name,
+          active: product.active,
+        };
       });
     },
 

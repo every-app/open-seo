@@ -246,7 +246,7 @@ function ProductSelect({
   label: string;
   value: string;
   onChange: (value: string) => void;
-  products: Array<{ productId: string; name: string }>;
+  products: Array<{ productId: string; name: string; active: boolean }>;
 }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm">
@@ -259,7 +259,7 @@ function ProductSelect({
         <option value={NONE}>Not tracked</option>
         {products.map((product) => (
           <option key={product.productId} value={product.productId}>
-            {product.name}
+            {product.active ? product.name : `${product.name} (archived)`}
           </option>
         ))}
       </select>
