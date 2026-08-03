@@ -8,10 +8,16 @@ type PeriodTotals = {
   endDate: string;
 };
 
-type BingComparison = {
+export type BingTrafficReport = {
   current: PeriodTotals;
-  previous: PeriodTotals;
+  /** Null when Bing's reporting window doesn't reach back far enough to
+   *  cover the full prior 28 days — no delta is shown rather than comparing
+   *  against a partial window. */
+  previous: PeriodTotals | null;
 };
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WINDOW_DAYS = 28;
 
 function totalsOf(rows: Array<DailyRow & { date: string }>): PeriodTotals {
   const clicks = rows.reduce((sum, row) => sum + row.clicks, 0);
@@ -25,44 +31,44 @@ function totalsOf(rows: Array<DailyRow & { date: string }>): PeriodTotals {
   };
 }
 
-/** A previous half carrying less than this share of the current half's
- *  impressions is noise, not a baseline — a ratio against it would print
- *  four-digit percentages that mean nothing. */
-const MIN_BASELINE_RATIO = 0.01;
-
 /**
- * Split Bing's daily series into two equal halves for a "vs prior period"
- * delta. Bing decides the reporting window (no date-range parameter exists),
- * so the honest comparison is the latest half of whatever it sent against the
- * preceding equal-length half.
+ * Fixed-window totals over Bing's daily series: the latest 28 reported days,
+ * plus the prior 28 for a delta — mirroring the Search Console report's
+ * last-28-days framing. Bing's endpoint takes no date range (it returns
+ * whatever window it decides), so the windows are cut client-side from the
+ * rows it sent, anchored on the newest reported day.
  *
- * Leading all-zero days are trimmed first: Bing pads the window back before a
- * site had any presence, and those rows mean "nothing to report", not "earned
- * zero" — left in, they gut the previous half and inflate every delta.
+ * Rows are day buckets stamped at midnight US Pacific, so a row's window is
+ * chosen by its rounded day-distance from the newest row — rounding absorbs
+ * the ±1h jitter a DST boundary adds to otherwise 24h-spaced buckets.
  *
- * Returns null (no delta shown) for: rows with unparseable dates only, fewer
- * than 4 dated rows after trimming, or a previous half with negligible volume
- * relative to the current half.
+ * Returns null when no row has a parseable date.
  */
-export function splitDailySeries(rows: DailyRow[]): BingComparison | null {
+export function last28DayReport(rows: DailyRow[]): BingTrafficReport | null {
   const dated = rows
-    .filter((row): row is DailyRow & { date: string } => row.date !== null)
-    .toSorted((a, b) => a.date.localeCompare(b.date));
-  const firstActive = dated.findIndex(
-    (row) => row.clicks > 0 || row.impressions > 0,
-  );
-  if (firstActive === -1) return null;
-  const active = dated.slice(firstActive);
-  const half = Math.floor(active.length / 2);
-  if (half < 2) return null;
-  const current = totalsOf(active.slice(active.length - half));
-  const previous = totalsOf(
-    active.slice(active.length - 2 * half, active.length - half),
-  );
-  if (previous.impressions < current.impressions * MIN_BASELINE_RATIO) {
-    return null;
-  }
-  return { current, previous };
+    .flatMap((row) =>
+      row.date === null ? [] : [{ ...row, date: row.date, ms: Date.parse(row.date) }],
+    )
+    .filter((row) => Number.isFinite(row.ms))
+    .toSorted((a, b) => a.ms - b.ms);
+  if (dated.length === 0) return null;
+
+  const endMs = dated[dated.length - 1].ms;
+  const dayIndex = (ms: number) => Math.round((endMs - ms) / DAY_MS);
+  const currentRows = dated.filter((row) => dayIndex(row.ms) < WINDOW_DAYS);
+  const previousRows = dated.filter((row) => {
+    const index = dayIndex(row.ms);
+    return index >= WINDOW_DAYS && index < 2 * WINDOW_DAYS;
+  });
+  const spanCoversPrevious = dayIndex(dated[0].ms) >= 2 * WINDOW_DAYS - 1;
+
+  return {
+    current: totalsOf(currentRows),
+    previous:
+      spanCoversPrevious && previousRows.length > 0
+        ? totalsOf(previousRows)
+        : null,
+  };
 }
 
 export type Delta = { text: string; improved: boolean } | null;

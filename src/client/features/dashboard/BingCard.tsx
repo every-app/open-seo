@@ -1,10 +1,9 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { splitDailySeries } from "@/client/features/bing/bingComparison";
+import { last28DayReport } from "@/client/features/bing/bingComparison";
 import {
   CardShell,
   EmptyCardBody,
-  formatDay,
   moreDetailsClass,
   PercentDelta,
   Stat,
@@ -43,29 +42,13 @@ export function BingCard({ projectId }: { projectId: string }) {
   }
 
   const rows = data?.connected ? (data.rows ?? []) : [];
-  const totals = rows.reduce(
-    (acc, row) => ({
-      clicks: acc.clicks + row.clicks,
-      impressions: acc.impressions + row.impressions,
-    }),
-    { clicks: 0, impressions: 0 },
-  );
-  const ctr = totals.impressions > 0 ? totals.clicks / totals.impressions : 0;
-  const comparison = splitDailySeries(rows);
-  // Bing decides the reporting window (no date-range parameter), so stamp
-  // the dates it actually sent rather than a fixed "last N days".
-  const dated = rows
-    .flatMap((row) => (row.date === null ? [] : [row.date]))
-    .toSorted();
-  const stamp =
-    dated.length > 0
-      ? `Bing Webmaster Tools · ${formatDay(dated[0])} – ${formatDay(dated[dated.length - 1])}`
-      : "Bing Webmaster Tools";
+  // Same last-28-days framing as the GSC card; deltas vs the prior 28.
+  const traffic = last28DayReport(rows);
 
   return (
     <CardShell
       title="Bing performance"
-      stamp={data?.connected ? stamp : undefined}
+      stamp={data?.connected ? "Bing Webmaster Tools · last 28 days" : undefined}
       action={
         <Link
           to="/p/$projectId/bing"
@@ -90,29 +73,29 @@ export function BingCard({ projectId }: { projectId: string }) {
         <div className="grid grid-cols-2 gap-3">
           <Stat
             label="Clicks"
-            value={formatCount(totals.clicks)}
+            value={formatCount(traffic?.current.clicks ?? 0)}
             sub={
-              comparison ? (
+              traffic?.previous ? (
                 <PercentDelta
-                  current={comparison.current.clicks}
-                  previous={comparison.previous.clicks}
+                  current={traffic.current.clicks}
+                  previous={traffic.previous.clicks}
                 />
               ) : undefined
             }
           />
           <Stat
             label="Impressions"
-            value={formatCount(totals.impressions)}
+            value={formatCount(traffic?.current.impressions ?? 0)}
             sub={
-              comparison ? (
+              traffic?.previous ? (
                 <PercentDelta
-                  current={comparison.current.impressions}
-                  previous={comparison.previous.impressions}
+                  current={traffic.current.impressions}
+                  previous={traffic.previous.impressions}
                 />
               ) : undefined
             }
           />
-          <Stat label="CTR" value={formatCtr(ctr)} />
+          <Stat label="CTR" value={formatCtr(traffic?.current.ctr ?? 0)} />
         </div>
       ) : null}
     </CardShell>
