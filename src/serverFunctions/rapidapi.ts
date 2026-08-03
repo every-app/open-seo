@@ -8,6 +8,8 @@ const logSnapshotSchema = projectScopedSchema.extend({
   capturedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   activeSubscribers: z.number().int().min(0).max(1_000_000),
   payingSubscribers: z.number().int().min(0).max(1_000_000).nullable(),
+  // Monthly plan price in USD cents; capped at $100k/month.
+  planPriceUsdMinor: z.number().int().min(0).max(10_000_000).nullable(),
 });
 const deleteSnapshotSchema = projectScopedSchema.extend({
   id: z.string().min(1),
@@ -30,6 +32,7 @@ export const logRapidapiSnapshot = createServerFn({ method: "POST" })
       capturedOn: data.capturedOn,
       activeSubscribers: data.activeSubscribers,
       payingSubscribers: data.payingSubscribers,
+      planPriceUsdMinor: data.planPriceUsdMinor,
       userId: context.userId,
     });
     return { snapshot };

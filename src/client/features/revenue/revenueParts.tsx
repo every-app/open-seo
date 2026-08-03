@@ -1,12 +1,17 @@
 /** Tiles and panel states shared by the Revenue page's panels and the
  *  dashboard revenue card. */
 
-/** Minor currency units → localized amount, e.g. (12300, "usd") → "$123". */
-export function formatMoney(amountMinor: number, currency: string): string {
+/** Minor currency units → localized amount, e.g. (12300, "usd") → "$123".
+ *  Pass fractionDigits for small amounts where cents matter ($5.99 plans). */
+export function formatMoney(
+  amountMinor: number,
+  currency: string,
+  fractionDigits = 0,
+): string {
   return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: currency.toUpperCase(),
-    maximumFractionDigits: 0,
+    maximumFractionDigits: fractionDigits,
   }).format(amountMinor / 100);
 }
 

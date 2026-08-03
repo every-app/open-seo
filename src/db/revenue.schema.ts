@@ -32,6 +32,9 @@ export const rapidapiSnapshots = sqliteTable(
     activeSubscribers: integer("active_subscribers").notNull(),
     // Null when the paying split wasn't recorded.
     payingSubscribers: integer("paying_subscribers"),
+    // Monthly plan price in USD cents (RapidAPI bills in USD only); null
+    // when not recorded. With the paying count this yields est. MRR.
+    planPriceUsdMinor: integer("plan_price_usd_minor"),
     createdByUserId: text("created_by_user_id").notNull(),
     createdAt: text("created_at")
       .notNull()

@@ -176,6 +176,13 @@
       "when": 1785774063411,
       "tag": "0024_glossy_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785775568636,
+      "tag": "0025_material_anthem",
+      "breakpoints": true
     }
   ]
 }
