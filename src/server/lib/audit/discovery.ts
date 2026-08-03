@@ -4,6 +4,7 @@
 import robotsParser from "robots-parser";
 import { XMLParser } from "fast-xml-parser";
 import { isSameOrigin, normalizeUrl } from "./url-utils";
+import { isCrawlableUrl } from "./url-policy";
 
 const SITEMAP_FETCH_TIMEOUT_MS = 15_000;
 const MAX_SITEMAP_DEPTH = 3;
@@ -126,6 +127,14 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
 }> {
   const normalizedSitemapUrl = normalizeUrl(sitemapUrl);
   if (!normalizedSitemapUrl) {
+    return { nestedSitemaps: [], pageUrls: [], timedOut: false };
+  }
+  // Sitemap URLs are declared by the target's robots.txt and by nested
+  // <sitemap><loc> entries, so they are attacker-controlled. Apply the same
+  // URL policy used for start URLs and mid-crawl links before fetching, so a
+  // sitemap can't point the crawler at private/loopback/metadata addresses.
+  // (Every sitemap, including nested ones, is fetched through this function.)
+  if (!isCrawlableUrl(normalizedSitemapUrl)) {
     return { nestedSitemaps: [], pageUrls: [], timedOut: false };
   }
 
