@@ -147,36 +147,81 @@ function StripePanel({ projectId }: { projectId: string }) {
               </div>
             </div>
           ) : null}
-          {data.oneOff ? (
-            <div className="space-y-3">
-              <p className="text-sm text-base-content/60">
-                <span className="font-mono">
-                  {data.oneOff.productName ?? data.oneOff.productId}
-                </span>{" "}
-                · one-off purchases · last 30 days vs prior 30
-              </p>
-              <div className="grid grid-cols-2 gap-3 lg:max-w-xl">
-                <DeltaTile
-                  label="Purchases (30d)"
-                  value={data.oneOff.purchasesLast30}
-                  previous={data.oneOff.purchasesPrev30}
-                />
-                <DeltaTile
-                  label="Revenue (30d)"
-                  value={data.oneOff.revenueLast30}
-                  previous={data.oneOff.revenuePrev30}
-                  format={(amount) =>
-                    data.oneOff?.currency
-                      ? formatMoney(amount, data.oneOff.currency)
-                      : String(amount)
-                  }
-                />
-              </div>
-            </div>
-          ) : null}
+          {data.oneOff ? <OneOffTiles oneOff={data.oneOff} /> : null}
         </div>
       )}
     </section>
+  );
+}
+
+function OneOffTiles({
+  oneOff,
+}: {
+  oneOff: {
+    productId: string;
+    productName: string | null;
+    purchasesLast30: number;
+    purchasesPrev30: number;
+    revenueLast30: number;
+    revenuePrev30: number;
+    currency: string | null;
+    refunds: {
+      refundsLast30: number;
+      refundsPrev30: number;
+      refundAmountLast30: number;
+      refundAmountPrev30: number;
+    } | null;
+  };
+}) {
+  const money = (amount: number) =>
+    oneOff.currency ? formatMoney(amount, oneOff.currency) : String(amount);
+  const { refunds } = oneOff;
+  return (
+    <div className="space-y-3">
+      <p className="text-sm text-base-content/60">
+        <span className="font-mono">
+          {oneOff.productName ?? oneOff.productId}
+        </span>{" "}
+        · one-off purchases · last 30 days vs prior 30
+      </p>
+      <div
+        className={`grid grid-cols-2 gap-3 ${refunds ? "lg:grid-cols-4" : "lg:max-w-xl"}`}
+      >
+        <DeltaTile
+          label="Purchases (30d)"
+          value={oneOff.purchasesLast30}
+          previous={oneOff.purchasesPrev30}
+        />
+        <DeltaTile
+          label="Gross revenue (30d)"
+          value={oneOff.revenueLast30}
+          previous={oneOff.revenuePrev30}
+          format={money}
+        />
+        {refunds ? (
+          <>
+            <DeltaTile
+              label="Refunds (30d)"
+              value={refunds.refundAmountLast30}
+              previous={refunds.refundAmountPrev30}
+              betterWhenLower
+              format={money}
+            />
+            <DeltaTile
+              label="Net revenue (30d)"
+              value={oneOff.revenueLast30 - refunds.refundAmountLast30}
+              previous={oneOff.revenuePrev30 - refunds.refundAmountPrev30}
+              format={money}
+            />
+          </>
+        ) : null}
+      </div>
+      {refunds ? null : (
+        <p className="text-xs text-base-content/50">
+          Refunds and net revenue need Refunds read access on STRIPE_SECRET_KEY.
+        </p>
+      )}
+    </div>
   );
 }
 

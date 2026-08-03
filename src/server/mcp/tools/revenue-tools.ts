@@ -133,7 +133,7 @@ export const getStripeRevenueTool = {
   config: {
     title: "Get Stripe revenue metrics",
     description:
-      "Revenue metrics for the project's mapped Stripe products: active subscribers, estimated MRR, and 30-day new/churn for the subscription product, plus purchase count and revenue for the one-off product — each with a prior-30-day comparison. Amounts are in the account's minor currency units (e.g. cents). No customer identities are included. Read-only; uses no credits.",
+      "Revenue metrics for the project's mapped Stripe products: active subscribers, estimated MRR, and 30-day new/churn for the subscription product, plus purchase count, gross revenue, refunds, and net revenue for the one-off product — each with a prior-30-day comparison. Amounts are in the account's minor currency units (e.g. cents). No customer identities are included. Read-only; uses no credits.",
     inputSchema: revenueInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -177,8 +177,18 @@ export const getStripeRevenueTool = {
         const o = report.oneOff;
         const currency = o.currency ? ` ${o.currency.toUpperCase()}` : "";
         lines.push(
-          `${o.productName ?? o.productId} (one-off): ${o.purchasesLast30} purchases / ${(o.revenueLast30 / 100).toFixed(0)}${currency} last 30d (prev 30d: ${o.purchasesPrev30} / ${(o.revenuePrev30 / 100).toFixed(0)}${currency})`,
+          `${o.productName ?? o.productId} (one-off): ${o.purchasesLast30} purchases / ${(o.revenueLast30 / 100).toFixed(0)}${currency} gross last 30d (prev 30d: ${o.purchasesPrev30} / ${(o.revenuePrev30 / 100).toFixed(0)}${currency})`,
         );
+        if (o.refunds) {
+          const net = o.revenueLast30 - o.refunds.refundAmountLast30;
+          lines.push(
+            `  refunds last 30d: ${o.refunds.refundsLast30} / ${(o.refunds.refundAmountLast30 / 100).toFixed(0)}${currency} → net ${(net / 100).toFixed(0)}${currency}`,
+          );
+        } else {
+          lines.push(
+            "  refunds unavailable (STRIPE_SECRET_KEY lacks Refunds read access)",
+          );
+        }
       }
       return mcpResponse({
         text: lines.join("\n") || "No Stripe products are mapped yet.",

@@ -1,7 +1,9 @@
 import { AppError } from "@/server/lib/errors";
 import {
   createStripeClient,
+  isExpectedStripeFailure,
   type StripeOneOffPurchase,
+  type StripeRefund,
   type StripeSubscription,
 } from "@/server/lib/stripeClient";
 import {
@@ -52,6 +54,16 @@ export type StripeOneOffMetrics = {
   currency: string | null;
 };
 
+/** Refunds already attributed to the product; null on the payload when the
+ *  key lacks Refunds read access. */
+export type StripeRefundMetrics = {
+  refundsLast30: number;
+  refundsPrev30: number;
+  /** Refunded amounts in minor currency units. */
+  refundAmountLast30: number;
+  refundAmountPrev30: number;
+};
+
 function matchesProduct(sub: StripeSubscription, productId: string): boolean {
   return sub.items.some((item) => item.productId === productId);
 }
@@ -62,6 +74,10 @@ function inWindow(time: number | null, from: number, to: number): boolean {
 
 function sumAmounts(rows: StripeOneOffPurchase[]): number {
   return rows.reduce((total, row) => total + (row.amountTotal ?? 0), 0);
+}
+
+function sumRefundAmounts(rows: StripeRefund[]): number {
+  return rows.reduce((total, row) => total + row.amount, 0);
 }
 
 /** Pure metric computation over the full subscription list, scoped to one
@@ -137,6 +153,63 @@ export function computeStripeOneOffMetrics(
     revenuePrev30: sumAmounts(prev30),
     currency: scoped.find((row) => row.currency)?.currency ?? null,
   };
+}
+
+/** Pure refund windowing over refunds already attributed to the product —
+ *  exported for tests. Same windows as the other metrics. */
+export function computeStripeRefundMetrics(
+  refunds: StripeRefund[],
+  now: Date,
+): StripeRefundMetrics {
+  const until = Math.floor(now.getTime() / 1000) + DAY_S; // include today
+  const since = until - WINDOW_DAYS * DAY_S;
+  const prevSince = since - WINDOW_DAYS * DAY_S;
+  const within = (from: number, to: number) =>
+    refunds.filter((refund) => refund.created >= from && refund.created < to);
+  const last30 = within(since, until);
+  const prev30 = within(prevSince, since);
+  return {
+    refundsLast30: last30.length,
+    refundsPrev30: prev30.length,
+    refundAmountLast30: sumRefundAmounts(last30),
+    refundAmountPrev30: sumRefundAmounts(prev30),
+  };
+}
+
+// A refund in the window can belong to a purchase older than the sessions
+// lookback; cap the per-refund session lookups so a refund-heavy account
+// can't fan out unboundedly.
+const MAX_REFUND_LOOKUPS = 20;
+
+/** Refunds attributed to the one-off product: matched against the fetched
+ *  sessions' PaymentIntents first, then by fetching the session behind each
+ *  remaining refund. Exported for tests. */
+export async function attributeRefundsToProduct(
+  refunds: StripeRefund[],
+  purchases: StripeOneOffPurchase[],
+  productId: string,
+  lookupPurchase: (
+    paymentIntent: string,
+  ) => Promise<StripeOneOffPurchase | null>,
+): Promise<StripeRefund[]> {
+  const knownIntents = new Set(
+    purchases
+      .filter((purchase) => purchase.productIds.includes(productId))
+      .map((purchase) => purchase.paymentIntent)
+      .filter((intent): intent is string => Boolean(intent)),
+  );
+  const matched: StripeRefund[] = [];
+  const unknown: Array<{ refund: StripeRefund; paymentIntent: string }> = [];
+  for (const refund of refunds) {
+    if (!refund.paymentIntent) continue;
+    if (knownIntents.has(refund.paymentIntent)) matched.push(refund);
+    else unknown.push({ refund, paymentIntent: refund.paymentIntent });
+  }
+  for (const entry of unknown.slice(0, MAX_REFUND_LOOKUPS)) {
+    const purchase = await lookupPurchase(entry.paymentIntent);
+    if (purchase?.productIds.includes(productId)) matched.push(entry.refund);
+  }
+  return matched;
 }
 
 async function getConnection(
@@ -228,10 +301,29 @@ async function getRevenue(input: { projectId: string }) {
   const now = new Date();
   // Sessions need the prior window too, so fetch 60 days back.
   const createdGte = Math.floor(now.getTime() / 1000) - 2 * WINDOW_DAYS * DAY_S;
-  const [subscriptions, purchases] = await Promise.all([
+  const [subscriptions, purchases, refundsResult] = await Promise.all([
     connection.subscriptionProductId ? client.listSubscriptions() : null,
     connection.oneOffProductId ? client.listOneOffPurchases(createdGte) : null,
+    // Refunds need their own read grant; a key without it degrades to
+    // refund-less metrics instead of failing the whole panel.
+    connection.oneOffProductId
+      ? client.listRefunds(createdGte).catch((error: unknown) => {
+          if (isExpectedStripeFailure(error)) return null;
+          throw error;
+        })
+      : null,
   ]);
+
+  let refunds: StripeRefundMetrics | null = null;
+  if (connection.oneOffProductId && purchases && refundsResult) {
+    const attributed = await attributeRefundsToProduct(
+      refundsResult.filter((refund) => refund.status === "succeeded"),
+      purchases,
+      connection.oneOffProductId,
+      (paymentIntent) => client.getOneOffPurchaseByPaymentIntent(paymentIntent),
+    );
+    refunds = computeStripeRefundMetrics(attributed, now);
+  }
   return {
     subscription:
       connection.subscriptionProductId && subscriptions
@@ -255,6 +347,8 @@ async function getRevenue(input: { projectId: string }) {
               connection.oneOffProductId,
               now,
             ),
+            // null = key lacks Refunds read access, not "no refunds".
+            refunds,
           }
         : null,
   };
