@@ -61,11 +61,10 @@ declare namespace Cloudflare {
     PAGESPEED_API_KEY?: string;
 
     // Stripe secret (or restricted read) API key for the Revenue page and the
-    // get_stripe_revenue MCP tool. Optional: missing renders the setup card.
+    // get_stripe_revenue MCP tool. May be organization-level — the target
+    // account then lives per-connection in stripe_connections, not here.
+    // Optional: missing renders the setup card.
     STRIPE_SECRET_KEY?: string;
-    // Target account ("acct_…") when STRIPE_SECRET_KEY is an
-    // organization-level key; unset for account-level keys.
-    STRIPE_CONTEXT?: string;
 
     // RapidAPI Platform API access for the Revenue page and the
     // get_rapidapi_subscriptions MCP tool. The GraphQL endpoint is per-hub,

@@ -155,6 +155,13 @@
       "when": 1785742694553,
       "tag": "0021_curved_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785749907804,
+      "tag": "0022_lyrical_spencer_smythe",
+      "breakpoints": true
     }
   ]
 }

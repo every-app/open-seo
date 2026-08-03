@@ -24,6 +24,12 @@ const NONE = "";
 export function StripeConnectionCard({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
   const [picking, setPicking] = React.useState(false);
+  // Account field is committed on blur (appliedAccountId) so the product
+  // list doesn't refetch per keystroke.
+  const [accountId, setAccountId] = React.useState(NONE);
+  const [appliedAccountId, setAppliedAccountId] = React.useState<string | null>(
+    null,
+  );
   const [subscriptionId, setSubscriptionId] = React.useState(NONE);
   const [oneOffId, setOneOffId] = React.useState(NONE);
 
@@ -36,10 +42,19 @@ export function StripeConnectionCard({ projectId }: { projectId: string }) {
   const connected = Boolean(connection?.connected);
   const needsSetup = connectionQuery.isSuccess && !connection?.keyConfigured;
 
+  React.useEffect(() => {
+    if (accountId !== NONE || !connection?.stripeAccountId) return;
+    setAccountId(connection.stripeAccountId);
+    setAppliedAccountId(connection.stripeAccountId);
+  }, [connection?.stripeAccountId, accountId]);
+
   const showPicker = picking || (!connected && !needsSetup);
   const productsQuery = useQuery({
-    queryKey: ["stripeProducts", projectId],
-    queryFn: () => listStripeProducts({ data: { projectId } }),
+    queryKey: ["stripeProducts", projectId, appliedAccountId],
+    queryFn: () =>
+      listStripeProducts({
+        data: { projectId, stripeAccountId: appliedAccountId },
+      }),
     enabled: Boolean(showPicker && connectionQuery.isSuccess),
   });
   const products = React.useMemo(
@@ -67,6 +82,7 @@ export function StripeConnectionCard({ projectId }: { projectId: string }) {
       setStripeProducts({
         data: {
           projectId,
+          stripeAccountId: accountId.trim() || null,
           subscriptionProductId: subscriptionId || null,
           oneOffProductId: oneOffId || null,
         },
@@ -138,6 +154,26 @@ export function StripeConnectionCard({ projectId }: { projectId: string }) {
             Pick which Stripe products count as this project's subscription and
             one-off offerings. Either can be left unset.
           </p>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium">
+              Stripe account{" "}
+              <span className="text-base-content/50">
+                (only for organization keys)
+              </span>
+            </span>
+            <input
+              type="text"
+              value={accountId}
+              onChange={(event) => setAccountId(event.target.value)}
+              onBlur={() => setAppliedAccountId(accountId.trim() || null)}
+              placeholder="acct_…"
+              className="input input-bordered w-full font-mono text-xs"
+            />
+            <span className="text-xs text-base-content/50">
+              If STRIPE_SECRET_KEY is an organization-level key, enter this
+              project's account id. Leave empty for an account-level key.
+            </span>
+          </label>
           {productsQuery.isLoading ? (
             <div className="flex items-center gap-2 text-sm text-base-content/50">
               <span className="loading loading-spinner loading-sm" />
@@ -146,7 +182,9 @@ export function StripeConnectionCard({ projectId }: { projectId: string }) {
           ) : productsQuery.isError ? (
             <div className="space-y-2">
               <p className="text-sm text-error">
-                Couldn't list Stripe products. The key may lack read access.
+                Couldn't list Stripe products. The key may lack read access —
+                or, with an organization key, the account id above may be
+                missing or wrong.
               </p>
               <button
                 type="button"

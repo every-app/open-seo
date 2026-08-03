@@ -18,6 +18,7 @@ async function getByProjectId(
 async function upsert(input: {
   projectId: string;
   organizationId: string;
+  stripeAccountId: string | null;
   subscriptionProductId: string | null;
   subscriptionProductName: string | null;
   oneOffProductId: string | null;
@@ -31,6 +32,7 @@ async function upsert(input: {
       target: stripeConnections.projectId,
       set: {
         organizationId: input.organizationId,
+        stripeAccountId: input.stripeAccountId,
         subscriptionProductId: input.subscriptionProductId,
         subscriptionProductName: input.subscriptionProductName,
         oneOffProductId: input.oneOffProductId,
