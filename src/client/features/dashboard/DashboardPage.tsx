@@ -307,10 +307,11 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
         <OnboardingChecklist projectId={projectId} activation={activation} />
 
-        {/* Every card is half width on large screens (only the checklist
-          spans). Fixed positions: GSC | Bing, then Revenue | Site audit, with
-          backlinks below. The MCP pitch leads during onboarding and shifts the
-          grid until it's dismissed or used. */}
+        {/* Revenue spans the full width, then fixed half-width positions:
+          GSC | Bing, then Backlinks | Site audit. The MCP pitch leads the
+          grid during onboarding and shifts it until dismissed or used. */}
+        <RevenueCard projectId={projectId} />
+
         <div className="grid items-start gap-5 lg:grid-cols-2">
           {activation.mcp.firstToolCallAt ||
           activation.mcp.cardDismissedAt ? null : (
@@ -318,11 +319,6 @@ export function DashboardPage({ projectId }: { projectId: string }) {
           )}
           <GscCard projectId={projectId} connected={gscConnected} />
           <BingCard projectId={projectId} />
-          <RevenueCard projectId={projectId} />
-          <AuditHealthCard
-            projectId={projectId}
-            audit={overview?.audit ?? null}
-          />
           {showBacklinks ? (
             <BacklinkPulseCard
               projectId={projectId}
@@ -330,6 +326,10 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               refreshing={refreshMutation.isPending}
             />
           ) : null}
+          <AuditHealthCard
+            projectId={projectId}
+            audit={overview?.audit ?? null}
+          />
         </div>
       </div>
     </div>
