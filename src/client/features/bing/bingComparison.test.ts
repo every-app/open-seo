@@ -1,122 +1,114 @@
 import { describe, expect, it } from "vitest";
-import { percentDelta, splitDailySeries } from "./bingComparison";
+import { last28DayReport, percentDelta } from "./bingComparison";
 
 function day(date: string, clicks: number, impressions: number) {
   return { date: `${date}T00:00:00.000Z`, clicks, impressions };
 }
 
-describe("splitDailySeries", () => {
-  it("splits the latest half against the preceding equal-length half", () => {
-    const result = splitDailySeries([
-      day("2026-07-01", 1, 10),
-      day("2026-07-02", 2, 20),
-      day("2026-07-03", 3, 30),
-      day("2026-07-04", 4, 40),
-    ]);
-    expect(result).toEqual({
-      previous: {
-        clicks: 3,
-        impressions: 30,
-        ctr: 0.1,
-        startDate: "2026-07-01",
-        endDate: "2026-07-02",
-      },
-      current: {
-        clicks: 7,
-        impressions: 70,
-        ctr: 0.1,
-        startDate: "2026-07-03",
-        endDate: "2026-07-04",
-      },
+/** `count` consecutive days ending at `end` (inclusive), constant volume. */
+function series(
+  end: string,
+  count: number,
+  clicks: number,
+  impressions: number,
+) {
+  const endMs = Date.parse(`${end}T00:00:00.000Z`);
+  return Array.from({ length: count }, (_, i) => {
+    const date = new Date(endMs - (count - 1 - i) * 24 * 60 * 60 * 1000);
+    return {
+      date: date.toISOString(),
+      clicks,
+      impressions,
+    };
+  });
+}
+
+describe("last28DayReport", () => {
+  it("totals the latest 28 days against the prior 28", () => {
+    const rows = [
+      ...series("2026-07-06", 28, 1, 10), // prior window
+      ...series("2026-08-03", 28, 2, 20), // current window
+    ];
+    const result = last28DayReport(rows);
+    expect(result?.current).toEqual({
+      clicks: 56,
+      impressions: 560,
+      ctr: 0.1,
+      startDate: "2026-07-07",
+      endDate: "2026-08-03",
+    });
+    expect(result?.previous).toEqual({
+      clicks: 28,
+      impressions: 280,
+      ctr: 0.1,
+      startDate: "2026-06-09",
+      endDate: "2026-07-06",
     });
   });
 
-  it("drops the oldest row on odd counts so halves stay equal", () => {
-    const result = splitDailySeries([
-      day("2026-07-01", 100, 1000),
-      day("2026-07-02", 1, 10),
-      day("2026-07-03", 2, 20),
-      day("2026-07-04", 3, 30),
-      day("2026-07-05", 4, 40),
-    ]);
-    expect(result?.previous.startDate).toBe("2026-07-02");
-    expect(result?.previous.clicks).toBe(3);
-    expect(result?.current.clicks).toBe(7);
+  it("excludes days older than the prior window from both totals", () => {
+    const rows = [
+      ...series("2026-06-08", 30, 100, 1000), // older than both windows
+      ...series("2026-07-06", 28, 1, 10),
+      ...series("2026-08-03", 28, 2, 20),
+    ];
+    const result = last28DayReport(rows);
+    expect(result?.current.clicks).toBe(56);
+    expect(result?.previous?.clicks).toBe(28);
+  });
+
+  it("omits the delta when the data doesn't span the full prior window", () => {
+    // 40 days of data: the current 28 are covered but the prior 28 aren't.
+    const result = last28DayReport(series("2026-08-03", 40, 1, 10));
+    expect(result?.current.clicks).toBe(28);
+    expect(result?.previous).toBeNull();
+  });
+
+  it("keeps the delta at exactly 56 days of coverage", () => {
+    const result = last28DayReport(series("2026-08-03", 56, 1, 10));
+    expect(result?.current.clicks).toBe(28);
+    expect(result?.previous?.clicks).toBe(28);
   });
 
   it("sorts unordered input and ignores null dates", () => {
-    const result = splitDailySeries([
-      day("2026-07-04", 4, 40),
+    const rows = [
+      ...series("2026-08-03", 56, 1, 10),
       { date: null, clicks: 999, impressions: 9999 },
-      day("2026-07-01", 1, 10),
-      day("2026-07-03", 3, 30),
-      day("2026-07-02", 2, 20),
-    ]);
-    expect(result?.current.clicks).toBe(7);
-    expect(result?.previous.clicks).toBe(3);
+    ].toReversed();
+    const result = last28DayReport(rows);
+    expect(result?.current.clicks).toBe(28);
+    expect(result?.previous?.clicks).toBe(28);
   });
 
-  it("returns null with fewer than 4 dated rows", () => {
+  it("absorbs the DST hour shift when assigning days to windows", () => {
+    // US DST ends Nov 1 2026: Bing's midnight-Pacific buckets jump from
+    // 07:00Z to 08:00Z mid-series. Day windows must not drift.
+    const before = series("2026-10-31", 40, 1, 10).map((row) => ({
+      ...row,
+      date: row.date.replace("T00:00:00.000Z", "T07:00:00.000Z"),
+    }));
+    const after = series("2026-11-16", 16, 2, 20).map((row) => ({
+      ...row,
+      date: row.date.replace("T00:00:00.000Z", "T08:00:00.000Z"),
+    }));
+    const result = last28DayReport([...before, ...after]);
+    // Current window: 16 after-days (32 clicks) + 12 before-days (12 clicks).
+    expect(result?.current.clicks).toBe(44);
+    expect(result?.previous?.clicks).toBe(28);
+  });
+
+  it("returns null with no dated rows", () => {
+    expect(last28DayReport([])).toBeNull();
     expect(
-      splitDailySeries([
-        day("2026-07-01", 1, 10),
-        day("2026-07-02", 2, 20),
-        day("2026-07-03", 3, 30),
-      ]),
-    ).toBeNull();
-    expect(splitDailySeries([])).toBeNull();
-  });
-
-  it("trims leading all-zero days before splitting", () => {
-    // Bing pads the window back before the site existed; those rows must not
-    // count as the baseline.
-    const result = splitDailySeries([
-      day("2026-02-01", 0, 0),
-      day("2026-02-02", 0, 0),
-      day("2026-02-03", 0, 0),
-      day("2026-02-04", 0, 0),
-      day("2026-07-01", 1, 10),
-      day("2026-07-02", 2, 20),
-      day("2026-07-03", 3, 30),
-      day("2026-07-04", 4, 40),
-    ]);
-    expect(result?.previous.startDate).toBe("2026-07-01");
-    expect(result?.previous.clicks).toBe(3);
-    expect(result?.current.clicks).toBe(7);
-  });
-
-  it("keeps interior zero days after the first active day", () => {
-    const result = splitDailySeries([
-      day("2026-07-01", 1, 10),
-      day("2026-07-02", 0, 0),
-      day("2026-07-03", 3, 30),
-      day("2026-07-04", 4, 40),
-    ]);
-    expect(result?.previous.clicks).toBe(1);
-    expect(result?.current.clicks).toBe(7);
-  });
-
-  it("returns null when the previous half's volume is a negligible baseline", () => {
-    // 1 impression vs 20,000 — a delta against noise is not information.
-    expect(
-      splitDailySeries([
-        day("2026-07-01", 0, 1),
-        day("2026-07-02", 0, 0),
-        day("2026-07-03", 100, 10000),
-        day("2026-07-04", 100, 10000),
-      ]),
+      last28DayReport([{ date: null, clicks: 1, impressions: 10 }]),
     ).toBeNull();
   });
 
-  it("returns null for an all-zero series", () => {
-    expect(
-      splitDailySeries([
-        day("2026-07-01", 0, 0),
-        day("2026-07-02", 0, 0),
-        day("2026-07-03", 0, 0),
-        day("2026-07-04", 0, 0),
-      ]),
-    ).toBeNull();
+  it("reports a zero-volume current window without inventing a delta", () => {
+    const result = last28DayReport([day("2026-08-03", 0, 0)]);
+    expect(result?.current.clicks).toBe(0);
+    expect(result?.current.ctr).toBe(0);
+    expect(result?.previous).toBeNull();
   });
 });
 

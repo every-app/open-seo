@@ -9,8 +9,8 @@ import {
   type BingQueryReport,
 } from "@/client/features/bing/BingTables";
 import {
+  last28DayReport,
   percentDelta,
-  splitDailySeries,
   type Delta,
 } from "@/client/features/bing/bingComparison";
 import { formatBingDay } from "@/client/features/bing/formatBingDay";
@@ -58,17 +58,11 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
   const report: BingQueryReport | null = reportQuery.data?.connected
     ? reportQuery.data
     : null;
-  const totals = rows.reduce(
-    (acc, row) => ({
-      clicks: acc.clicks + row.clicks,
-      impressions: acc.impressions + row.impressions,
-    }),
-    { clicks: 0, impressions: 0 },
-  );
-  const ctr = totals.impressions > 0 ? totals.clicks / totals.impressions : 0;
-  const comparison = splitDailySeries(rows);
-  const deltaTitle = comparison
-    ? `${comparison.current.startDate} to ${comparison.current.endDate} vs ${comparison.previous.startDate} to ${comparison.previous.endDate}`
+  // Tiles mirror the Search Console report's framing: latest 28 reported
+  // days, delta vs the prior 28. The daily tab still shows Bing's full window.
+  const traffic = last28DayReport(rows);
+  const deltaTitle = traffic?.previous
+    ? `${traffic.current.startDate} to ${traffic.current.endDate} vs ${traffic.previous.startDate} to ${traffic.previous.endDate}`
     : undefined;
   const avgPosition = weightedAveragePosition(report);
 
@@ -93,6 +87,7 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-base-content/60">
             <span className="font-mono">{data.siteUrl}</span>
+            <span>Last 28 days vs prior 28</span>
             {data.connectedBy ? (
               <span>Connected by {data.connectedBy}</span>
             ) : null}
@@ -101,12 +96,12 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatTile
               label="Clicks"
-              value={totals.clicks.toLocaleString()}
+              value={(traffic?.current.clicks ?? 0).toLocaleString()}
               delta={
-                comparison
+                traffic?.previous
                   ? percentDelta(
-                      comparison.current.clicks,
-                      comparison.previous.clicks,
+                      traffic.current.clicks,
+                      traffic.previous.clicks,
                     )
                   : null
               }
@@ -114,12 +109,12 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
             />
             <StatTile
               label="Impressions"
-              value={totals.impressions.toLocaleString()}
+              value={(traffic?.current.impressions ?? 0).toLocaleString()}
               delta={
-                comparison
+                traffic?.previous
                   ? percentDelta(
-                      comparison.current.impressions,
-                      comparison.previous.impressions,
+                      traffic.current.impressions,
+                      traffic.previous.impressions,
                     )
                   : null
               }
@@ -127,13 +122,10 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
             />
             <StatTile
               label="CTR"
-              value={formatCtr(ctr)}
+              value={formatCtr(traffic?.current.ctr ?? 0)}
               delta={
-                comparison
-                  ? percentDelta(
-                      comparison.current.ctr,
-                      comparison.previous.ctr,
-                    )
+                traffic?.previous
+                  ? percentDelta(traffic.current.ctr, traffic.previous.ctr)
                   : null
               }
               deltaTitle={deltaTitle}
