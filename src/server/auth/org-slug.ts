@@ -1,10 +1,12 @@
 export function slugify(value: string) {
+  // Truncate before trimming dashes so a cut that lands on a "-" separator
+  // does not leave a leading or trailing dash in the final slug.
   const slug = value
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
+    .slice(0, 48)
+    .replace(/^-+|-+$/g, "");
 
   return slug || "workspace";
 }
