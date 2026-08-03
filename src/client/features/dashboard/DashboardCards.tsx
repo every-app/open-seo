@@ -15,7 +15,6 @@ import {
   EmptyCardBody,
   formatDay,
   moreDetailsClass,
-  newLost,
   PercentDelta,
   Stat,
 } from "@/client/features/dashboard/cardParts";
@@ -239,8 +238,10 @@ export function BacklinkPulseCard({
     <CardShell
       title="Backlink pulse"
       stamp={`Backlinks · snapshot ${formatDay(backlinks.capturedAt)}${
-        refreshing ? " · refreshing…" : ""
-      }`}
+        backlinks.previous
+          ? ` · vs ${formatDay(backlinks.previous.capturedAt)}`
+          : ""
+      }${refreshing ? " · refreshing…" : ""}`}
       action={
         <Link
           to="/p/$projectId/backlinks"
@@ -260,6 +261,15 @@ export function BacklinkPulseCard({
               ? "—"
               : backlinks.referringDomains.toLocaleString()
           }
+          sub={
+            backlinks.referringDomains !== null &&
+            backlinks.previous?.referringDomains != null ? (
+              <PercentDelta
+                current={backlinks.referringDomains}
+                previous={backlinks.previous.referringDomains}
+              />
+            ) : undefined
+          }
         />
         <Stat
           label="Backlinks"
@@ -268,24 +278,28 @@ export function BacklinkPulseCard({
               ? "—"
               : backlinks.backlinks.toLocaleString()
           }
-        />
-        <Stat
-          label="New links"
-          value={`▲ ${newLost(backlinks.newBacklinks)}`}
-          tone={
-            backlinks.newBacklinks && backlinks.newBacklinks > 0
-              ? "success"
-              : undefined
+          sub={
+            backlinks.backlinks !== null &&
+            backlinks.previous?.backlinks != null ? (
+              <PercentDelta
+                current={backlinks.backlinks}
+                previous={backlinks.previous.backlinks}
+              />
+            ) : undefined
           }
         />
         <Stat
-          label="Lost links"
-          value={`▼ ${newLost(backlinks.lostBacklinks)}`}
-          tone={
-            backlinks.lostBacklinks && backlinks.lostBacklinks > 0
-              ? "error"
-              : undefined
+          label="Rank"
+          value={backlinks.rank === null ? "—" : String(backlinks.rank)}
+        />
+        <Stat
+          label="Broken links"
+          value={
+            backlinks.brokenBacklinks === null
+              ? "—"
+              : backlinks.brokenBacklinks.toLocaleString()
           }
+          tone={backlinks.brokenBacklinks ? "error" : undefined}
         />
       </div>
     </CardShell>
