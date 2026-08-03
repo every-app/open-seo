@@ -1,5 +1,6 @@
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
+import type { BacklinksOverviewResult } from "@/server/features/backlinks/services/backlinksOverviewSchema";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { getIssueTypePageCountsForAudit } from "@/server/features/audit/repositories/auditSummaryQueries";
 import { BacklinkSnapshotRepository } from "@/server/features/dashboard/repositories/BacklinkSnapshotRepository";
@@ -266,8 +267,55 @@ async function ensureBacklinkSnapshot(input: {
   return getBacklinkSummary(projectId, domain);
 }
 
+/**
+ * Opportunistic snapshot write from a Backlinks-page overview lookup: when the
+ * looked-up target is the project's own domain, store the summary as a
+ * dashboard snapshot so the card never lags behind numbers the user has
+ * already seen. Costs no extra DataForSEO spend — the overview response is
+ * reused — and a snapshot recorded here also satisfies the dashboard's daily
+ * freshness check, saving that path's metered call. Cache-served overviews
+ * carry their original fetchedAt, so the newer-than-latest guard drops
+ * anything that would move the card backwards.
+ */
+async function recordBacklinkSnapshotFromOverview(input: {
+  projectId: string;
+  domain: string | null;
+  overview: BacklinksOverviewResult;
+}): Promise<void> {
+  const { projectId, domain, overview } = input;
+  if (!domain || overview.scope !== "domain") return;
+  const normalized = normalizeBacklinksTarget(domain, { scope: "domain" });
+  if (normalized.apiTarget !== overview.target) return;
+
+  const fetchedMs = Date.parse(overview.fetchedAt);
+  if (Number.isNaN(fetchedMs)) return;
+  const latest = await BacklinkSnapshotRepository.getLatestForProject(projectId);
+  if (
+    latest &&
+    latest.domain === domain &&
+    Date.parse(latest.capturedAt) >= fetchedMs
+  ) {
+    return;
+  }
+
+  await BacklinkSnapshotRepository.insert({
+    projectId,
+    domain,
+    rank: overview.summary.rank,
+    backlinks: overview.summary.backlinks,
+    referringDomains: overview.summary.referringDomains,
+    brokenBacklinks: overview.summary.brokenBacklinks,
+    newBacklinks: overview.summary.newBacklinks,
+    lostBacklinks: overview.summary.lostBacklinks,
+    newReferringDomains: overview.summary.newReferringDomains,
+    lostReferringDomains: overview.summary.lostReferringDomains,
+    capturedAt: overview.fetchedAt,
+  });
+}
+
 export const DashboardService = {
   getActivation,
   getOverview,
   ensureBacklinkSnapshot,
+  recordBacklinkSnapshotFromOverview,
 };
