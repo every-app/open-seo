@@ -1,0 +1,1 @@
+ALTER TABLE `stripe_connections` ADD `stripe_account_id` text;

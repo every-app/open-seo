@@ -18,7 +18,12 @@ panels, mirroring the Vercel Web Analytics integration (specs/0010) exactly:
 
 - Credentials are **instance-level env secrets**, never stored in the DB:
   - `STRIPE_SECRET_KEY` — a restricted key with read access to Products,
-    Subscriptions, and Checkout Sessions.
+    Subscriptions, and Checkout Sessions. An organization-level key works
+    across projects on different Stripe accounts: each connection stores its
+    target account (`acct_…`, an identifier, not a secret) and the client
+    sends it as `Stripe-Context`. Requests always pin `Stripe-Version` —
+    newer accounts have no default version and reject versionless requests
+    (both verified live 2026-08-03).
   - `RAPIDAPI_KEY` + `RAPIDAPI_GRAPHQL_URL` — the GraphQL Platform API lives
     at a per-hub URL (`https://graphql-<hub>.p.rapidapi.com/`), so the
     endpoint is config, not a constant. Auth is `x-rapidapi-key` plus an
@@ -26,8 +31,8 @@ panels, mirroring the Vercel Web Analytics integration (specs/0010) exactly:
 - The DB stores only **identifier mappings** (`rapidapi_connections`,
   `stripe_connections`): which RapidAPI listing (`api_…` id, entered by hand
   and verified by running the subscriptions query — the Platform API has no
-  usable "list my APIs" query) and which Stripe products (picked from
-  `/v1/products`, either slot nullable) belong to a project.
+  usable "list my APIs" query) and which Stripe account + products (picked
+  from `/v1/products`, either product slot nullable) belong to a project.
 - Data is **fetch-on-demand** — no snapshots, no cron. Metrics windows are
   the last 30 days vs the prior 30, computed in pure functions
   (`computeRapidapiMetrics`, `computeStripeSubscriptionMetrics`,

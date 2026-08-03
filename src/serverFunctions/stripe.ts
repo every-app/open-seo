@@ -11,7 +11,14 @@ import {
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
+// acct_… id targeting one account of an organization-level key; null when
+// the key is account-scoped.
+const stripeAccountIdSchema = z.string().min(1).max(100).nullable();
+const listProductsSchema = projectScopedSchema.extend({
+  stripeAccountId: stripeAccountIdSchema.optional(),
+});
 const setProductsSchema = projectScopedSchema.extend({
+  stripeAccountId: stripeAccountIdSchema,
   subscriptionProductId: z.string().min(1).nullable(),
   oneOffProductId: z.string().min(1).nullable(),
 });
@@ -27,6 +34,7 @@ export const getStripeConnection = createServerFn({ method: "POST" })
     return {
       connected: Boolean(connection),
       keyConfigured,
+      stripeAccountId: connection?.stripeAccountId ?? null,
       subscriptionProductName: connection?.subscriptionProductName ?? null,
       oneOffProductName: connection?.oneOffProductName ?? null,
       connectedAt: connection?.createdAt ?? null,
@@ -35,10 +43,11 @@ export const getStripeConnection = createServerFn({ method: "POST" })
 
 export const listStripeProducts = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(projectScopedSchema)
-  .handler(async ({ context }) => {
+  .validator(listProductsSchema)
+  .handler(async ({ data, context }) => {
     const products = await StripeRevenueService.listProductsForPicker(
       context.projectId,
+      data.stripeAccountId ?? null,
     );
     return { products };
   });
@@ -50,6 +59,7 @@ export const setStripeProducts = createServerFn({ method: "POST" })
     const connection = await StripeRevenueService.setProducts({
       projectId: context.projectId,
       organizationId: context.organizationId,
+      stripeAccountId: data.stripeAccountId,
       subscriptionProductId: data.subscriptionProductId,
       oneOffProductId: data.oneOffProductId,
       userId: context.userId,

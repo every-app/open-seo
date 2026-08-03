@@ -135,13 +135,21 @@ function messageForStatus(status: number, body: string): string {
 // field semantics can change between versions.
 const STRIPE_API_VERSION = "2026-07-29.dahlia";
 
-export function createStripeClient() {
+/**
+ * @param stripeAccountId Target account ("acct_…"), sent as Stripe-Context.
+ *   Required when STRIPE_SECRET_KEY is an organization-level key — org keys
+ *   reject requests that don't name an account — and per-connection so
+ *   different projects can point at different accounts. Null/undefined for
+ *   account-level keys.
+ */
+export function createStripeClient(stripeAccountId?: string | null) {
   async function request(path: string): Promise<unknown> {
     const key = await getRequiredEnvValue("STRIPE_SECRET_KEY");
     const response = await fetch(`${STRIPE_API_BASE}${path}`, {
       headers: {
         Authorization: `Bearer ${key}`,
         "Stripe-Version": STRIPE_API_VERSION,
+        ...(stripeAccountId ? { "Stripe-Context": stripeAccountId } : {}),
       },
     });
     if (!response.ok) {

@@ -145,12 +145,17 @@ async function getConnection(
   return StripeConnectionRepository.getByProjectId(projectId);
 }
 
-/** Active Stripe products, flagged with the project's current selections. */
-async function listProductsForPicker(projectId: string) {
-  const [connection, products] = await Promise.all([
-    StripeConnectionRepository.getByProjectId(projectId),
-    createStripeClient().listProducts(),
-  ]);
+/** Active Stripe products, flagged with the project's current selections.
+ *  `stripeAccountId` (from the card's account field) targets one account of
+ *  an organization-level key; it falls back to the saved connection's. */
+async function listProductsForPicker(
+  projectId: string,
+  stripeAccountId?: string | null,
+) {
+  const connection = await StripeConnectionRepository.getByProjectId(projectId);
+  const products = await createStripeClient(
+    stripeAccountId ?? connection?.stripeAccountId,
+  ).listProducts();
   return products.map((product) => ({
     productId: product.id,
     name: product.name,
@@ -164,6 +169,7 @@ async function listProductsForPicker(projectId: string) {
 async function setProducts(input: {
   projectId: string;
   organizationId: string;
+  stripeAccountId: string | null;
   subscriptionProductId: string | null;
   oneOffProductId: string | null;
   userId: string;
@@ -174,7 +180,9 @@ async function setProducts(input: {
       "Pick at least one product to track (subscription or one-off).",
     );
   }
-  const products = await createStripeClient().listProducts();
+  const products = await createStripeClient(
+    input.stripeAccountId,
+  ).listProducts();
   const findProduct = (id: string | null) => {
     if (!id) return null;
     const match = products.find((product) => product.id === id);
@@ -191,6 +199,7 @@ async function setProducts(input: {
   return StripeConnectionRepository.upsert({
     projectId: input.projectId,
     organizationId: input.organizationId,
+    stripeAccountId: input.stripeAccountId,
     subscriptionProductId: subscriptionProduct?.id ?? null,
     subscriptionProductName: subscriptionProduct?.name ?? null,
     oneOffProductId: oneOffProduct?.id ?? null,
@@ -212,7 +221,7 @@ async function getRevenue(input: { projectId: string }) {
   if (!connection) {
     throw new StripeNotConnectedError(input.projectId);
   }
-  const client = createStripeClient();
+  const client = createStripeClient(connection.stripeAccountId);
   const now = new Date();
   // Sessions need the prior window too, so fetch 60 days back.
   const createdGte = Math.floor(now.getTime() / 1000) - 2 * WINDOW_DAYS * DAY_S;

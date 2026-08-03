@@ -50,6 +50,10 @@ export const stripeConnections = sqliteTable(
     organizationId: text("organization_id")
       .notNull()
       .references(() => organization.id, { onDelete: "cascade" }),
+    // Target Stripe account ("acct_…"), sent as Stripe-Context. Needed when
+    // STRIPE_SECRET_KEY is an organization-level key so different projects
+    // can point at different accounts; null for account-level keys.
+    stripeAccountId: text("stripe_account_id"),
     // Stripe product id ("prod_…") for the recurring subscription offering.
     subscriptionProductId: text("subscription_product_id"),
     subscriptionProductName: text("subscription_product_name"),
