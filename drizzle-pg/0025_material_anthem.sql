@@ -1,0 +1,1 @@
+ALTER TABLE "rapidapi_snapshots" ADD COLUMN "plan_price_usd_minor" integer;

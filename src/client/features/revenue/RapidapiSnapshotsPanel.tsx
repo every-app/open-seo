@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   DeltaTile,
+  formatMoney,
   PanelError,
   PanelLoading,
   StatTile,
@@ -44,7 +45,7 @@ export function RapidapiSnapshotsPanel({ projectId }: { projectId: string }) {
             API for marketplace subscriber data.
           </p>
           {latest ? (
-            <div className="grid grid-cols-2 gap-3 lg:max-w-xl">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               {previous ? (
                 <DeltaTile
                   label={`Active subscribers (${latest.capturedOn})`}
@@ -76,9 +77,31 @@ export function RapidapiSnapshotsPanel({ projectId }: { projectId: string }) {
                   }
                 />
               )}
+              {data?.report.grossMrrUsdMinor != null &&
+              data.report.netMrrUsdMinor != null ? (
+                <>
+                  <StatTile
+                    label="Est. MRR (gross)"
+                    value={formatMoney(data.report.grossMrrUsdMinor, "usd", 2)}
+                    hint={`${latest.payingSubscribers} paying × ${formatMoney(
+                      latest.planPriceUsdMinor ?? 0,
+                      "usd",
+                      2,
+                    )}`}
+                  />
+                  <StatTile
+                    label="Est. net MRR"
+                    value={formatMoney(data.report.netMrrUsdMinor, "usd", 2)}
+                    hint="After RapidAPI's flat 25% marketplace fee."
+                  />
+                </>
+              ) : null}
             </div>
           ) : null}
-          <SnapshotForm projectId={projectId} />
+          <SnapshotForm
+            projectId={projectId}
+            latestPlanPriceUsdMinor={latest?.planPriceUsdMinor ?? null}
+          />
           <SnapshotHistory projectId={projectId} rows={data?.snapshots ?? []} />
         </div>
       )}
@@ -86,13 +109,26 @@ export function RapidapiSnapshotsPanel({ projectId }: { projectId: string }) {
   );
 }
 
-function SnapshotForm({ projectId }: { projectId: string }) {
+function SnapshotForm({
+  projectId,
+  latestPlanPriceUsdMinor,
+}: {
+  projectId: string;
+  latestPlanPriceUsdMinor: number | null;
+}) {
   const queryClient = useQueryClient();
   const [capturedOn, setCapturedOn] = React.useState(() =>
     new Date().toISOString().slice(0, 10),
   );
   const [active, setActive] = React.useState("");
   const [paying, setPaying] = React.useState("");
+  // Dollars, e.g. "5.99". Prefilled from the latest snapshot since the plan
+  // price rarely changes between snapshots; kept (not cleared) after logging.
+  const [price, setPrice] = React.useState(() =>
+    latestPlanPriceUsdMinor === null
+      ? ""
+      : (latestPlanPriceUsdMinor / 100).toString(),
+  );
 
   const logMutation = useMutation({
     mutationFn: () =>
@@ -102,6 +138,8 @@ function SnapshotForm({ projectId }: { projectId: string }) {
           capturedOn,
           activeSubscribers: Number(active),
           payingSubscribers: paying === "" ? null : Number(paying),
+          planPriceUsdMinor:
+            price === "" ? null : Math.round(Number(price) * 100),
         },
       }),
     onSuccess: () => {
@@ -156,6 +194,20 @@ function SnapshotForm({ projectId }: { projectId: string }) {
           className="input input-bordered input-sm w-36"
         />
       </label>
+      <label className="flex flex-col gap-1.5 text-sm">
+        <span className="font-medium">
+          Plan price $/mo{" "}
+          <span className="text-base-content/50">(optional)</span>
+        </span>
+        <input
+          type="number"
+          min={0}
+          step="0.01"
+          value={price}
+          onChange={(event) => setPrice(event.target.value)}
+          className="input input-bordered input-sm w-36"
+        />
+      </label>
       <button
         type="submit"
         className="btn btn-primary btn-sm"
@@ -177,6 +229,7 @@ function SnapshotHistory({
     capturedOn: string;
     activeSubscribers: number;
     payingSubscribers: number | null;
+    planPriceUsdMinor: number | null;
   }>;
 }) {
   const queryClient = useQueryClient();
@@ -211,6 +264,7 @@ function SnapshotHistory({
               <th>Date</th>
               <th className="text-right">Active</th>
               <th className="text-right">Paying</th>
+              <th className="text-right">Plan price</th>
               <th />
             </tr>
           </thead>
@@ -223,6 +277,11 @@ function SnapshotHistory({
                 </td>
                 <td className="text-right tabular-nums">
                   {row.payingSubscribers ?? "—"}
+                </td>
+                <td className="text-right tabular-nums">
+                  {row.planPriceUsdMinor === null
+                    ? "—"
+                    : formatMoney(row.planPriceUsdMinor, "usd", 2)}
                 </td>
                 <td className="text-right">
                   <button

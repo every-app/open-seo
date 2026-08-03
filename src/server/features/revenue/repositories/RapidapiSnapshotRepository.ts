@@ -18,6 +18,7 @@ async function upsert(input: {
   capturedOn: string;
   activeSubscribers: number;
   payingSubscribers: number | null;
+  planPriceUsdMinor: number | null;
   createdByUserId: string;
 }): Promise<RapidapiSnapshot> {
   const [row] = await db
@@ -28,6 +29,7 @@ async function upsert(input: {
       set: {
         activeSubscribers: input.activeSubscribers,
         payingSubscribers: input.payingSubscribers,
+        planPriceUsdMinor: input.planPriceUsdMinor,
         createdByUserId: input.createdByUserId,
         updatedAt: sql`(current_timestamp)`,
       },

@@ -10,6 +10,9 @@ import {
  * the live query. Counts only — no subscriber identities. See specs/0014.
  */
 
+/** RapidAPI's flat marketplace commission on subscription revenue. */
+export const RAPIDAPI_FEE_RATE = 0.25;
+
 export type RapidapiSnapshotReport = {
   latest: RapidapiSnapshot | null;
   previous: RapidapiSnapshot | null;
@@ -17,6 +20,10 @@ export type RapidapiSnapshotReport = {
    *  when either snapshot skipped the paying split). */
   activeDelta: number | null;
   payingDelta: number | null;
+  /** paying × plan price from the latest snapshot, USD cents; null when
+   *  either wasn't recorded. Net deducts RapidAPI's flat 25% fee. */
+  grossMrrUsdMinor: number | null;
+  netMrrUsdMinor: number | null;
 };
 
 /** Deltas between the two most recent snapshots — exported for tests.
@@ -26,6 +33,10 @@ export function buildSnapshotReport(
 ): RapidapiSnapshotReport {
   const latest = snapshots[0] ?? null;
   const previous = snapshots[1] ?? null;
+  const grossMrrUsdMinor =
+    latest?.payingSubscribers != null && latest.planPriceUsdMinor != null
+      ? latest.payingSubscribers * latest.planPriceUsdMinor
+      : null;
   return {
     latest,
     previous,
@@ -37,6 +48,11 @@ export function buildSnapshotReport(
       latest?.payingSubscribers != null && previous?.payingSubscribers != null
         ? latest.payingSubscribers - previous.payingSubscribers
         : null,
+    grossMrrUsdMinor,
+    netMrrUsdMinor:
+      grossMrrUsdMinor === null
+        ? null
+        : Math.round(grossMrrUsdMinor * (1 - RAPIDAPI_FEE_RATE)),
   };
 }
 
@@ -55,6 +71,7 @@ async function logSnapshot(input: {
   capturedOn: string;
   activeSubscribers: number;
   payingSubscribers: number | null;
+  planPriceUsdMinor: number | null;
   userId: string;
 }): Promise<RapidapiSnapshot> {
   return RapidapiSnapshotRepository.upsert({
@@ -63,6 +80,7 @@ async function logSnapshot(input: {
     capturedOn: input.capturedOn,
     activeSubscribers: input.activeSubscribers,
     payingSubscribers: input.payingSubscribers,
+    planPriceUsdMinor: input.planPriceUsdMinor,
     createdByUserId: input.userId,
   });
 }
