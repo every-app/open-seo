@@ -58,7 +58,7 @@ export function RevenueCard({ projectId }: { projectId: string }) {
       }
     >
       {revenueQuery.isPending ? (
-        <div className="grid grid-cols-2 gap-3" aria-busy>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="skeleton h-20" />
           ))}
@@ -72,7 +72,8 @@ export function RevenueCard({ projectId }: { projectId: string }) {
           Pick your Stripe products on the Revenue page to see metrics here.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        // Full-width card: the four tiles share one row on large screens.
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {subscription ? (
             <>
               <Stat
