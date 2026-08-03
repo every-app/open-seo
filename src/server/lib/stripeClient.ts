@@ -137,11 +137,17 @@ const STRIPE_API_VERSION = "2026-07-29.dahlia";
 
 export function createStripeClient() {
   async function request(path: string): Promise<unknown> {
-    const key = await getRequiredEnvValue("STRIPE_SECRET_KEY");
+    const [key, context] = await Promise.all([
+      getRequiredEnvValue("STRIPE_SECRET_KEY"),
+      // Organization-level API keys must name the target account
+      // ("acct_…") via Stripe-Context; account-level keys need none.
+      getOptionalEnvValue("STRIPE_CONTEXT"),
+    ]);
     const response = await fetch(`${STRIPE_API_BASE}${path}`, {
       headers: {
         Authorization: `Bearer ${key}`,
         "Stripe-Version": STRIPE_API_VERSION,
+        ...(context ? { "Stripe-Context": context } : {}),
       },
     });
     if (!response.ok) {

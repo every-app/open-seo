@@ -288,6 +288,7 @@ const dataEnv = {
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
   // Revenue page (specs/0014): Stripe + RapidAPI Platform API access.
   STRIPE_SECRET_KEY: optionalSecret("STRIPE_SECRET_KEY"),
+  STRIPE_CONTEXT: optionalVar("STRIPE_CONTEXT"),
   RAPIDAPI_KEY: optionalSecret("RAPIDAPI_KEY"),
   RAPIDAPI_GRAPHQL_URL: optionalVar("RAPIDAPI_GRAPHQL_URL"),
   // Alchemy reconciles worker vars on every deploy, so the telemetry opt-out
