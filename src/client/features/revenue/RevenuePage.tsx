@@ -292,7 +292,7 @@ function formatDay(iso: string | null): string {
 }
 
 /** Minor currency units → localized amount, e.g. (12300, "usd") → "$123". */
-function formatMoney(amountMinor: number, currency: string): string {
+export function formatMoney(amountMinor: number, currency: string): string {
   return new Intl.NumberFormat(undefined, {
     style: "currency",
     currency: currency.toUpperCase(),
