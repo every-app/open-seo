@@ -3,6 +3,7 @@ import {
   Bookmark,
   Bot,
   Braces,
+  CircleDollarSign,
   ClipboardCheck,
   Gauge,
   Globe,
@@ -60,6 +61,11 @@ const projectNavItems = [
     to: "/p/$projectId/pagespeed" as const,
     label: "PageSpeed",
     icon: Gauge,
+  },
+  {
+    to: "/p/$projectId/revenue" as const,
+    label: "Revenue",
+    icon: CircleDollarSign,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -144,6 +150,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/bing"),
         byPath("/p/$projectId/traffic"),
         byPath("/p/$projectId/pagespeed"),
+        byPath("/p/$projectId/revenue"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
