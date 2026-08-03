@@ -156,12 +156,15 @@ async function listProductsForPicker(
   const products = await createStripeClient(
     stripeAccountId ?? connection?.stripeAccountId,
   ).listProducts();
-  return products.map((product) => ({
-    productId: product.id,
-    name: product.name,
-    isSubscriptionProduct: connection?.subscriptionProductId === product.id,
-    isOneOffProduct: connection?.oneOffProductId === product.id,
-  }));
+  return products
+    .toSorted((a, b) => Number(b.active) - Number(a.active))
+    .map((product) => ({
+      productId: product.id,
+      name: product.name,
+      active: product.active,
+      isSubscriptionProduct: connection?.subscriptionProductId === product.id,
+      isOneOffProduct: connection?.oneOffProductId === product.id,
+    }));
 }
 
 /** Map Stripe products to an OpenSEO project. Ids are validated against the
