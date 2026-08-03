@@ -91,10 +91,6 @@ export function PercentDelta({
 
 export const moreDetailsClass = "btn btn-ghost btn-xs";
 
-export function newLost(value: number | null): string {
-  return value === null ? "—" : String(value);
-}
-
 export function formatDay(timestamp: string): string {
   const ms = Date.parse(
     // SQLite's current_timestamp default has no timezone marker; treat it as
