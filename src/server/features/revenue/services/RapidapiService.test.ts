@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { RapidapiSubscription } from "@/server/lib/rapidapiClient";
-import { computeRapidapiMetrics } from "./RapidapiService";
+import { computeRapidapiMetrics, scopeToApi } from "./RapidapiService";
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock(
@@ -18,6 +18,8 @@ function sub(overrides: Partial<RapidapiSubscription>): RapidapiSubscription {
     canceledAt: null,
     entityType: "User",
     entityId: "user_1",
+    apiId: "api_ss",
+    apiName: "scholar-sidekick",
     planName: "BASIC",
     planPrice: 0,
     ...overrides,
@@ -82,12 +84,34 @@ describe("computeRapidapiMetrics", () => {
     expect(metrics.churnedPrev30).toBe(1);
   });
 
-  it("treats a canceled status without canceledAt as inactive", () => {
+  it("treats non-ACTIVE statuses without canceledAt as inactive", () => {
+    // Observed live: plan-switched rows arrive as DELETED with canceledAt
+    // null — only an explicit ACTIVE counts.
     const metrics = computeRapidapiMetrics(
-      [sub({ status: "CANCELLED", canceledAt: null })],
+      [
+        sub({ status: "DELETED", canceledAt: null }),
+        sub({ status: "CANCELLED", canceledAt: null }),
+      ],
       true,
       NOW,
     );
     expect(metrics.activeSubscribers).toBe(0);
+  });
+});
+
+describe("scopeToApi", () => {
+  it("drops nodes that belong to other APIs (ignored-filter fallback)", () => {
+    // The Platform API silently ignores an unknown where.apiId and returns
+    // the caller's own subscriptions — those must not be counted.
+    const scoped = scopeToApi(
+      [
+        sub({ apiId: "api_ss" }),
+        sub({ apiId: "api_other" }),
+        sub({ apiId: null }),
+      ],
+      "api_ss",
+    );
+    expect(scoped).toHaveLength(2);
+    expect(scoped.every((s) => s.apiId !== "api_other")).toBe(true);
   });
 });

@@ -52,6 +52,12 @@ export type RapidapiSubscription = {
   canceledAt: string | null;
   entityType: string | null;
   entityId: string | null;
+  /** Which API the node actually belongs to. The Platform API silently
+   *  ignores an unrecognized where.apiId and returns the CALLER's own
+   *  subscriptions (verified live 2026-08-03), so callers must scope nodes
+   *  by this instead of trusting the filter. */
+  apiId: string | null;
+  apiName: string | null;
   planName: string | null;
   /** Recurring plan price in the hub's currency units; 0 = free plan. */
   planPrice: number | null;
@@ -59,7 +65,6 @@ export type RapidapiSubscription = {
 
 export type RapidapiSubscriptionsResult = {
   totalCount: number | null;
-  apiName: string | null;
   /** False when the schema fallback dropped billingPlanVersion — paying vs
    *  free can't be told apart in that case. */
   planInfoAvailable: boolean;
@@ -82,7 +87,12 @@ const subscriptionNodeSchema = z.looseObject({
       id: z.union([z.string(), z.number()]).nullish(),
     })
     .nullish(),
-  api: z.looseObject({ name: z.string().nullish() }).nullish(),
+  api: z
+    .looseObject({
+      id: z.union([z.string(), z.number()]).nullish(),
+      name: z.string().nullish(),
+    })
+    .nullish(),
   billingPlanVersion: z
     .looseObject({
       name: z.string().nullish(),
@@ -97,6 +107,10 @@ const subscriptionsDataSchema = z.looseObject({
     totalCount: z.number().nullish(),
   }),
 });
+
+function asId(value: string | number | null | undefined): string | null {
+  return value === null || value === undefined ? null : String(value);
+}
 
 /** The Platform API reports dates as ISO strings in the docs, but GraphQL
  *  timestamps elsewhere on RapidAPI are epoch millis — accept both. */
@@ -120,6 +134,7 @@ const SUBSCRIPTION_FIELDS = `
         id
       }
       api {
+        id
         name
       }`;
 
@@ -202,27 +217,23 @@ export function createRapidapiClient() {
         data = await graphql(BASIC_QUERY, variables);
       }
       const { subscriptions } = subscriptionsDataSchema.parse(data);
-      const parsedNodes = subscriptions.nodes.map((raw) =>
-        subscriptionNodeSchema.parse(raw),
-      );
-      const nodes = parsedNodes.map((node) => ({
-        id: node.id,
-        status: node.status ?? null,
-        createdAt: normalizeDate(node.createdAt),
-        canceledAt: normalizeDate(node.canceledAt),
-        entityType: node.entity?.type ?? null,
-        entityId:
-          node.entity?.id === null || node.entity?.id === undefined
-            ? null
-            : String(node.entity.id),
-        planName: node.billingPlanVersion?.name ?? null,
-        planPrice: node.billingPlanVersion?.price ?? null,
-      }));
+      const nodes = subscriptions.nodes.map((raw) => {
+        const node = subscriptionNodeSchema.parse(raw);
+        return {
+          id: node.id,
+          status: node.status ?? null,
+          createdAt: normalizeDate(node.createdAt),
+          canceledAt: normalizeDate(node.canceledAt),
+          entityType: node.entity?.type ?? null,
+          entityId: asId(node.entity?.id),
+          apiId: asId(node.api?.id),
+          apiName: node.api?.name ?? null,
+          planName: node.billingPlanVersion?.name ?? null,
+          planPrice: node.billingPlanVersion?.price ?? null,
+        };
+      });
       return {
         totalCount: subscriptions.totalCount ?? nodes.length,
-        apiName:
-          parsedNodes.map((node) => node.api?.name).find((name) => name) ??
-          null,
         planInfoAvailable:
           planInfoAvailable && nodes.some((node) => node.planPrice !== null),
         subscriptions: nodes,
