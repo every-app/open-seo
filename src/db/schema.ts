@@ -119,4 +119,8 @@ export const {
   rapidapiSnapshots,
   stripeConnections,
   telemetryState,
+  bingAiCitationDays,
+  bingAiCitationSnapshots,
+  bingAiPageCitations,
+  bingAiQueryCitations,
 } = schema;

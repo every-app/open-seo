@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { BingAiCitationsPanel } from "@/client/features/bing/BingAiCitationsPanel";
 import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
 import { BingCrawlPanel } from "@/client/features/bing/BingCrawlPanel";
 import {
@@ -27,7 +28,7 @@ type BingRow = {
   impressions: number;
 };
 
-type Tab = "striking" | "queries" | "pages" | "daily" | "crawl";
+type Tab = "striking" | "queries" | "pages" | "daily" | "crawl" | "ai";
 
 /**
  * Bing performance. Deliberately NOT a source toggle on the Search Console
@@ -165,10 +166,17 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
                 onClick={() => switchTab("crawl")}
                 label="Crawl"
               />
+              <TabButton
+                active={tab === "ai"}
+                onClick={() => switchTab("ai")}
+                label="AI performance"
+              />
             </div>
 
             <div className="mt-4 rounded-xl border border-base-300 bg-base-100 shadow-sm">
-              {tab === "crawl" ? (
+              {tab === "ai" ? (
+                <BingAiCitationsPanel projectId={projectId} />
+              ) : tab === "crawl" ? (
                 <BingCrawlPanel projectId={projectId} />
               ) : tab === "daily" ? (
                 rows.length === 0 ? (
@@ -208,7 +216,7 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
               )}
             </div>
 
-            {tab !== "daily" && tab !== "crawl" ? (
+            {tab !== "daily" && tab !== "crawl" && tab !== "ai" ? (
               <p className="mt-2 text-xs text-base-content/50">
                 Aggregated from Bing's sampled data (~5 months). Bing provides
                 no date range.

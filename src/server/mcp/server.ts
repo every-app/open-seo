@@ -5,6 +5,7 @@ import {
   getBingQueriesTool,
 } from "@/server/mcp/tools/bing-tools";
 import { inspectBingUrlsTool } from "@/server/mcp/tools/bing-inspect-tools";
+import { getBingAiCitationsTool } from "@/server/mcp/tools/bing-ai-citation-tools";
 import { getVercelTrafficTool } from "@/server/mcp/tools/vercel-tools";
 import {
   getRapidapiSnapshotsTool,
@@ -248,6 +249,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       inspectBingUrlsTool.name,
       inspectBingUrlsTool.config.outputSchema,
       inspectBingUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingAiCitationsTool.name,
+    getBingAiCitationsTool.config,
+    instrumentMcpToolHandler(
+      getBingAiCitationsTool.name,
+      getBingAiCitationsTool.config.outputSchema,
+      getBingAiCitationsTool.handler,
     ),
   );
   server.registerTool(

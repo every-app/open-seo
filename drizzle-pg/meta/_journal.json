@@ -183,6 +183,13 @@
       "when": 1785775568636,
       "tag": "0025_material_anthem",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785904148809,
+      "tag": "0026_brief_dagger",
+      "breakpoints": true
     }
   ]
 }
