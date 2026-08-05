@@ -19,6 +19,8 @@ export type RawLighthouseCategory = {
   score?: number | null;
   auditRefs?: Array<{
     id?: string;
+    /** How much this audit's score contributes to the category score. */
+    weight?: number;
   }>;
 };
 
@@ -116,12 +118,48 @@ const DIAGNOSTIC_AUDIT_KEYS = new Set([
   "resource-summary",
 ]);
 
-function compactItem(item: Record<string, unknown>): string {
+/** Longest a single evidence value is worth carrying. Lighthouse explanations
+ *  and DOM snippets run to paragraphs; past this they stop being a hint. */
+const MAX_VALUE_CHARS = 200;
+
+/**
+ * Accessibility audits report `{node: {…}, subItems: {…}}`, so the fields worth
+ * showing — snippet, selector, explanation — sit a level below where flat key
+ * matching can see them, and the positional fallback grabs the whole DOM node
+ * blob instead. Lift `node` up so those fields are reachable. Top-level keys
+ * still win, so nothing that already matched changes.
+ */
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function liftNode(item: Record<string, unknown>): Record<string, unknown> {
+  const node = item["node"];
+  return isRecord(node) ? { ...node, ...item } : item;
+}
+
+function truncate(value: unknown): unknown {
+  if (typeof value !== "string" || value.length <= MAX_VALUE_CHARS) {
+    return value;
+  }
+  return `${value.slice(0, MAX_VALUE_CHARS)}…`;
+}
+
+function compactItem(rawItem: Record<string, unknown>): string {
+  const item = liftNode(rawItem);
   const preferredKeys = [
     "url",
     "source",
     "nodeLabel",
     "snippet",
+    // Accessibility audits: which element, and Lighthouse's own reason.
+    "selector",
+    "explanation",
+    // `robots-txt` reports each parse failure as {index, line, message}; without
+    // these the exact offending line only survived by falling through to the
+    // positional fallback below.
+    "line",
+    "message",
     "totalBytes",
     "wastedBytes",
     "wastedMs",
@@ -132,19 +170,39 @@ function compactItem(item: Record<string, unknown>): string {
   const output: Record<string, unknown> = {};
   for (const key of preferredKeys) {
     if (item[key] != null) {
-      output[key] = item[key];
+      output[key] = truncate(item[key]);
     }
   }
 
   if (Object.keys(output).length === 0) {
     for (const [key, value] of Object.entries(item).slice(0, 6)) {
-      output[key] = value;
+      output[key] = truncate(value);
     }
   }
 
   return JSON.stringify(output);
 }
 
+/**
+ * Severity for an audit Lighthouse actually scores, taken from what failing it
+ * costs: the audit's share of its category's total weight.
+ *
+ * Binary audits — most of accessibility, SEO and best-practices — score 0 or
+ * 100 with no magnitude, so a score threshold reads every failure as equally
+ * severe. Weight is Lighthouse's own ranking and says how much is at stake.
+ */
+function getWeightedSeverity(share: number): "critical" | "warning" | "info" {
+  if (share >= 0.1) return "critical";
+  if (share >= 0.03) return "warning";
+  return "info";
+}
+
+/**
+ * Severity for an audit Lighthouse leaves unweighted. Performance
+ * Opportunities and Diagnostics are all weight 0 — only the five metrics carry
+ * weight there, and those are numeric and skipped — so measured savings are
+ * the only magnitude on offer.
+ */
 function getSeverity(input: {
   score: number | null;
   impactMs: number | null;
@@ -181,9 +239,12 @@ export function buildStoredLighthouseIssues(input: {
 
   for (const category of LIGHTHOUSE_CATEGORIES) {
     const refs = input.categories[category]?.auditRefs ?? [];
+    const totalWeight = refs.reduce((sum, ref) => sum + (ref.weight ?? 0), 0);
+
     for (const ref of refs) {
       const auditKey = ref.id;
       if (!auditKey) continue;
+      const weight = ref.weight ?? 0;
 
       const audit = input.audits[auditKey];
       if (!audit) continue;
@@ -226,7 +287,10 @@ export function buildStoredLighthouseIssues(input: {
         displayValue: audit.displayValue ?? null,
         impactMs,
         impactBytes,
-        severity: getSeverity({ score, impactMs, impactBytes }),
+        severity:
+          weight > 0 && totalWeight > 0
+            ? getWeightedSeverity(weight / totalWeight)
+            : getSeverity({ score, impactMs, impactBytes }),
         items,
       });
     }

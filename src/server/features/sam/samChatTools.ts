@@ -28,6 +28,7 @@ import {
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
+import { validateStructuredDataTool } from "@/server/mcp/tools/structured-data-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
@@ -264,5 +265,10 @@ export function buildSamMcpTools(
       projectId,
     ),
     inspect_urls: adaptMcpTool(inspectUrlsTool, extra, projectId),
+    validate_structured_data: adaptMcpTool(
+      validateStructuredDataTool,
+      extra,
+      projectId,
+    ),
   };
 }

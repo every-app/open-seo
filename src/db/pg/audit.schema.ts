@@ -92,6 +92,14 @@ export const auditPages = pgTable(
     externalLinkCount: integer("external_link_count").notNull().default(0),
     // Structured data
     hasStructuredData: boolean("has_structured_data").notNull().default(false),
+    // JSON-LD validation counts. Only the counts are stored: the messages are
+    // carried on the issue rows the reporters raise (spec 0012).
+    structuredDataErrors: integer("structured_data_errors")
+      .notNull()
+      .default(0),
+    structuredDataWarnings: integer("structured_data_warnings")
+      .notNull()
+      .default(0),
     // Hreflang
     hreflangTagsJson: text("hreflang_tags_json"),
     // Indexability

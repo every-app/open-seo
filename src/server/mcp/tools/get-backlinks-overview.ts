@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { waitUntil } from "cloudflare:workers";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
+import { DashboardService } from "@/server/features/dashboard/services/DashboardService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -86,6 +88,16 @@ export const getBacklinksOverviewTool = {
         spamOptions,
       ),
     ]);
+    // Keep the dashboard card coherent with what this lookup just returned.
+    waitUntil(
+      DashboardService.recordBacklinkSnapshotFromOverview({
+        projectId: args.projectId,
+        domain: context.project.domain,
+        overview: overview.overview,
+      }).catch((error: unknown) => {
+        console.error("backlinks: snapshot sync from overview failed", error);
+      }),
+    );
     const topDomains = refDomains.rows ?? [];
     const summary = overview.overview.summary;
     const text = [

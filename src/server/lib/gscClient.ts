@@ -1,5 +1,10 @@
 import { getAuth } from "@/lib/auth";
-import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import {
+  GSC_OAUTH_PROVIDER_ID,
+  type GscSeverity,
+  type GscVerdict,
+  type RichResultsResult,
+} from "@/shared/gsc";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
@@ -66,7 +71,7 @@ export type GscSearchAnalyticsRequest = {
  *  shape is richer; extra fields are ignored. */
 export type UrlInspectionResult = {
   indexStatusResult?: {
-    verdict?: string;
+    verdict?: GscVerdict;
     coverageState?: string;
     robotsTxtState?: string;
     indexingState?: string;
@@ -78,8 +83,20 @@ export type UrlInspectionResult = {
     sitemap?: string[];
     referringUrls?: string[];
   };
-  mobileUsabilityResult?: { verdict?: string };
-  richResultsResult?: { verdict?: string };
+  mobileUsabilityResult?: {
+    verdict?: GscVerdict;
+    issues?: Array<{
+      issueType?: string;
+      severity?: GscSeverity;
+      message?: string;
+    }>;
+  };
+  richResultsResult?: RichResultsResult;
+  ampResult?: {
+    verdict?: GscVerdict;
+    ampUrl?: string;
+    issues?: Array<{ issueMessage?: string; severity?: GscSeverity }>;
+  };
   inspectionResultLink?: string;
 };
 

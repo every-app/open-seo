@@ -1,0 +1,1 @@
+ALTER TABLE "psi_urls" ADD COLUMN "schedule_enabled" boolean DEFAULT true NOT NULL;

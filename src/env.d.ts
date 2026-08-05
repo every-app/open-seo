@@ -12,6 +12,22 @@ declare namespace Cloudflare {
     // Durable Object backing the SAM in-app agent (see wrangler.jsonc).
     SAM_CHAT: DurableObjectNamespace;
 
+    // Workflow driving the daily PageSpeed sweep (see wrangler.jsonc).
+    // Declared here rather than taken from worker-configuration.d.ts: the
+    // checked-in generated file predates the installed wrangler, so
+    // regenerating it rewrites ~6k lines of unrelated runtime types and breaks
+    // two existing call sites. That regen is its own chore, not this feature's
+    // — drop this block once it happens.
+    //
+    // The payload is spelled out because a .d.ts global augmentation cannot
+    // carry a top-level import. It is not load-bearing: the cron passes this
+    // binding into a parameter typed from the real `PagespeedSweepParams`, so
+    // any drift between the two fails typecheck.
+    PAGESPEED_SWEEP_WORKFLOW: Workflow<{
+      projectId: string;
+      urlIds: string[];
+    }>;
+
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
@@ -39,6 +55,16 @@ declare namespace Cloudflare {
 
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
+
+    // Google API key with the PageSpeed Insights API enabled. Optional: a
+    // missing key renders the setup card instead of erroring.
+    PAGESPEED_API_KEY?: string;
+
+    // Stripe secret (or restricted read) API key for the Revenue page and the
+    // get_stripe_revenue MCP tool. May be organization-level — the target
+    // account then lives per-connection in stripe_connections, not here.
+    // Optional: missing renders the setup card.
+    STRIPE_SECRET_KEY?: string;
 
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;

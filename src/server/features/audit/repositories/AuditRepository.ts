@@ -3,6 +3,7 @@
  * Provider-aware (D1 or Postgres) via the `@/db` handle. Covers audits,
  * audit_pages, audit_links, audit_issues, and stored Lighthouse results.
  */
+/* eslint-disable max-lines */
 import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
@@ -179,6 +180,8 @@ async function insertCrawledBatch(
       internalLinkCount: page.links.filter((l) => l.isInternal).length,
       externalLinkCount: page.links.filter((l) => !l.isInternal).length,
       hasStructuredData: page.hasStructuredData,
+      structuredDataErrors: page.structuredData?.errorCount ?? 0,
+      structuredDataWarnings: page.structuredData?.warningCount ?? 0,
       hreflangTagsJson: JSON.stringify(page.hreflangTags),
       isIndexable: page.isIndexable,
       fetchClass: page.fetchClass,

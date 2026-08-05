@@ -1,5 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
+import { waitUntil } from "cloudflare:workers";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
+import { DashboardService } from "@/server/features/dashboard/services/DashboardService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   backlinksOverviewInputSchema,
@@ -24,6 +26,16 @@ export const getBacklinksOverview = createServerFn({
         scope: data.scope,
       },
       context,
+    );
+    // Keep the dashboard card coherent with what this page just showed.
+    waitUntil(
+      DashboardService.recordBacklinkSnapshotFromOverview({
+        projectId: context.projectId,
+        domain: context.project.domain,
+        overview: profile.overview,
+      }).catch((error: unknown) => {
+        console.error("backlinks: snapshot sync from overview failed", error);
+      }),
     );
     return profile.overview;
   });

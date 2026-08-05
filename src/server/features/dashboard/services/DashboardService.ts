@@ -1,5 +1,6 @@
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
+import type { BacklinksOverviewResult } from "@/server/features/backlinks/services/backlinksOverviewSchema";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
 import { getIssueTypePageCountsForAudit } from "@/server/features/audit/repositories/auditSummaryQueries";
 import { BacklinkSnapshotRepository } from "@/server/features/dashboard/repositories/BacklinkSnapshotRepository";
@@ -14,6 +15,16 @@ import {
 // Daily cadence: fresh numbers each visit without per-visit spend; a dormant
 // project costs nothing because refreshes are visit-triggered.
 const SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+// DataForSEO's summary endpoint carries no new/lost counts, so the card's
+// deltas come from diffing the latest snapshot against a previous-day
+// baseline: the newest snapshot at least this much older than the latest.
+// 20h rather than 24h because visit-triggered capture times drift, and a
+// full-day threshold would skip yesterday's snapshot whenever today's fired
+// earlier in the day.
+const DELTA_BASELINE_MIN_AGE_MS = 20 * 60 * 60 * 1000;
+// Overview-synced snapshots can add a few rows per day, so scan enough
+// recent rows to reliably reach one from a previous day.
+const DELTA_LOOKBACK_ROWS = 40;
 // Bounds the per-config result reads on the overview path; projects rarely
 // have more than a couple of configs.
 const MAX_CONFIGS_FOR_OVERVIEW = 5;
@@ -55,10 +66,14 @@ export type DashboardBacklinkSummary = {
   rank: number | null;
   backlinks: number | null;
   referringDomains: number | null;
-  newBacklinks: number | null;
-  lostBacklinks: number | null;
-  newReferringDomains: number | null;
-  lostReferringDomains: number | null;
+  brokenBacklinks: number | null;
+  /** Previous-day (or older) snapshot backing the card's delta subs; null
+   *  until the project has two snapshots captured a day apart. */
+  previous: {
+    backlinks: number | null;
+    referringDomains: number | null;
+    capturedAt: string;
+  } | null;
   capturedAt: string;
   stale: boolean;
 };
@@ -189,18 +204,34 @@ async function getBacklinkSummary(
   domain: string | null,
 ): Promise<DashboardBacklinkSummary | null> {
   if (!domain) return null;
-  const snapshot =
-    await BacklinkSnapshotRepository.getLatestForProject(projectId);
+  const recent = await BacklinkSnapshotRepository.getRecentForProject(
+    projectId,
+    DELTA_LOOKBACK_ROWS,
+  );
+  const snapshot = recent[0];
   if (!snapshot || snapshot.domain !== domain) return null;
+  // Newest row old enough to be a previous-day baseline. `recent` is newest
+  // first, so the first qualifying row is the closest baseline.
+  const latestMs = Date.parse(snapshot.capturedAt);
+  const baseline =
+    recent.find(
+      (row) =>
+        row.domain === domain &&
+        latestMs - Date.parse(row.capturedAt) >= DELTA_BASELINE_MIN_AGE_MS,
+    ) ?? null;
   return {
     domain: snapshot.domain,
     rank: snapshot.rank,
     backlinks: snapshot.backlinks,
     referringDomains: snapshot.referringDomains,
-    newBacklinks: snapshot.newBacklinks,
-    lostBacklinks: snapshot.lostBacklinks,
-    newReferringDomains: snapshot.newReferringDomains,
-    lostReferringDomains: snapshot.lostReferringDomains,
+    brokenBacklinks: snapshot.brokenBacklinks,
+    previous: baseline
+      ? {
+          backlinks: baseline.backlinks,
+          referringDomains: baseline.referringDomains,
+          capturedAt: baseline.capturedAt,
+        }
+      : null,
     capturedAt: snapshot.capturedAt,
     stale: !isSnapshotFresh(snapshot.capturedAt),
   };
@@ -238,6 +269,8 @@ async function ensureBacklinkSnapshot(input: {
     const summary = await dataforseo.backlinks.summary({
       target: normalized.apiTarget,
     });
+    // No new/lost fields: the summary endpoint never returns them (the
+    // card's deltas come from diffing consecutive snapshots instead).
     await BacklinkSnapshotRepository.insert({
       projectId,
       domain,
@@ -245,14 +278,6 @@ async function ensureBacklinkSnapshot(input: {
       backlinks: summary.backlinks ?? null,
       referringDomains: summary.referring_domains ?? null,
       brokenBacklinks: summary.broken_backlinks ?? null,
-      newBacklinks: summary.new_backlinks ?? null,
-      lostBacklinks: summary.lost_backlinks ?? null,
-      newReferringDomains:
-        summary.new_referring_domains ?? summary.new_reffering_domains ?? null,
-      lostReferringDomains:
-        summary.lost_referring_domains ??
-        summary.lost_reffering_domains ??
-        null,
       capturedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -266,8 +291,52 @@ async function ensureBacklinkSnapshot(input: {
   return getBacklinkSummary(projectId, domain);
 }
 
+/**
+ * Opportunistic snapshot write from a Backlinks-page overview lookup: when the
+ * looked-up target is the project's own domain, store the summary as a
+ * dashboard snapshot so the card never lags behind numbers the user has
+ * already seen. Costs no extra DataForSEO spend — the overview response is
+ * reused — and a snapshot recorded here also satisfies the dashboard's daily
+ * freshness check, saving that path's metered call. Cache-served overviews
+ * carry their original fetchedAt, so the newer-than-latest guard drops
+ * anything that would move the card backwards.
+ */
+async function recordBacklinkSnapshotFromOverview(input: {
+  projectId: string;
+  domain: string | null;
+  overview: BacklinksOverviewResult;
+}): Promise<void> {
+  const { projectId, domain, overview } = input;
+  if (!domain || overview.scope !== "domain") return;
+  const normalized = normalizeBacklinksTarget(domain, { scope: "domain" });
+  if (normalized.apiTarget !== overview.target) return;
+
+  const fetchedMs = Date.parse(overview.fetchedAt);
+  if (Number.isNaN(fetchedMs)) return;
+  const latest =
+    await BacklinkSnapshotRepository.getLatestForProject(projectId);
+  if (
+    latest &&
+    latest.domain === domain &&
+    Date.parse(latest.capturedAt) >= fetchedMs
+  ) {
+    return;
+  }
+
+  await BacklinkSnapshotRepository.insert({
+    projectId,
+    domain,
+    rank: overview.summary.rank,
+    backlinks: overview.summary.backlinks,
+    referringDomains: overview.summary.referringDomains,
+    brokenBacklinks: overview.summary.brokenBacklinks,
+    capturedAt: overview.fetchedAt,
+  });
+}
+
 export const DashboardService = {
   getActivation,
   getOverview,
   ensureBacklinkSnapshot,
+  recordBacklinkSnapshotFromOverview,
 };

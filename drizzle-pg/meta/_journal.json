@@ -99,6 +99,97 @@
       "when": 1784426969390,
       "tag": "0013_sleepy_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1784965259500,
+      "tag": "0014_deep_mattie_franklin",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1785029392970,
+      "tag": "0015_nebulous_colonel_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1785328388845,
+      "tag": "0016_striped_preak",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1785364201167,
+      "tag": "0017_clear_slayback",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1785365783099,
+      "tag": "0018_flat_eddie_brock",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1785368674334,
+      "tag": "0019_nice_the_captain",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1785370205804,
+      "tag": "0020_groovy_pyro",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1785742694553,
+      "tag": "0021_curved_harrier",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1785749907804,
+      "tag": "0022_lyrical_spencer_smythe",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1785774051842,
+      "tag": "0023_empty_kitty_pryde",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1785774063411,
+      "tag": "0024_glossy_excalibur",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1785775568636,
+      "tag": "0025_material_anthem",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1785904148809,
+      "tag": "0026_brief_dagger",
+      "breakpoints": true
     }
   ]
 }

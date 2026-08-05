@@ -1,7 +1,11 @@
 import {
+  Activity,
   Bookmark,
   Bot,
+  Braces,
+  CircleDollarSign,
   ClipboardCheck,
+  Gauge,
   Globe,
   LayoutDashboard,
   Link2,
@@ -11,6 +15,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
+import { BingGlyphMuted } from "@/client/features/bing/BingGlyph";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 
 const projectNavItems = [
@@ -43,6 +48,26 @@ const projectNavItems = [
     icon: GoogleGlyphMuted,
   },
   {
+    to: "/p/$projectId/bing" as const,
+    label: "Bing Insights",
+    icon: BingGlyphMuted,
+  },
+  {
+    to: "/p/$projectId/traffic" as const,
+    label: "Traffic",
+    icon: Activity,
+  },
+  {
+    to: "/p/$projectId/pagespeed" as const,
+    label: "PageSpeed",
+    icon: Gauge,
+  },
+  {
+    to: "/p/$projectId/revenue" as const,
+    label: "Revenue",
+    icon: CircleDollarSign,
+  },
+  {
     to: "/p/$projectId/domain" as const,
     label: "Domain Overview",
     icon: Globe,
@@ -56,6 +81,11 @@ const projectNavItems = [
     to: "/p/$projectId/audit" as const,
     label: "Site Audit",
     icon: ClipboardCheck,
+  },
+  {
+    to: "/p/$projectId/structured-data" as const,
+    label: "Structured Data",
+    icon: Braces,
   },
   {
     to: "/p/$projectId/brand-lookup" as const,
@@ -117,9 +147,14 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/bing"),
+        byPath("/p/$projectId/traffic"),
+        byPath("/p/$projectId/pagespeed"),
+        byPath("/p/$projectId/revenue"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
+        byPath("/p/$projectId/structured-data"),
       ],
     },
   ];

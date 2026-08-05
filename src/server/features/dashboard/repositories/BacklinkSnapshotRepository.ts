@@ -18,6 +18,20 @@ async function getLatestForProject(
   return rows[0] ?? null;
 }
 
+/** Latest `limit` snapshots for the project, newest first (id order, same
+ *  rationale as getLatestForProject). */
+async function getRecentForProject(
+  projectId: string,
+  limit: number,
+): Promise<BacklinkSnapshot[]> {
+  return db
+    .select()
+    .from(backlinkSnapshots)
+    .where(eq(backlinkSnapshots.projectId, projectId))
+    .orderBy(desc(backlinkSnapshots.id))
+    .limit(limit);
+}
+
 async function insert(
   values: typeof backlinkSnapshots.$inferInsert,
 ): Promise<BacklinkSnapshot> {
@@ -30,5 +44,6 @@ async function insert(
 
 export const BacklinkSnapshotRepository = {
   getLatestForProject,
+  getRecentForProject,
   insert,
 };

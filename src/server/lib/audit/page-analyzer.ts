@@ -7,7 +7,46 @@
  */
 import * as cheerio from "cheerio";
 import { normalizeUrl, isSameOrigin } from "./url-utils";
-import type { PageAnalysis, PageLink } from "./types";
+import type { PageAnalysis, PageLink, PageStructuredData } from "./types";
+import { validateCheerioDocument } from "@/server/lib/structured-data/validate";
+import type { ValidationResult } from "@/server/lib/structured-data/types";
+
+/** Error messages carried into the audit issue detail before trailing off. */
+const STRUCTURED_DATA_MESSAGE_LIMIT = 5;
+
+/** Projects a full validation result down to what the issue reporters need. */
+function summarizeStructuredData(
+  result: ValidationResult,
+): PageStructuredData | null {
+  if (result.scriptCount === 0) return null;
+
+  // Google-layer errors are rich-result ineligibility, reported per feature;
+  // parse and vocabulary errors are broken markup.
+  const brokenMarkup = result.findings.filter(
+    (finding) => finding.severity === "error" && finding.layer !== "google",
+  );
+
+  return {
+    blockCount: result.scriptCount,
+    types: result.types,
+    errorCount: brokenMarkup.length,
+    warningCount: result.warningCount,
+    errorMessages: brokenMarkup
+      .slice(0, STRUCTURED_DATA_MESSAGE_LIMIT)
+      .map((finding) =>
+        finding.path === ""
+          ? finding.message
+          : `${finding.path}: ${finding.message}`,
+      ),
+    ineligibleFeatures: result.features
+      .filter((feature) => !feature.eligible)
+      .map((feature) => ({
+        feature: feature.feature,
+        missing: feature.missingRequired,
+        docsUrl: feature.docsUrl,
+      })),
+  };
+}
 
 /**
  * Analyze an HTML string and extract all SEO-relevant data.
@@ -97,10 +136,11 @@ export function analyzeHtml(
   const links = Array.from(linksByTarget.values());
 
   // --- Structured data (JSON-LD) ---
-  let hasStructuredData = false;
-  $('script[type="application/ld+json"]').each(() => {
-    hasStructuredData = true;
-  });
+  // Validated here rather than in a reporter: this is the one place with a
+  // loaded document, and re-parsing the HTML downstream would double the
+  // crawl's parse cost.
+  const structuredData = summarizeStructuredData(validateCheerioDocument($));
+  const hasStructuredData = structuredData !== null;
 
   const hreflangTags: string[] = [];
   $('link[rel="alternate"][hreflang]').each((_, el) => {
@@ -127,6 +167,7 @@ export function analyzeHtml(
     images,
     links,
     hasStructuredData,
+    structuredData,
     hreflangTags,
   };
 }

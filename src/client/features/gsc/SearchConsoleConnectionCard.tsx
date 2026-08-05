@@ -12,6 +12,10 @@ import {
 } from "@/client/features/gsc/SitePicker";
 import { startGscLink } from "@/client/features/gsc/startGscLink";
 import {
+  ConnectedState,
+  IntegrationCard,
+} from "@/client/features/integrations/integrationCardParts";
+import {
   disconnectGsc,
   getGscConnection,
   listGscSites,
@@ -138,6 +142,7 @@ export function SearchConsoleConnectionCard({
 
   return (
     <IntegrationCard
+      title="Google Search Console"
       status={
         connectionQuery.isLoading
           ? undefined
@@ -157,6 +162,8 @@ export function SearchConsoleConnectionCard({
         <SelfHostedSetupWarning />
       ) : connected && !picking ? (
         <ConnectedState
+          glyph={<GoogleGlyph className="size-[18px]" />}
+          changeLabel="Change property"
           siteUrl={connection?.siteUrl ?? ""}
           connectedByEmail={connection?.connectedByEmail ?? null}
           onChange={() => {
@@ -205,119 +212,5 @@ export function SearchConsoleConnectionCard({
         </div>
       )}
     </IntegrationCard>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Card shell
-// ---------------------------------------------------------------------------
-
-function IntegrationCard({
-  status,
-  children,
-}: {
-  status?: "connected" | "disconnected" | "setup_required";
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
-      <div className="flex items-start justify-between gap-4 p-5 sm:p-6">
-        <h2 className="text-base font-semibold leading-tight">
-          Google Search Console
-        </h2>
-        {status ? <StatusPill status={status} /> : null}
-      </div>
-      <div className="border-t border-base-300 p-5 sm:p-6">{children}</div>
-    </div>
-  );
-}
-
-function StatusPill({
-  status,
-}: {
-  status: "connected" | "disconnected" | "setup_required";
-}) {
-  const connected = status === "connected";
-  const setupRequired = status === "setup_required";
-  return (
-    <span
-      className={[
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-        connected
-          ? "border-success/30 bg-success/10 text-success"
-          : setupRequired
-            ? "border-warning/30 bg-warning/10 text-warning"
-            : "border-base-300 bg-base-200 text-base-content/60",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "size-1.5 rounded-full",
-          connected
-            ? "bg-success"
-            : setupRequired
-              ? "bg-warning"
-              : "bg-base-content/40",
-        ].join(" ")}
-      />
-      {connected
-        ? "Connected"
-        : setupRequired
-          ? "Setup required"
-          : "Not connected"}
-    </span>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Connected state
-// ---------------------------------------------------------------------------
-
-function ConnectedState({
-  siteUrl,
-  connectedByEmail,
-  onChange,
-  onDisconnect,
-  disconnecting,
-}: {
-  siteUrl: string;
-  connectedByEmail: string | null;
-  onChange: () => void;
-  onDisconnect: () => void;
-  disconnecting: boolean;
-}) {
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3 rounded-lg border border-base-300 bg-base-200/40 p-3.5">
-        <div className="grid size-9 shrink-0 place-items-center rounded-md border border-base-300 bg-base-100">
-          <GoogleGlyph className="size-[18px]" />
-        </div>
-        <div className="min-w-0">
-          <p className="truncate font-mono text-sm">{siteUrl}</p>
-          {connectedByEmail ? (
-            <p className="truncate text-xs text-base-content/55">
-              Connected by {connectedByEmail}
-            </p>
-          ) : null}
-        </div>
-      </div>
-      <div className="flex items-center gap-1">
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm"
-          onClick={onChange}
-        >
-          Change property
-        </button>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm text-error hover:bg-error/10"
-          onClick={onDisconnect}
-          disabled={disconnecting}
-        >
-          Disconnect
-        </button>
-      </div>
-    </div>
   );
 }

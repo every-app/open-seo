@@ -1,5 +1,20 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
+import {
+  getBingPerformanceTool,
+  getBingQueriesTool,
+} from "@/server/mcp/tools/bing-tools";
+import { inspectBingUrlsTool } from "@/server/mcp/tools/bing-inspect-tools";
+import { getBingAiCitationsTool } from "@/server/mcp/tools/bing-ai-citation-tools";
+import { getVercelTrafficTool } from "@/server/mcp/tools/vercel-tools";
+import {
+  getRapidapiSnapshotsTool,
+  getStripeRevenueTool,
+} from "@/server/mcp/tools/revenue-tools";
+import {
+  getPagespeedInsightsTool,
+  getPagespeedIssuesTool,
+} from "@/server/mcp/tools/pagespeed-tools";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -29,6 +44,7 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import { validateStructuredDataTool } from "@/server/mcp/tools/structured-data-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
@@ -209,12 +225,102 @@ export function registerOpenSeoMcpTools(server: McpServer) {
     ),
   );
   server.registerTool(
+    getBingPerformanceTool.name,
+    getBingPerformanceTool.config,
+    instrumentMcpToolHandler(
+      getBingPerformanceTool.name,
+      getBingPerformanceTool.config.outputSchema,
+      getBingPerformanceTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingQueriesTool.name,
+    getBingQueriesTool.config,
+    instrumentMcpToolHandler(
+      getBingQueriesTool.name,
+      getBingQueriesTool.config.outputSchema,
+      getBingQueriesTool.handler,
+    ),
+  );
+  server.registerTool(
+    inspectBingUrlsTool.name,
+    inspectBingUrlsTool.config,
+    instrumentMcpToolHandler(
+      inspectBingUrlsTool.name,
+      inspectBingUrlsTool.config.outputSchema,
+      inspectBingUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingAiCitationsTool.name,
+    getBingAiCitationsTool.config,
+    instrumentMcpToolHandler(
+      getBingAiCitationsTool.name,
+      getBingAiCitationsTool.config.outputSchema,
+      getBingAiCitationsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getVercelTrafficTool.name,
+    getVercelTrafficTool.config,
+    instrumentMcpToolHandler(
+      getVercelTrafficTool.name,
+      getVercelTrafficTool.config.outputSchema,
+      getVercelTrafficTool.handler,
+    ),
+  );
+  server.registerTool(
+    getRapidapiSnapshotsTool.name,
+    getRapidapiSnapshotsTool.config,
+    instrumentMcpToolHandler(
+      getRapidapiSnapshotsTool.name,
+      getRapidapiSnapshotsTool.config.outputSchema,
+      getRapidapiSnapshotsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getStripeRevenueTool.name,
+    getStripeRevenueTool.config,
+    instrumentMcpToolHandler(
+      getStripeRevenueTool.name,
+      getStripeRevenueTool.config.outputSchema,
+      getStripeRevenueTool.handler,
+    ),
+  );
+  server.registerTool(
+    getPagespeedInsightsTool.name,
+    getPagespeedInsightsTool.config,
+    instrumentMcpToolHandler(
+      getPagespeedInsightsTool.name,
+      getPagespeedInsightsTool.config.outputSchema,
+      getPagespeedInsightsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getPagespeedIssuesTool.name,
+    getPagespeedIssuesTool.config,
+    instrumentMcpToolHandler(
+      getPagespeedIssuesTool.name,
+      getPagespeedIssuesTool.config.outputSchema,
+      getPagespeedIssuesTool.handler,
+    ),
+  );
+  server.registerTool(
     inspectUrlsTool.name,
     inspectUrlsTool.config,
     instrumentMcpToolHandler(
       inspectUrlsTool.name,
       inspectUrlsTool.config.outputSchema,
       inspectUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    validateStructuredDataTool.name,
+    validateStructuredDataTool.config,
+    instrumentMcpToolHandler(
+      validateStructuredDataTool.name,
+      validateStructuredDataTool.config.outputSchema,
+      validateStructuredDataTool.handler,
     ),
   );
   server.registerTool(

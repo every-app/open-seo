@@ -85,24 +85,32 @@ function subtractUtcMonths(date: Date, months: number): Date {
   return d;
 }
 
+// GSC treats startDate and endDate as inclusive, so an N-day range starts
+// N-1 days back and a calendar-month range starts the day after the subtraction.
 function subtractRange(end: Date, range: GscDateRange): Date {
   const d = new Date(end);
   switch (range) {
     case "last_7_days":
-      d.setUTCDate(d.getUTCDate() - 7);
+      d.setUTCDate(d.getUTCDate() - 6);
       break;
     case "last_28_days":
-      d.setUTCDate(d.getUTCDate() - 28);
+      d.setUTCDate(d.getUTCDate() - 27);
       break;
     case "last_3_months":
-      return subtractUtcMonths(d, 3);
+      return nextUtcDay(subtractUtcMonths(d, 3));
     case "last_6_months":
-      return subtractUtcMonths(d, 6);
+      return nextUtcDay(subtractUtcMonths(d, 6));
     case "last_12_months":
-      return subtractUtcMonths(d, 12);
+      return nextUtcDay(subtractUtcMonths(d, 12));
     case "last_16_months":
-      return subtractUtcMonths(d, 16);
+      return nextUtcDay(subtractUtcMonths(d, 16));
   }
+  return d;
+}
+
+function nextUtcDay(date: Date): Date {
+  const d = new Date(date);
+  d.setUTCDate(d.getUTCDate() + 1);
   return d;
 }
 

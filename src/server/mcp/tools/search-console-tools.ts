@@ -22,8 +22,15 @@ import {
   GSC_SEARCH_TYPES,
   type GscPerformanceInput,
 } from "@/server/features/gsc/searchAnalytics";
-import { GscApiError, GscTokenError } from "@/server/lib/gscClient";
-import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
+import {
+  GscApiError,
+  GscTokenError,
+  type UrlInspectionResult,
+} from "@/server/lib/gscClient";
+import {
+  flattenRichResultIssues,
+  GSC_SELF_HOSTED_SETUP_DOCS_URL,
+} from "@/shared/gsc";
 
 const TEXT_SUMMARY_ROWS = 15;
 
@@ -304,6 +311,49 @@ export const getSearchConsolePerformanceTool = {
 // inspect_urls
 // ---------------------------------------------------------------------------
 
+/** Issue messages named per URL before the summary trails off. */
+const RICH_RESULT_ISSUE_LINES = 5;
+
+/**
+ * Google's rich-results verdict for a URL, with its own issue messages. The
+ * crawl date rides along on every non-PASS verdict: a FAIL from three weeks ago
+ * says nothing about markup fixed this morning, and reading it as current is
+ * the easiest mistake to make with this API.
+ */
+function describeRichResults(
+  result: UrlInspectionResult | null | undefined,
+): string[] {
+  const rich = result?.richResultsResult;
+  if (!rich) return [];
+
+  const verdict = rich.verdict ?? "UNKNOWN";
+  const types = (rich.detectedItems ?? [])
+    .map((detected) => detected.richResultType)
+    .filter((type): type is string => !!type);
+  const summary =
+    types.length > 0 ? `${verdict} (${types.join(", ")})` : verdict;
+
+  const lines = [`    rich results: ${summary}`];
+  if (verdict !== "PASS") {
+    const crawled = result?.indexStatusResult?.lastCrawlTime;
+    if (crawled) lines.push(`    as of Google's last crawl: ${crawled}`);
+  }
+
+  const issues = flattenRichResultIssues(rich);
+  for (const issue of issues.slice(0, RICH_RESULT_ISSUE_LINES)) {
+    const item = issue.itemName ? ` "${issue.itemName}"` : "";
+    lines.push(
+      `    ${issue.severity} · ${issue.richResultType}${item}: ${issue.issueMessage}`,
+    );
+  }
+  if (issues.length > RICH_RESULT_ISSUE_LINES) {
+    lines.push(
+      `    …and ${issues.length - RICH_RESULT_ISSUE_LINES} more issue${issues.length - RICH_RESULT_ISSUE_LINES === 1 ? "" : "s"} (full detail in structuredContent)`,
+    );
+  }
+  return lines;
+}
+
 const inspectInputSchema = {
   projectId: projectIdSchema,
   urls: z
@@ -326,7 +376,7 @@ export const inspectUrlsTool = {
   config: {
     title: "Inspect URLs in Google Search Console",
     description:
-      "Run Google Search Console's URL Inspection on up to 10 URLs of the connected property: index/coverage state, last crawl time, Google-selected vs declared canonical, and mobile/rich-results verdicts. Use it to answer 'is this page indexed? why not?'. Per-URL failures are reported inline. Read-only; uses no credits.",
+      "Run Google Search Console's URL Inspection on up to 10 URLs of the connected property: index/coverage state, last crawl time, Google-selected vs declared canonical, and rich-results verdicts with Google's own per-item issue messages. Use it to answer 'is this page indexed? why not?' and 'what does Google think is wrong with my structured data?'. Reflects Google's last crawl, not the page as it is right now — for unpublished or uncrawled markup use validate_structured_data. This is URL-by-URL and is not a property-wide indexation picture: Search Console's API does not expose the aggregate Page Indexing report, Crawl Stats, manual actions, or security issues, so clean verdicts here are not evidence the property as a whole is healthy — check those four in the Search Console UI. Per-URL failures are reported inline. Read-only; uses no credits.",
     inputSchema: inspectInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -382,7 +432,10 @@ export const inspectUrlsTool = {
         const canonical = index?.googleCanonical
           ? `, google-canonical ${index.googleCanonical}`
           : "";
-        return `  ${r.url} — ${verdict}: ${coverage}${canonical}`;
+        return [
+          `  ${r.url} — ${verdict}: ${coverage}${canonical}`,
+          ...describeRichResults(r.result),
+        ].join("\n");
       });
       const text =
         `${siteUrl} · inspected ${results.length} URL${results.length === 1 ? "" : "s"}\n` +

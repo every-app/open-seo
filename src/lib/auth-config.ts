@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
+import { bingProviderConfig } from "@/server/features/bing/oauth-config";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
 
 export function createBaseAuthConfig() {
@@ -47,6 +48,10 @@ export function createBaseAuthConfig() {
             prompt: "select_account consent",
             pkce: true,
           },
+          // Bing Webmaster Tools. Unlike Google there is no discovery document
+          // and no userinfo endpoint, so the endpoints are explicit and
+          // identity is decoded from the access token — see specs/0009.
+          bingProviderConfig,
         ],
       }),
     ],

@@ -14,6 +14,8 @@ import {
   BacklinkPulseCard,
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
+import { BingCard } from "@/client/features/dashboard/BingCard";
+import { RevenueCard } from "@/client/features/dashboard/RevenueCard";
 import { McpConnectCard } from "@/client/features/dashboard/McpConnectCard";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
@@ -305,62 +307,29 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
         <OnboardingChecklist projectId={projectId} activation={activation} />
 
-        {/* Every card is half width on large screens (only the checklist spans).
-          Cards with data render before setup pitches and empty states. */}
+        {/* Revenue spans the full width, then fixed half-width positions:
+          GSC | Bing, then Backlinks | Site audit. The MCP pitch leads the
+          grid during onboarding and shifts it until dismissed or used. */}
+        <RevenueCard projectId={projectId} />
+
         <div className="grid items-start gap-5 lg:grid-cols-2">
-          {[
-            // Array order is the within-bucket order after the data-first sort:
-            // the MCP pitch leads the setup cards.
-            ...(activation.mcp.firstToolCallAt || activation.mcp.cardDismissedAt
-              ? []
-              : [
-                  {
-                    key: "mcp",
-                    hasData: false,
-                    node: (
-                      <McpConnectCard
-                        projectId={projectId}
-                        activation={activation}
-                      />
-                    ),
-                  },
-                ]),
-            {
-              key: "gsc",
-              hasData: gscConnected,
-              node: <GscCard projectId={projectId} connected={gscConnected} />,
-            },
-            {
-              key: "audit",
-              hasData: overview?.audit != null,
-              node: (
-                <AuditHealthCard
-                  projectId={projectId}
-                  audit={overview?.audit ?? null}
-                />
-              ),
-            },
-            ...(showBacklinks
-              ? [
-                  {
-                    key: "backlinks",
-                    hasData:
-                      overview?.backlinks != null || refreshMutation.isPending,
-                    node: (
-                      <BacklinkPulseCard
-                        projectId={projectId}
-                        backlinks={overview?.backlinks ?? null}
-                        refreshing={refreshMutation.isPending}
-                      />
-                    ),
-                  },
-                ]
-              : []),
-          ]
-            .toSorted((a, b) => Number(b.hasData) - Number(a.hasData))
-            .map((card) => (
-              <div key={card.key}>{card.node}</div>
-            ))}
+          {activation.mcp.firstToolCallAt ||
+          activation.mcp.cardDismissedAt ? null : (
+            <McpConnectCard projectId={projectId} activation={activation} />
+          )}
+          <GscCard projectId={projectId} connected={gscConnected} />
+          <BingCard projectId={projectId} />
+          {showBacklinks ? (
+            <BacklinkPulseCard
+              projectId={projectId}
+              backlinks={overview?.backlinks ?? null}
+              refreshing={refreshMutation.isPending}
+            />
+          ) : null}
+          <AuditHealthCard
+            projectId={projectId}
+            audit={overview?.audit ?? null}
+          />
         </div>
       </div>
     </div>
