@@ -6,6 +6,7 @@ import {
   DEFAULT_LOCATION_CODE,
   isLabsLocationCode,
 } from "@/client/features/keywords/locations";
+import { isGlobalLocationCode } from "@/shared/domain-global-market";
 import type { ProjectMarket } from "@/client/features/projects/types";
 import {
   EMPTY_DOMAIN_FILTERS,
@@ -55,8 +56,10 @@ export function getDomainRouteState(
       ? projectMarket.locationCode
       : DEFAULT_LOCATION_CODE;
   // Domain analytics is Labs-backed; Google-Ads-only countries aren't valid.
+  // Global is a synthetic sentinel (not a Labs location) accepted separately.
   const normalizedLocationCode =
-    search.loc != null && isLabsLocationCode(search.loc)
+    search.loc != null &&
+    (isLabsLocationCode(search.loc) || isGlobalLocationCode(search.loc))
       ? search.loc
       : defaultLocationCode;
 

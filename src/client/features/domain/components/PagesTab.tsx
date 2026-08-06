@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Copy, Download, FileSpreadsheet, Sheet } from "lucide-react";
 import { toast } from "sonner";
 import { DomainKeywordsPagination } from "@/client/features/domain/components/DomainKeywordsPagination";
@@ -22,7 +22,8 @@ import {
   type PageRow,
   type PagesFilterValues,
 } from "@/client/features/domain/types";
-import { pagesToTable } from "@/client/features/domain/utils";
+import { pagesToTable, toPageSortMode } from "@/client/features/domain/utils";
+import { clearDomainPagesCache } from "@/serverFunctions/domain";
 import type { DomainOverviewRouteState } from "@/client/features/domain/domainRouteState";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
@@ -60,6 +61,8 @@ type Props = {
   onSortClick: (sort: DomainSortMode) => void;
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextSize: number) => void;
+  /** Bumped by the page-level Refresh button; triggers a cache-bypassing refetch of this exact table. */
+  refreshToken: number;
 };
 
 export function PagesTab({
@@ -70,6 +73,7 @@ export function PagesTab({
   onSortClick,
   onPageChange,
   onPageSizeChange,
+  refreshToken,
 }: Props) {
   const [showFilters, setShowFilters] = useState(false);
   const filterPreferences = useDomainPageFilterPreferences(
@@ -104,6 +108,41 @@ export function PagesTab({
     appliedFilters: appliedPagesFilters,
     enabled: Boolean(domain),
   });
+
+  const lastRefreshToken = useRef(refreshToken);
+  useEffect(() => {
+    if (refreshToken === lastRefreshToken.current) return;
+    lastRefreshToken.current = refreshToken;
+    void clearDomainPagesCache({
+      data: {
+        projectId,
+        domain,
+        includeSubdomains: routeState.subdomains,
+        locationCode: routeState.sentLocationCode,
+        page: routeState.page,
+        pageSize: routeState.pageSize,
+        sortMode: toPageSortMode(routeState.sort),
+        sortOrder: routeState.order,
+        filters: appliedPagesFilters,
+      },
+    })
+      .then(() => query.refetch())
+      .catch((error: unknown) => {
+        console.error("domain.pages.clear-cache failed:", error);
+      });
+  }, [
+    appliedPagesFilters,
+    domain,
+    projectId,
+    query,
+    refreshToken,
+    routeState.order,
+    routeState.page,
+    routeState.pageSize,
+    routeState.sentLocationCode,
+    routeState.sort,
+    routeState.subdomains,
+  ]);
 
   const rows = query.data?.pages ?? EMPTY_PAGES_ROWS;
   const totalCount = query.data?.totalCount ?? null;
