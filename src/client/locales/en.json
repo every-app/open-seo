@@ -1,0 +1,143 @@
+{
+  "nav": {
+    "groups": {
+      "connect": "Connect",
+      "overview": "Overview",
+      "research": "Research",
+      "mySite": "My Site"
+    },
+    "items": {
+      "dashboard": { "label": "Dashboard", "help": "Your project's home page — a quick summary of keywords, rankings and site health." },
+      "keywords": { "label": "Keyword Research", "help": "Discover new keywords, their search volume, competition and ranking difficulty." },
+      "saved": { "label": "Saved Keywords", "help": "Keywords you've bookmarked from research to track or come back to later." },
+      "rankTracking": { "label": "Rank Tracking", "help": "See where your pages rank in Google for the keywords you're targeting, tracked over time." },
+      "gscInsights": { "label": "GSC Insights", "help": "Real clicks, impressions and average position from your connected Google Search Console." },
+      "domain": { "label": "Domain Overview", "help": "A snapshot of any domain's overall SEO strength — traffic estimate, top keywords, authority." },
+      "backlinks": { "label": "Backlinks", "help": "Websites linking to a domain — a major ranking factor in Google's algorithm." },
+      "audit": { "label": "Site Audit", "help": "Scans your site for technical SEO issues: broken links, missing tags, slow pages and more." },
+      "brandLookup": { "label": "Brand Lookup", "help": "Check how a brand or company name appears across search results and AI answers." },
+      "promptExplorer": { "label": "Prompt Explorer", "help": "See how your site shows up when AI assistants (ChatGPT, Gemini...) answer relevant questions." },
+      "aiMcp": { "label": "AI & MCP", "help": "Connect OpenSEO to AI assistants like Claude so they can run SEO tasks for you directly." }
+    }
+  },
+  "help": {
+    "hint": "What's this?"
+  },
+  "lang": {
+    "switcher": "Language",
+    "english": "English",
+    "arabic": "العربية"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "analytics": "Analytics",
+    "analyticsHelp": "Help improve OpenSEO",
+    "analyticsShare": "Share analytics and usage data.",
+    "about": "About",
+    "version": "Version"
+  },
+  "createProject": {
+    "title": "New project",
+    "name": "Name",
+    "nameHelp": "A label to recognize this project by — your company or website name. Only used inside OpenSEO, not shown publicly.",
+    "namePlaceholder": "Acme Inc.",
+    "domain": "Domain",
+    "domainOptional": "(optional)",
+    "domainHelp": "Your website's domain. Needed to connect Google Search Console, track rankings, and run a site audit — you can add it later if you don't have it handy now.",
+    "domainPlaceholder": "example.com",
+    "domainNote": "You can connect Search Console and set up rank tracking after creating the project.",
+    "country": "Country",
+    "countryHelp": "The country whose Google results and search volume this project focuses on. Affects keyword data, rankings and competitor comparisons.",
+    "language": "Language",
+    "languageHelp": "The language keyword and search data is pulled in. Automatically matches the country you picked; only changeable when a country supports more than one.",
+    "marketNote": "Keyword, SERP, and domain data uses this country and language unless a call asks for a different one. Change it later in project settings.",
+    "cancel": "Cancel",
+    "create": "Create project",
+    "nameRequired": "Project name is required",
+    "success": "Project created",
+    "error": "Failed to create project"
+  },
+  "keywordResearch": {
+    "placeholder": "Enter a keyword",
+    "search": "Search",
+    "resultsSuffix": "results",
+    "mode": { "auto": "Auto", "related": "Related keywords", "suggestions": "Suggestions", "ideas": "Ideas" },
+    "modeHelp": "How to expand your keyword: Auto picks the best method, Related finds similar terms, Suggestions mirrors Google's autocomplete, Ideas is broader topic exploration.",
+    "resultsHelp": "Maximum number of keywords to return per search.",
+    "clickstream": "Clickstream-refined volumes",
+    "clickstreamHelp": "Google reports one combined search volume for similar keywords (e.g. 'seo tool' and 'seo tools'). Turn this on to estimate each keyword's own volume. Costs 2x the credits.",
+    "gadsNotice": "Keyword data for this country comes from Google Ads — search volume, CPC, and trends are available, but difficulty and intent are not.",
+    "filters": "Filters",
+    "showingKeywords": "Showing {{count}} keywords",
+    "showingFilteredKeywords": "Showing {{filtered}} of {{total}} keywords",
+    "selectedOfTotal": "{{selected}} of {{total}} selected",
+    "export": "Export",
+    "exportToSheets": "Export to Sheets",
+    "exportCsv": "Export CSV",
+    "saveKeywords": "Save Keywords",
+    "refineResults": "Refine table results",
+    "clearAll": "Clear all",
+    "includeTerms": "Include Terms",
+    "excludeTerms": "Exclude Terms",
+    "searchVolumeFilter": "Search Volume",
+    "cpcFilter": "CPC (USD)",
+    "difficultyFilter": "Difficulty",
+    "searchTrends": "Search Trends",
+    "serpAnalysis": "SERP Analysis",
+    "organicResults": "{{count}} organic results",
+    "retry": "Retry",
+    "columns": {
+      "keyword": "Keyword",
+      "volume": "Volume",
+      "volumeHelp": "Estimated average monthly searches for this keyword.",
+      "cpc": "CPC",
+      "cpcHelp": "Cost per click in USD.",
+      "comp": "Comp.",
+      "compHelp": "Paid-search competition from Google Ads (0-1): higher means more advertisers bidding.",
+      "score": "Score",
+      "scoreHelp": "Organic ranking difficulty (0-100): higher means harder to reach Google's top 10.",
+      "intent": "Intent",
+      "intentHelp": "The likely reason behind the search: Informational (learning), Navigational (finding a site), Commercial (comparing), or Transactional (ready to buy/act)."
+    },
+    "intent": {
+      "short": { "informational": "Info", "commercial": "Comm", "transactional": "Trans", "navigational": "Nav", "unknown": "?" },
+      "full": { "informational": "Informational", "commercial": "Commercial", "transactional": "Transactional", "navigational": "Navigational", "unknown": "Unknown" },
+      "desc": {
+        "informational": "The searcher wants information or answers. Use this for educational content, guides, and comparison-light explainers.",
+        "commercial": "The searcher is researching options before a purchase. Treat this as buying intent for comparisons, alternatives, and product-led pages.",
+        "transactional": "The searcher is ready to complete an action, often a purchase. Prioritize clear offers, pricing, trials, or conversion paths.",
+        "navigational": "The searcher is looking for a specific site, brand, or page. These queries usually reward matching the expected destination.",
+        "unknown": "Intent was not available for this keyword, so avoid making content strategy decisions from this badge alone."
+      }
+    }
+  },
+  "guide": {
+    "navLabel": "How to use OpenSEO",
+    "title": "How to Get the Most Out of OpenSEO",
+    "intro": "A practical, priority-ordered guide to using this tool for real SEO results — not just clicking around.",
+    "step1Title": "1. Set up your project correctly",
+    "step1Body": "Enter your real domain and pick the right country/language when creating a project — every number after this (rankings, volume, competitors) is scoped to this market. Getting this wrong quietly skews everything.",
+    "step2Title": "2. Connect Google Search Console",
+    "step2Body": "This is the single most valuable connection you can make. It gives you your *actual* clicks, impressions and average position from Google — data no keyword tool can estimate for you. Do this before anything else in Settings.",
+    "step3Title": "3. Start keyword research broad, then narrow",
+    "step3Body": "Search a broad 'seed' keyword first (e.g. your main product/service). Use 'Ideas' mode to see the full landscape, then use filters (Volume, low Score = easier to rank, matching Intent) to find realistic opportunities — not just the highest-volume terms everyone else is chasing.",
+    "step4Title": "4. Prioritize by Score vs Volume, not Volume alone",
+    "step4Body": "A keyword with 500 searches/month and Score 15 is usually a better target than one with 5,000 searches and Score 80 — especially for a new or small site. Low competition keywords compound: you rank faster, get real traffic sooner, and build authority to go after bigger terms later.",
+    "step5Title": "5. Match content to Intent",
+    "step5Body": "Informational keywords want a helpful guide/article. Commercial keywords want a comparison or 'best X' page. Transactional keywords want a product/service page with a clear call-to-action. Writing the wrong content type for the intent is why pages with 'good' keywords still don't rank or convert.",
+    "step6Title": "6. Track rankings for keywords you actually target",
+    "step6Body": "Don't track everything — track the specific keywords you're writing content for or optimizing pages around. Rank Tracking tells you if your work is paying off over time; without it you're optimizing blind.",
+    "step7Title": "7. Check Backlinks — yours and competitors'",
+    "step7Body": "Backlinks remain one of Google's strongest ranking signals. Look up your own domain to see your current link profile, then look up a competitor ranking above you for the same keywords — their backlinks often explain the gap.",
+    "step8Title": "8. Run a Site Audit before chasing new keywords",
+    "step8Body": "Technical problems (broken links, missing tags, slow pages) can hold back pages that would otherwise rank well. Fixing existing issues is often faster ROI than producing new content.",
+    "step9Title": "9. Use Domain Overview to size up any market",
+    "step9Body": "Before investing heavily in a niche, look up the strongest domains in it. It tells you honestly whether you're entering an easy market or a crowded one — and who you're actually competing with.",
+    "step10Title": "10. Check Brand Lookup and Prompt Explorer periodically",
+    "step10Body": "Increasingly, people find businesses through AI assistants (ChatGPT, Gemini) as well as Google. These tools show whether your brand shows up when AI answers relevant questions — a newer but fast-growing channel worth monitoring.",
+    "closingTitle": "The core loop",
+    "closingBody": "Research keywords → prioritize the realistic ones → publish content matched to intent → track rankings → fix technical issues → repeat. SEO compounds over months, not days — consistency beats intensity."
+  }
+}

@@ -2,7 +2,9 @@ import * as React from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { Modal } from "@/client/components/Modal";
+import { HelpHint } from "@/client/components/HelpHint";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { setLastProjectId } from "@/client/lib/active-project";
 import {
@@ -13,6 +15,7 @@ import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFie
 import { createProject } from "@/serverFunctions/projects";
 
 export function CreateProjectModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [name, setName] = React.useState("");
@@ -35,7 +38,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       setLastProjectId(created.id);
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
       onClose();
-      toast.success("Project created");
+      toast.success(t("createProject.success"));
       // Land on the new project's settings so they can connect Search Console
       // and finish setting up the workspace.
       void navigate({
@@ -44,7 +47,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       });
     },
     onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Failed to create project")),
+      toast.error(getStandardErrorMessage(error, t("createProject.error"))),
   });
 
   const isPending = createMutation.isPending;
@@ -53,7 +56,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     if (isPending) return;
     if (!name.trim()) {
-      toast.error("Project name is required");
+      toast.error(t("createProject.nameRequired"));
       return;
     }
     createMutation.mutate();
@@ -67,16 +70,19 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <h2 id="create-project-title" className="text-lg font-semibold">
-          New project
+          {t("createProject.title")}
         </h2>
 
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Name</span>
+          <span className="font-medium">
+            {t("createProject.name")}
+            <HelpHint text={t("createProject.nameHelp")} />
+          </span>
           <input
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Acme Inc."
+            placeholder={t("createProject.namePlaceholder")}
             maxLength={120}
             autoFocus
             className="input input-bordered w-full"
@@ -85,28 +91,29 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
 
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium">
-            Domain <span className="text-base-content/50">(optional)</span>
+            {t("createProject.domain")}{" "}
+            <span className="text-base-content/50">
+              {t("createProject.domainOptional")}
+            </span>
+            <HelpHint text={t("createProject.domainHelp")} />
           </span>
           <input
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
-            placeholder="example.com"
+            placeholder={t("createProject.domainPlaceholder")}
             maxLength={255}
             className="input input-bordered w-full"
           />
           <span className="text-xs text-base-content/50">
-            You can connect Search Console and set up rank tracking after
-            creating the project.
+            {t("createProject.domainNote")}
           </span>
         </label>
 
         <div className="flex flex-col gap-1.5">
           <ProjectMarketFields value={market} onChange={setMarket} />
           <span className="text-xs text-base-content/50">
-            Keyword, SERP, and domain data uses this country and language unless
-            a call asks for a different one. Change it later in project
-            settings.
+            {t("createProject.marketNote")}
           </span>
         </div>
 
@@ -117,14 +124,14 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             disabled={isPending}
           >
-            Cancel
+            {t("createProject.cancel")}
           </button>
           <button
             type="submit"
             className="btn btn-primary btn-sm"
             disabled={isPending}
           >
-            Create project
+            {t("createProject.create")}
           </button>
         </div>
       </form>

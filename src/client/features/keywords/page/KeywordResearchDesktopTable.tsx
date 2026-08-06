@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   createColumnHelper,
   type ColumnDef,
@@ -48,6 +49,7 @@ export function KeywordResearchDesktopTable({
   resetFilters,
   handleRowClick,
 }: Props) {
+  const { t } = useTranslation();
   const selectAnchorRef = useSelectionAnchor();
   const rowSelection = useMemo<RowSelectionState>(
     () =>
@@ -62,7 +64,7 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("keyword", {
         header: () => (
           <SortHeader
-            label="Keyword"
+            label={t("keywordResearch.columns.keyword")}
             field="keyword"
             current={sortField}
             dir={sortDir}
@@ -86,7 +88,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("searchVolume", {
         header: () => (
           <SortHeader
-            label="Volume"
+            label={t("keywordResearch.columns.volume")}
+            helpText={t("keywordResearch.columns.volumeHelp")}
             field="searchVolume"
             current={sortField}
             dir={sortDir}
@@ -104,8 +107,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("cpc", {
         header: () => (
           <SortHeader
-            label="CPC"
-            helpText="Cost per click in USD."
+            label={t("keywordResearch.columns.cpc")}
+            helpText={t("keywordResearch.columns.cpcHelp")}
             field="cpc"
             current={sortField}
             dir={sortDir}
@@ -126,8 +129,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("competition", {
         header: () => (
           <SortHeader
-            label="Comp."
-            helpText="Paid-search competition from Google Ads (0-1): higher means more advertisers bidding."
+            label={t("keywordResearch.columns.comp")}
+            helpText={t("keywordResearch.columns.compHelp")}
             field="competition"
             current={sortField}
             dir={sortDir}
@@ -148,8 +151,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("keywordDifficulty", {
         header: () => (
           <SortHeader
-            label="Score"
-            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
+            label={t("keywordResearch.columns.score")}
+            helpText={t("keywordResearch.columns.scoreHelp")}
             field="keywordDifficulty"
             current={sortField}
             dir={sortDir}
@@ -161,7 +164,11 @@ export function KeywordResearchDesktopTable({
         meta: { headerClassName: "text-right", cellClassName: "text-right" },
       }),
       keywordColumnHelper.accessor("intent", {
-        header: "Intent",
+        header: () => (
+          <span title={t("keywordResearch.columns.intentHelp")}>
+            {t("keywordResearch.columns.intent")}
+          </span>
+        ),
         cell: ({ getValue }) => <IntentBadge intent={getValue()} />,
         meta: {
           headerClassName: "text-center",

@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Languages, Monitor, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
+import { type LangPreference, useLangPreference } from "@/client/lib/lang";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { version } from "../../../package.json";
@@ -21,11 +23,23 @@ const THEME_OPTIONS: {
   { value: "dark", label: "Dark", icon: Moon },
 ];
 
+const LANG_OPTIONS: { value: LangPreference; labelKey: string }[] = [
+  { value: "en", labelKey: "lang.english" },
+  { value: "ar", labelKey: "lang.arabic" },
+];
+
 function SettingsPage() {
+  const { t, i18n: i18nInstance } = useTranslation();
   const isHosted = isHostedClientAuthMode();
   const { themePreference, setThemePreference } = useThemePreference();
+  const { lang, setLang } = useLangPreference();
   const { data: session, isPending: isSessionPending } = useSession();
   const [isSaving, setIsSaving] = useState(false);
+
+  const handleLangSelect = (next: LangPreference) => {
+    setLang(next);
+    i18nInstance.changeLanguage(next);
+  };
 
   const analyticsEnabled = session?.user?.analyticsOptedOut !== true;
 
@@ -50,14 +64,16 @@ function SettingsPage() {
   return (
     <div className="h-full overflow-auto bg-base-100 px-4 py-8 pb-24 md:px-6 md:py-12 md:pb-8">
       <div className="mx-auto max-w-xl space-y-10">
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">
+          {t("settings.title")}
+        </h1>
 
         <section className="space-y-3">
           <h2 className="text-sm font-medium text-base-content/50">
-            Appearance
+            {t("settings.appearance")}
           </h2>
           <div className="flex items-center justify-between gap-6">
-            <span className="text-sm">Theme</span>
+            <span className="text-sm">{t("settings.theme")}</span>
             <div
               role="radiogroup"
               aria-label="Theme preference"
@@ -87,18 +103,50 @@ function SettingsPage() {
               })}
             </div>
           </div>
+
+          <div className="flex items-center justify-between gap-6">
+            <span className="text-sm">{t("lang.switcher")}</span>
+            <div
+              role="radiogroup"
+              aria-label={t("lang.switcher")}
+              className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
+            >
+              {LANG_OPTIONS.map((option) => {
+                const isActive = option.value === lang;
+
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isActive}
+                    aria-label={t(option.labelKey)}
+                    className={`flex cursor-pointer items-center gap-1.5 rounded-md px-3 py-1.5 text-xs transition-colors ${
+                      isActive
+                        ? "bg-base-100 text-base-content shadow-sm"
+                        : "text-base-content/50 hover:text-base-content/80"
+                    }`}
+                    onClick={() => handleLangSelect(option.value)}
+                  >
+                    <Languages className="size-3.5" />
+                    {option.value.toUpperCase()}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </section>
 
         {isHosted ? (
           <section className="space-y-3">
             <h2 className="text-sm font-medium text-base-content/50">
-              Analytics
+              {t("settings.analytics")}
             </h2>
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-sm">Help improve OpenSEO</p>
+                <p className="text-sm">{t("settings.analyticsHelp")}</p>
                 <p className="mt-1 text-sm text-base-content/60">
-                  Share analytics and usage data.
+                  {t("settings.analyticsShare")}
                 </p>
               </div>
               <input
@@ -115,9 +163,11 @@ function SettingsPage() {
           </section>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-base-content/50">About</h2>
+            <h2 className="text-sm font-medium text-base-content/50">
+              {t("settings.about")}
+            </h2>
             <div className="flex items-center justify-between gap-6">
-              <span className="text-sm">Version</span>
+              <span className="text-sm">{t("settings.version")}</span>
               <span className="font-mono text-sm text-base-content/60">
                 v{version}
               </span>

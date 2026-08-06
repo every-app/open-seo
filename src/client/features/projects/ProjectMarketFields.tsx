@@ -1,4 +1,6 @@
+import { useTranslation } from "react-i18next";
 import { LocationSelect } from "@/client/components/LocationSelect";
+import { HelpHint } from "@/client/components/HelpHint";
 import {
   getLanguageCode,
   getLanguageOptions,
@@ -20,12 +22,16 @@ export function ProjectMarketFields({
   onChange: (market: ProjectMarket) => void;
   hideLanguageOnMobile?: boolean;
 }) {
+  const { t } = useTranslation();
   const languageOptions = getLanguageOptions(value.locationCode);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">Country</span>
+        <span className="font-medium">
+          {t("createProject.country")}
+          <HelpHint text={t("createProject.countryHelp")} />
+        </span>
         <LocationSelect
           value={value.locationCode}
           onChange={(locationCode) =>
@@ -39,7 +45,10 @@ export function ProjectMarketFields({
       <label
         className={`${hideLanguageOnMobile ? "hidden sm:flex" : "flex"} flex-col gap-1.5 text-sm`}
       >
-        <span className="font-medium">Language</span>
+        <span className="font-medium">
+          {t("createProject.language")}
+          <HelpHint text={t("createProject.languageHelp")} />
+        </span>
         <select
           value={value.languageCode}
           onChange={(event) =>

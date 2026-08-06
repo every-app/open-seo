@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import type { LinkOptions } from "@tanstack/react-router";
 import { useEffect, useState, type ComponentType } from "react";
+import { useTranslation } from "react-i18next";
 import {
   CircleHelp,
   CreditCard,
@@ -18,6 +19,7 @@ import {
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
+import { LanguagePreferenceMenuItems } from "@/client/components/LanguagePreferenceMenuItems";
 import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -47,14 +49,17 @@ const navItemActiveProps = {
 function SidebarNavLink({
   icon: Icon,
   label,
+  helpKey,
   onNavigate,
   linkProps,
 }: {
   icon: ComponentType<{ className?: string }>;
   label: string;
+  helpKey?: string;
   onNavigate?: () => void;
   linkProps: LinkOptions;
 }) {
+  const { t } = useTranslation();
   return (
     <Link
       onClick={onNavigate}
@@ -62,6 +67,7 @@ function SidebarNavLink({
       {...linkProps}
       className={navItemClass}
       activeProps={navItemActiveProps}
+      title={helpKey ? t(helpKey) : undefined}
     >
       {({ isActive }: { isActive: boolean }) => (
         <>
@@ -69,7 +75,7 @@ function SidebarNavLink({
             <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
           ) : null}
           <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
+          <span className="truncate">{t(label)}</span>
         </>
       )}
     </Link>
@@ -77,6 +83,7 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
+  const { t } = useTranslation();
   const navGroups = [
     ...(projectId ? getProjectNavGroups(projectId) : []),
     connectNavGroup,
@@ -175,15 +182,16 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
           {navGroups.map((group) => (
             <div key={group.label} className="mb-1">
               <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                {group.label}
+                {t(group.label)}
               </div>
               {group.items.map((item) => {
-                const { icon, label, ...linkProps } = item;
+                const { icon, label, helpKey, ...linkProps } = item;
                 return (
                   <SidebarNavLink
                     key={linkProps.to}
                     icon={icon}
                     label={label}
+                    helpKey={helpKey}
                     onNavigate={onNavigate}
                     linkProps={linkProps}
                   />
@@ -275,6 +283,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
               </li>
             ) : null}
             <ThemePreferenceMenuItems />
+            <LanguagePreferenceMenuItems />
             {isHostedMode ? (
               <>
                 <li
