@@ -39,6 +39,23 @@ Try OpenSEO for free on our website. If you want to support the project, a hoste
 OpenSEO exposes an MCP server so AI agents like Claude Code, OpenClaw, and Hermes can use your SEO data directly. Agent Skills are reusable workflows that guide your agent through SEO tasks using the MCP.
 
 - [Set up OpenSEO MCP](https://openseo.so/docs/mcp)
+
+### Self-hosted analytics and crawling tools
+
+Self-hosted MCP deployments also expose `ga4_traffic`, `gsc_second_page`, and
+`crawl_audit`. The crawler is standalone and needs no credentials. It respects
+robots.txt and accepts a start URL, depth cap, and page cap.
+
+To enable the Google tools, create a Google Cloud service account, enable the
+Google Analytics Data API and Search Console API, download its JSON key, and
+set `GOOGLE_APPLICATION_CREDENTIALS` to the absolute path of that file in the
+OpenSEO server environment. In GA4, add the service-account email as a Viewer
+to each numeric property and pass that property ID to `ga4_traffic`. In Search
+Console, add the same email as a Full user (or Owner) on each site property and
+pass its property URL (or `sc-domain:` property) to `gsc_second_page`. The two
+APIs can share one service account; permissions are granted separately in GA4
+and Search Console.
+
 - [Set up OpenSEO Agent Skills](https://openseo.so/docs/skills/setup)
 
 ## Self-Hosting

@@ -7,7 +7,9 @@ import {
   Link2,
   MessageSquare,
   Search,
+  Send,
   Sparkles,
+  Swords,
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
@@ -43,6 +45,11 @@ const projectNavItems = [
     icon: GoogleGlyphMuted,
   },
   {
+    to: "/p/$projectId/indexing" as const,
+    label: "Indexing",
+    icon: Send,
+  },
+  {
     to: "/p/$projectId/domain" as const,
     label: "Domain Overview",
     icon: Globe,
@@ -75,10 +82,16 @@ const aiNavItem = linkOptions({
   icon: Bot,
 });
 
+const warRoomNavItem = linkOptions({
+  to: "/war-room" as const,
+  label: "War Room",
+  icon: Swords,
+});
+
 // Always-visible sidebar group (not project-scoped, unlike the groups below).
 export const connectNavGroup = {
   label: "Connect",
-  items: [aiNavItem],
+  items: [aiNavItem, warRoomNavItem],
 };
 
 function getProjectNavItems(projectId: string) {
@@ -117,6 +130,7 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/indexing"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

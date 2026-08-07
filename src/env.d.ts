@@ -26,11 +26,16 @@ declare namespace Cloudflare {
     };
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
+    BING_CLIENT_ID?: string;
+    BING_CLIENT_SECRET?: string;
+    BING_WEBMASTER_API_KEY?: string;
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
     AUTUMN_SECRET_KEY?: string;
     AUTUMN_WEBHOOK_SECRET?: string;
+    INDEXNOW_WEBHOOK_SECRET?: string;
+    INDEXNOW_WEBHOOK_HOSTS?: string;
 
     // Cloudflare Turnstile — signup captcha (hosted only). Secret verifies
     // tokens server-side; site key is public and inlined into the client build.
@@ -53,6 +58,11 @@ interface ImportMetaEnv {
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;
   readonly POSTHOG_HOST?: string;
+  readonly BING_CLIENT_ID?: string;
+  readonly BING_CLIENT_SECRET?: string;
+  readonly BING_WEBMASTER_API_KEY?: string;
+  readonly INDEXNOW_WEBHOOK_SECRET?: string;
+  readonly INDEXNOW_WEBHOOK_HOSTS?: string;
   readonly TURNSTILE_SITE_KEY?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;

@@ -22,6 +22,7 @@ import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOauthConsentRouteImport } from './routes/_authenticated.oauth-consent'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
+import { Route as AppWarRoomRouteImport } from './routes/_app/war-room'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
 import { Route as AppProjectsRouteImport } from './routes/_app/projects'
@@ -29,6 +30,7 @@ import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated.onboarding.index'
+import { Route as ApiWebhooksIndexnowRouteImport } from './routes/api/webhooks/indexnow'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
@@ -37,6 +39,7 @@ import { Route as AppHelpDataforseoApiKeyRouteImport } from './routes/_app/help/
 import { Route as ProjectPProjectIdRouteRouteImport } from './routes/_project/p/$projectId/route'
 import { Route as ProjectPProjectIdIndexRouteImport } from './routes/_project/p/$projectId/index'
 import { Route as ApiGscOauthCallbackRouteImport } from './routes/api/gsc/oauth/callback'
+import { Route as ApiBingOauthCallbackRouteImport } from './routes/api/bing/oauth/callback'
 import { Route as ProjectPProjectIdSettingsRouteImport } from './routes/_project/p/$projectId/settings'
 import { Route as ProjectPProjectIdSearchPerformanceRouteImport } from './routes/_project/p/$projectId/search-performance'
 import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/$projectId/saved'
@@ -44,6 +47,7 @@ import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$p
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
+import { Route as ProjectPProjectIdIndexingRouteImport } from './routes/_project/p/$projectId/indexing'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
@@ -115,6 +119,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppWarRoomRoute = AppWarRoomRouteImport.update({
+  id: '/war-room',
+  path: '/war-room',
+  getParentRoute: () => AppRouteRoute,
+} as any)
 const AppSupportRoute = AppSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -152,6 +161,11 @@ const AuthenticatedOnboardingIndexRoute =
     path: '/onboarding/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiWebhooksIndexnowRoute = ApiWebhooksIndexnowRouteImport.update({
+  id: '/api/webhooks/indexnow',
+  path: '/api/webhooks/indexnow',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAutumnSplatRoute = ApiAutumnSplatRouteImport.update({
   id: '/api/autumn/$',
   path: '/api/autumn/$',
@@ -193,6 +207,11 @@ const ApiGscOauthCallbackRoute = ApiGscOauthCallbackRouteImport.update({
   path: '/api/gsc/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiBingOauthCallbackRoute = ApiBingOauthCallbackRouteImport.update({
+  id: '/api/bing/oauth/callback',
+  path: '/api/bing/oauth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProjectPProjectIdSettingsRoute =
   ProjectPProjectIdSettingsRouteImport.update({
     id: '/settings',
@@ -231,6 +250,12 @@ const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
     path: '/keywords',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
+const ProjectPProjectIdIndexingRoute =
+  ProjectPProjectIdIndexingRouteImport.update({
+    id: '/indexing',
+    path: '/indexing',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
 const ProjectPProjectIdDomainRoute = ProjectPProjectIdDomainRouteImport.update({
@@ -291,6 +316,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AppProjectsRoute
   '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
+  '/war-room': typeof AppWarRoomRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -302,11 +328,13 @@ export interface FileRoutesByFullPath {
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/indexing': typeof ProjectPProjectIdIndexingRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
@@ -314,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
@@ -332,6 +361,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AppProjectsRoute
   '/settings': typeof AppSettingsRoute
   '/support': typeof AppSupportRoute
+  '/war-room': typeof AppWarRoomRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -342,16 +372,19 @@ export interface FileRoutesByTo {
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/p/$projectId/indexing': typeof ProjectPProjectIdIndexingRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
@@ -374,6 +407,7 @@ export interface FileRoutesById {
   '/_app/projects': typeof AppProjectsRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/support': typeof AppSupportRoute
+  '/_app/war-room': typeof AppWarRoomRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_authenticated/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -386,11 +420,13 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
+  '/_project/p/$projectId/indexing': typeof ProjectPProjectIdIndexingRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
@@ -398,6 +434,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
   '/_project/p/$projectId/search-performance': typeof ProjectPProjectIdSearchPerformanceRoute
   '/_project/p/$projectId/settings': typeof ProjectPProjectIdSettingsRoute
+  '/api/bing/oauth/callback': typeof ApiBingOauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/_project/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
@@ -418,6 +455,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/settings'
     | '/support'
+    | '/war-room'
     | '/sign-in'
     | '/sign-up'
     | '/oauth-consent'
@@ -429,11 +467,13 @@ export interface FileRouteTypes {
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/onboarding/'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
+    | '/p/$projectId/indexing'
     | '/p/$projectId/keywords'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
@@ -441,6 +481,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
+    | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/rank-tracking/$configId'
@@ -459,6 +500,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/settings'
     | '/support'
+    | '/war-room'
     | '/sign-in'
     | '/sign-up'
     | '/oauth-consent'
@@ -469,16 +511,19 @@ export interface FileRouteTypes {
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/onboarding'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
+    | '/p/$projectId/indexing'
     | '/p/$projectId/keywords'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/sam'
     | '/p/$projectId/saved'
     | '/p/$projectId/search-performance'
     | '/p/$projectId/settings'
+    | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/rank-tracking/$configId'
@@ -500,6 +545,7 @@ export interface FileRouteTypes {
     | '/_app/projects'
     | '/_app/settings'
     | '/_app/support'
+    | '/_app/war-room'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_authenticated/oauth-consent'
@@ -512,11 +558,13 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/_authenticated/onboarding/'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
     | '/_project/p/$projectId/domain'
+    | '/_project/p/$projectId/indexing'
     | '/_project/p/$projectId/keywords'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
@@ -524,6 +572,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/saved'
     | '/_project/p/$projectId/search-performance'
     | '/_project/p/$projectId/settings'
+    | '/api/bing/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/'
     | '/_project/p/$projectId/rank-tracking/$configId'
@@ -544,6 +593,8 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
+  ApiWebhooksIndexnowRoute: typeof ApiWebhooksIndexnowRoute
+  ApiBingOauthCallbackRoute: typeof ApiBingOauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
 }
 
@@ -640,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/war-room': {
+      id: '/_app/war-room'
+      path: '/war-room'
+      fullPath: '/war-room'
+      preLoaderRoute: typeof AppWarRoomRouteImport
+      parentRoute: typeof AppRouteRoute
+    }
     '/_app/support': {
       id: '/_app/support'
       path: '/support'
@@ -688,6 +746,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding/'
       preLoaderRoute: typeof AuthenticatedOnboardingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/webhooks/indexnow': {
+      id: '/api/webhooks/indexnow'
+      path: '/api/webhooks/indexnow'
+      fullPath: '/api/webhooks/indexnow'
+      preLoaderRoute: typeof ApiWebhooksIndexnowRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/autumn/$': {
       id: '/api/autumn/$'
@@ -745,6 +810,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiGscOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/bing/oauth/callback': {
+      id: '/api/bing/oauth/callback'
+      path: '/api/bing/oauth/callback'
+      fullPath: '/api/bing/oauth/callback'
+      preLoaderRoute: typeof ApiBingOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_project/p/$projectId/settings': {
       id: '/_project/p/$projectId/settings'
       path: '/settings'
@@ -792,6 +864,13 @@ declare module '@tanstack/react-router' {
       path: '/keywords'
       fullPath: '/p/$projectId/keywords'
       preLoaderRoute: typeof ProjectPProjectIdKeywordsRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
+    '/_project/p/$projectId/indexing': {
+      id: '/_project/p/$projectId/indexing'
+      path: '/indexing'
+      fullPath: '/p/$projectId/indexing'
+      preLoaderRoute: typeof ProjectPProjectIdIndexingRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
     '/_project/p/$projectId/domain': {
@@ -859,6 +938,7 @@ interface AppRouteRouteChildren {
   AppProjectsRoute: typeof AppProjectsRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppSupportRoute: typeof AppSupportRoute
+  AppWarRoomRoute: typeof AppWarRoomRoute
   AppIndexRoute: typeof AppIndexRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
   AppHelpOpenrouterApiKeyRoute: typeof AppHelpOpenrouterApiKeyRoute
@@ -870,6 +950,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppProjectsRoute: AppProjectsRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppSupportRoute: AppSupportRoute,
+  AppWarRoomRoute: AppWarRoomRoute,
   AppIndexRoute: AppIndexRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,
   AppHelpOpenrouterApiKeyRoute: AppHelpOpenrouterApiKeyRoute,
@@ -919,6 +1000,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
+  ProjectPProjectIdIndexingRoute: typeof ProjectPProjectIdIndexingRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
@@ -935,6 +1017,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
+    ProjectPProjectIdIndexingRoute: ProjectPProjectIdIndexingRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
@@ -1007,6 +1090,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
+  ApiWebhooksIndexnowRoute: ApiWebhooksIndexnowRoute,
+  ApiBingOauthCallbackRoute: ApiBingOauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport

@@ -30,6 +30,13 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import { crawlAuditTool } from "@/server/mcp/tools/crawl-audit";
+import { ga4TrafficTool } from "@/server/mcp/tools/ga4-traffic";
+import { gscSecondPageTool } from "@/server/mcp/tools/gsc-second-page";
+import { getIndexingQueueTool } from "@/server/mcp/tools/get-indexing-queue";
+import { getBingCrawlIssuesTool } from "@/server/mcp/tools/get-bing-crawl-issues";
+import { getBingVisibilityTool } from "@/server/mcp/tools/get-bing-visibility";
+import { submitIndexNowUrlsTool } from "@/server/mcp/tools/submit-indexnow-urls";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
 // PostHog — the MCP route has no error middleware of its own. Tools are
@@ -251,6 +258,69 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getAuditPagesTool.name,
       getAuditPagesTool.config.outputSchema,
       getAuditPagesTool.handler,
+    ),
+  );
+  server.registerTool(
+    ga4TrafficTool.name,
+    ga4TrafficTool.config,
+    instrumentMcpToolHandler(
+      ga4TrafficTool.name,
+      ga4TrafficTool.config.outputSchema,
+      ga4TrafficTool.handler,
+    ),
+  );
+  server.registerTool(
+    gscSecondPageTool.name,
+    gscSecondPageTool.config,
+    instrumentMcpToolHandler(
+      gscSecondPageTool.name,
+      gscSecondPageTool.config.outputSchema,
+      gscSecondPageTool.handler,
+    ),
+  );
+  server.registerTool(
+    crawlAuditTool.name,
+    crawlAuditTool.config,
+    instrumentMcpToolHandler(
+      crawlAuditTool.name,
+      crawlAuditTool.config.outputSchema,
+      crawlAuditTool.handler,
+    ),
+  );
+  server.registerTool(
+    submitIndexNowUrlsTool.name,
+    submitIndexNowUrlsTool.config,
+    instrumentMcpToolHandler(
+      submitIndexNowUrlsTool.name,
+      submitIndexNowUrlsTool.config.outputSchema,
+      submitIndexNowUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getIndexingQueueTool.name,
+    getIndexingQueueTool.config,
+    instrumentMcpToolHandler(
+      getIndexingQueueTool.name,
+      getIndexingQueueTool.config.outputSchema,
+      getIndexingQueueTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingVisibilityTool.name,
+    getBingVisibilityTool.config,
+    instrumentMcpToolHandler(
+      getBingVisibilityTool.name,
+      getBingVisibilityTool.config.outputSchema,
+      getBingVisibilityTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingCrawlIssuesTool.name,
+    getBingCrawlIssuesTool.config,
+    instrumentMcpToolHandler(
+      getBingCrawlIssuesTool.name,
+      getBingCrawlIssuesTool.config.outputSchema,
+      getBingCrawlIssuesTool.handler,
     ),
   );
 }
