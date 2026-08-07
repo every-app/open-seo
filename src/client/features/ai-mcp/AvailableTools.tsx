@@ -24,6 +24,16 @@ const toolCategories: ToolCategory[] = [
         description: "Read tracked keyword positions.",
       },
       {
+        name: "add_rank_tracking_keywords",
+        title: "Add rank tracking keywords",
+        description: "Add keywords to a rank tracker's watchlist.",
+      },
+      {
+        name: "remove_rank_tracking_keywords",
+        title: "Remove rank tracking keywords",
+        description: "Remove keywords from a rank tracker's watchlist.",
+      },
+      {
         name: "get_keyword_metrics",
         title: "Get keyword metrics",
         description:
