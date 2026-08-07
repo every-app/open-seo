@@ -1,8 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { RefreshCw, Swords, CheckCircle2, Circle, User } from "lucide-react";
+import { CheckCircle2, Circle, RefreshCw, Swords, User } from "lucide-react";
 import { toast } from "sonner";
-import { getSeoPulseDigest, getSeoWarRoom } from "@/serverFunctions/war-room";
+import {
+  BingTelemetrySection,
+  IndexNowTelemetrySection,
+} from "@/client/features/war-room/WarRoomTelemetry";
+import {
+  getSeoPulseDigest,
+  getSeoWarRoom,
+  getWarRoomBingTelemetry,
+  getWarRoomIndexingTelemetry,
+} from "@/serverFunctions/war-room";
 
 export const Route = createFileRoute("/_app/war-room")({
   component: WarRoomPage,
@@ -138,7 +147,9 @@ function TaskRow({ task }: { task: WarRoomTask }) {
 
 function LogCard({ entry }: { entry: WarRoomLogEntry }) {
   // Strip leading "- **" and trailing "**" for display, keep it simple
-  const text = entry.raw.replace(/^\s*-\s*\*\*/, "").replace(/\*\*\s*—?/, " — ");
+  const text = entry.raw
+    .replace(/^\s*-\s*\*\*/, "")
+    .replace(/\*\*\s*—?/, " — ");
   return (
     <div className="rounded-lg border-l-4 border-primary/40 bg-base-200/40 px-4 py-3 text-sm text-base-content/80">
       {text}
@@ -163,11 +174,23 @@ function WarRoomPage() {
     staleTime: 60_000,
   });
 
+  const indexingTelemetryQuery = useQuery({
+    queryKey: ["warRoomIndexingTelemetry"],
+    queryFn: () => getWarRoomIndexingTelemetry(),
+    staleTime: 60_000,
+  });
+
+  const bingTelemetryQuery = useQuery({
+    queryKey: ["warRoomBingTelemetry"],
+    queryFn: () => getWarRoomBingTelemetry(),
+    staleTime: 60_000,
+  });
+
   const warRoomMd = warRoomQuery.data ?? "";
   const tasks = parseWarRoomTasks(warRoomMd);
   const logs = parseWarRoomLogs(warRoomMd).slice(0, 3);
   const pulseText = pulseQuery.data
-    ? extractPulseBlock(pulseQuery.data) ?? pulseQuery.data
+    ? (extractPulseBlock(pulseQuery.data) ?? pulseQuery.data)
     : null;
 
   const openTasks = tasks.filter((t) => !t.done);
@@ -176,6 +199,10 @@ function WarRoomPage() {
   const handleRefresh = () => {
     void queryClient.invalidateQueries({ queryKey: ["seoPulseDigest"] });
     void queryClient.invalidateQueries({ queryKey: ["seoWarRoom"] });
+    void queryClient.invalidateQueries({
+      queryKey: ["warRoomIndexingTelemetry"],
+    });
+    void queryClient.invalidateQueries({ queryKey: ["warRoomBingTelemetry"] });
     toast.success("War Room refreshed");
   };
 
@@ -189,7 +216,9 @@ function WarRoomPage() {
               <Swords className="size-5" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">SEO War Room</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                SEO War Room
+              </h1>
               <p className="text-sm text-base-content/50">
                 Shared workboard — Ramon + Poseidon
               </p>
@@ -199,11 +228,19 @@ function WarRoomPage() {
             type="button"
             className="btn btn-sm btn-ghost gap-2"
             onClick={handleRefresh}
-            disabled={pulseQuery.isFetching || warRoomQuery.isFetching}
+            disabled={
+              pulseQuery.isFetching ||
+              warRoomQuery.isFetching ||
+              indexingTelemetryQuery.isFetching ||
+              bingTelemetryQuery.isFetching
+            }
           >
             <RefreshCw
               className={`size-4 ${
-                pulseQuery.isFetching || warRoomQuery.isFetching
+                pulseQuery.isFetching ||
+                warRoomQuery.isFetching ||
+                indexingTelemetryQuery.isFetching ||
+                bingTelemetryQuery.isFetching
                   ? "animate-spin"
                   : ""
               }`}
@@ -229,6 +266,18 @@ function WarRoomPage() {
             </div>
           )}
         </section>
+
+        <IndexNowTelemetrySection
+          data={indexingTelemetryQuery.data}
+          isLoading={indexingTelemetryQuery.isLoading}
+          isError={indexingTelemetryQuery.isError}
+        />
+
+        <BingTelemetrySection
+          data={bingTelemetryQuery.data}
+          isLoading={bingTelemetryQuery.isLoading}
+          isError={bingTelemetryQuery.isError}
+        />
 
         {/* Task Queue */}
         <section className="space-y-3">
