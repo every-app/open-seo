@@ -87,6 +87,10 @@ OpenSEO MCP exposes tools for SEO research workflows:
 - Check backlink and referring-domain overview data.
 - Read first-party Google Search Console performance (clicks, impressions, CTR, position).
 - Inspect index status, crawl, and canonical for specific URLs (up to 10 per call).
+- `submit_indexnow_urls`: "Submit project URLs to IndexNow and return the resulting indexing ledger events." Input `{ projectId, urls }`, where `urls` contains 1–10,000 absolute URLs. Output: `submitted`, `failed`, and ledger `events` (`id`, `url`, `eventType`, `status`, `httpStatus`, `attempts`, `createdAt`).
+- `get_indexing_queue`: "Return recent IndexNow submission and verification events for a project." Input `{ projectId, limit? }` with `limit` from 1–500. Output: `events` with `id`, `url`, `eventType`, `status`, `httpStatus`, `attempts`, `createdAt`, and `updatedAt`.
+- `get_bing_visibility`: "Read the connected Bing Webmaster property's rank and traffic visibility summary. Returns the provider's first-party response without spending DataForSEO credits." Input `{ projectId }`. Output includes `ok`, optional `reason`/`connectUrl`, optional `siteUrl`/`connectedBy`/`visibility`, and optional `meta`.
+- `get_bing_crawl_issues`: "Read crawl errors and warnings for the connected Bing Webmaster property. Returns first-party crawl issue rows and never changes the site." Input `{ projectId, limit? }` with `limit` defaulting to 100 and capped at 1,000. Output includes `ok`, optional `reason`/`connectUrl`, optional `siteUrl`/`connectedBy`/`rowCount`/`issues`, and optional `meta`.
 
 ## What to do after setup
 
