@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
+import { BING_OAUTH_PROVIDER_ID, BING_OAUTH_SCOPES } from "@/shared/bing";
 
 export function createBaseAuthConfig() {
   return {
@@ -45,6 +46,17 @@ export function createBaseAuthConfig() {
             scopes: [...GSC_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
             prompt: "select_account consent",
+            pkce: true,
+          },
+          {
+            providerId: BING_OAUTH_PROVIDER_ID,
+            clientId: env.BING_CLIENT_ID?.trim() ?? "",
+            clientSecret: env.BING_CLIENT_SECRET?.trim() ?? "",
+            discoveryUrl:
+              "https://login.microsoftonline.com/common/v2.0/.well-known/openid-configuration",
+            scopes: [...BING_OAUTH_SCOPES],
+            accessType: "offline",
+            prompt: "select_account",
             pkce: true,
           },
         ],
