@@ -59,9 +59,9 @@ export function ContentOptimizationPage({
   });
 
   const startMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (vars: { url: string; keyword: string }) =>
       startContentScan({
-        data: { projectId, url: normalizeUrl(url), keyword, region },
+        data: { projectId, url: vars.url, keyword: vars.keyword, region },
       }),
     onSuccess: (started) => {
       startedJobIds.add(started.jobId);
@@ -171,7 +171,31 @@ export function ContentOptimizationPage({
                   toast.error("Enter a page URL and a target keyword to scan.");
                   return;
                 }
-                startMutation.mutate();
+                const target = normalizeUrl(url);
+                if (!isScannableUrl(target)) {
+                  // The page URL often lands in the keyword box (and vice
+                  // versa). When the keyword box holds the only valid URL,
+                  // swap the two and keep going instead of failing.
+                  const swappedUrl = normalizeUrl(keyword);
+                  const swappedKeyword = url.trim();
+                  if (
+                    isScannableUrl(swappedUrl) &&
+                    swappedKeyword.length <= 150
+                  ) {
+                    setUrl(swappedUrl);
+                    setKeyword(swappedKeyword);
+                    startMutation.mutate({
+                      url: swappedUrl,
+                      keyword: swappedKeyword,
+                    });
+                    return;
+                  }
+                  toast.error(
+                    "That page URL doesn't look valid. Check it and try again.",
+                  );
+                  return;
+                }
+                startMutation.mutate({ url: target, keyword });
               }}
             >
               <div className="flex flex-col gap-2">
@@ -285,9 +309,25 @@ export function ContentOptimizationPage({
   );
 }
 
+// Pasted URLs often carry stray whitespace, line wraps, or invisible
+// characters (zero-width spaces, soft hyphens, direction marks) that fail
+// validation with no visible cause; none of these can legally appear in a
+// URL, so stripping them always matches intent.
 function normalizeUrl(raw: string): string {
-  const trimmed = raw.trim();
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+  const compact = raw.replace(/[\s\u00AD\u200B-\u200F\u2060\uFEFF]+/g, "");
+  return /^https?:\/\//i.test(compact) ? compact : `https://${compact}`;
+}
+
+function isScannableUrl(candidate: string): boolean {
+  try {
+    const parsed = new URL(candidate);
+    return (
+      (parsed.protocol === "http:" || parsed.protocol === "https:") &&
+      parsed.hostname.includes(".")
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ─── History ─────────────────────────────────────────────────────────────────
