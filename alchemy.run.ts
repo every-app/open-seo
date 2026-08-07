@@ -11,6 +11,7 @@ import { z } from "zod";
 import {
   emailAccessGate,
   HOSTED_PROD_STAGE,
+  machineAccessToken,
   readWorkersSubdomain,
   requireAllowedEmails,
   workerName,
@@ -353,6 +354,28 @@ export default Alchemy.Stack(
       authMode === "cloudflare_access" && !prod,
       workersSubdomain,
     );
+
+    // Lets a non-interactive client (e.g. an MCP client) authenticate
+    // through Cloudflare Access without the interactive login the rest of
+    // the app requires. This only provisions the token — see
+    // machineAccessToken's doc comment for the manual dashboard step
+    // still needed to actually authorize it.
+    if (authMode === "cloudflare_access" && stage === "selfhost") {
+      const mcpToken = yield* machineAccessToken({
+        tokenId: "McpServiceToken",
+        tokenName: `open-seo ${stage} mcp clients`,
+      });
+      const mcpClientId = yield* (yield* mcpToken.clientId);
+      const mcpClientSecret = yield* (yield* mcpToken.clientSecret);
+      if (mcpClientSecret) {
+        yield* Console.log(
+          `\nMCP Service Token (only shown on create/rotate — save it now):\n` +
+            `  CF-Access-Client-Id: ${mcpClientId}\n` +
+            `  CF-Access-Client-Secret: ${Redacted.value(mcpClientSecret)}\n` +
+            `Authorize it in the Zero Trust dashboard: Access > Applications > (the app protecting this hostname) > Policies > add a policy with decision "Service Auth" selecting this token.\n`,
+        );
+      }
+    }
 
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),

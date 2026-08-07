@@ -79,3 +79,27 @@ export const emailAccessGate = (options: {
       policies: [allow.policyId],
     });
   });
+
+/**
+ * A machine-auth credential for a non-interactive client (an MCP client, a
+ * CI job) to authenticate through Cloudflare Access with the
+ * `CF-Access-Client-Id` / `CF-Access-Client-Secret` headers instead of an
+ * interactive identity-provider login.
+ *
+ * This only provisions the token — it does NOT attach it to an Access
+ * application. The app's own JWT check (src/middleware/ensure-user/
+ * cloudflareAccess.ts) verifies the token's `aud` claim against
+ * `POLICY_AUD`, so the token must be authorized via a policy attached to
+ * *that same* Access application (whichever one actually issues
+ * POLICY_AUD-audienced tokens for the deployment's hostname) — attaching it
+ * to a different/new application would mint a token with the wrong
+ * audience and the app would reject it. Wire the resulting
+ * `token.serviceTokenId` into a `non_identity` policy
+ * (`include: [{ serviceToken: { tokenId } }]`) on that application by hand
+ * in the Zero Trust dashboard, since which application that is depends on
+ * how each deployment's Access application was set up.
+ */
+export const machineAccessToken = (options: {
+  tokenId: string;
+  tokenName: string;
+}) => Cloudflare.Access.ServiceToken(options.tokenId, { name: options.tokenName });
