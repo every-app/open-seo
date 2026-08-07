@@ -11,7 +11,7 @@
 >
 > **Quick start:** follow [Install this fork](#install-this-fork) below, then
 > open **Content Optimization** in the sidebar and click **Connect your
-> On-Page.ai account**. New accounts include free trial credits.
+> On-Page.ai account**.
 >
 > Everything else is unchanged OpenSEO, kept current with
 > [every-app/open-seo](https://github.com/every-app/open-seo).
@@ -29,8 +29,8 @@ OPEN_SEO_IMAGE=open-seo:local docker compose up -d
 ```
 
 Then open `http://localhost:3001`, go to **Content Optimization** under
-Research in the sidebar, and click **Connect your On-Page.ai account**. New
-accounts include free trial credits, so your first scans cost nothing.
+Research in the sidebar, and click **Connect your On-Page.ai account** to
+link your workspace.
 
 > [!IMPORTANT]
 > Build the image locally as shown above. A plain `docker compose up -d` pulls

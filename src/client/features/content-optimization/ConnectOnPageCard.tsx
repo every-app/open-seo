@@ -54,9 +54,10 @@ export function ModuleDisabledCard() {
 
 /**
  * Guided connect: one click opens api.on-page.ai/activate where the user
- * signs up (free trial credits included), picks a plan, and approves this
- * OpenSEO install. The API key is delivered over the device-connect
- * handshake and stored automatically. No env editing, no restart.
+ * signs up (any pricing/activation is presented there, never here), and
+ * approves this OpenSEO install. The API key is delivered over the
+ * device-connect handshake and stored automatically. No env editing, no
+ * restart.
  */
 export function ConnectOnPageCard() {
   const queryClient = useQueryClient();
@@ -111,9 +112,8 @@ export function ConnectOnPageCard() {
         </div>
         <p className="max-w-[640px] text-[15px] leading-relaxed text-base-content/70">
           Content optimization scans run through your own On-Page.ai account,
-          the same bring-your-own-key model as DataForSEO. New accounts include
-          free trial credits, so you can run your first scans without paying
-          anything.
+          the same bring-your-own-key model as DataForSEO. Connecting takes a
+          few minutes and the key is stored automatically.
         </p>
 
         {session === null ? (
