@@ -17,6 +17,10 @@ import {
   getRankedKeywordsTool,
   searchLocalBusinessesTool,
 } from "@/server/mcp/tools/dataforseo-research-tools";
+import {
+  addRankTrackingKeywordsTool,
+  removeRankTrackingKeywordsTool,
+} from "@/server/mcp/tools/rank-tracking-write-tools";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
@@ -143,6 +147,24 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getRankTrackerTool.name,
       getRankTrackerTool.config.outputSchema,
       getRankTrackerTool.handler,
+    ),
+  );
+  server.registerTool(
+    addRankTrackingKeywordsTool.name,
+    addRankTrackingKeywordsTool.config,
+    instrumentMcpToolHandler(
+      addRankTrackingKeywordsTool.name,
+      addRankTrackingKeywordsTool.config.outputSchema,
+      addRankTrackingKeywordsTool.handler,
+    ),
+  );
+  server.registerTool(
+    removeRankTrackingKeywordsTool.name,
+    removeRankTrackingKeywordsTool.config,
+    instrumentMcpToolHandler(
+      removeRankTrackingKeywordsTool.name,
+      removeRankTrackingKeywordsTool.config.outputSchema,
+      removeRankTrackingKeywordsTool.handler,
     ),
   );
   server.registerTool(
