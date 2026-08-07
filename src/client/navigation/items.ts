@@ -13,10 +13,14 @@ import {
 import { linkOptions } from "@tanstack/react-router";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 
+// `label`/`helpKey` are i18n key paths (translated at render time in
+// Sidebar.tsx via useTranslation), not display text — keeps this file
+// language-agnostic.
 const projectNavItems = [
   {
     to: "/p/$projectId" as const,
-    label: "Dashboard",
+    label: "nav.items.dashboard.label",
+    helpKey: "nav.items.dashboard.help",
     icon: LayoutDashboard,
     // Without exact matching, the index path is a prefix of every project
     // route and the Dashboard item would render active everywhere.
@@ -24,60 +28,70 @@ const projectNavItems = [
   },
   {
     to: "/p/$projectId/keywords" as const,
-    label: "Keyword Research",
+    label: "nav.items.keywords.label",
+    helpKey: "nav.items.keywords.help",
     icon: Search,
   },
   {
     to: "/p/$projectId/saved" as const,
-    label: "Saved Keywords",
+    label: "nav.items.saved.label",
+    helpKey: "nav.items.saved.help",
     icon: Bookmark,
   },
   {
     to: "/p/$projectId/rank-tracking" as const,
-    label: "Rank Tracking",
+    label: "nav.items.rankTracking.label",
+    helpKey: "nav.items.rankTracking.help",
     icon: TrendingUp,
   },
   {
     to: "/p/$projectId/search-performance" as const,
-    label: "GSC Insights",
+    label: "nav.items.gscInsights.label",
+    helpKey: "nav.items.gscInsights.help",
     icon: GoogleGlyphMuted,
   },
   {
     to: "/p/$projectId/domain" as const,
-    label: "Domain Overview",
+    label: "nav.items.domain.label",
+    helpKey: "nav.items.domain.help",
     icon: Globe,
   },
   {
     to: "/p/$projectId/backlinks" as const,
-    label: "Backlinks",
+    label: "nav.items.backlinks.label",
+    helpKey: "nav.items.backlinks.help",
     icon: Link2,
   },
   {
     to: "/p/$projectId/audit" as const,
-    label: "Site Audit",
+    label: "nav.items.audit.label",
+    helpKey: "nav.items.audit.help",
     icon: ClipboardCheck,
   },
   {
     to: "/p/$projectId/brand-lookup" as const,
-    label: "Brand Lookup",
+    label: "nav.items.brandLookup.label",
+    helpKey: "nav.items.brandLookup.help",
     icon: Sparkles,
   },
   {
     to: "/p/$projectId/prompt-explorer" as const,
-    label: "Prompt Explorer",
+    label: "nav.items.promptExplorer.label",
+    helpKey: "nav.items.promptExplorer.help",
     icon: MessageSquare,
   },
 ] as const;
 
 const aiNavItem = linkOptions({
   to: "/ai" as const,
-  label: "AI & MCP",
+  label: "nav.items.aiMcp.label",
+  helpKey: "nav.items.aiMcp.help",
   icon: Bot,
 });
 
 // Always-visible sidebar group (not project-scoped, unlike the groups below).
 export const connectNavGroup = {
-  label: "Connect",
+  label: "nav.groups.connect",
   items: [aiNavItem],
 };
 
@@ -100,11 +114,11 @@ export function getProjectNavGroups(projectId: string) {
 
   return [
     {
-      label: "Overview",
+      label: "nav.groups.overview",
       items: [byPath("/p/$projectId")],
     },
     {
-      label: "Research",
+      label: "nav.groups.research",
       items: [
         byPath("/p/$projectId/keywords"),
         byPath("/p/$projectId/domain"),
@@ -114,7 +128,7 @@ export function getProjectNavGroups(projectId: string) {
       ],
     },
     {
-      label: "My Site",
+      label: "nav.groups.mySite",
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),

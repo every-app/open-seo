@@ -1,5 +1,12 @@
 /* eslint-disable max-lines, max-lines-per-function -- Domain Overview keeps page-only orchestration colocated to avoid fake indirection. */
-import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { useForm, useStore } from "@tanstack/react-form";
 import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
@@ -11,6 +18,10 @@ import {
   LOCATIONS,
   isLabsLocationCode,
 } from "@/client/features/keywords/locations";
+import {
+  GLOBAL_MARKET_OPTION,
+  isGlobalLocationCode,
+} from "@/shared/domain-global-market";
 import { useDomainSearchHistory } from "@/client/hooks/useDomainSearchHistory";
 import type { DomainSearchHistoryItem } from "@/client/hooks/useDomainSearchHistory";
 import {
@@ -18,6 +29,7 @@ import {
   getDomainSearchValidationErrors,
 } from "@/client/features/domain/domainSearchValidation";
 import { useDomainOverviewQuery } from "@/client/features/domain/hooks/useDomainOverviewQuery";
+import { clearDomainOverviewCache } from "@/serverFunctions/domain";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
 import { DomainHistorySection } from "@/client/features/domain/components/DomainHistorySection";
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
@@ -126,7 +138,9 @@ function getHistorySearchUpdate(
   defaultLocationCode: number,
 ): DomainSearchUpdate {
   const historyLocation =
-    item.locationCode != null && isLabsLocationCode(item.locationCode)
+    item.locationCode != null &&
+    (isLabsLocationCode(item.locationCode) ||
+      isGlobalLocationCode(item.locationCode))
       ? item.locationCode
       : defaultLocationCode;
 
@@ -390,6 +404,40 @@ function useDomainOverviewState({
     [controlsForm],
   );
 
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [tableRefreshToken, setTableRefreshToken] = useState(0);
+
+  const handleRefresh = useCallback(async () => {
+    if (routeState.domain.trim() === "" || isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await clearDomainOverviewCache({
+        data: {
+          projectId,
+          domain: routeState.domain,
+          includeSubdomains: routeState.subdomains,
+          locationCode: routeState.sentLocationCode,
+        },
+      });
+      await overviewQuery.refetch();
+      // KeywordsTab/PagesTab watch this to clear+refetch their own table
+      // cache using their own already-resolved filters (may include
+      // locally-saved filter preferences the parent doesn't know about).
+      setTableRefreshToken((t) => t + 1);
+    } catch (error) {
+      toast.error(getStandardErrorMessage(error, "Refresh failed."));
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [
+    isRefreshing,
+    overviewQuery,
+    projectId,
+    routeState.domain,
+    routeState.sentLocationCode,
+    routeState.subdomains,
+  ]);
+
   return {
     controlsForm,
     isLoading,
@@ -407,6 +455,9 @@ function useDomainOverviewState({
     handleSearchSubmit,
     goToPage,
     setPageSize,
+    isRefreshing,
+    tableRefreshToken,
+    handleRefresh,
   };
 }
 
@@ -474,7 +525,9 @@ export function DomainOverviewPage({
           input.locationCode == null ||
           input.locationCode === routeState.defaultLocationCode
             ? ""
-            : ` ${LOCATIONS[input.locationCode] ?? input.locationCode}`;
+            : isGlobalLocationCode(input.locationCode)
+              ? ` ${GLOBAL_MARKET_OPTION.shortLabel}`
+              : ` ${LOCATIONS[input.locationCode] ?? input.locationCode}`;
         return `${input.domain}${locationSuffix}`;
       },
       [routeState.defaultLocationCode],
@@ -562,6 +615,8 @@ export function DomainOverviewPage({
           onLocationChange={(locationCode) =>
             state.applyLocationChange(locationCode)
           }
+          onRefresh={state.handleRefresh}
+          isRefreshing={state.isRefreshing}
         />
 
         {state.isLoading ? (
@@ -642,6 +697,7 @@ export function DomainOverviewPage({
                   onSortClick={state.handleSortColumnClick}
                   onPageChange={state.goToPage}
                   onPageSizeChange={state.setPageSize}
+                  refreshToken={state.tableRefreshToken}
                 />
               ) : (
                 <PagesTab
@@ -653,6 +709,7 @@ export function DomainOverviewPage({
                   onSortClick={state.handleSortColumnClick}
                   onPageChange={state.goToPage}
                   onPageSizeChange={state.setPageSize}
+                  refreshToken={state.tableRefreshToken}
                 />
               )}
             </div>

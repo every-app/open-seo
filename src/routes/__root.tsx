@@ -11,9 +11,12 @@ import { TanStackDevtools } from "@tanstack/react-devtools";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { AutumnProvider } from "autumn-js/react";
 import * as React from "react";
+import { I18nextProvider } from "react-i18next";
 import { DefaultCatchBoundary } from "@/client/components/DefaultCatchBoundary";
 import { ExportToSheetsModal } from "@/client/components/table/ExportToSheetsModal";
 import { themePreferenceInitScript } from "@/client/lib/theme";
+import { langPreferenceInitScript } from "@/client/lib/lang";
+import i18n from "@/client/lib/i18n";
 import {
   identifyAnalyticsUser,
   resetAnalyticsUser,
@@ -165,10 +168,13 @@ function RootDocument({ children }: { children: React.ReactNode }) {
     import.meta.env.DEV && import.meta.env.VITE_SHOW_DEVTOOLS !== "false";
 
   return (
-    <html suppressHydrationWarning translate="no">
+    <html suppressHydrationWarning translate="no" lang="en" dir="ltr">
       <head>
         <script
           dangerouslySetInnerHTML={{ __html: themePreferenceInitScript }}
+        />
+        <script
+          dangerouslySetInnerHTML={{ __html: langPreferenceInitScript }}
         />
         <HeadContent />
       </head>
@@ -181,7 +187,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               context — nothing fetches until a useCustomer consumer mounts. */}
           <AutumnProvider>
             <QueryClientProvider client={queryClient}>
-              <>
+              <I18nextProvider i18n={i18n}>
                 <PostHogBootstrap />
                 {children}
                 <ExportToSheetsModal />
@@ -202,7 +208,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
                     ]}
                   />
                 ) : null}
-              </>
+              </I18nextProvider>
             </QueryClientProvider>
           </AutumnProvider>
         </ClientOnly>

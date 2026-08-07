@@ -1,4 +1,5 @@
 import { Info, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { getFieldError } from "@/client/lib/forms";
 import {
   isResultLimit,
@@ -23,6 +24,7 @@ function getTextareaRows(value: string): number {
 }
 
 export function KeywordResearchSearchBar({ controller }: Props) {
+  const { t } = useTranslation();
   const { controlsForm, handleSearchSubmit } = controller;
 
   return (
@@ -47,7 +49,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                   <textarea
                     className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
                     rows={rows}
-                    placeholder="Enter a keyword"
+                    placeholder={t("keywordResearch.placeholder")}
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onKeyDown={(event) => {
@@ -80,6 +82,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               {(field) => (
                 <select
                   className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                  title={t("keywordResearch.resultsHelp")}
                   value={field.state.value}
                   onChange={(event) => {
                     const next = Number(event.target.value);
@@ -88,7 +91,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                 >
                   {RESULT_LIMITS.map((limit) => (
                     <option key={limit} value={limit}>
-                      {limit} results
+                      {limit} {t("keywordResearch.resultsSuffix")}
                     </option>
                   ))}
                 </select>
@@ -99,15 +102,20 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               {(field) => (
                 <select
                   className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                  title={t("keywordResearch.modeHelp")}
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(normalizeKeywordMode(event.target.value))
                   }
                 >
-                  <option value="auto">Auto</option>
-                  <option value="related">Related keywords</option>
-                  <option value="suggestions">Suggestions</option>
-                  <option value="ideas">Ideas</option>
+                  <option value="auto">{t("keywordResearch.mode.auto")}</option>
+                  <option value="related">
+                    {t("keywordResearch.mode.related")}
+                  </option>
+                  <option value="suggestions">
+                    {t("keywordResearch.mode.suggestions")}
+                  </option>
+                  <option value="ideas">{t("keywordResearch.mode.ideas")}</option>
                 </select>
               )}
             </controlsForm.Field>
@@ -116,7 +124,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               type="submit"
               className="btn btn-primary w-full px-6 lg:w-auto lg:shrink-0"
             >
-              Search
+              {t("keywordResearch.search")}
             </button>
           </div>
         </form>
@@ -145,12 +153,12 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                         }
                       />
                       <span className="text-sm font-medium text-base-content/80">
-                        Clickstream-refined volumes
+                        {t("keywordResearch.clickstream")}
                       </span>
                     </label>
                     <div
                       className="tooltip tooltip-right"
-                      data-tip="Google reports one combined search volume for similar keywords (e.g. 'seo tool' and 'seo tools'). Turn this on to estimate each keyword's own volume. Costs 2x the credits."
+                      data-tip={t("keywordResearch.clickstreamHelp")}
                     >
                       <Info className="size-3.5 text-base-content/50" />
                     </div>
@@ -163,11 +171,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                 role="status"
               >
                 <Info className="mt-0.5 size-4 shrink-0 text-info" />
-                <span>
-                  Keyword data for this country comes from Google Ads — search
-                  volume, CPC, and trends are available, but difficulty and
-                  intent are not.
-                </span>
+                <span>{t("keywordResearch.gadsNotice")}</span>
               </div>
             )
           }

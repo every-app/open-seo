@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Copy, Download, FileSpreadsheet, Save, Sheet } from "lucide-react";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ import {
   useDomainRenderDebug,
 } from "@/client/features/domain/domainDebug";
 import { useDomainKeywordsQuery } from "@/client/features/domain/hooks/useDomainKeywordsQuery";
+import { clearDomainKeywordsCache } from "@/serverFunctions/domain";
 import { useSaveKeywordsMutation } from "@/client/features/domain/mutations";
 import { useDomainKeywordFilterPreferences } from "@/client/features/domain/useDomainFilterPreferences";
 import {
@@ -71,6 +72,8 @@ type Props = {
   onSortClick: (sort: DomainSortMode) => void;
   onPageChange: (nextPage: number) => void;
   onPageSizeChange: (nextSize: number) => void;
+  /** Bumped by the page-level Refresh button; triggers a cache-bypassing refetch of this exact table. */
+  refreshToken: number;
 };
 
 export function KeywordsTab({
@@ -82,6 +85,7 @@ export function KeywordsTab({
   onSortClick,
   onPageChange,
   onPageSizeChange,
+  refreshToken,
 }: Props) {
   const queryClient = useQueryClient();
   const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(
@@ -112,6 +116,41 @@ export function KeywordsTab({
     appliedFilters,
     enabled: Boolean(domain),
   });
+
+  const lastRefreshToken = useRef(refreshToken);
+  useEffect(() => {
+    if (refreshToken === lastRefreshToken.current) return;
+    lastRefreshToken.current = refreshToken;
+    void clearDomainKeywordsCache({
+      data: {
+        projectId,
+        domain,
+        includeSubdomains: routeState.subdomains,
+        locationCode: routeState.sentLocationCode,
+        page: routeState.page,
+        pageSize: routeState.pageSize,
+        sortMode: routeState.sort,
+        sortOrder: routeState.order,
+        filters: appliedFilters,
+      },
+    })
+      .then(() => query.refetch())
+      .catch((error: unknown) => {
+        console.error("domain.keywords.clear-cache failed:", error);
+      });
+  }, [
+    appliedFilters,
+    domain,
+    projectId,
+    query,
+    refreshToken,
+    routeState.order,
+    routeState.page,
+    routeState.pageSize,
+    routeState.sentLocationCode,
+    routeState.sort,
+    routeState.subdomains,
+  ]);
 
   const rows = query.data?.keywords ?? EMPTY_KEYWORDS;
   const totalCount = query.data?.totalCount ?? null;

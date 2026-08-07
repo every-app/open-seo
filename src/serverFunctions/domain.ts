@@ -82,3 +82,45 @@ export const getDomainPagesPage = createServerFn({ method: "POST" })
 
     return DomainService.getPagesPage(input, context);
   });
+
+// Refresh: deletes the cached entry for the exact same params the matching
+// getDomain* call above would use, so the client's next fetch is a genuine
+// cache-miss instead of serving the (up to 12h stale) R2-cached result.
+export const clearDomainOverviewCache = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(domainOverviewSchema)
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveLabsMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    await DomainService.clearOverviewCache(input, context);
+    return { cleared: true };
+  });
+
+export const clearDomainKeywordsCache = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(domainKeywordsPageRequestSchema)
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveLabsMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    await DomainService.clearKeywordsPageCache(input, context);
+    return { cleared: true };
+  });
+
+export const clearDomainPagesCache = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(domainPagesPageRequestSchema)
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveLabsMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    await DomainService.clearPagesPageCache(input, context);
+    return { cleared: true };
+  });

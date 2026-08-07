@@ -1,9 +1,9 @@
+import { useTranslation } from "react-i18next";
 import {
   KEYWORD_INTENT_ORDER,
   parseIntentFilter,
   toggleIntentFilter,
 } from "@/client/features/keywords/keywordResearchTypes";
-import { INTENT_LABELS } from "@/client/features/keywords/components/IntentBadge";
 import type { KeywordResearchControllerState } from "./types";
 
 export function FilterIntentSelect({
@@ -11,6 +11,7 @@ export function FilterIntentSelect({
 }: {
   form: KeywordResearchControllerState["filtersForm"];
 }) {
+  const { t } = useTranslation();
   return (
     <div
       role="group"
@@ -21,7 +22,7 @@ export function FilterIntentSelect({
         id="keyword-intent-filter-label"
         className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60"
       >
-        Intent
+        {t("keywordResearch.columns.intent")}
       </p>
       <form.Field name="intents">
         {(field) => {
@@ -46,7 +47,7 @@ export function FilterIntentSelect({
                       )
                     }
                   >
-                    {INTENT_LABELS[intent]}
+                    {t(`keywordResearch.intent.full.${intent}`)}
                   </button>
                 );
               })}

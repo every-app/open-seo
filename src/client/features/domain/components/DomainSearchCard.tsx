@@ -1,11 +1,14 @@
 import type { FormEvent } from "react";
-import { AlertCircle, Search } from "lucide-react";
+import { AlertCircle, RefreshCw, Search } from "lucide-react";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import type { DomainOverviewControlsForm } from "@/client/features/domain/DomainOverviewPage";
 import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
 import { LABS_LOCATION_OPTIONS } from "@/client/features/keywords/locations";
+import { GLOBAL_MARKET_OPTION } from "@/shared/domain-global-market";
 import { LocationSelect } from "@/client/components/LocationSelect";
+
+const DOMAIN_LOCATION_OPTIONS = [GLOBAL_MARKET_OPTION, ...LABS_LOCATION_OPTIONS];
 
 type Props = {
   controlsForm: DomainOverviewControlsForm;
@@ -13,6 +16,9 @@ type Props = {
   onSubmit: (event: FormEvent) => void;
   onSortChange: (sort: DomainSortMode) => void;
   onLocationChange: (locationCode: number) => void;
+  /** Clears the cached result for the current search and re-fetches fresh data from DataForSEO. */
+  onRefresh: () => void;
+  isRefreshing: boolean;
 };
 
 export function DomainSearchCard({
@@ -21,6 +27,8 @@ export function DomainSearchCard({
   onSubmit,
   onSortChange,
   onLocationChange,
+  onRefresh,
+  isRefreshing,
 }: Props) {
   return (
     <div className="card bg-base-100 border border-base-300">
@@ -57,7 +65,7 @@ export function DomainSearchCard({
             {(field) => (
               <LocationSelect
                 value={field.state.value}
-                options={LABS_LOCATION_OPTIONS}
+                options={DOMAIN_LOCATION_OPTIONS}
                 className="w-full lg:w-44 lg:shrink-0"
                 onChange={(code) => {
                   field.handleChange(code);
@@ -98,6 +106,19 @@ export function DomainSearchCard({
               </button>
             )}
           </controlsForm.Subscribe>
+
+          <button
+            type="button"
+            className="btn btn-ghost btn-square shrink-0"
+            title="Refresh: bypass the cache and re-fetch fresh data"
+            aria-label="Refresh"
+            disabled={isLoading || isRefreshing}
+            onClick={onRefresh}
+          >
+            <RefreshCw
+              className={`size-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+          </button>
         </form>
 
         <controlsForm.Field name="domain">

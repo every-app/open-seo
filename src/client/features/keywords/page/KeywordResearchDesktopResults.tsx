@@ -8,6 +8,7 @@ import {
   Sheet,
   SlidersHorizontal,
 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   downloadKeywordResearchCsv,
   KEYWORD_RESEARCH_HEADERS,
@@ -121,6 +122,7 @@ function DesktopKeywordPanel({ controller }: Props) {
 }
 
 function DesktopTableCard({ controller }: Props) {
+  const { t } = useTranslation();
   const {
     activeFilterCount,
     filteredRows,
@@ -134,10 +136,16 @@ function DesktopTableCard({ controller }: Props) {
 
   const keywordCountLabel =
     selectedRows.size > 0
-      ? `${selectedRows.size} of ${filteredRows.length} selected`
+      ? t("keywordResearch.selectedOfTotal", {
+          selected: selectedRows.size,
+          total: filteredRows.length,
+        })
       : activeFilterCount > 0
-        ? `Showing ${filteredRows.length} of ${rows.length} keywords`
-        : `Showing ${filteredRows.length} keywords`;
+        ? t("keywordResearch.showingFilteredKeywords", {
+            filtered: filteredRows.length,
+            total: rows.length,
+          })
+        : t("keywordResearch.showingKeywords", { count: filteredRows.length });
 
   const canExport = filteredRows.length > 0;
   const selectedExportRows = filteredRows
@@ -172,10 +180,10 @@ function DesktopTableCard({ controller }: Props) {
         <button
           className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
           onClick={() => controller.setShowFilters((current) => !current)}
-          title="Toggle table filters"
+          title={t("keywordResearch.filters")}
         >
           <SlidersHorizontal className="size-3.5" />
-          Filters
+          {t("keywordResearch.filters")}
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {activeFilterCount}
@@ -193,7 +201,9 @@ function DesktopTableCard({ controller }: Props) {
             className={`btn btn-ghost btn-sm gap-1 ${!canExport ? "btn-disabled" : ""}`}
           >
             <Download className="size-3.5" />
-            <span className="hidden lg:inline">Export</span>
+            <span className="hidden lg:inline">
+              {t("keywordResearch.export")}
+            </span>
             <ChevronDown className="size-3 opacity-60" />
           </div>
           <ul
@@ -203,13 +213,13 @@ function DesktopTableCard({ controller }: Props) {
             <li>
               <button onClick={handleExportToSheets} disabled={!canExport}>
                 <Sheet className="size-4" />
-                Export to Sheets
+                {t("keywordResearch.exportToSheets")}
               </button>
             </li>
             <li>
               <button onClick={controller.exportCsv} disabled={!canExport}>
                 <FileDown className="size-4" />
-                Export CSV
+                {t("keywordResearch.exportCsv")}
               </button>
             </li>
           </ul>
@@ -225,17 +235,17 @@ function DesktopTableCard({ controller }: Props) {
               icon={<Save className="size-3.5" />}
               onClick={controller.handleSaveKeywords}
             >
-              Save Keywords
+              {t("keywordResearch.saveKeywords")}
             </TableBulkActionButton>
             <TableBulkExportMenu
               actions={[
                 {
-                  label: "Export to Sheets",
+                  label: t("keywordResearch.exportToSheets"),
                   icon: <Sheet className="size-4" />,
                   onClick: handleExportSelectionToSheets,
                 },
                 {
-                  label: "Export CSV",
+                  label: t("keywordResearch.exportCsv"),
                   icon: <FileDown className="size-4" />,
                   onClick: handleExportSelectionCsv,
                 },

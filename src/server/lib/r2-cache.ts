@@ -46,6 +46,13 @@ export async function getCached(key: string): Promise<unknown> {
 }
 
 /**
+ * Delete a cached entry from R2, forcing the next read to be a fresh fetch.
+ */
+export async function deleteCached(key: string): Promise<void> {
+  await env.R2.delete(`${CACHE_PREFIX}${key}`);
+}
+
+/**
  * Store a JSON value in R2 with a soft TTL via custom metadata.
  */
 export async function setCached<T>(
