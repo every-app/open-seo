@@ -7,6 +7,7 @@ import {
   Link2,
   MessageSquare,
   Search,
+  Send,
   Sparkles,
   Swords,
   TrendingUp,
@@ -42,6 +43,11 @@ const projectNavItems = [
     to: "/p/$projectId/search-performance" as const,
     label: "GSC Insights",
     icon: GoogleGlyphMuted,
+  },
+  {
+    to: "/p/$projectId/indexing" as const,
+    label: "Indexing",
+    icon: Send,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -124,6 +130,7 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/indexing"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

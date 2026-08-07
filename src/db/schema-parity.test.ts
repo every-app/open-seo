@@ -9,6 +9,7 @@ import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
 import * as sqliteGsc from "./gsc.schema";
+import * as sqliteIndexNow from "./indexnow.schema";
 import * as sqliteReddit from "./reddit-attribution.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
@@ -16,6 +17,7 @@ import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
 import * as pgGsc from "./pg/gsc.schema";
+import * as pgIndexNow from "./pg/indexnow.schema";
 import * as pgReddit from "./pg/reddit-attribution.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
@@ -138,6 +140,7 @@ const sqliteAppTables = tablesFrom(
   sqliteSam,
   sqliteBilling,
   sqliteGsc,
+  sqliteIndexNow,
   sqliteReddit,
   sqliteTelemetry,
 );
@@ -146,6 +149,7 @@ const pgAppTables = tablesFrom(
   pgSam,
   pgBilling,
   pgGsc,
+  pgIndexNow,
   pgReddit,
   pgTelemetry,
 );
