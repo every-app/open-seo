@@ -30,6 +30,7 @@ import { Route as AppBillingRouteImport } from './routes/_app/billing'
 import { Route as AppAiRouteImport } from './routes/_app/ai'
 import { Route as Char91DotwellKnownChar93OpenaiAppsChallengeRouteImport } from './routes/[.well-known]/openai-apps-challenge'
 import { Route as AuthenticatedOnboardingIndexRouteImport } from './routes/_authenticated.onboarding.index'
+import { Route as ApiWebhooksIndexnowRouteImport } from './routes/api/webhooks/indexnow'
 import { Route as ApiAutumnSplatRouteImport } from './routes/api/autumn/$'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 import { Route as AuthenticatedOnboardingChatRouteImport } from './routes/_authenticated.onboarding.chat'
@@ -160,6 +161,11 @@ const AuthenticatedOnboardingIndexRoute =
     path: '/onboarding/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const ApiWebhooksIndexnowRoute = ApiWebhooksIndexnowRouteImport.update({
+  id: '/api/webhooks/indexnow',
+  path: '/api/webhooks/indexnow',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAutumnSplatRoute = ApiAutumnSplatRouteImport.update({
   id: '/api/autumn/$',
   path: '/api/autumn/$',
@@ -322,6 +328,7 @@ export interface FileRoutesByFullPath {
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
@@ -365,6 +372,7 @@ export interface FileRoutesByTo {
   '/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -412,6 +420,7 @@ export interface FileRoutesById {
   '/_authenticated/onboarding/chat': typeof AuthenticatedOnboardingChatRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
   '/api/autumn/$': typeof ApiAutumnSplatRoute
+  '/api/webhooks/indexnow': typeof ApiWebhooksIndexnowRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
@@ -458,6 +467,7 @@ export interface FileRouteTypes {
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/onboarding/'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
@@ -501,6 +511,7 @@ export interface FileRouteTypes {
     | '/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/onboarding'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -547,6 +558,7 @@ export interface FileRouteTypes {
     | '/_authenticated/onboarding/chat'
     | '/api/auth/$'
     | '/api/autumn/$'
+    | '/api/webhooks/indexnow'
     | '/_authenticated/onboarding/'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
@@ -581,6 +593,7 @@ export interface RootRouteChildren {
   ApiHealthRoute: typeof ApiHealthRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
   ApiAutumnSplatRoute: typeof ApiAutumnSplatRoute
+  ApiWebhooksIndexnowRoute: typeof ApiWebhooksIndexnowRoute
   ApiBingOauthCallbackRoute: typeof ApiBingOauthCallbackRoute
   ApiGscOauthCallbackRoute: typeof ApiGscOauthCallbackRoute
 }
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/onboarding/'
       preLoaderRoute: typeof AuthenticatedOnboardingIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/api/webhooks/indexnow': {
+      id: '/api/webhooks/indexnow'
+      path: '/api/webhooks/indexnow'
+      fullPath: '/api/webhooks/indexnow'
+      preLoaderRoute: typeof ApiWebhooksIndexnowRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/autumn/$': {
       id: '/api/autumn/$'
@@ -1070,6 +1090,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHealthRoute: ApiHealthRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
   ApiAutumnSplatRoute: ApiAutumnSplatRoute,
+  ApiWebhooksIndexnowRoute: ApiWebhooksIndexnowRoute,
   ApiBingOauthCallbackRoute: ApiBingOauthCallbackRoute,
   ApiGscOauthCallbackRoute: ApiGscOauthCallbackRoute,
 }
