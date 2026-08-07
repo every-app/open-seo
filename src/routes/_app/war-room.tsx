@@ -16,6 +16,11 @@ interface WarRoomTask {
   text: string;
 }
 
+function toAssignee(value: string | undefined): WarRoomTask["assignee"] {
+  const upper = value?.toUpperCase();
+  return upper === "RAMON" || upper === "POSEIDON" ? upper : null;
+}
+
 interface WarRoomLogEntry {
   raw: string;
 }
@@ -40,7 +45,7 @@ function parseWarRoomTasks(md: string): WarRoomTask[] {
     if (m) {
       tasks.push({
         done: m[1].toLowerCase() === "x",
-        assignee: (m[2]?.toUpperCase() as WarRoomTask["assignee"]) ?? null,
+        assignee: toAssignee(m[2]),
         text: m[3].trim(),
       });
     }

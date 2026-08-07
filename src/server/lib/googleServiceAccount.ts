@@ -34,12 +34,15 @@ function parseServiceAccount(raw: string): GoogleServiceAccount | null {
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
 function isServiceAccount(value: unknown): value is GoogleServiceAccount {
-  if (!value || typeof value !== "object") return false;
-  const record = value as Record<string, unknown>;
+  if (!isRecord(value)) return false;
   return (
-    typeof record.client_email === "string" &&
-    typeof record.private_key === "string"
+    typeof value.client_email === "string" &&
+    typeof value.private_key === "string"
   );
 }
 
@@ -77,6 +80,7 @@ export async function getGoogleServiceAccountToken(
         setupMessage: `Google service-account authentication failed (${response.status}). Confirm the JSON key is valid and the APIs are enabled. ${body}`,
       };
     }
+    // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- response.json() is Promise<any>; the cast is required
     const data = (await response.json()) as { access_token?: string };
     if (!data.access_token) {
       return {
