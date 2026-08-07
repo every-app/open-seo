@@ -34,6 +34,8 @@ import { crawlAuditTool } from "@/server/mcp/tools/crawl-audit";
 import { ga4TrafficTool } from "@/server/mcp/tools/ga4-traffic";
 import { gscSecondPageTool } from "@/server/mcp/tools/gsc-second-page";
 import { getIndexingQueueTool } from "@/server/mcp/tools/get-indexing-queue";
+import { getBingCrawlIssuesTool } from "@/server/mcp/tools/get-bing-crawl-issues";
+import { getBingVisibilityTool } from "@/server/mcp/tools/get-bing-visibility";
 import { submitIndexNowUrlsTool } from "@/server/mcp/tools/submit-indexnow-urls";
 
 // Each handler is wrapped with instrumentMcpToolHandler so failures reach
@@ -301,6 +303,24 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       getIndexingQueueTool.name,
       getIndexingQueueTool.config.outputSchema,
       getIndexingQueueTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingVisibilityTool.name,
+    getBingVisibilityTool.config,
+    instrumentMcpToolHandler(
+      getBingVisibilityTool.name,
+      getBingVisibilityTool.config.outputSchema,
+      getBingVisibilityTool.handler,
+    ),
+  );
+  server.registerTool(
+    getBingCrawlIssuesTool.name,
+    getBingCrawlIssuesTool.config,
+    instrumentMcpToolHandler(
+      getBingCrawlIssuesTool.name,
+      getBingCrawlIssuesTool.config.outputSchema,
+      getBingCrawlIssuesTool.handler,
     ),
   );
 }
