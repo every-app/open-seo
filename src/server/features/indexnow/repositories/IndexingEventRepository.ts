@@ -1,10 +1,7 @@
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import { indexingEvents } from "@/db/schema";
-import type {
-  IndexingEventStatus,
-  IndexingEventType,
-} from "@/shared/indexnow";
+import type { IndexingEventStatus, IndexingEventType } from "@/shared/indexnow";
 
 export type IndexingEvent = typeof indexingEvents.$inferSelect;
 
@@ -50,6 +47,24 @@ async function listByProjectId(
     .offset(options.offset ?? 0);
 }
 
+async function listRecentSuccessfulByProjectId(
+  projectId: string,
+  limit = 1_000,
+): Promise<IndexingEvent[]> {
+  return db
+    .select()
+    .from(indexingEvents)
+    .where(
+      and(
+        eq(indexingEvents.projectId, projectId),
+        eq(indexingEvents.eventType, "submitted"),
+        eq(indexingEvents.status, "success"),
+      ),
+    )
+    .orderBy(desc(indexingEvents.createdAt), desc(indexingEvents.id))
+    .limit(Math.min(Math.max(limit, 1), 5_000));
+}
+
 async function markAttempted(id: string): Promise<IndexingEvent | null> {
   const [row] = await db
     .update(indexingEvents)
@@ -88,6 +103,7 @@ async function markResult(
 export const IndexingEventRepository = {
   insert,
   listByProjectId,
+  listRecentSuccessfulByProjectId,
   markAttempted,
   markResult,
 };

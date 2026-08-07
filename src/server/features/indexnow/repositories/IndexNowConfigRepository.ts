@@ -1,16 +1,36 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, sql } from "drizzle-orm";
 import { db } from "@/db";
-import { indexnowConfigs } from "@/db/schema";
+import { indexnowConfigs, projects } from "@/db/schema";
 
 export type IndexNowConfig = typeof indexnowConfigs.$inferSelect;
 
-async function getByProjectId(projectId: string): Promise<IndexNowConfig | null> {
+async function getByProjectId(
+  projectId: string,
+): Promise<IndexNowConfig | null> {
   const rows = await db
     .select()
     .from(indexnowConfigs)
     .where(eq(indexnowConfigs.projectId, projectId))
     .limit(1);
   return rows[0] ?? null;
+}
+
+async function listEnabled(): Promise<IndexNowConfig[]> {
+  return db
+    .select({
+      id: indexnowConfigs.id,
+      projectId: indexnowConfigs.projectId,
+      organizationId: indexnowConfigs.organizationId,
+      host: indexnowConfigs.host,
+      key: indexnowConfigs.key,
+      keyLocation: indexnowConfigs.keyLocation,
+      enabled: indexnowConfigs.enabled,
+      createdAt: indexnowConfigs.createdAt,
+      updatedAt: indexnowConfigs.updatedAt,
+    })
+    .from(indexnowConfigs)
+    .innerJoin(projects, eq(indexnowConfigs.projectId, projects.id))
+    .where(and(eq(indexnowConfigs.enabled, true), isNull(projects.archivedAt)));
 }
 
 async function upsert(input: {
@@ -48,6 +68,7 @@ async function deleteByProjectId(projectId: string): Promise<void> {
 
 export const IndexNowConfigRepository = {
   getByProjectId,
+  listEnabled,
   upsert,
   deleteByProjectId,
 };
