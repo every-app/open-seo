@@ -91,6 +91,90 @@ async function fetchPage(
   return { response: await fetch(current), chain };
 }
 
+function analyzePage(
+  page: Page,
+  chain: string[],
+  body: string,
+  links: string[],
+  ctx: {
+    item: { url: string; depth: number };
+    maxDepth: number;
+    maxPages: number;
+    queue: { url: string; depth: number }[];
+    queued: Set<string>;
+    pages: Map<string, Page>;
+  },
+): Finding[] {
+  const { item } = ctx;
+  const findings: Finding[] = [];
+  if (page.status >= 400)
+    findings.push({
+      type: "http_error",
+      severity: "error",
+      url: item.url,
+      details: `HTTP ${page.status}`,
+    });
+  if (chain.length > 1)
+    findings.push({
+      type: "redirect_chain",
+      severity: "warning",
+      url: item.url,
+      details: `${chain.length - 1} redirect(s) before the final response`,
+      target: chain[chain.length - 1],
+    });
+  if (!body) return findings;
+  if (!page.title)
+    findings.push({
+      type: "missing_title",
+      severity: "error",
+      url: item.url,
+      details: "Page has no title tag.",
+    });
+  if (!page.description)
+    findings.push({
+      type: "missing_meta_description",
+      severity: "warning",
+      url: item.url,
+      details: "Page has no meta description.",
+    });
+  if (!page.canonical)
+    findings.push({
+      type: "missing_canonical",
+      severity: "warning",
+      url: item.url,
+      details: "Page has no canonical link.",
+    });
+  else if (!normalizeUrl(page.canonical, item.url))
+    findings.push({
+      type: "broken_canonical",
+      severity: "error",
+      url: item.url,
+      details: "Canonical is not a valid HTTP(S) URL.",
+      target: page.canonical,
+    });
+  if (page.h1Count === 0)
+    findings.push({
+      type: "missing_h1",
+      severity: "warning",
+      url: item.url,
+      details: "Page has no H1 heading.",
+    });
+  if (page.hreflangs === 0)
+    findings.push({
+      type: "missing_hreflang",
+      severity: "info",
+      url: item.url,
+      details: "Page has no hreflang annotations.",
+    });
+  if (item.depth < ctx.maxDepth)
+    for (const link of links)
+      if (!ctx.queued.has(link) && ctx.pages.size + ctx.queue.length < ctx.maxPages) {
+        ctx.queued.add(link);
+        ctx.queue.push({ url: link, depth: item.depth + 1 });
+      }
+  return findings;
+}
+
 export const crawlAuditTool = {
   name: "crawl_audit",
   config: {
@@ -195,71 +279,7 @@ export const crawlAuditTool = {
           links,
         };
         pages.set(item.url, page);
-        if (response.status >= 400)
-          findings.push({
-            type: "http_error",
-            severity: "error",
-            url: item.url,
-            details: `HTTP ${response.status}`,
-          });
-        if (chain.length > 1)
-          findings.push({
-            type: "redirect_chain",
-            severity: "warning",
-            url: item.url,
-            details: `${chain.length - 1} redirect(s) before the final response`,
-            target: finalUrl,
-          });
-        if (!body) continue;
-        if (!page.title)
-          findings.push({
-            type: "missing_title",
-            severity: "error",
-            url: item.url,
-            details: "Page has no title tag.",
-          });
-        if (!page.description)
-          findings.push({
-            type: "missing_meta_description",
-            severity: "warning",
-            url: item.url,
-            details: "Page has no meta description.",
-          });
-        if (!page.canonical)
-          findings.push({
-            type: "missing_canonical",
-            severity: "warning",
-            url: item.url,
-            details: "Page has no canonical link.",
-          });
-        else if (!normalizeUrl(page.canonical, item.url))
-          findings.push({
-            type: "broken_canonical",
-            severity: "error",
-            url: item.url,
-            details: "Canonical is not a valid HTTP(S) URL.",
-            target: page.canonical,
-          });
-        if (page.h1Count === 0)
-          findings.push({
-            type: "missing_h1",
-            severity: "warning",
-            url: item.url,
-            details: "Page has no H1 heading.",
-          });
-        if (page.hreflangs === 0)
-          findings.push({
-            type: "missing_hreflang",
-            severity: "info",
-            url: item.url,
-            details: "Page has no hreflang annotations.",
-          });
-        if (item.depth < maxDepth)
-          for (const link of links)
-            if (!queued.has(link) && pages.size + queue.length < maxPages) {
-              queued.add(link);
-              queue.push({ url: link, depth: item.depth + 1 });
-            }
+        findings.push(...analyzePage(page, chain, body, links, { item, maxDepth, maxPages, queue, queued, pages }));
       } catch (error) {
         findings.push({
           type: "crawl_error",
@@ -282,7 +302,7 @@ export const crawlAuditTool = {
             url,
             details: `Title is shared by ${urls.length} pages: ${title}`,
           });
-    for (const [url, page] of pages)
+    for (const [url, _page] of pages)
       if (url !== start && (inbound.get(url) ?? 0) === 0)
         findings.push({
           type: "orphan_page",

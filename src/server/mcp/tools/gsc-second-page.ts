@@ -78,6 +78,7 @@ export const gscSecondPageTool = {
         throw new Error(
           `Search Console API error (${response.status}): ${(await response.text()).slice(0, 300)}`,
         );
+      // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- response.json() is Promise<any>; the cast is required
       const data = (await response.json()) as {
         rows?: Array<{
           keys?: string[];
@@ -89,7 +90,7 @@ export const gscSecondPageTool = {
       };
       const rows = (data.rows ?? [])
         .filter((row) => (row.position ?? 0) >= 11 && (row.position ?? 0) <= 15)
-        .sort((a, b) => (b.impressions ?? 0) - (a.impressions ?? 0))
+        .toSorted((a, b) => (b.impressions ?? 0) - (a.impressions ?? 0))
         .slice(0, args.limit ?? 100)
         .map((row) => ({
           query: row.keys?.[0] ?? "",

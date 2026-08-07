@@ -9,6 +9,24 @@ import { projectIdSchema } from "@/server/mcp/schemas";
 // column to check against. Closes the unauthenticated-tool gap; a caller who
 // owns *any* project can still pass an arbitrary propertyId. Upgrade path:
 // add a per-project GA4 property binding and verify it here once one exists.
+interface Ga4Report {
+  rows?: Array<{
+    dimensionValues?: Array<{ value?: string }>;
+    metricValues?: Array<{ value?: string }>;
+  }>;
+}
+
+function rows(result: Ga4Report) {
+  return (result.rows ?? []).map((row) => ({
+    ...(row.dimensionValues?.length
+      ? { dimension: row.dimensionValues[0]?.value }
+      : {}),
+    sessions: Number(row.metricValues?.[0]?.value ?? 0),
+    users: Number(row.metricValues?.[1]?.value ?? 0),
+    pageviews: Number(row.metricValues?.[2]?.value ?? 0),
+  }));
+}
+
 const inputSchema = {
   projectId: projectIdSchema,
   propertyId: z.string().regex(/^\d+$/).describe("GA4 numeric property ID."),
@@ -91,12 +109,8 @@ export const ga4TrafficTool = {
         throw new Error(
           `GA4 API error (${response.status}): ${(await response.text()).slice(0, 300)}`,
         );
-      return (await response.json()) as {
-        rows?: Array<{
-          dimensionValues?: Array<{ value?: string }>;
-          metricValues?: Array<{ value?: string }>;
-        }>;
-      };
+      // oxlint-disable-next-line typescript/no-unnecessary-type-assertion -- response.json() is Promise<any>; the cast is required
+      return (await response.json()) as Ga4Report;
     };
     try {
       const [totals, daily, topPages] = await Promise.all([
@@ -108,15 +122,6 @@ export const ga4TrafficTool = {
           args.limit ?? 25,
         ),
       ]);
-      const rows = (result: Awaited<ReturnType<typeof run>>) =>
-        (result.rows ?? []).map((row) => ({
-          ...(row.dimensionValues?.length
-            ? { dimension: row.dimensionValues[0]?.value }
-            : {}),
-          sessions: Number(row.metricValues?.[0]?.value ?? 0),
-          users: Number(row.metricValues?.[1]?.value ?? 0),
-          pageviews: Number(row.metricValues?.[2]?.value ?? 0),
-        }));
       const total = rows(totals)[0] ?? { sessions: 0, users: 0, pageviews: 0 };
       return mcpResponse({
         text: `GA4 traffic for property ${args.propertyId} (${args.startDate} to ${args.endDate}): ${total.sessions} sessions, ${total.users} users, ${total.pageviews} pageviews.`,
