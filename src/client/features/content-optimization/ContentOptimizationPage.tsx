@@ -201,18 +201,18 @@ export function ContentOptimizationPage({
               <div className="flex flex-col gap-2">
                 <div className="card flex flex-col border border-base-300 bg-base-100 p-[7px] sm:flex-row sm:items-stretch">
                   <input
-                    className="min-w-0 flex-[2] rounded-[6px] bg-transparent px-4 py-3 text-[15px] outline-none transition-shadow placeholder:text-base-content/35 focus:ring-2 focus:ring-primary/50"
-                    placeholder="https://example.com/page"
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                  />
-                  <div className="my-[9px] hidden w-px bg-base-300 sm:block" />
-                  <input
                     className="min-w-0 flex-[1.3] rounded-[6px] bg-transparent px-4 py-3 text-[15px] outline-none transition-shadow placeholder:text-base-content/35 focus:ring-2 focus:ring-primary/50"
                     placeholder="Target keyword"
                     maxLength={150}
                     value={keyword}
                     onChange={(e) => setKeyword(e.target.value)}
+                  />
+                  <div className="my-[9px] hidden w-px bg-base-300 sm:block" />
+                  <input
+                    className="min-w-0 flex-[2] rounded-[6px] bg-transparent px-4 py-3 text-[15px] outline-none transition-shadow placeholder:text-base-content/35 focus:ring-2 focus:ring-primary/50"
+                    placeholder="https://example.com/page"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
                   />
                   <div className="my-[9px] hidden w-px bg-base-300 sm:block" />
                   <select
