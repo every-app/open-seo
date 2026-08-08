@@ -8,14 +8,27 @@ import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  seoDataRouter: {
+    route: vi.fn(),
+  },
 }));
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
 }));
 
-// Keep the real fetchKeywordMetricsForList (it only routes provider calls onto
-// the supplied client) so the handler's normalization is exercised end-to-end.
+vi.mock("@/server/lib/r2-cache", () => ({
+  buildCacheKey: vi.fn(async (prefix: string) => prefix),
+  getCached: vi.fn(async () => null),
+  setCached: vi.fn(async () => {}),
+  CACHE_TTL: { researchResult: 86400 },
+}));
+
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: () => mocks.seoDataRouter,
+  isDataforseoBudgetAvailable: vi.fn(async () => true),
+}));
+
 vi.mock("@/server/lib/dataforseo", async () => {
   const keywordMetrics = await vi.importActual<{
     fetchKeywordMetricsForList: typeof FetchKeywordMetricsForList;
@@ -62,6 +75,7 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
     vi.resetModules();
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
+    mocks.seoDataRouter.route.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_1",
       locationCode: 2840,
@@ -70,22 +84,25 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
   });
 
   it("serves Iceland from adsSearchVolume without KD/intent", async () => {
-    const keywordOverview = vi.fn();
-    const adsSearchVolume = vi.fn().mockResolvedValue([
-      {
-        keyword: "hotel reykjavik",
-        search_volume: 1300,
-        cpc: 2.54,
-        competition: "HIGH",
-        competition_index: 42,
-        monthly_searches: [{ year: 2026, month: 5, search_volume: 1300 }],
-      },
-    ]);
-
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
-      keywords: { adsSearchVolume },
+    mocks.seoDataRouter.route.mockResolvedValue({
+      dataType: "keyword_metrics",
+      provider: "dataforseo",
+      fromCache: false,
+      durationMs: 100,
+      data: [
+        {
+          keyword: "hotel reykjavik",
+          searchVolume: 1300,
+          cpc: 2.54,
+          competition: 0.42,
+          competitionLevel: "HIGH",
+          keywordDifficulty: null,
+          intent: null,
+          monthlySearches: [{ year: 2026, month: 5, searchVolume: 1300 }],
+        },
+      ],
     });
+
     const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
@@ -93,22 +110,12 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
       {
         projectId: "project_1",
         keywords: ["hotel reykjavik"],
-        // Iceland is not supported by DataForSEO Labs.
         locationCode: 2352,
         languageCode: "is",
       },
       toolExtra,
     );
 
-    expect(keywordOverview).not.toHaveBeenCalled();
-    expect(adsSearchVolume).toHaveBeenCalledWith(
-      expect.objectContaining({
-        keywords: ["hotel reykjavik"],
-        locationCode: 2352,
-        languageCode: "is",
-        creditFeature: "keyword_research",
-      }),
-    );
     const rows = z
       .object({ keywords: z.array(z.record(z.string(), z.unknown())) })
       .passthrough()
@@ -125,23 +132,25 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
   });
 
   it("passes the clickstream opt-in to Labs and prefers refined volumes", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      {
-        keyword: "seo tools",
-        keyword_info: {
-          search_volume: 10000,
-          monthly_searches: [{ year: 2026, month: 5, search_volume: 10000 }],
+    mocks.seoDataRouter.route.mockResolvedValue({
+      dataType: "keyword_metrics",
+      provider: "dataforseo",
+      fromCache: false,
+      durationMs: 100,
+      data: [
+        {
+          keyword: "seo tools",
+          searchVolume: 6400,
+          cpc: null,
+          competition: null,
+          competitionLevel: null,
+          keywordDifficulty: null,
+          intent: null,
+          monthlySearches: [{ year: 2026, month: 5, searchVolume: 6400 }],
         },
-        keyword_info_normalized_with_clickstream: {
-          search_volume: 6400,
-          monthly_searches: [{ year: 2026, month: 5, search_volume: 6400 }],
-        },
-      },
-    ]);
-
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
+      ],
     });
+
     const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
@@ -154,8 +163,13 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
       toolExtra,
     );
 
-    expect(keywordOverview).toHaveBeenCalledWith(
-      expect.objectContaining({ includeClickstreamData: true }),
+    // Verify the router was called with the clickstream constraint
+    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith(
+      expect.objectContaining({
+        constraints: expect.objectContaining({
+          includeClickstreamData: true,
+        }),
+      }),
     );
     const rows = z
       .object({ keywords: z.array(z.record(z.string(), z.unknown())) })

@@ -50,6 +50,31 @@ OpenSEO supports two self-hosting paths:
 
 Either way, you need a DataForSEO API key to get SEO data. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
 
+## Free-First Data Architecture
+
+OpenSEO uses a **cache-first, free-first** data routing layer that minimizes DataForSEO API usage and cost:
+
+```
+Request → Cache → Free/First-party provider → Internal data → DataForSEO (paid fallback)
+```
+
+- **Cache**: every result is cached in R2 with per-data-type TTLs (24h–14d)
+- **Google Search Console**: free first-party search performance data
+- **Google Ads**: free keyword ideas and historical metrics (when configured)
+- **Bing Webmaster**: free first-party search performance
+- **Local crawler**: free technical SEO checks (title, meta, canonical, headings, links, JSON-LD, hreflang) without DataForSEO
+- **Internal**: reads previously-fetched data from D1 (keyword metrics, backlink snapshots, rank snapshots)
+- **DataForSEO**: paid fallback — only called when cache misses and no free provider can satisfy the request
+
+Budget guards (`DATAFORSEO_DAILY_BUDGET`, `DATAFORSEO_MONTHLY_BUDGET`) block DataForSEO calls when limits are exceeded. Request coalescing deduplicates concurrent identical requests. SSRF protection blocks the local crawler from accessing private/internal IPs.
+
+The app remains usable when `DATAFORSEO_ENABLED=false` for any functionality that has a free/internal provider.
+
+See:
+- [`docs/free-first-architecture-audit.md`](./docs/free-first-architecture-audit.md) — architecture audit
+- [`docs/free-first-implementation-report.md`](./docs/free-first-implementation-report.md) — implementation report with provider matrix
+- [`.env.example`](./.env.example) — all configuration variables
+
 ## Costs
 
 OpenSEO needs a [DataForSEO](https://dataforseo.com/?aff=255379) API key so that you can get SEO data. You pay them directly when self hosting.

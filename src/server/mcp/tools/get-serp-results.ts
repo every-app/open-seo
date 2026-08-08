@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
+import type { SerpLiveItem } from "@/server/lib/dataforseo";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -93,14 +94,19 @@ export const getSerpResultsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const client = createDataforseoClient(context.billing);
+    const router = getSeoDataRouter();
     const results = await Promise.all(
       args.queries.map(async (q) => {
         try {
-          const items = await client.serp.live({
+          const market = resolveMarket(q, context.project);
+          const response = await router.route<SerpLiveItem[]>({
+            dataType: "serp",
             keyword: q.keyword,
-            ...resolveMarket(q, context.project),
+            locationCode: market.locationCode,
+            languageCode: market.languageCode,
+            billingCustomer: context.billing,
           });
+          const items = response.data;
           // Trim noise — return only essentials per item.
           const trimmed = items.slice(0, 20).map((item) => ({
             type: item.type,

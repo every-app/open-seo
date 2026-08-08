@@ -2,9 +2,11 @@
 import { z } from "zod";
 import {
   createDataforseoClient,
-  fetchKeywordMetricsForList,
   type KeywordMetricRow,
 } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
+import { isDataforseoBudgetAvailable } from "@/server/lib/seo-data/cost-tracker";
+import { BudgetExceededError } from "@/server/lib/seo-data/errors";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import {
@@ -28,6 +30,16 @@ import {
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
+
+/** Budget guard for DataForSEO calls that don't go through the DataRouter
+ *  (e.g. local SERP, business listings, Q&A — DataForSEO-only endpoints with
+ *  no free alternative). Throws BudgetExceededError if the budget is spent. */
+async function assertDataforseoBudget(): Promise<void> {
+  const available = await isDataforseoBudgetAvailable();
+  if (!available) {
+    throw new BudgetExceededError("daily", 0, 0);
+  }
+}
 
 const rankedResultTypeSchema = z.enum([
   "organic",
@@ -647,24 +659,32 @@ export const getRankedKeywordsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: GetRankedKeywordsArgs, context) => {
-    const client = createDataforseoClient(context.billing);
     const targetIsPage = /^https?:\/\//.test(args.target);
     const market = resolveMarketSelector(args, context.project);
-    const keywords = await client.domain.rankedKeywords({
-      target: args.target,
+
+    // Route through the DataRouter for cache-first + budget guard.
+    // domain_keywords is served by: internal (D1 cache) → dataforseo (fallback)
+    const router = getSeoDataRouter();
+    const response = await router.route({
+      dataType: "domain_keywords",
+      domain: args.target,
       locationCode: market.locationCode,
       languageCode: market.languageCode,
-      limit: args.limit ?? 50,
-      offset: args.offset,
-      orderBy: sortOrderByRankedMode(args.sortBy),
-      filters: buildRankedKeywordFilters({
-        minSearchVolume: args.minSearchVolume,
-        maxRank: args.maxRank,
-        excludeBrandTerms: args.excludeBrandTerms,
-      }),
-      itemTypes: args.resultTypes,
-      includeSubdomains: args.includeSubdomains ?? !targetIsPage,
+      billingCustomer: context.billing,
+      constraints: {
+        limit: args.limit ?? 50,
+        offset: args.offset,
+        orderBy: sortOrderByRankedMode(args.sortBy),
+        filters: buildRankedKeywordFilters({
+          minSearchVolume: args.minSearchVolume,
+          maxRank: args.maxRank,
+          excludeBrandTerms: args.excludeBrandTerms,
+        }),
+        itemTypes: args.resultTypes,
+        includeSubdomains: args.includeSubdomains ?? !targetIsPage,
+      },
     });
+    const keywords = response.data as { items: unknown[]; totalCount: number | null };
 
     const rankedRows = keywords.items.map(toRankedKeywordRow);
     const text =
@@ -705,6 +725,7 @@ export const searchLocalBusinessesTool = {
   },
   handler: withMcpProjectAuth(
     async (args: SearchLocalBusinessesArgs, context) => {
+      await assertDataforseoBudget();
       const client = createDataforseoClient(context.billing);
       const businesses = await client.business.businessListings({
         categories: args.categories,
@@ -745,6 +766,7 @@ export const getLocalSerpResultsTool = {
   },
   handler: withMcpProjectAuth(
     async (args: GetLocalSerpResultsArgs, context) => {
+      await assertDataforseoBudget();
       const client = createDataforseoClient(context.billing);
       const results = await client.serp.local({
         keyword: args.keyword,
@@ -788,6 +810,7 @@ export const getGoogleBusinessQuestionsTool = {
   },
   handler: withMcpProjectAuth(
     async (args: GetGoogleBusinessQuestionsArgs, context) => {
+      await assertDataforseoBudget();
       const client = createDataforseoClient(context.billing);
       const questions = await client.business.questionsAnswers({
         keyword: args.keyword,
@@ -828,6 +851,7 @@ export const findSerpCompetitorsTool = {
   },
   handler: withMcpProjectAuth(
     async (args: FindSerpCompetitorsArgs, context) => {
+      await assertDataforseoBudget();
       const client = createDataforseoClient(context.billing);
       const market = resolveMarketSelector(args, context.project);
       const competitors = await client.labs.serpCompetitors({
@@ -890,14 +914,22 @@ export const getKeywordMetricsTool = {
     // Assert against the RESOLVED pair: an explicit language with an omitted
     // location must validate against the project's default location.
     assertLanguageForLocation(locationCode, languageCode);
-    const client = createDataforseoClient(context.billing);
-    const metrics = await fetchKeywordMetricsForList(client, {
+
+    // Route through the DataRouter for cache-first + budget guard.
+    // keyword_metrics is served by: google_ads → internal (D1) → dataforseo (fallback)
+    const router = getSeoDataRouter();
+    const response = await router.route<KeywordMetricRow[]>({
+      dataType: "keyword_metrics",
       keywords: args.keywords,
       locationCode,
       languageCode,
-      includeClickstreamData: args.includeClickstreamData ?? false,
-      creditFeature: "keyword_research",
+      billingCustomer: context.billing,
+      constraints: {
+        includeClickstreamData: args.includeClickstreamData ?? false,
+        creditFeature: "keyword_research",
+      },
     });
+    const metrics = response.data;
     const rows = sortKeywordMetricRows(
       metrics.map(toMcpKeywordMetricRow),
       args.sortBy ?? "search_volume",

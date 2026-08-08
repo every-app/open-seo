@@ -10,10 +10,31 @@ import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   profileBacklinksPage: vi.fn(),
+  seoDataRouter: {
+    route: vi.fn(async () => ({
+      dataType: "serp",
+      provider: "dataforseo",
+      fromCache: false,
+      durationMs: 100,
+      data: [],
+    })),
+  },
 }));
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
+}));
+
+vi.mock("@/server/lib/r2-cache", () => ({
+  buildCacheKey: vi.fn(async (prefix: string) => prefix),
+  getCached: vi.fn(async () => null),
+  setCached: vi.fn(async () => {}),
+  CACHE_TTL: { researchResult: 86400 },
+}));
+
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: () => mocks.seoDataRouter,
+  isDataforseoBudgetAvailable: vi.fn(async () => true),
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({

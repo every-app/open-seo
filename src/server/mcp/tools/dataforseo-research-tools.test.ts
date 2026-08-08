@@ -8,10 +8,25 @@ import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  seoDataRouter: {
+    route: vi.fn(),
+  },
 }));
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
+}));
+
+vi.mock("@/server/lib/r2-cache", () => ({
+  buildCacheKey: vi.fn(async (prefix: string) => prefix),
+  getCached: vi.fn(async () => null),
+  setCached: vi.fn(async () => {}),
+  CACHE_TTL: { researchResult: 86400 },
+}));
+
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: () => mocks.seoDataRouter,
+  isDataforseoBudgetAvailable: vi.fn(async () => true),
 }));
 
 // Keep the real fetchKeywordMetricsForList (it only routes provider calls onto
@@ -69,6 +84,21 @@ const usProjectRow = {
   locationCode: 2840,
   languageCode: "en",
 };
+
+function routerResponse(dataType: string, data: unknown) {
+  return { dataType, provider: "dataforseo", fromCache: false, durationMs: 100, data };
+}
+
+function kwRow(keyword: string, searchVolume: number, extra?: Partial<{
+  cpc: number; competition: number; competitionLevel: string;
+  keywordDifficulty: number; intent: string; monthlySearches: unknown[];
+}>) {
+  return {
+    keyword, searchVolume, cpc: null, competition: null,
+    competitionLevel: null, keywordDifficulty: null, intent: null,
+    monthlySearches: [] as unknown[], ...extra,
+  };
+}
 
 describe("DataForSEO research MCP tools", () => {
   beforeEach(() => {
@@ -222,14 +252,10 @@ describe("DataForSEO research MCP tools", () => {
   });
 
   it("passes only explicit brand exclusions to ranked keyword filters", async () => {
-    const rankedKeywords = vi.fn().mockResolvedValue({
-      items: [],
-      totalCount: 0,
-    });
+    mocks.seoDataRouter.route.mockResolvedValue(
+      routerResponse("domain_keywords", { items: [], totalCount: 0 }),
+    );
 
-    mocks.createDataforseoClient.mockReturnValue({
-      domain: { rankedKeywords },
-    });
     const { getRankedKeywordsTool } =
       await import("./dataforseo-research-tools");
 
@@ -242,9 +268,14 @@ describe("DataForSEO research MCP tools", () => {
       toolExtra,
     );
 
-    expect(rankedKeywords).toHaveBeenCalledWith(
+    // The router should have been called with brand exclusion filters in constraints
+    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith(
       expect.objectContaining({
-        filters: [["keyword_data.keyword", "not_ilike", "%acme%"]],
+        dataType: "domain_keywords",
+        domain: "acmeexample.com",
+        constraints: expect.objectContaining({
+          filters: [["keyword_data.keyword", "not_ilike", "%acme%"]],
+        }),
       }),
     );
   });
@@ -304,23 +335,15 @@ describe("DataForSEO research MCP tools", () => {
   });
 
   it("normalizes keyword_overview rows with difficulty and intent", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      {
-        keyword: "seo automation",
-        keyword_info: {
-          search_volume: 2400,
-          cpc: 25.6,
-          competition: 0.24,
-          competition_level: "LOW",
-        },
-        keyword_properties: { keyword_difficulty: 18 },
-        search_intent_info: { main_intent: "commercial" },
-      },
-    ]);
+    mocks.seoDataRouter.route.mockResolvedValue(
+      routerResponse("keyword_metrics", [
+        kwRow("seo automation", 2400, {
+          cpc: 25.6, competition: 0.24, competitionLevel: "LOW",
+          keywordDifficulty: 18, intent: "commercial",
+        }),
+      ]),
+    );
 
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
-    });
     const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
@@ -329,14 +352,6 @@ describe("DataForSEO research MCP tools", () => {
       toolExtra,
     );
 
-    expect(keywordOverview).toHaveBeenCalledWith(
-      expect.objectContaining({
-        keywords: ["seo automation"],
-        locationCode: 2840,
-        languageCode: "en",
-        creditFeature: "keyword_research",
-      }),
-    );
     const rows = z
       .object({
         keywords: z.array(
@@ -364,15 +379,14 @@ describe("DataForSEO research MCP tools", () => {
   });
 
   it("sorts keyword metric rows by the requested numeric field", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      { keyword: "low", keyword_info: { search_volume: 10 } },
-      { keyword: "high", keyword_info: { search_volume: 90 } },
-      { keyword: "medium", keyword_info: { search_volume: 50 } },
-    ]);
+    mocks.seoDataRouter.route.mockResolvedValue(
+      routerResponse("keyword_metrics", [
+        kwRow("low", 10),
+        kwRow("high", 90),
+        kwRow("medium", 50),
+      ]),
+    );
 
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
-    });
     const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 
@@ -393,19 +407,14 @@ describe("DataForSEO research MCP tools", () => {
   });
 
   it("drops monthly trends when includeMonthlyTrends is false", async () => {
-    const keywordOverview = vi.fn().mockResolvedValue([
-      {
-        keyword: "seo",
-        keyword_info: {
-          search_volume: 100,
-          monthly_searches: [{ year: 2026, month: 1, search_volume: 100 }],
-        },
-      },
-    ]);
+    mocks.seoDataRouter.route.mockResolvedValue(
+      routerResponse("keyword_metrics", [
+        kwRow("seo", 100, {
+          monthlySearches: [{ year: 2026, month: 1, searchVolume: 100 }],
+        }),
+      ]),
+    );
 
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { keywordOverview },
-    });
     const { getKeywordMetricsTool } =
       await import("./dataforseo-research-tools");
 

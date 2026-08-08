@@ -19,11 +19,17 @@ const mocks = vi.hoisted(() => ({
   getConfigById: vi.fn(),
   getConfigsForProject: vi.fn(),
   getLatestResults: vi.fn(),
+  seoDataRouter: {
+    route: vi.fn(),
+  },
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: mocks.createDataforseoClient,
+}));
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: () => mocks.seoDataRouter,
 }));
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
   ProjectService: {
@@ -89,7 +95,13 @@ function text(result: { content?: Array<{ type: string; text?: string }> }) {
 describe("MCP tool text output (service-backed tools)", () => {
   beforeEach(() => {
     vi.resetModules();
-    for (const mock of Object.values(mocks)) mock.mockReset();
+    for (const mock of Object.values(mocks)) {
+      // Skip plain objects (like seoDataRouter which wraps route as a property)
+      if (typeof mock === "function" && "mockReset" in mock) {
+        (mock as { mockReset: () => void }).mockReset();
+      }
+    }
+    mocks.seoDataRouter.route.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_1",
       locationCode: 2840,
@@ -271,22 +283,25 @@ describe("MCP tool text output (service-backed tools)", () => {
   });
 
   it("get_ranked_keywords renders nested provider rows as a text table", async () => {
-    const rankedKeywords = vi.fn().mockResolvedValue({
-      items: [
-        {
-          keyword_data: {
-            keyword: "seo tools",
-            keyword_info: { search_volume: 1000, cpc: 3.2 },
+    mocks.seoDataRouter.route.mockResolvedValue({
+      dataType: "domain_keywords",
+      provider: "dataforseo",
+      fromCache: false,
+      durationMs: 100,
+      data: {
+        items: [
+          {
+            keyword_data: {
+              keyword: "seo tools",
+              keyword_info: { search_volume: 1000, cpc: 3.2 },
+            },
+            ranked_serp_element: {
+              serp_item: { rank_absolute: 4, url: "https://example.com/tools" },
+            },
           },
-          ranked_serp_element: {
-            serp_item: { rank_absolute: 4, url: "https://example.com/tools" },
-          },
-        },
-      ],
-      totalCount: 1,
-    });
-    mocks.createDataforseoClient.mockReturnValue({
-      domain: { rankedKeywords },
+        ],
+        totalCount: 1,
+      },
     });
     const { getRankedKeywordsTool } =
       await import("./dataforseo-research-tools");
@@ -304,17 +319,22 @@ describe("MCP tool text output (service-backed tools)", () => {
   });
 
   it("get_serp_results renders each query's items as a text table", async () => {
-    const live = vi.fn().mockResolvedValue([
-      {
-        type: "organic",
-        rank_absolute: 1,
-        title: "Best SEO Tools",
-        url: "https://example.com/best",
-        domain: "example.com",
-        description: "desc",
-      },
-    ]);
-    mocks.createDataforseoClient.mockReturnValue({ serp: { live } });
+    mocks.seoDataRouter.route.mockResolvedValue({
+      dataType: "serp",
+      provider: "dataforseo",
+      fromCache: false,
+      durationMs: 100,
+      data: [
+        {
+          type: "organic",
+          rank_absolute: 1,
+          title: "Best SEO Tools",
+          url: "https://example.com/best",
+          domain: "example.com",
+          description: "desc",
+        },
+      ],
+    });
     const { getSerpResultsTool } = await import("./get-serp-results");
 
     const result = await getSerpResultsTool.handler(
