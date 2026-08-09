@@ -2,6 +2,7 @@ import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
+import { GA4_OAUTH_PROVIDER_ID, GA4_OAUTH_SCOPES } from "@/shared/ga4";
 
 export function createBaseAuthConfig() {
   return {
@@ -43,6 +44,20 @@ export function createBaseAuthConfig() {
             discoveryUrl:
               "https://accounts.google.com/.well-known/openid-configuration",
             scopes: [...GSC_OAUTH_SCOPES],
+            accessType: "offline", // request a refresh token
+            prompt: "select_account consent",
+            pkce: true,
+          },
+          {
+            // Independent connection from Search Console above: its own
+            // provider id, own scope, own grant — connecting one never
+            // touches the other's tokens or requires re-consenting it.
+            providerId: GA4_OAUTH_PROVIDER_ID,
+            clientId: env.GOOGLE_CLIENT_ID?.trim() ?? "",
+            clientSecret: env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
+            discoveryUrl:
+              "https://accounts.google.com/.well-known/openid-configuration",
+            scopes: [...GA4_OAUTH_SCOPES],
             accessType: "offline", // request a refresh token
             prompt: "select_account consent",
             pkce: true,
