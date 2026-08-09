@@ -23,6 +23,7 @@ import {
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
+import { getAnalyticsPerformanceTool } from "@/server/mcp/tools/analytics-tools";
 import {
   getAuditIssuesTool,
   getAuditPagesTool,
@@ -215,6 +216,15 @@ export function registerOpenSeoMcpTools(server: McpServer) {
       inspectUrlsTool.name,
       inspectUrlsTool.config.outputSchema,
       inspectUrlsTool.handler,
+    ),
+  );
+  server.registerTool(
+    getAnalyticsPerformanceTool.name,
+    getAnalyticsPerformanceTool.config,
+    instrumentMcpToolHandler(
+      getAnalyticsPerformanceTool.name,
+      getAnalyticsPerformanceTool.config.outputSchema,
+      getAnalyticsPerformanceTool.handler,
     ),
   );
   server.registerTool(
