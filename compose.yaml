@@ -28,8 +28,12 @@ services:
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
       # Optional: AI features (SAM, the in-app SEO agent)
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      # Optional: point the chat agent at a local / OpenAI-compatible endpoint
+      # (vLLM, Ollama, LM Studio) instead of OpenRouter. When set,
+      # OPENROUTER_API_KEY becomes optional.
+      # See docs/SELF_HOSTING_LOCAL_CHAT_MODEL.md
+      - CHAT_BASE_URL=${CHAT_BASE_URL:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
