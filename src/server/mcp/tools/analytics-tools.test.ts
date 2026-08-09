@@ -140,6 +140,112 @@ describe("analytics MCP tools", () => {
     expect(text?.type === "text" && text.text).toContain("Organic Search");
   });
 
+  it("reports hasMore:false on an exact-multiple-of-limit last page, using rowCount", async () => {
+    mocks.Ga4Service.getPerformance.mockResolvedValue({
+      propertyId: "properties/123",
+      propertyDisplayName: null,
+      connectedBy: "alice@example.com",
+      request: {
+        dateRanges: [{ startDate: "2026-04-29", endDate: "2026-05-27" }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }],
+        limit: 2,
+        offset: 0,
+      },
+      report: {
+        rowCount: 2,
+        rows: [
+          { dimensionValues: [{ value: "2026-05-26" }], metricValues: [{ value: "10" }] },
+          { dimensionValues: [{ value: "2026-05-27" }], metricValues: [{ value: "12" }] },
+        ],
+      },
+    });
+    const { getAnalyticsPerformanceTool } = await import(
+      "./analytics-tools"
+    );
+
+    const result = await getAnalyticsPerformanceTool.handler(
+      { projectId: "project_1", metrics: ["sessions"], rowLimit: 2 },
+      toolExtra,
+    );
+
+    // Naive length->=limit heuristic would say hasMore:true here (2 >= 2);
+    // rowCount says the 2 rows returned are the whole result set.
+    expect(result.structuredContent).toMatchObject({
+      hasMore: false,
+      nextStartRow: undefined,
+    });
+  });
+
+  it("reports hasMore:true when rowCount says more rows remain", async () => {
+    mocks.Ga4Service.getPerformance.mockResolvedValue({
+      propertyId: "properties/123",
+      propertyDisplayName: null,
+      connectedBy: "alice@example.com",
+      request: {
+        dateRanges: [{ startDate: "2026-04-29", endDate: "2026-05-27" }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }],
+        limit: 2,
+        offset: 0,
+      },
+      report: {
+        rowCount: 5,
+        rows: [
+          { dimensionValues: [{ value: "2026-05-26" }], metricValues: [{ value: "10" }] },
+          { dimensionValues: [{ value: "2026-05-27" }], metricValues: [{ value: "12" }] },
+        ],
+      },
+    });
+    const { getAnalyticsPerformanceTool } = await import(
+      "./analytics-tools"
+    );
+
+    const result = await getAnalyticsPerformanceTool.handler(
+      { projectId: "project_1", metrics: ["sessions"], rowLimit: 2 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      hasMore: true,
+      nextStartRow: 2,
+    });
+  });
+
+  it("falls back to the length-vs-limit heuristic when rowCount is absent", async () => {
+    mocks.Ga4Service.getPerformance.mockResolvedValue({
+      propertyId: "properties/123",
+      propertyDisplayName: null,
+      connectedBy: "alice@example.com",
+      request: {
+        dateRanges: [{ startDate: "2026-04-29", endDate: "2026-05-27" }],
+        dimensions: [{ name: "date" }],
+        metrics: [{ name: "sessions" }],
+        limit: 2,
+        offset: 0,
+      },
+      report: {
+        rows: [
+          { dimensionValues: [{ value: "2026-05-26" }], metricValues: [{ value: "10" }] },
+          { dimensionValues: [{ value: "2026-05-27" }], metricValues: [{ value: "12" }] },
+        ],
+      },
+    });
+    const { getAnalyticsPerformanceTool } = await import(
+      "./analytics-tools"
+    );
+
+    const result = await getAnalyticsPerformanceTool.handler(
+      { projectId: "project_1", metrics: ["sessions"], rowLimit: 2 },
+      toolExtra,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      hasMore: true,
+      nextStartRow: 2,
+    });
+  });
+
   it("surfaces a not-connected message with a connect URL", async () => {
     mocks.Ga4Service.getPerformance.mockRejectedValue(
       new Ga4NotConnectedError("project_1"),

@@ -98,18 +98,24 @@ export function isExpectedGrantFailure(error: unknown): boolean {
   );
 }
 
+// A single Google grant can see more than one GA4 Admin "account" (e.g. a
+// personal account and a work account under the same login) — each becomes
+// its own accountSummary. Flatten all of them into one property list per
+// grant rather than one entry per summary: the grant's OAuth sub is what
+// setProperty/createGa4Client actually key on, so per-summary entries would
+// share that same id and collide (duplicate React keys in the picker, with
+// later summaries' properties dropped).
 function flattenProperties(
   summaries: Ga4AccountSummary[],
   connection: Ga4Connection | null,
-): Array<{ accountId: string; properties: Ga4PropertyOption[] }> {
-  return summaries.map((summary) => ({
-    accountId: summary.account,
-    properties: (summary.propertySummaries ?? []).map((property) => ({
+): Ga4PropertyOption[] {
+  return summaries.flatMap((summary) =>
+    (summary.propertySummaries ?? []).map((property) => ({
       propertyId: property.property,
       displayName: property.displayName,
       isSelected: connection?.propertyId === property.property,
     })),
-  }));
+  );
 }
 
 async function listPropertiesForUserWithGrantStatus(
@@ -135,13 +141,12 @@ async function listPropertiesForUserWithGrantStatus(
         } catch {
           email = null;
         }
-        const byAccount = flattenProperties(summaries, connection);
-        return byAccount.map((entry) => ({
+        return {
           accountId: grant.accountId,
           email,
           requiresReconnect: false,
-          properties: entry.properties,
-        }));
+          properties: flattenProperties(summaries, connection),
+        };
       } catch (error) {
         if (!isExpectedGrantFailure(error)) {
           console.error(
@@ -150,18 +155,16 @@ async function listPropertiesForUserWithGrantStatus(
             error,
           );
         }
-        return [
-          {
-            accountId: grant.accountId,
-            email: null,
-            requiresReconnect: true,
-            properties: [],
-          },
-        ];
+        return {
+          accountId: grant.accountId,
+          email: null,
+          requiresReconnect: true,
+          properties: [],
+        };
       }
     }),
   );
-  return { accounts: accounts.flat() };
+  return { accounts };
 }
 
 /** Map a property to a project. Rejects properties not present on the

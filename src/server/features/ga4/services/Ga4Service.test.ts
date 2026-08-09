@@ -321,6 +321,59 @@ describe("Ga4Service.listPropertiesForUserWithGrantStatus", () => {
     expect(result.accounts[0]?.properties[0]?.isSelected).toBe(true);
   });
 
+  it("merges properties from multiple GA4 accounts under one grant into a single entry", async () => {
+    mocks.state.selectRows = [{ id: "grant-a", accountId: "sub-a" }];
+    mocks.getUserInfoEmail.mockResolvedValue("a@example.com");
+    mocks.listAccountSummaries.mockResolvedValue([
+      {
+        account: "accounts/1",
+        displayName: "Personal",
+        propertySummaries: [
+          {
+            property: "properties/111",
+            displayName: "personal-site.com",
+            parent: "accounts/1",
+          },
+        ],
+      },
+      {
+        account: "accounts/2",
+        displayName: "Work",
+        propertySummaries: [
+          {
+            property: "properties/222",
+            displayName: "work-site.com",
+            parent: "accounts/2",
+          },
+        ],
+      },
+    ]);
+    const { Ga4Service } = await import("./Ga4Service");
+
+    const result = await Ga4Service.listPropertiesForUserWithGrantStatus(
+      "u1",
+      "p1",
+    );
+
+    // One entry per grant, not per GA4 account — otherwise both entries would
+    // share the same accountId (the grant's OAuth sub) and collide as
+    // duplicate React keys in the property picker.
+    expect(result.accounts).toHaveLength(1);
+    expect(result.accounts[0]?.accountId).toBe("sub-a");
+    expect(result.accounts[0]?.properties).toEqual([
+      {
+        propertyId: "properties/111",
+        displayName: "personal-site.com",
+        isSelected: false,
+      },
+      {
+        propertyId: "properties/222",
+        displayName: "work-site.com",
+        isSelected: false,
+      },
+    ]);
+  });
+
   it("keeps userinfo failures non-fatal", async () => {
     mocks.state.selectRows = [{ id: "grant-a", accountId: "sub-a" }];
     mocks.getUserInfoEmail.mockRejectedValue(new Error("userinfo unavailable"));

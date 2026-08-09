@@ -228,8 +228,15 @@ export const getAnalyticsPerformanceTool = {
       const rawRows = result.report.rows ?? [];
       const rows = flattenRows(dimensions, metrics, rawRows);
       const requestedLimit = result.request.limit ?? GA4_DEFAULT_ROW_LIMIT;
-      const hasMore = rows.length >= requestedLimit;
-      const nextStartRow = (result.request.offset ?? 0) + rows.length;
+      const offset = result.request.offset ?? 0;
+      // GA4 reports the true total in rowCount, unlike Search Console — prefer
+      // it so the last exact-multiple-of-limit page doesn't misreport hasMore.
+      // Fall back to the length-vs-limit heuristic only if it's ever absent.
+      const hasMore =
+        result.report.rowCount !== undefined
+          ? offset + rows.length < result.report.rowCount
+          : rows.length >= requestedLimit;
+      const nextStartRow = offset + rows.length;
 
       const columns: McpTableColumn<Record<string, string>>[] = [
         ...dimensions.map((name) => ({
