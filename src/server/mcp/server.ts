@@ -107,24 +107,6 @@ function registerOpenSeoTool<Input extends ToolSchema>(
       // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- args were validated against the tool's own inputSchema just above
       handler(args as ToolArgs<Input>, createMcpToolContext(context)),
   );
-  server.registerTool(
-    getIndexNowKeyTool.name,
-    getIndexNowKeyTool.config,
-    instrumentMcpToolHandler(
-      getIndexNowKeyTool.name,
-      getIndexNowKeyTool.config.outputSchema,
-      getIndexNowKeyTool.handler,
-    ),
-  );
-  server.registerTool(
-    submitUrlsIndexNowTool.name,
-    submitUrlsIndexNowTool.config,
-    instrumentMcpToolHandler(
-      submitUrlsIndexNowTool.name,
-      submitUrlsIndexNowTool.config.outputSchema,
-      submitUrlsIndexNowTool.handler,
-    ),
-  );
 }
 
 export function createOpenSeoMcpServer() {
@@ -189,6 +171,8 @@ export function createOpenSeoMcpServer() {
   registerOpenSeoTool(server, getAuditStatusTool);
   registerOpenSeoTool(server, getAuditIssuesTool);
   registerOpenSeoTool(server, getAuditPagesTool);
+  registerOpenSeoTool(server, getIndexNowKeyTool);
+  registerOpenSeoTool(server, submitUrlsIndexNowTool);
 
   return server;
 }

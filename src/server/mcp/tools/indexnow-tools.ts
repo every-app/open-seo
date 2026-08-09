@@ -60,7 +60,7 @@ export const submitUrlsIndexNowTool = {
   config: {
     title: "Submit URLs to IndexNow",
     description:
-      "Notify Bing, Yandex, and other IndexNow engines that URLs are new or updated — free, no DataForSEO credits, typically indexed within seconds. All URLs must be on the project's domain (cross-host URLs are skipped and reported). The verification file from get_indexnow_key must already be published at the domain root, or engines will ignore the submission.",
+      "Notify Bing, Yandex, and other IndexNow engines that URLs are new or updated — free, no DataForSEO credits, typically indexed within seconds. Google does NOT participate in IndexNow, so this does not affect Google indexing. All URLs must be on the project's domain (cross-host URLs are skipped and reported). The verification file from get_indexnow_key must already be published at the domain root, or engines will ignore the submission. The engine's HTTP status is returned as data (`status`, `ok`), not a tool error: 202 = accepted with key validation pending, 403 = key file not published yet.",
     inputSchema: {
       projectId: projectIdSchema,
       urls: z

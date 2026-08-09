@@ -1,9 +1,7 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 import { deriveIndexNowKey } from "@/server/lib/indexnow";
+import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
@@ -15,30 +13,7 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
-const authContext = {
-  userId: "user_123",
-  userEmail: "alice@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
-  baseUrl: "https://open-seo.test",
-};
-
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://open-seo.test/mcp"),
-    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-  } satisfies AuthInfo,
-};
+const toolContext = makeToolContext();
 
 const indexNowBodySchema = z.object({
   host: z.string(),
@@ -70,7 +45,7 @@ describe("IndexNow MCP tools", () => {
 
     const result = await getIndexNowKeyTool.handler(
       { projectId: "project_1" },
-      toolExtra,
+      toolContext,
     );
 
     expect(expectedKey).toMatch(/^[0-9a-f]{32}$/);
@@ -93,7 +68,7 @@ describe("IndexNow MCP tools", () => {
     const { getIndexNowKeyTool } = await import("./indexnow-tools");
 
     await expect(
-      getIndexNowKeyTool.handler({ projectId: "project_1" }, toolExtra),
+      getIndexNowKeyTool.handler({ projectId: "project_1" }, toolContext),
     ).rejects.toThrow(/domain/i);
   });
 
@@ -118,7 +93,7 @@ describe("IndexNow MCP tools", () => {
           "https://other.com/c",
         ],
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -138,6 +113,40 @@ describe("IndexNow MCP tools", () => {
     });
   });
 
+  // Contract: a non-2xx from the IndexNow endpoint is reported as data
+  // (ok:false + the status), NOT raised as a tool error. The submission was
+  // well-formed; the engine simply rejected it — most often because the key
+  // file isn't published yet (403), which the agent should be able to read and
+  // act on rather than see as a tool failure. Engines also answer 202 for
+  // "accepted, key validation pending", so ok tracks 2xx, not strictly 200.
+  it.each([
+    { status: 202, ok: true, label: "202 accepted / validation pending" },
+    { status: 403, ok: false, label: "403 key not valid" },
+    { status: 422, ok: false, label: "422 URLs do not belong to host" },
+    { status: 500, ok: false, label: "500 engine error" },
+  ])("reports HTTP $label as data, not a thrown error", async (scenario) => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(new Response(null, { status: scenario.status })),
+      ),
+    );
+    const { submitUrlsIndexNowTool } = await import("./indexnow-tools");
+
+    const result = await submitUrlsIndexNowTool.handler(
+      { projectId: "project_1", urls: ["https://acme.com/a"] },
+      toolContext,
+    );
+
+    expect(result.structuredContent).toMatchObject({
+      host: "acme.com",
+      submitted: 1,
+      status: scenario.status,
+      ok: scenario.ok,
+    });
+    expect(result.isError).toBeFalsy();
+  });
+
   it("errors when no submitted URL is on the project host", async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal("fetch", fetchMock);
@@ -146,7 +155,7 @@ describe("IndexNow MCP tools", () => {
     await expect(
       submitUrlsIndexNowTool.handler(
         { projectId: "project_1", urls: ["https://elsewhere.com/x"] },
-        toolExtra,
+        toolContext,
       ),
     ).rejects.toThrow(/acme\.com/);
     expect(fetchMock).not.toHaveBeenCalled();

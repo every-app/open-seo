@@ -9,6 +9,11 @@ indexing also means faster appearance in those AI answers.
 OpenSEO exposes IndexNow through two MCP tools, so agents can close the
 publish → index loop without leaving the chat.
 
+> **Google does not participate in IndexNow.** Submitting notifies Bing,
+> Yandex, Seznam, Naver, and Yep — a single submission is shared between them.
+> Google indexing is unaffected and still relies on crawling / sitemaps. This
+> catches people out, so the tool description says it too.
+
 ## How the key works
 
 IndexNow proves you control a host by having you serve a **verification file**
@@ -30,6 +35,23 @@ Submits up to 10,000 URLs to IndexNow for the project's host. URLs that aren't o
 that host are skipped and reported (IndexNow only accepts same-host lists). The
 verification file must already be live, or engines ignore the submission. Uses no
 credits.
+
+**Response contract.** The engine's HTTP status is returned as _data_
+(`{ status, ok }`), not raised as a tool error — the call itself succeeded, the
+engine just may not have accepted the list. `ok` tracks 2xx, so `202`
+("accepted, key validation pending") is a success. A `403` means the key file
+isn't published (or doesn't match) — the agent can read that and fix it. Only a
+malformed request throws: no domain on the project, or no submitted URL on the
+project's host.
+
+| Status | Meaning                                                            |
+| ------ | ------------------------------------------------------------------ |
+| `200`  | Accepted                                                           |
+| `202`  | Accepted, key validation pending (normal before the file is live)  |
+| `400`  | Invalid format                                                     |
+| `403`  | Key not valid — file missing or contents don't match               |
+| `422`  | URLs don't belong to the host, or the key doesn't match the schema |
+| `429`  | Too many requests                                                  |
 
 ## Setup (one time per project)
 
