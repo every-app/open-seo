@@ -12,6 +12,11 @@
  */
 import { Parser } from "htmlparser2";
 import { normalizeUrl, isSameOrigin } from "./url-utils";
+import {
+  addJsonLdBlock,
+  createJsonLdAccumulator,
+  summarizeJsonLd,
+} from "./jsonld";
 import type { PageAnalysis, PageLink } from "./types";
 
 const SKIPPED_LINK_PROTOCOLS = /^(javascript:|mailto:|tel:|#)/;
@@ -56,6 +61,11 @@ export function analyzeHtml(
   let ogDescription: string | null = null;
   let ogImage: string | null = null;
   let hasStructuredData = false;
+  // JSON-LD is folded into counters one block at a time (see jsonld.ts): the
+  // raw text of at most one block is ever held, keeping this parse allocation-
+  // flat like every other buffer in this file.
+  const jsonLd = createJsonLdAccumulator();
+  let openLdJson: string[] | null = null;
   const hreflangTags: string[] = [];
 
   const h1s: string[] = [];
@@ -156,6 +166,7 @@ export function analyzeHtml(
           case "script":
             if (attribs["type"] === "application/ld+json") {
               hasStructuredData = true;
+              openLdJson = [];
             }
             break;
           case "a": {
@@ -180,6 +191,8 @@ export function analyzeHtml(
         }
       },
       ontext(text) {
+        // <script> is a suppressed tag, so capture before the guard below.
+        if (openLdJson) openLdJson.push(text);
         if (suppressDepth > 0) return;
         if (titleDepth > 0) {
           if (title !== null) title += text;
@@ -196,6 +209,10 @@ export function analyzeHtml(
       onclosetag(name) {
         if (NON_CONTENT_TAGS.has(name) && suppressDepth > 0) {
           suppressDepth -= 1;
+        }
+        if (name === "script" && openLdJson) {
+          addJsonLdBlock(jsonLd, openLdJson.join(""));
+          openLdJson = null;
         }
         if (name === "noscript" && noscriptDepth > 0) {
           noscriptDepth -= 1;
@@ -244,6 +261,7 @@ export function analyzeHtml(
     images,
     links: Array.from(linksByTarget.values()),
     hasStructuredData,
+    jsonLd: summarizeJsonLd(jsonLd),
     hreflangTags,
   };
 }

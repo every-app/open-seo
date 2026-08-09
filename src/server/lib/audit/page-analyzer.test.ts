@@ -3,6 +3,11 @@
  * cheerio/DOM reference implementation — the exact logic the analyzer
  * replaced. Cheerio stays as a devDependency for this test only.
  */
+import {
+  addJsonLdBlock,
+  createJsonLdAccumulator,
+  summarizeJsonLd,
+} from "@/server/lib/audit/jsonld";
 import * as cheerio from "cheerio";
 import { describe, expect, it } from "vitest";
 import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
@@ -74,8 +79,13 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   });
 
   let hasStructuredData = false;
-  $('script[type="application/ld+json"]').each(() => {
+  // The reference folds JSON-LD through the same pure accumulator as the
+  // streaming analyzer; only the block extraction differs (DOM vs tokenizer),
+  // which is exactly what the parity assertion is meant to compare.
+  const referenceJsonLd = createJsonLdAccumulator();
+  $('script[type="application/ld+json"]').each((_, el) => {
     hasStructuredData = true;
+    addJsonLdBlock(referenceJsonLd, $(el).text());
   });
 
   const hreflangTags: string[] = [];
@@ -103,6 +113,7 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
     images,
     links: Array.from(linksByTarget.values()),
     hasStructuredData,
+    jsonLd: summarizeJsonLd(referenceJsonLd),
     hreflangTags,
   };
 }

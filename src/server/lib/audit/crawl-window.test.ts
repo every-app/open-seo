@@ -1,3 +1,4 @@
+import { EMPTY_JSON_LD_SUMMARY } from "@/server/lib/audit/jsonld";
 import { describe, expect, it } from "vitest";
 import { adjustCrawlWindow } from "@/server/lib/audit/crawl-window";
 import type {
@@ -41,6 +42,7 @@ function page(
     images: [],
     links: [],
     hasStructuredData: false,
+    jsonLd: EMPTY_JSON_LD_SUMMARY,
     hreflangTags: [],
     isIndexable: true,
     responseTimeMs,

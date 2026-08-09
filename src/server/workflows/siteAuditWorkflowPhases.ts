@@ -16,6 +16,7 @@ import { AuditRepository } from "@/server/features/audit/repositories/AuditRepos
 import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
+import { runSiteChecks } from "@/server/lib/audit/issues/site-checks";
 import type { DetectedIssue } from "@/server/lib/audit/issues/page-reporters";
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -98,6 +99,8 @@ export async function runAuditPhases(
     billingCustomer,
     projectId,
     startUrl,
+    origin,
+    robotsText: discovery.robotsText,
     config,
     crawl,
   });
@@ -322,6 +325,9 @@ async function finalizeAudit(args: {
   billingCustomer: BillingCustomerContext;
   projectId: string;
   startUrl: string;
+  origin: string;
+  /** Checkpointed by the discovery step, so replays see the same robots.txt. */
+  robotsText: string | null;
   config: AuditConfig;
   crawl: CrawlPhaseResult;
 }) {
@@ -332,6 +338,8 @@ async function finalizeAudit(args: {
     billingCustomer,
     projectId,
     startUrl,
+    origin,
+    robotsText,
     config,
     crawl,
   } = args;
@@ -355,6 +363,10 @@ async function finalizeAudit(args: {
 
     const issues = await runMultipageChecks({ auditId });
     issues.push(...(await runScratchpadLinkChecks(auditId, startUrl, crawl)));
+    // Site-level findings ride along with the multipage step: same
+    // checkpoint, and insertIssues is idempotent, so a retry that re-fetches
+    // the root resource can't duplicate rows.
+    issues.push(...(await runSiteChecks({ origin, robotsText })));
     await AuditRepository.insertIssues(auditId, issues);
     return { issueCount: issues.length };
   });

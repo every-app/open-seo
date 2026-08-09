@@ -9,6 +9,7 @@
  * live in multipage.ts and run over D1 after the crawl.
  */
 import type { AuditIssueType } from "@/shared/audit-issues";
+import { isUnlinkedJsonLdGraph } from "@/server/lib/audit/jsonld";
 import type { CrawledPageResult } from "@/server/lib/audit/types";
 
 export interface DetectedIssue {
@@ -148,6 +149,15 @@ export function runPageReporters(page: CrawledPageResult): DetectedIssue[] {
   }
   if (page.crawlDepth !== null && page.crawlDepth >= DEEP_PAGE_DEPTH) {
     report("deep-page", { crawlDepth: page.crawlDepth });
+  }
+
+  // Structured data: several entities that never reference each other read as
+  // unrelated fragments rather than one graph.
+  if (isUnlinkedJsonLdGraph(page.jsonLd)) {
+    report("jsonld-not-linked-graph", {
+      blocks: page.jsonLd.blocks,
+      nodes: page.jsonLd.nodes,
+    });
   }
 
   return issues;

@@ -1,3 +1,4 @@
+import { EMPTY_JSON_LD_SUMMARY } from "@/server/lib/audit/jsonld";
 import { describe, expect, it } from "vitest";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
 import {
@@ -47,6 +48,7 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
     images: [],
     links: [HEALTHY_LINK],
     hasStructuredData: false,
+    jsonLd: EMPTY_JSON_LD_SUMMARY,
     hreflangTags: [],
     isIndexable: true,
     responseTimeMs: 200,
@@ -200,6 +202,50 @@ describe("runPageReporters", () => {
     expect(issueTypes(makePage({ links: [HEALTHY_LINK] }))).not.toContain(
       "no-outgoing-links",
     );
+  });
+
+  it("checks structured-data linkage", () => {
+    // Linkage itself is exercised in jsonld.test.ts; this pins the wiring —
+    // the reporter reads the page's summary and attaches the counts.
+    const unlinked = makePage({
+      jsonLd: {
+        ...EMPTY_JSON_LD_SUMMARY,
+        blocks: 2,
+        nodes: 2,
+      },
+    });
+    expect(issueTypes(unlinked)).toContain("jsonld-not-linked-graph");
+    expect(
+      runPageReporters(unlinked).find(
+        (issue) => issue.issueType === "jsonld-not-linked-graph",
+      )?.details,
+    ).toEqual({ blocks: 2, nodes: 2 });
+
+    expect(issueTypes(makePage({}))).not.toContain("jsonld-not-linked-graph");
+    expect(
+      issueTypes(
+        makePage({
+          jsonLd: {
+            ...EMPTY_JSON_LD_SUMMARY,
+            blocks: 1,
+            nodes: 2,
+            hasGraph: true,
+          },
+        }),
+      ),
+    ).not.toContain("jsonld-not-linked-graph");
+  });
+
+  it("does not run content checks on non-HTML responses", () => {
+    // A PDF has no structured data to be unlinked.
+    expect(
+      issueTypes(
+        makePage({
+          isHtml: false,
+          jsonLd: { ...EMPTY_JSON_LD_SUMMARY, blocks: 2, nodes: 2 },
+        }),
+      ),
+    ).not.toContain("jsonld-not-linked-graph");
   });
 });
 

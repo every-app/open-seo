@@ -6,6 +6,7 @@ import { httpStatusFixtures } from "./http-status";
 import { redirectFixtures } from "./redirects";
 import { performanceFixtures } from "./performance";
 import { structureFixtures } from "./structure";
+import { structuredDataFixtures } from "./structured-data";
 import { kitchenSinkFixtures } from "./kitchen-sink";
 
 /** Every fixture on the site, in catalog order. */
@@ -17,6 +18,7 @@ export const allFixtures: Fixture[] = [
   ...redirectFixtures,
   ...performanceFixtures,
   ...structureFixtures,
+  ...structuredDataFixtures,
   ...kitchenSinkFixtures,
 ];
 
