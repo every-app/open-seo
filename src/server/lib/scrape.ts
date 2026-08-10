@@ -27,7 +27,11 @@ type SiteReadResult = {
 
 // Bounded read: accumulate up to MAX_RESPONSE_BYTES regardless of whether
 // content-length is present (chunked / CDN responses often omit it).
-async function readBoundedText(response: Response): Promise<string | null> {
+// Exported so other fetchers (e.g. the llms.txt check) reuse the same cap
+// instead of buffering an unbounded third-party body into memory.
+export async function readBoundedText(
+  response: Response,
+): Promise<string | null> {
   const reader = response.body?.getReader();
   if (!reader) return null;
   const decoder = new TextDecoder();

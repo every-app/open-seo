@@ -232,6 +232,46 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Add links from higher-level pages (hubs, category pages, navigation) to flatten the path to this page.",
   },
+  "ai-search-crawlers-blocked": {
+    severity: "warning",
+    title: "AI search crawlers blocked",
+    explanation:
+      "robots.txt blocks crawlers that build the indexes AI answers cite (e.g. OAI-SearchBot for ChatGPT search, PerplexityBot). Pages these crawlers cannot see cannot be cited in AI search results — an increasingly important discovery channel that is separate from classic search rankings.",
+    howToFix:
+      "Allow the blocked user agents in robots.txt (they are listed in the issue details). If you intentionally opted out of AI search visibility, no action is needed.",
+  },
+  "ai-user-fetchers-blocked": {
+    severity: "warning",
+    title: "AI assistant fetchers blocked",
+    explanation:
+      "robots.txt blocks user-request fetchers (e.g. ChatGPT-User, Claude-User) — the agents that retrieve a page live when someone asks an AI assistant about it. Blocking them means assistants cannot open your links or quote your content even when a user explicitly requests it.",
+    howToFix:
+      "Allow the blocked user agents in robots.txt (listed in the issue details). These fetchers act on direct user requests and are not used for model training.",
+  },
+  "ai-training-crawlers-blocked": {
+    severity: "info",
+    title: "AI training crawlers blocked",
+    explanation:
+      "robots.txt blocks crawlers that collect model training data (e.g. GPTBot, CCBot). That is often an intentional content-policy choice — this is a heads-up, not an error. Note that Google-Extended also controls whether Gemini can ground answers in your pages, so blocking it can reduce AI answer visibility, not just training use.",
+    howToFix:
+      "If the block is intentional, no action is needed. If you want AI answer visibility, review the blocked agents in the issue details — especially Google-Extended — and allow the ones tied to answer grounding.",
+  },
+  "missing-llms-txt": {
+    severity: "info",
+    title: "No llms.txt file",
+    explanation:
+      "The site has no /llms.txt. It is an emerging convention (llmstxt.org) that gives AI assistants a curated markdown map of your most important pages, improving how accurately they summarize and cite the site. Absence is common and not an error.",
+    howToFix:
+      "Consider adding a /llms.txt: a markdown file starting with an H1 site name, an optional blockquote summary, and sections of links to key pages. See llmstxt.org for the format.",
+  },
+  "llms-txt-invalid": {
+    severity: "warning",
+    title: "llms.txt does not follow the expected format",
+    explanation:
+      "The site serves /llms.txt, but the file does not start with an H1 title as the llms.txt format requires, so AI tools that parse the file may ignore it entirely — the effort of providing it is lost.",
+    howToFix:
+      'Make the first line of /llms.txt an H1 with the site name (e.g. "# Example Corp"), optionally followed by a blockquote summary and markdown sections of links. See llmstxt.org for the full format.',
+  },
 } as const satisfies Record<string, AuditIssueDescriptor>;
 
 export type AuditIssueType = keyof typeof AUDIT_ISSUE_TYPES;
