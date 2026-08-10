@@ -31,7 +31,7 @@ export function RankTrackingDetailHeader({
   onToggleAddKeywords,
 }: {
   config: RankTrackingConfig;
-  run: { lastCheckedAt: string } | null | undefined;
+  run: { lastCheckedAt: string | null } | null | undefined;
   costEstimate: { keywordCount: number; costUsd: number } | undefined;
   hasBothDevices: boolean;
   activeDevice: "desktop" | "mobile";
@@ -51,7 +51,7 @@ export function RankTrackingDetailHeader({
             : (LOCATIONS[config.locationCode] ?? "US")}{" "}
           &middot; {devicesLabel(config.devices)} &middot;{" "}
           {scheduleLabel(config.scheduleInterval)}
-          {run && (
+          {run?.lastCheckedAt && (
             <>
               {" "}
               &middot; Last: {new Date(run.lastCheckedAt).toLocaleDateString()}

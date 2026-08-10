@@ -128,7 +128,7 @@ export const runSiteAuditTool = {
     });
 
     return mcpResponse({
-      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it completes, then call get_audit_issues for the prioritized issue report.`,
+      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -177,8 +177,16 @@ export const getAuditStatusTool = {
       status.lighthouseTotal > 0
         ? `, lighthouse ${status.lighthouseCompleted + status.lighthouseFailed}/${status.lighthouseTotal}`
         : "";
+    // Failed audits keep partial results — point agents at them instead of
+    // letting a mid-crawl death read as "no data".
+    const nextStep =
+      status.status === "completed"
+        ? " Call get_audit_issues for the issue report."
+        : status.status === "failed" && status.pagesCrawled > 0
+          ? ` The audit stopped early but kept results for the ${status.pagesCrawled} pages it crawled — call get_audit_issues for the partial issue report.`
+          : "";
     return mcpResponse({
-      text: `Audit ${status.id} (${status.startUrl}): ${status.status} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${status.status === "completed" ? " Call get_audit_issues for the issue report." : ""}`,
+      text: `Audit ${status.id} (${status.startUrl}): ${status.status} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${nextStep}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

@@ -15,7 +15,7 @@
     "format:write": "prettier --write .",
     "deploy": "npm run build && wrangler deploy",
     "deploy:prod": "npm run build && wrangler deploy",
-    "deploy:preview": "npm run build && wrangler deploy --env preview"
+    "deploy:preview": "CLOUDFLARE_ENV=preview npm run build && wrangler deploy"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.168.10",

@@ -1,7 +1,6 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
+import { createProjectTool } from "./create-project";
+import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   createProject: vi.fn(),
@@ -13,36 +12,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
-const authContext = {
-  userId: "user_123",
-  userEmail: "alice@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
-  baseUrl: "https://open-seo.test",
-};
-
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://open-seo.test/mcp"),
-    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-  } satisfies AuthInfo,
-};
+const toolContext = makeToolContext();
 
 describe("create_project MCP tool", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    mocks.createProject.mockReset();
-  });
+  beforeEach(() => {});
 
   it("creates a project scoped to the caller's organization and returns it", async () => {
     mocks.createProject.mockResolvedValue({
@@ -52,11 +25,10 @@ describe("create_project MCP tool", () => {
       locationCode: 2840,
       languageCode: "en",
     });
-    const { createProjectTool } = await import("./create-project");
 
     const result = await createProjectTool.handler(
       { name: "Acme", domain: "acme.com", locationCode: 2840 },
-      toolExtra,
+      toolContext,
     );
 
     // The schema does not derive languageCode; the service resolves it from
@@ -89,9 +61,8 @@ describe("create_project MCP tool", () => {
       locationCode: 2840,
       languageCode: "en",
     });
-    const { createProjectTool } = await import("./create-project");
 
-    await createProjectTool.handler({ name: "Just a name" }, toolExtra);
+    await createProjectTool.handler({ name: "Just a name" }, toolContext);
 
     expect(mocks.createProject).toHaveBeenCalledWith("org_123", {
       name: "Just a name",
@@ -99,12 +70,10 @@ describe("create_project MCP tool", () => {
   });
 
   it("rejects a languageCode without a locationCode (market pair rule)", async () => {
-    const { createProjectTool } = await import("./create-project");
-
     await expect(
       createProjectTool.handler(
         { name: "Bad market", languageCode: "en" },
-        toolExtra,
+        toolContext,
       ),
     ).rejects.toThrow();
     expect(mocks.createProject).not.toHaveBeenCalled();

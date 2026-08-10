@@ -1,5 +1,15 @@
+import { z } from "zod";
+
+const PUBLIC_CLIENT_AUTH_METHOD = "none";
 const CONFIDENTIAL_CLIENT_AUTH_METHOD = "client_secret_post";
+const PERPLEXITY_CALLBACK = "https://www.perplexity.ai/api/mcp/oauth/callback";
 const MAX_CLIENT_REGISTRATION_BODY_BYTES = 1024 * 1024;
+
+// Loose so every field the provider cares about survives the round trip.
+const clientMetadataSchema = z.looseObject({
+  token_endpoint_auth_method: z.string().optional(),
+  redirect_uris: z.array(z.string()).optional(),
+});
 
 export async function normalizeClientRegistrationRequest(request: Request) {
   if (request.method !== "POST") {
@@ -16,7 +26,7 @@ export async function normalizeClientRegistrationRequest(request: Request) {
     return request;
   }
 
-  let clientMetadata: unknown;
+  let rawMetadata: unknown;
   try {
     const text = await request.clone().text();
     if (text.length > MAX_CLIENT_REGISTRATION_BODY_BYTES) {
@@ -25,28 +35,26 @@ export async function normalizeClientRegistrationRequest(request: Request) {
       return request;
     }
 
-    clientMetadata = JSON.parse(text);
+    rawMetadata = JSON.parse(text);
   } catch {
     return request;
   }
 
-  if (!clientMetadata || typeof clientMetadata !== "object") {
+  const parsed = clientMetadataSchema.safeParse(rawMetadata);
+  if (!parsed.success || parsed.data.token_endpoint_auth_method !== undefined) {
     return request;
   }
 
+  // Perplexity requires a client secret, so let the provider create and store a
+  // real one. Other MCP clients that omit the method are public clients: some
+  // discard DCR secrets and would otherwise fail their first token refresh.
+  const isPerplexity = parsed.data.redirect_uris?.includes(PERPLEXITY_CALLBACK);
   const metadata = {
-    ...clientMetadata,
-  } as Record<string, unknown>;
-
-  if (
-    metadata.token_endpoint_auth_method === undefined ||
-    metadata.token_endpoint_auth_method === "none"
-  ) {
-    // Perplexity registers as a public client but then rejects DCR responses
-    // without a client_secret. Use client_secret_post because its validator
-    // accepts that method but rejects client_secret_basic.
-    metadata.token_endpoint_auth_method = CONFIDENTIAL_CLIENT_AUTH_METHOD;
-  }
+    ...parsed.data,
+    token_endpoint_auth_method: isPerplexity
+      ? CONFIDENTIAL_CLIENT_AUTH_METHOD
+      : PUBLIC_CLIENT_AUTH_METHOD,
+  };
 
   const headers = new Headers(request.headers);
   headers.set("Content-Type", "application/json");

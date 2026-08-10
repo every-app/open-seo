@@ -22,99 +22,70 @@ type LighthouseFetchResult = {
   payloadJson: string | null;
 };
 
-async function fetchLighthouseResult(
+export async function fetchLighthouseResult(
   url: string,
   pageId: string,
   strategy: "mobile" | "desktop",
   billingCustomer: BillingCustomerContext,
 ): Promise<LighthouseFetchResult> {
-  let lastError: Error | null = null;
   const dataforseo = createDataforseoClient(billingCustomer);
+  try {
+    const data = await dataforseo.lighthouse.live({ url, strategy });
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      if (attempt > 0) {
-        // Exponential backoff: 2s, 4s
-        await new Promise((resolve) =>
-          setTimeout(resolve, 2000 * Math.pow(2, attempt - 1)),
-        );
-      }
-
-      const data = await dataforseo.lighthouse.live({ url, strategy });
-
-      return {
-        result: {
-          url,
-          pageId,
-          strategy,
-          performanceScore: data.scores.performance,
-          accessibilityScore: data.scores.accessibility,
-          bestPracticesScore: data.scores["best-practices"],
-          seoScore: data.scores.seo,
-          lcpMs: data.metrics.largestContentfulPaint.numericValue,
-          cls: data.metrics.cumulativeLayoutShift.numericValue,
-          inpMs: data.metrics.interactionToNextPaint.numericValue,
-          ttfbMs: data.metrics.serverResponseTime.numericValue,
-        },
-        payloadJson: JSON.stringify(data),
-      };
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error));
-      console.warn(
-        `Lighthouse attempt ${attempt + 1} failed for ${url}:`,
-        lastError.message,
-      );
-    }
+    return {
+      result: {
+        url,
+        pageId,
+        strategy,
+        performanceScore: data.scores.performance,
+        accessibilityScore: data.scores.accessibility,
+        bestPracticesScore: data.scores["best-practices"],
+        seoScore: data.scores.seo,
+        lcpMs: data.metrics.largestContentfulPaint.numericValue,
+        cls: data.metrics.cumulativeLayoutShift.numericValue,
+        inpMs: data.metrics.interactionToNextPaint.numericValue,
+        ttfbMs: data.metrics.serverResponseTime.numericValue,
+      },
+      payloadJson: JSON.stringify(data),
+    };
+  } catch (error) {
+    const failed = error instanceof Error ? error : new Error(String(error));
+    console.error(`Lighthouse failed for ${url}:`, failed.message);
+    return {
+      result: {
+        url,
+        pageId,
+        strategy,
+        performanceScore: null,
+        accessibilityScore: null,
+        bestPracticesScore: null,
+        seoScore: null,
+        lcpMs: null,
+        cls: null,
+        inpMs: null,
+        ttfbMs: null,
+        errorMessage: failed.message,
+      },
+      payloadJson: null,
+    };
   }
-
-  // All retries exhausted — return null scores
-  console.error(
-    `Lighthouse failed after 3 attempts for ${url}:`,
-    lastError?.message,
-  );
-  return {
-    result: {
-      url,
-      pageId,
-      strategy,
-      performanceScore: null,
-      accessibilityScore: null,
-      bestPracticesScore: null,
-      seoScore: null,
-      lcpMs: null,
-      cls: null,
-      inpMs: null,
-      ttfbMs: null,
-      errorMessage: lastError?.message ?? "Lighthouse request failed",
-    },
-    payloadJson: null,
-  };
 }
 
-export async function fetchAndStoreLighthouseResult(input: {
-  url: string;
-  pageId: string;
-  strategy: "mobile" | "desktop";
-  billingCustomer: BillingCustomerContext;
+export async function storeLighthouseResult(input: {
   projectId: string;
   auditId: string;
+  fetched: LighthouseFetchResult;
 }): Promise<LighthouseResult> {
-  const fetched = await fetchLighthouseResult(
-    input.url,
-    input.pageId,
-    input.strategy,
-    input.billingCustomer,
-  );
-
-  if (!fetched.payloadJson) {
-    return fetched.result;
+  if (!input.fetched.payloadJson) {
+    return input.fetched.result;
   }
 
-  const key = `site-audit/${input.projectId}/${input.auditId}/${input.pageId}-${input.strategy}.json`;
-  const uploaded = await putTextToR2(key, fetched.payloadJson);
+  const { pageId, strategy } = input.fetched.result;
+  const key = `site-audit/${input.projectId}/${input.auditId}/${pageId}-${strategy}.json`;
+  const uploaded = await putTextToR2(key, input.fetched.payloadJson);
 
   return {
-    ...fetched.result,
+    ...input.fetched.result,
     r2Key: uploaded.key,
     payloadSizeBytes: uploaded.sizeBytes,
   };
@@ -153,6 +124,12 @@ export function selectLighthouseSample(
 
   // Group by URL template pattern
   const templateGroups = new Map<string, LighthouseSamplePage>();
+  if (startPage) {
+    templateGroups.set(
+      detectUrlTemplate(new URL(startPage.url).pathname),
+      startPage,
+    );
+  }
   for (const page of validPages) {
     if (selected.has(page.url)) continue;
     const template = detectUrlTemplate(new URL(page.url).pathname);

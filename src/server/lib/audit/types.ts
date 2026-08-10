@@ -50,7 +50,7 @@ export interface PageLink {
   isNofollow: boolean;
 }
 
-/** Data extracted from a single page via cheerio. */
+/** Data extracted from a single page's HTML. */
 export interface PageAnalysis {
   url: string;
   statusCode: number;
@@ -106,8 +106,9 @@ export interface LighthouseResult {
 }
 
 /**
- * Full result of crawling one page. Persisted to D1 inside the crawl-batch
- * step; never accumulated in memory or returned as durable step state.
+ * Full result of crawling one page. Persisted to the app DB inside the
+ * crawl-chunk step; never accumulated in memory or returned as durable
+ * step state.
  */
 export interface CrawledPageResult {
   id: string;
@@ -139,6 +140,12 @@ export interface CrawledPageResult {
    * checked; a PDF must not). Transient — not persisted.
    */
   isHtml: boolean;
+  /**
+   * HTML size read for this page (approximate; capped at MAX_HTML_BYTES).
+   * Transient — feeds the crawl window's memory-pressure signal, since
+   * response time is measured at headers and says nothing about body size.
+   */
+  htmlBytes: number;
   imagesTotal: number;
   imagesMissingAlt: number;
   images: Array<{ src: string | null; alt: string | null }>;
@@ -150,19 +157,4 @@ export interface CrawledPageResult {
   /** null = not reached via links (e.g. sitemap-seeded). */
   crawlDepth: number | null;
   inSitemap: boolean;
-}
-
-/**
- * Slim per-page summary returned as durable step state from a crawl batch.
- * Keep this small: full page data lives in D1, not in Workflow step state.
- */
-export interface StepPageSummary {
-  id: string;
-  url: string;
-  statusCode: number;
-  fetchClass: PageFetchClass;
-  redirectUrl: string | null;
-  title: string;
-  /** Normalized same-origin link targets, for frontier expansion. */
-  internalLinks: string[];
 }

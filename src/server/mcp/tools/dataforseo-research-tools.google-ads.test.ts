@@ -1,9 +1,8 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
+import { getKeywordMetricsTool } from "./dataforseo-research-tools";
+import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
@@ -32,36 +31,10 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
-const authContext = {
-  userId: "user_123",
-  userEmail: "alice@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
-  baseUrl: "https://open-seo.test",
-};
-
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://open-seo.test/mcp"),
-    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-  } satisfies AuthInfo,
-};
+const toolContext = makeToolContext();
 
 describe("get_keyword_metrics for Google-Ads-only locations", () => {
   beforeEach(() => {
-    vi.resetModules();
-    mocks.createDataforseoClient.mockReset();
-    mocks.getProjectForOrganization.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue({
       id: "project_1",
       locationCode: 2840,
@@ -86,8 +59,6 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
       labs: { keywordOverview },
       keywords: { adsSearchVolume },
     });
-    const { getKeywordMetricsTool } =
-      await import("./dataforseo-research-tools");
 
     const result = await getKeywordMetricsTool.handler(
       {
@@ -97,7 +68,7 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
         locationCode: 2352,
         languageCode: "is",
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(keywordOverview).not.toHaveBeenCalled();
@@ -142,8 +113,6 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
     });
-    const { getKeywordMetricsTool } =
-      await import("./dataforseo-research-tools");
 
     const result = await getKeywordMetricsTool.handler(
       {
@@ -151,7 +120,7 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
         keywords: ["seo tools"],
         includeClickstreamData: true,
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(keywordOverview).toHaveBeenCalledWith(

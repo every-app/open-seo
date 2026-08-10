@@ -33,7 +33,7 @@ export const KEYWORDS_PER_BATCH = 10;
 /** Approximate seconds per batch */
 export const SECONDS_PER_BATCH = 6;
 
-/** Maximum keywords allowed per rank tracking config */
+/** Soft application limit for keywords per rank tracking config */
 export const MAX_KEYWORDS_PER_CONFIG = 1000;
 
 /** Maximum length of a single tracked keyword */
@@ -41,6 +41,16 @@ export const MAX_TRACKED_KEYWORD_LENGTH = 200;
 
 /** Maximum configs (domain+location combos) per project */
 export const MAX_CONFIGS_PER_PROJECT = 500;
+
+/** Maximum queued rank-check tasks DataForSEO accepts in one task_post. */
+export const MAX_TASKS_PER_POST = 100;
+
+export const rankCheckCostApprovalError = (
+  costCredits: number,
+  maxCostCredits: number,
+) => {
+  return `The current rank check costs ${costCredits} credits, above the approved maximum of ${maxCostCredits}. Call estimate_rank_tracker_cost again and ask the user to approve the updated amount.`;
+};
 
 // ---------------------------------------------------------------------------
 // Cost estimation
@@ -69,10 +79,26 @@ export function estimateRankCheckCredits(
   method: RankCheckMethod,
 ) {
   const totalChecks = keywordCount * devicesCount(devices);
-  const costUsd = roundUsdForBilling(
-    totalChecks * costPerSerpAtDepth(depth, method) * SEO_DATA_COST_MARKUP,
-  );
-  const costCredits = Math.ceil(costUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD);
+  const checksPerMeteredCall = method === "queued" ? MAX_TASKS_PER_POST : 1;
+  let costUsd = 0;
+  let costCredits = 0;
+
+  // Metering rounds and ceilings each provider call independently. Live rank
+  // checks make one call per keyword/device pair, while queued checks post up
+  // to MAX_TASKS_PER_POST pairs per call. Summing one aggregate and rounding
+  // once can therefore understate the credits that will actually be charged.
+  for (let offset = 0; offset < totalChecks; offset += checksPerMeteredCall) {
+    const checksInCall = Math.min(checksPerMeteredCall, totalChecks - offset);
+    const callCostUsd = roundUsdForBilling(
+      checksInCall * costPerSerpAtDepth(depth, method) * SEO_DATA_COST_MARKUP,
+    );
+    costUsd += callCostUsd;
+    costCredits += Math.ceil(callCostUsd * AUTUMN_SEO_DATA_CREDITS_PER_USD);
+  }
+
+  // This is the nominal queued task_post estimate. Rejected, failed, or
+  // timed-out tasks can later incur additional live-fallback spend.
+  costUsd = roundUsdForBilling(costUsd);
   return { costUsd, costCredits };
 }
 
@@ -84,6 +110,37 @@ type ScheduledRankTrackingInterval = Exclude<
   RankTrackingConfig["scheduleInterval"],
   "manual"
 >;
+
+// Values written to rank_tracking_configs.last_skip_reason (free-form text in
+// the schema; this union keeps writers and UI comparisons in sync).
+export type RankTrackingSkipReason =
+  | "plan_required"
+  | "no_keywords"
+  | "insufficient_credits";
+
+export function estimateScheduledRankCheckCredits(
+  keywordCount: number,
+  devices: RankTrackingConfig["devices"],
+  depth: number,
+  scheduleInterval: ScheduledRankTrackingInterval,
+) {
+  const { costUsd, costCredits } = estimateRankCheckCredits(
+    keywordCount,
+    devices,
+    depth,
+    "queued",
+  );
+  const checksPerMonth =
+    scheduleInterval === "daily" ? 30 : scheduleInterval === "weekly" ? 4 : 1;
+  return {
+    scheduleInterval,
+    costUsd,
+    costCredits,
+    checksPerMonth,
+    monthlyCostUsd: costUsd * checksPerMonth,
+    monthlyCostCredits: costCredits * checksPerMonth,
+  };
+}
 
 export function isScheduledRankTrackingInterval(
   interval: RankTrackingConfig["scheduleInterval"],

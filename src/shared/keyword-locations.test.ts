@@ -9,6 +9,7 @@ import {
   isLabsLocationCode,
   isSupportedLanguageCode,
   isSupportedLocationCode,
+  resolveKeywordDataLanguage,
   resolveLabsMarket,
   resolveMarket,
 } from "./keyword-locations";
@@ -167,5 +168,18 @@ describe("resolveLabsMarket", () => {
         { locationCode: 2704, languageCode: "vi" },
       ),
     ).toMatchObject({ locationCode: 2352 });
+  });
+});
+
+describe("resolveKeywordDataLanguage", () => {
+  it("keeps a language the country's keyword data serves", () => {
+    expect(resolveKeywordDataLanguage(2840, "es")).toBe("es");
+  });
+
+  it("falls back to the country default for a SERP-only pair", () => {
+    // Rank tracking can track English in Czechia; Labs would charge and fail.
+    expect(resolveKeywordDataLanguage(2203, "en")).toBe("cs");
+    // Google-Ads countries keep their single default too.
+    expect(resolveKeywordDataLanguage(2352, "en")).toBe("is");
   });
 });

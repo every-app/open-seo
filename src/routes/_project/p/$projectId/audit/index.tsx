@@ -16,7 +16,7 @@ import {
   formatStartedAt,
   HttpStatusBadge,
   StatusBadge,
-  SUPPORT_URL,
+  SUPPORT_EMAIL,
 } from "@/client/features/audit/shared";
 
 export const Route = createFileRoute<"/_project/p/$projectId/audit/">(
@@ -87,10 +87,13 @@ function AuditDetail({
   const isFailed = statusQuery.data?.status === "failed";
   const isRunning = statusQuery.data?.status === "running";
 
+  // Failed audits keep whatever pages were crawled before the failure
+  // (persistence is per-batch), so fetch results for them too and show the
+  // partial crawl instead of a dead end.
   const resultsQuery = useQuery({
     queryKey: ["audit-results", projectId, auditId],
     queryFn: () => getAuditResults({ data: { projectId, auditId } }),
-    enabled: isComplete,
+    enabled: isComplete || isFailed,
   });
 
   if (statusQuery.isLoading) {
@@ -118,8 +121,15 @@ function AuditDetail({
   }
 
   const status = statusQuery.data;
+  const partialPageCount = isFailed
+    ? (resultsQuery.data?.pages.length ?? 0)
+    : 0;
+  const failedWithResults = isFailed && partialPageCount > 0;
+  // Wait for the results fetch before choosing between the "partial results"
+  // banner and the zero-page support CTA, so the CTA doesn't flash first.
   const showSupportCta =
-    isFailed || (isComplete && status && status.pagesCrawled <= 1);
+    (isFailed && resultsQuery.isSuccess && !failedWithResults) ||
+    (isComplete && status && status.pagesCrawled <= 1);
 
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
@@ -161,15 +171,12 @@ function AuditDetail({
                 Site audit couldn't fully crawl this website.
               </p>
               <p>
-                This is often caused by anti-bot or firewall settings. Reach out
-                at{" "}
+                This is often caused by anti-bot or firewall settings. Email{" "}
                 <a
                   className="link link-primary"
-                  href={SUPPORT_URL}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                 >
-                  everyapp.dev/support
+                  {SUPPORT_EMAIL}
                 </a>{" "}
                 and we'll help configure auditing for your site.
               </p>
@@ -177,7 +184,30 @@ function AuditDetail({
           </div>
         )}
 
-        {isComplete && resultsQuery.data && (
+        {failedWithResults && (
+          <div className="alert alert-warning">
+            <AlertCircle className="size-5" />
+            <div className="space-y-1">
+              <p className="font-medium">
+                This audit stopped early after {partialPageCount} page
+                {partialPageCount === 1 ? "" : "s"}.
+              </p>
+              <p>
+                The results below cover everything crawled before it stopped.
+                Run a new audit to try again, or email{" "}
+                <a
+                  className="link link-primary"
+                  href={`mailto:${SUPPORT_EMAIL}`}
+                >
+                  {SUPPORT_EMAIL}
+                </a>{" "}
+                if this keeps happening.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {(isComplete || failedWithResults) && resultsQuery.data && (
           <ResultsView
             projectId={projectId}
             data={resultsQuery.data}

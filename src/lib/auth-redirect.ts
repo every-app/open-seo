@@ -3,7 +3,15 @@ const OAUTH_SIGNED_QUERY_END = "sig";
 const OAUTH_AUTHORIZE_MARKERS = ["response_type", "client_id", "redirect_uri"];
 
 export function normalizeAuthRedirect(value: string | null | undefined) {
-  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+  // Backslashes are rejected because URL parsers treat them as slashes:
+  // "/\evil.com" resolves cross-origin, an open redirect via
+  // window.location sinks.
+  if (
+    !value ||
+    !value.startsWith("/") ||
+    value.startsWith("//") ||
+    value.includes("\\")
+  ) {
     return "/";
   }
 

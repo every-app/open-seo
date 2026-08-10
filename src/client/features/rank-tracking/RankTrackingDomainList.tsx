@@ -234,6 +234,12 @@ function DomainRow({
             Scheduled check skipped — insufficient credits
           </p>
         )}
+        {summary.lastSkipReason === "plan_required" && (
+          <p className="flex items-center gap-1 text-xs text-warning">
+            <AlertTriangle className="size-3" />
+            Scheduled check skipped — paid plan required
+          </p>
+        )}
       </div>
       <div className="hidden sm:flex items-center gap-6 text-sm pointer-events-none">
         {summary.keywordCount > 0 && (

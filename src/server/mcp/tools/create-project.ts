@@ -1,9 +1,6 @@
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { mcpResponse } from "@/server/mcp/formatters";
-import {
-  requireMcpToolAuthContext,
-  type ToolExtra,
-} from "@/server/mcp/context";
+import { type ToolContext } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { languageCodeSchema, locationCodeSchema } from "@/server/mcp/schemas";
@@ -65,8 +62,8 @@ export const createProjectTool = {
       destructiveHint: false,
     },
   },
-  handler: async (args: Args, extra: ToolExtra) => {
-    const { baseUrl, ...auth } = requireMcpToolAuthContext(extra);
+  handler: async (args: Args, context: ToolContext) => {
+    const { baseUrl, ...auth } = context.auth;
     // Reuse the app's create schema so the market pair rule (a languageCode
     // requires a locationCode) is enforced identically to the dashboard, and
     // the domain is normalized the same way.

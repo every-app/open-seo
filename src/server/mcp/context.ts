@@ -1,123 +1,92 @@
-import type {
-  ServerNotification,
-  ServerRequest,
-} from "@modelcontextprotocol/sdk/types.js";
-import type { RequestHandlerExtra } from "@modelcontextprotocol/sdk/shared/protocol.js";
-import { AsyncLocalStorage } from "node:async_hooks";
+import type { ServerContext } from "@modelcontextprotocol/server";
+import { getMcpAuthContext } from "agents/mcp/server";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { getMcpResource } from "@/lib/oauth-resource";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 
-type McpAuth = {
+export type ToolAuthContext = {
   userId: string;
   userEmail: string;
   organizationId: string;
   scopes: string[];
   clientId: string | null;
-  audience: string;
-  subject: string;
+  baseUrl: string;
+};
+
+export type ToolContext = {
+  auth: ToolAuthContext;
 };
 
 export const MCP_AUTH_CONTEXT_PROP = "openSeoAuth";
 export const MCP_ROUTE = "/mcp";
 
-const mcpToolAuthContextSchema = z.object({
+const applicationAuthContextSchema = z.object({
   userId: z.string().min(1),
   userEmail: z.string().min(1),
   organizationId: z.string().min(1),
-  clientId: z.string().nullable(),
-  scopes: z.array(z.string()),
-  audience: z.string().min(1),
-  subject: z.string().min(1),
   baseUrl: z.string().url(),
+  // Compatibility fallback until workers-oauth-provider supplies the verified
+  // context marker consumed by Agents SDK 0.20.x (the
+  // cloudflare.workers-oauth-provider.verified-context.v1 symbol, which mints
+  // context.http.authInfo — watch the provider changelog). Once it ships,
+  // delete these two fields and the fallback in createMcpToolContext, and read
+  // clientId/scopes in transport.ts from authInfo instead of props.
+  clientId: z.string().min(1).nullable().optional(),
+  scopes: z.array(z.string()).optional(),
 });
 
-export type McpToolAuthContext = z.infer<typeof mcpToolAuthContextSchema>;
-
-export type ToolExtra = RequestHandlerExtra<ServerRequest, ServerNotification>;
+type ApplicationAuthContext = z.infer<typeof applicationAuthContextSchema>;
 
 export const workersOAuthMcpPropsSchema = z.object({
-  [MCP_AUTH_CONTEXT_PROP]: mcpToolAuthContextSchema,
+  [MCP_AUTH_CONTEXT_PROP]: applicationAuthContextSchema,
 });
 
-const mcpToolAuthContextStorage = new AsyncLocalStorage<McpToolAuthContext>();
-
-/**
- * Auth context for first-party (non-OAuth) callers — the self-hosted MCP
- * transport and the SAM agent. Centralizes the invariants both sites relied
- * on by convention: `subject` is the user id, `clientId` is null, and the
- * audience derives from the base URL.
- */
-export function buildFirstPartyMcpAuthContext(input: {
-  userId: string;
-  userEmail: string;
-  organizationId: string;
-  baseUrl: string;
-  scopes?: string[];
-}): McpToolAuthContext {
-  return {
-    userId: input.userId,
-    userEmail: input.userEmail,
-    organizationId: input.organizationId,
-    clientId: null,
-    scopes: input.scopes ?? [],
-    audience: getMcpResource(input.baseUrl),
-    subject: input.userId,
-    baseUrl: input.baseUrl,
-  };
-}
+// The hosted /mcp route only ever sees provider-minted tokens, whose props
+// always carry the OAuth client identity — require it so scope enforcement
+// fails closed instead of silently degrading to first-party.
+export const hostedWorkersOAuthMcpPropsSchema = z.object({
+  [MCP_AUTH_CONTEXT_PROP]: applicationAuthContextSchema.extend({
+    clientId: z.string().min(1),
+    scopes: z.array(z.string()),
+  }),
+});
 
 export function createWorkersOAuthMcpProps(
-  context: McpToolAuthContext,
-): Record<string, McpToolAuthContext> {
+  context: ApplicationAuthContext,
+): Record<string, ApplicationAuthContext> {
   return {
     [MCP_AUTH_CONTEXT_PROP]: context,
   };
 }
 
-export function withWorkersOAuthMcpScopes(
-  props: unknown,
-  scopes: string[],
-): Record<string, McpToolAuthContext> | undefined {
-  const result = workersOAuthMcpPropsSchema.safeParse(props);
-  if (!result.success) return undefined;
-
-  return createWorkersOAuthMcpProps({
-    ...result.data[MCP_AUTH_CONTEXT_PROP],
-    scopes,
-  });
-}
-
-export function runWithMcpToolAuthContext<T>(
-  context: McpToolAuthContext,
-  callback: () => T,
-) {
-  return mcpToolAuthContextStorage.run(context, callback);
-}
-
-export function requireMcpToolAuthContext(
-  extra: ToolExtra,
-): McpToolAuthContext {
-  const rawContext =
-    mcpToolAuthContextStorage.getStore() ??
-    extra.authInfo?.extra?.[MCP_AUTH_CONTEXT_PROP];
-  const result = mcpToolAuthContextSchema.safeParse(rawContext);
-
+export function createMcpToolContext(
+  context: Pick<ServerContext, "http">,
+): ToolContext {
+  const result = workersOAuthMcpPropsSchema.safeParse(
+    getMcpAuthContext()?.props,
+  );
   if (!result.success) {
     throw new Error(`MCP auth context missing: ${result.error.message}`);
   }
 
-  return result.data;
-}
+  // Scope enforcement happens once, at the hosted transport boundary
+  // (handleAuthenticatedOpenSeoMcpRequest); this only assembles identity.
+  const applicationAuth = result.data[MCP_AUTH_CONTEXT_PROP];
+  const authInfo = context.http?.authInfo;
+  const clientId = authInfo?.clientId ?? applicationAuth.clientId ?? null;
+  const scopes = authInfo?.scopes ?? applicationAuth.scopes ?? [];
 
-export function getAuth(extra: ToolExtra): McpAuth {
-  const { baseUrl: _baseUrl, ...auth } = requireMcpToolAuthContext(extra);
-  return auth;
+  return {
+    auth: {
+      ...applicationAuth,
+      clientId,
+      scopes,
+    },
+  };
 }
 
 export function buildBillingCustomer(
-  auth: McpAuth,
+  auth: Pick<ToolAuthContext, "userId" | "userEmail" | "organizationId">,
   projectId: string,
 ): BillingCustomerContext {
   return {
@@ -129,7 +98,10 @@ export function buildBillingCustomer(
 }
 
 export function buildProjectMeta(
-  context: { auth: Pick<McpAuth, "organizationId">; baseUrl: string },
+  context: {
+    auth: Pick<ToolAuthContext, "organizationId">;
+    baseUrl: string;
+  },
   projectId: string,
   path?: string,
   params?: Record<string, string | number | undefined>,

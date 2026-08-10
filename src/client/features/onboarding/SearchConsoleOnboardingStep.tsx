@@ -8,7 +8,7 @@ import {
   SitePicker,
   type GscSiteSelection,
 } from "@/client/features/gsc/SitePicker";
-import { startGscLink } from "@/client/features/gsc/startGscLink";
+import { startGoogleLink } from "@/client/features/integrations/startGoogleLink";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
@@ -154,7 +154,7 @@ function GscConnect({ projectId }: { projectId: string }) {
 
   const handleConnect = () => {
     captureClientEvent("onboarding:gsc_connect_clicked");
-    void startGscLink(window.location.href);
+    void startGoogleLink("gsc", window.location.href);
   };
 
   if (connectionQuery.isLoading) return <Checking />;

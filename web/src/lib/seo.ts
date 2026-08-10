@@ -1,5 +1,5 @@
 const DEFAULT_SITE_URL = "https://openseo.so";
-const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
+const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.jpg";
 const DEFAULT_SOCIAL_IMAGE_ALT = "OpenSEO product preview";
 
 export const SITE_URL = (
@@ -53,7 +53,7 @@ export function buildPageSeo({
       { property: "og:url", content: canonicalUrl },
       { property: "og:image", content: socialImageUrl },
       { property: "og:image:alt", content: imageAlt },
-      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:type", content: "image/jpeg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },

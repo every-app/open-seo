@@ -4,8 +4,6 @@ import { RankTrackingRepository } from "@/server/features/rank-tracking/reposito
 import { RankTrackingService } from "@/server/features/rank-tracking/services/RankTrackingService";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import { AppError, asAppError } from "@/server/lib/errors";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
@@ -125,14 +123,6 @@ export const triggerRankCheck = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(triggerCheckSchema)
   .handler(async ({ data, context }) => {
-    const isHosted = await isHostedServerAuthMode();
-    if (isHosted && !(await customerHasPaidPlan(context.organizationId))) {
-      throw new AppError(
-        "PAYMENT_REQUIRED",
-        "Upgrade to the paid plan to run rank checks",
-      );
-    }
-
     const result = await RankTrackingService.triggerCheck({
       configId: data.configId,
       projectId: context.projectId,
@@ -183,6 +173,17 @@ export const estimateRankCheckCost = createServerFn({ method: "POST" })
     return RankTrackingService.estimateCost(data.configId, context.projectId);
   });
 
+function logAutoActionFailure(action: string, err: unknown) {
+  const appErr = asAppError(err);
+  if (appErr?.code === "PAYMENT_REQUIRED") {
+    console.info(`[rank-tracking] ${action} skipped: paid plan required`);
+  } else if (appErr?.code === "INSUFFICIENT_CREDITS") {
+    console.info(`[rank-tracking] ${action} skipped: insufficient credits`);
+  } else {
+    console.error(`[rank-tracking] ${action} failed:`, err);
+  }
+}
+
 export const addTrackingKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(addKeywordsSchema)
@@ -191,42 +192,27 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
       data.configId,
       context.projectId,
       data.keywords,
+      { kind: "direct_user_action" },
     );
 
     let checkTriggered = false;
     if (result.addedIds.length > 0) {
-      const isHosted = await isHostedServerAuthMode();
-      const hasPaidPlan =
-        !isHosted || (await customerHasPaidPlan(context.organizationId));
-
-      if (hasPaidPlan) {
-        try {
-          const triggerResult = await RankTrackingService.triggerCheck({
-            configId: data.configId,
-            projectId: context.projectId,
-            billingCustomer: context,
-            keywordIds: result.addedIds,
-          });
-          checkTriggered = triggerResult.ok;
-          if (!triggerResult.ok) {
-            console.info(
-              "[rank-tracking] auto-check skipped: %s",
-              triggerResult.reason,
-            );
-          }
-        } catch (err) {
-          const appErr = asAppError(err);
-          if (appErr?.code === "INSUFFICIENT_CREDITS") {
-            console.info(
-              "[rank-tracking] auto-check skipped: insufficient credits",
-            );
-          } else {
-            console.error(
-              "[rank-tracking] auto-check after keyword add failed:",
-              err,
-            );
-          }
+      try {
+        const triggerResult = await RankTrackingService.triggerCheck({
+          configId: data.configId,
+          projectId: context.projectId,
+          billingCustomer: context,
+          keywordIds: result.addedIds,
+        });
+        checkTriggered = triggerResult.ok;
+        if (!triggerResult.ok) {
+          console.info(
+            "[rank-tracking] auto-check skipped: %s",
+            triggerResult.reason,
+          );
         }
+      } catch (err) {
+        logAutoActionFailure("auto-check", err);
       }
     }
 
@@ -239,14 +225,7 @@ export const addTrackingKeywords = createServerFn({ method: "POST" })
           context,
         );
       } catch (err) {
-        const appErr = asAppError(err);
-        if (appErr?.code === "INSUFFICIENT_CREDITS") {
-          console.info(
-            "[rank-tracking] auto-metrics-refresh skipped: insufficient credits",
-          );
-        } else {
-          console.error("[rank-tracking] auto-metrics-refresh failed:", err);
-        }
+        logAutoActionFailure("auto-metrics-refresh", err);
       }
     }
 
@@ -257,12 +236,11 @@ export const removeTrackingKeywords = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(removeKeywordsSchema)
   .handler(async ({ data, context }) => {
-    await RankTrackingService.removeKeywords(
+    return RankTrackingService.removeKeywords(
       data.configId,
       context.projectId,
       data.keywordIds,
     );
-    return { removed: data.keywordIds.length };
   });
 
 export const refreshTrackingKeywordMetrics = createServerFn({ method: "POST" })

@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { MAX_CONFIGS_PER_PROJECT } from "@/shared/rank-tracking";
+import { RankTrackingService } from "./RankTrackingService";
 
 const mocks = vi.hoisted(() => ({
   getConfigByProjectDomainLocation: vi.fn(),
+  getConfigById: vi.fn(),
   getConfigsForProject: vi.fn(),
   createConfig: vi.fn(),
   updateConfig: vi.fn(),
@@ -39,19 +42,29 @@ const baseInput = {
 };
 
 describe("RankTrackingService.createConfig", () => {
-  beforeEach(() => {
-    vi.resetModules();
-    for (const mock of Object.values(mocks)) mock.mockReset();
-  });
+  beforeEach(() => {});
 
   it("reactivates an archived config instead of throwing, applying the new settings", async () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.updateConfig.mockResolvedValue(undefined);
-    const { RankTrackingService } = await import("./RankTrackingService");
+    mocks.getConfigById.mockResolvedValue({
+      ...archivedConfig,
+      languageCode: "es",
+      devices: "desktop",
+      serpDepth: 40,
+      scheduleInterval: "daily",
+      isActive: true,
+      lastSkipReason: null,
+    });
 
-    await expect(RankTrackingService.createConfig(baseInput)).resolves.toEqual({
-      configId: "config_archived",
+    await expect(
+      RankTrackingService.createConfig(baseInput),
+    ).resolves.toMatchObject({
+      id: "config_archived",
+      isActive: true,
+      languageCode: "es",
+      devices: "desktop",
     });
 
     expect(mocks.updateConfig).toHaveBeenCalledTimes(1);
@@ -76,7 +89,6 @@ describe("RankTrackingService.createConfig", () => {
       ...archivedConfig,
       isActive: true,
     });
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     await expect(
       RankTrackingService.createConfig(baseInput),
@@ -89,7 +101,6 @@ describe("RankTrackingService.createConfig", () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.createConfig.mockResolvedValue(undefined);
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     // Local config: the lookup must be scoped to this exact city, so an
     // existing national row for the same domain doesn't collide.
@@ -115,7 +126,6 @@ describe("RankTrackingService.createConfig", () => {
   });
 
   it("rejects reactivating an archived config when the project is at the active-config cap", async () => {
-    const { MAX_CONFIGS_PER_PROJECT } = await import("@/shared/rank-tracking");
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
     mocks.getConfigsForProject.mockResolvedValue(
       Array.from({ length: MAX_CONFIGS_PER_PROJECT }, (_, i) => ({
@@ -124,7 +134,6 @@ describe("RankTrackingService.createConfig", () => {
         isActive: true,
       })),
     );
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     await expect(
       RankTrackingService.createConfig(baseInput),
@@ -137,16 +146,15 @@ describe("RankTrackingService.createConfig", () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.createConfig.mockResolvedValue(undefined);
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     const result = await RankTrackingService.createConfig(baseInput);
 
-    expect(result.configId).toBeTruthy();
+    expect(result.id).toBeTruthy();
     expect(mocks.createConfig).toHaveBeenCalledTimes(1);
     expect(mocks.updateConfig).not.toHaveBeenCalled();
     expect(mocks.createConfig).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: result.configId,
+        id: result.id,
         projectId: "project_1",
         domain: "acme.com",
         devices: "desktop",
@@ -160,7 +168,6 @@ describe("RankTrackingService.createConfig", () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.createConfig.mockResolvedValue(undefined);
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     await RankTrackingService.createConfig({
       projectId: "project_1",
@@ -178,7 +185,6 @@ describe("RankTrackingService.createConfig", () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
     mocks.getConfigsForProject.mockResolvedValue([]);
     mocks.createConfig.mockResolvedValue(undefined);
-    const { RankTrackingService } = await import("./RankTrackingService");
 
     await RankTrackingService.createConfig({
       projectId: "project_1",

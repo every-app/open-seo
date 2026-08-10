@@ -41,7 +41,7 @@ function HomePage() {
         <div className="home-issues" id="issues">
           {homepageCategories.map((category) => (
             <section className="home-issue-group" key={category}>
-              <h3>{category}</h3>
+              <h2>{category}</h2>
               <div className="home-case-head" aria-hidden="true">
                 <span>Issue</span>
                 <span>What it demonstrates</span>

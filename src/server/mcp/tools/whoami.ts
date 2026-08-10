@@ -4,7 +4,7 @@ import {
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
 import { mcpResponse } from "@/server/mcp/formatters";
-import { getAuth, type ToolExtra } from "@/server/mcp/context";
+import { type ToolContext } from "@/server/mcp/context";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
@@ -40,8 +40,8 @@ export const whoamiTool = {
       destructiveHint: false,
     },
   },
-  handler: async (_args: Record<string, never>, extra: ToolExtra) => {
-    const auth = getAuth(extra);
+  handler: async (_args: Record<string, never>, context: ToolContext) => {
+    const auth = context.auth;
     const isHosted = await isHostedServerAuthMode();
     let creditsRemaining: number | null = null;
     if (isHosted) {

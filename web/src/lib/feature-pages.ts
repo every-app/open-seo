@@ -208,7 +208,7 @@ export const featurePages = {
     ],
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlinks" },
       { label: "Keyword Research", href: "/features/keyword-research" },
     ],
     faqs: [
@@ -229,18 +229,18 @@ export const featurePages = {
       },
     ],
   },
-  backlinkChecker: {
-    slug: FEATURE_PAGE_SLUGS.backlinkChecker,
+  backlinks: {
+    slug: FEATURE_PAGE_SLUGS.backlinks,
     eyebrow: "Backlinks",
     navDescription: "Check links and referring domains.",
-    title: "Backlink checker for understanding a domain's link profile",
+    title: "Backlink analysis for understanding a domain's link profile",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
-    primaryKeyword: "backlink checker",
+    primaryKeyword: "backlink analysis",
     secondaryKeywords: [
-      "free backlink checker",
       "backlink analysis tool",
-      "google backlink checker",
+      "referring domains",
+      "link profile",
     ],
     imageAlt: "OpenSEO backlinks report",
     imageSrc:
@@ -280,18 +280,18 @@ export const featurePages = {
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
     related: [
+      { label: "Free Backlink Checker", href: "/backlink-checker" },
       {
         label: "Link Prospecting",
         href: "/docs/skills/link-prospecting",
       },
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
     faqs: [
       {
-        question: "What is a backlink checker used for?",
+        question: "What is backlink analysis used for?",
         answer:
-          "A backlink checker helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
+          "Backlink analysis helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
       },
       {
         question: "Can I check competitor backlinks in OpenSEO?",
@@ -361,7 +361,7 @@ export const featurePages = {
         href: "/docs/skills/competitor-analysis",
       },
       { label: "Keyword Research", href: "/features/keyword-research" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlinks" },
     ],
     faqs: [
       {
@@ -695,7 +695,7 @@ export const featureGroups = [
     description: "Understand competitors, backlinks, and technical health.",
     pages: [
       featurePages.domainOverview,
-      featurePages.backlinkChecker,
+      featurePages.backlinks,
       featurePages.siteAudit,
     ],
   },

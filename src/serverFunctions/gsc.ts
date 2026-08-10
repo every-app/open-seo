@@ -3,8 +3,11 @@ import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import { GscService } from "@/server/features/gsc/services/GscService";
-import { hasSelfHostedGscConfig } from "@/server/features/gsc/oauth-config";
-import { createSelfHostedGscAuthorizationUrl } from "@/server/features/gsc/selfHostedOAuth";
+import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
+import {
+  createSelfHostedGoogleAuthorizationUrl,
+  GSC_INTEGRATION,
+} from "@/server/features/google/selfHostedOAuth";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -40,7 +43,7 @@ export const getGscConnection = createServerFn({ method: "POST" })
         GscService.getConnection(context.projectId),
         GscService.userHasGrant(context.userId),
         isHostedServerAuthMode(),
-        hasSelfHostedGscConfig(),
+        hasSelfHostedGoogleOAuthConfig(),
       ]);
     return {
       connected: Boolean(connection),
@@ -131,7 +134,8 @@ export const startSelfHostedGscLink = createServerFn({ method: "POST" })
   .validator(startSelfHostedLinkSchema)
   .handler(async ({ data, context }) => {
     const publicOrigin = getPublicOrigin(getRequest());
-    const url = await createSelfHostedGscAuthorizationUrl({
+    const url = await createSelfHostedGoogleAuthorizationUrl({
+      integration: GSC_INTEGRATION,
       user: {
         userId: context.userId,
         userEmail: context.userEmail,

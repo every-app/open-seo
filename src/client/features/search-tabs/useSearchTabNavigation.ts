@@ -50,13 +50,10 @@ export function useSearchTabNavigation({
       return;
     }
 
-    const result = openTab({
+    openTab({
       label: getLabel(urlInput),
       input: urlInput,
     });
-    if (result.dropped) {
-      setActiveTab(null);
-    }
   }, [activeTabId, findMatchingTab, getLabel, openTab, setActiveTab, urlInput]);
 
   const selectTab = useCallback(
@@ -85,7 +82,7 @@ export function useSearchTabNavigation({
   const openSearchTab = useCallback(
     (input: SearchTabInput) => {
       closedInputKeysRef.current.delete(tabInputKey(input));
-      return openTab({
+      openTab({
         label: getLabel(input),
         input,
       });
@@ -104,9 +101,7 @@ export function useSearchTabNavigation({
   return {
     activeTabId: tabs.activeTabId,
     tabs: visibleTabs,
-    canOpenTab: tabs.canOpenTab,
     closeTab: closeSearchTab,
-    limit: tabs.limit,
     markTabViewed,
     openTab: openSearchTab,
     selectTab,

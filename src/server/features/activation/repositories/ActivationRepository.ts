@@ -89,6 +89,20 @@ async function markMcpCardDismissed(projectId: string): Promise<void> {
     });
 }
 
+async function markGa4CardDismissed(projectId: string): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .insert(projectActivationState)
+    .values({ projectId, ga4CardDismissedAt: now, updatedAt: now })
+    .onConflictDoUpdate({
+      target: projectActivationState.projectId,
+      set: {
+        ga4CardDismissedAt: sql`coalesce(${projectActivationState.ga4CardDismissedAt}, ${now})`,
+        updatedAt: now,
+      },
+    });
+}
+
 export const ActivationRepository = {
   getOrganizationActivation,
   getProjectActivation,
@@ -96,4 +110,5 @@ export const ActivationRepository = {
   recordFirstMcpToolCall,
   markCompetitorStepClicked,
   markMcpCardDismissed,
+  markGa4CardDismissed,
 };
