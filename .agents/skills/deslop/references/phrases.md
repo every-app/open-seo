@@ -187,6 +187,25 @@ Asserting clarity instead of demonstrating it:
 - "History is clear, the metrics are clear, the examples are clear"
 - "but none of them is the real story. The real story is..."
 
+## Self-Certifying Candor
+
+Avoid phrases that announce the writer's honesty instead of making the claim precise:
+
+- "the honest answer"
+- "the honest framing"
+- "the most honest signal"
+- "an honest forecast"
+- "the truth is"
+
+Do not mechanically replace "honest" with "realistic," "candid," or another unsupported self-certification such as "clearest" or "most reliable." State the evidence, limitation, or uncertainty directly. When a modifier is necessary, use one that names the basis of the claim: "first-party," "directional," "modeled," "bounded," or "based on stated assumptions." Keep ordinary uses that describe a person's conduct or testimony, such as "she gave an honest account."
+
+| Avoid | Use instead |
+|-------|-------------|
+| "The honest framing is that ranking and traffic have come apart." | "Ranking and traffic have come apart." |
+| "The honest answer lives between the scenarios." | "The likely outcome falls between the scenarios." |
+| "This is the most honest signal available." | "Treat this as a directional signal, not direct attribution." |
+| "Use an honest forecast." | "Build the forecast from stated assumptions." |
+
 ## Vague Declaratives
 
 Sentences that announce importance without naming the specific thing. Kill these or replace with the specific thing.

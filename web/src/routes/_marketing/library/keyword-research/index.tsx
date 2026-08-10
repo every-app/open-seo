@@ -3,7 +3,7 @@ import { buildPageSeo } from "@/lib/seo";
 
 const PATH = "/library/keyword-research";
 
-const plays = [
+const strategies = [
   {
     title: "Seed from conversation, not a volume report",
     description:
@@ -37,7 +37,7 @@ const plays = [
   {
     title: "Opportunity sizing & forecasting",
     description:
-      "Size a cluster before you invest: difficulty, traffic ceiling, and honest payback windows.",
+      "Size a cluster before you invest: difficulty, traffic ceiling, and modeled payback windows.",
     href: "/library/keyword-research/opportunity-sizing-forecasting",
   },
   {
@@ -49,7 +49,7 @@ const plays = [
   {
     title: "Map positioning to real demand",
     description:
-      "Competitor keyword gaps as a positioning instrument, not a copying exercise.",
+      "Check whether your category language matches what customers actually search.",
     href: "/library/keyword-research/positioning-to-demand",
   },
 ];
@@ -97,7 +97,7 @@ export const Route = createFileRoute("/_marketing/library/keyword-research/")({
     buildPageSeo({
       title: "How to Do Keyword Research: The Strategy Library",
       description:
-        "Eight practitioner plays that treat keyword research as demand discovery, sourced from real interviews with working SEOs, executable inside OpenSEO.",
+        "Eight demand-discovery strategies drawn from interviews with working SEOs, each with a workflow you can run in OpenSEO.",
       path: PATH,
       titleSuffix: "OpenSEO",
     }),
@@ -115,9 +115,8 @@ function KeywordResearchLibraryPage() {
           The Keyword Research Strategy Library
         </h1>
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
-          Eight practitioner plays that treat keyword research as demand
-          discovery, sourced from real interviews with working SEOs, executable
-          inside OpenSEO.
+          Eight demand-discovery strategies drawn from interviews with working
+          SEOs, each with a workflow you can run in OpenSEO.
         </p>
       </header>
 
@@ -127,13 +126,14 @@ function KeywordResearchLibraryPage() {
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Most guides teach you to export a volume report and sort descending.
-          These plays start earlier, where demand originates: customer language,
-          question mining, your own Search Console. They end with pages mapped
-          to intent, not keywords stuffed into paragraphs. Each play is a full
-          walkthrough with the copy-paste MCP prompt that runs it.
+          These strategies start earlier, where demand originates: customer
+          language, question mining, your own Search Console. They end with
+          pages mapped to intent, not keywords stuffed into paragraphs. Each
+          strategy includes a walkthrough and a copy-paste MCP prompt for the
+          workflow.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
-          {plays.map((play, index) => {
+          {strategies.map((strategy, index) => {
             const number = String(index + 1).padStart(2, "0");
             const body = (
               <>
@@ -141,15 +141,15 @@ function KeywordResearchLibraryPage() {
                   <span className="font-mono text-sm tabular-nums text-[var(--color-brand-accent)]">
                     {number}
                   </span>
-                  {play.href ? null : (
+                  {strategy.href ? null : (
                     <span className="rounded-full border border-[var(--color-border-subtle)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-[var(--color-brand-muted)]">
                       Next up
                     </span>
                   )}
                 </div>
                 <h3 className="mt-3 text-base font-semibold text-neutral-950">
-                  {play.title}
-                  {play.href ? (
+                  {strategy.title}
+                  {strategy.href ? (
                     <span
                       aria-hidden="true"
                       className="ml-1 text-[var(--color-brand-accent)]"
@@ -159,21 +159,21 @@ function KeywordResearchLibraryPage() {
                   ) : null}
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
-                  {play.description}
+                  {strategy.description}
                 </p>
               </>
             );
-            return play.href ? (
+            return strategy.href ? (
               <a
-                key={play.title}
-                href={play.href}
+                key={strategy.title}
+                href={strategy.href}
                 className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 transition-colors hover:border-neutral-900"
               >
                 {body}
               </a>
             ) : (
               <div
-                key={play.title}
+                key={strategy.title}
                 className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5"
               >
                 {body}
@@ -183,7 +183,7 @@ function KeywordResearchLibraryPage() {
         </div>
       </section>
 
-      <section className="mt-12 rounded-xl border border-[var(--color-border-subtle)] bg-white p-6 md:p-8">
+      <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
           What Google Keyword Planner hides (and what to use instead)
         </h2>
@@ -194,20 +194,21 @@ function KeywordResearchLibraryPage() {
           for content strategy.
         </p>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-700">
-          The plays in this library replace it with three honest sources: your
-          customers' language (play 01), Google's own question surfaces (play
-          02), and your Search Console reality (play 05). Volume data still
-          matters, but it's the <em>last</em> filter, not the first.
+          The strategies in this library replace it with three sources you can
+          inspect: your customers' language (strategy 01), Google's own question
+          surfaces (strategy 02), and your Search Console reality (strategy 05).
+          Volume data still matters, but it's the <em>last</em> filter, not the
+          first.
         </p>
       </section>
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          Free keyword research tools for every play
+          Free keyword research tools for every strategy
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Google's free surfaces (autocomplete, People Also Ask) plus your own
-          Search Console do the discovery. Every play then runs in{" "}
+          Search Console do the discovery. You can run each workflow in{" "}
           <a
             href="/features/keyword-research"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
@@ -252,8 +253,8 @@ function KeywordResearchLibraryPage() {
             The Keyword Research Playbook
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            The plays as a working PDF: checklists, the MCP prompts, and the
-            keyword-map template. Ungated.
+            The strategies as a working PDF: checklists, the MCP prompts, and
+            the keyword-map template. Ungated.
           </p>
         </div>
         <a

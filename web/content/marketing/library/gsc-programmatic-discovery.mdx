@@ -1,6 +1,6 @@
 ---
 title: "Query-mine the Search Console you already own"
-description: "Your own Search Console is the only keyword database built from people who reached you. The play for mining it: striking-distance keywords, zero-click pages, and the queries Google won't name."
+description: "Your own Search Console is the only keyword database built from people who reached you. The strategy for mining it: striking-distance keywords, zero-click pages, and the queries Google won't name."
 ---
 
 ## What is programmatic keyword discovery?
@@ -15,9 +15,9 @@ Open a page report and note the click total. Then add up the clicks in the query
 
 The gap is worse than most people assume. On one of my own pages earning around a hundred clicks a month, the interface named five queries. Going through the API raised that to twelve. Out of a hundred clicks, I could name twelve of them, on a page I wrote and understood.
 
-That is the problem the [dark query post](/blogs/dark-queries) works through in detail. This page is the repeatable play that comes out of it.
+That is the problem the [dark query post](/blogs/dark-queries) works through in detail. This page is the repeatable strategy that comes out of it.
 
-Grant Simmons, who has built SEO tooling for years, is honest about the ceiling on any fix:
+Grant Simmons, who has built SEO tooling for years, adds a confidence score to his estimates:
 
 > Most of my tools, I add in a confidence score, because the math is just math and reasoning is just reasoning.
 
@@ -27,7 +27,7 @@ He is also skeptical that the gap can be closed outright, on the grounds that yo
 
 Striking-distance keywords are the terms where you rank between roughly position 11 and 30. They earn few clicks and prove Google already considers your page a credible answer. Moving one of them onto page one is cheaper than earning a new ranking from nothing, which makes this the highest-return query mine on most sites.
 
-The play runs in four steps:
+The workflow runs in four steps:
 
 1. Pull every query for the property over the longest window available, not the default three months.
 2. Filter to positions 11 to 30 with impressions above your own noise floor.
@@ -56,7 +56,7 @@ Sort those by impressions and read the queries attached. When the queries do not
 
 ## Do it with OpenSEO
 
-Because the Search Console connection runs through OpenSEO, your agent can query it alongside your ranking data without a second integration. Connect the [OpenSEO MCP](/docs/mcp) once, or read how the [Search Console MCP](/google-search-console-mcp) fits together, then run the play as a prompt.
+Because the Search Console connection runs through OpenSEO, your agent can query it alongside your ranking data without a second integration. Connect the [OpenSEO MCP](/docs/mcp) once, or read how the [Search Console MCP](/google-search-console-mcp) fits together, then run the workflow with this prompt.
 
 ```text
 Using the OpenSEO MCP, pull Search Console query data for
