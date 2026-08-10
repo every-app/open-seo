@@ -21,14 +21,20 @@ function formatStarCount(count: number): string {
 
 async function fetchGithubStarCount(): Promise<string | null> {
   try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        ...(typeof window === "undefined"
-          ? { "User-Agent": "openseo-landing" }
-          : {}),
-      },
-    });
+    const isServer = typeof window === "undefined";
+    const res = await fetch(
+      isServer
+        ? `https://api.github.com/repos/${GITHUB_REPO}`
+        : "/api/github-stars",
+      isServer
+        ? {
+            headers: {
+              Accept: "application/vnd.github+json",
+              "User-Agent": "openseo-landing",
+            },
+          }
+        : undefined,
+    );
     if (!res.ok) return null;
     const data = (await res.json()) as { stargazers_count?: number };
     return typeof data.stargazers_count === "number"

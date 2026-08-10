@@ -21,6 +21,7 @@ import { Route as GuidesSplatRouteImport } from './routes/guides/$'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as BlogsSplatRouteImport } from './routes/blogs/$'
 import { Route as ApiSubscribeRouteImport } from './routes/api/subscribe'
+import { Route as ApiGithubStarsRouteImport } from './routes/api/github-stars'
 import { Route as ApiEventRouteImport } from './routes/api/event'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
 import { Route as MarketingOpenSourceSeoRouteImport } from './routes/_marketing/open-source-seo'
@@ -98,6 +99,11 @@ const BlogsSplatRoute = BlogsSplatRouteImport.update({
 const ApiSubscribeRoute = ApiSubscribeRouteImport.update({
   id: '/api/subscribe',
   path: '/api/subscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGithubStarsRoute = ApiGithubStarsRouteImport.update({
+  id: '/api/github-stars',
+  path: '/api/github-stars',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiEventRoute = ApiEventRouteImport.update({
@@ -218,6 +224,7 @@ export interface FileRoutesByFullPath {
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
+  '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
@@ -249,6 +256,7 @@ export interface FileRoutesByTo {
   '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
+  '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
@@ -283,6 +291,7 @@ export interface FileRoutesById {
   '/_marketing/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/api/event': typeof ApiEventRoute
+  '/api/github-stars': typeof ApiGithubStarsRoute
   '/api/subscribe': typeof ApiSubscribeRoute
   '/blogs/$': typeof BlogsSplatRoute
   '/docs/$': typeof DocsSplatRoute
@@ -318,6 +327,7 @@ export interface FileRouteTypes {
     | '/open-source-seo'
     | '/pricing'
     | '/api/event'
+    | '/api/github-stars'
     | '/api/subscribe'
     | '/blogs/$'
     | '/docs/$'
@@ -349,6 +359,7 @@ export interface FileRouteTypes {
     | '/open-source-seo'
     | '/pricing'
     | '/api/event'
+    | '/api/github-stars'
     | '/api/subscribe'
     | '/blogs/$'
     | '/docs/$'
@@ -382,6 +393,7 @@ export interface FileRouteTypes {
     | '/_marketing/open-source-seo'
     | '/_marketing/pricing'
     | '/api/event'
+    | '/api/github-stars'
     | '/api/subscribe'
     | '/blogs/$'
     | '/docs/$'
@@ -413,6 +425,7 @@ export interface RootRouteChildren {
   PrivacyRoute: typeof PrivacyRoute
   TermsAndConditionsRoute: typeof TermsAndConditionsRoute
   ApiEventRoute: typeof ApiEventRoute
+  ApiGithubStarsRoute: typeof ApiGithubStarsRoute
   ApiSubscribeRoute: typeof ApiSubscribeRoute
   BlogsSplatRoute: typeof BlogsSplatRoute
   DocsSplatRoute: typeof DocsSplatRoute
@@ -507,6 +520,13 @@ declare module '@tanstack/react-router' {
       path: '/api/subscribe'
       fullPath: '/api/subscribe'
       preLoaderRoute: typeof ApiSubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/github-stars': {
+      id: '/api/github-stars'
+      path: '/api/github-stars'
+      fullPath: '/api/github-stars'
+      preLoaderRoute: typeof ApiGithubStarsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/event': {
@@ -704,6 +724,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacyRoute: PrivacyRoute,
   TermsAndConditionsRoute: TermsAndConditionsRoute,
   ApiEventRoute: ApiEventRoute,
+  ApiGithubStarsRoute: ApiGithubStarsRoute,
   ApiSubscribeRoute: ApiSubscribeRoute,
   BlogsSplatRoute: BlogsSplatRoute,
   DocsSplatRoute: DocsSplatRoute,
