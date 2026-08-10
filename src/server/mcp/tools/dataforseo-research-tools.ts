@@ -458,6 +458,15 @@ function pushAnd(filters: unknown[], condition: unknown[]) {
   filters.push(condition);
 }
 
+/**
+ * Shape of the raw DataForSEO/internal domain_keywords payload the router
+ * returns (validated inside the router when passed as the route schema).
+ */
+const rankedKeywordsRouterDataSchema = z.object({
+  items: z.array(z.unknown()),
+  totalCount: z.number().nullable(),
+});
+
 function buildRankedKeywordFilters(args: {
   minSearchVolume?: number;
   maxRank?: number;
@@ -684,7 +693,8 @@ export const getRankedKeywordsTool = {
         includeSubdomains: args.includeSubdomains ?? !targetIsPage,
       },
     });
-    const keywords = response.data as { items: unknown[]; totalCount: number | null };
+    // The provider payload is untrusted; validate before narrowing.
+    const keywords = rankedKeywordsRouterDataSchema.parse(response.data);
 
     const rankedRows = keywords.items.map(toRankedKeywordRow);
     const text =

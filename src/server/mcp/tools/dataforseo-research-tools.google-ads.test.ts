@@ -164,13 +164,22 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
     );
 
     // Verify the router was called with the clickstream constraint
-    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith(
-      expect.objectContaining({
-        constraints: expect.objectContaining({
-          includeClickstreamData: true,
-        }),
-      }),
-    );
+    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith({
+      dataType: "keyword_metrics",
+      keywords: ["seo tools"],
+      locationCode: 2840,
+      languageCode: "en",
+      billingCustomer: {
+        organizationId: "org_123",
+        userId: "user_123",
+        userEmail: "alice@example.com",
+        projectId: "project_1",
+      },
+      constraints: {
+        includeClickstreamData: true,
+        creditFeature: "keyword_research",
+      },
+    });
     const rows = z
       .object({ keywords: z.array(z.record(z.string(), z.unknown())) })
       .passthrough()

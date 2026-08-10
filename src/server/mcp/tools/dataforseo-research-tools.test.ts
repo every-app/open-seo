@@ -4,12 +4,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
+import type { SEODataRequest } from "@/server/lib/seo-data";
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
   seoDataRouter: {
-    route: vi.fn(),
+    route: vi.fn<
+      (request: SEODataRequest, schema?: unknown) => Promise<unknown>
+    >(),
   },
 }));
 
@@ -269,15 +272,14 @@ describe("DataForSEO research MCP tools", () => {
     );
 
     // The router should have been called with brand exclusion filters in constraints
-    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith(
-      expect.objectContaining({
-        dataType: "domain_keywords",
-        domain: "acmeexample.com",
-        constraints: expect.objectContaining({
-          filters: [["keyword_data.keyword", "not_ilike", "%acme%"]],
-        }),
-      }),
-    );
+    const request = mocks.seoDataRouter.route.mock.calls[0]?.[0];
+    expect(request).toMatchObject({
+      dataType: "domain_keywords",
+      domain: "acmeexample.com",
+      constraints: {
+        filters: [["keyword_data.keyword", "not_ilike", "%acme%"]],
+      },
+    });
   });
 
   it("filters SERP competitors only by explicit excluded domains", async () => {
