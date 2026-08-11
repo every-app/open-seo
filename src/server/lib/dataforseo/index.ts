@@ -36,6 +36,7 @@ export const fetchRankCheckTaskResult: DataforseoSections["fetchRankCheckTaskRes
 
 export type {
   LabsKeywordDataItem,
+  DomainMetricsItem,
   DomainRankedKeywordItem,
   RelevantPagesItem,
 } from "@/server/lib/dataforseo/labs";

@@ -2,7 +2,6 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import {
-  createDataforseoClient,
   normalizeBacklinksTarget,
   type BacklinksHistoryItem,
   type BacklinksItem,
@@ -10,6 +9,14 @@ import {
   type DomainPageSummaryItem,
   type ReferringDomainItem,
 } from "@/server/lib/dataforseo";
+import {
+  backlinksHistoryItemSchema,
+  backlinksSummaryItemSchema,
+  backlinksItemSchema,
+  referringDomainItemSchema,
+  domainPageSummaryItemSchema,
+} from "@/server/lib/dataforseo/backlinks";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import type {
   BacklinksLookupInput,
   BacklinksRowsPageInput,
@@ -19,10 +26,6 @@ import type {
 } from "@/types/schemas/backlinks";
 
 import {
-  backlinksOverviewSchema,
-  backlinksRowsPageResultSchema,
-  referringDomainsPageResultSchema,
-  topPagesPageResultSchema,
   type BacklinksOverviewResult,
   type BacklinksRowsPageResult,
   type ReferringDomainsPageResult,
@@ -49,16 +52,21 @@ export type ReferringDomainsPageServiceInput = Omit<
 >;
 export type TopPagesPageServiceInput = Omit<TopPagesPageInput, "projectId">;
 
-const BACKLINKS_OVERVIEW_TTL_SECONDS = 6 * 60 * 60;
-const BACKLINKS_TAB_TTL_SECONDS = 6 * 60 * 60;
+// Router response schemas — the router returns the raw provider payload, so
+// these mirror the DataForSEO item shapes plus the paginated envelope.
+const backlinksSummaryRouteSchema = backlinksSummaryItemSchema;
+const backlinksHistoryRouteSchema = z.array(backlinksHistoryItemSchema);
+const backlinksListRouteResultSchema = <T extends z.ZodTypeAny>(
+  itemSchema: T,
+) =>
+  z.object({
+    items: z.array(itemSchema),
+    totalCount: z.number().nullable(),
+  });
 
-const backlinksOverviewCacheSchema = z.object({
-  overview: backlinksOverviewSchema,
-});
-
-export type BacklinksCache = {
-  get(key: string): Promise<unknown>;
-  set(key: string, data: unknown, ttlSeconds: number): Promise<void>;
+type BacklinksListPayload<TRow> = {
+  items: TRow[];
+  totalCount: number | null;
 };
 
 type BacklinksOverviewProfile = {
@@ -71,22 +79,11 @@ type BacklinksDateRange = {
 };
 
 export async function profileBacklinksOverview(
-  cache: BacklinksCache,
-  cacheKey: string,
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
 ): Promise<BacklinksOverviewProfile> {
-  const cached = backlinksOverviewCacheSchema.safeParse(
-    await cache.get(cacheKey),
-  );
-  if (cached.success) {
-    return {
-      overview: cached.data.overview,
-    };
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
+  const router = getSeoDataRouter();
 
   const now = new Date();
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
@@ -94,142 +91,154 @@ export async function profileBacklinksOverview(
   });
   const dateRange = buildBacklinksDateRange(now);
 
-  const [summary, history] = await Promise.all([
-    dataforseo.backlinks.summary({
-      target: normalizedTarget.apiTarget,
-      creditFeature,
-    }),
+  const [summaryResponse, historyResponse] = await Promise.all([
+    router.route<BacklinksSummaryItem>(
+      {
+        dataType: "backlinks",
+        domain: normalizedTarget.apiTarget,
+        billingCustomer,
+        creditFeature,
+        constraints: { backlinkCall: "summary" },
+      },
+      backlinksSummaryRouteSchema,
+    ),
     normalizedTarget.scope === "domain"
-      ? dataforseo.backlinks.history({
-          target: normalizedTarget.apiTarget,
-          ...dateRange,
-          creditFeature,
-        })
-      : Promise.resolve([]),
+      ? router.route<BacklinksHistoryItem[]>(
+          {
+            dataType: "backlinks",
+            domain: normalizedTarget.apiTarget,
+            billingCustomer,
+            creditFeature,
+            dateFrom: dateRange.dateFrom,
+            dateTo: dateRange.dateTo,
+            constraints: { backlinkCall: "history" },
+          },
+          backlinksHistoryRouteSchema,
+        )
+      : null,
   ]);
 
   const overview = buildOverviewResult({
     normalizedTarget,
     now,
-    summary,
-    history,
+    summary: summaryResponse.data,
+    history: historyResponse?.data ?? [],
   });
-  await cacheValue(
-    cache,
-    cacheKey,
-    { overview },
-    BACKLINKS_OVERVIEW_TTL_SECONDS,
-  );
 
   return { overview };
 }
 
 export async function profileBacklinksRowsPage(
-  cache: BacklinksCache,
-  cacheKey: string,
   input: BacklinksRowsPageServiceInput,
   billingCustomer: BillingCustomerContext,
   spamOptions?: BacklinksSpamFilterOptions,
 ): Promise<BacklinksRowsPageResult> {
-  const cached = backlinksRowsPageResultSchema.safeParse(
-    await cache.get(cacheKey),
-  );
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
   const offset = (input.page - 1) * input.pageSize;
   const filters = buildBacklinksRowsApiFilters(input.filters);
 
-  const response = await dataforseo.backlinks.rows({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
-    limit: input.pageSize,
-    offset,
-    orderBy: buildBacklinksRowsOrderBy(input.sortField, input.sortOrder),
-    filters: filters.length > 0 ? filters : undefined,
-    mode: input.mode,
-    ...spamOptions,
-  });
+  const response = await getSeoDataRouter().route<
+    BacklinksListPayload<BacklinksItem>
+  >(
+    {
+      dataType: "backlinks",
+      domain: normalizeBacklinksTarget(input.target, { scope: input.scope })
+        .apiTarget,
+      billingCustomer,
+      constraints: {
+        backlinkCall: "rows",
+        limit: input.pageSize,
+        offset,
+        orderBy: buildBacklinksRowsOrderBy(input.sortField, input.sortOrder),
+        ...(filters.length > 0 ? { filters } : {}),
+        ...(input.mode !== undefined ? { mode: input.mode } : {}),
+        // Spam options stay explicit: only forward values the caller set, so
+        // the provider fetcher applies the same defaults it sees today.
+        ...(spamOptions?.hideSpam !== undefined
+          ? { hideSpam: spamOptions.hideSpam }
+          : {}),
+        ...(spamOptions?.spamThreshold !== undefined
+          ? { spamThreshold: spamOptions.spamThreshold }
+          : {}),
+      },
+    },
+    backlinksListRouteResultSchema(backlinksItemSchema),
+  );
 
-  const result = buildPageResult(input, offset, {
-    rows: mapBacklinksRows(response.items),
-    totalCount: response.totalCount,
+  return buildPageResult(input, offset, {
+    rows: mapBacklinksRows(response.data.items),
+    totalCount: response.data.totalCount,
   });
-  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
-
-  return result;
 }
 
 export async function profileReferringDomainsPage(
-  cache: BacklinksCache,
-  cacheKey: string,
   input: ReferringDomainsPageServiceInput,
   billingCustomer: BillingCustomerContext,
   spamOptions?: BacklinksSpamFilterOptions,
 ): Promise<ReferringDomainsPageResult> {
-  const cached = referringDomainsPageResultSchema.safeParse(
-    await cache.get(cacheKey),
-  );
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
   const offset = (input.page - 1) * input.pageSize;
   const filters = buildReferringDomainsApiFilters(input.filters);
 
-  const response = await dataforseo.backlinks.referringDomains({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
-    limit: input.pageSize,
-    offset,
-    orderBy: buildReferringDomainsOrderBy(input.sortField, input.sortOrder),
-    filters: filters.length > 0 ? filters : undefined,
-    ...spamOptions,
-  });
+  const response = await getSeoDataRouter().route<
+    BacklinksListPayload<ReferringDomainItem>
+  >(
+    {
+      dataType: "backlinks",
+      domain: normalizeBacklinksTarget(input.target, { scope: input.scope })
+        .apiTarget,
+      billingCustomer,
+      constraints: {
+        backlinkCall: "referring_domains",
+        limit: input.pageSize,
+        offset,
+        orderBy: buildReferringDomainsOrderBy(input.sortField, input.sortOrder),
+        ...(filters.length > 0 ? { filters } : {}),
+        ...(spamOptions?.hideSpam !== undefined
+          ? { hideSpam: spamOptions.hideSpam }
+          : {}),
+        ...(spamOptions?.spamThreshold !== undefined
+          ? { spamThreshold: spamOptions.spamThreshold }
+          : {}),
+      },
+    },
+    backlinksListRouteResultSchema(referringDomainItemSchema),
+  );
 
-  const result = buildPageResult(input, offset, {
-    rows: mapReferringDomainsRows(response.items),
-    totalCount: response.totalCount,
+  return buildPageResult(input, offset, {
+    rows: mapReferringDomainsRows(response.data.items),
+    totalCount: response.data.totalCount,
   });
-  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
-
-  return result;
 }
 
 export async function profileTopPagesPage(
-  cache: BacklinksCache,
-  cacheKey: string,
   input: TopPagesPageServiceInput,
   billingCustomer: BillingCustomerContext,
 ): Promise<TopPagesPageResult> {
-  const cached = topPagesPageResultSchema.safeParse(await cache.get(cacheKey));
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
   const offset = (input.page - 1) * input.pageSize;
   const filters = buildTopPagesApiFilters(input.filters);
 
-  const response = await dataforseo.backlinks.domainPages({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
-    limit: input.pageSize,
-    offset,
-    orderBy: buildTopPagesOrderBy(input.sortField, input.sortOrder),
-    filters: filters.length > 0 ? filters : undefined,
-  });
+  const response = await getSeoDataRouter().route<
+    BacklinksListPayload<DomainPageSummaryItem>
+  >(
+    {
+      dataType: "backlinks",
+      domain: normalizeBacklinksTarget(input.target, { scope: input.scope })
+        .apiTarget,
+      billingCustomer,
+      constraints: {
+        backlinkCall: "domain_pages",
+        limit: input.pageSize,
+        offset,
+        orderBy: buildTopPagesOrderBy(input.sortField, input.sortOrder),
+        ...(filters.length > 0 ? { filters } : {}),
+      },
+    },
+    backlinksListRouteResultSchema(domainPageSummaryItemSchema),
+  );
 
-  const result = buildPageResult(input, offset, {
-    rows: mapTopPagesRows(response.items),
-    totalCount: response.totalCount,
+  return buildPageResult(input, offset, {
+    rows: mapTopPagesRows(response.data.items),
+    totalCount: response.data.totalCount,
   });
-  await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
-
-  return result;
 }
 
 function buildPageResult<TRow>(
@@ -382,15 +391,4 @@ function mapTopPagesRows(rows: DomainPageSummaryItem[]) {
     rank: item.rank ?? null,
     brokenBacklinks: item.broken_backlinks ?? null,
   }));
-}
-
-async function cacheValue(
-  cache: BacklinksCache,
-  key: string,
-  data: unknown,
-  ttlSeconds: number,
-) {
-  await cache.set(key, data, ttlSeconds).catch((error: unknown) => {
-    console.error("backlinks.cache-write failed:", error);
-  });
 }

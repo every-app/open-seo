@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/server/lib/dataforseo", () => ({
-  createDataforseoClient: vi.fn(),
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: vi.fn(),
 }));
 
 import {

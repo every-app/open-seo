@@ -35,6 +35,8 @@ const PROVIDER_PRIORITY: Record<SEODataType, string[]> = {
   keyword_metrics: ["google_ads", "internal", "dataforseo"],
   serp: ["internal", "dataforseo"],
   domain_keywords: ["internal", "dataforseo"],
+  domain_overview: ["internal", "dataforseo"],
+  domain_pages: ["internal", "dataforseo"],
   competitors: ["internal", "dataforseo"],
   backlinks: ["internal", "dataforseo"],
   site_audit: ["local_crawler", "dataforseo"],

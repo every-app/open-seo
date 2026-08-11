@@ -30,6 +30,93 @@ export type BacklinkCall =
   | "domain_pages";
 
 /**
+ * Which keyword-idea endpoint a `keyword_ideas` request should hit. Feature
+ * services (KeywordResearchService) set this via `constraints.source` to run
+ * their related/suggestions/ideas waterfall (and the Google-Ads-only location
+ * branch) through the DataRouter instead of calling the client directly.
+ * Defaults to "ideas" for plain keyword-expansion requests.
+ */
+export type KeywordIdeasSource =
+  | "ideas"
+  | "suggestions"
+  | "related"
+  | "google_ads";
+
+/**
+ * Translate the research-source constraint into the matching client call.
+ * Returns the raw SDK items — mapping to app rows lives in the feature module
+ * (research-data.ts) so intent normalization and trend mapping stay in one
+ * place. `related` keeps its deeper wrapper (items have `keyword_data`);
+ * callers unwrap it. `google_ads` (countries Labs doesn't cover) calls
+ * keywords_for_keywords via `client.keywords.adsIdeas`.
+ */
+async function keywordIdeasBySource(
+  client: ReturnType<typeof createDataforseoClient>,
+  request: SEODataRequest,
+  keyword: string,
+  locationCode: number,
+  languageCode: string,
+): Promise<unknown> {
+  const c = request.constraints ?? {};
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+  const source = (c.source as KeywordIdeasSource | undefined) ?? "ideas";
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+  const limit = (c.limit as number | undefined) ?? 100;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+  const includeClickstreamData = c.includeClickstreamData as boolean | undefined;
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+  const creditFeature = request.creditFeature as CreditFeature | undefined;
+
+  switch (source) {
+    case "google_ads":
+      return client.keywords.adsIdeas({
+        keyword,
+        locationCode,
+        languageCode,
+        limit,
+        creditFeature,
+      });
+    case "related":
+      return client.keywords.related({
+        keyword,
+        locationCode,
+        languageCode,
+        limit,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+        depth: c.depth as number | undefined,
+        includeClickstreamData,
+        creditFeature,
+      });
+    case "suggestions":
+      return client.keywords.suggestions({
+        keyword,
+        locationCode,
+        languageCode,
+        limit,
+        includeClickstreamData,
+        creditFeature,
+      });
+    case "ideas":
+      return client.keywords.ideas({
+        keyword,
+        locationCode,
+        languageCode,
+        limit,
+        includeClickstreamData,
+        creditFeature,
+      });
+  }
+}
+
+/**
+ * Build the paginated/filtered backlinks request the DataForSEO provider
+  | "summary"
+  | "history"
+  | "rows"
+  | "referring_domains"
+  | "domain_pages";
+
+/**
  * Build the paginated/filtered backlinks request the DataForSEO client
  * expects from a router request. The service layer supplies limit/offset/
  * orderBy/filters/mode via `constraints`; defaults keep the call cheap.
@@ -37,6 +124,7 @@ export type BacklinkCall =
 function backlinksListRequest(
   domain: string,
   request: SEODataRequest,
+  creditFeature?: CreditFeature,
 ): Parameters<ReturnType<typeof createDataforseoClient>["backlinks"]["rows"]>[0] {
   const c = request.constraints ?? {};
   return {
@@ -51,7 +139,151 @@ function backlinksListRequest(
     filters: c.filters as unknown[] | undefined,
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
     mode: c.mode as string | undefined,
+    // Spam-filter passthrough: only forwarded when the caller set them, so
+    // the backlinks fetchers keep applying their own defaults otherwise.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    ...(c.hideSpam !== undefined ? { hideSpam: c.hideSpam as boolean } : {}),
+    ...(c.spamThreshold !== undefined
+      ? // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+        { spamThreshold: c.spamThreshold as number }
+      : {}),
+    ...(creditFeature ? { creditFeature } : {}),
   };
+}
+
+/**
+ * Build the granular domain request the DataForSEO client expects from a
+ * router request. Feature services (DomainService, MCP tools) supply
+ * limit/offset/orderBy/filters/includeSubdomains via `constraints`;
+ * creditFeature rides on the request itself so spend is attributed without
+ * widening the provider inputs.
+ */
+function domainLabsRequest(
+  domain: string,
+  request: SEODataRequest,
+  locationCode: number,
+  languageCode: string,
+) {
+  const c = request.constraints ?? {};
+  return {
+    target: domain,
+    locationCode,
+    languageCode,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    limit: (c.limit as number | undefined) ?? 100,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    offset: c.offset as number | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    orderBy: c.orderBy as string[] | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    filters: c.filters as unknown[] | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    includeSubdomains: c.includeSubdomains as boolean | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+    creditFeature: request.creditFeature as CreditFeature | undefined,
+  };
+}
+
+/**
+ * Route a `backlinks` request to the matching client call. Feature services
+ * (BacklinksService) supply the granular call mode plus pagination/filter/sort
+ * options via `constraints`; the summary endpoint is the default for simple
+ * overview use.
+ */
+async function routeBacklinksRequest(
+  client: ReturnType<typeof createDataforseoClient>,
+  request: SEODataRequest,
+  domain: string,
+): Promise<unknown> {
+  const mode =
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    (request.constraints?.backlinkCall as BacklinkCall | undefined) ??
+    "summary";
+  const creditFeature =
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+    (request.creditFeature ?? "backlinks") as CreditFeature;
+
+  switch (mode) {
+    case "summary":
+      return client.backlinks.summary({
+        target: domain,
+        creditFeature,
+      });
+    case "history": {
+      const dateFrom =
+        request.dateFrom ??
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+        (request.constraints?.dateFrom as string | undefined) ??
+        "";
+      const dateTo =
+        request.dateTo ??
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+        (request.constraints?.dateTo as string | undefined) ??
+        "";
+      return client.backlinks.history({
+        target: domain,
+        dateFrom,
+        dateTo,
+        creditFeature,
+      });
+    }
+    case "rows":
+      return client.backlinks.rows(
+        backlinksListRequest(domain, request, creditFeature),
+      );
+    case "referring_domains":
+      return client.backlinks.referringDomains(
+        backlinksListRequest(domain, request, creditFeature),
+      );
+    case "domain_pages":
+      return client.backlinks.domainPages(
+        backlinksListRequest(domain, request, creditFeature),
+      );
+    default:
+      throw new ProviderUnsupportedError(
+        "dataforseo",
+        "backlinks",
+        `unknown backlink call mode: ${String(mode)}`,
+      );
+  }
+}
+
+/**
+ * Route domain-scoped requests (domain_keywords / domain_overview /
+ * domain_pages) to the matching Labs client call. Feature services supply
+ * granular pagination/filter/sort options via request constraints.
+ */
+async function routeDomainRequest(
+  client: ReturnType<typeof createDataforseoClient>,
+  request: SEODataRequest,
+  domain: string,
+  locationCode: number,
+  languageCode: string,
+): Promise<unknown> {
+  switch (request.dataType) {
+    case "domain_keywords":
+      return client.domain.rankedKeywords(
+        domainLabsRequest(domain, request, locationCode, languageCode),
+      );
+    case "domain_overview":
+      return client.domain.rankOverview({
+        target: domain,
+        locationCode,
+        languageCode,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+        creditFeature: request.creditFeature as CreditFeature | undefined,
+      });
+    case "domain_pages":
+      return client.domain.relevantPages(
+        domainLabsRequest(domain, request, locationCode, languageCode),
+      );
+    default:
+      throw new ProviderUnsupportedError(
+        "dataforseo",
+        request.dataType,
+        `DataForSEO does not support ${request.dataType}`,
+      );
+  }
 }
 
 /**
@@ -75,6 +307,8 @@ export function createDataforseoProvider(): SEODataProvider {
         case "keyword_metrics":
         case "serp":
         case "domain_keywords":
+        case "domain_overview":
+        case "domain_pages":
         case "competitors":
         case "backlinks":
         case "site_audit":
@@ -155,12 +389,13 @@ async function routeByDataType(
           "keyword is required",
         );
       }
-      return client.keywords.ideas({
+      return keywordIdeasBySource(
+        client,
+        request,
         keyword,
         locationCode,
         languageCode,
-        limit: 100,
-      });
+      );
 
     case "keyword_metrics": {
       const kws =
@@ -208,19 +443,22 @@ async function routeByDataType(
       });
 
     case "domain_keywords":
+    case "domain_overview":
+    case "domain_pages":
       if (!domain) {
         throw new ProviderUnsupportedError(
           "dataforseo",
-          "domain_keywords",
+          request.dataType,
           "domain is required",
         );
       }
-      return client.domain.rankedKeywords({
-        target: domain,
+      return routeDomainRequest(
+        client,
+        request,
+        domain,
         locationCode,
         languageCode,
-        limit: 100,
-      });
+      );
 
     case "competitors":
       if (!domain) {
@@ -245,46 +483,7 @@ async function routeByDataType(
           "domain is required",
         );
       }
-      // Granular backlink call mode and pagination/filter/sort options are
-      // passed through via constraints by feature services (BacklinksService).
-      // Default to the summary endpoint for simple overview use.
-      const mode =
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
-        (request.constraints?.backlinkCall as BacklinkCall | undefined) ??
-        "summary";
-      switch (mode) {
-        case "summary":
-          return client.backlinks.summary({ target: domain });
-        case "history": {
-          const dateFrom =
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
-            (request.constraints?.dateFrom as string | undefined) ?? "";
-          const dateTo =
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
-            (request.constraints?.dateTo as string | undefined) ?? "";
-          return client.backlinks.history({
-            target: domain,
-            dateFrom,
-            dateTo,
-          });
-        }
-        case "rows":
-          return client.backlinks.rows(backlinksListRequest(domain, request));
-        case "referring_domains":
-          return client.backlinks.referringDomains(
-            backlinksListRequest(domain, request),
-          );
-        case "domain_pages":
-          return client.backlinks.domainPages(
-            backlinksListRequest(domain, request),
-          );
-        default:
-          throw new ProviderUnsupportedError(
-            "dataforseo",
-            "backlinks",
-            `unknown backlink call mode: ${String(mode)}`,
-          );
-      }
+      return routeBacklinksRequest(client, request, domain);
     }
 
     case "site_audit":

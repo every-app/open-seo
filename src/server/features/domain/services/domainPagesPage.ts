@@ -1,14 +1,10 @@
-import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput, toRelativePath } from "@/server/lib/domainUtils";
 import type { RelevantPagesItem } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import { computeHasMore } from "@/server/features/domain/services/pagination";
 import type { DomainKeywordsFilters } from "@/types/schemas/domain";
-
-const DOMAIN_PAGES_PAGE_TTL_SECONDS = 12 * 60 * 60;
 
 type DomainPagesSortMode = "traffic" | "keywords";
 type DomainPagesSortOrder = "asc" | "desc";
@@ -17,6 +13,13 @@ const SORT_FIELD_BY_MODE: Record<DomainPagesSortMode, string> = {
   traffic: "metrics.organic.etv",
   keywords: "metrics.organic.count",
 };
+
+/** Loose passthrough schema for the raw router payload. The router validates
+ *  cached data against this, so stale schema versions are treated as a miss. */
+const domainPagesRouterDataSchema = z.object({
+  items: z.array(z.unknown()),
+  totalCount: z.number().nullable(),
+});
 
 const domainPagesPageResultSchema = z.object({
   domain: z.string(),
@@ -140,54 +143,44 @@ export async function getPagesPage(
   const orderBy = [`${SORT_FIELD_BY_MODE[input.sortMode]},${input.sortOrder}`];
   const filters = buildPageFilters(input.filters, input.search);
 
-  const cacheKey = await buildCacheKey("domain:pages-page", {
-    organizationId: billingCustomer.organizationId,
-    projectId: input.projectId,
-    domain,
-    includeSubdomains: input.includeSubdomains,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    page: input.page,
-    pageSize: input.pageSize,
-    sortMode: input.sortMode,
-    sortOrder: input.sortOrder,
-    filters: input.filters,
-    search: input.search,
-  });
+  const response = await getSeoDataRouter().route<{
+    items: RelevantPagesItem[];
+    totalCount: number | null;
+  }>(
+    {
+      dataType: "domain_pages",
+      domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      billingCustomer,
+      constraints: {
+        limit: input.pageSize,
+        offset,
+        orderBy,
+        ...(filters.length > 0 ? { filters } : {}),
+        includeSubdomains: input.includeSubdomains,
+        projectId: input.projectId,
+      },
+    },
+    domainPagesRouterDataSchema,
+  );
 
-  const cachedRaw = await getCached(cacheKey);
-  const cached = domainPagesPageResultSchema.safeParse(cachedRaw);
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
-  const response = await dataforseo.domain.relevantPages({
-    target: domain,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    limit: input.pageSize,
-    offset,
-    orderBy,
-    filters: filters.length > 0 ? filters : undefined,
-  });
-
-  const pages = response.items
+  const pages = response.data.items
     .map(mapPageItem)
     .filter(
       (item): item is NonNullable<ReturnType<typeof mapPageItem>> =>
         item != null,
     );
 
-  const totalCount = response.totalCount;
+  const totalCount = response.data.totalCount;
   const hasMore = computeHasMore(
     offset,
-    response.items.length,
+    response.data.items.length,
     totalCount,
     input.pageSize,
   );
 
-  const result: DomainPagesPageResult = {
+  return {
     domain,
     page: input.page,
     pageSize: input.pageSize,
@@ -196,16 +189,4 @@ export async function getPagesPage(
     pages,
     fetchedAt: new Date().toISOString(),
   };
-
-  // waitUntil, not void: workerd cancels unregistered pending I/O once the
-  // response is sent, so a fire-and-forget put never persists the cache.
-  waitUntil(
-    setCached(cacheKey, result, DOMAIN_PAGES_PAGE_TTL_SECONDS).catch(
-      (error) => {
-        console.error("domain.pages-page.cache-write failed:", error);
-      },
-    ),
-  );
-
-  return result;
 }

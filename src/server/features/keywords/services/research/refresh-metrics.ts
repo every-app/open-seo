@@ -1,9 +1,7 @@
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import { normalizeIntent } from "@/server/features/keywords/services/research/helpers";
-import {
-  createDataforseoClient,
-  fetchKeywordMetricsForList,
-} from "@/server/lib/dataforseo";
+import type { KeywordMetricRow } from "@/server/lib/dataforseo/keyword-metrics";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { RefreshSavedKeywordMetricsInput } from "@/types/schemas/keywords";
 
@@ -22,7 +20,6 @@ export async function refreshSavedKeywordMetrics(
 
   if (rows.length === 0) return { updated: 0 };
 
-  const client = createDataforseoClient(billingCustomer);
   let updated = 0;
 
   // Group by (locationCode, languageCode) so each provider call is homogeneous.
@@ -36,11 +33,18 @@ export async function refreshSavedKeywordMetrics(
 
   for (const groupRows of groups.values()) {
     const { locationCode, languageCode } = groupRows[0].row;
-    const metrics = await fetchKeywordMetricsForList(client, {
+    // projectId scopes the internal provider's D1 read to this project's
+    // previously persisted metrics before any paid fallback.
+    const { data: metrics } = await getSeoDataRouter().route<
+      KeywordMetricRow[]
+    >({
+      dataType: "keyword_metrics",
       keywords: groupRows.map((r) => r.row.keyword),
       locationCode,
       languageCode,
+      billingCustomer,
       creditFeature: "keyword_research",
+      constraints: { projectId: input.projectId },
     });
     const byKeyword = new Map(
       metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),

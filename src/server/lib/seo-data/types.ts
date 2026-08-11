@@ -5,6 +5,8 @@ export type SEODataType =
   | "keyword_metrics"
   | "serp"
   | "domain_keywords"
+  | "domain_overview"
+  | "domain_pages"
   | "competitors"
   | "backlinks"
   | "site_audit"

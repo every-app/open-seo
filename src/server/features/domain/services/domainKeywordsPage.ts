@@ -1,9 +1,7 @@
-import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import { normalizeDomainInput } from "@/server/lib/domainUtils";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import { mapKeywordItem } from "@/server/features/domain/services/domainKeywordMapper";
 import { computeHasMore } from "@/server/features/domain/services/pagination";
 import {
@@ -14,7 +12,12 @@ import {
 } from "@/server/features/domain/services/domainKeywordFilters";
 import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
-const DOMAIN_KEYWORDS_PAGE_TTL_SECONDS = 12 * 60 * 60;
+/** Loose passthrough schema for the raw router payload. The router validates
+ *  cached data against this, so stale schema versions are treated as a miss. */
+const domainKeywordsRouterDataSchema = z.object({
+  items: z.array(z.unknown()),
+  totalCount: z.number().nullable(),
+});
 
 const domainKeywordsPageResultSchema = z.object({
   domain: z.string(),
@@ -60,54 +63,44 @@ export async function getKeywordsPage(
   const orderBy = buildOrderBy(input.sortMode, input.sortOrder);
   const filters = buildKeywordFilters(input.filters, input.search);
 
-  const cacheKey = await buildCacheKey("domain:keywords-page", {
-    organizationId: billingCustomer.organizationId,
-    projectId: input.projectId,
-    domain,
-    includeSubdomains: input.includeSubdomains,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    page: input.page,
-    pageSize: input.pageSize,
-    sortMode: input.sortMode,
-    sortOrder: input.sortOrder,
-    filters: input.filters,
-    search: input.search,
-  });
+  const response = await getSeoDataRouter().route<{
+    items: Parameters<typeof mapKeywordItem>[0][];
+    totalCount: number | null;
+  }>(
+    {
+      dataType: "domain_keywords",
+      domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      billingCustomer,
+      constraints: {
+        limit: input.pageSize,
+        offset,
+        orderBy,
+        ...(filters.length > 0 ? { filters } : {}),
+        includeSubdomains: input.includeSubdomains,
+        projectId: input.projectId,
+      },
+    },
+    domainKeywordsRouterDataSchema,
+  );
 
-  const cachedRaw = await getCached(cacheKey);
-  const cached = domainKeywordsPageResultSchema.safeParse(cachedRaw);
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const dataforseo = createDataforseoClient(billingCustomer);
-  const response = await dataforseo.domain.rankedKeywords({
-    target: domain,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    limit: input.pageSize,
-    offset,
-    orderBy,
-    filters: filters.length > 0 ? filters : undefined,
-  });
-
-  const keywords = response.items
+  const keywords = response.data.items
     .map((item) => mapKeywordItem(item))
     .filter(
       (item): item is NonNullable<ReturnType<typeof mapKeywordItem>> =>
         item != null,
     );
 
-  const totalCount = response.totalCount;
+  const totalCount = response.data.totalCount;
   const hasMore = computeHasMore(
     offset,
-    response.items.length,
+    response.data.items.length,
     totalCount,
     input.pageSize,
   );
 
-  const result: DomainKeywordsPageResult = {
+  return {
     domain,
     page: input.page,
     pageSize: input.pageSize,
@@ -116,16 +109,4 @@ export async function getKeywordsPage(
     keywords,
     fetchedAt: new Date().toISOString(),
   };
-
-  // waitUntil, not void: workerd cancels unregistered pending I/O once the
-  // response is sent, so a fire-and-forget put never persists the cache.
-  waitUntil(
-    setCached(cacheKey, result, DOMAIN_KEYWORDS_PAGE_TTL_SECONDS).catch(
-      (error) => {
-        console.error("domain.keywords-page.cache-write failed:", error);
-      },
-    ),
-  );
-
-  return result;
 }

@@ -1,16 +1,9 @@
 import { AppError } from "@/server/lib/errors";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
-import {
-  CACHE_TTL,
-  buildCacheKey,
-  getCached,
-  setCached,
-} from "@/server/lib/r2-cache";
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import type { KeywordResearchRow } from "@/types/keywords";
 import type { ResolvedResearchKeywordsInput } from "@/types/schemas/keywords";
-import { z } from "zod";
 import { getKeywordDataProvider } from "@/shared/keyword-locations";
 import { type EnrichedKeyword, normalizeKeyword } from "./helpers";
 import {
@@ -45,51 +38,6 @@ type ResearchResult = {
   usedFallback: boolean;
   diagnostics: ResearchDiagnostics;
 };
-
-type CachedResult = ResearchResult;
-
-const cachedKeywordRowSchema = z.object({
-  keyword: z.string(),
-  searchVolume: z.number().nullable(),
-  trend: z.array(
-    z.object({
-      year: z.number(),
-      month: z.number(),
-      searchVolume: z.number(),
-    }),
-  ),
-  cpc: z.number().nullable(),
-  competition: z.number().nullable(),
-  keywordDifficulty: z.number().nullable(),
-  intent: z.enum([
-    "informational",
-    "commercial",
-    "transactional",
-    "navigational",
-    "unknown",
-  ]),
-});
-
-const sourceAttemptSchema = z.object({
-  source: z.enum(["related", "suggestions", "ideas", "google_ads"]),
-  rowCount: z.number(),
-  nonSeedCount: z.number(),
-});
-
-const cachedResultSchema = z.object({
-  rows: z.array(cachedKeywordRowSchema),
-  source: z.enum(["related", "suggestions", "ideas", "google_ads"]),
-  usedFallback: z.boolean(),
-  diagnostics: z.object({
-    requestedMode: z.enum(["auto", "related", "suggestions", "ideas"]),
-    threshold: z.number(),
-    sourceAttempts: z.array(sourceAttemptSchema),
-  }),
-});
-
-// v3: research volumes are no longer clickstream-refined, and Google-Ads-only
-// locations route to keywords_for_keywords.
-const CACHE_VERSION = 3;
 
 async function fetchRowsFromSource(
   source: KeywordSource,
@@ -241,26 +189,6 @@ async function fetchManualRows(
   };
 }
 
-async function buildResearchCacheKey(
-  input: ResolvedResearchKeywordsInput,
-  normalizedKeywords: string[],
-  mode: KeywordMode,
-  billingCustomer: BillingCustomerContext,
-): Promise<string> {
-  return buildCacheKey("kw:research", {
-    cacheVersion: CACHE_VERSION,
-    organizationId: billingCustomer.organizationId,
-    projectId: input.projectId,
-    keywords: normalizedKeywords,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    resultLimit: input.resultLimit,
-    mode,
-    depth: 3,
-    clickstream: input.clickstream,
-  });
-}
-
 function persistRows(
   input: ResolvedResearchKeywordsInput,
   rows: EnrichedKeyword[],
@@ -308,23 +236,11 @@ export async function research(
       ? { ...input, mode: "auto", clickstream: false }
       : input;
   const mode = effectiveInput.mode ?? "auto";
-  const cacheKey = await buildResearchCacheKey(
-    effectiveInput,
-    uniqueKeywords,
-    mode,
-    billingCustomer,
-  );
 
-  const cachedRaw = await getCached(cacheKey);
-  const cachedResult = cachedResultSchema.safeParse(cachedRaw);
-  const cached: CachedResult | null = cachedResult.success
-    ? cachedResult.data
-    : null;
-
-  if (cached && cached.rows.length > 0) {
-    return cached;
-  }
-
+  // No outer kw:research cache: the DataRouter caches each per-source call
+  // (keyed by dataType + keyword + market + constraints) and single-flight
+  // coalesces concurrent requests, so a repeat research() run re-reads the
+  // per-source router cache entries instead of re-calling providers.
   const result =
     provider === "google_ads"
       ? await fetchGoogleAdsRows(
@@ -348,7 +264,6 @@ export async function research(
             creditFeature,
           );
 
-  await setCached(cacheKey, result, CACHE_TTL.researchResult);
   persistRows(effectiveInput, result.rows);
 
   return result;

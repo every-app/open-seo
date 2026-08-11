@@ -27,7 +27,7 @@ import {
 // under the names the rest of the app already uses (no hand-written Zod).
 export type LabsKeywordDataItem = KeywordDataInfo;
 type RelatedKeywordItem = DataforseoLabsRelatedKeywordsLiveItem;
-type DomainMetricsItem = DataforseoLabsDomainRankOverviewLiveItem;
+export type DomainMetricsItem = DataforseoLabsDomainRankOverviewLiveItem;
 export type RelevantPagesItem = DataforseoLabsRelevantPagesLiveItem;
 export type KeywordOverviewItem = DataforseoLabsGoogleKeywordOverviewLiveItem;
 type SerpCompetitorItem = DataforseoLabsSerpCompetitorsLiveItem;

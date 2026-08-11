@@ -4,7 +4,8 @@ import {
 } from "@/server/lib/dataforseo";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
+import type { KeywordIdeasSource } from "@/server/lib/seo-data/providers/dataforseo-provider";
 import {
   normalizeIntent,
   normalizeKeyword,
@@ -24,7 +25,16 @@ type FetchResearchRowsParams = {
   creditFeature?: CreditFeature;
 };
 
-function mapKeywordDataItems(items: LabsKeywordDataItem[]): EnrichedKeyword[] {
+// `related` items wrap the keyword payload one level deeper than the
+// suggestions/ideas items; providers return raw SDK items so the mappers below
+// stay in this module.
+type RelatedKeywordResultItem = {
+  keyword_data?: LabsKeywordDataItem | null;
+};
+
+export function mapKeywordDataItems(
+  items: LabsKeywordDataItem[],
+): EnrichedKeyword[] {
   const rows: EnrichedKeyword[] = [];
   const seen = new Set<string>();
 
@@ -103,72 +113,57 @@ export async function fetchGoogleAdsResearchRows(
   params: Omit<FetchResearchRowsParams, "source">,
   billingCustomer: BillingCustomerContext,
 ): Promise<EnrichedKeyword[]> {
-  const dataforseo = createDataforseoClient(billingCustomer);
-  return mapAdsKeywordItems(
-    await dataforseo.keywords.adsIdeas({
-      keyword: params.seedKeyword,
-      locationCode: params.locationCode,
-      languageCode: params.languageCode,
-      limit: params.resultLimit,
-      creditFeature: params.creditFeature,
-    }),
-  );
-}
-
-async function fetchRelatedRows(
-  params: Omit<FetchResearchRowsParams, "source">,
-  dataforseo: ReturnType<typeof createDataforseoClient>,
-) {
-  const items = await dataforseo.keywords.related({
+  // DataForSEO's keywords_for_keywords (Google Ads) endpoint. The router's
+  // google_ads API provider does not apply this source (see the adsIdeas
+  // branch in the DataForSEO provider), so the DFS provider serves it.
+  const { data } = await getSeoDataRouter().route<AdsKeywordIdeaItem[]>({
+    dataType: "keyword_ideas",
     keyword: params.seedKeyword,
     locationCode: params.locationCode,
     languageCode: params.languageCode,
-    limit: params.resultLimit,
-    depth: 3,
-    includeClickstreamData: params.includeClickstreamData,
+    billingCustomer,
     creditFeature: params.creditFeature,
+    constraints: {
+      source: "google_ads" satisfies KeywordIdeasSource,
+      limit: params.resultLimit,
+    },
   });
-
-  // Related items wrap the keyword payload one level deeper; unwrap and reuse
-  // the same mapper as suggestions/ideas.
-  return mapKeywordDataItems(
-    items
-      .map((item) => item.keyword_data)
-      .filter((data): data is NonNullable<typeof data> => data != null),
-  );
+  return mapAdsKeywordItems(data);
 }
 
 export async function fetchResearchRowsBySource(
   params: FetchResearchRowsParams,
   billingCustomer: BillingCustomerContext,
 ): Promise<EnrichedKeyword[]> {
-  const dataforseo = createDataforseoClient(billingCustomer);
+  const constraints = {
+    source: params.source satisfies KeywordIdeasSource,
+    limit: params.resultLimit,
+    ...(params.source === "related" ? { depth: 3 } : {}),
+    includeClickstreamData: params.includeClickstreamData,
+  };
+  const request = {
+    dataType: "keyword_ideas" as const,
+    keyword: params.seedKeyword,
+    locationCode: params.locationCode,
+    languageCode: params.languageCode,
+    billingCustomer,
+    creditFeature: params.creditFeature,
+    constraints,
+  };
 
   if (params.source === "related") {
-    return fetchRelatedRows(params, dataforseo);
-  }
-
-  if (params.source === "suggestions") {
+    // Related items wrap the keyword payload one level deeper; unwrap and
+    // reuse the same mapper as suggestions/ideas.
+    const { data: relatedItems } =
+      await getSeoDataRouter().route<RelatedKeywordResultItem[]>(request);
     return mapKeywordDataItems(
-      await dataforseo.keywords.suggestions({
-        keyword: params.seedKeyword,
-        locationCode: params.locationCode,
-        languageCode: params.languageCode,
-        limit: params.resultLimit,
-        includeClickstreamData: params.includeClickstreamData,
-        creditFeature: params.creditFeature,
-      }),
+      relatedItems
+        .map((item) => item.keyword_data)
+        .filter((data): data is NonNullable<typeof data> => data != null),
     );
   }
 
-  return mapKeywordDataItems(
-    await dataforseo.keywords.ideas({
-      keyword: params.seedKeyword,
-      locationCode: params.locationCode,
-      languageCode: params.languageCode,
-      limit: params.resultLimit,
-      includeClickstreamData: params.includeClickstreamData,
-      creditFeature: params.creditFeature,
-    }),
-  );
+  const { data } =
+    await getSeoDataRouter().route<LabsKeywordDataItem[]>(request);
+  return mapKeywordDataItems(data);
 }

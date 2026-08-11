@@ -13,6 +13,8 @@ const DEFAULT_TTL_SECONDS: Record<SEODataType, number> = {
   keyword_metrics: 7 * 24 * 60 * 60, // 7 days
   serp: 5 * 24 * 60 * 60, // 5 days (midpoint of 3-7 day range)
   domain_keywords: 7 * 24 * 60 * 60, // 7 days
+  domain_overview: 7 * 24 * 60 * 60, // 7 days
+  domain_pages: 7 * 24 * 60 * 60, // 7 days
   competitors: 7 * 24 * 60 * 60, // 7 days
   backlinks: 14 * 24 * 60 * 60, // 14 days (midpoint of 7-30 day range)
   site_audit: 7 * 24 * 60 * 60, // 7 days
@@ -25,6 +27,8 @@ const ENV_KEY_MAP: Record<SEODataType, string> = {
   keyword_metrics: "SEO_CACHE_TTL_KEYWORD_METRICS",
   serp: "SEO_CACHE_TTL_SERP",
   domain_keywords: "SEO_CACHE_TTL_DOMAIN_KEYWORDS",
+  domain_overview: "SEO_CACHE_TTL_DOMAIN_OVERVIEW",
+  domain_pages: "SEO_CACHE_TTL_DOMAIN_PAGES",
   competitors: "SEO_CACHE_TTL_COMPETITORS",
   backlinks: "SEO_CACHE_TTL_BACKLINKS",
   site_audit: "SEO_CACHE_TTL_SITE_AUDIT",

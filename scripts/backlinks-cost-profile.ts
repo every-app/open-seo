@@ -10,16 +10,7 @@ import { loadLocalEnv, parseArgs } from "./cli-utils";
 loadLocalEnv();
 
 const args = parseArgs(process.argv.slice(2));
-const inMemoryCache = new Map<string, string>();
-const service = createBacklinksService({
-  async get(key) {
-    const raw = inMemoryCache.get(key);
-    return raw ? parseCachedValue(raw) : null;
-  },
-  async set(key, data) {
-    inMemoryCache.set(key, JSON.stringify(data));
-  },
-});
+const service = createBacklinksService();
 
 await main();
 
@@ -159,12 +150,4 @@ function printUsageAndExit(message: string): never {
     "Usage: pnpm billing:backlinks --target=example.com --confirmLive=true [--scope=domain|page] [--repeat=1] [--includeTabs=true|false] [--allowCi=true]",
   );
   process.exit(1);
-}
-
-function parseCachedValue(raw: string): unknown {
-  try {
-    return JSON.parse(raw) as unknown;
-  } catch {
-    return null;
-  }
 }

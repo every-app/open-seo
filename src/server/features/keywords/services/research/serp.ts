@@ -1,13 +1,8 @@
-import { waitUntil } from "cloudflare:workers";
 import { type SerpLiveItem } from "@/server/lib/dataforseo";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { SerpResultItem } from "@/types/keywords";
-import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import { normalizeKeyword } from "./helpers";
-
-const SERP_CACHE_TTL_SECONDS = 12 * 60 * 60;
 
 type SerpAnalysisReason = "no_organic_results";
 
@@ -16,26 +11,6 @@ type SerpAnalysisResult = {
   items: SerpResultItem[];
   reason?: SerpAnalysisReason;
 };
-
-const serpResultItemSchema = z.object({
-  rank: z.number().int(),
-  title: z.string(),
-  url: z.string(),
-  domain: z.string(),
-  description: z.string(),
-  etv: z.number().nullable(),
-  estimatedPaidTrafficCost: z.number().nullable(),
-  referringDomains: z.number().nullable(),
-  backlinks: z.number().nullable(),
-  isNew: z.boolean(),
-  rankChange: z.number().nullable(),
-});
-
-const serpCacheSchema = z.object({
-  requestedKeyword: z.string(),
-  items: z.array(serpResultItemSchema),
-  reason: z.enum(["no_organic_results"]).optional(),
-});
 
 function mapOrganicSerpItems(items: SerpLiveItem[]): SerpResultItem[] {
   return items
@@ -66,39 +41,21 @@ async function getSerpLiveAnalysis(
 ): Promise<SerpAnalysisResult> {
   const keyword = normalizeKeyword(input.keyword);
 
-  const cacheKey = await buildCacheKey("serp:analysis", {
-    organizationId: billingCustomer.organizationId,
-    projectId: input.projectId,
+  // Caching and single-flight live in the router; the trimmed organic-only
+  // mapping below stays a cheap per-call transform.
+  const { data } = await getSeoDataRouter().route<SerpLiveItem[]>({
+    dataType: "serp",
     keyword,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
+    billingCustomer,
   });
 
-  const cachedRaw = await getCached(cacheKey);
-  const cached = serpCacheSchema.safeParse(cachedRaw);
-  if (cached.success) {
-    return cached.data;
-  }
-
-  const liveItems = await createDataforseoClient(billingCustomer).serp.live({
-    keyword,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-  });
-
-  const items = mapOrganicSerpItems(liveItems);
+  const items = mapOrganicSerpItems(data);
   const result: SerpAnalysisResult = { requestedKeyword: keyword, items };
   if (items.length === 0) {
     result.reason = "no_organic_results";
   }
-
-  // waitUntil, not void: workerd cancels unregistered pending I/O once the
-  // response is sent, so a fire-and-forget put never persists the cache.
-  waitUntil(
-    setCached(cacheKey, result, SERP_CACHE_TTL_SECONDS).catch((error) => {
-      console.error("keywords.serp.cache-write failed:", error);
-    }),
-  );
 
   return result;
 }
