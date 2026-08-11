@@ -2,6 +2,12 @@
 
 ## Implemented
 
+### Phase 0 — Docker/Wrangler Local Dev Environment
+- `Dockerfile.dev` (node:22-bookworm + corepack pnpm), `compose.dev.yaml`, `docker-entrypoint.dev.sh`, `.env.docker.example`
+- Runs `vite dev` inside the full Cloudflare Workers local runtime (wrangler/vite-plugin-cloudflare): local D1 (migrations applied on boot), local R2, local KV, local DOs/Workflows
+- Scripts: `dev:docker`, `dev:docker:down`, `dev:docker:logs`, `dev:docker:reset`
+- Verified: `/api/health` 200, homepage SSR 200, `/mcp` initialize 200, 24 MCP tools registered, D1/R2/KV state initialized. See `docs/local-docker-development.md`
+
 ### Phase 1 — Audit
 Comprehensive codebase audit identifying all DataForSEO integration points, existing cache mechanisms, database schema, MCP architecture, and recommended insertion points. See `docs/free-first-architecture-audit.md`.
 
@@ -56,8 +62,18 @@ Comprehensive codebase audit identifying all DataForSEO integration points, exis
 - `get_serp_results` tool: now routes through `DataRouter` (cache → internal → DataForSEO)
 - `get_ranked_keywords` tool: now routes through `DataRouter` (cache → internal → DataForSEO)
 - `get_keyword_metrics` tool: now routes through `DataRouter` (cache → google_ads → internal → DataForSEO)
-- `search_local_businesses`, `get_local_serp_results`, `get_google_business_questions`, `find_serp_competitors`: budget guard added via `assertDataforseoBudget()` before DataForSEO calls
-- All other MCP tools (GSC tools, domain overview, backlinks, keyword research) already delegate to feature services with their own R2 caching — no change needed
+- `search_local_businesses`, `get_local_serp_results`, `get_google_business_questions`, `find_serp_competitors`: budget guard added via `assertDataforseoBudget()` before DataForSEO calls (still direct-client; see "DataForSEO Calls Still Required")
+
+### Phase 10 — Feature Services Routed Through DataRouter
+All three high-traffic feature services now route through the DataRouter instead of calling `createDataforseoClient` directly and managing their own R2 caches:
+
+- **DomainService** — `getOverview` (`domain_overview`), `getSuggestedKeywords` / `getKeywordsPage` (`domain_keywords` with limit/offset/orderBy/filters/includeSubdomains constraints), `getPagesPage` (`domain_pages`). Service-level R2 cache and `waitUntil` writes removed.
+- **BacklinksService** — `profileOverview` (`summary` + `history` calls), `profileBacklinksPage` (`rows`), `profileReferringDomainsPage` (`referring_domains`), `profileTopPagesPage` (`domain_pages`) via `constraints.backlinkCall` with limit/offset/orderBy/filters/mode/spam-option passthrough. Service-level R2 cache removed.
+- **KeywordResearchService** — waterfall legs (`related`/`suggestions`/`ideas`/`google_ads` via `keyword_ideas` + `constraints.source`), `getSerpAnalysis` (`serp`), `refreshSavedKeywordMetrics` (`keyword_metrics`, keeping D1 upserts that feed the internal provider). Outer `kw:research` and `serp:analysis` R2 caches removed — the router's per-constraint cache keys cover the waterfall granularity.
+
+Result: these services inherit R2 caching, single-flight coalescing, budget-guard enforcement, and structured cost logging. Router response schemas live in SDK-free modules so the ~3 MB `dataforseo-client` stays behind `loadDataforseoSections()` (see `backlinks-schemas.ts`).
+
+New data types: `domain_overview` and `domain_pages` added to `SEODataType` with 7-day TTLs and provider support in the DataForSEO provider (`routeDomainRequest` honors limit/offset/orderBy/filters/includeSubdomains; `keywordIdeasBySource` honors source/limit/depth/includeClickstreamData).
 
 ## Modified Files
 
@@ -66,6 +82,14 @@ Comprehensive codebase audit identifying all DataForSEO integration points, exis
 | `src/server/mcp/tools/get-serp-results.ts` | Replaced direct `createDataforseoClient` with `getSeoDataRouter().route()` |
 | `src/server/mcp/tools/dataforseo-research-tools.ts` | Wired `get_ranked_keywords` and `get_keyword_metrics` through DataRouter; added `assertDataforseoBudget()` guard to 4 remaining direct DataForSEO tools |
 | `.env.example` | Added all new configuration variables (feature flags, budget guards, provider credentials, cache TTL overrides) |
+| `src/server/lib/seo-data/providers/dataforseo-provider.ts` | Granular `constraints` support: `backlinkCall` (summary/history/rows/referring_domains/domain_pages), keyword-idea `source` (ideas/suggestions/related/google_ads), domain labs pagination |
+| `src/server/lib/seo-data/types.ts` / `config.ts` / `data-router.ts` | Added `domain_overview` + `domain_pages` data types, 7-day TTLs, provider priorities |
+| `src/server/features/domain/services/DomainService.ts` + `domainKeywordsPage.ts` + `domainPagesPage.ts` | Routed through DataRouter; removed service R2 cache |
+| `src/server/features/backlinks/services/backlinksServiceData.ts` + `BacklinksService.ts` | Routed through DataRouter; removed service R2 cache |
+| `src/server/features/keywords/services/research/*` | Routed through DataRouter; removed `kw:research`/`serp:analysis` R2 caches; D1 persistence kept |
+| `src/server/lib/dataforseo/backlinks-schemas.ts` | New SDK-free home for backlinks response zod schemas (keeps SDK out of the eager worker graph) |
+| `scripts/backlinks-cost-profile.ts` | Updated for cache-less service factory |
+| `Dockerfile.dev`, `compose.dev.yaml`, `docker-entrypoint.dev.sh`, `.env.docker.example` | Local Docker/Wrangler dev environment |
 
 ## New Files
 
@@ -104,7 +128,9 @@ Comprehensive codebase audit identifying all DataForSEO integration points, exis
 | Bing performance | Bing Webmaster | None | 24 hours |
 | SERP | Internal (cache) | DataForSEO | 5 days |
 | Domain keywords | Internal (cache) | DataForSEO | 7 days |
-| Competitors | Internal (cache) | DataForSEO | 7 days |
+| Domain overview | Internal (cache) | DataForSEO | 7 days |
+| Domain pages | Internal (cache) | DataForSEO | 7 days |
+| Competitors | Internal (cache) — not persisted | DataForSEO | 7 days |
 | Backlinks | Internal (cache) | DataForSEO | 14 days |
 | Site audit | Local crawler | DataForSEO | 7 days |
 
@@ -140,15 +166,17 @@ DataForSEO remains the only source for:
 ## Tests
 
 ```
-Tests: 43 passed (4 test files)
+Full suite: 835 passed (100 test files)
+seo-data modules: 43+ passed
   - cache-service.test.ts: 15 tests (cache hit/miss, TTL, key normalization, different locations/devices)
   - single-flight.test.ts: 5 tests (dedup, concurrent coalescing, failure cleanup)
   - data-router.test.ts: 8 tests (cache→free, cache→DataForSEO, provider unavailable→fallback, budget exceeded, no provider)
   - ssrf-guard.test.ts: 20 tests (private IPs, blocked hostnames, crawl target blocking)
 
-Typecheck: PASSED (0 errors in seo-data modules, 0 errors in modified MCP tools)
-Lint: PASSED (0 errors in seo-data modules — all `as` casts suppressed with `oxlint-disable-next-line` following existing codebase pattern)
-Build: not run (requires full `vite build` which depends on Cloudflare Workers bindings)
+Typecheck: PASSED (0 errors)
+Lint: PASSED (0 errors, oxlint --type-aware)
+Build: PASSED (vite build + tsc; SDK stays behind the lazy loadDataforseoSections boundary)
+Docker: PASSED (compose config + build + up; /api/health, homepage SSR, /mcp initialize all 200; D1 migrations applied; R2/KV state initialized)
 ```
 
 Note: `pnpm install` completed successfully (29 min on Windows with `--node-linker=hoisted`). Typecheck and lint now pass cleanly.
@@ -157,8 +185,6 @@ Note: `pnpm install` completed successfully (29 min on Windows with `--node-link
 
 1. **Google Ads provider**: The Google Ads API requires a developer token (approved by Google after review) plus OAuth credentials. The provider is fully implemented but will return `ProviderUnavailableError` (causing the router to fall back to DataForSEO) when credentials are not configured. In practice, most self-hosted users will not have Google Ads API access — however, the existing DataForSEO client already uses Google Ads endpoints internally (`keywords.adsIdeas`, `keywords.adsSearchVolume`), so keyword research still works via DataForSEO. The practical benefit of the Google Ads provider is for users who DO have API access: they get free keyword ideas/metrics without DataForSEO cost. The provider's `supports()` method checks credentials at runtime, so it gracefully degrades.
 
-2. **Internal provider for competitors**: The internal provider now serves `keyword_metrics` (from D1 `keyword_metrics`), `backlinks` (from D1 `backlink_snapshots`), and `domain_keywords` (from D1 `rank_snapshots`). For `competitors`, it returns `ProviderUnsupportedError` because competitor analysis is not persisted in D1. Extending this would require a new table to persist DataForSEO competitor results — a future enhancement.
+2. **Competitor D1 persistence (intentionally deferred)**: Competitors currently remain DataForSEO-backed and benefit from DataRouter caching and budget protection. The internal provider returns `ProviderUnsupportedError` for `competitors` because competitor analysis is not persisted in D1. D1 competitor snapshot persistence is a future enhancement — it would require a new table (e.g. `competitor_snapshots`) plus write-through persistence in the DataForSEO provider so a subsequent request for the same keyword set hits the internal provider for free.
 
-3. **Feature services not yet wired through router**: The existing feature services (`DomainService`, `BacklinksService`, `KeywordResearchService`) have their own R2 caching and were left untouched to preserve backward compatibility. The router is wired at the MCP layer (the uncached entry points). A future phase could route the services through the DataRouter too, but this requires careful schema alignment.
-
-4. **Build not run**: The full `vite build` requires Cloudflare Workers bindings (R2, D1, KV) which are not available in the local test environment. Typecheck and lint pass cleanly.
+3. **Direct-client MCP tools**: `search_local_businesses`, `get_local_serp_results`, `get_google_business_questions`, and `find_serp_competitors` still call `createDataforseoClient` directly (with the budget guard). Routing them through the DataRouter would require new data types (`business_listings`, `local_serp`, `business_questions`) — a future enhancement.

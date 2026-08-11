@@ -8,6 +8,10 @@
 
 ## Local Development Workflow
 
+> Prefer Docker? The full Cloudflare/Wrangler local runtime (local D1, R2, KV,
+> workflows) runs in a container with no Node tooling on the host — see
+> [`LOCAL_DEVELOPMENT_DOCKER.md`](./local-docker-development.md).
+
 ```sh
 # Activates the exact pnpm version declared in package.json.
 corepack enable

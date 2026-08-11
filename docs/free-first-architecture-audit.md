@@ -160,3 +160,13 @@ The existing R2 cache pattern is well-established, works across both D1 and Post
 8. **DataForSEO fallback** — budget guard, batching, cost tracking, fallback logging
 9. **MCP integration** — all MCP tools use DataRouter
 10. **Documentation** — README, .env.example, developer docs, final report
+
+## Status (updated after Phase F)
+
+This document is the Phase-1 audit/planning artifact. Implementation status and the live architecture are tracked in `docs/free-first-implementation-report.md`.
+
+Notable divergences from the plan above:
+
+- **"Files to remain untouched" (section 8) is superseded**: `DomainService`, `BacklinksService`, and `KeywordResearchService` have since been routed through the DataRouter (their service-level R2 caches removed). Their data types now include `domain_overview` and `domain_pages` in addition to the original nine.
+- The router gained granular constraint support for backlinks (`constraints.backlinkCall`), keyword-idea sources (`constraints.source`), and domain-labs pagination (limit/offset/orderBy/filters/includeSubdomains).
+- Four MCP tools (`search_local_businesses`, `get_local_serp_results`, `get_google_business_questions`, `find_serp_competitors`) still call the DataForSEO client directly, behind the budget guard — see "Remaining Limitations" in the implementation report.
