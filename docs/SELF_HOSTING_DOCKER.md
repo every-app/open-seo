@@ -30,7 +30,7 @@ Open `http://localhost:<PORT>` (default `3001`). The first start builds the app 
 Optional env values:
 
 - `PORT` (defaults to `3001`)
-- `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
+- `ALLOWED_HOST` (reverse-proxy hostname(s) to allow in Vite preview; comma-separated for multiple, e.g. `app.example.com,mcp.example.com`)
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
