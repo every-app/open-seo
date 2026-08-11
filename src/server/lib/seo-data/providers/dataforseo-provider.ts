@@ -17,6 +17,44 @@ import { AppError } from "@/server/lib/errors";
 import type { SEODataProvider, SEODataRequest } from "../types";
 
 /**
+ * Which backlinks endpoint a `backlinks` request should call. Feature services
+ * (BacklinksService) set this via `constraints.backlinkCall` to route paginated
+ * / filtered / sorted backlinks requests through the DataRouter instead of
+ * calling the DataForSEO client directly.
+ */
+export type BacklinkCall =
+  | "summary"
+  | "history"
+  | "rows"
+  | "referring_domains"
+  | "domain_pages";
+
+/**
+ * Build the paginated/filtered backlinks request the DataForSEO client
+ * expects from a router request. The service layer supplies limit/offset/
+ * orderBy/filters/mode via `constraints`; defaults keep the call cheap.
+ */
+function backlinksListRequest(
+  domain: string,
+  request: SEODataRequest,
+): Parameters<ReturnType<typeof createDataforseoClient>["backlinks"]["rows"]>[0] {
+  const c = request.constraints ?? {};
+  return {
+    target: domain,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    limit: (c.limit as number | undefined) ?? 100,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    offset: c.offset as number | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    orderBy: c.orderBy as string[] | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    filters: c.filters as unknown[] | undefined,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    mode: c.mode as string | undefined,
+  };
+}
+
+/**
  * DataForSEO fallback provider — the paid last resort.
  *
  * Wraps the existing `createDataforseoClient` (which handles billing/metering).
@@ -199,7 +237,7 @@ async function routeByDataType(
         limit: 50,
       });
 
-    case "backlinks":
+    case "backlinks": {
       if (!domain) {
         throw new ProviderUnsupportedError(
           "dataforseo",
@@ -207,9 +245,47 @@ async function routeByDataType(
           "domain is required",
         );
       }
-      return client.backlinks.summary({
-        target: domain,
-      });
+      // Granular backlink call mode and pagination/filter/sort options are
+      // passed through via constraints by feature services (BacklinksService).
+      // Default to the summary endpoint for simple overview use.
+      const mode =
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+        (request.constraints?.backlinkCall as BacklinkCall | undefined) ??
+        "summary";
+      switch (mode) {
+        case "summary":
+          return client.backlinks.summary({ target: domain });
+        case "history": {
+          const dateFrom =
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+            (request.constraints?.dateFrom as string | undefined) ?? "";
+          const dateTo =
+            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+            (request.constraints?.dateTo as string | undefined) ?? "";
+          return client.backlinks.history({
+            target: domain,
+            dateFrom,
+            dateTo,
+          });
+        }
+        case "rows":
+          return client.backlinks.rows(backlinksListRequest(domain, request));
+        case "referring_domains":
+          return client.backlinks.referringDomains(
+            backlinksListRequest(domain, request),
+          );
+        case "domain_pages":
+          return client.backlinks.domainPages(
+            backlinksListRequest(domain, request),
+          );
+        default:
+          throw new ProviderUnsupportedError(
+            "dataforseo",
+            "backlinks",
+            `unknown backlink call mode: ${String(mode)}`,
+          );
+      }
+    }
 
     case "site_audit":
       if (!request.url) {
