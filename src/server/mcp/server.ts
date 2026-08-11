@@ -53,6 +53,10 @@ import {
   getAuditStatusTool,
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
+import {
+  getIndexNowKeyTool,
+  submitUrlsIndexNowTool,
+} from "@/server/mcp/tools/indexnow-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -167,6 +171,8 @@ export function createOpenSeoMcpServer() {
   registerOpenSeoTool(server, getAuditStatusTool);
   registerOpenSeoTool(server, getAuditIssuesTool);
   registerOpenSeoTool(server, getAuditPagesTool);
+  registerOpenSeoTool(server, getIndexNowKeyTool);
+  registerOpenSeoTool(server, submitUrlsIndexNowTool);
 
   return server;
 }
