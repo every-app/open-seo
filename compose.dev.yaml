@@ -1,0 +1,75 @@
+# Local development on Docker Desktop.
+#
+# This compose runs the same Cloudflare/Wrangler local runtime as `pnpm dev`,
+# with the repository bind-mounted for hot reload and persistent named volumes
+# for pnpm's store and wrangler's local D1/R2/KV state.
+#
+#   docker compose -f compose.dev.yaml up --build
+#   docker compose -f compose.dev.yaml down
+#
+# Do not use this for production; production self-hosting is compose.yaml +
+# Dockerfile.selfhost.
+
+services:
+  open-seo-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: open-seo-dev:local
+    init: true
+    # Expose every variable defined in .env.docker (if present) plus the safe
+    # local-development defaults below. Explicit `environment:` entries win
+    # over `env_file` values for the same key.
+    env_file:
+      - path: .env.docker
+        required: false
+    environment:
+      # Wrangler/Vite must be able to reach Cloudflare workerd and expose
+      # bindings through process.env for the dev-server-side code paths that
+      # read them before the binding shim is available.
+      CLOUDFLARE_INCLUDE_PROCESS_ENV: "true"
+      # Local dev should never require auth or external credentials.
+      AUTH_MODE: ${AUTH_MODE:-local_noauth}
+      PORT: ${PORT:-3001}
+      # Default all SEO data providers off: local dev runs on cache/internal
+      # data only unless explicitly enabled. DataForSEO stays disabled so
+      # no credits are consumed.
+      DATAFORSEO_ENABLED: ${DATAFORSEO_ENABLED:-false}
+      GOOGLE_ADS_ENABLED: ${GOOGLE_ADS_ENABLED:-false}
+      GOOGLE_SEARCH_CONSOLE_ENABLED: ${GOOGLE_SEARCH_CONSOLE_ENABLED:-false}
+      BING_WEBMASTER_ENABLED: ${BING_WEBMASTER_ENABLED:-false}
+      LOCAL_CRAWLER_ENABLED: ${LOCAL_CRAWLER_ENABLED:-true}
+      # Keep devtools off in container logs by default.
+      VITE_SHOW_DEVTOOLS: ${VITE_SHOW_DEVTOOLS:-false}
+      # Polling watchers on a large bind-mounted tree (Windows/macOS Docker
+      # Desktop) push Vite to 100% CPU re-statting thousands of modules and
+      # stall startup. Default to native fs watching (inotify inside the
+      # container); Docker Desktop translates file events for bind mounts.
+      # Opt back into polling only if hot reload misses changes on your setup:
+      #   CHOKIDAR_USEPOLLING=true WATCHPACK_POLLING=true docker compose -f compose.dev.yaml up
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-false}
+      WATCHPACK_POLLING: ${WATCHPACK_POLLING:-false}
+    ports:
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
+    volumes:
+      # Live source: hot reload without rebuilds.
+      - .:/app
+      # Keep the container's Linux node_modules isolated from the host's
+      # (potentially Windows/macOS) install.
+      - open_seo_dev_node_modules:/app/node_modules
+      # Wrangler/miniflare state for the local D1, R2, KV, and Durable Object
+      # instances. Persisted across restarts; delete this volume to reset the
+      # entire local Cloudflare environment.
+      - open_seo_dev_wrangler:/app/.wrangler
+      # pnpm store cache: faster cold installs/rebuilds.
+      - open_seo_dev_pnpm_store:/pnpm/store
+    # Allow services to keep the container running for interactive shells:
+    # `docker compose -f compose.dev.yaml exec open-seo-dev sh` then
+    # `pnpm test`, `pnpm lint`, etc. from inside the container.
+    stdin_open: true
+    tty: true
+
+volumes:
+  open_seo_dev_node_modules:
+  open_seo_dev_wrangler:
+  open_seo_dev_pnpm_store:

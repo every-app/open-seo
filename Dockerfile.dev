@@ -1,0 +1,46 @@
+# Local development image for OpenSEO on Docker Desktop.
+#
+# This image runs the project's Cloudflare/Wrangler local runtime (via the
+# Vite dev server + @cloudflare/vite-plugin), not a generic Node-only server.
+# It is intentionally separate from Dockerfile.selfhost: self-host bakes the
+# repo into the image and runs a one-time `vite preview` of a built bundle;
+# this dev image bind-mounts the working tree and runs `pnpm dev` with hot
+# reload against local D1/R2 through Wrangler/workerd.
+
+# Node 22 matches `engines`/CI; the full (non-slim) image keeps workerd's TLS
+# trust store and build tooling available for native addons if needed.
+FROM node:22-bookworm
+
+ENV PNPM_HOME=/pnpm
+ENV PATH="$PNPM_HOME:$PATH"
+# Corepack resolves pnpm to the exact version pinned in package.json.
+RUN corepack enable
+
+# pnpm store cache persists across container rebuilds via the named volume
+# declared in compose.dev.yaml.
+ENV PNPM_STORE_PATH=/pnpm/store
+
+# Inside Docker, pnpm defaults to content-addressable hardlinks on the overlay
+# filesystem, which breaks with bind-mounted workspaces on Windows/macOS.
+# copy+yalc-style fallback keeps behaviour predictable without extra config.
+ENV PNPM_PACKAGE_IMPORT_METHOD=copy
+
+WORKDIR /app
+
+# Install only the production graph? No — dev needs vite/wrangler/devtools.
+# We use the lockfile for reproducibility. This layer is cached while the
+# lockfile is unchanged.
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN pnpm install --frozen-lockfile --workspace-root
+
+# The rest of the repo is bind-mounted at runtime (see compose.dev.yaml), so
+# no broad COPY of the source tree is needed in the image. Only tools the
+# entrypoint expects before sources are mounted (none beyond node_modules)
+# materialise above.
+
+EXPOSE 3001
+
+# `docker-entrypoint.dev.sh` owns startup: it prints a short orientation,
+# applies D1 migrations to the local `.wrangler` state if/when the schema is
+# already present, then execs `pnpm dev` so Vite + wrangler take over.
+CMD ["sh", "docker-entrypoint.dev.sh"]
