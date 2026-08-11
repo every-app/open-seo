@@ -1,5 +1,12 @@
 import { beforeEach, expect, it, vi } from "vitest";
 import type { SEODataRequest } from "@/server/lib/seo-data";
+import {
+  backlinksHistoryItemSchema,
+  backlinksSummaryItemSchema,
+  backlinksItemSchema,
+  referringDomainItemSchema,
+  domainPageSummaryItemSchema,
+} from "@/server/lib/dataforseo/backlinks-schemas";
 
 const routeMock = vi.hoisted(() =>
   vi.fn<(request: SEODataRequest, schema?: unknown) => Promise<unknown>>(),
@@ -11,6 +18,11 @@ vi.mock("@/server/lib/seo-data", () => ({
 
 vi.mock("@/server/lib/dataforseo", () => ({
   normalizeBacklinksTarget: vi.fn(),
+  backlinksHistoryItemSchema,
+  backlinksSummaryItemSchema,
+  backlinksItemSchema,
+  referringDomainItemSchema,
+  domainPageSummaryItemSchema,
 }));
 
 import { normalizeBacklinksTarget } from "@/server/lib/dataforseo";

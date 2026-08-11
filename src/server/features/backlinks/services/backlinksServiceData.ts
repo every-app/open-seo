@@ -3,19 +3,17 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import {
   normalizeBacklinksTarget,
+  backlinksHistoryItemSchema,
+  backlinksSummaryItemSchema,
+  backlinksItemSchema,
+  referringDomainItemSchema,
+  domainPageSummaryItemSchema,
   type BacklinksHistoryItem,
   type BacklinksItem,
   type BacklinksSummaryItem,
   type DomainPageSummaryItem,
   type ReferringDomainItem,
 } from "@/server/lib/dataforseo";
-import {
-  backlinksHistoryItemSchema,
-  backlinksSummaryItemSchema,
-  backlinksItemSchema,
-  referringDomainItemSchema,
-  domainPageSummaryItemSchema,
-} from "@/server/lib/dataforseo/backlinks";
 import { getSeoDataRouter } from "@/server/lib/seo-data";
 import type {
   BacklinksLookupInput,
