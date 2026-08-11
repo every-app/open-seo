@@ -33,7 +33,9 @@
   ],
   // Durable Object backing the onboarding strategy chat (Agents SDK
   // AIChatAgent). One instance per project; messages persist in the DO's
-  // SQLite. SQLite-backed classes must be declared in `migrations` below.
+  // SQLite. SQLite-backed classes must be declared in `migrations` below for
+  // the wrangler/workerd surfaces (local dev, Docker self-host); Alchemy
+  // deploys derive SQLite backing on their own.
   "durable_objects": {
     "bindings": [
       {
@@ -46,6 +48,13 @@
         "name": "SAM_CHAT",
         "class_name": "SamChatAgent",
       },
+      // Per-audit crawl scratchpad: frontier, link edges, and a slim page
+      // mirror in the DO's SQLite. Destroyed at finalize; self-cleans via
+      // alarm if the audit dies.
+      {
+        "name": "AUDIT_SCRATCHPAD",
+        "class_name": "AuditScratchpad",
+      },
     ],
   },
   "migrations": [
@@ -57,9 +66,15 @@
       "tag": "v2",
       "new_sqlite_classes": ["SamChatAgent"],
     },
+    {
+      "tag": "v3",
+      "new_sqlite_classes": ["AuditScratchpad"],
+    },
   ],
   "triggers": {
-    "crons": ["*/15 * * * *"],
+    // Every 5 min: rank checks + stale-audit reconcile. Daily: OAuth KV GC.
+    // Dispatched on controller.cron in src/server.ts `scheduled`.
+    "crons": ["*/5 * * * *", "17 3 * * *"],
   },
   // This config serves local dev and Docker self-host only. All Cloudflare
   // deployments — previews, prod, self-host — go through Alchemy
@@ -94,10 +109,9 @@
   // docs/LOCAL_POSTGRES.md, and nothing connects to it unless
   // DATABASE_PROVIDER=postgres is set in .env.local.
   //
-  // Kept commented out: an active hyperdrive block makes the "Deploy to
-  // Cloudflare" button demand a Postgres connection string, and the id lives in
-  // OpenSEO's account anyway (Alchemy deploys and the Docker image never read
-  // it). Uncomment when running local Postgres dev per docs/LOCAL_POSTGRES.md.
+  // Kept commented out: the id lives in OpenSEO's account, and only local
+  // Postgres dev reads this block (Alchemy deploys and the Docker image never
+  // do). Uncomment when running local Postgres dev per docs/LOCAL_POSTGRES.md.
   // "hyperdrive": [
   //   {
   //     "binding": "HYPERDRIVE",

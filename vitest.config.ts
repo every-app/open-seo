@@ -8,5 +8,13 @@ export default defineConfig({
     include: ["src/**/*.test.ts"],
     restoreMocks: true,
     clearMocks: true,
+    server: {
+      deps: {
+        // Processed by vitest (instead of loaded natively by node) so the
+        // oauth-refresh e2e test's cloudflare:workers mock reaches the real
+        // provider module.
+        inline: ["@cloudflare/workers-oauth-provider"],
+      },
+    },
   },
 });

@@ -1,3 +1,5 @@
+import { GA4_OAUTH_APP_PENDING } from "@/shared/ga4";
+
 type McpTool = {
   name: string;
   title: string;
@@ -22,6 +24,31 @@ const toolCategories: ToolCategory[] = [
         name: "get_rank_tracker",
         title: "Get rank tracking positions",
         description: "Read tracked keyword positions.",
+      },
+      {
+        name: "create_rank_tracker",
+        title: "Create a rank tracker",
+        description: "Configure a domain for rank tracking.",
+      },
+      {
+        name: "add_rank_tracking_keywords",
+        title: "Add tracked keywords",
+        description: "Add keywords to an existing rank tracker.",
+      },
+      {
+        name: "remove_rank_tracking_keywords",
+        title: "Remove tracked keywords",
+        description: "Stop tracking selected keyword IDs.",
+      },
+      {
+        name: "estimate_rank_tracker_cost",
+        title: "Estimate rank check cost",
+        description: "Preview the cost of an explicit rank check.",
+      },
+      {
+        name: "run_rank_tracker",
+        title: "Run a rank check",
+        description: "Check a tracker's current positions now.",
       },
       {
         name: "get_keyword_metrics",
@@ -118,12 +145,78 @@ const toolCategories: ToolCategory[] = [
       },
     ],
   },
+  {
+    label: "Google Analytics",
+    tools: [
+      {
+        name: "get_google_analytics_organic_overview",
+        title: "Get organic overview",
+        description:
+          "Compare top-line organic performance with the previous period.",
+      },
+      {
+        name: "get_google_analytics_organic_landing_pages",
+        title: "Get organic landing pages",
+        description:
+          "Read organic sessions, engagement, key events, and revenue by landing page.",
+      },
+      {
+        name: "get_google_analytics_page_performance",
+        title: "Get page performance",
+        description: "Read page views, users, engagement time, and key events.",
+      },
+      {
+        name: "get_google_analytics_key_events",
+        title: "Get key events",
+        description: "Read key-event outcomes by event or landing page.",
+      },
+      {
+        name: "get_search_opportunities",
+        title: "Get search opportunities",
+        description:
+          "Join Search Console demand with Analytics outcomes to prioritize pages.",
+      },
+      {
+        name: "get_google_analytics_traffic_acquisition",
+        title: "Get traffic acquisition",
+        description:
+          "Compare channels, source/medium, or campaigns using session outcomes.",
+      },
+      {
+        name: "get_google_analytics_measurement_health",
+        title: "Check measurement health",
+        description:
+          "Inspect streams, enhanced measurement, key events, and custom definitions.",
+      },
+      {
+        name: "get_google_analytics_ecommerce_performance",
+        title: "Get ecommerce performance",
+        description:
+          "Read product-funnel or landing-page transaction performance.",
+      },
+      {
+        name: "get_google_analytics_site_search",
+        title: "Get site search",
+        description: "Read measured internal search terms and outcomes.",
+      },
+      {
+        name: "get_google_analytics_audience_breakdown",
+        title: "Get audience breakdown",
+        description:
+          "Compare device, country, or new-versus-returning audiences.",
+      },
+    ],
+  },
 ];
+
+const visibleCategories = GA4_OAUTH_APP_PENDING
+  ? toolCategories.filter((cat) => cat.label !== "Google Analytics")
+  : toolCategories;
 
 export function AvailableTools() {
   return (
     <div className="grid gap-x-8 gap-y-8 md:grid-cols-2">
-      {toolCategories.map((cat) => (
+      {visibleCategories.map((cat) => (
         <div key={cat.label}>
           <h3 className="text-xs font-semibold uppercase tracking-wide text-base-content/50">
             {cat.label}

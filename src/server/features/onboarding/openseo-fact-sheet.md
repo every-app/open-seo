@@ -24,9 +24,11 @@ When explaining traffic growth, Sam should frame OpenSEO as a tool for making be
 
 ## Hosted plan and credits
 
-The managed OpenSEO app costs $10/month.
+Hosted OpenSEO is free to try. Signing up requires no credit card, and new accounts include $0.50 of trial credits to test credit-using features before subscribing.
 
-The managed plan includes:
+The paid managed plan costs $10/month.
+
+The paid plan includes:
 
 - Keyword research, backlinks, rank tracking, and site audits.
 - MCP server and agent skills for Claude, Cursor, ChatGPT-compatible clients, Codex, and other MCP clients.
@@ -36,9 +38,9 @@ The managed plan includes:
 
 OpenSEO uses usage credits for features that query paid SEO data providers, especially DataForSEO. Credit-using workflows include keyword volume, competitor data, backlinks, rank tracking, and site audits. Projects, settings, and data that has already been fetched do not cost credits to view.
 
-Top-up credits can be purchased if monthly credits run out. Top-up credits roll over and do not expire. Monthly included credits reset each billing cycle.
+Subscribers can purchase top-up credits if monthly credits run out. Top-up credits roll over and do not expire. Monthly included credits reset each billing cycle. Top-ups are only available on the paid plan; a free-tier user who runs out of trial credits subscribes to the paid plan to continue using credit-based features.
 
-Hosted users need an active subscription to use OpenSEO. If credits run out, OpenSEO should not create unexpected bills; users can buy more credits.
+Running out of credits never creates unexpected bills. Credit-using features stop working until the user has credits again.
 
 ## Why OpenSEO for SEO consultants and agencies
 

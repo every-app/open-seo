@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { Ga4ConnectCard } from "@/client/features/dashboard/Ga4ConnectCard";
 import {
   computeNextStep,
   isStepDone,
@@ -15,6 +16,7 @@ import {
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
 import { McpConnectCard } from "@/client/features/dashboard/McpConnectCard";
+import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import {
@@ -24,6 +26,7 @@ import {
   refreshDashboardBacklinkSnapshot,
 } from "@/serverFunctions/dashboard";
 import { setProjectDomain } from "@/serverFunctions/projects";
+import { GA4_OAUTH_APP_PENDING } from "@/shared/ga4";
 import type { DashboardHeroStep } from "@/types/schemas/dashboard";
 
 const HERO_COPY: Record<
@@ -276,7 +279,10 @@ export function DashboardPage({ projectId }: { projectId: string }) {
     );
   }
 
-  if (!activation) {
+  // Wait for the overview too: rendering cards from `overview === undefined`
+  // flashes their empty states (and reshuffles the data-first sort) once the
+  // real data lands. An overview error falls through so the page still loads.
+  if (!activation || overviewQuery.isPending) {
     return (
       <div
         className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-4 md:px-6 md:py-6"
@@ -294,11 +300,14 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
+  const ga4Connected = activation.ga4.connected;
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
+
+        <WorkspaceMergeBanner />
 
         <OnboardingChecklist projectId={projectId} activation={activation} />
 
@@ -327,6 +336,21 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               hasData: gscConnected,
               node: <GscCard projectId={projectId} connected={gscConnected} />,
             },
+            ...(!GA4_OAUTH_APP_PENDING &&
+            (ga4Connected || !activation.ga4.cardDismissedAt)
+              ? [
+                  {
+                    key: "ga4",
+                    hasData: ga4Connected,
+                    node: (
+                      <Ga4ConnectCard
+                        projectId={projectId}
+                        connected={ga4Connected}
+                      />
+                    ),
+                  },
+                ]
+              : []),
             {
               key: "audit",
               hasData: overview?.audit != null,

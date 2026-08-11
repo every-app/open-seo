@@ -40,6 +40,11 @@ describe("auth redirect helpers", () => {
     expect(normalizeAuthRedirect("//evil.test")).toBe("/");
   });
 
+  it("rejects backslash redirects that URL parsers treat as slashes", () => {
+    expect(normalizeAuthRedirect("/\\evil.test")).toBe("/");
+    expect(normalizeAuthRedirect("/path\\..\\evil")).toBe("/");
+  });
+
   it("builds sign-in links with the redirect query only when needed", () => {
     expect(getSignInHref("/")).toBe("/sign-in");
     expect(getSignInHref("/oauth-consent?client_id=abc")).toBe(

@@ -1,5 +1,6 @@
 import { Think } from "@cloudflare/think";
 import type {
+  ChatErrorContext,
   ChatResponseResult,
   Session,
   StepContext,
@@ -12,7 +13,10 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
 import { user } from "@/db/schema";
-import { openRouterCostUsd } from "@/server/lib/chatAgent";
+import {
+  openRouterCostUsd,
+  staticAssistantModel,
+} from "@/server/lib/chatAgent";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemoryRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
@@ -29,7 +33,7 @@ import {
 } from "@/server/billing/subscription";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_SCOPE } from "@/lib/oauth-resource";
-import { buildFirstPartyMcpAuthContext } from "@/server/mcp/context";
+import type { ToolAuthContext } from "@/server/mcp/context";
 
 // SAM's writable context blocks, backed by sam_project_memory rows shared by
 // every chat session in the project.
@@ -94,6 +98,17 @@ export class SamChatAgent extends Think {
   // meters the spend.
   private turnCostUsd = 0;
   private turnMonthlyRemaining: number | null = null;
+
+  /** Permanently remove this session's transcript for an account erasure. */
+  async destroyForErasure(): Promise<void> {
+    for (const socket of this.ctx.getWebSockets()) {
+      socket.close(1000, "Account erased");
+    }
+    this.cancelAllChats();
+    await this.waitUntilStable({ timeout: 5000 });
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+  }
 
   // Record the app origin for the deep links tools attach to responses,
   // derived from the requests this DO serves instead of env config. DO storage
@@ -202,21 +217,14 @@ export class SamChatAgent extends Think {
     };
   }
 
-  // Gates reshape the turn: no tools, a tiny budget, a system prompt that
-  // pins the exact reply, and no history — so the (unmetered) LLM call a
-  // refusal still makes costs a constant few hundred tokens even when users
-  // script them. Think's no-model path (deliverNotice + cancelAllChats)
-  // would make refusals free but hasn't been validated against the chat UI's
-  // rendering of an aborted turn; swap it in only after checking that.
+  // Gates swap the model for one turn: the canned model streams the refusal
+  // back through Think's normal pipeline (rendered and persisted like any
+  // assistant message) without calling a provider, so a refusal is free even
+  // when users script them. The old version made a real 200-token call, which
+  // MiniMax M3 could spend entirely on reasoning tokens — leaving the user a
+  // truncated chain-of-thought and no reply (issue #161).
   private refusalTurn(text: string): TurnConfig {
-    return {
-      system: `Reply with exactly the following message and nothing else: ${text}`,
-      messages: [{ role: "user", content: "Acknowledge." }],
-      activeTools: [],
-      maxSteps: 1,
-      maxOutputTokens: 200,
-      maxRetries: 0,
-    };
+    return { model: staticAssistantModel(text) };
   }
 
   async beforeTurn(_ctx: TurnContext): Promise<TurnConfig> {
@@ -255,13 +263,14 @@ export class SamChatAgent extends Think {
       const baseUrl =
         (await this.ctx.storage.get<string>(PUBLIC_ORIGIN_KEY)) ??
         "https://app.openseo.so";
-      const authContext = buildFirstPartyMcpAuthContext({
+      const authContext: ToolAuthContext = {
         userId: ctx.row.userId,
         userEmail: ctx.userEmail,
         organizationId,
         baseUrl,
+        clientId: null,
         scopes: [MCP_SCOPE],
-      });
+      };
 
       return {
         tools: buildSamMcpTools(authContext, {
@@ -328,8 +337,11 @@ export class SamChatAgent extends Think {
     }
   }
 
-  onChatError(error: unknown): void {
-    console.error("[sam] chat turn error", error);
+  // The return value becomes the stored chat-terminal body that reconnecting
+  // clients replay — returning nothing would make it the string "undefined".
+  onChatError(error: unknown, ctx?: ChatErrorContext): unknown {
+    console.error("[sam] chat turn error", ctx?.stage, error);
+    return error;
   }
 
   // POST .../rewind {messageId}: delete that message and everything after it on

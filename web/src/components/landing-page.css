@@ -34,7 +34,12 @@
   --feat-bg: #221f1b;
   --feat-text: #ffffff;
   --term-bg: #221f1b;
-  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  font-family:
+    "Inter",
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--canvas);
   color: var(--ink);
   font-size: 16px;
@@ -297,6 +302,33 @@
 .itc-hero .itc-container {
   position: relative;
   z-index: 1;
+}
+/* Out of flow so the hero's vertical centering ignores the laurel and the
+   headline block sits exactly where it did without it. */
+.itc-hero-ph-laurel {
+  color: var(--ink);
+  display: inline-flex;
+  position: absolute;
+  bottom: calc(100% + 28px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0.85;
+  transition: opacity 0.18s ease;
+}
+.itc-hero-ph-laurel:hover {
+  opacity: 1;
+}
+.itc-hero-ph-laurel svg {
+  height: 44px;
+  width: auto;
+}
+@media (max-width: 767px) {
+  .itc-hero-ph-laurel {
+    bottom: calc(100% + 20px);
+  }
+  .itc-hero-ph-laurel svg {
+    height: 38px;
+  }
 }
 .itc-hero-title {
   color: var(--ink);

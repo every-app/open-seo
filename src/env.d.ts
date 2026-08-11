@@ -12,6 +12,10 @@ declare namespace Cloudflare {
     // Durable Object backing the SAM in-app agent (see wrangler.jsonc).
     SAM_CHAT: DurableObjectNamespace;
 
+    // Durable Object holding per-audit crawl scratch state (frontier, link
+    // edges, page mirror). Untyped here; getAuditScratchpad narrows the stub.
+    AUDIT_SCRATCHPAD: DurableObjectNamespace;
+
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
@@ -31,6 +35,8 @@ declare namespace Cloudflare {
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
     AUTUMN_SECRET_KEY?: string;
     AUTUMN_WEBHOOK_SECRET?: string;
+    // HMAC secret for the operator-only GDPR storage-erasure endpoint.
+    GDPR_ERASURE_SECRET?: string;
 
     // Cloudflare Turnstile — signup captcha (hosted only). Secret verifies
     // tokens server-side; site key is public and inlined into the client build.

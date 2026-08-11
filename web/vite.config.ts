@@ -27,6 +27,7 @@ export default defineConfig({
     tanstackStart({
       prerender: {
         enabled: true,
+        filter: ({ path }) => !/\.pdf(?:[?#]|$)/i.test(path),
       },
     }),
     react(),

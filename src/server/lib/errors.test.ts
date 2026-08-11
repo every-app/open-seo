@@ -18,4 +18,23 @@ describe("toClientError", () => {
 
     expect(error.message).toBe("PAYMENT_REQUIRED");
   });
+
+  it("passes setup-error detail through as CODE: detail", () => {
+    const error = toClientError(
+      new AppError(
+        "AUTH_CONFIG_MISSING",
+        "TEAM_DOMAIN must be a full https URL like https://your-team.cloudflareaccess.com",
+      ),
+    );
+
+    expect(error.message).toBe(
+      "AUTH_CONFIG_MISSING: TEAM_DOMAIN must be a full https URL like https://your-team.cloudflareaccess.com",
+    );
+  });
+
+  it("keeps a detail-less setup error as its bare code", () => {
+    const error = toClientError(new AppError("AUTH_CONFIG_MISSING"));
+
+    expect(error.message).toBe("AUTH_CONFIG_MISSING");
+  });
 });

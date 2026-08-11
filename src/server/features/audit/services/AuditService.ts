@@ -5,6 +5,7 @@ import {
   type BillingCustomerContext,
 } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import {
   AUDIT_LIMITS,
   clampAuditMaxPages,
@@ -18,7 +19,11 @@ import {
   type AuditConfig,
   type LighthouseStrategy,
 } from "@/server/lib/audit/types";
-import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
+import {
+  normalizeAndValidateStartUrl,
+  resolveStartUrlRedirects,
+} from "@/server/lib/audit/url-policy";
+import { reconcileRunningAudit } from "@/server/features/audit/services/auditReconciler";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 // Plan-tier limits are the abuse bound in hosted mode: free accounts get one
@@ -27,7 +32,7 @@ import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 async function resolveAuditLimitTier(
   organizationId: string,
 ): Promise<AuditLimitTier> {
-  if (!(await isHostedServerAuthMode())) return "paid";
+  if (!(await isHostedServerAuthMode())) return "self_hosted";
   const [hasManagedAccess, hasPaidPlan] = await Promise.all([
     customerHasManagedAccess(organizationId),
     customerHasPaidPlan(organizationId),
@@ -61,7 +66,12 @@ async function startAudit(input: {
 
   const auditId = crypto.randomUUID();
   const config: AuditConfig = { maxPages, lighthouseStrategy };
-  const startUrl = await normalizeAndValidateStartUrl(input.startUrl);
+  // Anchor the audit to the site's real origin: a start domain that 301s
+  // elsewhere (…net -> …com, apex -> www) would otherwise dead-end after
+  // one page at the same-origin crawl boundary.
+  const startUrl = await resolveStartUrlRedirects(
+    await normalizeAndValidateStartUrl(input.startUrl),
+  );
 
   await AuditRepository.createAudit({
     id: auditId,
@@ -125,22 +135,13 @@ async function getStatus(auditId: string, projectId: string) {
     throw new AppError("NOT_FOUND", "Audit not found in this project.");
 
   // Self-heal audits whose workflow died without reaching the mark-failed
-  // step (instance terminated, mark-failed itself failed, deploys, ...).
+  // step (instance terminated/errored, instance expired from retention, ...).
   // Without this they stay "running" forever and hold capacity.
-  if (audit.status === "running" && audit.workflowInstanceId) {
-    try {
-      const instance = await env.SITE_AUDIT_WORKFLOW.get(
-        audit.workflowInstanceId,
-      );
-      const { status } = await instance.status();
-      if (status === "errored" || status === "terminated") {
-        await AuditRepository.failAudit(audit.id, audit.workflowInstanceId);
-        audit =
-          (await AuditRepository.getAuditForProject(auditId, projectId)) ??
-          audit;
-      }
-    } catch {
-      // Instance not found or status unavailable — leave the audit as-is.
+  if (audit.status === "running") {
+    const reconciled = await reconcileRunningAudit(audit);
+    if (reconciled) {
+      audit =
+        (await AuditRepository.getAuditForProject(auditId, projectId)) ?? audit;
     }
   }
 
@@ -154,6 +155,7 @@ async function getStatus(auditId: string, projectId: string) {
     lighthouseCompleted: audit.lighthouseCompleted,
     lighthouseFailed: audit.lighthouseFailed,
     currentPhase: audit.currentPhase,
+    errorCode: audit.errorCode,
     startedAt: audit.startedAt,
     completedAt: audit.completedAt,
   };
@@ -257,6 +259,13 @@ async function remove(auditId: string, projectId: string) {
   }
 
   await AuditRepository.deleteAuditForProject(auditId, projectId);
+  // Best-effort: drop the crawl scratchpad DO with the audit. A missed
+  // destroy self-cleans via the DO's 7-day alarm.
+  try {
+    await getAuditScratchpad(auditId).destroy();
+  } catch (error) {
+    console.warn(`Failed to destroy audit scratchpad ${auditId}:`, error);
+  }
 }
 
 export const AuditService = {

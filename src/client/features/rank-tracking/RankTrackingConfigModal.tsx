@@ -9,11 +9,11 @@ import {
   pagesToDepth,
   estimateRankCheckCredits,
 } from "@/shared/rank-tracking";
+import { getLanguageCode } from "@/client/features/keywords/locations";
 import {
-  getLanguageCode,
-  getLanguageOptions,
-} from "@/client/features/keywords/locations";
-import { getIsoCountryCode } from "@/shared/keyword-locations";
+  SERP_LANGUAGE_OPTIONS,
+  getIsoCountryCode,
+} from "@/shared/keyword-locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
 import type { ProjectMarket } from "@/client/features/projects/types";
 import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
@@ -86,10 +86,6 @@ function RankTrackingConfigModalContent({
   );
   const [languageCode, setLanguageCode] = useState(
     existingConfig?.languageCode ?? initialMarket.languageCode,
-  );
-  const languageOptions = useMemo(
-    () => getLanguageOptions(locationCode),
-    [locationCode],
   );
   const [serpDepth, setSerpDepth] = useState(existingConfig?.serpDepth ?? 40);
   const [schedule, setSchedule] = useState<
@@ -176,7 +172,6 @@ function RankTrackingConfigModalContent({
           projectId={projectId}
           domain={domain}
           locationCode={locationCode}
-          languageCode={languageCode}
           onDone={(id) => onSaved(id)}
           onClose={closeKeywordStep}
         />
@@ -245,14 +240,17 @@ function RankTrackingConfigModalContent({
             className="select select-bordered w-full"
             value={languageCode}
             onChange={(e) => setLanguageCode(e.target.value)}
-            disabled={languageOptions.length <= 1}
           >
-            {languageOptions.map((language) => (
+            {SERP_LANGUAGE_OPTIONS.map((language) => (
               <option key={language.code} value={language.code}>
                 {language.label}
               </option>
             ))}
           </select>
+          <div className="mt-1.5 text-xs text-base-content/50">
+            Defaults to the country's language. Any language can be tracked in
+            any country — pick the one your customers search in.
+          </div>
         </div>
 
         <div className="form-control">

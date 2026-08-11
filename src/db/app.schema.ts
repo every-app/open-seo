@@ -381,6 +381,9 @@ export const projectActivationState = sqliteTable("project_activation_state", {
   // without faking the org-level first-tool-call milestone, which stays
   // truthful and self-heals when a real external call lands.
   mcpCardDismissedAt: text("mcp_card_dismissed_at"),
+  // Optional integration pitch: hiding it from the dashboard does not remove
+  // the GA4 connection controls from Project Settings.
+  ga4CardDismissedAt: text("ga4_card_dismissed_at"),
   updatedAt: text("updated_at")
     .notNull()
     .default(sql`(current_timestamp)`),

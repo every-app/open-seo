@@ -4,16 +4,16 @@ import * as sqliteAudit from "./audit.schema";
 import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
+import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
-import * as sqliteReddit from "./reddit-attribution.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgAudit from "./pg/audit.schema";
 import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
+import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
-import * as pgReddit from "./pg/reddit-attribution.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
@@ -31,8 +31,8 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteSam &
   typeof sqliteAuth &
   typeof sqliteBilling &
+  typeof sqliteGa4 &
   typeof sqliteGsc &
-  typeof sqliteReddit &
   typeof sqliteTelemetry;
 
 const runtimeSchema =
@@ -43,8 +43,8 @@ const runtimeSchema =
         ...pgSam,
         ...pgAuth,
         ...pgBilling,
+        ...pgGa4,
         ...pgGsc,
-        ...pgReddit,
         ...pgTelemetry,
       }
     : {
@@ -53,8 +53,8 @@ const runtimeSchema =
         ...sqliteSam,
         ...sqliteAuth,
         ...sqliteBilling,
+        ...sqliteGa4,
         ...sqliteGsc,
-        ...sqliteReddit,
         ...sqliteTelemetry,
       };
 
@@ -77,7 +77,6 @@ export const {
   backlinkSnapshots,
   audits,
   auditPages,
-  auditLinks,
   auditIssues,
   auditLighthouseResults,
   samSessions,
@@ -90,7 +89,7 @@ export const {
   member,
   invitation,
   billingCustomerStatus,
+  ga4Connections,
   gscConnections,
-  redditAttributions,
   telemetryState,
 } = schema;

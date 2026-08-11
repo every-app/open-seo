@@ -1,6 +1,15 @@
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
+  # TEMPORARY (remove after 2026-08-15): workers-oauth-provider 0.10.2 was
+  # published 2026-08-07; needed for the MCP SDK v2 migration plus the
+  # ChatGPT DCR client-auth-negotiation fix.
+  - "@cloudflare/workers-oauth-provider"
+  # TEMPORARY (remove after 2026-08-09): security releases published
+  # 2026-07-30/31; required to clear current high-severity advisories.
+  - "brace-expansion"
+  - "fast-uri"
+  - "js-yaml"
   # TEMPORARY (remove after 2026-07-16): alchemy 2.0.0-beta.61 and its
   # matching @distilled.cloud/*@0.28.2 published 2026-07-08 — 2 days shy of
   # the window. Exact-pinned in package.json.
@@ -27,23 +36,29 @@ auditConfig:
 overrides:
   # GHSA-4x5r-pxfx-6jf8 — waiting on @tanstack/devtools-vite
   "@babel/core": "^7.29.6"
+  # GHSA-3jxr-9vmj-r5cp, GHSA-mh99-v99m-4gvg, GHSA-rgw5-rvv9-x895 — waiting on just-bash
+  brace-expansion: "^5.0.9"
   # GHSA-737v-mqg7-c878 — waiting on better-auth
   defu: "^6.1.5"
   # 13 advisories incl. GHSA-x4vx-rjvf-j5p4, GHSA-gvmj-g25r-r7wr — waiting on posthog-js
   dompurify: "^3.4.11"
-  # GHSA-hmw2-7cc7-3qxx — waiting on cloudflare
-  form-data: "^4.0.6"
+  # GHSA-v2hh-gcrm-f6hx, GHSA-7p8r-x3mc-p8w7, GHSA-4c8g-83qw-93j6 — waiting on @modelcontextprotocol/sdk
+  fast-uri: "^3.1.5"
   # 9 advisories incl. GHSA-88fw-hqm2-52qc (CORS) — waiting on @modelcontextprotocol/sdk
   hono: "^4.12.25"
+  # GHSA-mwp4-54f8-5fhr — waiting on @modelcontextprotocol/sdk
+  ip-address: "^10.3.1"
+  # GHSA-5p4m-2wfm-xmqj — waiting on @tanstack/start-plugin-core
+  js-yaml: "^4.3.1"
   # GHSA-v6wh-96g9-6wx3 — waiting on @tanstack/devtools-vite
   launch-editor: "^2.14.1"
-  # GHSA-qx2v-qp2m-jg93 — waiting on vite
-  postcss: "^8.5.10"
+  # GHSA-qx2v-qp2m-jg93, GHSA-r28c-9q8g-f849 — waiting on vite
+  postcss: "^8.5.18"
   # GHSA-q8mj-m7cp-5q26 — waiting on @modelcontextprotocol/sdk
   qs: "^6.15.2"
   # GHSA-w7jw-789q-3m8p — waiting on @tanstack/devtools-vite
   shell-quote: "^1.8.4"
   # GHSA-v3rj-xjv7-4jmq — waiting on knip
   smol-toml: "^1.6.1"
-  # 7 advisories incl. GHSA-vmh5-mc38-953g — waiting on cheerio + miniflare
-  undici: "^7.28.0"
+  # 8 advisories incl. GHSA-vmh5-mc38-953g, GHSA-4cwx-7wf7-3272 — waiting on cheerio + miniflare
+  undici: "^7.29.0"

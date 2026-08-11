@@ -65,7 +65,10 @@ function formatDataforseoRequestPath(url: RequestInfo): string {
  * (which return HTTP 200) are handled downstream by {@link assertOk}. An
  * optional classifier maps recognised HTTP failures to product errors.
  */
-function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
+function createAuthenticatedFetch(
+  classify?: DataforseoErrorClassifier,
+  maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
+) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
     const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
     const headers = new Headers(init?.headers);
@@ -80,7 +83,7 @@ function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
       if (response.ok) return response;
 
       // Transient upstream 5xx on an idempotent read -> back off and retry.
-      if (response.status >= 500 && attempt < DATAFORSEO_MAX_RETRIES) {
+      if (response.status >= 500 && attempt < maxServerErrorRetries) {
         await new Promise((resolve) =>
           setTimeout(resolve, DATAFORSEO_RETRY_BACKOFF_MS * (attempt + 1)),
         );
@@ -116,8 +119,11 @@ function createAuthenticatedFetch(classify?: DataforseoErrorClassifier) {
   };
 }
 
-function http(classify?: DataforseoErrorClassifier) {
-  return { fetch: createAuthenticatedFetch(classify) };
+function http(
+  classify?: DataforseoErrorClassifier,
+  maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
+) {
+  return { fetch: createAuthenticatedFetch(classify, maxServerErrorRetries) };
 }
 
 // Per-section API factories. Each is created per-request so the auth secret is
@@ -126,7 +132,9 @@ export const labsApi = () => new DataforseoLabsApi(API_BASE, http());
 export const keywordsDataApi = () => new KeywordsDataApi(API_BASE, http());
 export const serpApi = () => new SerpApi(API_BASE, http());
 export const businessDataApi = () => new BusinessDataApi(API_BASE, http());
-export const onPageApi = () => new OnPageApi(API_BASE, http());
+// Lighthouse live is a billed, non-idempotent POST. A 5xx does not prove the
+// provider skipped the charge, so this client must not replay it.
+export const onPageApi = () => new OnPageApi(API_BASE, http(undefined, 0));
 // Account/appendix data (spend, balance, rates). userData() is FREE ($0) and
 // read-only — do NOT wire it through metering.
 export const appendixApi = () => new AppendixApi(API_BASE, http());

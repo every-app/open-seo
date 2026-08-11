@@ -1,43 +1,75 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+const mocks = vi.hoisted(() => ({
+  props: {} as Record<string, unknown>,
+}));
+
+vi.mock("agents/mcp/server", () => ({
+  getMcpAuthContext: () => ({ props: mocks.props }),
+}));
+
 import {
+  createMcpToolContext,
   createWorkersOAuthMcpProps,
   MCP_AUTH_CONTEXT_PROP,
-  withWorkersOAuthMcpScopes,
   workersOAuthMcpPropsSchema,
 } from "@/server/mcp/context";
 
-const mcpContext = {
+const applicationContext = {
   userId: "user_123",
   userEmail: "alice@example.com",
   organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["offline_access", "mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
   baseUrl: "https://open-seo.test",
 };
 
-describe("withWorkersOAuthMcpScopes", () => {
-  it("stores the OpenSEO MCP context in Workers OAuth props", () => {
-    const props = createWorkersOAuthMcpProps(mcpContext);
+describe("OpenSEO tool auth context", () => {
+  it("stores only application-specific identity in Workers OAuth props", () => {
+    const props = createWorkersOAuthMcpProps(applicationContext);
 
     expect(workersOAuthMcpPropsSchema.parse(props)).toEqual({
-      [MCP_AUTH_CONTEXT_PROP]: mcpContext,
+      [MCP_AUTH_CONTEXT_PROP]: applicationContext,
     });
   });
 
-  it("updates access-token props with downscoped token scopes", () => {
-    const props = createWorkersOAuthMcpProps(mcpContext);
+  it("rejects unrecognized provider props", () => {
+    expect(workersOAuthMcpPropsSchema.safeParse({}).success).toBe(false);
+  });
 
-    expect(withWorkersOAuthMcpScopes(props, ["mcp"])).toEqual({
-      [MCP_AUTH_CONTEXT_PROP]: {
-        ...mcpContext,
-        scopes: ["mcp"],
-      },
+  it("prefers standard OAuth client metadata over the props fallback", () => {
+    mocks.props = createWorkersOAuthMcpProps({
+      ...applicationContext,
+      clientId: "stale-client",
+      scopes: ["offline_access"],
+    });
+
+    expect(
+      createMcpToolContext({
+        http: {
+          authInfo: {
+            token: "access-token",
+            clientId: "client-1",
+            scopes: ["mcp"],
+          },
+        },
+      }).auth,
+    ).toMatchObject({
+      ...applicationContext,
+      clientId: "client-1",
+      scopes: ["mcp"],
     });
   });
 
-  it("leaves unrecognized provider props alone", () => {
-    expect(withWorkersOAuthMcpScopes({}, ["mcp"])).toBeUndefined();
+  it("falls back to encrypted props with workers-oauth-provider 0.10", () => {
+    mocks.props = createWorkersOAuthMcpProps({
+      ...applicationContext,
+      clientId: "client-1",
+      scopes: ["mcp"],
+    });
+
+    expect(createMcpToolContext({}).auth).toMatchObject({
+      ...applicationContext,
+      clientId: "client-1",
+      scopes: ["mcp"],
+    });
   });
 });

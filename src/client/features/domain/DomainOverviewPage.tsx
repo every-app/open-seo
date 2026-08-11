@@ -482,39 +482,6 @@ export function DomainOverviewPage({
     navigateToInput: navigateToSearchTab,
   });
 
-  const handleSearchSubmit = useCallback(
-    (event: FormEvent) => {
-      const values = state.controlsForm.state.values;
-      const target = normalizeDomainTarget(values.domain);
-      if (!target) {
-        state.handleSearchSubmit(event);
-        return;
-      }
-
-      const nextTabInput: SearchTabInput = {
-        type: "domain",
-        domain: target,
-        subdomains: values.subdomains,
-        locationCode: values.locationCode,
-      };
-
-      if (!searchTabs.canOpenTab(nextTabInput)) {
-        event.preventDefault();
-        state.controlsForm.setErrorMap({
-          onSubmit: createFormValidationErrors({
-            fields: {
-              domain: `Close a tab to open more searches (max ${searchTabs.limit}).`,
-            },
-          }),
-        });
-        return;
-      }
-
-      state.handleSearchSubmit(event);
-    },
-    [searchTabs, state],
-  );
-
   const tabControls = routeState.domain ? (
     <div className="flex flex-col gap-2">
       <div>
@@ -555,7 +522,7 @@ export function DomainOverviewPage({
         <DomainSearchCard
           controlsForm={state.controlsForm}
           isLoading={state.isLoading}
-          onSubmit={handleSearchSubmit}
+          onSubmit={state.handleSearchSubmit}
           onSortChange={(sort) =>
             state.applySort(sort, getDefaultSortOrder(sort))
           }

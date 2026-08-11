@@ -10,8 +10,7 @@ export const CHATGPT_LANGUAGE_CODE = "en";
 
 export type LlmPlatform = "chat_gpt" | "google";
 
-/** Max tasks DataForSEO accepts in a single task_post request. */
-export const MAX_TASKS_PER_POST = 100;
+export { MAX_TASKS_PER_POST } from "@/shared/rank-tracking";
 
 // DataForSEO's LLM-mentions `target` array accepts domain OR keyword entries.
 // We always pass exactly one target per call.

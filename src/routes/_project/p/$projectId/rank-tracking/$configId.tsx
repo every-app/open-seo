@@ -17,7 +17,7 @@ function RankTrackingConfigRoute() {
   const queryClient = useQueryClient();
   const [showConfigModal, setShowConfigModal] = useState(false);
 
-  const { data: configs, isLoading } = useQuery({
+  const { data: configs, isPending } = useQuery({
     queryKey: ["rankTrackingConfigs", projectId],
     queryFn: () => getRankTrackingConfigs({ data: { projectId } }),
   });
@@ -40,7 +40,13 @@ function RankTrackingConfigRoute() {
     });
   };
 
-  if (isLoading) return null;
+  if (isPending) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <span className="loading loading-spinner loading-lg" />
+      </div>
+    );
+  }
 
   if (!config) {
     return (

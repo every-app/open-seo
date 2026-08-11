@@ -166,7 +166,7 @@ const QUEUED_POLL_INTERVALS = [
 /** Concurrent task_get requests within a collect step. */
 const TASK_GET_CONCURRENCY = 25;
 
-/** Max task_get calls per collect round (per-invocation subrequest budget). */
+/** Max task_get calls per collect round (bounds one round's fan-out). */
 const TASK_GETS_PER_COLLECT = 500;
 
 // Collect steps may issue hundreds of task_get calls, so they get more room

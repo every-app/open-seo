@@ -2,7 +2,7 @@
  * Per-page issue reporters.
  *
  * Each reporter is a pure function over a single crawled page record —
- * DOM-free by design (cheerio runs once in crawlPage), so the engine works
+ * DOM-free by design (HTML parsing runs once in crawlPage), so the engine works
  * over any crawl source that can produce a CrawledPageResult.
  *
  * Cross-page checks (duplicates, broken links, orphans, redirect chains)

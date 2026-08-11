@@ -1,5 +1,18 @@
 import { z } from "zod";
 
+// Tools author schemas as either a raw Zod shape (most tools) or a full
+// z.object (the GA4 tools). The SDK accepts both; this normalization exists so
+// TS overload resolution stays simple and instrumentation receives a real
+// ZodType to validate with.
+export function objectSchema(schema: z.ZodType | z.ZodRawShape): z.ZodType;
+export function objectSchema(
+  schema: z.ZodType | z.ZodRawShape | undefined,
+): z.ZodType | undefined;
+export function objectSchema(schema: z.ZodType | z.ZodRawShape | undefined) {
+  if (!schema) return undefined;
+  return schema instanceof z.ZodType ? schema : z.object(schema);
+}
+
 const mcpMetaOutputSchema = z
   .object({
     url: z.string().optional(),

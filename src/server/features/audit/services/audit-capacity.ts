@@ -6,13 +6,14 @@ import {
   PAID_MAX_AUDIT_PAGES,
 } from "@/shared/audit-limits";
 
-export type AuditLimitTier = "free" | "paid";
+export type AuditLimitTier = "free" | "paid" | "self_hosted";
 
 // The crawler runs on our Workers compute and isn't credit-metered, so these
 // per-tier bounds are the abuse control: free accounts cost nothing to create,
 // so they get one small audit at a time and a modest total budget. Paid gets
 // bounds sized for real sites rather than abuse (a payment method on file is
-// the deterrent). Self-hosted deployments resolve to the paid tier.
+// the deterrent). The cumulative bound is a hosted commercial policy, while
+// the per-audit page limit is also a technical Workflow/database ceiling.
 export const AUDIT_LIMITS: Record<
   AuditLimitTier,
   {
@@ -29,6 +30,11 @@ export const AUDIT_LIMITS: Record<
   paid: {
     maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
     maxCapacityUnits: 100_000,
+    maxRunningAudits: Number.POSITIVE_INFINITY,
+  },
+  self_hosted: {
+    maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,
+    maxCapacityUnits: Number.POSITIVE_INFINITY,
     maxRunningAudits: Number.POSITIVE_INFINITY,
   },
 };
