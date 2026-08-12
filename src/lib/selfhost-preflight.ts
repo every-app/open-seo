@@ -195,20 +195,25 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
     });
   }
 
+  const chatProvider = get(env, "MINIMAX_API_KEY")
+    ? "MINIMAX_API_KEY"
+    : get(env, "OPENROUTER_API_KEY")
+      ? "OPENROUTER_API_KEY"
+      : null;
   items.push(
-    get(env, "OPENROUTER_API_KEY")
+    chatProvider
       ? {
           key: "ai",
           name: "AI features",
           level: "ok",
-          message: "OPENROUTER_API_KEY set",
+          message: `${chatProvider} set`,
         }
       : {
           key: "ai",
           name: "AI features",
           level: "info",
           message:
-            "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+            "No chat provider API key set (optional) — SAM, the in-app SEO agent, is disabled.",
         },
   );
 }

@@ -72,6 +72,18 @@ describe("runSelfhostPreflight", () => {
     expect(itemFor(result, "Search Console")?.message).toContain("32");
   });
 
+  it("recognizes a first-party MiniMax chat key", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      MINIMAX_API_KEY: "test-key",
+    });
+
+    expect(itemFor(result, "AI features")).toMatchObject({
+      level: "ok",
+      message: "MINIMAX_API_KEY set",
+    });
+  });
+
   it("fails hosted mode listing every missing variable", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "hosted",
