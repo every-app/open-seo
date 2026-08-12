@@ -17,7 +17,12 @@ const { handleAuthenticatedOpenSeoMcpRequestMock } = vi.hoisted(() => ({
 }));
 
 vi.mock("@/server/mcp/transport", () => ({
-  handleAuthenticatedOpenSeoMcpRequest: handleAuthenticatedOpenSeoMcpRequestMock,
+  handleAuthenticatedOpenSeoMcpRequest:
+    handleAuthenticatedOpenSeoMcpRequestMock,
+}));
+
+vi.mock("@/lib/auth", () => ({
+  getHostedBaseUrl: () => "https://open-seo.test",
 }));
 
 import { handleAgentOnboardMcpRequest } from "@/server/agentonboard/agentonboard-mcp";
@@ -46,7 +51,7 @@ beforeEach(() => {
     organizationId: "org-1",
   });
   handleAuthenticatedOpenSeoMcpRequestMock.mockImplementation(
-    async (request, props, env, ctx) => new Response("mcp response", { status: 200 }),
+    async () => new Response("mcp response", { status: 200 }),
   );
 });
 
