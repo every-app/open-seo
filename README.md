@@ -43,9 +43,13 @@ OpenSEO exposes an MCP server so AI agents like Claude Code, OpenClaw, and Herme
 
 ## Self-Hosting
 
-OpenSEO supports two self-hosting paths:
+OpenSEO supports these self-hosting paths:
 
 - **Simple: Docker** for personal use on your own machine (recommended for getting started). See [`docs/SELF_HOSTING_DOCKER.md`](./docs/SELF_HOSTING_DOCKER.md).
+- **Railway** for one-click cloud Docker hosting with a persistent volume and a password gate by default (community template). See [`docs/SELF_HOSTING_RAILWAY.md`](./docs/SELF_HOSTING_RAILWAY.md).
+
+  [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/openseo)
+
 - **Advanced: Cloudflare** for internet-facing self-hosting across multiple devices or with your team (works on the free plan). See [`docs/SELF_HOSTING_CLOUDFLARE.md`](./docs/SELF_HOSTING_CLOUDFLARE.md).
 
 Either way, you need a DataForSEO API key to get SEO data. See [`docs/DATAFORSEO_API_KEY.md`](./docs/DATAFORSEO_API_KEY.md).
