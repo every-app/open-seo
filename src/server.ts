@@ -18,6 +18,7 @@ import {
 import { requestWithPublicOrigin } from "@/server/mcp/public-origin";
 import { MCP_ROUTE } from "@/server/mcp/context";
 import { handleSelfHostedOpenSeoMcpRequest } from "@/server/mcp/transport";
+import { handleAgentOnboardMcpRequest } from "@/server/agentonboard/agentonboard-mcp";
 import { withPgClient } from "@/db";
 import {
   AUTUMN_WEBHOOK_PATH,
@@ -136,11 +137,11 @@ function fetch(
   return withPgClient(() => Promise.resolve(handleFetch(request, env, ctx)));
 }
 
-function handleFetch(
+async function handleFetch(
   request: Request,
   env: Env,
   ctx: ExecutionContext,
-): Response | Promise<Response> {
+): Promise<Response> {
   ctx.waitUntil(maybeSendSelfHostHeartbeat());
 
   const authMode = getAuthMode(env.AUTH_MODE);
@@ -158,6 +159,20 @@ function handleFetch(
   if (isHostedAuthMode(authMode)) {
     if (pathname === AUTUMN_WEBHOOK_PATH) {
       return handleAutumnWebhookRequest(publicRequest);
+    }
+
+    // AgentOnboard agents reach the MCP server with a session token instead of
+    // an OAuth grant. Try that path first (returns null for non-agent
+    // requests); if it does not apply, fall through to the OAuth provider.
+    if (pathname === MCP_ROUTE) {
+      const agentOnboardResponse = await handleAgentOnboardMcpRequest(
+        publicRequest,
+        env,
+        ctx,
+      );
+      if (agentOnboardResponse) {
+        return agentOnboardResponse;
+      }
     }
 
     return openSeoOAuthProvider.fetch(
