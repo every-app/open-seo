@@ -75,7 +75,7 @@ describe("DataForSEO research MCP tools", () => {
 
     expect(businessListings).toHaveBeenCalledWith(
       expect.objectContaining({
-        locationCoordinate: "33.1234568,-84.9876543,5",
+        locationCoordinate: "33.1234568,-84.9876543,5000",
         categories: ["cafe"],
       }),
     );
