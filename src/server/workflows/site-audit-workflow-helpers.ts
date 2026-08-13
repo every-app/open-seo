@@ -6,7 +6,7 @@ import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 
 const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
-const MAX_HTML_BYTES = 2 * 1024 * 1024;
+const MAX_HTML_BYTES = 1024 * 1024;
 
 /**
  * Markers of a bot-mitigation challenge page. We classify these honestly as
@@ -104,9 +104,8 @@ export async function crawlPage(
 
     const contentType = response.headers.get("content-type") ?? "";
     const isHtml = contentType.includes("text/html");
-    // Large pages make Cheerio disproportionately expensive and can exhaust a
-    // crawl step's CPU or isolate memory. The first 2 MiB still contains the
-    // SEO metadata and navigation needed by the audit in normal documents.
+    // Cap what we read: the first 1 MiB still contains the SEO metadata and
+    // navigation needed by the audit in normal documents.
     const body = isHtml ? await readTextUpTo(response, MAX_HTML_BYTES) : "";
     const fetchClass = classifyFetch(
       statusCode,
@@ -125,13 +124,16 @@ export async function crawlPage(
         headerCanonicalUrl,
         crawlDepth,
         inSitemap,
+        // The body was still fetched and buffered; report its size so the
+        // crawl window's byte budget sees blocked/error pages too.
+        htmlBytes: body.length,
       });
     }
 
-    // Dynamic import keeps cheerio (page-analyzer's HTML parser) out of the
-    // worker's startup module graph: SiteAuditWorkflow is re-exported from
-    // src/server.ts, so a static import would evaluate cheerio in every
-    // isolate's baseline heap, not just when an audit actually crawls.
+    // Dynamic import keeps the HTML parser out of the worker's startup
+    // module graph: SiteAuditWorkflow is re-exported from src/server.ts, so
+    // a static import would evaluate it in every isolate's baseline heap,
+    // not just when an audit actually crawls.
     const { analyzeHtml } = await import("@/server/lib/audit/page-analyzer");
     const analysis = analyzeHtml(body, url, statusCode, responseTimeMs);
     const robotsDirectives = [analysis.robotsMeta, xRobotsTag]
@@ -171,6 +173,7 @@ export async function crawlPage(
         ? await sha256Hex(analysis.bodyText)
         : null,
       isHtml: true,
+      htmlBytes: body.length,
       imagesTotal: analysis.images.length,
       // Only a truly absent alt attribute counts: alt="" is the correct
       // markup for decorative images.
@@ -244,6 +247,7 @@ function emptyPageResult(input: {
   headerCanonicalUrl: string | null;
   crawlDepth: number | null;
   inSitemap: boolean;
+  htmlBytes?: number;
 }): CrawledPageResult {
   return {
     id: crypto.randomUUID(),
@@ -270,6 +274,7 @@ function emptyPageResult(input: {
     wordCount: 0,
     contentHash: null,
     isHtml: false,
+    htmlBytes: input.htmlBytes ?? 0,
     imagesTotal: 0,
     imagesMissingAlt: 0,
     images: [],

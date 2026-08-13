@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
+import { GoogleAnalyticsConnectionCard } from "@/client/features/ga4/GoogleAnalyticsConnectionCard";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
@@ -59,6 +60,11 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
           Search Console
         </h2>
         <SearchConsoleConnectionCard projectId={projectId} />
+      </section>
+
+      <section id="google-analytics" className="space-y-3 scroll-mt-6">
+        <h2 className="text-sm font-medium text-base-content/50">Analytics</h2>
+        <GoogleAnalyticsConnectionCard projectId={projectId} />
       </section>
 
       <DangerSection project={project} canArchive={projects.length > 1} />

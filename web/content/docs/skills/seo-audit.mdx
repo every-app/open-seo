@@ -1,0 +1,56 @@
+---
+title: "SEO Audit Agent Skill"
+description: "Audit a website with your AI agent and get a one-page, plain-language SEO report built around a single next action."
+---
+
+<RunSkillCallout command="/seo-audit" />
+
+The SEO Audit Agent Skill audits a site and writes a one-page HTML report that anyone can act on, including someone who has never done SEO.
+
+Your agent runs an OpenSEO site audit, pulls backlink and traffic-estimate data, and re-checks every finding against the live pages before reporting it. The report is built around one action the site owner can take this week, with the exact message or steps included, followed by a short list of small fixes and a section on what already works.
+
+The skill is plain `SKILL.md` instructions plus an HTML template, so it runs in Claude Code, Codex, or any agent that supports the skills format. If your agent can publish or preview HTML it will use that; otherwise it saves the report as a file for you to open in your browser.
+
+## What this skill helps your agent do
+
+- Run a site audit and read the prioritized issues.
+- Check backlinks and traffic estimates to find the real bottleneck, not just tag-level nitpicks.
+- Verify each finding against the live page HTML before reporting it.
+- Pick one do-this-week action and include the copy-paste mechanics for it.
+- Propose a starting focus area: a handful of specific, winnable keywords and what to make for each.
+- Explain every technical term in plain English the first time it appears.
+- Deliver the result as a single HTML page you can send to anyone.
+
+## When to use it
+
+Use this skill when the report is for someone new to SEO: a client, a founder, a friend with a podcast or a photography site. It is also a good first skill if that beginner is you, because the report explains itself.
+
+It handles broken sites honestly. If the domain is down or half-crawled, the agent investigates why before writing, and the recommendation changes to match: an expired certificate, a dead domain with a live successor site, or a page-level block each lead to a different "one thing".
+
+## What you get back
+
+One HTML page: a three-sentence summary, the single action to take this week with concrete steps, five to ten small fixes with the exact evidence for each, a starting focus area with three to five keyword ideas (healthy sites only), a list of what already works, and a note on how the review was done.
+
+## How to get the best result
+
+- Give the agent one domain.
+- Say who the report is for.
+- Mention anything you already know, like a site move or an old domain.
+- Ask to see the verified facts if you want to check the agent's work.
+
+## Use it with OpenSEO MCP
+
+Set up [OpenSEO MCP](/docs/mcp) so your agent can run the audit and read backlink data, traffic estimates, and keyword ideas. The site audit is included on every plan (up to 50 pages on the free plan); the backlink, domain, and keyword lookups spend credits, and the skill keeps that spend modest.
+
+## Read the actual skill
+
+The source `SKILL.md` lives on GitHub:
+
+- [SEO Audit skill](https://github.com/every-app/open-seo/tree/main/.agents/skills/seo-audit)
+
+## Related skills
+
+- [SEO Coach](/docs/skills/seo-coach) if you are not sure this is the right workflow to run first.
+- [Keyword Research](/docs/skills/keyword-research) to go deeper than the report's starting keywords.
+- [Link Prospecting](/docs/skills/link-prospecting) when the report's one thing is links and you want to go beyond the first outreach batch.
+- [Competitor Analysis](/docs/skills/competitor-analysis) once the basics are handled and you want to study who outranks you.

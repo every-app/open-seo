@@ -18,8 +18,6 @@ type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 function getBacklinksValidationErrors(
   value: SearchDraft,
   shouldValidateUntouchedField: boolean,
-  canOpenSearch?: (value: SearchDraft) => boolean,
-  tabLimit?: number,
 ) {
   if (!value.target.trim()) {
     if (!shouldValidateUntouchedField) {
@@ -33,34 +31,17 @@ function getBacklinksValidationErrors(
     });
   }
 
-  const normalizedValue = {
-    ...value,
-    target: value.target.trim(),
-  };
-
-  if (canOpenSearch && !canOpenSearch(normalizedValue)) {
-    return createFormValidationErrors({
-      fields: {
-        target: `Close a tab to open more searches (max ${tabLimit ?? 8}).`,
-      },
-    });
-  }
-
   return null;
 }
 
 export function BacklinksSearchCard({
-  canOpenSearch,
   errorMessage,
   initialValues,
   onSubmit,
-  tabLimit,
 }: {
-  canOpenSearch?: (values: SearchDraft) => boolean;
   errorMessage: string | null;
   initialValues: SearchDraft;
   onSubmit: (values: SearchDraft) => void;
-  tabLimit?: number;
 }) {
   const [userSelectedScope, setUserSelectedScope] = useState(false);
   const form = useForm({
@@ -70,11 +51,8 @@ export function BacklinksSearchCard({
         getBacklinksValidationErrors(
           value,
           shouldValidateFieldOnChange(formApi, "target"),
-          canOpenSearch,
-          tabLimit,
         ),
-      onSubmit: ({ value }) =>
-        getBacklinksValidationErrors(value, true, canOpenSearch, tabLimit),
+      onSubmit: ({ value }) => getBacklinksValidationErrors(value, true),
     },
     onSubmit: ({ value }) => {
       const target = value.target.trim();

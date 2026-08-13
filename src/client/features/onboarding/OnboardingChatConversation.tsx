@@ -1,13 +1,16 @@
 import { useAgent } from "agents/react";
 import { useAgentChat } from "@cloudflare/ai-chat/react";
 import { useCustomer } from "autumn-js/react";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import {
   ChatMessage,
   messageHasVisibleContent,
   type ResolveToolLabel,
 } from "@/client/components/chat/ChatMessage";
+import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import { buildCheckoutSuccessUrl } from "@/client/features/billing/checkout-url";
 import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
 import {
@@ -104,38 +107,36 @@ export function OnboardingChatConversation({
   const showRemainingHint = remaining > 0 && remaining <= 3;
 
   const isBusy = status === "submitted" || status === "streaming";
-  const sendText = (text: string) => void sendMessage({ text });
+  const { scrollRef, onScroll, pinToBottom } = useStickToBottom(
+    messages,
+    status,
+  );
+  const sendText = (text: string) => {
+    pinToBottom();
+    void sendMessage({ text });
+  };
   async function startCheckout() {
     setCheckoutError(null);
     setIsStartingCheckout(true);
     try {
       captureClientEvent("billing:checkout_start");
-      // After payment, re-enter onboarding at the GSC step (not back into this
-      // chat) so the user finishes connecting Search Console + MCP.
-      const successUrl = new URL("/onboarding", window.location.origin);
-      successUrl.searchParams.set("step", "3");
-      successUrl.searchParams.set("checkout", "success");
+      // After payment, re-enter onboarding at the GSC step (not back into
+      // this chat) so the user finishes connecting Search Console + MCP.
       await customerQuery.attach({
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
-        successUrl: successUrl.toString(),
+        successUrl: buildCheckoutSuccessUrl("/onboarding?step=3"),
       });
     } catch (checkoutErr) {
-      console.error("Failed to start checkout", checkoutErr);
       setCheckoutError(
-        "We couldn't start checkout. Please refresh and try again.",
+        getStandardErrorMessage(
+          checkoutErr,
+          "We couldn't start checkout. Please refresh and try again.",
+        ),
       );
       setIsStartingCheckout(false);
     }
   }
-
-  // Pin to the bottom while the user is following along; the strategy doc plus
-  // a streaming reply quickly grows past the viewport.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
 
   const lastMessage = messages[messages.length - 1];
   const suggestionPool = [
@@ -172,7 +173,11 @@ export function OnboardingChatConversation({
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          className="flex-1 overflow-y-auto px-5 py-6"
+        >
           <div className="mx-auto max-w-2xl space-y-6">
             <WelcomeMessage
               domain={domain}

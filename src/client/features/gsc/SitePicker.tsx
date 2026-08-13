@@ -1,5 +1,5 @@
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
-import { startGscLink } from "@/client/features/gsc/startGscLink";
+import { startGoogleLink } from "@/client/features/integrations/startGoogleLink";
 
 type SiteOption = {
   siteUrl: string;
@@ -177,7 +177,7 @@ export function SitePicker({
         <button
           type="button"
           className="btn btn-ghost btn-sm"
-          onClick={() => void startGscLink(window.location.href)}
+          onClick={() => void startGoogleLink("gsc", window.location.href)}
         >
           Connect another Google account
         </button>

@@ -1,44 +1,145 @@
-import { createMcpHandler } from "agents/mcp";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { createMcpHandler } from "agents/mcp/server";
+import {
+  hostHeaderValidationResponse,
+  isLegacyRequest,
+  localhostAllowedHostnames,
+  localhostAllowedOrigins,
+  originValidationResponse,
+  WebStandardStreamableHTTPServerTransport,
+} from "@modelcontextprotocol/server";
+import { getHostedBaseUrl } from "@/lib/auth";
 import { MCP_SCOPE } from "@/lib/oauth-resource";
 import { resolveCloudflareAccessContext } from "@/middleware/ensure-user/cloudflareAccess";
 import { resolveLocalNoAuthContext } from "@/middleware/ensure-user/delegated";
 import {
-  buildFirstPartyMcpAuthContext,
   createWorkersOAuthMcpProps,
+  hostedWorkersOAuthMcpPropsSchema,
   MCP_AUTH_CONTEXT_PROP,
   MCP_ROUTE,
-  runWithMcpToolAuthContext,
-  workersOAuthMcpPropsSchema,
+  type McpProps,
 } from "@/server/mcp/context";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
-import { registerOpenSeoMcpTools } from "@/server/mcp/server";
+import { createOpenSeoMcpServer } from "@/server/mcp/server";
 
-function createOpenSeoMcpServer() {
-  const server = new McpServer(
-    {
-      name: "OpenSEO MCP",
-      title: "OpenSEO",
-      version: "0.0.11",
-      description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
-      websiteUrl: "https://openseo.so",
-      icons: [
+// Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
+// same CORS surface as the modern handler's.
+const MCP_CORS_HEADERS = {
+  "Access-Control-Allow-Headers":
+    "Content-Type, Accept, Authorization, mcp-session-id, MCP-Protocol-Version, Mcp-Method, Mcp-Name",
+  "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Expose-Headers": "mcp-session-id",
+  "Access-Control-Max-Age": "86400",
+} as const;
+
+function withMcpCors(response: Response) {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of Object.entries(MCP_CORS_HEADERS)) {
+    headers.set(name, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+// Port of the host/origin validation the agents SDK handler applies to the
+// requests it serves; legacy requests bypass that handler, so it runs here.
+function validateLegacyRequest(
+  request: Request,
+  allowedOriginHostnames?: string[],
+) {
+  const url = new URL(request.url);
+  const isLocal = localhostAllowedHostnames().includes(url.hostname);
+  const isWorkersDev = url.hostname.endsWith(".workers.dev");
+  const acceptedHostnames = isLocal
+    ? localhostAllowedHostnames()
+    : isWorkersDev
+      ? [url.hostname]
+      : undefined;
+  const hostRejection = acceptedHostnames
+    ? hostHeaderValidationResponse(request, acceptedHostnames)
+    : undefined;
+  if (hostRejection) return withMcpCors(hostRejection);
+
+  const acceptedOrigins =
+    allowedOriginHostnames ??
+    (isWorkersDev
+      ? [...localhostAllowedOrigins(), url.hostname]
+      : localhostAllowedOrigins());
+  const originRejection = originValidationResponse(request, acceptedOrigins);
+  return originRejection ? withMcpCors(originRejection) : undefined;
+}
+
+async function handleLegacyJsonRequest(request: Request, props: McpProps) {
+  if (request.method !== "POST") {
+    return withMcpCors(
+      Response.json(
         {
-          src: "https://openseo.so/android-chrome-512x512.png",
-          mimeType: "image/png",
-          sizes: ["512x512"],
+          jsonrpc: "2.0",
+          error: { code: -32000, message: "Method not allowed." },
+          id: null,
         },
-      ],
-    },
-    {
-      instructions:
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
-    },
-  );
-  registerOpenSeoMcpTools(server);
+        { status: 405, headers: { Allow: "POST, OPTIONS" } },
+      ),
+    );
+  }
 
-  return server;
+  // The SDK's own legacy fallbacks (agents' compat lane, the MCP SDK's
+  // legacyStatelessFallback) construct this transport without
+  // enableJsonResponse, which answers with an SSE stream and retains the
+  // per-request server plus a keepalive for the response lifetime. JSON mode
+  // buffers the response and lets the finally below tear everything down
+  // before the request completes. JSON mode silently drops server-to-client
+  // requests (sampling/elicitation) and would hang the buffered response —
+  // no OpenSEO tool issues them.
+  const server = createOpenSeoMcpServer(props);
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+
+  try {
+    await server.connect(transport);
+    return withMcpCors(await transport.handleRequest(request));
+  } finally {
+    await Promise.all([
+      transport.close().catch(() => {}),
+      server.close().catch(() => {}),
+    ]);
+  }
+}
+
+// Hosted pins browser Origins to the configured base URL. Self-hosted leaves
+// the option unset so the handler's localhost-class default applies — an
+// allowlist derived from the request's own Host would accept a DNS-rebinding
+// page trivially. Non-browser MCP clients send no Origin and are unaffected
+// either way.
+function createRequestHandler(
+  props: McpProps,
+  allowedOriginHostnames?: string[],
+) {
+  const modernHandler = createMcpHandler(() => createOpenSeoMcpServer(props), {
+    route: MCP_ROUTE,
+    allowedOriginHostnames,
+    legacy: "reject",
+  });
+
+  return async (request: Request, env: unknown, ctx: ExecutionContext) => {
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: MCP_CORS_HEADERS });
+    }
+    if (new URL(request.url).pathname !== MCP_ROUTE) {
+      return withMcpCors(new Response("Not Found", { status: 404 }));
+    }
+    if (!(await isLegacyRequest(request))) {
+      return modernHandler(request, env, ctx);
+    }
+
+    const rejection = validateLegacyRequest(request, allowedOriginHostnames);
+    return rejection ?? handleLegacyJsonRequest(request, props);
+  };
 }
 
 export async function handleAuthenticatedOpenSeoMcpRequest(
@@ -47,16 +148,17 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   env: unknown,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  const result = workersOAuthMcpPropsSchema.safeParse(props);
-  const scopes = result.success
-    ? result.data[MCP_AUTH_CONTEXT_PROP].scopes
-    : [];
-
-  if (!result.success || !scopes.includes(MCP_SCOPE)) {
+  const result = hostedWorkersOAuthMcpPropsSchema.safeParse(props);
+  if (!result.success) {
     return new Response("MCP auth context required", { status: 403 });
   }
+  if (!result.data[MCP_AUTH_CONTEXT_PROP].scopes.includes(MCP_SCOPE)) {
+    return new Response("MCP scope required", { status: 403 });
+  }
 
-  return handleOpenSeoMcpRequest(request, result.data, env, ctx);
+  return createRequestHandler(result.data, [
+    new URL(getHostedBaseUrl()).hostname,
+  ])(request, env, ctx);
 }
 
 export async function handleSelfHostedOpenSeoMcpRequest(
@@ -65,70 +167,21 @@ export async function handleSelfHostedOpenSeoMcpRequest(
   env: unknown,
   ctx: ExecutionContext,
 ): Promise<Response> {
-  // Self-hosted auth mirrors the app: local_noauth uses the local admin
-  // workspace, while cloudflare_access trusts Cloudflare's Access JWT.
-  // CORS/preflight still needs to reach the MCP transport before auth context
-  // exists, so OPTIONS intentionally bypasses context creation.
+  // Preflight does not carry an authenticated application context.
   if (request.method === "OPTIONS") {
-    return handleOpenSeoMcpRequest(request, undefined, env, ctx);
+    return new Response(null, { headers: MCP_CORS_HEADERS });
   }
 
-  const baseUrl = getPublicOrigin(request);
-  const context =
+  const identity =
     authMode === "local_noauth"
       ? await resolveLocalNoAuthContext()
       : await resolveCloudflareAccessContext(request.headers);
-  const props = createWorkersOAuthMcpProps(
-    buildFirstPartyMcpAuthContext({
-      userId: context.userId,
-      userEmail: context.userEmail,
-      organizationId: context.organizationId,
-      baseUrl,
-    }),
-  );
-
-  return handleOpenSeoMcpRequest(request, props, env, ctx);
-}
-
-function handleOpenSeoMcpRequest(
-  request: Request,
-  props: ReturnType<typeof createWorkersOAuthMcpProps> | undefined,
-  env: unknown,
-  ctx: ExecutionContext,
-): Promise<Response> {
-  // Decline the optional standalone GET SSE stream: this server is stateless
-  // (POST returns JSON) and pushes no server-initiated messages, so the stream
-  // does nothing but leak memory — each GET is held open by a keepalive and
-  // pins a per-request McpServer (~5MB), so a few dozen concurrent clients OOM
-  // the 128MB isolate. 405 is the spec's "no stream" response; returning it
-  // before building the server means a GET allocates nothing.
-  if (request.method === "GET") {
-    return Promise.resolve(
-      new Response("Method Not Allowed", {
-        status: 405,
-        headers: {
-          Allow: "POST, DELETE, OPTIONS",
-          "Access-Control-Allow-Origin": "*",
-        },
-      }),
-    );
-  }
-
-  const server = createOpenSeoMcpServer();
-  const handler = createMcpHandler(server, {
-    route: MCP_ROUTE,
-    enableJsonResponse: true,
-    authContext: props ? { props } : undefined,
-    corsOptions: {
-      headers:
-        "Authorization, Content-Type, Last-Event-ID, mcp-protocol-version, mcp-session-id",
-      exposeHeaders: "mcp-protocol-version, mcp-session-id",
-    },
+  const props = createWorkersOAuthMcpProps({
+    userId: identity.userId,
+    userEmail: identity.userEmail,
+    organizationId: identity.organizationId,
+    baseUrl: getPublicOrigin(request),
   });
 
-  if (!props) return handler(request, env, ctx);
-
-  return runWithMcpToolAuthContext(props[MCP_AUTH_CONTEXT_PROP], () =>
-    handler(request, env, ctx),
-  );
+  return createRequestHandler(props)(request, env, ctx);
 }

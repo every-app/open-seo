@@ -12,6 +12,7 @@ import * as pgSchema from "@/db/pg/schema";
 import { getDatabaseProvider } from "@/db/provider";
 import { z } from "zod";
 import { isHostedAuthMode } from "@/lib/auth-mode";
+import { createApiKeyPlugin } from "@/lib/auth-api-key";
 import { createBaseAuthConfig } from "@/lib/auth-config";
 import {
   getHostedTurnstileSecretKey,
@@ -96,6 +97,7 @@ function createAuth() {
     database,
     plugins: [
       ...baseAuthConfig.plugins,
+      ...(isHostedAuthMode(env.AUTH_MODE) ? [createApiKeyPlugin()] : []),
       ...(turnstileSecretKey
         ? [
             captcha({

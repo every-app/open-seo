@@ -1,6 +1,9 @@
 import { db } from "@/db";
 import { user } from "@/db/schema";
-import { ensureDelegatedOrganizationForUser } from "@/server/auth/delegated-organization";
+import {
+  ensureDelegatedOrganizationForUser,
+  ensureSharedWorkspaceOrganization,
+} from "@/server/auth/delegated-organization";
 import { eq } from "drizzle-orm";
 import type { EnsuredUserContext } from "./types";
 
@@ -52,7 +55,7 @@ async function ensureUserRecord(userId: string, userEmail: string) {
   return existing.email;
 }
 
-export async function resolveDelegatedContext(
+async function resolveDelegatedContext(
   userId: string,
   userEmail: string,
 ): Promise<EnsuredUserContext> {
@@ -66,6 +69,24 @@ export async function resolveDelegatedContext(
     userId,
     userEmail: ensuredEmail,
     // Delegated auth (Cloudflare Access / local) has no unverified state.
+    emailVerified: true,
+    organizationId,
+  };
+}
+
+// Cloudflare Access mode: everyone the Access policy lets in works in one
+// shared workspace, keeping their own user identity. Per-user workspaces were
+// the pre-shared-workspace behavior; workspace-merge.ts folds those in.
+export async function resolveSharedWorkspaceContext(
+  userId: string,
+  userEmail: string,
+): Promise<EnsuredUserContext> {
+  const ensuredEmail = await ensureUserRecord(userId, userEmail);
+  const organizationId = await ensureSharedWorkspaceOrganization();
+
+  return {
+    userId,
+    userEmail: ensuredEmail,
     emailVerified: true,
     organizationId,
   };

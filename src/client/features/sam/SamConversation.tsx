@@ -10,6 +10,7 @@ import {
   humanizeToolLabel,
   messageHasVisibleContent,
 } from "@/client/components/chat/ChatMessage";
+import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
 
 const SUGGESTIONS = [
   "What keywords should I focus on next?",
@@ -33,7 +34,14 @@ export function SamConversation({
     useAgentChat({ agent });
 
   const isBusy = status === "submitted" || status === "streaming";
-  const sendText = (text: string) => void sendMessage({ text });
+  const { scrollRef, onScroll, pinToBottom } = useStickToBottom(
+    messages,
+    status,
+  );
+  const sendText = (text: string) => {
+    pinToBottom();
+    void sendMessage({ text });
+  };
 
   // Rewind the server-side conversation to before `messageId`: the DO aborts
   // any in-flight turn, then deletes the message and everything after it. Sync
@@ -56,7 +64,7 @@ export function SamConversation({
 
   const undoFrom = (messageId: string) => void rewindTo(messageId);
   const editAndResend = async (messageId: string, newText: string) => {
-    if (await rewindTo(messageId)) void sendMessage({ text: newText });
+    if (await rewindTo(messageId)) sendText(newText);
   };
 
   // The DO names the session from its first message during the turn, so refresh
@@ -72,13 +80,6 @@ export function SamConversation({
       invalidateSamSessions(projectId);
     }
   }, [isBusy, projectId]);
-
-  // Pin to the bottom while the user follows along.
-  const scrollRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, status]);
 
   const lastMessage = messages[messages.length - 1];
   const showTyping =
@@ -101,7 +102,11 @@ export function SamConversation({
           Clear history (dev)
         </button>
       ) : null}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
+      <div
+        ref={scrollRef}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto px-5 py-6"
+      >
         <div className="mx-auto max-w-2xl space-y-6">
           {messages.length === 0 ? (
             <div className="space-y-2 text-sm text-base-content/80">

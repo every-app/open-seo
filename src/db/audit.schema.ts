@@ -37,6 +37,13 @@ export const audits = sqliteTable(
     lighthouseCompleted: integer("lighthouse_completed").notNull().default(0),
     lighthouseFailed: integer("lighthouse_failed").notNull().default(0),
     currentPhase: text("current_phase").default("discovery"),
+    // Failure diagnostics; null unless status = "failed". errorCode is a
+    // closed vocabulary (see classifyAuditError) so failures are aggregable;
+    // errorDetail is the raw message, truncated. failedPhase records which
+    // currentPhase the audit was in when it died.
+    errorCode: text("error_code"),
+    errorDetail: text("error_detail"),
+    failedPhase: text("failed_phase"),
     startedAt: text("started_at")
       .notNull()
       .default(sql`(current_timestamp)`),
@@ -116,36 +123,8 @@ export const auditPages = sqliteTable(
   (table) => [index("audit_pages_audit_url_idx").on(table.auditId, table.url)],
 );
 
-// One row per unique (source page, target URL) link edge. Currently only
-// internal edges are stored (see AuditRepository); isInternal stays so
-// external-link checks can start writing rows without a migration.
-export const auditLinks = sqliteTable(
-  "audit_links",
-  {
-    id: text("id").primaryKey(),
-    auditId: text("audit_id")
-      .notNull()
-      .references(() => audits.id, { onDelete: "cascade" }),
-    sourcePageId: text("source_page_id")
-      .notNull()
-      .references(() => auditPages.id, { onDelete: "cascade" }),
-    sourceUrl: text("source_url").notNull(),
-    targetUrl: text("target_url").notNull(),
-    anchor: text("anchor"),
-    isInternal: integer("is_internal", { mode: "boolean" })
-      .notNull()
-      .default(true),
-    isNofollow: integer("is_nofollow", { mode: "boolean" })
-      .notNull()
-      .default(false),
-  },
-  (table) => [
-    index("audit_links_audit_target_idx").on(table.auditId, table.targetUrl),
-    // Cascade path from audit_pages deletes; without this every page delete
-    // seq-scans the (large) links table.
-    index("audit_links_source_page_id_idx").on(table.sourcePageId),
-  ],
-);
+// Link edges live in the per-audit AuditScratchpad Durable Object for the
+// duration of the crawl; they are never persisted to the app DB.
 
 // One row per (issue type, affected page)
 export const auditIssues = sqliteTable(

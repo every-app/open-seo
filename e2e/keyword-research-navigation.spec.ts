@@ -2,11 +2,11 @@ import { expect, test, type Page } from "@playwright/test";
 
 async function getProjectId(page: Page) {
   await page.goto("/");
-  await page.waitForURL(/\/p\/([^/]+)\/keywords(?:\?.*)?$/, {
+  await page.waitForURL(/\/p\/([^/]+)\/?$/, {
     timeout: 30_000,
   });
 
-  const match = page.url().match(/\/p\/([^/]+)\/keywords/);
+  const match = page.url().match(/\/p\/([^/]+)/);
   if (!match) throw new Error(`Could not read project id from ${page.url()}`);
   return match[1];
 }

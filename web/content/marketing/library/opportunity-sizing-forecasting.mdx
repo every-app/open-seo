@@ -1,0 +1,97 @@
+---
+title: "Size the opportunity before you commit the quarter"
+description: "SEO forecasting turns a keyword cluster into a defensible traffic and revenue range, so you can argue for the work in the only two numbers a business treats as exact."
+---
+
+## What is SEO forecasting?
+
+SEO forecasting estimates the traffic and revenue a keyword cluster could return, before you spend anything building for it. The output is a range rather than a number, because every input is an estimate and pretending otherwise is how forecasts lose credibility on contact with reality.
+
+The arithmetic is short. Take the combined search volume for a cluster, apply a click-through-rate curve for the position you expect to reach, apply your conversion rate, then apply the value of a conversion. Present the result as three scenarios rather than one figure. Conservative assumes position eight and your worst converting month. Aggressive assumes position three and your best. Build the middle scenario from your typical conversion rate and the position you expect to reach.
+
+## How to size a keyword cluster before you invest
+
+Sizing runs on the cluster, not on the keyword. A single term tells you nothing about the page you would build, because the page will rank for dozens of variations. [Clustering first](/library/keyword-research/cluster-topical-hubs) gives you a unit worth forecasting.
+
+For each cluster, gather four inputs:
+
+1. Combined monthly volume across every keyword in the cluster.
+2. The difficulty of the terms you would need to beat, which sets how long the climb takes.
+3. Your realistic ceiling position, judged from what already ranks and what you can credibly publish.
+4. The conversion value, taken from your own analytics rather than an industry average.
+
+Difficulty deserves more weight than it usually gets. A cluster worth 5,000 searches a month behind a wall of established domains is worth less than a 400-search cluster nobody has bothered to answer, because you will reach the second one this quarter and the first one never. That comparison is the entire point of sizing.
+
+## Why volume is the wrong number to lead with
+
+Sorting by volume selects for the terms your competitors have already spent years defending. It also selects against the terms that convert. The pattern repeats across niches: the highest-volume keyword in a market is usually informational, and the terms carrying real buying intent sit an order of magnitude below it.
+
+![OpenSEO keyword research for a Nashville kayak rental topic, showing search volume alongside keyword difficulty, CPC, competition, and intent](/library/keyword-research/keyword-difficulty-volume-openseo.png)
+
+OpenSEO keeps volume and difficulty separate because they answer different questions. In the run above, the 10-search term has a difficulty score of 28, while the 6,600-search term scores 15. Neither number establishes value on its own. Use an expected rank, click-through rate, conversion rate, and conversion value to compare the business case instead of treating volume or difficulty as an opportunity score.
+
+Paul Baterina ran the test that shows what disciplined sizing buys you. Working on long-tail category pages, he built a proper control group rather than shipping on instinct:
+
+> We're four weeks in, we're seeing a 25% lift on the test group versus the control group. The control group is actually down 5%. So that's already a signal that I could roll this out to all the long tail pages, which we have about 40,000 of those.
+
+Four weeks and one controlled test turned a guess about 40,000 pages into a decision with evidence under it. That is what a forecast is for. It is not a promise about traffic, it is a way to find out whether the bet is worth placing at scale.
+
+## Report in the numbers the business already trusts
+
+Traffic is the number SEOs reach for and the number executives discount, because it does not appear on any statement they are accountable for. Ernesto Ortiz puts the problem at the level of measurement rather than tactics:
+
+> You've used it as a proxy for so long. You've got to have better metrics, and you need to have a clear way to evaluate business results.
+
+Forecast in sessions if that is all you have, then translate. A cluster forecast that ends at "an estimated 900 sessions a month" invites a shrug. The same forecast carried through a 2% conversion rate and a $400 average order value ends at a number that gets a budget approved or rejected on its merits, which is the outcome you want either way.
+
+The same arithmetic works in reverse for pages you already own. Take your current position, apply the CTR curve for position three, and the difference is the traffic your existing rankings are leaving on the table. That figure is often larger than anything new content would produce, and it is cheaper to capture. [Search Console discovery](/library/keyword-research/gsc-programmatic-discovery) finds those pages.
+
+## Do it with OpenSEO
+
+Connect the [OpenSEO MCP](/docs/mcp) and the sizing runs against live difficulty and volume data instead of a stale export.
+
+```text
+Using the OpenSEO MCP, research keywords for "[my topic]" and cluster
+the results by intent.
+
+1. Size each cluster
+For every cluster, report combined monthly volume, median keyword
+difficulty, and the domains currently holding the top 3. Flag any
+cluster where the top 3 are all sites I cannot realistically outrank.
+
+2. Forecast a range
+For the 5 most winnable clusters, model traffic at position 3,
+position 5 and position 8 using a standard CTR curve. Show me
+conservative, moderate and aggressive scenarios.
+
+3. Convert to money
+Apply a [2]% conversion rate and a [$400] conversion value to each
+scenario. Rank the clusters by moderate-scenario revenue per unit of
+difficulty, not by volume.
+
+Output as a document I can review.
+```
+
+Ranking by revenue per unit of difficulty is the step that changes the plan. It routinely promotes a cluster sitting eighth by volume to first by value, which is the whole argument the rest of this library makes.
+
+## What to do first
+
+Take the cluster you were about to write for and run the three scenarios against it. Then run them against one cluster you dismissed for having low volume. If the low-volume cluster wins on revenue per unit of difficulty, you have found the order your content calendar should have been in.
+
+## SEO forecasting FAQ
+
+### How accurate is SEO forecasting?
+
+Directionally useful and precisely wrong, which is why the output should be a range. Volume figures are estimates, CTR curves are averages across wildly different SERPs, and ranking timelines depend on competitors who are also working. Forecast to compare opportunities against each other, not to promise a number.
+
+### What is a good SEO ROI?
+
+It depends on conversion value and payback window rather than a benchmark. The useful calculation is cost of the content and links against forecast revenue over 12 months, and whether that beats what the same budget would return in paid. SEO usually loses that comparison in month one and wins it by month nine, so the timeline matters as much as the multiple.
+
+### Which SEO KPIs matter?
+
+Leads and revenue are the two numbers a business treats as exact. Everything else, including rankings, sessions and impressions, is diagnostic: useful for explaining why the exact numbers moved, weak as a target in its own right.
+
+### How do you calculate potential traffic from keywords?
+
+Combined cluster volume, times the CTR for your expected position, gives estimated sessions. Multiply by conversion rate and conversion value for revenue. Run it three times at three positions so you finish with a range rather than a single figure nobody should trust.

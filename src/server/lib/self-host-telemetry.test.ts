@@ -62,6 +62,7 @@ function createHarness(
     isNonProductionBuild: () => false,
     claimHeartbeat,
     collectCounts: async () => emptyCounts,
+    collectSetupIssues: async () => [],
     sendHeartbeat,
     markHeartbeatSent,
     getDbBackend: () => "d1",
@@ -154,6 +155,27 @@ describe("maybeSendSelfHostHeartbeat", () => {
 
     expect(harness.claimHeartbeat).not.toHaveBeenCalled();
     expect(harness.sendHeartbeat).not.toHaveBeenCalled();
+  });
+
+  it('still sends when the disable flags are explicitly "0"/"false"', async () => {
+    vi.stubEnv("OPENSEO_TELEMETRY_DISABLED", "0");
+    vi.stubEnv("DO_NOT_TRACK", "false");
+    const harness = createHarness();
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat).toHaveBeenCalledTimes(1);
+  });
+
+  it("includes the setup-issue summary in heartbeat properties", async () => {
+    const harness = createHarness();
+    harness.dependencies.collectSetupIssues = async () => ["dataforseo:error"];
+
+    await runHeartbeat(harness);
+
+    expect(harness.sendHeartbeat.mock.calls[0]?.[1]).toMatchObject({
+      setupIssues: ["dataforseo:error"],
+    });
   });
 
   it("does not send from non-production builds (dev, test, preview)", async () => {

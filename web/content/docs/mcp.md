@@ -11,7 +11,7 @@ The hosted MCP server URL is:
 https://app.openseo.so/mcp
 ```
 
-The first connection sends you through OpenSEO login. After authorization, your MCP client can call OpenSEO tools with the project context and account scopes you approved.
+The first connection sends you through OpenSEO login. After authorization, your MCP client can call OpenSEO tools with the project context and account scopes you approved. For headless environments and CI, [connect with an API key](#connect-with-an-api-key) instead.
 
 For the most current setup UI and a copyable endpoint, open [AI & MCP in OpenSEO](https://app.openseo.so/ai).
 
@@ -68,6 +68,42 @@ Approve the login when prompted.
 2. Click Add your own.
 3. Paste `https://app.openseo.so/mcp`.
 4. Approve the OpenSEO login when prompted.
+
+## Connect with an API key
+
+Use an API key in headless environments, CI, or clients where OAuth is inconvenient. API keys are personal: anything an agent does with your key acts as you in your workspace.
+
+In the [OpenSEO app](https://app.openseo.so/settings), open **Settings -> API keys**, create a key, and copy it when it appears. It won't be shown again.
+
+For Claude Code, run:
+
+```bash
+claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp --header "Authorization: Bearer oseo_YOUR_KEY"
+```
+
+For Cursor, add `headers` to the server entry in `mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "openseo": {
+      "url": "https://app.openseo.so/mcp",
+      "headers": {
+        "Authorization": "Bearer oseo_YOUR_KEY"
+      }
+    }
+  }
+}
+```
+
+For Codex CLI, put the key in an environment variable and reference it:
+
+```bash
+export OPENSEO_API_KEY=oseo_YOUR_KEY
+codex mcp add openseo --url https://app.openseo.so/mcp --bearer-token-env-var OPENSEO_API_KEY
+```
+
+Any other client that supports custom HTTP headers can send `Authorization: Bearer oseo_YOUR_KEY` or `x-api-key: oseo_YOUR_KEY`.
 
 ## Available tools
 

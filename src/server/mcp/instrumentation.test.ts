@@ -1,11 +1,8 @@
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type { CallToolResult } from "@modelcontextprotocol/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import {
-  runWithMcpToolAuthContext,
-  type McpToolAuthContext,
-  type ToolExtra,
-} from "@/server/mcp/context";
+import { instrumentMcpToolHandler } from "./instrumentation";
+import { type ToolAuthContext, type ToolContext } from "@/server/mcp/context";
 import { AppError } from "@/server/lib/errors";
 
 const mocks = vi.hoisted(() => ({
@@ -35,29 +32,24 @@ vi.mock("@/server/lib/self-host-telemetry", () => ({
   incrementSelfHostMcpToolCallCount: mocks.incrementSelfHostMcpToolCallCount,
 }));
 
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-};
-
-const outputSchema = { items: z.array(z.object({}).passthrough()) };
+const outputSchema = z.object({
+  items: z.array(z.object({}).passthrough()),
+});
 
 function okResult(structuredContent: Record<string, unknown>): CallToolResult {
   return { content: [{ type: "text", text: "ok" }], structuredContent };
 }
 
-const authContext: McpToolAuthContext = {
+const authContext: ToolAuthContext = {
   userId: "user-1",
   userEmail: "user@example.com",
   organizationId: "org-1",
   clientId: "client-1",
   scopes: ["mcp"],
-  audience: "https://app.openseo.so/mcp",
-  subject: "user-1",
   baseUrl: "https://app.openseo.so",
 };
+
+const toolContext: ToolContext = { auth: authContext };
 
 describe("instrumentMcpToolHandler", () => {
   beforeEach(() => {
@@ -68,12 +60,11 @@ describe("instrumentMcpToolHandler", () => {
   });
 
   it("passes a valid result through without reporting", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: [{ domain: "example.com" }] }),
     );
 
-    const result = await wrapped({}, toolExtra);
+    const result = await wrapped({}, toolContext);
 
     expect(result.structuredContent).toEqual({
       items: [{ domain: "example.com" }],
@@ -82,12 +73,11 @@ describe("instrumentMcpToolHandler", () => {
   });
 
   it("reports an output schema mismatch the SDK would silently reject", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: "not-an-array" }),
     );
 
-    await wrapped({}, toolExtra);
+    await wrapped({}, toolContext);
 
     expect(mocks.captureServerError).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerError.mock.calls[0][1]).toMatchObject({
@@ -97,34 +87,31 @@ describe("instrumentMcpToolHandler", () => {
   });
 
   it("reports and rethrows a reportable handler error", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const boom = new Error("upstream exploded");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
       throw boom;
     });
 
-    await expect(wrapped({}, toolExtra)).rejects.toThrow("upstream exploded");
+    await expect(wrapped({}, toolContext)).rejects.toThrow("upstream exploded");
     expect(mocks.captureServerError).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerError.mock.calls[0][0]).toBe(boom);
   });
 
   it("rethrows expected errors without reporting them", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
       throw new AppError("NOT_FOUND");
     });
 
-    await expect(wrapped({}, toolExtra)).rejects.toThrow("NOT_FOUND");
+    await expect(wrapped({}, toolContext)).rejects.toThrow("NOT_FOUND");
     expect(mocks.captureServerError).not.toHaveBeenCalled();
   });
 
-  it("captures a usage event when auth context is present", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
+  it("captures a usage event for every call", async () => {
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: [] }),
     );
 
-    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
+    await wrapped({}, toolContext);
 
     expect(mocks.captureServerEvent).toHaveBeenCalledTimes(1);
     expect(mocks.incrementSelfHostMcpToolCallCount).toHaveBeenCalledTimes(1);
@@ -142,12 +129,11 @@ describe("instrumentMcpToolHandler", () => {
   });
 
   it("marks schema-rejected results as failed usage", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: "not-an-array" }),
     );
 
-    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
+    await wrapped({}, toolContext);
 
     expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
       event: "mcp:tool_call",
@@ -155,15 +141,48 @@ describe("instrumentMcpToolHandler", () => {
     });
   });
 
+  it("marks a structured tool error as failed usage without recording activation", async () => {
+    const schema = z.object({
+      status: z.enum(["ok", "error"]),
+      error: z.object({ code: z.string() }).optional(),
+    });
+    const wrapped = instrumentMcpToolHandler("demo", schema, async () =>
+      okResult({ status: "error", error: { code: "ga4_not_connected" } }),
+    );
+
+    await wrapped({}, toolContext);
+
+    expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
+      event: "mcp:tool_call",
+      properties: { success: false, error_code: "ga4_not_connected" },
+    });
+    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
+  });
+
+  it("marks an ok-false tool result as failed usage", async () => {
+    const schema = z.object({
+      ok: z.boolean(),
+      reason: z.string().optional(),
+    });
+    const wrapped = instrumentMcpToolHandler("demo", schema, async () =>
+      okResult({ ok: false, reason: "audit_not_ready" }),
+    );
+
+    await wrapped({}, toolContext);
+
+    expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
+      event: "mcp:tool_call",
+      properties: { success: false, error_code: "audit_not_ready" },
+    });
+    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
+  });
+
   it("captures a failed usage event with the error code", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
       throw new AppError("NOT_FOUND");
     });
 
-    await expect(
-      runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra)),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(wrapped({}, toolContext)).rejects.toThrow("NOT_FOUND");
 
     expect(mocks.captureServerEvent.mock.calls[0][0]).toMatchObject({
       event: "mcp:tool_call",
@@ -171,25 +190,12 @@ describe("instrumentMcpToolHandler", () => {
     });
   });
 
-  it("skips the usage event when auth context is missing", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
-    const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
-      okResult({ items: [] }),
-    );
-
-    await wrapped({}, toolExtra);
-
-    expect(mocks.captureServerEvent).not.toHaveBeenCalled();
-    expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
-  });
-
   it("records the activation milestone for a successful external call", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: [] }),
     );
 
-    await runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra));
+    await wrapped({}, toolContext);
 
     expect(mocks.recordExternalMcpToolCall).toHaveBeenCalledExactlyOnceWith(
       "org-1",
@@ -197,27 +203,21 @@ describe("instrumentMcpToolHandler", () => {
   });
 
   it("skips the activation milestone for first-party (null clientId) calls", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () =>
       okResult({ items: [] }),
     );
 
-    await runWithMcpToolAuthContext({ ...authContext, clientId: null }, () =>
-      wrapped({}, toolExtra),
-    );
+    await wrapped({}, { auth: { ...authContext, clientId: null } });
 
     expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
   });
 
   it("skips the activation milestone when the call fails", async () => {
-    const { instrumentMcpToolHandler } = await import("./instrumentation");
     const wrapped = instrumentMcpToolHandler("demo", outputSchema, async () => {
       throw new AppError("NOT_FOUND");
     });
 
-    await expect(
-      runWithMcpToolAuthContext(authContext, () => wrapped({}, toolExtra)),
-    ).rejects.toThrow("NOT_FOUND");
+    await expect(wrapped({}, toolContext)).rejects.toThrow("NOT_FOUND");
 
     expect(mocks.recordExternalMcpToolCall).not.toHaveBeenCalled();
   });

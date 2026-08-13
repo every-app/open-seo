@@ -7,12 +7,9 @@ import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { projectIdSchema } from "@/server/mcp/schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
-import { hasSelfHostedGscConfig } from "@/server/features/gsc/oauth-config";
+import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import {
-  GscNotConnectedError,
-  GscService,
-} from "@/server/features/gsc/services/GscService";
+import { GscService } from "@/server/features/gsc/services/GscService";
 import {
   GSC_DATE_RANGES,
   GSC_DEFAULT_ROW_LIMIT,
@@ -22,7 +19,11 @@ import {
   GSC_SEARCH_TYPES,
   type GscPerformanceInput,
 } from "@/server/features/gsc/searchAnalytics";
-import { GscApiError, GscTokenError } from "@/server/lib/gscClient";
+import {
+  GscApiError,
+  GscNotConnectedError,
+  GscTokenError,
+} from "@/server/lib/gscErrors";
 import { GSC_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/gsc";
 
 const TEXT_SUMMARY_ROWS = 15;
@@ -72,7 +73,7 @@ async function missingSelfHostedGoogleClientResponse(
 ) {
   const [hosted, configured] = await Promise.all([
     isHostedServerAuthMode(),
-    hasSelfHostedGscConfig(),
+    hasSelfHostedGoogleOAuthConfig(),
   ]);
   if (hosted || configured) return null;
 

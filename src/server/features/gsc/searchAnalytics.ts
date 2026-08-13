@@ -72,6 +72,19 @@ function formatDate(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+// Subtract calendar months in UTC, clamping the day to the target month's length.
+function subtractUtcMonths(date: Date, months: number): Date {
+  const day = date.getUTCDate();
+  const d = new Date(date);
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - months);
+  const daysInTargetMonth = new Date(
+    Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0),
+  ).getUTCDate();
+  d.setUTCDate(Math.min(day, daysInTargetMonth));
+  return d;
+}
+
 function subtractRange(end: Date, range: GscDateRange): Date {
   const d = new Date(end);
   switch (range) {
@@ -82,25 +95,19 @@ function subtractRange(end: Date, range: GscDateRange): Date {
       d.setUTCDate(d.getUTCDate() - 28);
       break;
     case "last_3_months":
-      d.setUTCMonth(d.getUTCMonth() - 3);
-      break;
+      return subtractUtcMonths(d, 3);
     case "last_6_months":
-      d.setUTCMonth(d.getUTCMonth() - 6);
-      break;
+      return subtractUtcMonths(d, 6);
     case "last_12_months":
-      d.setUTCMonth(d.getUTCMonth() - 12);
-      break;
+      return subtractUtcMonths(d, 12);
     case "last_16_months":
-      d.setUTCMonth(d.getUTCMonth() - 16);
-      break;
+      return subtractUtcMonths(d, 16);
   }
   return d;
 }
 
 function sixteenMonthFloor(today: Date): string {
-  const d = new Date(today);
-  d.setUTCMonth(d.getUTCMonth() - 16);
-  return formatDate(d);
+  return formatDate(subtractUtcMonths(today, 16));
 }
 
 /** Resolve a convenience `dateRange` or explicit start/end into GSC dates.

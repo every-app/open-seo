@@ -1,9 +1,8 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
 import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
+import * as researchTools from "./dataforseo-research-tools";
+import { makeToolContext, textContent } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
@@ -32,37 +31,7 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
-const authContext = {
-  userId: "user_123",
-  userEmail: "alice@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
-  baseUrl: "https://open-seo.test",
-};
-
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://open-seo.test/mcp"),
-    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-  } satisfies AuthInfo,
-};
-
-function textOf(result: {
-  content?: Array<{ type: string; text?: string }>;
-}): string {
-  const first = result.content?.[0];
-  return first?.type === "text" ? (first.text ?? "") : "";
-}
+const toolContext = makeToolContext();
 
 const usProjectRow = {
   id: "project_1",
@@ -72,9 +41,6 @@ const usProjectRow = {
 
 describe("DataForSEO research MCP tools", () => {
   beforeEach(() => {
-    vi.resetModules();
-    mocks.createDataforseoClient.mockReset();
-    mocks.getProjectForOrganization.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue(usProjectRow);
   });
 
@@ -91,8 +57,7 @@ describe("DataForSEO research MCP tools", () => {
       business: { businessListings, questionsAnswers },
       serp: { local },
     });
-    const { searchLocalBusinessesTool } =
-      await import("./dataforseo-research-tools");
+    const { searchLocalBusinessesTool } = researchTools;
 
     const result = await searchLocalBusinessesTool.handler(
       {
@@ -105,7 +70,7 @@ describe("DataForSEO research MCP tools", () => {
         },
         categories: ["cafe"],
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(businessListings).toHaveBeenCalledWith(
@@ -122,8 +87,8 @@ describe("DataForSEO research MCP tools", () => {
       .passthrough()
       .parse(result.structuredContent);
     expect(content.businesses).toEqual([{ title: "Acme Cafe" }]);
-    expect(textOf(result)).toContain("title | category");
-    expect(textOf(result)).toContain("Acme Cafe");
+    expect(textContent(result)).toContain("title | category");
+    expect(textContent(result)).toContain("Acme Cafe");
   });
 
   it("fetches one local SERP with search_places disabled", async () => {
@@ -139,8 +104,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       serp: { local },
     });
-    const { getLocalSerpResultsTool } =
-      await import("./dataforseo-research-tools");
+    const { getLocalSerpResultsTool } = researchTools;
 
     const result = await getLocalSerpResultsTool.handler(
       {
@@ -152,7 +116,7 @@ describe("DataForSEO research MCP tools", () => {
           zoom: 14,
         },
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(local).toHaveBeenCalledWith(
@@ -176,8 +140,8 @@ describe("DataForSEO research MCP tools", () => {
       rank_group: 1,
       rank_absolute: 2,
     });
-    expect(textOf(result)).toContain("rank | title | rating");
-    expect(textOf(result)).toContain("Acme Cafe");
+    expect(textContent(result)).toContain("rank | title | rating");
+    expect(textContent(result)).toContain("Acme Cafe");
   });
 
   it("fetches Google Business Q&A as an explicit tool", async () => {
@@ -188,8 +152,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       business: { questionsAnswers },
     });
-    const { getGoogleBusinessQuestionsTool } =
-      await import("./dataforseo-research-tools");
+    const { getGoogleBusinessQuestionsTool } = researchTools;
 
     const result = await getGoogleBusinessQuestionsTool.handler(
       {
@@ -201,7 +164,7 @@ describe("DataForSEO research MCP tools", () => {
           radiusKm: 5,
         },
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(questionsAnswers).toHaveBeenCalledWith(
@@ -217,8 +180,8 @@ describe("DataForSEO research MCP tools", () => {
     expect(content.questions).toEqual([
       { question_text: "Do you serve breakfast?" },
     ]);
-    expect(textOf(result)).toContain("question | asked by");
-    expect(textOf(result)).toContain("Do you serve breakfast?");
+    expect(textContent(result)).toContain("question | asked by");
+    expect(textContent(result)).toContain("Do you serve breakfast?");
   });
 
   it("passes only explicit brand exclusions to ranked keyword filters", async () => {
@@ -230,8 +193,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       domain: { rankedKeywords },
     });
-    const { getRankedKeywordsTool } =
-      await import("./dataforseo-research-tools");
+    const { getRankedKeywordsTool } = researchTools;
 
     await getRankedKeywordsTool.handler(
       {
@@ -239,7 +201,7 @@ describe("DataForSEO research MCP tools", () => {
         target: "acmeexample.com",
         excludeBrandTerms: ["acme"],
       },
-      toolExtra,
+      toolContext,
     );
 
     expect(rankedKeywords).toHaveBeenCalledWith(
@@ -258,8 +220,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       labs: { serpCompetitors },
     });
-    const { findSerpCompetitorsTool } =
-      await import("./dataforseo-research-tools");
+    const { findSerpCompetitorsTool } = researchTools;
 
     const result = await findSerpCompetitorsTool.handler(
       {
@@ -267,7 +228,7 @@ describe("DataForSEO research MCP tools", () => {
         keywords: ["coffee"],
         excludeDomains: ["directory.example"],
       },
-      toolExtra,
+      toolContext,
     );
 
     const content = z
@@ -277,13 +238,12 @@ describe("DataForSEO research MCP tools", () => {
     expect(content.competitors.map((row) => row.domain)).toEqual([
       "competitor.example",
     ]);
-    expect(textOf(result)).toContain("domain | keywords | avg pos");
-    expect(textOf(result)).toContain("competitor.example");
+    expect(textContent(result)).toContain("domain | keywords | avg pos");
+    expect(textContent(result)).toContain("competitor.example");
   });
 
   it("keeps AI overview result types out of SERP competitors", async () => {
-    const { findSerpCompetitorsTool, getRankedKeywordsTool } =
-      await import("./dataforseo-research-tools");
+    const { findSerpCompetitorsTool, getRankedKeywordsTool } = researchTools;
 
     expect(
       getRankedKeywordsTool.config.inputSchema.resultTypes.safeParse([
@@ -321,12 +281,11 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
     });
-    const { getKeywordMetricsTool } =
-      await import("./dataforseo-research-tools");
+    const { getKeywordMetricsTool } = researchTools;
 
     const result = await getKeywordMetricsTool.handler(
       { projectId: "project_1", keywords: ["seo automation"] },
-      toolExtra,
+      toolContext,
     );
 
     expect(keywordOverview).toHaveBeenCalledWith(
@@ -358,7 +317,7 @@ describe("DataForSEO research MCP tools", () => {
       keyword_difficulty: 18,
       main_intent: "commercial",
     });
-    const out = textOf(result);
+    const out = textContent(result);
     expect(out).toContain("keyword | volume | KD | CPC | competition | intent");
     expect(out).toContain("seo automation");
   });
@@ -373,8 +332,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
     });
-    const { getKeywordMetricsTool } =
-      await import("./dataforseo-research-tools");
+    const { getKeywordMetricsTool } = researchTools;
 
     const result = await getKeywordMetricsTool.handler(
       {
@@ -382,7 +340,7 @@ describe("DataForSEO research MCP tools", () => {
         keywords: ["low", "high", "medium"],
         sortBy: "search_volume",
       },
-      toolExtra,
+      toolContext,
     );
 
     const rows = z
@@ -406,8 +364,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReturnValue({
       labs: { keywordOverview },
     });
-    const { getKeywordMetricsTool } =
-      await import("./dataforseo-research-tools");
+    const { getKeywordMetricsTool } = researchTools;
 
     const result = await getKeywordMetricsTool.handler(
       {
@@ -415,7 +372,7 @@ describe("DataForSEO research MCP tools", () => {
         keywords: ["seo"],
         includeMonthlyTrends: false,
       },
-      toolExtra,
+      toolContext,
     );
 
     const rows = z

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   boolean,
   index,
   integer,
@@ -372,6 +373,9 @@ export const projectActivationState = pgTable("project_activation_state", {
   // without faking the org-level first-tool-call milestone, which stays
   // truthful and self-heals when a real external call lands.
   mcpCardDismissedAt: timestampColumn("mcp_card_dismissed_at"),
+  // Optional integration pitch: hiding it from the dashboard does not remove
+  // the GA4 connection controls from Project Settings.
+  ga4CardDismissedAt: timestampColumn("ga4_card_dismissed_at"),
   updatedAt: timestampColumn("updated_at").notNull().default(isoNow),
 });
 
@@ -389,13 +393,13 @@ export const backlinkSnapshots = pgTable(
       .references(() => projects.id, { onDelete: "cascade" }),
     domain: text("domain").notNull(),
     rank: integer("rank"),
-    backlinks: integer("backlinks"),
-    referringDomains: integer("referring_domains"),
-    brokenBacklinks: integer("broken_backlinks"),
-    newBacklinks: integer("new_backlinks"),
-    lostBacklinks: integer("lost_backlinks"),
-    newReferringDomains: integer("new_referring_domains"),
-    lostReferringDomains: integer("lost_referring_domains"),
+    backlinks: bigint("backlinks", { mode: "number" }),
+    referringDomains: bigint("referring_domains", { mode: "number" }),
+    brokenBacklinks: bigint("broken_backlinks", { mode: "number" }),
+    newBacklinks: bigint("new_backlinks", { mode: "number" }),
+    lostBacklinks: bigint("lost_backlinks", { mode: "number" }),
+    newReferringDomains: bigint("new_referring_domains", { mode: "number" }),
+    lostReferringDomains: bigint("lost_referring_domains", { mode: "number" }),
     capturedAt: timestampColumn("captured_at").notNull().default(isoNow),
   },
   (table) => [

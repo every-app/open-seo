@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { MoreHorizontal, ScanSearch, Trash2 } from "lucide-react";
+import { ScanSearch, Trash2 } from "lucide-react";
 import type { getAuditHistory } from "@/serverFunctions/audit";
+import { PortalMenu } from "@/client/components/PortalMenu";
 import { formatDate, StatusBadge } from "@/client/features/audit/shared";
 
 export function AuditHistorySection({
@@ -95,24 +96,13 @@ function HistoryActions({
       >
         View
       </Link>
-      <div className="dropdown dropdown-end">
-        <div
-          tabIndex={0}
-          role="button"
-          className="btn btn-ghost btn-xs btn-square"
-          aria-label="Audit actions"
-        >
-          <MoreHorizontal className="size-3.5" />
-        </div>
-        <ul
-          tabIndex={0}
-          className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-40"
-        >
+      <PortalMenu ariaLabel="Audit actions">
+        {(close) => (
           <li>
             <button
               className="text-error"
-              onClick={(event) => {
-                event.stopPropagation();
+              onClick={() => {
+                close();
                 onDelete(auditId);
               }}
             >
@@ -120,8 +110,8 @@ function HistoryActions({
               Delete audit
             </button>
           </li>
-        </ul>
-      </div>
+        )}
+      </PortalMenu>
     </div>
   );
 }

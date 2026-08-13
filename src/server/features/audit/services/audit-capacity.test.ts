@@ -47,4 +47,13 @@ describe("audit capacity helpers", () => {
     expect(freeAudit.pagesTotal).toBe(AUDIT_LIMITS.free.maxPagesPerAudit);
     expect(freeAudit.total).toBeLessThan(AUDIT_LIMITS.free.maxCapacityUnits);
   });
+
+  it("lifts only the cumulative self-hosted cap", () => {
+    expect(AUDIT_LIMITS.self_hosted.maxCapacityUnits).toBe(
+      Number.POSITIVE_INFINITY,
+    );
+    expect(AUDIT_LIMITS.self_hosted.maxPagesPerAudit).toBe(
+      AUDIT_LIMITS.paid.maxPagesPerAudit,
+    );
+  });
 });

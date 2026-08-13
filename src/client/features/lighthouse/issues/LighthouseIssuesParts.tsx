@@ -7,6 +7,7 @@ import {
   Sheet,
   TriangleAlert,
 } from "lucide-react";
+import { PortalMenu } from "@/client/components/PortalMenu";
 import type {
   CategoryTab,
   ExportPayload,
@@ -191,121 +192,153 @@ function ExportMenu({
   visibleIssues: LighthouseIssue[];
 }) {
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className="btn btn-sm gap-1">
-        <Download className="size-4" />
-        Export
-        <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul
-        tabIndex={0}
-        className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-72"
-      >
-        <li className="menu-title">
-          <span>Export to Sheets</span>
-        </li>
-        <li>
-          <button
-            disabled={!visibleIssues.length}
-            onClick={() => onExportSheets(visibleIssues, "current")}
-          >
-            <Sheet className="size-4" />
-            Open in Sheets — {categoryLabelLower}
-          </button>
-        </li>
-        <li>
-          <button
-            disabled={!allIssues.length}
-            onClick={() => onExportSheets(allIssues, "all")}
-          >
-            <Sheet className="size-4" />
-            Open in Sheets — all actionable
-          </button>
-        </li>
-        <li className="menu-title">
-          <span>Copy</span>
-        </li>
-        <li>
-          <button
-            disabled={isBusy}
-            onClick={() =>
-              onCopy(
-                exportCurrentCategory,
-                `Copied ${categoryLabelLower} issues`,
-              )
-            }
-          >
-            <Copy className="size-4" />
-            Copy {categoryLabelLower} issues
-          </button>
-        </li>
-        <li>
-          <button
-            disabled={isBusy}
-            onClick={() =>
-              onCopy({ mode: "issues" }, "Copied all actionable issues")
-            }
-          >
-            <Copy className="size-4" />
-            Copy all actionable issues
-          </button>
-        </li>
-        <li>
-          <button
-            disabled={isBusy}
-            onClick={() =>
-              onCopy({ mode: "full" }, "Copied saved Lighthouse payload")
-            }
-          >
-            <Copy className="size-4" />
-            Copy saved Lighthouse payload
-          </button>
-        </li>
-        <li className="menu-title">
-          <span>Download JSON</span>
-        </li>
-        <li>
-          <button
-            disabled={isBusy}
-            onClick={() => onExport(exportCurrentCategory)}
-          >
-            Download {categoryLabelLower} issues
-          </button>
-        </li>
-        <li>
-          <button
-            disabled={isBusy}
-            onClick={() => onExport({ mode: "issues" })}
-          >
-            Download all actionable issues
-          </button>
-        </li>
-        <li>
-          <button disabled={isBusy} onClick={() => onExport({ mode: "full" })}>
-            Download saved Lighthouse payload
-          </button>
-        </li>
-        <li className="menu-title">
-          <span>Download CSV</span>
-        </li>
-        <li>
-          <button
-            disabled={!visibleIssues.length}
-            onClick={() => onExportCsv(visibleIssues, "current")}
-          >
-            Download {categoryLabelLower} issues
-          </button>
-        </li>
-        <li>
-          <button
-            disabled={!allIssues.length}
-            onClick={() => onExportCsv(allIssues, "all")}
-          >
-            Download all actionable issues
-          </button>
-        </li>
-      </ul>
-    </div>
+    <PortalMenu
+      ariaLabel="Export Lighthouse issues"
+      triggerClassName="btn btn-sm gap-1"
+      triggerContent={
+        <>
+          <Download className="size-4" />
+          Export
+          <ChevronDown className="size-3 opacity-60" />
+        </>
+      }
+      menuClassName="w-72 max-h-[min(30rem,70vh)] flex-nowrap overflow-y-auto"
+    >
+      {(close) => (
+        <>
+          <li className="menu-title">
+            <span>Export to Sheets</span>
+          </li>
+          <li>
+            <button
+              disabled={!visibleIssues.length}
+              onClick={() => {
+                close();
+                onExportSheets(visibleIssues, "current");
+              }}
+            >
+              <Sheet className="size-4" />
+              Open in Sheets — {categoryLabelLower}
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={!allIssues.length}
+              onClick={() => {
+                close();
+                onExportSheets(allIssues, "all");
+              }}
+            >
+              <Sheet className="size-4" />
+              Open in Sheets — all actionable
+            </button>
+          </li>
+          <li className="menu-title">
+            <span>Copy</span>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onCopy(
+                  exportCurrentCategory,
+                  `Copied ${categoryLabelLower} issues`,
+                );
+              }}
+            >
+              <Copy className="size-4" />
+              Copy {categoryLabelLower} issues
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onCopy({ mode: "issues" }, "Copied all actionable issues");
+              }}
+            >
+              <Copy className="size-4" />
+              Copy all actionable issues
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onCopy({ mode: "full" }, "Copied saved Lighthouse payload");
+              }}
+            >
+              <Copy className="size-4" />
+              Copy saved Lighthouse payload
+            </button>
+          </li>
+          <li className="menu-title">
+            <span>Download JSON</span>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onExport(exportCurrentCategory);
+              }}
+            >
+              Download {categoryLabelLower} issues
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onExport({ mode: "issues" });
+              }}
+            >
+              Download all actionable issues
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={isBusy}
+              onClick={() => {
+                close();
+                onExport({ mode: "full" });
+              }}
+            >
+              Download saved Lighthouse payload
+            </button>
+          </li>
+          <li className="menu-title">
+            <span>Download CSV</span>
+          </li>
+          <li>
+            <button
+              disabled={!visibleIssues.length}
+              onClick={() => {
+                close();
+                onExportCsv(visibleIssues, "current");
+              }}
+            >
+              Download {categoryLabelLower} issues
+            </button>
+          </li>
+          <li>
+            <button
+              disabled={!allIssues.length}
+              onClick={() => {
+                close();
+                onExportCsv(allIssues, "all");
+              }}
+            >
+              Download all actionable issues
+            </button>
+          </li>
+        </>
+      )}
+    </PortalMenu>
   );
 }
 

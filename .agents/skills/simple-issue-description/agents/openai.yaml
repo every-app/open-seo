@@ -1,0 +1,4 @@
+interface:
+  display_name: "Simple Issue Description"
+  short_description: "Turn rough reports into clear, simple issues"
+  default_prompt: "Use $simple-issue-description to turn this report or PR into a clear issue focused on the problem and desired behavior."

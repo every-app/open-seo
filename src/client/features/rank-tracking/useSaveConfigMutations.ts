@@ -48,7 +48,7 @@ export function useSaveConfigMutations(input: {
     onSuccess: (result) => {
       captureClientEvent("rank_tracking:config_create");
       toast.success("Domain added for rank tracking");
-      onCreated(result.configId);
+      onCreated(result.id);
     },
     onError: (error) => {
       toast.error(getStandardErrorMessage(error, "Failed to save config"));

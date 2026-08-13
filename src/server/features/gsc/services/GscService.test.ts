@@ -1,25 +1,10 @@
 /* eslint-disable max-lines */
 import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GscApiError, GscTokenError } from "@/server/lib/gscErrors";
+import { GscService } from "./GscService";
 
 const mocks = vi.hoisted(() => {
-  class GscApiError extends Error {
-    constructor(
-      public readonly status: number,
-      message: string,
-    ) {
-      super(message);
-      this.name = "GscApiError";
-    }
-  }
-
-  class GscTokenError extends Error {
-    constructor(message = "token unavailable") {
-      super(message);
-      this.name = "GscTokenError";
-    }
-  }
-
   const state: { selectRows: Array<{ id: string; accountId: string }> } = {
     selectRows: [],
   };
@@ -61,8 +46,6 @@ const mocks = vi.hoisted(() => {
     getByProjectId: vi.fn(),
     deleteByProjectId: vi.fn(),
     existsForConnectorAccount: vi.fn(),
-    GscApiError,
-    GscTokenError,
   };
 });
 
@@ -72,8 +55,6 @@ vi.mock("@/db", () => ({
 }));
 vi.mock("@/server/lib/gscClient", () => ({
   createGscClient: mocks.createGscClient,
-  GscApiError: mocks.GscApiError,
-  GscTokenError: mocks.GscTokenError,
 }));
 vi.mock("@/server/features/gsc/repositories/GscConnectionRepository", () => ({
   GscConnectionRepository: {
@@ -115,7 +96,6 @@ describe("GscService.setSite", () => {
     ]);
     mocks.getUserInfoEmail.mockResolvedValue("client@example.com");
     mocks.upsert.mockResolvedValue({ siteUrl: "https://x/" });
-    const { GscService } = await import("./GscService");
 
     await GscService.setSite({ ...baseInput, siteUrl: "https://x/" });
 
@@ -143,7 +123,6 @@ describe("GscService.setSite", () => {
       siteUrl: "https://x/",
       connectedAccountEmail: "previous@example.com",
     });
-    const { GscService } = await import("./GscService");
 
     const result = await GscService.setSite({
       ...baseInput,
@@ -159,8 +138,6 @@ describe("GscService.setSite", () => {
   });
 
   it("rejects a Google sub that is not one of the caller's grants", async () => {
-    const { GscService } = await import("./GscService");
-
     await expect(
       GscService.setSite({
         ...baseInput,
@@ -176,7 +153,6 @@ describe("GscService.setSite", () => {
     mocks.listSites.mockResolvedValue([
       { siteUrl: "https://x/", permissionLevel: "siteUnverifiedUser" },
     ]);
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.setSite({ ...baseInput, siteUrl: "https://x/" }),
@@ -188,7 +164,6 @@ describe("GscService.setSite", () => {
     mocks.listSites.mockResolvedValue([
       { siteUrl: "https://x/", permissionLevel: "siteOwner" },
     ]);
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.setSite({ ...baseInput, siteUrl: "https://not-mine/" }),
@@ -216,11 +191,10 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     );
     mocks.listSites.mockImplementation(
       async ({ gscAccountId }: { gscAccountId?: string }) => {
-        if (gscAccountId === "sub-b") throw new mocks.GscTokenError();
+        if (gscAccountId === "sub-b") throw new GscTokenError("revoked");
         return [{ siteUrl: "https://x/", permissionLevel: "siteOwner" }];
       },
     );
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.listSitesForUserWithGrantStatus("u1"),
@@ -253,7 +227,6 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     mocks.listSites.mockResolvedValue([
       { siteUrl: "https://x/", permissionLevel: "siteOwner" },
     ]);
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.listSitesForUserWithGrantStatus("u1"),
@@ -273,9 +246,8 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     mocks.state.selectRows = [{ id: "grant-a", accountId: "sub-a" }];
     mocks.getUserInfoEmail.mockResolvedValue("a@example.com");
     mocks.listSites.mockRejectedValue(
-      new mocks.GscApiError(403, "Search Console denied access"),
+      new GscApiError(403, "Search Console denied access"),
     );
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.listSitesForUserWithGrantStatus("u1"),
@@ -298,7 +270,7 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
       async ({ gscAccountId }: { gscAccountId?: string }) =>
         `${gscAccountId}@example.com`,
     );
-    const rateLimit = new mocks.GscApiError(429, "slow down");
+    const rateLimit = new GscApiError(429, "slow down");
     mocks.listSites.mockImplementation(
       async ({ gscAccountId }: { gscAccountId?: string }) => {
         if (gscAccountId === "sub-b") throw rateLimit;
@@ -308,7 +280,6 @@ describe("GscService.listSitesForUserWithGrantStatus", () => {
     const consoleError = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
-    const { GscService } = await import("./GscService");
 
     await expect(
       GscService.listSitesForUserWithGrantStatus("u1"),
@@ -352,7 +323,6 @@ describe("GscService.getPerformance", () => {
       gscAccountId: "sub-a",
       siteUrl: "https://x/",
     });
-    const { GscService } = await import("./GscService");
 
     await GscService.getPerformance({
       projectId: "p1",
@@ -373,7 +343,6 @@ describe("GscService.getPerformance", () => {
       gscAccountId: null,
       siteUrl: "https://x/",
     });
-    const { GscService } = await import("./GscService");
 
     await GscService.getPerformance({
       projectId: "p1",
@@ -403,7 +372,6 @@ describe("GscService.disconnect", () => {
       gscAccountId: "sub-b",
     });
     mocks.existsForConnectorAccount.mockResolvedValue(false);
-    const { GscService } = await import("./GscService");
 
     await GscService.disconnect({ projectId: "p1", userId: "u1" });
 
@@ -422,7 +390,6 @@ describe("GscService.disconnect", () => {
       gscAccountId: "sub-b",
     });
     mocks.existsForConnectorAccount.mockResolvedValue(true);
-    const { GscService } = await import("./GscService");
 
     await GscService.disconnect({ projectId: "p1", userId: "u1" });
 
@@ -434,7 +401,6 @@ describe("GscService.disconnect", () => {
       connectedByUserId: "owner",
       gscAccountId: "sub-b",
     });
-    const { GscService } = await import("./GscService");
 
     await GscService.disconnect({ projectId: "p1", userId: "other-member" });
 
@@ -447,7 +413,6 @@ describe("GscService.disconnect", () => {
       connectedByUserId: "u1",
       gscAccountId: null,
     });
-    const { GscService } = await import("./GscService");
 
     await GscService.disconnect({ projectId: "p1", userId: "u1" });
 
@@ -458,7 +423,6 @@ describe("GscService.disconnect", () => {
 
   it("deletes no grants when no property was bound", async () => {
     mocks.getByProjectId.mockResolvedValue(null);
-    const { GscService } = await import("./GscService");
 
     await GscService.disconnect({ projectId: "p1", userId: "u1" });
 

@@ -1,7 +1,5 @@
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
+import { makeToolContext } from "@/server/mcp/tools/tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
@@ -13,30 +11,7 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
-const authContext = {
-  userId: "user_123",
-  userEmail: "alice@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "https://open-seo.test/mcp",
-  subject: "user_123",
-  baseUrl: "https://open-seo.test",
-};
-
-const toolExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://open-seo.test/mcp"),
-    extra: { [MCP_AUTH_CONTEXT_PROP]: authContext },
-  } satisfies AuthInfo,
-};
+const toolContext = makeToolContext();
 
 describe("withMcpProjectAuth", () => {
   beforeEach(() => {
@@ -57,7 +32,7 @@ describe("withMcpProjectAuth", () => {
 
     const wrapped = withMcpProjectAuth(handler);
     await expect(
-      wrapped({ projectId: "project_123" }, toolExtra),
+      wrapped({ projectId: "project_123" }, toolContext),
     ).resolves.toBe("ok");
 
     expect(mocks.getProjectForOrganization).toHaveBeenCalledWith(
@@ -71,7 +46,7 @@ describe("withMcpProjectAuth", () => {
     const handler = vi.fn().mockReturnValue("ok");
 
     const wrapped = withMcpProjectAuth(handler);
-    await wrapped({ projectId: "project_123" }, toolExtra);
+    await wrapped({ projectId: "project_123" }, toolContext);
 
     expect(handler).toHaveBeenCalledWith(
       { projectId: "project_123" },
@@ -82,8 +57,6 @@ describe("withMcpProjectAuth", () => {
           organizationId: "org_123",
           clientId: "client_123",
           scopes: ["mcp"],
-          audience: "https://open-seo.test/mcp",
-          subject: "user_123",
         },
         baseUrl: "https://open-seo.test",
         billing: {
@@ -109,9 +82,9 @@ describe("withMcpProjectAuth", () => {
     const handler = vi.fn();
 
     const wrapped = withMcpProjectAuth(handler);
-    await expect(wrapped({ projectId: "project_123" }, toolExtra)).rejects.toBe(
-      error,
-    );
+    await expect(
+      wrapped({ projectId: "project_123" }, toolContext),
+    ).rejects.toBe(error);
 
     expect(handler).not.toHaveBeenCalled();
   });
@@ -126,7 +99,7 @@ describe("withMcpProjectAuth", () => {
 
     const wrapped = withMcpProjectAuth(handler);
     await expect(
-      wrapped({ projectId: "someone-elses-project" }, toolExtra),
+      wrapped({ projectId: "someone-elses-project" }, toolContext),
     ).rejects.toThrow();
 
     expect(handler).not.toHaveBeenCalled();

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { ArrowRight, Settings, User } from "lucide-react";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { captureClientEvent } from "@/client/lib/posthog";
-import { getStoredRedditAttribution } from "@/client/lib/reddit-attribution";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -15,7 +14,6 @@ import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
-import { captureRedditConversionEvent } from "@/serverFunctions/redditConversions";
 
 const SUPPORT_EMAIL = "ben@openseo.so";
 
@@ -26,29 +24,33 @@ const PLAN_FEATURES = [
   "Includes $10.00 of Usage Credits each month",
 ];
 
+// How long the post-checkout "finalizing" screen polls Autumn before giving
+// up and letting the user through anyway.
+const FINALIZING_TIMEOUT_MS = 30_000;
+
 export const Route = createFileRoute("/_authenticated/subscribe")({
   validateSearch: (
     search: Record<string, unknown>,
-  ): { upgrade?: true; redirect?: string } => ({
+  ): { upgrade?: true; redirect?: string; checkout?: "success" } => ({
     upgrade:
       search.upgrade === true || search.upgrade === "true" ? true : undefined,
     redirect:
       typeof search.redirect === "string"
         ? normalizeAuthRedirect(search.redirect)
         : undefined,
+    checkout: search.checkout === "success" ? "success" : undefined,
   }),
   component: SubscribePage,
 });
 
 function SubscribePage() {
   const navigate = useNavigate();
-  const { upgrade: isUpgradeFlow, redirect } = Route.useSearch();
+  const { upgrade: isUpgradeFlow, redirect, checkout } = Route.useSearch();
   const { data: session } = useSession();
   const [isAttaching, setIsAttaching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const checkoutCompleted =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("checkout") === "success";
+  const [finalizingTimedOut, setFinalizingTimedOut] = useState(false);
+  const checkoutCompleted = checkout === "success";
 
   const hasSession = Boolean(session?.user?.id);
   const customerQuery = useCustomer({
@@ -74,43 +76,39 @@ function SubscribePage() {
     planStatus,
     isUpgradeFlow: isUpgradeFlow === true,
     checkoutCompleted,
+    finalizingTimedOut,
   });
 
   // Autumn can lag Stripe by a few seconds after checkout; poll until the
   // subscription shows up so the just-paid user isn't shown the paywall again.
   const isFinalizing = subscribeRouteState === "finalizing";
+  const { refetch: refetchCustomer } = customerQuery;
   useEffect(() => {
     if (!isFinalizing) return;
     const interval = setInterval(() => {
-      void customerQuery.refetch();
+      void refetchCustomer();
     }, 2000);
     return () => clearInterval(interval);
-  }, [customerQuery, isFinalizing]);
+  }, [refetchCustomer, isFinalizing]);
+
+  // Armed once on landing with checkout=success (not on the finalizing state,
+  // which a transient poll error can leave and re-enter) so the deadline is a
+  // hard bound from arrival.
+  useEffect(() => {
+    if (!checkoutCompleted || finalizingTimedOut) return;
+    const timeout = setTimeout(
+      () => setFinalizingTimedOut(true),
+      FINALIZING_TIMEOUT_MS,
+    );
+    return () => clearTimeout(timeout);
+  }, [checkoutCompleted, finalizingTimedOut]);
 
   useEffect(() => {
     if (subscribeRouteState === "redirectToApp") {
-      const destination = redirect ?? "/";
-      const [destinationPath, destinationQuery] = destination.split("?");
-      const destinationSearch: Record<string, string> = destinationQuery
-        ? Object.fromEntries(new URLSearchParams(destinationQuery))
-        : {};
-      const goToApp = () =>
-        void navigate({
-          to: destinationPath,
-          search: destinationSearch,
-          replace: true,
-        });
       if (checkoutCompleted) {
         captureClientEvent("billing:checkout_success");
-        const attribution = getStoredRedditAttribution();
-        if (attribution) {
-          void captureRedditConversionEvent({
-            data: { attribution, eventType: "PURCHASE" },
-          }).finally(goToApp);
-          return;
-        }
       }
-      goToApp();
+      void navigate({ href: redirect ?? "/", replace: true });
     }
   }, [checkoutCompleted, navigate, redirect, subscribeRouteState]);
 

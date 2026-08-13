@@ -1,18 +1,17 @@
 /**
  * Data access layer for site audit tables.
  * Provider-aware (D1 or Postgres) via the `@/db` handle. Covers audits,
- * audit_pages, audit_links, audit_issues, and stored Lighthouse results.
+ * audit_pages, audit_issues, and stored Lighthouse results. Link edges live
+ * in the per-audit scratchpad Durable Object, not here.
  */
-import { and, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import {
   audits,
   auditIssues,
   auditLighthouseResults,
-  auditLinks,
   auditPages,
 } from "@/db/schema";
-import { getDatabaseProvider } from "@/db/provider";
 import { executeInBatches } from "@/db/runBatch";
 import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
 import { deterministicAuditRowId } from "@/server/lib/audit/ids";
@@ -22,14 +21,6 @@ import type {
   CrawledPageResult,
   LighthouseResult,
 } from "@/server/lib/audit/types";
-
-// Only internal links are stored: both consumers (broken-internal-link and
-// orphan checks) filter on isInternal, and per-page external counts already
-// live on audit_pages. External rows come back when P1 adds external-link
-// checks. Mega-menu/footer-heavy sites can carry 1000+ links per page; cap
-// what we store so a 10k-page crawl can't write tens of millions of link rows.
-const MAX_STORED_LINKS_PER_PAGE = 500;
-const POSTGRES_LINK_INSERT_SIZE = 500;
 
 async function createAudit(data: {
   id: string;
@@ -102,7 +93,15 @@ async function completeAudit(
     );
 }
 
-async function failAudit(auditId: string, workflowInstanceId: string) {
+async function failAudit(
+  auditId: string,
+  workflowInstanceId: string,
+  errorInfo?: {
+    errorCode: string;
+    errorDetail: string;
+    failedPhase: string | null;
+  },
+) {
   // Only a running audit can transition to failed: the getStatus reconciler
   // races the workflow's own finalize, and without this guard it could flip
   // a just-completed audit to failed.
@@ -112,6 +111,11 @@ async function failAudit(auditId: string, workflowInstanceId: string) {
       status: "failed",
       completedAt: new Date().toISOString(),
       currentPhase: "failed",
+      ...(errorInfo && {
+        errorCode: errorInfo.errorCode,
+        errorDetail: errorInfo.errorDetail,
+        failedPhase: errorInfo.failedPhase,
+      }),
     })
     .where(
       and(
@@ -135,15 +139,15 @@ async function getAuditForWorkflow(
 }
 
 /**
- * Persist one crawl batch (pages + link edges + per-page issues).
- * Called inside the crawl-batch Workflow step so results land in D1
- * incrementally instead of accumulating in memory until finalize.
+ * Persist one crawled sub-batch (pages + per-page issues). Called inside the
+ * crawl-chunk Workflow step so results land in the app DB incrementally
+ * instead of accumulating in memory until finalize. Link edges go to the
+ * audit's scratchpad DO, not here.
  *
  * Idempotent on step retry: callers assign deterministic page ids
- * (deterministicAuditRowId) and link/issue ids are derived from stable
- * content. Page rows upsert (a retried fetch may legitimately differ — last
- * attempt wins, matching what the step returns); links and issues are
- * insert-or-ignore.
+ * (deterministicAuditRowId) and issue ids are derived from stable content.
+ * Page rows upsert (a retried fetch may legitimately differ — last attempt
+ * wins); issues are insert-or-ignore.
  */
 async function insertCrawledBatch(
   auditId: string,
@@ -191,38 +195,6 @@ async function insertCrawledBatch(
       .values({ id: page.id, auditId, ...dataColumns })
       .onConflictDoUpdate({ target: auditPages.id, set: dataColumns });
   });
-
-  const linkRows = await Promise.all(
-    pages.flatMap((page) =>
-      page.links
-        .filter((link) => link.isInternal)
-        .slice(0, MAX_STORED_LINKS_PER_PAGE)
-        .map(async (link) => ({
-          id: await deterministicAuditRowId(auditId, page.url, link.targetUrl),
-          auditId,
-          sourcePageId: page.id,
-          sourceUrl: page.url,
-          targetUrl: link.targetUrl,
-          anchor: link.anchor,
-          isInternal: link.isInternal,
-          isNofollow: link.isNofollow,
-        })),
-    ),
-  );
-  if (getDatabaseProvider() === "postgres") {
-    // A Postgres transaction executes runBatch statements sequentially. Bulk
-    // values avoid thousands of Hyperdrive round trips on link-heavy pages.
-    for (let i = 0; i < linkRows.length; i += POSTGRES_LINK_INSERT_SIZE) {
-      await db
-        .insert(auditLinks)
-        .values(linkRows.slice(i, i + POSTGRES_LINK_INSERT_SIZE))
-        .onConflictDoNothing();
-    }
-  } else {
-    await executeInBatches(linkRows, (tx, row) =>
-      tx.insert(auditLinks).values(row).onConflictDoNothing(),
-    );
-  }
 
   await insertIssues(auditId, issues);
 }
@@ -276,8 +248,8 @@ async function insertLighthouseResults(
       payloadSizeBytes: result.payloadSizeBytes ?? null,
     })),
   );
-  // Upsert: a step retry can charge a second DataForSEO call whose result
-  // must not be silently dropped in favor of a failed first attempt.
+  // The persistence step is retryable after its paid provider result has been
+  // checkpointed, so repeated writes must stay idempotent.
   await executeInBatches(rows, (tx, row) => {
     const { id: _id, auditId: _auditId, ...dataColumns } = row;
     return tx.insert(auditLighthouseResults).values(row).onConflictDoUpdate({
@@ -334,6 +306,19 @@ async function getPagesForAudit(auditId: string) {
     })
     .from(auditPages)
     .where(eq(auditPages.auditId, auditId));
+}
+
+async function countBlockedPages(auditId: string): Promise<number> {
+  const rows = await db
+    .select({ blocked: count() })
+    .from(auditPages)
+    .where(
+      and(
+        eq(auditPages.auditId, auditId),
+        eq(auditPages.fetchClass, "blocked"),
+      ),
+    );
+  return rows[0]?.blocked ?? 0;
 }
 
 async function hasPagesForAudit(auditId: string): Promise<boolean> {
@@ -449,6 +434,7 @@ export const AuditRepository = {
   getLatestAuditForProject,
   getIssuesForAudit,
   getPagesForAudit,
+  countBlockedPages,
   hasPagesForAudit,
   getAuditsByProject,
   getAuditUsageForUser,

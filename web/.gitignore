@@ -7,3 +7,4 @@ dist
 .source
 source.generated.ts
 *.local
+.dev.vars*

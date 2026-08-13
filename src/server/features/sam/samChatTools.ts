@@ -1,12 +1,9 @@
 import { tool, type Tool, type ToolSet } from "ai";
 import { z, type ZodRawShape } from "zod";
 import { withPgClient } from "@/db";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import {
-  createWorkersOAuthMcpProps,
-  type McpToolAuthContext,
-  type ToolExtra,
-} from "@/server/mcp/context";
+import type { CallToolResult } from "@modelcontextprotocol/server";
+import { type ToolAuthContext, type ToolContext } from "@/server/mcp/context";
+import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -41,10 +38,11 @@ const SAM_MAX_MAPPED_URLS = 60;
 // the exact same definitions the MCP server registers, so the in-app agent and
 // the MCP server can never drift in what a tool does or how it bills.
 type McpToolDefinition<Shape extends ZodRawShape> = {
+  name: string;
   config: { description: string; inputSchema: Shape };
   handler: (
     args: z.infer<z.ZodObject<Shape>>,
-    extra: ToolExtra,
+    context: ToolContext,
   ) => Promise<CallToolResult>;
 };
 
@@ -62,9 +60,11 @@ function toModelOutput(result: CallToolResult): unknown {
     : { summary };
 }
 
-// Adapt one MCP tool into an AI SDK tool. The MCP handler reads auth from `extra`
-// (via requireMcpToolAuthContext) and self-gates project access against the org,
-// so SAM gets identical scoping and metering for free.
+// Adapt one OpenSEO tool into an AI SDK tool. The shared handler receives the
+// same explicit auth context as the MCP transport, and runs through the same
+// instrumentation wrapper, so project scoping, credit metering, and the
+// mcp:tool_call telemetry (source "in_app_agent", null clientId) all match the
+// external MCP path.
 //
 // SAM always runs inside one project (the session row), so we bind that project
 // server-side: any tool with a `projectId` input has it stripped from the schema
@@ -72,11 +72,12 @@ function toModelOutput(result: CallToolResult): unknown {
 // the id, can't target another project, and can't hallucinate a wrong one.
 function adaptMcpTool<Shape extends ZodRawShape>(
   def: McpToolDefinition<Shape>,
-  extra: ToolExtra,
+  context: ToolContext,
   projectId: string,
 ): Tool {
   const { projectId: _projectIdSchema, ...modelShape } = def.config.inputSchema;
   const bindsProject = "projectId" in def.config.inputSchema;
+  const handler = instrumentMcpToolHandler(def.name, undefined, def.handler);
 
   return tool({
     description: def.config.description,
@@ -93,7 +94,7 @@ function adaptMcpTool<Shape extends ZodRawShape>(
         // request scope, so each execution scopes its own Postgres client
         // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
         return toModelOutput(
-          await withPgClient(() => def.handler(fullArgs, extra)),
+          await withPgClient(() => handler(fullArgs, context)),
         );
       } catch (error) {
         // Surface the failure to the model so it can recover or report it,
@@ -174,32 +175,19 @@ function scrapeTools(projectDomain: string | null): ToolSet {
 /**
  * Builds SAM's tool surface as an AI SDK ToolSet: the full MCP toolset plus the
  * free site-reading tools. Every tool the OpenSEO MCP server exposes is
- * available; auth/billing context is carried on a synthetic `ToolExtra` the
- * handlers read exactly as they would on the real MCP route. DataForSEO spend
- * is metered inside the shared client, so tool calls draw down the org's
- * credits automatically.
+ * available. Auth and billing context are passed directly to the shared tool
+ * handlers. DataForSEO spend is metered inside the shared client, so tool calls
+ * draw down the org's credits automatically.
  */
 export function buildSamMcpTools(
-  authContext: McpToolAuthContext,
+  authContext: ToolAuthContext,
   project: { id: string; domain: string | null },
 ): ToolSet {
   const projectId = project.id;
-  const extra: ToolExtra = {
-    // Placeholder to satisfy ToolExtra — no tool handler or the DataForSEO
-    // client reads this signal (true on the real MCP route too), so aborting a
-    // turn does not cancel in-flight tool requests.
-    signal: new AbortController().signal,
-    requestId: 0,
-    authInfo: {
-      token: "sam-session",
-      clientId: authContext.clientId ?? "sam",
-      scopes: authContext.scopes,
-      extra: createWorkersOAuthMcpProps(authContext),
-    },
-    sendNotification: () => Promise.resolve(),
-    sendRequest: () =>
-      Promise.reject(new Error("sendRequest is unsupported in the SAM agent")),
-  };
+  const toolContext: ToolContext = { auth: authContext };
+  const adaptTool = <Shape extends ZodRawShape>(
+    definition: McpToolDefinition<Shape>,
+  ) => adaptMcpTool(definition, toolContext, projectId);
 
   // Note: no `list_projects`. SAM is bound to the session's project, so
   // discovering other projects isn't part of its job — every project-scoped tool
@@ -214,55 +202,23 @@ export function buildSamMcpTools(
       execute: () => Promise.resolve({ factSheet: openSeoFactSheet }),
     }),
     ...scrapeTools(project.domain),
-    whoami: adaptMcpTool(whoamiTool, extra, projectId),
-    list_saved_keywords: adaptMcpTool(listSavedKeywordsTool, extra, projectId),
-    research_keywords: adaptMcpTool(researchKeywordsTool, extra, projectId),
-    save_keywords: adaptMcpTool(saveKeywordsTool, extra, projectId),
-    get_domain_overview: adaptMcpTool(getDomainOverviewTool, extra, projectId),
-    get_domain_keyword_suggestions: adaptMcpTool(
-      getDomainKeywordSuggestionsTool,
-      extra,
-      projectId,
-    ),
-    get_backlinks_overview: adaptMcpTool(
-      getBacklinksOverviewTool,
-      extra,
-      projectId,
-    ),
-    get_backlinks_profile: adaptMcpTool(
-      getBacklinksProfileTool,
-      extra,
-      projectId,
-    ),
-    get_serp_results: adaptMcpTool(getSerpResultsTool, extra, projectId),
-    get_rank_tracker: adaptMcpTool(getRankTrackerTool, extra, projectId),
-    get_ranked_keywords: adaptMcpTool(getRankedKeywordsTool, extra, projectId),
-    find_serp_competitors: adaptMcpTool(
-      findSerpCompetitorsTool,
-      extra,
-      projectId,
-    ),
-    search_local_businesses: adaptMcpTool(
-      searchLocalBusinessesTool,
-      extra,
-      projectId,
-    ),
-    get_local_serp_results: adaptMcpTool(
-      getLocalSerpResultsTool,
-      extra,
-      projectId,
-    ),
-    get_google_business_questions: adaptMcpTool(
-      getGoogleBusinessQuestionsTool,
-      extra,
-      projectId,
-    ),
-    get_keyword_metrics: adaptMcpTool(getKeywordMetricsTool, extra, projectId),
-    get_search_console_performance: adaptMcpTool(
-      getSearchConsolePerformanceTool,
-      extra,
-      projectId,
-    ),
-    inspect_urls: adaptMcpTool(inspectUrlsTool, extra, projectId),
+    whoami: adaptTool(whoamiTool),
+    list_saved_keywords: adaptTool(listSavedKeywordsTool),
+    research_keywords: adaptTool(researchKeywordsTool),
+    save_keywords: adaptTool(saveKeywordsTool),
+    get_domain_overview: adaptTool(getDomainOverviewTool),
+    get_domain_keyword_suggestions: adaptTool(getDomainKeywordSuggestionsTool),
+    get_backlinks_overview: adaptTool(getBacklinksOverviewTool),
+    get_backlinks_profile: adaptTool(getBacklinksProfileTool),
+    get_serp_results: adaptTool(getSerpResultsTool),
+    get_rank_tracker: adaptTool(getRankTrackerTool),
+    get_ranked_keywords: adaptTool(getRankedKeywordsTool),
+    find_serp_competitors: adaptTool(findSerpCompetitorsTool),
+    search_local_businesses: adaptTool(searchLocalBusinessesTool),
+    get_local_serp_results: adaptTool(getLocalSerpResultsTool),
+    get_google_business_questions: adaptTool(getGoogleBusinessQuestionsTool),
+    get_keyword_metrics: adaptTool(getKeywordMetricsTool),
+    get_search_console_performance: adaptTool(getSearchConsolePerformanceTool),
+    inspect_urls: adaptTool(inspectUrlsTool),
   };
 }

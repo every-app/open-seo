@@ -29,6 +29,19 @@ export type FeaturePage = {
     question: string;
     answer: string;
   }>;
+  guides?: {
+    title: string;
+    description: string;
+    items: Array<{
+      label: string;
+      description: string;
+      href: string;
+    }>;
+    cta: {
+      label: string;
+      href: string;
+    };
+  };
 };
 
 export const featurePages = {
@@ -99,7 +112,7 @@ export const featurePages = {
       {
         question: "Can I use OpenSEO as a free keyword research tool?",
         answer:
-          "OpenSEO is open source and can be self-hosted. The managed app also keeps keyword research tied to transparent usage instead of a large fixed subscription to a closed SEO suite.",
+          "Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. OpenSEO is the most affordable option; you can start for free, and paid plans start at $10/month with usage credits included. It's also open source, so you can self-host with your own DataForSEO account.",
       },
       {
         question: "Does OpenSEO show live search results?",
@@ -107,6 +120,41 @@ export const featurePages = {
           "Yes. Keyword research can be paired with SERP inspection so you can see ranking pages alongside the metrics.",
       },
     ],
+    guides: {
+      title: "The Keyword Research Strategy Library",
+      description:
+        "Practitioner plays that treat keyword research as demand discovery, not a volume spreadsheet. Each guide is a full walkthrough with the copy-paste MCP prompt that runs it.",
+      items: [
+        {
+          label: "Seed from conversation, not a volume report",
+          description:
+            "Harvest seed keywords from sales calls and support tickets.",
+          href: "/library/keyword-research/seed-from-conversation",
+        },
+        {
+          label: "What are long-tail keywords, and how to mine them",
+          description:
+            "PAA fan-out, autocomplete harvesting, and your own GSC queries.",
+          href: "/library/keyword-research/long-tail-question-mining",
+        },
+        {
+          label: "Search-intent mapping (hot / warm / cold)",
+          description:
+            "Label every keyword by buying temperature before you write.",
+          href: "/library/keyword-research/search-intent-mapping",
+        },
+        {
+          label: "Cluster keywords into topical hubs",
+          description:
+            "One page per intent, plus the keyword cannibalization fix.",
+          href: "/library/keyword-research/cluster-topical-hubs",
+        },
+      ],
+      cta: {
+        label: "Browse the full Strategy Library",
+        href: "/library/keyword-research",
+      },
+    },
   },
   siteAudit: {
     slug: FEATURE_PAGE_SLUGS.siteAudit,
@@ -160,19 +208,19 @@ export const featurePages = {
     ],
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlinks" },
       { label: "Keyword Research", href: "/features/keyword-research" },
     ],
     faqs: [
       {
         question: "What does the OpenSEO site audit tool check?",
         answer:
-          "OpenSEO crawls pages, shows page-level technical signals, and can attach Lighthouse issue details when Lighthouse is enabled.",
+          "Status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, and response time for every crawled page. Enable Lighthouse and each page also gets performance, SEO, accessibility, and best-practice issues.",
       },
       {
         question: "Is OpenSEO a free SEO audit tool?",
         answer:
-          "OpenSEO is open source and can be self-hosted. Managed usage depends on the crawl and data costs behind each workflow.",
+          "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
       },
       {
         question: "Who should use OpenSEO Site Audit?",
@@ -181,18 +229,18 @@ export const featurePages = {
       },
     ],
   },
-  backlinkChecker: {
-    slug: FEATURE_PAGE_SLUGS.backlinkChecker,
+  backlinks: {
+    slug: FEATURE_PAGE_SLUGS.backlinks,
     eyebrow: "Backlinks",
     navDescription: "Check links and referring domains.",
-    title: "Backlink checker for understanding a domain's link profile",
+    title: "Backlink analysis for understanding a domain's link profile",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
-    primaryKeyword: "backlink checker",
+    primaryKeyword: "backlink analysis",
     secondaryKeywords: [
-      "free backlink checker",
       "backlink analysis tool",
-      "google backlink checker",
+      "referring domains",
+      "link profile",
     ],
     imageAlt: "OpenSEO backlinks report",
     imageSrc:
@@ -232,28 +280,28 @@ export const featurePages = {
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
     related: [
+      { label: "Free Backlink Checker", href: "/backlink-checker" },
       {
         label: "Link Prospecting",
         href: "/docs/skills/link-prospecting",
       },
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
     ],
     faqs: [
       {
-        question: "What is a backlink checker used for?",
+        question: "What is backlink analysis used for?",
         answer:
-          "A backlink checker helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
+          "Backlink analysis helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
       },
       {
         question: "Can I check competitor backlinks in OpenSEO?",
         answer:
-          "Yes. OpenSEO's backlink workflow is designed for researching your own domain as well as competitor domains.",
+          "Yes. Enter any domain, yours or a competitor's, and pull its backlinks, referring domains, and top linked pages.",
       },
       {
         question: "How does backlink research connect to SEO planning?",
         answer:
-          "Backlinks add link-profile context that can inform link-building, digital PR, and competitor research alongside your keyword work.",
+          "Backlinks tell you whether a page ranks on content or on authority. Check them before targeting a keyword to judge whether you can realistically outrank the incumbents, and check a competitor's profile to find sites that might link to you too.",
       },
     ],
   },
@@ -313,7 +361,7 @@ export const featurePages = {
         href: "/docs/skills/competitor-analysis",
       },
       { label: "Keyword Research", href: "/features/keyword-research" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlinks" },
     ],
     faqs: [
       {
@@ -329,12 +377,12 @@ export const featurePages = {
       {
         question: "Can OpenSEO help with competitor keyword analysis?",
         answer:
-          "Yes. Domain Overview is designed to reveal the keywords and topics a competitor is already visible for.",
+          "Yes. Enter a competitor's domain and you get the keywords it ranks for and its top organic pages: the raw material for finding topics worth building or defending.",
       },
       {
         question: "Is Domain Overview the same as a traffic checker?",
         answer:
-          "It includes traffic-oriented visibility metrics, but the bigger value is connecting that traffic estimate to ranking keywords and top pages.",
+          "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
       },
     ],
   },
@@ -405,7 +453,7 @@ export const featurePages = {
       {
         question: "Does OpenSEO track mobile and desktop rankings?",
         answer:
-          "OpenSEO rank tracking can be configured for mobile, desktop, or both, so teams can compare devices when both are enabled.",
+          "Yes: mobile, desktop, or both. Each tracked domain is configured with the devices you want, and enabling both lets you compare them side by side.",
       },
       {
         question: "How should I choose keywords to track?",
@@ -482,7 +530,7 @@ export const featurePages = {
       {
         question: "How do saved keywords fit into SEO planning?",
         answer:
-          "Saved Keywords keeps promising ideas organized so they can inform content planning, rank tracking decisions, and future research.",
+          "Research fills the list, tags group it into pages and campaigns, and the shortlist feeds rank tracking. Saved keywords are the bridge between finding an opportunity and acting on it.",
       },
     ],
   },
@@ -621,7 +669,7 @@ export const featurePages = {
       {
         question: "Why does prompt research matter for SEO?",
         answer:
-          "Prompts reveal comparison, problem, and buying questions that can inform pages, guides, and the pages or domains that appear in returned citations.",
+          "Prompts are the new queries: they show the comparison, problem, and buying questions your customers now ask AI tools. The cited sources show which pages and domains those answers are built on, so you can see where your coverage is missing.",
       },
       {
         question: "Can this help with answer engine optimization?",
@@ -647,7 +695,7 @@ export const featureGroups = [
     description: "Understand competitors, backlinks, and technical health.",
     pages: [
       featurePages.domainOverview,
-      featurePages.backlinkChecker,
+      featurePages.backlinks,
       featurePages.siteAudit,
     ],
   },

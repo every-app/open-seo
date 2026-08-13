@@ -63,6 +63,8 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
         <ListSection title="Why OpenSEO" items={page.differentiators} />
       </div>
 
+      {page.guides ? <GuidesSection guides={page.guides} /> : null}
+
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
           Related features
@@ -177,6 +179,56 @@ function MetricsSection({ page }: FeaturePageProps) {
           </div>
         ))}
       </dl>
+    </section>
+  );
+}
+
+function GuidesSection({
+  guides,
+}: {
+  guides: NonNullable<FeaturePage["guides"]>;
+}) {
+  return (
+    <section className="mt-12">
+      <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+        {guides.title}
+      </h2>
+      <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
+        {guides.description}
+      </p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        {guides.items.map((item) => (
+          <a
+            key={item.href}
+            href={item.href}
+            className="rounded-lg border border-[var(--color-border-subtle)] bg-white p-5 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-base font-semibold text-neutral-950">
+              {item.label}
+              <span
+                aria-hidden="true"
+                className="ml-1 text-[var(--color-brand-accent)]"
+              >
+                &rarr;
+              </span>
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
+              {item.description}
+            </p>
+          </a>
+        ))}
+      </div>
+      <div className="mt-4">
+        <a
+          href={guides.cta.href}
+          className="text-sm font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
+        >
+          {guides.cta.label}
+          <span aria-hidden="true" className="ml-1">
+            &rarr;
+          </span>
+        </a>
+      </div>
     </section>
   );
 }

@@ -1,6 +1,8 @@
 ---
 name: papercuts
-description: Log genuine, recurring repository friction to .agents/PAPERCUTS.md — confusing setup, a flaky repo command or script, a misleading in-repo error, stale generated files, or a non-obvious gotcha that will cost the next contributor time. Also use to review, deduplicate, and resolve existing entries. Gate hard before logging: only friction the repository itself can fix counts. Never log the agent's own sandbox/permission errors, shell-scripting mistakes, transient flakiness, or third-party tool quirks the repo can't change.
+description: "Log genuine, recurring repository friction to .agents/PAPERCUTS.md — confusing setup, a flaky repo command or script, a misleading in-repo error, stale generated files, or a non-obvious gotcha that will cost the next contributor time. Also use to review, deduplicate, and resolve existing entries. Gate hard before logging: only friction the repository itself can fix counts. Never log the agent's own sandbox/permission errors, shell-scripting mistakes, transient flakiness, or third-party tool quirks the repo can't change."
+metadata:
+  internal: true
 ---
 
 # Papercuts

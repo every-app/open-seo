@@ -1,8 +1,10 @@
 import { ActivationRepository } from "@/server/features/activation/repositories/ActivationRepository";
 
-// Orgs whose first external MCP tool call is already recorded (or in flight)
-// in this isolate. Only *first* timestamps matter, so after one successful
-// write the tool-call hot path never touches the DB again for that org.
+// Orgs whose activation milestones are already recorded (or in flight) in
+// this isolate. Only *first* timestamps matter, so after one successful write
+// these hot paths (every API-key /mcp request, every external tool call)
+// never touch the DB again for that org.
+const recordedAuthorizedOrgs = new Set<string>();
 const recordedToolCallOrgs = new Set<string>();
 
 /**
@@ -14,9 +16,13 @@ const recordedToolCallOrgs = new Set<string>();
 export async function recordMcpAuthorized(
   organizationId: string,
 ): Promise<void> {
+  if (recordedAuthorizedOrgs.has(organizationId)) return;
+  recordedAuthorizedOrgs.add(organizationId);
   try {
     await ActivationRepository.recordFirstMcpAuthorized(organizationId);
   } catch (error) {
+    // Allow a retry on a later call rather than losing the milestone.
+    recordedAuthorizedOrgs.delete(organizationId);
     console.error("activation: recordMcpAuthorized failed", error);
   }
 }

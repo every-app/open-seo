@@ -11,7 +11,7 @@ type BatchStatement = Parameters<typeof d1Db.batch>[0][number];
 // D1 caps bound parameters at ~100 per statement; keep batches bounded so each
 // runBatch call stays under that limit. (Postgres allows far more, but the same
 // chunk size is harmless there.)
-const DB_BATCH_SIZE = 100;
+export const DB_BATCH_SIZE = 100;
 
 /**
  * Run a set of write statements atomically on either backend.

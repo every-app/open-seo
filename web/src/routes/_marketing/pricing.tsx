@@ -320,7 +320,7 @@ function Pricing() {
                     label="Websites"
                     value={inputs.sites}
                     min={1}
-                    max={50}
+                    max={500}
                     onChange={(v) => set("sites", v)}
                   />
                 </>

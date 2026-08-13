@@ -17,7 +17,7 @@ import {
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
   customerHasManagedAccess,
-  getUsageCreditsRemaining,
+  checkUsageCreditsDepleted,
   trackUsageCreditSpend,
 } from "@/server/billing/subscription";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
@@ -70,6 +70,18 @@ function buildSystemPrompt(domain: string | null): string {
 export class OnboardingChatAgent extends AIChatAgent {
   // Cap stored history; the onboarding chat is short and pre-paywall.
   maxPersistedMessages = 60;
+
+  /** Permanently remove this project's transcript for an account erasure. */
+  async destroyForErasure(): Promise<void> {
+    for (const socket of this.ctx.getWebSockets()) {
+      socket.close(1000, "Account erased");
+    }
+    this.abortAllRequests("GDPR erasure");
+    this.resetTurnState();
+    await this.waitUntilStable({ timeout: 5_000 });
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+  }
 
   // The base class persists each message as its own bounded SQLite row, so DO
   // storage occasionally returns a transient internal error (code 10001) that
@@ -139,9 +151,9 @@ export class OnboardingChatAgent extends AIChatAgent {
         );
       }
 
-      const { monthlyRemaining, topupRemaining } =
-        await getUsageCreditsRemaining(organizationId);
-      if (monthlyRemaining + topupRemaining <= 0) {
+      const { depleted, monthlyRemaining } =
+        await checkUsageCreditsDepleted(billingCustomer);
+      if (depleted) {
         return staticAssistantResponse(
           "You've used your onboarding credits. Subscribe to continue.",
         );
