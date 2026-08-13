@@ -187,11 +187,21 @@ async function hostnameResolvesToBlockedAddress(
 }
 
 /**
+ * CDN/proxy infrastructure namespaces that are not site content. Cloudflare
+ * reserves /cdn-cgi/ on every proxied zone and injects links into it (e.g.
+ * the /cdn-cgi/l/email-protection href its Email Address Obfuscation
+ * rewrites mailto: links into), and those URLs 404 when fetched directly —
+ * crawling them only manufactures broken-link false positives. Mainstream
+ * crawlers skip the namespace for the same reason.
+ */
+const INFRASTRUCTURE_PATH_PREFIXES = ["/cdn-cgi/"];
+
+/**
  * Synchronous SSRF check for URLs discovered mid-crawl (links, redirect
  * targets, sitemap entries). Blocks non-http(s) schemes, private/loopback IP
- * literals, and internal hostnames. DNS resolution is only performed for the
- * start URL (see normalizeAndValidateStartUrl); per-link DoH lookups would be
- * prohibitively slow.
+ * literals, internal hostnames, and CDN infrastructure paths. DNS resolution
+ * is only performed for the start URL (see normalizeAndValidateStartUrl);
+ * per-link DoH lookups would be prohibitively slow.
  */
 export function isCrawlableUrl(url: string): boolean {
   let parsed: URL;
@@ -201,6 +211,13 @@ export function isCrawlableUrl(url: string): boolean {
     return false;
   }
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    return false;
+  }
+  if (
+    INFRASTRUCTURE_PATH_PREFIXES.some((prefix) =>
+      parsed.pathname.startsWith(prefix),
+    )
+  ) {
     return false;
   }
   return !isBlockedHost(parsed.hostname);
