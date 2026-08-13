@@ -46,9 +46,22 @@ export const getDashboardGa4Summary = createServerFn({ method: "POST" })
         projectId: context.projectId,
       });
     } catch (error) {
+      const detail = toSafeGa4ReportErrorDetail(error);
+      waitUntil(
+        captureServerEvent({
+          distinctId: context.userId,
+          event: "ga4:dashboard_summary_error",
+          organizationId: context.organizationId,
+          properties: {
+            project_id: context.projectId,
+            error_code: detail.code,
+            retry_after_seconds: detail.retryAfterSeconds,
+          },
+        }),
+      );
       return {
         status: "error",
-        error: toSafeGa4ReportErrorDetail(error),
+        error: detail,
       };
     }
   });

@@ -3,8 +3,11 @@ import {
   createGa4DataClient,
   type Ga4RunReportRequest,
 } from "@/server/lib/ga4Client";
-import { Ga4ReportError } from "@/server/lib/ga4Errors";
-import { previousPeriod, comparisonValue } from "./Ga4ReportEnhancements";
+import {
+  Ga4MalformedResponseError,
+  Ga4ReportError,
+} from "@/server/lib/ga4Errors";
+import { previousPeriod } from "./Ga4ReportEnhancements";
 import {
   type Ga4Quota,
   type Ga4ReportMetadata,
@@ -32,7 +35,7 @@ type DashboardReportContext = {
 function reportRequest(input: {
   startDate: string;
   endDate: string;
-  dimensions?: Array<"pageTitle" | "pagePath" | "city">;
+  dimensions?: Array<"pagePath" | "city">;
   metric?: "screenPageViews" | "sessions";
 }): Ga4RunReportRequest {
   const metrics = input.metric ? [input.metric] : [...DASHBOARD_METRICS];
@@ -90,14 +93,10 @@ function topPages(report: NormalizedGa4Report) {
     .flatMap((row) => {
       const pagePath = row.pagePath;
       if (!isUsefulDimension(pagePath)) return [];
-      const pageTitle = isUsefulDimension(row.pageTitle)
-        ? row.pageTitle.trim()
-        : pagePath.trim();
       return [
         {
-          title: pageTitle,
-          pagePath: pagePath.trim(),
-          screenPageViews:
+          path: pagePath.trim(),
+          views:
             typeof row.screenPageViews === "number"
               ? row.screenPageViews
               : null,
@@ -146,7 +145,7 @@ async function getDashboardGa4Summary(
   const previousRequest = reportRequest(previousDateRange);
   const topPagesRequest = reportRequest({
     ...currentDateRange,
-    dimensions: ["pageTitle", "pagePath"],
+    dimensions: ["pagePath"],
     metric: "screenPageViews",
   });
   const topCitiesRequest = reportRequest({
@@ -161,17 +160,27 @@ async function getDashboardGa4Summary(
   });
 
   try {
+    const { reports } = await client.batchRunReports([
+      currentRequest,
+      previousRequest,
+      topPagesRequest,
+      topCitiesRequest,
+    ]);
+    if (reports.length !== 4) throw new Ga4MalformedResponseError();
     const [
       currentResponse,
       previousResponse,
       topPagesResponse,
       topCitiesResponse,
-    ] = await Promise.all([
-      client.runReport(currentRequest),
-      client.runReport(previousRequest),
-      client.runReport(topPagesRequest),
-      client.runReport(topCitiesRequest),
-    ]);
+    ] = reports;
+    if (
+      !currentResponse ||
+      !previousResponse ||
+      !topPagesResponse ||
+      !topCitiesResponse
+    ) {
+      throw new Ga4MalformedResponseError();
+    }
     const current = normalizeGa4Response(currentResponse, currentRequest);
     const previous = normalizeGa4Response(previousResponse, previousRequest);
     const pages = normalizeGa4Response(topPagesResponse, topPagesRequest);
@@ -202,21 +211,7 @@ async function getDashboardGa4Summary(
         visits: previousMetrics.sessions,
         conversions: previousMetrics.keyEvents,
       },
-      comparisons: {
-        visits: comparisonValue(
-          currentMetrics.sessions,
-          previousMetrics.sessions,
-        ),
-        conversions: comparisonValue(
-          currentMetrics.keyEvents,
-          previousMetrics.keyEvents,
-        ),
-      },
-      topPages: topPages(pages).map((page) => ({
-        title: page.title,
-        path: page.pagePath,
-        views: page.screenPageViews,
-      })),
+      topPages: topPages(pages),
       topCities: topCities(cities).map((city) => ({
         city: city.city,
         visits: city.sessions,

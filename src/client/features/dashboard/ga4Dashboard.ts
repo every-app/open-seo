@@ -24,38 +24,23 @@ type Ga4DashboardQueryState = {
   data: DashboardGa4Summary | undefined;
 };
 
-export type Ga4DashboardViewState =
+type Ga4DashboardViewState =
   | { kind: "hidden" }
   | { kind: "loading" }
-  | { kind: "error"; message: string }
+  | {
+      kind: "error";
+      message: string;
+      code: string;
+      retryAfterSeconds?: number;
+    }
   | {
       kind: "success";
-      data: Ga4DashboardDisplayData;
+      data: Pick<
+        SuccessfulDashboardGa4Summary,
+        "metrics" | "previous" | "topPages" | "topCities" | "limitedData"
+      >;
       summaryUnavailable: boolean;
-      pagesEmpty: boolean;
-      citiesEmpty: boolean;
-      limited: boolean;
     };
-
-export type Ga4DashboardDisplayData = {
-  metrics: {
-    visits: number | null;
-    conversions: number | null;
-    conversionRate: number | null;
-    engagementRate: number | null;
-  };
-  previous: {
-    visits: number | null;
-    conversions: number | null;
-  };
-  topPages: Array<{ title: string; path: string; views: number | null }>;
-  topCities: Array<{ city: string; visits: number | null }>;
-  limitedData: {
-    summary: boolean;
-    pages: boolean;
-    cities: boolean;
-  };
-};
 
 /**
  * Keeps the component branches deterministic and testable without requiring a
@@ -70,19 +55,25 @@ export function getGa4DashboardViewState(
   if (query.isError || !query.data) {
     return {
       kind: "error",
+      code: "transport_error",
       message:
         "We couldn't load Google Analytics data. Review the connection and try again.",
     };
   }
   if (query.data.status === "error") {
+    const isQuotaError = query.data.error.code === "ga4_quota_exhausted";
     return {
       kind: "error",
+      code: query.data.error.code,
       message: recoveryMessage(query.data.error.code),
+      ...(isQuotaError
+        ? { retryAfterSeconds: query.data.error.retryAfterSeconds ?? 60 }
+        : {}),
     };
   }
 
   const response = query.data;
-  const data: Ga4DashboardDisplayData = {
+  const data = {
     metrics: response.metrics,
     previous: response.previous,
     topPages: response.topPages,
@@ -95,9 +86,6 @@ export function getGa4DashboardViewState(
     summaryUnavailable: Object.values(data.metrics).every(
       (value) => value === null,
     ),
-    pagesEmpty: data.topPages.length === 0,
-    citiesEmpty: data.topCities.length === 0,
-    limited: Object.values(data.limitedData).some(Boolean),
   };
 }
 
@@ -108,7 +96,17 @@ function recoveryMessage(code: string): string {
   if (code === "ga4_property_inaccessible") {
     return "This Google Analytics property is no longer accessible.";
   }
+  if (code === "ga4_quota_exhausted") {
+    return "Google Analytics is temporarily rate-limited.";
+  }
   return "Google Analytics couldn't return this report. Try again shortly or review the connection.";
+}
+
+export function ga4DashboardHasDataForSort(input: {
+  gscConnected: boolean;
+  ga4Connected: boolean;
+}): boolean {
+  return input.gscConnected && input.ga4Connected;
 }
 
 export function shouldShowDashboardGa4(input: {
@@ -126,6 +124,15 @@ export function shouldShowDashboardGa4(input: {
 
 export function formatGa4Count(value: number | null): string {
   return value === null ? "—" : value.toLocaleString();
+}
+
+export function formatGa4CountWithUnit(
+  value: number | null,
+  singularUnit: string,
+): string {
+  if (value === null) return "—";
+  const unit = value === 1 ? singularUnit : `${singularUnit}s`;
+  return `${formatGa4Count(value)} ${unit}`;
 }
 
 export function formatGa4Rate(value: number | null): string {

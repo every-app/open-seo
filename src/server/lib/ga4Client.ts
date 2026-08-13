@@ -365,6 +365,10 @@ const runReportResponseSchema = z.object({
   kind: z.string().optional(),
 });
 
+const batchRunReportsResponseSchema = z.object({
+  reports: z.array(runReportResponseSchema),
+});
+
 const googleErrorSchema = z.object({
   error: z.object({
     details: z
@@ -379,6 +383,10 @@ const googleErrorSchema = z.object({
 });
 
 export type Ga4RunReportResponse = z.infer<typeof runReportResponseSchema>;
+
+export type Ga4BatchRunReportsResponse = z.infer<
+  typeof batchRunReportsResponseSchema
+>;
 
 export type Ga4RunReportRequest = {
   dateRanges: Array<{ startDate: string; endDate: string }>;
@@ -419,62 +427,80 @@ export function createGa4DataClient(opts: {
   const propertyId = propertyIdSchema.parse(opts.propertyId);
   const accessToken = memoizedGa4AccessToken(opts);
 
+  async function requestReport(endpoint: string, body: unknown) {
+    const token = await accessToken();
+    let response: Response;
+    try {
+      response = await fetch(`${GA4_DATA_API_BASE}/${propertyId}:${endpoint}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      if (isAbortError(error)) throw error;
+      throw new Ga4DataApiError(
+        0,
+        "Google Analytics reporting is temporarily unavailable.",
+      );
+    }
+    if (!response.ok) {
+      const responseBody = await response
+        .text()
+        .then((value) => value.slice(0, MAX_ERROR_BODY_LENGTH))
+        .catch(() => "");
+      let upstreamReason: string | null = null;
+      try {
+        const parsed = googleErrorSchema.safeParse(JSON.parse(responseBody));
+        if (parsed.success) {
+          upstreamReason =
+            parsed.data.error.details?.find(
+              (detail) =>
+                detail.metadata?.service === "analyticsdata.googleapis.com",
+            )?.reason ??
+            parsed.data.error.details?.find((detail) => detail.reason)
+              ?.reason ??
+            null;
+        }
+      } catch {
+        // Non-JSON error pages intentionally collapse to status-only errors.
+      }
+      throw new Ga4DataApiError(
+        response.status,
+        dataMessageForStatus(response.status),
+        safeRetryAfter(response),
+        upstreamReason,
+      );
+    }
+
+    try {
+      return await response.json();
+    } catch {
+      throw new Ga4MalformedResponseError();
+    }
+  }
+
   return {
     async runReport(
       request: Ga4RunReportRequest,
     ): Promise<Ga4RunReportResponse> {
-      const token = await accessToken();
-      let response: Response;
-      try {
-        response = await fetch(`${GA4_DATA_API_BASE}/${propertyId}:runReport`, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(request),
-        });
-      } catch (error) {
-        if (isAbortError(error)) throw error;
-        throw new Ga4DataApiError(
-          0,
-          "Google Analytics reporting is temporarily unavailable.",
-        );
-      }
-      if (!response.ok) {
-        const body = await response
-          .text()
-          .then((responseBody) => responseBody.slice(0, MAX_ERROR_BODY_LENGTH))
-          .catch(() => "");
-        let upstreamReason: string | null = null;
-        try {
-          const parsed = googleErrorSchema.safeParse(JSON.parse(body));
-          if (parsed.success) {
-            upstreamReason =
-              parsed.data.error.details?.find(
-                (detail) =>
-                  detail.metadata?.service === "analyticsdata.googleapis.com",
-              )?.reason ??
-              parsed.data.error.details?.find((detail) => detail.reason)
-                ?.reason ??
-              null;
-          }
-        } catch {
-          // Non-JSON error pages intentionally collapse to status-only errors.
-        }
-        throw new Ga4DataApiError(
-          response.status,
-          dataMessageForStatus(response.status),
-          safeRetryAfter(response),
-          upstreamReason,
-        );
-      }
+      const parsed = runReportResponseSchema.safeParse(
+        await requestReport("runReport", request),
+      );
+      if (!parsed.success) throw new Ga4MalformedResponseError();
+      return parsed.data;
+    },
 
-      try {
-        return runReportResponseSchema.parse(await response.json());
-      } catch {
-        throw new Ga4MalformedResponseError();
-      }
+    async batchRunReports(
+      requests: Ga4RunReportRequest[],
+    ): Promise<Ga4BatchRunReportsResponse> {
+      const parsed = batchRunReportsResponseSchema.safeParse(
+        await requestReport("batchRunReports", { requests }),
+      );
+      if (!parsed.success) throw new Ga4MalformedResponseError();
+      return parsed.data;
     },
   };
 }

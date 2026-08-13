@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   formatGa4Count,
+  formatGa4CountWithUnit,
   formatGa4Rate,
+  ga4DashboardHasDataForSort,
   getGa4DashboardViewState,
   shouldShowDashboardGa4,
   type DashboardGa4Summary,
@@ -16,7 +18,7 @@ const summary: Extract<DashboardGa4Summary, { status: "ok" }> = {
     engagementRate: 0.625,
   },
   previous: { visits: 100, conversions: 5 },
-  topPages: [{ title: "Home", path: "/", views: 80 }],
+  topPages: [{ path: "/", views: 80 }],
   topCities: [{ city: "Manila", visits: 30 }],
   limitedData: { summary: false, pages: false, cities: false },
 };
@@ -55,9 +57,6 @@ describe("getGa4DashboardViewState", () => {
     expect(state).toMatchObject({
       kind: "success",
       summaryUnavailable: false,
-      pagesEmpty: false,
-      citiesEmpty: false,
-      limited: false,
     });
     if (state.kind === "success") {
       expect(state.data.metrics).toEqual({
@@ -67,9 +66,7 @@ describe("getGa4DashboardViewState", () => {
         engagementRate: 0.625,
       });
       expect(state.data.previous).toEqual({ visits: 100, conversions: 5 });
-      expect(state.data.topPages).toEqual([
-        { title: "Home", path: "/", views: 80 },
-      ]);
+      expect(state.data.topPages).toEqual([{ path: "/", views: 80 }]);
       expect(state.data.topCities).toEqual([{ city: "Manila", visits: 30 }]);
     }
   });
@@ -98,7 +95,31 @@ describe("getGa4DashboardViewState", () => {
       }),
     ).toEqual({
       kind: "error",
+      code: "ga4_reconnect_required",
       message: "Google Analytics access needs to be reconnected.",
+    });
+  });
+
+  it("preserves quota retry guidance and suppresses immediate retry", () => {
+    expect(
+      getGa4DashboardViewState({
+        connected: true,
+        isPending: false,
+        isError: false,
+        data: {
+          status: "error",
+          error: {
+            code: "ga4_quota_exhausted",
+            message: "Try later.",
+            retryAfterSeconds: 90,
+          },
+        },
+      }),
+    ).toEqual({
+      kind: "error",
+      code: "ga4_quota_exhausted",
+      message: "Google Analytics is temporarily rate-limited.",
+      retryAfterSeconds: 90,
     });
   });
 
@@ -124,9 +145,6 @@ describe("getGa4DashboardViewState", () => {
     expect(state).toMatchObject({
       kind: "success",
       summaryUnavailable: true,
-      pagesEmpty: true,
-      citiesEmpty: true,
-      limited: true,
     });
     expect(formatGa4Count(null)).toBe("—");
     expect(formatGa4Rate(null)).toBe("—");
@@ -173,9 +191,29 @@ describe("shouldShowDashboardGa4", () => {
   });
 });
 
+describe("GA4 dashboard ordering", () => {
+  it("keeps Analytics with Search performance in mixed connection states", () => {
+    expect(
+      ga4DashboardHasDataForSort({
+        gscConnected: false,
+        ga4Connected: true,
+      }),
+    ).toBe(false);
+    expect(
+      ga4DashboardHasDataForSort({
+        gscConnected: true,
+        ga4Connected: true,
+      }),
+    ).toBe(true);
+  });
+});
+
 describe("GA4 metric formatting", () => {
   it("formats GA4 rates as percentages", () => {
     expect(formatGa4Rate(0.625)).toBe("62.5%");
     expect(formatGa4Count(1200)).toBe("1,200");
+    expect(formatGa4CountWithUnit(1, "view")).toBe("1 view");
+    expect(formatGa4CountWithUnit(1200, "visit")).toBe("1,200 visits");
+    expect(formatGa4CountWithUnit(null, "view")).toBe("—");
   });
 });

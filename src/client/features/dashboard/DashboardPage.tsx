@@ -6,7 +6,10 @@ import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { Ga4ConnectCard } from "@/client/features/dashboard/Ga4ConnectCard";
 import { Ga4DashboardCards } from "@/client/features/dashboard/Ga4DashboardCards";
-import { shouldShowDashboardGa4 } from "@/client/features/dashboard/ga4Dashboard";
+import {
+  ga4DashboardHasDataForSort,
+  shouldShowDashboardGa4,
+} from "@/client/features/dashboard/ga4Dashboard";
 import {
   computeNextStep,
   isStepDone,
@@ -349,7 +352,10 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               ? [
                   {
                     key: "ga4",
-                    hasData: ga4Connected,
+                    hasData: ga4DashboardHasDataForSort({
+                      gscConnected,
+                      ga4Connected,
+                    }),
                     node: ga4Connected ? (
                       <Ga4DashboardCards
                         projectId={projectId}

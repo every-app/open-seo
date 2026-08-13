@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,6 +9,7 @@ import {
 } from "@/client/features/dashboard/cardParts";
 import {
   formatGa4Count,
+  formatGa4CountWithUnit,
   formatGa4Rate,
   getGa4DashboardViewState,
 } from "@/client/features/dashboard/ga4Dashboard";
@@ -62,13 +64,10 @@ export function Ga4DashboardCards({
       >
         <div className="space-y-3">
           <p className="text-sm text-base-content/70">{state.message}</p>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => void summaryQuery.refetch()}
-          >
-            Try again
-          </button>
+          <ReportRetryAction
+            retryAfterSeconds={state.retryAfterSeconds}
+            onRetry={() => void summaryQuery.refetch()}
+          />
         </div>
       </CardShell>
     );
@@ -128,30 +127,21 @@ export function Ga4DashboardCards({
       <CardShell title="Popular pages & cities" stamp={GA4_STAMP}>
         <div className="grid gap-5 sm:grid-cols-2">
           <RankedList
-            heading="Popular pages"
-            empty={
-              data.limitedData.pages
-                ? "Page data is unavailable for this period."
-                : "No page views were recorded in this period."
-            }
+            heading="Popular pages by views"
+            empty="No identifiable page data was returned for this period."
             rows={data.topPages.slice(0, 3).map((page) => ({
               key: page.path,
-              primary: page.title,
-              secondary: page.title === page.path ? undefined : page.path,
-              value: formatGa4Count(page.views),
+              primary: page.path,
+              value: formatGa4CountWithUnit(page.views, "view"),
             }))}
           />
           <RankedList
-            heading="Top cities"
-            empty={
-              data.limitedData.cities
-                ? "City data is unavailable for this period."
-                : "No city visits were recorded in this period."
-            }
+            heading="Top cities by visits"
+            empty="No identifiable city data was returned for this period."
             rows={data.topCities.slice(0, 3).map((city) => ({
               key: city.city,
               primary: city.city || "Unknown city",
-              value: formatGa4Count(city.visits),
+              value: formatGa4CountWithUnit(city.visits, "visit"),
             }))}
           />
         </div>
@@ -160,6 +150,41 @@ export function Ga4DashboardCards({
         ) : null}
       </CardShell>
     </div>
+  );
+}
+
+function ReportRetryAction({
+  retryAfterSeconds,
+  onRetry,
+}: {
+  retryAfterSeconds?: number;
+  onRetry: () => void;
+}) {
+  const [canRetry, setCanRetry] = useState(
+    retryAfterSeconds === undefined || retryAfterSeconds <= 0,
+  );
+
+  useEffect(() => {
+    if (retryAfterSeconds === undefined || retryAfterSeconds <= 0) {
+      setCanRetry(true);
+      return;
+    }
+    setCanRetry(false);
+    const timeout = setTimeout(
+      () => setCanRetry(true),
+      retryAfterSeconds * 1_000,
+    );
+    return () => clearTimeout(timeout);
+  }, [retryAfterSeconds]);
+
+  return canRetry ? (
+    <button type="button" className="btn btn-outline btn-sm" onClick={onRetry}>
+      Try again
+    </button>
+  ) : (
+    <p className="text-xs text-base-content/55">
+      Try again in about {retryAfterSeconds} seconds.
+    </p>
   );
 }
 

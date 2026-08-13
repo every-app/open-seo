@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+  Ga4BatchRunReportsResponse,
   Ga4RunReportRequest,
   Ga4RunReportResponse,
 } from "@/server/lib/ga4Client";
@@ -15,6 +16,10 @@ const mocks = vi.hoisted(() => ({
   getByProjectId: vi.fn(),
   runReport:
     vi.fn<(request: Ga4RunReportRequest) => Promise<Ga4RunReportResponse>>(),
+  batchRunReports:
+    vi.fn<
+      (requests: Ga4RunReportRequest[]) => Promise<Ga4BatchRunReportsResponse>
+    >(),
 }));
 
 vi.mock("@/server/features/ga4/repositories/Ga4ConnectionRepository", () => ({
@@ -22,7 +27,7 @@ vi.mock("@/server/features/ga4/repositories/Ga4ConnectionRepository", () => ({
 }));
 
 vi.mock("@/server/lib/ga4Client", () => ({
-  createGa4DataClient: () => ({ runReport: mocks.runReport }),
+  createGa4DataClient: () => ({ batchRunReports: mocks.batchRunReports }),
 }));
 
 const connection = makeGa4Connection();
@@ -81,9 +86,14 @@ function listResponse(
 describe("Ga4DashboardSummaryService", () => {
   beforeEach(() => {
     mocks.getByProjectId.mockResolvedValue(connection);
+    mocks.batchRunReports.mockImplementation(async (requests) => ({
+      reports: await Promise.all(
+        requests.map((request) => mocks.runReport(request)),
+      ),
+    }));
   });
 
-  it("starts the four all-traffic reports together for complete local periods", async () => {
+  it("batches four all-traffic reports for complete local periods", async () => {
     const pending: Array<{
       request: Ga4RunReportRequest;
       resolve: (response: Ga4RunReportResponse) => void;
@@ -105,6 +115,8 @@ describe("Ga4DashboardSummaryService", () => {
       report.resolve(responseFor(report.request, { rowCount: 0 }));
     }
     const result = await resultPromise;
+
+    expect(mocks.batchRunReports).toHaveBeenCalledTimes(1);
 
     expect(result.period).toEqual({
       startDate: "2026-07-09",
@@ -138,7 +150,7 @@ describe("Ga4DashboardSummaryService", () => {
       { startDate: "2026-06-11", endDate: "2026-07-08" },
     ]);
     expect(pages).toMatchObject({
-      dimensions: [{ name: "pageTitle" }, { name: "pagePath" }],
+      dimensions: [{ name: "pagePath" }],
       metrics: [{ name: "screenPageViews" }],
       limit: "10",
       orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
@@ -154,13 +166,13 @@ describe("Ga4DashboardSummaryService", () => {
     }
   });
 
-  it("returns previous-period comparisons and shaped top lists", async () => {
+  it("returns previous-period values and shaped top lists", async () => {
     mocks.runReport.mockImplementation(async (request) => {
       const dimension = request.dimensions[0]?.name;
       if (request.dimensions.some(({ name }) => name === "pagePath")) {
         return listResponse(request, [
-          [["SEO guide", "/guides/seo"], "40"],
-          [["Home", "/"], "30"],
+          ["/guides/seo", "40"],
+          ["/", "30"],
         ]);
       }
       if (dimension === "city") {
@@ -186,15 +198,9 @@ describe("Ga4DashboardSummaryService", () => {
       engagementRate: 0.7,
     });
     expect(result.previous).toEqual({ visits: 80, conversions: 5 });
-    expect(result.comparisons.visits).toEqual({
-      current: 100,
-      previous: 80,
-      absoluteChange: 20,
-      percentChange: 0.25,
-    });
     expect(result.topPages).toEqual([
-      { title: "SEO guide", path: "/guides/seo", views: 40 },
-      { title: "Home", path: "/", views: 30 },
+      { path: "/guides/seo", views: 40 },
+      { path: "/", views: 30 },
     ]);
     expect(result.topCities).toEqual([
       { city: "Manila", visits: 25 },
@@ -207,13 +213,13 @@ describe("Ga4DashboardSummaryService", () => {
       const dimension = request.dimensions[0]?.name;
       if (request.dimensions.some(({ name }) => name === "pagePath")) {
         return listResponse(request, [
-          [["Ignored", ""], "100"],
-          [["Ignored", "(not set)"], "90"],
-          [["Ignored", "   "], "80"],
-          [["One", " /one "], "70"],
-          [["(not set)", "/two"], "60"],
-          [["Three", "/three"], "50"],
-          [["Four", "/four"], "40"],
+          ["", "100"],
+          ["(not set)", "90"],
+          ["   ", "80"],
+          [" /one ", "70"],
+          ["/two", "60"],
+          ["/three", "50"],
+          ["/four", "40"],
         ]);
       }
       if (dimension === "city") {
@@ -276,11 +282,6 @@ describe("Ga4DashboardSummaryService", () => {
       { now: new Date("2026-08-06T15:00:00Z") },
     );
 
-    expect(result.comparisons.visits).toMatchObject({
-      current: 0,
-      previous: 0,
-      absoluteChange: 0,
-    });
     expect(result.metrics).toEqual({
       visits: 0,
       conversions: null,
@@ -288,12 +289,6 @@ describe("Ga4DashboardSummaryService", () => {
       engagementRate: 0,
     });
     expect(result.previous).toEqual({ visits: 0, conversions: 0 });
-    expect(result.comparisons.conversions).toEqual({
-      current: null,
-      previous: 0,
-      absoluteChange: null,
-      percentChange: null,
-    });
     expect(result.quota.current.reportMetadata.restrictedMetrics).toEqual([
       { metricName: "keyEvents", restrictedMetricTypes: ["COST_DATA"] },
     ]);
@@ -304,7 +299,7 @@ describe("Ga4DashboardSummaryService", () => {
     mocks.runReport.mockImplementation(async (request) => {
       const dimension = request.dimensions[0]?.name;
       if (request.dimensions.some(({ name }) => name === "pagePath")) {
-        return listResponse(request, [[["Home", "/"], "5"]], {
+        return listResponse(request, [["/", "5"]], {
           metadata: { dataLossFromOtherRow: true },
           propertyQuota: {
             tokensPerDay: { consumed: 3, remaining: 97 },
@@ -365,6 +360,16 @@ describe("Ga4DashboardSummaryService", () => {
       reportMetadata: { hasLimitedData: true, subjectToThresholding: true },
       quota: { tokensPerHour: { consumed: 4, remaining: 96 } },
     });
+  });
+
+  it("rejects a batch response with missing logical reports", async () => {
+    mocks.batchRunReports.mockResolvedValueOnce({ reports: [] });
+
+    await expect(
+      Ga4DashboardSummaryService.getDashboardGa4Summary({
+        projectId: "project_1",
+      }),
+    ).rejects.toMatchObject({ code: "ga4_malformed_response" });
   });
 
   it("maps connection and quota failures to stable reporting errors", async () => {
