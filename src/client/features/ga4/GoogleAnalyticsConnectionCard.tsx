@@ -88,6 +88,9 @@ export function GoogleAnalyticsConnectionCard({
     void queryClient.invalidateQueries({
       queryKey: ["dashboardActivation", projectId],
     });
+    void queryClient.invalidateQueries({
+      queryKey: ["dashboardGa4Summary", projectId],
+    });
   };
   const setPropertyMutation = useMutation({
     mutationFn: (selected: Ga4PropertySelection) =>
