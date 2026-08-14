@@ -1,13 +1,12 @@
+/* eslint-disable max-lines */
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { fetchKeywordMetricsForList } from "@/server/lib/dataforseo";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { getProviderFeatureFlags } from "../config";
+import { persistCompetitorSnapshot } from "../competitor-snapshot-repository";
+import { DomainOverviewSnapshotRepository } from "../domain-overview-snapshot-repository";
+import { recordDataforseoFallback } from "../cost-tracker";
 import {
-  isDataforseoBudgetAvailable,
-  recordDataforseoCall,
-} from "../cost-tracker";
-import {
-  BudgetExceededError,
   ProviderUnsupportedError,
   ProviderUnavailableError,
   AuthenticationError,
@@ -15,6 +14,12 @@ import {
 } from "../errors";
 import { AppError } from "@/server/lib/errors";
 import type { SEODataProvider, SEODataRequest } from "../types";
+
+// Input shape of client.labs.serpCompetitors, derived so the constraints
+// passthrough below stays in sync with the SDK without importing its internals.
+type SerpCompetitorsInput = Parameters<
+  ReturnType<typeof createDataforseoClient>["labs"]["serpCompetitors"]
+>[0];
 
 /**
  * Which backlinks endpoint a `backlinks` request should call. Feature services
@@ -63,7 +68,9 @@ async function keywordIdeasBySource(
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
   const limit = (c.limit as number | undefined) ?? 100;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
-  const includeClickstreamData = c.includeClickstreamData as boolean | undefined;
+  const includeClickstreamData = c.includeClickstreamData as
+    | boolean
+    | undefined;
   // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
   const creditFeature = request.creditFeature as CreditFeature | undefined;
 
@@ -125,7 +132,9 @@ function backlinksListRequest(
   domain: string,
   request: SEODataRequest,
   creditFeature?: CreditFeature,
-): Parameters<ReturnType<typeof createDataforseoClient>["backlinks"]["rows"]>[0] {
+): Parameters<
+  ReturnType<typeof createDataforseoClient>["backlinks"]["rows"]
+>[0] {
   const c = request.constraints ?? {};
   return {
     target: domain,
@@ -266,13 +275,13 @@ async function routeDomainRequest(
         domainLabsRequest(domain, request, locationCode, languageCode),
       );
     case "domain_overview":
-      return client.domain.rankOverview({
-        target: domain,
+      return fetchAndPersistDomainOverview(
+        client,
+        request,
+        domain,
         locationCode,
         languageCode,
-        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
-        creditFeature: request.creditFeature as CreditFeature | undefined,
-      });
+      );
     case "domain_pages":
       return client.domain.relevantPages(
         domainLabsRequest(domain, request, locationCode, languageCode),
@@ -284,6 +293,38 @@ async function routeDomainRequest(
         `DataForSEO does not support ${request.dataType}`,
       );
   }
+}
+
+async function fetchAndPersistDomainOverview(
+  client: ReturnType<typeof createDataforseoClient>,
+  request: SEODataRequest,
+  domain: string,
+  locationCode: number,
+  languageCode: string,
+): Promise<unknown> {
+  const items = await client.domain.rankOverview({
+    target: domain,
+    locationCode,
+    languageCode,
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+    creditFeature: request.creditFeature as CreditFeature | undefined,
+  });
+  const organic = items[0]?.metrics?.organic;
+
+  try {
+    await DomainOverviewSnapshotRepository.insert({
+      organizationId: request.billingCustomer.organizationId,
+      domain,
+      locationCode,
+      languageCode,
+      organicTraffic: organic?.etv ?? null,
+      organicKeywords: organic?.count ?? null,
+    });
+  } catch (error) {
+    console.error("seo-data.domain-overview-snapshot.write-through:", error);
+  }
+
+  return items;
 }
 
 /**
@@ -331,19 +372,11 @@ export function createDataforseoProvider(): SEODataProvider {
         );
       }
 
-      // Budget guard — never call DataForSEO if budget is exceeded
-      const budgetAvailable = await isDataforseoBudgetAvailable();
-      if (!budgetAvailable) {
-        throw new BudgetExceededError("daily", 0, 0);
-      }
-
       const client = createDataforseoClient(request.billingCustomer);
 
       try {
         const result = await routeByDataType(client, request);
-        // Record the call (cost tracking; the metered client handles actual
-        // billing in hosted mode)
-        recordDataforseoCall(0, "no_free_provider");
+        recordDataforseoFallback();
         return result;
       } catch (error) {
         // Translate AppErrors from the DataForSEO client into provider errors
@@ -399,8 +432,7 @@ async function routeByDataType(
 
     case "keyword_metrics": {
       const kws =
-        request.keywords ??
-        (request.keyword ? [request.keyword] : []);
+        request.keywords ?? (request.keyword ? [request.keyword] : []);
       if (kws.length === 0) {
         throw new ProviderUnsupportedError(
           "dataforseo",
@@ -412,20 +444,19 @@ async function routeByDataType(
       // KeywordMetricRow[] (camelCase fields) — matching what callers
       // (including the MCP tool) expect. Raw labs.keywordOverview returns
       // SDK items with snake_case nested fields.
-      return fetchKeywordMetricsForList(
-        client,
-        {
-          keywords: kws,
-          locationCode,
-          languageCode,
-          includeClickstreamData:
-            // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
-            (request.constraints?.includeClickstreamData as boolean | undefined) ??
-            false,
-          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
-          creditFeature: (request.creditFeature ?? "keyword_research") as CreditFeature,
-        },
-      );
+      return fetchKeywordMetricsForList(client, {
+        keywords: kws,
+        locationCode,
+        languageCode,
+        includeClickstreamData:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+          (request.constraints?.includeClickstreamData as
+            | boolean
+            | undefined) ?? false,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- CreditFeature is a string union
+        creditFeature: (request.creditFeature ??
+          "keyword_research") as CreditFeature,
+      });
     }
 
     case "serp":
@@ -460,20 +491,55 @@ async function routeByDataType(
         languageCode,
       );
 
-    case "competitors":
-      if (!domain) {
+    case "competitors": {
+      const keywords =
+        request.keywords ?? (request.keyword ? [request.keyword] : []);
+      if (keywords.length === 0) {
         throw new ProviderUnsupportedError(
           "dataforseo",
           "competitors",
-          "domain is required",
+          "keywords are required",
         );
       }
-      return client.labs.serpCompetitors({
-        keywords: [keyword ?? ""].filter(Boolean),
+      const constraints = request.constraints ?? {};
+      const items = await client.labs.serpCompetitors({
+        keywords,
         locationCode,
         languageCode,
-        limit: 50,
+        itemTypes:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraint values are validated by the caller
+          constraints.itemTypes as SerpCompetitorsInput["itemTypes"],
+        includeSubdomains:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraint values are validated by the caller
+          constraints.includeSubdomains as boolean | undefined,
+        limit:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraint values are validated by the caller
+          (constraints.limit as number | undefined) ?? 50,
+        offset:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraint values are validated by the caller
+          constraints.offset as number | undefined,
       });
+
+      // Write-through to D1 so the internal provider can serve the next
+      // identical analysis for free. Persistence is best-effort: a snapshot
+      // that fails to write must not fail the already-paid fetch.
+      const projectId = constraints.projectId;
+      if (typeof projectId === "string") {
+        try {
+          await persistCompetitorSnapshot({
+            projectId,
+            keywords,
+            locationCode,
+            languageCode,
+            items,
+          });
+        } catch (error) {
+          console.error("seo-data.competitor-snapshot.write-through:", error);
+        }
+      }
+
+      return items;
+    }
 
     case "backlinks": {
       if (!domain) {

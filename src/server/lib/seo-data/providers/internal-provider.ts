@@ -1,12 +1,10 @@
 import { db } from "@/db";
-import {
-  keywordMetrics,
-  backlinkSnapshots,
-  rankSnapshots,
-} from "@/db/schema";
+import { keywordMetrics, backlinkSnapshots, rankSnapshots } from "@/db/schema";
 import { eq, and, desc } from "drizzle-orm";
 import type { SEODataProvider, SEODataRequest } from "../types";
 import { ProviderUnsupportedError } from "../errors";
+import { getLatestCompetitorSnapshot } from "../competitor-snapshot-repository";
+import { DomainOverviewSnapshotRepository } from "../domain-overview-snapshot-repository";
 
 /**
  * Internal data provider — reads from OpenSEO's own database (keyword_metrics
@@ -18,7 +16,8 @@ import { ProviderUnsupportedError } from "../errors";
  *   - keyword_metrics: from the keyword_metrics table (latest per keyword)
  *   - backlinks: from backlink_snapshots (latest summary per project)
  *   - domain_keywords: from rank_snapshots (latest tracked keyword positions)
- *   - competitors: not yet (would require persisting competitor analysis)
+ *   - competitors: from competitor_snapshots (latest analysis per keyword set)
+ *   - domain_overview: from fresh organization-scoped normalized snapshots
  */
 export function createInternalProvider(): SEODataProvider {
   return {
@@ -29,7 +28,8 @@ export function createInternalProvider(): SEODataProvider {
         request.dataType === "keyword_metrics" ||
         request.dataType === "backlinks" ||
         request.dataType === "domain_keywords" ||
-        request.dataType === "competitors"
+        request.dataType === "competitors" ||
+        request.dataType === "domain_overview"
       );
     },
 
@@ -43,6 +43,8 @@ export function createInternalProvider(): SEODataProvider {
           return getInternalDomainKeywords(request);
         case "competitors":
           return getInternalCompetitors(request);
+        case "domain_overview":
+          return getInternalDomainOverview(request);
         default:
           throw new ProviderUnsupportedError(
             "internal",
@@ -52,6 +54,45 @@ export function createInternalProvider(): SEODataProvider {
       }
     },
   };
+}
+
+async function getInternalDomainOverview(
+  request: SEODataRequest,
+): Promise<unknown> {
+  const domain = request.domain;
+  const organizationId = request.billingCustomer.organizationId;
+  if (!domain || !organizationId) {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "domain_overview",
+      "organizationId and domain are required",
+    );
+  }
+
+  const snapshot = await DomainOverviewSnapshotRepository.getFresh({
+    organizationId,
+    domain,
+    locationCode: request.locationCode ?? 2840,
+    languageCode: request.languageCode ?? "en",
+  });
+  if (!snapshot) {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "domain_overview",
+      "No fresh domain overview snapshot found",
+    );
+  }
+
+  return [
+    {
+      metrics: {
+        organic: {
+          etv: snapshot.organicTraffic,
+          count: snapshot.organicKeywords,
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -92,9 +133,7 @@ async function getInternalKeywordMetrics(
     .limit(keywords.length * 2);
 
   const keywordSet = new Set(keywords.map((k) => k.toLowerCase()));
-  const filtered = rows.filter((r) =>
-    keywordSet.has(r.keyword.toLowerCase()),
-  );
+  const filtered = rows.filter((r) => keywordSet.has(r.keyword.toLowerCase()));
 
   if (filtered.length === 0) {
     throw new ProviderUnsupportedError(
@@ -121,9 +160,7 @@ async function getInternalKeywordMetrics(
  * This is summary data (not full backlink rows), so it serves as a quick
  * overview without calling DataForSEO.
  */
-async function getInternalBacklinks(
-  request: SEODataRequest,
-): Promise<unknown> {
+async function getInternalBacklinks(request: SEODataRequest): Promise<unknown> {
   const projectId =
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
     request.constraints?.projectId as string | undefined;
@@ -244,15 +281,41 @@ async function getInternalDomainKeywords(
 }
 
 /**
- * Competitors are not yet persisted in D1. This always returns unsupported so
- * the router falls back to DataForSEO.
+ * Read the latest persisted SERP competitor analysis for a keyword set +
+ * market from competitor_snapshots. The DataForSEO provider write-throughs
+ * every paid fetch, so a repeated analysis of the same keyword set is free.
  */
 async function getInternalCompetitors(
-  _request: SEODataRequest,
+  request: SEODataRequest,
 ): Promise<unknown> {
-  throw new ProviderUnsupportedError(
-    "internal",
-    "competitors",
-    "Competitor data is not persisted in D1",
-  );
+  const keywords =
+    request.keywords ?? (request.keyword ? [request.keyword] : []);
+  const projectId =
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+    request.constraints?.projectId as string | undefined;
+
+  if (keywords.length === 0 || !projectId) {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "competitors",
+      "projectId and keywords are required",
+    );
+  }
+
+  const items = await getLatestCompetitorSnapshot({
+    projectId,
+    keywords,
+    locationCode: request.locationCode ?? 2840,
+    languageCode: request.languageCode ?? "en",
+  });
+
+  if (items === null) {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "competitors",
+      "No cached competitor snapshot found",
+    );
+  }
+
+  return items;
 }

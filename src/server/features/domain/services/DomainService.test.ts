@@ -1,13 +1,14 @@
+/* eslint-disable max-lines */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import type { SEODataRequest } from "@/server/lib/seo-data";
 
 const mocks = vi.hoisted(() => ({
   seoDataRouter: {
-    route: vi.fn<
-      (request: SEODataRequest, schema?: unknown) => Promise<unknown>
-    >(),
+    route:
+      vi.fn<(request: SEODataRequest, schema?: unknown) => Promise<unknown>>(),
   },
+  backlinkSnapshot: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
@@ -18,6 +19,15 @@ vi.mock("cloudflare:workers", () => ({
 vi.mock("@/server/lib/seo-data", () => ({
   getSeoDataRouter: () => mocks.seoDataRouter,
 }));
+
+vi.mock(
+  "@/server/features/dashboard/repositories/BacklinkSnapshotRepository",
+  () => ({
+    BacklinkSnapshotRepository: {
+      getFreshForProjectDomain: mocks.backlinkSnapshot,
+    },
+  }),
+);
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
 const billingCustomer = { organizationId: "org_123" } as never;
@@ -145,6 +155,8 @@ describe("DomainService", () => {
   beforeEach(() => {
     vi.resetModules();
     mocks.seoDataRouter.route.mockReset();
+    mocks.backlinkSnapshot.mockReset();
+    mocks.backlinkSnapshot.mockResolvedValue(null);
   });
 
   describe("getOverview", () => {
@@ -178,6 +190,31 @@ describe("DomainService", () => {
         organicTraffic: 1235,
         organicKeywords: 57,
         hasData: true,
+      });
+    });
+
+    it("merges a fresh exact-project backlink snapshot without another provider call", async () => {
+      mocks.seoDataRouter.route.mockResolvedValue(
+        routerResponse(overviewResponseData),
+      );
+      mocks.backlinkSnapshot.mockResolvedValue({
+        domain: "example.com",
+        backlinks: 88,
+        referringDomains: 12,
+      });
+      const { DomainService } = await import("./DomainService");
+
+      const result = await DomainService.getOverview(
+        BASE_INPUT,
+        billingCustomer,
+      );
+
+      expect(result).toMatchObject({ backlinks: 88, referringDomains: 12 });
+      expect(mocks.seoDataRouter.route).toHaveBeenCalledTimes(1);
+      expect(mocks.backlinkSnapshot).toHaveBeenCalledWith({
+        projectId: "project_1",
+        domain: "example.com",
+        maxAgeMs: 24 * 60 * 60 * 1_000,
       });
     });
 
@@ -444,7 +481,11 @@ describe("DomainService", () => {
       );
 
       const parsed = domainPagesPageResultSchema.parse(result);
-      expect(parsed).toMatchObject({ totalCount: 0, hasMore: false, pages: [] });
+      expect(parsed).toMatchObject({
+        totalCount: 0,
+        hasMore: false,
+        pages: [],
+      });
     });
   });
 });

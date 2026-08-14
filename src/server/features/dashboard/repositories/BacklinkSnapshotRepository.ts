@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { db } from "@/db";
 import { backlinkSnapshots } from "@/db/schema";
 
@@ -28,7 +28,37 @@ async function insert(
   return row;
 }
 
+async function getFreshForProjectDomain(params: {
+  projectId: string;
+  domain: string;
+  maxAgeMs: number;
+  now?: number;
+}): Promise<BacklinkSnapshot | null> {
+  const rows = await db
+    .select()
+    .from(backlinkSnapshots)
+    .where(
+      and(
+        eq(backlinkSnapshots.projectId, params.projectId),
+        eq(backlinkSnapshots.domain, params.domain),
+      ),
+    )
+    .orderBy(desc(backlinkSnapshots.id))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  const capturedMs = Date.parse(row.capturedAt);
+  if (
+    !Number.isFinite(capturedMs) ||
+    (params.now ?? Date.now()) - capturedMs >= params.maxAgeMs
+  ) {
+    return null;
+  }
+  return row;
+}
+
 export const BacklinkSnapshotRepository = {
   getLatestForProject,
+  getFreshForProjectDomain,
   insert,
 };

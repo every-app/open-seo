@@ -7,6 +7,25 @@ import { getSeoDataRouter } from "@/server/lib/seo-data";
 import { mapKeywordItem } from "@/server/features/domain/services/domainKeywordMapper";
 import { getKeywordsPage } from "@/server/features/domain/services/domainKeywordsPage";
 import { getPagesPage } from "@/server/features/domain/services/domainPagesPage";
+import { BacklinkSnapshotRepository } from "@/server/features/dashboard/repositories/BacklinkSnapshotRepository";
+
+const BACKLINK_SNAPSHOT_MAX_AGE_MS = 24 * 60 * 60 * 1_000;
+
+async function getFreshBacklinkSnapshot(input: {
+  projectId: string;
+  domain: string;
+}) {
+  try {
+    return await BacklinkSnapshotRepository.getFreshForProjectDomain({
+      projectId: input.projectId,
+      domain: input.domain,
+      maxAgeMs: BACKLINK_SNAPSHOT_MAX_AGE_MS,
+    });
+  } catch (error) {
+    console.error("domain-overview.backlink-snapshot.read:", error);
+    return null;
+  }
+}
 
 // Lets a caller attribute spend to its own feature (e.g. onboarding). Applied
 // to the DataForSEO call, not the cache key, so cached results are shared
@@ -48,18 +67,24 @@ async function getOverview(
 ): Promise<DomainOverviewResult> {
   const domain = normalizeDomainInput(input.domain, input.includeSubdomains);
 
-  const response = await getSeoDataRouter().route<DomainMetricsItem[]>(
-    {
-      dataType: "domain_overview",
+  const [response, backlinkSnapshot] = await Promise.all([
+    getSeoDataRouter().route<DomainMetricsItem[]>(
+      {
+        dataType: "domain_overview",
+        domain,
+        locationCode: input.locationCode,
+        languageCode: input.languageCode,
+        billingCustomer,
+        creditFeature: metering.creditFeature,
+        constraints: { projectId: input.projectId },
+      },
+      domainOverviewRouterDataSchema,
+    ),
+    getFreshBacklinkSnapshot({
+      projectId: input.projectId,
       domain,
-      locationCode: input.locationCode,
-      languageCode: input.languageCode,
-      billingCustomer,
-      creditFeature: metering.creditFeature,
-      constraints: { projectId: input.projectId },
-    },
-    domainOverviewRouterDataSchema,
-  );
+    }),
+  ]);
 
   const metrics: DomainMetricsItem | undefined = response.data[0];
 
@@ -76,8 +101,8 @@ async function getOverview(
     domain,
     organicTraffic,
     organicKeywords,
-    backlinks: null,
-    referringDomains: null,
+    backlinks: backlinkSnapshot?.backlinks ?? null,
+    referringDomains: backlinkSnapshot?.referringDomains ?? null,
     hasData: organicKeywords != null && organicKeywords > 0,
     fetchedAt: new Date().toISOString(),
   };
