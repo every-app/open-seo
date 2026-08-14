@@ -75,6 +75,8 @@ export const {
   organizationActivationState,
   projectActivationState,
   backlinkSnapshots,
+  competitorSnapshots,
+  domainOverviewSnapshots,
   audits,
   auditPages,
   auditLinks,

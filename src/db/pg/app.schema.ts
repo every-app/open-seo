@@ -405,3 +405,62 @@ export const backlinkSnapshots = pgTable(
     ),
   ],
 );
+
+// Point-in-time SERP competitor sets per project + keyword set + market,
+// written by the DataForSEO provider after a paid labs serp_competitors fetch.
+// The internal provider serves the latest snapshot for the same request for
+// free, so repeat competitor analyses never re-bill. keywordKey is the
+// canonical form of the requested keyword set (lowercased, deduped, sorted);
+// rows accumulate for history.
+export const competitorSnapshots = pgTable(
+  "competitor_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    keywordKey: text("keyword_key").notNull(),
+    keywordsJson: text("keywords_json").notNull(),
+    locationCode: integer("location_code").notNull(),
+    languageCode: text("language_code").notNull(),
+    itemsJson: text("items_json").notNull(),
+    fetchedAt: timestampColumn("fetched_at").notNull().default(isoNow),
+  },
+  (table) => [
+    index("competitor_snapshots_lookup_idx").on(
+      table.projectId,
+      table.keywordKey,
+      table.locationCode,
+      table.languageCode,
+      table.fetchedAt,
+    ),
+  ],
+);
+
+// Organization-scoped normalized domain overview snapshots. These rows retain
+// only the organic metrics needed by DomainService; raw provider payloads and
+// credentials are never persisted. Freshness is enforced by the repository.
+export const domainOverviewSnapshots = pgTable(
+  "domain_overview_snapshots",
+  {
+    id: serial("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    domain: text("domain").notNull(),
+    locationCode: integer("location_code").notNull(),
+    languageCode: text("language_code").notNull(),
+    organicTraffic: real("organic_traffic"),
+    organicKeywords: integer("organic_keywords"),
+    fetchedAt: timestampColumn("fetched_at").notNull().default(isoNow),
+  },
+  (table) => [
+    index("domain_overview_snapshots_lookup_idx").on(
+      table.organizationId,
+      table.domain,
+      table.locationCode,
+      table.languageCode,
+      table.id,
+    ),
+  ],
+);
