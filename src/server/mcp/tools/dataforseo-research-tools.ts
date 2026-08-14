@@ -861,18 +861,27 @@ export const findSerpCompetitorsTool = {
   },
   handler: withMcpProjectAuth(
     async (args: FindSerpCompetitorsArgs, context) => {
-      await assertDataforseoBudget();
-      const client = createDataforseoClient(context.billing);
       const market = resolveMarketSelector(args, context.project);
-      const competitors = await client.labs.serpCompetitors({
+
+      // Route through the DataRouter for cache-first + internal D1 snapshots
+      // + budget guard. competitors is served by: internal (D1) → dataforseo
+      // (paid fallback, which write-throughs its result for the next call).
+      const router = getSeoDataRouter();
+      const response = await router.route<Record<string, unknown>[]>({
+        dataType: "competitors",
         keywords: args.keywords,
         locationCode: market.locationCode,
         languageCode: market.languageCode,
-        itemTypes: args.resultTypes ?? ["organic", "local_pack"],
-        includeSubdomains: args.includeSubdomains,
-        limit: args.limit ?? 50,
-        offset: args.offset,
+        billingCustomer: context.billing,
+        constraints: {
+          projectId: args.projectId,
+          limit: args.limit ?? 50,
+          offset: args.offset,
+          itemTypes: args.resultTypes ?? ["organic", "local_pack"],
+          includeSubdomains: args.includeSubdomains,
+        },
       });
+      const competitors = response.data;
       const excludedDomains = args.excludeDomains ?? [];
       const filtered =
         excludedDomains.length === 0

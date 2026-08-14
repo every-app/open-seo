@@ -102,9 +102,12 @@ async function runRankedKeywords(args: MarketArgs) {
 }
 
 async function runSerpCompetitors(args: MarketArgs) {
-  const serpCompetitors = vi.fn().mockResolvedValue([]);
-  mocks.createDataforseoClient.mockReturnValue({
-    labs: { serpCompetitors },
+  mocks.seoDataRouter.route.mockResolvedValue({
+    dataType: "competitors",
+    provider: "dataforseo",
+    fromCache: false,
+    durationMs: 100,
+    data: [],
   });
   const { findSerpCompetitorsTool } =
     await import("./dataforseo-research-tools");
@@ -112,7 +115,7 @@ async function runSerpCompetitors(args: MarketArgs) {
     { projectId: "project_1", keywords: ["seo"], ...args },
     toolExtra,
   );
-  return serpCompetitors;
+  return mocks.seoDataRouter.route;
 }
 
 describe("market resolution for Labs tools", () => {

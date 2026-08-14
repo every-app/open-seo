@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
 import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,9 +11,8 @@ const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
   seoDataRouter: {
-    route: vi.fn<
-      (request: SEODataRequest, schema?: unknown) => Promise<unknown>
-    >(),
+    route:
+      vi.fn<(request: SEODataRequest, schema?: unknown) => Promise<unknown>>(),
   },
 }));
 
@@ -89,17 +89,37 @@ const usProjectRow = {
 };
 
 function routerResponse(dataType: string, data: unknown) {
-  return { dataType, provider: "dataforseo", fromCache: false, durationMs: 100, data };
+  return {
+    dataType,
+    provider: "dataforseo",
+    fromCache: false,
+    durationMs: 100,
+    data,
+  };
 }
 
-function kwRow(keyword: string, searchVolume: number, extra?: Partial<{
-  cpc: number; competition: number; competitionLevel: string;
-  keywordDifficulty: number; intent: string; monthlySearches: unknown[];
-}>) {
+function kwRow(
+  keyword: string,
+  searchVolume: number,
+  extra?: Partial<{
+    cpc: number;
+    competition: number;
+    competitionLevel: string;
+    keywordDifficulty: number;
+    intent: string;
+    monthlySearches: unknown[];
+  }>,
+) {
   return {
-    keyword, searchVolume, cpc: null, competition: null,
-    competitionLevel: null, keywordDifficulty: null, intent: null,
-    monthlySearches: [] as unknown[], ...extra,
+    keyword,
+    searchVolume,
+    cpc: null,
+    competition: null,
+    competitionLevel: null,
+    keywordDifficulty: null,
+    intent: null,
+    monthlySearches: [] as unknown[],
+    ...extra,
   };
 }
 
@@ -109,6 +129,7 @@ describe("DataForSEO research MCP tools", () => {
     mocks.createDataforseoClient.mockReset();
     mocks.getProjectForOrganization.mockReset();
     mocks.getProjectForOrganization.mockResolvedValue(usProjectRow);
+    mocks.seoDataRouter.route.mockReset();
   });
 
   it("searches local businesses without running rankings or Q&A", async () => {
@@ -283,14 +304,12 @@ describe("DataForSEO research MCP tools", () => {
   });
 
   it("filters SERP competitors only by explicit excluded domains", async () => {
-    const serpCompetitors = vi.fn().mockResolvedValue([
-      { domain: "directory.example", visibility: 10 },
-      { domain: "competitor.example", visibility: 5 },
-    ]);
-
-    mocks.createDataforseoClient.mockReturnValue({
-      labs: { serpCompetitors },
-    });
+    mocks.seoDataRouter.route.mockResolvedValue(
+      routerResponse("competitors", [
+        { domain: "directory.example", visibility: 10 },
+        { domain: "competitor.example", visibility: 5 },
+      ]),
+    );
     const { findSerpCompetitorsTool } =
       await import("./dataforseo-research-tools");
 
@@ -312,6 +331,9 @@ describe("DataForSEO research MCP tools", () => {
     ]);
     expect(textOf(result)).toContain("domain | keywords | avg pos");
     expect(textOf(result)).toContain("competitor.example");
+    expect(mocks.seoDataRouter.route).toHaveBeenCalledWith(
+      expect.objectContaining({ dataType: "competitors" }),
+    );
   });
 
   it("keeps AI overview result types out of SERP competitors", async () => {
@@ -340,8 +362,11 @@ describe("DataForSEO research MCP tools", () => {
     mocks.seoDataRouter.route.mockResolvedValue(
       routerResponse("keyword_metrics", [
         kwRow("seo automation", 2400, {
-          cpc: 25.6, competition: 0.24, competitionLevel: "LOW",
-          keywordDifficulty: 18, intent: "commercial",
+          cpc: 25.6,
+          competition: 0.24,
+          competitionLevel: "LOW",
+          keywordDifficulty: 18,
+          intent: "commercial",
         }),
       ]),
     );
