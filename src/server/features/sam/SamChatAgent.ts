@@ -352,6 +352,22 @@ export class SamChatAgent extends Think {
   async onRequest(request: Request): Promise<Response> {
     if (
       request.method === "POST" &&
+      new URL(request.url).pathname.endsWith("/stop")
+    ) {
+      // Stop the in-flight turn without touching the transcript, so the user
+      // keeps whatever partial reply already streamed in. Same settle-before-
+      // respond race as rewind: returning while the loop is still aborting
+      // would let late chunks persist (and stream) after we claim it stopped.
+      this.cancelAllChats();
+      await this.waitUntilStable({ timeout: 5000 });
+      // The aborted turn surfaces to Think as a chat error, which stores a
+      // terminal record that reconnecting clients replay as "Something went
+      // wrong" — but the user stopped this turn on purpose, so drop it.
+      await clearChatTerminal(this.ctx.storage);
+      return Response.json({ ok: true });
+    }
+    if (
+      request.method === "POST" &&
       new URL(request.url).pathname.endsWith("/rewind")
     ) {
       const body = z
