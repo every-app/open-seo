@@ -84,6 +84,60 @@ describe("SeoCacheService", () => {
       const keyB = await SeoCacheService.buildKey(baseRequest);
       expect(keyA).toBe(keyB);
     });
+
+    it("shares domain overview keys across projects in one organization", async () => {
+      const reqA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "domain_overview",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a" },
+      };
+      const reqB = {
+        ...reqA,
+        constraints: { projectId: "project-b" },
+      };
+
+      expect(await SeoCacheService.buildKey(reqA)).toBe(
+        await SeoCacheService.buildKey(reqB),
+      );
+    });
+
+    it("keeps domain overview cache keys isolated by organization", async () => {
+      const reqA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "domain_overview",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a" },
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+        billingCustomer: { organizationId: "org-a" } as never,
+      };
+      const reqB = {
+        ...reqA,
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+        billingCustomer: { organizationId: "org-b" } as never,
+      };
+
+      expect(await SeoCacheService.buildKey(reqA)).not.toBe(
+        await SeoCacheService.buildKey(reqB),
+      );
+    });
+
+    it("retains project-scoped constraints for other data types", async () => {
+      const reqA = {
+        ...baseRequest,
+        constraints: { projectId: "project-a" },
+      };
+      const reqB = {
+        ...reqA,
+        constraints: { projectId: "project-b" },
+      };
+
+      expect(await SeoCacheService.buildKey(reqA)).not.toBe(
+        await SeoCacheService.buildKey(reqB),
+      );
+    });
   });
 
   describe("get", () => {

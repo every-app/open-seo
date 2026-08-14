@@ -20,6 +20,13 @@ import { z, type ZodTypeAny } from "zod";
  * Format: {dataType}:{organizationId}:{sha256(params)}
  */
 async function buildKey(request: SEODataRequest): Promise<string> {
+  const constraints = request.constraints
+    ? { ...request.constraints }
+    : undefined;
+  if (request.dataType === "domain_overview" && constraints) {
+    delete constraints.projectId;
+  }
+
   const params: Record<string, unknown> = {
     dataType: request.dataType,
     organizationId: request.billingCustomer.organizationId,
@@ -33,7 +40,7 @@ async function buildKey(request: SEODataRequest): Promise<string> {
     device: request.device,
     dateFrom: request.dateFrom,
     dateTo: request.dateTo,
-    constraints: request.constraints,
+    constraints,
   };
   return buildCacheKey(`seo:${request.dataType}`, params);
 }
