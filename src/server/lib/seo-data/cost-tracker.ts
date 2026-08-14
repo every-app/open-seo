@@ -1,9 +1,10 @@
 import { getOptionalEnvValue } from "@/server/lib/runtime-env";
+import { BudgetExceededError } from "./errors";
 
 /**
  * Cost-control and observability counters for SEO data requests. Tracks
- * provider usage across the lifetime of the isolate, with optional persistent
- * budget guards (daily/monthly) backed by KV.
+ * provider usage across the lifetime of the isolate, with optional isolate-local
+ * daily/monthly budget guards.
  *
  * Never logs: API passwords, API keys, OAuth secrets, authorization headers,
  * refresh tokens. Only logs provider name, data type, cache status, and
@@ -39,6 +40,10 @@ export function resetCostCounters(): void {
   counters.freeProviderCalls = 0;
   counters.fallbackCalls = 0;
   counters.estimatedDataforseoCostUsd = 0;
+  periodSpend.dayKey = "";
+  periodSpend.monthKey = "";
+  periodSpend.dailyUsd = 0;
+  periodSpend.monthlyUsd = 0;
 }
 
 export function recordCacheHit(): void {
@@ -55,13 +60,20 @@ export function recordFreeProviderCall(provider: string): void {
   void provider;
 }
 
+export function recordDataforseoFallback(): void {
+  counters.fallbackCalls += 1;
+}
+
 export function recordDataforseoCall(
   costUsd: number,
   fallbackReason?: string,
 ): void {
+  syncPeriodSpend();
   counters.dataforseoCalls += 1;
   counters.fallbackCalls += fallbackReason ? 1 : 0;
   counters.estimatedDataforseoCostUsd += costUsd;
+  periodSpend.dailyUsd += costUsd;
+  periodSpend.monthlyUsd += costUsd;
   void fallbackReason;
 }
 
@@ -94,7 +106,7 @@ export function logRequest(entry: RequestLogEntry): void {
 
 /**
  * Budget guard for DataForSEO calls. Reads daily/monthly limits from env.
- * Returns whether a DataForSEO call is permitted given current spend.
+ * Checks whether a DataForSEO call is permitted given current UTC-period spend.
  *
  * Note: persistent spend tracking across isolate restarts requires KV. In the
  * Workers runtime, each isolate has its own in-memory counters, so the budget
@@ -109,6 +121,37 @@ export type BudgetConfig = {
 
 let cachedBudget: BudgetConfig | null = null;
 
+type PeriodSpend = {
+  dayKey: string;
+  monthKey: string;
+  dailyUsd: number;
+  monthlyUsd: number;
+};
+
+const periodSpend: PeriodSpend = {
+  dayKey: "",
+  monthKey: "",
+  dailyUsd: 0,
+  monthlyUsd: 0,
+};
+
+function getUtcPeriodKeys(now = new Date()) {
+  const iso = now.toISOString();
+  return { dayKey: iso.slice(0, 10), monthKey: iso.slice(0, 7) };
+}
+
+function syncPeriodSpend(now = new Date()): void {
+  const { dayKey, monthKey } = getUtcPeriodKeys(now);
+  if (periodSpend.dayKey !== dayKey) {
+    periodSpend.dayKey = dayKey;
+    periodSpend.dailyUsd = 0;
+  }
+  if (periodSpend.monthKey !== monthKey) {
+    periodSpend.monthKey = monthKey;
+    periodSpend.monthlyUsd = 0;
+  }
+}
+
 async function loadBudgetConfig(): Promise<BudgetConfig> {
   if (cachedBudget) return cachedBudget;
 
@@ -116,25 +159,49 @@ async function loadBudgetConfig(): Promise<BudgetConfig> {
   const monthly = await getOptionalEnvValue("DATAFORSEO_MONTHLY_BUDGET");
 
   cachedBudget = {
-    dailyLimitUsd: daily ? Number.parseFloat(daily) || null : null,
-    monthlyLimitUsdUsd: monthly ? Number.parseFloat(monthly) || null : null,
+    dailyLimitUsd: parseBudgetLimit(daily),
+    monthlyLimitUsdUsd: parseBudgetLimit(monthly),
   };
   return cachedBudget;
 }
 
-export async function isDataforseoBudgetAvailable(): Promise<boolean> {
+function parseBudgetLimit(value: string | undefined): number | null {
+  if (value === undefined || value.trim() === "") return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+}
+
+export async function assertDataforseoBudgetAvailable(): Promise<void> {
   const config = await loadBudgetConfig();
+  syncPeriodSpend();
   if (config.dailyLimitUsd !== null) {
-    if (counters.estimatedDataforseoCostUsd >= config.dailyLimitUsd) {
-      return false;
+    if (periodSpend.dailyUsd >= config.dailyLimitUsd) {
+      throw new BudgetExceededError(
+        "daily",
+        config.dailyLimitUsd,
+        periodSpend.dailyUsd,
+      );
     }
   }
   if (config.monthlyLimitUsdUsd !== null) {
-    if (counters.estimatedDataforseoCostUsd >= config.monthlyLimitUsdUsd) {
-      return false;
+    if (periodSpend.monthlyUsd >= config.monthlyLimitUsdUsd) {
+      throw new BudgetExceededError(
+        "monthly",
+        config.monthlyLimitUsdUsd,
+        periodSpend.monthlyUsd,
+      );
     }
   }
-  return true;
+}
+
+export async function isDataforseoBudgetAvailable(): Promise<boolean> {
+  try {
+    await assertDataforseoBudgetAvailable();
+    return true;
+  } catch (error) {
+    if (error instanceof BudgetExceededError) return false;
+    throw error;
+  }
 }
 
 export async function getDataforseoBudgetConfig(): Promise<BudgetConfig> {

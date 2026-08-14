@@ -18,6 +18,10 @@ import {
 } from "@/server/lib/dataforseo/envelope";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { AppError } from "@/server/lib/errors";
+import {
+  assertDataforseoBudgetAvailable,
+  recordDataforseoCall,
+} from "@/server/lib/seo-data/cost-tracker";
 
 export { mapDataforseoPathToCreditFeature };
 
@@ -142,8 +146,17 @@ async function meterDataforseoCall<T>(
   const isHostedMode = await isHostedServerAuthMode();
 
   if (!isHostedMode) {
-    const result = await execute();
-    return result.data;
+    await assertDataforseoBudgetAvailable();
+    try {
+      const result = await execute();
+      recordDataforseoCall(result.billing.costUsd);
+      return result.data;
+    } catch (error) {
+      if (error instanceof DataforseoChargedTaskError) {
+        recordDataforseoCall(error.billing.costUsd);
+      }
+      throw error;
+    }
   }
 
   const billingCustomer = await getOrCreateOrganizationCustomer(customer);
