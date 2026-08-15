@@ -44,11 +44,11 @@ export function DomainTableTabSurface({
         <button
           className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
           onClick={onToggleFilters}
-          title="Toggle filters"
+          title="显示或隐藏筛选条件"
           type="button"
         >
           <SlidersHorizontal className="size-3.5" />
-          Filters
+          筛选
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {activeFilterCount}

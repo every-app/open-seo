@@ -35,7 +35,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       setLastProjectId(created.id);
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
       onClose();
-      toast.success("Project created");
+      toast.success("项目已创建");
       // Land on the new project's settings so they can connect Search Console
       // and finish setting up the workspace.
       void navigate({
@@ -44,7 +44,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       });
     },
     onError: (error) =>
-      toast.error(getStandardErrorMessage(error, "Failed to create project")),
+      toast.error(getStandardErrorMessage(error, "项目创建失败")),
   });
 
   const isPending = createMutation.isPending;
@@ -53,7 +53,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
     event.preventDefault();
     if (isPending) return;
     if (!name.trim()) {
-      toast.error("Project name is required");
+      toast.error("请输入项目名称");
       return;
     }
     createMutation.mutate();
@@ -67,16 +67,16 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <h2 id="create-project-title" className="text-lg font-semibold">
-          New project
+          新建项目
         </h2>
 
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Name</span>
+          <span className="font-medium">名称</span>
           <input
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Acme Inc."
+            placeholder="示例公司"
             maxLength={120}
             autoFocus
             className="input input-bordered w-full"
@@ -85,7 +85,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
 
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium">
-            Domain <span className="text-base-content/50">(optional)</span>
+            域名 <span className="text-base-content/50">（可选）</span>
           </span>
           <input
             type="text"
@@ -96,17 +96,15 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
             className="input input-bordered w-full"
           />
           <span className="text-xs text-base-content/50">
-            You can connect Search Console and set up rank tracking after
-            creating the project.
+            创建项目后，您可以连接 Search Console 并设置排名追踪。
           </span>
         </label>
 
         <div className="flex flex-col gap-1.5">
           <ProjectMarketFields value={market} onChange={setMarket} />
           <span className="text-xs text-base-content/50">
-            Keyword, SERP, and domain data uses this country and language unless
-            a call asks for a different one. Change it later in project
-            settings.
+            关键词、SERP
+            和域名数据默认使用此国家或地区及语言，调用时也可另行指定。之后可在项目设置中修改。
           </span>
         </div>
 
@@ -117,14 +115,14 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
             onClick={onClose}
             disabled={isPending}
           >
-            Cancel
+            取消
           </button>
           <button
             type="submit"
             className="btn btn-primary btn-sm"
             disabled={isPending}
           >
-            Create project
+            创建项目
           </button>
         </div>
       </form>

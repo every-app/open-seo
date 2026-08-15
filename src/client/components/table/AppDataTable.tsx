@@ -73,7 +73,7 @@ export function makeSelectionColumn<TData>(
         className="checkbox checkbox-xs [--radius-selector:0.25rem]"
         checked={table.getIsAllRowsSelected()}
         onChange={table.getToggleAllRowsSelectedHandler()}
-        aria-label="Select all rows"
+        aria-label="选择全部行"
       />
     ),
     cell: ({ row, table }) => (
@@ -97,7 +97,7 @@ function SelectionCheckbox<TData>({
       type="checkbox"
       className="checkbox checkbox-xs [--radius-selector:0.25rem]"
       checked={row.getIsSelected()}
-      aria-label="Select row"
+      aria-label="选择此行"
       onClick={(event) => {
         event.stopPropagation();
         rangeHandledRef.current = applyShiftRangeSelection(

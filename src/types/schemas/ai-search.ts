@@ -26,7 +26,7 @@ export function parseCompetitorList(raw: string): string[] {
   return Array.from(
     new Set(
       raw
-        .split(",")
+        .split(/[,，、]/)
         .map((part) => part.trim())
         .filter((part) => part.length > 0),
     ),

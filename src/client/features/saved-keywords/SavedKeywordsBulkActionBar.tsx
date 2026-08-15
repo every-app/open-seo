@@ -38,24 +38,24 @@ export function SavedKeywordsBulkActionBar({
               icon={<Tags className="size-3.5" />}
               onClick={onOpenTags}
             >
-              Tag
+              添加标签
             </TableBulkActionButton>
 
             <TableBulkExportMenu
               busy={exportBusy}
               actions={[
                 {
-                  label: "Copy keywords",
+                  label: "复制关键词",
                   icon: <Copy className="size-4" />,
                   onClick: onCopy,
                 },
                 {
-                  label: "Export to Sheets",
+                  label: "导出到 Google 表格",
                   icon: <Sheet className="size-4" />,
                   onClick: onExportSheets,
                 },
                 {
-                  label: "Export CSV",
+                  label: "导出 CSV",
                   icon: <FileDown className="size-4" />,
                   onClick: onExportCsv,
                 },
@@ -69,7 +69,7 @@ export function SavedKeywordsBulkActionBar({
               onClick={onDelete}
               variant="danger"
             >
-              Delete
+              删除
             </TableBulkActionButton>
           </div>
         </>

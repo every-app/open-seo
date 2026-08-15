@@ -11,20 +11,20 @@ const COLORS: Record<KeywordIntent, string> = {
 };
 
 const SHORT_LABELS: Record<KeywordIntent, string> = {
-  informational: "Info",
-  commercial: "Comm",
-  transactional: "Trans",
-  navigational: "Nav",
+  informational: "信息",
+  commercial: "商业",
+  transactional: "交易",
+  navigational: "导航",
   unknown: "?",
 };
 
 /** Full intent labels, shared with the keyword filters so both stay in sync. */
 export const INTENT_LABELS: Record<KeywordIntent, string> = {
-  informational: "Informational",
-  commercial: "Commercial",
-  transactional: "Transactional",
-  navigational: "Navigational",
-  unknown: "Unknown",
+  informational: "信息型",
+  commercial: "商业调研型",
+  transactional: "交易型",
+  navigational: "导航型",
+  unknown: "未知",
 };
 
 const DESCRIPTIONS: Record<
@@ -33,28 +33,24 @@ const DESCRIPTIONS: Record<
 > = {
   informational: {
     label: INTENT_LABELS.informational,
-    description:
-      "The searcher wants information or answers. Use this for educational content, guides, and comparison-light explainers.",
+    description: "搜索者希望获取信息或答案，适合教育内容、指南和简明对比说明。",
   },
   commercial: {
     label: INTENT_LABELS.commercial,
-    description:
-      "The searcher is researching options before a purchase. Treat this as buying intent for comparisons, alternatives, and product-led pages.",
+    description: "搜索者正在购买前比较方案，适合对比、替代方案和产品导向页面。",
   },
   transactional: {
     label: INTENT_LABELS.transactional,
     description:
-      "The searcher is ready to complete an action, often a purchase. Prioritize clear offers, pricing, trials, or conversion paths.",
+      "搜索者准备完成购买等操作，应优先提供清晰的优惠、价格、试用或转化路径。",
   },
   navigational: {
     label: INTENT_LABELS.navigational,
-    description:
-      "The searcher is looking for a specific site, brand, or page. These queries usually reward matching the expected destination.",
+    description: "搜索者正在寻找特定网站、品牌或页面，内容应准确匹配预期入口。",
   },
   unknown: {
     label: INTENT_LABELS.unknown,
-    description:
-      "Intent was not available for this keyword, so avoid making content strategy decisions from this badge alone.",
+    description: "此关键词暂无搜索意图数据，请结合其他信息制定内容策略。",
   },
 };
 

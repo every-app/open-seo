@@ -144,15 +144,15 @@ export function DomainFilterPanel<TValues extends FilterValues>({
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine table results</p>
+          <p className="text-sm font-semibold">筛选表格结果</p>
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
+              已启用 {activeFilterCount} 项
             </span>
           ) : null}
           {meta.dirtyCount > 0 ? (
             <span className="badge badge-xs badge-warning border-0">
-              {meta.dirtyCount} unapplied
+              未应用 {meta.dirtyCount} 项
             </span>
           ) : null}
         </div>
@@ -163,7 +163,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
           disabled={activeFilterCount === 0 && !meta.isDirty}
         >
           <RotateCcw className="size-3" />
-          Clear all
+          全部清除
         </button>
       </div>
 
@@ -185,13 +185,13 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             <FilterNumberInput
               value={draftFilters[field.minKey]}
               onChange={(value) => handleValueChange(field.minKey, value)}
-              placeholder="Min"
+              placeholder="最小值"
               step={field.step}
             />
             <FilterNumberInput
               value={draftFilters[field.maxKey]}
               onChange={(value) => handleValueChange(field.maxKey, value)}
-              placeholder="Max"
+              placeholder="最大值"
               step={field.step}
             />
           </FilterRangeGroup>
@@ -204,15 +204,15 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         <div className="alert alert-warning py-2 text-xs">
           <AlertTriangle className="size-4 shrink-0" />
           <span>
-            Too many filter conditions ({meta.conditionCount} of{" "}
-            {MAX_DATAFORSEO_FILTER_CONDITIONS} max). Remove some terms or ranges
-            before applying.
+            筛选条件过多（已用 {meta.conditionCount} 项，最多{" "}
+            {MAX_DATAFORSEO_FILTER_CONDITIONS}{" "}
+            项）。请移除部分词语或数值范围后再应用。
           </span>
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-2 pt-1">
         <span className="text-xs text-base-content/50 tabular-nums">
-          {meta.conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} conditions
+          {meta.conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} 个条件
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -221,7 +221,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             onClick={cancelFilterEdits}
             disabled={!meta.isDirty}
           >
-            Cancel
+            取消
           </button>
           <button
             type="button"
@@ -230,11 +230,11 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             disabled={!meta.isDirty || meta.overLimit}
             title={
               meta.overLimit
-                ? `DataForSEO accepts at most ${MAX_DATAFORSEO_FILTER_CONDITIONS} filter conditions per request`
+                ? `DataForSEO 每次请求最多接受 ${MAX_DATAFORSEO_FILTER_CONDITIONS} 个筛选条件`
                 : undefined
             }
           >
-            Apply filters
+            应用筛选
             {meta.isDirty ? (
               <span className="badge badge-xs ml-1 border-0 bg-primary-content/20">
                 {meta.dirtyCount}

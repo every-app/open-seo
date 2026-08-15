@@ -18,11 +18,11 @@ function formatRange(
 ) {
   const start = (page - 1) * pageSize + 1;
   if (totalCount == null) {
-    return `${start.toLocaleString()}–${(start + pageSize - 1).toLocaleString()}`;
+    return `${start.toLocaleString()}-${(start + pageSize - 1).toLocaleString()}`;
   }
   if (totalCount === 0) return "0";
   const end = Math.min(totalCount, start + pageSize - 1);
-  return `${start.toLocaleString()}–${end.toLocaleString()} of ${totalCount.toLocaleString()}`;
+  return `${start.toLocaleString()}-${end.toLocaleString()} / ${totalCount.toLocaleString()}`;
 }
 
 export function TablePagination({
@@ -51,7 +51,7 @@ export function TablePagination({
 
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm text-base-content/70">
-          <span className="whitespace-nowrap">Rows per page</span>
+          <span className="whitespace-nowrap">每页行数</span>
           <select
             className="select select-bordered select-sm w-20"
             value={pageSize}
@@ -67,13 +67,13 @@ export function TablePagination({
 
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
-            Page {page.toLocaleString()}
-            {totalPages != null ? ` of ${totalPages.toLocaleString()}` : ""}
+            第 {page.toLocaleString()}
+            {totalPages != null ? ` / ${totalPages.toLocaleString()}` : ""} 页
           </span>
           <div className="flex items-center gap-1">
             <button
               type="button"
-              aria-label="Previous page"
+              aria-label="上一页"
               className="btn btn-ghost btn-sm btn-square"
               disabled={!canGoPrev || isLoading}
               onClick={() => onPageChange(page - 1)}
@@ -82,7 +82,7 @@ export function TablePagination({
             </button>
             <button
               type="button"
-              aria-label="Next page"
+              aria-label="下一页"
               className="btn btn-ghost btn-sm btn-square"
               disabled={!canGoNext || isLoading}
               onClick={() => onPageChange(page + 1)}

@@ -124,7 +124,7 @@ export function useKeywordResearchData(
     queryKey,
     queryFn: () => {
       if (!request) {
-        throw new Error("Keyword research query ran without request params");
+        throw new Error("关键词研究请求缺少必要参数");
       }
 
       return keywordResearchQueryFn(request);
@@ -153,7 +153,7 @@ export function useKeywordResearchData(
     addSearch(
       request.seedKeyword,
       displayedLocationCode,
-      LOCATIONS[displayedLocationCode] || "Unknown",
+      LOCATIONS[displayedLocationCode] || "未知",
     );
   }, [
     addSearch,
@@ -168,7 +168,7 @@ export function useKeywordResearchData(
   const rows = hasSearched ? (researchQuery.data?.rows ?? []) : [];
   const researchError =
     hasSearched && researchQuery.isError
-      ? getStandardErrorMessage(researchQuery.error, "Research failed.")
+      ? getStandardErrorMessage(researchQuery.error, "研究失败。")
       : null;
 
   return {

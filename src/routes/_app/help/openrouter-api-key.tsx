@@ -12,23 +12,21 @@ function OpenrouterApiKeyHelpPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-3">
-            <h1 className="text-2xl font-semibold">
-              Set up your OpenRouter API key
-            </h1>
+            <h1 className="text-2xl font-semibold">设置 OpenRouter API 密钥</h1>
             <p className="text-sm text-base-content/70">
-              OpenSEO needs the <code>OPENROUTER_API_KEY</code> secret before AI
-              features like SAM, the in-app SEO agent, can run. It is optional —
-              everything else in OpenSEO works without it.
+              OpenSEO 的应用内 SEO 智能体 SAM 等 AI 功能需要
+              <code className="mx-1">OPENROUTER_API_KEY</code>
+              密钥。此项为可选配置，其他功能无需该密钥即可使用。
             </p>
           </div>
         </div>
 
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-4">
-            <h2 className="card-title text-base">Steps</h2>
+            <h2 className="card-title text-base">操作步骤</h2>
             <ol className="list-decimal pl-5 text-sm space-y-3 text-base-content/80">
               <li>
-                Create an account at{" "}
+                在{" "}
                 <a
                   className="link link-primary"
                   href="https://openrouter.ai"
@@ -37,34 +35,34 @@ function OpenrouterApiKeyHelpPage() {
                 >
                   openrouter.ai
                 </a>{" "}
-                and add credits (pay-as-you-go, like DataForSEO).
+                创建账户并充值，计费方式与 DataForSEO 类似，按量付费。
               </li>
               <li>
-                Go to{" "}
+                打开{" "}
                 <a
                   className="link link-primary"
                   href={OPENROUTER_KEYS_URL}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  OpenRouter API Keys
+                  OpenRouter API 密钥页面
                 </a>{" "}
-                and click "Create API Key".
+                ，点击“Create API Key”。
               </li>
               <li>
-                Save the key as the <code>OPENROUTER_API_KEY</code> secret in
-                your environment:
+                将密钥保存为当前环境中的
+                <code className="mx-1">OPENROUTER_API_KEY</code> 密钥：
                 <ul className="list-disc pl-5 mt-2 space-y-1">
                   <li>
-                    Docker self-hosting: <code>.env</code>
+                    Docker 自托管：<code>.env</code>
                   </li>
-                  <li>Cloudflare: set it in the Workers UI (see below)</li>
+                  <li>Cloudflare：在 Workers 管理界面中设置，具体步骤见下方</li>
                   <li>
-                    Local development: <code>.env.local</code>
+                    本地开发：<code>.env.local</code>
                   </li>
                 </ul>
               </li>
-              <li>Restart OpenSEO.</li>
+              <li>重启 OpenSEO。</li>
             </ol>
           </div>
         </div>
@@ -72,32 +70,31 @@ function OpenrouterApiKeyHelpPage() {
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-2 text-sm text-base-content/75">
             <h2 className="card-title text-base">
-              Cloudflare Workers (Dashboard UI)
+              Cloudflare Workers（管理界面）
             </h2>
             <ol className="list-decimal pl-5 space-y-2 text-sm text-base-content/80">
               <li>
-                In Cloudflare, go to <code>Compute</code> -&gt;{" "}
+                在 Cloudflare 中前往 <code>Compute</code> -&gt;{" "}
                 <code>Workers &amp; Pages</code>
-                and open your OpenSEO Worker.
+                ，然后打开你的 OpenSEO Worker。
               </li>
               <li>
-                Open <code>Settings</code>.
+                打开 <code>Settings</code>。
               </li>
               <li>
-                Go to <code>Variables &amp; Secrets</code> and add a new secret
-                named
-                <code className="mx-1">OPENROUTER_API_KEY</code>.
+                前往 <code>Variables &amp; Secrets</code>，新增名为
+                <code className="mx-1">OPENROUTER_API_KEY</code>。
               </li>
-              <li>Paste your OpenRouter API key and save.</li>
+              <li>粘贴 OpenRouter API 密钥并保存。</li>
             </ol>
 
             <div className="divider my-1" />
 
-            <p>Or set the same secret from your terminal with:</p>
+            <p>也可以在终端中运行以下命令设置同一密钥：</p>
             <pre className="p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
               <code>npx wrangler secret put OPENROUTER_API_KEY</code>
             </pre>
-            <p>Paste your OpenRouter API key when prompted.</p>
+            <p>出现提示后粘贴 OpenRouter API 密钥。</p>
           </div>
         </div>
       </div>

@@ -40,7 +40,7 @@ export function DomainSearchCard({
                   <Search className="size-4 text-base-content/60" />
                   <input
                     className="grow min-w-0"
-                    placeholder="Enter a domain"
+                    placeholder="输入域名"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     aria-invalid={domainError ? true : undefined}
@@ -78,11 +78,11 @@ export function DomainSearchCard({
                   onSortChange(next);
                 }}
               >
-                <option value="rank">By Rank</option>
-                <option value="traffic">By Traffic</option>
-                <option value="volume">By Volume</option>
-                <option value="score">By Score</option>
-                <option value="cpc">By CPC</option>
+                <option value="rank">按排名</option>
+                <option value="traffic">按流量</option>
+                <option value="volume">按搜索量</option>
+                <option value="score">按难度</option>
+                <option value="cpc">按 CPC</option>
               </select>
             )}
           </controlsForm.Field>
@@ -94,7 +94,7 @@ export function DomainSearchCard({
                 className="btn btn-primary shrink-0 px-6"
                 disabled={isLoading || isSubmitting}
               >
-                {isLoading || isSubmitting ? "Loading..." : "Search"}
+                {isLoading || isSubmitting ? "加载中…" : "搜索"}
               </button>
             )}
           </controlsForm.Subscribe>
@@ -137,7 +137,7 @@ export function DomainSearchCard({
                 />
               )}
             </controlsForm.Field>
-            <span className="label-text">Include subdomains</span>
+            <span className="label-text">包含子域名</span>
           </label>
         </div>
       </div>

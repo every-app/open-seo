@@ -47,11 +47,11 @@ export function useSaveConfigMutations(input: {
       }),
     onSuccess: (result) => {
       captureClientEvent("rank_tracking:config_create");
-      toast.success("Domain added for rank tracking");
+      toast.success("域名已添加到排名追踪");
       onCreated(result.id);
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to save config"));
+      toast.error(getStandardErrorMessage(error, "配置保存失败"));
     },
   });
 
@@ -71,11 +71,11 @@ export function useSaveConfigMutations(input: {
       }),
     onSuccess: () => {
       captureClientEvent("rank_tracking:config_update");
-      toast.success("Configuration updated");
+      toast.success("配置已更新");
       onUpdated();
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to update config"));
+      toast.error(getStandardErrorMessage(error, "配置更新失败"));
     },
   });
 

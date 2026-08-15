@@ -13,25 +13,24 @@ const FEATURE_SHORT_LABELS: Record<string, string> = {
   featured_snippet: "FS",
   people_also_ask: "PAA",
   ai_overview: "AI",
-  local_pack: "Local",
+  local_pack: "本地",
   knowledge_panel: "KP",
-  video: "Video",
-  images: "Img",
-  shopping: "Shop",
-  top_stories: "News",
+  video: "视频",
+  images: "图片",
+  shopping: "购物",
+  top_stories: "新闻",
 };
 
 const FEATURE_TOOLTIPS: Record<string, string> = {
-  featured_snippet:
-    "Featured Snippet — highlighted answer box at top of results",
-  people_also_ask: "People Also Ask — expandable related questions",
-  ai_overview: "AI Overview — AI-generated summary at top of search",
-  local_pack: "Local Pack — map with local business listings",
-  knowledge_panel: "Knowledge Panel — info box about an entity",
-  video: "Video — video results shown in the SERP",
-  images: "Images — image results shown in the SERP",
-  shopping: "Shopping — product listings with prices",
-  top_stories: "Top Stories — news articles carousel",
+  featured_snippet: "精选摘要：搜索结果顶部突出显示的答案框",
+  people_also_ask: "其他用户还问了：可展开的相关问题",
+  ai_overview: "AI 摘要：搜索结果顶部由 AI 生成的摘要",
+  local_pack: "本地结果包：包含本地商家列表的地图",
+  knowledge_panel: "知识面板：实体相关信息框",
+  video: "视频：SERP 中显示的视频结果",
+  images: "图片：SERP 中显示的图片结果",
+  shopping: "购物：包含价格的商品列表",
+  top_stories: "焦点新闻：新闻文章轮播",
 };
 
 export function SerpFeatureTags({ features }: { features: string[] }) {
@@ -177,28 +176,18 @@ export function buildRankTrackingExport(
   locationName?: string | null,
 ): { headers: string[]; rows: (string | number)[][] } {
   const headers = [
-    "Keyword",
+    "关键词",
     // Exports lack the table's tooltip, so name the city inline.
     locationName
-      ? `Local volume (${formatLocationLabel(locationName, 2)})`
-      : "Volume",
+      ? `本地搜索量（${formatLocationLabel(locationName, 2)}）`
+      : "搜索量",
     "KD",
     "CPC",
     ...(showDesktop
-      ? [
-          "Desktop Position",
-          "Desktop Change",
-          "Desktop URL",
-          "Desktop SERP Features",
-        ]
+      ? ["桌面端排名", "桌面端变化", "桌面端网址", "桌面端 SERP 功能"]
       : []),
     ...(showMobile
-      ? [
-          "Mobile Position",
-          "Mobile Change",
-          "Mobile URL",
-          "Mobile SERP Features",
-        ]
+      ? ["移动端排名", "移动端变化", "移动端网址", "移动端 SERP 功能"]
       : []),
   ];
   // Emit empty cells (not "Not ranking" strings) so Sheets infers a numeric
@@ -251,7 +240,7 @@ export function exportRankTrackingCsv(
   locationName?: string | null,
 ) {
   if (sorted.length === 0) {
-    toast.error("No data to export");
+    toast.error("没有可导出的数据");
     return;
   }
   const { headers, rows } = buildRankTrackingExport(

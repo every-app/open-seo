@@ -55,12 +55,12 @@ export function RankTrackingTableToolbar({
             {
               value: "table" as const,
               icon: <Table className="size-3.5" />,
-              label: "Latest",
+              label: "最新数据",
             },
             {
               value: "history" as const,
               icon: <CalendarDays className="size-3.5" />,
-              label: "History",
+              label: "历史记录",
             },
           ]}
           value={viewMode}
@@ -71,10 +71,10 @@ export function RankTrackingTableToolbar({
       <button
         className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
         onClick={onToggleFilters}
-        title="Toggle table filters"
+        title="显示或隐藏表格筛选条件"
       >
         <SlidersHorizontal className="size-3.5" />
-        Filters
+        筛选
         {activeFilterCount > 0 && (
           <span className="badge badge-xs badge-primary border-0 text-primary-content">
             {activeFilterCount}
@@ -87,8 +87,8 @@ export function RankTrackingTableToolbar({
           <Loader2 className="size-3.5 animate-spin text-primary" />
           <span>
             {latestRun.status === "pending"
-              ? "Preparing..."
-              : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
+              ? "准备中…"
+              : `正在获取 ${latestRun.keywordsTotal || "?"} 个关键词的排名…`}{" "}
             {latestRun.keywordsChecked}/{latestRun.keywordsTotal || "?"}
           </span>
           {latestRun.keywordsTotal > 0 && (
@@ -101,7 +101,7 @@ export function RankTrackingTableToolbar({
         </div>
       ) : (
         <span className="text-sm text-base-content/60">
-          {keywordCount} keywords
+          {keywordCount} 个关键词
         </span>
       )}
 

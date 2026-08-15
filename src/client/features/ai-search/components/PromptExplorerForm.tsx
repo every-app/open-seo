@@ -72,7 +72,7 @@ export function PromptExplorerForm({
             className="block text-sm font-medium"
             htmlFor="prompt-explorer-prompt"
           >
-            Prompt
+            提示词
           </label>
           <textarea
             id="prompt-explorer-prompt"
@@ -87,7 +87,7 @@ export function PromptExplorerForm({
             autoFocus
           />
           <div className="flex items-center justify-between text-xs text-base-content/60">
-            <span>What your customers might ask AI.</span>
+            <span>客户可能向 AI 提出的问题。</span>
             <span
               className={`tabular-nums ${promptOverLimit ? "font-medium text-error" : ""}`}
             >
@@ -102,7 +102,7 @@ export function PromptExplorerForm({
               className="block text-sm font-medium"
               htmlFor="prompt-explorer-brand"
             >
-              Highlight brand (optional)
+              突出显示品牌（可选）
             </label>
             <input
               id="prompt-explorer-brand"
@@ -114,12 +114,12 @@ export function PromptExplorerForm({
               spellCheck={false}
             />
             <p className="text-xs text-base-content/60">
-              We&apos;ll flag whether each model mentions this brand.
+              系统会标记每个模型是否提及此品牌。
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <span className="block text-sm font-medium">Models</span>
+            <span className="block text-sm font-medium">模型</span>
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1.5">
               {PROMPT_EXPLORER_MODELS.map((model) => {
                 const isActive = form.models.includes(model);
@@ -151,13 +151,11 @@ export function PromptExplorerForm({
                 checked={form.webSearch}
                 onChange={(event) => onWebSearchChange(event.target.checked)}
               />
-              <span className="text-sm">
-                Allow web search (more current answers)
-              </span>
+              <span className="text-sm">允许联网搜索（回答更及时）</span>
             </label>
             <select
               id="prompt-explorer-country"
-              aria-label="Web search location"
+              aria-label="联网搜索地区"
               className="select select-bordered select-sm min-w-0 sm:max-w-xs"
               value={form.webSearchCountryCode}
               onChange={(event) =>
@@ -177,7 +175,7 @@ export function PromptExplorerForm({
             className="btn btn-primary shrink-0 px-6"
             disabled={isLoading || form.models.length === 0}
           >
-            {isLoading ? "Running…" : "Run"}
+            {isLoading ? "运行中…" : "运行"}
           </button>
         </div>
 

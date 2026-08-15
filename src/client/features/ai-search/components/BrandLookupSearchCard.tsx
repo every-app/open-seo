@@ -65,7 +65,7 @@ export function BrandLookupSearchCard({
               <Search className="size-4 text-base-content/60" />
               <input
                 type="text"
-                placeholder="Enter a brand name or domain"
+                placeholder="输入品牌名称或域名"
                 value={query}
                 maxLength={BRAND_LOOKUP_MAX_INPUT_LENGTH}
                 onChange={(event) => onQueryChange(event.target.value)}
@@ -84,14 +84,14 @@ export function BrandLookupSearchCard({
               className="btn btn-primary shrink-0 px-6"
               disabled={isLoading}
             >
-              {isLoading ? "Looking up..." : "Look up"}
+              {isLoading ? "查询中…" : "查询"}
             </button>
           </div>
 
           <div className="flex flex-col gap-1">
             <input
               type="text"
-              placeholder="Add competitors (comma-separated)"
+              placeholder="添加竞争对手（用逗号分隔）"
               value={competitors}
               onChange={(event) => onCompetitorsChange(event.target.value)}
               autoComplete="off"
@@ -99,15 +99,14 @@ export function BrandLookupSearchCard({
               className={`input input-bordered w-full ${
                 competitorsError ? "input-error" : ""
               }`}
-              aria-label="Competitors"
+              aria-label="竞争对手"
               aria-invalid={competitorsError || undefined}
               aria-describedby={
                 competitorsError ? "brand-lookup-input-error" : undefined
               }
             />
             <p className="text-xs text-base-content/60">
-              Add up to 5 competitor brands or domains to see your Share of
-              Voice.
+              最多添加 5 个竞争品牌或域名，查看 AI 声量份额。
             </p>
           </div>
         </form>
@@ -120,16 +119,16 @@ export function BrandLookupSearchCard({
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-base-content/60">
           <p className="tabular-nums">
-            Est.{" "}
+            预计{" "}
             <span className="font-medium text-base-content/80">
               ${BRAND_LOOKUP_DISPLAYED_COST_USD.toFixed(2)}
             </span>
             {hasCompetitors ? (
               <span>
                 {" "}
-                plus ~$
-                {BRAND_LOOKUP_COMPETITOR_DISPLAYED_COST_USD.toFixed(2)} to
-                compare competitors
+                ，另加约 $
+                {BRAND_LOOKUP_COMPETITOR_DISPLAYED_COST_USD.toFixed(2)}{" "}
+                用于竞争对手对比
               </span>
             ) : null}
           </p>

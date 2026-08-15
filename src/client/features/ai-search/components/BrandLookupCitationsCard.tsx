@@ -157,7 +157,7 @@ export function CitationTabsCard({
             className={`tab ${queriesActive ? "tab-active" : ""}`}
             onClick={() => setActiveTab("queries")}
           >
-            Queries
+            查询
           </button>
           <button
             type="button"
@@ -166,7 +166,7 @@ export function CitationTabsCard({
             className={`tab ${pagesActive ? "tab-active" : ""}`}
             onClick={() => setActiveTab("pages")}
           >
-            Cited sources
+            引用来源
           </button>
         </div>
 
@@ -177,7 +177,7 @@ export function CitationTabsCard({
             className={`btn btn-ghost btn-sm gap-1.5 ${canExport ? "" : "btn-disabled"}`}
           >
             <Download className="size-3.5" />
-            Export
+            导出
             <ChevronDown className="size-3.5" />
           </div>
           <ul
@@ -191,7 +191,7 @@ export function CitationTabsCard({
                 disabled={!canExport}
               >
                 <Sheet className="size-4" />
-                Google Sheets
+                Google 表格
               </button>
             </li>
             <li>
@@ -213,10 +213,10 @@ export function CitationTabsCard({
           type="button"
           className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
           onClick={() => filters.setShowFilters((current) => !current)}
-          title="Toggle table filters"
+          title="显示或隐藏表格筛选条件"
         >
           <SlidersHorizontal className="size-3.5" />
-          Filters
+          筛选
           {currentFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {currentFilterCount}
@@ -229,19 +229,19 @@ export function CitationTabsCard({
         <span>
           {activeTab === "pages" ? (
             <>
-              Pages cited alongside{" "}
+              同时被引用的页面{" "}
               <strong className="text-base-content/80">
                 {result.resolvedTarget}
               </strong>{" "}
-              in AI answers. Prompt examples come from the fetched sample.
+              出现在 AI 回答中。提示词示例来自已获取的样本。
             </>
           ) : (
             <>
-              Fetched sample of prompts whose AI answer cited{" "}
+              已获取的提示词样本，其 AI 回答引用了{" "}
               <strong className="text-base-content/80">
                 {result.resolvedTarget}
               </strong>{" "}
-              in its text or sources.
+              ，位置可能在正文或来源中。
             </>
           )}
         </span>

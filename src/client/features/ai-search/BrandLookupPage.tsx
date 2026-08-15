@@ -36,18 +36,18 @@ type Props = {
 const BRAND_LOOKUP_BULLETS = [
   {
     icon: TrendingUp,
-    title: "Track AI visibility",
-    body: "See estimated counts for ChatGPT and Google AI Overview answers that cite your brand, and watch the trend month over month.",
+    title: "追踪 AI 可见性",
+    body: "查看 ChatGPT 和 Google AI 摘要中引用您品牌的预估次数，并观察月度趋势。",
   },
   {
     icon: Quote,
-    title: "See the prompts",
-    body: "View sample user questions where LLMs reference your brand or domain.",
+    title: "查看相关提示词",
+    body: "查看大模型提及您品牌或域名的用户问题样本。",
   },
   {
     icon: BarChart3,
-    title: "Map the competition",
-    body: "Spot the pages LLMs cite alongside you so you know who's competing for attention in AI answers.",
+    title: "了解竞争格局",
+    body: "找出大模型与您同时引用的页面，了解 AI 回答中的注意力竞争者。",
   },
 ];
 
@@ -138,14 +138,14 @@ function BrandLookupPageInner({
     if (trimmed.length === 0) {
       setValidationError({
         field: "query",
-        message: "Enter a brand name or domain",
+        message: "输入品牌名称或域名",
       });
       return;
     }
     if (trimmed.length > BRAND_LOOKUP_MAX_INPUT_LENGTH) {
       setValidationError({
         field: "query",
-        message: `Keep it under ${BRAND_LOOKUP_MAX_INPUT_LENGTH} characters`,
+        message: `最多输入 ${BRAND_LOOKUP_MAX_INPUT_LENGTH} 个字符`,
       });
       return;
     }
@@ -160,7 +160,7 @@ function BrandLookupPageInner({
     if (tooLong) {
       setValidationError({
         field: "competitors",
-        message: `Keep each competitor under ${BRAND_LOOKUP_MAX_INPUT_LENGTH} characters`,
+        message: `每个竞争对手最多输入 ${BRAND_LOOKUP_MAX_INPUT_LENGTH} 个字符`,
       });
       return;
     }
@@ -172,7 +172,7 @@ function BrandLookupPageInner({
     if (matchesTarget) {
       setValidationError({
         field: "competitors",
-        message: `"${matchesTarget}" matches the brand you're looking up — remove it from competitors`,
+        message: `“${matchesTarget}”与正在查询的品牌相同，请将其从竞争对手中移除`,
       });
       return;
     }
@@ -202,16 +202,16 @@ function BrandLookupPageInner({
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Brand Lookup</h1>
+          <h1 className="text-2xl font-semibold">品牌查询</h1>
           <p className="text-sm text-base-content/70">
-            See how AI search cites any brand name or domain.
+            查看 AI 搜索如何引用任意品牌名称或域名。
           </p>
         </div>
 
         {planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
-            feature="Brand Lookup"
-            description="See how ChatGPT and Google AI Overview cite any brand or domain — total mentions, sample prompts where it appears, and the pages cited alongside it."
+            feature="品牌查询"
+            description="查看 ChatGPT 和 Google AI 摘要对品牌或域名的引用情况，包括提及总量、相关提示词样本，以及同时被引用的页面。"
             bullets={BRAND_LOOKUP_BULLETS}
           />
         ) : (
@@ -256,7 +256,7 @@ function BrandLookupPageInner({
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
                   >
                     <ArrowLeft className="size-4" />
-                    Recent searches
+                    最近搜索
                   </Link>
                 </div>
                 <BrandLookupResults result={resultData} projectId={projectId} />

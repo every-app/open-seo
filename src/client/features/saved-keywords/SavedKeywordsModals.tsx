@@ -24,11 +24,10 @@ export function DeleteSavedKeywordsModal({
   return (
     <Modal onClose={onClose} labelledBy="delete-keywords-title">
       <h3 id="delete-keywords-title" className="text-lg font-semibold">
-        Delete keywords?
+        删除关键词？
       </h3>
       <p className="text-sm text-base-content/70">
-        This will permanently delete {selectedCount} saved keyword
-        {selectedCount !== 1 ? "s" : ""}.
+        此操作将永久删除 {selectedCount} 个已保存关键词。
       </p>
       <div className="flex justify-end gap-2">
         <button
@@ -36,7 +35,7 @@ export function DeleteSavedKeywordsModal({
           className="btn btn-ghost btn-sm"
           onClick={onClose}
         >
-          Cancel
+          取消
         </button>
         <button
           type="button"
@@ -45,8 +44,7 @@ export function DeleteSavedKeywordsModal({
           disabled={isPending}
         >
           {isPending ? <Loader2 className="size-3 animate-spin" /> : null}
-          Delete {selectedCount} keyword
-          {selectedCount !== 1 ? "s" : ""}
+          删除 {selectedCount} 个关键词
         </button>
       </div>
     </Modal>

@@ -15,16 +15,14 @@ import {
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 const HEADER_TOOLTIPS: Record<string, string> = {
-  keyword: "The search term being tracked in Google",
-  volume: "Estimated monthly search volume from Google",
-  kd: "Keyword difficulty score (0-100) — higher means harder to rank",
-  cpc: "Average cost per click in Google Ads (USD)",
-  desktopPosition:
-    "Current Google ranking position, showing change from the comparison period",
-  mobilePosition:
-    "Current Google ranking position, showing change from the comparison period",
-  url: "The page on your site that ranks for this keyword",
-  serp: "Special result features appearing on the search results page (e.g. AI Overview, People Also Ask)",
+  keyword: "在 Google 中追踪的搜索词",
+  volume: "Google 预估月搜索量",
+  kd: "关键词难度分数（0 到 100），数值越高表示越难获得排名",
+  cpc: "Google Ads 平均单次点击费用（美元）",
+  desktopPosition: "当前 Google 排名及相较对比周期的变化",
+  mobilePosition: "当前 Google 排名及相较对比周期的变化",
+  url: "网站中获得此关键词排名的页面",
+  serp: "搜索结果页中的特殊功能，例如 AI 摘要和“其他用户还问了”",
 };
 
 export function SortableHeader({
@@ -48,7 +46,7 @@ export function SortableHeader({
       className="inline-flex items-center gap-1 text-xs uppercase tracking-wide font-medium text-base-content/60 transition-colors hover:text-base-content"
       onClick={column.getToggleSortingHandler()}
       title={tooltip ?? HEADER_TOOLTIPS[id]}
-      aria-label={`Sort by ${label}`}
+      aria-label={`按${label}排序`}
       aria-pressed={!!sorted}
     >
       {label}
@@ -71,11 +69,11 @@ function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label={locationLabel ? "Local volume" : "Volume"}
+        label={locationLabel ? "本地搜索量" : "搜索量"}
         id="volume"
         tooltip={
           locationLabel
-            ? `Estimated monthly searches in ${locationLabel} from Google Ads`
+            ? `Google Ads 预估的${locationLabel}月搜索量`
             : undefined
         }
       />
@@ -119,14 +117,14 @@ function makeKeywordColumn(
     id: "keyword",
     accessorKey: "keyword",
     header: ({ column }) => (
-      <SortableHeader column={column} label="Keyword" id="keyword" />
+      <SortableHeader column={column} label="关键词" id="keyword" />
     ),
     cell: ({ row }) => (
       <button
         type="button"
         className="font-medium text-left link link-hover decoration-dotted underline-offset-2"
         onClick={() => onKeywordClick(row.original)}
-        title="View position history"
+        title="查看排名历史"
       >
         {row.original.keyword}
       </button>
@@ -143,7 +141,7 @@ function makeDeviceColumn(
     id,
     accessorFn: (row) => row[device].position ?? undefined,
     header: ({ column }) => (
-      <SortableHeader column={column} label="Position" id={id} />
+      <SortableHeader column={column} label="排名" id={id} />
     ),
     size: 120,
     maxSize: 140,
@@ -164,7 +162,7 @@ function makeUrlColumn(
         className="text-xs uppercase tracking-wide font-medium text-base-content/60 cursor-help"
         title={HEADER_TOOLTIPS.url}
       >
-        URL
+        网址
       </span>
     ),
     size: 240,
@@ -185,7 +183,7 @@ function makeSerpColumn(
         className="text-xs uppercase tracking-wide font-medium text-base-content/60 cursor-help"
         title={HEADER_TOOLTIPS.serp}
       >
-        SERP Features
+        SERP 功能
       </span>
     ),
     cell: ({ row }) => {

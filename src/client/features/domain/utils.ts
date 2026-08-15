@@ -91,7 +91,7 @@ export function formatMetric(
   value: number | null | undefined,
   hasData: boolean | undefined,
 ) {
-  if (!hasData) return "Not enough data";
+  if (!hasData) return "数据不足";
   return formatRounded(value);
 }
 
@@ -99,7 +99,7 @@ type ExportTable = { headers: string[]; rows: (string | number | null)[][] };
 
 export function keywordsToTable(rows: KeywordRow[]): ExportTable {
   return {
-    headers: ["Keyword", "Rank", "Volume", "Traffic", "CPC", "URL", "Score"],
+    headers: ["关键词", "排名", "搜索量", "流量", "CPC", "网址", "难度"],
     rows: rows.map((row) => [
       row.keyword,
       row.position,
@@ -114,7 +114,7 @@ export function keywordsToTable(rows: KeywordRow[]): ExportTable {
 
 export function pagesToTable(rows: PageRow[]): ExportTable {
   return {
-    headers: ["Page", "Organic Traffic", "Keywords"],
+    headers: ["页面", "自然搜索流量", "关键词"],
     rows: rows.map((row) => [row.page, row.organicTraffic, row.keywords]),
   };
 }

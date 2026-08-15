@@ -18,10 +18,10 @@ import {
 } from "./RankTrackingTrendChart";
 
 const BUCKETS = [
-  { key: "top3", label: "Top 3", color: "#16a34a" },
+  { key: "top3", label: "前 3 名", color: "#16a34a" },
   { key: "top4to10", label: "4–10", color: "#2563eb" },
   { key: "top11to20", label: "11–20", color: "#f59e0b" },
-  { key: "notRanking", label: "Not in top 20", color: "#6b7280" },
+  { key: "notRanking", label: "未进入前 20 名", color: "#6b7280" },
 ] as const;
 
 /** Narrowed recharts tooltip payload entry (typed `any` upstream). */
@@ -67,7 +67,7 @@ export function RankTrackingOverview({
     <div className="px-4 pt-4 pb-4">
       <div className="rounded-lg border border-base-300 p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium">Position distribution</span>
+          <span className="text-sm font-medium">排名分布</span>
           <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
         </div>
 
@@ -93,8 +93,8 @@ export function RankTrackingOverview({
         ) : chartData.length <= 1 ? (
           <div className="rounded-lg border border-dashed border-base-300 p-8 text-center text-xs text-base-content/60">
             {chartData.length === 0
-              ? "No history yet — run a check to start tracking positions over time."
-              : "Only 1 check so far — the trend fills in after the next check."}
+              ? "暂无历史记录。运行检查后即可持续追踪排名。"
+              : "目前只有 1 次检查，下次检查后将显示趋势。"}
           </div>
         ) : (
           <div

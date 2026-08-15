@@ -20,44 +20,44 @@ export function PagesFilterBar({
     <FilterPanel activeFilterCount={activeFilterCount} onReset={onReset}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
         <TextFilter
-          label="Search"
+          label="搜索"
           value={filters.query}
-          placeholder="URL, title, meta"
+          placeholder="网址、标题、Meta"
           onChange={(query) => onChange({ ...filters, query })}
         />
         <SelectFilter
-          label="Status"
+          label="状态"
           value={filters.status}
           onChange={(status) => onChange({ ...filters, status })}
           options={[
-            ["all", "All"],
+            ["all", "全部"],
             ["ok", "2xx"],
             ["redirect", "3xx"],
             ["error", "4xx/5xx"],
-            ["missing", "Missing"],
+            ["missing", "缺失"],
           ]}
         />
         <SelectFilter
-          label="Alt text"
+          label="替代文本"
           value={filters.missingAlt}
           onChange={(missingAlt) => onChange({ ...filters, missingAlt })}
           options={[
-            ["all", "All"],
-            ["yes", "Missing alt"],
-            ["no", "No missing alt"],
+            ["all", "全部"],
+            ["yes", "缺少替代文本"],
+            ["no", "替代文本完整"],
           ]}
         />
       </div>
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         <RangeFilter
-          label="Words"
+          label="字数"
           min={filters.minWords}
           max={filters.maxWords}
           onMinChange={(minWords) => onChange({ ...filters, minWords })}
           onMaxChange={(maxWords) => onChange({ ...filters, maxWords })}
         />
         <RangeFilter
-          label="Speed ms"
+          label="速度（毫秒）"
           min={filters.minResponseMs}
           max={filters.maxResponseMs}
           onMinChange={(minResponseMs) =>
@@ -87,33 +87,33 @@ export function PerformanceFilterBar({
     <FilterPanel activeFilterCount={activeFilterCount} onReset={onReset}>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
         <TextFilter
-          label="Search"
+          label="搜索"
           value={filters.query}
-          placeholder="URL"
+          placeholder="网址"
           onChange={(query) => onChange({ ...filters, query })}
         />
         <SelectFilter
-          label="Device"
+          label="设备"
           value={filters.device}
           onChange={(device) => onChange({ ...filters, device })}
           options={[
-            ["all", "All"],
-            ["desktop", "Desktop"],
-            ["mobile", "Mobile"],
+            ["all", "全部"],
+            ["desktop", "桌面端"],
+            ["mobile", "移动端"],
           ]}
         />
         <SelectFilter
-          label="Status"
+          label="状态"
           value={filters.status}
           onChange={(status) => onChange({ ...filters, status })}
           options={[
-            ["all", "All"],
+            ["all", "全部"],
             ["ok", "OK"],
-            ["failed", "Failed"],
+            ["failed", "失败"],
           ]}
         />
         <TextFilter
-          label="Max LCP s"
+          label="最大 LCP（秒）"
           value={filters.maxLcpSeconds}
           placeholder="2.5"
           type="number"
@@ -122,7 +122,7 @@ export function PerformanceFilterBar({
       </div>
       <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
         <RangeFilter
-          label="Perf"
+          label="性能"
           min={filters.minPerf}
           max={filters.maxPerf}
           onMinChange={(minPerf) => onChange({ ...filters, minPerf })}
@@ -162,11 +162,11 @@ export function TableFilterToggle({
       <button
         className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
         onClick={onToggle}
-        title="Toggle filters"
+        title="显示或隐藏筛选条件"
         type="button"
       >
         <SlidersHorizontal className="size-3.5" />
-        Filters
+        筛选
         {activeFilterCount > 0 ? (
           <span className="badge badge-xs badge-primary border-0 text-primary-content">
             {activeFilterCount}
@@ -174,7 +174,7 @@ export function TableFilterToggle({
         ) : null}
       </button>
       <span className="text-sm tabular-nums text-base-content/60">
-        {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
+        {resultCount.toLocaleString()} / {totalCount.toLocaleString()}
       </span>
     </div>
   );
@@ -203,10 +203,10 @@ function FilterPanel({
     <div className="space-y-3 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine results</p>
+          <p className="text-sm font-semibold">筛选结果</p>
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
+              已启用 {activeFilterCount} 项
             </span>
           ) : null}
         </div>
@@ -217,7 +217,7 @@ function FilterPanel({
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
-          Clear all
+          全部清除
         </button>
       </div>
       {children}
@@ -277,14 +277,14 @@ function RangeFilter({
           className="input input-bordered input-xs bg-base-100"
           type="number"
           value={min}
-          placeholder="Min"
+          placeholder="最小值"
           onChange={(event) => onMinChange(event.target.value)}
         />
         <input
           className="input input-bordered input-xs bg-base-100"
           type="number"
           value={max}
-          placeholder="Max"
+          placeholder="最大值"
           onChange={(event) => onMaxChange(event.target.value)}
         />
       </div>

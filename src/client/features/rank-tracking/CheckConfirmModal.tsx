@@ -42,12 +42,10 @@ export function CheckConfirmModal({
     >
       <div>
         <h3 id="rank-check-confirm-title" className="text-lg font-semibold">
-          Check {keywordCount} keyword
-          {keywordCount !== 1 ? "s" : ""}
+          检查 {keywordCount} 个关键词
         </h3>
         <p className="text-sm text-base-content/60 mt-1">
-          {keywordCount} keywords &times; {dc} device
-          {dc !== 1 ? "s" : ""} = {totalChecks} SERP checks
+          {keywordCount} 个关键词 × {dc} 种设备 = {totalChecks} 次 SERP 检查
         </p>
       </div>
 
@@ -60,9 +58,9 @@ export function CheckConfirmModal({
           <Zap className="size-5 text-primary" />
         </div>
         <div className="flex-1">
-          <p className="font-medium">Run Now</p>
+          <p className="font-medium">立即运行</p>
           <p className="text-xs text-base-content/60">
-            Results in ~
+            预计出结果时间约为
             {liveTime < 60 ? `${liveTime}s` : `${Math.ceil(liveTime / 60)} min`}
           </p>
         </div>
@@ -73,7 +71,7 @@ export function CheckConfirmModal({
       </button>
 
       <button className="btn btn-ghost btn-sm self-center" onClick={onCancel}>
-        Cancel
+        取消
       </button>
     </Modal>
   );

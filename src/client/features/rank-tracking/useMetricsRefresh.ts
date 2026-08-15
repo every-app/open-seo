@@ -13,10 +13,10 @@ export function useMetricsRefresh(projectId: string, configId: string) {
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingResults", projectId, configId],
       });
-      toast.success(`Metrics updated for ${result.updated} keywords`);
+      toast.success(`已更新 ${result.updated} 个关键词的指标`);
     },
     onError: () => {
-      toast.error("Failed to refresh keyword metrics");
+      toast.error("关键词指标刷新失败");
     },
   });
   return { refresh: mutation.mutate, isRefreshing: mutation.isPending };

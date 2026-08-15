@@ -34,7 +34,7 @@ export function saveSelectedKeywords({
   locationCode?: number;
 }) {
   if (selectedKeywords.size === 0) {
-    toast.error("Select at least one keyword first");
+    toast.error("请先选择至少一个关键词");
     return;
   }
 
@@ -59,10 +59,10 @@ export function saveSelectedKeywords({
           source_feature: "domain_overview",
           keyword_count: selectedKeywords.size,
         });
-        toast.success(`Saved ${selectedKeywords.size} keywords`);
+        toast.success(`已保存 ${selectedKeywords.size} 个关键词`);
       },
       onError: (error: unknown) => {
-        toast.error(getStandardErrorMessage(error, "Save failed."));
+        toast.error(getStandardErrorMessage(error, "保存失败。"));
       },
     },
   );

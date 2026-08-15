@@ -38,9 +38,9 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Keyword"
+        label="关键词"
         id="keyword"
-        tooltip="The search term this domain ranks for"
+        tooltip="此域名获得排名的搜索词"
       />
     ),
     cell: ({ getValue }) => (
@@ -54,9 +54,9 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Position"
+        label="排名"
         id="position"
-        tooltip="Current Google ranking position"
+        tooltip="当前 Google 排名"
       />
     ),
     cell: ({ getValue }) => {
@@ -79,9 +79,9 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Volume"
+        label="搜索量"
         id="searchVolume"
-        tooltip="Monthly search volume"
+        tooltip="月搜索量"
       />
     ),
     cell: ({ getValue }) => {
@@ -104,9 +104,9 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Traffic"
+        label="流量"
         id="traffic"
-        tooltip="Estimated monthly organic traffic"
+        tooltip="预估每月自然搜索流量"
       />
     ),
     cell: ({ getValue }) => {
@@ -210,11 +210,11 @@ export function KeywordSuggestionStep({
     mutationFn: (keywords: string[]) =>
       addTrackingKeywords({ data: { projectId, configId, keywords } }),
     onSuccess: (result) => {
-      toast.success(`Added ${result.added} keywords for tracking`);
+      toast.success(`已添加 ${result.added} 个追踪关键词`);
       onDone(configId);
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to add keywords"));
+      toast.error(getStandardErrorMessage(error, "关键词添加失败"));
     },
   });
 
@@ -241,14 +241,13 @@ export function KeywordSuggestionStep({
   if (!labsSupported) {
     return (
       <>
-        {sectionHeader("Add keywords manually")}
+        {sectionHeader("手动添加关键词")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <p className="text-xs text-base-content/50">
-            Ranked-keyword suggestions aren't available for this country.
-            Continue and add the keywords you want to track manually.
+            此国家或地区暂无排名关键词建议。继续后可手动添加需要追踪的关键词。
           </p>
           <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
-            Continue
+            继续
           </button>
         </div>
       </>
@@ -259,12 +258,10 @@ export function KeywordSuggestionStep({
   if (suggestionsQuery.isLoading) {
     return (
       <>
-        {sectionHeader("Finding your top keywords...")}
+        {sectionHeader("正在查找排名靠前的关键词…")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-xs text-base-content/50">
-            This usually takes a few seconds
-          </p>
+          <p className="text-xs text-base-content/50">通常只需几秒钟</p>
         </div>
       </>
     );
@@ -274,15 +271,15 @@ export function KeywordSuggestionStep({
   if (suggestionsQuery.isError) {
     return (
       <>
-        {sectionHeader("Couldn't fetch keywords")}
+        {sectionHeader("无法获取关键词")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <AlertCircle className="size-8 text-error" />
           <p className="text-xs text-base-content/50">
-            You can skip this step and add keywords manually later.
+            可跳过此步骤，稍后再手动添加关键词。
           </p>
           <div className="flex gap-2 mt-2">
             <button className="btn btn-primary btn-sm" onClick={onClose}>
-              Skip
+              跳过
             </button>
           </div>
         </div>
@@ -294,14 +291,13 @@ export function KeywordSuggestionStep({
   if (data.length === 0) {
     return (
       <>
-        {sectionHeader("No rankings found")}
+        {sectionHeader("未找到排名数据")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <p className="text-xs text-base-content/50">
-            We couldn't find any keywords {domain} currently ranks for. You can
-            add keywords manually.
+            未找到 {domain} 当前有排名的关键词。您可以手动添加关键词。
           </p>
           <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
-            Skip
+            跳过
           </button>
         </div>
       </>
@@ -311,10 +307,10 @@ export function KeywordSuggestionStep({
   // Data loaded
   return (
     <div className="flex flex-col gap-3">
-      {sectionHeader("Choose keywords to track")}
+      {sectionHeader("选择要追踪的关键词")}
       <div className="flex items-center justify-between">
         <p className="text-sm text-base-content/60">
-          We found {data.length} keywords {domain} ranks for.
+          已找到 {data.length} 个 {domain} 有排名的关键词。
         </p>
       </div>
 
@@ -337,11 +333,11 @@ export function KeywordSuggestionStep({
 
       <div className="flex items-center justify-between gap-3 pt-1">
         <p className="text-xs text-base-content/60">
-          {selectedCount} of {data.length} selected
+          已选择 {selectedCount} / {data.length} 个
         </p>
         <div className="flex items-center gap-2">
           <button className="btn btn-ghost btn-sm" onClick={onClose}>
-            Skip
+            跳过
           </button>
           <button
             type="button"
@@ -352,7 +348,7 @@ export function KeywordSuggestionStep({
             {addMutation.isPending && (
               <Loader2 className="size-3.5 animate-spin" />
             )}
-            Save Keyword{selectedCount !== 1 ? "s" : ""}
+            保存关键词
           </button>
         </div>
       </div>

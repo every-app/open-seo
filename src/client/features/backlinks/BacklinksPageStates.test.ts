@@ -7,13 +7,13 @@ describe("BacklinksErrorState", () => {
   it("renders a visible retry state", () => {
     const markup = renderToStaticMarkup(
       createElement(BacklinksErrorState, {
-        errorMessage: "Could not load backlinks data.",
+        errorMessage: "无法加载反向链接数据。",
         onRetry: vi.fn(),
       }),
     );
 
-    expect(markup).toContain("Could not load backlinks");
-    expect(markup).toContain("Could not load backlinks data.");
-    expect(markup).toContain("Retry");
+    expect(markup).toContain("无法加载反向链接");
+    expect(markup).toContain("无法加载反向链接数据。");
+    expect(markup).toContain("重试");
   });
 });

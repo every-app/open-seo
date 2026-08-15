@@ -25,7 +25,7 @@ export function ExportToSheetsButton({
   rows,
   feature,
   disabled,
-  label = "Export to Sheets",
+  label = "导出到 Google 表格",
   iconOnly,
   className,
 }: Props) {
@@ -47,8 +47,8 @@ export function ExportToSheetsButton({
       className={`btn btn-ghost btn-xs gap-1 ${className ?? ""}`}
       onClick={handleClick}
       disabled={disabled || rows.length === 0 || busy}
-      title="Copy table and open a new Google Sheet"
-      aria-label={iconOnly ? "Export to Sheets" : undefined}
+      title="复制表格并打开新的 Google 表格"
+      aria-label={iconOnly ? "导出到 Google 表格" : undefined}
     >
       <Sheet className="size-3.5" />
       {iconOnly ? null : label}

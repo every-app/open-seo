@@ -45,7 +45,7 @@ function getBacklinksErrorMessage(
 ): string | null {
   if (!error) return null;
   if (getErrorCode(error) === "VALIDATION_ERROR") {
-    return "Enter a valid domain or page URL.";
+    return "请输入有效的域名或页面网址。";
   }
 
   return getStandardErrorMessage(error, fallback);
@@ -198,7 +198,7 @@ export function useBacklinksPageData({
 
   const overviewErrorMessage = getBacklinksErrorMessage(
     overviewQuery.error,
-    "Could not load backlinks data.",
+    "无法加载反向链接数据。",
   );
   const activeTabQuery =
     tab === "backlinks"
@@ -208,7 +208,7 @@ export function useBacklinksPageData({
         : topPagesQuery;
   const activeTabErrorMessage = getBacklinksErrorMessage(
     activeTabQuery.error,
-    "Could not load this tab.",
+    "无法加载此标签页。",
   );
 
   return {

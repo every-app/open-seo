@@ -13,12 +13,12 @@ import type {
 import type { KeywordResearchControllerInput } from "./useKeywordResearchController";
 
 export const KEYWORD_RESEARCH_HEADERS = [
-  "Keyword",
-  "Volume",
+  "关键词",
+  "搜索量",
   "CPC",
-  "Competition",
-  "Score",
-  "Intent",
+  "竞争度",
+  "难度",
+  "搜索意图",
 ];
 
 export function keywordResearchExportRow(row: KeywordResearchRow): CsvValue[] {
@@ -102,7 +102,7 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
 
   const handleSaveKeywords = () => {
     if (selectedRows.size === 0) {
-      toast.error("Select at least one keyword first");
+      toast.error("请先选择至少一个关键词");
       return;
     }
     setShowSaveDialog(true);
@@ -134,11 +134,11 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
             source_feature: "keyword_research",
             keyword_count: selectedRows.size,
           });
-          toast.success(`Saved ${selectedRows.size} keywords`);
+          toast.success(`已保存 ${selectedRows.size} 个关键词`);
           setShowSaveDialog(false);
         },
         onError: (error: unknown) => {
-          toast.error(getStandardErrorMessage(error, "Save failed."));
+          toast.error(getStandardErrorMessage(error, "保存失败。"));
         },
       },
     );
@@ -151,7 +151,7 @@ export function useSaveAndExportActions(params: SaveExportActionParams) {
 
   const exportCsv = () => {
     if (sheetsExportRows.length === 0) {
-      toast.error("No data to export");
+      toast.error("没有可导出的数据");
       return;
     }
     downloadKeywordResearchCsv(sheetsExportRows);

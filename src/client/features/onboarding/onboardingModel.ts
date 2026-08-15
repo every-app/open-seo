@@ -50,6 +50,28 @@ export const SOURCE_OPTIONS_HIDDEN_ON_MOBILE = [
   "AI (Claude, ChatGPT, etc)",
 ] as const;
 
+const ONBOARDING_OPTION_LABELS: Record<string, string> = {
+  "AI workflows with Claude or Codex (MCP)":
+    "使用 Claude 或 Codex 的 AI 工作流（MCP）",
+  "Keyword research": "关键词研究",
+  "Competitor research": "竞品研究",
+  "Backlink analysis": "反向链接分析",
+  "Site audits": "站点审计",
+  "Rank tracking": "排名追踪",
+  Other: "其他",
+  "My own startup or business": "自己的创业项目或企业",
+  "My clients": "我的客户",
+  "My employer's website": "任职公司的官网",
+  "My own side project": "自己的副业项目",
+  "I'm exploring before choosing a project": "先体验，再选择具体项目",
+  "AI (Claude, ChatGPT, etc)": "AI（Claude、ChatGPT 等）",
+  "Friend or colleague": "朋友或同事",
+};
+
+export function getOnboardingOptionLabel(value: string): string {
+  return ONBOARDING_OPTION_LABELS[value] ?? value;
+}
+
 /** In-progress form state. Step is tracked separately in the URL. */
 export type OnboardingAnswers = {
   selectedInterests: string[];

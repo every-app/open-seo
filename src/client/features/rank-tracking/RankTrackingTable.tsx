@@ -138,12 +138,10 @@ export function RankTrackingTable({
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingCostEstimate", projectId, configId],
       });
-      toast.success(
-        `${result.removed} keyword${result.removed !== 1 ? "s" : ""} removed`,
-      );
+      toast.success(`已移除 ${result.removed} 个关键词`);
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to remove keywords"));
+      toast.error(getStandardErrorMessage(error, "关键词移除失败"));
     },
   });
 
@@ -159,8 +157,8 @@ export function RankTrackingTable({
     return (
       <div className="rounded-xl border border-dashed border-base-300 p-10 text-center text-sm text-base-content/55">
         {totalCount === 0
-          ? 'No rank data yet. Click "Check Now" to run your first check.'
-          : "No keywords match your search."}
+          ? "暂无排名数据。点击“立即检查”运行首次检查。"
+          : "没有关键词符合搜索条件。"}
       </div>
     );
   }
@@ -177,17 +175,17 @@ export function RankTrackingTable({
               onClick={() => setShowConfirm(true)}
               variant="danger"
             >
-              Remove
+              移除
             </TableBulkActionButton>
             <TableBulkExportMenu
               actions={[
                 {
-                  label: "Export to Sheets",
+                  label: "导出到 Google 表格",
                   icon: <Sheet className="size-4" />,
                   onClick: exportSelectionToSheets,
                 },
                 {
-                  label: "Export CSV",
+                  label: "导出 CSV",
                   icon: <FileDown className="size-4" />,
                   onClick: exportSelectionCsv,
                 },
@@ -204,19 +202,18 @@ export function RankTrackingTable({
           labelledBy="remove-keywords-title"
         >
           <h3 id="remove-keywords-title" className="text-lg font-semibold">
-            Remove keywords?
+            移除关键词？
           </h3>
           <p className="text-sm text-base-content/70">
-            This will stop tracking {selectedCount} keyword
-            {selectedCount !== 1 ? "s" : ""}. Historical ranking data is
-            preserved but won't appear in the table.
+            此操作将停止追踪 {selectedCount}{" "}
+            个关键词。历史排名数据会保留，但不会继续显示在表格中。
           </p>
           <div className="flex justify-end gap-2">
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setShowConfirm(false)}
             >
-              Cancel
+              取消
             </button>
             <button
               className="btn btn-error btn-sm gap-1"
@@ -228,8 +225,7 @@ export function RankTrackingTable({
               {removeMutation.isPending && (
                 <Loader2 className="size-3 animate-spin" />
               )}
-              Remove {selectedCount} keyword
-              {selectedCount !== 1 ? "s" : ""}
+              移除 {selectedCount} 个关键词
             </button>
           </div>
         </Modal>
@@ -250,7 +246,7 @@ export function RankTrackingTable({
 
       <AppDataTable table={table} getCellClassName={() => "align-top"} />
       <p className="text-xs text-base-content/60 pt-2">
-        {rows.length} of {totalCount} keywords
+        当前显示 {rows.length} / {totalCount} 个关键词
       </p>
     </>
   );

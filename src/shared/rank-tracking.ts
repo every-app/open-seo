@@ -227,17 +227,17 @@ export function computeNextCheckAt(
 // ---------------------------------------------------------------------------
 
 export function devicesLabel(devices: RankTrackingConfig["devices"]): string {
-  if (devices === "both") return "Desktop + Mobile";
-  return devices === "desktop" ? "Desktop" : "Mobile";
+  if (devices === "both") return "桌面端和移动端";
+  return devices === "desktop" ? "桌面端" : "移动端";
 }
 
 export function scheduleLabel(
   interval: RankTrackingConfig["scheduleInterval"],
 ): string {
-  if (interval === "daily") return "Daily";
-  if (interval === "weekly") return "Weekly";
-  if (interval === "monthly") return "Monthly";
-  return "Manual";
+  if (interval === "daily") return "每天";
+  if (interval === "weekly") return "每周";
+  if (interval === "monthly") return "每月";
+  return "手动";
 }
 
 export function devicesCount(devices: RankTrackingConfig["devices"]): number {

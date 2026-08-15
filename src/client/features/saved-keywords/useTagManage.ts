@@ -40,9 +40,9 @@ export function useTagManage(projectId: string) {
         },
       });
       await invalidate();
-      toast.success("Tag updated");
+      toast.success("标签已更新");
     } catch (error) {
-      toast.error(getStandardErrorMessage(error, "Could not update tag"));
+      toast.error(getStandardErrorMessage(error, "标签更新失败"));
     } finally {
       markBusy(input.tagId, false);
     }
@@ -53,13 +53,13 @@ export function useTagManage(projectId: string) {
     try {
       await deleteSavedKeywordTag({ data: { projectId, tagId } });
       await invalidate();
-      toast.success("Tag deleted");
+      toast.success("标签已删除");
       return true;
     } catch (error) {
       toast.error(
         getStandardErrorMessage(
           error,
-          "Could not delete tag. Detach it from all keywords and try again.",
+          "无法删除标签。请先从所有关键词中移除该标签，然后重试。",
         ),
       );
       return false;

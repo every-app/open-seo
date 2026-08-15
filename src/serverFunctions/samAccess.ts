@@ -7,7 +7,7 @@ import {
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
 const OPENROUTER_KEY_MISSING_MESSAGE =
-  "OPENROUTER_API_KEY is not set for this deployment yet. Add it to your environment, restart OpenSEO, then confirm here.";
+  "当前部署尚未设置 OPENROUTER_API_KEY。请将其添加到环境变量，重启 OpenSEO 后在此确认。";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 

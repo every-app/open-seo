@@ -114,10 +114,10 @@ export function SamChat({
         <Wrench className="size-6" />
       </div>
       <div className="space-y-1">
-        <p className="text-lg font-medium">What should we work on?</p>
+        <p className="text-lg font-medium">今天想处理什么？</p>
         <p className="max-w-sm text-sm text-base-content/60">
-          SAM is your in-app SEO agent with access to every OpenSEO research
-          tool. Start a chat to get going.
+          SAM 是你的应用内 SEO 智能体，可以调用 OpenSEO
+          的全部研究工具。创建对话即可开始。
         </p>
       </div>
       <button
@@ -131,7 +131,7 @@ export function SamChat({
         ) : (
           <Plus className="size-4" />
         )}
-        New chat
+        新建对话
       </button>
     </div>
   );

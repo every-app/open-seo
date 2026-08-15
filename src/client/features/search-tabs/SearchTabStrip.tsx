@@ -43,7 +43,7 @@ export function SearchTabStrip({
     <div className="rounded-xl border border-base-300 bg-base-100 p-1">
       <div
         role="tablist"
-        aria-label="Search tabs"
+        aria-label="搜索标签页"
         className="flex min-w-0 items-stretch gap-1 overflow-x-auto"
       >
         {tabs.map((tab) => {
@@ -84,7 +84,7 @@ export function SearchTabStrip({
                 data-search-tab-id={tab.id}
                 className="flex items-center px-1.5 text-base-content/50 opacity-60 transition hover:bg-base-content/10 hover:text-base-content hover:opacity-100 group-hover:opacity-100"
                 onClick={() => onClose(tab.id)}
-                aria-label={`Close ${tab.label} tab`}
+                aria-label={`关闭 ${tab.label} 标签页`}
               >
                 <X className="size-3.5" />
               </button>
@@ -222,7 +222,7 @@ function getSearchTabQueryConfig(
   return {
     queryKey: buildKeywordResearchQueryKey(request),
     queryFn: () => {
-      if (!request) throw new Error("Tab is missing a research request");
+      if (!request) throw new Error("此标签页缺少研究请求");
       return keywordResearchQueryFn(request);
     },
     staleTime: KEYWORD_RESEARCH_STALE_TIME_MS,

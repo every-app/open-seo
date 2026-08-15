@@ -123,7 +123,7 @@ export function countFilterConditions(values: Record<string, string>): number {
   let n = 0;
   for (const [key, value] of Object.entries(values)) {
     if (key === "include" || key === "exclude") {
-      for (const term of value.split(/[,+]/)) if (term.trim()) n += 1;
+      for (const term of value.split(/[,+，、]/)) if (term.trim()) n += 1;
       continue;
     }
     if (value.trim() !== "") n += 1;

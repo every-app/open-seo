@@ -12,12 +12,12 @@ export function escapeLikeTerm(term: string): string {
   return term.replace(/[\\%_]/g, (match) => `\\${match}`);
 }
 
-/** Splits a comma/plus separated terms string into trimmed lowercase terms. */
+/** Splits comma, ideographic-comma, or plus separated terms. */
 export function parseFilterTerms(value: string | undefined): string[] {
   if (!value) return [];
   return value
     .toLowerCase()
-    .split(/[,+]/)
+    .split(/[,+，、]/)
     .map((term) => term.trim())
     .filter(Boolean);
 }

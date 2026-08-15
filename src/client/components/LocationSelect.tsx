@@ -4,6 +4,12 @@ import { LOCATION_OPTIONS } from "@/shared/keyword-locations";
 
 type LocationOption = (typeof LOCATION_OPTIONS)[number];
 
+const REGION_NAMES = new Intl.DisplayNames(["zh-CN"], { type: "region" });
+
+function getLocationLabel(option: LocationOption): string {
+  return REGION_NAMES.of(option.shortLabel) ?? option.label;
+}
+
 type Props = {
   value: number;
   onChange: (locationCode: number) => void;
@@ -17,6 +23,7 @@ function matches(option: LocationOption, query: string): boolean {
   const needle = query.trim().toLowerCase();
   if (!needle) return true;
   return (
+    getLocationLabel(option).toLowerCase().includes(needle) ||
     option.label.toLowerCase().includes(needle) ||
     option.shortLabel.toLowerCase().includes(needle)
   );
@@ -112,7 +119,9 @@ export function LocationSelect({
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
       >
-        <span className="truncate">{selected?.label ?? "Select country"}</span>
+        <span className="truncate">
+          {selected ? getLocationLabel(selected) : "选择国家或地区"}
+        </span>
       </button>
 
       {open ? (
@@ -123,7 +132,7 @@ export function LocationSelect({
               ref={inputRef}
               type="text"
               className="grow min-w-0 bg-transparent text-sm outline-none placeholder:text-base-content/40"
-              placeholder="Search countries"
+              placeholder="搜索国家或地区"
               value={query}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -140,7 +149,7 @@ export function LocationSelect({
           >
             {filtered.length === 0 ? (
               <li className="w-full break-all px-3 py-2 text-sm text-base-content/50">
-                No countries match “{query.trim()}”
+                没有匹配“{query.trim()}”的国家或地区
               </li>
             ) : (
               filtered.map((option, index) => {
@@ -157,7 +166,9 @@ export function LocationSelect({
                       onClick={() => select(option)}
                       onMouseEnter={() => setActiveIndex(index)}
                     >
-                      <span className="flex-1 truncate">{option.label}</span>
+                      <span className="flex-1 truncate">
+                        {getLocationLabel(option)}
+                      </span>
                       {isSelected ? (
                         <Check className="size-4 shrink-0 text-primary" />
                       ) : null}

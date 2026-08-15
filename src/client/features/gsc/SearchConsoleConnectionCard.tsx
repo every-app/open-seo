@@ -86,7 +86,7 @@ export function SearchConsoleConnectionCard({
       setGscSite({ data: { projectId, ...selected } }),
     onSuccess: () => {
       captureClientEvent("gsc:property_select");
-      toast.success("Search Console connected");
+      toast.success("Search Console 已连接");
       setPicking(false);
       void queryClient.invalidateQueries({ queryKey: connectionKey });
       void queryClient.invalidateQueries({ queryKey: GRANT_STATUS_KEY });
@@ -113,7 +113,7 @@ export function SearchConsoleConnectionCard({
   const disconnectMutation = useMutation({
     mutationFn: () => disconnectGsc({ data: { projectId } }),
     onSuccess: () => {
-      toast.success("Search Console disconnected");
+      toast.success("Search Console 已断开");
       setPicking(false);
       setSelection(null);
       void queryClient.invalidateQueries({ queryKey: connectionKey });
@@ -155,7 +155,7 @@ export function SearchConsoleConnectionCard({
       {connectionQuery.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-base-content/50">
           <span className="loading loading-spinner loading-sm" />
-          Checking…
+          检查中…
         </div>
       ) : selfHostedNeedsSetup ? (
         <SelfHostedSetupWarning />
@@ -183,9 +183,9 @@ export function SearchConsoleConnectionCard({
           onReconnect={handleConnect}
           secondaryAction={
             connected
-              ? { label: "Cancel", onClick: () => setPicking(false) }
+              ? { label: "取消", onClick: () => setPicking(false) }
               : {
-                  label: "Disconnect",
+                  label: "断开连接",
                   destructive: true,
                   disabled: disconnectMutation.isPending,
                   onClick: () => disconnectMutation.mutate(),
@@ -195,8 +195,7 @@ export function SearchConsoleConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Connect GSC to see how your website is actually performing in Google
-            Search.
+            连接 GSC，查看网站在 Google 搜索中的真实表现。
           </p>
           <button
             type="button"
@@ -204,7 +203,7 @@ export function SearchConsoleConnectionCard({
             className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
           >
             <GoogleGlyph className="size-[18px]" />
-            Connect with Google
+            连接 Google
           </button>
         </div>
       )}
@@ -239,7 +238,7 @@ function ConnectedState({
           <p className="truncate font-mono text-sm">{siteUrl}</p>
           {connectedByEmail ? (
             <p className="truncate text-xs text-base-content/55">
-              Connected by {connectedByEmail}
+              连接账户 {connectedByEmail}
             </p>
           ) : null}
         </div>
@@ -250,7 +249,7 @@ function ConnectedState({
           className="btn btn-ghost btn-sm"
           onClick={onChange}
         >
-          Change property
+          更换媒体资源
         </button>
         <button
           type="button"
@@ -258,7 +257,7 @@ function ConnectedState({
           onClick={onDisconnect}
           disabled={disconnecting}
         >
-          Disconnect
+          断开连接
         </button>
       </div>
     </div>

@@ -94,7 +94,7 @@ export function GoogleAnalyticsConnectionCard({
       setGa4Property({ data: { projectId, ...selected } }),
     onSuccess: () => {
       captureClientEvent("ga4:property_select");
-      toast.success("Google Analytics connected");
+      toast.success("Google Analytics 已连接");
       setPicking(false);
       invalidateConnectionState();
     },
@@ -103,7 +103,7 @@ export function GoogleAnalyticsConnectionCard({
   const disconnectMutation = useMutation({
     mutationFn: () => disconnectGa4({ data: { projectId } }),
     onSuccess: () => {
-      toast.success("Google Analytics disconnected");
+      toast.success("Google Analytics 已断开");
       setPicking(false);
       setSelection(null);
       invalidateConnectionState();
@@ -131,7 +131,7 @@ export function GoogleAnalyticsConnectionCard({
       {connectionQuery.isLoading ? (
         <div className="flex items-center gap-2 text-sm text-base-content/50">
           <span className="loading loading-spinner loading-sm" />
-          Checking…
+          检查中…
         </div>
       ) : selfHostedNeedsSetup ? (
         <div className="space-y-3">
@@ -169,15 +169,15 @@ export function GoogleAnalyticsConnectionCard({
           onRetry={() => void propertiesQuery.refetch()}
           secondaryAction={
             connected
-              ? { label: "Cancel", onClick: () => setPicking(false) }
+              ? { label: "取消", onClick: () => setPicking(false) }
               : onDismiss
                 ? {
-                    label: "Dismiss",
+                    label: "暂不处理",
                     disabled: dismissing,
                     onClick: onDismiss,
                   }
                 : {
-                    label: "Disconnect",
+                    label: "断开连接",
                     destructive: true,
                     disabled: disconnectMutation.isPending,
                     onClick: () => disconnectMutation.mutate(),
@@ -187,8 +187,7 @@ export function GoogleAnalyticsConnectionCard({
       ) : (
         <div className="space-y-4">
           <p className="text-sm text-base-content/70">
-            Connect GA4 to understand what organic visitors do after they land
-            on your site.
+            连接 GA4，了解自然搜索访客进入网站后的行为。
           </p>
           <div className="flex flex-wrap items-center gap-1">
             <button
@@ -197,7 +196,7 @@ export function GoogleAnalyticsConnectionCard({
               className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
               <GoogleGlyph className="size-[18px]" />
-              Connect with Google
+              连接 Google
             </button>
             {onDismiss ? (
               <DismissButton onClick={onDismiss} disabled={dismissing} />
@@ -223,7 +222,7 @@ function DismissButton({
       onClick={onClick}
       disabled={disabled}
     >
-      Dismiss
+      暂不处理
     </button>
   );
 }
@@ -255,7 +254,7 @@ function ConnectedState({
         <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
           <div className="min-w-0">
             <p className="text-[11px] font-medium uppercase tracking-wide text-base-content/45">
-              Selected property
+              已选媒体资源
             </p>
             <p className="mt-0.5 truncate text-sm font-semibold">
               {displayName}
@@ -268,20 +267,20 @@ function ConnectedState({
 
         <dl className="mt-3 grid gap-x-6 gap-y-2 border-t border-base-300/70 pt-3 text-xs sm:grid-cols-3">
           <div className="min-w-0">
-            <dt className="text-base-content/45">Time zone</dt>
+            <dt className="text-base-content/45">时区</dt>
             <dd className="mt-0.5 truncate font-medium text-base-content/75">
               {timeZone}
             </dd>
           </div>
           <div>
-            <dt className="text-base-content/45">Currency</dt>
+            <dt className="text-base-content/45">货币</dt>
             <dd className="mt-0.5 font-medium text-base-content/75">
               {currencyCode}
             </dd>
           </div>
           {connectedByEmail ? (
             <div className="min-w-0">
-              <dt className="text-base-content/45">Connected account</dt>
+              <dt className="text-base-content/45">已连接账户</dt>
               <dd className="mt-0.5 truncate font-medium text-base-content/75">
                 {connectedByEmail}
               </dd>
@@ -295,7 +294,7 @@ function ConnectedState({
           className="btn btn-outline btn-sm border-base-300 font-medium"
           onClick={onChange}
         >
-          Change property
+          更换媒体资源
         </button>
         <button
           type="button"
@@ -303,7 +302,7 @@ function ConnectedState({
           onClick={onDisconnect}
           disabled={disconnecting}
         >
-          {disconnecting ? "Disconnecting…" : "Disconnect"}
+          {disconnecting ? "正在断开…" : "断开连接"}
         </button>
       </div>
     </div>

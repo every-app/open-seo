@@ -20,7 +20,7 @@ export function AuthConfigErrorCard({
       <div className="card-body gap-4">
         <h2 className="card-title gap-2">
           <ShieldAlert className="size-5 text-error" />
-          Authentication setup required
+          需要配置身份验证
         </h2>
 
         <div className="alert alert-error">
@@ -29,24 +29,24 @@ export function AuthConfigErrorCard({
 
         {isHostedMode ? (
           <p className="text-sm text-base-content/70">
-            Hosted mode requires{" "}
+            托管模式需要在部署环境中设置{" "}
             <code className="mx-1">BETTER_AUTH_SECRET</code>
-            (32+ characters), <code className="mx-1">BETTER_AUTH_URL</code>, and
-            Google OAuth credentials on the deployment.
+            （至少 32 个字符）、<code className="mx-1">BETTER_AUTH_URL</code>和
+            Google OAuth 凭据。
           </p>
         ) : (
           <p className="text-sm text-base-content/70">
-            Cloudflare Access mode requires
-            <code className="mx-1">TEAM_DOMAIN</code> (a full https URL) and
-            <code className="mx-1">POLICY_AUD</code> set on the deployment, with
-            an Access application protecting this hostname.
+            Cloudflare Access 模式需要在部署环境中设置
+            <code className="mx-1">TEAM_DOMAIN</code>（完整 HTTPS 地址）和
+            <code className="mx-1">POLICY_AUD</code>，并使用 Access
+            应用保护此主机名。
           </p>
         )}
 
         <div className="card-actions justify-end">
           {onRetry ? (
             <button className="btn btn-ghost btn-sm" onClick={onRetry}>
-              Try Again
+              重试
             </button>
           ) : null}
           <a
@@ -55,7 +55,7 @@ export function AuthConfigErrorCard({
             target="_blank"
             rel="noreferrer"
           >
-            Open Setup Guide
+            打开设置指南
           </a>
         </div>
       </div>

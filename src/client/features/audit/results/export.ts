@@ -4,7 +4,7 @@ import { buildCsv, type CsvValue, downloadCsv } from "@/client/lib/csv";
 import { downloadFile } from "@/client/lib/download";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 
-const ISSUES_HEADERS = ["Severity", "Issue", "URL", "Details", "How To Fix"];
+const ISSUES_HEADERS = ["严重程度", "问题", "网址", "详情", "修复方法"];
 
 function issuesRows(issues: AuditResultsData["issues"]): CsvValue[][] {
   return issues.map((issue) => {
@@ -58,14 +58,14 @@ export function exportIssues(
 }
 
 const PAGES_HEADERS = [
-  "URL",
-  "Status",
-  "Title",
+  "网址",
+  "状态",
+  "标题",
   "H1",
-  "Words",
-  "Images",
-  "Missing Alt",
-  "Response Time (ms)",
+  "字数",
+  "图片",
+  "缺少替代文本",
+  "响应时间（毫秒）",
 ];
 
 function pagesRows(pages: AuditResultsData["pages"]): CsvValue[][] {
@@ -82,15 +82,15 @@ function pagesRows(pages: AuditResultsData["pages"]): CsvValue[][] {
 }
 
 const PERFORMANCE_HEADERS = [
-  "URL",
-  "Device",
-  "Performance",
-  "Accessibility",
+  "网址",
+  "设备",
+  "性能",
+  "无障碍",
   "SEO",
-  "LCP (ms)",
+  "LCP（毫秒）",
   "CLS",
-  "INP (ms)",
-  "TTFB (ms)",
+  "INP（毫秒）",
+  "TTFB（毫秒）",
 ];
 
 function performanceRows(

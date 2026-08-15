@@ -24,7 +24,7 @@ export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
 
       <div className="flex items-center gap-4 text-sm flex-wrap min-w-0">
         <div className="flex items-center gap-1.5">
-          <span className="text-base-content/50">Vol</span>
+          <span className="text-base-content/50">搜索量</span>
           <span className="font-semibold tabular-nums">
             {formatNumber(keyword.searchVolume)}
           </span>
@@ -36,7 +36,7 @@ export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <span className="text-base-content/50">Comp</span>
+          <span className="text-base-content/50">竞争度</span>
           <span className="font-semibold tabular-nums">
             {keyword.competition == null ? "-" : keyword.competition.toFixed(2)}
           </span>

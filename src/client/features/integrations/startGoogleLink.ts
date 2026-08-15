@@ -42,7 +42,7 @@ export async function startGoogleLink(
       callbackURL,
     });
     if (res.error) {
-      toast.error(res.error.message ?? "Could not start Google sign-in");
+      toast.error(res.error.message ?? "无法启动 Google 登录");
       return;
     }
     if (res.data?.url) window.location.href = res.data.url;

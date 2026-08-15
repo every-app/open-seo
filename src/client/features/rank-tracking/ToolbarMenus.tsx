@@ -101,15 +101,12 @@ export function MoreMenu({
   hasData: boolean;
 }) {
   return (
-    <ToolbarMenu
-      icon={<MoreHorizontal className="size-4" />}
-      title="More actions"
-    >
+    <ToolbarMenu icon={<MoreHorizontal className="size-4" />} title="更多操作">
       {!checkDisabled && (
         <MenuItem
           icon={<Play className="size-3.5" />}
-          label={checkBusy ? "Running..." : "Check rankings"}
-          description="Fetch current Google positions"
+          label={checkBusy ? "运行中…" : "检查排名"}
+          description="获取当前 Google 排名"
           onClick={onCheckNow}
           disabled={checkBusy}
         />
@@ -120,8 +117,8 @@ export function MoreMenu({
             className={`size-3.5 ${metricsRefreshing ? "animate-spin" : ""}`}
           />
         }
-        label={metricsRefreshing ? "Refreshing..." : "Update keyword stats"}
-        description="Volume, difficulty & CPC — not rankings"
+        label={metricsRefreshing ? "刷新中…" : "更新关键词数据"}
+        description="更新搜索量、难度和 CPC，不更新排名"
         onClick={onRefreshMetrics}
         disabled={metricsRefreshing || !hasData}
       />
@@ -141,22 +138,22 @@ export function ExportMenu({
   hasData: boolean;
 }) {
   return (
-    <ToolbarMenu label="Export" icon={<Download className="size-3.5" />}>
+    <ToolbarMenu label="导出" icon={<Download className="size-3.5" />}>
       <MenuItem
         icon={<Sheet className="size-3.5" />}
-        label="Export to Sheets"
+        label="导出到 Google 表格"
         onClick={onExportToSheets}
         disabled={!hasData}
       />
       <MenuItem
         icon={<FileDown className="size-3.5" />}
-        label="Export CSV"
+        label="导出 CSV"
         onClick={onExport}
         disabled={!hasData}
       />
       <MenuItem
         icon={<Copy className="size-3.5" />}
-        label="Copy keywords"
+        label="复制关键词"
         onClick={onCopyKeywords}
         disabled={!hasData}
       />

@@ -49,25 +49,25 @@ function AiPage() {
   return (
     <div className="h-full overflow-auto bg-base-100 px-4 py-12 md:px-6 md:py-16 pb-24 md:pb-12">
       <div className="mx-auto max-w-3xl">
-        <h1 className="text-2xl font-semibold">AI & MCP</h1>
+        <h1 className="text-2xl font-semibold">AI 与 MCP</h1>
         <p className="mt-2 text-sm text-base-content/70 leading-relaxed">
-          Connect your AI agent to OpenSEO. Run keyword research, SERP analysis,
-          domain lookups, and backlink reviews from your editor or chat.
+          将 AI 智能体连接到 OpenSEO，即可从编辑器或对话中执行关键词研究、SERP
+          分析、域名查询和反向链接检查。
         </p>
 
         {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
           <div className="alert alert-warning mt-6 text-sm" role="alert">
             <ShieldAlert className="size-4 shrink-0" />
             <span>
-              This instance is behind Cloudflare Access. MCP clients cannot
-              connect until Managed OAuth is enabled on your Access application.{" "}
+              此实例位于 Cloudflare Access 之后。请先在 Access 应用中启用
+              Managed OAuth，MCP 客户端才能连接。{" "}
               <a
                 href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
                 target="_blank"
                 rel="noreferrer"
                 className="link font-medium"
               >
-                Setup guide
+                设置指南
               </a>
             </span>
           </div>
@@ -77,11 +77,11 @@ function AiPage() {
           <div className="rounded-lg border border-base-300 bg-base-200 px-4 py-3.5">
             <div className="flex items-center justify-between gap-3">
               <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
-                MCP server URL
+                MCP 服务器网址
               </p>
               <CopyButton
                 value={mcpUrl}
-                successMessage="MCP URL copied"
+                successMessage="MCP 网址已复制"
                 onCopy={() => captureClientEvent("mcp:setup_url_copy")}
               />
             </div>
@@ -90,36 +90,33 @@ function AiPage() {
             </code>
           </div>
           <p className="mt-2.5 text-xs text-base-content/55 leading-relaxed">
-            Paste this into any MCP client. This URL points at the OpenSEO
-            instance you are using now, whether hosted, self-hosted, or local.
-            Sign in with OpenSEO when prompted.
+            将此网址粘贴到任意 MCP 客户端。它会指向您当前使用的 OpenSEO
+            实例，包括托管、自托管或本地实例。出现提示时请登录 OpenSEO。
           </p>
           {isHostedClientAuthMode() ? (
             <p className="mt-2 text-xs text-base-content/55">
-              For headless or CI setups, use an API key from{" "}
+              对于无界面环境或 CI，请使用以下位置创建的 API 密钥：{" "}
               <Link className="link link-primary" to="/settings">
-                Settings
+                设置
               </Link>{" "}
-              instead of the OAuth login.
+              ，以替代 OAuth 登录。
             </p>
           ) : null}
         </section>
 
         <section className="mt-10">
-          <h2 className="text-base font-semibold">Setup guides</h2>
+          <h2 className="text-base font-semibold">设置指南</h2>
           <p className="mt-1.5 text-sm text-base-content/70">
-            Pick your agent.
+            选择您的智能体。
           </p>
           <div className="mt-4 divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300 bg-base-200">
             <Collapsible
               id="claude-code"
               title="Claude Code"
-              subtitle="Add with the CLI"
+              subtitle="通过命令行添加"
               icon={<ClaudeIcon className="size-5" />}
             >
-              <p className="text-sm text-base-content/70">
-                Run this in your terminal:
-              </p>
+              <p className="text-sm text-base-content/70">在终端中运行：</p>
               <CodeBlock
                 code={`claude mcp add --transport http --scope user openseo ${mcpUrl}`}
                 onCopy={() =>
@@ -129,56 +126,52 @@ function AiPage() {
                 }
               />
               <p className="text-sm text-base-content/70">
-                Approve the login when prompted.
+                出现提示时批准登录。
               </p>
             </Collapsible>
 
             <Collapsible
               id="claude-desktop"
               title="Claude Desktop"
-              subtitle="Add a custom connector"
+              subtitle="添加自定义连接器"
               icon={<ClaudeIcon className="size-5" />}
             >
               <ol className="ml-5 list-decimal space-y-1.5 text-sm text-base-content/70 leading-relaxed">
                 <li>
-                  Open <span className="text-base-content">Settings</span> →{" "}
-                  <span className="text-base-content">Connectors</span>.
+                  打开 <span className="text-base-content">设置</span> →{" "}
+                  <span className="text-base-content">连接器</span>。
                 </li>
                 <li>
-                  Click{" "}
+                  点击{" "}
                   <span className="font-medium text-base-content">
-                    Add custom connector
+                    添加自定义连接器
                   </span>
-                  .
+                  。
                 </li>
-                <li>Paste the MCP URL above and click Add.</li>
-                <li>Approve the OpenSEO login when prompted.</li>
+                <li>粘贴上方 MCP 网址，然后点击“添加”。</li>
+                <li>出现提示时批准 OpenSEO 登录。</li>
                 <li>
-                  Optional: after OpenSEO connects, click{" "}
+                  可选：OpenSEO 连接成功后，点击{" "}
+                  <span className="font-medium text-base-content">配置</span>
+                  ，然后选择{" "}
                   <span className="font-medium text-base-content">
-                    Configure
+                    始终允许
                   </span>
-                  , then choose{" "}
-                  <span className="font-medium text-base-content">
-                    Always Approved
-                  </span>
-                  , except for any tools you want Claude to ask before using.
+                  。需要 Claude 每次询问后才能使用的工具可保持原设置。
                 </li>
               </ol>
               <p className="text-xs text-base-content/55 leading-relaxed">
-                Requires a Claude Pro, Max, Team, or Enterprise plan.
+                需要 Claude Pro、Max、Team 或 Enterprise 方案。
               </p>
             </Collapsible>
 
             <Collapsible
               id="codex"
               title="Codex"
-              subtitle="Add with the CLI"
+              subtitle="通过命令行添加"
               icon={<CodexIcon className="size-5" />}
             >
-              <p className="text-sm text-base-content/70">
-                Run this in your terminal:
-              </p>
+              <p className="text-sm text-base-content/70">在终端中运行：</p>
               <CodeBlock
                 code={`codex mcp add openseo --url ${mcpUrl}`}
                 onCopy={() =>
@@ -188,92 +181,90 @@ function AiPage() {
                 }
               />
               <p className="text-sm text-base-content/70">
-                Approve the login when prompted.
+                出现提示时批准登录。
               </p>
             </Collapsible>
 
             <Collapsible
               id="codex-desktop"
               title="Codex Desktop"
-              subtitle="Settings → Integrations & MCP"
+              subtitle="设置 → 集成与 MCP"
               icon={<CodexIcon className="size-5" />}
             >
               <ol className="ml-5 list-decimal space-y-1.5 text-sm text-base-content/70 leading-relaxed">
                 <li>
-                  Open{" "}
+                  打开{" "}
                   <span className="text-base-content">
-                    Settings → Integrations & MCP
+                    设置（Settings）→ 集成与 MCP（Integrations & MCP）
                   </span>
-                  .
+                  。
                 </li>
                 <li>
-                  Click{" "}
+                  点击{" "}
                   <span className="font-medium text-base-content">
-                    Add your own
+                    添加自己的连接
                   </span>
                   .
                 </li>
-                <li>Paste the MCP URL above.</li>
-                <li>Approve the OpenSEO login when prompted.</li>
+                <li>粘贴上方 MCP 网址。</li>
+                <li>出现提示时批准 OpenSEO 登录。</li>
               </ol>
             </Collapsible>
           </div>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-base font-semibold">OpenSEO Skills</h2>
+          <h2 className="text-base font-semibold">OpenSEO 技能</h2>
           <p className="mt-1.5 text-sm text-base-content/70 leading-relaxed">
-            Skills give Codex and Claude Code reusable SEO workflows that can
-            call your OpenSEO MCP tools when live SERP, keyword, backlink, or
-            domain data is needed.
+            技能为 Codex 和 Claude Code 提供可复用的 SEO 工作流，并可在需要实时
+            SERP、关键词、反向链接或域名数据时调用 OpenSEO MCP 工具。
           </p>
           <div className="mt-4 divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300 bg-base-200">
             <Collapsible
               id="skills-add"
-              title="Install with skills add"
-              subtitle="Recommended cross-agent installer"
+              title="使用 skills add 安装"
+              subtitle="推荐的跨智能体安装方式"
             >
               <CodeBlock code={SKILLS_INSTALL} />
               <p className="text-sm text-base-content/70">
-                You can also auto-accept each OpenSEO skill:
+                也可以自动接受每个 OpenSEO 技能：
               </p>
               <CodeBlock code={ALL_SKILLS_INSTALL} />
             </Collapsible>
             <Collapsible
               id="claude-code-skills"
-              title="Install for Claude Code"
-              subtitle="Target Claude Code only"
+              title="为 Claude Code 安装"
+              subtitle="仅安装到 Claude Code"
               icon={<ClaudeIcon className="size-5" />}
             >
               <CodeBlock code={CLAUDE_CODE_SKILLS_INSTALL} />
             </Collapsible>
             <Collapsible
               id="codex-skills"
-              title="Install for Codex"
-              subtitle="Target OpenAI Codex only"
+              title="为 Codex 安装"
+              subtitle="仅安装到 OpenAI Codex"
               icon={<CodexIcon className="size-5" />}
             >
               <CodeBlock code={CODEX_SKILLS_INSTALL} />
             </Collapsible>
             <Collapsible
               id="manual-skills"
-              title="Manual GitHub install"
-              subtitle="Clone the repo and copy the skills"
+              title="从 GitHub 手动安装"
+              subtitle="克隆仓库并复制技能目录"
             >
               <CodeBlock code={SKILLS_MANUAL_INSTALL} />
             </Collapsible>
           </div>
           <div className="mt-5">
             <p className="text-sm text-base-content/70 leading-relaxed">
-              Start with{" "}
+              从这里开始{" "}
               <span className="font-mono text-base-content">
                 /seo-project-setup
               </span>
-              . It will ask about your project and help configure your
-              workspace.
+              。它会询问您的项目信息，并协助配置工作区。
             </p>
             <p className="mt-4 text-xs font-medium uppercase tracking-wide text-base-content/50">
-              Available skills
+              可用技能
             </p>
             <ul className="mt-2 grid gap-1.5 text-sm text-base-content/70 sm:grid-cols-2">
               {SKILL_NAMES.map((skill) => (
@@ -287,18 +278,17 @@ function AiPage() {
         </section>
 
         <section className="mt-12">
-          <h2 className="text-base font-semibold">Available tools</h2>
+          <h2 className="text-base font-semibold">可用工具</h2>
           <div className="mt-5">
             <AvailableTools />
           </div>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-base font-semibold">Sam: AI SEO teammate</h2>
+          <h2 className="text-base font-semibold">Sam：AI SEO 队友</h2>
           <p className="mt-1.5 text-sm text-base-content/70 leading-relaxed">
-            Sam is an experimental content workflow for Claude Code and other
-            coding agents. It combines keyword research, source discovery,
-            drafting, and QA.
+            Sam 是面向 Claude Code
+            和其他编程智能体的实验性内容工作流，整合了关键词研究、来源发现、内容起草和质量检查。
           </p>
           <a
             href={SAM_GITHUB_URL}
@@ -306,29 +296,27 @@ function AiPage() {
             rel="noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-base-content transition-colors hover:text-base-content/60"
           >
-            View Sam on GitHub
+            在 GitHub 查看 Sam
             <ArrowUpRight className="size-3.5" />
           </a>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-base font-semibold">Roadmap</h2>
+          <h2 className="text-base font-semibold">路线图</h2>
           <ul className="mt-4 space-y-3">
             {[
               {
-                title: "In-app SEO Research Agent",
-                description:
-                  "Ask questions and run research without leaving OpenSEO",
+                title: "应用内 SEO 研究智能体",
+                description: "无需离开 OpenSEO 即可提问和开展研究",
               },
               {
-                title: "Content Assistant",
-                description:
-                  "Generate drafts using saved keywords and business context",
+                title: "内容助手",
+                description: "使用已保存关键词和业务背景生成草稿",
               },
             ].map((item) => (
               <li key={item.title} className="flex gap-2.5 text-sm">
                 <span className="mt-[2px] shrink-0 text-base-content/40">
-                  &mdash;
+                  ·
                 </span>
                 <span className="text-base-content/70">
                   <span className="font-medium text-base-content">
@@ -343,7 +331,7 @@ function AiPage() {
         </section>
 
         <p className="mt-12 text-xs text-base-content/55 leading-relaxed">
-          Have feedback? Reach out on{" "}
+          欢迎通过以下方式反馈：{" "}
           <a
             className="link link-primary"
             href={DISCORD_URL}
@@ -352,11 +340,11 @@ function AiPage() {
           >
             Discord
           </a>{" "}
-          or email{" "}
+          或发送邮件{" "}
           <a className="link link-primary" href={`mailto:${SUPPORT_EMAIL}`}>
             {SUPPORT_EMAIL}
           </a>
-          .
+          。
         </p>
       </div>
     </div>

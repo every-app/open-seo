@@ -180,9 +180,9 @@ export function KeywordResearchPage(input: Props) {
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
         <div>
-          <h1 className="text-2xl font-semibold">Keyword Research</h1>
+          <h1 className="text-2xl font-semibold">关键词研究</h1>
           <p className="text-sm text-base-content/70">
-            Discover keyword ideas, search demand, and ranking opportunities.
+            发现关键词创意、搜索需求和排名机会。
           </p>
         </div>
 
@@ -196,7 +196,7 @@ export function KeywordResearchPage(input: Props) {
               onClick={showRecentSearches}
             >
               <ArrowLeft className="size-4" />
-              Recent searches
+              最近搜索
             </button>
             <SearchTabStrip
               projectId={projectId}
@@ -242,11 +242,11 @@ function KeywordResearchContent({
           </div>
           {isCreditsError ? (
             <Link to={BILLING_ROUTE} className="btn btn-sm">
-              Go to Billing
+              前往账单
             </Link>
           ) : (
             <button className="btn btn-sm" onClick={controller.retrySearch}>
-              Try again
+              重试
             </button>
           )}
         </div>
@@ -277,11 +277,11 @@ function KeywordSaveDialog({
     <div className="modal modal-open">
       <div className="modal-box">
         <h3 className="font-bold text-lg">
-          Save {controller.selectedRows.size} Keywords
+          保存 {controller.selectedRows.size} 关键词
         </h3>
         <div className="py-4">
           <p className="text-base-content/70 text-sm">
-            These keywords will be saved to your current project.
+            这些关键词将保存到当前项目。
           </p>
         </div>
         <div className="modal-action">
@@ -289,10 +289,10 @@ function KeywordSaveDialog({
             className="btn"
             onClick={() => controller.setShowSaveDialog(false)}
           >
-            Cancel
+            取消
           </button>
           <button className="btn btn-primary" onClick={controller.confirmSave}>
-            Save
+            保存
           </button>
         </div>
       </div>

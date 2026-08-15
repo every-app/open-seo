@@ -45,7 +45,7 @@ function strikingExportTable(report: Report): ExportTable {
   const stamp = `${report.range.startDate}-to-${report.range.endDate}`;
   return {
     filename: `search-performance-striking-distance-${stamp}.csv`,
-    headers: ["Query", "Page", "Impressions", "Clicks", "Position"],
+    headers: ["查询词", "页面", "展示次数", "点击次数", "排名"],
     rows: report.strikingDistance.map((row) => [
       row.query,
       row.page,
@@ -65,11 +65,11 @@ function dimensionExportTable(
   return {
     filename: `search-performance-${isPage ? "pages" : "queries"}-${stamp}.csv`,
     headers: [
-      isPage ? "Page" : "Query",
-      "Clicks",
-      "Impressions",
+      isPage ? "页面" : "查询词",
+      "点击次数",
+      "展示次数",
       "CTR",
-      "Position",
+      "排名",
     ],
     rows: rows.map((row) => [
       row.key,
@@ -156,17 +156,17 @@ function positionDelta(current: number, previous: number): Delta {
 
 export function TotalsCards({ report }: { report: Report }) {
   const { totals, prevTotals, range } = report;
-  const deltaTitle = `vs ${range.prevStartDate} to ${range.prevEndDate}`;
+  const deltaTitle = `对比 ${range.prevStartDate} 至 ${range.prevEndDate}`;
   return (
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <TotalCard
-        label="Clicks"
+        label="点击次数"
         value={formatCount(totals.clicks)}
         delta={percentDelta(totals.clicks, prevTotals.clicks)}
         deltaTitle={deltaTitle}
       />
       <TotalCard
-        label="Impressions"
+        label="展示次数"
         value={formatCount(totals.impressions)}
         delta={percentDelta(totals.impressions, prevTotals.impressions)}
         deltaTitle={deltaTitle}
@@ -178,7 +178,7 @@ export function TotalsCards({ report }: { report: Report }) {
         deltaTitle={deltaTitle}
       />
       <TotalCard
-        label="Avg position"
+        label="平均排名"
         value={formatPosition(totals.position)}
         delta={positionDelta(totals.position, prevTotals.position)}
         deltaTitle={deltaTitle}
@@ -239,7 +239,7 @@ export function DimensionTable({
       wrapperClassName="overflow-x-auto"
       empty={
         <p className="p-6 text-sm text-base-content/60">
-          No data for this period yet. Search Console data trails by a few days.
+          此周期暂无数据。Search Console 数据通常会延迟几天。
         </p>
       }
     />
@@ -288,11 +288,9 @@ export function StrikingDistanceTable({
         .map((query) => normalizeExportValue(query))
         .join("\n");
       await navigator.clipboard.writeText(text);
-      toast.success(
-        `Copied ${selectedQueries.length} ${selectedQueries.length === 1 ? "keyword" : "keywords"}`,
-      );
+      toast.success(`已复制 ${selectedQueries.length} 个关键词`);
     } catch {
-      toast.error("Couldn't copy to clipboard");
+      toast.error("无法复制到剪贴板");
     }
   };
 
@@ -307,22 +305,19 @@ export function StrikingDistanceTable({
       void queryClient.invalidateQueries({
         queryKey: ["savedKeywords", projectId],
       });
-      toast.success(
-        `Saved ${keywords.length} ${keywords.length === 1 ? "keyword" : "keywords"}`,
-      );
+      toast.success(`已保存 ${keywords.length} 个关键词`);
       setRowSelection({});
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Could not save keywords"));
+      toast.error(getStandardErrorMessage(error, "无法保存关键词"));
     },
   });
 
   if (rows.length === 0) {
     return (
       <p className="p-6 text-sm text-base-content/60">
-        No striking-distance queries in this period. These are queries ranking
-        at positions 5 to 20, where an improvement is most likely to move
-        traffic.
+        此周期暂无接近突破的查询词。此类查询词通常位于第 5 到 20
+        名，优化后更有机会带来流量增长。
       </p>
     );
   }
@@ -331,8 +326,8 @@ export function StrikingDistanceTable({
     <>
       <div className="p-4">
         <p className="mb-3 text-sm text-base-content/60">
-          Queries ranking at positions 5 to 20, sorted by impressions. Improve
-          the listed page to move them into the top results.
+          查询词当前位于第 5 到 20
+          名，并按展示次数排序。优化对应页面可帮助其进入更靠前的结果。
         </p>
         <AppDataTable
           table={table}
@@ -352,7 +347,7 @@ export function StrikingDistanceTable({
       />
       <TableBulkActionBar
         selectedCount={selectedQueries.length}
-        selectedLabel={selectedQueries.length === 1 ? "query" : "queries"}
+        selectedLabel="个查询词"
         onClear={() => setRowSelection({})}
         actions={
           <div className="flex items-center gap-1 px-1.5">
@@ -360,7 +355,7 @@ export function StrikingDistanceTable({
               icon={<Copy className="size-3.5" />}
               onClick={() => void copyKeywords()}
             >
-              Copy keywords
+              复制关键词
             </TableBulkActionButton>
             <TableBulkActionButton
               icon={
@@ -373,7 +368,7 @@ export function StrikingDistanceTable({
               onClick={() => save.mutate(selectedQueries)}
               disabled={save.isPending}
             >
-              Save as keywords
+              保存为关键词
             </TableBulkActionButton>
           </div>
         }

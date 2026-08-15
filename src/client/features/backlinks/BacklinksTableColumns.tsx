@@ -31,11 +31,11 @@ function BacklinkFlags({ row }: { row: BacklinksRow }) {
   return (
     <div className="flex flex-wrap gap-1">
       {row.isLost ? (
-        <span className="badge badge-sm badge-error badge-outline">Lost</span>
+        <span className="badge badge-sm badge-error badge-outline">已丢失</span>
       ) : null}
       {row.isBroken ? (
         <span className="badge badge-sm badge-warning badge-outline">
-          Broken
+          已失效
         </span>
       ) : null}
       {row.isDofollow === false ? (
@@ -55,15 +55,13 @@ function StatusCell({ status }: { status: "loading" | "error" | "empty" }) {
     return (
       <span className="flex items-center gap-2 pl-6 text-sm text-base-content/60">
         <span className="loading loading-spinner loading-xs" />
-        Loading links…
+        正在加载链接…
       </span>
     );
   }
   return (
     <span className="pl-6 text-sm text-base-content/60">
-      {status === "error"
-        ? "Couldn't load this domain's links."
-        : "No other links from this domain."}
+      {status === "error" ? "无法加载此域名的链接。" : "此域名没有其他链接。"}
     </span>
   );
 }
@@ -99,7 +97,7 @@ function SourceCell({
         <button
           type="button"
           className="btn btn-ghost btn-xs btn-square shrink-0 -ml-1"
-          aria-label={`${expanded ? "Hide" : "Show"} all links from ${domainLabel}`}
+          aria-label={`${expanded ? "隐藏" : "显示"} all links from ${domainLabel}`}
           aria-expanded={expanded}
           onClick={() => onToggleDomain(row.domainFrom ?? "")}
         >
@@ -136,9 +134,7 @@ function buildBaseColumns(
     {
       id: "source",
       enableSorting: false,
-      header: () => (
-        <HeaderHelpLabel label="Source" helpText="Page linking to you" />
-      ),
+      header: () => <HeaderHelpLabel label="来源" helpText="链接到您的页面" />,
       size: 250,
       minSize: 180,
       cell: ({ row }) => (
@@ -149,7 +145,7 @@ function buildBaseColumns(
       id: "target",
       enableSorting: false,
       header: () => (
-        <HeaderHelpLabel label="Target" helpText="Destination on your site" />
+        <HeaderHelpLabel label="目标" helpText="您网站中的目标页面" />
       ),
       size: 220,
       minSize: 150,
@@ -167,13 +163,13 @@ function buildBaseColumns(
       id: "anchor",
       enableSorting: false,
       header: () => (
-        <HeaderHelpLabel label="Anchor" helpText="Text or format of the link" />
+        <HeaderHelpLabel label="锚文本" helpText="链接的文字或形式" />
       ),
       size: 150,
       minSize: 100,
       cell: linkCell((row) => (
         <div className="space-y-0.5 break-words">
-          <span className="text-sm">{row.anchor || "No anchor text"}</span>
+          <span className="text-sm">{row.anchor || "无锚文本"}</span>
           {row.itemType ? (
             <div className="text-xs text-base-content/55">{row.itemType}</div>
           ) : null}
@@ -185,8 +181,8 @@ function buildBaseColumns(
       enableSorting: false,
       header: () => (
         <HeaderHelpLabel
-          label="Flags"
-          helpText="Special backlink attributes, such as lost, broken, nofollow, or multiple links from the same source."
+          label="标记"
+          helpText="反向链接的特殊属性，例如已丢失、已失效、nofollow 或同一来源包含多条链接。"
         />
       ),
       size: 130,
@@ -200,8 +196,8 @@ function buildBaseColumns(
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          label="Link"
-          helpText="Authority of the linking page"
+          label="页面权威度"
+          helpText="来源页面的权威度"
           align="right"
         />
       ),
@@ -222,7 +218,7 @@ function buildBaseColumns(
         <SortableHeader
           column={column}
           label="DA"
-          helpText="Authority of the linking domain"
+          helpText="来源域名的权威度"
           align="right"
         />
       ),
@@ -242,8 +238,8 @@ function buildBaseColumns(
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          label="Spam"
-          helpText="Estimated spam risk for this backlink. Higher scores are more likely to be manipulative or low quality."
+          label="垃圾风险"
+          helpText="此反向链接的预估垃圾风险。分数越高，越可能存在操纵性或质量较低。"
           align="right"
         />
       ),
@@ -266,8 +262,8 @@ function buildBaseColumns(
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          label="First Seen"
-          helpText="When this link was first discovered by the crawler"
+          label="首次发现"
+          helpText="爬虫首次发现此链接的时间"
         />
       ),
       size: 110,
@@ -278,7 +274,7 @@ function buildBaseColumns(
           <div>{formatCompactDate(row.firstSeen)}</div>
           {row.lastSeen ? (
             <div className="text-xs text-base-content/55">
-              Last {formatCompactDate(row.lastSeen)}
+              最近检查 {formatCompactDate(row.lastSeen)}
             </div>
           ) : null}
         </div>
@@ -308,7 +304,7 @@ export function buildBacklinksColumns(
       <span className="flex w-full justify-end">
         <HeaderHelpLabel
           label="Ahrefs DR"
-          helpText="Ahrefs Domain Rating (0-100) for the linking domain."
+          helpText="来源域名的 Ahrefs 域名评级（0 到 100）。"
         />
       </span>
     ),

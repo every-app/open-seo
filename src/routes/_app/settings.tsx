@@ -17,9 +17,9 @@ const THEME_OPTIONS: {
   label: string;
   icon: typeof Sun;
 }[] = [
-  { value: "system", label: "System", icon: Monitor },
-  { value: "light", label: "Light", icon: Sun },
-  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "跟随系统", icon: Monitor },
+  { value: "light", label: "浅色", icon: Sun },
+  { value: "dark", label: "深色", icon: Moon },
 ];
 
 function SettingsPage() {
@@ -37,12 +37,12 @@ function SettingsPage() {
         analyticsOptedOut: !enabled,
       });
       if (result.error) {
-        toast.error("We couldn't update your analytics setting.");
+        toast.error("无法更新数据分析设置。");
       } else {
-        toast.success(enabled ? "Analytics enabled" : "Analytics disabled");
+        toast.success(enabled ? "数据分析已启用" : "数据分析已停用");
       }
     } catch {
-      toast.error("We couldn't update your analytics setting.");
+      toast.error("无法更新数据分析设置。");
     } finally {
       setIsSaving(false);
     }
@@ -51,17 +51,15 @@ function SettingsPage() {
   return (
     <div className="h-full overflow-auto bg-base-100 px-4 py-8 pb-24 md:px-6 md:py-12 md:pb-8">
       <div className="mx-auto max-w-3xl space-y-10">
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        <h1 className="text-2xl font-bold tracking-tight">设置</h1>
 
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-base-content/50">
-            Appearance
-          </h2>
+          <h2 className="text-sm font-medium text-base-content/50">外观</h2>
           <div className="flex items-center justify-between gap-6">
-            <span className="text-sm">Theme</span>
+            <span className="text-sm">主题</span>
             <div
               role="radiogroup"
-              aria-label="Theme preference"
+              aria-label="主题偏好"
               className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
             >
               {THEME_OPTIONS.map((option) => {
@@ -96,13 +94,13 @@ function SettingsPage() {
 
             <section className="space-y-3">
               <h2 className="text-sm font-medium text-base-content/50">
-                Analytics
+                数据分析
               </h2>
               <div className="flex items-start justify-between gap-6">
                 <div>
-                  <p className="text-sm">Help improve OpenSEO</p>
+                  <p className="text-sm">帮助改进 OpenSEO</p>
                   <p className="mt-1 text-sm text-base-content/60">
-                    Share analytics and usage data.
+                    共享匿名分析和使用数据。
                   </p>
                 </div>
                 <input
@@ -113,16 +111,16 @@ function SettingsPage() {
                   onChange={(event) => {
                     void updateAnalyticsPreference(event.currentTarget.checked);
                   }}
-                  aria-label="Enable product analytics"
+                  aria-label="启用产品数据分析"
                 />
               </div>
             </section>
           </>
         ) : (
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-base-content/50">About</h2>
+            <h2 className="text-sm font-medium text-base-content/50">关于</h2>
             <div className="flex items-center justify-between gap-6">
-              <span className="text-sm">Version</span>
+              <span className="text-sm">版本</span>
               <span className="font-mono text-sm text-base-content/60">
                 v{version}
               </span>

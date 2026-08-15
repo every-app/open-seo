@@ -43,18 +43,18 @@ type Props = {
 const PROMPT_EXPLORER_BULLETS = [
   {
     icon: Columns3,
-    title: "Four models side-by-side",
-    body: "Run one prompt across ChatGPT, Claude, Gemini, and Perplexity and compare answers in a single view.",
+    title: "并排对比四个模型",
+    body: "用同一个提示词同时运行 ChatGPT、Claude、Gemini 和 Perplexity，并在一个视图中比较回答。",
   },
   {
     icon: SearchCheck,
-    title: "See what the models cite",
-    body: "Every answer lists the sources it drew from, so you can audit where each model gets its information.",
+    title: "查看模型引用来源",
+    body: "每个回答都会列出引用来源，方便核查各模型的信息出处。",
   },
   {
     icon: Sparkles,
-    title: "Check brand mentions",
-    body: "Highlight a brand to instantly see whether it shows up in the answer text or the cited sources.",
+    title: "检查品牌提及",
+    body: "突出显示品牌，立即查看它是否出现在回答正文或引用来源中。",
   },
 ];
 
@@ -160,17 +160,17 @@ function PromptExplorerPageInner({
     event.preventDefault();
     const trimmed = form.prompt.trim();
     if (trimmed.length === 0) {
-      setValidationError("Enter a prompt");
+      setValidationError("输入提示词");
       return;
     }
     if (trimmed.length > PROMPT_EXPLORER_MAX_PROMPT_LENGTH) {
       setValidationError(
-        `Keep prompts under ${PROMPT_EXPLORER_MAX_PROMPT_LENGTH} characters`,
+        `提示词最多输入 ${PROMPT_EXPLORER_MAX_PROMPT_LENGTH} 个字符`,
       );
       return;
     }
     if (form.models.length === 0) {
-      setValidationError("Select at least one model");
+      setValidationError("请至少选择一个模型");
       return;
     }
     setValidationError(null);
@@ -199,17 +199,16 @@ function PromptExplorerPageInner({
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
-          <h1 className="text-2xl font-semibold">Prompt Explorer</h1>
+          <h1 className="text-2xl font-semibold">提示词探索</h1>
           <p className="text-sm text-base-content/70">
-            Ask any prompt across ChatGPT, Claude, Gemini, and Perplexity
-            side-by-side.
+            并排查看 ChatGPT、Claude、Gemini 和 Perplexity 对任意提示词的回答。
           </p>
         </div>
 
         {planGate.isFreePlan ? (
           <AiSearchPaidPlanGate
-            feature="Prompt Explorer"
-            description="Ask one prompt across ChatGPT, Claude, Gemini, and Perplexity at the same time and compare their answers — including which sources each model cites."
+            feature="提示词探索"
+            description="将同一个提示词同时发送给 ChatGPT、Claude、Gemini 和 Perplexity，比较回答及各模型引用的来源。"
             bullets={PROMPT_EXPLORER_BULLETS}
           />
         ) : (
@@ -254,7 +253,7 @@ function PromptExplorerPageInner({
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
                   >
                     <ArrowLeft className="size-4" />
-                    Recent searches
+                    最近搜索
                   </Link>
                 </div>
                 <PromptExplorerResults result={resultData} />

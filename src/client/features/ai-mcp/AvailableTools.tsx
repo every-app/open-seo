@@ -13,118 +13,117 @@ type ToolCategory = {
 
 const toolCategories: ToolCategory[] = [
   {
-    label: "Keywords",
+    label: "关键词",
     tools: [
       {
         name: "research_keywords",
-        title: "Research keywords",
-        description: "Get keyword ideas with volume, difficulty, and CPC.",
+        title: "研究关键词",
+        description: "获取关键词创意及搜索量、难度和 CPC。",
       },
       {
         name: "get_rank_tracker",
-        title: "Get rank tracking positions",
-        description: "Read tracked keyword positions.",
+        title: "获取排名追踪数据",
+        description: "读取已追踪关键词的排名。",
       },
       {
         name: "create_rank_tracker",
-        title: "Create a rank tracker",
-        description: "Configure a domain for rank tracking.",
+        title: "创建排名追踪器",
+        description: "为域名配置排名追踪。",
       },
       {
         name: "add_rank_tracking_keywords",
-        title: "Add tracked keywords",
-        description: "Add keywords to an existing rank tracker.",
+        title: "添加追踪关键词",
+        description: "向现有排名追踪器添加关键词。",
       },
       {
         name: "remove_rank_tracking_keywords",
-        title: "Remove tracked keywords",
-        description: "Stop tracking selected keyword IDs.",
+        title: "移除追踪关键词",
+        description: "停止追踪所选关键词 ID。",
       },
       {
         name: "estimate_rank_tracker_cost",
-        title: "Estimate rank check cost",
-        description: "Preview the cost of an explicit rank check.",
+        title: "估算排名检查成本",
+        description: "预估一次手动排名检查的成本。",
       },
       {
         name: "run_rank_tracker",
-        title: "Run a rank check",
-        description: "Check a tracker's current positions now.",
+        title: "运行排名检查",
+        description: "立即检查追踪器中的当前排名。",
       },
       {
         name: "get_keyword_metrics",
-        title: "Get keyword metrics",
-        description:
-          "Volume, difficulty, intent, CPC, and trends for any keyword list.",
+        title: "获取关键词指标",
+        description: "获取任意关键词列表的搜索量、难度、意图、CPC 和趋势。",
       },
       {
         name: "list_saved_keywords",
-        title: "Get saved keywords",
-        description: "Pull your saved keyword lists.",
+        title: "获取已保存关键词",
+        description: "读取已保存的关键词列表。",
       },
       {
         name: "save_keywords",
-        title: "Save keywords",
-        description: "Save keywords back to OpenSEO.",
+        title: "保存关键词",
+        description: "将关键词保存到 OpenSEO。",
       },
     ],
   },
   {
-    label: "Competitive Research",
+    label: "竞争研究",
     tools: [
       {
         name: "get_serp_results",
-        title: "Get SERP results",
-        description: "See live Google results for a keyword.",
+        title: "获取 SERP 结果",
+        description: "查看关键词的实时 Google 搜索结果。",
       },
       {
         name: "find_serp_competitors",
-        title: "Find SERP competitors",
-        description: "Compare domains across a keyword set.",
+        title: "查找 SERP 竞争对手",
+        description: "基于一组关键词比较多个域名。",
       },
       {
         name: "get_ranked_keywords",
-        title: "Get ranked keywords",
-        description: "Find exact keyword, page, and rank rows.",
+        title: "获取有排名的关键词",
+        description: "查找具体的关键词、页面和排名记录。",
       },
       {
         name: "get_domain_overview",
-        title: "Get domain overview",
-        description: "Summarize a domain's organic footprint.",
+        title: "获取域名概览",
+        description: "汇总域名的自然搜索表现。",
       },
       {
         name: "get_domain_keyword_suggestions",
-        title: "Get domain keywords",
-        description: "Find keywords a domain already ranks for.",
+        title: "获取域名关键词",
+        description: "查找域名已获得排名的关键词。",
       },
       {
         name: "get_backlinks_overview",
-        title: "Get backlinks overview",
-        description: "Check backlink and referring-domain stats.",
+        title: "获取反向链接概览",
+        description: "检查反向链接和引用域名数据。",
       },
       {
         name: "get_backlinks_profile",
-        title: "Get backlinks profile",
-        description: "Fetch paginated link-level backlink rows.",
+        title: "获取反向链接详情",
+        description: "分页获取链接级反向链接记录。",
       },
     ],
   },
   {
-    label: "Local Business",
+    label: "本地商家",
     tools: [
       {
         name: "search_local_businesses",
-        title: "Search local businesses",
-        description: "Find local business candidates near a coordinate.",
+        title: "搜索本地商家",
+        description: "查找指定坐标附近的本地商家。",
       },
       {
         name: "get_local_serp_results",
-        title: "Get local SERP results",
-        description: "Fetch one Maps or Local Finder result set.",
+        title: "获取本地 SERP 结果",
+        description: "获取一组地图或本地搜索结果。",
       },
       {
         name: "get_google_business_questions",
-        title: "Get business questions",
-        description: "Read Google Business Profile Q&A rows.",
+        title: "获取商家问答",
+        description: "读取 Google 商家资料问答记录。",
       },
     ],
   },
@@ -133,15 +132,13 @@ const toolCategories: ToolCategory[] = [
     tools: [
       {
         name: "get_search_console_performance",
-        title: "Get Search Console performance",
-        description:
-          "Read clicks, impressions, CTR, and position from Search Console.",
+        title: "获取 Search Console 表现",
+        description: "读取 Search Console 的点击、展示、CTR 和排名数据。",
       },
       {
         name: "inspect_urls",
-        title: "Inspect URLs",
-        description:
-          "Check index status, crawl, and canonical for up to 10 URLs.",
+        title: "检查网址",
+        description: "检查最多 10 个网址的索引状态、抓取和规范网址。",
       },
     ],
   },
@@ -150,60 +147,54 @@ const toolCategories: ToolCategory[] = [
     tools: [
       {
         name: "get_google_analytics_organic_overview",
-        title: "Get organic overview",
-        description:
-          "Compare top-line organic performance with the previous period.",
+        title: "获取自然搜索概览",
+        description: "对比当前周期与上一周期的自然搜索核心表现。",
       },
       {
         name: "get_google_analytics_organic_landing_pages",
-        title: "Get organic landing pages",
-        description:
-          "Read organic sessions, engagement, key events, and revenue by landing page.",
+        title: "获取自然搜索落地页",
+        description: "按落地页读取自然搜索会话、互动、关键事件和收入。",
       },
       {
         name: "get_google_analytics_page_performance",
-        title: "Get page performance",
-        description: "Read page views, users, engagement time, and key events.",
+        title: "获取页面表现",
+        description: "读取页面浏览量、用户数、互动时长和关键事件。",
       },
       {
         name: "get_google_analytics_key_events",
-        title: "Get key events",
-        description: "Read key-event outcomes by event or landing page.",
+        title: "获取关键事件",
+        description: "按事件或落地页读取关键事件结果。",
       },
       {
         name: "get_search_opportunities",
-        title: "Get search opportunities",
+        title: "获取搜索机会",
         description:
-          "Join Search Console demand with Analytics outcomes to prioritize pages.",
+          "结合 Search Console 需求和 Analytics 结果确定页面优先级。",
       },
       {
         name: "get_google_analytics_traffic_acquisition",
-        title: "Get traffic acquisition",
-        description:
-          "Compare channels, source/medium, or campaigns using session outcomes.",
+        title: "获取流量获取数据",
+        description: "基于会话结果比较渠道、来源/媒介或广告系列。",
       },
       {
         name: "get_google_analytics_measurement_health",
-        title: "Check measurement health",
-        description:
-          "Inspect streams, enhanced measurement, key events, and custom definitions.",
+        title: "检查衡量设置",
+        description: "检查数据流、增强型衡量、关键事件和自定义定义。",
       },
       {
         name: "get_google_analytics_ecommerce_performance",
-        title: "Get ecommerce performance",
-        description:
-          "Read product-funnel or landing-page transaction performance.",
+        title: "获取电商表现",
+        description: "读取商品漏斗或落地页交易表现。",
       },
       {
         name: "get_google_analytics_site_search",
-        title: "Get site search",
-        description: "Read measured internal search terms and outcomes.",
+        title: "获取站内搜索",
+        description: "读取已衡量的站内搜索词和结果。",
       },
       {
         name: "get_google_analytics_audience_breakdown",
-        title: "Get audience breakdown",
-        description:
-          "Compare device, country, or new-versus-returning audiences.",
+        title: "获取受众细分",
+        description: "比较设备、国家或地区、新访客与回访用户等受众。",
       },
     ],
   },

@@ -21,7 +21,7 @@ export function FilterIntentSelect({
         id="keyword-intent-filter-label"
         className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60"
       >
-        Intent
+        搜索意图
       </p>
       <form.Field name="intents">
         {(field) => {
@@ -110,13 +110,13 @@ export function FilterRangeInputs({
         <CompactRangeInput
           form={form}
           name={minName}
-          placeholder="Min"
+          placeholder="最小值"
           step={step}
         />
         <CompactRangeInput
           form={form}
           name={maxName}
-          placeholder="Max"
+          placeholder="最大值"
           step={step}
         />
       </div>
@@ -160,12 +160,10 @@ export function EmptyFilterResults({
 }) {
   return (
     <div className="h-full flex flex-col items-center justify-center text-center px-4 text-base-content/50 gap-3">
-      <p className="text-sm font-medium">
-        No keywords match your current filters.
-      </p>
+      <p className="text-sm font-medium">没有关键词符合当前筛选条件。</p>
       {activeFilterCount > 0 ? (
         <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
-          Clear filters
+          清除筛选
         </button>
       ) : null}
     </div>

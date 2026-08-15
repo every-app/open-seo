@@ -106,7 +106,7 @@ export function BacklinksTable({
   });
 
   if (rows.length === 0) {
-    return <EmptyTableState label="No backlinks match this filter." />;
+    return <EmptyTableState label="没有反向链接符合当前筛选条件。" />;
   }
 
   return (

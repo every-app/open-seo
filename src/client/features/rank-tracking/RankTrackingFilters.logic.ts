@@ -121,14 +121,14 @@ export function applyFilters(
   const includeTerms = filters.include
     ? filters.include
         .toLowerCase()
-        .split(",")
+        .split(/[,，、]/)
         .map((t) => t.trim())
         .filter(Boolean)
     : [];
   const excludeTerms = filters.exclude
     ? filters.exclude
         .toLowerCase()
-        .split(",")
+        .split(/[,，、]/)
         .map((t) => t.trim())
         .filter(Boolean)
     : [];

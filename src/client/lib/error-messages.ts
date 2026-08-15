@@ -2,34 +2,28 @@ import { FREE_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
 
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
-  UNAUTHENTICATED: "Please sign in and try again.",
+  UNAUTHENTICATED: "请登录后重试。",
   AUTH_CONFIG_MISSING:
-    "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
-  PAYMENT_REQUIRED:
-    "An active hosted subscription is required before you can use OpenSEO.",
-  INSUFFICIENT_CREDITS:
-    "You've run out of credits. Add more credits or upgrade your plan to continue.",
-  FORBIDDEN: "You do not have access to this resource.",
-  NOT_FOUND: "The requested resource was not found.",
+    "OpenSEO 身份验证尚未配置，请按照 README 中的步骤配置 Cloudflare Access。",
+  PAYMENT_REQUIRED: "使用 OpenSEO 需要有效的托管订阅。",
+  INSUFFICIENT_CREDITS: "点数已用完，请补充点数或升级套餐后继续。",
+  FORBIDDEN: "你无权访问此资源。",
+  NOT_FOUND: "找不到请求的资源。",
   AUDIT_CAPACITY_REACHED:
-    "You've reached audit capacity for your account. Delete old audits from your projects to start a new one.",
-  AUDIT_PAGE_LIMIT_EXCEEDED: `Free plan audits are limited to ${FREE_MAX_AUDIT_PAGES} pages. Upgrade to run larger audits.`,
+    "当前账户已达到审计容量上限，请删除项目中的旧审计后再创建新审计。",
+  AUDIT_PAGE_LIMIT_EXCEEDED: `免费套餐每次最多审计 ${FREE_MAX_AUDIT_PAGES} 个页面。升级后可运行更大规模的审计。`,
   AUDIT_ALREADY_RUNNING:
-    "You already have an audit running. Wait for it to finish or delete it before starting another.",
-  VALIDATION_ERROR: "Please check your input and try again.",
-  CRAWL_TARGET_BLOCKED: "This crawl target is blocked by security policy.",
-  BACKLINKS_BILLING_ISSUE:
-    "The connected DataForSEO account has a billing or balance issue.",
-  AI_SEARCH_BILLING_ISSUE:
-    "The connected DataForSEO account has a billing or balance issue.",
+    "已有一项审计正在运行，请等待其完成或删除后再开始新审计。",
+  VALIDATION_ERROR: "请检查输入内容后重试。",
+  CRAWL_TARGET_BLOCKED: "安全策略已阻止此抓取目标。",
+  BACKLINKS_BILLING_ISSUE: "已连接的 DataForSEO 账户存在账单或余额问题。",
+  AI_SEARCH_BILLING_ISSUE: "已连接的 DataForSEO 账户存在账单或余额问题。",
   DATAFORSEO_AUTH_FAILED:
-    "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
-  RATE_LIMITED: "Too many requests. Please wait and try again.",
-  UPSTREAM_UNAVAILABLE:
-    "The data provider is temporarily unavailable. Please retry in a moment.",
-  CONFLICT: "This request conflicts with existing data.",
-  INTERNAL_ERROR:
-    "An unexpected error occurred. Please check server logs and try again.",
+    "DataForSEO 拒绝了此 API 密钥。请确认 DATAFORSEO_API_KEY 是 DataForSEO 登录名和密码（login:password）的 Base64 编码。",
+  RATE_LIMITED: "请求过于频繁，请稍后重试。",
+  UPSTREAM_UNAVAILABLE: "数据提供商暂时不可用，请稍后重试。",
+  CONFLICT: "此请求与现有数据冲突。",
+  INTERNAL_ERROR: "发生意外错误，请检查服务器日志后重试。",
 };
 
 // Setup errors cross the wire as "CODE: detail" (see toClientError) so the

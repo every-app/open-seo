@@ -38,22 +38,20 @@ export function BacklinksOverviewPanels({
           className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
         >
           <ArrowLeft className="size-4" />
-          Recent searches
+          最近搜索
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/65">
         <span className="badge badge-outline">{data.scope}</span>
-        <span>Target: {data.displayTarget}</span>
+        <span>目标： {data.displayTarget}</span>
         <span>-</span>
-        <span>Updated {formatRelativeTimestamp(data.fetchedAt)}</span>
+        <span>更新时间 {formatRelativeTimestamp(data.fetchedAt)}</span>
       </div>
       <OverviewGrid data={data} summaryStats={summaryStats} />
       {data.scope === "page" ? (
         <div className="alert alert-info">
           <span>
-            Showing backlinks for this exact page. Enter a bare domain for
-            site-wide results. Trend charts are only shown for domain-level
-            lookups.
+            当前显示指定页面的反向链接。输入域名可查看全站结果；趋势图仅在域名级查询中显示。
           </span>
         </div>
       ) : null}
@@ -114,15 +112,12 @@ function TrendPanels({ data }: { data: BacklinksOverviewData }) {
   return (
     <>
       <TrendCard
-        title="Backlink growth"
-        description="Backlinks and referring domains over the last year"
+        title="反向链接增长"
+        description="过去一年的反向链接和引用域名变化"
       >
         <BacklinksTrendChart data={data.trends} />
       </TrendCard>
-      <TrendCard
-        title="New vs lost"
-        description="Backlink acquisition and attrition"
-      >
+      <TrendCard title="新增与丢失" description="反向链接新增与流失情况">
         <BacklinksNewLostChart data={data.newLostTrends} />
       </TrendCard>
     </>

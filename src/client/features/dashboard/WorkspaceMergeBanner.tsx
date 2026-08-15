@@ -23,20 +23,13 @@ export function WorkspaceMergeBanner() {
   const mergeMutation = useMutation({
     mutationFn: () => mergeLegacyWorkspaces(),
     onSuccess: ({ mergedWorkspaces }) => {
-      toast.success(
-        `Migrated ${mergedWorkspaces} workspace${mergedWorkspaces === 1 ? "" : "s"} into the shared workspace.`,
-      );
+      toast.success(`已将 ${mergedWorkspaces} 个工作区迁移到共享工作区。`);
       // The merge changes projects, connections, and the banner's own status —
       // refetch everything rather than enumerating keys.
       void queryClient.invalidateQueries();
     },
     onError: (error) =>
-      toast.error(
-        getStandardErrorMessage(
-          error,
-          "Couldn't migrate the workspaces. Try again.",
-        ),
-      ),
+      toast.error(getStandardErrorMessage(error, "无法迁移工作区，请重试。")),
   });
 
   if (!statusQuery.data || statusQuery.data.legacyWorkspaceCount === 0) {
@@ -46,10 +39,8 @@ export function WorkspaceMergeBanner() {
   return (
     <div className="rounded-xl border border-warning/40 bg-warning/10 p-5">
       <p className="max-w-3xl text-sm">
-        When self-hosting on Cloudflare, there was a bug where each user had
-        their own workspace. It was intended for all users to be in one
-        workspace. Clicking the button below will migrate everyone&apos;s
-        previous work into this shared workspace.
+        Cloudflare
+        自托管版本曾存在工作区问题，每位用户会获得独立工作区。系统设计为所有用户共用一个工作区。点击下方按钮可将所有用户之前的内容迁移到共享工作区。
       </p>
       <button
         type="button"
@@ -57,7 +48,7 @@ export function WorkspaceMergeBanner() {
         disabled={mergeMutation.isPending}
         onClick={() => mergeMutation.mutate()}
       >
-        {mergeMutation.isPending ? "Migrating…" : "Migrate workspaces"}
+        {mergeMutation.isPending ? "迁移中…" : "迁移工作区"}
       </button>
     </div>
   );

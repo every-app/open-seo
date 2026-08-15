@@ -22,7 +22,7 @@ export function SortableHeader({
       type="button"
       className="inline-flex items-center gap-1 font-medium hover:text-base-content"
       onClick={onClick}
-      aria-label={`Sort by ${label}`}
+      aria-label={`按${label}排序`}
       aria-pressed={isActive}
     >
       {helpText ? (

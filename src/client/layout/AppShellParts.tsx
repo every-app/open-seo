@@ -19,15 +19,15 @@ function SeoApiStatusBanners({
             <div className="alert alert-warning">
               <AlertTriangle className="size-4 shrink-0" />
               <span className="text-sm">
-                Setup needed: add your DataForSEO API key to use OpenSEO
-                features. See the quick steps on the{" "}
+                需要完成设置：添加 DataForSEO API 密钥后才能使用 OpenSEO
+                功能。请查看
                 <Link
                   {...dataforseoHelpLinkOptions}
                   className="link link-primary font-medium"
                 >
-                  help page
+                  帮助页面
                 </Link>
-                .
+                中的快速步骤。
               </span>
             </div>
           </div>
@@ -40,15 +40,14 @@ function SeoApiStatusBanners({
             <div className="alert alert-info">
               <AlertTriangle className="size-4 shrink-0" />
               <span className="text-sm">
-                We could not verify your DataForSEO setup. If features are not
-                working, check the setup steps on the{" "}
+                无法验证 DataForSEO 设置。如果功能无法使用，请查看
                 <Link
                   {...dataforseoHelpLinkOptions}
                   className="link link-primary font-medium"
                 >
-                  help page
+                  帮助页面
                 </Link>
-                .
+                中的设置步骤。
               </span>
             </div>
           </div>
@@ -73,7 +72,7 @@ function MobileSidebarDrawer({
     <div className="fixed inset-0 z-50 md:hidden">
       <button
         type="button"
-        aria-label="Close sidebar"
+        aria-label="关闭侧边栏"
         className="absolute inset-0 bg-black/45"
         onClick={onClose}
       />
@@ -113,27 +112,27 @@ const MissingSeoSetupModal = React.forwardRef<
               id="dataforseo-setup-title"
               className="text-lg font-semibold text-base-content"
             >
-              One quick setup step
+              还需完成一项设置
             </h2>
             <p
               id="dataforseo-setup-description"
               className="text-sm text-base-content/75"
             >
-              Add your DataForSEO API key to start using OpenSEO.
+              添加 DataForSEO API 密钥后即可开始使用 OpenSEO。
             </p>
           </div>
         </div>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" className="btn btn-ghost" onClick={onClose}>
-            Dismiss
+            暂不处理
           </button>
           <Link
             {...dataforseoHelpLinkOptions}
             className="btn btn-primary"
             onClick={onClose}
           >
-            Open setup guide
+            打开设置指南
             <ExternalLink className="size-4" />
           </Link>
         </div>

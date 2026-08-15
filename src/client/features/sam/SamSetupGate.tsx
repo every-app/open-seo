@@ -18,20 +18,19 @@ export function SamSetupGate({
             <Wrench className="size-5" />
           </div>
           <div className="max-w-3xl space-y-1.5">
-            <h2 className="text-xl font-semibold">Enable AI Features</h2>
+            <h2 className="text-xl font-semibold">启用 AI 功能</h2>
             <div className="text-sm text-base-content/68">
-              SAM, OpenSEO's in-app AI agent, needs an OpenRouter API key.
-              Create a key on OpenRouter, set it as the{" "}
-              <code>OPENROUTER_API_KEY</code> environment variable, restart
-              OpenSEO, then confirm here.
+              OpenSEO 内置 AI 智能体 SAM 需要 OpenRouter API 密钥。请在
+              OpenRouter 创建密钥，将其设置为 <code>OPENROUTER_API_KEY</code>{" "}
+              环境变量，重启 OpenSEO 后在此确认。
             </div>
             <div className="text-xs text-base-content/50">
-              Step-by-step instructions for every deployment are in the{" "}
+              各类部署方式的操作步骤请查看{" "}
               <Link
                 className="underline underline-offset-2 hover:text-base-content/70"
                 to="/help/openrouter-api-key"
               >
-                OpenRouter API key setup guide
+                OpenRouter API 密钥设置指南
               </Link>
               .
             </div>
@@ -44,7 +43,7 @@ export function SamSetupGate({
             onClick={onRetry}
             disabled={isRefetching}
           >
-            {isRefetching ? "Confirming..." : "Confirm API Key"}
+            {isRefetching ? "正在确认…" : "确认 API 密钥"}
           </button>
           <a
             className="btn"
@@ -52,7 +51,7 @@ export function SamSetupGate({
             target="_blank"
             rel="noreferrer"
           >
-            Open OpenRouter Keys
+            打开 OpenRouter 密钥页面
           </a>
         </div>
 

@@ -54,7 +54,7 @@ export function RankTrackingDetailHeader({
           {run?.lastCheckedAt && (
             <>
               {" "}
-              &middot; Last: {new Date(run.lastCheckedAt).toLocaleDateString()}
+              · 最近检查： {new Date(run.lastCheckedAt).toLocaleDateString()}
             </>
           )}
           {costEstimate && costEstimate.keywordCount > 0 && (
@@ -69,12 +69,12 @@ export function RankTrackingDetailHeader({
               {
                 value: "desktop" as const,
                 icon: <Monitor className="size-3.5" />,
-                label: "Desktop",
+                label: "桌面端",
               },
               {
                 value: "mobile" as const,
                 icon: <Smartphone className="size-3.5" />,
-                label: "Mobile",
+                label: "移动端",
               },
             ]}
             value={activeDevice}
@@ -83,29 +83,29 @@ export function RankTrackingDetailHeader({
         )}
         <select
           className="select select-bordered select-sm text-xs w-auto"
-          title="Comparison period"
+          title="对比周期"
           value={comparePeriod}
           onChange={(e) => {
             if (isComparePeriod(e.target.value))
               onComparePeriodChange(e.target.value);
           }}
         >
-          <option value="1d">vs yesterday</option>
-          <option value="7d">vs last week</option>
-          <option value="30d">vs last month</option>
-          <option value="90d">vs 90 days ago</option>
+          <option value="1d">对比昨天</option>
+          <option value="7d">对比上周</option>
+          <option value="30d">对比上月</option>
+          <option value="90d">对比 90 天前</option>
         </select>
         <div className="hidden sm:block h-6 w-px bg-base-300" />
         <button className="btn btn-sm gap-1" onClick={onEdit}>
           <Settings className="size-3.5" />
-          Configure
+          配置
         </button>
         <button
           className="btn btn-primary btn-sm gap-1"
           onClick={onToggleAddKeywords}
         >
           <Plus className="size-3.5" />
-          Add Keywords
+          添加关键词
         </button>
       </div>
     </div>

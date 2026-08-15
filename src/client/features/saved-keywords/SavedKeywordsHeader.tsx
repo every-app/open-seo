@@ -27,10 +27,9 @@ export function SavedKeywordsHeader({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold">Saved Keywords</h1>
+        <h1 className="text-2xl font-semibold">已保存关键词</h1>
         <p className="text-sm text-base-content/70">
-          Save keyword ideas from research, organize them with tags, and revisit
-          when you&apos;re ready to act.
+          保存研究中发现的关键词，用标签分类，并在需要时继续使用。
         </p>
       </div>
 
@@ -46,7 +45,7 @@ export function SavedKeywordsHeader({
             <RefreshCw
               className={`size-4 ${metricsRefreshing ? "animate-spin" : ""}`}
             />
-            {metricsRefreshing ? "Updating..." : "Actions"}
+            {metricsRefreshing ? "更新中…" : "操作"}
             <ChevronDown className="size-3 opacity-60" />
           </button>
           <ul
@@ -62,9 +61,9 @@ export function SavedKeywordsHeader({
               >
                 <RefreshCw className="size-4" />
                 <span className="flex flex-col items-start">
-                  <span>Update keyword stats</span>
+                  <span>更新关键词数据</span>
                   <span className="text-xs text-base-content/50">
-                    Volume, difficulty &amp; CPC
+                    搜索量、难度和 CPC
                   </span>
                 </span>
               </button>
@@ -85,7 +84,7 @@ export function SavedKeywordsHeader({
             ) : (
               <Download className="size-4" />
             )}
-            Export
+            导出
             <ChevronDown className="size-3 opacity-60" />
           </button>
           <ul
@@ -100,13 +99,13 @@ export function SavedKeywordsHeader({
                 disabled={disabled}
               >
                 <Sheet className="size-4" />
-                Export to Sheets
+                导出到 Google 表格
               </button>
             </li>
             <li>
               <button type="button" onClick={onExportCsv} disabled={disabled}>
                 <FileDown className="size-4" />
-                Export CSV
+                导出 CSV
               </button>
             </li>
           </ul>

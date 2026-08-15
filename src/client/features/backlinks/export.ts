@@ -24,23 +24,23 @@ export function buildBacklinksTabExport(args: {
   if (tab === "backlinks") {
     return {
       headers: [
-        "Domain",
-        "Source URL",
-        "Target URL",
-        "Anchor",
-        "Type",
+        "域名",
+        "来源网址",
+        "目标网址",
+        "锚文本",
+        "类型",
         "Dofollow",
-        "Rel Attributes",
-        "Domain Rank",
+        "Rel 属性",
+        "域名权威度",
         ...(domainRatings ? ["Ahrefs DR"] : []),
-        "Source Page Rank",
-        "Target Rank",
-        "Spam Score",
-        "First Seen",
-        "Last Seen",
-        "Lost",
-        "Broken",
-        "Links Count",
+        "来源页面权威度",
+        "目标页面权威度",
+        "垃圾链接分数",
+        "首次发现",
+        "最近发现",
+        "已丢失",
+        "已失效",
+        "链接数量",
       ],
       rows: rows.backlinks.map((row) => [
         row.domainFrom,
@@ -67,15 +67,15 @@ export function buildBacklinksTabExport(args: {
   if (tab === "domains") {
     return {
       headers: [
-        "Domain",
-        "Backlinks",
-        "Referring Pages",
-        "Rank",
+        "域名",
+        "反向链接",
+        "引用页面",
+        "权威度",
         ...(domainRatings ? ["Ahrefs DR"] : []),
-        "Spam Score",
-        "First Seen",
-        "Broken Backlinks",
-        "Broken Pages",
+        "垃圾链接分数",
+        "首次发现",
+        "失效反向链接",
+        "失效页面",
       ],
       rows: rows.referringDomains.map((row) => [
         row.domain,
@@ -92,13 +92,7 @@ export function buildBacklinksTabExport(args: {
   }
 
   return {
-    headers: [
-      "Page",
-      "Backlinks",
-      "Referring Domains",
-      "Rank",
-      "Broken Backlinks",
-    ],
+    headers: ["页面", "反向链接", "引用域名", "权威度", "失效反向链接"],
     rows: rows.topPages.map((row) => [
       row.page,
       row.backlinks,

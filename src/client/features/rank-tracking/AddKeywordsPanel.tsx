@@ -26,7 +26,7 @@ export function AddKeywordsPanel({
       onSuccess(result);
     },
     onError: (error) => {
-      toast.error(getStandardErrorMessage(error, "Failed to add keywords"));
+      toast.error(getStandardErrorMessage(error, "关键词添加失败"));
     },
   });
   const isPending = mutation.isPending;
@@ -35,7 +35,7 @@ export function AddKeywordsPanel({
       <textarea
         className="textarea textarea-bordered textarea-sm flex-1"
         rows={3}
-        placeholder="Enter keywords, one per line"
+        placeholder="输入关键词，每行一个"
         value={keywordInput}
         onChange={(e) => setKeywordInput(e.target.value)}
       />
@@ -49,7 +49,7 @@ export function AddKeywordsPanel({
               .filter(Boolean);
             if (lines.some((l) => l.length > MAX_TRACKED_KEYWORD_LENGTH)) {
               toast.error(
-                `Keywords must be ${MAX_TRACKED_KEYWORD_LENGTH} characters or fewer.`,
+                `每个关键词最多可输入 ${MAX_TRACKED_KEYWORD_LENGTH} 个字符。`,
               );
               return;
             }
@@ -58,10 +58,10 @@ export function AddKeywordsPanel({
           disabled={isPending || !keywordInput.trim()}
         >
           {isPending && <Loader2 className="size-3 animate-spin" />}
-          Add
+          添加
         </button>
         <button className="btn btn-ghost btn-sm" onClick={onCancel}>
-          Cancel
+          取消
         </button>
       </div>
     </div>

@@ -39,9 +39,9 @@ import {
 } from "@/types/schemas/search-performance";
 
 const RANGE_LABELS: Record<SearchPerformanceDateRange, string> = {
-  last_7_days: "Last 7 days",
-  last_28_days: "Last 28 days",
-  last_3_months: "Last 3 months",
+  last_7_days: "最近 7 天",
+  last_28_days: "最近 28 天",
+  last_3_months: "最近 3 个月",
 };
 const RANGE_OPTIONS = SEARCH_PERFORMANCE_RANGES.map((value) => ({
   value,
@@ -49,9 +49,9 @@ const RANGE_OPTIONS = SEARCH_PERFORMANCE_RANGES.map((value) => ({
 }));
 
 const DEVICE_LABELS: Record<SearchPerformanceDevice, string> = {
-  DESKTOP: "Desktop",
-  MOBILE: "Mobile",
-  TABLET: "Tablet",
+  DESKTOP: "桌面端",
+  MOBILE: "移动端",
+  TABLET: "平板设备",
 };
 const DEVICE_OPTIONS = GSC_DEVICES.map((value) => ({
   value,
@@ -184,7 +184,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
       });
       exportDimensionRows(dimension, data.rows, report.range, target);
     } catch (error) {
-      toast.error(getStandardErrorMessage(error, "Export failed"));
+      toast.error(getStandardErrorMessage(error, "导出失败"));
     }
   };
 
@@ -193,10 +193,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
       <div className="mx-auto max-w-7xl space-y-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Search Performance</h1>
+            <h1 className="text-2xl font-semibold">搜索表现</h1>
             <p className="text-sm text-base-content/70">
-              See your site&apos;s clicks, impressions, CTR, and position from
-              Google Search Console.
+              查看网站在 Google Search Console 中的点击、展示、CTR 和排名。
             </p>
           </div>
           {report?.connected ? (
@@ -206,7 +205,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
               hash="search-console"
               className="link link-hover shrink-0 self-start text-sm font-medium text-base-content/60 transition-colors hover:text-base-content sm:mt-1"
             >
-              Change property
+              更换媒体资源
             </Link>
           ) : null}
         </div>
@@ -232,17 +231,17 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   <TabButton
                     active={tab === "striking"}
                     onClick={() => setTab("striking")}
-                    label={`Striking distance (${report.strikingDistance.length})`}
+                    label={`接近突破（${report.strikingDistance.length}）`}
                   />
                   <TabButton
                     active={tab === "queries"}
                     onClick={() => setTab("queries")}
-                    label="Queries"
+                    label="查询词"
                   />
                   <TabButton
                     active={tab === "pages"}
                     onClick={() => setTab("pages")}
-                    label="Pages"
+                    label="页面"
                   />
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -257,9 +256,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                         isDevice(event.target.value) ? event.target.value : ALL,
                       );
                     }}
-                    aria-label="Device filter"
+                    aria-label="设备筛选"
                   >
-                    <option value={ALL}>All devices</option>
+                    <option value={ALL}>全部设备</option>
                     {DEVICE_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
                         {option.label}
@@ -270,9 +269,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                     className="select select-bordered select-sm w-36"
                     value={country}
                     onChange={(event) => setCountry(event.target.value)}
-                    aria-label="Country filter"
+                    aria-label="国家或地区筛选"
                   >
-                    <option value={ALL}>All countries</option>
+                    <option value={ALL}>全部国家或地区</option>
                     {report.countries.map((row) => (
                       <option key={row.key} value={row.key}>
                         {row.key.toUpperCase()}
@@ -287,7 +286,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                         setRange(event.target.value);
                       }
                     }}
-                    aria-label="Date range"
+                    aria-label="日期范围"
                   >
                     {RANGE_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -299,12 +298,12 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                     buttonClassName="btn btn-ghost btn-sm gap-1"
                     actions={[
                       {
-                        label: "Export to Sheets",
+                        label: "导出到 Google 表格",
                         icon: <Sheet className="size-4" />,
                         onClick: () => void handleExport("sheets"),
                       },
                       {
-                        label: "Download CSV",
+                        label: "下载 CSV",
                         icon: <Download className="size-4" />,
                         onClick: () => void handleExport("csv"),
                       },
@@ -320,7 +319,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                 />
               ) : tableQuery.isPending ? (
                 <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
-                  <Loader2 className="size-4 animate-spin" /> Loading…
+                  <Loader2 className="size-4 animate-spin" /> 加载中…
                 </div>
               ) : tableQuery.isError ? (
                 <div className="p-4">
@@ -335,7 +334,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   <div className="p-4">
                     <DimensionTable
                       rows={tableRows}
-                      keyLabel={tab === "queries" ? "Query" : "Page"}
+                      keyLabel={tab === "queries" ? "查询词" : "页面"}
                     />
                   </div>
                   <TablePagination

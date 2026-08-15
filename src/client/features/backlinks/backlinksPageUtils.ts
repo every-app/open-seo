@@ -2,12 +2,9 @@ import type { BacklinksTab } from "@/types/schemas/backlinks";
 import type { BacklinksOverviewData } from "./backlinksPageTypes";
 
 export const TAB_DESCRIPTIONS: Record<BacklinksTab, string> = {
-  backlinks:
-    "See the individual links pointing to your target, including source page, anchor text, and link quality signals.",
-  domains:
-    "View the unique domains linking to your target, grouped at the site level instead of by individual link.",
-  pages:
-    "See which pages on the target site attract the most backlinks and referring domains.",
+  backlinks: "查看指向目标的每条链接，包括来源页面、锚文本和链接质量信号。",
+  domains: "按网站维度查看链接到目标的不重复域名。",
+  pages: "查看目标网站中吸引反向链接和引用域名最多的页面。",
 };
 
 export function buildSummaryStats(data: BacklinksOverviewData | undefined) {
@@ -15,44 +12,44 @@ export function buildSummaryStats(data: BacklinksOverviewData | undefined) {
 
   return [
     {
-      label: "Backlinks",
+      label: "反向链接",
       value: formatNumber(data.summary.backlinks),
-      description: "Total links pointing to this site or page.",
+      description: "指向此网站或页面的链接总数。",
     },
     {
-      label: "Referring Domains",
+      label: "引用域名",
       value: formatNumber(data.summary.referringDomains),
-      description: "Unique domains linking to this site or page.",
+      description: "链接到此网站或页面的不重复域名数。",
     },
     {
-      label: "Referring Pages",
+      label: "引用页面",
       value: formatNumber(data.summary.referringPages),
-      description: "Unique pages linking to this site or page.",
+      description: "链接到此网站或页面的不重复页面数。",
     },
     {
-      label: "Rank",
+      label: "权威度",
       value: formatNumber(data.summary.rank),
-      description: "DataForSEO's 0-100 authority score.",
+      description: "DataForSEO 提供的 0 到 100 权威度分数。",
     },
     {
-      label: "Backlink Spam Score",
+      label: "反向链接垃圾风险",
       value: formatDecimal(data.summary.backlinksSpamScore),
-      description: "Estimated spam risk of links pointing here.",
+      description: "指向此处链接的预估垃圾风险。",
     },
     {
-      label: "Broken Backlinks",
+      label: "失效反向链接",
       value: formatNumber(data.summary.brokenBacklinks),
-      description: "Links pointing to broken pages here.",
+      description: "指向此处失效页面的链接。",
     },
     {
-      label: "Broken Pages",
+      label: "失效页面",
       value: formatNumber(data.summary.brokenPages),
-      description: "Broken pages here that still have backlinks.",
+      description: "此处仍有反向链接的失效页面。",
     },
     {
-      label: "Target Spam Score",
+      label: "目标垃圾风险",
       value: formatDecimal(data.summary.targetSpamScore),
-      description: "Estimated spam risk of this site or page.",
+      description: "此网站或页面的预估垃圾风险。",
     },
   ];
 }

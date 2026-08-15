@@ -78,7 +78,7 @@ export function RankTrackingDomainList({
       void queryClient.invalidateQueries({
         queryKey: ["rankTrackingConfigs", projectId],
       });
-      toast.success("Domain archived");
+      toast.success("域名已归档");
     },
   });
 
@@ -86,13 +86,13 @@ export function RankTrackingDomainList({
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-0 p-0">
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
-          <h2 className="text-sm font-semibold">Tracked Domains</h2>
+          <h2 className="text-sm font-semibold">已追踪域名</h2>
           <button
             className="btn btn-primary btn-sm gap-1"
             onClick={onAddDomain}
           >
             <Plus className="size-3.5" />
-            Add Domain
+            添加域名
           </button>
         </div>
         {(allSummaries.length >= FILTER_BAR_MIN_DOMAINS ||
@@ -121,10 +121,10 @@ export function RankTrackingDomainList({
                 <Globe className="size-5 text-base-content/40" />
               </div>
               <p className="text-sm font-medium text-base-content/70">
-                No tracked domains yet
+                暂无已追踪域名
               </p>
               <p className="text-xs text-base-content/40">
-                Add a domain to start monitoring keyword rankings over time.
+                添加域名后即可持续监控关键词排名。
               </p>
             </div>
           ) : filteredSummaries.length === 0 ? (
@@ -134,10 +134,10 @@ export function RankTrackingDomainList({
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-base-content/70">
-                  No matching tracked domains
+                  没有匹配的已追踪域名
                 </p>
                 <p className="text-xs text-base-content/40">
-                  Try clearing search or adjusting filters.
+                  请清除搜索内容或调整筛选条件。
                 </p>
               </div>
               <button
@@ -145,7 +145,7 @@ export function RankTrackingDomainList({
                 onClick={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
                 disabled={activeFilterCount === 0}
               >
-                Clear filters
+                清除筛选
               </button>
             </div>
           ) : (
@@ -167,18 +167,17 @@ export function RankTrackingDomainList({
           labelledBy="archive-domain-title"
         >
           <h3 id="archive-domain-title" className="text-lg font-semibold">
-            Archive {archiveTarget.domain}?
+            归档 {archiveTarget.domain}？
           </h3>
           <p className="text-sm text-base-content/70">
-            Scheduled checks will stop and this domain will be hidden from the
-            list. Ranking history is preserved.
+            定时检查将停止，域名会从列表中隐藏，排名历史仍会保留。
           </p>
           <div className="flex justify-end gap-2">
             <button
               className="btn btn-ghost btn-sm"
               onClick={() => setArchiveTarget(null)}
             >
-              Cancel
+              取消
             </button>
             <button
               className="btn btn-error btn-sm gap-1"
@@ -186,7 +185,7 @@ export function RankTrackingDomainList({
               disabled={archiveMutation.isPending}
             >
               <Archive className="size-3.5" />
-              Archive
+              归档
             </button>
           </div>
         </Modal>
@@ -210,7 +209,7 @@ function DomainRow({
         to="/p/$projectId/rank-tracking/$configId"
         params={{ projectId, configId: summary.id }}
         className="absolute inset-0 z-0"
-        aria-label={`Open ${summary.domain}`}
+        aria-label={`打开 ${summary.domain}`}
       />
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
@@ -223,7 +222,7 @@ function DomainRow({
           {summary.lastRunCompletedAt && (
             <>
               {" "}
-              &middot; Last:{" "}
+              · 最近检查：{" "}
               {new Date(summary.lastRunCompletedAt).toLocaleDateString()}
             </>
           )}
@@ -231,13 +230,13 @@ function DomainRow({
         {summary.lastSkipReason === "insufficient_credits" && (
           <p className="flex items-center gap-1 text-xs text-warning">
             <AlertTriangle className="size-3" />
-            Scheduled check skipped — insufficient credits
+            定时检查已跳过，点数不足
           </p>
         )}
         {summary.lastSkipReason === "plan_required" && (
           <p className="flex items-center gap-1 text-xs text-warning">
             <AlertTriangle className="size-3" />
-            Scheduled check skipped — paid plan required
+            定时检查已跳过，需要付费方案
           </p>
         )}
       </div>
@@ -245,7 +244,7 @@ function DomainRow({
         {summary.keywordCount > 0 && (
           <div className="text-center">
             <p className="text-xs uppercase tracking-wide text-base-content/60">
-              Keywords
+              关键词
             </p>
             <p className="font-mono font-medium">{summary.keywordCount}</p>
           </div>
@@ -254,7 +253,7 @@ function DomainRow({
       <button
         type="button"
         className="btn btn-ghost btn-xs text-base-content/40 hover:text-error relative z-10"
-        title="Archive domain"
+        title="归档域名"
         onClick={(e) => {
           e.stopPropagation();
           e.preventDefault();

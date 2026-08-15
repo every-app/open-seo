@@ -57,7 +57,7 @@ function DomainKeywordsTableComponent({
     () => [
       makeSelectionColumn<KeywordRow>(selectAnchorRef),
       keywordColumnHelper.accessor("keyword", {
-        header: () => "Keyword",
+        header: () => "关键词",
         cell: ({ getValue }) => (
           <span className="font-medium">{getValue()}</span>
         ),
@@ -65,7 +65,7 @@ function DomainKeywordsTableComponent({
       keywordColumnHelper.accessor("position", {
         header: () => (
           <SortableHeader
-            label="Rank"
+            label="排名"
             isActive={sortMode === "rank"}
             order={currentSortOrder}
             onClick={() => onSortClick("rank")}
@@ -76,7 +76,7 @@ function DomainKeywordsTableComponent({
       keywordColumnHelper.accessor("searchVolume", {
         header: () => (
           <SortableHeader
-            label="Volume"
+            label="搜索量"
             isActive={sortMode === "volume"}
             order={currentSortOrder}
             onClick={() => onSortClick("volume")}
@@ -87,7 +87,7 @@ function DomainKeywordsTableComponent({
       keywordColumnHelper.accessor("traffic", {
         header: () => (
           <SortableHeader
-            label="Traffic"
+            label="流量"
             isActive={sortMode === "traffic"}
             order={currentSortOrder}
             onClick={() => onSortClick("traffic")}
@@ -99,7 +99,7 @@ function DomainKeywordsTableComponent({
         header: () => (
           <SortableHeader
             label="CPC"
-            helpText="Cost per click in USD."
+            helpText="以美元计算的单次点击费用。"
             isActive={sortMode === "cpc"}
             order={currentSortOrder}
             onClick={() => onSortClick("cpc")}
@@ -112,7 +112,7 @@ function DomainKeywordsTableComponent({
       }),
       keywordColumnHelper.display({
         id: "url",
-        header: () => "URL",
+        header: () => "网址",
         cell: ({ row }) => (
           <ExternalUrlCell
             value={row.original.relativeUrl ?? row.original.url}
@@ -127,8 +127,8 @@ function DomainKeywordsTableComponent({
       keywordColumnHelper.accessor("keywordDifficulty", {
         header: () => (
           <SortableHeader
-            label="Score"
-            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
+            label="难度"
+            helpText="自然搜索排名难度（0 到 100），数值越高表示进入 Google 前 10 名越难。"
             isActive={sortMode === "score"}
             order={currentSortOrder}
             onClick={() => onSortClick("score")}
@@ -171,8 +171,8 @@ function DomainKeywordsTableComponent({
     <div className="overflow-x-auto">
       <div className="mb-2 text-xs text-base-content/60">
         {selectedKeywords.size > 0
-          ? `${selectedKeywords.size} selected`
-          : "Select keywords to save"}
+          ? `已选择 ${selectedKeywords.size} 个`
+          : "选择要保存的关键词"}
       </div>
       <AppDataTable
         table={table}
@@ -180,7 +180,7 @@ function DomainKeywordsTableComponent({
         wrapperClassName=""
         empty={
           <div className="py-6 text-center text-base-content/60">
-            No keywords match this search.
+            没有关键词符合当前搜索。
           </div>
         }
       />

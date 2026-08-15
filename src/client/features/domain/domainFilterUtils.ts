@@ -99,8 +99,8 @@ function countFilterConditions<TValues extends Record<string, string>>(
   fields: ReadonlyArray<FilterKey<TValues>>,
 ): number {
   let n = 0;
-  for (const term of values.include.split(/[,+]/)) if (term.trim()) n += 1;
-  for (const term of values.exclude.split(/[,+]/)) if (term.trim()) n += 1;
+  for (const term of values.include.split(/[,+，、]/)) if (term.trim()) n += 1;
+  for (const term of values.exclude.split(/[,+，、]/)) if (term.trim()) n += 1;
   for (const key of fields) {
     if (key === "include" || key === "exclude") continue;
     if (values[key].trim() !== "") n += 1;

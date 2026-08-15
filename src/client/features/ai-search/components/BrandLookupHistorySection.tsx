@@ -18,8 +18,8 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
     <SearchHistorySection
       {...props}
       emptyIcon={Sparkles}
-      emptyMessage="Search a brand name or domain to see how AI cites it"
-      noun="lookup"
+      emptyMessage="搜索品牌名称或域名，查看 AI 的引用情况"
+      noun="品牌查询"
       renderItemLink={(item, content) => (
         <Link
           from="/p/$projectId/brand-lookup"

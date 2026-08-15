@@ -32,16 +32,15 @@ export function UnauthenticatedErrorCard({
   return (
     <div className="card w-full max-w-md bg-base-100 border border-base-300 shadow-xl">
       <div className="card-body gap-4">
-        <h2 className="card-title">Authentication required</h2>
+        <h2 className="card-title">需要身份验证</h2>
         <p className="text-sm text-base-content/70">{message}</p>
         <p className="text-sm text-base-content/70">
-          This deployment uses external authentication. Refresh your access
-          session, then try again.
+          此部署使用外部身份验证。请刷新访问会话后重试。
         </p>
         {onRetry ? (
           <div className="card-actions justify-end">
             <button className="btn btn-primary btn-sm" onClick={onRetry}>
-              Try Again
+              重试
             </button>
           </div>
         ) : null}

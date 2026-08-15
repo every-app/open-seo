@@ -29,7 +29,7 @@ export function useKeywordSerpAnalysis(
     serpKeyword ?? serpQuery.data?.requestedKeyword ?? null;
   const serpLoading = !!serpKeyword && serpQuery.isLoading;
   const serpError = serpQuery.isError
-    ? getStandardErrorMessage(serpQuery.error, "Failed to load SERP data.")
+    ? getStandardErrorMessage(serpQuery.error, "SERP 数据加载失败。")
     : null;
 
   return {

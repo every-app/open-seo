@@ -28,8 +28,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Domain"
-        helpText="The referring site linking to your target."
+        label="域名"
+        helpText="链接到目标的来源网站。"
       />
     ),
     cell: ({ getValue }) => {
@@ -49,8 +49,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Backlinks"
-        helpText="Total backlinks found from this domain."
+        label="反向链接"
+        helpText="从此域名发现的反向链接总数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -61,8 +61,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Referring Pages"
-        helpText="Unique pages on this domain that link to your target."
+        label="引用页面"
+        helpText="此域名中链接到目标的不重复页面数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -73,8 +73,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Rank"
-        helpText="Authority score for the referring domain."
+        label="权威度"
+        helpText="引用域名的权威度分数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -85,8 +85,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Spam"
-        helpText="Spam risk score for this referring domain."
+        label="垃圾风险"
+        helpText="引用域名的垃圾风险分数。"
       />
     ),
     cell: ({ getValue }) => formatDecimal(getValue()),
@@ -97,8 +97,8 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="First Seen"
-        helpText="When this domain was first discovered linking to your target."
+        label="首次发现"
+        helpText="首次发现此域名链接到目标的时间。"
       />
     ),
     cell: ({ getValue }) => formatCompactDate(getValue()),
@@ -109,15 +109,15 @@ const baseColumns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Issues"
-        helpText="Broken link and broken page counts tied to this domain."
+        label="问题"
+        helpText="与此域名相关的失效链接和失效页面数量。"
       />
     ),
     cell: ({ row }) => (
       <div className="text-sm">
-        <div>Broken links: {formatNumber(row.original.brokenBacklinks)}</div>
+        <div>失效链接： {formatNumber(row.original.brokenBacklinks)}</div>
         <div className="text-base-content/55">
-          Broken pages: {formatNumber(row.original.brokenPages)}
+          失效页面： {formatNumber(row.original.brokenPages)}
         </div>
       </div>
     ),
@@ -140,7 +140,7 @@ function buildReferringDomainColumns(domainRatings: DomainRatings | null) {
     header: () => (
       <HeaderHelpLabel
         label="Ahrefs DR"
-        helpText="Ahrefs Domain Rating (0-100) for this referring domain."
+        helpText="此引用域名的 Ahrefs 域名评级（0 到 100）。"
       />
     ),
     cell: ({ row }) => {
@@ -191,7 +191,7 @@ export function ReferringDomainsTable({
   });
 
   if (rows.length === 0) {
-    return <EmptyTableState label="No referring domains match this filter." />;
+    return <EmptyTableState label="没有引用域名符合当前筛选条件。" />;
   }
 
   return (
