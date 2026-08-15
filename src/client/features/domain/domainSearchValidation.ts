@@ -6,7 +6,7 @@ export function getDomainSearchValidationErrors(value: DomainControlsValues) {
   if (!value.domain.trim()) {
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a domain",
+        domain: "请输入域名",
       },
     });
   }
@@ -14,7 +14,7 @@ export function getDomainSearchValidationErrors(value: DomainControlsValues) {
   if (!normalizeDomainTarget(value.domain)) {
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a valid URL or domain (e.g. example.com)",
+        domain: "请输入有效的网址或域名，例如 example.com",
       },
     });
   }
@@ -34,7 +34,7 @@ export function getDomainSearchChangeValidationErrors(
 
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a domain",
+        domain: "请输入域名",
       },
     });
   }

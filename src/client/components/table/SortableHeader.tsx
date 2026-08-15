@@ -23,7 +23,7 @@ export function SortableHeader({
       type="button"
       className="inline-flex items-center gap-1 font-medium transition-colors hover:text-base-content"
       onClick={column.getToggleSortingHandler()}
-      aria-label={`Sort by ${label}`}
+      aria-label={`按${label}排序`}
       aria-pressed={!!sorted}
     >
       {helpText ? <HeaderHelpLabel label={label} helpText={helpText} /> : label}

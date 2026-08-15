@@ -46,7 +46,7 @@ export function KeywordResearchMobileResults({ controller }: Props) {
           }`}
           onClick={() => controller.setMobileTab("keywords")}
         >
-          Keywords ({filteredRows.length})
+          关键词（{filteredRows.length})
         </button>
         <button
           className={`flex-1 py-2 text-sm font-medium text-center border-b-2 transition-colors ${
@@ -56,7 +56,7 @@ export function KeywordResearchMobileResults({ controller }: Props) {
           }`}
           onClick={() => controller.setMobileTab("serp")}
         >
-          SERP Analysis
+          SERP 分析
         </button>
       </div>
 
@@ -94,10 +94,10 @@ function MobileKeywordResults({ controller }: Props) {
 
   const keywordCountLabel =
     selectedRows.size > 0
-      ? `${selectedRows.size} selected`
+      ? `已选择 ${selectedRows.size} 个`
       : activeFilterCount > 0
-        ? `Showing ${filteredRows.length} of ${rows.length}`
-        : `Showing ${filteredRows.length} keywords`;
+        ? `显示 ${filteredRows.length} / ${rows.length} 个关键词`
+        : `显示 ${filteredRows.length} 个关键词`;
 
   const canExport = filteredRows.length > 0;
   const selectedExportRows = filteredRows
@@ -133,9 +133,9 @@ function MobileKeywordResults({ controller }: Props) {
           className="mx-4 mt-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-base-content"
           role="status"
         >
-          No exact match for{" "}
-          <span className="font-medium">"{controller.searchedKeyword}"</span>.
-          Showing closest related keywords.
+          没有完全匹配：{" "}
+          <span className="font-medium">“{controller.searchedKeyword}”</span>。
+          当前显示最接近的相关关键词。
         </div>
       ) : null}
 
@@ -145,7 +145,7 @@ function MobileKeywordResults({ controller }: Props) {
           onClick={() => controller.setShowFilters((current) => !current)}
         >
           <SlidersHorizontal className="size-3.5" />
-          Filters
+          筛选
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {activeFilterCount}
@@ -161,7 +161,7 @@ function MobileKeywordResults({ controller }: Props) {
             tabIndex={0}
             role="button"
             className={`btn btn-ghost btn-xs gap-1 ${!canExport ? "btn-disabled" : ""}`}
-            aria-label="Export"
+            aria-label="导出"
           >
             <Download className="size-3.5" />
             <ChevronDown className="size-3 opacity-60" />
@@ -173,13 +173,13 @@ function MobileKeywordResults({ controller }: Props) {
             <li>
               <button onClick={handleExportToSheets} disabled={!canExport}>
                 <Sheet className="size-4" />
-                Export to Sheets
+                导出到 Google 表格
               </button>
             </li>
             <li>
               <button onClick={controller.exportCsv} disabled={!canExport}>
                 <FileDown className="size-4" />
-                Export CSV
+                导出 CSV
               </button>
             </li>
           </ul>
@@ -195,17 +195,17 @@ function MobileKeywordResults({ controller }: Props) {
               icon={<Save className="size-3.5" />}
               onClick={controller.handleSaveKeywords}
             >
-              Save
+              保存
             </TableBulkActionButton>
             <TableBulkExportMenu
               actions={[
                 {
-                  label: "Export to Sheets",
+                  label: "导出到 Google 表格",
                   icon: <Sheet className="size-4" />,
                   onClick: handleExportSelectionToSheets,
                 },
                 {
-                  label: "Export CSV",
+                  label: "导出 CSV",
                   icon: <FileDown className="size-4" />,
                   onClick: handleExportSelectionCsv,
                 },
@@ -249,7 +249,7 @@ function MobileFilters({ controller }: Props) {
     <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold">Refine table results</p>
+          <p className="text-xs font-semibold">筛选表格结果</p>
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {activeFilterCount}
@@ -262,7 +262,7 @@ function MobileFilters({ controller }: Props) {
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
-          Clear
+          清除
         </button>
       </div>
 
@@ -271,7 +271,7 @@ function MobileFilters({ controller }: Props) {
           {(field) => (
             <input
               className="input input-bordered input-sm bg-base-100"
-              placeholder="Include terms (audit, checker)"
+              placeholder="包含词语（例如：审计、检测）"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
             />
@@ -281,7 +281,7 @@ function MobileFilters({ controller }: Props) {
           {(field) => (
             <input
               className="input input-bordered input-sm bg-base-100"
-              placeholder="Exclude terms (jobs, course)"
+              placeholder="排除词语（例如：招聘、课程）"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
             />
@@ -293,34 +293,34 @@ function MobileFilters({ controller }: Props) {
         <MobileRangeInput
           form={filtersForm}
           name="minVol"
-          placeholder="Min volume"
+          placeholder="最低搜索量"
         />
         <MobileRangeInput
           form={filtersForm}
           name="maxVol"
-          placeholder="Max volume"
+          placeholder="最高搜索量"
         />
         <MobileRangeInput
           form={filtersForm}
           name="minCpc"
-          placeholder="Min CPC"
+          placeholder="最低 CPC"
           step="0.01"
         />
         <MobileRangeInput
           form={filtersForm}
           name="maxCpc"
-          placeholder="Max CPC"
+          placeholder="最高 CPC"
           step="0.01"
         />
         <MobileRangeInput
           form={filtersForm}
           name="minKd"
-          placeholder="Min difficulty"
+          placeholder="最低难度"
         />
         <MobileRangeInput
           form={filtersForm}
           name="maxKd"
-          placeholder="Max difficulty"
+          placeholder="最高难度"
         />
       </div>
 

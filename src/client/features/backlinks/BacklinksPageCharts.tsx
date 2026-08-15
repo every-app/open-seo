@@ -30,7 +30,7 @@ export function BacklinksTrendChart({
     <div
       ref={containerRef}
       className="h-56 min-w-0"
-      aria-label="Backlink trend chart"
+      aria-label="反向链接趋势图"
     >
       {chartWidth > 0 ? (
         <LineChart
@@ -68,7 +68,7 @@ export function BacklinksTrendChart({
             stroke="#2563eb"
             strokeWidth={2}
             dot={false}
-            name="Backlinks"
+            name="反向链接"
           />
           <Line
             yAxisId="right"
@@ -77,7 +77,7 @@ export function BacklinksTrendChart({
             stroke="#14b8a6"
             strokeWidth={2}
             dot={false}
-            name="Referring domains"
+            name="引荐域名"
           />
         </LineChart>
       ) : null}
@@ -100,7 +100,7 @@ export function BacklinksNewLostChart({
     <div
       ref={containerRef}
       className="h-56 min-w-0"
-      aria-label="New and lost backlinks chart"
+      aria-label="新增与丢失反向链接图"
     >
       {chartWidth > 0 ? (
         <LineChart
@@ -131,7 +131,7 @@ export function BacklinksNewLostChart({
             stroke="#ef4444"
             strokeWidth={2}
             dot={false}
-            name="Lost backlinks"
+            name="丢失的反向链接"
           />
           <Line
             type="monotone"
@@ -139,7 +139,7 @@ export function BacklinksNewLostChart({
             stroke="#16a34a"
             strokeWidth={2}
             dot={false}
-            name="New backlinks"
+            name="新增反向链接"
           />
         </LineChart>
       ) : null}
@@ -177,7 +177,7 @@ function useChartWidth() {
 function EmptyChartState() {
   return (
     <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-base-300 text-sm text-base-content/55">
-      Not enough historical data yet.
+      暂无足够的历史数据。
     </div>
   );
 }

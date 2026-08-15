@@ -170,9 +170,9 @@ async function finalizeRankCheckRun(input: {
 
   let errorMessage: string | undefined;
   if (input.batchError) {
-    errorMessage = `Completed ${keywordsChecked} of ${keywordsTotal} keyword(s). Error: ${input.batchError}`;
+    errorMessage = `已检查 ${keywordsChecked}/${keywordsTotal} 个关键词。错误：${input.batchError}`;
   } else if (incompleteCount > 0) {
-    errorMessage = `${incompleteCount} keyword(s) could not be checked`;
+    errorMessage = `${incompleteCount} 个关键词无法完成检查`;
   }
 
   // Flipping status away from 'pending'/'running' is what releases the

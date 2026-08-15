@@ -26,14 +26,14 @@ export function SavedKeywordsPagination({
     <div className="flex flex-col gap-3 border-t border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2 text-sm tabular-nums text-base-content/70">
         <span>
-          {start.toLocaleString()}-{end.toLocaleString()} of{" "}
+          {start.toLocaleString()}-{end.toLocaleString()} /{" "}
           {totalCount.toLocaleString()}
         </span>
         {isLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
       </div>
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm text-base-content/70">
-          <span className="whitespace-nowrap">Rows per page</span>
+          <span className="whitespace-nowrap">每页行数</span>
           <select
             className="select select-bordered select-sm w-20"
             value={pageSize}
@@ -50,7 +50,7 @@ export function SavedKeywordsPagination({
         </label>
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
-            Page {page.toLocaleString()} of {totalPages.toLocaleString()}
+            第 {page.toLocaleString()} / {totalPages.toLocaleString()} 页
           </span>
           <div className="flex items-center gap-1">
             <button
@@ -58,7 +58,7 @@ export function SavedKeywordsPagination({
               className="btn btn-ghost btn-sm btn-square"
               disabled={page <= 1 || isLoading}
               onClick={() => onPageChange(page - 1)}
-              aria-label="Previous page"
+              aria-label="上一页"
             >
               <ChevronLeft className="size-4" />
             </button>
@@ -67,7 +67,7 @@ export function SavedKeywordsPagination({
               className="btn btn-ghost btn-sm btn-square"
               disabled={page >= totalPages || isLoading}
               onClick={() => onPageChange(page + 1)}
-              aria-label="Next page"
+              aria-label="下一页"
             >
               <ChevronRight className="size-4" />
             </button>

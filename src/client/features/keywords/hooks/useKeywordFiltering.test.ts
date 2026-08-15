@@ -59,6 +59,17 @@ describe("parseIntentFilter", () => {
   });
 });
 
+describe("applyKeywordFiltersAndSort", () => {
+  it("accepts Chinese punctuation between filter terms", () => {
+    const result = filter(rows, { include: "running、shoes" });
+
+    expect(result.map((row) => row.keyword)).toEqual([
+      "best running shoes",
+      "buy running shoes",
+    ]);
+  });
+});
+
 describe("toggleIntentFilter", () => {
   it("adds an intent when absent and keeps canonical order", () => {
     expect(toggleIntentFilter("transactional", "informational")).toBe(

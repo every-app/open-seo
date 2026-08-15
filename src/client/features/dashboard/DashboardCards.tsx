@@ -60,15 +60,15 @@ export function GscCard({
 
   return (
     <CardShell
-      title="Search performance"
-      stamp="Google Search Console · last 28 days"
+      title="搜索表现"
+      stamp="Google Search Console · 最近 28 天"
       action={
         <Link
           to="/p/$projectId/search-performance"
           params={{ projectId }}
           className={moreDetailsClass}
         >
-          More details
+          查看更多
         </Link>
       }
     >
@@ -80,12 +80,12 @@ export function GscCard({
         </div>
       ) : reportQuery.isError ? (
         <p className="text-sm text-base-content/60">
-          Couldn&rsquo;t load Search Console data. Try again shortly.
+          无法加载 Search Console 数据，请稍后重试。
         </p>
       ) : report?.connected ? (
         <div className="grid grid-cols-2 gap-3">
           <Stat
-            label="Clicks"
+            label="点击次数"
             value={formatCount(report.totals.clicks)}
             sub={
               <PercentDelta
@@ -95,7 +95,7 @@ export function GscCard({
             }
           />
           <Stat
-            label="Impressions"
+            label="展示次数"
             value={formatCount(report.totals.impressions)}
             sub={
               <PercentDelta
@@ -106,7 +106,7 @@ export function GscCard({
           />
           <Stat label="CTR" value={formatCtr(report.totals.ctr)} />
           <Stat
-            label="Avg position"
+            label="平均排名"
             value={formatPosition(report.totals.position)}
           />
         </div>
@@ -124,16 +124,16 @@ export function AuditHealthCard({
 }) {
   if (!audit) {
     return (
-      <CardShell title="Site audit">
+      <CardShell title="站点审计">
         <EmptyCardBody
-          message="Crawl your site for broken links, missing tags and indexability problems."
+          message="抓取网站，检查失效链接、缺失标签和索引问题。"
           cta={
             <Link
               to="/p/$projectId/audit"
               params={{ projectId }}
               className="btn btn-primary btn-sm"
             >
-              Run an audit
+              运行审计
             </Link>
           }
         />
@@ -143,13 +143,13 @@ export function AuditHealthCard({
 
   return (
     <CardShell
-      title="Site audit"
-      stamp={`Site audit · ${
+      title="站点审计"
+      stamp={`站点审计 · ${
         audit.status === "completed"
-          ? `crawled ${audit.pagesCrawled} pages · ${formatDay(audit.startedAt)}`
+          ? `已抓取 ${audit.pagesCrawled} 个页面 · ${formatDay(audit.startedAt)}`
           : audit.status === "running"
-            ? "crawl in progress"
-            : "last crawl failed"
+            ? "正在抓取"
+            : "上次抓取失败"
       }`}
       action={
         <Link
@@ -157,14 +157,14 @@ export function AuditHealthCard({
           params={{ projectId }}
           className={moreDetailsClass}
         >
-          More details
+          查看更多
         </Link>
       }
     >
       {audit.topIssues.length === 0 ? (
         <div className="flex items-center gap-2 text-sm text-base-content/70">
           <Check className="size-4 text-success" />
-          No issues found — your site looks healthy.
+          未发现问题，网站状态良好。
         </div>
       ) : (
         <ul className="space-y-2">
@@ -188,14 +188,13 @@ export function AuditHealthCard({
                 </span>
               </span>
               <span className="shrink-0 tabular-nums text-base-content/60">
-                {issue.count} {issue.count === 1 ? "page" : "pages"}
+                {issue.count} 个页面
               </span>
             </li>
           ))}
           {audit.totalIssueTypes > audit.topIssues.length ? (
             <li className="text-xs text-base-content/50">
-              + {audit.totalIssueTypes - audit.topIssues.length} more issue
-              {audit.totalIssueTypes - audit.topIssues.length === 1 ? "" : "s"}
+              + {audit.totalIssueTypes - audit.topIssues.length} 个其他问题
             </li>
           ) : null}
         </ul>
@@ -215,7 +214,7 @@ export function BacklinkPulseCard({
 }) {
   if (!backlinks && refreshing) {
     return (
-      <CardShell title="Backlink pulse" stamp="Taking your first snapshot…">
+      <CardShell title="反向链接动态" stamp="正在生成首次快照…">
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
             <div key={i} className="skeleton h-20" />
@@ -227,9 +226,9 @@ export function BacklinkPulseCard({
 
   if (!backlinks) {
     return (
-      <CardShell title="Backlink pulse">
+      <CardShell title="反向链接动态">
         <p className="text-sm text-base-content/60">
-          We&rsquo;ll snapshot who links to your domain — nothing to set up.
+          我们会记录链接到您域名的网站，无需额外设置。
         </p>
       </CardShell>
     );
@@ -237,9 +236,9 @@ export function BacklinkPulseCard({
 
   return (
     <CardShell
-      title="Backlink pulse"
-      stamp={`Backlinks · snapshot ${formatDay(backlinks.capturedAt)}${
-        refreshing ? " · refreshing…" : ""
+      title="反向链接动态"
+      stamp={`反向链接 · 快照 ${formatDay(backlinks.capturedAt)}${
+        refreshing ? "· 刷新中…" : ""
       }`}
       action={
         <Link
@@ -248,13 +247,13 @@ export function BacklinkPulseCard({
           search={{ target: backlinks.domain, scope: "domain" }}
           className={moreDetailsClass}
         >
-          More details
+          查看更多
         </Link>
       }
     >
       <div className="grid grid-cols-2 gap-3">
         <Stat
-          label="Ref. domains"
+          label="引用域名"
           value={
             backlinks.referringDomains === null
               ? "—"
@@ -262,7 +261,7 @@ export function BacklinkPulseCard({
           }
         />
         <Stat
-          label="Backlinks"
+          label="反向链接"
           value={
             backlinks.backlinks === null
               ? "—"
@@ -270,7 +269,7 @@ export function BacklinkPulseCard({
           }
         />
         <Stat
-          label="New links"
+          label="新增链接"
           value={`▲ ${newLost(backlinks.newBacklinks)}`}
           tone={
             backlinks.newBacklinks && backlinks.newBacklinks > 0
@@ -279,7 +278,7 @@ export function BacklinkPulseCard({
           }
         />
         <Stat
-          label="Lost links"
+          label="丢失链接"
           value={`▼ ${newLost(backlinks.lostBacklinks)}`}
           tone={
             backlinks.lostBacklinks && backlinks.lostBacklinks > 0

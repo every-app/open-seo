@@ -12,42 +12,38 @@ function DataforseoApiKeyHelpPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-3">
-            <h1 className="text-2xl font-semibold">
-              Set up your DataForSEO API key
-            </h1>
+            <h1 className="text-2xl font-semibold">设置 DataForSEO API 密钥</h1>
             <p className="text-sm text-base-content/70">
-              OpenSEO needs the <code>DATAFORSEO_API_KEY</code> secret before
-              keyword, domain, and SEO data workflows can run.
+              OpenSEO 需要 <code>DATAFORSEO_API_KEY</code>{" "}
+              密钥，才能运行关键词、 域名和 SEO 数据工作流。
             </p>
           </div>
         </div>
 
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-4">
-            <h2 className="card-title text-base">Steps</h2>
+            <h2 className="card-title text-base">设置步骤</h2>
             <ol className="list-decimal pl-5 text-sm space-y-3 text-base-content/80">
               <li>
-                Go to{" "}
+                前往{" "}
                 <a
                   className="link link-primary"
                   href={DATAFORSEO_API_ACCESS_URL}
                   target="_blank"
                   rel="noreferrer"
                 >
-                  DataForSEO API Access
+                  DataForSEO API 访问页面
                 </a>{" "}
-                and request API credentials by email.
+                ，并通过电子邮件申请 API 凭据。
               </li>
               <li>
-                Base64 encode your DataForSEO login and API password in this
-                format:
+                按以下格式对 DataForSEO 登录名和 API 密码进行 Base64 编码：
                 <pre className="mt-2 p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
                   <code>printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64</code>
                 </pre>
               </li>
               <li>
-                Save the output as the <code>DATAFORSEO_API_KEY</code> secret in
-                your environment.
+                将输出结果保存为环境中的 <code>DATAFORSEO_API_KEY</code> 密钥。
               </li>
             </ol>
           </div>
@@ -56,35 +52,34 @@ function DataforseoApiKeyHelpPage() {
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body gap-2 text-sm text-base-content/75">
             <h2 className="card-title text-base">
-              Cloudflare Workers (Dashboard UI)
+              Cloudflare Workers（控制台界面）
             </h2>
             <ol className="list-decimal pl-5 space-y-2 text-sm text-base-content/80">
               <li>
-                In Cloudflare, go to <code>Compute</code> -&gt;{" "}
+                在 Cloudflare 中前往 <code>Compute</code> -&gt;{" "}
                 <code>Workers &amp; Pages</code>
-                and open your OpenSEO Worker.
+                ，然后打开您的 OpenSEO Worker。
               </li>
               <li>
-                Open <code>Settings</code>.
+                打开 <code>设置</code>。
               </li>
               <li>
-                Go to <code>Variables &amp; Secrets</code> and add a new secret
-                named
-                <code className="mx-1">DATAFORSEO_API_KEY</code>.
+                前往 <code>Variables &amp; Secrets</code>{" "}
+                并添加一个名为以下内容的新密钥：
+                <code className="mx-1">DATAFORSEO_API_KEY</code>。
               </li>
-              <li>
-                Paste the base64 value from the terminal command above and save.
-              </li>
+              <li>粘贴上方终端命令生成的 Base64 值并保存。</li>
             </ol>
 
             <div className="divider my-1" />
 
-            <p>Or set the same secret from your terminal with:</p>
+            <p>也可以在终端中运行以下命令设置同一密钥：</p>
             <pre className="p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
               <code>npx wrangler secret put DATAFORSEO_API_KEY</code>
             </pre>
             <p>
-              Use the base64 value of <code>login:password</code> when prompted.
+              出现提示时，请使用以下内容的 Base64 值：{" "}
+              <code>login:password</code> 。
             </p>
           </div>
         </div>

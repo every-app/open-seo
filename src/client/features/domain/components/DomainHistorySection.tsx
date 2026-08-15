@@ -24,7 +24,7 @@ export function DomainHistorySection({
       <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/55 space-y-2">
         <Globe className="size-9 mx-auto opacity-35" />
         <p className="text-base font-medium text-base-content/80">
-          Enter a domain to get started
+          输入域名开始分析
         </p>
       </section>
     );
@@ -36,7 +36,7 @@ export function DomainHistorySection({
         <div className="flex items-center gap-2">
           <History className="size-4 text-base-content/45" />
           <span className="text-sm text-base-content/60">
-            {history.length} recent search{history.length !== 1 ? "es" : ""}
+            {history.length} 条最近搜索
           </span>
         </div>
       </div>
@@ -58,7 +58,7 @@ export function DomainHistorySection({
                   {item.domain}
                 </p>
                 <p className="text-sm text-base-content/60 truncate">
-                  {item.subdomains ? "Include subdomains" : "Root domain only"}
+                  {item.subdomains ? "包含子域名" : "仅根域名"}
                 </p>
               </div>
             </button>

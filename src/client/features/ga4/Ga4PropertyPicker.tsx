@@ -53,7 +53,7 @@ export function Ga4PropertyPicker({
     return (
       <div className="flex items-center gap-2 text-sm text-base-content/50">
         <span className="loading loading-spinner loading-sm" />
-        Loading properties…
+        正在加载媒体资源…
       </div>
     );
   }
@@ -61,7 +61,7 @@ export function Ga4PropertyPicker({
     return (
       <div className="space-y-3">
         <p className="text-sm text-error">
-          Couldn&rsquo;t load your Google Analytics properties.
+          无法加载您的 Google Analytics 媒体资源。
         </p>
         <div className="flex flex-wrap items-center gap-1">
           <button
@@ -69,7 +69,7 @@ export function Ga4PropertyPicker({
             className="btn btn-ghost btn-sm"
             onClick={onRetry}
           >
-            Try again
+            重试
           </button>
           {secondaryAction ? (
             <SecondaryActionButton action={secondaryAction} />
@@ -85,12 +85,10 @@ export function Ga4PropertyPicker({
   if (allAccountsRequireReconnect) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-error">
-          Connection expired. Reconnect to continue.
-        </p>
+        <p className="text-sm text-error">连接已过期，请重新连接后继续。</p>
         <div className="flex flex-wrap items-center gap-1">
           <GoogleConnectButton
-            label="Reconnect with Google"
+            label="重新连接 Google"
             onClick={() => void startGoogleLink("ga4", window.location.href)}
           />
           {secondaryAction ? (
@@ -125,13 +123,13 @@ export function Ga4PropertyPicker({
     <div className="space-y-4">
       {hasUnavailableAccounts ? (
         <p className="text-sm text-warning">
-          Some properties couldn&rsquo;t be loaded. Check that the Analytics
-          Admin API is enabled and that this Google account has property access.
+          部分媒体资源无法加载。请确认已启用 Analytics Admin API，且此 Google
+          账户拥有媒体资源访问权限。
         </p>
       ) : null}
       <label className="block">
         <span className="mb-1.5 block text-sm font-medium text-base-content/80">
-          Property
+          媒体资源
         </span>
         <select
           className="select select-bordered w-full max-w-md"
@@ -142,15 +140,15 @@ export function Ga4PropertyPicker({
           }}
         >
           <option value="" disabled>
-            Select a property…
+            选择媒体资源…
           </option>
           {usableAccounts.map((account) => (
             <optgroup
               key={account.accountId}
-              label={account.email ?? "Google account"}
+              label={account.email ?? "Google 账户"}
             >
               {account.properties.length === 0 ? (
-                <option disabled>No properties</option>
+                <option disabled>没有媒体资源</option>
               ) : (
                 account.properties.map((property) => {
                   const index = options.findIndex(
@@ -171,7 +169,7 @@ export function Ga4PropertyPicker({
       </label>
       {options.length === 0 && !hasUnavailableAccounts ? (
         <p className="text-sm text-base-content/60">
-          No Google Analytics properties are available for this account.
+          此账户没有可用的 Google Analytics 媒体资源。
         </p>
       ) : null}
       <div className="flex flex-wrap items-center gap-1">
@@ -181,14 +179,14 @@ export function Ga4PropertyPicker({
           onClick={onSave}
           disabled={selectedIndex < 0 || saving}
         >
-          {saving ? "Saving…" : "Save property"}
+          {saving ? "保存中…" : "保存媒体资源"}
         </button>
         <button
           type="button"
           className="btn btn-ghost btn-sm"
           onClick={() => void startGoogleLink("ga4", window.location.href)}
         >
-          Connect another Google account
+          连接其他 Google 账户
         </button>
         {secondaryAction ? (
           <SecondaryActionButton action={secondaryAction} />

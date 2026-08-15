@@ -139,11 +139,9 @@ export function RankTrackingDomainDetail({
     });
     setShowAddKeywords(false);
     captureClientEvent("rank_tracking:keywords_add");
-    toast.success(
-      `${result.added} keyword${result.added !== 1 ? "s" : ""} added`,
-    );
+    toast.success(`已添加 ${result.added} 个关键词`);
     if (!result.checkTriggered && result.added > 0) {
-      toast.info("Use 'Check Now' to check these keywords");
+      toast.info("点击“立即检查”获取这些关键词的排名");
     }
   };
 
@@ -193,25 +191,20 @@ export function RankTrackingDomainDetail({
         onClick={onBack}
       >
         <ArrowLeft className="size-3" />
-        Back to domains
+        返回域名列表
       </button>
 
       {config.lastSkipReason === "insufficient_credits" && (
         <div className="alert alert-warning text-sm py-2">
           <AlertTriangle className="size-4" />
-          <span>
-            Last scheduled check was skipped due to insufficient credits. Top up
-            your balance to resume automatic tracking.
-          </span>
+          <span>上次定时检查因点数不足而跳过。充值后可恢复自动追踪。</span>
         </div>
       )}
 
       {latestRun?.maybeStale && (
         <div className="alert alert-warning text-sm py-2">
           <AlertTriangle className="size-4" />
-          <span>
-            This run may be unresponsive and will be cleaned up automatically.
-          </span>
+          <span>本次运行可能已无响应，系统会自动清理。</span>
         </div>
       )}
 
@@ -285,7 +278,7 @@ export function RankTrackingDomainDetail({
             void navigator.clipboard.writeText(
               filtered.map((r) => r.keyword).join("\n"),
             );
-            toast.success("Keywords copied to clipboard");
+            toast.success("关键词已复制到剪贴板");
           }}
           onCheckNow={() => {
             const count = costEstimate?.keywordCount ?? rows?.length ?? 0;

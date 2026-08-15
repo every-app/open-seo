@@ -62,7 +62,7 @@ function IndexRedirect() {
           <AuthConfigErrorCard
             message={getStandardErrorMessage(
               error,
-              "An unexpected error occurred. Please check server logs.",
+              "发生意外错误，请检查服务器日志。",
             )}
             onRetry={() => {
               void refetch();
@@ -76,7 +76,7 @@ function IndexRedirect() {
       return (
         <div className="flex items-center justify-center h-full p-4">
           <UnauthenticatedErrorCard
-            message="Please sign in to access your OpenSEO workspace."
+            message="请登录以访问你的 OpenSEO 工作区。"
             onRetry={() => {
               void refetch();
             }}
@@ -90,7 +90,7 @@ function IndexRedirect() {
         <div className="flex items-center justify-center h-full p-4">
           <div className="flex flex-col items-center gap-3 max-w-xl text-center">
             <p className="text-base-content/80">
-              Redirecting you to billing so you can start a hosted subscription.
+              正在跳转到账单页面，以便开通托管订阅。
             </p>
           </div>
         </div>
@@ -101,10 +101,7 @@ function IndexRedirect() {
       <div className="flex items-center justify-center h-full p-4">
         <div className="flex flex-col items-center gap-3 max-w-xl">
           <p className="text-error text-center">
-            {getStandardErrorMessage(
-              error,
-              "An unexpected error occurred. Please check server logs.",
-            )}
+            {getStandardErrorMessage(error, "发生意外错误，请检查服务器日志。")}
           </p>
         </div>
       </div>

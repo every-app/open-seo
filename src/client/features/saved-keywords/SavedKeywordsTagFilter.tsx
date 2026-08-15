@@ -93,7 +93,7 @@ export function SavedKeywordsTagFilter({
         onClick={() => setOpen((v) => !v)}
       >
         <TagIcon className="size-3.5 opacity-70" />
-        <span className="font-medium">Tags</span>
+        <span className="font-medium">标签</span>
         {hasSelection ? (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-primary-content">
             {selectedTags.length}
@@ -112,7 +112,7 @@ export function SavedKeywordsTagFilter({
               selected
               onClick={() => onToggleTagFilter(tag.id)}
               trailing={<X className="size-3 opacity-70" />}
-              title="Remove filter"
+              title="移除筛选条件"
             />
           ))}
           <button
@@ -120,7 +120,7 @@ export function SavedKeywordsTagFilter({
             className="text-xs text-base-content/60 underline-offset-2 hover:text-base-content hover:underline"
             onClick={onClearSelection}
           >
-            Clear
+            清除
           </button>
         </div>
       ) : null}
@@ -190,7 +190,7 @@ function TagFilterPopover({
             autoFocus
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="Search tags…"
+            placeholder="搜索标签…"
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
           />
           {query ? (
@@ -209,8 +209,8 @@ function TagFilterPopover({
         {filteredTags.length === 0 ? (
           <div className="px-3 py-6 text-center text-xs text-base-content/55">
             {availableTags.length === 0
-              ? "No tags yet. Add tags from a selection of keywords."
-              : "No tags match that search."}
+              ? "暂无标签。选择关键词后即可添加标签。"
+              : "没有符合搜索条件的标签。"}
           </div>
         ) : null}
 
@@ -232,14 +232,14 @@ function TagFilterPopover({
       {selectedTagIds.length > 0 ? (
         <div className="flex items-center justify-between border-t border-base-300 px-2 py-1.5 text-xs">
           <span className="text-base-content/55">
-            {selectedTagIds.length} selected
+            已选择 {selectedTagIds.length} 个
           </span>
           <button
             type="button"
             className="rounded px-2 py-1 text-base-content/70 hover:bg-base-200"
             onClick={onClearSelection}
           >
-            Clear all
+            全部清除
           </button>
         </div>
       ) : null}
@@ -298,7 +298,7 @@ function TagFilterRow({
             isManaging ? "bg-base-300 text-base-content" : ""
           }`}
           onClick={() => onStartManaging(isManaging ? null : tag.id)}
-          aria-label={`Manage ${tag.name}`}
+          aria-label={`管理标签 ${tag.name}`}
         >
           <MoreHorizontal className="size-3.5" />
         </button>

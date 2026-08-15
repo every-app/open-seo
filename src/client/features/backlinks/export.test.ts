@@ -76,7 +76,7 @@ describe("buildBacklinksTabExport", () => {
       },
     });
 
-    expect(content).toContain('"Domain","Source URL","Target URL"');
+    expect(content).toContain('"域名","来源网址","目标网址"');
     expect(content).not.toContain('"Ahrefs DR"');
     expect(content).toContain('"example.org"');
     expect(content).toContain('"noopener, noreferrer"');
@@ -93,7 +93,7 @@ describe("buildBacklinksTabExport", () => {
       },
     });
 
-    expect(content).toContain('"Rank","Ahrefs DR","Spam Score"');
+    expect(content).toContain('"权威度","Ahrefs DR","垃圾链接分数"');
     expect(content).toContain('"71.5"');
   });
 
@@ -108,7 +108,7 @@ describe("buildBacklinksTabExport", () => {
       },
     });
 
-    expect(content).toContain('"Domain Rank","Ahrefs DR","Source Page Rank"');
+    expect(content).toContain('"域名权威度","Ahrefs DR","来源页面权威度"');
     expect(content).toContain('"33"');
   });
 
@@ -122,7 +122,7 @@ describe("buildBacklinksTabExport", () => {
       },
     });
 
-    expect(content).toContain('"Domain","Backlinks","Referring Pages"');
+    expect(content).toContain('"域名","反向链接","引用页面"');
     expect(content).toContain('"source.com"');
   });
 
@@ -145,7 +145,7 @@ describe("buildBacklinksTabExport", () => {
     });
 
     expect(content).toContain(
-      '"Page","Backlinks","Referring Domains","Rank","Broken Backlinks"',
+      '"页面","反向链接","引用域名","权威度","失效反向链接"',
     );
     expect(content).toContain('"https://docs.example.com/start"');
   });

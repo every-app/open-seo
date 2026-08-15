@@ -47,7 +47,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                   <textarea
                     className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
                     rows={rows}
-                    placeholder="Enter a keyword"
+                    placeholder="输入关键词"
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     onKeyDown={(event) => {
@@ -88,7 +88,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                 >
                   {RESULT_LIMITS.map((limit) => (
                     <option key={limit} value={limit}>
-                      {limit} results
+                      {limit} 条结果
                     </option>
                   ))}
                 </select>
@@ -104,10 +104,10 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                     field.handleChange(normalizeKeywordMode(event.target.value))
                   }
                 >
-                  <option value="auto">Auto</option>
-                  <option value="related">Related keywords</option>
-                  <option value="suggestions">Suggestions</option>
-                  <option value="ideas">Ideas</option>
+                  <option value="auto">自动</option>
+                  <option value="related">相关关键词</option>
+                  <option value="suggestions">搜索建议</option>
+                  <option value="ideas">关键词创意</option>
                 </select>
               )}
             </controlsForm.Field>
@@ -116,7 +116,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               type="submit"
               className="btn btn-primary w-full px-6 lg:w-auto lg:shrink-0"
             >
-              Search
+              搜索
             </button>
           </div>
         </form>
@@ -145,12 +145,12 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                         }
                       />
                       <span className="text-sm font-medium text-base-content/80">
-                        Clickstream-refined volumes
+                        经点击流数据校准的搜索量
                       </span>
                     </label>
                     <div
                       className="tooltip tooltip-right"
-                      data-tip="Google reports one combined search volume for similar keywords (e.g. 'seo tool' and 'seo tools'). Turn this on to estimate each keyword's own volume. Costs 2x the credits."
+                      data-tip="Google 会合并相似关键词的搜索量，例如“seo tool”和“seo tools”。启用后可估算每个关键词各自的搜索量，并消耗 2 倍点数。"
                     >
                       <Info className="size-3.5 text-base-content/50" />
                     </div>
@@ -164,9 +164,8 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               >
                 <Info className="mt-0.5 size-4 shrink-0 text-info" />
                 <span>
-                  Keyword data for this country comes from Google Ads — search
-                  volume, CPC, and trends are available, but difficulty and
-                  intent are not.
+                  此国家或地区的关键词数据来自 Google Ads，可查看搜索量、CPC
+                  和趋势，暂无难度与搜索意图数据。
                 </span>
               </div>
             )

@@ -75,7 +75,7 @@ export function LighthouseIssueRow({ issue }: { issue: LighthouseIssue }) {
               {issue.items.length > 0 ? (
                 <details className="text-sm">
                   <summary className="cursor-pointer font-medium text-base-content/60 text-xs">
-                    Affected items ({issue.items.length})
+                    受影响项目（{issue.items.length}）
                   </summary>
                   <div className="mt-2 space-y-1.5">
                     {issue.items.map((item, itemIndex) => (

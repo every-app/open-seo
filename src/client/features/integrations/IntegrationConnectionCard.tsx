@@ -65,11 +65,7 @@ function ConnectionStatusPill({
               : "bg-base-content/40",
         ].join(" ")}
       />
-      {connected
-        ? "Connected"
-        : setupRequired
-          ? "Setup required"
-          : "Not connected"}
+      {connected ? "已连接" : setupRequired ? "需要设置" : "未连接"}
     </span>
   );
 }

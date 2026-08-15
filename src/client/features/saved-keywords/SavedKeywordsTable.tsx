@@ -48,7 +48,7 @@ export function SavedKeywordsTable({
       makeSelectionColumn<SavedKeywordRow>(selectAnchorRef),
       columnHelper.accessor("keyword", {
         header: ({ column }) => (
-          <SortableHeader column={column} label="Keyword" />
+          <SortableHeader column={column} label="关键词" />
         ),
         cell: ({ getValue }) => (
           <span className="font-medium">{getValue()}</span>
@@ -56,7 +56,7 @@ export function SavedKeywordsTable({
       }),
       columnHelper.accessor("searchVolume", {
         header: ({ column }) => (
-          <SortableHeader column={column} label="Volume" />
+          <SortableHeader column={column} label="搜索量" />
         ),
         cell: ({ getValue }) => formatSavedKeywordNumber(getValue()),
       }),
@@ -71,8 +71,8 @@ export function SavedKeywordsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Competition"
-            helpText="Paid-search competition from Google Ads (0-1): higher means more advertisers bidding."
+            label="竞争度"
+            helpText="Google Ads 付费搜索竞争度（0 到 1），数值越高表示参与竞价的广告主越多。"
           />
         ),
         cell: ({ getValue }) => {
@@ -84,14 +84,14 @@ export function SavedKeywordsTable({
         header: ({ column }) => (
           <SortableHeader
             column={column}
-            label="Difficulty"
-            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
+            label="难度"
+            helpText="自然搜索排名难度（0 到 100），数值越高表示进入 Google 前 10 名越难。"
           />
         ),
         cell: ({ getValue }) => <DifficultyBadge value={getValue()} />,
       }),
       columnHelper.accessor("intent", {
-        header: () => "Intent",
+        header: () => "搜索意图",
         cell: ({ getValue }) => (
           <IntentBadge intent={normalizeIntent(getValue())} />
         ),
@@ -99,14 +99,14 @@ export function SavedKeywordsTable({
       }),
       columnHelper.display({
         id: "tags",
-        header: () => "Tags",
+        header: () => "标签",
         cell: ({ row }) => <TagList tags={row.original.tags} />,
         enableSorting: false,
         meta: { cellClassName: "min-w-40 max-w-64" },
       }),
       columnHelper.accessor("fetchedAt", {
         header: ({ column }) => (
-          <SortableHeader column={column} label="Last Fetched" />
+          <SortableHeader column={column} label="上次获取" />
         ),
         cell: ({ getValue }) => (
           <span className="text-xs text-base-content/55">
@@ -195,8 +195,8 @@ function SavedKeywordsEmptyState({
       <Search className="mx-auto mb-2 size-8 opacity-40" />
       <p>
         {hasActiveFilters
-          ? "No saved keywords match the current filters."
-          : "No saved keywords yet. Use the Keyword Research page to find and save keywords."}
+          ? "没有已保存关键词符合当前筛选条件。"
+          : "暂无已保存关键词。可前往“关键词研究”页面查找并保存。"}
       </p>
     </div>
   );

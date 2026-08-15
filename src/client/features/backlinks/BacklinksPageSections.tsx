@@ -28,9 +28,9 @@ const BACKLINKS_RESULTS_TABS: Array<{
   tab: BacklinksSearchState["tab"];
   label: string;
 }> = [
-  { tab: "backlinks", label: "Backlinks" },
-  { tab: "domains", label: "Referring Domains" },
-  { tab: "pages", label: "Top Pages" },
+  { tab: "backlinks", label: "反向链接" },
+  { tab: "domains", label: "引用域名" },
+  { tab: "pages", label: "热门页面" },
 ];
 
 export function BacklinksResultsCard({
@@ -143,10 +143,10 @@ export function BacklinksResultsCard({
         <button
           className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
           onClick={() => filters.setShowFilters((current) => !current)}
-          title="Toggle table filters"
+          title="显示或隐藏表格筛选条件"
         >
           <SlidersHorizontal className="size-3.5" />
-          Filters
+          筛选
           {activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
               {activeFilterCount}
@@ -156,7 +156,7 @@ export function BacklinksResultsCard({
         {activeTab === "backlinks" ? (
           <div
             role="tablist"
-            aria-label="Backlinks view"
+            aria-label="反向链接视图"
             className="ml-auto tabs tabs-border tabs-xs w-fit"
           >
             <button
@@ -164,20 +164,20 @@ export function BacklinksResultsCard({
               role="tab"
               aria-selected={view !== "all"}
               className={`tab ${view !== "all" ? "tab-active" : ""}`}
-              title="Show each referring domain's strongest link; expand a row for the rest"
+              title="每个引用域名显示最强链接，展开行可查看其余链接"
               onClick={() => onViewChange(undefined)}
             >
-              One per domain
+              每个域名一条
             </button>
             <button
               type="button"
               role="tab"
               aria-selected={view === "all"}
               className={`tab ${view === "all" ? "tab-active" : ""}`}
-              title="List every individual backlink"
+              title="列出每一条反向链接"
               onClick={() => onViewChange("all")}
             >
-              All links
+              全部链接
             </button>
           </div>
         ) : null}
@@ -246,9 +246,9 @@ export function BacklinksResultsCard({
 }
 
 const TAB_LOADING_LABELS: Record<BacklinksTab, string> = {
-  backlinks: "Loading backlinks",
-  domains: "Loading referring domains",
-  pages: "Loading top pages",
+  backlinks: "正在加载反向链接",
+  domains: "正在加载引用域名",
+  pages: "正在加载热门页面",
 };
 
 /** Unique domains the DR column keys on, from both the backlinks and referring

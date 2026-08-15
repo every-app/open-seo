@@ -92,7 +92,7 @@ function buildPagesColumns({
 }): ColumnDef<PageRow>[] {
   return [
     pageColumnHelper.accessor("url", {
-      header: ({ column }) => <SortableHeader column={column} label="URL" />,
+      header: ({ column }) => <SortableHeader column={column} label="网址" />,
       cell: ({ getValue }) => {
         const url = getValue();
         return (
@@ -110,18 +110,18 @@ function buildPagesColumns({
       meta: { cellClassName: "max-w-[240px] truncate" },
     }),
     pageColumnHelper.accessor("statusCode", {
-      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      header: ({ column }) => <SortableHeader column={column} label="状态" />,
       cell: ({ getValue }) => <HttpStatusBadge code={getValue()} />,
       sortingFn: nullableNumberSort,
     }),
     pageColumnHelper.accessor("title", {
-      header: ({ column }) => <SortableHeader column={column} label="Title" />,
+      header: ({ column }) => <SortableHeader column={column} label="标题" />,
       cell: ({ getValue, row }) => {
         if (isRedirect(row.original)) {
           const target = row.original.redirectUrl;
           return (
             <span className="text-xs text-base-content/60">
-              → {target ? displayPath(target, canonicalHost) : "redirect"}
+              → {target ? displayPath(target, canonicalHost) : "重定向"}
             </span>
           );
         }
@@ -132,7 +132,7 @@ function buildPagesColumns({
         // Red only when the engine flagged it — a 200 that isn't an HTML
         // document (robots.txt, security.txt) legitimately has no title.
         return missingTitlePageIds.has(row.original.id) ? (
-          <span className="text-error text-xs">missing</span>
+          <span className="text-error text-xs">缺失</span>
         ) : (
           <EmptyCell />
         );
@@ -146,13 +146,13 @@ function buildPagesColumns({
         hasAnalyzedContent(row.original) ? getValue() : <EmptyCell />,
     }),
     pageColumnHelper.accessor("wordCount", {
-      header: ({ column }) => <SortableHeader column={column} label="Words" />,
+      header: ({ column }) => <SortableHeader column={column} label="字数" />,
       cell: ({ getValue, row }) =>
         hasAnalyzedContent(row.original) ? getValue() : <EmptyCell />,
     }),
     pageColumnHelper.display({
       id: "images",
-      header: ({ column }) => <SortableHeader column={column} label="Images" />,
+      header: ({ column }) => <SortableHeader column={column} label="图片" />,
       cell: ({ row }) => {
         if (!hasAnalyzedContent(row.original)) return <EmptyCell />;
         return row.original.imagesMissingAlt > 0 ? (
@@ -169,7 +169,7 @@ function buildPagesColumns({
         left.original.imagesTotal - right.original.imagesTotal,
     }),
     pageColumnHelper.accessor("responseTimeMs", {
-      header: ({ column }) => <SortableHeader column={column} label="Speed" />,
+      header: ({ column }) => <SortableHeader column={column} label="速度" />,
       cell: ({ getValue }) => {
         const value = getValue();
         return value ? (
@@ -245,7 +245,7 @@ export function PagesTable({
       <AppDataTable
         table={table}
         className="table table-sm"
-        empty={<EmptyTableMessage label="No pages match these filters." />}
+        empty={<EmptyTableMessage label="没有页面符合当前筛选条件。" />}
       />
     </div>
   );

@@ -34,24 +34,24 @@ const HERO_COPY: Record<
   { title: string; body: string; cta: string }
 > = {
   domain: {
-    title: "What site are you working on?",
-    body: "Set your project's domain and every card on this page starts working for it — backlinks and audits.",
-    cta: "Save",
+    title: "您正在运营哪个网站？",
+    body: "设置项目域名后，本页的反向链接和站点审计卡片即可开始工作。",
+    cta: "保存",
   },
   mcp: {
-    title: "Connect your AI agent",
-    body: "OpenSEO is built to be used from agents like Claude. Connect once, then ask it to use OpenSEO to help build your SEO strategy.",
-    cta: "Show me how",
+    title: "连接您的 AI 智能体",
+    body: "OpenSEO 可供 Claude 等 AI 智能体调用。完成一次连接后，即可让智能体使用 OpenSEO 制定 SEO 策略。",
+    cta: "查看连接方法",
   },
   gsc: {
-    title: "Connect Search Console",
-    body: "Your real queries and clicks, straight from Google.",
-    cta: "Connect",
+    title: "连接 Search Console",
+    body: "直接获取 Google 中真实的查询和点击数据。",
+    cta: "连接",
   },
   competitor: {
-    title: "Size up a competitor",
-    body: "Paste a competitor's domain to see what they rank for and who links to them.",
-    cta: "Open domain lookup",
+    title: "分析竞争对手",
+    body: "输入竞争对手域名，查看其排名关键词和反向链接来源。",
+    cta: "打开域名查询",
   },
 };
 
@@ -102,9 +102,7 @@ function OnboardingChecklist({
       void queryClient.invalidateQueries({ queryKey: ["projects"] });
     },
     onError: (error) =>
-      toast.error(
-        getStandardErrorMessage(error, "Couldn't save the domain. Try again."),
-      ),
+      toast.error(getStandardErrorMessage(error, "无法保存域名，请重试。")),
   });
 
   // Hidden once every step is done.
@@ -142,7 +140,7 @@ function OnboardingChecklist({
     <div className="rounded-xl border border-primary/25 bg-primary/5 shadow-sm">
       <div className="flex items-center justify-between gap-4 px-5 pt-4">
         <p className="text-xs font-medium uppercase tracking-wide text-primary">
-          Onboarding checklist
+          入门清单
         </p>
         <div className="flex items-center gap-1">
           <button
@@ -150,7 +148,7 @@ function OnboardingChecklist({
             className={`btn btn-ghost btn-xs btn-square ${
               index === 0 ? "invisible" : ""
             }`}
-            aria-label="Previous step"
+            aria-label="上一步"
             disabled={index === 0}
             onClick={() => page(-1)}
           >
@@ -164,7 +162,7 @@ function OnboardingChecklist({
             className={`btn btn-ghost btn-xs btn-square ${
               index === STEP_ORDER.length - 1 ? "invisible" : ""
             }`}
-            aria-label="Next step"
+            aria-label="下一步"
             disabled={index === STEP_ORDER.length - 1}
             onClick={() => page(1)}
           >
@@ -183,7 +181,7 @@ function OnboardingChecklist({
           {done ? (
             <span className="inline-flex items-center gap-1.5 text-sm font-medium text-success">
               <Check className="size-4" />
-              Done
+              已完成
             </span>
           ) : step === "domain" ? (
             <form
@@ -199,7 +197,7 @@ function OnboardingChecklist({
                 placeholder="acme.com"
                 value={domainInput}
                 onChange={(event) => setDomainInput(event.target.value)}
-                aria-label="Your site's domain"
+                aria-label="您的网站域名"
               />
               <button
                 type="submit"
@@ -305,7 +303,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <h1 className="text-2xl font-semibold">仪表盘</h1>
 
         <WorkspaceMergeBanner />
 

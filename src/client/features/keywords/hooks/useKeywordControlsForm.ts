@@ -38,7 +38,7 @@ function getKeywordSearchValidationErrors(
     if (!validateEmptyKeyword) return null;
     return createFormValidationErrors({
       fields: {
-        keyword: "Please enter at least one keyword.",
+        keyword: "请至少输入一个关键词。",
       },
     });
   }
@@ -48,7 +48,7 @@ function getKeywordSearchValidationErrors(
   if (keywords.length > MAX_KEYWORDS_PER_SUBMIT) {
     return createFormValidationErrors({
       fields: {
-        keyword: `Please enter no more than ${MAX_KEYWORDS_PER_SUBMIT} keywords (one per line).`,
+        keyword: `最多可输入 ${MAX_KEYWORDS_PER_SUBMIT} 个关键词，每行一个。`,
       },
     });
   }

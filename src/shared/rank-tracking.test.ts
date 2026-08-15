@@ -55,7 +55,7 @@ describe("rank tracking schedules", () => {
   });
 
   it("labels monthly schedules", () => {
-    expect(scheduleLabel("monthly")).toBe("Monthly");
+    expect(scheduleLabel("monthly")).toBe("每月");
   });
 
   it("schedules new monthly configs for the end of the current month", () => {

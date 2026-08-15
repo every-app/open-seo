@@ -4,6 +4,7 @@ import { Fragment } from "react";
 import {
   CLIENT_WEBSITE_COUNT_OPTIONS,
   CLIENT_WORK_FOR,
+  getOnboardingOptionLabel,
   INTEREST_OPTIONS,
   ONBOARDING_LAST_STEP,
   type OnboardingAnswers,
@@ -65,24 +66,24 @@ export function PostSignupOnboarding({
           className="mx-auto size-10 rounded-lg"
         />
         <p className="text-xs font-medium uppercase tracking-wide text-base-content/50">
-          Step {step + 1} of {ONBOARDING_LAST_STEP + 1}
+          第 {step + 1} 步，共 {ONBOARDING_LAST_STEP + 1} 步
         </p>
         <h1 className="text-xl font-semibold">
           {title ??
             (firstName
-              ? `Welcome to OpenSEO, ${firstName}!`
-              : "Welcome to OpenSEO!")}
+              ? `${firstName}，欢迎使用 OpenSEO！`
+              : "欢迎使用 OpenSEO！")}
         </h1>
         <p className="text-sm text-base-content/60">
-          {helperText ?? "A few quick answers to set things up."}
+          {helperText ?? "回答几个简单问题，快速完成设置。"}
         </p>
       </div>
 
       <div className="rounded-lg border border-base-300 bg-base-100 p-5 shadow-sm">
         {step === 0 ? (
           <OnboardingChoiceGroup
-            title="What tasks matter to you most?"
-            description="Pick up to 3."
+            title="你最关注哪些任务？"
+            description="最多选择 3 项。"
             maxSelections={3}
             options={[...INTEREST_OPTIONS]}
             selectedValues={answers.selectedInterests}
@@ -99,7 +100,7 @@ export function PostSignupOnboarding({
           />
         ) : step === 1 ? (
           <OnboardingChoiceGroup
-            title="Who are you doing SEO for?"
+            title="你在为谁做 SEO？"
             options={[...WORK_FOR_OPTIONS]}
             selectedValues={answers.workFor ? [answers.workFor] : []}
             onToggle={(workFor) => updateAnswers({ workFor })}
@@ -107,7 +108,7 @@ export function PostSignupOnboarding({
             onOtherChange={(workForOther) => updateAnswers({ workForOther })}
             followUp={{
               showForValue: CLIENT_WORK_FOR,
-              label: "About how many client sites do you work on?",
+              label: "你大约负责多少个客户网站？",
               options: [...CLIENT_WEBSITE_COUNT_OPTIONS],
               value: answers.clientWebsiteCount,
               onChange: (clientWebsiteCount) =>
@@ -116,7 +117,7 @@ export function PostSignupOnboarding({
           />
         ) : step === 2 ? (
           <OnboardingChoiceGroup
-            title="How did you find OpenSEO?"
+            title="你是通过什么渠道了解到 OpenSEO 的？"
             options={[...SOURCE_OPTIONS]}
             selectedValues={answers.source ? [answers.source] : []}
             onToggle={(source) => updateAnswers({ source })}
@@ -135,7 +136,7 @@ export function PostSignupOnboarding({
             disabled={step === 0 || isSaving}
             onClick={onBack}
           >
-            Back
+            返回
           </button>
           {step < ONBOARDING_LAST_STEP ? (
             <div className="flex items-center gap-2">
@@ -145,7 +146,7 @@ export function PostSignupOnboarding({
                 disabled={isSaving}
                 onClick={onSkip}
               >
-                Skip
+                跳过
               </button>
               <button
                 type="button"
@@ -153,7 +154,7 @@ export function PostSignupOnboarding({
                 disabled={!canContinue || isSaving}
                 onClick={onNext}
               >
-                Continue
+                继续
                 <ArrowRight className="size-4" />
               </button>
             </div>
@@ -164,7 +165,7 @@ export function PostSignupOnboarding({
               disabled={isSaving}
               onClick={onFinish}
             >
-              Finish
+              完成
               <ArrowRight className="size-4" />
             </button>
           )}
@@ -244,7 +245,7 @@ function OnboardingChoiceGroup({
                 disabled={disabled}
                 onClick={() => onToggle(option)}
               >
-                <span>{option}</span>
+                <span>{getOnboardingOptionLabel(option)}</span>
                 {selected ? <Check className="size-4 shrink-0" /> : null}
               </button>
 
@@ -290,7 +291,7 @@ function OnboardingChoiceGroup({
         <input
           type="text"
           className="input input-bordered w-full"
-          placeholder={multiple ? "Tell us what else..." : "Tell us more..."}
+          placeholder={multiple ? "请填写其他关注项…" : "请补充说明…"}
           value={otherValue}
           onChange={(event) => onOtherChange(event.target.value)}
         />

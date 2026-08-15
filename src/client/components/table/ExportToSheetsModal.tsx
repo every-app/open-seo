@@ -39,21 +39,21 @@ export function ExportToSheetsModal() {
             <Check className="size-4" />
           </span>
           <h3 id="export-to-sheets-title" className="text-base font-semibold">
-            Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
+            已复制 {rowCount} 行到剪贴板
           </h3>
         </div>
         <button
           type="button"
           className="btn btn-ghost btn-xs btn-square"
           onClick={closeExportToSheetsModal}
-          aria-label="Close"
+          aria-label="关闭"
         >
           <X className="size-4" />
         </button>
       </div>
 
       <p className="text-sm text-base-content/75">
-        Open a new Google Sheet and paste to fill it.
+        打开新的 Google 表格，然后粘贴即可填充数据。
       </p>
 
       <div className="flex justify-end">
@@ -62,7 +62,7 @@ export function ExportToSheetsModal() {
           className="btn btn-primary btn-sm gap-1.5"
           onClick={handleOpenSheet}
         >
-          Open new Google Sheet
+          打开新的 Google 表格
           <ExternalLink className="size-3.5" />
         </button>
       </div>

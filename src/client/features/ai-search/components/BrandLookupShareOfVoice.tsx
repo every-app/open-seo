@@ -27,14 +27,14 @@ export function BrandLookupShareOfVoice({
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-xl border border-base-300 bg-base-100">
       <div className="flex items-baseline justify-between gap-2 border-b border-base-300 px-4 py-3">
-        <h3 className="text-sm font-semibold">Share of Voice</h3>
+        <h3 className="text-sm font-semibold">AI 声量份额</h3>
         {target ? (
           <span className="text-xs text-base-content/50">
             <span className="font-medium text-base-content/80">
               {target.label}
             </span>{" "}
             {target.sharePct == null
-              ? "· no comparable data"
+              ? "· 暂无可比数据"
               : `· ${Math.round(target.sharePct)}%`}
           </span>
         ) : null}
@@ -54,9 +54,9 @@ export function BrandLookupShareOfVoice({
       {/* Captions only the platforms actually summed — when one platform's
           cross_aggregated call failed, the leaderboard must not claim both. */}
       <p className="border-t border-base-200 px-4 py-2 text-[11px] text-base-content/50">
-        Mentions share across{" "}
-        {shareOfVoice.platforms.map(formatPlatformLabel).join(" and ")} · bars
-        relative to the leader.
+        提及份额，覆盖{" "}
+        {shareOfVoice.platforms.map(formatPlatformLabel).join("、")} ·
+        条形长度相对于领先者。
       </p>
     </section>
   );
@@ -86,7 +86,7 @@ function LeaderboardRow({
         <div className="flex items-center gap-2">
           <span className="truncate text-sm">{entry.label}</span>
           {entry.isTarget ? (
-            <span className="badge badge-primary badge-xs border-0">You</span>
+            <span className="badge badge-primary badge-xs border-0">您</span>
           ) : null}
           <span className="ml-auto shrink-0 text-xs tabular-nums text-base-content/50">
             {/* Null mentions = "no data"; render a dash, not zero. */}

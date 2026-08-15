@@ -31,18 +31,18 @@ function NoResultsState({
         <Globe className="size-10 mx-auto text-base-content/40" />
         <div className="space-y-2">
           <p className="text-lg font-semibold text-base-content">
-            Not enough keyword data for this query yet
+            此查询暂时没有足够的关键词数据
           </p>
           <p className="text-sm text-base-content/70">
-            We could not find keyword opportunities for
+            未找到
             <span className="font-medium text-base-content">
-              {` "${lastSearchKeyword}" `}
+              {`“${lastSearchKeyword}”`}
             </span>
-            in
+            在
             <span className="font-medium text-base-content">
-              {` ${LOCATIONS[lastSearchLocationCode] || "this location"}`}
+              {` ${LOCATIONS[lastSearchLocationCode] || "此地区"}`}
             </span>
-            .
+            的关键词机会。
           </p>
         </div>
       </div>
@@ -71,8 +71,7 @@ function SearchHistoryState({
             <div className="flex items-center gap-2">
               <History className="size-4 text-base-content/45" />
               <span className="text-sm text-base-content/60">
-                {history.length} recent search
-                {history.length !== 1 ? "es" : ""}
+                {history.length} 条最近搜索
               </span>
             </div>
           </div>
@@ -126,11 +125,10 @@ function SearchHistoryState({
         <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/50 space-y-3">
           <Search className="size-10 mx-auto opacity-40" />
           <p className="text-lg font-medium text-base-content/80">
-            Enter a keyword to get started
+            输入关键词开始研究
           </p>
           <p className="text-sm max-w-md mx-auto">
-            Search for any keyword to see volume, difficulty, CPC, and related
-            keyword ideas.
+            搜索任意关键词，查看搜索量、难度、CPC 和相关关键词建议。
           </p>
         </section>
       )}

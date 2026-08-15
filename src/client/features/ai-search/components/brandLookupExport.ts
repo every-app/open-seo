@@ -15,12 +15,12 @@ export function buildBrandLookupExport(
   if (tab === "pages") {
     return {
       headers: [
-        "URL",
-        "Domain",
-        "Platform",
-        "Source mentions",
-        "Source AI search volume",
-        "Fetched-sample prompt examples",
+        "网址",
+        "域名",
+        "平台",
+        "来源提及量",
+        "来源 AI 搜索量",
+        "已获取样本中的提示词示例",
       ],
       rows: sortedPages.map((row) => [
         row.url,
@@ -33,13 +33,7 @@ export function buildBrandLookupExport(
     };
   }
   return {
-    headers: [
-      "Query",
-      "Platform",
-      "AI search volume",
-      "First seen",
-      "Last seen",
-    ],
+    headers: ["查询", "平台", "AI 搜索量", "首次发现", "最近发现"],
     rows: sortedQueries.map((row) => [
       row.question,
       formatPlatformLabel(row.platform),

@@ -18,219 +18,211 @@ interface AuditIssueDescriptor {
 export const AUDIT_ISSUE_TYPES = {
   "blocked-page": {
     severity: "critical",
-    title: "Crawler was blocked",
+    title: "爬虫被拦截",
     explanation:
-      "The site returned a bot challenge or access denial (e.g. a Cloudflare challenge, 403, or 429) instead of the page. We report this honestly rather than pretending the page is broken — but it means this page could not be audited, and other crawlers like search engines may face similar friction.",
+      "网站返回了机器人验证或拒绝访问响应，例如 Cloudflare 验证、403 或 429，未返回正常页面。因此该页面无法审计，搜索引擎等其他爬虫也可能遇到类似阻碍。",
     howToFix:
-      'If you own this site, allowlist the "OpenSEO-Audit" user agent in your WAF/bot-protection settings (on Cloudflare: a WAF custom rule that skips bot protection when the user agent contains "OpenSEO-Audit"; on some free tiers you may need to relax bot protection). Then re-run the audit.',
+      "如果您拥有此网站，请在 WAF 或机器人防护设置中将“OpenSEO-Audit”用户代理加入允许名单。使用 Cloudflare 时，可创建 WAF 自定义规则，在用户代理包含“OpenSEO-Audit”时跳过机器人防护；部分免费方案可能需要适当放宽防护。完成后重新运行审计。",
   },
   "server-error": {
     severity: "critical",
-    title: "Server error (5xx)",
+    title: "服务器错误（5xx）",
     explanation:
-      "The page returned a 5xx server error. Search engines that repeatedly see server errors will crawl the site less and may drop the page from the index.",
+      "页面返回了 5xx 服务器错误。搜索引擎反复遇到服务器错误后会降低抓取频率，并可能将页面移出索引。",
     howToFix:
-      "Check the server logs for this URL and fix the underlying error. If the page is gone, return a 404/410 or redirect it to a relevant page instead of erroring.",
+      "检查此网址的服务器日志并修复根本错误。如果页面已经删除，请返回 404/410，或将其重定向到相关页面。",
   },
   "broken-internal-link": {
     severity: "critical",
-    title: "Broken internal link",
+    title: "失效的内部链接",
     explanation:
-      "This page links to an internal URL that returns an error status (4xx/5xx). Broken links waste crawl budget, leak link equity, and frustrate users — they are among the most common and most damaging technical SEO issues.",
+      "此页面链接到返回错误状态（4xx/5xx）的内部网址。失效链接会浪费抓取预算、损失链接权重并影响用户体验，是常见且影响较大的技术 SEO 问题。",
     howToFix:
-      "Update the link to point at the correct live URL, or remove it. If the target was moved, prefer linking directly to the new URL rather than relying on a redirect.",
+      "将链接更新为正确且可访问的网址，或移除链接。如果目标已迁移，建议直接链接到新网址，减少对重定向的依赖。",
   },
   "missing-title": {
     severity: "critical",
-    title: "Missing title tag",
+    title: "缺少标题标签",
     explanation:
-      "The page has no <title>. The title is the strongest on-page relevance signal and the headline shown in search results; without it search engines generate one themselves, usually badly.",
+      "页面缺少 <title>。标题是重要的页面相关性信号，也会作为搜索结果标题显示。缺少标题时，搜索引擎会自行生成，结果通常不够理想。",
     howToFix:
-      "Add a unique, descriptive <title> of roughly 50–60 characters that includes the page's primary topic.",
+      "添加唯一且描述清晰的 <title>，长度约为 50 到 60 个字符，并包含页面核心主题。",
   },
   "broken-page": {
     severity: "warning",
-    title: "Page returns an error (4xx)",
+    title: "页面返回错误（4xx）",
     explanation:
-      "This crawled URL returned a client error (e.g. 404). If it is referenced from your sitemap or other pages, crawlers keep wasting requests on it.",
+      "此网址在抓取时返回了客户端错误，例如 404。如果站点地图或其他页面仍引用它，爬虫会持续浪费请求。",
     howToFix:
-      "If the page should exist, restore it. If it is intentionally gone, remove it from the sitemap and internal links, and consider a 301 redirect to the closest live page.",
+      "如果页面应当存在，请恢复页面。如果页面已计划删除，请从站点地图和内部链接中移除，并考虑使用 301 重定向到最相关的可用页面。",
   },
   "duplicate-title": {
     severity: "warning",
-    title: "Duplicate title",
+    title: "标题重复",
     explanation:
-      "Multiple pages share the same title tag. Search engines use titles to differentiate pages; duplicates make pages compete with each other and depress click-through rates.",
+      "多个页面使用相同的标题标签。搜索引擎依靠标题区分页面，重复标题会导致页面相互竞争并降低点击率。",
     howToFix:
-      "Write a unique title for each page describing its specific content. For templated pages, include the distinguishing attribute (name, category, location) in the template.",
+      "为每个页面编写描述具体内容的唯一标题。模板页面应在标题模板中加入名称、分类或地区等区分属性。",
   },
   "duplicate-meta-description": {
     severity: "warning",
-    title: "Duplicate meta description",
+    title: "Meta 描述重复",
     explanation:
-      "Multiple pages share the same meta description, so search results show identical snippets and users cannot tell the pages apart.",
+      "多个页面使用相同的 Meta 描述，导致搜索结果显示相同摘要，用户难以区分。",
     howToFix:
-      "Write a unique meta description per page, or remove the duplicated one entirely — search engines will generate a snippet from page content, which beats a wrong duplicate.",
+      "为每个页面编写唯一的 Meta 描述，或移除重复描述，让搜索引擎从页面内容中生成更准确的摘要。",
   },
   "duplicate-content": {
     severity: "warning",
-    title: "Duplicate page content",
+    title: "页面内容重复",
     explanation:
-      "Two or more URLs serve byte-identical visible text. Search engines pick one version to index and ignore the rest, and ranking signals get split across the duplicates.",
+      "两个或更多网址提供完全相同的可见文本。搜索引擎通常只选择一个版本建立索引，排名信号也会分散到多个重复页面。",
     howToFix:
-      "Consolidate duplicates: pick the canonical URL, add rel=canonical from the others, and 301-redirect duplicate URLs where possible (common causes: trailing-slash variants, URL parameters, http/https or www variants).",
+      "合并重复页面：选择规范网址，在其他页面添加 rel=canonical，并尽可能将重复网址 301 重定向到规范网址。常见原因包括尾部斜杠、网址参数、http/https 或 www 变体。",
   },
   "missing-meta-description": {
     severity: "warning",
-    title: "Missing meta description",
+    title: "缺少 Meta 描述",
     explanation:
-      "The page has no meta description. Search engines will assemble a snippet from page text, which is often less compelling and hurts click-through rate.",
+      "页面缺少 Meta 描述。搜索引擎会从正文中组合摘要，吸引力通常较弱，可能影响点击率。",
     howToFix:
-      "Add a meta description of roughly 70–160 characters that summarizes the page and gives a reason to click.",
+      "添加约 70 到 160 个字符的 Meta 描述，概括页面内容并提供点击理由。",
   },
   "missing-h1": {
     severity: "warning",
-    title: "Missing H1 heading",
+    title: "缺少 H1 标题",
     explanation:
-      "The page has no H1. The H1 tells users and search engines what the page is about; pages without one tend to have weaker topical clarity.",
-    howToFix:
-      "Add a single H1 that states the page's main topic, consistent with the title tag.",
+      "页面缺少 H1。H1 用于向用户和搜索引擎说明页面主题，缺少 H1 会降低主题清晰度。",
+    howToFix: "添加一个说明页面核心主题的 H1，并与标题标签保持一致。",
   },
   "multiple-h1": {
     severity: "warning",
-    title: "Multiple H1 headings",
+    title: "存在多个 H1 标题",
     explanation:
-      "The page has more than one H1, which dilutes the main-topic signal and usually indicates a templating mistake (e.g. a logo and a headline both marked up as H1).",
+      "页面包含多个 H1，会削弱核心主题信号，也常表示模板标记存在问题，例如标志和主标题都被标记为 H1。",
     howToFix:
-      "Keep one H1 for the page's main heading and demote the others to H2/H3 (or unstyled elements for non-headings like logos).",
+      "保留一个 H1 作为页面主标题，将其他标题调整为 H2/H3；标志等非标题元素应改用普通元素。",
   },
   "redirect-chain": {
     severity: "warning",
-    title: "Redirect chain",
+    title: "重定向链",
     explanation:
-      "Reaching the final page requires two or more consecutive redirects. Each hop adds latency, leaks link equity, and burns crawl budget; long chains may not be followed at all.",
-    howToFix:
-      "Point the first URL (and any internal links) directly at the final destination so there is at most one redirect.",
+      "到达最终页面需要连续经过两次或更多重定向。每次跳转都会增加延迟、损失链接权重并消耗抓取预算，过长的链可能无法被完整跟随。",
+    howToFix: "让初始网址及相关内部链接直接指向最终目标，最多保留一次重定向。",
   },
   "redirect-loop": {
     severity: "warning",
-    title: "Redirect loop",
+    title: "重定向循环",
     explanation:
-      "This redirect eventually points back to itself, so the URL never resolves. Browsers and crawlers give up with an error.",
+      "此重定向最终指回自身，导致网址始终无法解析，浏览器和爬虫会因错误而停止。",
     howToFix:
-      "Trace the redirect rules for this URL and break the cycle so the chain terminates at a real 200 page.",
+      "检查此网址的重定向规则并打破循环，使重定向链最终到达返回 200 的真实页面。",
   },
   "canonical-conflict": {
     severity: "warning",
-    title: "Conflicting canonical signals",
+    title: "规范网址信号冲突",
     explanation:
-      "The page declares different canonical URLs in its HTML <link rel=canonical> and its HTTP Link header. When signals conflict, search engines ignore both and choose their own canonical.",
+      "页面在 HTML <link rel=canonical> 和 HTTP Link 标头中声明了不同的规范网址。信号冲突时，搜索引擎可能忽略两者并自行选择规范网址。",
     howToFix:
-      "Pick one canonical URL and declare it in exactly one place (HTML head is the most common); remove or align the other declaration.",
+      "选择一个规范网址并仅在一个位置声明，通常使用 HTML head。移除另一处声明或使其保持一致。",
   },
   "thin-content": {
     severity: "warning",
-    title: "Thin content",
+    title: "内容单薄",
     explanation:
-      "The page has very little visible text. Thin pages rarely rank, can drag down sitewide quality assessments, and (if the site renders client-side) may indicate content invisible to plain-HTML crawlers.",
+      "页面的可见文本很少。内容单薄的页面较难获得排名，也可能降低全站质量评价。对于客户端渲染网站，这还可能表示普通 HTML 爬虫无法看到内容。",
     howToFix:
-      "Either expand the page with genuinely useful content, noindex it, or consolidate it into a stronger page. If the content exists but is rendered by JavaScript, ensure it is server-rendered or pre-rendered.",
+      "可以补充真正有用的内容、设置 noindex，或将其合并到内容更完整的页面。如果内容由 JavaScript 渲染，请确保使用服务器渲染或预渲染。",
   },
   "images-missing-alt": {
     severity: "warning",
-    title: "Images missing alt text",
+    title: "图片缺少替代文本",
     explanation:
-      "One or more images on the page lack alt attributes. Alt text is an accessibility requirement and the main way search engines understand images.",
+      "页面中一个或多个图片缺少 alt 属性。替代文本是无障碍要求，也是搜索引擎理解图片内容的主要方式。",
     howToFix:
-      'Add descriptive alt text to meaningful images; use an empty alt (alt="") only for purely decorative ones.',
+      '为有实际含义的图片添加描述性替代文本；仅对纯装饰图片使用空 alt（alt=""）。',
   },
   "orphan-page": {
     severity: "warning",
-    title: "Orphan page",
+    title: "孤立页面",
     explanation:
-      "No crawled page links to this URL — it was only discoverable via the sitemap. Pages without internal links receive little crawl attention and no internal link equity, and users can't find them by browsing.",
+      "没有已抓取页面链接到此网址，它只能通过站点地图被发现。缺少内部链接的页面获得的抓取关注和内部链接权重较少，用户也难以通过浏览找到。",
     howToFix:
-      "Link to this page from relevant pages (navigation, related content, hub pages), or remove it from the sitemap if it shouldn't be indexed.",
+      "从导航、相关内容或聚合页面等相关位置链接到此页面。如果页面无需建立索引，请将其从站点地图中移除。",
   },
   "no-outgoing-links": {
     severity: "warning",
-    title: "Page has no outgoing links",
+    title: "页面没有出站链接",
     explanation:
-      "The page contains no links at all — a dead end. Link equity that flows into it stops there, crawlers have nowhere to go next, and users have to reach for the back button.",
+      "页面完全没有链接，形成浏览终点。流入页面的链接权重无法继续传递，爬虫没有后续路径，用户也只能返回。",
     howToFix:
-      "Add links to related pages, the parent category, or the homepage. If the page's navigation is rendered by JavaScript, make sure it also exists in the server-rendered HTML.",
+      "添加指向相关页面、上级分类或首页的链接。如果页面导航由 JavaScript 渲染，请确保服务器渲染的 HTML 中也包含导航。",
   },
   "title-too-long": {
     severity: "info",
-    title: "Title too long",
+    title: "标题过长",
     explanation:
-      "The title exceeds ~60 characters, so search results will truncate it and the ending may be cut off mid-phrase.",
-    howToFix:
-      "Shorten the title to roughly 50–60 characters, front-loading the most important words.",
+      "标题超过约 60 个字符，搜索结果会将其截断，末尾内容可能显示不完整。",
+    howToFix: "将标题缩短到约 50 到 60 个字符，并把重要词语放在前面。",
   },
   "title-too-short": {
     severity: "info",
-    title: "Title too short",
-    explanation:
-      "The title is under ~10 characters, which is usually too generic to describe the page or attract clicks.",
+    title: "标题过短",
+    explanation: "标题少于约 10 个字符，通常难以准确描述页面或吸引点击。",
     howToFix:
-      "Expand the title into a descriptive phrase (roughly 30–60 characters) that states what the page offers.",
+      "将标题扩展为约 30 到 60 个字符的描述性短语，明确说明页面提供的内容。",
   },
   "meta-description-too-long": {
     severity: "info",
-    title: "Meta description too long",
-    explanation:
-      "The meta description exceeds ~160 characters, so search engines will truncate the snippet.",
-    howToFix:
-      "Trim the description to roughly 70–160 characters while keeping the core message and call to action.",
+    title: "Meta 描述过长",
+    explanation: "Meta 描述超过约 160 个字符，搜索引擎会截断摘要。",
+    howToFix: "将描述缩短到约 70 到 160 个字符，同时保留核心信息和行动引导。",
   },
   "meta-description-too-short": {
     severity: "info",
-    title: "Meta description too short",
+    title: "Meta 描述过短",
     explanation:
-      "The meta description is under ~70 characters. Short descriptions waste the snippet space search results give you, and search engines often ignore them in favor of text pulled from the page.",
-    howToFix:
-      "Expand the description to roughly 70–160 characters that summarize the page and give a reason to click.",
+      "Meta 描述少于约 70 个字符，没有充分利用搜索结果摘要空间，搜索引擎也可能改用页面正文。",
+    howToFix: "将描述扩展到约 70 到 160 个字符，概括页面内容并提供点击理由。",
   },
   "heading-order-skip": {
     severity: "info",
-    title: "Heading levels skip",
+    title: "标题层级跳跃",
     explanation:
-      "The heading hierarchy skips levels (e.g. an H4 directly after an H2). This weakens document structure for accessibility tools and content parsing.",
-    howToFix:
-      "Adjust heading levels so they descend one step at a time (H1 → H2 → H3) without skipping.",
+      "标题层级存在跳跃，例如 H2 后直接使用 H4。这会削弱无障碍工具和内容解析所依赖的文档结构。",
+    howToFix: "调整标题层级，使其按 H1 → H2 → H3 逐级下降，避免跳级。",
   },
   "slow-response": {
     severity: "info",
-    title: "Slow server response",
+    title: "服务器响应缓慢",
     explanation:
-      "The HTML response took over 1.5 seconds. Slow time-to-first-byte drags down every downstream performance metric and reduces crawl rate on large sites.",
+      "HTML 响应耗时超过 1.5 秒。首字节时间过长会拖累后续性能指标，并降低大型网站的抓取频率。",
     howToFix:
-      "Investigate server/database time and caching for this route; serving cached or statically generated HTML usually fixes it.",
+      "检查此路由的服务器或数据库耗时与缓存设置。提供缓存或静态生成的 HTML 通常可以改善问题。",
   },
   "noindex-page": {
     severity: "info",
-    title: "Page is noindex",
+    title: "页面设置了 noindex",
     explanation:
-      "The page asks search engines not to index it (via robots meta tag or X-Robots-Tag header). That's often intentional — this is a heads-up, not an error.",
+      "页面通过 robots Meta 标签或 X-Robots-Tag 标头要求搜索引擎不要建立索引。这通常是有意设置，此项用于提醒。",
     howToFix:
-      "If this page should rank, remove the noindex directive. If it's intentional (admin, thank-you, filter pages), no action is needed.",
+      "如果此页面需要参与排名，请移除 noindex 指令。如果用于管理后台、感谢页或筛选页等预期场景，则无需处理。",
   },
   "canonicalized-page": {
     severity: "info",
-    title: "Canonicalized to another URL",
+    title: "规范网址指向其他页面",
     explanation:
-      "The page declares a different URL as its canonical, telling search engines to index that URL instead. Fine when intentional (parameter pages, syndication) — a problem if this page was meant to rank.",
+      "页面将其他网址声明为规范网址，提示搜索引擎改为索引该网址。参数页面或内容分发等场景可能符合预期；如果当前页面需要参与排名，则需要检查。",
     howToFix:
-      "If this page should rank on its own, set its canonical to itself. Otherwise no action is needed.",
+      "如果此页面需要独立参与排名，请将规范网址设置为自身；其他情况无需处理。",
   },
   "deep-page": {
     severity: "info",
-    title: "Page is deep in the site structure",
+    title: "页面层级过深",
     explanation:
-      "The page is 5+ clicks from the homepage. Deep pages get crawled less often and receive less link equity.",
+      "从首页到此页面需要点击 5 次以上。层级较深的页面抓取频率更低，获得的链接权重也更少。",
     howToFix:
-      "Add links from higher-level pages (hubs, category pages, navigation) to flatten the path to this page.",
+      "从聚合页、分类页或导航等更高层级页面添加链接，缩短到达此页面的路径。",
   },
 } as const satisfies Record<string, AuditIssueDescriptor>;
 

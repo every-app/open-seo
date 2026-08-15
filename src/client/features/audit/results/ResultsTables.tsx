@@ -105,9 +105,7 @@ export function PerformanceTable({
       <AppDataTable
         table={table}
         className="table table-sm"
-        empty={
-          <EmptyTableMessage label="No performance results match these filters." />
-        }
+        empty={<EmptyTableMessage label="没有性能结果符合当前筛选条件。" />}
       />
     </div>
   );
@@ -122,7 +120,7 @@ function buildPerformanceColumns({
 }): ColumnDef<PerformanceRowData>[] {
   return [
     performanceColumnHelper.accessor("pagePath", {
-      header: ({ column }) => <SortableHeader column={column} label="URL" />,
+      header: ({ column }) => <SortableHeader column={column} label="网址" />,
       cell: ({ getValue }) => (
         <span className="text-xs">{getValue() ?? "-"}</span>
       ),
@@ -130,27 +128,27 @@ function buildPerformanceColumns({
       meta: { cellClassName: "max-w-[180px] truncate" },
     }),
     performanceColumnHelper.accessor("strategy", {
-      header: ({ column }) => <SortableHeader column={column} label="Device" />,
+      header: ({ column }) => <SortableHeader column={column} label="设备" />,
       cell: ({ getValue }) => (
         <span className="capitalize text-xs">{getValue()}</span>
       ),
     }),
     performanceColumnHelper.display({
       id: "status",
-      header: ({ column }) => <SortableHeader column={column} label="Status" />,
+      header: ({ column }) => <SortableHeader column={column} label="状态" />,
       cell: ({ row }) => {
         const isFailed = isLighthouseFailure(row.original);
         const failureMessage =
-          row.original.errorMessage ?? "Lighthouse returned no category scores";
+          row.original.errorMessage ?? "Lighthouse 未返回分类分数";
         return isFailed ? (
           <span
             className="badge badge-error badge-outline text-xs"
             title={failureMessage}
           >
-            failed
+            失败
           </span>
         ) : (
-          <span className="badge badge-success badge-outline text-xs">ok</span>
+          <span className="badge badge-success badge-outline text-xs">正常</span>
         );
       },
       enableSorting: true,
@@ -159,12 +157,12 @@ function buildPerformanceColumns({
         Number(isLighthouseFailure(right.original)),
     }),
     performanceColumnHelper.accessor("performanceScore", {
-      header: ({ column }) => <SortableHeader column={column} label="Perf" />,
+      header: ({ column }) => <SortableHeader column={column} label="性能" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
       sortingFn: nullableNumberSort,
     }),
     performanceColumnHelper.accessor("accessibilityScore", {
-      header: ({ column }) => <SortableHeader column={column} label="A11y" />,
+      header: ({ column }) => <SortableHeader column={column} label="无障碍" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
       sortingFn: nullableNumberSort,
     }),
@@ -223,7 +221,7 @@ function buildPerformanceColumns({
     }),
     performanceColumnHelper.display({
       id: "issues",
-      header: () => "Issues",
+      header: () => "问题",
       cell: ({ row }) =>
         row.original.r2Key && !isLighthouseFailure(row.original) ? (
           <Link
@@ -232,7 +230,7 @@ function buildPerformanceColumns({
             params={{ projectId, resultId: row.original.id }}
             search={{ auditId, category: "performance" }}
           >
-            View issues
+            查看问题
           </Link>
         ) : (
           <span className="text-xs text-base-content/40">-</span>
@@ -251,7 +249,7 @@ export function ExportDropdown({
       buttonClassName="btn btn-sm btn-ghost gap-1"
       menuClassName="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
       actions={[
-        { label: "Export to Sheets", onClick: () => onExport("sheets") },
+        { label: "导出到 Google 表格", onClick: () => onExport("sheets") },
         { label: "CSV", onClick: () => onExport("csv") },
         { label: "JSON", onClick: () => onExport("json") },
       ]}

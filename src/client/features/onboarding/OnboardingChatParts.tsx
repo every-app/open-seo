@@ -65,40 +65,35 @@ export function WelcomeMessage({
       </div>
       <div className="min-w-0 flex-1 space-y-3 pt-0.5 text-sm">
         <div className="space-y-3 text-base-content/80">
-          <p>Hey, I’m Sam — welcome to OpenSEO.</p>
+          <p>你好，我是 Sam，欢迎使用 OpenSEO。</p>
+          <p>升级付费套餐后即可使用 OpenSEO 的全部功能。你也可以先向我提问。</p>
           <p>
-            To get full access to OpenSEO, you need to upgrade to the paid plan.
-            But, I’m here if you have any questions.
-          </p>
-          <p>
-            You can also{" "}
+            你也可以{" "}
             <a
               href={DISCORD_URL}
               target="_blank"
               rel="noreferrer"
               className="link link-primary"
             >
-              join the Discord
+              加入 Discord
             </a>{" "}
-            or email{" "}
+            或发送邮件至{" "}
             <a href="mailto:ben@openseo.so" className="link link-primary">
               ben@openseo.so
             </a>{" "}
-            if you have any questions I can’t help you with.
+            获取更多帮助。
           </p>
           <p>
-            Want me to analyze{" "}
-            <span className="font-medium text-base-content">{domain}</span> and
-            draft a strategy, or do you have questions first? Pick one below to
-            get started.
+            我可以分析{" "}
+            <span className="font-medium text-base-content">{domain}</span>
+            并生成策略，也可以先回答你的问题。请从下方选择一项开始。
           </p>
         </div>
 
         <div className="rounded-box border border-base-300 bg-base-200/50 p-3 text-xs lg:hidden">
-          <p className="font-medium">Want Sam to keep going?</p>
+          <p className="font-medium">让 Sam 继续协助你</p>
           <p className="mt-0.5 text-base-content/70">
-            Upgrade to run keyword research, rank tracking, and site audits on{" "}
-            {domain}.
+            升级后可为 {domain} 运行关键词研究、排名追踪和站点审计。
           </p>
           <button
             type="button"
@@ -106,7 +101,7 @@ export function WelcomeMessage({
             disabled={isStartingCheckout}
             onClick={onUpgrade}
           >
-            {isStartingCheckout ? "Redirecting..." : "Upgrade"}
+            {isStartingCheckout ? "正在跳转…" : "升级"}
           </button>
           {checkoutError ? (
             <p className="mt-2 text-error">{checkoutError}</p>
@@ -131,10 +126,10 @@ export function UpgradeSidebar({
   onUpgrade: () => void;
 }) {
   const features = [
-    "Keyword research, backlinks, rank tracking & site audits",
-    "Google Search Console — read-only, no credits, no Google Cloud setup",
-    "Connect Claude, Cursor, Codex & other MCP clients",
-    "Top-up credits roll over and never expire",
+    "关键词研究、反向链接、排名追踪与站点审计",
+    "Google Search Console 只读连接，无需点数或 Google Cloud 配置",
+    "连接 Claude、Cursor、Codex 与其他 MCP 客户端",
+    "充值点数可结转且长期有效",
   ];
   const used = Math.min(questionsUsed, FREE_ONBOARDING_QUESTION_LIMIT);
   const progress = (used / FREE_ONBOARDING_QUESTION_LIMIT) * 100;
@@ -146,7 +141,7 @@ export function UpgradeSidebar({
           <Globe className="size-4" />
         </span>
         <div className="min-w-0">
-          <p className="font-medium text-base-content/80">Previewing OpenSEO</p>
+          <p className="font-medium text-base-content/80">正在预览 OpenSEO</p>
           <p className="truncate" title={domain}>
             {domain}
           </p>
@@ -157,11 +152,10 @@ export function UpgradeSidebar({
         <div>
           <div className="flex items-baseline gap-1.5">
             <span className="text-3xl font-semibold tracking-tight">$10</span>
-            <span className="text-sm text-base-content/55">/month</span>
+            <span className="text-sm text-base-content/55">/月</span>
           </div>
           <p className="mt-1.5 text-xs leading-relaxed text-base-content/55">
-            Includes $10 of usage credits every month, plus a 30-day money-back
-            guarantee.
+            每月包含 10 美元使用点数，并提供 30 天退款保障。
           </p>
         </div>
 
@@ -184,17 +178,17 @@ export function UpgradeSidebar({
             disabled={isStartingCheckout}
             onClick={onUpgrade}
           >
-            {isStartingCheckout ? "Redirecting..." : "Upgrade to continue"}
+            {isStartingCheckout ? "正在跳转…" : "升级并继续"}
           </button>
           <p className="text-center text-xs leading-relaxed text-base-content/55">
-            Want advice from other OpenSEO users?{" "}
+            想听听其他 OpenSEO 用户的建议？{" "}
             <a
               href={DISCORD_URL}
               target="_blank"
               rel="noreferrer"
               className="link link-primary"
             >
-              Join the Discord
+              加入 Discord
             </a>
             .
           </p>
@@ -209,7 +203,7 @@ export function UpgradeSidebar({
           />
         </div>
         <p className="text-xs text-base-content/55">
-          {used} of {FREE_ONBOARDING_QUESTION_LIMIT} free questions used
+          已使用 {used}/{FREE_ONBOARDING_QUESTION_LIMIT} 个免费问题
         </p>
       </div>
     </aside>
@@ -228,10 +222,10 @@ export function ChatGate({
     <div className="flex-shrink-0 border-t border-base-300 px-5 py-4">
       <div className="mx-auto w-full max-w-2xl rounded-box border border-primary/30 bg-primary/5 p-4 text-center">
         <p className="text-sm font-medium">
-          That’s all {FREE_ONBOARDING_QUESTION_LIMIT} free questions
+          {FREE_ONBOARDING_QUESTION_LIMIT} 个免费问题已全部用完
         </p>
         <p className="mx-auto mt-1 max-w-md text-xs text-base-content/70">
-          Upgrade to keep working with Sam and unlock the full OpenSEO app.
+          升级后可继续与 Sam 协作，并解锁 OpenSEO 全部功能。
         </p>
         <button
           type="button"
@@ -239,11 +233,9 @@ export function ChatGate({
           disabled={isStartingCheckout}
           onClick={onUpgrade}
         >
-          {isStartingCheckout ? "Redirecting..." : "Upgrade to continue"}
+          {isStartingCheckout ? "正在跳转…" : "升级并继续"}
         </button>
-        <p className="mt-2 text-xs text-base-content/45">
-          30-day money-back guarantee
-        </p>
+        <p className="mt-2 text-xs text-base-content/45">30 天退款保障</p>
       </div>
     </div>
   );
@@ -252,7 +244,7 @@ export function ChatGate({
 export function ChatComposer({
   busy,
   onSend,
-  placeholder = "Ask Sam about your strategy or OpenSEO…",
+  placeholder = "向 Sam 询问策略或 OpenSEO 使用问题…",
 }: {
   busy: boolean;
   onSend: (text: string) => void;
@@ -305,7 +297,7 @@ export function ChatComposer({
       />
       <button
         type="submit"
-        aria-label="Send message"
+        aria-label="发送消息"
         disabled={busy || !value.trim()}
         className="btn btn-primary btn-circle btn-sm"
       >

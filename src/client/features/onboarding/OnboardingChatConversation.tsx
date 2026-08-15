@@ -25,34 +25,34 @@ import {
 // rather than going silent while it gathers site data. `running` shows while the
 // call is in flight; `done` stays as a persistent badge once it finishes.
 const TOOL_LABELS: Record<string, { running: string; done: string }> = {
-  "tool-read_website": { running: "Reading site", done: "Read site" },
+  "tool-read_website": { running: "正在读取网站", done: "网站读取完成" },
   "tool-get_seo_metrics": {
-    running: "Getting SEO metrics",
-    done: "SEO metrics",
+    running: "正在获取 SEO 指标",
+    done: "SEO 指标",
   },
   "tool-research_keywords": {
-    running: "Researching keywords",
-    done: "Keyword research",
+    running: "正在研究关键词",
+    done: "关键词研究",
   },
   "tool-get_domain_overview": {
-    running: "Analyzing domain",
-    done: "Domain overview",
+    running: "正在分析域名",
+    done: "域名概览",
   },
   "tool-get_serp_results": {
-    running: "Checking search results",
-    done: "Search results",
+    running: "正在检查搜索结果",
+    done: "搜索结果",
   },
   "tool-find_serp_competitors": {
-    running: "Finding competitors",
-    done: "Competitors",
+    running: "正在查找竞争对手",
+    done: "竞争对手",
   },
   "tool-get_competitor_keywords": {
-    running: "Analyzing competitor",
-    done: "Competitor keywords",
+    running: "正在分析竞争对手",
+    done: "竞品关键词",
   },
   "tool-get_backlinks_overview": {
-    running: "Checking backlinks",
-    done: "Backlinks overview",
+    running: "正在检查反向链接",
+    done: "反向链接概览",
   },
 };
 
@@ -62,17 +62,17 @@ const resolveToolLabel: ResolveToolLabel = (partType) =>
   TOOL_LABELS[partType] ?? null;
 
 const SUGGESTED_QUESTIONS = [
-  "How will OpenSEO help me get more traffic?",
-  "Compare OpenSEO and Claude",
-  "What do I get after I upgrade?",
-  "How does the Google Search Console integration work?",
-  "Right fit for consultants and agencies?",
+  "OpenSEO 如何帮助我获得更多流量？",
+  "比较 OpenSEO 和 Claude",
+  "升级后可以获得哪些功能？",
+  "Google Search Console 集成如何工作？",
+  "适合顾问和代理机构使用吗？",
 ];
 
 // Highlighted (primary) chips shown first, before the general questions.
 // STRATEGY_SUGGESTION drops out once the user has asked for their strategy.
-const STRATEGY_SUGGESTION = "What do you recommend for my site?";
-const COMPETITOR_SUGGESTION = "Compare against my competitors";
+const STRATEGY_SUGGESTION = "你对我的网站有什么建议？";
+const COMPETITOR_SUGGESTION = "与我的竞争对手进行比较";
 const PRIMARY_SUGGESTIONS = [STRATEGY_SUGGESTION, COMPETITOR_SUGGESTION];
 
 export function OnboardingChatConversation({
@@ -131,7 +131,7 @@ export function OnboardingChatConversation({
       setCheckoutError(
         getStandardErrorMessage(
           checkoutErr,
-          "We couldn't start checkout. Please refresh and try again.",
+          "无法开始结账，请刷新页面后重试。",
         ),
       );
       setIsStartingCheckout(false);
@@ -214,7 +214,7 @@ export function OnboardingChatConversation({
                 {/* Billing gates (free-question cap / out-of-credits) come
                     back as normal assistant messages now, so this only covers
                     genuine failures. */}
-                Something went wrong. Please refresh and try again.
+                出现问题，请刷新页面后重试。
               </p>
             ) : null}
 
@@ -248,14 +248,14 @@ export function OnboardingChatConversation({
             <div className="mx-auto w-full max-w-2xl space-y-2">
               {showRemainingHint ? (
                 <p className="px-1 text-xs text-base-content/50">
-                  {remaining} free question{remaining === 1 ? "" : "s"} left.{" "}
+                  还可免费提问 {remaining} 次。{" "}
                   <button
                     type="button"
                     className="link link-primary"
                     disabled={isStartingCheckout}
                     onClick={() => void startCheckout()}
                   >
-                    Upgrade for full access
+                    升级以使用全部功能
                   </button>
                 </p>
               ) : null}

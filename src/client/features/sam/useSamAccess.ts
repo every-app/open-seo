@@ -49,10 +49,7 @@ export function useSamAccess(projectId: string): SamAccess {
     errorMessage:
       data?.errorMessage ??
       (error
-        ? getStandardErrorMessage(
-            error,
-            "Could not load AI agent setup status.",
-          )
+        ? getStandardErrorMessage(error, "无法加载 AI 智能体设置状态。")
         : null),
     isRefetching,
     onRetry,

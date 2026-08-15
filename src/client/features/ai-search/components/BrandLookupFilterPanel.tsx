@@ -56,8 +56,8 @@ function FilterRangeInputs({
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <CompactRangeInput form={form} name={minName} placeholder="Min" />
-        <CompactRangeInput form={form} name={maxName} placeholder="Max" />
+        <CompactRangeInput form={form} name={minName} placeholder="最小值" />
+        <CompactRangeInput form={form} name={maxName} placeholder="最大值" />
       </div>
     </div>
   );
@@ -94,7 +94,7 @@ function PlatformToggle({ form }: { form: AnyForm }) {
   return (
     <div className="space-y-1.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-        Platform
+        平台
       </p>
       <form.Field name="platform">
         {(field: {
@@ -109,7 +109,7 @@ function PlatformToggle({ form }: { form: AnyForm }) {
                 className={`btn btn-xs ${field.state.value === value ? "btn-soft" : "btn-ghost"}`}
                 onClick={() => field.handleChange(value)}
               >
-                {value === "" ? "All" : formatPlatformLabel(value)}
+                {value === "" ? "全部" : formatPlatformLabel(value)}
               </button>
             ))}
           </div>
@@ -130,13 +130,13 @@ function TopPagesFilters({
         <FilterTextInput
           form={form}
           name="include"
-          label="Include Terms"
+          label="包含词语"
           placeholder="reddit, forbes"
         />
         <FilterTextInput
           form={form}
           name="exclude"
-          label="Exclude Terms"
+          label="排除词语"
           placeholder="pinterest, /tag"
         />
       </div>
@@ -146,7 +146,7 @@ function TopPagesFilters({
         <div className="min-w-[220px]">
           <FilterRangeInputs
             form={form}
-            title="Source mentions"
+            title="来源提及量"
             minName="minMentions"
             maxName="maxMentions"
           />
@@ -167,13 +167,13 @@ function QueriesFilters({
         <FilterTextInput
           form={form}
           name="include"
-          label="Include Terms"
+          label="包含词语"
           placeholder="pricing, reviews"
         />
         <FilterTextInput
           form={form}
           name="exclude"
-          label="Exclude Terms"
+          label="排除词语"
           placeholder="login, download"
         />
       </div>
@@ -183,7 +183,7 @@ function QueriesFilters({
         <div className="min-w-[220px]">
           <FilterRangeInputs
             form={form}
-            title="AI search volume"
+            title="AI 搜索量"
             minName="minVolume"
             maxName="maxVolume"
           />
@@ -206,10 +206,10 @@ export function BrandLookupFilterPanel({
     <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold">Refine results</p>
+          <p className="text-sm font-semibold">筛选结果</p>
           {current.activeFilterCount > 0 ? (
             <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {current.activeFilterCount} active
+              已启用 {current.activeFilterCount} 项
             </span>
           ) : null}
         </div>
@@ -220,7 +220,7 @@ export function BrandLookupFilterPanel({
           disabled={current.activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
-          Clear all
+          全部清除
         </button>
       </div>
 

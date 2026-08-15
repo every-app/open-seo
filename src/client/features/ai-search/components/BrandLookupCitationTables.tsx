@@ -33,8 +33,7 @@ function HeaderWithHelp({
   );
 }
 
-const PLATFORM_HELP =
-  "Which AI surface produced the answer — ChatGPT or Google AI Overview.";
+const PLATFORM_HELP = "生成回答的 AI 平台：ChatGPT 或 Google AI 摘要。";
 
 /**
  * Platform indicator used only when a table actually spans >1 platform. A dot +
@@ -103,7 +102,7 @@ function PageUrlCell({
           {row.domain ?? formatUrlForDisplay(row.url)}
         </span>
         {isOwn ? (
-          <span className="badge badge-primary badge-xs border-0">You</span>
+          <span className="badge badge-primary badge-xs border-0">您</span>
         ) : null}
         <ExternalLink className="size-3 shrink-0 text-base-content/40" />
       </span>
@@ -149,14 +148,14 @@ function KeywordsCell({
               params={{ projectId }}
               search={{ q: keyword.question, hb: brand || undefined }}
               className="group/kw inline-flex items-baseline gap-2 text-xs"
-              title="Run this prompt in Prompt Explorer"
+              title="在提示词探索中运行"
             >
               <span className="text-base-content/80 group-hover/kw:underline">
                 {keyword.question}
               </span>
               <span
                 className="shrink-0 tabular-nums text-base-content/40"
-                title="Prompt volume in the fetched sample"
+                title="已获取样本中的提示词搜索量"
               >
                 {formatCount(keyword.aiSearchVolume)} vol.
               </span>
@@ -170,7 +169,7 @@ function KeywordsCell({
           onClick={() => setExpanded((current) => !current)}
           className="text-xs text-base-content/50 hover:text-base-content"
         >
-          {expanded ? "Show less" : `+${remaining} more`}
+          {expanded ? "收起" : `+${remaining} more`}
         </button>
       ) : null}
     </div>
@@ -196,8 +195,8 @@ export function buildTopPagesColumns({
       id: "url",
       header: () => (
         <HeaderWithHelp
-          label="Source"
-          helpText="A page cited as a source in AI answers where the searched brand or domain appears."
+          label="来源"
+          helpText="在包含所查品牌或域名的 AI 回答中，被引用为来源的页面。"
         />
       ),
       enableSorting: false,
@@ -210,7 +209,7 @@ export function buildTopPagesColumns({
           pagesHelper.accessor("platform", {
             id: "platform",
             header: () => (
-              <HeaderWithHelp label="Platform" helpText={PLATFORM_HELP} />
+              <HeaderWithHelp label="平台" helpText={PLATFORM_HELP} />
             ),
             enableSorting: false,
             cell: ({ getValue }) => <PlatformCell platform={getValue()} />,
@@ -221,8 +220,8 @@ export function buildTopPagesColumns({
       id: "keywords",
       header: () => (
         <HeaderWithHelp
-          label="Cited for"
-          helpText="Example prompts from the fetched sample where this page was cited."
+          label="引用场景"
+          helpText="已获取样本中引用此页面的提示词示例。"
         />
       ),
       cell: ({ row }) => (
@@ -238,8 +237,8 @@ export function buildTopPagesColumns({
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          label="Source vol."
-          helpText="Estimated monthly prompt demand DataForSEO reports for this cited source, across prompts where the searched brand or domain appears."
+          label="来源搜索量"
+          helpText="DataForSEO 估算的该引用来源月度提示词需求，统计范围为包含所查品牌或域名的提示词。"
           align="right"
         />
       ),
@@ -266,8 +265,8 @@ export function buildTopQueriesColumns({
       id: "question",
       header: () => (
         <HeaderWithHelp
-          label="Query"
-          helpText="A sampled user prompt whose AI answer cited the searched brand or domain in its text or sources. The prompt itself may not name the brand."
+          label="查询"
+          helpText="AI 回答正文或来源中引用了所查品牌或域名的用户提示词样本。提示词本身可能没有出现该品牌。"
         />
       ),
       enableSorting: false,
@@ -276,7 +275,7 @@ export function buildTopQueriesColumns({
           <p className="break-words font-medium">{row.original.question}</p>
           {row.original.brandsMentioned.length > 0 ? (
             <p className="mt-0.5 text-xs text-base-content/50">
-              Brands: {row.original.brandsMentioned.slice(0, 5).join(", ")}
+              品牌： {row.original.brandsMentioned.slice(0, 5).join(", ")}
             </p>
           ) : null}
         </>
@@ -287,7 +286,7 @@ export function buildTopQueriesColumns({
           queriesHelper.accessor("platform", {
             id: "platform",
             header: () => (
-              <HeaderWithHelp label="Platform" helpText={PLATFORM_HELP} />
+              <HeaderWithHelp label="平台" helpText={PLATFORM_HELP} />
             ),
             enableSorting: false,
             cell: ({ getValue }) => <PlatformCell platform={getValue()} />,
@@ -299,8 +298,8 @@ export function buildTopQueriesColumns({
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          label="AI search vol."
-          helpText="Estimated monthly search demand for this prompt's topic. This is prompt demand, not the number of brand mentions."
+          label="AI 搜索量"
+          helpText="此提示词主题的预估月度搜索需求，表示提示词需求量，不代表品牌提及次数。"
           align="right"
         />
       ),
@@ -312,19 +311,19 @@ export function buildTopQueriesColumns({
     }),
     queriesHelper.display({
       id: "action",
-      header: () => <span className="sr-only">Actions</span>,
+      header: () => <span className="sr-only">操作</span>,
       meta: { cellClassName: "w-px whitespace-nowrap text-right align-top" },
       cell: ({ row }) => (
         <span
           className="tooltip tooltip-left opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-          data-tip="Run this prompt in Prompt Explorer"
+          data-tip="在提示词探索中运行此提示词"
         >
           <Link
             to="/p/$projectId/prompt-explorer"
             params={{ projectId }}
             search={{ q: row.original.question, hb: brand || undefined }}
             className="btn btn-ghost btn-xs gap-1"
-            aria-label="Run this prompt in Prompt Explorer"
+            aria-label="在提示词探索中运行"
           >
             <Sparkles className="size-3.5" />
           </Link>
@@ -338,7 +337,7 @@ export function TopPagesTable({ table }: { table: Table<TopPageRow> }) {
   if (table.getRowModel().rows.length === 0) {
     return (
       <p className="p-6 text-center text-sm text-base-content/60">
-        No cited sources to show.
+        暂无可显示的引用来源。
       </p>
     );
   }
@@ -350,7 +349,7 @@ export function TopQueriesTable({ table }: { table: Table<TopQueryRow> }) {
   if (table.getRowModel().rows.length === 0) {
     return (
       <p className="p-6 text-center text-sm text-base-content/60">
-        No matching queries found.
+        未找到匹配的查询。
       </p>
     );
   }

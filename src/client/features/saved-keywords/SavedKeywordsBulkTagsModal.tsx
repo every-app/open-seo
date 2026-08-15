@@ -97,11 +97,10 @@ export function SavedKeywordsBulkTagsModal({
       <div className="space-y-4">
         <div>
           <h3 id="bulk-tags-title" className="text-lg font-semibold">
-            Update tags
+            更新标签
           </h3>
           <p className="text-sm text-base-content/65">
-            Apply or remove tags across {selectedCount} selected keyword
-            {selectedCount !== 1 ? "s" : ""}.
+            为 {selectedCount} 个已选关键词添加或移除标签。
           </p>
         </div>
 
@@ -109,13 +108,13 @@ export function SavedKeywordsBulkTagsModal({
           <SegmentButton
             active={mode === "add"}
             onClick={() => setMode("add")}
-            label="Add tags"
+            label="添加标签"
             count={addNames.length}
           />
           <SegmentButton
             active={mode === "remove"}
             onClick={() => setMode("remove")}
-            label="Remove tags"
+            label="移除标签"
             count={removeIds.length}
             disabled={selectedRowTags.length === 0}
           />
@@ -148,7 +147,7 @@ export function SavedKeywordsBulkTagsModal({
                         )
                       }
                       trailing={<X className="size-3 opacity-70" />}
-                      title="Remove from selection"
+                      title="从选择中移除"
                     />
                   );
                 })}
@@ -167,7 +166,7 @@ export function SavedKeywordsBulkTagsModal({
                     handleCreate();
                   }
                 }}
-                placeholder="Search or create…"
+                placeholder="搜索或创建…"
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-base-content/40"
               />
             </label>
@@ -180,7 +179,7 @@ export function SavedKeywordsBulkTagsModal({
                   className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-base-200"
                 >
                   <Plus className="size-3.5 text-primary" />
-                  <span className="text-base-content/70">Create</span>
+                  <span className="text-base-content/70">创建</span>
                   <span className="font-medium">
                     &ldquo;{trimmedQuery}&rdquo;
                   </span>
@@ -190,8 +189,8 @@ export function SavedKeywordsBulkTagsModal({
               {filteredAvailable.length === 0 && !showCreate ? (
                 <div className="px-3 py-6 text-center text-xs text-base-content/55">
                   {availableTags.length === 0
-                    ? "No tags yet. Type a name above to create one."
-                    : "No tags match that search."}
+                    ? "暂无标签，可在上方输入名称创建。"
+                    : "没有符合搜索条件的标签。"}
                 </div>
               ) : null}
 
@@ -230,7 +229,7 @@ export function SavedKeywordsBulkTagsModal({
           <div className="space-y-2">
             {selectedRowTags.length === 0 ? (
               <div className="rounded-md border border-base-300 bg-base-200/40 px-3 py-6 text-center text-xs text-base-content/55">
-                The selected keywords don&apos;t have any tags to remove.
+                所选关键词没有可移除的标签。
               </div>
             ) : (
               <div className="flex flex-wrap gap-1.5 rounded-md border border-base-300 p-3">
@@ -244,7 +243,7 @@ export function SavedKeywordsBulkTagsModal({
                       onClick={() => handleToggleRemove(tag)}
                       selected={checked}
                       trailing={checked ? <Check className="size-3" /> : null}
-                      title={checked ? "Will be removed" : "Click to remove"}
+                      title={checked ? "将被移除" : "点击移除"}
                     />
                   );
                 })}
@@ -252,8 +251,7 @@ export function SavedKeywordsBulkTagsModal({
             )}
             {removeIds.length > 0 ? (
               <p className="text-xs text-base-content/55">
-                {removeIds.length} tag{removeIds.length !== 1 ? "s" : ""} will
-                be detached from the selected keywords.
+                将从所选关键词中移除 {removeIds.length} 个标签。
               </p>
             ) : null}
           </div>
@@ -265,7 +263,7 @@ export function SavedKeywordsBulkTagsModal({
             className="rounded-md px-3 py-1.5 text-sm text-base-content/70 hover:bg-base-200"
             onClick={onClose}
           >
-            Cancel
+            取消
           </button>
           <button
             type="button"
@@ -279,7 +277,7 @@ export function SavedKeywordsBulkTagsModal({
             }
           >
             {isPending ? <Loader2 className="size-3.5 animate-spin" /> : null}
-            Apply
+            应用
           </button>
         </div>
       </div>

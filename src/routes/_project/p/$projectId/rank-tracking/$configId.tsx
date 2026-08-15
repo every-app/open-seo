@@ -51,11 +51,9 @@ function RankTrackingConfigRoute() {
   if (!config) {
     return (
       <>
-        <p className="text-sm text-base-content/70">
-          Domain configuration not found.
-        </p>
+        <p className="text-sm text-base-content/70">未找到域名配置。</p>
         <button className="btn btn-ghost btn-sm" onClick={handleBack}>
-          Back to domains
+          返回域名列表
         </button>
       </>
     );

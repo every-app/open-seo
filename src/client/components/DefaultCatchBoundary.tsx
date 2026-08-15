@@ -18,10 +18,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   });
   const pathname = router.state.location.pathname;
 
-  const message = getStandardErrorMessage(
-    error,
-    "Something went wrong. Please try again.",
-  );
+  const message = getStandardErrorMessage(error, "出现问题，请重试。");
   const errorCode = getErrorCode(error);
 
   React.useEffect(() => {
@@ -74,11 +71,11 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
           }}
           className="btn btn-primary btn-sm"
         >
-          Try Again
+          重试
         </button>
         {isRoot ? (
           <Link to="/" className="btn btn-sm">
-            Home
+            首页
           </Link>
         ) : (
           <Link
@@ -89,7 +86,7 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
               window.history.back();
             }}
           >
-            Go Back
+            返回
           </Link>
         )}
       </div>

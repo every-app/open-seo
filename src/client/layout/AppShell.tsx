@@ -174,7 +174,7 @@ function MobileTopBar({
       <button
         type="button"
         className="btn btn-square btn-ghost btn-sm"
-        aria-label="Toggle sidebar"
+        aria-label="显示或隐藏侧边栏"
         aria-expanded={drawerOpen}
         onClick={onOpenDrawer}
       >

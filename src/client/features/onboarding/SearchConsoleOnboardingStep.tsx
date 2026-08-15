@@ -39,19 +39,19 @@ export function SearchConsoleOnboardingStep() {
     <div className="space-y-8">
       <div className="space-y-4">
         <h2 className="text-lg font-semibold">
-          Connect with Google Search Console now?
+          现在连接 Google Search Console 吗？
         </h2>
 
         {project ? <GscConnect projectId={project.id} /> : <Checking />}
 
         <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
-          For now, Search Console data flows through the OpenSEO MCP. We're
-          building it into the OpenSEO app soon too.
+          目前可通过 OpenSEO MCP 使用 Search Console
+          数据，应用内的原生功能也在持续完善中。
         </p>
       </div>
 
       <div className="space-y-4">
-        <h2 className="text-lg font-semibold">Choose country &amp; language</h2>
+        <h2 className="text-lg font-semibold">选择国家或地区与语言</h2>
         {project ? <DefaultMarketPicker project={project} /> : <Checking />}
       </div>
     </div>
@@ -95,8 +95,8 @@ function DefaultMarketPicker({
         hideLanguageOnMobile
       />
       <p className="hidden sm:block text-xs leading-relaxed text-base-content/55">
-        We'll use this country and language for keyword, SERP, and domain data
-        unless you pick a different one. You can change it in project settings.
+        关键词、SERP
+        和域名数据将默认使用此国家或地区与语言。你可以在项目设置中随时更改。
       </p>
     </div>
   );
@@ -170,7 +170,7 @@ function GscConnect({ projectId }: { projectId: string }) {
           <Check className="size-3.5" />
         </span>
         <span className="text-base-content/80">
-          Connected to <span className="font-mono">{connection?.siteUrl}</span>.
+          已连接 <span className="font-mono">{connection?.siteUrl}</span>。
         </span>
       </div>
     );
@@ -199,7 +199,7 @@ function GscConnect({ projectId }: { projectId: string }) {
       className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
       <GoogleGlyph className="size-[18px]" />
-      Connect with Google
+      连接 Google
     </button>
   );
 }
@@ -208,7 +208,7 @@ function Checking() {
   return (
     <div className="flex items-center gap-2 text-sm text-base-content/50">
       <span className="loading loading-spinner loading-sm" />
-      Checking…
+      正在检查…
     </div>
   );
 }

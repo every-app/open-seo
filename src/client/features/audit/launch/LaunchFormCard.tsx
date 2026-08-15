@@ -20,7 +20,7 @@ export function LaunchFormCard({
   return (
     <div className="card bg-base-100 border border-base-300">
       <div className="card-body gap-4">
-        <h2 className="card-title text-base">Start New Audit</h2>
+        <h2 className="card-title text-base">开始新审计</h2>
 
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
@@ -61,10 +61,10 @@ export function LaunchFormCard({
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" /> Starting...
+                    <Loader2 className="size-4 animate-spin" /> 启动中…
                   </>
                 ) : (
-                  "Start Audit"
+                  "开始审计"
                 )}
               </button>
             )}
@@ -96,10 +96,10 @@ function LaunchOptions({
   return (
     <div className="rounded-lg border border-base-300 bg-base-200/20 p-3 space-y-2">
       <label className="text-xs font-medium uppercase tracking-wide text-base-content/60">
-        Crawl limit
+        抓取上限
       </label>
       <div className="flex items-center gap-2">
-        <span className="text-sm text-base-content/70">Max pages</span>
+        <span className="text-sm text-base-content/70">最大页面数</span>
         <launchForm.Field name="maxPagesInput">
           {(field) => (
             <input
@@ -122,7 +122,7 @@ function LaunchOptions({
         </launchForm.Field>
       </div>
       <p className="text-xs text-base-content/50">
-        Enter any value from {MIN_PAGES} to {maxPagesLimit.toLocaleString()}.
+        请输入 {MIN_PAGES} 到 {maxPagesLimit.toLocaleString()} 之间的任意数值。
         {isFreeLimited ? (
           <>
             {" "}
@@ -131,9 +131,9 @@ function LaunchOptions({
               search={{ upgrade: true }}
               className="link link-primary"
             >
-              Upgrade
+              升级
             </Link>{" "}
-            to crawl up to {PAID_MAX_AUDIT_PAGES.toLocaleString()} pages.
+            后最高可抓取 {PAID_MAX_AUDIT_PAGES.toLocaleString()} 个页面。
           </>
         ) : null}
       </p>
@@ -157,9 +157,9 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
         </launchForm.Field>
         <span
           className="text-sm font-medium text-base-content/80"
-          title="Lighthouse measures the performance of your pages and identifies issues."
+          title="Lighthouse 用于衡量页面性能并发现问题。"
         >
-          Include Lighthouse
+          包含 Lighthouse 检查
         </span>
       </label>
 
@@ -170,8 +170,7 @@ function LighthouseOptions({ launchForm }: Pick<Props, "launchForm">) {
           runLighthouse ? (
             <div className="space-y-1">
               <p className="text-xs text-base-content/60">
-                We choose a sample of 20 pages to audit, removing pages from
-                duplicate templates.
+                系统会选取 20 个页面样本进行审计，并排除重复模板页面。
               </p>
             </div>
           ) : null

@@ -37,28 +37,28 @@ export function BacklinksFilterPanel({
         textFields={[
           {
             key: "include",
-            label: "Source URL Contains",
-            placeholder: "example.com, blog",
+            label: "来源网址包含",
+            placeholder: "example.com、博客",
           },
           {
             key: "exclude",
-            label: "Source URL Excludes",
-            placeholder: "spam, forum",
+            label: "来源网址排除",
+            placeholder: "垃圾内容、论坛",
           },
         ]}
         rangeFields={[
           {
-            title: "Domain Authority",
+            title: "域名权威度",
             minKey: "minDomainRank",
             maxKey: "maxDomainRank",
           },
           {
-            title: "Link Authority",
+            title: "链接权威度",
             minKey: "minLinkAuthority",
             maxKey: "maxLinkAuthority",
           },
           {
-            title: "Spam Score",
+            title: "垃圾链接分数",
             minKey: "minSpamScore",
             maxKey: "maxSpamScore",
             step: "0.1",
@@ -92,24 +92,24 @@ export function BacklinksFilterPanel({
         textFields={[
           {
             key: "include",
-            label: "Domain Contains",
-            placeholder: "example.com, blog",
+            label: "域名包含",
+            placeholder: "example.com、博客",
           },
           {
             key: "exclude",
-            label: "Domain Excludes",
-            placeholder: "spam, forum",
+            label: "域名排除",
+            placeholder: "垃圾内容、论坛",
           },
         ]}
         rangeFields={[
           {
-            title: "Backlinks",
+            title: "反向链接",
             minKey: "minBacklinks",
             maxKey: "maxBacklinks",
           },
-          { title: "Rank", minKey: "minRank", maxKey: "maxRank" },
+          { title: "权威度", minKey: "minRank", maxKey: "maxRank" },
           {
-            title: "Spam Score",
+            title: "垃圾链接分数",
             minKey: "minSpamScore",
             maxKey: "maxSpamScore",
             step: "0.1",
@@ -139,23 +139,23 @@ export function BacklinksFilterPanel({
       textFields={[
         {
           key: "include",
-          label: "Page URL Contains",
+          label: "页面网址包含",
           placeholder: "/blog, /products",
         },
         {
           key: "exclude",
-          label: "Page URL Excludes",
+          label: "页面网址排除",
           placeholder: "/tag, /author",
         },
       ]}
       rangeFields={[
-        { title: "Backlinks", minKey: "minBacklinks", maxKey: "maxBacklinks" },
+        { title: "反向链接", minKey: "minBacklinks", maxKey: "maxBacklinks" },
         {
-          title: "Referring Domains",
+          title: "引用域名",
           minKey: "minReferringDomains",
           maxKey: "maxReferringDomains",
         },
-        { title: "Rank", minKey: "minRank", maxKey: "maxRank" },
+        { title: "权威度", minKey: "minRank", maxKey: "maxRank" },
       ]}
       onApply={(values) => {
         state.apply(values);
@@ -180,7 +180,7 @@ function BacklinksToggleControls({
     <div className="flex flex-wrap items-center gap-4">
       <div className="space-y-1.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-          Link Type
+          链接类型
         </p>
         <div className="flex items-center gap-1">
           {(["", "dofollow", "nofollow"] as const).map((value) => (
@@ -191,7 +191,7 @@ function BacklinksToggleControls({
               onClick={() => setValue("linkType", value)}
             >
               {value === ""
-                ? "All"
+                ? "全部"
                 : value === "dofollow"
                   ? "Dofollow"
                   : "Nofollow"}
@@ -202,7 +202,7 @@ function BacklinksToggleControls({
 
       <div className="space-y-1.5">
         <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
-          Visibility
+          显示设置
         </p>
         <div className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 cursor-pointer">
@@ -214,7 +214,7 @@ function BacklinksToggleControls({
                 setValue("hideLost", event.target.checked ? "true" : "")
               }
             />
-            <span className="text-xs">Hide lost</span>
+            <span className="text-xs">隐藏已丢失链接</span>
           </label>
           <label className="flex items-center gap-1.5 cursor-pointer">
             <input
@@ -225,7 +225,7 @@ function BacklinksToggleControls({
                 setValue("hideBroken", event.target.checked ? "true" : "")
               }
             />
-            <span className="text-xs">Hide broken</span>
+            <span className="text-xs">隐藏失效链接</span>
           </label>
         </div>
       </div>

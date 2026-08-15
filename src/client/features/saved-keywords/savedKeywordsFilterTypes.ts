@@ -34,7 +34,7 @@ export type AppliedSavedKeywordsFilters = {
 function parseTerms(value: string): string[] {
   return value
     .toLowerCase()
-    .split(/[,+]/)
+    .split(/[,+，、]/)
     .map((term) => term.trim())
     .filter(Boolean);
 }

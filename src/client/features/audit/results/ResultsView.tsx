@@ -47,14 +47,12 @@ export function ResultsView({
           <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" />
           <p>
             <span className="font-medium">
-              We were blocked on {blockedCount}{" "}
-              {blockedCount === 1 ? "page" : "pages"}.
+              有 {blockedCount} 个页面阻止了抓取。
             </span>{" "}
             <span className="text-base-content/70">
-              The site's bot protection challenged our crawler, so those pages
-              couldn't be audited. If this is your site, allowlist the{" "}
-              <code className="font-mono">OpenSEO-Audit</code> user agent in
-              your WAF or bot-protection settings and re-run the audit.
+              网站的机器人防护拦截了爬虫，因此无法审计这些页面。如果这是您的网站，请在防火墙或机器人防护设置中将{" "}
+              <code className="font-mono">OpenSEO-Audit</code>{" "}
+              用户代理加入允许名单，然后重新运行审计。
             </span>
           </p>
         </div>
@@ -174,13 +172,13 @@ function ResultsHeader({
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   const tabs: Array<{ tab: ResultsTab; label: string }> = [
-    { tab: "issues", label: `Issues (${issueCount})` },
-    { tab: "pages", label: `Pages (${pageCount})` },
+    { tab: "issues", label: `问题（${issueCount}）` },
+    { tab: "pages", label: `页面（${pageCount}）` },
     ...(hasPerformanceTab
       ? [
           {
             tab: "performance" as const,
-            label: `Performance (${lighthouseCount})`,
+            label: `性能（${lighthouseCount}）`,
           },
         ]
       : []),
@@ -246,9 +244,9 @@ function StatsStrip({
   }, [issues]);
 
   const items: StatItem[] = [
-    { label: "Pages crawled", value: String(pagesCrawled) },
+    { label: "已抓取页面", value: String(pagesCrawled) },
     {
-      label: "Issues found",
+      label: "发现问题",
       value: String(issues.length),
       valueClass: issues.length === 0 ? "text-success" : "",
       sub: issues.length > 0 && (
@@ -262,14 +260,14 @@ function StatsStrip({
         </span>
       ),
     },
-    { label: "Avg response", value: `${averageResponseMs}ms` },
+    { label: "平均响应时间", value: `${averageResponseMs}ms` },
   ];
 
   if (totalLighthouse > 0) {
     items.push(
-      { label: "Lighthouse tests", value: String(totalLighthouse) },
+      { label: "Lighthouse 测试", value: String(totalLighthouse) },
       {
-        label: "Avg Lighthouse perf",
+        label: "Lighthouse 平均性能",
         value:
           lighthouseSummary.avgPerformance == null
             ? "-"
@@ -277,7 +275,7 @@ function StatsStrip({
         valueClass: scoreClass(lighthouseSummary.avgPerformance),
       },
       {
-        label: "Avg Lighthouse SEO",
+        label: "Lighthouse 平均 SEO",
         value:
           lighthouseSummary.avgSeo == null
             ? "-"
@@ -285,7 +283,7 @@ function StatsStrip({
         valueClass: scoreClass(lighthouseSummary.avgSeo),
       },
       {
-        label: "Avg Lighthouse a11y",
+        label: "Lighthouse 平均无障碍",
         value:
           lighthouseSummary.avgAccessibility == null
             ? "-"
@@ -293,7 +291,7 @@ function StatsStrip({
         valueClass: scoreClass(lighthouseSummary.avgAccessibility),
       },
       {
-        label: "Lighthouse failures",
+        label: "Lighthouse 失败次数",
         value: String(lighthouseSummary.failed),
         valueClass:
           lighthouseSummary.failed > 0 ? "text-error" : "text-success",

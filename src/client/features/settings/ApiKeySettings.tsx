@@ -27,7 +27,7 @@ export function ApiKeySettings() {
     queryFn: async () => {
       const result = await authClient.apiKey.list();
       if (result.error) {
-        throw new Error(result.error.message ?? "Failed to load API keys");
+        throw new Error(result.error.message ?? "API 密钥加载失败");
       }
       return result.data.apiKeys.map((key) => ({
         id: key.id,
@@ -43,7 +43,7 @@ export function ApiKeySettings() {
     mutationFn: async (keyName: string) => {
       const result = await authClient.apiKey.create({ name: keyName });
       if (result.error || !result.data?.key) {
-        throw new Error(result.error?.message ?? "Failed to create the key");
+        throw new Error(result.error?.message ?? "API 密钥创建失败");
       }
       return result.data.key;
     },
@@ -62,12 +62,12 @@ export function ApiKeySettings() {
     mutationFn: async (keyId: string) => {
       const result = await authClient.apiKey.delete({ keyId });
       if (result.error) {
-        throw new Error(result.error.message ?? "Failed to revoke the key");
+        throw new Error(result.error.message ?? "API 密钥撤销失败");
       }
     },
     onSuccess: () => {
       captureClientEvent("mcp:api_key_revoked");
-      toast.success("API key revoked");
+      toast.success("API 密钥已撤销");
       void queryClient.invalidateQueries({ queryKey: ["apiKeys"] });
     },
     onError: (error) => {
@@ -85,15 +85,12 @@ export function ApiKeySettings() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-base-content/50">API keys</h2>
+      <h2 className="text-sm font-medium text-base-content/50">API 密钥</h2>
       <div className="flex items-start justify-between gap-6">
         <div>
-          <p className="text-sm">
-            Authenticate MCP clients when OAuth doesn't work
-          </p>
+          <p className="text-sm">在 OAuth 不可用时验证 MCP 客户端</p>
           <p className="mt-1 text-sm text-base-content/60">
-            Use this for remote agents like Hermes where the normal login flow
-            doesn't work.
+            当 Hermes 等远程智能体无法使用常规登录流程时，可使用 API 密钥。
           </p>
           <p className="mt-1 text-sm">
             <a
@@ -102,7 +99,7 @@ export function ApiKeySettings() {
               target="_blank"
               rel="noreferrer"
             >
-              Setup guide
+              设置指南
             </a>
           </p>
         </div>
@@ -111,21 +108,21 @@ export function ApiKeySettings() {
           className="btn btn-primary btn-sm"
           onClick={() => setIsCreateOpen(true)}
         >
-          Create API key
+          创建 API 密钥
         </button>
       </div>
 
       {apiKeysQuery.isError ? (
-        <p className="text-sm text-error">We couldn't load your API keys.</p>
+        <p className="text-sm text-error">无法加载您的 API 密钥。</p>
       ) : apiKeys.length > 0 ? (
         <div className="overflow-x-auto rounded-lg border border-base-300">
           <table className="table table-sm">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Key</th>
-                <th>Created</th>
-                <th>Last used</th>
+                <th>名称</th>
+                <th>密钥</th>
+                <th>创建时间</th>
+                <th>最近使用</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -133,7 +130,7 @@ export function ApiKeySettings() {
               {apiKeys.map((key) => (
                 <tr key={key.id} className="hover">
                   <td className="max-w-[220px] truncate font-medium">
-                    {key.name || "Unnamed key"}
+                    {key.name || "未命名密钥"}
                   </td>
                   <td className="font-mono text-xs text-base-content/70">
                     {key.start || "oseo_"}…
@@ -144,12 +141,10 @@ export function ApiKeySettings() {
                   <td className="text-xs text-base-content/70">
                     {key.lastRequest
                       ? key.lastRequest.toLocaleDateString()
-                      : "Never"}
+                      : "从未使用"}
                   </td>
                   <td>
-                    <PortalMenu
-                      ariaLabel={`Actions for ${key.name || "API key"}`}
-                    >
+                    <PortalMenu ariaLabel={`${key.name || "API 密钥"}的操作`}>
                       {(close) => (
                         <li>
                           <button
@@ -162,7 +157,7 @@ export function ApiKeySettings() {
                               close();
                               if (
                                 window.confirm(
-                                  `Revoke "${key.name || "Unnamed key"}"? Clients using it will stop working.`,
+                                  `确定撤销“${key.name || "未命名密钥"}”吗？使用此密钥的客户端将停止工作。`,
                                 )
                               ) {
                                 revokeMutation.mutate(key.id);
@@ -170,7 +165,7 @@ export function ApiKeySettings() {
                             }}
                           >
                             <Trash2 className="size-3.5" />
-                            Revoke key
+                            撤销密钥
                           </button>
                         </li>
                       )}
@@ -188,9 +183,9 @@ export function ApiKeySettings() {
           <div className="modal-box max-w-md">
             {createdKey ? (
               <>
-                <h3 className="text-lg font-bold">Copy your new API key</h3>
+                <h3 className="text-lg font-bold">复制新的 API 密钥</h3>
                 <p className="mt-2 text-sm text-base-content/60">
-                  It won't be shown again. Send it as{" "}
+                  此密钥不会再次显示。请按以下方式发送：{" "}
                   <span className="font-mono text-xs">
                     Authorization: Bearer
                   </span>{" "}
@@ -202,7 +197,7 @@ export function ApiKeySettings() {
                   </code>
                   <CopyButton
                     value={createdKey}
-                    successMessage="API key copied"
+                    successMessage="API 密钥已复制"
                     iconOnly
                   />
                 </div>
@@ -212,7 +207,7 @@ export function ApiKeySettings() {
                     className="btn btn-primary btn-sm"
                     onClick={closeCreateModal}
                   >
-                    Done
+                    已完成
                   </button>
                 </div>
               </>
@@ -223,14 +218,14 @@ export function ApiKeySettings() {
                   if (name.trim()) createMutation.mutate(name.trim());
                 }}
               >
-                <h3 className="text-lg font-bold">Create API key</h3>
+                <h3 className="text-lg font-bold">创建 API 密钥</h3>
                 <label className="form-control mt-4 w-full">
                   <span className="label-text pb-1 text-xs text-base-content/60">
-                    Name
+                    名称
                   </span>
                   <input
                     className="input input-sm input-bordered w-full"
-                    placeholder="Claude Code on laptop"
+                    placeholder="笔记本电脑上的 Claude Code"
                     value={name}
                     maxLength={MAX_KEY_NAME_LENGTH}
                     onChange={(event) => setName(event.currentTarget.value)}
@@ -244,14 +239,14 @@ export function ApiKeySettings() {
                     className="btn btn-ghost btn-sm"
                     onClick={closeCreateModal}
                   >
-                    Cancel
+                    取消
                   </button>
                   <button
                     type="submit"
                     className="btn btn-primary btn-sm"
                     disabled={createMutation.isPending || !name.trim()}
                   >
-                    {createMutation.isPending ? "Creating…" : "Create"}
+                    {createMutation.isPending ? "创建中…" : "创建"}
                   </button>
                 </div>
               </form>

@@ -23,10 +23,10 @@ function BetaNotice() {
   return (
     <div className="mx-2 mb-2 rounded-lg border border-base-300 bg-base-100 p-3">
       <div className="flex items-center justify-between">
-        <span className="badge badge-primary badge-sm">Beta</span>
+        <span className="badge badge-primary badge-sm">测试版</span>
         <button
           type="button"
-          aria-label="Dismiss"
+          aria-label="关闭提示"
           className="btn btn-ghost btn-xs btn-square text-base-content/40"
           onClick={() => {
             localStorage.setItem(BETA_NOTICE_DISMISSED_KEY, "1");
@@ -37,11 +37,11 @@ function BetaNotice() {
         </button>
       </div>
       <p className="mt-1.5 text-xs text-base-content/70">
-        For more powerful AI workflows, use the OpenSEO MCP with your own agent
-        like Claude Code or Hermes.
+        将 OpenSEO MCP 连接到 Claude Code 或 Hermes 等智能体，可使用更强大的 AI
+        工作流。
       </p>
       <Link to="/ai" className="link link-primary mt-1.5 inline-block text-xs">
-        Set up the MCP →
+        设置 MCP →
       </Link>
     </div>
   );
@@ -55,10 +55,10 @@ function ageLabel(timestamp: string): string {
   const then = new Date(iso.replace(" ", "T")).getTime();
   if (Number.isNaN(then)) return "";
   const minutes = Math.max(0, Math.floor((Date.now() - then) / 60_000));
-  if (minutes < 60) return `${minutes}m`;
+  if (minutes < 60) return `${minutes}分`;
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h`;
-  return `${Math.floor(hours / 24)}d`;
+  if (hours < 24) return `${hours}时`;
+  return `${Math.floor(hours / 24)}天`;
 }
 
 /**
@@ -124,7 +124,7 @@ export function SamSidebarPanel({
           ) : (
             <Plus className="size-4" />
           )}
-          New chat
+          新建对话
         </button>
       </div>
 
@@ -135,7 +135,7 @@ export function SamSidebarPanel({
           </div>
         ) : sessions.length === 0 ? (
           <p className="px-2 py-6 text-center text-xs text-base-content/50">
-            No chats yet. Start a new one.
+            暂无对话，请新建一个对话。
           </p>
         ) : (
           sessions.map((session) => {
@@ -159,7 +159,7 @@ export function SamSidebarPanel({
                 </span>
                 <button
                   type="button"
-                  aria-label="Archive chat"
+                  aria-label="归档对话"
                   className="btn btn-ghost btn-xs btn-square hidden group-hover:inline-flex"
                   disabled={archiveSession.isPending}
                   onClick={() => archiveSession.mutate(session.id)}

@@ -41,36 +41,36 @@ export function LighthouseIssuesHeader({
     <>
       <div className="flex items-center justify-between gap-3">
         <button className="btn btn-ghost btn-sm px-2" onClick={onBack}>
-          &larr; Back to {backLabel}
+          ← 返回 {backLabel}
         </button>
         <span className="text-xs text-base-content/60">
           {scannedAt
-            ? `Scanned ${new Date(scannedAt).toLocaleString()}`
-            : "Reading latest issues..."}
+            ? `扫描时间：${new Date(scannedAt).toLocaleString()}`
+            : "正在读取最新问题…"}
         </span>
       </div>
 
       <div className="card bg-base-100 border border-base-300">
         <div className="card-body py-5 gap-4">
           <div className="space-y-1">
-            <h1 className="text-2xl font-semibold">Lighthouse Issues</h1>
+            <h1 className="text-2xl font-semibold">Lighthouse 问题</h1>
             <p className="text-sm text-base-content/70 break-all">
-              {finalUrl ?? "Loading URL..."}
+              {finalUrl ?? "正在加载网址…"}
             </p>
           </div>
           <LighthouseIssuesSummary scores={scores} metrics={metrics} />
           <div className="flex flex-wrap gap-2 text-xs">
             <span className="badge border border-error/30 bg-error/10 text-error/80 gap-1">
               <FileWarning className="size-3" />
-              Critical {severityCounts.critical}
+              严重 {severityCounts.critical}
             </span>
             <span className="badge border border-warning/30 bg-warning/10 text-warning/80 gap-1">
               <TriangleAlert className="size-3" />
-              Warning {severityCounts.warning}
+              警告 {severityCounts.warning}
             </span>
             <span className="badge border border-info/30 bg-info/10 text-info/80 gap-1">
               <Info className="size-3" />
-              Info {severityCounts.info}
+              信息 {severityCounts.info}
             </span>
           </div>
         </div>
@@ -110,7 +110,7 @@ export function LighthouseIssuesToolbar({
   const exportCurrentCategory: ExportPayload =
     category === "all" ? { mode: "issues" } : { mode: "category", category };
 
-  const categoryLabelLower = selectedCategoryLabel.toLowerCase();
+  const categoryLabelLower = selectedCategoryLabel;
 
   return (
     <div className="sticky top-0 z-[2] -mx-2 px-2 py-2 bg-base-100/95 backdrop-blur-sm border-b border-base-300/60">
@@ -193,12 +193,12 @@ function ExportMenu({
 }) {
   return (
     <PortalMenu
-      ariaLabel="Export Lighthouse issues"
+      ariaLabel="导出 Lighthouse 问题"
       triggerClassName="btn btn-sm gap-1"
       triggerContent={
         <>
           <Download className="size-4" />
-          Export
+          导出
           <ChevronDown className="size-3 opacity-60" />
         </>
       }
@@ -207,7 +207,7 @@ function ExportMenu({
       {(close) => (
         <>
           <li className="menu-title">
-            <span>Export to Sheets</span>
+            <span>导出到 Google 表格</span>
           </li>
           <li>
             <button
@@ -217,8 +217,8 @@ function ExportMenu({
                 onExportSheets(visibleIssues, "current");
               }}
             >
-              <Sheet className="size-4" />
-              Open in Sheets — {categoryLabelLower}
+              <Sheet className="size-4" />在 Google 表格中打开：{" "}
+              {categoryLabelLower}
             </button>
           </li>
           <li>
@@ -229,12 +229,11 @@ function ExportMenu({
                 onExportSheets(allIssues, "all");
               }}
             >
-              <Sheet className="size-4" />
-              Open in Sheets — all actionable
+              <Sheet className="size-4" />在 Google 表格中打开全部可处理问题
             </button>
           </li>
           <li className="menu-title">
-            <span>Copy</span>
+            <span>复制</span>
           </li>
           <li>
             <button
@@ -243,12 +242,12 @@ function ExportMenu({
                 close();
                 onCopy(
                   exportCurrentCategory,
-                  `Copied ${categoryLabelLower} issues`,
+                  `已复制${categoryLabelLower}问题`,
                 );
               }}
             >
               <Copy className="size-4" />
-              Copy {categoryLabelLower} issues
+              复制{categoryLabelLower}问题
             </button>
           </li>
           <li>
@@ -256,11 +255,11 @@ function ExportMenu({
               disabled={isBusy}
               onClick={() => {
                 close();
-                onCopy({ mode: "issues" }, "Copied all actionable issues");
+                onCopy({ mode: "issues" }, "全部可处理问题已复制");
               }}
             >
               <Copy className="size-4" />
-              Copy all actionable issues
+              复制全部可处理问题
             </button>
           </li>
           <li>
@@ -268,15 +267,15 @@ function ExportMenu({
               disabled={isBusy}
               onClick={() => {
                 close();
-                onCopy({ mode: "full" }, "Copied saved Lighthouse payload");
+                onCopy({ mode: "full" }, "已保存的 Lighthouse 数据已复制");
               }}
             >
               <Copy className="size-4" />
-              Copy saved Lighthouse payload
+              复制已保存的 Lighthouse 数据
             </button>
           </li>
           <li className="menu-title">
-            <span>Download JSON</span>
+            <span>下载 JSON</span>
           </li>
           <li>
             <button
@@ -286,7 +285,7 @@ function ExportMenu({
                 onExport(exportCurrentCategory);
               }}
             >
-              Download {categoryLabelLower} issues
+              下载{categoryLabelLower}问题
             </button>
           </li>
           <li>
@@ -297,7 +296,7 @@ function ExportMenu({
                 onExport({ mode: "issues" });
               }}
             >
-              Download all actionable issues
+              下载全部可处理问题
             </button>
           </li>
           <li>
@@ -308,11 +307,11 @@ function ExportMenu({
                 onExport({ mode: "full" });
               }}
             >
-              Download saved Lighthouse payload
+              下载已保存的 Lighthouse 数据
             </button>
           </li>
           <li className="menu-title">
-            <span>Download CSV</span>
+            <span>下载 CSV</span>
           </li>
           <li>
             <button
@@ -322,7 +321,7 @@ function ExportMenu({
                 onExportCsv(visibleIssues, "current");
               }}
             >
-              Download {categoryLabelLower} issues
+              下载{categoryLabelLower}问题
             </button>
           </li>
           <li>
@@ -333,7 +332,7 @@ function ExportMenu({
                 onExportCsv(allIssues, "all");
               }}
             >
-              Download all actionable issues
+              下载全部可处理问题
             </button>
           </li>
         </>
@@ -352,12 +351,12 @@ export function LighthouseIssueList({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <p className="text-sm text-base-content/60">Loading issues...</p>;
+    return <p className="text-sm text-base-content/60">正在加载问题…</p>;
   }
   if (!issues.length) {
     return (
       <p className="text-sm text-base-content/60">
-        {emptyMessage ?? "No actionable issues for this category."}
+        {emptyMessage ?? "此分类下没有可处理的问题。"}
       </p>
     );
   }
@@ -374,13 +373,11 @@ export function LighthouseIssueList({
       <thead>
         <tr className="text-xs text-base-content/50 uppercase tracking-wide border-b border-base-300">
           <th />
-          <th className="font-medium">Severity</th>
-          <th className="font-medium">Issue</th>
-          <th className="font-medium hidden sm:table-cell">Category</th>
-          <th className="font-medium hidden md:table-cell text-right">
-            Impact
-          </th>
-          <th className="font-medium text-right">Score</th>
+          <th className="font-medium">严重程度</th>
+          <th className="font-medium">问题</th>
+          <th className="font-medium hidden sm:table-cell">分类</th>
+          <th className="font-medium hidden md:table-cell text-right">影响</th>
+          <th className="font-medium text-right">难度</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-base-300/60">

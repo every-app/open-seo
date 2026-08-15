@@ -25,7 +25,7 @@ export function SerpLocationCombobox({
   value,
   onChange,
   countryCode,
-  placeholder = "Search cities...",
+  placeholder = "搜索城市…",
 }: Props) {
   const [inputValue, setInputValue] = useState(
     value ? formatLocationLabel(value) : "",
@@ -179,12 +179,10 @@ export function SerpLocationCombobox({
       {open && (
         <div className="absolute z-30 mt-1 w-full rounded-box border border-base-300 bg-base-100 shadow-lg p-1">
           {isError ? (
-            <p className="px-3 py-2 text-sm text-error">
-              Unable to load locations
-            </p>
+            <p className="px-3 py-2 text-sm text-error">无法加载地点</p>
           ) : results.length === 0 ? (
             <p className="px-3 py-2 text-sm text-base-content/50">
-              No locations found for "{debouncedQuery.trim()}"
+              未找到与“{debouncedQuery.trim()}”匹配的地点
             </p>
           ) : (
             <ul

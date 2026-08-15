@@ -62,7 +62,7 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("keyword", {
         header: () => (
           <SortHeader
-            label="Keyword"
+            label="关键词"
             field="keyword"
             current={sortField}
             dir={sortDir}
@@ -86,7 +86,7 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("searchVolume", {
         header: () => (
           <SortHeader
-            label="Volume"
+            label="搜索量"
             field="searchVolume"
             current={sortField}
             dir={sortDir}
@@ -105,7 +105,7 @@ export function KeywordResearchDesktopTable({
         header: () => (
           <SortHeader
             label="CPC"
-            helpText="Cost per click in USD."
+            helpText="以美元计算的单次点击费用。"
             field="cpc"
             current={sortField}
             dir={sortDir}
@@ -126,8 +126,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("competition", {
         header: () => (
           <SortHeader
-            label="Comp."
-            helpText="Paid-search competition from Google Ads (0-1): higher means more advertisers bidding."
+            label="竞争度"
+            helpText="Google Ads 付费搜索竞争度（0 到 1），数值越高表示参与竞价的广告主越多。"
             field="competition"
             current={sortField}
             dir={sortDir}
@@ -148,8 +148,8 @@ export function KeywordResearchDesktopTable({
       keywordColumnHelper.accessor("keywordDifficulty", {
         header: () => (
           <SortHeader
-            label="Score"
-            helpText="Organic ranking difficulty (0-100): higher means harder to reach Google's top 10."
+            label="难度"
+            helpText="自然搜索排名难度（0 到 100），数值越高表示进入 Google 前 10 名越难。"
             field="keywordDifficulty"
             current={sortField}
             dir={sortDir}
@@ -161,7 +161,7 @@ export function KeywordResearchDesktopTable({
         meta: { headerClassName: "text-right", cellClassName: "text-right" },
       }),
       keywordColumnHelper.accessor("intent", {
-        header: "Intent",
+        header: "搜索意图",
         cell: ({ getValue }) => <IntentBadge intent={getValue()} />,
         meta: {
           headerClassName: "text-center",

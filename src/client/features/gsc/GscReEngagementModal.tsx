@@ -103,17 +103,17 @@ export function GscReEngagementModal({
     >
       <div className="space-y-1">
         <h2 id="gsc-nudge-title" className="text-lg font-semibold">
-          New: Connect Google Search Console
+          新功能：连接 Google Search Console
         </h2>
         <p className="text-sm text-base-content/70">
-          Bring your real clicks, impressions, and rankings into OpenSEO and
-          query them from Claude or Codex over MCP. It never uses credits.
+          将真实的点击、展示和排名数据导入 OpenSEO，并通过 MCP 在 Claude 或
+          Codex 中查询，全程不消耗点数。
         </p>
       </div>
 
       <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button type="button" className="btn btn-ghost" onClick={handleDismiss}>
-          Maybe later
+          稍后再说
         </button>
         <button
           type="button"
@@ -121,7 +121,7 @@ export function GscReEngagementModal({
           className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <GoogleGlyph className="size-[18px]" />
-          Connect with Google
+          连接 Google
         </button>
       </div>
     </Modal>

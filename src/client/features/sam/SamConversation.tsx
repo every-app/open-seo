@@ -13,10 +13,10 @@ import {
 import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
 
 const SUGGESTIONS = [
-  "What keywords should I focus on next?",
-  "Who are my top SERP competitors?",
-  "How is my Search Console traffic trending?",
-  "Find quick-win keywords I already rank for",
+  "接下来应该重点关注哪些关键词？",
+  "我最主要的 SERP 竞争对手有哪些？",
+  "我的 Search Console 流量趋势如何？",
+  "查找已经获得排名且容易提升的关键词",
 ];
 
 export function SamConversation({
@@ -99,7 +99,7 @@ export function SamConversation({
           className="btn btn-ghost btn-xs absolute right-3 top-2 z-10 text-base-content/40"
           onClick={() => clearHistory()}
         >
-          Clear history (dev)
+          清空历史（开发）
         </button>
       ) : null}
       <div
@@ -111,12 +111,12 @@ export function SamConversation({
           {messages.length === 0 ? (
             <div className="space-y-2 text-sm text-base-content/80">
               <p>
-                Hey, I’m SAM — your in-app SEO agent. I can research keywords,
-                size up competitors, read your SERPs, backlinks, rank tracking
-                and Search Console, and turn it into next steps for this
-                project.
+                你好，我是 SAM，你的应用内 SEO
+                智能体。我可以研究关键词、分析竞争对手，读取
+                SERP、反向链接、排名追踪和 Search Console
+                数据，并整理出项目下一步行动。
               </p>
-              <p>Ask me anything, or start with one of these:</p>
+              <p>你可以直接提问，也可以从以下建议开始：</p>
             </div>
           ) : null}
 
@@ -157,9 +157,7 @@ export function SamConversation({
           ) : null}
 
           {status === "error" ? (
-            <p className="text-sm text-error">
-              Something went wrong. Please try again.
-            </p>
+            <p className="text-sm text-error">出现问题，请重试。</p>
           ) : null}
 
           {showSuggestions ? (
@@ -184,7 +182,7 @@ export function SamConversation({
           <ChatComposer
             busy={isBusy}
             onSend={sendText}
-            placeholder="Ask SAM to research, analyze, or track anything…"
+            placeholder="让 SAM 帮你研究、分析或追踪 SEO 数据…"
           />
         </div>
       </div>

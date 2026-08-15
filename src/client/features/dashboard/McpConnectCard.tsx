@@ -6,10 +6,10 @@ import type { DashboardActivation } from "@/server/features/dashboard/services/D
 import { dismissDashboardMcpCard } from "@/serverFunctions/dashboard";
 
 function firstPrompts(domain: string | null): string[] {
-  const site = domain ?? "my site";
+  const site = domain ?? "我的网站";
   return [
-    `Review ${site}. Ideas for what keywords we could target? Use OpenSEO`,
-    "Research my competitors top pages and keywords and tell me what's working. Use OpenSEO",
+    `使用 OpenSEO 分析 ${site}，并建议可以重点布局哪些关键词`,
+    "使用 OpenSEO 研究竞争对手的热门页面和关键词，并告诉我哪些策略有效",
   ];
 }
 
@@ -44,12 +44,12 @@ export function McpConnectCard({
     <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
       <div className="flex items-center justify-between gap-4 px-5 py-4">
         <h2 className="text-base font-semibold leading-tight">
-          Connect your AI agent
+          连接您的 AI 智能体
         </h2>
         <div className="flex items-center gap-2">
           {connected ? (
             <span className="badge badge-success badge-outline badge-sm">
-              Connected
+              已连接
             </span>
           ) : null}
           <button
@@ -61,7 +61,7 @@ export function McpConnectCard({
               dismissMutation.mutate();
             }}
           >
-            I already connected
+            我已完成连接
           </button>
         </div>
       </div>
@@ -69,7 +69,7 @@ export function McpConnectCard({
         {connected ? (
           <>
             <p className="text-sm text-base-content/70">
-              Your agent is connected. Try asking it:
+              智能体已连接，可以试着这样提问：
             </p>
             <ul className="space-y-2">
               {firstPrompts(activation.domain).map((prompt) => (
@@ -82,7 +82,7 @@ export function McpConnectCard({
                   </span>
                   <CopyButton
                     value={prompt}
-                    successMessage="Prompt copied"
+                    successMessage="提示词已复制"
                     iconOnly
                     onCopy={() =>
                       captureClientEvent("dashboard:mcp_prompt_copy")
@@ -92,23 +92,16 @@ export function McpConnectCard({
               ))}
             </ul>
             <p className="text-xs text-base-content/50">
-              Waiting for your first call — this card disappears once your agent
-              talks to OpenSEO.
+              正在等待首次调用。智能体连接 OpenSEO 后，此卡片会自动消失。
             </p>
           </>
         ) : (
           <>
             <div className="space-y-2 text-sm text-base-content/70">
+              <p>OpenSEO 为 AI 智能体提供制定和执行 SEO 策略所需的数据。</p>
+              <p>这种方式不受“AI 点数”限制。</p>
               <p>
-                OpenSEO is designed to give your AI agent the data it needs to
-                build a great SEO strategy and help you execute it.
-              </p>
-              <p>
-                This way you aren&rsquo;t limited on &ldquo;AI credits&rdquo;.
-              </p>
-              <p>
-                You can work with your agent to figure out what automations make
-                sense for you and it can help you write content too.
+                您可以与智能体共同设计合适的自动化流程，也可以让它协助撰写内容。
               </p>
             </div>
             <Link
@@ -116,7 +109,7 @@ export function McpConnectCard({
               className="link link-primary text-sm font-medium"
               onClick={() => captureClientEvent("dashboard:mcp_setup_open")}
             >
-              Set up in AI &amp; MCP →
+              前往 AI 与 MCP 设置 →
             </Link>
           </>
         )}

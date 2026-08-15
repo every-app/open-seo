@@ -47,14 +47,14 @@ export function BacklinksErrorState({
           <ShieldAlert className="size-5" />
         </div>
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold">Could not load backlinks</h2>
+          <h2 className="text-lg font-semibold">无法加载反向链接</h2>
           <p className="text-sm text-base-content/70">
-            {errorMessage ?? "Please try again in a moment."}
+            {errorMessage ?? "请稍后重试。"}
           </p>
         </div>
       </div>
       <button className="btn btn-sm" onClick={onRetry}>
-        Retry
+        重试
       </button>
     </section>
   );

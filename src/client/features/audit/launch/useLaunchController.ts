@@ -32,7 +32,7 @@ function getLaunchValidationErrors(
 
   return createFormValidationErrors({
     fields: {
-      url: "Please enter a URL.",
+      url: "请输入网址。",
     },
   });
 }
@@ -72,7 +72,7 @@ export function useLaunchController({
 
       if (effectiveMaxPages > 500) {
         const confirmed = window.confirm(
-          `You are about to crawl ${effectiveMaxPages.toLocaleString()} pages. This is okay, but it may take a while. Continue?`,
+          `即将抓取 ${effectiveMaxPages.toLocaleString()} 个页面，可能需要一段时间。是否继续？`,
         );
         if (!confirmed) {
           return;
@@ -86,12 +86,12 @@ export function useLaunchController({
           maxPages: effectiveMaxPages,
           lighthouseStrategy: value.runLighthouse ? "auto" : "none",
         });
-        toast.success("Audit started!");
+        toast.success("审计已开始！");
         onAuditStarted(result.auditId);
       } catch (error) {
         formApi.setErrorMap({
           onSubmit: createFormValidationErrors({
-            form: getStandardErrorMessage(error, "Failed to start audit"),
+            form: getStandardErrorMessage(error, "审计启动失败"),
           }),
         });
       }
@@ -128,7 +128,7 @@ function useLaunchMutations({
       deleteAudit({ data: { projectId, auditId } }),
     onSuccess: () => {
       void historyRefetch();
-      toast.success("Audit deleted");
+      toast.success("审计已删除");
     },
   });
 

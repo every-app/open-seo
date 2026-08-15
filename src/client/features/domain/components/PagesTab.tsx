@@ -38,18 +38,18 @@ const EMPTY_PAGES_ROWS: PageRow[] = [];
 const PAGE_TEXT_FILTERS = [
   {
     key: "include",
-    label: "Include Page Terms",
-    placeholder: "pricing, tools, guides",
+    label: "页面包含词语",
+    placeholder: "价格、工具、指南",
   },
   {
     key: "exclude",
-    label: "Exclude Page Terms",
-    placeholder: "blog, tag, archive",
+    label: "页面排除词语",
+    placeholder: "博客、标签、归档",
   },
 ] as const;
 const PAGE_RANGE_FILTERS = [
-  { title: "Traffic", minKey: "minTraffic", maxKey: "maxTraffic" },
-  { title: "Keywords", minKey: "minVol", maxKey: "maxVol" },
+  { title: "流量", minKey: "minTraffic", maxKey: "maxTraffic" },
+  { title: "关键词", minKey: "minVol", maxKey: "maxVol" },
 ] as const;
 
 type Props = {
@@ -152,7 +152,7 @@ export function PagesTab({
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(JSON.stringify(rows, null, 2));
-    toast.success("Copied data");
+    toast.success("数据已复制");
   };
   const handleExportToSheets = () => {
     void exportTableToSheets({
@@ -180,29 +180,29 @@ export function PagesTab({
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters((prev) => !prev)}
         activeFilterCount={activeFilterCount}
-        countLabel="pages"
+        countLabel="个页面"
         totalCount={totalCount}
         fallbackCount={rows.length}
         isLoading={isLoading}
         showTableLoading={showTableLoading}
         exportActions={[
           {
-            label: "Export to Sheets",
+            label: "导出到 Google 表格",
             icon: <Sheet className="size-4" />,
             onClick: handleExportToSheets,
           },
           {
-            label: "Copy data (JSON)",
+            label: "复制数据（JSON）",
             icon: <Copy className="size-4" />,
             onClick: handleCopy,
           },
           {
-            label: "Download CSV",
+            label: "下载 CSV",
             icon: <Download className="size-4" />,
             onClick: () => handleDownload("csv"),
           },
           {
-            label: "Download Excel",
+            label: "下载 Excel",
             icon: <FileSpreadsheet className="size-4" />,
             onClick: () => handleDownload("xls"),
           },

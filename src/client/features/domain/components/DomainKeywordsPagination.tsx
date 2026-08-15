@@ -24,7 +24,7 @@ function formatRange(
   }
   if (totalCount === 0) return "0";
   const end = Math.min(totalCount, start + pageSize - 1);
-  return `${start.toLocaleString()}–${end.toLocaleString()} of ${totalCount.toLocaleString()}`;
+  return `${start.toLocaleString()} 到 ${end.toLocaleString()}，共 ${totalCount.toLocaleString()} 条`;
 }
 
 export function DomainKeywordsPagination({
@@ -52,7 +52,7 @@ export function DomainKeywordsPagination({
 
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm text-base-content/70">
-          <span className="whitespace-nowrap">Rows per page</span>
+          <span className="whitespace-nowrap">每页行数</span>
           <select
             className="select select-bordered select-sm w-20"
             value={pageSize}
@@ -68,15 +68,15 @@ export function DomainKeywordsPagination({
 
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
-            Page {page.toLocaleString()}
-            {totalPages != null ? ` of ${totalPages.toLocaleString()}` : ""}
+            页面 {page.toLocaleString()}
+            {totalPages != null ? ` / ${totalPages.toLocaleString()}` : ""}
           </span>
           <div className="flex items-center gap-1">
             <PageLink
               page={page - 1}
               disabled={!canGoPrev || isLoading}
               onPageChange={onPageChange}
-              label="Previous page"
+              label="上一页"
             >
               <ChevronLeft className="size-4" />
             </PageLink>
@@ -84,7 +84,7 @@ export function DomainKeywordsPagination({
               page={page + 1}
               disabled={!canGoNext || isLoading}
               onPageChange={onPageChange}
-              label="Next page"
+              label="下一页"
             >
               <ChevronRight className="size-4" />
             </PageLink>

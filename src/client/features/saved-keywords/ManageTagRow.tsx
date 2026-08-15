@@ -32,7 +32,7 @@ export function ManageTagRow({
     <div className="space-y-2 border-y border-base-300 bg-base-200/40 px-3 py-2.5">
       <div className="space-y-1">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
-          Rename
+          重命名
         </label>
         <div className="flex items-center gap-1.5">
           <Pencil className="size-3 opacity-50" />
@@ -46,7 +46,7 @@ export function ManageTagRow({
 
       <div className="space-y-1">
         <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
-          Color
+          颜色
         </label>
         <div className="flex flex-wrap items-center gap-1.5">
           {TAG_COLOR_KEYS.map((key) => (
@@ -73,7 +73,7 @@ export function ManageTagRow({
           disabled={isBusy}
         >
           <Trash2 className="size-3" />
-          Delete
+          删除
         </button>
         <div className="flex items-center gap-1.5">
           <button
@@ -81,7 +81,7 @@ export function ManageTagRow({
             className="rounded px-2 py-1 text-xs text-base-content/70 hover:bg-base-300"
             onClick={onCancel}
           >
-            Cancel
+            取消
           </button>
           <button
             type="button"
@@ -94,7 +94,7 @@ export function ManageTagRow({
               })
             }
           >
-            Save
+            保存
           </button>
         </div>
       </div>

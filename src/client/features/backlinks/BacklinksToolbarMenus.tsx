@@ -45,10 +45,10 @@ export function BacklinksExportMenu({
         tabIndex={0}
         role="button"
         className={`btn btn-sm btn-ghost gap-1 ${rows.length === 0 ? "btn-disabled" : ""}`}
-        aria-label="Export backlinks table"
+        aria-label="导出反向链接表格"
       >
         <Download className="size-4" />
-        Export
+        导出
         <ChevronDown className="size-3 opacity-60" />
       </div>
       <ul
@@ -67,7 +67,7 @@ export function BacklinksExportMenu({
             ) : (
               <Sheet className="size-4" />
             )}
-            Export to Sheets
+            导出到 Google 表格
           </button>
         </li>
         <li>
@@ -84,7 +84,7 @@ export function BacklinksExportMenu({
             disabled={rows.length === 0}
           >
             <Download className="size-4" />
-            Export CSV
+            导出 CSV
           </button>
         </li>
       </ul>
@@ -107,8 +107,8 @@ export function BacklinksActionsMenu({
         tabIndex={0}
         role="button"
         className="btn btn-sm btn-ghost btn-square"
-        aria-label="Backlinks table actions"
-        title="Backlinks table actions"
+        aria-label="反向链接表格操作"
+        title="反向链接表格操作"
       >
         <MoreHorizontal className="size-4" />
       </div>
@@ -122,7 +122,7 @@ export function BacklinksActionsMenu({
             type="button"
             onClick={() => void loadRatings(ratableDomains)}
             disabled={isLoadingRatings}
-            title="Look up Ahrefs Domain Rating for each domain in the table"
+            title="查询表格中各域名的 Ahrefs 域名评级"
           >
             {isLoadingRatings ? (
               <span className="loading loading-spinner loading-xs" />

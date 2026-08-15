@@ -86,18 +86,18 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
   }, []);
 
   const monthLabels = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
+    "1 月",
+    "2 月",
+    "3 月",
+    "4 月",
+    "5 月",
+    "6 月",
+    "7 月",
+    "8 月",
+    "9 月",
+    "10 月",
+    "11 月",
+    "12 月",
   ];
   const data = last12.map((m) => ({
     month: monthLabels[m.month - 1],
@@ -110,7 +110,7 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
     <div
       ref={containerRef}
       className="w-full h-[210px] min-w-0"
-      aria-label="Search trend chart"
+      aria-label="搜索趋势图"
     >
       {chartWidth > 0 ? (
         <AreaChart
@@ -167,7 +167,7 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
           <Area
             type="monotone"
             dataKey="searchVolume"
-            name="Search volume"
+            name="搜索量"
             stroke="var(--color-primary)"
             strokeWidth={2}
             fill="url(#trendGrad)"

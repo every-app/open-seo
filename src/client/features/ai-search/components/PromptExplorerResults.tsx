@@ -95,7 +95,7 @@ function ModelResultCard({
       {modelResult.fanOutQueries.length > 0 ? (
         <div className="border-t border-base-200 px-5 py-3">
           <p className="mb-2 text-xs font-medium uppercase tracking-wider text-base-content/50">
-            Related queries the model considered
+            模型参考的相关查询
           </p>
           <div className="flex flex-wrap gap-1.5">
             {modelResult.fanOutQueries.map((query, index) => (
@@ -128,7 +128,7 @@ function CitationsList({
   return (
     <div className="border-t border-base-200 bg-base-200/30 px-5 py-3">
       <p className="mb-2 text-xs font-medium uppercase tracking-wider text-base-content/50">
-        Cited sources ({citations.length})
+        引用来源（{citations.length})
       </p>
       <ul className="space-y-1.5">
         {visible.map((citation, index) => (
@@ -164,7 +164,7 @@ function CitationsList({
           onClick={() => setExpanded((current) => !current)}
           className="mt-1.5 text-xs text-base-content/50 hover:text-base-content"
         >
-          {expanded ? "Show less" : `+${remaining} more`}
+          {expanded ? "收起" : `+${remaining} more`}
         </button>
       ) : null}
     </div>
@@ -198,7 +198,7 @@ function ModelHeader({
           <code className="text-xs text-base-content/50">{modelName}</code>
         ) : null}
         {status === "error" ? (
-          <span className="badge badge-error badge-sm">Error</span>
+          <span className="badge badge-error badge-sm">错误</span>
         ) : null}
         <BrandMentionBadge
           mentioned={brandMentioned}
@@ -207,7 +207,7 @@ function ModelHeader({
         {webSearch ? (
           <span className="inline-flex items-center gap-1 text-xs text-base-content/60">
             <Globe className="size-3" />
-            web search
+            联网搜索
           </span>
         ) : null}
       </div>

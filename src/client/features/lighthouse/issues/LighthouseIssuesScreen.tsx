@@ -72,12 +72,12 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
 
   const issuesErrorMessage = getStandardErrorMessage(
     issuesQuery.error,
-    "Failed to load Lighthouse issues.",
+    "Lighthouse 问题加载失败。",
   );
   const showsLegacyPayloadNotice =
     issuesQuery.data != null && !issuesQuery.data.hasIssueDetails;
   const emptyMessage = showsLegacyPayloadNotice
-    ? "This audit was saved without issue-level Lighthouse details. Re-run the audit to populate this screen."
+    ? "此次审计未保存 Lighthouse 问题级详情。请重新运行审计以生成此页面的数据。"
     : undefined;
 
   return (
@@ -106,9 +106,8 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
               <div className="alert alert-warning">
                 <TriangleAlert className="size-4" />
                 <span>
-                  This Lighthouse run was stored before issue details were
-                  preserved. Re-run the audit to see category counts and issue
-                  cards.
+                  此次 Lighthouse
+                  运行记录创建时尚未保存问题详情。请重新运行审计，查看分类数量和问题卡片。
                 </span>
               </div>
             ) : null}
@@ -167,10 +166,9 @@ function useLighthouseIssuesActions({
     try {
       const exported = await exportMutation.mutateAsync(data);
       downloadFile(exported.content, exported.filename, "application/json");
-      toast.success("Download started");
+      toast.success("已开始下载");
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to export payload";
+      const message = error instanceof Error ? error.message : "数据导出失败";
       toast.error(message);
     }
   };
@@ -181,7 +179,7 @@ function useLighthouseIssuesActions({
   ) => {
     const filename = `lighthouse-${variant}-${category}-issues.csv`;
     downloadFile(issuesToCsv(rows), filename, "text/csv");
-    toast.success("CSV download started");
+    toast.success("CSV 已开始下载");
   };
 
   const runExportSheets = (
@@ -202,8 +200,7 @@ function useLighthouseIssuesActions({
       await navigator.clipboard.writeText(exported.content);
       toast.success(toastMessage);
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Failed to copy payload";
+      const message = error instanceof Error ? error.message : "数据复制失败";
       toast.error(message);
     }
   };

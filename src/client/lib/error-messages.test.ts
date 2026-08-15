@@ -7,7 +7,7 @@ import {
 describe("getStandardErrorMessage", () => {
   it("maps known error codes to standard copy", () => {
     expect(getStandardErrorMessage(new Error("PAYMENT_REQUIRED"))).toBe(
-      "An active hosted subscription is required before you can use OpenSEO.",
+      "使用 OpenSEO 需要有效的托管订阅。",
     );
   });
 
@@ -38,7 +38,7 @@ describe("coded error messages (CODE: detail)", () => {
   it("keeps bare codes mapping to the standard copy", () => {
     const bare = new Error("AUTH_CONFIG_MISSING");
     expect(getErrorCode(bare)).toBe("AUTH_CONFIG_MISSING");
-    expect(getStandardErrorMessage(bare)).toContain("not configured");
+    expect(getStandardErrorMessage(bare)).toContain("尚未配置");
   });
 
   it("does not treat arbitrary colon messages as coded", () => {

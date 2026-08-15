@@ -20,8 +20,8 @@ const DEVICE_STYLE: Record<
   "desktop" | "mobile",
   { label: string; color: string }
 > = {
-  desktop: { label: "Desktop", color: "#2563eb" },
-  mobile: { label: "Mobile", color: "#14b8a6" },
+  desktop: { label: "桌面端", color: "#2563eb" },
+  mobile: { label: "移动端", color: "#14b8a6" },
 };
 
 export interface KeywordTrendTarget {
@@ -121,14 +121,14 @@ export function KeywordTrendModal({
     ]);
 
   const handleCopy = () => {
-    const headers = ["Date", "Device", "Position", "Change vs previous"];
+    const headers = ["日期", "设备", "排名", "较上次变化"];
     void navigator.clipboard.writeText(buildCsv(headers, exportRows()));
-    toast.success("Copied to clipboard");
+    toast.success("已复制到剪贴板");
     captureClientEvent("rank_tracking:keyword_trend_copy");
   };
 
   const handleExport = () => {
-    const headers = ["Date", "Device", "Position", "Change vs previous"];
+    const headers = ["日期", "设备", "排名", "较上次变化"];
     downloadCsv(
       `rank-history-${slugify(target.keyword)}.csv`,
       buildCsv(headers, exportRows()),
@@ -152,7 +152,7 @@ export function KeywordTrendModal({
             {locationName
               ? formatLocationLabel(locationName, 2)
               : (LOCATIONS[locationCode] ?? "US")}{" "}
-            &middot; Position over time
+            · 排名趋势
           </p>
         </div>
         <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
@@ -184,14 +184,14 @@ export function KeywordTrendModal({
           <div className="flex items-center justify-end gap-2">
             <button className="btn btn-ghost btn-xs gap-1" onClick={handleCopy}>
               <Copy className="size-3.5" />
-              Copy
+              复制
             </button>
             <button
               className="btn btn-ghost btn-xs gap-1"
               onClick={handleExport}
             >
               <Download className="size-3.5" />
-              Export CSV
+              导出 CSV
             </button>
           </div>
 
@@ -199,10 +199,10 @@ export function KeywordTrendModal({
             <table className="table table-sm">
               <thead className="sticky top-0 bg-base-100">
                 <tr>
-                  <th>Date</th>
-                  {devices.length > 1 && <th>Device</th>}
-                  <th>Position</th>
-                  <th>Δ vs previous check</th>
+                  <th>日期</th>
+                  {devices.length > 1 && <th>设备</th>}
+                  <th>排名</th>
+                  <th>较上次检查的变化</th>
                 </tr>
               </thead>
               <tbody>
@@ -226,7 +226,7 @@ export function KeywordTrendModal({
                       <td>
                         {r.position === null ? (
                           <span className="text-base-content/40 text-xs">
-                            Not in top {serpDepth}
+                            未进入前 {serpDepth}
                           </span>
                         ) : (
                           <span className="font-mono text-sm">
@@ -270,7 +270,7 @@ export function KeywordTrendModal({
 
       <div className="flex justify-end">
         <button className="btn btn-ghost btn-sm" onClick={onClose}>
-          Close
+          关闭
         </button>
       </div>
     </Modal>
@@ -281,8 +281,8 @@ function EmptyState({ count }: { count: number }) {
   return (
     <div className="rounded-lg border border-dashed border-base-300 p-10 text-center text-sm text-base-content/60">
       {count === 0
-        ? "No history yet — run a check to start tracking position over time."
-        : "Only 1 check so far — the trend chart fills in after the next check."}
+        ? "暂无历史记录。运行检查后即可持续追踪排名变化。"
+        : "目前只有 1 次检查，下次检查后将显示趋势图。"}
     </div>
   );
 }
@@ -317,9 +317,7 @@ function ChartTooltip({
           <p key={String(e.dataKey)} className="text-sm font-medium">
             {device}:{" "}
             {inBottomBand ? (
-              <span className="text-base-content/60">
-                Not in top {serpDepth}
-              </span>
+              <span className="text-base-content/60">未进入前 {serpDepth}</span>
             ) : (
               e.value
             )}

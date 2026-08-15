@@ -55,8 +55,7 @@ export function SearchHistorySection<TItem extends { timestamp: number }>({
         <div className="flex items-center gap-2">
           <History className="size-4 text-base-content/45" />
           <span className="text-sm text-base-content/60">
-            {history.length} recent {noun}
-            {history.length !== 1 ? "s" : ""}
+            {history.length} 条{noun}记录
           </span>
         </div>
       </div>
@@ -85,7 +84,7 @@ export function SearchHistorySection<TItem extends { timestamp: number }>({
                 type="button"
                 className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
                 onClick={() => onRemoveHistoryItem(item.timestamp)}
-                aria-label="Remove from history"
+                aria-label="从历史记录中移除"
               >
                 <X className="size-3" />
               </button>

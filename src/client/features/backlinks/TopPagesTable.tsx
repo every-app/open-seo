@@ -21,10 +21,7 @@ const columns = [
     id: "page",
     enableSorting: false,
     header: () => (
-      <HeaderHelpLabel
-        label="Page"
-        helpText="Page on the target site receiving backlinks."
-      />
+      <HeaderHelpLabel label="页面" helpText="目标网站中获得反向链接的页面。" />
     ),
     cell: ({ getValue }) => {
       const page = getValue();
@@ -44,8 +41,8 @@ const columns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Backlinks"
-        helpText="Total backlinks pointing to this page."
+        label="反向链接"
+        helpText="指向此页面的反向链接总数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -56,8 +53,8 @@ const columns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Referring Domains"
-        helpText="Unique domains linking to this page."
+        label="引用域名"
+        helpText="链接到此页面的不重复域名数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -68,8 +65,8 @@ const columns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Rank"
-        helpText="Authority score for this target page."
+        label="权威度"
+        helpText="目标页面的权威度分数。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -80,8 +77,8 @@ const columns = [
     header: ({ column }) => (
       <SortableHeader
         column={column}
-        label="Broken Backlinks"
-        helpText="Backlinks pointing here that are currently broken."
+        label="失效反向链接"
+        helpText="当前指向此页面的失效反向链接。"
       />
     ),
     cell: ({ getValue }) => formatNumber(getValue()),
@@ -107,7 +104,7 @@ export function TopPagesTable({
   });
 
   if (rows.length === 0) {
-    return <EmptyTableState label="No top pages match this filter." />;
+    return <EmptyTableState label="没有热门页面符合当前筛选条件。" />;
   }
 
   return (
