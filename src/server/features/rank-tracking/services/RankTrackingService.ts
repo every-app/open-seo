@@ -1,9 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import {
-  createDataforseoClient,
-  fetchKeywordMetricsForList,
-} from "@/server/lib/dataforseo";
+import type { KeywordMetricRow } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { AppError } from "@/server/lib/errors";
 import type {
@@ -289,15 +287,19 @@ async function refreshKeywordMetrics(
   ]);
   if (keywords.length === 0) return { updated: 0 };
 
-  const client = createDataforseoClient(billingCustomer);
-  const metrics = await fetchKeywordMetricsForList(client, {
+  const { data: metrics } = await getSeoDataRouter().route<KeywordMetricRow[]>({
+    dataType: "keyword_metrics",
     keywords: keywords.map((kw) => kw.keyword),
     locationCode: config.locationCode,
     languageCode: config.languageCode,
-    // Local configs get volume/CPC scoped to the tracked city; national
-    // numbers can overstate local demand by orders of magnitude.
-    locationName: config.locationName ?? undefined,
+    billingCustomer,
     creditFeature: "rank_tracking",
+    constraints: {
+      projectId,
+      // Local configs must retain city-scoped volume/CPC semantics. Providers
+      // that cannot honor this constraint report unsupported and fall through.
+      ...(config.locationName ? { locationName: config.locationName } : {}),
+    },
   });
   const byKeyword = new Map(
     metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),

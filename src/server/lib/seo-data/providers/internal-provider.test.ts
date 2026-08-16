@@ -24,6 +24,16 @@ function fakeSelectChain(rows: unknown[]) {
   });
 }
 
+function fakeKeywordMetricsSelect(rows: unknown[]) {
+  mocks.db.select.mockReturnValue({
+    from: vi.fn().mockReturnValue({
+      where: vi.fn().mockReturnValue({
+        limit: vi.fn().mockResolvedValue(rows),
+      }),
+    }),
+  });
+}
+
 function makeCompetitorsRequest(
   overrides: Partial<SEODataRequest> = {},
 ): SEODataRequest {
@@ -134,5 +144,53 @@ describe("internal provider — competitors", () => {
         billingCustomer: { organizationId: "org-1" } as never,
       }),
     ).rejects.toThrow("No fresh domain overview snapshot found");
+  });
+});
+
+describe("internal provider — keyword metrics", () => {
+  const provider = createInternalProvider();
+  const request: SEODataRequest = {
+    dataType: "keyword_metrics",
+    keywords: ["one", "two"],
+    locationCode: 2840,
+    languageCode: "en",
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+    billingCustomer: { organizationId: "org-1" } as never,
+    constraints: { projectId: "project-1" },
+  };
+
+  beforeEach(() => vi.clearAllMocks());
+
+  it("serves D1 only when all requested keywords are covered", async () => {
+    fakeKeywordMetricsSelect([
+      { keyword: "one", searchVolume: 10 },
+      { keyword: "two", searchVolume: 20 },
+    ]);
+
+    await expect(provider.get(request)).resolves.toEqual([
+      expect.objectContaining({ keyword: "one", searchVolume: 10 }),
+      expect.objectContaining({ keyword: "two", searchVolume: 20 }),
+    ]);
+  });
+
+  it("falls through when D1 only partially covers the request", async () => {
+    fakeKeywordMetricsSelect([{ keyword: "one", searchVolume: 10 }]);
+
+    await expect(provider.get(request)).rejects.toThrow(
+      "Stored keyword metrics do not cover the full request",
+    );
+  });
+
+  it("falls through for city-scoped requests", async () => {
+    await expect(
+      provider.get({
+        ...request,
+        constraints: {
+          projectId: "project-1",
+          locationName: "Enid,Oklahoma,United States",
+        },
+      }),
+    ).rejects.toThrow("not scoped to a local location name");
+    expect(mocks.db.select).not.toHaveBeenCalled();
   });
 });

@@ -5,10 +5,16 @@ const mocks = vi.hoisted(() => ({
   getConfigsForProject: vi.fn(),
   createConfig: vi.fn(),
   updateConfig: vi.fn(),
+  getConfigById: vi.fn(),
+  getKeywordsForConfig: vi.fn(),
+  updateKeywordMetrics: vi.fn(),
+  route: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
-vi.mock("@/server/lib/dataforseo", () => ({ createDataforseoClient: vi.fn() }));
+vi.mock("@/server/lib/seo-data", () => ({
+  getSeoDataRouter: () => ({ route: mocks.route }),
+}));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
   () => ({ RankTrackingRepository: mocks }),
@@ -190,6 +196,94 @@ describe("RankTrackingService.createConfig", () => {
 
     expect(mocks.createConfig).toHaveBeenCalledWith(
       expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
+    );
+  });
+});
+
+describe("RankTrackingService.refreshKeywordMetrics", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    for (const mock of Object.values(mocks)) mock.mockReset();
+    mocks.getConfigById.mockResolvedValue({
+      id: "config_1",
+      projectId: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+      locationName: null,
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue([
+      { id: "keyword_1", keyword: "seo software" },
+    ]);
+    mocks.route.mockResolvedValue({
+      data: [
+        {
+          keyword: "seo software",
+          searchVolume: 100,
+          keywordDifficulty: 20,
+          cpc: 3.5,
+        },
+      ],
+    });
+  });
+
+  it("routes metrics through keyword_metrics with project and market context", async () => {
+    const { RankTrackingService } = await import("./RankTrackingService");
+    const billingCustomer = {
+      organizationId: "org_1",
+      userId: "user_1",
+      userEmail: "user@example.com",
+    };
+
+    await expect(
+      RankTrackingService.refreshKeywordMetrics(
+        "config_1",
+        "project_1",
+        billingCustomer,
+      ),
+    ).resolves.toEqual({ updated: 1 });
+
+    expect(mocks.route).toHaveBeenCalledWith({
+      dataType: "keyword_metrics",
+      keywords: ["seo software"],
+      locationCode: 2840,
+      languageCode: "en",
+      billingCustomer,
+      creditFeature: "rank_tracking",
+      constraints: { projectId: "project_1" },
+    });
+    expect(mocks.updateKeywordMetrics).toHaveBeenCalledWith([
+      expect.objectContaining({
+        id: "keyword_1",
+        searchVolume: 100,
+        keywordDifficulty: 20,
+        cpc: 3.5,
+      }),
+    ]);
+  });
+
+  it("preserves local location-name semantics in the router request", async () => {
+    mocks.getConfigById.mockResolvedValue({
+      id: "config_1",
+      projectId: "project_1",
+      locationCode: 2840,
+      languageCode: "en",
+      locationName: "Enid,Oklahoma,United States",
+    });
+    const { RankTrackingService } = await import("./RankTrackingService");
+
+    await RankTrackingService.refreshKeywordMetrics("config_1", "project_1", {
+      organizationId: "org_1",
+      userId: "user_1",
+      userEmail: "user@example.com",
+    });
+
+    expect(mocks.route).toHaveBeenCalledWith(
+      expect.objectContaining({
+        constraints: {
+          projectId: "project_1",
+          locationName: "Enid,Oklahoma,United States",
+        },
+      }),
     );
   });
 });

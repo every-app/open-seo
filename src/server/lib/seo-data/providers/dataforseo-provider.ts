@@ -448,6 +448,9 @@ async function routeByDataType(
         keywords: kws,
         locationCode,
         languageCode,
+        locationName:
+          // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+          request.constraints?.locationName as string | undefined,
         includeClickstreamData:
           // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
           (request.constraints?.includeClickstreamData as

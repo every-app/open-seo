@@ -7,6 +7,7 @@ import {
   RateLimitError,
 } from "../errors";
 import { getProviderFeatureFlags } from "../config";
+import { getKeywordDataProvider } from "@/shared/keyword-locations";
 
 /**
  * Google Ads Keyword Planner provider — free keyword research and historical
@@ -194,12 +195,96 @@ async function getHistoricalMetrics(
     );
   }
 
-  return googleAdsRequest("keywordPlanKeywords:generateHistoricalMetrics", {
+  if (request.constraints?.locationName) {
+    throw new ProviderUnsupportedError(
+      "google_ads",
+      "keyword_metrics",
+      "Google Ads router provider does not support location-name targeting",
+    );
+  }
+
+  const response = await googleAdsRequest<{
+    results?: Array<{
+      text?: string;
+      keyword?: string;
+      keywordMetrics?: {
+        avgMonthlySearches?: string | number;
+        competition?: string;
+        competitionIndex?: string | number;
+        lowTopOfPageBidMicros?: string | number;
+        monthlySearchVolumes?: Array<{
+          year?: string | number;
+          month?: string;
+          monthlySearches?: string | number;
+        }>;
+      };
+    }>;
+  }>("keywordPlanKeywords:generateHistoricalMetrics", {
     keywords: keywords.map((kw) => ({
       text: kw,
       matchType: "EXACT",
     })),
   });
+
+  return (response.results ?? []).flatMap((result) => {
+    if (!result.text) return [];
+    const metrics = result.keywordMetrics;
+    const competitionIndex = toNumber(metrics?.competitionIndex);
+    const lowBidMicros = toNumber(metrics?.lowTopOfPageBidMicros);
+    return [
+      {
+        keyword: result.keyword ?? result.text,
+        searchVolume: toNumber(metrics?.avgMonthlySearches),
+        cpc: lowBidMicros == null ? null : lowBidMicros / 1_000_000,
+        competition:
+          competitionIndex == null ? null : competitionIndex / 100,
+        competitionLevel: metrics?.competition ?? null,
+        keywordDifficulty: null,
+        intent: null,
+        monthlySearches: (metrics?.monthlySearchVolumes ?? []).flatMap(
+          (month) => {
+            const year = toNumber(month.year);
+            const searchVolume = toNumber(month.monthlySearches);
+            const monthNumber = monthNumberFor(month.month);
+            if (year == null || monthNumber == null || searchVolume == null) {
+              return [];
+            }
+            return [{ year, month: monthNumber, searchVolume }];
+          },
+        ),
+      },
+    ];
+  });
+}
+
+function monthNumberFor(month: string | undefined): number | null {
+  if (!month) return null;
+  const numeric = Number(month);
+  if (Number.isInteger(numeric) && numeric >= 1 && numeric <= 12) {
+    return numeric;
+  }
+  const monthNames = [
+    "JANUARY",
+    "FEBRUARY",
+    "MARCH",
+    "APRIL",
+    "MAY",
+    "JUNE",
+    "JULY",
+    "AUGUST",
+    "SEPTEMBER",
+    "OCTOBER",
+    "NOVEMBER",
+    "DECEMBER",
+  ];
+  const index = monthNames.indexOf(month.toUpperCase());
+  return index === -1 ? null : index + 1;
+}
+
+function toNumber(value: string | number | undefined): number | null {
+  if (value === undefined) return null;
+  const number = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 export function createGoogleAdsProvider(): SEODataProvider {
@@ -208,8 +293,9 @@ export function createGoogleAdsProvider(): SEODataProvider {
 
     supports(request: SEODataRequest): boolean {
       return (
-        request.dataType === "keyword_ideas" ||
-        request.dataType === "keyword_metrics"
+        (request.dataType === "keyword_ideas" ||
+          request.dataType === "keyword_metrics") &&
+        getKeywordDataProvider(request.locationCode ?? 2840) === "google_ads"
       );
     },
 

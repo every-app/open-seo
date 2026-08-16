@@ -111,6 +111,14 @@ async function getInternalKeywordMetrics(
     );
   }
 
+  if (request.constraints?.locationName) {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "keyword_metrics",
+      "Stored keyword metrics are not scoped to a local location name",
+    );
+  }
+
   const projectId =
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
     request.constraints?.projectId as string | undefined;
@@ -135,11 +143,14 @@ async function getInternalKeywordMetrics(
   const keywordSet = new Set(keywords.map((k) => k.toLowerCase()));
   const filtered = rows.filter((r) => keywordSet.has(r.keyword.toLowerCase()));
 
-  if (filtered.length === 0) {
+  const coveredKeywords = new Set(
+    filtered.map((row) => row.keyword.toLowerCase()),
+  );
+  if (keywords.some((keyword) => !coveredKeywords.has(keyword.toLowerCase()))) {
     throw new ProviderUnsupportedError(
       "internal",
       "keyword_metrics",
-      "No cached keyword metrics found",
+      "Stored keyword metrics do not cover the full request",
     );
   }
 
