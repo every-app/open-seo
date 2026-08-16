@@ -5,6 +5,11 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Check } from "lucide-react";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { Ga4ConnectCard } from "@/client/features/dashboard/Ga4ConnectCard";
+import { Ga4DashboardCards } from "@/client/features/dashboard/Ga4DashboardCards";
+import {
+  ga4DashboardHasDataForSort,
+  shouldShowDashboardGa4,
+} from "@/client/features/dashboard/ga4Dashboard";
 import {
   computeNextStep,
   isStepDone,
@@ -28,6 +33,7 @@ import {
 import { setProjectDomain } from "@/serverFunctions/projects";
 import { GA4_OAUTH_APP_PENDING } from "@/shared/ga4";
 import type { DashboardHeroStep } from "@/types/schemas/dashboard";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 const HERO_COPY: Record<
   DashboardHeroStep,
@@ -301,6 +307,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
   const ga4Connected = activation.ga4.connected;
+  const showGa4 = shouldShowDashboardGa4({
+    hosted: isHostedClientAuthMode(),
+    oauthAppPending: GA4_OAUTH_APP_PENDING,
+    connected: ga4Connected,
+    dismissedAt: activation.ga4.cardDismissedAt,
+  });
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
@@ -336,13 +348,20 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               hasData: gscConnected,
               node: <GscCard projectId={projectId} connected={gscConnected} />,
             },
-            ...(!GA4_OAUTH_APP_PENDING &&
-            (ga4Connected || !activation.ga4.cardDismissedAt)
+            ...(showGa4
               ? [
                   {
                     key: "ga4",
-                    hasData: ga4Connected,
-                    node: (
+                    hasData: ga4DashboardHasDataForSort({
+                      gscConnected,
+                      ga4Connected,
+                    }),
+                    node: ga4Connected ? (
+                      <Ga4DashboardCards
+                        projectId={projectId}
+                        connected={ga4Connected}
+                      />
+                    ) : (
                       <Ga4ConnectCard
                         projectId={projectId}
                         connected={ga4Connected}
@@ -380,7 +399,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
           ]
             .toSorted((a, b) => Number(b.hasData) - Number(a.hasData))
             .map((card) => (
-              <div key={card.key}>{card.node}</div>
+              <div
+                key={card.key}
+                className={card.key === "ga4" ? "contents" : undefined}
+              >
+                {card.node}
+              </div>
             ))}
         </div>
       </div>

@@ -37,7 +37,7 @@ export class Ga4MalformedResponseError extends Error {
   }
 }
 
-type Ga4ReportErrorCode =
+export type Ga4ReportErrorCode =
   | "validation_error"
   | "ga4_not_connected"
   | "ga4_reconnect_required"
@@ -56,4 +56,33 @@ export class Ga4ReportError extends Error {
     super(message);
     this.name = "Ga4ReportError";
   }
+}
+
+export type Ga4ReportErrorDetail = {
+  code: Ga4ReportErrorCode;
+  message: string;
+  retryAfterSeconds?: number;
+};
+
+/**
+ * Collapse reporting failures into the small, user-safe contract exposed by
+ * dashboard server functions. Unexpected exceptions intentionally use a
+ * generic message rather than leaking an upstream response or credential.
+ */
+export function toSafeGa4ReportErrorDetail(
+  error: unknown,
+): Ga4ReportErrorDetail {
+  if (error instanceof Ga4ReportError) {
+    return {
+      code: error.code,
+      message: error.message,
+      ...(error.retryAfterSeconds == null
+        ? {}
+        : { retryAfterSeconds: error.retryAfterSeconds }),
+    };
+  }
+  return {
+    code: "ga4_upstream_unavailable",
+    message: "Google Analytics reporting is temporarily unavailable.",
+  };
 }

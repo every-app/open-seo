@@ -2,6 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { waitUntil } from "cloudflare:workers";
 import { z } from "zod";
+import {
+  Ga4DashboardSummaryService,
+  type DashboardGa4Summary,
+} from "@/server/features/ga4/services/Ga4DashboardSummaryService";
 import { Ga4Service } from "@/server/features/ga4/services/Ga4Service";
 import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import {
@@ -10,6 +14,10 @@ import {
 } from "@/server/features/google/selfHostedOAuth";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { captureServerEvent } from "@/server/lib/posthog";
+import {
+  toSafeGa4ReportErrorDetail,
+  type Ga4ReportErrorDetail,
+} from "@/server/lib/ga4Errors";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import {
   requireAuthenticatedContext,
@@ -24,6 +32,39 @@ const setPropertySchema = projectScopedSchema.extend({
 const startSelfHostedLinkSchema = z.object({
   callbackURL: z.string().min(1),
 });
+
+export type DashboardGa4SummaryResult =
+  | DashboardGa4Summary
+  | { status: "error"; error: Ga4ReportErrorDetail };
+
+export const getDashboardGa4Summary = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(projectScopedSchema)
+  .handler(async ({ context }): Promise<DashboardGa4SummaryResult> => {
+    try {
+      return await Ga4DashboardSummaryService.getDashboardGa4Summary({
+        projectId: context.projectId,
+      });
+    } catch (error) {
+      const detail = toSafeGa4ReportErrorDetail(error);
+      waitUntil(
+        captureServerEvent({
+          distinctId: context.userId,
+          event: "ga4:dashboard_summary_error",
+          organizationId: context.organizationId,
+          properties: {
+            project_id: context.projectId,
+            error_code: detail.code,
+            retry_after_seconds: detail.retryAfterSeconds,
+          },
+        }),
+      );
+      return {
+        status: "error",
+        error: detail,
+      };
+    }
+  });
 
 export const getGa4Connection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
