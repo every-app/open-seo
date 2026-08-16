@@ -27,7 +27,13 @@ export function createLocalCrawlerProvider(): SEODataProvider {
     name: "local_crawler",
 
     supports(request: SEODataRequest): boolean {
-      return request.dataType === "site_audit";
+      // Lighthouse requests (constraints.lighthouse) must fall through to the
+      // DataForSEO provider — the local crawler serves page-parse checks, not
+      // Lighthouse scores, and would silently replace paid lighthouse data.
+      return (
+        request.dataType === "site_audit" &&
+        request.constraints?.lighthouse !== true
+      );
     },
 
     async get(request: SEODataRequest): Promise<unknown> {
