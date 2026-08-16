@@ -10,6 +10,8 @@ import {
 import type { LlmCrossAggregatedItem } from "@/server/lib/dataforseoLlmSchemas";
 import { AppError } from "@/server/lib/errors";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import { assertDataforseoBudgetAvailable } from "@/server/lib/seo-data/cost-tracker";
+import { singleFlight } from "@/server/lib/seo-data/single-flight";
 import {
   resolveCompetitorGroups,
   type CompetitorGroup,
@@ -73,7 +75,16 @@ export async function getBrandLookup(
     languageCode: input.languageCode,
   });
 
-  const cached = brandLookupResultSchema.safeParse(await getCached(cacheKey));
+  const fetched = await singleFlight(cacheKey, () =>
+    fetchOrCoalesceBrandLookup(
+      input,
+      detected,
+      competitorGroups,
+      billingCustomer,
+      cacheKey,
+    ),
+  );
+  const cached = brandLookupResultSchema.safeParse(fetched);
   if (cached.success) {
     return {
       ...cached.data,
@@ -81,6 +92,28 @@ export async function getBrandLookup(
       resolvedTarget: detected.value,
     };
   }
+  throw cached.error;
+}
+
+/**
+ * The actual fan-out body, guarded by the cache key's single-flight. A cache
+ * hit returns before any budget check or DataForSEO call; a cache miss checks
+ * the self-hosted budget once (in-memory counters — hosted billing is still
+ * handled per-call by the metered client, so nothing is double-counted), then
+ * runs the paid fan-out. Coalesced callers share this one execution's result
+ * or its rejection.
+ */
+async function fetchOrCoalesceBrandLookup(
+  input: BrandLookupInput,
+  detected: ReturnType<typeof detectTarget>,
+  competitorGroups: CompetitorGroup[],
+  billingCustomer: BillingCustomerContext,
+  cacheKey: string,
+) {
+  const cached = await getCached(cacheKey);
+  if (cached !== null) return cached;
+
+  await assertDataforseoBudgetAvailable();
 
   const dataforseo = createDataforseoClient(billingCustomer);
 
@@ -110,17 +143,19 @@ export async function getBrandLookup(
   if (crossSettled.status === "rejected") throw crossSettled.reason;
   const crossOutcomes = crossSettled.value;
 
-  const platformBundles: PlatformOutcome[] = settled.map((settledResult, i) => {
-    const platform = PLATFORMS[i];
-    if (settledResult.status === "fulfilled") {
-      return { platform, status: "success", bundle: settledResult.value };
-    }
-    console.error(
-      `ai-search.brand-lookup.${platform}.error:`,
-      settledResult.reason,
-    );
-    return { platform, status: "error", bundle: null };
-  });
+  const platformBundles: PlatformOutcome[] = settled.map(
+    (settledResult, i) => {
+      const platform = PLATFORMS[i];
+      if (settledResult.status === "fulfilled") {
+        return { platform, status: "success", bundle: settledResult.value };
+      }
+      console.error(
+        `ai-search.brand-lookup.${platform}.error:`,
+        settledResult.reason,
+      );
+      return { platform, status: "error", bundle: null };
+    },
+  );
 
   const result = shapeResult({
     query: input.query,

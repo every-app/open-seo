@@ -2,23 +2,28 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
 
-const { dataforseoClientMock, cacheMock } = vi.hoisted(() => ({
-  dataforseoClientMock: {
-    aiSearch: {
-      aggregatedMetrics: vi.fn(),
-      topPages: vi.fn(),
-      mentionsSearch: vi.fn(),
-      crossAggregatedMetrics: vi.fn(),
+const { dataforseoClientMock, cacheMock, budgetMock, createClientMock } =
+  vi.hoisted(() => ({
+    dataforseoClientMock: {
+      aiSearch: {
+        aggregatedMetrics: vi.fn(),
+        topPages: vi.fn(),
+        mentionsSearch: vi.fn(),
+        crossAggregatedMetrics: vi.fn(),
+      },
     },
-  },
-  cacheMock: {
-    buildCacheKey: vi.fn(async (_prefix: string, params: unknown) =>
-      JSON.stringify(params),
-    ),
-    getCached: vi.fn(),
-    setCached: vi.fn(async () => undefined),
-  },
-}));
+    cacheMock: {
+      buildCacheKey: vi.fn(async (_prefix: string, params: unknown) =>
+        JSON.stringify(params),
+      ),
+      getCached: vi.fn(),
+      setCached: vi.fn(async () => undefined),
+    },
+    budgetMock: {
+      assertDataforseoBudgetAvailable: vi.fn(async () => undefined),
+    },
+    createClientMock: vi.fn(),
+  }));
 
 vi.mock("@/server/lib/dataforseo", () => {
   return {
@@ -28,11 +33,20 @@ vi.mock("@/server/lib/dataforseo", () => {
       ({ type, value }: { type: "domain" | "keyword"; value: string }) =>
         type === "domain" ? { domain: value } : { keyword: value },
     ),
-    createDataforseoClient: vi.fn(() => dataforseoClientMock),
+    createDataforseoClient: createClientMock,
   };
 });
 
 vi.mock("@/server/lib/r2-cache", () => cacheMock);
+vi.mock("@/server/lib/seo-data/cost-tracker", () => budgetMock);
+// Real single-flight implementation — the coalescing tests exercise it.
+vi.mock("@/server/lib/seo-data/single-flight", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return actual;
+});
+
+import { clearSingleFlight } from "@/server/lib/seo-data/single-flight";
+import { BudgetExceededError } from "@/server/lib/seo-data/errors";
 
 import { getBrandLookup } from "./brandLookup";
 import { shapeResult, type ShapeArgs } from "./brandLookupShaping";
@@ -103,8 +117,11 @@ function baseArgs(overrides: Partial<ShapeArgs>): ShapeArgs {
 
 function resetBrandLookupMocks(): void {
   vi.clearAllMocks();
+  createClientMock.mockReturnValue(dataforseoClientMock);
+  budgetMock.assertDataforseoBudgetAvailable.mockResolvedValue(undefined);
   cacheMock.getCached.mockResolvedValue(null);
   cacheMock.setCached.mockResolvedValue(undefined);
+  clearSingleFlight();
   dataforseoClientMock.aiSearch.aggregatedMetrics.mockResolvedValue({
     platform: [{ key: "google", mentions: 5, ai_search_volume: 50 }],
   });
@@ -269,6 +286,140 @@ function citedMention(
     sources: urls.map((url) => ({ url })),
   };
 }
+
+function brandLookupInput(overrides: {
+  query?: string;
+  competitors?: string[];
+} = {}) {
+  return {
+    projectId: "project_123",
+    query: overrides.query ?? "acme.com",
+    competitors: overrides.competitors ?? [],
+    locationCode: 2840,
+    languageCode: "en",
+  };
+}
+
+describe("getBrandLookup cost containment", () => {
+  it("serves a cached result with zero DataForSEO calls", async () => {
+    resetBrandLookupMocks();
+    cacheMock.getCached.mockResolvedValueOnce({
+      ...shapeResult(baseArgs({})),
+      query: "acme.com",
+      resolvedTarget: "acme",
+    });
+
+    const result = await getBrandLookup(brandLookupInput(), billingCustomer);
+
+    expect(result.hasData).toBe(true);
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(
+      dataforseoClientMock.aiSearch.aggregatedMetrics,
+    ).not.toHaveBeenCalled();
+    expect(budgetMock.assertDataforseoBudgetAvailable).not.toHaveBeenCalled();
+  });
+
+  it("coalesces identical concurrent cache misses into one fan-out", async () => {
+    resetBrandLookupMocks();
+
+    const [a, b, c] = await Promise.all([
+      getBrandLookup(brandLookupInput(), billingCustomer),
+      getBrandLookup(brandLookupInput(), billingCustomer),
+      getBrandLookup(brandLookupInput(), billingCustomer),
+    ]);
+
+    // One fan-out: one client, one set of paid calls, one cache write.
+    expect(createClientMock).toHaveBeenCalledTimes(1);
+    expect(dataforseoClientMock.aiSearch.aggregatedMetrics).toHaveBeenCalledTimes(
+      2,
+    );
+    expect(cacheMock.setCached).toHaveBeenCalledTimes(1);
+    for (const result of [a, b, c]) {
+      expect(result.hasData).toBe(true);
+    }
+  });
+
+  it("does not coalesce lookups across organizations", async () => {
+    resetBrandLookupMocks();
+    const otherOrg: BillingCustomerContext = {
+      organizationId: "org_456",
+      userId: "user_456",
+      userEmail: "bob@example.com",
+    };
+
+    await Promise.all([
+      getBrandLookup(brandLookupInput(), billingCustomer),
+      getBrandLookup(brandLookupInput(), otherOrg),
+    ]);
+
+    // Two independent fan-outs → two clients.
+    expect(createClientMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not coalesce lookups with different targets or competitors", async () => {
+    resetBrandLookupMocks();
+
+    await Promise.all([
+      getBrandLookup(brandLookupInput({ query: "acme.com" }), billingCustomer),
+      getBrandLookup(
+        brandLookupInput({ query: "acme.com", competitors: ["globex.com"] }),
+        billingCustomer,
+      ),
+      getBrandLookup(brandLookupInput({ query: "globex.com" }), billingCustomer),
+    ]);
+
+    expect(createClientMock).toHaveBeenCalledTimes(3);
+  });
+
+  it("fans out normally when the budget is available", async () => {
+    resetBrandLookupMocks();
+
+    await getBrandLookup(brandLookupInput(), billingCustomer);
+
+    expect(budgetMock.assertDataforseoBudgetAvailable).toHaveBeenCalledTimes(1);
+    expect(dataforseoClientMock.aiSearch.aggregatedMetrics).toHaveBeenCalledTimes(
+      2,
+    );
+  });
+
+  it("fails before any DataForSEO call when the budget is exhausted", async () => {
+    resetBrandLookupMocks();
+    budgetMock.assertDataforseoBudgetAvailable.mockRejectedValue(
+      new BudgetExceededError("daily", 1, 1),
+    );
+
+    await expect(
+      getBrandLookup(brandLookupInput(), billingCustomer),
+    ).rejects.toThrow(BudgetExceededError);
+    expect(createClientMock).not.toHaveBeenCalled();
+    expect(
+      dataforseoClientMock.aiSearch.aggregatedMetrics,
+    ).not.toHaveBeenCalled();
+    expect(cacheMock.setCached).not.toHaveBeenCalled();
+  });
+
+  it("performs the paid calls exactly once per fan-out (no duplicate cost recording)", async () => {
+    // The metered client boundary records cost per DataForSEO call. Exactly one
+    // client per fan-out means exactly one charge sequence per logical lookup.
+    resetBrandLookupMocks();
+
+    await Promise.all([
+      getBrandLookup(
+        brandLookupInput({ competitors: ["globex.com"] }),
+        billingCustomer,
+      ),
+      getBrandLookup(
+        brandLookupInput({ competitors: ["globex.com"] }),
+        billingCustomer,
+      ),
+    ]);
+
+    expect(createClientMock).toHaveBeenCalledTimes(1);
+    expect(
+      dataforseoClientMock.aiSearch.crossAggregatedMetrics,
+    ).toHaveBeenCalledTimes(2);
+  });
+});
 
 function topPage(
   url: string,
