@@ -223,6 +223,8 @@ async function getDashboardGa4Summary(
     const currentMetrics = aggregateMetrics(current);
     const previousMetrics = aggregateMetrics(previous);
     const conversionEvents = conversionEventBreakdown(conversions);
+    const conversionEventsTruncated =
+      conversions.totalRowCount > conversions.rows.length;
 
     return {
       status: "ok" as const,
@@ -253,14 +255,18 @@ async function getDashboardGa4Summary(
         visits: city.sessions,
       })),
       conversionEvents: conversionEvents.events,
-      conversionEventTypeCount: conversionEvents.totalEventTypes,
+      conversionEventTypeCount: conversionEventsTruncated
+        ? null
+        : conversionEvents.totalEventTypes,
       limitedData: {
         summary:
           current.reportMetadata.hasLimitedData ||
           previous.reportMetadata.hasLimitedData,
         pages: pages.reportMetadata.hasLimitedData,
         cities: cities.reportMetadata.hasLimitedData,
-        conversions: conversions.reportMetadata.hasLimitedData,
+        conversions:
+          conversions.reportMetadata.hasLimitedData ||
+          conversionEventsTruncated,
       },
       quota: {
         current: reportContext(current),

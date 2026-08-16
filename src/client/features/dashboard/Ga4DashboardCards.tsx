@@ -126,30 +126,11 @@ export function Ga4DashboardCards({
         {data.limitedData.summary ? <LimitedDataNote /> : null}
       </CardShell>
 
-      <CardShell title="Conversion breakdown" stamp={GA4_STAMP}>
-        <RankedList
-          heading="What counted as a conversion"
-          empty="No key events were recorded for this period."
-          rows={data.conversionEvents.slice(0, 5).map((event) => ({
-            key: event.eventName,
-            primary: formatGa4EventName(event.eventName),
-            secondary: event.eventName,
-            value: formatGa4CountWithUnit(event.keyEvents, "event"),
-            subvalue: formatGa4CountWithUnit(event.users, "user"),
-          }))}
-        />
-        {data.conversionEventTypeCount > data.conversionEvents.length ? (
-          <p className="mt-3 text-xs text-base-content/55">
-            Showing the top {data.conversionEvents.length} of{" "}
-            {data.conversionEventTypeCount} active conversion types.
-          </p>
-        ) : null}
-        <p className="mt-3 text-[11px] leading-relaxed text-base-content/45">
-          Events can repeat. Analytics users are not unique CRM leads.
-          Conversion rate is the share of sessions with at least one key event.
-        </p>
-        {data.limitedData.conversions ? <LimitedDataNote /> : null}
-      </CardShell>
+      <ConversionBreakdownCard
+        events={data.conversionEvents}
+        eventTypeCount={data.conversionEventTypeCount}
+        limited={data.limitedData.conversions}
+      />
 
       <CardShell title="Popular pages & cities" stamp={GA4_STAMP}>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -177,6 +158,56 @@ export function Ga4DashboardCards({
         ) : null}
       </CardShell>
     </div>
+  );
+}
+
+export function ConversionBreakdownCard({
+  events,
+  eventTypeCount,
+  limited,
+}: {
+  events: Array<{
+    eventName: string;
+    keyEvents: number | null;
+    users: number | null;
+  }>;
+  eventTypeCount: number | null;
+  limited: boolean;
+}) {
+  return (
+    <CardShell title="Conversion breakdown" stamp={GA4_STAMP}>
+      <RankedList
+        heading="What counted as a conversion"
+        empty={
+          limited
+            ? "Google Analytics did not return a complete key-event breakdown for this period."
+            : "No key events were recorded for this period."
+        }
+        rows={events.slice(0, 5).map((event) => ({
+          key: event.eventName,
+          primary: formatGa4EventName(event.eventName),
+          secondary: event.eventName,
+          value: formatGa4CountWithUnit(event.keyEvents, "event"),
+          subvalue: formatGa4CountWithUnit(event.users, "user"),
+          wrapLabels: true,
+        }))}
+      />
+      {eventTypeCount === null && events.length > 0 ? (
+        <p className="mt-3 text-xs text-base-content/55">
+          Showing the top {events.length}; more active conversion types exist.
+        </p>
+      ) : eventTypeCount !== null && eventTypeCount > events.length ? (
+        <p className="mt-3 text-xs text-base-content/55">
+          Showing the top {events.length} of {eventTypeCount} active conversion
+          types.
+        </p>
+      ) : null}
+      <p className="mt-3 text-[11px] leading-relaxed text-base-content/45">
+        Events can repeat. Analytics users are not unique CRM leads. Conversion
+        rate is the share of sessions with at least one key event.
+      </p>
+      {limited ? <LimitedDataNote /> : null}
+    </CardShell>
   );
 }
 
@@ -259,6 +290,7 @@ function RankedList({
     secondary?: string;
     value: string;
     subvalue?: string;
+    wrapLabels?: boolean;
   }>;
 }) {
   return (
@@ -281,11 +313,15 @@ function RankedList({
                 {index + 1}
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium">
+                <span
+                  className={`block font-medium ${row.wrapLabels ? "break-words" : "truncate"}`}
+                >
                   {row.primary}
                 </span>
                 {row.secondary ? (
-                  <span className="block truncate text-xs text-base-content/50">
+                  <span
+                    className={`block text-xs text-base-content/50 ${row.wrapLabels ? "break-all" : "truncate"}`}
+                  >
                     {row.secondary}
                   </span>
                 ) : null}

@@ -163,4 +163,29 @@ describe("GA4 dashboard conversion events", () => {
       },
     });
   });
+
+  it("does not claim an exact event-type total when Google truncates rows", async () => {
+    mocks.runReport.mockImplementation(async (request) => {
+      if (request.dimensions[0]?.name !== "eventName") {
+        return {
+          dimensionHeaders: request.dimensions.map(({ name }) => ({ name })),
+          metricHeaders: request.metrics.map(({ name }) => ({ name })),
+          rowCount: 0,
+        };
+      }
+      return responseFor(request, [["form_submit_contact", "5", "3"]], {
+        rowCount: 1_001,
+      });
+    });
+
+    const result = await Ga4DashboardSummaryService.getDashboardGa4Summary({
+      projectId: "project_1",
+    });
+
+    expect(result.conversionEvents).toEqual([
+      { eventName: "form_submit_contact", keyEvents: 5, users: 3 },
+    ]);
+    expect(result.conversionEventTypeCount).toBeNull();
+    expect(result.limitedData.conversions).toBe(true);
+  });
 });

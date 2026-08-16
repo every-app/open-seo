@@ -45,7 +45,7 @@ describe("getGa4DashboardViewState", () => {
     ).toEqual({ kind: "hidden" });
   });
 
-  it("shows the two-card loading state for a connected project", () => {
+  it("shows the loading state for a connected project", () => {
     expect(
       getGa4DashboardViewState({
         connected: true,
