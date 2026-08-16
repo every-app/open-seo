@@ -188,3 +188,61 @@ Note: `pnpm install` completed successfully (29 min on Windows with `--node-link
 2. **Competitor D1 persistence (intentionally deferred)**: Competitors currently remain DataForSEO-backed and benefit from DataRouter caching and budget protection. The internal provider returns `ProviderUnsupportedError` for `competitors` because competitor analysis is not persisted in D1. D1 competitor snapshot persistence is a future enhancement — it would require a new table (e.g. `competitor_snapshots`) plus write-through persistence in the DataForSEO provider so a subsequent request for the same keyword set hits the internal provider for free.
 
 3. **Direct-client MCP tools**: `search_local_businesses`, `get_local_serp_results`, `get_google_business_questions`, and `find_serp_competitors` still call `createDataforseoClient` directly (with the budget guard). Routing them through the DataRouter would require new data types (`business_listings`, `local_serp`, `business_questions`) — a future enhancement.
+
+## Phase K — Route Remaining Paid Bypasses Through DataRouter
+
+Four consumers that previously bypassed the DataRouter now route through it, inheriting cache-first, free-provider preference, single-flight coalescing, and budget guarding. All four are fully tested, lint-clean, and committed on `feature/free-first-seo`:
+
+### K1 — Rank-tracking metric refresh (`db12d89`)
+`RankTrackingService.refreshKeywordMetrics` no longer builds a DataForSEO client; it calls `router.route({ dataType: "keyword_metrics", ... })` with `creditFeature: "rank_tracking"` and `constraints.locationName`.
+
+- **google-ads-provider**: gated to Google Ads markets via `getKeywordDataProvider(locationCode) === "google_ads"` (throws `ProviderUnsupportedError` for `constraints.locationName`); output normalized to `KeywordMetricRow` (`result.keyword ?? result.text`, month mapping via `monthNumberFor`) so the service contract is unchanged.
+- **internal-provider**: succeeds only when D1 covers the full requested keyword set; otherwise falls back so paid markets still get fresh metrics.
+- **dataforseo-provider**: passes `locationName` through for `keyword_metrics` calls.
+- Tested: RankTrackingService (9), internal-provider (10), dataforseo-provider (8).
+
+### K2 — Onboarding market data (`9b749a8`)
+`onboardingMarketTools` routes `get_serp_results` through the `serp` data type (`constraints` carry keyword/location/language; `creditFeature: "onboarding"`) and `find_serp_competitors` through `competitors` with `constraints: { projectId, limit: 50 }`; `createDataforseoClient` removed from the onboarding `ToolContext` (`onboardingChatTools`). Tested: `onboardingMarketTools.test.ts` (4), including per-keyword failure isolation.
+
+### K3 — Dashboard backlink refresh coalescing (`aee7444`)
+`DashboardService.ensureBacklinkSnapshot` routes through the `backlinks` data type (`dataType: "backlinks"`, `domain`, `creditFeature: "backlinks"`, `constraints: { projectId, backlinkCall: "summary" }`). The router's single-flight coalesces concurrent dashboard refreshes into one upstream call.
+
+- Snapshot insert only when the router actually paid DataForSEO (`provider === "dataforseo"`) or when no row exists yet (materializing cached data) — cached/internal refreshes over existing rows do NOT re-insert, so the dashboard's stale badge reflects real capture age.
+- 24h `SNAPSHOT_MAX_AGE_MS` early-return gate and stale-snapshot-on-provider-error behavior preserved.
+- Tested: `DashboardService.test.ts` (7).
+
+### K4 — Lighthouse read-through cache (`3713b16`)
+`fetchAndStoreLighthouseResult` dropped its 3-attempt direct-client retry loop for a single `router.route({ dataType: "site_audit", device, constraints: { lighthouse: true } })` attempt — retrying around the router would multiply paid calls. Successful results are cached (7d `site_audit` TTL); failures are not cached and return a null-score result with `errorMessage` (no R2 write).
+
+- The `site_audit` provider priority is `["local_crawler", "dataforseo"]`; `local-crawler-provider.supports()` now returns `false` when `constraints.lighthouse === true`, so Lighthouse requests fall through to DataForSEO instead of silently receiving free crawl-check payloads. The cache key includes constraints, so crawl-check and Lighthouse payloads never collide.
+- Tested: `lighthouse.test.ts` (5), `local-crawler-provider.test.ts` (3).
+
+### Follow-up (`f0d3332`)
+Silenced 4 oxlint findings in the new test files (vitest asymmetric-matcher and ToolSet-narrowing assertion patterns, matching the existing `oxlint-disable` convention).
+
+### Phase K validation
+```
+Full suite: 901/903 passed (107/108 files) — the 2 failures were load artifacts in
+  the untouched client.test.ts metering file (5000ms timeout + shared-state contention
+  under single-worker memory pressure); the file passes 21/21 in isolation.
+New/focused tests: RankTrackingService 9, internal-provider 10, dataforseo-provider 8,
+  onboardingMarketTools 4, DashboardService 7, lighthouse 5, local-crawler-provider 3
+Typecheck: PASSED (0 errors)
+Lint: PASSED (oxlint --type-aware, 0 errors)
+Build: PASSED (vite client + SSR + tsc)
+Docker: PASSED (compose config; pulled published image, container healthy;
+  /api/health 200, homepage SSR 200, /mcp initialize returns valid JSON-RPC with tools capability)
+Direct createDataforseoClient verified absent from all four targeted areas.
+```
+
+### DataForSEO calls still required (unchanged by Phase K)
+- Backlinks detail endpoints via `backlinksServiceData` (`history`, `rows`, `referring_domains`, `domain_pages`) — already router-routed, still paid when cache/internal miss.
+- MCP `dataforseo-research-tools` remaining direct tools (business listings, local SERP, business questions — plus the budget-guarded direct calls).
+- AI-search `brandLookup` / `promptExplorer`.
+- Rank-check workflows (`rankCheckPaths`, `RankCheckWorkflow`) — scheduled SERP position checks.
+
+### Future opportunities (explicitly out of Phase K scope)
+- Route local business listings / local SERP / business questions through new data types (needs new providers).
+- D1 persistence for `serp` snapshots (per-keyword) and `domain_keywords` rows, making the internal provider a free source for repeats.
+- Persistent budget accounting per organization (currently in-memory counters).
+- Route rank-check workflow collection through the `serp` data type with D1-backed snapshots.
