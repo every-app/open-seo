@@ -2,6 +2,8 @@ import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
+import type { SerpLiveItem } from "@/server/lib/dataforseo";
 import { isLabsLocationCode, LOCATIONS } from "@/shared/keyword-locations";
 import type { ToolContext } from "@/server/features/onboarding/onboardingChatTools";
 
@@ -9,7 +11,7 @@ import type { ToolContext } from "@/server/features/onboarding/onboardingChatToo
 // competitors, competitor keywords, backlinks). These cost more credits, so the
 // system prompt tells Sam to use them sparingly.
 export function marketTools(ctx: ToolContext): ToolSet {
-  const { project, organizationId, billingCustomer, metering, dfsClient } = ctx;
+  const { project, organizationId, billingCustomer, metering } = ctx;
   const { isSameDomain } = ctx;
   return {
     get_domain_overview: tool({
@@ -71,19 +73,22 @@ export function marketTools(ctx: ToolContext): ToolSet {
           .describe("1-3 search queries to inspect."),
       }),
       execute: async ({ keywords }) => {
+        const router = getSeoDataRouter();
         const results = await Promise.all(
           keywords.map(async (keyword) => {
             try {
-              const items = await dfsClient.serp.live({
+              const response = await router.route<SerpLiveItem[]>({
+                dataType: "serp",
                 keyword,
                 locationCode: project.locationCode,
                 languageCode: project.languageCode,
+                billingCustomer,
                 creditFeature: "onboarding",
               });
               return {
                 keyword,
                 ok: true as const,
-                results: items
+                results: response.data
                   .filter((item) => item.type === "organic")
                   .slice(0, 10)
                   .map((item) => ({
@@ -125,14 +130,26 @@ export function marketTools(ctx: ToolContext): ToolSet {
           };
         }
         try {
-          const competitors = await dfsClient.labs.serpCompetitors({
+          const response = await getSeoDataRouter().route<
+            Array<{
+              domain?: string | null;
+              keywords_count?: number | null;
+              avg_position?: number | null;
+              etv?: number | null;
+            }>
+          >({
+            dataType: "competitors",
             keywords,
             locationCode: project.locationCode,
             languageCode: project.languageCode,
-            limit: 50,
+            billingCustomer,
             creditFeature: "onboarding",
+            constraints: {
+              projectId: project.id,
+              limit: 50,
+            },
           });
-          const top = competitors
+          const top = response.data
             .filter((c) => !isSameDomain(c.domain))
             .toSorted((a, b) => (b.etv ?? 0) - (a.etv ?? 0))
             .slice(0, 10)
