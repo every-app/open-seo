@@ -138,6 +138,84 @@ describe("SeoCacheService", () => {
         await SeoCacheService.buildKey(reqB),
       );
     });
+
+    it("shares backlink summary keys across projects in one organization", async () => {
+      const reqA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "backlinks",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a", backlinkCall: "summary" },
+      };
+      const reqB = {
+        ...reqA,
+        constraints: { backlinkCall: "summary" },
+      };
+      const reqC = {
+        ...reqA,
+        constraints: { projectId: "project-c", backlinkCall: "summary" },
+      };
+
+      const keyA = await SeoCacheService.buildKey(reqA);
+      expect(keyA).toBe(await SeoCacheService.buildKey(reqB));
+      expect(keyA).toBe(await SeoCacheService.buildKey(reqC));
+    });
+
+    it("keeps backlink summary cache keys isolated by organization", async () => {
+      const reqA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "backlinks",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a", backlinkCall: "summary" },
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+        billingCustomer: { organizationId: "org-a" } as never,
+      };
+      const reqB = {
+        ...reqA,
+        constraints: { backlinkCall: "summary" },
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+        billingCustomer: { organizationId: "org-b" } as never,
+      };
+
+      expect(await SeoCacheService.buildKey(reqA)).not.toBe(
+        await SeoCacheService.buildKey(reqB),
+      );
+    });
+
+    it("keeps non-summary backlink operations project-sensitive in the key", async () => {
+      const rowsA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "backlinks",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a", backlinkCall: "rows", limit: 50 },
+      };
+      const rowsB = {
+        ...rowsA,
+        constraints: { backlinkCall: "rows", limit: 50 },
+      };
+      const historyA: SEODataRequest = {
+        ...baseRequest,
+        dataType: "backlinks",
+        keyword: undefined,
+        domain: "example.com",
+        dateFrom: "2026-01-01",
+        dateTo: "2026-02-01",
+        constraints: { projectId: "project-a", backlinkCall: "history" },
+      };
+      const historyB = {
+        ...historyA,
+        constraints: { backlinkCall: "history" },
+      };
+
+      expect(await SeoCacheService.buildKey(rowsA)).not.toBe(
+        await SeoCacheService.buildKey(rowsB),
+      );
+      expect(await SeoCacheService.buildKey(historyA)).not.toBe(
+        await SeoCacheService.buildKey(historyB),
+      );
+    });
   });
 
   describe("get", () => {

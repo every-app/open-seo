@@ -26,6 +26,19 @@ async function buildKey(request: SEODataRequest): Promise<string> {
   if (request.dataType === "domain_overview" && constraints) {
     delete constraints.projectId;
   }
+  // A backlink *summary* call bills and returns purely on the domain target —
+  // `projectId` in constraints is routing metadata (see
+  // dataforseo-provider#routeBacklinksRequest) and does not affect the paid
+  // result. Dropping it lets the dashboard and BacklinksService share one
+  // cached entry per (org, domain). Organization isolation is unaffected:
+  // organizationId is always part of the key below.
+  if (
+    request.dataType === "backlinks" &&
+    constraints &&
+    constraints.backlinkCall === "summary"
+  ) {
+    delete constraints.projectId;
+  }
 
   const params: Record<string, unknown> = {
     dataType: request.dataType,
