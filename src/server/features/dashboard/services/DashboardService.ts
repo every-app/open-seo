@@ -7,9 +7,9 @@ import { GscConnectionRepository } from "@/server/features/gsc/repositories/GscC
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { getLatestResults } from "@/server/features/rank-tracking/services/rankTrackingResults";
 import {
-  createDataforseoClient,
   normalizeBacklinksTarget,
 } from "@/server/lib/dataforseo";
+import { getSeoDataRouter } from "@/server/lib/seo-data";
 
 // Daily cadence: fresh numbers each visit without per-visit spend; a dormant
 // project costs nothing because refreshes are visit-triggered.
@@ -207,14 +207,70 @@ async function getBacklinkSummary(
 }
 
 /**
- * Visit-triggered snapshot refresh. Fetches only the DataForSEO backlinks
- * summary (not the history endpoint the backlinks page also pays for) and is
- * a no-op while the latest snapshot for the current domain is under a day
- * old. Concurrent loads racing the freshness check can each pay a metered
- * call — every call is metered, so the race duplicates customer spend on
- * identical data but never leaks revenue; accepted for now. On a fetch
- * failure with a stale snapshot in hand, the stale snapshot is returned
- * rather than surfacing an error card.
+ * Backlink summary payload as returned by the router: the DataForSEO provider
+ * yields snake_case fields (with DataForSEO's `reffering` typo fallbacks), the
+ * internal provider yields camelCase rows. Both are mapped into the fields the
+ * snapshot repository insert expects.
+ */
+type BacklinkSummaryItem = {
+  rank?: number | null;
+  backlinks?: number | null;
+  referring_domains?: number | null;
+  referringDomains?: number | null;
+  broken_backlinks?: number | null;
+  brokenBacklinks?: number | null;
+  new_backlinks?: number | null;
+  newBacklinks?: number | null;
+  lost_backlinks?: number | null;
+  lostBacklinks?: number | null;
+  new_referring_domains?: number | null;
+  new_reffering_domains?: number | null;
+  newReferringDomains?: number | null;
+  lost_referring_domains?: number | null;
+  lost_reffering_domains?: number | null;
+  lostReferringDomains?: number | null;
+};
+
+function toSummaryFields(
+  item: BacklinkSummaryItem,
+): Omit<
+  Parameters<typeof BacklinkSnapshotRepository.insert>[0],
+  "projectId" | "domain" | "capturedAt"
+> {
+  return {
+    rank: item.rank ?? null,
+    backlinks: item.backlinks ?? null,
+    referringDomains:
+      item.referringDomains ?? item.referring_domains ?? null,
+    brokenBacklinks: item.brokenBacklinks ?? item.broken_backlinks ?? null,
+    newBacklinks: item.newBacklinks ?? item.new_backlinks ?? null,
+    lostBacklinks: item.lostBacklinks ?? item.lost_backlinks ?? null,
+    newReferringDomains:
+      item.newReferringDomains ??
+      item.new_referring_domains ??
+      item.new_reffering_domains ??
+      null,
+    lostReferringDomains:
+      item.lostReferringDomains ??
+      item.lost_referring_domains ??
+      item.lost_reffering_domains ??
+      null,
+  };
+}
+
+/**
+ * Visit-triggered snapshot refresh. Fetches the backlinks summary through the
+ * seo data router (R2 cache → internal snapshot → DataForSEO), and is a no-op
+ * while the latest snapshot for the current domain is under a day old.
+ * Concurrent loads racing the freshness check coalesce on the router's
+ * single-flight, so identical data is paid for at most once per cache TTL. On
+ * a fetch failure with a stale snapshot in hand, the stale snapshot is
+ * returned rather than surfacing an error card.
+ *
+ * The snapshot row's capturedAt is only bumped by a genuine DataForSEO fetch
+ * (or a first-ever fetch served from the shared cache), so the dashboard's
+ * stale badge reflects the real capture age — cached refreshes never fake a
+ * fresh capture.
  */
 async function ensureBacklinkSnapshot(input: {
   projectId: string;
@@ -232,29 +288,23 @@ async function ensureBacklinkSnapshot(input: {
   }
 
   const normalized = normalizeBacklinksTarget(domain, { scope: "domain" });
-  const dataforseo = createDataforseoClient(input.billingCustomer);
 
   try {
-    const summary = await dataforseo.backlinks.summary({
-      target: normalized.apiTarget,
+    const { data, provider } = await getSeoDataRouter().route<BacklinkSummaryItem>({
+      dataType: "backlinks",
+      domain: normalized.apiTarget,
+      billingCustomer: input.billingCustomer,
+      creditFeature: "backlinks",
+      constraints: { projectId, backlinkCall: "summary" },
     });
-    await BacklinkSnapshotRepository.insert({
-      projectId,
-      domain,
-      rank: summary.rank ?? null,
-      backlinks: summary.backlinks ?? null,
-      referringDomains: summary.referring_domains ?? null,
-      brokenBacklinks: summary.broken_backlinks ?? null,
-      newBacklinks: summary.new_backlinks ?? null,
-      lostBacklinks: summary.lost_backlinks ?? null,
-      newReferringDomains:
-        summary.new_referring_domains ?? summary.new_reffering_domains ?? null,
-      lostReferringDomains:
-        summary.lost_referring_domains ??
-        summary.lost_reffering_domains ??
-        null,
-      capturedAt: new Date().toISOString(),
-    });
+    if (provider === "dataforseo" || latest === null) {
+      await BacklinkSnapshotRepository.insert({
+        projectId,
+        domain,
+        ...toSummaryFields(data),
+        capturedAt: new Date().toISOString(),
+      });
+    }
   } catch (error) {
     if (latestMatchesDomain) {
       console.error("dashboard: backlink snapshot refresh failed", error);
