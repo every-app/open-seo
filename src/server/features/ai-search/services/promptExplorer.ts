@@ -4,6 +4,9 @@ import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LlmResponseResult } from "@/server/lib/dataforseoLlmSchemas";
 import { AppError } from "@/server/lib/errors";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import { assertDataforseoBudgetAvailable } from "@/server/lib/seo-data/cost-tracker";
+import { BudgetExceededError } from "@/server/lib/seo-data/errors";
+import { singleFlight } from "@/server/lib/seo-data/single-flight";
 import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
 import {
   promptExplorerModelResultSchema,
@@ -102,14 +105,37 @@ async function runModel(
     systemPromptV: 5,
   });
 
+  // Identify concurrent runs by the exact cache key, so coalesced callers
+  // always receive the same brand-agnostic execution (org/project/model/prompt
+  // are in the key; `highlightBrand` is not — it's reapplied per caller below,
+  // so one paid answer serves every highlight).
+  const shaped = await singleFlight(cacheKey, () =>
+    fetchOrCacheModelResponse(args, cacheKey),
+  );
+
+  return reapplyHighlightBrand(shaped, args.highlightBrand);
+}
+
+/**
+ * The actual model execution, guarded by the cache key's single-flight. A
+ * cache hit returns before any budget check or paid call; a cache miss checks
+ * the self-hosted budget once (in-memory counters — hosted billing is still
+ * handled per-call by the metered client, so nothing is double-counted), then
+ * runs the paid DataForSEO call and caches the brand-agnostic result for
+ * 7 days. Coalesced callers share this one execution's result or rejection.
+ */
+async function fetchOrCacheModelResponse(
+  args: RunModelArgs,
+  cacheKey: string,
+): Promise<PromptExplorerModelResult> {
   const cached = promptExplorerModelResultSchema.safeParse(
     await getCached(cacheKey),
   );
   if (cached.success && cached.data.status === "success") {
-    // highlightBrand is not part of the cache key — re-apply it so the same
-    // cached response can power different brand highlights for free.
-    return reapplyHighlightBrand(cached.data, args.highlightBrand);
+    return cached.data;
   }
+
+  await assertDataforseoBudgetAvailable();
 
   const rawResponse = await fetchModelResponse(args);
   const shaped = shapeSuccess(args.model, rawResponse);
@@ -120,7 +146,7 @@ async function runModel(
     }),
   );
 
-  return reapplyHighlightBrand(shaped, args.highlightBrand);
+  return shaped;
 }
 
 // Each value must be a member of ACCEPTED_LLM_MODEL_NAMES in dataforseo/ai.ts,
@@ -283,6 +309,12 @@ function mapErrorToResult(
   model: PromptExplorerModel,
   reason: unknown,
 ): PromptExplorerModelResult {
+  if (reason instanceof BudgetExceededError) {
+    // The self-hosted budget guard rejects the whole exploration — no model
+    // was (or will be) paid. Surface the budget failure instead of silently
+    // degrading to per-model failures.
+    throw reason;
+  }
   if (
     reason instanceof AppError &&
     (reason.code === "INSUFFICIENT_CREDITS" ||
