@@ -7,7 +7,8 @@ import {
   Ga4MalformedResponseError,
   Ga4ReportError,
 } from "@/server/lib/ga4Errors";
-import { previousPeriod } from "./Ga4ReportEnhancements";
+import { buildGa4ReportRequest } from "./Ga4ReportDefinitions";
+import { COMPLETE_REPORT_LIMIT, previousPeriod } from "./Ga4ReportEnhancements";
 import {
   type Ga4Quota,
   type Ga4ReportMetadata,
@@ -24,6 +25,7 @@ const DASHBOARD_METRICS = [
 ] as const;
 const LIST_FETCH_LIMIT = 10;
 const LIST_RESULT_LIMIT = 3;
+const CONVERSION_EVENT_RESULT_LIMIT = 5;
 
 type DashboardMetric = (typeof DASHBOARD_METRICS)[number];
 type DashboardMetricValues = Record<DashboardMetric, number | null>;
@@ -121,6 +123,24 @@ function topCities(report: NormalizedGa4Report) {
     .slice(0, LIST_RESULT_LIMIT);
 }
 
+function conversionEventBreakdown(report: NormalizedGa4Report) {
+  const activeEvents = report.rows.flatMap((row) => {
+    const eventName = row.eventName;
+    if (!isUsefulDimension(eventName)) return [];
+    return [
+      {
+        eventName: eventName.trim(),
+        keyEvents: typeof row.keyEvents === "number" ? row.keyEvents : null,
+        users: typeof row.totalUsers === "number" ? row.totalUsers : null,
+      },
+    ];
+  });
+  return {
+    events: activeEvents.slice(0, CONVERSION_EVENT_RESULT_LIMIT),
+    totalEventTypes: activeEvents.length,
+  };
+}
+
 async function getDashboardGa4Summary(
   input: { projectId: string },
   opts: { now?: Date } = {},
@@ -153,6 +173,14 @@ async function getDashboardGa4Summary(
     dimensions: ["city"],
     metric: "sessions",
   });
+  const conversionEventsRequest = buildGa4ReportRequest({
+    kind: "key_events",
+    ...currentDateRange,
+    channel: "all",
+    breakdown: "event",
+    offset: 0,
+    limit: COMPLETE_REPORT_LIMIT,
+  });
   const client = createGa4DataClient({
     userId: connection.connectedByUserId,
     ga4AccountId: connection.ga4AccountId,
@@ -165,19 +193,22 @@ async function getDashboardGa4Summary(
       previousRequest,
       topPagesRequest,
       topCitiesRequest,
+      conversionEventsRequest,
     ]);
-    if (reports.length !== 4) throw new Ga4MalformedResponseError();
+    if (reports.length !== 5) throw new Ga4MalformedResponseError();
     const [
       currentResponse,
       previousResponse,
       topPagesResponse,
       topCitiesResponse,
+      conversionEventsResponse,
     ] = reports;
     if (
       !currentResponse ||
       !previousResponse ||
       !topPagesResponse ||
-      !topCitiesResponse
+      !topCitiesResponse ||
+      !conversionEventsResponse
     ) {
       throw new Ga4MalformedResponseError();
     }
@@ -185,8 +216,13 @@ async function getDashboardGa4Summary(
     const previous = normalizeGa4Response(previousResponse, previousRequest);
     const pages = normalizeGa4Response(topPagesResponse, topPagesRequest);
     const cities = normalizeGa4Response(topCitiesResponse, topCitiesRequest);
+    const conversions = normalizeGa4Response(
+      conversionEventsResponse,
+      conversionEventsRequest,
+    );
     const currentMetrics = aggregateMetrics(current);
     const previousMetrics = aggregateMetrics(previous);
+    const conversionEvents = conversionEventBreakdown(conversions);
 
     return {
       status: "ok" as const,
@@ -216,18 +252,22 @@ async function getDashboardGa4Summary(
         city: city.city,
         visits: city.sessions,
       })),
+      conversionEvents: conversionEvents.events,
+      conversionEventTypeCount: conversionEvents.totalEventTypes,
       limitedData: {
         summary:
           current.reportMetadata.hasLimitedData ||
           previous.reportMetadata.hasLimitedData,
         pages: pages.reportMetadata.hasLimitedData,
         cities: cities.reportMetadata.hasLimitedData,
+        conversions: conversions.reportMetadata.hasLimitedData,
       },
       quota: {
         current: reportContext(current),
         previous: reportContext(previous),
         pages: reportContext(pages),
         cities: reportContext(cities),
+        conversions: reportContext(conversions),
       },
     };
   } catch (error) {

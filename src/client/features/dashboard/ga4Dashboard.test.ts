@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   formatGa4Count,
   formatGa4CountWithUnit,
+  formatGa4EventName,
   formatGa4Rate,
   ga4DashboardHasDataForSort,
   getGa4DashboardViewState,
@@ -20,7 +21,16 @@ const summary: Extract<DashboardGa4Summary, { status: "ok" }> = {
   previous: { visits: 100, conversions: 5 },
   topPages: [{ path: "/", views: 80 }],
   topCities: [{ city: "Manila", visits: 30 }],
-  limitedData: { summary: false, pages: false, cities: false },
+  conversionEvents: [
+    { eventName: "form_submit_contact", keyEvents: 8, users: 6 },
+  ],
+  conversionEventTypeCount: 1,
+  limitedData: {
+    summary: false,
+    pages: false,
+    cities: false,
+    conversions: false,
+  },
 };
 
 describe("getGa4DashboardViewState", () => {
@@ -68,6 +78,10 @@ describe("getGa4DashboardViewState", () => {
       expect(state.data.previous).toEqual({ visits: 100, conversions: 5 });
       expect(state.data.topPages).toEqual([{ path: "/", views: 80 }]);
       expect(state.data.topCities).toEqual([{ city: "Manila", visits: 30 }]);
+      expect(state.data.conversionEvents).toEqual([
+        { eventName: "form_submit_contact", keyEvents: 8, users: 6 },
+      ]);
+      expect(state.data.conversionEventTypeCount).toBe(1);
     }
   });
 
@@ -138,7 +152,14 @@ describe("getGa4DashboardViewState", () => {
         },
         topPages: [],
         topCities: [],
-        limitedData: { summary: true, pages: true, cities: true },
+        conversionEvents: [],
+        conversionEventTypeCount: 0,
+        limitedData: {
+          summary: true,
+          pages: true,
+          cities: true,
+          conversions: true,
+        },
       },
     });
 
@@ -215,5 +236,11 @@ describe("GA4 metric formatting", () => {
     expect(formatGa4CountWithUnit(1, "view")).toBe("1 view");
     expect(formatGa4CountWithUnit(1200, "visit")).toBe("1,200 visits");
     expect(formatGa4CountWithUnit(null, "view")).toBe("—");
+    expect(formatGa4EventName("form_submit_contact")).toBe(
+      "Contact form submission",
+    );
+    expect(formatGa4EventName("form_submit")).toBe("Form submission");
+    expect(formatGa4EventName("phone-click_sales")).toBe("Sales phone click");
+    expect(formatGa4EventName("purchase")).toBe("Purchase");
   });
 });

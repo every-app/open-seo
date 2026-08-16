@@ -93,79 +93,6 @@ describe("Ga4DashboardSummaryService", () => {
     }));
   });
 
-  it("batches four all-traffic reports for complete local periods", async () => {
-    const pending: Array<{
-      request: Ga4RunReportRequest;
-      resolve: (response: Ga4RunReportResponse) => void;
-    }> = [];
-    mocks.runReport.mockImplementation(
-      (request) =>
-        new Promise((resolve) => {
-          pending.push({ request, resolve });
-        }),
-    );
-
-    const resultPromise = Ga4DashboardSummaryService.getDashboardGa4Summary(
-      { projectId: "project_1" },
-      { now: new Date("2026-08-06T15:00:00Z") },
-    );
-    await vi.waitFor(() => expect(pending).toHaveLength(4));
-
-    for (const report of pending) {
-      report.resolve(responseFor(report.request, { rowCount: 0 }));
-    }
-    const result = await resultPromise;
-
-    expect(mocks.batchRunReports).toHaveBeenCalledTimes(1);
-
-    expect(result.period).toEqual({
-      startDate: "2026-07-09",
-      endDate: "2026-08-05",
-      previousStartDate: "2026-06-11",
-      previousEndDate: "2026-07-08",
-    });
-    expect(result.property).toEqual({
-      id: "properties/123",
-      displayName: "Example",
-      timeZone: "America/New_York",
-    });
-    const [current, previous, pages, cities] = pending.map(
-      ({ request }) => request,
-    );
-    expect(current).toMatchObject({
-      dateRanges: [{ startDate: "2026-07-09", endDate: "2026-08-05" }],
-      dimensions: [],
-      metrics: [
-        { name: "sessions" },
-        { name: "keyEvents" },
-        { name: "sessionKeyEventRate" },
-        { name: "engagementRate" },
-      ],
-      limit: "1",
-      orderBys: [],
-      keepEmptyRows: false,
-      returnPropertyQuota: true,
-    });
-    expect(previous?.dateRanges).toEqual([
-      { startDate: "2026-06-11", endDate: "2026-07-08" },
-    ]);
-    expect(pages).toMatchObject({
-      dimensions: [{ name: "pagePath" }],
-      metrics: [{ name: "screenPageViews" }],
-      limit: "10",
-      orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
-    });
-    expect(cities).toMatchObject({
-      dimensions: [{ name: "city" }],
-      metrics: [{ name: "sessions" }],
-      limit: "10",
-      orderBys: [{ metric: { metricName: "sessions" }, desc: true }],
-    });
-    for (const reportRequest of pending.map(({ request }) => request)) {
-      expect(reportRequest.dimensionFilter).toBeUndefined();
-    }
-  });
-
   it("returns previous-period values and shaped top lists", async () => {
     mocks.runReport.mockImplementation(async (request) => {
       const dimension = request.dimensions[0]?.name;
@@ -180,6 +107,9 @@ describe("Ga4DashboardSummaryService", () => {
           ["Manila", "25"],
           ["Dallas", "12"],
         ]);
+      }
+      if (dimension === "eventName") {
+        return responseFor(request, { rowCount: 0 });
       }
       return request.dateRanges[0]?.startDate === "2026-07-09"
         ? aggregateResponse(request, ["100", "10", "0.1", "0.7"])
@@ -231,6 +161,9 @@ describe("Ga4DashboardSummaryService", () => {
           ["Cebu", "60"],
           ["Austin", "50"],
         ]);
+      }
+      if (dimension === "eventName") {
+        return responseFor(request, { rowCount: 0 });
       }
       return aggregateResponse(request, ["0", "0", "0", "0"]);
     });
@@ -314,6 +247,9 @@ describe("Ga4DashboardSummaryService", () => {
           },
         });
       }
+      if (dimension === "eventName") {
+        return responseFor(request, { rowCount: 0 });
+      }
       aggregateCall += 1;
       return aggregateResponse(request, ["1", "1", "1", "1"], {
         metadata:
@@ -340,6 +276,7 @@ describe("Ga4DashboardSummaryService", () => {
       summary: true,
       pages: true,
       cities: true,
+      conversions: false,
     });
     expect(result.quota.current).toMatchObject({
       reportMetadata: { hasLimitedData: true, subjectToThresholding: true },

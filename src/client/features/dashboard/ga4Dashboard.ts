@@ -13,6 +13,8 @@ export type DashboardGa4Summary =
       | "previous"
       | "topPages"
       | "topCities"
+      | "conversionEvents"
+      | "conversionEventTypeCount"
       | "limitedData"
     >
   | Extract<DashboardGa4SummaryResult, { status: "error" }>;
@@ -37,7 +39,13 @@ type Ga4DashboardViewState =
       kind: "success";
       data: Pick<
         SuccessfulDashboardGa4Summary,
-        "metrics" | "previous" | "topPages" | "topCities" | "limitedData"
+        | "metrics"
+        | "previous"
+        | "topPages"
+        | "topCities"
+        | "conversionEvents"
+        | "conversionEventTypeCount"
+        | "limitedData"
       >;
       summaryUnavailable: boolean;
     };
@@ -78,6 +86,8 @@ export function getGa4DashboardViewState(
     previous: response.previous,
     topPages: response.topPages,
     topCities: response.topCities,
+    conversionEvents: response.conversionEvents,
+    conversionEventTypeCount: response.conversionEventTypeCount,
     limitedData: response.limitedData,
   };
   return {
@@ -142,4 +152,27 @@ export function formatGa4Rate(value: number | null): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: 1,
   });
+}
+
+function titleCaseGa4EventParts(parts: string[]): string {
+  return parts
+    .map((part) => `${part.charAt(0).toUpperCase()}${part.slice(1)}`)
+    .join(" ");
+}
+
+export function formatGa4EventName(eventName: string): string {
+  const parts = eventName
+    .trim()
+    .split(/[_\s-]+/)
+    .filter(Boolean);
+
+  if (parts[0] === "form" && parts[1] === "submit") {
+    const detail = titleCaseGa4EventParts(parts.slice(2));
+    return detail ? `${detail} form submission` : "Form submission";
+  }
+  if (parts[0] === "phone" && parts[1] === "click") {
+    const detail = titleCaseGa4EventParts(parts.slice(2));
+    return detail ? `${detail} phone click` : "Phone click";
+  }
+  return titleCaseGa4EventParts(parts);
 }

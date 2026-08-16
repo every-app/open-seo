@@ -10,6 +10,7 @@ import {
 import {
   formatGa4Count,
   formatGa4CountWithUnit,
+  formatGa4EventName,
   formatGa4Rate,
   getGa4DashboardViewState,
 } from "@/client/features/dashboard/ga4Dashboard";
@@ -48,6 +49,7 @@ export function Ga4DashboardCards({
     return (
       <div className="contents" aria-busy>
         <Ga4CardSkeleton title="Google Analytics" />
+        <Ga4CardSkeleton title="Conversion breakdown" />
         <Ga4CardSkeleton title="Popular pages & cities" />
       </div>
     );
@@ -122,6 +124,31 @@ export function Ga4DashboardCards({
           </p>
         ) : null}
         {data.limitedData.summary ? <LimitedDataNote /> : null}
+      </CardShell>
+
+      <CardShell title="Conversion breakdown" stamp={GA4_STAMP}>
+        <RankedList
+          heading="What counted as a conversion"
+          empty="No key events were recorded for this period."
+          rows={data.conversionEvents.slice(0, 5).map((event) => ({
+            key: event.eventName,
+            primary: formatGa4EventName(event.eventName),
+            secondary: event.eventName,
+            value: formatGa4CountWithUnit(event.keyEvents, "event"),
+            subvalue: formatGa4CountWithUnit(event.users, "user"),
+          }))}
+        />
+        {data.conversionEventTypeCount > data.conversionEvents.length ? (
+          <p className="mt-3 text-xs text-base-content/55">
+            Showing the top {data.conversionEvents.length} of{" "}
+            {data.conversionEventTypeCount} active conversion types.
+          </p>
+        ) : null}
+        <p className="mt-3 text-[11px] leading-relaxed text-base-content/45">
+          Events can repeat. Analytics users are not unique CRM leads.
+          Conversion rate is the share of sessions with at least one key event.
+        </p>
+        {data.limitedData.conversions ? <LimitedDataNote /> : null}
       </CardShell>
 
       <CardShell title="Popular pages & cities" stamp={GA4_STAMP}>
@@ -231,6 +258,7 @@ function RankedList({
     primary: string;
     secondary?: string;
     value: string;
+    subvalue?: string;
   }>;
 }) {
   return (
@@ -262,8 +290,13 @@ function RankedList({
                   </span>
                 ) : null}
               </span>
-              <span className="shrink-0 tabular-nums text-base-content/65">
-                {row.value}
+              <span className="shrink-0 text-right tabular-nums text-base-content/65">
+                <span className="block">{row.value}</span>
+                {row.subvalue ? (
+                  <span className="block text-xs text-base-content/50">
+                    {row.subvalue}
+                  </span>
+                ) : null}
               </span>
             </li>
           ))}
