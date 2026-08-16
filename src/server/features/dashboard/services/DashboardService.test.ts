@@ -137,6 +137,7 @@ describe("DashboardService.ensureBacklinkSnapshot", () => {
         lostBacklinks: 2,
         newReferringDomains: 6,
         lostReferringDomains: 1,
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- Vitest asymmetric matcher
         capturedAt: expect.any(String),
       }),
     );
@@ -183,6 +184,7 @@ describe("DashboardService.ensureBacklinkSnapshot", () => {
         backlinks: 300,
         referringDomains: 120,
         newBacklinks: 5,
+        // oxlint-disable-next-line typescript/no-unsafe-assignment -- Vitest asymmetric matcher
         capturedAt: expect.any(String),
       }),
     );

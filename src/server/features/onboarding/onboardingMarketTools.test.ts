@@ -44,6 +44,7 @@ const competitorItems = [
 ];
 
 function buildTools(overrides: Partial<typeof project> = {}) {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test helper narrows ToolSet to the tools under test
   return marketTools({
     project: { ...project, ...overrides },
     organizationId: "org_1",
@@ -153,6 +154,7 @@ describe("marketTools.get_serp_results", () => {
         {
           keyword: "seo tool",
           ok: true,
+          // oxlint-disable-next-line typescript/no-unsafe-assignment -- Vitest asymmetric matcher
           results: expect.any(Array),
         },
         {
