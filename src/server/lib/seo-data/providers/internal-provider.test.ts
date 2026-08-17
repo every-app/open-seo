@@ -56,9 +56,7 @@ function fakeSelectChain(rows: unknown[]) {
 function fakeKeywordMetricsSelect(rows: unknown[]) {
   mocks.db.select.mockReturnValue({
     from: vi.fn().mockReturnValue({
-      where: vi.fn().mockReturnValue({
-        limit: vi.fn().mockResolvedValue(rows),
-      }),
+      where: vi.fn().mockResolvedValue(rows),
     }),
   });
 }
@@ -221,6 +219,85 @@ describe("internal provider — keyword metrics", () => {
       }),
     ).rejects.toThrow("not scoped to a local location name");
     expect(mocks.db.select).not.toHaveBeenCalled();
+  });
+
+  it("finds the requested keyword even when D1 has many unrelated rows", async () => {
+    // The query now filters by inArray(keyword, requestedKeywords), so
+    // unrelated rows never enter the result set. Simulate a large table by
+    // returning only the matching row (the SQL filter would have excluded
+    // the rest).
+    fakeKeywordMetricsSelect([
+      { keyword: "one", searchVolume: 10 },
+      { keyword: "two", searchVolume: 20 },
+    ]);
+
+    const result = await provider.get(request);
+
+    expect(result).toHaveLength(2);
+    expect(result).toEqual([
+      expect.objectContaining({ keyword: "one", searchVolume: 10 }),
+      expect.objectContaining({ keyword: "two", searchVolume: 20 }),
+    ]);
+  });
+
+  it("finds a single requested keyword among many D1 rows", async () => {
+    fakeKeywordMetricsSelect([
+      { keyword: "needle", searchVolume: 999 },
+    ]);
+
+    const result = await provider.get({
+      ...request,
+      keywords: ["needle"],
+    });
+
+    expect(result).toEqual([
+      expect.objectContaining({ keyword: "needle", searchVolume: 999 }),
+    ]);
+  });
+
+  it("does not cross-match across different location codes", async () => {
+    // D1 returns rows for location 2840 only; requesting location 2784
+    // should get no rows back and fall through.
+    fakeKeywordMetricsSelect([]);
+
+    await expect(
+      provider.get({
+        ...request,
+        locationCode: 2784,
+      }),
+    ).rejects.toThrow("Stored keyword metrics do not cover the full request");
+  });
+
+  it("does not cross-match across different language codes", async () => {
+    fakeKeywordMetricsSelect([]);
+
+    await expect(
+      provider.get({
+        ...request,
+        languageCode: "ar",
+      }),
+    ).rejects.toThrow("Stored keyword metrics do not cover the full request");
+  });
+
+  it("respects project isolation — does not serve another project's keywords", async () => {
+    // D1 returns rows for project-1; requesting with project-2 should
+    // get no rows and fall through.
+    fakeKeywordMetricsSelect([]);
+
+    await expect(
+      provider.get({
+        ...request,
+        constraints: { projectId: "project-2" },
+      }),
+    ).rejects.toThrow("Stored keyword metrics do not cover the full request");
+  });
+
+  it("falls through on empty D1", async () => {
+    fakeKeywordMetricsSelect([]);
+
+    await expect(provider.get(request)).rejects.toThrow(
+      "Stored keyword metrics do not cover the full request",
+    );
   });
 });
 

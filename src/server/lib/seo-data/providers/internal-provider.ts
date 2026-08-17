@@ -1,6 +1,6 @@
 import { db } from "@/db";
 import { keywordMetrics, backlinkSnapshots, rankSnapshots } from "@/db/schema";
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import type { SEODataProvider, SEODataRequest } from "../types";
 import { ProviderUnsupportedError } from "../errors";
 import { getLatestCompetitorSnapshot } from "../competitor-snapshot-repository";
@@ -116,7 +116,11 @@ async function getInternalDomainOverview(
 }
 
 /**
- * Read keyword metrics from the D1 keyword_metrics table.
+ * Read keyword metrics from the D1 keyword_metrics table. Filters by the
+ * exact requested keyword set (via inArray) so the query returns only
+ * relevant rows regardless of how many other keywords share the same
+ * location/language. A case-insensitive post-filter handles casing drift
+ * between caller and stored data.
  */
 async function getInternalKeywordMetrics(
   request: SEODataRequest,
@@ -148,6 +152,7 @@ async function getInternalKeywordMetrics(
   const conditions = [
     eq(keywordMetrics.locationCode, locationCode),
     eq(keywordMetrics.languageCode, languageCode),
+    inArray(keywordMetrics.keyword, keywords),
   ];
 
   if (projectId) {
@@ -157,8 +162,7 @@ async function getInternalKeywordMetrics(
   const rows = await db
     .select()
     .from(keywordMetrics)
-    .where(and(...conditions))
-    .limit(keywords.length * 2);
+    .where(and(...conditions));
 
   const keywordSet = new Set(keywords.map((k) => k.toLowerCase()));
   const filtered = rows.filter((r) => keywordSet.has(r.keyword.toLowerCase()));
