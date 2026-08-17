@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   setCached: vi.fn<
     (key: string, data: unknown, ttl: number) => Promise<void>
   >(async () => {}),
+  db: { select: vi.fn(), insert: vi.fn() },
 }));
 
 vi.mock("@/server/lib/r2-cache", () => ({
@@ -32,7 +33,11 @@ vi.mock("@/server/lib/r2-cache", () => ({
   CACHE_TTL: { researchResult: 86400 },
 }));
 
+vi.mock("@/db", () => ({ db: mocks.db }));
+
 vi.mock("cloudflare:workers", () => ({ env: {} }));
+
+import { createInternalProvider } from "./providers/internal-provider";
 
 function makeProvider(
   name: string,
@@ -61,6 +66,20 @@ function makeRequest(
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
     billingCustomer: { organizationId: "org-1" } as never,
     ...overrides,
+  };
+}
+
+function makeBacklinksRequest(
+  constraints: Record<string, unknown>,
+): SEODataRequest {
+  return {
+    dataType: "backlinks",
+    domain: "powersiment.ae",
+    locationCode: 2784,
+    languageCode: "ar",
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- test-only BillingCustomerContext mock
+    billingCustomer: { organizationId: "org-1" } as never,
+    constraints,
   };
 }
 
@@ -183,5 +202,126 @@ describe("DataRouter", () => {
     expect(res3.data).toEqual({ items: ["dfs"] });
     // The provider should only be called once (single-flight coalescing)
     expect(dfsGet).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("DataRouter — backlinks provider selection (internal vs DataForSEO)", () => {
+  // The internal provider is the real one; the paid provider is mocked —
+  // these tests assert provider *selection*, not DataForSEO behavior.
+  const BACKLINK_SNAPSHOT_ROW = {
+    domain: "powersiment.ae",
+    rank: 28,
+    backlinks: 151,
+    referringDomains: 38,
+    brokenBacklinks: 15,
+    newBacklinks: null,
+    lostBacklinks: null,
+    newReferringDomains: null,
+    lostReferringDomains: null,
+    capturedAt: "2026-08-16T00:05:07.120Z",
+  };
+
+  function fakeBacklinkSelect(rows: unknown[]) {
+    mocks.db.select.mockReturnValue({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          orderBy: vi.fn().mockReturnValue({
+            limit: vi.fn().mockResolvedValue(rows),
+          }),
+        }),
+      }),
+    });
+  }
+
+  const dataforseoGet = vi.fn(async () => ({ items: [], totalCount: 0 }));
+  let router: DataRouter;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getCached.mockResolvedValue(null);
+    resetProviderConfigCache();
+    resetBudgetConfigCache();
+    resetCostCounters();
+    clearSingleFlight();
+    router = new DataRouter();
+    router.register(createInternalProvider());
+    router.register({
+      name: "dataforseo",
+      supports: () => true,
+      get: dataforseoGet,
+    });
+  });
+
+  it("serves backlink summary from the internal snapshot — no DataForSEO", async () => {
+    fakeBacklinkSelect([BACKLINK_SNAPSHOT_ROW]);
+
+    const response = await router.route(
+      makeBacklinksRequest({ backlinkCall: "summary", projectId: "project-1" }),
+    );
+
+    expect(response.data).toMatchObject({ referring_domains: 38 });
+    expect(response.provider).toBe("provider");
+    expect(dataforseoGet).not.toHaveBeenCalled();
+  });
+
+  it("routes history to DataForSEO even when a snapshot exists", async () => {
+    fakeBacklinkSelect([BACKLINK_SNAPSHOT_ROW]);
+
+    const response = await router.route(
+      makeBacklinksRequest({ backlinkCall: "history", projectId: "project-1" }),
+    );
+
+    expect(dataforseoGet).toHaveBeenCalledTimes(1);
+    expect(response.data).toEqual({ items: [], totalCount: 0 });
+  });
+
+  it("routes rows to DataForSEO even when a snapshot exists", async () => {
+    fakeBacklinkSelect([BACKLINK_SNAPSHOT_ROW]);
+
+    await router.route(
+      makeBacklinksRequest({
+        backlinkCall: "rows",
+        projectId: "project-1",
+        limit: 50,
+      }),
+    );
+
+    expect(dataforseoGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes referring_domains to DataForSEO even when a snapshot exists", async () => {
+    fakeBacklinkSelect([BACKLINK_SNAPSHOT_ROW]);
+
+    await router.route(
+      makeBacklinksRequest({
+        backlinkCall: "referring_domains",
+        projectId: "project-1",
+      }),
+    );
+
+    expect(dataforseoGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("routes domain_pages to DataForSEO even when a snapshot exists", async () => {
+    fakeBacklinkSelect([BACKLINK_SNAPSHOT_ROW]);
+
+    await router.route(
+      makeBacklinksRequest({
+        backlinkCall: "domain_pages",
+        projectId: "project-1",
+      }),
+    );
+
+    expect(dataforseoGet).toHaveBeenCalledTimes(1);
+  });
+
+  it("falls back to DataForSEO for summary when no snapshot exists", async () => {
+    fakeBacklinkSelect([]);
+
+    await router.route(
+      makeBacklinksRequest({ backlinkCall: "summary", projectId: "project-1" }),
+    );
+
+    expect(dataforseoGet).toHaveBeenCalledTimes(1);
   });
 });

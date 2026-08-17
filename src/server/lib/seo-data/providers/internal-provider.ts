@@ -14,19 +14,39 @@ import { DomainOverviewSnapshotRepository } from "../domain-overview-snapshot-re
  *
  * Serves:
  *   - keyword_metrics: from the keyword_metrics table (latest per keyword)
- *   - backlinks: from backlink_snapshots (latest summary per project)
+ *   - backlinks: from backlink_snapshots (latest summary per project) — the
+ *     summary operation only; paginated/history calls fall through to
+ *     DataForSEO because the snapshot only stores the summary shape
  *   - domain_keywords: from rank_snapshots (latest tracked keyword positions)
  *   - competitors: from competitor_snapshots (latest analysis per keyword set)
  *   - domain_overview: from fresh organization-scoped normalized snapshots
  */
+
+/**
+ * The backlinks operation the internal snapshot can satisfy. `undefined`
+ * matches the DataForSEO provider's default (no explicit backlinkCall means
+ * summary), so both spellings of the same operation claim support here.
+ */
+function internalBacklinkCall(request: SEODataRequest): string | undefined {
+  // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
+  return request.constraints?.backlinkCall as string | undefined;
+}
+
 export function createInternalProvider(): SEODataProvider {
   return {
     name: "internal",
 
     supports(request: SEODataRequest): boolean {
+      if (request.dataType === "backlinks") {
+        // The snapshot only stores the summary payload. Claiming support for
+        // history/rows/referring_domains/domain_pages lets the router cache a
+        // wrong-shape payload under those operations' keys and crash the
+        // consumer that expects the requested shape.
+        const call = internalBacklinkCall(request);
+        return call === undefined || call === "summary";
+      }
       return (
         request.dataType === "keyword_metrics" ||
-        request.dataType === "backlinks" ||
         request.dataType === "domain_keywords" ||
         request.dataType === "competitors" ||
         request.dataType === "domain_overview"
@@ -167,11 +187,25 @@ async function getInternalKeywordMetrics(
 }
 
 /**
- * Read the latest backlink snapshot for a project from backlink_snapshots.
- * This is summary data (not full backlink rows), so it serves as a quick
- * overview without calling DataForSEO.
+ * Read the latest backlink summary snapshot for a project/domain from
+ * backlink_snapshots. Only the `summary` operation (or an unspecified
+ * backlinkCall, which the DataForSEO provider documents as defaulting to
+ * summary) is served: the snapshot stores the summary payload only, so
+ * history/rows/referring_domains/domain_pages must fall through to
+ * DataForSEO. Returns the snake_case shape of `backlinksSummaryItemSchema`
+ * (the shape `BacklinksService.buildOverviewResult` and the route schema
+ * expect); fields the snapshot table does not track are simply absent.
  */
 async function getInternalBacklinks(request: SEODataRequest): Promise<unknown> {
+  const call = internalBacklinkCall(request);
+  if (call !== undefined && call !== "summary") {
+    throw new ProviderUnsupportedError(
+      "internal",
+      "backlinks",
+      `Backlink snapshots only store the summary payload, not "${call}"`,
+    );
+  }
+
   const projectId =
     // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- constraints is Record<string, unknown>
     request.constraints?.projectId as string | undefined;
@@ -210,16 +244,15 @@ async function getInternalBacklinks(request: SEODataRequest): Promise<unknown> {
 
   const row = rows[0];
   return {
-    domain: row.domain,
+    target: row.domain,
     rank: row.rank,
     backlinks: row.backlinks,
-    referringDomains: row.referringDomains,
-    brokenBacklinks: row.brokenBacklinks,
-    newBacklinks: row.newBacklinks,
-    lostBacklinks: row.lostBacklinks,
-    newReferringDomains: row.newReferringDomains,
-    lostReferringDomains: row.lostReferringDomains,
-    capturedAt: row.capturedAt,
+    referring_domains: row.referringDomains,
+    broken_backlinks: row.brokenBacklinks,
+    new_backlinks: row.newBacklinks,
+    lost_backlinks: row.lostBacklinks,
+    new_referring_domains: row.newReferringDomains,
+    lost_referring_domains: row.lostReferringDomains,
   };
 }
 

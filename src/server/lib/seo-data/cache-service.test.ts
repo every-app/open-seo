@@ -216,6 +216,43 @@ describe("SeoCacheService", () => {
         await SeoCacheService.buildKey(historyB),
       );
     });
+
+    it("does not let the summary key collide with a non-summary operation key", async () => {
+      const summary: SEODataRequest = {
+        ...baseRequest,
+        dataType: "backlinks",
+        keyword: undefined,
+        domain: "example.com",
+        constraints: { projectId: "project-a", backlinkCall: "summary" },
+      };
+      const history = {
+        ...summary,
+        constraints: { projectId: "project-a", backlinkCall: "history" },
+      };
+      const rows = {
+        ...summary,
+        constraints: { projectId: "project-a", backlinkCall: "rows", limit: 50 },
+      };
+      const referringDomains = {
+        ...summary,
+        constraints: {
+          projectId: "project-a",
+          backlinkCall: "referring_domains",
+        },
+      };
+      const domainPages = {
+        ...summary,
+        constraints: { projectId: "project-a", backlinkCall: "domain_pages" },
+      };
+
+      const summaryKey = await SeoCacheService.buildKey(summary);
+      expect(summaryKey).not.toBe(await SeoCacheService.buildKey(history));
+      expect(summaryKey).not.toBe(await SeoCacheService.buildKey(rows));
+      expect(summaryKey).not.toBe(
+        await SeoCacheService.buildKey(referringDomains),
+      );
+      expect(summaryKey).not.toBe(await SeoCacheService.buildKey(domainPages));
+    });
   });
 
   describe("get", () => {
