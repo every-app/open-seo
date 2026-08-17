@@ -1,13 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { z } from "zod";
+import type { BudgetReservation } from "@/lib/backlink-budget";
 
 const DATAFORSEO_BASE = "https://api.dataforseo.com";
 const TOP_BACKLINKS_LIMIT = 15;
 const CACHE_TTL_SECONDS = 86_400;
-// Hard ceiling on paid DataForSEO lookups per day (~$0.04 each). Cached
-// checks don't count. Bumping this is a deliberate spend decision.
-const DAILY_CHECK_BUDGET = 500;
 
 const requestSchema = z.object({
   target: z.string().trim().min(1, "Enter a domain").max(300),
@@ -67,13 +65,9 @@ type RateLimiter = {
   limit(options: { key: string }): Promise<{ success: boolean }>;
 };
 
-type KvStore = {
-  get(key: string): Promise<string | null>;
-  put(
-    key: string,
-    value: string,
-    options?: { expirationTtl?: number },
-  ): Promise<void>;
+type BudgetNamespace = {
+  idFromName(name: string): unknown;
+  get(id: unknown): { fetch(url: string, init?: RequestInit): Promise<Response> };
 };
 
 function normalizeDomain(input: string): string | null {
@@ -220,31 +214,38 @@ export const Route = createFileRoute("/api/backlink-check")({
         const cached = await cache.match(cacheKey);
         if (cached) return cached;
 
-        // Global daily budget. Best-effort: KV reads are edge-cached and the
-        // increment is non-atomic, so the ceiling is approximate — the hard
-        // spend bound is the DataForSEO account balance. Counts attempts, not
-        // successes, so charged-but-failed calls still consume budget, and a
-        // KV error can never fail a request the user already paid latency for.
-        const kv = (env as any).BACKLINK_CHECK_KV as KvStore | undefined;
-        if (kv) {
-          const budgetKey = `daily-checks:${new Date().toISOString().slice(0, 10)}`;
+        // Global daily budget, reserved atomically in a Durable Object so a
+        // burst of concurrent requests consumes one unit each instead of all
+        // racing on the same count. Counts attempts, not successes, so
+        // charged-but-failed calls still consume budget. Fails closed: a
+        // spend cap that opens under error isn't a cap.
+        const budget = (env as any).BACKLINK_CHECK_BUDGET as
+          | BudgetNamespace
+          | undefined;
+        if (budget) {
+          let reservation: BudgetReservation;
           try {
-            const stored = Number(await kv.get(budgetKey));
-            const used = Number.isFinite(stored) ? stored : 0;
-            if (used >= DAILY_CHECK_BUDGET) {
-              return jsonResponse(
-                {
-                  error:
-                    "The free checker has reached today's limit. Try again tomorrow, or sign up for OpenSEO for full backlink research.",
-                },
-                429,
-              );
-            }
-            await kv.put(budgetKey, String(used + 1), {
-              expirationTtl: 2 * 86_400,
+            const stub = budget.get(budget.idFromName("global"));
+            const res = await stub.fetch("https://backlink-budget/reserve", {
+              method: "POST",
             });
+            if (!res.ok) throw new Error(`budget DO HTTP ${res.status}`);
+            reservation = (await res.json()) as BudgetReservation;
           } catch (err) {
             console.error("Backlink check budget counter error:", err);
+            return jsonResponse(
+              { error: "Service temporarily unavailable. Try again shortly." },
+              503,
+            );
+          }
+          if (!reservation.allowed) {
+            return jsonResponse(
+              {
+                error:
+                  "The free checker has reached today's limit. Try again tomorrow, or sign up for OpenSEO for full backlink research.",
+              },
+              429,
+            );
           }
         }
 
