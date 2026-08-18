@@ -7,6 +7,8 @@ import { sortBy } from "remeda";
 export const CACHE_TTL = {
   /** Related keyword research results */
   researchResult: 86400,
+  /** AI provider model catalogs (OpenRouter models endpoint) */
+  aiModels: 43200,
 } as const;
 
 const CACHE_PREFIX = "dataforseo-cache/";

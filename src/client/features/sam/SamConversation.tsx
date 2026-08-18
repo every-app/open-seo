@@ -18,6 +18,36 @@ const SUGGESTIONS = [
   "Find quick-win keywords I already rank for",
 ];
 
+// One-click workflow templates: longer prompts that start SAM on a full
+// multi-tool research arc instead of a single question.
+const WORKFLOW_PRESETS: { label: string; prompt: string }[] = [
+  {
+    label: "Full SEO opportunity analysis",
+    prompt:
+      "Run a full SEO opportunity analysis for this project: read the site, review Search Console performance, then research my strongest opportunities — keyword gaps, ranking quick wins, and content or technical issues worth fixing first. Summarize as a prioritized list.",
+  },
+  {
+    label: "Commercial keyword research",
+    prompt:
+      "Research commercial keywords for this project: find high-intent terms people search when ready to buy, with realistic search volume and difficulty. Suggest where each should live on my site (or whether new pages are needed), and recommend which ones to save.",
+  },
+  {
+    label: "Competitor analysis",
+    prompt:
+      "Identify my main SERP competitors and analyze them: what they rank for, where they win, and what content or keywords they cover that I don't. Give me a concrete gap list I can act on.",
+  },
+  {
+    label: "Technical SEO",
+    prompt:
+      "Audit this site's technical SEO: run a site audit, then summarize the highest-impact issues (indexing, crawlability, Core Web Vitals, duplicate content) with a concrete fix order.",
+  },
+  {
+    label: "Executive SEO plan",
+    prompt:
+      "Turn everything you know about this project into a short executive SEO plan: current standing, the 3–5 highest-leverage moves, expected impact, and a 90-day timeline. Keep it tight enough to share with a founder.",
+  },
+];
+
 export function SamConversation({
   projectId,
   sessionId,
@@ -115,6 +145,35 @@ export function SamConversation({
             </div>
           ) : null}
 
+          {showSuggestions ? (
+            <div className="space-y-3">
+              <div className="flex flex-wrap gap-2">
+                {WORKFLOW_PRESETS.map((preset) => (
+                  <button
+                    key={preset.label}
+                    type="button"
+                    className="rounded-full border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-base-content/80 transition-colors hover:border-primary/70 hover:bg-primary/10"
+                    onClick={() => sendText(preset.prompt)}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {SUGGESTIONS.map((question) => (
+                  <button
+                    key={question}
+                    type="button"
+                    className="rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-xs font-medium text-base-content/70 transition-colors hover:border-primary/50 hover:text-base-content"
+                    onClick={() => sendText(question)}
+                  >
+                    {question}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {messages.map((message, index) => (
             <ChatMessage
               key={message.id}
@@ -155,21 +214,6 @@ export function SamConversation({
             <p className="text-sm text-error">
               Something went wrong. Please try again.
             </p>
-          ) : null}
-
-          {showSuggestions ? (
-            <div className="flex flex-wrap gap-2">
-              {SUGGESTIONS.map((question) => (
-                <button
-                  key={question}
-                  type="button"
-                  className="rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-xs font-medium text-base-content/70 transition-colors hover:border-primary/50 hover:text-base-content"
-                  onClick={() => sendText(question)}
-                >
-                  {question}
-                </button>
-              ))}
-            </div>
           ) : null}
         </div>
       </div>

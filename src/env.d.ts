@@ -44,6 +44,14 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
+
+    // In-app agent (SAM) overrides. AI_AGENT_MODEL falls back to
+    // OPENROUTER_MODEL when unset; AI_AGENT_MAX_TOOL_CALLS bounds the number
+    // of tool calls per turn and AI_AGENT_MAX_STEPS bounds inference steps
+    // (defaults in SamChatAgent.ts).
+    AI_AGENT_MODEL?: string;
+    AI_AGENT_MAX_TOOL_CALLS?: string;
+    AI_AGENT_MAX_STEPS?: string;
   }
 }
 

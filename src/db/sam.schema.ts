@@ -1,6 +1,7 @@
 import { sqliteTable, text, index, primaryKey } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
-import { user } from "./better-auth-schema";
+import { uniqueIndex } from "drizzle-orm/sqlite-core";
+import { organization, user } from "./better-auth-schema";
 import { projects } from "./app.schema";
 
 // One row per SAM chat session. The conversation history itself lives in the
@@ -36,6 +37,37 @@ export const samSessions = sqliteTable(
       table.projectId,
       table.updatedAt,
     ),
+  ],
+);
+
+// Per-scope AI provider/model selection for the in-app agent. Scope precedence:
+// project row > organization row > environment (OPENROUTER_MODEL / built-in
+// default). Provider is persisted for future providers but Phase O only supports
+// OpenRouter; rows never store API credentials — the key remains a server-side
+// deployment secret (see in-app-ai-agent.md).
+export const aiAgentSettings = sqliteTable(
+  "ai_agent_settings",
+  {
+    provider: text("provider").notNull().default("openrouter"),
+    model: text("model").notNull().default(""),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    // One row per scope: at most one org row and one project row.
+    uniqueIndex("ai_agent_settings_org_idx")
+      .on(table.organizationId)
+      .where(sql`${table.projectId} is null`),
+    uniqueIndex("ai_agent_settings_project_idx")
+      .on(table.projectId)
+      .where(sql`${table.organizationId} is null`),
   ],
 );
 

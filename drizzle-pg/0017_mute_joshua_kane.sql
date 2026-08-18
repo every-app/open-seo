@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX "ai_agent_settings_org_idx" ON "ai_agent_settings" USING btree ("organization_id") WHERE "ai_agent_settings"."project_id" is null;--> statement-breakpoint
+CREATE UNIQUE INDEX "ai_agent_settings_project_idx" ON "ai_agent_settings" USING btree ("project_id") WHERE "ai_agent_settings"."organization_id" is null;

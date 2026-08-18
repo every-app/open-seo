@@ -39,6 +39,15 @@ services:
       GOOGLE_SEARCH_CONSOLE_ENABLED: ${GOOGLE_SEARCH_CONSOLE_ENABLED:-false}
       BING_WEBMASTER_ENABLED: ${BING_WEBMASTER_ENABLED:-false}
       LOCAL_CRAWLER_ENABLED: ${LOCAL_CRAWLER_ENABLED:-true}
+      # Optional AI agent credentials/overrides (SAM, onboarding chat). The
+      # OPENROUTER_API_KEY itself flows from .env.docker via env_file (an
+      # `environment:` mapping would override it with the host shell's unset
+      # value); the tuning overrides below are host-shell knobs, unset = server
+      # defaults.
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      AI_AGENT_MODEL: ${AI_AGENT_MODEL:-}
+      AI_AGENT_MAX_TOOL_CALLS: ${AI_AGENT_MAX_TOOL_CALLS:-}
+      AI_AGENT_MAX_STEPS: ${AI_AGENT_MAX_STEPS:-}
       # Keep devtools off in container logs by default.
       VITE_SHOW_DEVTOOLS: ${VITE_SHOW_DEVTOOLS:-false}
       # Polling watchers on a large bind-mounted tree (Windows/macOS Docker

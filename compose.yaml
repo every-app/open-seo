@@ -30,6 +30,9 @@ services:
       # Optional: AI features (SAM, the in-app SEO agent)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      - AI_AGENT_MODEL=${AI_AGENT_MODEL:-}
+      - AI_AGENT_MAX_TOOL_CALLS=${AI_AGENT_MAX_TOOL_CALLS:-}
+      - AI_AGENT_MAX_STEPS=${AI_AGENT_MAX_STEPS:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"

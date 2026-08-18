@@ -71,6 +71,34 @@ Set `DATAFORSEO_API_KEY` etc. in `.env.docker` when you need to exercise the
 DataForSEO provider locally (billing applies — see
 [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md)).
 
+## In-App AI Agent (SAM)
+
+SAM reads its model configuration from the settings UI (global setting on the
+Settings page, per-project override on the project settings page) and falls
+back to these environment variables:
+
+| Variable | Default | Meaning |
+|----------|---------|---------|
+| `OPENROUTER_API_KEY` | *(none)* | Server-side credential for model calls. Without it, SAM responds with a billing/configuration notice instead of running |
+| `OPENROUTER_MODEL` | `minimax/minimax-m3` | Fallback model when no settings row is saved |
+| `AI_AGENT_MODEL` | *(none)* | Preferred env fallback — takes precedence over `OPENROUTER_MODEL` |
+| `AI_AGENT_MAX_STEPS` | `48` | Think turn step bound |
+| `AI_AGENT_MAX_TOOL_CALLS` | `24` | Tool-call cap per turn (bounded-loop guard) |
+
+To run SAM locally, add your key to `.env.docker` (a valid OpenRouter key, not
+a placeholder), then restart the container:
+
+```sh
+echo "OPENROUTER_API_KEY=sk-or-v1-..." >> .env.docker
+pnpm dev:docker:down
+pnpm dev:docker
+```
+
+The key never leaves the server: the UI only shows a masked status and lets
+you test the connection, and model calls are billed to your OpenRouter account
+(not to OpenSEO usage credits). The model catalog is fetched from OpenRouter
+and cached server-side for 12 hours.
+
 ## Verifying It Works
 
 ```sh

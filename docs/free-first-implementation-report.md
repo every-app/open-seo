@@ -246,3 +246,91 @@ Direct createDataforseoClient verified absent from all four targeted areas.
 - D1 persistence for `serp` snapshots (per-keyword) and `domain_keywords` rows, making the internal provider a free source for repeats.
 - Persistent budget accounting per organization (currently in-memory counters).
 - Route rank-check workflow collection through the `serp` data type with D1-backed snapshots.
+
+## Phase O — In-App AI Agent Configuration
+
+Phase O extends the existing SAM agent (no second agent stack) with a
+configurable AI provider/model surface, bounded loops, tool-call dedup, site
+audit tools, workflow presets, tests, and docs. See
+`docs/in-app-ai-agent.md` for the full guide.
+
+### O1 — AI settings schema
+- New `ai_agent_settings` table in both `src/db/sam.schema.ts` and
+  `src/db/pg/sam.schema.ts`: `provider` (default `'openrouter'`), `model`
+  (default `''` = unset/inherit), nullable `organization_id`/`project_id` FKs
+  with cascade delete, `updated_at`.
+- Partial unique indexes (`ai_agent_settings_org_idx`,
+  `ai_agent_settings_project_idx`) enforce one row per scope.
+- D1 migration `drizzle/0039_ordinary_azazel.sql` (journal repaired — the
+  prior file deletions left dangling entries); PG `drizzle-pg/0016_sloppy_cargill.sql`
+  (table + FKs) + `0017_mute_joshua_kane.sql` (indexes). Schema-parity test
+  suite passes (132 tests).
+
+### O2 — Settings service + repository
+- `AiSettingsRepository` (org/project get/upsert; project row with a cleared
+  model deletes the row = inherit; empty model normalized to null).
+- `AiSettingsService` — model resolution order: project → organization →
+  `AI_AGENT_MODEL` → `OPENROUTER_MODEL` → built-in default
+  (`minimax/minimax-m3`). `maskApiKey` for UI status display. Credentials
+  never touch the database or the client.
+
+### O3 — Provider abstraction
+- `AiProvider` interface + `AiProviderRegistry` (`src/server/features/ai/providers.ts`);
+  OpenRouter is the only provider this phase. `listModels` reads the public
+  OpenRouter catalog, normalizes pricing/tool-support, and caches in R2 for
+  12h (`CACHE_TTL.aiModels = 43200`). `testConnection` fires a minimal
+  `generateText` and classifies failures (401/403 → invalid key, 404 → model
+  unavailable, else unreachable).
+
+### O4 — SAM agent hardening
+- `SamChatAgent.beforeTurn` resolves DB settings via the repository +
+  `resolveAiModel`, applies `AI_AGENT_MAX_STEPS` (default 48) and a
+  `toolCallCap` stop condition (`AI_AGENT_MAX_TOOL_CALLS`, default 24) that
+  ends the turn at the cumulative tool-call bound — the primary cost guard.
+- `samToolExecution.ts`: per-conversation dedup cache (64 entries, keyed by
+  `tool:args`, successful outputs only, errors never cached) + structured
+  `sam-tool` log lines.
+- `samChatTools.ts`: tool adapter wired to the tracker; four site-audit tools
+  added to the SAM toolset (`run_site_audit`, `get_audit_status`,
+  `get_audit_issues`, `get_audit_pages`) by adapting the existing MCP
+  definitions.
+- `samSystemPrompt.ts`: prompt-injection guidance (tool outputs are untrusted)
+  and cost policy (reuse fetched data).
+
+### O5 — Server functions
+- `src/serverFunctions/aiSettings.ts`: `getGlobalAiSettings`,
+  `updateGlobalAiSettings`, `getProjectAiSettings`, `updateProjectAiSettings`,
+  `listAiModels`, `testAiConnection`.
+
+### O6 — Settings UI
+- Global AI agent section on the Settings page (`AiSettingsSection`):
+  provider, model picker (filterable, price/context/tool-support display),
+  masked key status, connection test, save.
+- Project override section on project settings (`ProjectAiSettingsSection`)
+  with an inherit toggle.
+- SAM empty state gained five workflow presets (opportunity analysis,
+  commercial keyword research, competitor analysis, technical SEO, executive
+  plan) alongside the quick-question chips.
+
+### O7 — Env/docs/tests
+- `AI_AGENT_MODEL`, `AI_AGENT_MAX_STEPS`, `AI_AGENT_MAX_TOOL_CALLS` added to
+  `env.d.ts`, `alchemy.run.ts`, all `.env*.example` files, `compose.yaml`, and
+  `compose.dev.yaml` (which also passes `OPENROUTER_API_KEY` through).
+- New tests: providers (catalog parse/caching/failure classification — 7),
+  settings resolution + key masking (7), tool dedup + event logging (2),
+  env parsing + tool-call counter (3).
+
+### Phase O validation
+```
+Full suite: 975 passed (112 files)
+Typecheck: PASSED (0 errors)
+Lint: PASSED (oxlint --type-aware, 0 errors)
+Build: PASSED (vite build + tsc)
+```
+
+### Phase O known gaps / follow-ups
+- Live E2E of a real SAM turn requires a valid `OPENROUTER_API_KEY` in the
+  deployment environment (the container currently runs without one; SAM
+  responds with the billing/configuration notice in that state).
+- Second provider support (e.g. Anthropic/OpenAI directly) is possible but
+  intentionally deferred — the `AiProvider` interface is the seam.

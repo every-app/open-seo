@@ -28,9 +28,19 @@ import {
   getSearchConsolePerformanceTool,
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
+import {
+  getAuditIssuesTool,
+  getAuditPagesTool,
+  getAuditStatusTool,
+  runSiteAuditTool,
+} from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
+import {
+  nullToolExecutionTracker,
+  type ToolExecutionTracker,
+} from "@/server/features/sam/samToolExecution";
 
 // SAM reads more of a site than the onboarding preview: enough pages to work
 // out what a business does, sells, and positions against on its own.
@@ -41,6 +51,7 @@ const SAM_MAX_MAPPED_URLS = 60;
 // the exact same definitions the MCP server registers, so the in-app agent and
 // the MCP server can never drift in what a tool does or how it bills.
 type McpToolDefinition<Shape extends ZodRawShape> = {
+  name: string;
   config: { description: string; inputSchema: Shape };
   handler: (
     args: z.infer<z.ZodObject<Shape>>,
@@ -70,10 +81,16 @@ function toModelOutput(result: CallToolResult): unknown {
 // server-side: any tool with a `projectId` input has it stripped from the schema
 // the model sees and injected at call time. The model never has to know or pass
 // the id, can't target another project, and can't hallucinate a wrong one.
+//
+// The tracker dedups identical calls within the conversation (the model can
+// re-request the same tool call after a stall/retry) and logs every execution;
+// a null/no-op tracker keeps non-SAM callers unaffected.
 function adaptMcpTool<Shape extends ZodRawShape>(
   def: McpToolDefinition<Shape>,
   extra: ToolExtra,
   projectId: string,
+  tracker: ToolExecutionTracker,
+  sessionId: string,
 ): Tool {
   const { projectId: _projectIdSchema, ...modelShape } = def.config.inputSchema;
   const bindsProject = "projectId" in def.config.inputSchema;
@@ -88,14 +105,47 @@ function adaptMcpTool<Shape extends ZodRawShape>(
       const fullArgs = (bindsProject
         ? { ...args, projectId }
         : args) as unknown as z.infer<z.ZodObject<Shape>>;
+      const startedAt = Date.now();
+      const cached = tracker.getCached(def.name, fullArgs);
+      if (cached !== undefined) {
+        tracker.log({
+          sessionId,
+          projectId,
+          toolName: def.name,
+          reused: true,
+          status: "ok",
+          durationMs: Date.now() - startedAt,
+        });
+        return cached;
+      }
       try {
         // Tool calls run inside Think's inference loop, outside any ambient
         // request scope, so each execution scopes its own Postgres client
-        // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
-        return toModelOutput(
+        // (no-op in D1 mode) â€” same rule as the DO's other DB-touching seams.
+        const output = toModelOutput(
           await withPgClient(() => def.handler(fullArgs, extra)),
         );
+        // Only successful outputs are cached: an error should be retryable
+        // (e.g. a transient 429) rather than served stale from memory.
+        tracker.setCached(def.name, fullArgs, output);
+        tracker.log({
+          sessionId,
+          projectId,
+          toolName: def.name,
+          reused: false,
+          status: "ok",
+          durationMs: Date.now() - startedAt,
+        });
+        return output;
       } catch (error) {
+        tracker.log({
+          sessionId,
+          projectId,
+          toolName: def.name,
+          reused: false,
+          status: "error",
+          durationMs: Date.now() - startedAt,
+        });
         // Surface the failure to the model so it can recover or report it,
         // rather than aborting the whole turn on one bad tool call.
         return {
@@ -125,7 +175,7 @@ function scrapeTools(projectDomain: string | null): ToolSet {
         if (!target) {
           return {
             error:
-              "This project has no website set — ask the user for their site first.",
+              "This project has no website set â€” ask the user for their site first.",
           };
         }
         const result = await discoverSiteUrls(target, SAM_MAX_MAPPED_URLS);
@@ -135,7 +185,7 @@ function scrapeTools(projectDomain: string | null): ToolSet {
       },
     }),
     read_pages: tool({
-      description: `Read up to ${SAM_MAX_SCRAPE_PAGES} web pages as plain text — the project's own pages or anyone else's (competitors, references). Pass specific \`urls\` (usually picked from map_links); omit to read a representative sample of the project's own site. Uses no credits.`,
+      description: `Read up to ${SAM_MAX_SCRAPE_PAGES} web pages as plain text â€” the project's own pages or anyone else's (competitors, references). Pass specific \`urls\` (usually picked from map_links); omit to read a representative sample of the project's own site. Uses no credits.`,
       inputSchema: z.object({
         urls: z
           .array(z.string().url())
@@ -155,7 +205,7 @@ function scrapeTools(projectDomain: string | null): ToolSet {
         if (!site) {
           return {
             error:
-              "This project has no website set — ask the user for their site, or pass explicit urls.",
+              "This project has no website set â€” ask the user for their site, or pass explicit urls.",
           };
         }
         if (site.blocked) {
@@ -178,14 +228,24 @@ function scrapeTools(projectDomain: string | null): ToolSet {
  * handlers read exactly as they would on the real MCP route. DataForSEO spend
  * is metered inside the shared client, so tool calls draw down the org's
  * credits automatically.
+ *
+ * `tracker` (optional) enables per-conversation dedup + execution logging; pass
+ * the result of `createToolExecutionTracker` from the DO, or nothing to keep
+ * plain behavior.
  */
 export function buildSamMcpTools(
   authContext: McpToolAuthContext,
   project: { id: string; domain: string | null },
+  tracker?: ToolExecutionTracker,
 ): ToolSet {
   const projectId = project.id;
+  const sessionId = "sam";
+  const toolTracker = tracker ?? nullToolExecutionTracker;
+  const adapt = <Shape extends ZodRawShape>(
+    def: McpToolDefinition<Shape>,
+  ): Tool => adaptMcpTool(def, extra, projectId, toolTracker, sessionId);
   const extra: ToolExtra = {
-    // Placeholder to satisfy ToolExtra — no tool handler or the DataForSEO
+    // Placeholder to satisfy ToolExtra â€” no tool handler or the DataForSEO
     // client reads this signal (true on the real MCP route too), so aborting a
     // turn does not cancel in-flight tool requests.
     signal: new AbortController().signal,
@@ -202,7 +262,7 @@ export function buildSamMcpTools(
   };
 
   // Note: no `list_projects`. SAM is bound to the session's project, so
-  // discovering other projects isn't part of its job — every project-scoped tool
+  // discovering other projects isn't part of its job â€” every project-scoped tool
   // below has `projectId` injected server-side by adaptMcpTool.
   return {
     // On-demand product reference (kept out of the system prompt: inlining it
@@ -214,55 +274,28 @@ export function buildSamMcpTools(
       execute: () => Promise.resolve({ factSheet: openSeoFactSheet }),
     }),
     ...scrapeTools(project.domain),
-    whoami: adaptMcpTool(whoamiTool, extra, projectId),
-    list_saved_keywords: adaptMcpTool(listSavedKeywordsTool, extra, projectId),
-    research_keywords: adaptMcpTool(researchKeywordsTool, extra, projectId),
-    save_keywords: adaptMcpTool(saveKeywordsTool, extra, projectId),
-    get_domain_overview: adaptMcpTool(getDomainOverviewTool, extra, projectId),
-    get_domain_keyword_suggestions: adaptMcpTool(
-      getDomainKeywordSuggestionsTool,
-      extra,
-      projectId,
-    ),
-    get_backlinks_overview: adaptMcpTool(
-      getBacklinksOverviewTool,
-      extra,
-      projectId,
-    ),
-    get_backlinks_profile: adaptMcpTool(
-      getBacklinksProfileTool,
-      extra,
-      projectId,
-    ),
-    get_serp_results: adaptMcpTool(getSerpResultsTool, extra, projectId),
-    get_rank_tracker: adaptMcpTool(getRankTrackerTool, extra, projectId),
-    get_ranked_keywords: adaptMcpTool(getRankedKeywordsTool, extra, projectId),
-    find_serp_competitors: adaptMcpTool(
-      findSerpCompetitorsTool,
-      extra,
-      projectId,
-    ),
-    search_local_businesses: adaptMcpTool(
-      searchLocalBusinessesTool,
-      extra,
-      projectId,
-    ),
-    get_local_serp_results: adaptMcpTool(
-      getLocalSerpResultsTool,
-      extra,
-      projectId,
-    ),
-    get_google_business_questions: adaptMcpTool(
-      getGoogleBusinessQuestionsTool,
-      extra,
-      projectId,
-    ),
-    get_keyword_metrics: adaptMcpTool(getKeywordMetricsTool, extra, projectId),
-    get_search_console_performance: adaptMcpTool(
-      getSearchConsolePerformanceTool,
-      extra,
-      projectId,
-    ),
-    inspect_urls: adaptMcpTool(inspectUrlsTool, extra, projectId),
+    whoami: adapt(whoamiTool),
+    list_saved_keywords: adapt(listSavedKeywordsTool),
+    research_keywords: adapt(researchKeywordsTool),
+    save_keywords: adapt(saveKeywordsTool),
+    get_domain_overview: adapt(getDomainOverviewTool),
+    get_domain_keyword_suggestions: adapt(getDomainKeywordSuggestionsTool),
+    get_backlinks_overview: adapt(getBacklinksOverviewTool),
+    get_backlinks_profile: adapt(getBacklinksProfileTool),
+    get_serp_results: adapt(getSerpResultsTool),
+    get_rank_tracker: adapt(getRankTrackerTool),
+    get_ranked_keywords: adapt(getRankedKeywordsTool),
+    find_serp_competitors: adapt(findSerpCompetitorsTool),
+    search_local_businesses: adapt(searchLocalBusinessesTool),
+    get_local_serp_results: adapt(getLocalSerpResultsTool),
+    get_google_business_questions: adapt(getGoogleBusinessQuestionsTool),
+    get_keyword_metrics: adapt(getKeywordMetricsTool),
+    get_search_console_performance: adapt(getSearchConsolePerformanceTool),
+    inspect_urls: adapt(inspectUrlsTool),
+    run_site_audit: adapt(runSiteAuditTool),
+    get_audit_status: adapt(getAuditStatusTool),
+    get_audit_issues: adapt(getAuditIssuesTool),
+    get_audit_pages: adapt(getAuditPagesTool),
   };
 }
+

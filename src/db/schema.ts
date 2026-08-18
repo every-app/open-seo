@@ -84,6 +84,7 @@ export const {
   auditLighthouseResults,
   samSessions,
   samProjectMemory,
+  aiAgentSettings,
   user,
   session,
   account,

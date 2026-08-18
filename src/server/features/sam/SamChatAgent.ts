@@ -19,6 +19,15 @@ import { ProjectRepository } from "@/server/features/projects/repositories/Proje
 import { buildSamMcpTools } from "@/server/features/sam/samChatTools";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
 import { buildChatAgentModel } from "@/server/lib/openrouter";
+import { createToolExecutionTracker } from "@/server/features/sam/samToolExecution";
+import {
+  DEFAULT_MAX_STEPS,
+  DEFAULT_MAX_TOOL_CALLS,
+  parsePositiveIntEnv,
+  toolCallCap,
+} from "@/server/features/sam/samTurnControls";
+import { AiSettingsRepository } from "@/server/features/ai/AiSettingsRepository";
+import { resolveAiModel } from "@/server/features/ai/AiSettingsService";
 import {
   getEnvValueSync,
   isHostedServerAuthMode,
@@ -95,6 +104,12 @@ export class SamChatAgent extends Think {
   private turnCostUsd = 0;
   private turnMonthlyRemaining: number | null = null;
 
+  // Per-conversation tool dedup + logging. Created lazily on the first turn
+  // (needs the session's project id); survives across turns of the same
+  // conversation, resets if the DO is evicted.
+  private toolTracker: ReturnType<typeof createToolExecutionTracker> | null =
+    null;
+
   // Record the app origin for the deep links tools attach to responses,
   // derived from the requests this DO serves instead of env config. DO storage
   // (not an instance field) because the DO hibernates: a turn can arrive as a
@@ -111,10 +126,13 @@ export class SamChatAgent extends Think {
     if (!apiKey) {
       throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
     }
-    return buildChatAgentModel(
-      apiKey,
-      getEnvValueSync(this.env, "OPENROUTER_MODEL"),
-    );
+    // Env-level fallback: AI_AGENT_MODEL (preferred) then OPENROUTER_MODEL
+    // (legacy). DB-level settings resolved in beforeTurn override this via
+    // TurnConfig.model when configured.
+    const modelId =
+      getEnvValueSync(this.env, "AI_AGENT_MODEL") ??
+      getEnvValueSync(this.env, "OPENROUTER_MODEL");
+    return buildChatAgentModel(apiKey, modelId);
   }
 
   configureSession(session: Session): Session {
@@ -263,18 +281,63 @@ export class SamChatAgent extends Think {
         scopes: [MCP_SCOPE],
       });
 
-      return {
+      // Per-conversation tool tracker (dedup + logs), bound to this session.
+      this.toolTracker ??= createToolExecutionTracker({
+        sessionId: this.name,
+        projectId: ctx.project.id,
+      });
+
+      // Effective model from the settings rows (project > organization), else
+      // the env/built-in default via getModel(). When a row is configured we
+      // pass the model per-turn; otherwise TurnConfig omits it and Think
+      // resolves getModel() (which prefers AI_AGENT_MODEL over
+      // OPENROUTER_MODEL).
+      const [projectSettings, organizationSettings] = await Promise.all([
+        AiSettingsRepository.getProjectAiSettings(ctx.project.id),
+        AiSettingsRepository.getOrganizationAiSettings(organizationId),
+      ]);
+      const resolved = resolveAiModel(
+        { project: projectSettings, organization: organizationSettings },
+        {
+          aiAgentModel: getEnvValueSync(this.env, "AI_AGENT_MODEL") ?? null,
+          openRouterModel: getEnvValueSync(this.env, "OPENROUTER_MODEL") ?? null,
+        },
+      );
+
+      const maxSteps = parsePositiveIntEnv(
+        getEnvValueSync(this.env, "AI_AGENT_MAX_STEPS"),
+        DEFAULT_MAX_STEPS,
+      );
+      const maxToolCalls = parsePositiveIntEnv(
+        getEnvValueSync(this.env, "AI_AGENT_MAX_TOOL_CALLS"),
+        DEFAULT_MAX_TOOL_CALLS,
+      );
+
+      const turn: TurnConfig = {
         tools: buildSamMcpTools(authContext, {
           id: ctx.project.id,
           domain: ctx.project.domain,
-        }),
+        }, this.toolTracker),
         // SAM is meant to run complex multi-step work in one turn (site-read
         // intake plus a full research chain, multi-competitor sweeps), so give
-        // it generous headroom — cost is bounded by per-step metering and the
-        // model stopping on its own, not by this cap.
-        maxSteps: 48,
+        // it generous headroom — cost is bounded by per-step metering, the
+        // tool-call cap below, and the model stopping on its own.
+        maxSteps,
         maxOutputTokens: 6000,
       };
+
+      // Bounded loop: stop the turn once the tool-call budget is spent, so a
+      // runaway model can't fan out unbounded paid calls.
+      turn.stopWhen = [toolCallCap(maxToolCalls)];
+
+      if (resolved.model) {
+        const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
+        if (apiKey) {
+          turn.model = buildChatAgentModel(apiKey, resolved.model);
+        }
+      }
+
+      return turn;
     });
   }
 
