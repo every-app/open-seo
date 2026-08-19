@@ -1,0 +1,123 @@
+---
+title: "How accurate are competitor traffic estimates?"
+description: "A domain overview reports an estimate, not a measurement. What inflates the headline number, how close-variant stacking works, and how to read a competitor's footprint without being fooled by its size."
+---
+
+## What a domain overview actually measures
+
+Every competitor traffic number you have ever seen is modelled. Nobody outside a company can see its analytics. What a tool does instead is find the keywords a domain ranks for, look up each keyword's estimated search volume, apply an assumed click-through rate for the position held, and add it all up.
+
+That method is genuinely useful and it is wrong in specific, knowable directions. If you understand the directions, the estimate becomes a good instrument. If you treat it as a measurement, it will lead you into fights you cannot win and away from ones you can.
+
+Melissa Popp of the agency Rickety Roo points at the largest blind spot, which no volume model can see at all:
+
+> And then you look at where traffic is actually coming from from competitors, and it's not going to their website. You know, people are starting on Instagram and TikTok.
+
+An organic traffic estimate covers Google organic. A competitor's real demand may be arriving somewhere the estimate has no visibility into, which cuts both ways: the number can overstate their search position and understate their business.
+
+## Read the headline number, then read what produced it
+
+Here is a real domain overview for a national brand in the property restoration category.
+
+![A domain overview showing 3,023,467 estimated organic traffic and 49,475 organic keywords, with a top-keywords table where the highest-traffic term is a carpet cleaning query](/library/competitive-analysis/competitor-domain-overview-openseo.png)
+
+Three million estimated visits a month, across just under fifty thousand keywords. If you run a restoration company, that is a terrifying number.
+
+Now read the table under it. The single highest-traffic term is a carpet cleaning query. Second is a commercial cleaning query. Work down the list and a very large share of the estimated traffic sits on carpet cleaning, general house cleaning, air duct cleaning, and dryer vent cleaning.
+
+That company is not beating you at restoration by three million visits a month. It also runs a cleaning services business, and the cleaning business is where a great deal of the traffic lives. The comparable number, restoration terms only, is a fraction of the headline.
+
+This is the first and most important correction: **a domain-level traffic estimate aggregates every business line a domain operates.** Before you benchmark against it, filter it down to the business you are actually in.
+
+## Close-variant stacking, and why keyword counts inflate
+
+The second correction is subtler and it inflates almost every competitor estimate you will ever read.
+
+![A ranked-keyword table where five different mold-related keywords all show identical search volume of 74,000 and identical estimated traffic of 22,496, all pointing at the same single URL](/library/competitive-analysis/close-variant-keyword-inflation-openseo.png)
+
+Look at the block in the middle. Five keywords, all reported at 74,000 monthly searches, all reported at 22,496 estimated traffic, nearly all pointing at the same URL. Above it, three more terms share an identical 165,000 and 26,730, again on one URL.
+
+Those are not five keywords and three keywords. Search volume data derives from Google Ads, which groups close variants together and reports the group's volume against every member. So one real pool of demand gets reported five times, and if the model then adds up per-keyword traffic estimates, that pool gets counted five times too.
+
+The practical consequences:
+
+- **Organic keyword counts are inflated.** "Ranks for 49,475 keywords" includes large families of near-duplicates.
+- **Estimated traffic is inflated wherever stacking is heavy**, which tends to be in commercial service categories where buyers phrase the same request many ways.
+- **Two tools will disagree** because they de-duplicate differently and assume different click curves.
+
+Gert Mellak of Solicom AI Consulting treats that disagreement as information rather than a problem:
+
+> The narrower the focus, the better you can use the data, because then you can start cross connecting data from different data points. Do Semrush and Ahrefs actually agree? Very often they might not.
+
+Where two estimates disagree wildly, the honest reading is that the true figure is uncertain, not that one tool is right.
+
+## Read pages, not keywords
+
+The fix for both problems is the same. Stop reading the keyword tab and read the pages tab.
+
+A page count cannot be inflated by close variants, because the five stacked mold terms resolve to one URL. Pages also map to work: you cannot build a keyword, but you can build a page. And grouping by page reveals the shape of a competitor's advantage, which is usually the actual finding.
+
+Ask three questions of the page list:
+
+1. **How concentrated is it?** If the top ten pages hold most of the estimated traffic, their moat is ten pages deep and you can see all of it.
+2. **How many of those pages are in my business?** The restoration example collapses considerably under this question.
+3. **How old and how good are they?** A dated page holding position three on a term you care about is an invitation.
+
+Brittany Trafis of Soarion Digital has watched the size advantage matter less than it used to:
+
+> We are working with brands who have a quarter of the budget of their big competitors in paid advertising, but now within AI search, they're starting to show up and have a higher presence than their larger brands.
+
+Budget and traffic estimates measure the same thing, which is how much a company has already spent. Neither measures whether a specific page can be beaten.
+
+## Do it with OpenSEO
+
+The [domain overview tool](/features/domain-overview) returns the footprint, and the ranked-keyword rows behind it are what let you check the estimate rather than trust it. Connect the [OpenSEO MCP](/docs/mcp) and run the whole correction in one pass.
+
+```text
+Using the OpenSEO MCP, give me an honest read on [competitor.com].
+
+1. Pull the domain overview: estimated organic traffic and
+   organic keyword count. Report these as the headline figures.
+
+2. Pull their ranked keywords sorted by traffic. Find rows that
+   share an identical search volume and identical traffic
+   estimate and resolve to the same URL. Report roughly how much
+   of the headline traffic sits in those stacked groups.
+
+3. Group the keywords by ranking URL. Give me their top 20 pages
+   by estimated traffic.
+
+4. Split those pages into "in my business" and "other business
+   line", where my business is [describe what you actually sell].
+   Total each side.
+
+Finish with two numbers: the headline estimate, and your best
+estimate for the part of it that competes with me. Say how
+confident you are and why.
+```
+
+That final instruction matters. An estimate presented without a confidence statement invites the reader to treat it as a measurement, which is the failure this whole page exists to prevent.
+
+## What to do first
+
+Take the competitor whose traffic number most intimidates you and run step four only. Split their footprint into your business and everything else. In most markets the number that comes back is between a third and a tenth of the headline, and the gap you were planning around was never the gap.
+
+Then take the terms that survive into [keyword gap analysis](/library/competitive-analysis/keyword-gap-analysis), and check whether the domains you are comparing against are even [the right competitors](/library/competitive-analysis/find-your-real-competitors) before you commit a quarter to catching them.
+
+## Competitor traffic estimate FAQ
+
+### How accurate are competitor traffic estimates?
+
+They are directionally useful and numerically unreliable. They are modelled from ranked keywords, estimated search volumes, and assumed click-through rates, so they inherit every error in all three. Treat an estimate as an order of magnitude and a trend, never as a figure to plan revenue against.
+
+### Why do different SEO tools show different traffic for the same site?
+
+Because each one uses a different keyword index, a different volume source, a different way of de-duplicating close variants, and a different click curve. Disagreement between tools is normal and tells you the true figure is uncertain.
+
+### Why do several keywords show exactly the same search volume?
+
+Google Ads groups close variants such as plurals, word order changes, and near-synonyms, then reports the grouped volume for every term in the group. Tools that source volume from Google Ads inherit that grouping, which is why five phrasings of one request can all report an identical number.
+
+### Is estimated organic traffic the same as a website traffic checker?
+
+No. A traffic checker tries to estimate all visits from every source. An organic traffic estimate covers Google organic search only, and says nothing about direct, email, paid, social, or referral traffic, which for many businesses is the majority.

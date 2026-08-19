@@ -53,3 +53,35 @@ export const keywordResearchStrategies: StrategyLibraryItem[] = [
     href: "/library/keyword-research/positioning-to-demand",
   },
 ];
+
+export const COMPETITIVE_ANALYSIS_LIBRARY = {
+  name: "Competitive Analysis",
+  path: "/library/competitive-analysis",
+};
+
+export const competitiveAnalysisStrategies: StrategyLibraryItem[] = [
+  {
+    title: "Find out who your real competitors are",
+    description:
+      "The domains sharing your SERPs are rarely the companies on your battlecard. Compare a keyword set and read the list you actually compete against.",
+    href: "/library/competitive-analysis/find-your-real-competitors",
+  },
+  {
+    title: "Keyword gap analysis: subtract the brand terms first",
+    description:
+      "Most ranked-keyword lists are mostly brand. Strip brand from both sides and the gap becomes a short, buildable list.",
+    href: "/library/competitive-analysis/keyword-gap-analysis",
+  },
+  {
+    title: "How accurate are competitor traffic estimates?",
+    description:
+      "Read a domain overview without being fooled by close-variant stacking or a headline traffic number from another business line.",
+    href: "/library/competitive-analysis/competitor-traffic-estimates",
+  },
+  {
+    title: "Read a competitor's link profile before you copy it",
+    description:
+      "Referring domains, spam score, and broken links tell you whether an authority advantage is real or repeated.",
+    href: "/library/competitive-analysis/backlink-gap-analysis",
+  },
+];

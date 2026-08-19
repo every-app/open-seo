@@ -395,6 +395,41 @@ export const featurePages = {
           "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
       },
     ],
+    guides: {
+      title: "The Competitive Analysis Strategy Library",
+      description:
+        "Practitioner strategies for turning a domain overview into a decision. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "Find out who your real competitors are",
+          description:
+            "Compare a keyword set and read the domains actually in your SERPs.",
+          href: "/library/competitive-analysis/find-your-real-competitors",
+        },
+        {
+          label: "Keyword gap analysis: subtract the brand terms first",
+          description:
+            "Strip brand from both sides and the gap becomes buildable.",
+          href: "/library/competitive-analysis/keyword-gap-analysis",
+        },
+        {
+          label: "How accurate are competitor traffic estimates?",
+          description:
+            "Close-variant stacking, other business lines, and how to correct for both.",
+          href: "/library/competitive-analysis/competitor-traffic-estimates",
+        },
+        {
+          label: "Read a competitor's link profile before you copy it",
+          description:
+            "Referring domains, spam score, and the broken links worth chasing.",
+          href: "/library/competitive-analysis/backlink-gap-analysis",
+        },
+      ],
+      cta: {
+        label: "Browse all competitive analysis strategies",
+        href: "/library/competitive-analysis",
+      },
+    },
   },
   rankTracking: {
     slug: FEATURE_PAGE_SLUGS.rankTracking,

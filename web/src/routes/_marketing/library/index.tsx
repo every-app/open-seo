@@ -1,11 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildPageSeo } from "@/lib/seo";
-import { keywordResearchStrategies } from "@/lib/strategy-libraries";
+import {
+  competitiveAnalysisStrategies,
+  keywordResearchStrategies,
+} from "@/lib/strategy-libraries";
 
 const PATH = "/library";
 const description =
-  "Browse practical SEO strategies for finding search demand, mapping intent, and planning pages.";
-const featuredStrategies = keywordResearchStrategies.slice(0, 4);
+  "Browse practical SEO strategies for finding search demand, sizing up competitors, mapping intent, and planning pages.";
+const featuredStrategies = [
+  ...keywordResearchStrategies.slice(0, 2),
+  ...competitiveAnalysisStrategies.slice(0, 2),
+];
 
 export const Route = createFileRoute("/_marketing/library/")({
   head: () =>
@@ -52,6 +58,23 @@ function StrategyLibraryIndexPage() {
             </p>
             <p className="mt-5 text-sm font-medium text-neutral-950">
               View all {keywordResearchStrategies.length} strategies{" "}
+              <span aria-hidden="true">&rarr;</span>
+            </p>
+          </a>
+          <a
+            href="/library/competitive-analysis"
+            className="block rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-2xl font-semibold tracking-tight text-neutral-950">
+              Competitive Analysis
+            </h3>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
+              Find out which domains really hold your search results, measure
+              the keyword and link gap honestly, and decide what is worth
+              taking.
+            </p>
+            <p className="mt-5 text-sm font-medium text-neutral-950">
+              View all {competitiveAnalysisStrategies.length} strategies{" "}
               <span aria-hidden="true">&rarr;</span>
             </p>
           </a>
