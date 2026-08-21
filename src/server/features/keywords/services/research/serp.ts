@@ -1,10 +1,9 @@
 import { waitUntil } from "cloudflare:workers";
-import { type SerpLiveItem } from "@/server/lib/dataforseo";
+import { type SerpLiveItem, getSerpResults } from "@/server/lib/serp";
 import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
 import type { SerpResultItem } from "@/types/keywords";
 import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { normalizeKeyword } from "./helpers";
 
 const SERP_CACHE_TTL_SECONDS = 12 * 60 * 60;
@@ -80,11 +79,14 @@ async function getSerpLiveAnalysis(
     return cached.data;
   }
 
-  const liveItems = await createDataforseoClient(billingCustomer).serp.live({
-    keyword,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-  });
+  const liveItems = await getSerpResults(
+    {
+      keyword,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+    },
+    billingCustomer,
+  );
 
   const items = mapOrganicSerpItems(liveItems);
   const result: SerpAnalysisResult = { requestedKeyword: keyword, items };

@@ -1,10 +1,9 @@
 import { z } from "zod";
-import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getSerpResults } from "@/server/lib/serp";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
-import { resolveMarket } from "@/shared/keyword-locations";
 import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import {
   languageCodeSchema,
@@ -93,14 +92,17 @@ export const getSerpResultsTool = {
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
-    const client = createDataforseoClient(context.billing);
     const results = await Promise.all(
       args.queries.map(async (q) => {
         try {
-          const items = await client.serp.live({
-            keyword: q.keyword,
-            ...resolveMarket(q, context.project),
-          });
+          const items = await getSerpResults(
+            {
+              keyword: q.keyword,
+              locationCode: q.locationCode ?? context.project.locationCode,
+              languageCode: q.languageCode ?? context.project.languageCode,
+            },
+            context.billing,
+          );
           // Trim noise — return only essentials per item.
           const trimmed = items.slice(0, 20).map((item) => ({
             type: item.type,
