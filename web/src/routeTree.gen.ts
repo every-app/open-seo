@@ -41,8 +41,13 @@ import { Route as MarketingFeaturesBacklinksRouteImport } from './routes/_market
 import { Route as MarketingFeaturesBacklinkCheckerRouteImport } from './routes/_marketing/features/backlink-checker'
 import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
+import { Route as MarketingLibrarySiteAuditIndexRouteImport } from './routes/_marketing/library/site-audit/index'
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
 import { Route as MarketingLibraryCompetitiveAnalysisIndexRouteImport } from './routes/_marketing/library/competitive-analysis/index'
+import { Route as MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport } from './routes/_marketing/library/site-audit/when-your-crawler-gets-blocked'
+import { Route as MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport } from './routes/_marketing/library/site-audit/technical-seo-audit-checklist'
+import { Route as MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport } from './routes/_marketing/library/site-audit/seo-audit-report-template'
+import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './routes/_marketing/library/site-audit/index-bloat'
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
 import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
@@ -226,6 +231,12 @@ const MarketingFeaturesAiBrandVisibilityRoute =
     path: '/features/ai-brand-visibility',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibrarySiteAuditIndexRoute =
+  MarketingLibrarySiteAuditIndexRouteImport.update({
+    id: '/library/site-audit/',
+    path: '/library/site-audit/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibraryKeywordResearchIndexRoute =
   MarketingLibraryKeywordResearchIndexRouteImport.update({
     id: '/library/keyword-research/',
@@ -236,6 +247,30 @@ const MarketingLibraryCompetitiveAnalysisIndexRoute =
   MarketingLibraryCompetitiveAnalysisIndexRouteImport.update({
     id: '/library/competitive-analysis/',
     path: '/library/competitive-analysis/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute =
+  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport.update({
+    id: '/library/site-audit/when-your-crawler-gets-blocked',
+    path: '/library/site-audit/when-your-crawler-gets-blocked',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute =
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport.update({
+    id: '/library/site-audit/technical-seo-audit-checklist',
+    path: '/library/site-audit/technical-seo-audit-checklist',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditSeoAuditReportTemplateRoute =
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport.update({
+    id: '/library/site-audit/seo-audit-report-template',
+    path: '/library/site-audit/seo-audit-report-template',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibrarySiteAuditIndexBloatRoute =
+  MarketingLibrarySiteAuditIndexBloatRouteImport.update({
+    id: '/library/site-audit/index-bloat',
+    path: '/library/site-audit/index-bloat',
     getParentRoute: () => MarketingRoute,
   } as any)
 const MarketingLibraryKeywordResearchSeedFromConversationRoute =
@@ -359,8 +394,13 @@ export interface FileRoutesByFullPath {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
@@ -406,8 +446,13 @@ export interface FileRoutesByTo {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/library/competitive-analysis': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/site-audit': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -455,8 +500,13 @@ export interface FileRoutesById {
   '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/_marketing/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
+  '/_marketing/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  '/_marketing/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/_marketing/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/_marketing/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/_marketing/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -504,8 +554,13 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/site-audit/index-bloat'
+    | '/library/site-audit/seo-audit-report-template'
+    | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/site-audit/when-your-crawler-gets-blocked'
     | '/library/competitive-analysis/'
     | '/library/keyword-research/'
+    | '/library/site-audit/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/privacy'
@@ -551,8 +606,13 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/site-audit/index-bloat'
+    | '/library/site-audit/seo-audit-report-template'
+    | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/site-audit/when-your-crawler-gets-blocked'
     | '/library/competitive-analysis'
     | '/library/keyword-research'
+    | '/library/site-audit'
   id:
     | '__root__'
     | '/_marketing'
@@ -599,8 +659,13 @@ export interface FileRouteTypes {
     | '/_marketing/library/keyword-research/positioning-to-demand'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
+    | '/_marketing/library/site-audit/index-bloat'
+    | '/_marketing/library/site-audit/seo-audit-report-template'
+    | '/_marketing/library/site-audit/technical-seo-audit-checklist'
+    | '/_marketing/library/site-audit/when-your-crawler-gets-blocked'
     | '/_marketing/library/competitive-analysis/'
     | '/_marketing/library/keyword-research/'
+    | '/_marketing/library/site-audit/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -845,6 +910,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingFeaturesAiBrandVisibilityRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/site-audit/': {
+      id: '/_marketing/library/site-audit/'
+      path: '/library/site-audit'
+      fullPath: '/library/site-audit/'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/': {
       id: '/_marketing/library/keyword-research/'
       path: '/library/keyword-research'
@@ -857,6 +929,34 @@ declare module '@tanstack/react-router' {
       path: '/library/competitive-analysis'
       fullPath: '/library/competitive-analysis/'
       preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/when-your-crawler-gets-blocked': {
+      id: '/_marketing/library/site-audit/when-your-crawler-gets-blocked'
+      path: '/library/site-audit/when-your-crawler-gets-blocked'
+      fullPath: '/library/site-audit/when-your-crawler-gets-blocked'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/technical-seo-audit-checklist': {
+      id: '/_marketing/library/site-audit/technical-seo-audit-checklist'
+      path: '/library/site-audit/technical-seo-audit-checklist'
+      fullPath: '/library/site-audit/technical-seo-audit-checklist'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/seo-audit-report-template': {
+      id: '/_marketing/library/site-audit/seo-audit-report-template'
+      path: '/library/site-audit/seo-audit-report-template'
+      fullPath: '/library/site-audit/seo-audit-report-template'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/site-audit/index-bloat': {
+      id: '/_marketing/library/site-audit/index-bloat'
+      path: '/library/site-audit/index-bloat'
+      fullPath: '/library/site-audit/index-bloat'
+      preLoaderRoute: typeof MarketingLibrarySiteAuditIndexBloatRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/library/keyword-research/seed-from-conversation': {
@@ -978,8 +1078,13 @@ interface MarketingRouteChildren {
   MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  MarketingLibrarySiteAuditIndexBloatRoute: typeof MarketingLibrarySiteAuditIndexBloatRoute
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute: typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   MarketingLibraryCompetitiveAnalysisIndexRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
+  MarketingLibrarySiteAuditIndexRoute: typeof MarketingLibrarySiteAuditIndexRoute
 }
 
 const MarketingRouteChildren: MarketingRouteChildren = {
@@ -1027,10 +1132,19 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchSearchIntentMappingRoute,
   MarketingLibraryKeywordResearchSeedFromConversationRoute:
     MarketingLibraryKeywordResearchSeedFromConversationRoute,
+  MarketingLibrarySiteAuditIndexBloatRoute:
+    MarketingLibrarySiteAuditIndexBloatRoute,
+  MarketingLibrarySiteAuditSeoAuditReportTemplateRoute:
+    MarketingLibrarySiteAuditSeoAuditReportTemplateRoute,
+  MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute:
+    MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute,
+  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute:
+    MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute,
   MarketingLibraryCompetitiveAnalysisIndexRoute:
     MarketingLibraryCompetitiveAnalysisIndexRoute,
   MarketingLibraryKeywordResearchIndexRoute:
     MarketingLibraryKeywordResearchIndexRoute,
+  MarketingLibrarySiteAuditIndexRoute: MarketingLibrarySiteAuditIndexRoute,
 }
 
 const MarketingRouteWithChildren = MarketingRoute._addFileChildren(

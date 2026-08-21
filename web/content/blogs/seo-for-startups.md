@@ -157,7 +157,7 @@ When you're ready to start focusing on SEO, this is a good order:
 7. Use [competitor analysis](/docs/skills/competitor-analysis) and [keyword research](/docs/skills/keyword-research) to find obvious gaps
 8. Earn mentions and links by doing things worth citing
 
-## Final thought
+## SEO is market research that compounds into distribution
 
 SEO is worth understanding as a founder because it shows what the market is asking for, what Google believes users want, and whether your company appears as a credible answer.
 

@@ -1,0 +1,126 @@
+---
+title: "When your own crawler gets blocked"
+description: "A crawl of 867 pages came back with 784 of them blocked by the site's own edge. Most audit tools report that as a broken site. What the flag actually means, and what it tells you about how search engines and AI crawlers are being treated."
+---
+
+## Why did my SEO crawler get blocked?
+
+Because a bot-protection layer decided it was not worth serving. A Cloudflare challenge, a 403, or a 429 rate limit, returned in a few milliseconds by an edge rule that never asked the origin server anything.
+
+This is the most under-reported outcome in technical SEO. It is not a finding about your pages; it is a finding about your infrastructure, and it silently invalidates every other finding in the same report. A page that was never fetched has no title, no meta description, no word count, and no links. Feed that into a scoring engine and it reads as a catastrophically bad page.
+
+OpenSEO handles this by classifying it rather than scoring it. Every crawled page carries a `fetchClass` of `ok`, `blocked`, or `error`, and `blocked` is exactly what it sounds like: the site's bot protection challenged the crawler, so the page could not be audited. It is one of only four issue types the audit engine rates as critical.
+
+## What 90% blocked looks like
+
+Here is a crawl of seoarcade.com, which sits behind Cloudflare. The crawler reached 867 URLs. **784 of them came back blocked.**
+
+![OpenSEO site audit for seoarcade.com showing a warning banner reading "We were blocked on 784 pages. The site's bot protection challenged our crawler, so those pages couldn't be audited." above stats of 867 pages crawled, 1,036 issues found and 184ms average response, with the pages table listing URL after URL returning a red 429 status and no title](/library/site-audit/crawler-blocked-429-pages-openseo.png)
+
+Three details in that screenshot are worth reading carefully.
+
+The status code is 429, not 403. That is rate limiting rather than a categorical block, which means the site did serve the crawler at first and then stopped. The first 83 URLs came back fine.
+
+The response times on the blocked rows are 4 to 15 milliseconds. No origin server answers that fast. Those responses came from the edge, which tells you the rule lives in Cloudflare and not in the application.
+
+And the report says so on the page rather than burying it. The banner names the count and gives the fix: allowlist the `OpenSEO-Audit` user agent in the WAF, then re-run. That instruction ships as the `how_to_fix` on every blocked-page issue row, so an agent reading the report through the MCP gets it too.
+
+Without that flag, the 78 missing meta descriptions in the same report would look like the site's main problem. They are not. They are a finding about the 83 pages that were served.
+
+## The finding underneath the finding
+
+The reason this matters beyond your own audit: whatever rule stopped your crawler is a rule, and rules apply to whoever matches them.
+
+Googlebot is usually exempt, because bot-protection vendors verify it by reverse DNS and ship allowlists by default. Everything else is a coin flip. Bingbot, the AI crawlers, the tool your agency uses, and the tool your client's new agency will use next quarter all arrive as unfamiliar user agents from unfamiliar IP ranges.
+
+Chris Green of Torque Partnership spends his time in access logs and makes the point that the user agent alone tells you nothing:
+
+> And without telling Claude to check the IP range and the other network conditions, you may start analyzing bot activity on the wrong bot. It could just be a spoofer.
+
+That cuts both ways. A rule written against a user-agent string blocks the honest crawlers that identify themselves and misses the ones that lie. The crawlers that show up as Chrome get served.
+
+Chris's answer is to stop guessing from the outside and read what the server recorded:
+
+> And for me, one of the other treasure troves of information is access logs. So if we can say like these AI bots are visiting on these days, here's your average count for the amount of times that a user driven bot has appeared versus a training bot versus a search bot, et cetera. You can start to build this picture that you can add sort of proxies or leading indicators to success.
+
+An audit tells you what happened to one crawler on one day. Access logs tell you what has happened to every crawler for months, including the ones you never thought to test. His full conversation on patents and the agentic web is on [the Unscripted SEO podcast](https://unscriptedseo.com/chris-green-do-googles-patents-still-hold-up-in-an-agentic-web/).
+
+## Read the report as a bounded estimate
+
+Until you fix access, the audit describes a sample you did not choose. Grant Simmons, who has spent years defending numbers in front of executives, puts it as a question worth asking of any report:
+
+> how much guessing are we willing to put up with?
+
+His own habit is to make the uncertainty explicit rather than let it travel:
+
+> most of my tools, I add in a confidence score, because the math is just math and reasoning is just reasoning.
+
+For a partly blocked crawl, that means a single line at the top of the report: 83 of 867 pages were audited, so every count below covers 10% of the site. Say it before the numbers, not after. Grant's episode is [here](https://unscriptedseo.com/grant-simmons-on-entity-seo-llms-and-the-future-of-search-visibility/).
+
+## The workflow
+
+1. Filter the pages report to `fetchClass: blocked` before reading anything else. If the count is more than a rounding error, stop.
+2. Read the status codes. A 403 is a categorical block on your user agent. A 429 is rate limiting, which often means the crawl was too fast rather than unwelcome. A 503 with a Cloudflare body is a managed challenge.
+3. Check response times. Single-digit milliseconds means an edge rule. Hundreds of milliseconds means the origin decided.
+4. Allowlist the crawler's user agent in the WAF and re-crawl. On Cloudflare that is a custom rule skipping bot protection when the user agent contains `OpenSEO-Audit`.
+5. Then ask the wider question: pull your access logs and check which other non-Googlebot crawlers are getting the same treatment.
+
+## Run this with the OpenSEO MCP
+
+`get_audit_pages` takes a `fetchClass` filter, so the diagnosis is one call.
+
+```text
+Using the OpenSEO MCP on project [name], from the most recent site
+audit:
+
+1. Get the pages with fetchClass "blocked" and tell me how many
+   there are as a share of the total crawl.
+
+2. Break the blocked pages down by status code, and give me the
+   range of response times for each code.
+
+3. Tell me whether the blocked URLs cluster in one section of the
+   site or are spread across it, and whether any of them were
+   reached before the blocking started.
+
+4. Based on the codes and the response times, tell me whether this
+   looks like a WAF rule, a rate limit, or an origin problem, and
+   what specifically to change.
+
+5. Then read the rest of the audit and restate every issue count as
+   a share of the pages that were actually fetched, not the total.
+
+Do not report the blocked pages as thin content or missing titles.
+```
+
+Step 5 is the one to keep. An agent that has been told 784 pages have no title will confidently recommend writing 784 titles.
+
+## Getting served is the check that precedes every other check
+
+Every technical SEO finding is downstream of the same assumption: that the tool making the finding was given the real page. That assumption breaks more often than the industry admits, and it breaks silently, because a blocked response is still a response and most tools treat the empty payload as data.
+
+Two habits fix it. Check `fetchClass` before you read a single issue. And when the audit is clean, look at your logs anyway, because the crawler you allowlisted is not the only one asking.
+
+Once you trust the fetch, the rest of the audit is worth reading. [The technical SEO audit checklist](/library/site-audit/technical-seo-audit-checklist) covers what to do with it, and [writing an audit report](/library/site-audit/seo-audit-report-template) covers how to state the coverage caveat so it survives being forwarded.
+
+## Blocked crawler FAQ
+
+### Why is my site blocking SEO crawlers but not Google?
+
+Because bot-protection vendors verify Googlebot by reverse DNS lookup and allowlist it out of the box. Third-party crawlers have no equivalent verification path, so they hit the same generic rules as scrapers. The block is usually a default rather than a decision anyone made.
+
+### What does a 429 mean during a site crawl?
+
+Too many requests. The site served the crawler and then throttled it, which is a rate limit rather than a refusal. Slowing the crawl or allowlisting the user agent normally clears it. A 403 is the categorical version and needs a WAF rule change.
+
+### How do I allow a crawler through Cloudflare?
+
+Add a WAF custom rule that skips bot protection when the user agent contains the crawler's token, then re-run the crawl. For OpenSEO that token is `OpenSEO-Audit`. On some free tiers the managed bot rules cannot be skipped selectively, and you have to relax bot protection for the duration of the crawl.
+
+### Can blocking bots hurt my SEO?
+
+It can, when the rule catches more than it was written for. Googlebot is normally exempt, but Bingbot, AI crawlers, and preview fetchers are not, and a site that is invisible to everything except Google is making a bet on one channel. Check your access logs to see which crawlers are actually being refused rather than assuming.
+
+### How do I know if a crawler is really Googlebot?
+
+Reverse DNS on the requesting IP, then a forward lookup to confirm it resolves back to the same address. The user-agent string is trivially spoofed, so anything that identifies itself as Googlebot from an unverified IP should be treated as an impostor. Google publishes its IP ranges for the same purpose.

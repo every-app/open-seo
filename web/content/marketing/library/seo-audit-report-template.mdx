@@ -1,0 +1,135 @@
+---
+title: "Write an SEO audit report the client will actually act on"
+description: "Most audit reports get read once and filed. A structure that connects each finding to a page, a cost, and a business number, plus what to leave out and why the summary belongs at the front."
+---
+
+## What should an SEO audit report contain?
+
+Six things, in this order: what you checked, what is broken now, what it costs, what you propose, who does it, and how you will know it worked. Everything else in a typical audit deck is evidence, and evidence belongs in an appendix.
+
+The reason most audit reports fail is not that they are wrong. They are usually correct and unusable. A 40-page document listing 1,180 findings across 27 issue types is a faithful description of a crawl, and it gives the person paying for it no way to decide anything.
+
+Grant Simmons, who ran search at Homes.com through its CoStar acquisition and now works with Fiat Growth, names this as the unsolved problem of the whole business:
+
+> I think the biggest challenge that most agencies have and most individual consultants have is reporting.
+
+And he is specific about what is missing from it:
+
+> I still think it's a primary agency issue where there's no consistency in tying efforts, outcomes back to KPIs for the business.
+
+That is the test to apply to your own audit report. Point at any row in it and ask which business number moves if the row gets fixed. If you cannot answer for most rows, you have written a crawl summary. Grant's full conversation on entity SEO and measurement is on [the Unscripted SEO podcast](https://unscriptedseo.com/grant-simmons-on-entity-seo-llms-and-the-future-of-search-visibility/).
+
+## The structure
+
+### 1. Scope, in two sentences
+
+What was crawled, how many pages, on what date, and what was excluded. Then the one line most audits omit: whether the crawl succeeded. If the site's bot protection blocked part of the crawl, that belongs in the first paragraph, not a footnote, because it bounds every number that follows.
+
+### 2. The critical tier, with named owners
+
+Only the issues that stop a page being reached, rendered, or understood. On a healthy site this is a short list, sometimes empty. Each row gets a URL, the specific detail, and the fix. Do not summarise this section. The client should be able to forward it to a developer without editing it.
+
+![OpenSEO site audit report for unscriptedseo.com grouped into CRITICAL, WARNING and INFO tiers, showing one critical issue type with 35 pages, nine warning types led by missing meta description on 279 pages, and five informational types, with an Export control above the list](/library/site-audit/audit-report-by-severity-openseo.png)
+
+### 3. Warnings, grouped by cause and not by URL
+
+This is the section that decides whether the report gets used. Two hundred and seventy-nine pages missing a meta description is one line, one owner, and one template change. Written out as 279 rows it becomes a document nobody opens twice.
+
+Name the cause for each group. "The post template does not output a meta description" is a sentence a developer can act on. "279 pages are missing meta descriptions" is a number a client can only feel bad about.
+
+### 4. What it costs, in the client's units
+
+Convert each group into the unit the reader already tracks: revenue on the affected pages for ecommerce, form fills for lead generation, sessions for a publisher. Pull the figure from Search Console or analytics rather than from the audit, because the audit does not know which pages matter.
+
+Grant puts a number on the uncertainty rather than hiding it:
+
+> most of my tools, I add in a confidence score, because the math is just math and reasoning is just reasoning.
+
+An estimate with a stated confidence survives being challenged in a meeting. An estimate presented as a fact does not survive the first person who asks how you got it.
+
+### 5. The proposal, ordered by pages fixed per hour of work
+
+Order by return, which means severity is an input rather than the sort key. A template change that repairs 279 pages outranks four broken links even though the broken links score higher on severity. Severity is a property of the issue. Return is a property of the fix.
+
+### 6. The measurement plan
+
+Two or three specific numbers, with the date you will read them and the date you expect movement: indexed page count, clicks on the affected URL set, crawl errors in Search Console. Write down what would count as the change not working, before you start.
+
+## What to leave out
+
+The informational tier does not belong in the body of the report. Twenty-six long titles and 82 heading-order skips are real, and putting them in front of a decision-maker costs you the attention you need for the four things that matter. Export them, attach the file, and reference it in one line.
+
+The same goes for a composite score. Any tool that emits one number out of 100 creates a conversation about that number: the client asks why it is 62 rather than 80, you explain the weighting, and nobody discusses the broken links. OpenSEO does not compute a site health score at all. The only scores it stores are Lighthouse's own performance, SEO, accessibility, and best-practice numbers for the sampled pages, and those are worth reporting as what they are, a page-level measurement of ten pages, rather than promoting into a headline.
+
+Chris Green of Torque Partnership makes the case for why report hygiene is not cosmetic, in the context of bot traffic corrupting analytics:
+
+> it pollutes all of my other data, which then ruins decision making, which then eventually potentially ruins my budget and my remit.
+
+A wrong number in an audit report travels the same route. It gets copied into a deck, the deck sets a budget, and the budget outlives everyone's memory of where the number came from. Chris's episode is [here](https://unscriptedseo.com/chris-green-do-googles-patents-still-hold-up-in-an-agentic-web/).
+
+## Run this with the OpenSEO MCP
+
+The report structure above is a prompt. Because `get_audit_issues` returns a `how_to_fix` string on every issue, an agent can write section 2 verbatim rather than paraphrasing remediation advice it half-remembers.
+
+```text
+Using the OpenSEO MCP on project [name], write me an SEO audit
+report for [client] from the most recent site audit.
+
+Structure it exactly like this:
+
+1. SCOPE: pages crawled, date, and whether any pages came back with
+   fetchClass other than "ok". If any did, say so in the first
+   paragraph and state how many findings are therefore unverified.
+
+2. CRITICAL: every issue at severity "critical". URL, the detail
+   from the issue row, and the how_to_fix text unedited. No
+   summarising.
+
+3. WARNINGS BY CAUSE: pull severity "warning", group by issueType,
+   and for each group write one sentence naming the likely cause
+   (template, migration, editorial). Sort groups by page count.
+
+4. COST: for the top three groups, list the affected URLs and tell
+   me which of them appear in Search Console with clicks or
+   impressions. Flag any group where none of the pages get traffic.
+
+5. PROPOSAL: order the groups by pages fixed per unit of effort,
+   not by severity. Say which team owns each one.
+
+6. MEASUREMENT: three numbers to re-check in 30 days.
+
+Put the informational tier in an appendix as counts only. Do not
+invent a score.
+```
+
+Step 4 is what turns a crawl into a report. The audit knows which pages are broken; Search Console knows which broken pages anybody was ever going to visit. [Programmatic discovery with Search Console](/library/keyword-research/gsc-programmatic-discovery) covers pulling that side.
+
+## An audit report is a proposal for work
+
+An audit report has a job that is easy to lose sight of: getting someone to authorise work. It is a sales document for a set of tasks, and it succeeds when the tasks get scheduled.
+
+That reframes every editorial choice in it. The 1,180-row export is honest and it does not persuade anybody. Four named fixes with owners, costs, and a re-check date do. Keep the export, attach it, and write the four.
+
+When the proposed fix is deletion rather than repair, the report needs a different shape again, because you are asking permission to remove pages someone paid to create. [Index bloat](/library/site-audit/index-bloat) covers how to make that case with evidence.
+
+## SEO audit report FAQ
+
+### What should be in an SEO audit report?
+
+Scope and crawl reliability, the critical issues with named owners and exact fixes, warnings grouped by underlying cause rather than by URL, an estimate of what each group costs in the client's own metric, a prioritised proposal, and a short measurement plan with dates. Raw findings go in an appendix.
+
+### How long should an SEO audit report be?
+
+The body should be short enough to read in a meeting, which in practice means four to eight pages. Length lives in the appendix. A long body signals that the findings were not triaged, which is the work the client is paying for.
+
+### Should an SEO audit report include a score?
+
+Not a composite one. A single number out of 100 invites an argument about the weighting and displaces the conversation about which fixes get scheduled. Report counts by severity, which are checkable, and let the proposal carry the judgement. Lighthouse category scores are fine to include as long as you say how many pages they cover.
+
+### How do you present SEO audit findings to a client?
+
+Lead with the decision you want, not the evidence you gathered. Open with the proposal and the cost, keep the critical issues as a forwardable list, group everything else by cause, and put the full export behind a link. Say plainly which numbers are estimates.
+
+### Is there a free SEO audit report template?
+
+The structure on this page is the template, and it is more useful than a formatted document because it tells you what goes in each section and what to leave out. OpenSEO can produce every section from a real crawl using the prompt above; it is open source and free to start, with paid plans from $10/month for larger crawls.

@@ -232,6 +232,41 @@ export const featurePages = {
           "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
       },
     ],
+    guides: {
+      title: "The Site Audit Strategy Library",
+      description:
+        "Practitioner strategies for turning a crawl into scheduled work. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "The technical SEO audit checklist that ends in fixes",
+          description:
+            "Triage 1,180 findings down to the 35 that stop a page being seen.",
+          href: "/library/site-audit/technical-seo-audit-checklist",
+        },
+        {
+          label: "Write an audit report the client will actually act on",
+          description:
+            "Six sections that tie each finding to a page, a cost, and an owner.",
+          href: "/library/site-audit/seo-audit-report-template",
+        },
+        {
+          label: "Index bloat: when the fix is deleting pages",
+          description:
+            "Check what Google actually indexed before you remove anything.",
+          href: "/library/site-audit/index-bloat",
+        },
+        {
+          label: "When your own crawler gets blocked",
+          description:
+            "Read the blocked flag, find the WAF rule, and bound every other number.",
+          href: "/library/site-audit/when-your-crawler-gets-blocked",
+        },
+      ],
+      cta: {
+        label: "Browse all site audit strategies",
+        href: "/library/site-audit",
+      },
+    },
   },
   backlinks: {
     slug: FEATURE_PAGE_SLUGS.backlinks,

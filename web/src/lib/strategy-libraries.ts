@@ -85,3 +85,35 @@ export const competitiveAnalysisStrategies: StrategyLibraryItem[] = [
     href: "/library/competitive-analysis/backlink-gap-analysis",
   },
 ];
+
+export const SITE_AUDIT_LIBRARY = {
+  name: "Site Audit",
+  path: "/library/site-audit",
+};
+
+export const siteAuditStrategies: StrategyLibraryItem[] = [
+  {
+    title: "The technical SEO audit checklist that ends in fixes",
+    description:
+      "One crawl returned 1,180 findings and 35 that mattered. Sort by severity, group by cause, and read the fix that ships with every issue.",
+    href: "/library/site-audit/technical-seo-audit-checklist",
+  },
+  {
+    title: "Write an audit report the client will actually act on",
+    description:
+      "A six-section structure that ties every finding to a page, a cost, and a business number, plus what to leave out.",
+    href: "/library/site-audit/seo-audit-report-template",
+  },
+  {
+    title: "Index bloat: when the fix is deleting pages",
+    description:
+      "Five million pages came out of one site and it recovered. On a small site the same instinct usually wastes a weekend. How to tell which you have.",
+    href: "/library/site-audit/index-bloat",
+  },
+  {
+    title: "When your own crawler gets blocked",
+    description:
+      "784 of 867 pages came back blocked by the site's own edge. What that flag means, and what it says about every other crawler.",
+    href: "/library/site-audit/when-your-crawler-gets-blocked",
+  },
+];

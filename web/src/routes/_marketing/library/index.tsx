@@ -3,14 +3,16 @@ import { buildPageSeo } from "@/lib/seo";
 import {
   competitiveAnalysisStrategies,
   keywordResearchStrategies,
+  siteAuditStrategies,
 } from "@/lib/strategy-libraries";
 
 const PATH = "/library";
 const description =
-  "Browse practical SEO strategies for finding search demand, sizing up competitors, mapping intent, and planning pages.";
+  "Browse practical SEO strategies for finding search demand, sizing up competitors, auditing a site, mapping intent, and planning pages.";
 const featuredStrategies = [
   ...keywordResearchStrategies.slice(0, 2),
-  ...competitiveAnalysisStrategies.slice(0, 2),
+  ...competitiveAnalysisStrategies.slice(0, 1),
+  ...siteAuditStrategies.slice(0, 1),
 ];
 
 export const Route = createFileRoute("/_marketing/library/")({
@@ -75,6 +77,23 @@ function StrategyLibraryIndexPage() {
             </p>
             <p className="mt-5 text-sm font-medium text-neutral-950">
               View all {competitiveAnalysisStrategies.length} strategies{" "}
+              <span aria-hidden="true">&rarr;</span>
+            </p>
+          </a>
+          <a
+            href="/library/site-audit"
+            className="block rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-2xl font-semibold tracking-tight text-neutral-950">
+              Site Audit
+            </h3>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
+              Turn a crawl into scheduled work: triage findings by severity,
+              write the report so it gets approved, and decide which pages
+              should stop existing.
+            </p>
+            <p className="mt-5 text-sm font-medium text-neutral-950">
+              View all {siteAuditStrategies.length} strategies{" "}
               <span aria-hidden="true">&rarr;</span>
             </p>
           </a>
