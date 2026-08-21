@@ -57,10 +57,10 @@ This is the difference between the two cases, and it costs nothing to establish.
 
 Four verdicts come back, and each implies a different action.
 
-- **URL is unknown to Google.** Nothing to remove. Fix the sitemap so you stop submitting it, and move on.
-- **Duplicate, Google chose a different canonical.** Also nothing to remove. Google has already consolidated. Confirm the URL it chose is the one you want.
-- **Crawled, currently not indexed** or **Discovered, currently not indexed.** Google has seen the page and declined it. This is the real bloat signal, and the fix is either to make the page worth indexing or to remove it from the sitemap and the internal link graph.
-- **Submitted and indexed** on a page you did not want indexed. This is the case for `noindex` or removal.
+- If the URL is unknown to Google, there is nothing to remove. Fix the sitemap so you stop submitting it, and move on.
+- "Duplicate, Google chose a different canonical" also leaves you nothing to remove, because Google has already consolidated the set. Confirm the URL it picked is the one you want.
+- The real bloat signal is "Crawled, currently not indexed" or "Discovered, currently not indexed". Google has seen the page and declined it, so either make the page worth indexing or take it out of the sitemap and the internal link graph.
+- A page that comes back "Submitted and indexed" when you never wanted it indexed is the one case for `noindex` or removal.
 
 Patrick Stox, who built Site Audit and Page Inspect at Ahrefs, points out that the discovery side has more inputs than most people account for, which is why bloat keeps reappearing after you delete it:
 
