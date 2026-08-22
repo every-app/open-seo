@@ -8,10 +8,18 @@ import {
 import { AiModelSelect } from "@/client/features/ai/AiModelSelect";
 import { EffectiveModelReadout } from "@/client/features/ai/AiConnectionTest";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import type { AiProviderId } from "@/server/features/ai/providers";
 
-// Per-project override for the in-app agent's model. Empty (inherited) state
-// means "use the organization default"; the toggle switches between inheriting
-// and pinning a model for this project.
+// Per-project override for the in-app agent's provider + model. Empty
+// (inherited) state means "use the organization default"; the toggle switches
+// between inheriting and pinning a provider/model for this project.
+
+const PROVIDER_LABELS: Record<AiProviderId, string> = {
+  openrouter: "OpenRouter",
+  openai: "OpenAI",
+  gemini: "Google Gemini",
+  anthropic: "Anthropic",
+};
 
 export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
@@ -20,6 +28,7 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
     queryFn: () => getProjectAiSettings({ data: { projectId } }),
   });
   const [inheriting, setInheriting] = useState<boolean | null>(null);
+  const [provider, setProvider] = useState<AiProviderId | null>(null);
   const [model, setModel] = useState<string | null>(null);
 
   const settings = settingsQuery.data;
@@ -28,6 +37,11 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
   );
   if (settings && (settings.project?.model ?? null) !== lastLoaded) {
     setLastLoaded(settings.project?.model ?? null);
+    const stored = settings.project?.provider ?? settings.effective.provider;
+    const storedEntry = stored
+      ? settings.providers.find((entry) => entry.id === stored)
+      : undefined;
+    setProvider(storedEntry?.id ?? null);
     setModel(settings.project?.model ?? null);
     setInheriting(settings.project === null);
   }
@@ -37,7 +51,7 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
       updateProjectAiSettings({
         data: {
           projectId,
-          provider: "openrouter",
+          provider: provider ?? "openrouter",
           model: inheriting ? undefined : (model ?? undefined),
         },
       }),
@@ -58,9 +72,14 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
     );
   }
 
+  const selectedProvider = provider ?? settings.effective.provider ?? "openrouter";
+  const providerStatus =
+    settings.providers.find((entry) => entry.id === selectedProvider) ?? null;
   const isDirty =
     inheriting !== (settings.project === null) ||
-    (!inheriting && (model ?? null) !== (settings.project?.model ?? null));
+    (!inheriting &&
+      ((provider ?? null) !== (settings.project?.provider ?? null) ||
+        (model ?? null) !== (settings.project?.model ?? null)));
 
   return (
     <div className="space-y-4">
@@ -68,7 +87,7 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
         <div>
           <p className="text-sm font-medium">Use organization default</p>
           <p className="text-xs text-base-content/50">
-            Inherit the default model configured in app settings.
+            Inherit the provider and default model configured in app settings.
           </p>
         </div>
         <input
@@ -77,22 +96,67 @@ export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {
           checked={inheriting}
           onChange={(event) => setInheriting(event.currentTarget.checked)}
           disabled={saveMutation.isPending}
-          aria-label="Inherit organization AI model"
+          aria-label="Inherit organization AI settings"
         />
       </div>
 
       {!inheriting && (
-        <div className="flex flex-col gap-1.5">
-          <span className="text-sm font-medium">Model override</span>
-          <AiModelSelect
-            value={model}
-            onChange={setModel}
-            disabled={saveMutation.isPending}
-          />
-        </div>
+        <>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Provider</span>
+            <div className="flex flex-wrap gap-2">
+              {settings.providers.map((entry) => (
+                <button
+                  key={entry.id}
+                  type="button"
+                  onClick={() => {
+                    setProvider(entry.id);
+                    setModel(null);
+                  }}
+                  className={`btn btn-outline btn-sm ${
+                    selectedProvider === entry.id ? "btn-primary" : ""
+                  }`}
+                  aria-pressed={selectedProvider === entry.id}
+                >
+                  {PROVIDER_LABELS[entry.id] ?? entry.displayName}
+                  {entry.configured ? (
+                    <span className="text-success">✓</span>
+                  ) : (
+                    <span
+                      className="text-warning"
+                      title={`Missing ${entry.envApiKey}`}
+                    >
+                      Not configured
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <span className="text-sm font-medium">Model override</span>
+            <AiModelSelect
+              provider={selectedProvider}
+              value={model}
+              onChange={setModel}
+              disabled={saveMutation.isPending}
+            />
+            {providerStatus && (
+              <p className="text-xs text-base-content/50">
+                {providerStatus.configured
+                  ? `${providerStatus.envApiKey} configured server-side.`
+                  : `${providerStatus.envApiKey} is not configured — the agent will fail to start until the deployment provides it.`}
+              </p>
+            )}
+          </div>
+        </>
       )}
 
-      <EffectiveModelReadout effectiveModel={settings.effective.model} />
+      <EffectiveModelReadout
+        effectiveProvider={settings.effective.provider}
+        effectiveModel={settings.effective.model}
+      />
 
       <div className="flex justify-end">
         <button

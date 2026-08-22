@@ -40,18 +40,35 @@ declare namespace Cloudflare {
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
-    // OpenRouter API key for the in-app chat agents (onboarding + SAM).
+    // AI provider keys for the in-app agents (onboarding uses OpenRouter;
+    // SAM can use any configured provider). Keys are server-side deployment
+    // secrets — never stored in the app DB, never returned to the client.
     OPENROUTER_API_KEY?: string;
-    // Optional OpenRouter model slug override (defaults in openrouter.ts).
+    OPENAI_API_KEY?: string;
+    GEMINI_API_KEY?: string;
+    ANTHROPIC_API_KEY?: string;
+    // Optional per-provider model defaults (defaults live in providers.ts).
     OPENROUTER_MODEL?: string;
+    OPENAI_MODEL?: string;
+    GEMINI_MODEL?: string;
+    ANTHROPIC_MODEL?: string;
 
-    // In-app agent (SAM) overrides. AI_AGENT_MODEL falls back to
-    // OPENROUTER_MODEL when unset; AI_AGENT_MAX_TOOL_CALLS bounds the number
-    // of tool calls per turn and AI_AGENT_MAX_STEPS bounds inference steps
+    // In-app agent (SAM) overrides. AI_AGENT_PROVIDER picks the deployment
+    // default provider (defaults to openrouter); AI_AGENT_MODEL overrides the
+    // provider default model; AI_AGENT_MAX_TOOL_CALLS bounds the number of
+    // tool calls per turn and AI_AGENT_MAX_STEPS bounds inference steps
     // (defaults in SamChatAgent.ts).
+    AI_AGENT_PROVIDER?: string;
     AI_AGENT_MODEL?: string;
     AI_AGENT_MAX_TOOL_CALLS?: string;
     AI_AGENT_MAX_STEPS?: string;
+    // Long-running tool polling (site audits): exponential backoff between
+    // status reads, attempt cap, and overall wall-clock window per wait
+    // (defaults in samTurnControls.ts).
+    AI_AGENT_POLL_INITIAL_MS?: string;
+    AI_AGENT_POLL_MAX_MS?: string;
+    AI_AGENT_MAX_POLL_ATTEMPTS?: string;
+    AI_AGENT_TOOL_TIMEOUT_MS?: string;
   }
 }
 

@@ -118,3 +118,55 @@ API-key column. The UI can select provider/model and test the server-managed
 credential; documentation must state that `OPENROUTER_API_KEY` remains a
 server-side deployment secret. The agent remains project-authorized and must
 continue to call shared handlers directly, never DataForSEO or MCP over HTTP.
+
+## Post-O2 Status
+
+The sections above record the pre-Phase-O baseline. Phase O2 (multi-provider
+AI) resolved the limitations as follows:
+
+- **Multi-provider**: `providers.ts` + `provider-adapters.ts` +
+  `provider-shared.ts` now expose four providers (OpenRouter, OpenAI, Google
+  Gemini, Anthropic) behind the `AiProvider` interface. Credentials stay
+  server-side deployment secrets (`OPENROUTER_API_KEY`, `OPENAI_API_KEY`,
+  `GEMINI_API_KEY`, `ANTHROPIC_API_KEY`); the UI shows masked status and
+  per-provider connection tests, never a plaintext key.
+- **Persisted resolution**: `ai_agent_settings` rows (project/org scope) now
+  persist `{provider, model}`; `resolveAiSettings` applies project row →
+  org row → `AI_AGENT_PROVIDER`/`AI_AGENT_MODEL` env → per-provider env model
+  → built-in default. Invalid provider/model pairs are rejected at save and
+  normalized at runtime (never sent to the wrong API).
+- **Model discovery + connection testing**: per-provider catalog fetches
+  cached 12h in R2; connection tests classify invalid key / model unavailable /
+  provider unreachable, and short-circuit when the key is missing.
+- **Bounded loops + dedup**: configurable `AI_AGENT_MAX_TOOL_CALLS` stop
+  condition and per-conversation dedup cache (see `in-app-ai-agent.md`).
+- **Settings UI**: global + project sections with provider selector,
+  per-provider model picker (catalog filter + manual entry fallback), masked
+  key readouts, capabilities row, and connection test; the project section has
+  an inherit toggle. Provider switch resets the model; dirty tracking gates
+  saving.
+- **No plaintext keys**: the "no plaintext API-key column" decision held.
+- **Unchanged**: SAM remains provider-agnostic (no provider-specific logic in
+  the SAM layer), MCP tool behavior, DataRouter/cache/budget behavior, and the
+  shared-tool contract are untouched.
+
+## Post-P Status (long-running tool execution)
+
+Phase P hardened how the agent handles asynchronous workflows (site audits)
+without changing any SEO service, the DataRouter, or the DataForSEO
+architecture:
+
+- **Robustness**: a stale-cache defect was fixed — `get_audit_status` reads
+  were being served from the conversation dedup cache, so repeated polls
+  returned the same "running" snapshot until the Durable Object was evicted.
+  Progress reads over mutable state are now always fresh. The agent waits for
+  terminal audit states through one bounded orchestrator (`poll_site_audit`)
+  instead of unbounded improvised polling; attempt and wall-clock budgets are
+  env-tunable and cannot loop forever. A user asking only to start an audit is
+  no longer blocked waiting; an audit that fails, is cancelled/deleted, or
+  times out produces an honest explanation — never fabricated results.
+- **Security posture unchanged**: polling reads go through the same
+  project-scoped MCP handler (identical authorization and self-heal), tool
+  execution stays read-only, and no new mutation-capable surface was added.
+  Observability improved: every internal status read plus a per-wait summary
+  line is logged under the existing `sam-tool` events.

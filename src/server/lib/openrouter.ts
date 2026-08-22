@@ -1,15 +1,13 @@
-import {
-  createOpenRouter,
-  type LanguageModelV3,
-} from "@openrouter/ai-sdk-provider";
+import type { LanguageModel } from "ai";
+import { AiProviderRegistry } from "@/server/features/ai/providers";
 import {
   getOptionalEnvValue,
   getRequiredEnvValue,
 } from "@/server/lib/runtime-env";
 
-// OpenRouter model slug used for the in-app chat agents (onboarding + SAM).
-// Override with OPENROUTER_MODEL to swap models without a code change.
-const DEFAULT_CHAT_AGENT_MODEL = "minimax/minimax-m3";
+// Compatibility shim for callers that predate the multi-provider registry
+// (the onboarding chat agent). The OpenRouter adapter in providers.ts owns
+// the model construction; these helpers keep the old names working.
 
 /**
  * Returns the AI SDK LanguageModel for the chat agents. `usage: { include: true }`
@@ -17,23 +15,12 @@ const DEFAULT_CHAT_AGENT_MODEL = "minimax/minimax-m3";
  * cost (providerMetadata.openrouter.usage.cost) — which we meter against the
  * shared usage-credit pool. `provider.order` prefers Together, then Atlas
  * Cloud (fp8); `zdr: true` restricts routing to Zero-Data-Retention endpoints
- * (prompts are never retained), which is the actual constraint — it excludes
- * MiniMax first-party without a hand-maintained allowlist. The account also
- * enforces this ("Non-frontier requires ZDR" data policy); the request-level
- * flag is belt-and-braces so the constraint survives a dashboard change.
- * Fallbacks stay on within the ZDR set because pinning providers caused a
- * prod outage (Jul 2026: Together upstream-rate-limited m3 and every chat
- * turn 429'd); as of Jul 2026 the ZDR set for m3 is Together/AtlasCloud/
- * Novita/Parasail at the same price plus Morph at 2x output as a last resort.
- *
- * `reasoning` turns on OpenRouter's reasoning-token channel so the model's
- * chain-of-thought comes back as a separate reasoning stream instead of
- * leaking into the visible answer text (MiniMax M3 otherwise dumps its
- * `<think>` trace inline). `effort: "medium"` is OpenRouter's default —
- * stated explicitly only because the SDK type requires one once the channel
- * is configured.
+ * (prompts are never retained); fallbacks stay on within the ZDR set because
+ * pinning providers caused a prod outage (Jul 2026). `reasoning` keeps
+ * chain-of-thought on a separate reasoning stream instead of leaking into the
+ * visible answer text.
  */
-export async function getChatAgentModel(): Promise<LanguageModelV3> {
+export async function getChatAgentModel(): Promise<LanguageModel> {
   const apiKey = await getRequiredEnvValue("OPENROUTER_API_KEY");
   const modelId = await getOptionalEnvValue("OPENROUTER_MODEL");
   return buildChatAgentModel(apiKey, modelId);
@@ -41,20 +28,12 @@ export async function getChatAgentModel(): Promise<LanguageModelV3> {
 
 /**
  * Synchronous variant for callers that already hold the env values. Think's
- * `getModel()` hook is sync and runs on every turn, so the SAM agent reads the
- * key/model from its DO env and builds the model here.
+ * `getModel()` hook is sync and runs on every turn.
  */
 export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
-): LanguageModelV3 {
-  return createOpenRouter({ apiKey })(modelId ?? DEFAULT_CHAT_AGENT_MODEL, {
-    usage: { include: true },
-    reasoning: { effort: "medium" },
-    provider: {
-      order: ["together", "atlas-cloud/fp8"],
-      zdr: true,
-      allow_fallbacks: true,
-    },
-  });
+): LanguageModel {
+  const openRouter = AiProviderRegistry.get("openrouter");
+  return openRouter.buildModel(apiKey, modelId ?? openRouter.defaultModelId);
 }

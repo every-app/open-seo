@@ -1,11 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { listAiModels } from "@/serverFunctions/aiSettings";
+import type { AiProviderId } from "@/server/features/ai/providers";
+import { filterModels } from "@/client/features/ai/modelFilter";
 
-// Model picker fed by the provider's cached catalog (see providers.ts). The
-// catalog can be large (~300+ models on OpenRouter), so a text filter narrows
-// the select; the currently selected model stays listed even when it doesn't
-// match the filter.
+// Model picker fed by the selected provider's cached catalog (see
+// providers.ts). The catalog can be large (~300+ models on OpenRouter), so a
+// text filter narrows the select; the currently selected model stays listed
+// even when it doesn't match the filter (see modelFilter.ts). When the
+// provider has no catalog (unconfigured key or catalog fetch failure) the
+// picker degrades to a manual model-id input so the agent's model can still be
+// pinned.
 
 function formatPrice(usd: number | null): string {
   if (usd === null) return "—";
@@ -13,34 +18,28 @@ function formatPrice(usd: number | null): string {
 }
 
 export function AiModelSelect({
+  provider,
   value,
   onChange,
   disabled,
 }: {
+  provider: AiProviderId;
   value: string | null;
   onChange: (model: string) => void;
   disabled?: boolean;
 }) {
   const modelsQuery = useQuery({
-    queryKey: ["aiModels"],
-    queryFn: () => listAiModels(),
+    queryKey: ["aiModels", provider],
+    queryFn: () => listAiModels({ data: { provider } }),
     staleTime: 12 * 60 * 60 * 1000,
   });
   const [filter, setFilter] = useState("");
-  const data = modelsQuery.data;
-  const models = data ?? [];
+  const models = modelsQuery.data ?? [];
 
-  const filtered = useMemo(() => {
-    const list = data ?? [];
-    const term = filter.trim().toLowerCase();
-    const sorted = list.toSorted((a, b) => a.name.localeCompare(b.name));
-    if (!term) return sorted;
-    return sorted.filter(
-      (model) =>
-        model.id.toLowerCase().includes(term) ||
-        model.name.toLowerCase().includes(term),
-    );
-  }, [data, filter]);
+  const filtered = useMemo(
+    () => filterModels(modelsQuery.data ?? [], filter, value),
+    [modelsQuery.data, filter, value],
+  );
 
   const selectedModel = models.find((model) => model.id === value) ?? null;
 
@@ -49,6 +48,25 @@ export function AiModelSelect({
       <span className="text-sm text-base-content/50">
         Loading model catalog…
       </span>
+    );
+  }
+
+  if (models.length === 0) {
+    return (
+      <div className="space-y-1.5">
+        <input
+          type="text"
+          value={value ?? ""}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder="Model id (e.g. gpt-5)"
+          disabled={disabled}
+          className="input input-bordered input-sm w-full font-mono"
+          aria-label="AI model id"
+        />
+        <p className="text-xs text-base-content/50">
+          No catalog available for this provider — enter a model id manually.
+        </p>
+      </div>
     );
   }
 
@@ -70,10 +88,11 @@ export function AiModelSelect({
         className="select select-bordered select-sm w-full"
       >
         <option value="" disabled>
-          {models.length === 0
-            ? "No models available"
-            : "Select a model…"}
+          Select a model…
         </option>
+        {value && !selectedModel && (
+          <option value={value}>{value} (saved model)</option>
+        )}
         {filtered.map((model) => (
           <option key={model.id} value={model.id}>
             {model.name} — {formatPrice(model.promptPrice)} prompt /{" "}

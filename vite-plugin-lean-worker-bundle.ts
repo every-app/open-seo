@@ -32,11 +32,12 @@ const EAGER_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
       "the /api/autumn route's lazy handler",
   },
   {
-    pattern:
-      /node_modules\/(workers-ai-provider|@ai-sdk\/(openai|anthropic))\//,
+    pattern: /node_modules\/workers-ai-provider\//,
     expected:
       "aliased to workers-ai-provider-stub.ts (@cloudflare/think's default " +
-      "provider path is dead code — our agents construct OpenRouter models)",
+      "Workers AI provider path is dead code — the SAM agent and the " +
+      "onboarding agent construct their own models via the AI provider " +
+      "registry)",
   },
   {
     pattern: /node_modules\/just-bash\//,
@@ -76,6 +77,13 @@ const EAGER_DENYLIST: Array<{ pattern: RegExp; expected: string }> = [
  *    worker entry chunk and fails the build if any EAGER_DENYLIST module is
  *    reachable — turning "we verified the chunk by grepping a sourcemap once"
  *    into a permanent regression test.
+ *
+ * Note (Phase O2): @ai-sdk/openai, @ai-sdk/google, and @ai-sdk/anthropic are
+ * intentionally eager now — the provider registry's adapters construct real
+ * models from them on every turn. Each is a thin wrapper over
+ * @ai-sdk/provider-utils (~100KB minified), which `ai` already pulls eagerly;
+ * they were only denied before because the stubbed workers-ai-provider was
+ * their sole consumer.
  */
 export function leanWorkerBundle(): Plugin {
   return {

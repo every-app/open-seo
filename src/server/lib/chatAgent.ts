@@ -1,16 +1,12 @@
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
-import { z } from "zod";
+import { estimateProviderCost } from "@/server/features/ai/providers";
 
 // OpenRouter (with usage accounting on) reports the real USD cost of each
-// response under providerMetadata.openrouter.usage.cost. Shared by the chat
-// agents (onboarding + SAM) that meter LLM spend against the credit pool.
-const openRouterUsageSchema = z.object({
-  openrouter: z.object({ usage: z.object({ cost: z.number() }) }),
-});
-
+// response under providerMetadata.openrouter.usage.cost. The cost extraction
+// lives in the OpenRouter adapter (estimateProviderCost); this is the
+// pre-registry name the onboarding agent still uses.
 export function openRouterCostUsd(providerMetadata: unknown): number {
-  const parsed = openRouterUsageSchema.safeParse(providerMetadata);
-  return parsed.success ? parsed.data.openrouter.usage.cost : 0;
+  return estimateProviderCost("openrouter", providerMetadata);
 }
 
 // A non-LLM assistant turn streamed back over the chat protocol. Used to surface

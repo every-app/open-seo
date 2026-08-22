@@ -73,20 +73,27 @@ DataForSEO provider locally (billing applies — see
 
 ## In-App AI Agent (SAM)
 
-SAM reads its model configuration from the settings UI (global setting on the
-Settings page, per-project override on the project settings page) and falls
-back to these environment variables:
+SAM reads its provider/model configuration from the settings UI (global
+setting on the Settings page, per-project override on the project settings
+page) and falls back to these environment variables:
 
 | Variable | Default | Meaning |
 |----------|---------|---------|
-| `OPENROUTER_API_KEY` | *(none)* | Server-side credential for model calls. Without it, SAM responds with a billing/configuration notice instead of running |
-| `OPENROUTER_MODEL` | `minimax/minimax-m3` | Fallback model when no settings row is saved |
-| `AI_AGENT_MODEL` | *(none)* | Preferred env fallback — takes precedence over `OPENROUTER_MODEL` |
+| `AI_AGENT_PROVIDER` | `openrouter` | Default provider when no settings row is saved (`openrouter`/`openai`/`gemini`/`anthropic`) |
+| `OPENROUTER_API_KEY` | *(none)* | OpenRouter credential for model calls. Without at least one provider key, SAM responds with a billing/configuration notice instead of running |
+| `OPENAI_API_KEY` | *(none)* | OpenAI credential |
+| `GEMINI_API_KEY` | *(none)* | Google Gemini credential |
+| `ANTHROPIC_API_KEY` | *(none)* | Anthropic credential |
+| `AI_AGENT_MODEL` | *(none)* | Preferred env fallback model (for `AI_AGENT_PROVIDER`) |
+| `OPENROUTER_MODEL` | `minimax/minimax-m3` | OpenRouter fallback model |
+| `OPENAI_MODEL` | `gpt-5` | OpenAI fallback model |
+| `GEMINI_MODEL` | `gemini-2.5-flash` | Gemini fallback model |
+| `ANTHROPIC_MODEL` | `claude-sonnet-4-5` | Anthropic fallback model |
 | `AI_AGENT_MAX_STEPS` | `48` | Think turn step bound |
 | `AI_AGENT_MAX_TOOL_CALLS` | `24` | Tool-call cap per turn (bounded-loop guard) |
 
-To run SAM locally, add your key to `.env.docker` (a valid OpenRouter key, not
-a placeholder), then restart the container:
+To run SAM locally, add your key(s) to `.env.docker` (a valid key, not a
+placeholder), then restart the container:
 
 ```sh
 echo "OPENROUTER_API_KEY=sk-or-v1-..." >> .env.docker
@@ -94,10 +101,16 @@ pnpm dev:docker:down
 pnpm dev:docker
 ```
 
-The key never leaves the server: the UI only shows a masked status and lets
-you test the connection, and model calls are billed to your OpenRouter account
-(not to OpenSEO usage credits). The model catalog is fetched from OpenRouter
-and cached server-side for 12 hours.
+Keys must come through `.env.docker` via `env_file` — do not also map them
+under `environment:` in `compose.dev.yaml`, because an explicit environment
+entry overrides the env_file value with the host shell's unset variable and
+silently disables the provider.
+
+The keys never leave the server: the UI only shows masked status per provider
+and lets you test the connection, and model calls are billed to your own
+provider accounts (not to OpenSEO usage credits). Each provider's model
+catalog is fetched from its public models endpoint and cached server-side for
+12 hours.
 
 ## Verifying It Works
 

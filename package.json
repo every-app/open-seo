@@ -77,6 +77,9 @@
     }
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.111",
+    "@ai-sdk/google": "^3.0.110",
+    "@ai-sdk/openai": "^3.0.97",
     "@ai-sdk/react": "^3.0.211",
     "@cloudflare/ai-chat": "^0.8.4",
     "@cloudflare/think": "0.12.1",
@@ -92,7 +95,7 @@
     "@tanstack/react-start": "^1.168.26",
     "@tanstack/react-table": "^8.21.3",
     "agents": "0.17.3",
-    "ai": "^6.0.199",
+    "ai": "^6.0.258",
     "autumn-js": "^1.2.33",
     "better-auth": "^1.6.22",
     "cheerio": "^1.2.0",
@@ -149,5 +152,16 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.6",
     "wrangler": "^4.105.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "workerd",
+      "sharp",
+      "msgpackr-extract",
+      "@mongodb-js/zstd",
+      "core-js",
+      "core-js-pure"
+    ]
   }
 }

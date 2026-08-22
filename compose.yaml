@@ -19,20 +19,31 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
-      # Optional: AI features (SAM, onboarding chat). Without this the setup
-      # gate in the app asks for the key, but nothing here would forward it.
+      # Optional: AI features (SAM, the in-app SEO agent). Keys are forwarded
+      # from .env (OPENROUTER_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY,
+      # ANTHROPIC_API_KEY). AI_AGENT_PROVIDER picks the default provider when
+      # no per-project/org settings row exists (default openrouter).
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - AI_AGENT_PROVIDER=${AI_AGENT_PROVIDER:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      - OPENAI_MODEL=${OPENAI_MODEL:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-}
+      - ANTHROPIC_MODEL=${ANTHROPIC_MODEL:-}
+      - AI_AGENT_MODEL=${AI_AGENT_MODEL:-}
+      - AI_AGENT_MAX_TOOL_CALLS=${AI_AGENT_MAX_TOOL_CALLS:-}
+      - AI_AGENT_MAX_STEPS=${AI_AGENT_MAX_STEPS:-}
+      - AI_AGENT_POLL_INITIAL_MS=${AI_AGENT_POLL_INITIAL_MS:-}
+      - AI_AGENT_POLL_MAX_MS=${AI_AGENT_POLL_MAX_MS:-}
+      - AI_AGENT_MAX_POLL_ATTEMPTS=${AI_AGENT_MAX_POLL_ATTEMPTS:-}
+      - AI_AGENT_TOOL_TIMEOUT_MS=${AI_AGENT_TOOL_TIMEOUT_MS:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
-      # Optional: AI features (SAM, the in-app SEO agent)
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
-      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
-      - AI_AGENT_MODEL=${AI_AGENT_MODEL:-}
-      - AI_AGENT_MAX_TOOL_CALLS=${AI_AGENT_MAX_TOOL_CALLS:-}
-      - AI_AGENT_MAX_STEPS=${AI_AGENT_MAX_STEPS:-}
       - VITE_SHOW_DEVTOOLS=false
     ports:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"

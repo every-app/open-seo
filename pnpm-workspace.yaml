@@ -6,6 +6,12 @@ minimumReleaseAgeExclude:
   # the window. Exact-pinned in package.json.
   - "alchemy"
   - "@distilled.cloud/*"
+  # TEMPORARY (remove after 2026-08-27): AI SDK publishes multiple times a week;
+  # 6.0.247 and earlier are missing LanguageModelV4 from the `LanguageModel`
+  # union, which @ai-sdk/openai|google|anthropic@4 require. Latest allowed
+  # instead of 8-day-window-pinned.
+  - "ai"
+  - "@ai-sdk/*"
 
 # Advisories triaged as not applicable. Re-review when the parent updates.
 # - GHSA-67mh-4wv8-2f99: esbuild <=0.24.2 dev-server CORS. Only reachable via

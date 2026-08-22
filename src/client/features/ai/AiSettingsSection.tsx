@@ -12,11 +12,41 @@ import {
   EffectiveModelReadout,
 } from "@/client/features/ai/AiConnectionTest";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import type { AiProviderId } from "@/server/features/ai/providers";
+import type { AiProviderStatus } from "@/serverFunctions/aiSettings";
 
 // Global (organization) AI agent settings: which provider and default model the
 // in-app agent uses. Credentials are never stored in the app — the key status
-// below reflects the server-side deployment secret, which is why this section
+// below reflects the server-side deployment secrets, which is why this section
 // can't accept or change a key.
+
+const PROVIDER_LABELS: Record<AiProviderId, string> = {
+  openrouter: "OpenRouter",
+  openai: "OpenAI",
+  gemini: "Google Gemini",
+  anthropic: "Anthropic",
+};
+
+function CapabilityRow({ provider }: { provider: AiProviderStatus }) {
+  const caps: Array<[string, boolean]> = [
+    ["Tool calling", provider.capabilities.toolCalling],
+    ["Streaming", provider.capabilities.streaming],
+    ["Model discovery", provider.capabilities.modelDiscovery],
+  ];
+  return (
+    <p className="text-xs text-base-content/50">
+      {caps.map(([label, supported]) => (
+        <span key={label} className="mr-3">
+          {supported ? (
+            <span className="text-success">✓ {label}</span>
+          ) : (
+            <span className="text-base-content/40">— {label}</span>
+          )}
+        </span>
+      ))}
+    </p>
+  );
+}
 
 export function AiSettingsSection() {
   const queryClient = useQueryClient();
@@ -24,6 +54,7 @@ export function AiSettingsSection() {
     queryKey: ["aiSettings", "global"],
     queryFn: () => getGlobalAiSettings(),
   });
+  const [provider, setProvider] = useState<AiProviderId | null>(null);
   const [model, setModel] = useState<string | null>(null);
 
   const settings = settingsQuery.data;
@@ -31,7 +62,7 @@ export function AiSettingsSection() {
   const saveMutation = useMutation({
     mutationFn: () =>
       updateGlobalAiSettings({
-        data: { provider: "openrouter", model: model ?? undefined },
+        data: { provider: provider ?? "openrouter", model: model ?? undefined },
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["aiSettings"] });
@@ -42,9 +73,17 @@ export function AiSettingsSection() {
   });
 
   // Reset local state when the server data arrives/changes (e.g. another tab).
-  const [lastLoadedModel, setLastLoadedModel] = useState<string | null | undefined>(undefined);
-  if (settings && settings.organization?.model !== lastLoadedModel) {
-    setLastLoadedModel(settings.organization?.model ?? null);
+  const [lastLoaded, setLastLoaded] = useState<string | null | undefined>(undefined);
+  if (
+    settings &&
+    (settings.organization?.provider ?? null) !== lastLoaded
+  ) {
+    setLastLoaded(settings.organization?.provider ?? null);
+    const stored = settings.organization?.provider ?? settings.effective.provider;
+    const storedEntry = stored
+      ? settings.providers.find((entry) => entry.id === stored)
+      : undefined;
+    setProvider(storedEntry?.id ?? null);
     setModel(settings.organization?.model ?? null);
   }
 
@@ -57,45 +96,87 @@ export function AiSettingsSection() {
     );
   }
 
-  const isDirty = (model ?? null) !== (settings.organization?.model ?? null);
+  const selectedProvider = provider ?? settings.effective.provider ?? "openrouter";
+  const providerStatus =
+    settings.providers.find((entry) => entry.id === selectedProvider) ?? null;
+  const isDirty =
+    (provider ?? null) !== (settings.organization?.provider ?? null) ||
+    (model ?? null) !== (settings.organization?.model ?? null);
   const currentModel = model ?? settings.effective.model;
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Provider</span>
-        <span className="text-sm">OpenRouter</span>
+        <div className="flex flex-wrap gap-2">
+          {settings.providers.map((entry) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => {
+                setProvider(entry.id);
+                setModel(null);
+              }}
+              className={`btn btn-outline btn-sm ${
+                selectedProvider === entry.id ? "btn-primary" : ""
+              }`}
+              aria-pressed={selectedProvider === entry.id}
+            >
+              {PROVIDER_LABELS[entry.id] ?? entry.displayName}
+              {entry.configured ? (
+                <span className="text-success">✓</span>
+              ) : (
+                <span className="text-warning" title={`Missing ${entry.envApiKey}`}>
+                  Not configured
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
         <p className="text-xs text-base-content/50">
-          Provider support is extensible; OpenRouter is the only provider
-          available right now.
+          The provider the in-app agent uses. Switching provider resets the
+          model selection.
         </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Default model</span>
         <AiModelSelect
+          provider={selectedProvider}
           value={model}
           onChange={setModel}
           disabled={saveMutation.isPending}
         />
-        <EffectiveModelReadout effectiveModel={settings.effective.model} />
+        <EffectiveModelReadout
+          effectiveProvider={selectedProvider}
+          effectiveModel={settings.effective.model}
+        />
       </div>
 
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">API key</span>
-        {settings.apiKeyConfigured ? (
-          <p className="text-sm text-success">
-            Configured server-side ({settings.maskedApiKey})
-          </p>
+        {providerStatus ? (
+          <>
+            <p className="text-xs">
+              Environment variable: <span className="font-mono">{providerStatus.envApiKey}</span>
+            </p>
+            {providerStatus.configured ? (
+              <p className="text-sm text-success">
+                Configured server-side ({providerStatus.maskedApiKey})
+              </p>
+            ) : (
+              <p className="text-sm text-warning">
+                Not configured. The in-app agent cannot use this provider until
+                the deployment provides {providerStatus.envApiKey}.
+              </p>
+            )}
+          </>
         ) : (
-          <p className="text-sm text-warning">
-            Not configured. The in-app agent (SAM) is disabled until the
-            deployment provides an OpenRouter key.
-          </p>
+          <p className="text-sm text-warning">Unknown provider status.</p>
         )}
         <p className="text-xs text-base-content/50">
           Keys are managed by the deployment, never stored in OpenSEO.
-          {!settings.apiKeyConfigured && (
+          {!providerStatus?.configured && selectedProvider === "openrouter" && (
             <>
               {" "}
               See the{" "}
@@ -111,13 +192,15 @@ export function AiSettingsSection() {
         </p>
       </div>
 
+      {providerStatus && <CapabilityRow provider={providerStatus} />}
+
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">Connection</span>
         <AiConnectionTest
+          provider={selectedProvider}
           model={currentModel ?? ""}
-          apiKeyConfigured={settings.apiKeyConfigured}
-        />
-      </div>
+          apiKeyConfigured={providerStatus?.configured ?? false}
+        />      </div>
 
       <div className="flex justify-end">
         <button
