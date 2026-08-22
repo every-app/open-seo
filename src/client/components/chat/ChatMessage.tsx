@@ -10,13 +10,27 @@ import {
   Undo2,
 } from "lucide-react";
 import { Markdown } from "@/client/components/Markdown";
+import {
+  buildRenderPlan,
+  type ChatToolPart,
+  type ToolPartGroup,
+} from "@/client/components/chat/toolParts";
 
 // Shared rendering for the chat agents (onboarding + SAM). The chats differ
 // only in which tools are available and how tool names become labels
 // (resolveToolLabel) plus which message actions their server supports
 // (onUndo/onEdit); the UI itself is identical and lives here.
 
-export type ToolLabel = { running: string; done: string };
+export type ToolLabel = {
+  running: string;
+  done: string;
+  /**
+   * Optional state/progress suffix computed from the part itself — e.g. an
+   * audit poller rendering "12/50 pages" or a terminal outcome. Return null
+   * for no suffix. Only the group's most recent part is summarized.
+   */
+  detail?: (part: ChatToolPart) => string | null;
+};
 
 // Maps a UIMessage tool part type (e.g. "tool-get_serp_results") to its label,
 // or null to hide the badge entirely (onboarding hides tools it hasn't curated).
@@ -161,25 +175,30 @@ function ReasoningBlock({
   );
 }
 
-// A small inline badge for one tool call, rendered in document order inside the
-// assistant bubble so the sequence of work stays visible after it completes.
+// A small inline badge for one run of same-type tool calls, rendered in
+// document order inside the assistant bubble so the sequence of work stays
+// visible after it completes. Repeated polling calls (identical part type,
+// back to back) collapse into a single badge with a ×N count — the model's
+// wait loop reads as one activity, not a wall of identical rows.
 function ToolBadge({
-  part,
+  group,
   live,
   resolveToolLabel,
 }: {
-  part: UIMessage["parts"][number];
+  group: ToolPartGroup;
   live: boolean;
   resolveToolLabel: ResolveToolLabel;
 }) {
-  const labels = resolveToolLabel(part.type);
+  const labels = resolveToolLabel(group.type);
   if (!labels) return null;
+  const part = group.last;
   const state = "state" in part ? part.state : undefined;
   const isDone = state === "output-available";
   // A "running" part in a message that is no longer being generated never
   // finished — the turn was interrupted. Show it as failed, not spinning.
   const isError = state === "output-error" || (!isDone && !live);
   const isRunning = !isError && !isDone;
+  const detail = isDone && labels.detail ? labels.detail(part) : null;
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
@@ -193,7 +212,11 @@ function ToolBadge({
       ) : (
         <Check className="size-3" />
       )}
-      <span>{isRunning ? `${labels.running}…` : labels.done}</span>
+      <span>
+        {isRunning ? `${labels.running}…` : labels.done}
+        {group.parts.length > 1 ? ` ×${group.parts.length}` : ""}
+        {detail ? ` · ${detail}` : ""}
+      </span>
     </span>
   );
 }
@@ -301,7 +324,18 @@ export function ChatMessage({
   return (
     <div className="group flex flex-col gap-1">
       <div className="min-w-0 space-y-2 text-sm">
-        {message.parts.map((part, index) => {
+        {buildRenderPlan(message.parts).map((entry, index) => {
+          if (entry.kind === "tools") {
+            return (
+              <ToolBadge
+                key={`tool-${index}`}
+                group={entry.group}
+                live={Boolean(streaming)}
+                resolveToolLabel={resolveToolLabel}
+              />
+            );
+          }
+          const { part } = entry;
           if (part.type === "reasoning") {
             return part.text.trim() ? (
               <ReasoningBlock
@@ -315,16 +349,6 @@ export function ChatMessage({
             return part.text.trim() ? (
               <Markdown key={index}>{part.text}</Markdown>
             ) : null;
-          }
-          if (part.type.startsWith("tool-")) {
-            return (
-              <ToolBadge
-                key={index}
-                part={part}
-                live={Boolean(streaming)}
-                resolveToolLabel={resolveToolLabel}
-              />
-            );
           }
           return null;
         })}

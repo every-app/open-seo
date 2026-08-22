@@ -41,6 +41,12 @@ import {
   nullToolExecutionTracker,
   type ToolExecutionTracker,
 } from "@/server/features/sam/samToolExecution";
+import {
+  buildPollSiteAuditTool,
+  type PollCoordinator,
+  tagStartedAudit,
+} from "@/server/features/sam/samLongRunningTools";
+import type { PollConfig } from "@/server/features/sam/samTurnControls";
 
 // SAM reads more of a site than the onboarding preview: enough pages to work
 // out what a business does, sells, and positions against on its own.
@@ -85,18 +91,36 @@ function toModelOutput(result: CallToolResult): unknown {
 // The tracker dedups identical calls within the conversation (the model can
 // re-request the same tool call after a stall/retry) and logs every execution;
 // a null/no-op tracker keeps non-SAM callers unaffected.
+// Tools whose output must never be served from the dedup cache: they are
+// progress reads over mutable workflow state, and a cached "running" snapshot
+// would make every repeat poll return the same stale result until the DO is
+// evicted (the failure mode that motivated Phase P). The reads are cheap D1
+// lookups, so skipping the cache costs nothing.
+const FRESH_READ_TOOLS = new Set(["get_audit_status"]);
+
+type AdaptMcpToolContext = {
+  extra: ToolExtra;
+  projectId: string;
+  tracker: ToolExecutionTracker;
+  sessionId: string;
+};
+
+type AdaptMcpToolOptions = {
+  description?: string;
+  postProcess?: (output: unknown) => unknown;
+};
+
 function adaptMcpTool<Shape extends ZodRawShape>(
   def: McpToolDefinition<Shape>,
-  extra: ToolExtra,
-  projectId: string,
-  tracker: ToolExecutionTracker,
-  sessionId: string,
+  ctx: AdaptMcpToolContext,
+  opts?: AdaptMcpToolOptions,
 ): Tool {
+  const { extra, projectId, tracker, sessionId } = ctx;
   const { projectId: _projectIdSchema, ...modelShape } = def.config.inputSchema;
   const bindsProject = "projectId" in def.config.inputSchema;
 
   return tool({
-    description: def.config.description,
+    description: opts?.description ?? def.config.description,
     inputSchema: z.object(bindsProject ? modelShape : def.config.inputSchema),
     execute: async (args) => {
       // Reconstruct the handler's validated arg shape by injecting the session
@@ -106,28 +130,35 @@ function adaptMcpTool<Shape extends ZodRawShape>(
         ? { ...args, projectId }
         : args) as unknown as z.infer<z.ZodObject<Shape>>;
       const startedAt = Date.now();
-      const cached = tracker.getCached(def.name, fullArgs);
-      if (cached !== undefined) {
-        tracker.log({
-          sessionId,
-          projectId,
-          toolName: def.name,
-          reused: true,
-          status: "ok",
-          durationMs: Date.now() - startedAt,
-        });
-        return cached;
+      if (!FRESH_READ_TOOLS.has(def.name)) {
+        const cached = tracker.getCached(def.name, fullArgs);
+        if (cached !== undefined) {
+          tracker.log({
+            sessionId,
+            projectId,
+            toolName: def.name,
+            reused: true,
+            status: "ok",
+            durationMs: Date.now() - startedAt,
+          });
+          return cached;
+        }
       }
       try {
         // Tool calls run inside Think's inference loop, outside any ambient
         // request scope, so each execution scopes its own Postgres client
-        // (no-op in D1 mode) â€” same rule as the DO's other DB-touching seams.
+        // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
         const output = toModelOutput(
           await withPgClient(() => def.handler(fullArgs, extra)),
         );
+        const finalOutput = opts?.postProcess
+          ? opts.postProcess(output)
+          : output;
         // Only successful outputs are cached: an error should be retryable
         // (e.g. a transient 429) rather than served stale from memory.
-        tracker.setCached(def.name, fullArgs, output);
+        if (!FRESH_READ_TOOLS.has(def.name)) {
+          tracker.setCached(def.name, fullArgs, finalOutput);
+        }
         tracker.log({
           sessionId,
           projectId,
@@ -136,7 +167,7 @@ function adaptMcpTool<Shape extends ZodRawShape>(
           status: "ok",
           durationMs: Date.now() - startedAt,
         });
-        return output;
+        return finalOutput;
       } catch (error) {
         tracker.log({
           sessionId,
@@ -223,27 +254,29 @@ function scrapeTools(projectDomain: string | null): ToolSet {
 
 /**
  * Builds SAM's tool surface as an AI SDK ToolSet: the full MCP toolset plus the
- * free site-reading tools. Every tool the OpenSEO MCP server exposes is
- * available; auth/billing context is carried on a synthetic `ToolExtra` the
- * handlers read exactly as they would on the real MCP route. DataForSEO spend
- * is metered inside the shared client, so tool calls draw down the org's
- * credits automatically.
+ * free site-reading tools and the audit poll orchestrator. Every tool the
+ * OpenSEO MCP server exposes is available; auth/billing context is carried on
+ * a synthetic `ToolExtra` the handlers read exactly as they would on the real
+ * MCP route. DataForSEO spend is metered inside the shared client, so tool
+ * calls draw down the org's credits automatically.
  *
  * `tracker` (optional) enables per-conversation dedup + execution logging; pass
  * the result of `createToolExecutionTracker` from the DO, or nothing to keep
  * plain behavior.
+ *
+ * `options.poll` + `options.pollCoordinator` enable `poll_site_audit` — the
+ * long-running-tool wait described in samLongRunningTools.ts. The coordinator
+ * should come from the DO so single-flight/terminal memo survive across turns.
  */
 export function buildSamMcpTools(
   authContext: McpToolAuthContext,
   project: { id: string; domain: string | null },
   tracker?: ToolExecutionTracker,
+  options?: { poll?: PollConfig; pollCoordinator?: PollCoordinator },
 ): ToolSet {
   const projectId = project.id;
   const sessionId = "sam";
   const toolTracker = tracker ?? nullToolExecutionTracker;
-  const adapt = <Shape extends ZodRawShape>(
-    def: McpToolDefinition<Shape>,
-  ): Tool => adaptMcpTool(def, extra, projectId, toolTracker, sessionId);
   const extra: ToolExtra = {
     // Placeholder to satisfy ToolExtra â€” no tool handler or the DataForSEO
     // client reads this signal (true on the real MCP route too), so aborting a
@@ -260,6 +293,16 @@ export function buildSamMcpTools(
     sendRequest: () =>
       Promise.reject(new Error("sendRequest is unsupported in the SAM agent")),
   };
+  const adaptCtx: AdaptMcpToolContext = {
+    extra,
+    projectId,
+    tracker: toolTracker,
+    sessionId,
+  };
+  const adapt = <Shape extends ZodRawShape>(
+    def: McpToolDefinition<Shape>,
+    opts?: AdaptMcpToolOptions,
+  ): Tool => adaptMcpTool(def, adaptCtx, opts);
 
   // Note: no `list_projects`. SAM is bound to the session's project, so
   // discovering other projects isn't part of its job â€” every project-scoped tool
@@ -292,10 +335,34 @@ export function buildSamMcpTools(
     get_keyword_metrics: adapt(getKeywordMetricsTool),
     get_search_console_performance: adapt(getSearchConsolePerformanceTool),
     inspect_urls: adapt(inspectUrlsTool),
-    run_site_audit: adapt(runSiteAuditTool),
-    get_audit_status: adapt(getAuditStatusTool),
+    run_site_audit: adapt(runSiteAuditTool, {
+      // SAM-specific orchestration guidance: the shared MCP description stays
+      // untouched for external MCP clients; here it routes the model to the
+      // poller instead of improvising a get_audit_status loop.
+      description:
+        "Start a site audit: crawls the site (robots.txt-aware, same-origin) and checks every page for SEO issues. Returns immediately with the audit id and state=started. If the user asked for audit RESULTS (page counts, issues), call poll_site_audit next and wait for a terminal state before answering — never report numbers from a partial crawl.",
+      postProcess: tagStartedAudit,
+    }),
+    get_audit_status: adapt(getAuditStatusTool, {
+      // One free snapshot. Waiting belongs in poll_site_audit so backoff,
+      // timeout, and UI aggregation stay consistent.
+      description:
+        "Single snapshot of a site audit's current state (phase, pages crawled, Lighthouse progress). Free — reads OpenSEO state. To WAIT for completion, call poll_site_audit instead — it polls with backoff and returns a terminal state.",
+    }),
     get_audit_issues: adapt(getAuditIssuesTool),
     get_audit_pages: adapt(getAuditPagesTool),
+    ...(options?.poll && options.pollCoordinator
+      ? {
+          poll_site_audit: buildPollSiteAuditTool({
+            projectId,
+            extra,
+            tracker: toolTracker,
+            sessionId,
+            coordinator: options.pollCoordinator,
+            config: options.poll,
+          }),
+        }
+      : {}),
   };
 }
 

@@ -12,22 +12,27 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
 import { user } from "@/db/schema";
-import { openRouterCostUsd } from "@/server/lib/chatAgent";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemoryRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamMcpTools } from "@/server/features/sam/samChatTools";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
-import { buildChatAgentModel } from "@/server/lib/openrouter";
 import { createToolExecutionTracker } from "@/server/features/sam/samToolExecution";
+import { createPollCoordinator } from "@/server/features/sam/samLongRunningTools";
 import {
   DEFAULT_MAX_STEPS,
   DEFAULT_MAX_TOOL_CALLS,
+  parsePollConfig,
   parsePositiveIntEnv,
   toolCallCap,
 } from "@/server/features/sam/samTurnControls";
 import { AiSettingsRepository } from "@/server/features/ai/AiSettingsRepository";
-import { resolveAiModel } from "@/server/features/ai/AiSettingsService";
+import { resolveAiSettings } from "@/server/features/ai/AiSettingsService";
+import {
+  AiProviderRegistry,
+  estimateProviderCost,
+  type AiProviderId,
+} from "@/server/features/ai/providers";
 import {
   getEnvValueSync,
   isHostedServerAuthMode,
@@ -99,16 +104,22 @@ export class SamChatAgent extends Think {
   private samContext: SamContext | null = null;
 
   // Per-turn billing state: beforeTurn arms it (non-null = hosted mode, meter
-  // this turn), onStepFinish accumulates the OpenRouter cost, onChatResponse
-  // meters the spend.
+  // this turn), onStepFinish accumulates the provider cost, onChatResponse
+  // meters the spend. The provider id lets cost extraction and the spend
+  // record follow the resolved provider instead of hardcoding OpenRouter.
   private turnCostUsd = 0;
   private turnMonthlyRemaining: number | null = null;
+  private turnProviderId: AiProviderId = "openrouter";
 
   // Per-conversation tool dedup + logging. Created lazily on the first turn
   // (needs the session's project id); survives across turns of the same
   // conversation, resets if the DO is evicted.
   private toolTracker: ReturnType<typeof createToolExecutionTracker> | null =
     null;
+
+  // Single-flight/terminal-memo for long-running tool waits (audit polling).
+  // Same lifecycle as toolTracker: per conversation, reset on DO eviction.
+  private auditPolls: ReturnType<typeof createPollCoordinator> | null = null;
 
   // Record the app origin for the deep links tools attach to responses,
   // derived from the requests this DO serves instead of env config. DO storage
@@ -122,17 +133,29 @@ export class SamChatAgent extends Think {
   }
 
   getModel() {
-    const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
+    // Env-level resolution only — DB settings rows are applied per-turn in
+    // beforeTurn via TurnConfig.model. The provider is whichever is selected
+    // (AI_AGENT_PROVIDER) or the built-in default; the model falls back
+    // AI_AGENT_MODEL → the provider's own env default → the adapter's
+    // built-in default. No provider names are hardcoded here: everything
+    // provider-specific lives in the adapter, keyed by the resolved id.
+    const providerId = AiProviderRegistry.getEnvDefaultProviderId(
+      getEnvValueSync(this.env, "AI_AGENT_PROVIDER"),
+    );
+    this.turnProviderId = providerId;
+    const provider = AiProviderRegistry.get(providerId);
+    const apiKey = getEnvValueSync(this.env, provider.envApiKey);
     if (!apiKey) {
-      throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
+      throw new Error(
+        `AI provider "${providerId}" is selected for the SAM agent, but ${provider.envApiKey} is not configured. ` +
+          `Set ${provider.envApiKey} (or select a configured provider via AI_AGENT_PROVIDER).`,
+      );
     }
-    // Env-level fallback: AI_AGENT_MODEL (preferred) then OPENROUTER_MODEL
-    // (legacy). DB-level settings resolved in beforeTurn override this via
-    // TurnConfig.model when configured.
     const modelId =
       getEnvValueSync(this.env, "AI_AGENT_MODEL") ??
-      getEnvValueSync(this.env, "OPENROUTER_MODEL");
-    return buildChatAgentModel(apiKey, modelId);
+      getEnvValueSync(this.env, provider.envModel) ??
+      provider.defaultModelId;
+    return provider.buildModel(apiKey, modelId);
   }
 
   configureSession(session: Session): Session {
@@ -286,23 +309,32 @@ export class SamChatAgent extends Think {
         sessionId: this.name,
         projectId: ctx.project.id,
       });
+      this.auditPolls ??= createPollCoordinator();
 
-      // Effective model from the settings rows (project > organization), else
-      // the env/built-in default via getModel(). When a row is configured we
-      // pass the model per-turn; otherwise TurnConfig omits it and Think
-      // resolves getModel() (which prefers AI_AGENT_MODEL over
-      // OPENROUTER_MODEL).
+      // Effective settings from the rows (project > organization) or the
+      // env/built-in default via getModel(). When a row is configured we
+      // build the model per-turn through the resolved provider's adapter;
+      // otherwise TurnConfig omits it and Think resolves getModel().
       const [projectSettings, organizationSettings] = await Promise.all([
         AiSettingsRepository.getProjectAiSettings(ctx.project.id),
         AiSettingsRepository.getOrganizationAiSettings(organizationId),
       ]);
-      const resolved = resolveAiModel(
+      const resolved = resolveAiSettings(
         { project: projectSettings, organization: organizationSettings },
         {
+          aiAgentProvider:
+            getEnvValueSync(this.env, "AI_AGENT_PROVIDER") ?? null,
           aiAgentModel: getEnvValueSync(this.env, "AI_AGENT_MODEL") ?? null,
-          openRouterModel: getEnvValueSync(this.env, "OPENROUTER_MODEL") ?? null,
+          providerModelDefaults: {
+            openrouter:
+              getEnvValueSync(this.env, "OPENROUTER_MODEL") ?? null,
+            openai: getEnvValueSync(this.env, "OPENAI_MODEL") ?? null,
+            gemini: getEnvValueSync(this.env, "GEMINI_MODEL") ?? null,
+            anthropic: getEnvValueSync(this.env, "ANTHROPIC_MODEL") ?? null,
+          },
         },
       );
+      this.turnProviderId = resolved.provider;
 
       const maxSteps = parsePositiveIntEnv(
         getEnvValueSync(this.env, "AI_AGENT_MAX_STEPS"),
@@ -317,7 +349,10 @@ export class SamChatAgent extends Think {
         tools: buildSamMcpTools(authContext, {
           id: ctx.project.id,
           domain: ctx.project.domain,
-        }, this.toolTracker),
+        }, this.toolTracker, {
+          poll: parsePollConfig((key) => getEnvValueSync(this.env, key)),
+          pollCoordinator: this.auditPolls,
+        }),
         // SAM is meant to run complex multi-step work in one turn (site-read
         // intake plus a full research chain, multi-competitor sweeps), so give
         // it generous headroom — cost is bounded by per-step metering, the
@@ -331,10 +366,16 @@ export class SamChatAgent extends Think {
       turn.stopWhen = [toolCallCap(maxToolCalls)];
 
       if (resolved.model) {
-        const apiKey = getEnvValueSync(this.env, "OPENROUTER_API_KEY");
-        if (apiKey) {
-          turn.model = buildChatAgentModel(apiKey, resolved.model);
+        // The resolved provider is authoritative (no automatic fallback to
+        // another provider): a missing credential is a hard, visible failure.
+        const provider = AiProviderRegistry.get(resolved.provider);
+        const apiKey = getEnvValueSync(this.env, provider.envApiKey);
+        if (!apiKey) {
+          throw new Error(
+            `AI provider "${resolved.provider}" is selected for this project, but ${provider.envApiKey} is not configured on this deployment.`,
+          );
         }
+        turn.model = provider.buildModel(apiKey, resolved.model);
       }
 
       return turn;
@@ -342,7 +383,11 @@ export class SamChatAgent extends Think {
   }
 
   onStepFinish(ctx: StepContext): void {
-    this.turnCostUsd += openRouterCostUsd(ctx.providerMetadata);
+    // Real USD cost when the provider publishes it (OpenRouter), else 0.
+    this.turnCostUsd += estimateProviderCost(
+      this.turnProviderId,
+      ctx.providerMetadata,
+    );
   }
 
   async onChatResponse(result: ChatResponseResult): Promise<void> {
@@ -362,7 +407,7 @@ export class SamChatAgent extends Think {
           creditFeature: "agent",
           costUsd: this.turnCostUsd,
           monthlyRemaining: this.turnMonthlyRemaining,
-          properties: { provider: "openrouter" },
+          properties: { provider: this.turnProviderId },
         });
       }
 

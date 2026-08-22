@@ -9,7 +9,70 @@ import {
   ChatMessage,
   humanizeToolLabel,
   messageHasVisibleContent,
+  type ResolveToolLabel,
+  type ToolLabel,
 } from "@/client/components/chat/ChatMessage";
+import {
+  isRecord,
+  toolPartOutput,
+  type ChatToolPart,
+} from "@/client/components/chat/toolParts";
+
+// Audit lifecycle labels: collapse the poller into one human activity
+// ("Running site audit…") with the outcome/progress as a detail suffix,
+// instead of exposing raw tool names for every step of the wait.
+function samToolLabel(partType: string): ToolLabel | null {
+  if (partType === "tool-run_site_audit") {
+    return { running: "Starting site audit", done: "Site audit started" };
+  }
+  if (partType === "tool-poll_site_audit") {
+    const outcome = (part: ChatToolPart): string | null => {
+      const output = toolPartOutput(part);
+      if (!output || typeof output.state !== "string") return null;
+      const progress = isRecord(output.progress)
+        ? output.progress
+        : undefined;
+      const pages =
+        progress &&
+        typeof progress.current === "number" &&
+        typeof progress.total === "number"
+          ? `${progress.current}/${progress.total} pages`
+          : null;
+      switch (output.state) {
+        case "completed":
+          return pages ? `complete · ${pages}` : "complete";
+        case "failed":
+          return "failed";
+        case "cancelled":
+          return "cancelled";
+        case "running":
+          return pages ? `still running · ${pages}` : "still running";
+        default:
+          return null;
+      }
+    };
+    return {
+      running: "Running site audit",
+      done: "Audit checked",
+      detail: outcome,
+    };
+  }
+  if (partType === "tool-get_audit_issues") {
+    return { running: "Checking issues", done: "Issues checked" };
+  }
+  if (partType === "tool-get_audit_pages") {
+    return { running: "Reading crawled pages", done: "Pages read" };
+  }
+  if (partType === "tool-get_audit_status") {
+    return { running: "Checking audit status", done: "Status checked" };
+  }
+  // SAM exposes the full MCP tool surface, too many to hand-label — fall back
+  // to generic humanized names.
+  return humanizeToolLabel(partType);
+}
+
+const resolveSamToolLabel: ResolveToolLabel = (partType) =>
+  samToolLabel(partType);
 
 const SUGGESTIONS = [
   "What keywords should I focus on next?",
@@ -178,10 +241,7 @@ export function SamConversation({
             <ChatMessage
               key={message.id}
               message={message}
-              // SAM exposes the full MCP tool surface (~19 tools), too many to
-              // hand-label, so tool names are humanized generically rather
-              // than kept in a curated label map.
-              resolveToolLabel={humanizeToolLabel}
+              resolveToolLabel={resolveSamToolLabel}
               streaming={
                 isBusy &&
                 index === messages.length - 1 &&

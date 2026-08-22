@@ -8,11 +8,14 @@ import {
   samSessionsQueryOptions,
 } from "@/client/features/sam/samQueries";
 
-const BETA_NOTICE_DISMISSED_KEY = "sam-beta-notice-dismissed";
+const BETA_NOTICE_DISMISSED_KEY = "sam-beta-notice-dismissed-v2";
 
-// Beta framing + the MCP power-path nudge, pinned to the bottom of the Chat
-// tab. Dismissible per browser; localStorage is read in an effect so SSR and
-// the first client render stay identical (same pattern as AppShell).
+// Product framing + the MCP power-path pointer, pinned to the bottom of the
+// Chat tab. Dismissible per browser; localStorage is read in an effect so SSR
+// and the first client render stay identical (same pattern as AppShell).
+// v2 copy: SAM is a real in-app agent now, so the old "Beta — use MCP for
+// more powerful workflows" framing was misleading; MCP stays, repositioned as
+// the path for EXTERNAL agents.
 function BetaNotice() {
   const [dismissed, setDismissed] = useState(true);
   useEffect(() => {
@@ -23,7 +26,7 @@ function BetaNotice() {
   return (
     <div className="mx-2 mb-2 rounded-lg border border-base-300 bg-base-100 p-3">
       <div className="flex items-center justify-between">
-        <span className="badge badge-primary badge-sm">Beta</span>
+        <span className="badge badge-primary badge-sm">New</span>
         <button
           type="button"
           aria-label="Dismiss"
@@ -37,8 +40,9 @@ function BetaNotice() {
         </button>
       </div>
       <p className="mt-1.5 text-xs text-base-content/70">
-        For more powerful AI workflows, use the OpenSEO MCP with your own agent
-        like Claude Code or Hermes.
+        SAM is OpenSEO's built-in AI SEO agent. Working outside the app?
+        Connect external coding agents like Claude Code or OpenCode through
+        MCP.
       </p>
       <Link to="/ai" className="link link-primary mt-1.5 inline-block text-xs">
         Set up the MCP →
