@@ -49,10 +49,13 @@ deployment's own provider account, not to OpenSEO usage credits.
 
 ## Provider Support
 
-Four providers are supported (adapters in `provider-adapters.ts`, shared
-helpers in `provider-shared.ts`, contract + registry in `providers.ts`; the
-`AiProvider` interface lets another provider slot in without touching the
-agent or the UI):
+OpenSEO supports multiple AI providers, including OpenRouter, OpenAI, Google
+Gemini, Anthropic, OpenAI-compatible endpoints, and Ollama Cloud. Provider
+availability depends on configuration and model capabilities.
+
+Adapters live in `provider-adapters.ts`, shared helpers in
+`provider-shared.ts`, contract + registry in `providers.ts`; the `AiProvider`
+interface lets another provider slot in without touching the agent or the UI:
 
 | Provider | Key env var | Model env var | Built-in model |
 |----------|-------------|---------------|----------------|
@@ -60,19 +63,69 @@ agent or the UI):
 | OpenAI | `OPENAI_API_KEY` | `OPENAI_MODEL` | `gpt-5` |
 | Google Gemini | `GEMINI_API_KEY` | `GEMINI_MODEL` | `gemini-2.5-flash` |
 | Anthropic | `ANTHROPIC_API_KEY` | `ANTHROPIC_MODEL` | `claude-sonnet-4-5` |
+| OpenAI Compatible | `OPENAI_COMPATIBLE_API_KEY` (+ `OPENAI_COMPATIBLE_BASE_URL`) | `OPENAI_COMPATIBLE_MODEL` | `gpt-4o-mini` |
+| Ollama Cloud | `OLLAMA_API_KEY` (+ optional `OLLAMA_CLOUD_BASE_URL`) | `OLLAMA_CLOUD_MODEL` | `qwen3-coder:480b-cloud` |
+
+### OpenAI-Compatible endpoints
+
+Any service speaking the OpenAI chat API works through this provider:
+gateways, vLLM, LM Studio, and **local Ollama** (`http://localhost:11434/v1`;
+inside Docker Desktop use `http://host.docker.internal:11434/v1` — container
+localhost is not the host). Configuration:
+
+- `OPENAI_COMPATIBLE_BASE_URL` — required; deployment configuration, shown
+  read-only in Settings → AI. Trailing slashes are normalized and `/v1` is
+  never duplicated.
+- `OPENAI_COMPATIBLE_API_KEY` — optional; some local gateways need none.
+- Model selection via the settings UI (catalog discovery from
+  `<base>/models`, with manual model entry when discovery is unavailable).
+
+### Ollama Cloud
+
+No local Ollama installation required. Defaults to the official cloud
+endpoint (`https://ollama.com/v1`); override with `OLLAMA_CLOUD_BASE_URL`
+for testing/enterprise compatibility. Tool calling and streaming work through
+the same OpenAI-compatible contract.
+
+### Base URL security
+
+User/deployment-supplied Base URLs are validated before use: absolute
+http(s) URLs only, no embedded credentials, and cloud metadata endpoints
+(`169.254.169.254`, `metadata.google.internal`) are always blocked. Hosted
+deployments (`AUTH_MODE=hosted`) additionally require HTTPS and reject
+private/loopback targets (SSRF protection); self-hosted/local runtimes may
+explicitly point at private gateways such as local Ollama.
+
+### Data policies (Zero Data Retention)
+
+The OpenRouter adapter routes requests to Zero-Data-Retention endpoints by
+product policy. If the selected model has no ZDR-compatible endpoint,
+requests fail with a clear DATA_POLICY_BLOCKED message:
+
+> OpenRouter could not find an endpoint compatible with your current Zero
+> Data Retention policy for this model. Choose a compatible model or adjust
+> your OpenRouter privacy settings.
+
+with a link to [openrouter.ai/settings/privacy](https://openrouter.ai/settings/privacy).
+OpenSEO never disables or works around the policy automatically, never
+silently switches models, and never surfaces raw provider payloads.
 
 Every provider supports:
 
-- **Model catalog** — fetched from the provider's public models endpoint
-  (OpenRouter: `/api/v1/models` without auth; OpenAI: `/v1/models`; Gemini:
-  `/v1beta/models`; Anthropic: `/v1/models`), normalized to
-  id/name/context length/pricing/tool support, and cached server-side in R2
-  for 12 hours. An unconfigured or unreachable provider yields an empty
-  catalog; the UI then degrades to a manual model-id input.
+- **Model catalog** — fetched from the provider's models endpoint (OpenRouter:
+  `/api/v1/models`; OpenAI: `/v1/models`; Gemini: `/v1beta/models`;
+  Anthropic: `/v1/models`; OpenAI-Compatible/Ollama Cloud: `<base>/models`),
+  normalized to id/name/context length/pricing/tool support, and cached
+  server-side in R2 for 12 hours. An unconfigured or unreachable provider
+  yields an empty catalog; the UI then degrades to a manual model-id input.
+  Values an endpoint does not expose stay unknown — never invented.
 - **Connection test** — a minimal `generateText` with `maxOutputTokens: 8`
-  plus a best-effort tool-calling probe. Failures are classified:
-  `401/403` → invalid key, `404` → model unavailable, anything else →
-  provider unreachable. Missing keys short-circuit without calling the API.
+  plus a best-effort tool-calling probe. Failures are normalized into one
+  vocabulary (AUTH_ERROR, MODEL_UNAVAILABLE, DATA_POLICY_BLOCKED,
+  INVALID_BASE_URL, RATE_LIMITED, PROVIDER_UNAVAILABLE, CONNECTION_TIMEOUT,
+  UNSUPPORTED_FEATURE) with curated user-safe messages — raw provider
+  payloads, keys, and stacks never reach the UI. Missing keys short-circuit
+  without calling the API.
 - **Cost estimate** — real per-call USD cost when the provider reports it
   (OpenRouter via `providerMetadata.openrouter.usage.cost`); providers without
   per-call pricing report 0.

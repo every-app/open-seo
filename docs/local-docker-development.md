@@ -84,6 +84,11 @@ page) and falls back to these environment variables:
 | `OPENAI_API_KEY` | *(none)* | OpenAI credential |
 | `GEMINI_API_KEY` | *(none)* | Google Gemini credential |
 | `ANTHROPIC_API_KEY` | *(none)* | Anthropic credential |
+| `OLLAMA_API_KEY` | *(none)* | Ollama Cloud credential (no local install needed; default endpoint `https://ollama.com/v1`) |
+| `OPENAI_COMPATIBLE_API_KEY` | *(none)* | OpenAI-Compatible gateway credential (optional for key-less gateways) |
+| `OPENAI_COMPATIBLE_BASE_URL` | *(none)* | OpenAI-Compatible endpoint, e.g. `http://host.docker.internal:11434/v1` for local Ollama from inside Docker |
+| `OLLAMA_CLOUD_BASE_URL` | `https://ollama.com/v1` | Ollama Cloud endpoint override |
+| `OPENAI_COMPATIBLE_MODEL` / `OLLAMA_CLOUD_MODEL` | *(none)* | Per-provider fallback models |
 | `AI_AGENT_MODEL` | *(none)* | Preferred env fallback model (for `AI_AGENT_PROVIDER`) |
 | `OPENROUTER_MODEL` | `minimax/minimax-m3` | OpenRouter fallback model |
 | `OPENAI_MODEL` | `gpt-5` | OpenAI fallback model |
