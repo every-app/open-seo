@@ -6,8 +6,8 @@ import {
 } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
-const OPENROUTER_KEY_MISSING_MESSAGE =
-  "OPENROUTER_API_KEY is not set for this deployment yet. Add it to your environment, restart OpenSEO, then confirm here.";
+const CHAT_KEY_MISSING_MESSAGE =
+  "No chat provider API key is set for this deployment yet. Add one to your environment, restart OpenSEO, then confirm here.";
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 
@@ -27,9 +27,13 @@ export const getSamAccessSetupStatus = createServerFn({ method: "GET" })
       return { enabled: true, errorMessage: null };
     }
 
-    const enabled = Boolean(await getOptionalEnvValue("OPENROUTER_API_KEY"));
+    const [routedKey, minimaxKey] = await Promise.all([
+      getOptionalEnvValue("OPENROUTER_API_KEY"),
+      getOptionalEnvValue("MINIMAX_API_KEY"),
+    ]);
+    const enabled = Boolean(routedKey || minimaxKey);
     return {
       enabled,
-      errorMessage: enabled ? null : OPENROUTER_KEY_MISSING_MESSAGE,
+      errorMessage: enabled ? null : CHAT_KEY_MISSING_MESSAGE,
     };
   });

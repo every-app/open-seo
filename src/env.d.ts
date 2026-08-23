@@ -50,6 +50,13 @@ declare namespace Cloudflare {
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).
     OPENROUTER_MODEL?: string;
+
+    // Optional first-party MiniMax configuration for the in-app chat agents.
+    // When set, this takes precedence over the routed provider above.
+    MINIMAX_API_KEY?: string;
+    MINIMAX_REGION?: "global" | "cn";
+    MINIMAX_API_FORMAT?: "anthropic" | "openai";
+    MINIMAX_THINKING?: "adaptive" | "disabled";
   }
 }
 
