@@ -30,7 +30,7 @@ export function SamConversation({
   // session id. The WebSocket is authorized in the Worker (src/server.ts) before
   // it reaches the DO; billing gates come back as normal assistant messages.
   const agent = useAgent({ agent: "sam-chat", name: sessionId });
-  const { messages, sendMessage, setMessages, clearHistory, status } =
+  const { messages, sendMessage, setMessages, clearHistory, status, stop } =
     useAgentChat({ agent });
 
   const isBusy = status === "submitted" || status === "streaming";
@@ -65,6 +65,23 @@ export function SamConversation({
   const undoFrom = (messageId: string) => void rewindTo(messageId);
   const editAndResend = async (messageId: string, newText: string) => {
     if (await rewindTo(messageId)) sendText(newText);
+  };
+
+  // Stop the in-flight turn server-side. `stop()` alone only closes the client
+  // stream — the DO keeps generating and persists the full reply (which is why
+  // reloading mid-answer used to show the finished text anyway) — so cancel the
+  // turn on the agent first, then sync the local view to whatever partial
+  // reply made it to storage.
+  const stopGenerating = async () => {
+    void stop();
+    const response = await fetch(`/agents/sam-chat/${sessionId}/stop`, {
+      method: "POST",
+    });
+    if (!response.ok) return;
+    const fresh = await fetch(
+      `/agents/sam-chat/${sessionId}/get-messages`,
+    ).then((res) => (res.ok ? res.json() : null));
+    if (Array.isArray(fresh)) setMessages(fresh);
   };
 
   // The DO names the session from its first message during the turn, so refresh
@@ -184,6 +201,7 @@ export function SamConversation({
           <ChatComposer
             busy={isBusy}
             onSend={sendText}
+            onStop={isBusy ? () => void stopGenerating() : undefined}
             placeholder="Ask SAM to research, analyze, or track anything…"
           />
         </div>
