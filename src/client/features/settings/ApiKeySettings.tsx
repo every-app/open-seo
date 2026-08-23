@@ -197,7 +197,11 @@ export function ApiKeySettings() {
                   to <span className="font-mono text-xs">{mcpUrl}</span>.
                 </p>
                 <div className="mt-4 flex items-center gap-2">
-                  <code className="min-w-0 flex-1 overflow-x-auto rounded bg-base-200 px-2.5 py-2 font-mono text-xs">
+                  {/* Plaintext key is shown once; keep it out of PostHog replay. */}
+                  <code
+                    className="ph-mask min-w-0 flex-1 overflow-x-auto rounded bg-base-200 px-2.5 py-2 font-mono text-xs"
+                    data-ph-mask
+                  >
                     {createdKey}
                   </code>
                   <CopyButton

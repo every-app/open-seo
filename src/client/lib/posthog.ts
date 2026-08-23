@@ -1,8 +1,8 @@
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   POSTHOG_PERSONAL_DATA_QUERY_PARAMETERS,
+  sanitizePostHogCapturedNetworkRequest,
   sanitizePostHogProperties,
-  sanitizePostHogUrl,
 } from "@/client/lib/posthog-sanitize";
 
 // Type-only import: extracts the type at compile time without bundling posthog-js
@@ -89,10 +89,7 @@ function getBrowserPostHogClient(): Promise<BrowserPostHogClient | null> {
             maskAllInputs: true,
             maskTextSelector: "[data-ph-mask], .ph-mask",
             maskCapturedNetworkRequestFn(request) {
-              return {
-                ...request,
-                name: sanitizePostHogUrl(request.name),
-              };
+              return sanitizePostHogCapturedNetworkRequest(request);
             },
           },
           sanitize_properties(properties) {
