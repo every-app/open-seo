@@ -8,6 +8,12 @@ import {
 } from "./AiSettingsService";
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("@/server/lib/runtime-env", () => ({
+  // Adapter readiness (isConfigured) reads the deployment env directly; the
+  // masked display key comes in via the apiKeys argument, not this mock.
+  getOptionalEnvValue: (key: string) =>
+    key === "OPENROUTER_API_KEY" ? "sk-or-v1-env-value" : undefined,
+}));
 
 const multiProviderEnv = (overrides: Partial<{
   aiAgentProvider: string | null;
@@ -211,12 +217,17 @@ describe("getProviderStatuses", () => {
       gemini: null,
     });
     const byId = Object.fromEntries(statuses.map((entry) => [entry.id, entry]));
+    // `configured` reflects adapter readiness from the deployment env; the
+    // masked display key comes from the apiKeys argument.
     expect(byId.openrouter.configured).toBe(true);
     expect(byId.openrouter.maskedApiKey).toBe("sk-••••mnop");
     expect(byId.openrouter.envApiKey).toBe("OPENROUTER_API_KEY");
     expect(byId.gemini.configured).toBe(false);
     expect(byId.gemini.maskedApiKey).toBeNull();
     expect(byId.gemini.envApiKey).toBe("GEMINI_API_KEY");
+    // Endpoint adapters expose their deployment-configured Base URL
+    // (configuration data, never a secret).
+    expect(byId.openai_compatible.baseUrl).toBeNull();
   });
 
   it("never returns a plaintext key", async () => {

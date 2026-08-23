@@ -49,6 +49,12 @@ services:
       OPENAI_MODEL: ${OPENAI_MODEL:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
       ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      OLLAMA_CLOUD_MODEL: ${OLLAMA_CLOUD_MODEL:-}
+      OPENAI_COMPATIBLE_MODEL: ${OPENAI_COMPATIBLE_MODEL:-}
+      # Base URLs are deployment configuration (never secrets); forwarded so
+      # the adapters can resolve them inside the container.
+      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_BASE_URL:-}
+      OLLAMA_CLOUD_BASE_URL: ${OLLAMA_CLOUD_BASE_URL:-}
       AI_AGENT_MODEL: ${AI_AGENT_MODEL:-}
       AI_AGENT_MAX_TOOL_CALLS: ${AI_AGENT_MAX_TOOL_CALLS:-}
       AI_AGENT_MAX_STEPS: ${AI_AGENT_MAX_STEPS:-}

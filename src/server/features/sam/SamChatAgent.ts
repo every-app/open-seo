@@ -7,7 +7,6 @@ import type {
   TurnContext,
 } from "@cloudflare/think";
 import { clearChatTerminal } from "agents/chat";
-import type { UIMessage } from "ai";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
@@ -17,6 +16,10 @@ import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemo
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { buildSamMcpTools } from "@/server/features/sam/samChatTools";
 import { buildSamSystemPrompt } from "@/server/features/sam/samSystemPrompt";
+import {
+  deriveTitle,
+  firstUserText,
+} from "@/server/features/sam/samSessionTitle";
 import { createToolExecutionTracker } from "@/server/features/sam/samToolExecution";
 import { createPollCoordinator } from "@/server/features/sam/samLongRunningTools";
 import {
@@ -31,8 +34,10 @@ import { resolveAiSettings } from "@/server/features/ai/AiSettingsService";
 import {
   AiProviderRegistry,
   estimateProviderCost,
+  toolCallingRefusalFor,
   type AiProviderId,
 } from "@/server/features/ai/providers";
+import { normalizeProviderError } from "@/server/features/ai/providerErrors";
 import {
   getEnvValueSync,
   isHostedServerAuthMode,
@@ -51,19 +56,6 @@ const MEMORY_BLOCK = "memory";
 const RESEARCH_LOG_BLOCK = "research_log";
 
 const PUBLIC_ORIGIN_KEY = "sam-public-origin";
-
-// Derive a short session title from the first user message.
-function deriveTitle(text: string): string {
-  const trimmed = text.replace(/\s+/g, " ").trim();
-  if (!trimmed) return "New chat";
-  return trimmed.length > 60 ? `${trimmed.slice(0, 57)}…` : trimmed;
-}
-
-function firstUserText(messages: UIMessage[]): string {
-  const firstUser = messages.find((message) => message.role === "user");
-  const textPart = firstUser?.parts.find((part) => part.type === "text");
-  return textPart?.text ?? "";
-}
 
 type SamContext = {
   row: NonNullable<
@@ -110,6 +102,7 @@ export class SamChatAgent extends Think {
   private turnCostUsd = 0;
   private turnMonthlyRemaining: number | null = null;
   private turnProviderId: AiProviderId = "openrouter";
+  private turnModelId: string | null = null;
 
   // Per-conversation tool dedup + logging. Created lazily on the first turn
   // (needs the session's project id); survives across turns of the same
@@ -262,8 +255,7 @@ export class SamChatAgent extends Think {
 
   async beforeTurn(_ctx: TurnContext): Promise<TurnConfig> {
     this.turnCostUsd = 0;
-    this.turnMonthlyRemaining = null;
-    return withPgClient(async (): Promise<TurnConfig> => {
+    this.turnMonthlyRemaining = null;    return withPgClient(async (): Promise<TurnConfig> => {
       const ctx = await this.loadSamContext();
       if (!ctx) {
         return this.refusalTurn(
@@ -331,10 +323,15 @@ export class SamChatAgent extends Think {
             openai: getEnvValueSync(this.env, "OPENAI_MODEL") ?? null,
             gemini: getEnvValueSync(this.env, "GEMINI_MODEL") ?? null,
             anthropic: getEnvValueSync(this.env, "ANTHROPIC_MODEL") ?? null,
+            openai_compatible:
+              getEnvValueSync(this.env, "OPENAI_COMPATIBLE_MODEL") ?? null,
+            ollama_cloud:
+              getEnvValueSync(this.env, "OLLAMA_CLOUD_MODEL") ?? null,
           },
         },
       );
       this.turnProviderId = resolved.provider;
+      this.turnModelId = resolved.model;
 
       const maxSteps = parsePositiveIntEnv(
         getEnvValueSync(this.env, "AI_AGENT_MAX_STEPS"),
@@ -367,14 +364,24 @@ export class SamChatAgent extends Think {
 
       if (resolved.model) {
         // The resolved provider is authoritative (no automatic fallback to
-        // another provider): a missing credential is a hard, visible failure.
+        // another provider): an unready adapter is a hard, visible failure.
         const provider = AiProviderRegistry.get(resolved.provider);
-        const apiKey = getEnvValueSync(this.env, provider.envApiKey);
-        if (!apiKey) {
+        // Warm lazily-resolved adapter config (env Base URLs) before the
+        // synchronous model build below.
+        await provider.prepare?.();
+        // SAM is a tool-using agent: refuse models the catalog explicitly
+        // marks as tool-less (unknown capability passes — unverifiable).
+        const refusal = await toolCallingRefusalFor(provider, resolved.model);
+        if (refusal) return this.refusalTurn(refusal);
+        if (!(await provider.isConfigured())) {
           throw new Error(
-            `AI provider "${resolved.provider}" is selected for this project, but ${provider.envApiKey} is not configured on this deployment.`,
+            `AI provider "${resolved.provider}" is selected for this project, but its deployment configuration (${provider.envApiKey}${provider.baseUrl ? " / Base URL" : ""}) is not ready.`,
           );
         }
+        const apiKey =
+          getEnvValueSync(this.env, provider.envApiKey) ??
+          (await provider.getApiKey()) ??
+          "";
         turn.model = provider.buildModel(apiKey, resolved.model);
       }
 
@@ -436,8 +443,47 @@ export class SamChatAgent extends Think {
     }
   }
 
-  onChatError(error: unknown): void {
-    console.error("[sam] chat turn error", error);
+  /**
+   * Think delivers `wrapped.message` from this hook to the client as the
+   * turn's terminal error. Normalize provider failures here so users see one
+   * actionable, secret-free vocabulary (auth / data policy / rate limit / …)
+   * instead of raw vendor dumps or retry-wrapper noise — and so a provider
+   * outage can never leak credentials or stacks into the chat UI.
+   *
+   * The normalized explanation is also persisted as an assistant note (when
+   * the turn's user message was already persisted), so the transcript itself
+   * carries the reason even though the react hook only surfaces status=error.
+   */
+  onChatError(
+    error: unknown,
+    ctx?: { stage?: string; messagesPersisted?: boolean },
+  ): Error {
+    const normalized = normalizeProviderError(
+      error,
+      this.turnProviderId,
+      this.turnModelId ?? undefined,
+    );
+    console.error(
+      JSON.stringify({
+        type: "sam-turn-error",
+        stage: ctx?.stage,
+        code: normalized.code,
+        provider: normalized.provider,
+        model: normalized.model,
+      }),
+    );
+    if (ctx?.messagesPersisted) {
+      void this.saveMessages([
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          parts: [{ type: "text", text: normalized.message }],
+        },
+      ]).catch(() => {
+        // Never let note-persistence fail the error path.
+      });
+    }
+    return new Error(normalized.message);
   }
 
   // POST .../rewind {messageId}: delete that message and everything after it on

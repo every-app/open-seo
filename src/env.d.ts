@@ -47,11 +47,20 @@ declare namespace Cloudflare {
     OPENAI_API_KEY?: string;
     GEMINI_API_KEY?: string;
     ANTHROPIC_API_KEY?: string;
+    OLLAMA_API_KEY?: string;
+    OPENAI_COMPATIBLE_API_KEY?: string;
     // Optional per-provider model defaults (defaults live in providers.ts).
     OPENROUTER_MODEL?: string;
     OPENAI_MODEL?: string;
     GEMINI_MODEL?: string;
     ANTHROPIC_MODEL?: string;
+    OLLAMA_CLOUD_MODEL?: string;
+    OPENAI_COMPATIBLE_MODEL?: string;
+    // OpenAI-Compatible / Ollama Cloud endpoints. Base URLs are deployment
+    // configuration (never user secrets); hosted builds only allow public
+    // HTTPS targets, self-hosted may point at local gateways.
+    OPENAI_COMPATIBLE_BASE_URL?: string;
+    OLLAMA_CLOUD_BASE_URL?: string;
 
     // In-app agent (SAM) overrides. AI_AGENT_PROVIDER picks the deployment
     // default provider (defaults to openrouter); AI_AGENT_MODEL overrides the

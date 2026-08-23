@@ -23,6 +23,7 @@ export function AiConnectionTest({
 }) {
   const [status, setStatus] = useState<ConnectionStatus>("idle");
   const [message, setMessage] = useState<string | null>(null);
+  const [policyBlocked, setPolicyBlocked] = useState(false);
 
   const testMutation = useMutation({
     mutationFn: () =>
@@ -30,6 +31,7 @@ export function AiConnectionTest({
     onMutate: () => {
       setStatus("testing");
       setMessage(null);
+      setPolicyBlocked(false);
     },
     onSuccess: (result) => {
       if (result.ok) {
@@ -42,6 +44,7 @@ export function AiConnectionTest({
           .filter(Boolean)
           .join(" · ");
         setStatus("ok");
+        setPolicyBlocked(false);
         setMessage(
           `Connection works — the provider accepted the key and the model responded${
             details ? ` (${details})` : ""
@@ -49,11 +52,18 @@ export function AiConnectionTest({
         );
       } else {
         setStatus("failed");
-        setMessage(result.message ?? "The provider did not respond as expected.");
+        const code = result.error;
+        setMessage(
+          code === "DATA_POLICY_BLOCKED"
+            ? `${result.message ?? "The provider blocked this model under its data policy."} Pick another model above, or see the provider's privacy settings.`
+            : (result.message ?? "The provider did not respond as expected."),
+        );
+        setPolicyBlocked(code === "DATA_POLICY_BLOCKED");
       }
     },
     onError: (error) => {
       setStatus("failed");
+      setPolicyBlocked(false);
       setMessage(getStandardErrorMessage(error, "Connection test failed"));
     },
   });
@@ -91,6 +101,16 @@ export function AiConnectionTest({
         >
           {message}
         </p>
+      )}
+      {policyBlocked && (
+        <a
+          href="https://openrouter.ai/settings/privacy"
+          target="_blank"
+          rel="noreferrer"
+          className="link link-primary w-fit text-xs"
+        >
+          OpenRouter Privacy Settings →
+        </a>
       )}
     </div>
   );

@@ -11,7 +11,27 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 
 /** Narrow one message part to its tool variant by its `tool-` prefix. */
 export function isToolPart(part: MessagePart): part is ChatToolPart {
-  return typeof part.type === "string" && part.type.startsWith("tool-");
+  return (
+    typeof part === "object" &&
+    part !== null &&
+    "type" in part &&
+    typeof part.type === "string" &&
+    part.type.startsWith("tool-")
+  );
+}
+
+/**
+ * A provider failure mid-turn can persist or stream a message whose `parts`
+ * array contains null/undefined/malformed entries. Nothing invalid may reach
+ * the renderer unchecked — every consumer filters through this first.
+ */
+export function safeParts(parts: unknown): MessagePart[] {
+  const list: unknown[] = Array.isArray(parts) ? parts : [];
+  return list.filter((part): part is MessagePart => {
+    if (typeof part !== "object" || part === null) return false;
+    if (!("type" in part)) return false;
+    return typeof part.type === "string";
+  });
 }
 
 export type ChatToolPart = Extract<MessagePart, { type: `tool-${string}` }>;
@@ -32,10 +52,11 @@ export type ToolPartGroup = {
  * parts break a run like any other part type.
  */
 export function groupConsecutiveToolParts(
-  parts: MessagePart[],
+  parts: unknown,
 ): ToolPartGroup[] {
+  const safe = safeParts(parts);
   const groups: ToolPartGroup[] = [];
-  for (const part of parts) {
+  for (const part of safe) {
     if (!isToolPart(part)) continue;
     const group = groups[groups.length - 1];
     if (group && group.type === part.type) {
@@ -58,22 +79,24 @@ export type RenderPlanEntry =
  * entry. This is what the chat bubble renders so interleaved
  * reasoning → tools → text sequences keep their original order.
  */
-export function buildRenderPlan(parts: MessagePart[]): RenderPlanEntry[] {
-  const groups = groupConsecutiveToolParts(parts);
+export function buildRenderPlan(parts: unknown): RenderPlanEntry[] {
+  const safe = safeParts(parts);
+  const groups = groupConsecutiveToolParts(safe);
   const plan: RenderPlanEntry[] = [];
   let groupIndex = 0;
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (part && isToolPart(part)) {
+  for (let i = 0; i < safe.length; i++) {
+    const part = safe[i];
+    if (!part) continue;
+    if (isToolPart(part)) {
       // Only the FIRST part of each same-type run emits the group entry.
-      const previous = i > 0 ? parts[i - 1] : undefined;
+      const previous = i > 0 ? safe[i - 1] : undefined;
       if (!previous || !isToolPart(previous) || previous.type !== part.type) {
         plan.push({ kind: "tools", group: groups[groupIndex] });
         groupIndex++;
       }
       continue;
     }
-    if (part) plan.push({ kind: "part", part });
+    plan.push({ kind: "part", part });
   }
   return plan;
 }

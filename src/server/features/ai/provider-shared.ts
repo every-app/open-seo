@@ -1,7 +1,7 @@
 import { generateText, type LanguageModel } from "ai";
-import { APICallError } from "ai";
 import { z } from "zod";
 import { CACHE_TTL, getCached, setCached } from "@/server/lib/r2-cache";
+import { normalizeProviderError } from "@/server/features/ai/providerErrors";
 import type {
   AiConnectionResult,
   AiModel,
@@ -97,29 +97,13 @@ async function probeToolCalling(model: LanguageModel): Promise<boolean> {
 function classifyConnectionError(
   error: unknown,
   modelId: string,
+  providerId: string,
 ): Pick<AiConnectionResult, "ok" | "error" | "message"> {
-  if (error instanceof APICallError) {
-    if (error.statusCode === 401 || error.statusCode === 403) {
-      return {
-        ok: false,
-        error: "invalid_key",
-        message: "The API key was rejected by the provider.",
-      };
-    }
-    if (error.statusCode === 404) {
-      return {
-        ok: false,
-        error: "model_unavailable",
-        message: `The provider returned 404 — model "${modelId}" may be unavailable or misconfigured.`,
-      };
-    }
-  }
-  const message =
-    error instanceof Error ? error.message : "Unknown provider error";
+  const normalized = normalizeProviderError(error, providerId, modelId);
   return {
     ok: false,
-    error: "provider_unreachable",
-    message: `Could not reach the provider: ${message}`,
+    error: normalized.code === "UNKNOWN" ? "unknown" : normalized.code,
+    message: normalized.message,
   };
 }
 
@@ -129,7 +113,7 @@ function connectionResultForFailure(
   error: unknown,
   latencyMs: number | null,
 ): AiConnectionResult {
-  const failure = classifyConnectionError(error, modelId);
+  const failure = classifyConnectionError(error, modelId, provider.id);
   return {
     ...failure,
     provider: provider.id,
@@ -146,7 +130,7 @@ function missingKeyResult(
 ): AiConnectionResult {
   return {
     ok: false,
-    error: "invalid_key",
+    error: "AUTH_ERROR",
     message: `${provider.envApiKey} is not configured on this deployment.`,
     provider: provider.id,
     model: modelId,

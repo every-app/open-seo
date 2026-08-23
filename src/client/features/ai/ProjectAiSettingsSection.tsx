@@ -19,6 +19,8 @@ const PROVIDER_LABELS: Record<AiProviderId, string> = {
   openai: "OpenAI",
   gemini: "Google Gemini",
   anthropic: "Anthropic",
+  openai_compatible: "OpenAI Compatible",
+  ollama_cloud: "Ollama Cloud",
 };
 
 export function ProjectAiSettingsSection({ projectId }: { projectId: string }) {

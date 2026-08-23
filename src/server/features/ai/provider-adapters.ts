@@ -16,7 +16,7 @@ import {
   runConnectionTest,
 } from "./provider-shared";
 
-// The four provider adapters. Each owns everything provider-specific —
+// The provider adapters. Each owns everything provider-specific —
 // credentials (env vars only, never the DB), model discovery, connection
 // testing, model construction, and cost extraction. The registry in
 // providers.ts exposes them to SAM and the settings UI through the AiProvider
@@ -99,9 +99,11 @@ const openRouterProvider: AiProvider = {
   envApiKey: "OPENROUTER_API_KEY",
   envModel: "OPENROUTER_MODEL",
   defaultModelId: "minimax/minimax-m3",
-  // Free OpenRouter model for the connection-test probe so testing a key costs
-  // nothing. Tool-capable so the tool-call round-trip can be verified too.
-  connectionTestModelId: "z-ai/glm-5.2:free",
+  // Probe on the default (paid) model: free OpenRouter models share one
+  // upstream rate-limit pool that is routinely saturated, which made the
+  // connection test fail spuriously with 429s. The probe is 8 output tokens
+  // (~$0.0001) — reliability is worth more than a rounding error.
+  connectionTestModelId: "minimax/minimax-m3",
   async isConfigured() {
     return Boolean(await getOptionalEnvValue("OPENROUTER_API_KEY"));
   },
@@ -387,9 +389,25 @@ const anthropicProvider: AiProvider = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Registry
+// ---------------------------------------------------------------------------
+
+// The OpenAI-Compatible and Ollama Cloud adapters live in
+// provider-compatible-adapters.ts (they share one factory around the
+// OpenAI-compatible SDK contract).
+export {
+  openAiCompatibleProvider,
+  ollamaCloudProvider,
+} from "./provider-compatible-adapters";
+
+import { openAiCompatibleProvider, ollamaCloudProvider } from "./provider-compatible-adapters";
+
 export const PROVIDER_ADAPTERS: Record<AiProviderId, AiProvider> = {
   openrouter: openRouterProvider,
   openai: openAiProvider,
   gemini: geminiProvider,
   anthropic: anthropicProvider,
+  openai_compatible: openAiCompatibleProvider,
+  ollama_cloud: ollamaCloudProvider,
 };

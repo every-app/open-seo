@@ -12,6 +12,7 @@ import {
 import { Markdown } from "@/client/components/Markdown";
 import {
   buildRenderPlan,
+  safeParts,
   type ChatToolPart,
   type ToolPartGroup,
 } from "@/client/components/chat/toolParts";
@@ -48,9 +49,10 @@ export function humanizeToolLabel(partType: string): ToolLabel {
 // Whether an assistant message already shows something — visible text, reasoning,
 // or a tool badge. Used to decide when the standalone typing indicator is still
 // needed: a running tool badge already reads as progress, so the dots would
-// double up.
+// double up. Malformed parts (a provider failure can persist/stream null
+// entries) are filtered before any property access.
 export function messageHasVisibleContent(message: UIMessage): boolean {
-  return message.parts.some(
+  return safeParts(message.parts).some(
     (part) =>
       (part.type === "text" && part.text.trim().length > 0) ||
       (part.type === "reasoning" && part.text.trim().length > 0) ||
@@ -61,9 +63,9 @@ export function messageHasVisibleContent(message: UIMessage): boolean {
 // Plain text of a message for the clipboard: its visible text parts only (no
 // reasoning traces, no tool payloads).
 function messageText(message: UIMessage): string {
-  return message.parts
+  return safeParts(message.parts)
     .filter(
-      (part): part is Extract<typeof part, { type: "text" }> =>
+      (part): part is Extract<UIMessage["parts"][number], { type: "text" }> =>
         part.type === "text",
     )
     .map((part) => part.text)
@@ -296,7 +298,7 @@ export function ChatMessage({
       <div className="group flex flex-col gap-1">
         <div className="flex justify-end pl-8 sm:pl-16">
           <div className="rounded-box rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-content">
-            {message.parts.map((part, index) =>
+            {safeParts(message.parts).map((part, index) =>
               part.type === "text" ? (
                 <span key={index} className="whitespace-pre-wrap">
                   {part.text}

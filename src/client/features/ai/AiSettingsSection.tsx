@@ -25,6 +25,8 @@ const PROVIDER_LABELS: Record<AiProviderId, string> = {
   openai: "OpenAI",
   gemini: "Google Gemini",
   anthropic: "Anthropic",
+  openai_compatible: "OpenAI Compatible",
+  ollama_cloud: "Ollama Cloud",
 };
 
 function CapabilityRow({ provider }: { provider: AiProviderStatus }) {
@@ -45,6 +47,57 @@ function CapabilityRow({ provider }: { provider: AiProviderStatus }) {
         </span>
       ))}
     </p>
+  );
+}
+
+/** Deployment-configured endpoint readout (OpenAI-Compatible / Ollama Cloud). */
+function BaseUrlRow({ status }: { status: AiProviderStatus }) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <span className="text-sm font-medium">Base URL</span>
+      <p className="text-xs">
+        {status.baseUrl ? (
+          <>
+            Configured server-side:{" "}
+            <span className="font-mono">{status.baseUrl}</span>
+          </>
+        ) : (
+          <span className="text-warning">
+            Not configured. Set the deployment environment variable to this
+            provider's OpenAI-compatible Base URL.
+          </span>
+        )}
+      </p>
+      <p className="text-xs text-base-content/50">
+        The endpoint is deployment configuration (not user-editable here).
+        Hosted builds only allow public HTTPS targets; self-hosted runtimes
+        may point at local gateways such as Ollama.
+      </p>
+    </div>
+  );
+}
+
+/** Per-provider credential readout: masked key or explicit not-configured. */
+function ApiKeyRow({ status }: { status: AiProviderStatus }) {
+  return (
+    <>
+      <p className="text-xs">
+        Environment variable:{" "}
+        <span className="font-mono">{status.envApiKey}</span>
+      </p>
+      {status.configured ? (
+        <p className="text-sm text-success">
+          {status.maskedApiKey
+            ? `Configured server-side (${status.maskedApiKey})`
+            : "Configured — this endpoint does not require an API key."}
+        </p>
+      ) : (
+        <p className="text-sm text-warning">
+          Not configured. The in-app agent cannot use this provider until the
+          deployment provides {status.envApiKey}.
+        </p>
+      )}
+    </>
   );
 }
 
@@ -153,24 +206,16 @@ export function AiSettingsSection() {
         />
       </div>
 
+      {providerStatus &&
+        (selectedProvider === "openai_compatible" ||
+          selectedProvider === "ollama_cloud") && (
+          <BaseUrlRow status={providerStatus} />
+        )}
+
       <div className="flex flex-col gap-1.5">
         <span className="text-sm font-medium">API key</span>
         {providerStatus ? (
-          <>
-            <p className="text-xs">
-              Environment variable: <span className="font-mono">{providerStatus.envApiKey}</span>
-            </p>
-            {providerStatus.configured ? (
-              <p className="text-sm text-success">
-                Configured server-side ({providerStatus.maskedApiKey})
-              </p>
-            ) : (
-              <p className="text-sm text-warning">
-                Not configured. The in-app agent cannot use this provider until
-                the deployment provides {providerStatus.envApiKey}.
-              </p>
-            )}
-          </>
+          <ApiKeyRow status={providerStatus} />
         ) : (
           <p className="text-sm text-warning">Unknown provider status.</p>
         )}

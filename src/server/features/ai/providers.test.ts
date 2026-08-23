@@ -115,7 +115,7 @@ describe("openRouterProvider", () => {
     );
     const result = await provider.testConnection("minimax/minimax-m3");
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("invalid_key");
+    expect(result.error).toBe("AUTH_ERROR");
     expect(result.toolCallingVerified).toBe(false);
   });
 
@@ -130,14 +130,14 @@ describe("openRouterProvider", () => {
     );
     const result = await provider.testConnection("nope/nope");
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("model_unavailable");
+    expect(result.error).toBe("MODEL_UNAVAILABLE");
   });
 
   it("classifies network/provider failures", async () => {
     mocks.generateText.mockRejectedValue(new Error("socket hang up"));
     const result = await provider.testConnection("minimax/minimax-m3");
     expect(result.ok).toBe(false);
-    expect(result.error).toBe("provider_unreachable");
+    expect(result.error).toBe("PROVIDER_UNAVAILABLE");
   });
 
   it("extracts the real USD cost from provider metadata", () => {
@@ -186,7 +186,7 @@ describe("openAiProvider", () => {
     const result = await provider.testConnection("gpt-5");
     expect(result).toMatchObject({
       ok: false,
-      error: "invalid_key",
+      error: "AUTH_ERROR",
       provider: "openai",
       model: "gpt-5",
     });
@@ -243,7 +243,7 @@ describe("geminiProvider", () => {
 
   it("reports a missing key without calling the API", async () => {
     const result = await provider.testConnection("gemini-2.5-flash");
-    expect(result).toMatchObject({ ok: false, error: "invalid_key", provider: "gemini" });
+    expect(result).toMatchObject({ ok: false, error: "AUTH_ERROR", provider: "gemini" });
     expect(mocks.generateText).not.toHaveBeenCalled();
   });
 });
@@ -294,7 +294,7 @@ describe("anthropicProvider", () => {
     const result = await provider.testConnection("claude-sonnet-4-5");
     expect(result).toMatchObject({
       ok: false,
-      error: "invalid_key",
+      error: "AUTH_ERROR",
       provider: "anthropic",
     });
     expect(mocks.generateText).not.toHaveBeenCalled();
@@ -326,9 +326,11 @@ describe("AiProviderRegistry", () => {
     );
   });
 
-  it("probes on a free OpenRouter model so connection tests cost nothing", () => {
+  it("probes on a reliable default model (free pools are rate-limit saturated)", () => {
     const openrouter = AiProviderRegistry.get("openrouter");
-    expect(openrouter.connectionTestModelId.endsWith(":free")).toBe(true);
+    expect(openrouter.connectionTestModelId).toBe(
+      openrouter.defaultModelId,
+    );
     for (const provider of AiProviderRegistry.list()) {
       expect(provider.connectionTestModelId).toBeTruthy();
     }

@@ -19,6 +19,8 @@ export const SUPPORTED_PROVIDERS = [
   "openai",
   "gemini",
   "anthropic",
+  "openai_compatible",
+  "ollama_cloud",
 ] as const;
 export type AiProviderId = (typeof SUPPORTED_PROVIDERS)[number];
 
@@ -46,7 +48,19 @@ export type AiModel = {
 
 export type AiConnectionResult = {
   ok: boolean;
-  error?: "invalid_key" | "model_unavailable" | "provider_unreachable" | "unknown";
+  /** Normalized failure code (see providerErrors.ts) when ok is false. */
+  error?:
+    | "AUTH_ERROR"
+    | "MODEL_UNAVAILABLE"
+    | "DATA_POLICY_BLOCKED"
+    | "INVALID_BASE_URL"
+    | "INVALID_RESPONSE"
+    | "RATE_LIMITED"
+    | "PROVIDER_UNAVAILABLE"
+    | "CONNECTION_TIMEOUT"
+    | "UNSUPPORTED_FEATURE"
+    | "unknown";
+  /** Curated, user-safe explanation — never raw provider payloads. */
   message?: string;
   provider: AiProviderId;
   model: string;
@@ -74,6 +88,18 @@ export type AiProvider = {
   connectionTestModelId: string;
   /** Whether the deployment has a credential configured for this provider. */
   isConfigured(): Promise<boolean>;
+  /**
+   * Warm any lazily-resolved adapter config (e.g. an env-configured Base
+   * URL) before synchronous model construction. Optional — adapters with
+   * only static config don't need it. SamChatAgent calls it in beforeTurn.
+   */
+  prepare?(): Promise<void>;
+  /**
+   * The deployment-configured endpoint Base URL for adapters that take one
+   * (OpenAI-Compatible / Ollama Cloud). Configuration data — never a secret;
+   * surfaced read-only in the settings UI.
+   */
+  baseUrl?(): Promise<string | null>;
   /**
    * Server-side credential. Never returned to the client, never logged, never
    * stored — callers pass it straight into the SDK model constructor.
@@ -116,6 +142,10 @@ const MODEL_ID_PATTERNS: Record<AiProviderId, RegExp> = {
   openai: /^[\w.:-]+$/i,
   gemini: /^(models\/)?gemini-/i,
   anthropic: /^claude-/i,
+  // Gateways host arbitrary model namespaces (vendor prefixes, :tags, /paths
+  // for multi-model proxies) — accept anything non-empty without whitespace.
+  openai_compatible: /^\S+$/i,
+  ollama_cloud: /^[^/\s]+(:[\w.-]+)?$/i,
 };
 
 const OPENAI_FOREIGN_PREFIX = /^(gemini-|claude-|models\/)/i;
@@ -145,13 +175,39 @@ export function validateModelForProvider(
     openai: 'an id like "gpt-5"',
     gemini: 'an id like "gemini-2.5-flash"',
     anthropic: 'an id like "claude-sonnet-4-5"',
+    openai_compatible: 'the model name your endpoint serves (e.g. "gpt-4o-mini")',
+    ollama_cloud: 'an Ollama cloud model (e.g. "qwen3-coder:480b-cloud")',
   }[providerId];
+  if (!expectation) return null;
   return `Model "${trimmed}" cannot be used with the ${PROVIDER_ADAPTERS[providerId].displayName} provider — expected ${expectation}.`;
 }
 
 // ---------------------------------------------------------------------------
 // Registry
 // ---------------------------------------------------------------------------
+
+/**
+ * SAM is a tool-using agent: when the provider's catalog explicitly marks the
+ * selected model as tool-less, returns a refusal message; unknown capability
+ * passes (nothing invented). Catalog fetch failures pass too — the provider
+ * enforces its own limits at call time.
+ */
+export async function toolCallingRefusalFor(
+  provider: AiProvider,
+  modelId: string,
+): Promise<string | null> {
+  if (!provider.capabilities.toolCalling) return null;
+  try {
+    const catalog = await provider.listModels();
+    const entry = catalog.find((model) => model.id === modelId);
+    if (entry && !entry.supportsTools) {
+      return "This model cannot run SAM because tool calling is not supported. Choose another model in Settings → AI.";
+    }
+  } catch {
+    // Catalog unavailable — proceed; the provider enforces its own limits.
+  }
+  return null;
+}
 
 export const AiProviderRegistry = {
   get(id: string): AiProvider {

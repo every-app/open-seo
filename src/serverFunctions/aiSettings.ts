@@ -45,6 +45,9 @@ async function readAiEnvironment(): Promise<{
       openai: (await getOptionalEnvValue("OPENAI_MODEL")) ?? null,
       gemini: (await getOptionalEnvValue("GEMINI_MODEL")) ?? null,
       anthropic: (await getOptionalEnvValue("ANTHROPIC_MODEL")) ?? null,
+      openai_compatible:
+        (await getOptionalEnvValue("OPENAI_COMPATIBLE_MODEL")) ?? null,
+      ollama_cloud: (await getOptionalEnvValue("OLLAMA_CLOUD_MODEL")) ?? null,
     },
   };
   const apiKeys = {
@@ -52,6 +55,9 @@ async function readAiEnvironment(): Promise<{
     openai: (await getOptionalEnvValue("OPENAI_API_KEY")) ?? null,
     gemini: (await getOptionalEnvValue("GEMINI_API_KEY")) ?? null,
     anthropic: (await getOptionalEnvValue("ANTHROPIC_API_KEY")) ?? null,
+    openai_compatible:
+      (await getOptionalEnvValue("OPENAI_COMPATIBLE_API_KEY")) ?? null,
+    ollama_cloud: (await getOptionalEnvValue("OLLAMA_API_KEY")) ?? null,
   };
   return { env, apiKeys };
 }

@@ -91,4 +91,22 @@ describe("buildRenderPlan", () => {
     expect(plan).toHaveLength(2);
     expect(plan.every((entry) => entry.kind === "part")).toBe(true);
   });
+
+  it("never crashes on malformed part arrays from failed provider turns", () => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- malformed-shape fixture: the whole point is invalid entries
+    const malformed = [
+      null,
+      textPart("partial answer"),
+      undefined,
+      toolPart("tool-get_audit_status"),
+      42,
+    ] as unknown as UIMessage["parts"];
+    expect(() => groupConsecutiveToolParts(malformed)).not.toThrow();
+    expect(() => buildRenderPlan(malformed)).not.toThrow();
+    const plan = buildRenderPlan(malformed);
+    // Only well-formed entries survive; order preserved among them.
+    expect(plan).toHaveLength(2);
+    expect(plan[0]).toMatchObject({ kind: "part" });
+    expect(plan[1]).toMatchObject({ kind: "tools" });
+  });
 });

@@ -41,8 +41,14 @@ export type AiProviderStatus = {
   displayName: string;
   capabilities: AiProviderCapabilities;
   envApiKey: string;
+  /** Deployment-readiness per the adapter (key and/or required Base URL). */
   configured: boolean;
   maskedApiKey: string | null;
+  /**
+   * Deployment-configured endpoint Base URL for adapters that take one
+   * (OpenAI-Compatible / Ollama Cloud). Configuration data, not a secret.
+   */
+  baseUrl: string | null;
 };
 
 /**
@@ -125,17 +131,18 @@ export function maskApiKey(key: string): string {
   return `${key.slice(0, schemeEnd)}••••${key.slice(-4)}`;
 }
 
-function providerStatus(
+async function providerStatus(
   provider: AiProvider,
   apiKey: string | null,
-): AiProviderStatus {
+): Promise<AiProviderStatus> {
   return {
     id: provider.id,
     displayName: provider.displayName,
     capabilities: provider.capabilities,
     envApiKey: provider.envApiKey,
-    configured: Boolean(apiKey),
+    configured: await provider.isConfigured(),
     maskedApiKey: apiKey ? maskApiKey(apiKey) : null,
+    baseUrl: (await provider.baseUrl?.()) ?? null,
   };
 }
 
@@ -146,8 +153,10 @@ function providerStatus(
 export async function getProviderStatuses(
   apiKeys: Partial<Record<AiProviderId, string | null>>,
 ): Promise<AiProviderStatus[]> {
-  return AiProviderRegistry.list().map((provider) =>
-    providerStatus(provider, apiKeys[provider.id] ?? null),
+  return Promise.all(
+    AiProviderRegistry.list().map((provider) =>
+      providerStatus(provider, apiKeys[provider.id] ?? null),
+    ),
   );
 }
 
