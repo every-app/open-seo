@@ -58,4 +58,76 @@ describe("createToolExecutionTracker", () => {
     );
     logSpy.mockRestore();
   });
+
+  it("logs a reused cache hit with reused:true (Phase R contract)", () => {
+    const events: string[] = [];
+    const logSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation((...args: unknown[]) => {
+        events.push(args.map(String).join(" "));
+      });
+    const tracker = createToolExecutionTracker({
+      sessionId: "s",
+      projectId: "p",
+    });
+    tracker.log({
+      sessionId: "s",
+      projectId: "p",
+      toolName: "get_audit_status",
+      reused: true,
+      status: "ok",
+      durationMs: 0,
+    });
+    // oxlint-disable-next-line typescript/no-unsafe-assignment -- tracker emits one self-owned JSON line
+    const event: Record<string, unknown> = JSON.parse(events[0]);
+    expect(event).toMatchObject({
+      type: "sam-tool",
+      tool: "get_audit_status",
+      reused: true,
+      status: "ok",
+    });
+    logSpy.mockRestore();
+  });
+
+  it("logs failures with status:error and never includes payloads or secrets", () => {
+    const events: string[] = [];
+    const logSpy = vi
+      .spyOn(console, "log")
+      .mockImplementation((...args: unknown[]) => {
+        events.push(args.map(String).join(" "));
+      });
+    const tracker = createToolExecutionTracker({
+      sessionId: "s",
+      projectId: "p",
+    });
+    tracker.log({
+      sessionId: "s",
+      projectId: "p",
+      toolName: "get_domain_overview",
+      reused: false,
+      status: "error",
+      durationMs: 358,
+    });
+    // oxlint-disable-next-line typescript/no-unsafe-assignment -- tracker emits one self-owned JSON line
+    const event: Record<string, unknown> = JSON.parse(events[0]);
+    expect(event).toMatchObject({
+      type: "sam-tool",
+      tool: "get_domain_overview",
+      reused: false,
+      status: "error",
+      durationMs: 358,
+    });
+    // Event schema carries only tool name/status/duration + ids — no args,
+    // no outputs, nothing secret-bearing can ride along.
+    expect(Object.keys(event).toSorted()).toEqual([
+      "durationMs",
+      "projectId",
+      "reused",
+      "sessionId",
+      "status",
+      "tool",
+      "type",
+    ]);
+    logSpy.mockRestore();
+  });
 });

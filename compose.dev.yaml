@@ -90,7 +90,13 @@ services:
     # `docker compose -f compose.dev.yaml exec open-seo-dev sh` then
     # `pnpm test`, `pnpm lint`, etc. from inside the container.
     stdin_open: true
-    tty: true
+    # tty: false routes stdout through pipes instead of a Docker Desktop pty.
+    # The Desktop pty relay (wslrelay) has repeatedly gone silent mid-session
+    # — app healthy, `docker logs` frozen after the startup banner — which
+    # swallowed DO/tool tracker logs. Pipe transport is immune. Cost: wrangler's
+    # interactive keybindings (b/e/t/h) need `docker compose exec` + a real
+    # TTY, and vite disables ANSI colors in logs.
+    tty: false
 
 volumes:
   open_seo_dev_node_modules:
