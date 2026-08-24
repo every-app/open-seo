@@ -69,6 +69,9 @@
       "DATAFORSEO_API_KEY": {
         "description": "Base64-encoded `login:password` for DataForSEO API access."
       },
+      "CRUX_API_KEY": {
+        "description": "Optional Google API key with the Chrome UX Report API enabled; powers real-user Core Web Vitals."
+      },
       "OAUTH_KV": {
         "description": "KV namespace used by the Cloudflare Workers OAuth provider for MCP client registrations, grants, and tokens."
       }

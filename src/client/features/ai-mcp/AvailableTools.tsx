@@ -174,6 +174,17 @@ const toolCategories: ToolCategory[] = [
     ],
   },
   {
+    label: "Core Web Vitals",
+    tools: [
+      {
+        name: "get_core_web_vitals",
+        title: "Get Core Web Vitals",
+        description:
+          "Read real-user LCP, INP, and CLS from the Chrome UX Report, with weekly history.",
+      },
+    ],
+  },
+  {
     label: "Google Analytics",
     tools: [
       {

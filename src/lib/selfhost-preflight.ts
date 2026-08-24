@@ -14,7 +14,7 @@ type PreflightLevel = "ok" | "info" | "warn" | "fail";
 
 type PreflightItem = {
   // Stable identifier shared with /api/health's check map.
-  key: "auth" | "dataforseo" | "gsc" | "ai" | "runtime";
+  key: "auth" | "dataforseo" | "gsc" | "ai" | "crux" | "runtime";
   name: string;
   level: PreflightLevel;
   message: string;
@@ -209,6 +209,23 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
           level: "info",
           message:
             "OPENROUTER_API_KEY not set (optional) — SAM, the in-app SEO agent, is disabled.",
+        },
+  );
+
+  items.push(
+    get(env, "CRUX_API_KEY")
+      ? {
+          key: "crux",
+          name: "Core Web Vitals",
+          level: "ok",
+          message: "Set",
+        }
+      : {
+          key: "crux",
+          name: "Core Web Vitals",
+          level: "info",
+          message:
+            "CRUX_API_KEY not set (optional) — real-user Core Web Vitals are hidden until it is.",
         },
   );
 }

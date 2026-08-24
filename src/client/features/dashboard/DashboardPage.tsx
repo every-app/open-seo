@@ -15,10 +15,12 @@ import {
   BacklinkPulseCard,
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
+import { CruxCard } from "@/client/features/dashboard/CruxCard";
 import { McpConnectCard } from "@/client/features/dashboard/McpConnectCard";
 import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
+import { getCruxApiKeyStatus } from "@/serverFunctions/crux";
 import {
   getDashboardActivation,
   getDashboardOverview,
@@ -246,6 +248,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
     queryKey: ["dashboardOverview", projectId],
     queryFn: () => getDashboardOverview({ data: { projectId } }),
   });
+  // Key status feeds the CrUX card's data-first sort position, so the page
+  // waits for it alongside activation/overview to avoid a card reshuffle.
+  const cruxKeyQuery = useQuery({
+    queryKey: ["cruxApiKeyStatus"],
+    queryFn: () => getCruxApiKeyStatus(),
+  });
 
   const activation = activationQuery.data;
   const overview = overviewQuery.data;
@@ -284,7 +292,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   // Wait for the overview too: rendering cards from `overview === undefined`
   // flashes their empty states (and reshuffles the data-first sort) once the
   // real data lands. An overview error falls through so the page still loads.
-  if (!activation || overviewQuery.isPending) {
+  if (!activation || overviewQuery.isPending || cruxKeyQuery.isPending) {
     return (
       <div
         className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-4 md:px-6 md:py-6"
@@ -303,6 +311,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
   const ga4Connected = activation.ga4.connected;
+  const cruxConfigured = cruxKeyQuery.data?.configured === true;
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
@@ -374,6 +383,21 @@ export function DashboardPage({ projectId }: { projectId: string }) {
                         projectId={projectId}
                         backlinks={overview?.backlinks ?? null}
                         refreshing={refreshMutation.isPending}
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            // Needs a domain to query CrUX against, like the backlinks card.
+            ...(activation.domain !== null
+              ? [
+                  {
+                    key: "crux",
+                    hasData: cruxConfigured,
+                    node: (
+                      <CruxCard
+                        projectId={projectId}
+                        configured={cruxConfigured}
                       />
                     ),
                   },

@@ -14,6 +14,7 @@ import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
+import { getCoreWebVitalsTool } from "@/server/mcp/tools/get-core-web-vitals";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-tracking-keywords";
@@ -180,6 +181,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getKeywordMetricsTool);
   register(getSearchConsolePerformanceTool);
   register(inspectUrlsTool);
+  register(getCoreWebVitalsTool);
   if (
     !GA4_OAUTH_APP_PENDING ||
     isGa4ConnectAvailable(authProps[MCP_AUTH_CONTEXT_PROP].userEmail)
