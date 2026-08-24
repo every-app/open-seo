@@ -56,7 +56,7 @@ export function SamChat({
     goToSession(firstSessionId);
   }, [activeSessionId, firstSessionId, goToSession]);
 
-  // SAM cannot answer a turn without OPENROUTER_API_KEY, so surface setup
+  // SAM cannot answer a turn without an LLM API key, so surface setup
   // instructions instead of letting a chat fail mid-stream. Only shown once the
   // check confirms the key is missing (self-hosted) — never as a blocking
   // skeleton while the check is in flight.

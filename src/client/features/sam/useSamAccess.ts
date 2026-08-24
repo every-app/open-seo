@@ -8,7 +8,7 @@ type SamAccess = {
   // Only true once the setup check has resolved to "no access". It stays false
   // while the check is in flight, so the chat renders immediately instead of
   // blocking behind a skeleton — the gate only replaces it if we confirm the
-  // OpenRouter key is missing.
+  // LLM API key is missing.
   showSetupGate: boolean;
   errorMessage: string | null;
   isRefetching: boolean;
@@ -16,7 +16,7 @@ type SamAccess = {
 };
 
 export function useSamAccess(projectId: string): SamAccess {
-  // Hosted deployments always have OPENROUTER_API_KEY provisioned (the server
+  // Hosted deployments always have an LLM API key provisioned (the server
   // function short-circuits to enabled), so skip the round-trip entirely.
   const isHosted = isHostedClientAuthMode();
 

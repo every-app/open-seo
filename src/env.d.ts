@@ -48,8 +48,15 @@ declare namespace Cloudflare {
 
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
-    // Optional OpenRouter model slug override (defaults in openrouter.ts).
+    // Optional OpenRouter model slug override (defaults in chatAgentModel.ts).
     OPENROUTER_MODEL?: string;
+
+    // API key for an OpenAI-compatible gateway, used by the same chat agents
+    // instead of OpenRouter when set. Base URL defaults to LLMTR and the model
+    // to the same slug as the OpenRouter path (see chatAgentModel.ts).
+    LLM_API_KEY?: string;
+    LLM_BASE_URL?: string;
+    LLM_MODEL?: string;
   }
 }
 
