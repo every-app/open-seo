@@ -41,6 +41,24 @@ Optional env values:
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 
+## Scheduled rank checks
+
+Docker does not emit Cloudflare Worker scheduled events. To run due rank checks,
+set a long random `RANK_CHECK_SCHEDULER_SECRET` in `.env`, recreate the container,
+and configure Coolify or another external scheduler to send an authenticated
+`POST` request on your desired cadence:
+
+```bash
+curl --fail-with-body --request POST \
+  --header "Authorization: Bearer $RANK_CHECK_SCHEDULER_SECRET" \
+  https://your-open-seo.example/api/internal/scheduled-rank-checks
+```
+
+The endpoint is disabled when the secret is unset, accepts `POST` only, and uses
+the same due-date, budget, deadline, and active-run guards as the Cloudflare
+scheduled handler. Keep the token in your scheduler's secret store and never put
+it in a URL or logs.
+
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
 ```bash
