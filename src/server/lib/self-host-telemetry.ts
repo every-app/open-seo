@@ -22,7 +22,7 @@ import { getSetupIssueSummary } from "@/server/lib/setup-status";
 import { isTelemetryOptOutValue } from "@/shared/selfhost-checks";
 
 const SELF_HOST_POSTHOG_KEY =
-  "REDACTED";
+  process.env.SELF_HOST_POSTHOG_KEY!;
 const SELF_HOST_POSTHOG_HOST = "https://us.i.posthog.com";
 
 const DAILY_HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;

@@ -15,7 +15,7 @@ import { isTelemetryOptOutValue } from "../src/shared/selfhost-checks";
 import { version } from "../package.json";
 
 const SELF_HOST_POSTHOG_KEY =
-  "REDACTED";
+  process.env.SELF_HOST_POSTHOG_KEY!;
 const SELF_HOST_POSTHOG_HOST = "https://us.i.posthog.com";
 
 function telemetryDisabled(): boolean {
