@@ -1,11 +1,17 @@
+import { env } from "cloudflare:workers";
 import type { InferInsertModel } from "drizzle-orm";
 import type {
   localBusinesses,
   localGridConfigs,
   localGridKeywords,
+  localGridResults,
+  localGridRunPoints,
 } from "@/db/schema";
+import type { BillingCustomerContext } from "@/server/billing/subscription";
+import { generateLocalGrid, toLocalGridSize } from "@/shared/local-seo";
 import type {
   createLocalGridConfigSchema,
+  LocalGridScanTriggerResult,
   updateLocalGridConfigSchema,
 } from "@/types/schemas/local-seo";
 import { AppError } from "@/server/lib/errors";
@@ -200,10 +206,106 @@ async function archiveConfig(configId: string, projectId: string) {
   return { success: true };
 }
 
+async function triggerScan(input: {
+  configId: string;
+  projectId: string;
+  billingCustomer: BillingCustomerContext;
+}): Promise<LocalGridScanTriggerResult> {
+  const details = await getConfig(input.configId, input.projectId);
+  if (!details.config.isActive) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Resume this map grid before scanning",
+    );
+  }
+  if (details.keywords.length === 0) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Add at least one keyword before scanning",
+    );
+  }
+
+  const grid = generateLocalGrid({
+    centerLatitude: details.config.centerLatitude,
+    centerLongitude: details.config.centerLongitude,
+    gridSize: toLocalGridSize(details.config.gridSize),
+    radiusMeters: details.config.radiusMeters,
+  });
+  const runId = crypto.randomUUID();
+  const inserted = await LocalGridRepository.tryCreateRun({
+    id: runId,
+    configId: input.configId,
+    projectId: input.projectId,
+    taskCount: grid.length * details.keywords.length,
+  });
+  if (!inserted) {
+    const blocker = await LocalGridRepository.getActiveRun(input.configId);
+    return {
+      ok: false,
+      reason: "already_running",
+      blockingRunId: blocker?.id ?? null,
+    };
+  }
+
+  try {
+    const points = grid.map((point) => ({
+      id: crypto.randomUUID(),
+      runId,
+      ...point,
+    })) satisfies Array<InferInsertModel<typeof localGridRunPoints>>;
+    const results = points.flatMap((point) =>
+      details.keywords.map((keyword) => ({
+        id: crypto.randomUUID(),
+        runPointId: point.id,
+        trackingKeywordId: keyword.id,
+        keyword: keyword.keyword,
+      })),
+    ) satisfies Array<InferInsertModel<typeof localGridResults>>;
+
+    await LocalGridRepository.insertRunPoints(points);
+    await LocalGridRepository.insertRunResults(results);
+    await env.LOCAL_GRID_WORKFLOW.create({
+      id: runId,
+      params: {
+        runId,
+        configId: input.configId,
+        projectId: input.projectId,
+        billingCustomer: {
+          userId: input.billingCustomer.userId,
+          userEmail: input.billingCustomer.userEmail,
+          organizationId: input.billingCustomer.organizationId,
+          projectId: input.billingCustomer.projectId,
+        },
+      },
+    });
+    return { ok: true, runId };
+  } catch (error) {
+    await LocalGridRepository.updateRun(runId, {
+      status: "failed",
+      errorMessage: "Failed to start map grid workflow",
+      completedAt: new Date().toISOString(),
+    });
+    try {
+      const instance = await env.LOCAL_GRID_WORKFLOW.get(runId);
+      await instance.terminate();
+    } catch {
+      // The workflow may not have been created.
+    }
+    throw error;
+  }
+}
+
+async function getLatestRun(configId: string, projectId: string) {
+  await getConfig(configId, projectId);
+  return LocalGridRepository.getLatestRun(configId);
+}
+
 export const LocalGridService = {
   createConfig,
   listConfigs,
   getConfig,
   updateConfig,
   archiveConfig,
+  triggerScan,
+  getLatestRun,
 };

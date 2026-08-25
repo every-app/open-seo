@@ -1,11 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
+import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { LocalGridService } from "@/server/features/local-seo/services/LocalGridService";
+import { AppError } from "@/server/lib/errors";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   archiveLocalGridConfigSchema,
   createLocalGridConfigSchema,
+  getLatestLocalGridRunSchema,
   getLocalGridConfigSchema,
   listLocalGridConfigsSchema,
+  triggerLocalGridScanSchema,
   updateLocalGridConfigSchema,
 } from "@/types/schemas/local-seo";
 
@@ -48,4 +53,29 @@ export const archiveLocalGridConfig = createServerFn({ method: "POST" })
   .validator(archiveLocalGridConfigSchema)
   .handler(async ({ data, context }) => {
     return LocalGridService.archiveConfig(data.configId, context.projectId);
+  });
+
+export const triggerLocalGridScan = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(triggerLocalGridScanSchema)
+  .handler(async ({ data, context }) => {
+    const isHosted = await isHostedServerAuthMode();
+    if (isHosted && !(await customerHasPaidPlan(context.organizationId))) {
+      throw new AppError(
+        "PAYMENT_REQUIRED",
+        "Upgrade to the paid plan to run local map grid scans",
+      );
+    }
+    return LocalGridService.triggerScan({
+      configId: data.configId,
+      projectId: context.projectId,
+      billingCustomer: context,
+    });
+  });
+
+export const getLatestLocalGridRun = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(getLatestLocalGridRunSchema)
+  .handler(async ({ data, context }) => {
+    return LocalGridService.getLatestRun(data.configId, context.projectId);
   });

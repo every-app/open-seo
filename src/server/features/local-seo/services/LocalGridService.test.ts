@@ -25,6 +25,15 @@ interface UpdateWrite {
   keywords?: Array<{ keyword: string }>;
 }
 
+const workflow = vi.hoisted(() => ({
+  create: vi.fn(),
+  get: vi.fn(),
+}));
+
+vi.mock("cloudflare:workers", () => ({
+  env: { LOCAL_GRID_WORKFLOW: workflow },
+}));
+
 const repository = vi.hoisted(() => ({
   findBusinessByStableIdentifiers:
     vi.fn<() => Promise<{ id: string } | null>>(),
@@ -41,6 +50,21 @@ const repository = vi.hoisted(() => ({
   getConfig: vi.fn<() => Promise<unknown>>(),
   updateConfig: vi.fn<(input: UpdateWrite) => Promise<void>>(),
   archiveConfig: vi.fn<() => Promise<{ id: string } | null>>(),
+  tryCreateRun: vi.fn<() => Promise<boolean>>(),
+  insertRunPoints: vi.fn<
+    (
+      points: Array<{
+        rowIndex: number;
+        columnIndex: number;
+        latitude: number;
+        longitude: number;
+      }>,
+    ) => Promise<void>
+  >(),
+  insertRunResults: vi.fn<(results: unknown[]) => Promise<void>>(),
+  getActiveRun: vi.fn<() => Promise<{ id: string } | null>>(),
+  updateRun: vi.fn<() => Promise<void>>(),
+  getLatestRun: vi.fn<() => Promise<unknown>>(),
 }));
 
 vi.mock("../repositories/LocalGridRepository", () => ({
@@ -182,6 +206,128 @@ describe("LocalGridService", () => {
       ),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     expect(repository.archiveConfig).not.toHaveBeenCalled();
+  });
+
+  it("materializes the grid and starts one durable scan workflow", async () => {
+    repository.getConfig.mockResolvedValue({
+      config: {
+        id: "00000000-0000-4000-8000-000000000002",
+        isActive: true,
+        centerLatitude: 50.8179,
+        centerLongitude: -0.3729,
+        gridSize: 3,
+        radiusMeters: 1_000,
+      },
+      business: { placeId: "ChIJ-worthing" },
+      keywords: [
+        { id: "keyword-1", keyword: "loft conversions" },
+        { id: "keyword-2", keyword: "loft company" },
+      ],
+    });
+    repository.tryCreateRun.mockResolvedValue(true);
+    repository.insertRunPoints.mockResolvedValue(undefined);
+    repository.insertRunResults.mockResolvedValue(undefined);
+    workflow.create.mockResolvedValue(undefined);
+
+    const result = await LocalGridService.triggerScan({
+      configId: "00000000-0000-4000-8000-000000000002",
+      projectId,
+      billingCustomer: {
+        userId: "user-1",
+        userEmail: "user@example.com",
+        organizationId: "org-1",
+        projectId,
+      },
+    });
+
+    expect(result).toMatchObject({ ok: true });
+    expect(repository.tryCreateRun).toHaveBeenCalledWith(
+      expect.objectContaining({ taskCount: 18 }),
+    );
+    const points = repository.insertRunPoints.mock.calls.at(0)?.[0];
+    expect(points).toHaveLength(9);
+    expect(points?.[4]).toMatchObject({
+      rowIndex: 1,
+      columnIndex: 1,
+      latitude: 50.8179,
+      longitude: -0.3729,
+    });
+    const results = repository.insertRunResults.mock.calls.at(0)?.[0];
+    expect(results).toHaveLength(18);
+    expect(workflow.create).toHaveBeenCalledOnce();
+  });
+
+  it("returns the active run instead of starting a duplicate scan", async () => {
+    repository.getConfig.mockResolvedValue({
+      config: {
+        isActive: true,
+        centerLatitude: 50,
+        centerLongitude: -1,
+        gridSize: 3,
+        radiusMeters: 1_000,
+      },
+      business: {},
+      keywords: [{ id: "keyword-1", keyword: "builder" }],
+    });
+    repository.tryCreateRun.mockResolvedValue(false);
+    repository.getActiveRun.mockResolvedValue({ id: "active-run" });
+
+    await expect(
+      LocalGridService.triggerScan({
+        configId: "00000000-0000-4000-8000-000000000002",
+        projectId,
+        billingCustomer: {
+          userId: "user-1",
+          userEmail: "user@example.com",
+          organizationId: "org-1",
+        },
+      }),
+    ).resolves.toEqual({
+      ok: false,
+      reason: "already_running",
+      blockingRunId: "active-run",
+    });
+    expect(repository.insertRunPoints).not.toHaveBeenCalled();
+    expect(workflow.create).not.toHaveBeenCalled();
+  });
+
+  it("releases the active-run slot when workflow startup fails", async () => {
+    repository.getConfig.mockResolvedValue({
+      config: {
+        isActive: true,
+        centerLatitude: 50,
+        centerLongitude: -1,
+        gridSize: 3,
+        radiusMeters: 1_000,
+      },
+      business: {},
+      keywords: [{ id: "keyword-1", keyword: "builder" }],
+    });
+    repository.tryCreateRun.mockResolvedValue(true);
+    repository.insertRunPoints.mockResolvedValue(undefined);
+    repository.insertRunResults.mockResolvedValue(undefined);
+    repository.updateRun.mockResolvedValue(undefined);
+    workflow.create.mockRejectedValue(new Error("workflow unavailable"));
+    workflow.get.mockRejectedValue(new Error("not created"));
+
+    await expect(
+      LocalGridService.triggerScan({
+        configId: "00000000-0000-4000-8000-000000000002",
+        projectId,
+        billingCustomer: {
+          userId: "user-1",
+          userEmail: "user@example.com",
+          organizationId: "org-1",
+        },
+      }),
+    ).rejects.toThrow("workflow unavailable");
+    expect(repository.updateRun).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({
+        status: "failed",
+        errorMessage: "Failed to start map grid workflow",
+      }),
+    );
   });
 });
 

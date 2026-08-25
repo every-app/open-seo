@@ -106,6 +106,11 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         "rank_tracking",
       ),
       local: meter(customer, (s) => s.fetchLocalSerp, "local_seo"),
+      localGridTaskPost: meter(
+        customer,
+        (s) => s.postLocalGridTasks,
+        "local_seo",
+      ),
     },
     labs: {
       // Callers (e.g. the keyword-metrics MCP tool) can attribute the spend to

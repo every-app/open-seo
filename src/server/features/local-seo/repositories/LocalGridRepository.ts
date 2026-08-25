@@ -1,12 +1,20 @@
-import { and, count, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, or, sql } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
-import { runBatch } from "@/db/runBatch";
+import { executeInBatches, runBatch } from "@/db/runBatch";
 import {
   localBusinesses,
   localGridConfigs,
   localGridKeywords,
+  localGridRankings,
+  localGridResults,
+  localGridRunPoints,
+  localGridRuns,
 } from "@/db/schema";
+import type {
+  CompletedLocalGridTask,
+  PostedLocalGridTask,
+} from "@/server/lib/dataforseo";
 
 async function findBusinessByStableIdentifiers(input: {
   projectId: string;
@@ -182,6 +190,167 @@ async function archiveConfig(
   return row ?? null;
 }
 
+async function tryCreateRun(data: {
+  id: string;
+  configId: string;
+  projectId: string;
+  taskCount: number;
+}) {
+  const inserted = await db
+    .insert(localGridRuns)
+    .values({ ...data, status: "pending" })
+    .onConflictDoNothing()
+    .returning({ id: localGridRuns.id });
+  return inserted.length > 0;
+}
+
+async function insertRunPoints(
+  points: Array<InferInsertModel<typeof localGridRunPoints>>,
+) {
+  await executeInBatches(points, (tx, point) =>
+    tx.insert(localGridRunPoints).values(point),
+  );
+}
+
+async function insertRunResults(
+  results: Array<InferInsertModel<typeof localGridResults>>,
+) {
+  await executeInBatches(results, (tx, result) =>
+    tx.insert(localGridResults).values(result),
+  );
+}
+
+async function getRun(runId: string, projectId: string) {
+  const [run] = await db
+    .select()
+    .from(localGridRuns)
+    .where(
+      and(eq(localGridRuns.id, runId), eq(localGridRuns.projectId, projectId)),
+    )
+    .limit(1);
+  return run ?? null;
+}
+
+async function getLatestRun(configId: string) {
+  const [run] = await db
+    .select()
+    .from(localGridRuns)
+    .where(eq(localGridRuns.configId, configId))
+    .orderBy(desc(localGridRuns.startedAt))
+    .limit(1);
+  return run ?? null;
+}
+
+async function getActiveRun(configId: string) {
+  const [run] = await db
+    .select()
+    .from(localGridRuns)
+    .where(
+      and(
+        eq(localGridRuns.configId, configId),
+        inArray(localGridRuns.status, ["pending", "running"]),
+      ),
+    )
+    .limit(1);
+  return run ?? null;
+}
+
+async function updateRun(
+  runId: string,
+  data: Partial<InferInsertModel<typeof localGridRuns>>,
+) {
+  await db.update(localGridRuns).set(data).where(eq(localGridRuns.id, runId));
+}
+
+async function getRunTaskInputs(runId: string) {
+  return db
+    .select({
+      resultId: localGridResults.id,
+      pointId: localGridRunPoints.id,
+      keywordId: localGridResults.trackingKeywordId,
+      keyword: localGridResults.keyword,
+      latitude: localGridRunPoints.latitude,
+      longitude: localGridRunPoints.longitude,
+      providerTaskId: localGridResults.providerTaskId,
+      status: localGridResults.status,
+    })
+    .from(localGridResults)
+    .innerJoin(
+      localGridRunPoints,
+      eq(localGridResults.runPointId, localGridRunPoints.id),
+    )
+    .where(eq(localGridRunPoints.runId, runId));
+}
+
+async function recordPostedTasks(tasks: PostedLocalGridTask[]) {
+  await executeInBatches(tasks, (tx, task) =>
+    tx
+      .update(localGridResults)
+      .set({
+        providerTaskId: task.taskId,
+        providerCostUsd: task.costUsd,
+      })
+      .where(eq(localGridResults.id, task.resultId)),
+  );
+}
+
+async function recordCompletedTask(result: CompletedLocalGridTask) {
+  const completedAt = new Date().toISOString();
+  await runBatch((tx) => [
+    tx
+      .update(localGridResults)
+      .set({
+        status: "completed",
+        targetRank: result.targetRank,
+        matchedBy: result.matchedBy,
+        completedAt,
+        errorMessage: null,
+      })
+      .where(eq(localGridResults.id, result.resultId)),
+    tx
+      .delete(localGridRankings)
+      .where(eq(localGridRankings.resultId, result.resultId)),
+    ...result.rankings.map((ranking) =>
+      tx.insert(localGridRankings).values({
+        id: crypto.randomUUID(),
+        resultId: result.resultId,
+        ...ranking,
+      }),
+    ),
+  ]);
+}
+
+async function markResultFailed(resultId: string, message: string) {
+  await db
+    .update(localGridResults)
+    .set({
+      status: "failed",
+      errorMessage: message.slice(0, 1_000),
+      completedAt: new Date().toISOString(),
+    })
+    .where(eq(localGridResults.id, resultId));
+}
+
+async function getRunProgress(runId: string) {
+  const [row] = await db
+    .select({
+      completed: sql<number>`sum(case when ${localGridResults.status} = 'completed' then 1 else 0 end)`,
+      failed: sql<number>`sum(case when ${localGridResults.status} = 'failed' then 1 else 0 end)`,
+      providerCostUsd: sql<number>`coalesce(sum(${localGridResults.providerCostUsd}), 0)`,
+    })
+    .from(localGridResults)
+    .innerJoin(
+      localGridRunPoints,
+      eq(localGridResults.runPointId, localGridRunPoints.id),
+    )
+    .where(eq(localGridRunPoints.runId, runId));
+  return {
+    completed: Number(row?.completed) || 0,
+    failed: Number(row?.failed) || 0,
+    providerCostUsd: Number(row?.providerCostUsd) || 0,
+  };
+}
+
 export const LocalGridRepository = {
   findBusinessByStableIdentifiers,
   updateBusiness,
@@ -190,4 +359,16 @@ export const LocalGridRepository = {
   getConfig,
   updateConfig,
   archiveConfig,
+  tryCreateRun,
+  insertRunPoints,
+  insertRunResults,
+  getRun,
+  getLatestRun,
+  getActiveRun,
+  updateRun,
+  getRunTaskInputs,
+  recordPostedTasks,
+  recordCompletedTask,
+  markResultFailed,
+  getRunProgress,
 };

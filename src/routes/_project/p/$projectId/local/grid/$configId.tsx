@@ -1,10 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Archive, ArrowLeft } from "lucide-react";
+import { Archive, ArrowLeft, Loader2, Zap } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
+import { Modal } from "@/client/components/Modal";
 import {
   archiveLocalGridConfig,
+  getLatestLocalGridRun,
   getLocalGridConfig,
+  triggerLocalGridScan,
   updateLocalGridConfig,
 } from "@/serverFunctions/local-seo";
 import { estimateLocalGridCost, toLocalGridSize } from "@/shared/local-seo";
@@ -19,6 +23,7 @@ function LocalGridDetail() {
   const { projectId, configId } = Route.useParams();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [showScanConfirm, setShowScanConfirm] = useState(false);
   const { data, isPending } = useQuery({
     queryKey: ["localGridConfig", projectId, configId],
     queryFn: () => getLocalGridConfig({ data: { projectId, configId } }),
@@ -49,6 +54,31 @@ function LocalGridDetail() {
       toast.success(isActive ? "Schedule resumed" : "Schedule paused");
     },
   });
+  const { data: latestRun } = useQuery({
+    queryKey: ["localGridLatestRun", projectId, configId],
+    queryFn: () => getLatestLocalGridRun({ data: { projectId, configId } }),
+    refetchInterval: (query) => {
+      const run = query.state.data;
+      return run?.status === "pending" || run?.status === "running"
+        ? 2_000
+        : false;
+    },
+  });
+  const scanMutation = useMutation({
+    mutationFn: () => triggerLocalGridScan({ data: { projectId, configId } }),
+    onSuccess: (result) => {
+      setShowScanConfirm(false);
+      void queryClient.invalidateQueries({
+        queryKey: ["localGridLatestRun", projectId, configId],
+      });
+      if (result.ok) {
+        toast.success("Map grid scan queued");
+      } else {
+        toast.info("A map grid scan is already running");
+      }
+    },
+    onError: () => toast.error("Could not start the map grid scan"),
+  });
 
   if (isPending || !data) {
     return <div className="skeleton h-56 w-full" aria-busy />;
@@ -59,6 +89,8 @@ function LocalGridDetail() {
     keywordCount: data.keywords.length,
     searchDepth: data.config.searchDepth,
   });
+  const scanIsActive =
+    latestRun?.status === "pending" || latestRun?.status === "running";
 
   return (
     <div className="space-y-4">
@@ -144,8 +176,25 @@ function LocalGridDetail() {
               <p>Raw provider: ${estimate.rawCostUsd.toFixed(5)}</p>
               <p>Hosted billing: ${estimate.hostedCostUsd.toFixed(5)}</p>
             </div>
-            <button className="btn btn-primary btn-sm mt-2" disabled>
-              Scanning arrives in Batch 2
+            {latestRun ? (
+              <p className="mt-2 text-xs text-base-content/60">
+                Latest: <span className="capitalize">{latestRun.status}</span>
+                {scanIsActive
+                  ? ` · ${latestRun.tasksCompleted}/${latestRun.taskCount}`
+                  : ""}
+              </p>
+            ) : null}
+            <button
+              className="btn btn-primary btn-sm mt-2"
+              onClick={() => setShowScanConfirm(true)}
+              disabled={!data.config.isActive || scanIsActive}
+            >
+              {scanIsActive ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <Zap className="size-3.5" />
+              )}
+              {scanIsActive ? "Scan running" : "Run scan"}
             </button>
           </div>
         </div>
@@ -163,6 +212,56 @@ function LocalGridDetail() {
           </div>
         </div>
       </div>
+
+      {showScanConfirm ? (
+        <Modal
+          maxWidth="max-w-md"
+          onClose={() => setShowScanConfirm(false)}
+          labelledBy="local-grid-scan-confirm-title"
+        >
+          <div>
+            <h3
+              id="local-grid-scan-confirm-title"
+              className="text-lg font-semibold"
+            >
+              Run this map grid scan?
+            </h3>
+            <p className="mt-1 text-sm text-base-content/60">
+              This queues {estimate.taskCount} paid DataForSEO tasks. Results
+              can take up to 15 minutes.
+            </p>
+          </div>
+          <div className="rounded-xl border border-base-300 p-4 text-sm">
+            <div className="flex justify-between gap-4">
+              <span>Estimated hosted cost</span>
+              <strong>${estimate.hostedCostUsd.toFixed(5)}</strong>
+            </div>
+            <div className="mt-1 flex justify-between gap-4 text-base-content/60">
+              <span>Usage credits</span>
+              <span>{estimate.hostedCredits.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={() => setShowScanConfirm(false)}
+              disabled={scanMutation.isPending}
+            >
+              Cancel
+            </button>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => scanMutation.mutate()}
+              disabled={scanMutation.isPending}
+            >
+              {scanMutation.isPending ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : null}
+              Confirm and run
+            </button>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }

@@ -91,3 +91,21 @@ export const archiveLocalGridConfigSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
 });
+
+export const triggerLocalGridScanSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+});
+
+export const getLatestLocalGridRunSchema = z.object({
+  projectId: z.string().uuid(),
+  configId: z.string().uuid(),
+});
+
+export type LocalGridScanTriggerResult =
+  | { ok: true; runId: string }
+  | {
+      ok: false;
+      reason: "already_running";
+      blockingRunId: string | null;
+    };

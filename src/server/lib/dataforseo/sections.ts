@@ -43,6 +43,11 @@ export {
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
 
+export {
+  fetchLocalGridTaskResult,
+  postLocalGridTasks,
+} from "@/server/lib/dataforseo/serp-local-grid";
+
 export { fetchLighthouseResult } from "@/server/lib/dataforseo/lighthouse";
 
 export {
