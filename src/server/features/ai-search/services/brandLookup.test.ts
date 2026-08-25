@@ -25,8 +25,18 @@ vi.mock("@/server/lib/dataforseo", () => {
     CHATGPT_LANGUAGE_CODE: "en",
     CHATGPT_LOCATION_CODE: 2840,
     buildLlmTarget: vi.fn(
-      ({ type, value }: { type: "domain" | "keyword"; value: string }) =>
-        type === "domain" ? { domain: value } : { keyword: value },
+      ({
+        type,
+        value,
+        includeSubdomains,
+      }: {
+        type: "domain" | "keyword";
+        value: string;
+        includeSubdomains?: boolean;
+      }) =>
+        type === "domain"
+          ? { domain: value, include_subdomains: includeSubdomains ?? true }
+          : { keyword: value },
     ),
     createDataforseoClient: vi.fn(() => dataforseoClientMock),
   };
@@ -89,6 +99,7 @@ function baseArgs(overrides: Partial<ShapeArgs>): ShapeArgs {
   return {
     query: "acme",
     detected: { type: "keyword", value: "acme" },
+    researchTarget: null,
     platformBundles: [
       platformBundle("chat_gpt", 10, 100),
       platformBundle("google", 5, 50),
@@ -207,6 +218,37 @@ describe("getBrandLookup", () => {
     expect(
       dataforseoClientMock.aiSearch.aggregatedMetrics,
     ).not.toHaveBeenCalled();
+  });
+
+  it("drops subdomains and keys the cache on scope for a URL query", async () => {
+    resetBrandLookupMocks();
+
+    const result = await getBrandLookup(
+      {
+        projectId: "project_123",
+        query: "https://acme.com/blog",
+        competitors: [],
+        locationCode: 2840,
+        languageCode: "en",
+      },
+      billingCustomer,
+    );
+
+    // No URL-level targeting exists upstream: the call is domain-only with
+    // subdomains excluded, and page rows are filtered in shaping.
+    expect(
+      dataforseoClientMock.aiSearch.aggregatedMetrics,
+    ).toHaveBeenCalledWith(
+      expect.objectContaining({
+        target: { domain: "acme.com", include_subdomains: false },
+      }),
+    );
+    expect(cacheMock.buildCacheKey).toHaveBeenCalledWith(
+      "ai-search:brand-lookup",
+      expect.objectContaining({ scope: "subfolder", path: "/blog" }),
+    );
+    expect(result.resolvedTarget).toBe("acme.com/blog");
+    expect(result.aggregatesAreDomainLevel).toBe(true);
   });
 });
 

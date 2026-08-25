@@ -56,7 +56,7 @@ const backlinksNewLostTrendRowSchema = z.object({
 export const backlinksOverviewSchema = z.object({
   target: z.string(),
   displayTarget: z.string(),
-  scope: z.enum(["domain", "page"]),
+  scope: z.enum(["exact_url", "subfolder", "domain", "subdomains"]),
   summary: z.object({
     rank: z.number().nullable(),
     backlinks: z.number().nullable(),

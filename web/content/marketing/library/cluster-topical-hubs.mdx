@@ -21,11 +21,11 @@ Keyword clustering is grouping keywords that deserve the _same page_ because the
 
 Cannibalization is the opposite problem: two of your pages compete for one intent, Google alternates between them, and both rank worse than either would alone.
 
-- **Find it:** in [Search Console](/google-search-console-mcp), group by query + page. Any query with 2+ of your URLs swapping impressions is a candidate.
+- **Find it:** in [Search Console](/google-search-console-mcp), group by query + page. Any query with 2+ of your URLs swapping impressions is a candidate. [Programmatic discovery](/library/keyword-research/gsc-programmatic-discovery) runs the same grouping across every page at once.
 - **Fix it:** merge the weaker page into the stronger (301), or re-point the weaker page at a genuinely different intent and re-title it.
 - **Prevent it:** the keyword map from step 5. No new page ships without checking which cluster it claims.
 
-Run this play with the [OpenSEO MCP](/docs/mcp):
+Run this workflow with the [OpenSEO MCP](/docs/mcp):
 
 ```text
 Using the OpenSEO MCP + Search Console: pull my queries grouped by
@@ -46,4 +46,4 @@ Not an unlimited one. The grouping step itself is free (the MCP prompt above doe
 
 ### What is a keyword mapping template?
 
-A sheet with one row per cluster: primary keyword, supporting keywords, intent, target URL, status. The keyword map above is the working example; copy the structure.
+A sheet with one row per cluster: primary keyword, supporting keywords, intent, target URL, status. The keyword map above is the working example; copy the structure. Add a forecast column and it becomes a build order: [size each cluster](/library/keyword-research/opportunity-sizing-forecasting) before you commit the quarter.

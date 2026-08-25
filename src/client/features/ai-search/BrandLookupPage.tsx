@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
@@ -25,13 +25,25 @@ import {
   parseCompetitorList,
 } from "@/types/schemas/ai-search";
 import { detectTarget } from "@/shared/targetDetection";
+import {
+  parseResearchTarget,
+  toScopeSearchParam,
+  type ResearchScope,
+} from "@/shared/researchScope";
 
 type Props = {
   projectId: string;
   initialQuery: string;
   initialCompetitors: string[];
-  onSearchChange: (nextQuery: string, nextCompetitors: string[]) => void;
+  initialScope: ResearchScope | undefined;
+  onSearchChange: (
+    nextQuery: string,
+    nextCompetitors: string[],
+    nextScope: ResearchScope | undefined,
+  ) => void;
 };
+
+const KEYWORD_SCOPE_REASON = "Scopes apply to domain lookups";
 
 const BRAND_LOOKUP_BULLETS = [
   {
@@ -63,10 +75,15 @@ function BrandLookupPageInner({
   projectId,
   initialQuery,
   initialCompetitors,
+  initialScope,
   onSearchChange,
   planGate,
 }: Props & { planGate: HostedPlanGateState }) {
   const [query, setQuery] = useState(initialQuery);
+  // The user's explicit scope pick, or undefined to follow the input's default.
+  const [scopeChoice, setScopeChoice] = useState<ResearchScope | undefined>(
+    initialScope,
+  );
   // Raw comma-separated competitor text; parsed into a deduped array on submit.
   const [competitorsInput, setCompetitorsInput] = useState(
     initialCompetitors.join(", "),
@@ -84,14 +101,36 @@ function BrandLookupPageInner({
   // stable string key, since `initialCompetitors` is a fresh array each render.
   const competitorKey = initialCompetitors.join(",");
 
+  // Scope only applies to domain/URL inputs. The pick always stays selectable
+  // — an invalid one (Subfolder without a path) errors on submit instead of
+  // the select greying out or changing under the user.
+  const scopeTarget = useMemo(() => {
+    if (detectTarget(query).type !== "domain") return null;
+    const parsed = parseResearchTarget(query);
+    return parsed.ok ? parsed.target : null;
+  }, [query]);
+
+  const selectedScope = scopeChoice ?? scopeTarget?.scope ?? "domain";
+  // Only grey the control once the input is clearly a brand keyword — an
+  // empty box shouldn't look disabled before the user has typed anything.
+  const scopeDisabledReason =
+    query.trim() !== "" && !scopeTarget ? KEYWORD_SCOPE_REASON : undefined;
+
   const lookupQuery = useQuery({
-    queryKey: ["brand-lookup", projectId, trimmedInitialQuery, competitorKey],
+    queryKey: [
+      "brand-lookup",
+      projectId,
+      trimmedInitialQuery,
+      competitorKey,
+      initialScope ?? "",
+    ],
     queryFn: () =>
       lookupBrand({
         data: {
           projectId,
           query: trimmedInitialQuery,
           competitors: initialCompetitors,
+          scope: initialScope,
           locationCode: 2840,
           languageCode: "en",
         },
@@ -117,18 +156,20 @@ function BrandLookupPageInner({
   const lastAddedKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!hasActiveQuery || !lookupQuery.isSuccess) return;
-    const addedKey = `${trimmedInitialQuery}::${competitorKey}`;
+    const addedKey = `${trimmedInitialQuery}::${competitorKey}::${initialScope ?? ""}`;
     if (lastAddedKeyRef.current === addedKey) return;
     lastAddedKeyRef.current = addedKey;
     addSearch({
       query: trimmedInitialQuery,
       competitors: competitorKey ? competitorKey.split(",") : [],
+      scope: initialScope,
     });
   }, [
     hasActiveQuery,
     lookupQuery.isSuccess,
     trimmedInitialQuery,
     competitorKey,
+    initialScope,
     addSearch,
   ]);
 
@@ -176,8 +217,24 @@ function BrandLookupPageInner({
       });
       return;
     }
+    if (
+      scopeTarget &&
+      selectedScope === "subfolder" &&
+      scopeTarget.path === ""
+    ) {
+      setValidationError({
+        field: "query",
+        message: "Add a path to use Subfolder (e.g. example.com/blog)",
+      });
+      return;
+    }
     setValidationError(null);
-    onSearchChange(trimmed, competitors);
+    // Keyword lookups never carry a scope; domain lookups omit it when it
+    // matches the query's implied default.
+    const explicitScope = scopeTarget
+      ? toScopeSearchParam(trimmed, selectedScope)
+      : undefined;
+    onSearchChange(trimmed, competitors, explicitScope);
   };
 
   // The form inputs are reset whenever the URL `q`/`c` changes — including the
@@ -188,8 +245,9 @@ function BrandLookupPageInner({
   useEffect(() => {
     setQuery(initialQuery);
     setCompetitorsInput(competitorKey.split(",").join(", "));
+    setScopeChoice(initialScope);
     setValidationError(null);
-  }, [initialQuery, competitorKey]);
+  }, [initialQuery, competitorKey, initialScope]);
 
   const isLoading = hasActiveQuery && lookupQuery.isPending;
   const errorMessage =
@@ -222,6 +280,9 @@ function BrandLookupPageInner({
                 setQuery(next);
                 if (validationError) setValidationError(null);
               }}
+              scope={selectedScope}
+              onScopeChange={setScopeChoice}
+              scopeDisabledReason={scopeDisabledReason}
               competitors={competitorsInput}
               onCompetitorsChange={(next) => {
                 setCompetitorsInput(next);
@@ -251,7 +312,7 @@ function BrandLookupPageInner({
                     from="/p/$projectId/brand-lookup"
                     to="/p/$projectId/brand-lookup"
                     params={{ projectId }}
-                    search={{ q: undefined, c: undefined }}
+                    search={{ q: undefined, c: undefined, scope: undefined }}
                     replace
                     className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
                   >

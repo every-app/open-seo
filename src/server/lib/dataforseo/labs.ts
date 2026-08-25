@@ -211,8 +211,10 @@ export async function fetchRankedKeywords(input: {
   orderBy?: string[];
   filters?: unknown[];
   itemTypes?: DataforseoLabsItemType[];
-  includeSubdomains?: boolean;
 }): Promise<DataforseoApiResponse<RankedKeywordsPage>> {
+  // Note: ranked_keywords has no include_subdomains parameter — a domain
+  // target always covers the hostname plus its subdomains. Narrower scopes
+  // are expressed through `filters` (see researchScopeFilters.ts).
   const response = await labsApi().googleRankedKeywordsLive([
     new DataforseoLabsGoogleRankedKeywordsLiveRequestInfo({
       target: input.target,
@@ -223,7 +225,6 @@ export async function fetchRankedKeywords(input: {
       order_by: input.orderBy,
       filters: input.filters,
       item_types: input.itemTypes,
-      include_subdomains: input.includeSubdomains,
     }),
   ]);
   const task = assertOk(response);

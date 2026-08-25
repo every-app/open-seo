@@ -144,7 +144,7 @@ function coreSiteTools(ctx: ToolContext): ToolSet {
               {
                 projectId: project.id,
                 domain: project.domain,
-                includeSubdomains: false,
+                scope: "domain",
                 locationCode: project.locationCode,
                 languageCode: project.languageCode,
               },

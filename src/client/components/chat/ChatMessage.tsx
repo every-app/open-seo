@@ -31,6 +31,20 @@ export function humanizeToolLabel(partType: string): ToolLabel {
   return { running: label, done: label };
 }
 
+// activate_skill is the one tool where the target matters more than the tool
+// name: surface which skill the agent loaded instead of a bare "Activate
+// skill" badge.
+function skillNameFromPart(part: UIMessage["parts"][number]): string | null {
+  if (part.type !== "tool-activate_skill" || !("input" in part)) return null;
+  const input: unknown = part.input;
+  return typeof input === "object" &&
+    input !== null &&
+    "name" in input &&
+    typeof input.name === "string"
+    ? input.name
+    : null;
+}
+
 // Whether an assistant message already shows something — visible text, reasoning,
 // or a tool badge. Used to decide when the standalone typing indicator is still
 // needed: a running tool badge already reads as progress, so the dots would
@@ -174,6 +188,9 @@ function ToolBadge({
 }) {
   const labels = resolveToolLabel(part.type);
   if (!labels) return null;
+  const skillName = skillNameFromPart(part);
+  const runningText = skillName ? `Activating ${skillName}` : labels.running;
+  const doneText = skillName ? `Skill: ${skillName}` : labels.done;
   const state = "state" in part ? part.state : undefined;
   const isDone = state === "output-available";
   // A "running" part in a message that is no longer being generated never
@@ -193,7 +210,7 @@ function ToolBadge({
       ) : (
         <Check className="size-3" />
       )}
-      <span>{isRunning ? `${labels.running}…` : labels.done}</span>
+      <span>{isRunning ? `${runningText}…` : doneText}</span>
     </span>
   );
 }

@@ -2,18 +2,18 @@ import type {
   KeywordMode,
   ResultLimit,
 } from "@/client/features/keywords/keywordResearchTypes";
-import type { BacklinksTargetScope } from "@/types/schemas/backlinks";
+import type { ResearchScope } from "@/shared/researchScope";
 
 export type BacklinksSearchTabInput = {
   type: "backlinks";
   target: string;
-  scope: BacklinksTargetScope;
+  scope: ResearchScope;
 };
 
 export type DomainSearchTabInput = {
   type: "domain";
   domain: string;
-  subdomains: boolean;
+  scope: ResearchScope;
   locationCode?: number;
 };
 

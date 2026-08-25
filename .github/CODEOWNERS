@@ -4,3 +4,10 @@
 /AGENTS.md @bensenescu
 /CLAUDE.md @bensenescu
 /.agents/skills/ @bensenescu
+
+# Plugin distribution — these files define the MCP endpoint and skills
+# every plugin installer connects to; a silent change here ships to all
+# installed users on the next update.
+/plugins/ @bensenescu
+/.claude-plugin/ @bensenescu
+/.agents/plugins/ @bensenescu

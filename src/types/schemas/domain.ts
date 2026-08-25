@@ -1,5 +1,5 @@
-import { parse as parseTld } from "tldts";
 import { z } from "zod";
+import { isValidDomainHost, researchScopeSchema } from "@/shared/researchScope";
 
 /**
  * Extract and validate a bare hostname from user input that may be a full URL.
@@ -11,19 +11,6 @@ export function normalizeDomain(input: string): string {
   if (!/^[a-z]+:\/\//.test(d)) d = `https://${d}`;
   const { hostname } = new URL(d); // throws on truly invalid input
   return hostname.replace(/^www\./, "");
-}
-
-/**
- * True when `host` resolves to a real registrable domain (public-suffix list),
- * rejecting IPs and fake TLDs like `example.por` before they reach DataForSEO.
- */
-export function isValidDomainHost(host: string): boolean {
-  const parsed = parseTld(host, { allowPrivateDomains: true });
-  return (
-    !parsed.isIp &&
-    !!parsed.publicSuffix &&
-    (parsed.isIcann === true || parsed.isPrivate === true)
-  );
 }
 
 /** Zod field: accepts a bare domain or full URL, outputs a clean hostname. */
@@ -57,8 +44,8 @@ export const booleanSearchParamSchema = z
 
 export const domainOverviewSchema = z.object({
   projectId: z.string().uuid(),
-  domain: z.string().min(1, "Domain is required").max(255),
-  includeSubdomains: z.boolean().default(true),
+  domain: z.string().min(1, "Domain is required").max(2048),
+  scope: researchScopeSchema.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
 });
@@ -73,7 +60,8 @@ const domainTabs = ["keywords", "pages"] as const;
 
 export const domainKeywordSuggestionsSchema = z.object({
   projectId: z.string().uuid(),
-  domain: domainField,
+  domain: z.string().min(1, "Domain is required").max(2048),
+  scope: researchScopeSchema.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
 });
@@ -117,8 +105,8 @@ export type DomainKeywordsFilters = z.infer<typeof domainKeywordsFiltersSchema>;
 
 export const domainKeywordsPageRequestSchema = z.object({
   projectId: z.string().uuid(),
-  domain: z.string().min(1).max(255),
-  includeSubdomains: z.boolean().default(true),
+  domain: z.string().min(1).max(2048),
+  scope: researchScopeSchema.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
   page: z.number().int().positive().default(1),
@@ -139,8 +127,8 @@ const domainPagesSortModes = ["traffic", "keywords"] as const;
 
 export const domainPagesPageRequestSchema = z.object({
   projectId: z.string().uuid(),
-  domain: z.string().min(1).max(255),
-  includeSubdomains: z.boolean().default(true),
+  domain: z.string().min(1).max(2048),
+  scope: researchScopeSchema.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
   page: z.number().int().positive().default(1),
@@ -169,6 +157,8 @@ const filterNumberParam = optionalSearchNumberParam;
 
 export const domainSearchSchema = z.object({
   domain: z.string().optional(),
+  scope: researchScopeSchema.optional().catch(undefined),
+  /** Legacy param: pre-scope URLs encoded "Include subdomains" here. */
   subdomains: booleanSearchParamSchema.optional(),
   sort: z.enum(domainSortModes).optional(),
   order: z.enum(domainSortOrders).optional(),

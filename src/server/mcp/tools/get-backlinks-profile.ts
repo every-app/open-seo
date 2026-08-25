@@ -12,13 +12,17 @@ import { projectIdSchema } from "@/server/mcp/schemas";
 import {
   BACKLINKS_DEFAULT_SORT,
   BACKLINKS_PAGE_SIZES,
+  BACKLINKS_SCOPE_DESCRIPTION,
   DEFAULT_BACKLINKS_PAGE_SIZE,
   backlinksRowsFiltersSchema,
   backlinksRowsModeSchema,
   backlinksRowsSortFieldSchema,
+  backlinksScopeWithLegacySchema,
   backlinksSortOrderSchema,
-  backlinksTargetScopeSchema,
+  resolveBacklinksScope,
 } from "@/types/schemas/backlinks";
+import { researchScopeSchema } from "@/shared/researchScope";
+import { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -29,11 +33,9 @@ const inputSchema = {
     .describe(
       "Domain or URL to analyze (e.g. 'example.com' or 'https://example.com/blog').",
     ),
-  scope: backlinksTargetScopeSchema
+  scope: backlinksScopeWithLegacySchema
     .optional()
-    .describe(
-      "'domain' analyzes the whole domain; 'page' analyzes a specific URL. Defaults to 'domain'.",
-    ),
+    .describe(BACKLINKS_SCOPE_DESCRIPTION),
   page: z
     .number()
     .int()
@@ -124,6 +126,8 @@ export const getBacklinksProfileTool = {
       "Returns one bounded page of detailed backlink rows for a domain or page: linking URLs, target URLs, anchors, dofollow/nofollow, authority/spam signals, and lost/broken status. Supports filters, sorting, one_per_domain/as_is mode, and pagination. Charges credits (~30 per page typical). Self-hosted deployments need the Backlinks API enabled on their DataForSEO account.",
     inputSchema,
     outputSchema: {
+      target: z.string(),
+      scope: researchScopeSchema,
       backlinks: backlinksProfileOutputSchema,
       ...optionalMetaOutputSchema,
     },
@@ -138,7 +142,7 @@ export const getBacklinksProfileTool = {
     // backlinksRowsPageRequestSchema), so pass them straight through.
     const request = {
       target: args.target,
-      scope: args.scope,
+      scope: args.scope ? resolveBacklinksScope(args.scope) : undefined,
       page: args.page,
       pageSize: args.pageSize,
       sortField: args.sortField,
@@ -147,13 +151,18 @@ export const getBacklinksProfileTool = {
       mode: args.mode,
     };
 
+    // The page result carries only rows, so resolve the target here to report
+    // the scope the rows were actually fetched with.
+    const target = normalizeBacklinksTarget(request.target, {
+      scope: request.scope,
+    });
     const backlinks = await BacklinksService.profileBacklinksPage(
       request,
       context.billing,
       { hideSpam: args.hideSpam ?? true },
     );
     const text = [
-      `Backlinks profile for ${request.target} (${request.scope ?? "domain"}):`,
+      `Backlinks profile for ${target.displayTarget} (scope: ${target.scope}):`,
       `- page: ${backlinks.page}`,
       `- page size: ${backlinks.pageSize}`,
       `- rows returned: ${backlinks.rows.length}`,
@@ -171,9 +180,13 @@ export const getBacklinksProfileTool = {
         context,
         args.projectId,
         `/p/${args.projectId}/backlinks`,
-        { target: request.target, scope: request.scope },
+        { target: request.target, scope: target.scope },
       ),
-      structuredContent: { backlinks },
+      structuredContent: {
+        target: target.displayTarget,
+        scope: target.scope,
+        backlinks,
+      },
     });
   }),
 };

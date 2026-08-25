@@ -10,8 +10,7 @@ export const CHATGPT_LANGUAGE_CODE = "en";
 
 export type LlmPlatform = "chat_gpt" | "google";
 
-/** Max tasks DataForSEO accepts in a single task_post request. */
-export const MAX_TASKS_PER_POST = 100;
+export { MAX_TASKS_PER_POST } from "@/shared/rank-tracking";
 
 // DataForSEO's LLM-mentions `target` array accepts domain OR keyword entries.
 // We always pass exactly one target per call.
@@ -32,11 +31,18 @@ export type LlmTarget =
 export function buildLlmTarget(input: {
   type: "domain" | "keyword";
   value: string;
+  /**
+   * Domain targets only. Defaults to the historical behavior (subdomains
+   * included); research scopes narrower than `subdomains` pass `false`. There
+   * is no URL/path-level targeting in this API — page-level scoping happens by
+   * post-filtering the returned page URLs.
+   */
+  includeSubdomains?: boolean;
 }): LlmTarget {
   if (input.type === "domain") {
     return {
       domain: input.value,
-      include_subdomains: true,
+      include_subdomains: input.includeSubdomains ?? true,
       search_filter: "include",
       search_scope: ["any"],
     };

@@ -28,8 +28,9 @@ export {
 
 export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
-/** Lazy wrapper for the one section fetcher called outside the metered client
- * (rank-check task collection is free at DataForSEO, so it skips metering). */
+/** Lazy wrappers for the section fetchers called outside the metered client.
+ * Task collection is free at DataForSEO (the task was charged at task_post), so
+ * routing these through the metering seam would charge the customer twice. */
 export const fetchRankCheckTaskResult: DataforseoSections["fetchRankCheckTaskResult"] =
   async (input) =>
     (await loadDataforseoSections()).fetchRankCheckTaskResult(input);
@@ -37,6 +38,21 @@ export const fetchRankCheckTaskResult: DataforseoSections["fetchRankCheckTaskRes
 export const fetchLocalGridTaskResult: DataforseoSections["fetchLocalGridTaskResult"] =
   async (input) =>
     (await loadDataforseoSections()).fetchLocalGridTaskResult(input);
+
+export const fetchBusinessDataTaskResult: DataforseoSections["fetchBusinessDataTaskResult"] =
+  async (input) =>
+    (await loadDataforseoSections()).fetchBusinessDataTaskResult(input);
+
+/** Free ($0) at DataForSEO, so it skips the metered client entirely — a
+ *  zero-credit org can still list categories. */
+export const fetchBusinessListingsCategories: DataforseoSections["fetchBusinessListingsCategories"] =
+  async () =>
+    (await loadDataforseoSections()).fetchBusinessListingsCategories();
+
+export type {
+  BusinessTaskEndpoint,
+  BusinessTaskOutcome,
+} from "@/server/lib/dataforseo/business";
 
 export type {
   LabsKeywordDataItem,

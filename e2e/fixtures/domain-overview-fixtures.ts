@@ -1,6 +1,12 @@
+import { parseResearchTarget } from "@/shared/researchScope";
+
 export function getFixtureOverview(domain: string) {
+  const parsed = parseResearchTarget(domain);
+  const target = parsed.ok ? parsed.target : null;
   return {
-    domain,
+    domain: target?.hostname ?? domain,
+    scope: target?.scope ?? "domain",
+    displayTarget: target?.display ?? domain,
     organicTraffic: 373,
     organicKeywords: 307,
     backlinks: null,

@@ -1,12 +1,23 @@
 import type { ReactNode } from "react";
 import { DocsBody } from "fumadocs-ui/page";
+import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
-const LIBRARY_PILLAR_PATH = "/library/keyword-research";
+const KEYWORD_RESEARCH_LIBRARY = {
+  name: "Keyword Research",
+  path: "/library/keyword-research",
+};
+
+type LibraryRef = {
+  name: string;
+  path: string;
+};
 
 type LibrarySpokePageProps = {
   title: string;
   description?: string;
   crumb: string;
+  path: string;
+  library?: LibraryRef;
   children: ReactNode;
 };
 
@@ -14,20 +25,38 @@ export function LibrarySpokePage({
   title,
   description,
   crumb,
+  path,
+  library = KEYWORD_RESEARCH_LIBRARY,
   children,
 }: LibrarySpokePageProps) {
+  const breadcrumbLd = buildBreadcrumbJsonLd([
+    { name: "Strategy Library", path: "/library" },
+    { name: library.name, path: library.path },
+    { name: crumb, path },
+  ]);
+
   return (
     <article className="mx-auto max-w-3xl text-neutral-900">
       <header className="mb-10 border-b border-[var(--color-border-subtle)] pb-8">
-        <p className="text-sm text-[var(--color-brand-muted)]">
+        <nav
+          aria-label="Breadcrumb"
+          className="text-sm text-[var(--color-brand-muted)]"
+        >
           <a
-            href={LIBRARY_PILLAR_PATH}
+            href="/library"
             className="font-medium text-[var(--color-brand-accent)]"
           >
             Strategy Library
           </a>{" "}
+          /{" "}
+          <a
+            href={library.path}
+            className="font-medium text-[var(--color-brand-accent)]"
+          >
+            {library.name}
+          </a>{" "}
           / <span>{crumb}</span>
-        </p>
+        </nav>
         <h1 className="mt-3 text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-5xl">
           {title}
         </h1>
@@ -42,20 +71,26 @@ export function LibrarySpokePage({
         {children}
       </DocsBody>
 
-      <LibrarySpokeCta />
+      <LibrarySpokeCta library={library} />
+
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+      />
     </article>
   );
 }
 
-function LibrarySpokeCta() {
+function LibrarySpokeCta({ library }: { library: LibraryRef }) {
   return (
     <section className="mt-14 rounded-xl border border-[var(--color-border-subtle)] bg-white p-6">
       <p className="text-xl font-semibold tracking-tight text-neutral-950">
-        Run every play in this guide
+        Run this strategy in OpenSEO
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-        OpenSEO connects your Search Console and expands your seeds. Open
-        source, free to try, no credit card.
+        Run the MCP prompt in this guide with OpenSEO. OpenSEO is open source,
+        free to try, and does not require a credit card.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
@@ -68,10 +103,10 @@ function LibrarySpokeCta() {
           </span>
         </a>
         <a
-          href={LIBRARY_PILLAR_PATH}
+          href={library.path}
           className="inline-flex h-10 items-center justify-center rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:border-neutral-950"
         >
-          Back to the Strategy Library
+          Back to {library.name}
         </a>
       </div>
     </section>

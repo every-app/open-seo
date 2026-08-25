@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowUpRight, ShieldAlert } from "lucide-react";
-import { getAuthMode } from "@/lib/auth-mode";
+import { getAuthMode, isHostedClientAuthMode } from "@/lib/auth-mode";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { ClaudeIcon, CodexIcon } from "@/client/features/ai-mcp/AgentIcons";
 import { AvailableTools } from "@/client/features/ai-mcp/AvailableTools";
@@ -21,6 +21,8 @@ const SKILL_NAMES = [
   "competitive-landscape",
   "competitor-analysis",
   "link-prospecting",
+  "local-seo",
+  "seo-audit",
 ];
 const SKILLS_INSTALL = `npx skills add every-app/open-seo`;
 const ALL_SKILLS_INSTALL = `npx skills add every-app/open-seo --skill '*'`;
@@ -94,6 +96,15 @@ function AiPage() {
             instance you are using now, whether hosted, self-hosted, or local.
             Sign in with OpenSEO when prompted.
           </p>
+          {isHostedClientAuthMode() ? (
+            <p className="mt-2 text-xs text-base-content/55">
+              For headless or CI setups, use an API key from{" "}
+              <Link className="link link-primary" to="/settings">
+                Settings
+              </Link>{" "}
+              instead of the OAuth login.
+            </p>
+          ) : null}
         </section>
 
         <section className="mt-10">
@@ -260,8 +271,8 @@ function AiPage() {
               <span className="font-mono text-base-content">
                 /seo-project-setup
               </span>
-              . It will ask about your project and help configure your
-              workspace.
+              . It will ask about your project and save your goals, positioning,
+              and competitors to your project context.
             </p>
             <p className="mt-4 text-xs font-medium uppercase tracking-wide text-base-content/50">
               Available skills

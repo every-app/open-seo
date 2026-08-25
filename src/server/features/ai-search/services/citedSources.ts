@@ -7,6 +7,10 @@ import type {
 import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
 import { roundOrNull } from "@/server/features/ai-search/services/shareOfVoice";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
+import {
+  urlMatchesResearchTarget,
+  type ResearchTarget,
+} from "@/shared/researchScope";
 
 type Bundle = {
   platform: LlmPlatform;
@@ -24,10 +28,15 @@ const MAX_QUESTION_LENGTH = 500;
  * examples from the mentions sample when the exact cited URL appears there.
  * The page metrics stay authoritative while the prompt examples remain plainly
  * sample-based.
+ *
+ * `pageFilter` narrows the rows to a URL-scoped research target (the provider
+ * has no URL-level targeting). Filtering happens before the per-platform cap so
+ * in-scope pages can't be crowded out by out-of-scope ones.
  */
 export function deriveCitedSources(
   bundles: Bundle[],
   limits: { sourcesPerPlatform: number; keywordsPerSource: number },
+  pageFilter: ResearchTarget | null = null,
 ): BrandLookupResult["topPages"] {
   const promptExamples = buildPromptExamples(bundles);
 
@@ -36,6 +45,9 @@ export function deriveCitedSources(
       .map((page) => {
         const url = safeHttpUrl(page.key);
         if (!url || url.length > MAX_URL_LENGTH) return null;
+        if (pageFilter && !urlMatchesResearchTarget(url, pageFilter)) {
+          return null;
+        }
         const platformGroup = page.platform?.find(
           (entry) => entry.key === bundle.platform,
         );

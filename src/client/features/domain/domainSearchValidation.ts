@@ -1,4 +1,4 @@
-import { normalizeDomainTarget } from "@/client/features/domain/utils";
+import { parseResearchTarget } from "@/shared/researchScope";
 import { createFormValidationErrors } from "@/client/lib/forms";
 import type { DomainControlsValues } from "@/client/features/domain/types";
 
@@ -11,10 +11,11 @@ export function getDomainSearchValidationErrors(value: DomainControlsValues) {
     });
   }
 
-  if (!normalizeDomainTarget(value.domain)) {
+  const parsed = parseResearchTarget(value.domain, value.scope);
+  if (!parsed.ok) {
     return createFormValidationErrors({
       fields: {
-        domain: "Please enter a valid URL or domain (e.g. example.com)",
+        domain: parsed.message,
       },
     });
   }

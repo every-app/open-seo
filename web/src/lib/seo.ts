@@ -1,5 +1,5 @@
 const DEFAULT_SITE_URL = "https://openseo.so";
-const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.png";
+const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.jpg";
 const DEFAULT_SOCIAL_IMAGE_ALT = "OpenSEO product preview";
 
 export const SITE_URL = (
@@ -17,6 +17,21 @@ export function toCanonicalPath(path: string): string {
 
 export function toCanonicalUrl(path: string): string {
   return new URL(toCanonicalPath(path), `${SITE_URL}/`).href;
+}
+
+export function buildBreadcrumbJsonLd(
+  items: Array<{ name: string; path: string }>,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: toCanonicalUrl(item.path),
+    })),
+  };
 }
 
 type BuildSeoParams = {
@@ -53,7 +68,7 @@ export function buildPageSeo({
       { property: "og:url", content: canonicalUrl },
       { property: "og:image", content: socialImageUrl },
       { property: "og:image:alt", content: imageAlt },
-      { property: "og:image:type", content: "image/png" },
+      { property: "og:image:type", content: "image/jpeg" },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },

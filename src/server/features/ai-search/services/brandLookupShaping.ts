@@ -19,6 +19,10 @@ import {
 } from "@/server/features/ai-search/services/shareOfVoice";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 import type { detectTarget } from "@/shared/targetDetection";
+import {
+  urlMatchesResearchTarget,
+  type ResearchTarget,
+} from "@/shared/researchScope";
 
 const TOP_QUERIES_PER_PLATFORM = 25;
 const TOP_SOURCES_PER_PLATFORM = 10;
@@ -45,6 +49,8 @@ export type PlatformOutcome = {
 export type ShapeArgs = {
   query: string;
   detected: ReturnType<typeof detectTarget>;
+  /** Resolved research target for domain queries; null for brand keywords. */
+  researchTarget: ResearchTarget | null;
   platformBundles: PlatformOutcome[];
   crossOutcomes: CrossOutcome[];
   /** Labels of the resolved competitor groups, as sent to cross_aggregated. */
@@ -54,6 +60,11 @@ export type ShapeArgs = {
 };
 
 export function shapeResult(args: ShapeArgs): BrandLookupResult {
+  // Post-filter page URLs only for URL scopes; domain/subdomains were already
+  // scoped in the provider call, and brand-keyword queries have no target.
+  const scope = args.researchTarget?.scope;
+  const pageFilter =
+    scope === "exact_url" || scope === "subfolder" ? args.researchTarget : null;
   const successfulBundles = args.platformBundles.filter(
     (b): b is PlatformOutcome & { bundle: PlatformBundle } =>
       b.status === "success" && b.bundle !== null,
@@ -104,9 +115,10 @@ export function shapeResult(args: ShapeArgs): BrandLookupResult {
       sourcesPerPlatform: TOP_SOURCES_PER_PLATFORM,
       keywordsPerSource: KEYWORDS_PER_SOURCE,
     },
+    pageFilter,
   );
 
-  const topQueries = shapeTopQueries(successfulBundles);
+  const topQueries = shapeTopQueries(successfulBundles, pageFilter);
   const trendBundles = chatGptLocaleMatches
     ? successfulBundles
     : successfulBundles.filter((b) => b.platform !== "chat_gpt");
@@ -129,7 +141,9 @@ export function shapeResult(args: ShapeArgs): BrandLookupResult {
   return {
     query: args.query,
     detectedTargetType: args.detected.type,
-    resolvedTarget: args.detected.value,
+    resolvedTarget: args.researchTarget?.display ?? args.detected.value,
+    scope: args.researchTarget?.scope ?? null,
+    aggregatesAreDomainLevel: pageFilter !== null,
     fetchedAt: new Date().toISOString(),
     hasData,
     totalMentions,
@@ -144,6 +158,7 @@ export function shapeResult(args: ShapeArgs): BrandLookupResult {
 
 function shapeTopQueries(
   bundles: Array<PlatformOutcome & { bundle: PlatformBundle }>,
+  pageFilter: ResearchTarget | null,
 ): BrandLookupResult["topQueries"] {
   return sortBy(
     bundles.flatMap((bundle) =>
@@ -152,6 +167,17 @@ function shapeTopQueries(
           .filter(
             (item): item is LlmMentionItem & { question: string } =>
               typeof item.question === "string" && item.question.length > 0,
+          )
+          // Under a URL scope a prompt only counts when the answer actually
+          // cited a page in scope — a brand named in the answer text is
+          // domain-level evidence we must not attribute to the page.
+          .filter(
+            (item) =>
+              pageFilter === null ||
+              (item.sources ?? []).some((source) => {
+                const url = safeHttpUrl(source.url);
+                return url != null && urlMatchesResearchTarget(url, pageFilter);
+              }),
           )
           .map((item) => ({
             question: truncate(item.question, MAX_QUESTION_LENGTH),

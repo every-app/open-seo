@@ -22,7 +22,10 @@ import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
-import { estimateRankCheckCredits } from "@/shared/rank-tracking";
+import {
+  estimateRankCheckCredits,
+  rankCheckCostApprovalError,
+} from "@/shared/rank-tracking";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 
 const SINGLE_ATTEMPT_STEP_CONFIG = {
@@ -43,9 +46,10 @@ interface RankCheckParams {
   serpDepth: number;
   trigger: "manual" | "scheduled";
   keywordIds?: string[];
+  maxCostCredits?: number;
 }
 
-async function prepareRankCheckKeywords(input: {
+export async function prepareRankCheckKeywords(input: {
   runId: string;
   configId: string;
   billingCustomer: BillingCustomerContext;
@@ -53,6 +57,7 @@ async function prepareRankCheckKeywords(input: {
   serpDepth: number;
   trigger: RankCheckParams["trigger"];
   keywordIds?: string[];
+  maxCostCredits?: number;
 }) {
   // If stale-cleanup marked our run failed before we got here, bail out
   // rather than resurrecting a superseded run.
@@ -80,16 +85,23 @@ async function prepareRankCheckKeywords(input: {
     throw new AppError("INTERNAL_ERROR", "No keywords to track");
   }
 
+  const { costCredits } = estimateRankCheckCredits(
+    trackingKeywords.length,
+    input.devices,
+    input.serpDepth,
+    input.trigger === "scheduled" ? "queued" : "live",
+  );
+  if (input.maxCostCredits != null && costCredits > input.maxCostCredits) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      rankCheckCostApprovalError(costCredits, input.maxCostCredits),
+    );
+  }
+
   // Verify the user has enough credits for the full check before starting.
   // Scheduled checks go through the cheaper task queue, so estimate at queued
   // pricing — a live-price estimate would skip checks the user can afford.
   if (await isHostedServerAuthMode()) {
-    const { costCredits } = estimateRankCheckCredits(
-      trackingKeywords.length,
-      input.devices,
-      input.serpDepth,
-      input.trigger === "scheduled" ? "queued" : "live",
-    );
     const [monthlyCheck, topupCheck] = await Promise.all([
       autumn.check({
         customerId: input.billingCustomer.organizationId,
@@ -275,9 +287,8 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       serpDepth,
       trigger,
       keywordIds,
+      maxCostCredits,
     } = event.payload;
-
-    const client = createDataforseoClient(billingCustomer);
 
     // Guard: skip if config was archived after the workflow was triggered
     const configCheck = await pgStep(
@@ -315,10 +326,12 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
             serpDepth,
             trigger,
             keywordIds,
+            maxCostCredits,
           }),
       );
 
       const keywords = prepareResult.keywords;
+      const client = createDataforseoClient(billingCustomer);
 
       console.log(`[rank-check] ${runId} loaded ${keywords.length} keywords`);
 

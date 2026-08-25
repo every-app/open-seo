@@ -12,10 +12,12 @@ import {
 import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { AuditRepository } from "@/server/features/audit/repositories/AuditRepository";
+import { classifyAuditError } from "@/server/lib/audit/audit-errors";
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerError, captureServerEvent } from "@/server/lib/posthog";
 import { runAuditPhases } from "@/server/workflows/siteAuditWorkflowPhases";
 import { pgStep } from "@/server/workflows/pgStep";
+import { DB_STEP } from "@/server/workflows/auditStepConfigs";
 
 interface AuditParams {
   auditId: string;
@@ -44,7 +46,7 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
       // Inside a step so the D1 read is retried and replay-cached; a bare
       // read here would re-execute on every replay and a transient failure
       // would kill the instance before the catch below exists.
-      await pgStep(step, "validate-context", undefined, async () => {
+      await pgStep(step, "validate-context", DB_STEP, async () => {
         const audit = await AuditRepository.getAuditForWorkflow(
           auditId,
           event.instanceId,
@@ -86,13 +88,17 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
           project_id: projectId,
         });
       }
-      await pgStep(step, "mark-failed", undefined, async () => {
-        await AuditRepository.failAudit(auditId, event.instanceId);
-
-        const latestAudit = await AuditRepository.getAuditForWorkflow(
+      const errorInfo = classifyAuditError(error);
+      await pgStep(step, "mark-failed", DB_STEP, async () => {
+        // Read the phase before failAudit stamps currentPhase = "failed".
+        const runningAudit = await AuditRepository.getAuditForWorkflow(
           auditId,
           event.instanceId,
         );
+        await AuditRepository.failAudit(auditId, event.instanceId, {
+          ...errorInfo,
+          failedPhase: runningAudit?.currentPhase ?? null,
+        });
 
         await captureServerEvent({
           distinctId: billingCustomer.userId,
@@ -101,8 +107,10 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
           properties: {
             project_id: projectId,
             status: "failed",
-            pages_crawled: latestAudit?.pagesCrawled,
-            pages_total: latestAudit?.pagesTotal,
+            error_code: errorInfo.errorCode,
+            failed_phase: runningAudit?.currentPhase,
+            pages_crawled: runningAudit?.pagesCrawled,
+            pages_total: runningAudit?.pagesTotal,
             run_lighthouse: config.lighthouseStrategy !== "none",
           },
         });

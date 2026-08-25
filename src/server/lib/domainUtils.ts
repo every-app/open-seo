@@ -1,6 +1,22 @@
 import { getDomain } from "tldts";
 import { AppError } from "@/server/lib/errors";
-import { isValidDomainHost } from "@/types/schemas/domain";
+import {
+  isValidDomainHost,
+  parseResearchTarget,
+  type ResearchScope,
+  type ResearchTarget,
+} from "@/shared/researchScope";
+
+export function parseResearchTargetOrThrow(
+  input: string,
+  scope?: ResearchScope,
+): ResearchTarget {
+  const parsed = parseResearchTarget(input, scope);
+  if (!parsed.ok) {
+    throw new AppError("VALIDATION_ERROR", parsed.message);
+  }
+  return parsed.target;
+}
 
 export function toRelativePath(url: string | null | undefined): string | null {
   if (!url) return null;

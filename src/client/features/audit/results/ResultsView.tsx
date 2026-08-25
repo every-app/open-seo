@@ -52,9 +52,27 @@ export function ResultsView({
             </span>{" "}
             <span className="text-base-content/70">
               The site's bot protection challenged our crawler, so those pages
-              couldn't be audited. If this is your site, allowlist the{" "}
-              <code className="font-mono">OpenSEO-Audit</code> user agent in
-              your WAF or bot-protection settings and re-run the audit.
+              couldn't be audited. We don't have a workaround for this yet.
+              Desktop crawlers run from your own machine and usually get past
+              it: try{" "}
+              <a
+                className="link link-primary"
+                href="https://github.com/PhialsBasement/LibreCrawl"
+                target="_blank"
+                rel="noreferrer"
+              >
+                LibreCrawl
+              </a>{" "}
+              (free, open source) or{" "}
+              <a
+                className="link link-primary"
+                href="https://www.screamingfrog.co.uk/seo-spider/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Screaming Frog
+              </a>{" "}
+              (free up to 500 URLs).
             </span>
           </p>
         </div>

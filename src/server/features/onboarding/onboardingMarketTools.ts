@@ -36,7 +36,7 @@ export function marketTools(ctx: ToolContext): ToolSet {
             {
               projectId: project.id,
               domain,
-              includeSubdomains: false,
+              scope: "domain",
               locationCode: project.locationCode,
               languageCode: project.languageCode,
             },
@@ -216,7 +216,7 @@ export function marketTools(ctx: ToolContext): ToolSet {
       execute: async ({ domain }) => {
         try {
           const { overview } = await BacklinksService.profileOverview(
-            { target: domain, scope: "domain" },
+            { target: domain, scope: "subdomains" },
             billingCustomer,
             "onboarding",
           );

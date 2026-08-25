@@ -3,7 +3,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { AppError } from "@/server/lib/errors";
 import { validateTeamDomain } from "@/shared/selfhost-checks";
 import { classifyAccessVerificationError } from "./accessTokenErrors";
-import { resolveDelegatedContext } from "./delegated";
+import { resolveSharedWorkspaceContext } from "./delegated";
 import type { EnsuredUserContext } from "./types";
 
 const jwksByTeamDomain = new Map<
@@ -94,5 +94,5 @@ export async function resolveCloudflareAccessContext(
     throw new AppError("UNAUTHENTICATED");
   }
 
-  return resolveDelegatedContext(userId, userEmail);
+  return resolveSharedWorkspaceContext(userId, userEmail);
 }

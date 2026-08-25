@@ -5,11 +5,15 @@ import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 import { AppError } from "@/server/lib/errors";
 import {
   createGscClient,
-  GscApiError,
-  GscTokenError,
   type GscSite,
   type UrlInspectionResult,
 } from "@/server/lib/gscClient";
+import {
+  GscApiError,
+  GscNotConnectedError,
+  GscTokenError,
+} from "@/server/lib/gscErrors";
+export { GscNotConnectedError } from "@/server/lib/gscErrors";
 import {
   buildSearchAnalyticsRequest,
   type GscPerformanceInput,
@@ -42,13 +46,6 @@ type GscSiteListResult = {
 };
 
 /** Thrown when a project has no connected GSC property. */
-export class GscNotConnectedError extends Error {
-  constructor(public readonly projectId: string) {
-    super("Search Console is not connected for this project");
-    this.name = "GscNotConnectedError";
-  }
-}
-
 async function getConnection(projectId: string): Promise<GscConnection | null> {
   return GscConnectionRepository.getByProjectId(projectId);
 }

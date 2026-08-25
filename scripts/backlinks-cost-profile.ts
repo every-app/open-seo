@@ -5,6 +5,7 @@ import type {
   BacklinksLookupInput,
   BacklinksTargetScope,
 } from "@/types/schemas/backlinks";
+import { backlinksScopeParamSchema } from "@/types/schemas/backlinks";
 import { loadLocalEnv, parseArgs } from "./cli-utils";
 
 loadLocalEnv();
@@ -143,8 +144,11 @@ function parseScope(
   value: string | undefined,
 ): BacklinksTargetScope | undefined {
   if (!value) return undefined;
-  if (value === "domain" || value === "page") return value;
-  printUsageAndExit(`Invalid scope: ${value}. Expected domain or page.`);
+  const parsed = backlinksScopeParamSchema.safeParse(value);
+  if (parsed.success) return parsed.data;
+  printUsageAndExit(
+    `Invalid scope: ${value}. Expected domain, subdomains, or exact_url.`,
+  );
 }
 
 function parsePositiveInteger(value: string | undefined, fallback: number) {
@@ -156,7 +160,7 @@ function parsePositiveInteger(value: string | undefined, fallback: number) {
 function printUsageAndExit(message: string): never {
   console.error(message);
   console.error(
-    "Usage: pnpm billing:backlinks --target=example.com --confirmLive=true [--scope=domain|page] [--repeat=1] [--includeTabs=true|false] [--allowCi=true]",
+    "Usage: pnpm billing:backlinks --target=example.com --confirmLive=true [--scope=domain|subdomains|exact_url] [--repeat=1] [--includeTabs=true|false] [--allowCi=true]",
   );
   process.exit(1);
 }

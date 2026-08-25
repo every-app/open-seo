@@ -334,11 +334,17 @@ export function buildTopQueriesColumns({
   ];
 }
 
-export function TopPagesTable({ table }: { table: Table<TopPageRow> }) {
+export function TopPagesTable({
+  table,
+  emptyMessage = "No cited sources to show.",
+}: {
+  table: Table<TopPageRow>;
+  emptyMessage?: string;
+}) {
   if (table.getRowModel().rows.length === 0) {
     return (
       <p className="p-6 text-center text-sm text-base-content/60">
-        No cited sources to show.
+        {emptyMessage}
       </p>
     );
   }
@@ -346,11 +352,17 @@ export function TopPagesTable({ table }: { table: Table<TopPageRow> }) {
   return <BrandLookupTable table={table} urlLikeColumnId="url" />;
 }
 
-export function TopQueriesTable({ table }: { table: Table<TopQueryRow> }) {
+export function TopQueriesTable({
+  table,
+  emptyMessage = "No matching queries found.",
+}: {
+  table: Table<TopQueryRow>;
+  emptyMessage?: string;
+}) {
   if (table.getRowModel().rows.length === 0) {
     return (
       <p className="p-6 text-center text-sm text-base-content/60">
-        No matching queries found.
+        {emptyMessage}
       </p>
     );
   }

@@ -21,11 +21,21 @@ import {
   PAGE_FILTER_FIELDS,
   PAGE_SEARCH_PARAM_BY_FIELD,
 } from "@/client/features/domain/domainFilterUtils";
-import { resolveSortOrder, toSortMode, toSortOrder } from "./utils";
+import {
+  defaultScopeForPath,
+  isScopeAllowedForInput,
+  type ResearchScope,
+} from "@/shared/researchScope";
+import {
+  getResearchInputPath,
+  resolveSortOrder,
+  toSortMode,
+  toSortOrder,
+} from "./utils";
 
 export type DomainOverviewRouteState = {
   domain: string;
-  subdomains: boolean;
+  scope: ResearchScope;
   sort: DomainSortMode;
   order: SortOrder;
   tab: DomainActiveTab;
@@ -39,6 +49,18 @@ export type DomainOverviewRouteState = {
   hasAppliedKeywordFilters: boolean;
   hasAppliedPageFilters: boolean;
 };
+
+function resolveScope(search: DomainSearchParams): ResearchScope {
+  const path = getResearchInputPath(search.domain ?? "");
+  if (search.scope && isScopeAllowedForInput(search.scope, path)) {
+    return search.scope;
+  }
+  // Legacy param: pre-scope URLs encoded "Include subdomains" here.
+  if (search.subdomains != null) {
+    return search.subdomains ? "subdomains" : "domain";
+  }
+  return defaultScopeForPath(path);
+}
 
 function numberToFilterString(value: number | undefined): string {
   if (value == null || !Number.isFinite(value)) return "";
@@ -62,7 +84,7 @@ export function getDomainRouteState(
 
   return {
     domain: search.domain ?? "",
-    subdomains: search.subdomains ?? true,
+    scope: resolveScope(search),
     sort: normalizedSort,
     order: resolveSortOrder(normalizedSort, toSortOrder(search.order ?? null)),
     tab: search.tab ?? "keywords",

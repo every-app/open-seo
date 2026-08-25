@@ -1,10 +1,11 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useCustomer } from "autumn-js/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import { captureClientEvent } from "@/client/lib/posthog";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { getStoredRedditAttribution } from "@/client/lib/reddit-attribution";
+import { buildCheckoutSuccessUrl } from "@/client/features/billing/checkout-url";
 import { BillingUsageChart } from "@/client/features/billing/BillingUsageChart";
 import { BillingFeatureBreakdown } from "@/client/features/billing/BillingFeatureBreakdown";
 import { parseTopUpAmount } from "@/client/features/billing/HostedBillingContentUtils";
@@ -12,6 +13,7 @@ import { getBillingRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import {
   AUTUMN_PAID_PLAN_ID,
+  BILLING_ROUTE,
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   LOW_CREDITS_THRESHOLD_USD,
   AUTUMN_SEO_DATA_CREDITS_PER_USD,
@@ -19,7 +21,6 @@ import {
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
   autumnSeoDataCreditsToUsd,
 } from "@/shared/billing";
-import { captureRedditConversionEvent } from "@/serverFunctions/redditConversions";
 
 export const Route = createFileRoute("/_app/billing")({
   beforeLoad: () => {
@@ -63,20 +64,6 @@ function BillingPage() {
 
   const { isValid: isValidTopUp, parsed: parsedTopUpAmount } =
     parseTopUpAmount(topUpAmount);
-  const checkoutCompleted =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("checkout") === "success";
-
-  useEffect(() => {
-    if (!checkoutCompleted || billingRouteState !== "ready") return;
-
-    const attribution = getStoredRedditAttribution();
-    if (!attribution) return;
-
-    void captureRedditConversionEvent({
-      data: { attribution, eventType: "PURCHASE" },
-    });
-  }, [billingRouteState, checkoutCompleted]);
 
   if (billingRouteState === "loading") {
     return null;
@@ -103,6 +90,15 @@ function BillingPage() {
         </button>
       </div>
     );
+  }
+
+  function startUpgradeCheckout() {
+    captureClientEvent("billing:checkout_start");
+    return customerQuery.attach({
+      planId: AUTUMN_PAID_PLAN_ID,
+      redirectMode: "always",
+      successUrl: buildCheckoutSuccessUrl(BILLING_ROUTE),
+    });
   }
 
   async function runAction(
@@ -207,12 +203,7 @@ function BillingPage() {
                 disabled={isPending}
                 onClick={() =>
                   void runAction(
-                    () =>
-                      customerQuery.attach({
-                        planId: AUTUMN_PAID_PLAN_ID,
-                        redirectMode: "always",
-                        successUrl: `${window.location.origin}${window.location.pathname}?checkout=success`,
-                      }),
+                    startUpgradeCheckout,
                     "We couldn't start the checkout. Please try again.",
                   )
                 }

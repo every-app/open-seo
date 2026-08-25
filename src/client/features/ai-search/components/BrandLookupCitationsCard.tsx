@@ -60,8 +60,16 @@ export function CitationTabsCard({
   ];
   const showQueryPlatform = queryPlatforms.length > 1;
   const showPagePlatform = pagePlatforms.length > 1;
+  // Under a URL scope `resolvedTarget` carries the path; the "You" badge and
+  // the Prompt Explorer brand highlight both want the bare hostname.
   const targetDomain =
-    result.detectedTargetType === "domain" ? result.resolvedTarget : null;
+    result.detectedTargetType === "domain"
+      ? result.resolvedTarget.split("/")[0]
+      : null;
+  const brand = targetDomain ?? result.resolvedTarget;
+  // Page rows are already narrowed server-side; say so instead of implying the
+  // pre-scope "everything cited alongside the brand" set.
+  const isUrlScoped = result.aggregatesAreDomainLevel;
 
   const filteredPages = useMemo(
     () => filterTopPages(result.topPages, filters.pages.values),
@@ -78,18 +86,18 @@ export function CitationTabsCard({
         showPlatform: showPagePlatform,
         targetDomain,
         projectId,
-        brand: result.resolvedTarget,
+        brand,
       }),
-    [showPagePlatform, targetDomain, projectId, result.resolvedTarget],
+    [showPagePlatform, targetDomain, projectId, brand],
   );
   const queriesColumns = useMemo(
     () =>
       buildTopQueriesColumns({
         showPlatform: showQueryPlatform,
         projectId,
-        brand: result.resolvedTarget,
+        brand,
       }),
-    [showQueryPlatform, projectId, result.resolvedTarget],
+    [showQueryPlatform, projectId, brand],
   );
 
   const pagesTable = useAppTable({
@@ -229,19 +237,21 @@ export function CitationTabsCard({
         <span>
           {activeTab === "pages" ? (
             <>
-              Pages cited alongside{" "}
+              {isUrlScoped ? "Cited pages within " : "Pages cited alongside "}
               <strong className="text-base-content/80">
                 {result.resolvedTarget}
-              </strong>{" "}
-              in AI answers. Prompt examples come from the fetched sample.
+              </strong>
+              {isUrlScoped ? "." : " in AI answers."} Prompt examples come from
+              the fetched sample.
             </>
           ) : (
             <>
               Fetched sample of prompts whose AI answer cited{" "}
+              {isUrlScoped ? "a page within " : null}
               <strong className="text-base-content/80">
                 {result.resolvedTarget}
-              </strong>{" "}
-              in its text or sources.
+              </strong>
+              {isUrlScoped ? "." : " in its text or sources."}
             </>
           )}
         </span>
@@ -260,9 +270,26 @@ export function CitationTabsCard({
       ) : null}
 
       {activeTab === "pages" ? (
-        <TopPagesTable table={pagesTable} />
+        <TopPagesTable
+          table={pagesTable}
+          // The provider only returns the domain's top cited pages, so a URL
+          // scope can filter every sampled row away without meaning zero
+          // citations exist for that section.
+          emptyMessage={
+            isUrlScoped
+              ? `None of this domain's top cited pages fall under ${result.resolvedTarget}. Broaden the scope to see domain-level citations.`
+              : undefined
+          }
+        />
       ) : (
-        <TopQueriesTable table={queriesTable} />
+        <TopQueriesTable
+          table={queriesTable}
+          emptyMessage={
+            isUrlScoped
+              ? `No sampled prompts cited a page under ${result.resolvedTarget}. Broaden the scope to see domain-level prompts.`
+              : undefined
+          }
+        />
       )}
     </section>
   );

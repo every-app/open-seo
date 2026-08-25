@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import {
   BacklinksNewLostChart,
@@ -42,18 +43,33 @@ export function BacklinksOverviewPanels({
         </Link>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-sm text-base-content/65">
-        <span className="badge badge-outline">{data.scope}</span>
+        <span className="badge badge-outline">
+          {RESEARCH_SCOPE_LABELS[data.scope]}
+        </span>
         <span>Target: {data.displayTarget}</span>
         <span>-</span>
         <span>Updated {formatRelativeTimestamp(data.fetchedAt)}</span>
+        {/* history/live can't exclude subdomains, so say so rather than imply
+            the charts match the domain-scoped totals. */}
+        {data.scope === "domain" ? (
+          <span>- Trends include subdomains</span>
+        ) : null}
       </div>
       <OverviewGrid data={data} summaryStats={summaryStats} />
-      {data.scope === "page" ? (
+      {data.scope === "exact_url" ? (
         <div className="alert alert-info">
           <span>
-            Showing backlinks for this exact page. Enter a bare domain for
-            site-wide results. Trend charts are only shown for domain-level
-            lookups.
+            Showing backlinks for this exact page. Switch the scope to Domain or
+            Subdomains for site-wide results — trend charts need one of those.
+          </span>
+        </div>
+      ) : null}
+      {data.scope === "subfolder" ? (
+        <div className="alert alert-info">
+          <span>
+            Showing backlinks pointing into this subfolder. Counts come from
+            filtered backlink totals; rank, trends, and the referring-domains
+            breakdown need Domain or Subdomains scope.
           </span>
         </div>
       ) : null}
@@ -68,7 +84,8 @@ function OverviewGrid({
   data: BacklinksOverviewData;
   summaryStats: SummaryStat[];
 }) {
-  const domainScope = data.scope === "domain";
+  // Trend charts need history/live, which only takes a whole hostname.
+  const domainScope = data.scope === "domain" || data.scope === "subdomains";
 
   return (
     <div
@@ -87,7 +104,8 @@ function SummaryStatsGrid({
   data: BacklinksOverviewData;
   summaryStats: SummaryStat[];
 }) {
-  const cardClassName = `card bg-base-100 border border-base-300 ${data.scope === "domain" ? "md:col-span-2 xl:col-span-1" : ""}`;
+  const hasTrendPanels = data.scope === "domain" || data.scope === "subdomains";
+  const cardClassName = `card bg-base-100 border border-base-300 ${hasTrendPanels ? "md:col-span-2 xl:col-span-1" : ""}`;
 
   return (
     <div className={cardClassName}>

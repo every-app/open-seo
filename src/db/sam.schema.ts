@@ -1,4 +1,4 @@
-import { sqliteTable, text, index, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, index } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { user } from "./better-auth-schema";
 import { projects } from "./app.schema";
@@ -37,25 +37,4 @@ export const samSessions = sqliteTable(
       table.updatedAt,
     ),
   ],
-);
-
-// SAM's persistent project memory: one row per (project, context-block label).
-// The SamChatAgent DO surfaces these rows to the model as writable context
-// blocks ("memory", "research_log"), so every chat session in a project reads
-// and writes the same memory. Lives in the app DB rather than DO storage so it
-// is shared across the per-session DOs and stays queryable by the Worker (for
-// a future settings/inspection UI).
-export const samProjectMemory = sqliteTable(
-  "sam_project_memory",
-  {
-    projectId: text("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    label: text("label").notNull(),
-    content: text("content").notNull(),
-    updatedAt: text("updated_at")
-      .notNull()
-      .default(sql`(current_timestamp)`),
-  },
-  (table) => [primaryKey({ columns: [table.projectId, table.label] })],
 );

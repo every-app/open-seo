@@ -304,7 +304,7 @@ const FEATURE_CARDS = [
     blurb: "Estimate organic traffic and ranking keywords.",
   },
   {
-    page: featurePages.backlinkChecker,
+    page: featurePages.backlinks,
     blurb: "Inspect backlinks, referring domains, and link quality.",
   },
   {

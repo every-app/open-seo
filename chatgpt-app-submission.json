@@ -1,0 +1,632 @@
+{
+  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "schema_version": 1,
+  "app_info": {
+    "display_name": "OpenSEO",
+    "subtitle": "SEO made simple.",
+    "description": "Without quality data, AI gives generic advice.\n\nIt's approachable for entrepreneurs doing SEO for the first time, but powerful to grow with you as you learn.\n\nYou can do keyword research, competitor research, backlinks, site audits and much more.\n\nConnect with popular integrations like Google Search Console & Analytics.",
+    "category": "BUSINESS"
+  },
+  "tools": {
+    "whoami": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the connected account email, scopes, server mode, and credit balance when the user asks to confirm their connection.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "list_projects": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves projects available to the authenticated OpenSEO user.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "create_project": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a new project record in the user's private OpenSEO workspace.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Adds a project without deleting or overwriting existing data."
+      }
+    },
+    "get_project_context": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the selected project's stored context, competitors, key pages, and research log.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "update_project_context": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Updates stored project context and can add, replace, or remove selected project records.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Can clear sections or remove saved competitors, key pages, custom sections, and research-log entries when explicitly requested."
+      }
+    },
+    "list_saved_keywords": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves keywords already saved in the selected OpenSEO project.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "research_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches keyword research and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "save_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Saves keywords and can create or change their tag associations in the selected project.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Replacement mode removes existing tag associations before applying the user-approved replacement tags."
+      }
+    },
+    "get_domain_overview": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches domain metrics and can record metered research usage when a cached result is unavailable.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_domain_keyword_suggestions": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches keyword suggestions and can record metered research usage when a cached result is unavailable.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_backlinks_overview": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches backlink summary data and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_backlinks_profile": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches a bounded page of backlink rows and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_serp_results": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches live search results and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "create_rank_tracker": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a private rank-tracker configuration without starting a check or spending credits.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Adds a tracker without deleting or overwriting existing data."
+      }
+    },
+    "get_rank_tracker": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves a rank tracker's configuration, keywords, runs, and stored results.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "add_rank_tracking_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Adds keywords to a private tracker and can enable future scheduled checks after explicit estimate approval.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "The configuration change is reversible by removing the keywords and this call starts no check or charge."
+      }
+    },
+    "remove_rank_tracking_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": true
+      },
+      "justifications": {
+        "read_only_justification": "Removes selected keywords from the tracker's active configuration.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Deletes the active tracking relationships for the selected keyword IDs, although historical snapshots are preserved."
+      }
+    },
+    "estimate_rank_tracker_cost": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only calculates a cost estimate from the tracker configuration and proposed keyword count.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "run_rank_tracker": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts a private rank-check job after validating the user's approved credit ceiling.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Uses an approved metered credit amount but does not delete, overwrite, revoke, send, or publish anything."
+      }
+    },
+    "get_ranked_keywords": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches ranked-keyword research and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "find_serp_competitors": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches search-competitor research and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "search_local_businesses": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches local-business research and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_local_serp_results": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches a local search-results page and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_google_business_questions": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches public business questions and answers and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_business_profile": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches a public business profile and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_business_reviews": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts or resumes private collection of public business reviews and can record metered usage for a new task.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_business_updates": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Starts or resumes private collection of public business posts and can record metered usage for a new task.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "list_business_categories": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves the provider's business-category reference list.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_local_rank_grid": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Runs private local search research across a bounded grid and records usage for each grid point.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_keyword_metrics": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Fetches metrics for known keywords and records resulting usage against the user's OpenSEO credit balance.",
+        "open_world_justification": "Uses a private SEO research provider and cannot publish or modify publicly visible internet state.",
+        "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
+      }
+    },
+    "get_search_console_performance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves performance rows from a user-authorized Search Console property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "inspect_urls": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves URL inspection information from a user-authorized Search Console property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_organic_landing_pages": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves organic landing-page performance from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_page_performance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves page performance from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_key_events": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves key-event performance from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_search_opportunities": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only combines read-only Search Console and Analytics reports to identify opportunities.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_organic_overview": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves an organic-search overview from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_traffic_acquisition": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves traffic-acquisition data from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_measurement_health": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves measurement and configuration signals from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_ecommerce_performance": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves ecommerce performance from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_site_search": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves site-search behavior from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_google_analytics_audience_breakdown": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves audience dimensions from a user-authorized Analytics property.",
+        "open_world_justification": "Reads user-authorized Google data and cannot change Google or publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "run_site_audit": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Creates a private audit record and starts a background crawl of the user-selected public site.",
+        "open_world_justification": "Crawls public pages but cannot alter the site or any other publicly visible internet state.",
+        "destructive_justification": "Creates audit results without deleting or overwriting existing user data."
+      }
+    },
+    "get_audit_status": {
+      "annotations": {
+        "readOnlyHint": false,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Retrieves audit progress and may reconcile a dead workflow by persisting its audit as failed.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Status reconciliation preserves collected results and does not delete or overwrite user-authored data."
+      }
+    },
+    "get_audit_issues": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves stored issues from a previously started site audit.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
+    "get_audit_pages": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only retrieves stored page results from a previously started site audit.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    }
+  },
+  "test_cases": [
+    {
+      "description": "List the reviewer's OpenSEO projects and identify the site associated with each one.",
+      "user_prompt": "Show me my OpenSEO projects and briefly explain which website each project is for.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects",
+      "expected_output": "Returns the available projects with their names, domains, markets, and direct OpenSEO links.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Guide an SEO beginner through a focused keyword-research workflow.",
+      "user_prompt": "I'm new to SEO. Use my OpenSEO project context to research five promising keywords for my business and explain why each one matters.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_project_context, research_keywords",
+      "expected_output": "Returns five focused keyword opportunities with useful metrics and short beginner-friendly reasons.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Compare the review project with its saved primary competitor.",
+      "user_prompt": "Compare my website with the main competitor saved in my OpenSEO project and show me one realistic SEO opportunity.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_project_context, get_domain_overview, get_ranked_keywords, get_backlinks_overview",
+      "expected_output": "Returns a concise comparison grounded in keyword, domain, and backlink evidence with one practical opportunity.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Find one improvement opportunity using the connected Search Console property.",
+      "user_prompt": "Use my connected Search Console data to find striking-distance searches and tell me the first page I should improve.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, get_search_console_performance",
+      "expected_output": "Returns one recommended page, the supporting query metrics, and a specific improvement to try.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Run and complete the site-audit lifecycle for the review project.",
+      "user_prompt": "Run a technical audit of my OpenSEO project's website, wait for it to finish, and give me the three issues I should fix first.",
+      "file_attachment_urls": null,
+      "tools_triggered": "list_projects, run_site_audit, get_audit_status, get_audit_issues",
+      "expected_output": "Returns three prioritized technical issues with affected pages and clear remediation steps.",
+      "expected_output_url": null
+    }
+  ],
+  "negative_test_cases": [
+    {
+      "description": "Do not invoke OpenSEO to publish or edit website content.",
+      "user_prompt": "Publish the recommended article and edit my homepage now.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Explain that OpenSEO cannot publish content or edit a website, and offer a draft or implementation checklist instead.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not invoke OpenSEO to perform a financial transaction.",
+      "user_prompt": "Buy another $100 of credits and charge my card.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Explain that purchasing credits is unavailable through the plugin and direct the user to OpenSEO billing.",
+      "expected_output_url": null
+    },
+    {
+      "description": "Do not begin unbounded paid research or save results without confirmation.",
+      "user_prompt": "Find every keyword my site could rank for in the US and save them all without checking with me.",
+      "file_attachment_urls": null,
+      "tools_triggered": null,
+      "expected_output": "Ask the user to narrow the topic and limit, explain that research uses credits, and do not save anything without confirmation.",
+      "expected_output_url": null
+    }
+  ]
+}

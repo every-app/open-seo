@@ -73,6 +73,23 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
         (s) => s.fetchQuestionsAnswers,
         "local_seo",
       ),
+      myBusinessInfo: meter(
+        customer,
+        (s) => s.fetchMyBusinessInfo,
+        "local_seo",
+      ),
+      // task_post is where DataForSEO charges; collection runs unmetered
+      // through fetchBusinessDataTaskResult (see index.ts).
+      reviewsTaskPost: meter(
+        customer,
+        (s) => s.postGoogleReviewsTask,
+        "local_seo",
+      ),
+      updatesTaskPost: meter(
+        customer,
+        (s) => s.postMyBusinessUpdatesTask,
+        "local_seo",
+      ),
     },
     backlinks: {
       summary: meter(customer, (s) => s.fetchBacklinksSummary),

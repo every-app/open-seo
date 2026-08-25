@@ -40,6 +40,8 @@ type Props<TValues extends FilterValues> = {
   textFields: ReadonlyArray<FilterTextField<TValues>>;
   rangeFields: ReadonlyArray<FilterRangeField<TValues>>;
   countConditions: (values: TValues) => number;
+  /** Conditions left for user filters once scope filters take their share. */
+  maxConditions?: number;
   onApply: (values: TValues) => void;
   onClear: () => void;
   /** Extra feature-specific controls (toggles etc.) bound to the draft. */
@@ -57,6 +59,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
   textFields,
   rangeFields,
   countConditions,
+  maxConditions = MAX_DATAFORSEO_FILTER_CONDITIONS,
   onApply,
   onClear,
   renderExtra,
@@ -79,8 +82,9 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         appliedFilters,
         fields,
         countConditions,
+        maxConditions,
       }),
-    [appliedFilters, countConditions, draftFilters, fields],
+    [appliedFilters, countConditions, draftFilters, fields, maxConditions],
   );
   useDomainRenderDebug(debugName, {
     activeFilterCount,
@@ -204,15 +208,14 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         <div className="alert alert-warning py-2 text-xs">
           <AlertTriangle className="size-4 shrink-0" />
           <span>
-            Too many filter conditions ({meta.conditionCount} of{" "}
-            {MAX_DATAFORSEO_FILTER_CONDITIONS} max). Remove some terms or ranges
-            before applying.
+            Too many filter conditions ({meta.conditionCount} of {maxConditions}{" "}
+            max). Remove some terms or ranges before applying.
           </span>
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-2 pt-1">
         <span className="text-xs text-base-content/50 tabular-nums">
-          {meta.conditionCount} / {MAX_DATAFORSEO_FILTER_CONDITIONS} conditions
+          {meta.conditionCount} / {maxConditions} conditions
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -230,7 +233,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             disabled={!meta.isDirty || meta.overLimit}
             title={
               meta.overLimit
-                ? `DataForSEO accepts at most ${MAX_DATAFORSEO_FILTER_CONDITIONS} filter conditions per request`
+                ? `This scope leaves room for at most ${maxConditions} filter conditions per request`
                 : undefined
             }
           >
@@ -252,11 +255,13 @@ function getFilterMeta<TValues extends FilterValues>({
   appliedFilters,
   fields,
   countConditions,
+  maxConditions,
 }: {
   values: TValues;
   appliedFilters: TValues;
   fields: ReadonlyArray<keyof TValues>;
   countConditions: (values: TValues) => number;
+  maxConditions: number;
 }) {
   const conditionCount = countConditions(values);
   const dirtyCount = fields.reduce(
@@ -268,6 +273,6 @@ function getFilterMeta<TValues extends FilterValues>({
     conditionCount,
     dirtyCount,
     isDirty: dirtyCount > 0,
-    overLimit: conditionCount > MAX_DATAFORSEO_FILTER_CONDITIONS,
+    overLimit: conditionCount > maxConditions,
   };
 }

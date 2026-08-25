@@ -26,6 +26,10 @@ import {
   type BrandLookupResult,
 } from "@/types/schemas/ai-search";
 import { detectTarget } from "@/shared/targetDetection";
+import {
+  parseResearchTarget,
+  type ResearchTarget,
+} from "@/shared/researchScope";
 
 /**
  * Brand Lookup is the AI-search analog of Domain Overview. The user types a
@@ -49,6 +53,11 @@ export async function getBrandLookup(
   billingCustomer: BillingCustomerContext,
 ): Promise<BrandLookupResult> {
   const detected = detectTarget(input.query);
+  const researchTarget = resolveResearchTarget(input, detected);
+  // The LLM mentions API only scopes a domain target by subdomain inclusion;
+  // exact_url/subfolder are honored by post-filtering page rows in shaping.
+  const includeSubdomains =
+    researchTarget === null || researchTarget.scope === "subdomains";
   const competitorGroups = resolveCompetitorGroups(
     detected.value,
     input.competitors,
@@ -71,6 +80,16 @@ export async function getBrandLookup(
       .join("|"),
     locationCode: input.locationCode,
     languageCode: input.languageCode,
+    // Scope changes both the provider call (include_subdomains) and the
+    // page-level filtering, so it must not share a cache entry. The path only
+    // affects output under URL scopes — keying it for domain/subdomains would
+    // re-buy identical fan-outs for example.com vs example.com/blog.
+    scope: researchTarget?.scope ?? null,
+    path:
+      researchTarget?.scope === "exact_url" ||
+      researchTarget?.scope === "subfolder"
+        ? researchTarget.path
+        : "",
   });
 
   const cached = brandLookupResultSchema.safeParse(await getCached(cacheKey));
@@ -78,7 +97,7 @@ export async function getBrandLookup(
     return {
       ...cached.data,
       query: input.query,
-      resolvedTarget: detected.value,
+      resolvedTarget: researchTarget?.display ?? detected.value,
     };
   }
 
@@ -92,7 +111,13 @@ export async function getBrandLookup(
   for (const platform of PLATFORMS) {
     settled.push(
       await settle(() =>
-        fetchPlatformData(platform, detected, input, dataforseo),
+        fetchPlatformData(
+          platform,
+          detected,
+          includeSubdomains,
+          input,
+          dataforseo,
+        ),
       ),
     );
   }
@@ -102,7 +127,13 @@ export async function getBrandLookup(
   const crossSettled =
     competitorGroups.length > 0
       ? await settle(() =>
-          fetchCrossAggregated(detected, competitorGroups, input, dataforseo),
+          fetchCrossAggregated(
+            detected,
+            competitorGroups,
+            includeSubdomains,
+            input,
+            dataforseo,
+          ),
         )
       : ({ status: "fulfilled", value: [] } as PromiseFulfilledResult<
           CrossOutcome[]
@@ -125,6 +156,7 @@ export async function getBrandLookup(
   const result = shapeResult({
     query: input.query,
     detected,
+    researchTarget,
     platformBundles,
     crossOutcomes,
     competitorKeys: competitorGroups.map((g) => g.label),
@@ -151,6 +183,26 @@ export async function getBrandLookup(
   return result;
 }
 
+/**
+ * Scopes only apply to domain/URL queries — a brand keyword has no URL to
+ * narrow. A domain the parser rejects (fake TLD) keeps today's unscoped
+ * behavior and fails downstream with the provider's own validation error.
+ */
+function resolveResearchTarget(
+  input: BrandLookupInput,
+  detected: ReturnType<typeof detectTarget>,
+): ResearchTarget | null {
+  if (detected.type !== "domain") return null;
+  const parsed = parseResearchTarget(input.query, input.scope);
+  if (!parsed.ok) {
+    // An explicit scope that doesn't fit the input (Subfolder without a path)
+    // must error, not silently run an unscoped lookup.
+    if (input.scope) throw new AppError("VALIDATION_ERROR", parsed.message);
+    return null;
+  }
+  return parsed.target;
+}
+
 async function settle<T>(
   execute: () => Promise<T>,
 ): Promise<PromiseSettledResult<T>> {
@@ -169,12 +221,14 @@ type PlatformFetchInput = Pick<
 async function fetchPlatformData(
   platform: LlmPlatform,
   detected: ReturnType<typeof detectTarget>,
+  includeSubdomains: boolean,
   input: PlatformFetchInput,
   dataforseo: ReturnType<typeof createDataforseoClient>,
 ): Promise<PlatformBundle> {
   const target = buildLlmTarget({
     type: detected.type,
     value: detected.value,
+    includeSubdomains,
   });
 
   // ChatGPT mentions DB only contains US/en data per DataForSEO docs.
@@ -240,23 +294,33 @@ async function fetchPlatformData(
  * single failure doesn't discard the other — matching the per-platform
  * fan-out in {@link getBrandLookup}. The target's aggregation_key is the
  * resolved target value so SoV can flag the target row.
+ *
+ * Share of Voice always compares domain against domain — the provider has no
+ * URL-level targeting — so every group (target and competitors) uses the same
+ * subdomain rule and the UI labels the section domain-level under URL scopes.
  */
 async function fetchCrossAggregated(
   detected: ReturnType<typeof detectTarget>,
   competitors: CompetitorGroup[],
+  includeSubdomains: boolean,
   input: PlatformFetchInput,
   dataforseo: ReturnType<typeof createDataforseoClient>,
 ): Promise<CrossOutcome[]> {
   const groups = [
     {
       key: detected.value,
-      target: buildLlmTarget({ type: detected.type, value: detected.value }),
+      target: buildLlmTarget({
+        type: detected.type,
+        value: detected.value,
+        includeSubdomains,
+      }),
     },
     ...competitors.map((competitor) => ({
       key: competitor.label,
       target: buildLlmTarget({
         type: competitor.detected.type,
         value: competitor.detected.value,
+        includeSubdomains,
       }),
     })),
   ];

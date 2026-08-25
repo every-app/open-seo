@@ -6,11 +6,15 @@ import { toSortMode } from "@/client/features/domain/utils";
 import type { DomainSortMode } from "@/client/features/domain/types";
 import { LABS_LOCATION_OPTIONS } from "@/client/features/keywords/locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
+import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
+import type { ResearchScope } from "@/shared/researchScope";
 
 type Props = {
   controlsForm: DomainOverviewControlsForm;
   isLoading: boolean;
   onSubmit: (event: FormEvent) => void;
+  onDomainChange: (domain: string) => void;
+  onScopeChange: (scope: ResearchScope) => void;
   onSortChange: (sort: DomainSortMode) => void;
   onLocationChange: (locationCode: number) => void;
 };
@@ -19,6 +23,8 @@ export function DomainSearchCard({
   controlsForm,
   isLoading,
   onSubmit,
+  onDomainChange,
+  onScopeChange,
   onSortChange,
   onLocationChange,
 }: Props) {
@@ -40,9 +46,12 @@ export function DomainSearchCard({
                   <Search className="size-4 text-base-content/60" />
                   <input
                     className="grow min-w-0"
-                    placeholder="Enter a domain"
+                    placeholder="Enter a domain or URL"
                     value={field.state.value}
-                    onChange={(event) => field.handleChange(event.target.value)}
+                    onChange={(event) => {
+                      field.handleChange(event.target.value);
+                      onDomainChange(event.target.value);
+                    }}
                     aria-invalid={domainError ? true : undefined}
                     aria-describedby={
                       domainError ? "domain-input-error" : undefined
@@ -51,6 +60,19 @@ export function DomainSearchCard({
                 </label>
               );
             }}
+          </controlsForm.Field>
+
+          <controlsForm.Field name="scope">
+            {(field) => (
+              <ResearchScopeSelect
+                value={field.state.value}
+                className="w-full lg:w-40"
+                onChange={(scope) => {
+                  field.handleChange(scope);
+                  onScopeChange(scope);
+                }}
+              />
+            )}
           </controlsForm.Field>
 
           <controlsForm.Field name="locationCode">
@@ -124,22 +146,6 @@ export function DomainSearchCard({
             ) : null;
           }}
         </controlsForm.Subscribe>
-
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="label cursor-pointer gap-2 py-0">
-            <controlsForm.Field name="subdomains">
-              {(field) => (
-                <input
-                  type="checkbox"
-                  className="checkbox checkbox-sm"
-                  checked={field.state.value}
-                  onChange={(event) => field.handleChange(event.target.checked)}
-                />
-              )}
-            </controlsForm.Field>
-            <span className="label-text">Include subdomains</span>
-          </label>
-        </div>
       </div>
     </div>
   );

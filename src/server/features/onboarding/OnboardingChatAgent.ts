@@ -71,6 +71,18 @@ export class OnboardingChatAgent extends AIChatAgent {
   // Cap stored history; the onboarding chat is short and pre-paywall.
   maxPersistedMessages = 60;
 
+  /** Permanently remove this project's transcript for an account erasure. */
+  async destroyForErasure(): Promise<void> {
+    for (const socket of this.ctx.getWebSockets()) {
+      socket.close(1000, "Account erased");
+    }
+    this.abortAllRequests("GDPR erasure");
+    this.resetTurnState();
+    await this.waitUntilStable({ timeout: 5_000 });
+    await this.ctx.storage.deleteAlarm();
+    await this.ctx.storage.deleteAll();
+  }
+
   // The base class persists each message as its own bounded SQLite row, so DO
   // storage occasionally returns a transient internal error (code 10001) that
   // clears on retry. Retry the message-write path a couple of times before

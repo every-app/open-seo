@@ -10,6 +10,7 @@ import {
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
+import { savedKeywordMetricSchema } from "@/types/schemas/keywords";
 
 const inputSchema = {
   projectId: projectIdSchema,
@@ -18,6 +19,13 @@ const inputSchema = {
     .min(1)
     .max(100)
     .describe("Keywords to save (1-100)."),
+  metrics: z
+    .array(savedKeywordMetricSchema)
+    .max(100)
+    .optional()
+    .describe(
+      "Optional metrics for the saved keywords. Copy keyword, searchVolume, keywordDifficulty, cpc, competition, and intent from research_keywords rows; map each row's trend to monthlySearches. Match each metric using its keyword field.",
+    ),
   tags: z
     .array(z.string().min(1).max(64))
     .max(20)
@@ -57,7 +65,7 @@ export const saveKeywordsTool = {
     annotations: {
       readOnlyHint: false,
       openWorldHint: false,
-      destructiveHint: false,
+      destructiveHint: true,
     },
   },
   handler: withMcpProjectAuth(async (args: Args, context) => {
@@ -70,6 +78,7 @@ export const saveKeywordsTool = {
     await KeywordResearchService.saveKeywords({
       projectId: args.projectId,
       keywords: args.keywords,
+      metrics: args.metrics,
       tags: args.tags,
       tagMode: args.tagMode ?? "append",
       locationCode,

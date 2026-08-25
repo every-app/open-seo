@@ -36,10 +36,10 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
       onClose();
       toast.success("Project created");
-      // Land on the new project's settings so they can connect Search Console
-      // and finish setting up the workspace.
+      // Land on the new project's integrations so they can connect Search
+      // Console and finish setting up the workspace.
       void navigate({
-        to: "/p/$projectId/settings",
+        to: "/p/$projectId/settings/integrations",
         params: { projectId: created.id },
       });
     },

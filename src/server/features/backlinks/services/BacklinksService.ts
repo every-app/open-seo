@@ -25,7 +25,7 @@ const defaultCache: BacklinksCache = {
 
 type BacklinksPageCacheInput = {
   target: string;
-  scope?: "domain" | "page";
+  scope?: BacklinksLookupInput["scope"];
   page: number;
   pageSize: number;
   sortField: string;
@@ -124,6 +124,12 @@ function buildTargetCacheInput(
     organizationId: billingCustomer.organizationId,
     target: normalizedTarget.apiTarget,
     scope: normalizedTarget.scope,
+    // Subfolder scope keeps the hostname as the API target, so the path must
+    // separate cache entries.
+    path: normalizedTarget.path,
+    // Same hostname, different result set — and keeping it in the key retires
+    // entries written before scopes could exclude subdomains.
+    includeSubdomains: normalizedTarget.includeSubdomains,
   };
 }
 

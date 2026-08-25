@@ -31,6 +31,16 @@ export function formatMcpCell(value: unknown): string {
   }
 }
 
+/** Column `format` that truncates long text after normal cell formatting, so
+ *  provider prose can't dominate the table (full text stays in
+ *  structuredContent). */
+export function truncatedCell(maxLength: number) {
+  return (value: unknown): string => {
+    const cell = formatMcpCell(value);
+    return cell.length > maxLength ? `${cell.slice(0, maxLength - 1)}…` : cell;
+  };
+}
+
 /** Render rows as a `header | header` table with one line per row. */
 export function formatMcpTable<T>(
   rows: readonly T[],

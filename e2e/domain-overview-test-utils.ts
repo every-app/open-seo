@@ -190,7 +190,7 @@ export async function openDomainOverview(page: Page, tab: DomainTab) {
 
   const params = new URLSearchParams({
     domain: PRIMARY_TEST_DOMAIN,
-    subdomains: "true",
+    scope: "subdomains",
     sort: "traffic",
     order: "desc",
   });

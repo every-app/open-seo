@@ -155,6 +155,7 @@ export function BacklinksBody({
       <BacklinksResultsCard
         projectId={projectId}
         activeTab={searchState.tab}
+        scope={searchState.scope}
         tabRows={tabRows}
         filters={filters}
         sorting={sorting}

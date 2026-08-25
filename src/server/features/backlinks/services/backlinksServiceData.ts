@@ -5,17 +5,15 @@ import {
   createDataforseoClient,
   normalizeBacklinksTarget,
   type BacklinksHistoryItem,
-  type BacklinksItem,
   type BacklinksSummaryItem,
-  type DomainPageSummaryItem,
-  type ReferringDomainItem,
 } from "@/server/lib/dataforseo";
-import type {
-  BacklinksLookupInput,
-  BacklinksRowsPageInput,
-  BacklinksSpamFilterOptions,
-  ReferringDomainsPageInput,
-  TopPagesPageInput,
+import {
+  normalizeBacklinksSpamFilterOptions,
+  type BacklinksLookupInput,
+  type BacklinksRowsPageInput,
+  type BacklinksSpamFilterOptions,
+  type ReferringDomainsPageInput,
+  type TopPagesPageInput,
 } from "@/types/schemas/backlinks";
 
 import {
@@ -36,6 +34,21 @@ import {
   buildTopPagesApiFilters,
   buildTopPagesOrderBy,
 } from "@/server/features/backlinks/services/backlinksApiFilters";
+import {
+  buildBacklinksScopeFilter,
+  countExpressionConditions,
+  prependScopeClauses,
+} from "@/server/lib/dataforseo/researchScopeFilters";
+import { buildSubfolderOverview } from "@/server/features/backlinks/services/backlinksSubfolderOverview";
+import {
+  buildPageResult,
+  mapBacklinksRows,
+  mapReferringDomainsRows,
+  mapTopPagesRows,
+  normalizeHistoryDate,
+} from "@/server/features/backlinks/services/backlinksRowMappers";
+import { assertFilterConditionBudget } from "@/server/lib/dataforseo/filters";
+import { AppError } from "@/server/lib/errors";
 
 // The page-request schemas carry projectId for the web middleware; the
 // service layer is organization-scoped and never reads it.
@@ -61,10 +74,6 @@ export type BacklinksCache = {
   set(key: string, data: unknown, ttlSeconds: number): Promise<void>;
 };
 
-type BacklinksOverviewProfile = {
-  overview: BacklinksOverviewResult;
-};
-
 type BacklinksDateRange = {
   dateFrom: string;
   dateTo: string;
@@ -76,7 +85,7 @@ export async function profileBacklinksOverview(
   input: BacklinksLookupInput,
   billingCustomer: BillingCustomerContext,
   creditFeature?: CreditFeature,
-): Promise<BacklinksOverviewProfile> {
+): Promise<{ overview: BacklinksOverviewResult }> {
   const cached = backlinksOverviewCacheSchema.safeParse(
     await cache.get(cacheKey),
   );
@@ -92,20 +101,40 @@ export async function profileBacklinksOverview(
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
+
+  if (normalizedTarget.scope === "subfolder") {
+    const overview = await buildSubfolderOverview(
+      dataforseo,
+      normalizedTarget,
+      now,
+      creditFeature,
+    );
+    await cacheValue(
+      cache,
+      cacheKey,
+      { overview },
+      BACKLINKS_OVERVIEW_TTL_SECONDS,
+    );
+    return { overview };
+  }
+
   const dateRange = buildBacklinksDateRange(now);
 
   const [summary, history] = await Promise.all([
     dataforseo.backlinks.summary({
       target: normalizedTarget.apiTarget,
+      includeSubdomains: normalizedTarget.includeSubdomains,
       creditFeature,
     }),
-    normalizedTarget.scope === "domain"
-      ? dataforseo.backlinks.history({
+    // history/live only accepts a hostname and has no include_subdomains field,
+    // so trends are unavailable for a page and subdomain-inclusive otherwise.
+    normalizedTarget.scope === "exact_url"
+      ? Promise.resolve([])
+      : dataforseo.backlinks.history({
           target: normalizedTarget.apiTarget,
           ...dateRange,
           creditFeature,
-        })
-      : Promise.resolve([]),
+        }),
   ]);
 
   const overview = buildOverviewResult({
@@ -140,11 +169,22 @@ export async function profileBacklinksRowsPage(
 
   const dataforseo = createDataforseoClient(billingCustomer);
   const offset = (input.page - 1) * input.pageSize;
-  const filters = buildBacklinksRowsApiFilters(input.filters);
+
+  const target = normalizeBacklinksTarget(input.target, { scope: input.scope });
+  const scopeFilter = buildBacklinksScopeFilter("url_to", target);
+  const userFilters = buildBacklinksRowsApiFilters(input.filters);
+  // The scope group and the server-appended spam condition share the same
+  // 8-condition budget as user filters.
+  assertFilterConditionBudget(
+    scopeFilter.conditionCount +
+      countExpressionConditions(userFilters) +
+      (normalizeBacklinksSpamFilterOptions(spamOptions).hideSpam ? 1 : 0),
+  );
+  const filters = prependScopeClauses(scopeFilter, userFilters);
 
   const response = await dataforseo.backlinks.rows({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
+    target: target.apiTarget,
+    includeSubdomains: target.includeSubdomains,
     limit: input.pageSize,
     offset,
     orderBy: buildBacklinksRowsOrderBy(input.sortField, input.sortOrder),
@@ -180,9 +220,20 @@ export async function profileReferringDomainsPage(
   const offset = (input.page - 1) * input.pageSize;
   const filters = buildReferringDomainsApiFilters(input.filters);
 
+  const target = normalizeBacklinksTarget(input.target, { scope: input.scope });
+  // referring_domains has no URL field to filter on, so subfolder scope has no
+  // accurate source for this breakdown (the count still comes from the
+  // overview's filtered totals).
+  if (target.scope === "subfolder") {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Referring domains can't be broken down for a subfolder — use the Backlinks tab, or switch to Domain or Subdomains scope.",
+    );
+  }
+
   const response = await dataforseo.backlinks.referringDomains({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
+    target: target.apiTarget,
+    includeSubdomains: target.includeSubdomains,
     limit: input.pageSize,
     offset,
     orderBy: buildReferringDomainsOrderBy(input.sortField, input.sortOrder),
@@ -212,11 +263,18 @@ export async function profileTopPagesPage(
 
   const dataforseo = createDataforseoClient(billingCustomer);
   const offset = (input.page - 1) * input.pageSize;
-  const filters = buildTopPagesApiFilters(input.filters);
+
+  const target = normalizeBacklinksTarget(input.target, { scope: input.scope });
+  const scopeFilter = buildBacklinksScopeFilter("url", target);
+  const userFilters = buildTopPagesApiFilters(input.filters);
+  assertFilterConditionBudget(
+    scopeFilter.conditionCount + countExpressionConditions(userFilters),
+  );
+  const filters = prependScopeClauses(scopeFilter, userFilters);
 
   const response = await dataforseo.backlinks.domainPages({
-    target: normalizeBacklinksTarget(input.target, { scope: input.scope })
-      .apiTarget,
+    target: target.apiTarget,
+    includeSubdomains: target.includeSubdomains,
     limit: input.pageSize,
     offset,
     orderBy: buildTopPagesOrderBy(input.sortField, input.sortOrder),
@@ -230,26 +288,6 @@ export async function profileTopPagesPage(
   await cacheValue(cache, cacheKey, result, BACKLINKS_TAB_TTL_SECONDS);
 
   return result;
-}
-
-function buildPageResult<TRow>(
-  input: { page: number; pageSize: number },
-  offset: number,
-  data: { rows: TRow[]; totalCount: number | null },
-) {
-  const hasMore =
-    data.totalCount != null
-      ? offset + data.rows.length < data.totalCount
-      : data.rows.length === input.pageSize;
-
-  return {
-    rows: data.rows,
-    totalCount: data.totalCount,
-    hasMore,
-    page: input.page,
-    pageSize: input.pageSize,
-    fetchedAt: new Date().toISOString(),
-  };
 }
 
 function buildBacklinksDateRange(now: Date): BacklinksDateRange {
@@ -334,54 +372,6 @@ function buildOverviewResult(args: {
     })),
     fetchedAt: args.now.toISOString(),
   };
-}
-
-function normalizeHistoryDate(value: string | null | undefined) {
-  return value ? value.slice(0, 10) : null;
-}
-
-function mapBacklinksRows(rows: BacklinksItem[]) {
-  return rows.map((item) => ({
-    domainFrom: item.domain_from ?? null,
-    urlFrom: item.url_from ?? null,
-    urlTo: item.url_to ?? null,
-    anchor: item.anchor ?? null,
-    itemType: item.item_type ?? null,
-    isDofollow: item.dofollow ?? null,
-    relAttributes: item.rel_attributes ?? item.attributes ?? [],
-    rank: item.rank ?? null,
-    domainFromRank: item.domain_from_rank ?? null,
-    pageFromRank: item.page_from_rank ?? null,
-    spamScore: item.backlink_spam_score ?? item.backlinks_spam_score ?? null,
-    firstSeen: item.first_seen ?? null,
-    lastSeen: item.lost_date ?? item.last_visited ?? null,
-    isLost: item.is_lost ?? Boolean(item.lost_date),
-    isBroken: item.is_broken ?? false,
-    linksCount: item.links_count ?? null,
-  }));
-}
-
-function mapReferringDomainsRows(rows: ReferringDomainItem[]) {
-  return rows.map((item) => ({
-    domain: item.domain ?? null,
-    backlinks: item.backlinks ?? null,
-    referringPages: item.referring_pages ?? null,
-    rank: item.rank ?? null,
-    spamScore: item.backlinks_spam_score ?? null,
-    firstSeen: item.first_seen ?? null,
-    brokenBacklinks: item.broken_backlinks ?? null,
-    brokenPages: item.broken_pages ?? null,
-  }));
-}
-
-function mapTopPagesRows(rows: DomainPageSummaryItem[]) {
-  return rows.map((item) => ({
-    page: item.page ?? item.url ?? null,
-    backlinks: item.backlinks ?? null,
-    referringDomains: item.referring_domains ?? null,
-    rank: item.rank ?? null,
-    brokenBacklinks: item.broken_backlinks ?? null,
-  }));
 }
 
 async function cacheValue(

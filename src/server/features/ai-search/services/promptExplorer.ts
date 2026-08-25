@@ -3,7 +3,12 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LlmResponseResult } from "@/server/lib/dataforseoLlmSchemas";
 import { AppError } from "@/server/lib/errors";
-import { buildCacheKey, getCached, setCached } from "@/server/lib/r2-cache";
+import {
+  AI_SEARCH_PROMPT_CACHE_NAMESPACE,
+  buildCacheKey,
+  getCached,
+  setCached,
+} from "@/server/lib/r2-cache";
 import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
 import {
   promptExplorerModelResultSchema,
@@ -88,7 +93,7 @@ type RunModelArgs = {
 async function runModel(
   args: RunModelArgs,
 ): Promise<PromptExplorerModelResult> {
-  const cacheKey = await buildCacheKey("ai-search:prompt-response", {
+  const cacheKey = await buildCacheKey(AI_SEARCH_PROMPT_CACHE_NAMESPACE, {
     organizationId: args.billingCustomer.organizationId,
     projectId: args.input.projectId,
     model: args.model,
@@ -115,7 +120,9 @@ async function runModel(
   const shaped = shapeSuccess(args.model, rawResponse);
 
   waitUntil(
-    setCached(cacheKey, shaped, PROMPT_RESPONSE_TTL_SECONDS).catch((err) => {
+    setCached(cacheKey, shaped, PROMPT_RESPONSE_TTL_SECONDS, {
+      organizationId: args.billingCustomer.organizationId,
+    }).catch((err) => {
       console.error("ai-search.prompt-response.cache-write failed:", err);
     }),
   );

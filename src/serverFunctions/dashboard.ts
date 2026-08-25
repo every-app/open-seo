@@ -61,3 +61,14 @@ export const dismissDashboardMcpCard = createServerFn({ method: "POST" })
     await ActivationRepository.markMcpCardDismissed(context.projectId);
     return { ok: true as const };
   });
+
+// Hides only the optional GA4 pitch on this project's dashboard. The
+// integration remains available in Project Settings and a later connection
+// makes the dashboard card visible again.
+export const dismissDashboardGa4Card = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(dashboardProjectInputSchema)
+  .handler(async ({ context }) => {
+    await ActivationRepository.markGa4CardDismissed(context.projectId);
+    return { ok: true as const };
+  });

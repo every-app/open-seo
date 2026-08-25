@@ -4,7 +4,7 @@ import {
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
 } from "@/shared/billing";
 import { mcpResponse } from "@/server/mcp/formatters";
-import { getAuth, type ToolExtra } from "@/server/mcp/context";
+import { type ToolContext } from "@/server/mcp/context";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { z } from "zod";
@@ -23,12 +23,10 @@ export const whoamiTool = {
   config: {
     title: "Who am I",
     description:
-      "Returns the authenticated user, organization, server mode, token scopes, and current credit balance. Uses no credits — does not call DataForSEO. Use this first to confirm connection context before choosing a project or running paid tools.",
+      "Confirms the connected OpenSEO account, server mode, token scopes, and current credit balance when the user asks to check their account or connection. Uses no credits — does not call DataForSEO.",
     inputSchema: {} as Record<string, never>,
     outputSchema: {
-      userId: z.string(),
       userEmail: z.string(),
-      organizationId: z.string(),
       scopes: z.array(z.string()),
       mode: z.enum(["hosted", "self-hosted"]),
       creditsRemaining: z.number().nullable(),
@@ -40,8 +38,8 @@ export const whoamiTool = {
       destructiveHint: false,
     },
   },
-  handler: async (_args: Record<string, never>, extra: ToolExtra) => {
-    const auth = getAuth(extra);
+  handler: async (_args: Record<string, never>, context: ToolContext) => {
+    const auth = context.auth;
     const isHosted = await isHostedServerAuthMode();
     let creditsRemaining: number | null = null;
     if (isHosted) {
@@ -55,8 +53,7 @@ export const whoamiTool = {
       creditsRemaining = (base ?? 0) + (topup ?? 0);
     }
     const lines = [
-      `User: ${auth.userId} (${auth.userEmail})`,
-      `Organization: ${auth.organizationId}`,
+      `Account: ${auth.userEmail}`,
       `Mode: ${isHosted ? "hosted" : "self-hosted"}`,
       `Scopes: ${auth.scopes.length > 0 ? auth.scopes.join(", ") : "none"}`,
     ];
@@ -68,13 +65,10 @@ export const whoamiTool = {
     return mcpResponse({
       text: lines.join("\n"),
       meta: {
-        organizationId: auth.organizationId,
         creditsRemaining: creditsRemaining ?? undefined,
       },
       structuredContent: {
-        userId: auth.userId,
         userEmail: auth.userEmail,
-        organizationId: auth.organizationId,
         scopes: auth.scopes,
         mode: isHosted ? "hosted" : "self-hosted",
         creditsRemaining,

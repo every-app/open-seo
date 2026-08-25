@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { researchScopeSchema } from "@/shared/researchScope";
 
 /**
  * Input + output schemas for the AI Search feature (Brand Lookup + Prompt
@@ -42,6 +43,10 @@ export const brandLookupInputSchema = z.object({
     .array(z.string().trim().min(1).max(BRAND_LOOKUP_MAX_INPUT_LENGTH))
     .max(BRAND_LOOKUP_MAX_COMPETITORS)
     .default([]),
+  // Research scope for domain/URL queries. Ignored for brand keywords, which
+  // have no URL to scope. Omitted = derive from the query (root → domain, path
+  // → subfolder).
+  scope: researchScopeSchema.optional(),
   locationCode: z.number().int().positive().default(2840),
   languageCode: z.string().min(2).max(8).default("en"),
 });
@@ -114,7 +119,18 @@ const brandMonthlyVolumeSchema = z.object({
 export const brandLookupResultSchema = z.object({
   query: z.string(),
   detectedTargetType: z.enum(["domain", "keyword"]),
+  /** Hostname for domain scopes, hostname + path for URL scopes. */
   resolvedTarget: z.string(),
+  // Resolved scope, or null for keyword lookups. Defaulted so cache entries
+  // written before scopes existed still parse.
+  scope: researchScopeSchema.nullable().default(null),
+  /**
+   * True under exact_url/subfolder scope: the LLM mentions API has no
+   * URL-level targeting, so totals, per-platform counts, monthly volume and
+   * Share of Voice stay domain-wide and the UI must say so. Page-level rows
+   * are filtered to the scope.
+   */
+  aggregatesAreDomainLevel: z.boolean().default(false),
   fetchedAt: z.string(),
   hasData: z.boolean(),
   totalMentions: z.number().int().nonnegative().nullable(),
@@ -255,10 +271,12 @@ export type PromptExplorerResult = z.infer<typeof promptExplorerResultSchema>;
  * is a comma-joined competitor list (route + page treat the parsed result as an
  * opaque string array). `c` accepts a raw string (from the URL) OR an array
  * (TanStack Router re-validates its own transformed output on navigate) — same
- * union pattern as `models` below.
+ * union pattern as `models` below. `scope` is only present when it differs
+ * from the scope derived from `q`.
  */
 export const brandLookupSearchSchema = z.object({
   q: z.string().optional(),
+  scope: researchScopeSchema.optional().catch(undefined),
   c: z
     .union([z.string(), z.array(z.string())])
     .optional()

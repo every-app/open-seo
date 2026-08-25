@@ -79,6 +79,7 @@ Run these before delivering any prose:
 - Any sentence starting with What/When/Where/Which/Who/Why/How as a crutch? Restructure.
 - Meta-joiners ("The rest of this essay...")? Delete.
 - "It's worth noting" or similar filler transitions? Delete.
+- Any self-certifying "honest answer/framing/signal" language? State the evidence, limit, or uncertainty instead.
 - Same metaphor used more than twice? Replace or cut repeats.
 - "Despite these challenges..." formula? Rewrite.
 - Bold-first bullet pattern? Remove bold leads.

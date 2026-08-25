@@ -17,6 +17,7 @@ Everything we publish must be traceable to what the product actually does and co
 4. **Sound like a person.** Fix AI tells by restating the underlying claim plainly, not by polishing the flourish. The [deslop skill](../deslop/SKILL.md) is the reference for what to hunt and how to fix it.
 5. **Reader-first altitude.** Guides teach actionable SEO that stands on its own — not product documentation, not generic filler. Credit free resources to their real owners (Google's autocomplete, the reader's own Search Console).
 6. **One bar, whole surface.** When a standard improves, sweep everything to it — all the FAQs, all the pages — not just the instance that got noticed.
+7. **Playbook terminology.** Call each approach within any OpenSEO playbook a "strategy," never a "play." Use "workflow" for the steps readers execute; use "playbook" only for the complete collection.
 
 ## Questions to ask while reviewing
 

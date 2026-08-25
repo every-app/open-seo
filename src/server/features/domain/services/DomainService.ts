@@ -4,7 +4,10 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
-import { normalizeDomainInput } from "@/server/lib/domainUtils";
+import { buildRankedKeywordsScopeFilter } from "@/server/lib/dataforseo/researchScopeFilters";
+import { joinClauses } from "@/server/lib/dataforseo/filters";
+import { parseResearchTargetOrThrow } from "@/server/lib/domainUtils";
+import type { ResearchScope } from "@/shared/researchScope";
 import { mapKeywordItem } from "@/server/features/domain/services/domainKeywordMapper";
 import { getKeywordsPage } from "@/server/features/domain/services/domainKeywordsPage";
 import { getPagesPage } from "@/server/features/domain/services/domainPagesPage";
@@ -29,26 +32,33 @@ const domainOverviewResultSchema = z.object({
   fetchedAt: z.string(),
 });
 
-type DomainOverviewResult = z.infer<typeof domainOverviewResultSchema>;
+type DomainOverviewResult = z.infer<typeof domainOverviewResultSchema> & {
+  /** Requested research scope, echoed for display. */
+  scope: ResearchScope;
+  displayTarget: string;
+};
 
 async function getOverview(
   input: {
     projectId: string;
     domain: string;
-    includeSubdomains: boolean;
+    scope?: ResearchScope;
     locationCode: number;
     languageCode: string;
   },
   billingCustomer: BillingCustomerContext,
   metering: MeteringOverrides = {},
 ): Promise<DomainOverviewResult> {
-  const domain = normalizeDomainInput(input.domain, input.includeSubdomains);
+  const target = parseResearchTargetOrThrow(input.domain, input.scope);
+  const domain = target.hostname;
 
+  // domain_rank_overview has no filters and always covers the hostname plus
+  // all of its subdomains, so every scope shares one cache entry per hostname.
+  // Callers label the metrics as domain-wide for narrower scopes.
   const cacheKey = await buildCacheKey("domain:overview", {
     organizationId: billingCustomer.organizationId,
     projectId: input.projectId,
     domain,
-    includeSubdomains: input.includeSubdomains,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
   });
@@ -56,7 +66,11 @@ async function getOverview(
   const cachedRaw = await getCached(cacheKey);
   const cached = domainOverviewResultSchema.safeParse(cachedRaw);
   if (cached.success && cached.data.hasData) {
-    return cached.data;
+    return {
+      ...cached.data,
+      scope: target.scope,
+      displayTarget: target.display,
+    };
   }
 
   const nowIso = new Date().toISOString();
@@ -80,7 +94,7 @@ async function getOverview(
       ? Math.round(metrics.metrics.organic.count)
       : null;
 
-  const result: DomainOverviewResult = {
+  const stored: z.infer<typeof domainOverviewResultSchema> = {
     domain,
     organicTraffic,
     organicKeywords,
@@ -90,11 +104,11 @@ async function getOverview(
     fetchedAt: nowIso,
   };
 
-  if (result.hasData) {
+  if (stored.hasData) {
     // waitUntil, not void: workerd cancels unregistered pending I/O once the
     // response is sent, so a fire-and-forget put never persists the cache.
     waitUntil(
-      setCached(cacheKey, result, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
+      setCached(cacheKey, stored, DOMAIN_OVERVIEW_TTL_SECONDS).catch(
         (error) => {
           console.error("domain.overview.cache-write failed:", error);
         },
@@ -102,12 +116,13 @@ async function getOverview(
     );
   }
 
-  return result;
+  return { ...stored, scope: target.scope, displayTarget: target.display };
 }
 
 async function getSuggestedKeywords(
   input: {
     domain: string;
+    scope?: ResearchScope;
     locationCode: number;
     languageCode: string;
     organizationId: string;
@@ -125,12 +140,15 @@ async function getSuggestedKeywords(
     keywordDifficulty: number | null;
   }>
 > {
-  const domain = normalizeDomainInput(input.domain, true);
+  const target = parseResearchTargetOrThrow(input.domain, input.scope);
+  const scopeFilter = buildRankedKeywordsScopeFilter(target);
 
   const cacheKey = await buildCacheKey("domain:keyword-suggestions", {
     organizationId: billingCustomer.organizationId,
     projectId: input.projectId,
-    domain,
+    domain: target.hostname,
+    scope: target.scope,
+    path: target.path,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
   });
@@ -155,11 +173,15 @@ async function getSuggestedKeywords(
   const dataforseo = createDataforseoClient(billingCustomer);
 
   const rankedKeywordsResponse = await dataforseo.domain.rankedKeywords({
-    target: domain,
+    target: target.hostname,
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     limit: 100,
     orderBy: ["ranked_serp_element.serp_item.etv,desc"],
+    filters:
+      scopeFilter.clauses.length > 0
+        ? joinClauses(scopeFilter.clauses, "and")
+        : undefined,
     ...metering,
   });
 

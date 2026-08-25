@@ -25,6 +25,7 @@ import { useDomainKeywordsQuery } from "@/client/features/domain/hooks/useDomain
 import { useSaveKeywordsMutation } from "@/client/features/domain/mutations";
 import { useDomainKeywordFilterPreferences } from "@/client/features/domain/useDomainFilterPreferences";
 import {
+  EMPTY_DOMAIN_FILTERS,
   type DomainSortMode,
   type KeywordRow,
   type KeywordsFilterValues,
@@ -38,6 +39,10 @@ import {
   MAX_DATAFORSEO_FILTER_CONDITIONS,
   type DomainSearchParams,
 } from "@/types/schemas/domain";
+import {
+  RESEARCH_SCOPE_FILTER_SLOTS,
+  type ResearchScope,
+} from "@/shared/researchScope";
 
 type SearchUpdate = Partial<DomainSearchParams>;
 
@@ -64,7 +69,11 @@ const KEYWORD_RANGE_FILTERS = [
 
 type Props = {
   projectId: string;
-  domain: string;
+  /** Research target as displayed: hostname, plus the path for URL scopes. */
+  target: string;
+  /** Hostname only, for resolving relative result URLs. */
+  hostname: string;
+  scope: ResearchScope;
   routeState: DomainOverviewRouteState;
   canSaveKeywords: boolean;
   setSearchParams: (updates: SearchUpdate) => void;
@@ -75,7 +84,9 @@ type Props = {
 
 export function KeywordsTab({
   projectId,
-  domain,
+  target,
+  hostname,
+  scope,
   routeState,
   canSaveKeywords,
   setSearchParams,
@@ -88,29 +99,41 @@ export function KeywordsTab({
     new Set(),
   );
   const [showFilters, setShowFilters] = useState(false);
+  // Scope filters consume part of DataForSEO's fixed filter budget.
+  const maxConditions =
+    MAX_DATAFORSEO_FILTER_CONDITIONS -
+    RESEARCH_SCOPE_FILTER_SLOTS.keywords[scope];
   const filterPreferences = useDomainKeywordFilterPreferences(
-    `${projectId}:${domain}`,
+    `${projectId}:${target}`,
   );
   const {
     filters: preferredFilters,
     save: savePreferredFilters,
     clear: clearPreferredFilters,
   } = filterPreferences;
-  const appliedFilters = routeState.hasAppliedKeywordFilters
+  const restoredFilters = routeState.hasAppliedKeywordFilters
     ? routeState.appliedFilters
     : preferredFilters;
+  // Filters restored from the URL or saved preferences can exceed this
+  // scope's tighter budget; sending them would make the server reject the
+  // whole query, so hold them back and let the panel explain.
+  const filtersOverBudget =
+    countKeywordFilterConditions(restoredFilters) > maxConditions;
+  const appliedFilters = filtersOverBudget
+    ? EMPTY_DOMAIN_FILTERS
+    : restoredFilters;
 
   const query = useDomainKeywordsQuery({
     projectId,
-    domain,
-    includeSubdomains: routeState.subdomains,
+    domain: target,
+    scope,
     locationCode: routeState.sentLocationCode,
     page: routeState.page,
     pageSize: routeState.pageSize,
     sortMode: routeState.sort,
     sortOrder: routeState.order,
     appliedFilters,
-    enabled: Boolean(domain),
+    enabled: Boolean(target),
   });
 
   const rows = query.data?.keywords ?? EMPTY_KEYWORDS;
@@ -168,16 +191,13 @@ export function KeywordsTab({
 
   const applyFilters = useCallback(
     (values: KeywordsFilterValues) => {
-      if (
-        countKeywordFilterConditions(values) > MAX_DATAFORSEO_FILTER_CONDITIONS
-      )
-        return;
+      if (countKeywordFilterConditions(values) > maxConditions) return;
       const update = buildKeywordsSearchUpdate(values);
       debugDomain("KeywordsTab:apply-filters", { values, update });
       savePreferredFilters(values);
       setSearchParams(update);
     },
-    [savePreferredFilters, setSearchParams],
+    [maxConditions, savePreferredFilters, setSearchParams],
   );
 
   const resetFilters = useCallback(() => {
@@ -190,12 +210,13 @@ export function KeywordsTab({
 
   const activeFilterCount = useMemo(
     () =>
-      KEYWORD_FILTER_FIELDS.filter((k) => appliedFilters[k].trim() !== "")
+      KEYWORD_FILTER_FIELDS.filter((k) => restoredFilters[k].trim() !== "")
         .length,
-    [appliedFilters],
+    [restoredFilters],
   );
 
   const exportTable = useMemo(() => keywordsToTable(rows), [rows]);
+  const fileNamePrefix = target.replaceAll("/", "-");
   const selectedExportTable = useMemo(
     () => keywordsToTable(rows.filter((r) => selectedKeywords.has(r.keyword))),
     [rows, selectedKeywords],
@@ -214,7 +235,7 @@ export function KeywordsTab({
   };
   const handleDownload = (extension: "csv" | "xls") => {
     downloadCsv(
-      `${domain}-keywords.${extension}`,
+      `${fileNamePrefix}-keywords.${extension}`,
       buildCsv(exportTable.headers, exportTable.rows),
     );
     if (extension === "csv") {
@@ -233,7 +254,7 @@ export function KeywordsTab({
   };
   const handleDownloadSelectionCsv = () => {
     downloadCsv(
-      `${domain}-selected-keywords.csv`,
+      `${fileNamePrefix}-selected-keywords.csv`,
       buildCsv(selectedExportTable.headers, selectedExportTable.rows),
     );
     captureClientEvent("data:export", {
@@ -275,6 +296,15 @@ export function KeywordsTab({
         }
       />
 
+      {filtersOverBudget ? (
+        <div className="alert alert-warning mb-3">
+          <span>
+            Saved filters exceed this scope&apos;s {maxConditions}-condition
+            limit and were not applied. Open Filters to trim them.
+          </span>
+        </div>
+      ) : null}
+
       <DomainTableTabSurface
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters((prev) => !prev)}
@@ -311,11 +341,12 @@ export function KeywordsTab({
             <DomainFilterPanel
               debugName="KeywordsFilterPanel"
               activeFilterCount={activeFilterCount}
-              appliedFilters={appliedFilters}
+              appliedFilters={restoredFilters}
               fields={KEYWORD_FILTER_FIELDS}
               textFields={KEYWORD_TEXT_FILTERS}
               rangeFields={KEYWORD_RANGE_FILTERS}
               countConditions={countKeywordFilterConditions}
+              maxConditions={maxConditions}
               onApply={applyFilters}
               onClear={resetFilters}
             />
@@ -334,7 +365,7 @@ export function KeywordsTab({
         }
       >
         <DomainKeywordsTable
-          domain={domain}
+          domain={hostname}
           rows={rows}
           selectedKeywords={selectedKeywords}
           visibleKeywords={visibleKeywords}

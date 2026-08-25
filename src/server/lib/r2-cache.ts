@@ -11,6 +11,13 @@ export const CACHE_TTL = {
 
 const CACHE_PREFIX = "dataforseo-cache/";
 
+export const AI_SEARCH_PROMPT_CACHE_NAMESPACE = "ai-search:prompt-response";
+
+/** Full R2 object-key prefix for a cache namespace, for prefix listing. */
+export function cacheObjectPrefix(namespace: string): string {
+  return `${CACHE_PREFIX}${namespace}:`;
+}
+
 /**
  * Build a deterministic cache key from an endpoint slug and input params.
  * Uses a SHA-256 digest for stability across runtimes.
@@ -52,10 +59,12 @@ export async function setCached<T>(
   key: string,
   data: T,
   ttlSeconds: number,
+  metadata: Record<string, string> = {},
 ): Promise<void> {
   await env.R2.put(`${CACHE_PREFIX}${key}`, JSON.stringify(data), {
     httpMetadata: { contentType: "application/json" },
     customMetadata: {
+      ...metadata,
       expiresAt: new Date(Date.now() + ttlSeconds * 1000).toISOString(),
     },
   });

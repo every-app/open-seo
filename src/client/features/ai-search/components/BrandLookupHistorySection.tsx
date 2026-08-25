@@ -5,6 +5,7 @@ import {
   SearchHistorySection,
 } from "@/client/features/ai-search/components/SearchHistorySection";
 import type { BrandLookupSearchHistoryItem } from "@/client/hooks/useBrandLookupSearchHistory";
+import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
 type Props = {
   projectId: string;
@@ -31,6 +32,7 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
               item.competitors.length > 0
                 ? item.competitors.join(",")
                 : undefined,
+            scope: item.scope,
           }}
           replace
           className={HISTORY_ITEM_LINK_CLASS}
@@ -40,7 +42,16 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
       )}
       renderItem={(item) => (
         <div className="min-w-0">
-          <p className="truncate font-medium text-base-content">{item.query}</p>
+          <p className="flex items-center gap-2 truncate font-medium text-base-content">
+            {item.query}
+            {/* Only non-default scopes are stored, so this badge always adds
+                information the query string doesn't already carry. */}
+            {item.scope ? (
+              <span className="badge badge-ghost badge-sm shrink-0">
+                {RESEARCH_SCOPE_LABELS[item.scope]}
+              </span>
+            ) : null}
+          </p>
           {item.competitors.length > 0 ? (
             <p className="truncate text-xs text-base-content/50">
               vs {item.competitors.join(", ")}

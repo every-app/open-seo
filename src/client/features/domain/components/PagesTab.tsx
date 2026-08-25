@@ -18,6 +18,7 @@ import {
 import { useDomainPagesQuery } from "@/client/features/domain/hooks/useDomainPagesQuery";
 import { useDomainPageFilterPreferences } from "@/client/features/domain/useDomainFilterPreferences";
 import {
+  EMPTY_DOMAIN_FILTERS,
   type DomainSortMode,
   type PageRow,
   type PagesFilterValues,
@@ -31,6 +32,10 @@ import {
   MAX_DATAFORSEO_FILTER_CONDITIONS,
   type DomainSearchParams,
 } from "@/types/schemas/domain";
+import {
+  RESEARCH_SCOPE_FILTER_SLOTS,
+  type ResearchScope,
+} from "@/shared/researchScope";
 
 type SearchUpdate = Partial<DomainSearchParams>;
 
@@ -54,7 +59,11 @@ const PAGE_RANGE_FILTERS = [
 
 type Props = {
   projectId: string;
-  domain: string;
+  /** Research target as displayed: hostname, plus the path for URL scopes. */
+  target: string;
+  /** Hostname only, for resolving relative result URLs. */
+  hostname: string;
+  scope: ResearchScope;
   routeState: DomainOverviewRouteState;
   setSearchParams: (updates: SearchUpdate) => void;
   onSortClick: (sort: DomainSortMode) => void;
@@ -64,7 +73,9 @@ type Props = {
 
 export function PagesTab({
   projectId,
-  domain,
+  target,
+  hostname,
+  scope,
   routeState,
   setSearchParams,
   onSortClick,
@@ -72,15 +83,18 @@ export function PagesTab({
   onPageSizeChange,
 }: Props) {
   const [showFilters, setShowFilters] = useState(false);
+  // Scope filters consume part of DataForSEO's fixed filter budget.
+  const maxConditions =
+    MAX_DATAFORSEO_FILTER_CONDITIONS - RESEARCH_SCOPE_FILTER_SLOTS.pages[scope];
   const filterPreferences = useDomainPageFilterPreferences(
-    `${projectId}:${domain}`,
+    `${projectId}:${target}`,
   );
   const {
     filters: preferredFilters,
     save: savePreferredFilters,
     clear: clearPreferredFilters,
   } = filterPreferences;
-  const appliedPagesFilters = useMemo(
+  const restoredFilters = useMemo(
     () =>
       routeState.hasAppliedPageFilters
         ? routeState.appliedPageFilters
@@ -91,18 +105,26 @@ export function PagesTab({
       routeState.hasAppliedPageFilters,
     ],
   );
+  // Filters restored from the URL or saved preferences can exceed this
+  // scope's tighter budget; sending them would make the server reject the
+  // whole query, so hold them back and let the panel explain.
+  const filtersOverBudget =
+    countPageFilterConditions(restoredFilters) > maxConditions;
+  const appliedPagesFilters = filtersOverBudget
+    ? EMPTY_DOMAIN_FILTERS
+    : restoredFilters;
 
   const query = useDomainPagesQuery({
     projectId,
-    domain,
-    includeSubdomains: routeState.subdomains,
+    domain: target,
+    scope,
     locationCode: routeState.sentLocationCode,
     page: routeState.page,
     pageSize: routeState.pageSize,
     sortMode: routeState.sort,
     sortOrder: routeState.order,
     appliedFilters: appliedPagesFilters,
-    enabled: Boolean(domain),
+    enabled: Boolean(target),
   });
 
   const rows = query.data?.pages ?? EMPTY_PAGES_ROWS;
@@ -124,14 +146,13 @@ export function PagesTab({
 
   const applyFilters = useCallback(
     (values: PagesFilterValues) => {
-      if (countPageFilterConditions(values) > MAX_DATAFORSEO_FILTER_CONDITIONS)
-        return;
+      if (countPageFilterConditions(values) > maxConditions) return;
       const update = buildPagesSearchUpdate(values);
       debugDomain("PagesTab:apply-filters", { values, update });
       savePreferredFilters(values);
       setSearchParams(update);
     },
-    [savePreferredFilters, setSearchParams],
+    [maxConditions, savePreferredFilters, setSearchParams],
   );
 
   const resetFilters = useCallback(() => {
@@ -143,12 +164,12 @@ export function PagesTab({
 
   const activeFilterCount = useMemo(
     () =>
-      PAGE_FILTER_FIELDS.filter((k) => appliedPagesFilters[k].trim() !== "")
-        .length,
-    [appliedPagesFilters],
+      PAGE_FILTER_FIELDS.filter((k) => restoredFilters[k].trim() !== "").length,
+    [restoredFilters],
   );
 
   const exportTable = useMemo(() => pagesToTable(rows), [rows]);
+  const fileNamePrefix = target.replaceAll("/", "-");
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(JSON.stringify(rows, null, 2));
@@ -163,7 +184,7 @@ export function PagesTab({
   };
   const handleDownload = (extension: "csv" | "xls") => {
     downloadCsv(
-      `${domain}-pages.${extension}`,
+      `${fileNamePrefix}-pages.${extension}`,
       buildCsv(exportTable.headers, exportTable.rows),
     );
     if (extension === "csv") {
@@ -176,6 +197,15 @@ export function PagesTab({
 
   return (
     <>
+      {filtersOverBudget ? (
+        <div className="alert alert-warning mb-3">
+          <span>
+            Saved filters exceed this scope&apos;s {maxConditions}-condition
+            limit and were not applied. Open Filters to trim them.
+          </span>
+        </div>
+      ) : null}
+
       <DomainTableTabSurface
         showFilters={showFilters}
         onToggleFilters={() => setShowFilters((prev) => !prev)}
@@ -212,11 +242,12 @@ export function PagesTab({
             <DomainFilterPanel
               debugName="PagesFilterPanel"
               activeFilterCount={activeFilterCount}
-              appliedFilters={appliedPagesFilters}
+              appliedFilters={restoredFilters}
               fields={PAGE_FILTER_FIELDS}
               textFields={PAGE_TEXT_FILTERS}
               rangeFields={PAGE_RANGE_FILTERS}
               countConditions={countPageFilterConditions}
+              maxConditions={maxConditions}
               onApply={applyFilters}
               onClear={resetFilters}
             />
@@ -235,7 +266,7 @@ export function PagesTab({
         }
       >
         <DomainPagesTable
-          domain={domain}
+          domain={hostname}
           rows={rows}
           sortMode={routeState.sort}
           currentSortOrder={routeState.order}

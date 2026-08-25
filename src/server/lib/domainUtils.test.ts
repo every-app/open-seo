@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeDomainInput } from "@/server/lib/domainUtils";
-import { isValidDomainHost } from "@/types/schemas/domain";
+import { isValidDomainHost } from "@/shared/researchScope";
 
 describe("isValidDomainHost", () => {
   it("accepts real registrable domains", () => {

@@ -8,6 +8,7 @@ import {
   PLATFORM_DOT_CLASS,
 } from "@/client/features/ai-search/platformLabels";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
+import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
 type Props = {
   result: BrandLookupResult;
@@ -16,6 +17,24 @@ type Props = {
 
 type PlatformRow = BrandLookupResult["perPlatform"][number];
 type MetricKey = "mentions" | "aiSearchVolume";
+
+const DOMAIN_LEVEL_TIP =
+  "AI search providers report mentions per domain, not per page. This number covers the whole domain — the cited pages below are limited to your scope.";
+
+/**
+ * Marks a metric that could not be narrowed to a URL scope, so a page-scoped
+ * lookup never reads as if the number belonged to that page.
+ */
+function DomainLevelBadge() {
+  return (
+    <span
+      className="tooltip badge badge-ghost badge-sm shrink-0 normal-case"
+      data-tip={DOMAIN_LEVEL_TIP}
+    >
+      Domain-level
+    </span>
+  );
+}
 
 export function BrandLookupResults({ result, projectId }: Props) {
   if (!result.hasData) {
@@ -71,7 +90,12 @@ export function BrandLookupResults({ result, projectId }: Props) {
       >
         <StatsCard result={result} />
         {hasTrendData ? <MentionTrendCard result={result} /> : null}
-        {sov ? <BrandLookupShareOfVoice shareOfVoice={sov} /> : null}
+        {sov ? (
+          <BrandLookupShareOfVoice
+            shareOfVoice={sov}
+            isDomainLevel={result.aggregatesAreDomainLevel}
+          />
+        ) : null}
       </div>
 
       <CitationTabsCard result={result} projectId={projectId} />
@@ -89,6 +113,11 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
         <span className="badge badge-ghost badge-sm">
           {result.detectedTargetType}
         </span>
+        {result.scope ? (
+          <span className="badge badge-ghost badge-sm">
+            {RESEARCH_SCOPE_LABELS[result.scope]}
+          </span>
+        ) : null}
       </div>
       <p className="text-xs text-base-content/50">
         Updated {formatRelative(result.fetchedAt)}
@@ -107,6 +136,7 @@ function StatsCard({ result }: { result: BrandLookupResult }) {
           value={result.totalMentions}
           perPlatform={result.perPlatform}
           metric="mentions"
+          isDomainLevel={result.aggregatesAreDomainLevel}
         />
         <StatBlock
           label="AI search volume"
@@ -114,6 +144,7 @@ function StatsCard({ result }: { result: BrandLookupResult }) {
           value={result.totalAiSearchVolume}
           perPlatform={result.perPlatform}
           metric="aiSearchVolume"
+          isDomainLevel={result.aggregatesAreDomainLevel}
         />
       </div>
     </section>
@@ -126,12 +157,14 @@ function StatBlock({
   value,
   perPlatform,
   metric,
+  isDomainLevel,
 }: {
   label: string;
   tooltip: string;
   value: number | null;
   perPlatform: PlatformRow[];
   metric: MetricKey;
+  isDomainLevel: boolean;
 }) {
   return (
     <div className="flex flex-1 flex-col justify-center p-4">
@@ -140,6 +173,7 @@ function StatBlock({
         <span className="tooltip inline-flex normal-case" data-tip={tooltip}>
           <Info className="size-3 text-base-content/40" />
         </span>
+        {isDomainLevel ? <DomainLevelBadge /> : null}
       </p>
       <p className="mt-1 text-3xl font-semibold tabular-nums">
         {formatCount(value)}
@@ -191,10 +225,11 @@ function PlatformStatRow({
 function MentionTrendCard({ result }: { result: BrandLookupResult }) {
   return (
     <section className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
-      <div className="border-b border-base-300 px-4 py-3">
+      <div className="flex items-center justify-between gap-2 border-b border-base-300 px-4 py-3">
         <h3 className="text-sm font-semibold">
           Mention trend (last 12 months)
         </h3>
+        {result.aggregatesAreDomainLevel ? <DomainLevelBadge /> : null}
       </div>
       <div className="p-4">
         <BrandLookupMentionTrendCard result={result} />

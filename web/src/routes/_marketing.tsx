@@ -10,8 +10,6 @@ import { SiteFooter } from "@/components/site-footer";
 import { featureGroups } from "@/lib/feature-pages";
 
 const GITHUB_REPO = "every-app/open-seo";
-const PRODUCT_HUNT_URL =
-  "https://www.producthunt.com/products/openseo?launch=openseo";
 // Used if GitHub is unreachable at build time so the header never renders empty.
 const FALLBACK_STAR_COUNT = "2.1k";
 
@@ -60,10 +58,11 @@ function getMobileNavItems(githubStarCount: string) {
     {
       label: "Resources",
       links: [
-        { label: "Blog", href: "/blogs" },
-        { label: "Docs", href: "/docs" },
         { label: "MCP Setup", href: "/docs/mcp" },
         { label: "Skills", href: "/docs/skills" },
+        { label: "Strategy Library", href: "/library" },
+        { label: "Blog", href: "/blogs" },
+        { label: "Docs", href: "/docs" },
       ],
     },
     {
@@ -158,24 +157,7 @@ function MarketingLayout() {
   }, [isHome]);
 
   return (
-    <main className="min-h-screen bg-[var(--color-surface)] text-[var(--color-brand)]">
-      {isHome ? (
-        <a
-          href={PRODUCT_HUNT_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group flex min-h-11 items-center justify-center gap-2 bg-[#ff6154] px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#e9574c] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-white"
-          aria-label="OpenSEO just launched on Product Hunt. Upvote and comment."
-        >
-          <span className="inline-flex size-6 shrink-0 items-center justify-center rounded-full bg-white p-0.5">
-            <img src="/product-hunt.svg" alt="" className="size-full" />
-          </span>
-          <span>OpenSEO just launched on Product Hunt.</span>
-          <span className="inline-flex items-center gap-1 whitespace-nowrap underline decoration-white/55 underline-offset-4 group-hover:decoration-white">
-            Upvote &amp; comment <span aria-hidden="true">&rarr;</span>
-          </span>
-        </a>
-      ) : null}
+    <main className="fd-light min-h-screen bg-[var(--color-surface)] text-[var(--color-brand)]">
       <div className="relative z-50 mx-auto w-full max-w-6xl px-4 pt-6 sm:px-6 md:pt-8">
         <div className="relative mx-auto max-w-5xl">
           <nav className="grid min-h-14 grid-cols-[1fr_auto] items-center gap-3 rounded-full border border-[var(--color-border-subtle)] bg-white/90 px-4 py-2.5 shadow-sm shadow-neutral-900/5 backdrop-blur md:grid-cols-[1fr_auto_1fr] md:px-5">
@@ -287,16 +269,6 @@ function MarketingLayout() {
 function ResourcesDropdown() {
   const resources = [
     {
-      label: "Blog",
-      href: "/blogs",
-      description: "SEO articles and guides.",
-    },
-    {
-      label: "Docs",
-      href: "/docs",
-      description: "Setup, MCP, skills, and self-hosting guides.",
-    },
-    {
       label: "MCP",
       href: "/docs/mcp",
       description: "Connect OpenSEO to AI clients.",
@@ -305,6 +277,21 @@ function ResourcesDropdown() {
       label: "Skills",
       href: "/docs/skills",
       description: "Focused OpenSEO workflows.",
+    },
+    {
+      label: "Strategy Library",
+      href: "/library",
+      description: "Practical SEO strategies grouped by topic.",
+    },
+    {
+      label: "Blog",
+      href: "/blogs",
+      description: "SEO articles and guides.",
+    },
+    {
+      label: "Docs",
+      href: "/docs",
+      description: "Setup, MCP, skills, and self-hosting guides.",
     },
   ];
 

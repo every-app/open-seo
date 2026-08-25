@@ -193,7 +193,7 @@ function getSearchTabQueryConfig(
         "domain-overview",
         projectId,
         trimmedDomain,
-        input.subdomains,
+        input.scope,
         input.locationCode,
       ],
       queryFn: () =>
@@ -201,7 +201,7 @@ function getSearchTabQueryConfig(
           data: {
             projectId,
             domain: trimmedDomain,
-            includeSubdomains: input.subdomains,
+            scope: input.scope,
             locationCode: input.locationCode,
           },
         }),

@@ -1,0 +1,115 @@
+---
+title: "Read a competitor's link profile before you copy it"
+description: "A big backlink number usually means a small number of domains linking many times. How to read referring domains, spam score, and broken links, and find the gap that is actually worth chasing."
+---
+
+## Backlinks are the wrong unit
+
+Pull the link profile of an established competitor and the first number you see is the largest one. Here is a real profile from a national brand in the property restoration category.
+
+![A backlink profile panel showing 596,564 backlinks, 13,980 referring domains, 408,922 referring pages, rank 67, backlink spam score 23.0, 2,217 broken backlinks, 529 broken pages, and target spam score 0.0](/library/competitive-analysis/competitor-backlink-profile-openseo.png)
+
+596,564 backlinks. That is the number that goes in a slide, and it is close to meaningless on its own.
+
+The number underneath it is the one that matters: 13,980 referring domains. Divide the first by the second and you get roughly forty-three links per domain. Nearly every one of those 596,564 links is a repeat vote from a site that had already voted. Sitewide footers, template navigation, franchise directories, and blogroll modules generate link counts in the hundreds of thousands without generating any new endorsement.
+
+The realistic reading of that profile is not "they have 596,564 links I need to match." It is "they have earned links from about fourteen thousand distinct sites, and I need to understand which of those are reachable."
+
+Bradley Benner, who runs link building at Semantic Mastery, argues the third-party numbers deserve even less weight than that:
+
+> And so I totally believe 100% wholeheartedly that third-party metrics are useless. What we should be focusing on is relevance to strengthen those entity associations.
+
+He allows one legitimate use for them, and the ordering is the point:
+
+> If you want to use a third-party metric like DA, DR, Trust Flow, whatever, as kind of a secondary metric after determining that a potential link source is relevant to what it's going to be linking to, then fine.
+
+Relevance first, metric second. A link profile report is a shortlist generator, not a scoreboard.
+
+## The metric everyone chases and nobody can spend
+
+The other headline on that panel is rank, a 0-100 authority score. It is the number most often set as an objective, and it is the one least connected to outcomes.
+
+Ben Senescu, who founded OpenSEO, sees the pattern constantly among founders:
+
+> A lot of people want to increase their domain rating, entrepreneurs especially, because that's what everyone talks about and what companies are marketing. Like, we'll buy you all these backlinks to increase your domain rating. But is that going to get you any organic traffic?
+
+The question answers itself for most link campaigns. Authority scores are third-party inventions calculated from link graphs. Google does not read them. They correlate with ranking because both correlate with having a lot of good links, which means moving the score without earning the links moves nothing.
+
+Read the score as a rough tier, not a target. It tells you whether a competitor is in a different weight class or roughly your own, which is a genuinely useful thing to know before you decide whether to compete on links at all.
+
+## The two numbers nobody reads, and the opportunity in them
+
+Look at the bottom half of that same panel. Backlink spam score of 23.0. Broken backlinks: 2,217. Broken pages: 529.
+
+**Spam score** describes the neighbourhood a site's links come from. A profile in the low twenties is normal for a large brand that has accumulated directory listings and scraper mentions over two decades. What it tells you is that a meaningful share of the fourteen thousand referring domains are not endorsements you would want or could use. Filter them out before you treat the remainder as a target list.
+
+**Broken backlinks and broken pages** are the interesting ones. 2,217 live links point at URLs on that domain that no longer resolve, spread across 529 dead pages. Every one of those is a site that decided this topic was worth linking to, whose link now goes nowhere.
+
+That is the most reachable link opportunity on the board, and it does not require you to out-produce anybody. You find the dead page, you find who still links to it, you check whether you have something that genuinely serves the same purpose, and you tell them. It works because you are not asking for a favour. You are reporting a broken link on their site and offering the fix.
+
+It is also worth running this check against your own domain first. Sites that have been rebuilt more than once frequently discover a double-digit percentage of their own earned links landing on 404s, which is link equity you already paid for and can recover with redirects alone.
+
+## How to run a link gap in OpenSEO
+
+As with the keyword gap, OpenSEO does not ship a single "link gap" report that diffs two domains. You pull the [backlink profile](/features/backlink-checker) for each side and let the agent do the comparison, which lets you set the quality filters yourself rather than inheriting somebody's defaults.
+
+```text
+Using the OpenSEO MCP, compare the link profiles of
+[mydomain.com] and [competitor.com].
+
+1. Pull the backlinks overview for both. Report backlinks,
+   referring domains, rank, and spam score side by side. Compute
+   links per referring domain for each, and tell me what that
+   ratio suggests about how their links were acquired.
+
+2. Pull their backlink profile grouped one per domain, filtered
+   to dofollow links with a low spam score. This is the
+   shortlist, not the full list.
+
+3. Cross-reference against my referring domains. Return the sites
+   linking to them and not to me, sorted by domain authority, and
+   for each one show which of their pages earned the link.
+
+4. Separately, pull their broken backlinks: live links pointing
+   at URLs on their domain that no longer resolve. For each,
+   show the linking site and the dead target.
+
+5. Run step 4 against my own domain too, and tell me how much of
+   my own earned link equity currently lands on a 404.
+
+For the step 3 list, judge each source on topical relevance to
+my business first. Tell me which ones you would not approach and
+why.
+```
+
+Step five is the one to run before any of the outreach ones. Recovering links you already earned is cheaper than earning new ones, and it is usually a redirect rather than a campaign.
+
+## What to do first
+
+Do not start with the competitor. Start with step five on your own domain. Then, on the competitor side, ignore the link total entirely and read three things: referring domains, links per domain, and broken backlinks.
+
+If their links-per-domain ratio is high, their advantage is thinner than the headline and their real domain count is within reach. If it is close to one, they have earned links from many distinct sites, which is a genuine moat and probably means competing on content depth rather than on links.
+
+Either way, the terms you would build pages for come out of [keyword gap analysis](/library/competitive-analysis/keyword-gap-analysis), and whether this domain is even the right one to study comes out of [finding your real competitors](/library/competitive-analysis/find-your-real-competitors). A link profile is the last thing to look at, not the first.
+
+## Competitor backlink analysis FAQ
+
+### How do you do a competitor backlink analysis?
+
+Pull their backlink overview for the headline metrics, then pull the link-level rows grouped one per referring domain so you see distinct sites rather than repeated links. Filter to relevant, low-spam, dofollow sources, then compare that list against your own referring domains. What remains is the reachable gap.
+
+### What is a good spam score?
+
+There is no universal threshold, and the score is a third-party estimate rather than a Google signal. Read it comparatively: a large old domain in the low twenties is unremarkable, while a young site with the same score has accumulated links it probably did not earn. Use it to filter a prospect list, not to judge a site.
+
+### Should I try to get every link my competitor has?
+
+No. A large share of any competitor's referring domains are directories, scrapers, and syndication that carry no value and would not accept you anyway. The reachable portion is usually a few hundred domains at most, and the relevant portion is smaller still.
+
+### Why does my competitor have hundreds of thousands of backlinks?
+
+Almost always because a small number of sites link many times each, through footers, sidebars, templates, or a franchise network. Divide backlinks by referring domains. A ratio far above one means the headline count is repetition rather than endorsement.
+
+### Are broken competitor backlinks worth chasing?
+
+They are among the best opportunities available, because the linking site has already demonstrated it will link to this topic and its link is currently broken. The approach works when you genuinely have a better replacement for the dead page, and fails when you are just asking for a swap.

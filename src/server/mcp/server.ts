@@ -1,13 +1,45 @@
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import {
+  type CallToolResult,
+  McpServer,
+  type ToolAnnotations,
+} from "@modelcontextprotocol/server";
+import type { z } from "zod";
+import {
+  createMcpToolContext,
+  type McpProps,
+  type ToolContext,
+} from "@/server/mcp/context";
+import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
+import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-tracking-keywords";
+import { createRankTrackerTool } from "@/server/mcp/tools/create-rank-tracker";
+import { estimateRankTrackerCostTool } from "@/server/mcp/tools/estimate-rank-tracker-cost";
 import { getRankTrackerTool } from "@/server/mcp/tools/get-rank-tracker";
+import { removeRankTrackingKeywordsTool } from "@/server/mcp/tools/remove-rank-tracking-keywords";
+import { runRankTrackerTool } from "@/server/mcp/tools/run-rank-tracker";
 import { getSerpResultsTool } from "@/server/mcp/tools/get-serp-results";
+import {
+  getGoogleAnalyticsAudienceBreakdownTool,
+  getGoogleAnalyticsEcommercePerformanceTool,
+  getGoogleAnalyticsKeyEventsTool,
+  getGoogleAnalyticsMeasurementHealthTool,
+  getGoogleAnalyticsOrganicLandingPagesTool,
+  getGoogleAnalyticsOrganicOverviewTool,
+  getGoogleAnalyticsPagePerformanceTool,
+  getGoogleAnalyticsSiteSearchTool,
+  getGoogleAnalyticsTrafficAcquisitionTool,
+  getSearchOpportunitiesTool,
+} from "@/server/mcp/tools/google-analytics-tools";
 import { createProjectTool } from "@/server/mcp/tools/create-project";
 import { listProjectsTool } from "@/server/mcp/tools/list-projects";
+import {
+  getProjectContextTool,
+  updateProjectContextTool,
+} from "@/server/mcp/tools/project-context";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
 import {
   findSerpCompetitorsTool,
@@ -17,6 +49,13 @@ import {
   getRankedKeywordsTool,
   searchLocalBusinessesTool,
 } from "@/server/mcp/tools/dataforseo-research-tools";
+import {
+  getBusinessProfileTool,
+  getBusinessReviewsTool,
+  getBusinessUpdatesTool,
+  getLocalRankGridTool,
+  listBusinessCategoriesTool,
+} from "@/server/mcp/tools/local-seo-tools";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
@@ -31,226 +70,134 @@ import {
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
-// Each handler is wrapped with instrumentMcpToolHandler so failures reach
-// PostHog — the MCP route has no error middleware of its own. Tools are
-// registered one explicit call at a time (not via a loop/helper) so each one's
-// input/output schema types stay concrete, which the SDK's registerTool
-// generics require to type the handler callback.
-export function registerOpenSeoMcpTools(server: McpServer) {
-  server.registerTool(
-    whoamiTool.name,
-    whoamiTool.config,
-    instrumentMcpToolHandler(
-      whoamiTool.name,
-      whoamiTool.config.outputSchema,
-      whoamiTool.handler,
-    ),
+type ToolSchema = z.ZodType | z.ZodRawShape;
+
+// Tools declare inputSchema as either a raw Zod shape (most tools) or a full
+// z.object (the GA4 tools); both normalize to one object schema at
+// registration.
+type ToolArgs<Input extends ToolSchema> = Input extends z.ZodType
+  ? z.infer<Input>
+  : Input extends z.ZodRawShape
+    ? z.infer<z.ZodObject<Input>>
+    : never;
+
+type OpenSeoToolDefinition<Input extends ToolSchema> = {
+  name: string;
+  config: {
+    title?: string;
+    description?: string;
+    inputSchema: Input;
+    outputSchema?: ToolSchema;
+    annotations?: ToolAnnotations;
+  };
+  handler: (
+    args: ToolArgs<Input>,
+    context: ToolContext,
+  ) => CallToolResult | Promise<CallToolResult>;
+};
+
+function registerOpenSeoTool<Input extends ToolSchema>(
+  server: McpServer,
+  tool: OpenSeoToolDefinition<Input>,
+  authProps: McpProps,
+) {
+  const outputSchema = objectSchema(tool.config.outputSchema);
+  const handler = instrumentMcpToolHandler(
+    tool.name,
+    outputSchema,
+    tool.handler,
   );
+
   server.registerTool(
-    listProjectsTool.name,
-    listProjectsTool.config,
-    instrumentMcpToolHandler(
-      listProjectsTool.name,
-      listProjectsTool.config.outputSchema,
-      listProjectsTool.handler,
-    ),
+    tool.name,
+    {
+      ...tool.config,
+      inputSchema: objectSchema(tool.config.inputSchema),
+      outputSchema,
+    },
+    (args, context) => {
+      return handler(
+        // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- args were validated against the tool's own inputSchema just above
+        args as ToolArgs<Input>,
+        createMcpToolContext(context, authProps),
+      );
+    },
   );
-  server.registerTool(
-    createProjectTool.name,
-    createProjectTool.config,
-    instrumentMcpToolHandler(
-      createProjectTool.name,
-      createProjectTool.config.outputSchema,
-      createProjectTool.handler,
-    ),
+}
+
+export function createOpenSeoMcpServer(authProps: McpProps) {
+  const server = new McpServer(
+    {
+      name: "OpenSEO MCP",
+      title: "OpenSEO",
+      version: "0.0.12",
+      description:
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+      websiteUrl: "https://openseo.so",
+      icons: [
+        {
+          src: "https://openseo.so/android-chrome-512x512.png",
+          mimeType: "image/png",
+          sizes: ["512x512"],
+        },
+      ],
+    },
+    {
+      instructions:
+        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
+    },
   );
-  server.registerTool(
-    listSavedKeywordsTool.name,
-    listSavedKeywordsTool.config,
-    instrumentMcpToolHandler(
-      listSavedKeywordsTool.name,
-      listSavedKeywordsTool.config.outputSchema,
-      listSavedKeywordsTool.handler,
-    ),
-  );
-  server.registerTool(
-    researchKeywordsTool.name,
-    researchKeywordsTool.config,
-    instrumentMcpToolHandler(
-      researchKeywordsTool.name,
-      researchKeywordsTool.config.outputSchema,
-      researchKeywordsTool.handler,
-    ),
-  );
-  server.registerTool(
-    saveKeywordsTool.name,
-    saveKeywordsTool.config,
-    instrumentMcpToolHandler(
-      saveKeywordsTool.name,
-      saveKeywordsTool.config.outputSchema,
-      saveKeywordsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getDomainOverviewTool.name,
-    getDomainOverviewTool.config,
-    instrumentMcpToolHandler(
-      getDomainOverviewTool.name,
-      getDomainOverviewTool.config.outputSchema,
-      getDomainOverviewTool.handler,
-    ),
-  );
-  server.registerTool(
-    getDomainKeywordSuggestionsTool.name,
-    getDomainKeywordSuggestionsTool.config,
-    instrumentMcpToolHandler(
-      getDomainKeywordSuggestionsTool.name,
-      getDomainKeywordSuggestionsTool.config.outputSchema,
-      getDomainKeywordSuggestionsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getBacklinksOverviewTool.name,
-    getBacklinksOverviewTool.config,
-    instrumentMcpToolHandler(
-      getBacklinksOverviewTool.name,
-      getBacklinksOverviewTool.config.outputSchema,
-      getBacklinksOverviewTool.handler,
-    ),
-  );
-  server.registerTool(
-    getBacklinksProfileTool.name,
-    getBacklinksProfileTool.config,
-    instrumentMcpToolHandler(
-      getBacklinksProfileTool.name,
-      getBacklinksProfileTool.config.outputSchema,
-      getBacklinksProfileTool.handler,
-    ),
-  );
-  server.registerTool(
-    getSerpResultsTool.name,
-    getSerpResultsTool.config,
-    instrumentMcpToolHandler(
-      getSerpResultsTool.name,
-      getSerpResultsTool.config.outputSchema,
-      getSerpResultsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getRankTrackerTool.name,
-    getRankTrackerTool.config,
-    instrumentMcpToolHandler(
-      getRankTrackerTool.name,
-      getRankTrackerTool.config.outputSchema,
-      getRankTrackerTool.handler,
-    ),
-  );
-  server.registerTool(
-    getRankedKeywordsTool.name,
-    getRankedKeywordsTool.config,
-    instrumentMcpToolHandler(
-      getRankedKeywordsTool.name,
-      getRankedKeywordsTool.config.outputSchema,
-      getRankedKeywordsTool.handler,
-    ),
-  );
-  server.registerTool(
-    findSerpCompetitorsTool.name,
-    findSerpCompetitorsTool.config,
-    instrumentMcpToolHandler(
-      findSerpCompetitorsTool.name,
-      findSerpCompetitorsTool.config.outputSchema,
-      findSerpCompetitorsTool.handler,
-    ),
-  );
-  server.registerTool(
-    searchLocalBusinessesTool.name,
-    searchLocalBusinessesTool.config,
-    instrumentMcpToolHandler(
-      searchLocalBusinessesTool.name,
-      searchLocalBusinessesTool.config.outputSchema,
-      searchLocalBusinessesTool.handler,
-    ),
-  );
-  server.registerTool(
-    getLocalSerpResultsTool.name,
-    getLocalSerpResultsTool.config,
-    instrumentMcpToolHandler(
-      getLocalSerpResultsTool.name,
-      getLocalSerpResultsTool.config.outputSchema,
-      getLocalSerpResultsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getGoogleBusinessQuestionsTool.name,
-    getGoogleBusinessQuestionsTool.config,
-    instrumentMcpToolHandler(
-      getGoogleBusinessQuestionsTool.name,
-      getGoogleBusinessQuestionsTool.config.outputSchema,
-      getGoogleBusinessQuestionsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getKeywordMetricsTool.name,
-    getKeywordMetricsTool.config,
-    instrumentMcpToolHandler(
-      getKeywordMetricsTool.name,
-      getKeywordMetricsTool.config.outputSchema,
-      getKeywordMetricsTool.handler,
-    ),
-  );
-  server.registerTool(
-    getSearchConsolePerformanceTool.name,
-    getSearchConsolePerformanceTool.config,
-    instrumentMcpToolHandler(
-      getSearchConsolePerformanceTool.name,
-      getSearchConsolePerformanceTool.config.outputSchema,
-      getSearchConsolePerformanceTool.handler,
-    ),
-  );
-  server.registerTool(
-    inspectUrlsTool.name,
-    inspectUrlsTool.config,
-    instrumentMcpToolHandler(
-      inspectUrlsTool.name,
-      inspectUrlsTool.config.outputSchema,
-      inspectUrlsTool.handler,
-    ),
-  );
-  server.registerTool(
-    runSiteAuditTool.name,
-    runSiteAuditTool.config,
-    instrumentMcpToolHandler(
-      runSiteAuditTool.name,
-      runSiteAuditTool.config.outputSchema,
-      runSiteAuditTool.handler,
-    ),
-  );
-  server.registerTool(
-    getAuditStatusTool.name,
-    getAuditStatusTool.config,
-    instrumentMcpToolHandler(
-      getAuditStatusTool.name,
-      getAuditStatusTool.config.outputSchema,
-      getAuditStatusTool.handler,
-    ),
-  );
-  server.registerTool(
-    getAuditIssuesTool.name,
-    getAuditIssuesTool.config,
-    instrumentMcpToolHandler(
-      getAuditIssuesTool.name,
-      getAuditIssuesTool.config.outputSchema,
-      getAuditIssuesTool.handler,
-    ),
-  );
-  server.registerTool(
-    getAuditPagesTool.name,
-    getAuditPagesTool.config,
-    instrumentMcpToolHandler(
-      getAuditPagesTool.name,
-      getAuditPagesTool.config.outputSchema,
-      getAuditPagesTool.handler,
-    ),
-  );
+
+  const register = <Input extends ToolSchema>(
+    tool: OpenSeoToolDefinition<Input>,
+  ) => registerOpenSeoTool(server, tool, authProps);
+
+  register(whoamiTool);
+  register(listProjectsTool);
+  register(createProjectTool);
+  register(getProjectContextTool);
+  register(updateProjectContextTool);
+  register(listSavedKeywordsTool);
+  register(researchKeywordsTool);
+  register(saveKeywordsTool);
+  register(getDomainOverviewTool);
+  register(getDomainKeywordSuggestionsTool);
+  register(getBacklinksOverviewTool);
+  register(getBacklinksProfileTool);
+  register(getSerpResultsTool);
+  register(createRankTrackerTool);
+  register(getRankTrackerTool);
+  register(addRankTrackingKeywordsTool);
+  register(removeRankTrackingKeywordsTool);
+  register(estimateRankTrackerCostTool);
+  register(runRankTrackerTool);
+  register(getRankedKeywordsTool);
+  register(findSerpCompetitorsTool);
+  register(searchLocalBusinessesTool);
+  register(getLocalSerpResultsTool);
+  register(getGoogleBusinessQuestionsTool);
+  register(getBusinessProfileTool);
+  register(getBusinessReviewsTool);
+  register(getBusinessUpdatesTool);
+  register(listBusinessCategoriesTool);
+  register(getLocalRankGridTool);
+  register(getKeywordMetricsTool);
+  register(getSearchConsolePerformanceTool);
+  register(inspectUrlsTool);
+  register(getGoogleAnalyticsOrganicLandingPagesTool);
+  register(getGoogleAnalyticsPagePerformanceTool);
+  register(getGoogleAnalyticsKeyEventsTool);
+  register(getSearchOpportunitiesTool);
+  register(getGoogleAnalyticsOrganicOverviewTool);
+  register(getGoogleAnalyticsTrafficAcquisitionTool);
+  register(getGoogleAnalyticsMeasurementHealthTool);
+  register(getGoogleAnalyticsEcommercePerformanceTool);
+  register(getGoogleAnalyticsSiteSearchTool);
+  register(getGoogleAnalyticsAudienceBreakdownTool);
+  register(runSiteAuditTool);
+  register(getAuditStatusTool);
+  register(getAuditIssuesTool);
+  register(getAuditPagesTool);
+
+  return server;
 }

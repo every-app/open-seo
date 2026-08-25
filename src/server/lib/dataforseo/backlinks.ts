@@ -21,7 +21,15 @@ import {
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 
-type BacklinksRequest = { target: string };
+type BacklinksRequest = {
+  target: string;
+  /**
+   * Whether the target's subdomains count. Defaults to DataForSEO's `true`.
+   * The API ignores it for page targets; `backlinks/history/live` has no such
+   * field, so a domain-scoped history is always subdomain-inclusive.
+   */
+  includeSubdomains?: boolean;
+};
 type BacklinksListRequest = BacklinksRequest &
   BacklinksSpamFilterOptions & {
     limit?: number;
@@ -140,7 +148,7 @@ export const backlinksHistoryItemSchema = z
 function buildCommonPayload(input: BacklinksRequest) {
   return {
     target: input.target,
-    include_subdomains: true,
+    include_subdomains: input.includeSubdomains ?? true,
     include_indirect_links: true,
     exclude_internal_backlinks: true,
     backlinks_status_type: "live",

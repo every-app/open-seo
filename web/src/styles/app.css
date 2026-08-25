@@ -11,12 +11,50 @@
   --color-border-subtle: #d8d1c8;
 }
 
+/* Marketing and blog pages are light-only, but RootProvider still toggles `.dark`
+   on <html> from the OS theme, which flips the fumadocs tokens that prose tables
+   and code blocks read. Re-pin the light values (from fumadocs-ui/css/neutral.css)
+   for those subtrees. */
+.fd-light {
+  --color-fd-background: hsl(0, 0%, 96%);
+  --color-fd-foreground: hsl(0, 0%, 3.9%);
+  --color-fd-muted: hsl(0, 0%, 96.1%);
+  --color-fd-muted-foreground: hsl(0, 0%, 45.1%);
+  --color-fd-popover: hsl(0, 0%, 98%);
+  --color-fd-popover-foreground: hsl(0, 0%, 15.1%);
+  --color-fd-card: hsl(0, 0%, 94.7%);
+  --color-fd-card-foreground: hsl(0, 0%, 3.9%);
+  --color-fd-border: hsla(0, 0%, 80%, 50%);
+  --color-fd-primary: hsl(0, 0%, 9%);
+  --color-fd-primary-foreground: hsl(0, 0%, 98%);
+  --color-fd-secondary: hsl(0, 0%, 93.1%);
+  --color-fd-secondary-foreground: hsl(0, 0%, 9%);
+  --color-fd-accent: hsla(0, 0%, 82%, 50%);
+  --color-fd-accent-foreground: hsl(0, 0%, 9%);
+  --color-fd-ring: hsl(0, 0%, 63.9%);
+}
+
+/* Syntax highlighting is separate from the tokens above: fumadocs-ui/css/shiki.css
+   flips code to `var(--shiki-dark)` with `.dark .shiki:not(.not-fumadocs-codeblock *)
+   { code span { ... } }`, which leaves dark-theme text on a light block here. Re-pin
+   the light colors with the same specificity — this file is emitted after the imports
+   above, so source order decides the tie. The block's background and border come from
+   --color-fd-card / --color-fd-border, which .fd-light already covers. */
+.fd-light .shiki:not(.not-fumadocs-codeblock *) code span {
+  color: var(--shiki-light);
+}
+
 html,
 body {
   background: var(--color-fd-background);
   color: var(--color-fd-foreground);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-    "Segoe UI", sans-serif;
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   overflow-x: clip;
 }

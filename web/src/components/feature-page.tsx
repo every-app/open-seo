@@ -32,6 +32,22 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <FeatureImage page={page} />
 
+      {page.featuredLink ? (
+        <section className="mt-12">
+          <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
+            <a
+              href={page.featuredLink.href}
+              className="underline decoration-[var(--color-brand-accent)] underline-offset-4"
+            >
+              {page.featuredLink.title}
+            </a>
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
+            {page.featuredLink.description}
+          </p>
+        </section>
+      ) : null}
+
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
           What you can do

@@ -14,7 +14,9 @@ import {
   BacklinkPulseCard,
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
+import { Ga4Card } from "@/client/features/dashboard/Ga4Card";
 import { McpConnectCard } from "@/client/features/dashboard/McpConnectCard";
+import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import {
@@ -297,11 +299,14 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
   const showBacklinks = activation.domain !== null;
   const gscConnected = activation.gsc.connected;
+  const ga4Connected = activation.ga4.connected;
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-5">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
+
+        <WorkspaceMergeBanner />
 
         <OnboardingChecklist projectId={projectId} activation={activation} />
 
@@ -330,6 +335,17 @@ export function DashboardPage({ projectId }: { projectId: string }) {
               hasData: gscConnected,
               node: <GscCard projectId={projectId} connected={gscConnected} />,
             },
+            ...(ga4Connected || !activation.ga4.cardDismissedAt
+              ? [
+                  {
+                    key: "ga4",
+                    hasData: ga4Connected,
+                    node: (
+                      <Ga4Card projectId={projectId} connected={ga4Connected} />
+                    ),
+                  },
+                ]
+              : []),
             {
               key: "audit",
               hasData: overview?.audit != null,

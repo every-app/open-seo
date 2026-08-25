@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { getDomainOverview } from "@/serverFunctions/domain";
+import type { ResearchScope } from "@/shared/researchScope";
 
 type Input = {
   projectId: string;
   domain: string;
-  includeSubdomains: boolean;
+  scope: ResearchScope;
   locationCode: number | undefined;
 };
 
@@ -17,7 +18,7 @@ export function useDomainOverviewQuery(input: Input) {
       "domain-overview",
       input.projectId,
       trimmedDomain,
-      input.includeSubdomains,
+      input.scope,
       input.locationCode,
     ],
     queryFn: () =>
@@ -25,7 +26,7 @@ export function useDomainOverviewQuery(input: Input) {
         data: {
           projectId: input.projectId,
           domain: trimmedDomain,
-          includeSubdomains: input.includeSubdomains,
+          scope: input.scope,
           locationCode: input.locationCode,
         },
       }),

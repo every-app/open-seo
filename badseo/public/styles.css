@@ -46,7 +46,7 @@ a:focus-visible, button:focus-visible { outline: 3px solid #ff6a57; outline-offs
 .home-copy > p { max-width: 860px; margin: 42px 0 0; font-family: var(--serif); font-size: clamp(28px, 2.2vw, 32px); line-height: 1.08; }
 .home-issues { scroll-margin-top: 24px; border-top: 3px solid var(--navy); }
 .home-issue-group { margin: 22px 0 54px; }
-.home-issue-group h3 { margin: 0; padding: 18px 0 14px; border-bottom: 1px solid var(--line); font-family: var(--condensed); font-size: 30px; line-height: 1; }
+.home-issue-group h2 { margin: 0; padding: 18px 0 14px; border-bottom: 1px solid var(--line); font-family: var(--condensed); font-size: 30px; line-height: 1; }
 .home-case-head, .home-case-row { display: grid; grid-template-columns: minmax(220px, .72fr) minmax(320px, 1.28fr); gap: clamp(30px, 6vw, 90px); }
 .home-case-head { padding: 11px 0; border-bottom: 1px solid var(--line-soft); color: var(--muted); font-family: var(--mono); font-size: 8px; }
 .home-case-row { min-height: 72px; align-items: center; padding: 16px 0; border-bottom: 1px solid var(--line-soft); text-decoration: none; }

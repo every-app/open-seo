@@ -1,7 +1,14 @@
 import * as React from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useRouter } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronsUpDown, FolderCog, Plus, Search } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  FolderCog,
+  Plus,
+  Search,
+  Settings,
+} from "lucide-react";
 import { getProjects } from "@/serverFunctions/projects";
 import { setLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
@@ -19,7 +26,10 @@ export function ProjectSwitcher({
   // drawer overlay.
   onCloseDrawer?: () => void;
 }) {
-  const navigate = useNavigate();
+  // Matches are read off router.state at click time; subscribing via
+  // useMatches() would re-render the whole sidebar on every route change for
+  // a value only a click needs.
+  const router = useRouter();
   const [creating, setCreating] = React.useState(false);
   // Controlled open state rather than daisyUI's CSS focus-within dropdown:
   // focus-within can't guarantee the search input ends up focused on open
@@ -76,9 +86,27 @@ export function ProjectSwitcher({
     onCloseDrawer?.();
     if (project.id === activeProjectId) return;
     setLastProjectId(project.id);
-    void navigate({
-      to: "/p/$projectId",
-      params: { projectId: project.id },
+    // Stay on the current page in the new project: the deepest matched route
+    // whose path's only dynamic segment is the project id. Deeper routes (a
+    // rank tracker, an audit result) reference entities owned by the old
+    // project, so they fall back to their section. Filtering on the path
+    // template rather than match.params matters: the router gives every match
+    // the location's full param set, so params can't tell layers apart.
+    const stayable = router.state.matches.findLast(
+      (match) =>
+        match.fullPath.includes("$projectId") &&
+        match.fullPath
+          .split("/")
+          .every(
+            (segment) => !segment.startsWith("$") || segment === "$projectId",
+          ),
+    );
+    // Navigating by href keeps typed-route generics out of a dynamic target
+    // while still running search validation; search params are deliberately
+    // not carried over — filters and session ids belong to the old project.
+    const template = stayable?.fullPath ?? "/p/$projectId";
+    void router.navigate({
+      href: template.split("$projectId").join(project.id).replace(/\/$/, ""),
     });
   };
 
@@ -190,28 +218,45 @@ export function ProjectSwitcher({
       // trigger still has focus).
       className="relative w-full"
     >
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label="Switch project"
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        onClick={() => (open ? closePanel() : openPanel())}
-        onKeyDown={handleTriggerKeyDown}
-        className="flex w-full items-center justify-between gap-2 rounded-lg border border-base-300 bg-base-100 px-3 py-1.5 text-left transition-colors hover:border-base-content/25"
-      >
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate text-sm font-medium text-base-content">
-            {activeProject?.name ?? "Select project"}
-          </span>
-          {activeProject?.domain ? (
-            <span className="truncate text-xs font-normal text-base-content/50">
-              {activeProject.domain}
+      <div className="flex items-stretch rounded-lg border border-base-300 bg-base-100">
+        <button
+          ref={triggerRef}
+          type="button"
+          aria-label="Switch project"
+          aria-expanded={open}
+          aria-haspopup="listbox"
+          onClick={() => (open ? closePanel() : openPanel())}
+          onKeyDown={handleTriggerKeyDown}
+          className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-l-lg px-3 py-1.5 text-left transition-colors hover:bg-base-200"
+        >
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-sm font-medium text-base-content">
+              {activeProject?.name ?? "Select project"}
             </span>
-          ) : null}
-        </span>
-        <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/40" />
-      </button>
+            {activeProject?.domain ? (
+              <span className="truncate text-xs font-normal text-base-content/50">
+                {activeProject.domain}
+              </span>
+            ) : null}
+          </span>
+          <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/40" />
+        </button>
+        {activeProject ? (
+          <Link
+            to="/p/$projectId/settings"
+            params={{ projectId: activeProject.id }}
+            aria-label="Project settings"
+            title="Project settings"
+            onClick={() => {
+              closePanel();
+              onCloseDrawer?.();
+            }}
+            className="flex shrink-0 items-center justify-center rounded-r-lg border-l border-base-300 px-2.5 text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+          >
+            <Settings className="size-4" />
+          </Link>
+        ) : null}
+      </div>
 
       {open ? (
         <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-lg">

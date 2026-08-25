@@ -27,7 +27,7 @@ import {
   toTopPagesFiltersPayload,
 } from "./backlinksFilterTypes";
 import type { BacklinksFiltersState } from "./useBacklinksFilters";
-import { getPersistedBacklinksSearchScope } from "./backlinksSearchScope";
+import { toScopeSearchParam } from "@/shared/researchScope";
 
 type UseBacklinksPageDataArgs = {
   projectId: string;
@@ -231,7 +231,7 @@ export function navigateToBacklinksSearch(
     search: (prev) => ({
       ...prev,
       target: values.target,
-      scope: getPersistedBacklinksSearchScope(values.target, values.scope),
+      scope: toScopeSearchParam(values.target, values.scope),
       tab: undefined,
       page: undefined,
       sort: undefined,

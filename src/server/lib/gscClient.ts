@@ -1,33 +1,13 @@
 import { getAuth } from "@/lib/auth";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
+import { GscApiError, GscTokenError } from "./gscErrors";
+
+export { GscApiError, GscTokenError } from "./gscErrors";
 
 const GSC_API_BASE = "https://www.googleapis.com/webmasters/v3";
 const GOOGLE_USERINFO_URL = "https://openidconnect.googleapis.com/v1/userinfo";
 
 /** A GSC REST call returned a non-2xx status. `status` drives user-facing messaging. */
-export class GscApiError extends Error {
-  constructor(
-    public readonly status: number,
-    message: string,
-    public readonly body?: string,
-  ) {
-    super(message);
-    this.name = "GscApiError";
-  }
-}
-
-/** No fresh access token could be minted — the user revoked the grant, or the
- *  refresh token expired (e.g. weekly in Google's OAuth "Testing" mode). */
-export class GscTokenError extends Error {
-  constructor(
-    message: string,
-    public readonly cause?: unknown,
-  ) {
-    super(message);
-    this.name = "GscTokenError";
-  }
-}
-
 export type GscSite = {
   siteUrl: string;
   permissionLevel: string;

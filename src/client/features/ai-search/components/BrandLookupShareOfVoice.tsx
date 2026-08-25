@@ -15,8 +15,11 @@ type ShareEntry = ShareOfVoice["entries"][number];
  */
 export function BrandLookupShareOfVoice({
   shareOfVoice,
+  isDomainLevel,
 }: {
   shareOfVoice: ShareOfVoice;
+  /** True under a URL scope: SoV always compares whole domains. */
+  isDomainLevel: boolean;
 }) {
   const target = shareOfVoice.entries.find((entry) => entry.isTarget) ?? null;
   const maxPct = Math.max(
@@ -27,7 +30,17 @@ export function BrandLookupShareOfVoice({
   return (
     <section className="flex h-full flex-col overflow-hidden rounded-xl border border-base-300 bg-base-100">
       <div className="flex items-baseline justify-between gap-2 border-b border-base-300 px-4 py-3">
-        <h3 className="text-sm font-semibold">Share of Voice</h3>
+        <h3 className="flex items-center gap-2 text-sm font-semibold">
+          Share of Voice
+          {isDomainLevel ? (
+            <span
+              className="tooltip badge badge-ghost badge-sm shrink-0 font-normal"
+              data-tip="Share of Voice compares whole domains — it is not narrowed to the page or folder you searched."
+            >
+              Domain-level
+            </span>
+          ) : null}
+        </h3>
         {target ? (
           <span className="text-xs text-base-content/50">
             <span className="font-medium text-base-content/80">

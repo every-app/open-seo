@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect } from "react";
-import { Loader2, Plus, Wrench } from "lucide-react";
+import { Brain, Loader2, Plus, Wrench } from "lucide-react";
 import { createSamSession } from "@/serverFunctions/sam";
 import {
   invalidateSamSessions,
@@ -75,25 +75,45 @@ export function SamChat({
   }
 
   if (activeSessionId) {
+    const activeTitle = sessions.find(
+      (session) => session.id === activeSessionId,
+    )?.title;
     return (
-      <div className="flex h-full min-h-0">
-        {/* useAgentChat suspends while it fetches the session's history; this
-            boundary keeps that suspension inside the chat panel instead of
-            letting it bubble up and swap out the whole shell — which read as
-            a full page refresh on every session switch. */}
-        <Suspense
-          fallback={
-            <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="size-5 animate-spin text-base-content/40" />
-            </div>
-          }
-        >
-          <SamConversation
-            key={activeSessionId}
-            projectId={projectId}
-            sessionId={activeSessionId}
-          />
-        </Suspense>
+      <div className="flex h-full min-h-0 flex-col">
+        {/* Session title + the shortest path to inspect or correct the shared
+            memory SAM reads and writes during the conversation. */}
+        <div className="flex items-center justify-between gap-3 border-b border-base-300 px-5 py-3.5">
+          <span className="truncate text-sm font-medium text-base-content/80">
+            {activeTitle ?? "Chat"}
+          </span>
+          <Link
+            to="/p/$projectId/settings/context"
+            params={{ projectId }}
+            className="flex shrink-0 items-center gap-1.5 text-xs text-base-content/60 transition-colors hover:text-base-content"
+          >
+            <Brain className="size-3.5" />
+            Project memory
+          </Link>
+        </div>
+        <div className="flex min-h-0 flex-1">
+          {/* useAgentChat suspends while it fetches the session's history; this
+              boundary keeps that suspension inside the chat panel instead of
+              letting it bubble up and swap out the whole shell — which read as
+              a full page refresh on every session switch. */}
+          <Suspense
+            fallback={
+              <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="size-5 animate-spin text-base-content/40" />
+              </div>
+            }
+          >
+            <SamConversation
+              key={activeSessionId}
+              projectId={projectId}
+              sessionId={activeSessionId}
+            />
+          </Suspense>
+        </div>
       </div>
     );
   }

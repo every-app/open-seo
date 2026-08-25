@@ -37,6 +37,19 @@ const billingCustomer = {
   userEmail: "team@example.com",
 };
 
+function mockTarget(
+  overrides: Partial<ReturnType<typeof normalizeBacklinksTarget>> = {},
+) {
+  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
+    apiTarget: "example.com",
+    displayTarget: "example.com",
+    scope: "domain",
+    includeSubdomains: false,
+    path: "",
+    ...overrides,
+  });
+}
+
 const pageInputDefaults = {
   projectId: "project_123",
   page: 1,
@@ -63,11 +76,7 @@ beforeEach(() => {
 });
 
 it("profiles only the summary and history for the overview and reuses cache on repeat", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
-    apiTarget: "example.com",
-    displayTarget: "example.com",
-    scope: "domain",
-  });
+  mockTarget();
   backlinksSummaryMock.mockResolvedValue({
     rank: 42,
     backlinks: 1200,
@@ -115,11 +124,7 @@ it("profiles only the summary and history for the overview and reuses cache on r
 });
 
 it("profiles backlink rows per page with offset and total count", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
-    apiTarget: "example.com",
-    displayTarget: "example.com",
-    scope: "domain",
-  });
+  mockTarget();
   backlinksRowsMock.mockResolvedValue({
     items: [
       {
@@ -172,11 +177,7 @@ it("profiles backlink rows per page with offset and total count", async () => {
 });
 
 it("translates filters into DataForSEO conditions for backlink rows", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
-    apiTarget: "example.com",
-    displayTarget: "example.com",
-    scope: "domain",
-  });
+  mockTarget();
   backlinksRowsMock.mockResolvedValue({ items: [], totalCount: 0 });
 
   await service.profileBacklinksPage(
@@ -211,10 +212,11 @@ it("translates filters into DataForSEO conditions for backlink rows", async () =
 });
 
 it("profiles referring domains and top pages pages separately", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
+  mockTarget({
     apiTarget: "https://example.com/foo",
     displayTarget: "https://example.com/foo",
-    scope: "page",
+    scope: "exact_url",
+    includeSubdomains: true,
   });
   referringDomainsMock.mockResolvedValue({
     items: [
@@ -269,11 +271,7 @@ it("profiles referring domains and top pages pages separately", async () => {
 });
 
 it("does not fall back to target spam score for referring domains", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
-    apiTarget: "example.com",
-    displayTarget: "example.com",
-    scope: "domain",
-  });
+  mockTarget();
   referringDomainsMock.mockResolvedValue({
     items: [
       {
@@ -304,12 +302,8 @@ it("does not fall back to target spam score for referring domains", async () => 
   expect(domains.rows[0]?.spamScore).toBeNull();
 });
 
-it("keeps page cache entries isolated per page and per organization", async () => {
-  vi.mocked(normalizeBacklinksTarget).mockReturnValue({
-    apiTarget: "example.com",
-    displayTarget: "example.com",
-    scope: "domain",
-  });
+it("keeps page cache entries isolated per page, organization, and scope", async () => {
+  mockTarget();
   backlinksRowsMock.mockResolvedValue({ items: [], totalCount: 0 });
 
   const input = {
@@ -331,6 +325,14 @@ it("keeps page cache entries isolated per page and per organization", async () =
     userEmail: "other@example.com",
   });
   expect(backlinksRowsMock).toHaveBeenCalledTimes(3);
+
+  // Same hostname, subdomains included: a different result set, not a cache hit.
+  mockTarget({ scope: "subdomains", includeSubdomains: true });
+  await service.profileBacklinksPage(
+    { ...input, scope: "subdomains" },
+    billingCustomer,
+  );
+  expect(backlinksRowsMock).toHaveBeenCalledTimes(4);
 });
 
 function parseCachedValue(raw: string): unknown {
@@ -340,3 +342,49 @@ function parseCachedValue(raw: string): unknown {
     return null;
   }
 }
+
+it("builds subfolder overview totals from two filtered backlink counts", async () => {
+  mockTarget({
+    displayTarget: "example.com/blog",
+    scope: "subfolder",
+    path: "/blog",
+  });
+  backlinksRowsMock
+    .mockResolvedValueOnce({ items: [], totalCount: 2500 })
+    .mockResolvedValueOnce({ items: [], totalCount: 180 });
+
+  const { overview } = await service.profileOverview(
+    { target: "example.com/blog", scope: "subfolder" },
+    billingCustomer,
+  );
+
+  expect(overview.summary.backlinks).toBe(2500);
+  expect(overview.summary.referringDomains).toBe(180);
+  expect(overview.summary.rank).toBeNull();
+  expect(overview.trends).toEqual([]);
+  expect(backlinksSummaryMock).not.toHaveBeenCalled();
+  expect(backlinksHistoryMock).not.toHaveBeenCalled();
+  expect(backlinksRowsMock).toHaveBeenCalledTimes(2);
+  expect(backlinksRowsMock).toHaveBeenNthCalledWith(
+    1,
+    expect.objectContaining({
+      mode: "as_is",
+      limit: 1,
+      filters: [
+        [
+          ["url_to", "like", "%://example.com/blog"],
+          "or",
+          ["url_to", "like", "%://example.com/blog/%"],
+          "or",
+          ["url_to", "like", "%://www.example.com/blog"],
+          "or",
+          ["url_to", "like", "%://www.example.com/blog/%"],
+        ],
+      ],
+    }),
+  );
+  expect(backlinksRowsMock).toHaveBeenNthCalledWith(
+    2,
+    expect.objectContaining({ mode: "one_per_domain", limit: 1 }),
+  );
+});

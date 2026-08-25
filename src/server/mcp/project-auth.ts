@@ -1,17 +1,16 @@
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { AppError } from "@/server/lib/errors";
-import {
-  buildBillingCustomer,
-  requireMcpToolAuthContext,
-  type ToolExtra,
-} from "@/server/mcp/context";
+import { buildBillingCustomer, type ToolContext } from "@/server/mcp/context";
 
 type ProjectScopedArgs = {
   projectId: string;
 };
 
-async function requireProjectAccess(extra: ToolExtra, projectId: string) {
-  const { baseUrl, ...auth } = requireMcpToolAuthContext(extra);
+async function requireProjectAccess(
+  toolContext: ToolContext,
+  projectId: string,
+) {
+  const { baseUrl, ...auth } = toolContext.auth;
 
   // Authorize the caller-supplied projectId against the token's organization.
   // Assert on the result instead of relying on the lookup throwing, so this
@@ -42,8 +41,8 @@ export function withMcpProjectAuth<TArgs extends ProjectScopedArgs, TResult>(
     context: McpProjectAuthContext,
   ) => Promise<TResult> | TResult,
 ) {
-  return async (args: TArgs, extra: ToolExtra) => {
-    const context = await requireProjectAccess(extra, args.projectId);
+  return async (args: TArgs, toolContext: ToolContext) => {
+    const context = await requireProjectAccess(toolContext, args.projectId);
     return handler(args, context);
   };
 }

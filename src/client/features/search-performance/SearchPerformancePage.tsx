@@ -201,9 +201,8 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
           </div>
           {report?.connected ? (
             <Link
-              to="/p/$projectId/settings"
+              to="/p/$projectId/settings/integrations"
               params={{ projectId }}
-              hash="search-console"
               className="link link-hover shrink-0 self-start text-sm font-medium text-base-content/60 transition-colors hover:text-base-content sm:mt-1"
             >
               Change property

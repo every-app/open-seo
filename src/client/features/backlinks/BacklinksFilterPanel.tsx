@@ -19,10 +19,13 @@ export function BacklinksFilterPanel({
   activeTab,
   filters,
   onApplied,
+  maxConditions,
 }: {
   activeTab: BacklinksTab;
   filters: BacklinksFiltersState;
   onApplied: () => void;
+  /** Scope filters can consume part of the DataForSEO condition budget. */
+  maxConditions?: number;
 }) {
   if (activeTab === "backlinks") {
     const state = filters.backlinks;
@@ -34,6 +37,7 @@ export function BacklinksFilterPanel({
         fields={BACKLINKS_FILTER_FIELDS}
         activeFilterCount={state.activeFilterCount}
         countConditions={countFilterConditions}
+        maxConditions={maxConditions}
         textFields={[
           {
             key: "include",
@@ -89,6 +93,7 @@ export function BacklinksFilterPanel({
         fields={REFERRING_DOMAINS_FILTER_FIELDS}
         activeFilterCount={state.activeFilterCount}
         countConditions={countFilterConditions}
+        maxConditions={maxConditions}
         textFields={[
           {
             key: "include",
@@ -136,6 +141,7 @@ export function BacklinksFilterPanel({
       fields={TOP_PAGES_FILTER_FIELDS}
       activeFilterCount={state.activeFilterCount}
       countConditions={countFilterConditions}
+      maxConditions={maxConditions}
       textFields={[
         {
           key: "include",

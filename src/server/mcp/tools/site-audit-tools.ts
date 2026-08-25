@@ -57,7 +57,7 @@ const runInputSchema = {
     .boolean()
     .optional()
     .describe(
-      "Run Lighthouse on a sample of up to 10 representative pages (default true).",
+      "Run Lighthouse on a sample of up to 10 representative pages (default false — it adds several minutes of wall-clock time). Pass true only when the user wants performance/Core Web Vitals detail.",
     ),
 } as const;
 
@@ -78,12 +78,15 @@ export const runSiteAuditTool = {
       .passthrough(),
     annotations: {
       readOnlyHint: false,
-      openWorldHint: true,
+      openWorldHint: false,
       destructiveHint: false,
     },
   },
   handler: withMcpProjectAuth(async (args: RunArgs, context) => {
-    const lighthouseStrategy = (args.runLighthouse ?? true) ? "auto" : "none";
+    // Default OFF for agent calls: Lighthouse turns a 1-2 minute crawl into a
+    // many-minute wait, which chat agents handle badly. The app UI passes its
+    // own explicit lighthouseStrategy, so this default only governs agents.
+    const lighthouseStrategy = (args.runLighthouse ?? false) ? "auto" : "none";
     const limitTier = await AuditService.resolveAuditLimitTier(
       context.auth.organizationId,
     );
@@ -128,7 +131,7 @@ export const runSiteAuditTool = {
     });
 
     return mcpResponse({
-      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it completes, then call get_audit_issues for the prioritized issue report.`,
+      text: `Audit ${auditId} started for ${args.url}. Poll get_audit_status until it finishes, then call get_audit_issues for the prioritized issue report (even a failed audit keeps results for every page it crawled).`,
       meta: buildProjectMeta(
         context,
         args.projectId,
@@ -153,7 +156,7 @@ export const getAuditStatusTool = {
   config: {
     title: "Get site audit status",
     description:
-      "Check the progress of a site audit (phase, pages crawled, Lighthouse progress). Free — reads OpenSEO state. Omit auditId for the most recent audit.",
+      "Check the progress of a site audit (phase, pages crawled, Lighthouse progress). Free — reads OpenSEO state and may reconcile a dead workflow by marking its audit failed. Omit auditId for the most recent audit.",
     inputSchema: statusInputSchema,
     outputSchema: z
       .object({
@@ -162,7 +165,7 @@ export const getAuditStatusTool = {
       })
       .passthrough(),
     annotations: {
-      readOnlyHint: true,
+      readOnlyHint: false,
       openWorldHint: false,
       destructiveHint: false,
     },
@@ -177,8 +180,16 @@ export const getAuditStatusTool = {
       status.lighthouseTotal > 0
         ? `, lighthouse ${status.lighthouseCompleted + status.lighthouseFailed}/${status.lighthouseTotal}`
         : "";
+    // Failed audits keep partial results — point agents at them instead of
+    // letting a mid-crawl death read as "no data".
+    const nextStep =
+      status.status === "completed"
+        ? " Call get_audit_issues for the issue report."
+        : status.status === "failed" && status.pagesCrawled > 0
+          ? ` The audit stopped early but kept results for the ${status.pagesCrawled} pages it crawled — call get_audit_issues for the partial issue report.`
+          : "";
     return mcpResponse({
-      text: `Audit ${status.id} (${status.startUrl}): ${status.status} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${status.status === "completed" ? " Call get_audit_issues for the issue report." : ""}`,
+      text: `Audit ${status.id} (${status.startUrl}): ${status.status} — phase ${status.currentPhase}, ${status.pagesCrawled}/${status.pagesTotal} pages${lighthouseNote}.${nextStep}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

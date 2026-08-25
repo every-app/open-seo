@@ -1,0 +1,16 @@
+{
+  "name": "openseo",
+  "owner": {
+    "name": "OpenSEO",
+    "url": "https://openseo.so"
+  },
+  "description": "OpenSEO's official Codex plugin marketplace.",
+  "plugins": [
+    {
+      "name": "openseo",
+      "source": "./plugins/openseo",
+      "description": "Without good data, your agent gives generic advice. Keyword research, competitor research, backlinks, and site audits. All for $10/month.",
+      "category": "Productivity"
+    }
+  ]
+}

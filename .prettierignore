@@ -8,6 +8,9 @@ routeTree.gen.ts
 
 # vendored skills are hash-pinned in skills-lock.json; don't reformat them
 .agents/skills/
+# real copies synced from .agents/skills/ via `pnpm sync-plugin-skills` — must
+# stay byte-identical to the canonical source, not reformatted
+plugins/openseo/skills/
 dist/
 drizzle/
 drizzle-pg/

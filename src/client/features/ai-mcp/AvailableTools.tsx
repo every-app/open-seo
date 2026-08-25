@@ -11,6 +11,23 @@ type ToolCategory = {
 
 const toolCategories: ToolCategory[] = [
   {
+    label: "Project Context",
+    tools: [
+      {
+        name: "get_project_context",
+        title: "Get project context",
+        description:
+          "Read your project's goals, positioning, competitors, and key pages.",
+      },
+      {
+        name: "update_project_context",
+        title: "Update project context",
+        description:
+          "Save what an agent learned back to your shared project context.",
+      },
+    ],
+  },
+  {
     label: "Keywords",
     tools: [
       {
@@ -22,6 +39,31 @@ const toolCategories: ToolCategory[] = [
         name: "get_rank_tracker",
         title: "Get rank tracking positions",
         description: "Read tracked keyword positions.",
+      },
+      {
+        name: "create_rank_tracker",
+        title: "Create a rank tracker",
+        description: "Configure a domain for rank tracking.",
+      },
+      {
+        name: "add_rank_tracking_keywords",
+        title: "Add tracked keywords",
+        description: "Add keywords to an existing rank tracker.",
+      },
+      {
+        name: "remove_rank_tracking_keywords",
+        title: "Remove tracked keywords",
+        description: "Stop tracking selected keyword IDs.",
+      },
+      {
+        name: "estimate_rank_tracker_cost",
+        title: "Estimate rank check cost",
+        description: "Preview the cost of an explicit rank check.",
+      },
+      {
+        name: "run_rank_tracker",
+        title: "Run a rank check",
+        description: "Check a tracker's current positions now.",
       },
       {
         name: "get_keyword_metrics",
@@ -99,6 +141,34 @@ const toolCategories: ToolCategory[] = [
         title: "Get business questions",
         description: "Read Google Business Profile Q&A rows.",
       },
+      {
+        name: "get_business_profile",
+        title: "Get business profile",
+        description:
+          "Audit a Google Business Profile's categories, rating, hours, and claim status.",
+      },
+      {
+        name: "get_business_reviews",
+        title: "Get business reviews",
+        description:
+          "Collect Google reviews, including owner replies and other-site sources.",
+      },
+      {
+        name: "get_business_updates",
+        title: "Get business updates",
+        description: "Check posting activity on a Google Business Profile.",
+      },
+      {
+        name: "list_business_categories",
+        title: "List business categories",
+        description: "Find valid Google Business category slugs.",
+      },
+      {
+        name: "get_local_rank_grid",
+        title: "Get local rank grid",
+        description:
+          "Check Google Maps rank at each point of a grid around a business.",
+      },
     ],
   },
   {
@@ -115,6 +185,68 @@ const toolCategories: ToolCategory[] = [
         title: "Inspect URLs",
         description:
           "Check index status, crawl, and canonical for up to 10 URLs.",
+      },
+    ],
+  },
+  {
+    label: "Google Analytics",
+    tools: [
+      {
+        name: "get_google_analytics_organic_overview",
+        title: "Get organic overview",
+        description:
+          "Compare top-line organic performance with the previous period.",
+      },
+      {
+        name: "get_google_analytics_organic_landing_pages",
+        title: "Get organic landing pages",
+        description:
+          "Read organic sessions, engagement, key events, and revenue by landing page.",
+      },
+      {
+        name: "get_google_analytics_page_performance",
+        title: "Get page performance",
+        description: "Read page views, users, engagement time, and key events.",
+      },
+      {
+        name: "get_google_analytics_key_events",
+        title: "Get key events",
+        description: "Read key-event outcomes by event or landing page.",
+      },
+      {
+        name: "get_search_opportunities",
+        title: "Get search opportunities",
+        description:
+          "Join Search Console demand with Analytics outcomes to prioritize pages.",
+      },
+      {
+        name: "get_google_analytics_traffic_acquisition",
+        title: "Get traffic acquisition",
+        description:
+          "Compare channels, source/medium, or campaigns using session outcomes.",
+      },
+      {
+        name: "get_google_analytics_measurement_health",
+        title: "Check measurement health",
+        description:
+          "Inspect streams, enhanced measurement, key events, and custom definitions.",
+      },
+      {
+        name: "get_google_analytics_ecommerce_performance",
+        title: "Get ecommerce performance",
+        description:
+          "Read product-funnel or landing-page transaction performance.",
+      },
+      {
+        name: "get_google_analytics_site_search",
+        title: "Get site search",
+        description: "Read measured internal search terms and outcomes.",
+      },
+      {
+        name: "get_google_analytics_audience_breakdown",
+        title: "Get audience breakdown",
+        description:
+          "Compare device, country, or new-versus-returning audiences.",
       },
     ],
   },

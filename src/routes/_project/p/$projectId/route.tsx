@@ -1,7 +1,7 @@
 import {
   Outlet,
   createFileRoute,
-  useLocation,
+  useMatch,
   useNavigate,
 } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -65,12 +65,16 @@ function ProjectLayout() {
   useProjectAccessRedirect(projectId);
 
   // Remember this as the last-visited project for the landing redirect.
-  // Settings is excluded: editing another project's settings is
-  // administration, not a context switch, so it shouldn't change which
-  // project the app opens next time.
-  const isSettingsPage = useLocation({
-    select: (l) => l.pathname.endsWith("/settings"),
-  });
+  // Settings and its sub-pages are excluded: editing another project's
+  // settings is administration, not a context switch, so it shouldn't change
+  // which project the app opens next time. (An explicit choice still counts:
+  // the switcher and project creation set it themselves, settings page or not.)
+  const isSettingsPage =
+    useMatch({
+      from: "/_project/p/$projectId/settings",
+      shouldThrow: false,
+      select: () => true,
+    }) ?? false;
   useEffect(() => {
     if (isSettingsPage) return;
     setLastProjectId(projectId);

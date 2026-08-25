@@ -21,6 +21,11 @@ export type FeaturePage = {
   showMetrics?: boolean;
   useCases: string[];
   differentiators: string[];
+  featuredLink?: {
+    title: string;
+    description: string;
+    href: string;
+  };
   related: Array<{
     label: string;
     href: string;
@@ -112,7 +117,7 @@ export const featurePages = {
       {
         question: "Can I use OpenSEO as a free keyword research tool?",
         answer:
-          "Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. OpenSEO is the most affordable option; you can start for free, and paid plans start at $10/month with usage credits included. It's also open source, so you can self-host with your own DataForSEO account.",
+          "Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. You can start OpenSEO for free; the paid plan is $10/month with usage credits included. It's also open source, so you can self-host with your own DataForSEO account.",
       },
       {
         question: "Does OpenSEO show live search results?",
@@ -123,7 +128,7 @@ export const featurePages = {
     guides: {
       title: "The Keyword Research Strategy Library",
       description:
-        "Practitioner plays that treat keyword research as demand discovery, not a volume spreadsheet. Each guide is a full walkthrough with the copy-paste MCP prompt that runs it.",
+        "Practitioner strategies for using keyword research to discover demand. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
       items: [
         {
           label: "Seed from conversation, not a volume report",
@@ -139,8 +144,7 @@ export const featurePages = {
         },
         {
           label: "Search-intent mapping (hot / warm / cold)",
-          description:
-            "Label every keyword by buying temperature before you write.",
+          description: "Sort keywords by buying temperature before you write.",
           href: "/library/keyword-research/search-intent-mapping",
         },
         {
@@ -151,7 +155,7 @@ export const featurePages = {
         },
       ],
       cta: {
-        label: "Browse the full Strategy Library",
+        label: "Browse all keyword research strategies",
         href: "/library/keyword-research",
       },
     },
@@ -208,7 +212,7 @@ export const featurePages = {
     ],
     related: [
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlink-checker" },
       { label: "Keyword Research", href: "/features/keyword-research" },
     ],
     faqs: [
@@ -229,18 +233,18 @@ export const featurePages = {
       },
     ],
   },
-  backlinkChecker: {
-    slug: FEATURE_PAGE_SLUGS.backlinkChecker,
+  backlinks: {
+    slug: FEATURE_PAGE_SLUGS.backlinks,
     eyebrow: "Backlinks",
     navDescription: "Check links and referring domains.",
     title: "Backlink checker for understanding a domain's link profile",
     description:
       "Analyze backlinks, referring domains, and linked pages without separating link research from the rest of your SEO workspace.",
-    primaryKeyword: "backlink checker",
+    primaryKeyword: "backlink analysis",
     secondaryKeywords: [
-      "free backlink checker",
       "backlink analysis tool",
-      "google backlink checker",
+      "referring domains",
+      "link profile",
     ],
     imageAlt: "OpenSEO backlinks report",
     imageSrc:
@@ -279,6 +283,12 @@ export const featurePages = {
       "Self-host or adapt backlink reporting for your team's workflow.",
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
+    featuredLink: {
+      title: "Free backlink checker",
+      description:
+        "Check any domain's backlink summary and top 15 backlinks. No signup required.",
+      href: "/backlink-checker",
+    },
     related: [
       {
         label: "Link Prospecting",
@@ -289,9 +299,9 @@ export const featurePages = {
     ],
     faqs: [
       {
-        question: "What is a backlink checker used for?",
+        question: "What is backlink analysis used for?",
         answer:
-          "A backlink checker helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
+          "Backlink analysis helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
       },
       {
         question: "Can I check competitor backlinks in OpenSEO?",
@@ -361,7 +371,7 @@ export const featurePages = {
         href: "/docs/skills/competitor-analysis",
       },
       { label: "Keyword Research", href: "/features/keyword-research" },
-      { label: "Backlink Checker", href: "/features/backlink-checker" },
+      { label: "Backlinks", href: "/features/backlink-checker" },
     ],
     faqs: [
       {
@@ -385,6 +395,41 @@ export const featurePages = {
           "Not quite. It includes an estimated-traffic metric, but the value is seeing which keywords and pages produce that traffic, which a plain traffic checker doesn't show.",
       },
     ],
+    guides: {
+      title: "The Competitive Analysis Strategy Library",
+      description:
+        "Practitioner strategies for turning a domain overview into a decision. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "Find out who your real competitors are",
+          description:
+            "Compare a keyword set and read the domains actually in your SERPs.",
+          href: "/library/competitive-analysis/find-your-real-competitors",
+        },
+        {
+          label: "Keyword gap analysis: subtract the brand terms first",
+          description:
+            "Strip brand from both sides and the gap becomes buildable.",
+          href: "/library/competitive-analysis/keyword-gap-analysis",
+        },
+        {
+          label: "How accurate are competitor traffic estimates?",
+          description:
+            "Close-variant stacking, other business lines, and how to correct for both.",
+          href: "/library/competitive-analysis/competitor-traffic-estimates",
+        },
+        {
+          label: "Read a competitor's link profile before you copy it",
+          description:
+            "Referring domains, spam score, and the broken links worth chasing.",
+          href: "/library/competitive-analysis/backlink-gap-analysis",
+        },
+      ],
+      cta: {
+        label: "Browse all competitive analysis strategies",
+        href: "/library/competitive-analysis",
+      },
+    },
   },
   rankTracking: {
     slug: FEATURE_PAGE_SLUGS.rankTracking,
@@ -695,7 +740,7 @@ export const featureGroups = [
     description: "Understand competitors, backlinks, and technical health.",
     pages: [
       featurePages.domainOverview,
-      featurePages.backlinkChecker,
+      featurePages.backlinks,
       featurePages.siteAudit,
     ],
   },

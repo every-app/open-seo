@@ -63,13 +63,27 @@ export async function getOrCreateOrganizationCustomer(
   return { id: customer.id };
 }
 
-export async function customerHasPaidPlan(customerId: string) {
+export async function customerHasPaidPlan(
+  customerId: string,
+  opts: { retryDenied?: boolean } = {},
+) {
   const result = await autumn.check({
     customerId,
     featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
   });
+  if (result.allowed || !opts.retryDenied) return result.allowed;
 
-  return result.allowed;
+  // Autumn sometimes returns degraded entitlement data in a successful
+  // response (see the balance retry in getUsageCreditsRemaining). Where a
+  // false negative does lasting damage — the scheduler would advance a paying
+  // org's schedule and flag "plan_required" — callers opt into one re-check.
+  // Interactive deny paths skip it to stay fast for genuinely free users.
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  const retry = await autumn.check({
+    customerId,
+    featureId: AUTUMN_PAID_PLAN_FEATURE_ID,
+  });
+  return retry.allowed;
 }
 
 export async function customerHasManagedAccess(customerId: string) {
@@ -96,13 +110,26 @@ async function getUsageCreditsRemaining(customerId: string): Promise<{
     }),
   ]);
 
+  // Autumn sometimes returns a successful response with no monthly balance
+  // for a customer that holds the feature. Retry that read once because the
+  // SDK's retry policy only covers failed HTTP requests.
+  let monthlyBalance = monthlyCheck.balance;
+  if (!monthlyBalance) {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    const retry = await autumn.check({
+      customerId,
+      featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+    });
+    monthlyBalance = retry.balance;
+  }
+
   // Every hosted org holds the monthly feature (the free plan is the Autumn
   // default, attached at customer creation), so a check with no balance data
   // is a broken read, not an empty wallet. Throwing keeps it out of the
   // credit math — coercing it to 0 once locked a paying customer with ~9k
   // credits out of chat (2026-07-20). The topup balance genuinely doesn't
   // exist until a first top-up, so 0 is the honest reading there.
-  if (!monthlyCheck.balance) {
+  if (!monthlyBalance) {
     throw new AppError(
       "UPSTREAM_UNAVAILABLE",
       `Autumn check returned no ${AUTUMN_SEO_DATA_BALANCE_FEATURE_ID} balance for customer ${customerId}`,
@@ -110,7 +137,7 @@ async function getUsageCreditsRemaining(customerId: string): Promise<{
   }
 
   return {
-    monthlyRemaining: monthlyCheck.balance.remaining,
+    monthlyRemaining: monthlyBalance.remaining,
     topupRemaining: topupCheck.balance?.remaining ?? 0,
   };
 }

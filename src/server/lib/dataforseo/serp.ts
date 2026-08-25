@@ -12,6 +12,7 @@ import {
   assertOk,
   buildTaskBilling,
   isNoResultsTask,
+  isTaskInProgress,
   parseTaskItems,
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
@@ -282,10 +283,6 @@ type RankCheckTaskOutcome =
   | { status: "failed"; message: string }
   | { status: "completed"; result: RankCheckResult };
 
-// Task lifecycle codes meaning "not done yet": Task Created / Task Handed /
-// Task In Queue.
-const TASK_IN_PROGRESS_STATUS_CODES = new Set([20100, 40601, 40602]);
-
 /**
  * Collect one queued task's result. Deliberately not metered and not wrapped
  * in the billing envelope: collection is free (the task was charged at
@@ -308,10 +305,7 @@ export async function fetchRankCheckTaskResult(input: {
     );
   }
 
-  if (
-    task.status_code !== undefined &&
-    TASK_IN_PROGRESS_STATUS_CODES.has(task.status_code)
-  ) {
+  if (isTaskInProgress(task)) {
     return { status: "pending" };
   }
 
@@ -364,7 +358,9 @@ export async function fetchLocalSerp(input: {
         search_places: input.searchPlaces,
       }),
     ]);
-    const task = assertOk(response);
+    // 40501 = billed empty SERP; DataForSEO returns it for some coordinate-only
+    // Maps and Local Finder queries (both paths below opt in).
+    const task = assertOk(response, { treatNoResultsAsEmpty: true });
     return {
       data: task.result?.[0]?.items ?? [],
       billing: buildTaskBilling(task),
@@ -381,7 +377,7 @@ export async function fetchLocalSerp(input: {
       depth: input.depth,
     }),
   ]);
-  const task = assertOk(response);
+  const task = assertOk(response, { treatNoResultsAsEmpty: true });
   return {
     data: task.result?.[0]?.items ?? [],
     billing: buildTaskBilling(task),

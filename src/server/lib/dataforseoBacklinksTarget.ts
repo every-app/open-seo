@@ -1,118 +1,79 @@
 import { AppError } from "@/server/lib/errors";
-import type { BacklinksLookupInput } from "@/types/schemas/backlinks";
-import { parse as parseTld } from "tldts";
+import {
+  resolveBacklinksScope,
+  type BacklinksScopeWithLegacy,
+} from "@/types/schemas/backlinks";
+import {
+  parseResearchTarget,
+  type ResearchScope,
+} from "@/shared/researchScope";
 
 type NormalizedBacklinkTarget = {
   apiTarget: string;
   displayTarget: string;
-  scope: "domain" | "page";
+  scope: ResearchScope;
+  /** DataForSEO `include_subdomains`; ignored by the API for page targets. */
+  includeSubdomains: boolean;
+  /**
+   * Subfolder scope only: the normalized path driving the url_to/url prefix
+   * filters (the API itself has no prefix targeting). `""` for other scopes.
+   */
+  path: string;
 };
 
 type NormalizeBacklinksTargetOptions = {
-  scope?: BacklinksLookupInput["scope"];
+  scope?: BacklinksScopeWithLegacy;
 };
 
-function normalizePageTargetUrl(url: URL, hostname: string): string {
-  const normalizedUrl = new URL(url.toString());
-  normalizedUrl.hostname = hostname;
-
-  if (normalizedUrl.pathname.length > 1) {
-    normalizedUrl.pathname = normalizedUrl.pathname.replace(/\/+$/, "");
-  }
-
-  return normalizedUrl.toString();
-}
-
+/**
+ * Backlinks-flavored wrapper over the shared research-target parser. The
+ * backlinks-specific rules: an exact-URL target is sent as an absolute URL
+ * (preserving an explicit http:// scheme, since url matching is exact) and
+ * rejects query strings/fragments instead of silently stripping them.
+ */
 export function normalizeBacklinksTarget(
   input: string,
   options: NormalizeBacklinksTargetOptions = {},
 ): NormalizedBacklinkTarget {
   const trimmed = input.trim();
-  if (!trimmed) {
-    throw new AppError("VALIDATION_ERROR", "Target is required");
+  const requestedScope = options.scope
+    ? resolveBacklinksScope(options.scope)
+    : undefined;
+
+  const parsed = parseResearchTarget(trimmed, requestedScope);
+  if (!parsed.ok) {
+    throw new AppError("VALIDATION_ERROR", parsed.message);
   }
+  const target = parsed.target;
 
-  const hasExplicitProtocol = /^[a-zA-Z][a-zA-Z\d+.-]*:\/\//.test(trimmed);
-  const withProtocol = hasExplicitProtocol ? trimmed : `https://${trimmed}`;
-
-  let parsed: URL;
-  try {
-    parsed = new URL(withProtocol);
-  } catch {
-    throw new AppError("VALIDATION_ERROR", "Target is invalid");
-  }
-
-  const exactHostname = parsed.hostname.toLowerCase();
-  const domainHostname = exactHostname.replace(/^www\./, "");
-  if (!domainHostname || !domainHostname.includes(".")) {
-    throw new AppError("VALIDATION_ERROR", "Target is invalid");
-  }
-
-  const parsedHostname = parseTld(domainHostname, {
-    allowPrivateDomains: true,
-  });
-  if (
-    parsedHostname.isIp ||
-    !parsedHostname.publicSuffix ||
-    (parsedHostname.isIcann !== true && parsedHostname.isPrivate !== true)
-  ) {
-    throw new AppError("VALIDATION_ERROR", "Target is invalid");
-  }
-
-  if (parsed.username || parsed.password) {
-    throw new AppError(
-      "VALIDATION_ERROR",
-      "Page URLs with embedded credentials are not supported",
-    );
-  }
-
-  const hasMeaningfulPath = parsed.pathname !== "/";
-  const requestedScope = options.scope;
-
-  if (requestedScope === "domain") {
+  if (target.scope !== "exact_url") {
     return {
-      apiTarget: domainHostname,
-      displayTarget: domainHostname,
-      scope: "domain",
+      apiTarget: target.hostname,
+      displayTarget:
+        target.scope === "subfolder" ? target.display : target.hostname,
+      scope: target.scope,
+      includeSubdomains: target.scope === "subdomains",
+      path: target.scope === "subfolder" ? target.path : "",
     };
   }
 
-  if (parsed.search || parsed.hash) {
+  // Query strings and fragments would target a different page than the one
+  // the user sees, so a page lookup rejects them rather than dropping them.
+  if (/[?#]/.test(trimmed)) {
     throw new AppError(
       "VALIDATION_ERROR",
       "Page URLs with query strings or fragments are not supported",
     );
   }
 
-  if (requestedScope === "page") {
-    const normalizedUrl = new URL(parsed.toString());
-    if (!hasExplicitProtocol && !hasMeaningfulPath) {
-      normalizedUrl.pathname = "/";
-    }
-
-    const normalizedTarget = normalizePageTargetUrl(
-      normalizedUrl,
-      exactHostname,
-    );
-    return {
-      apiTarget: normalizedTarget,
-      displayTarget: normalizedTarget,
-      scope: "page",
-    };
-  }
-
-  if (hasExplicitProtocol || hasMeaningfulPath) {
-    const normalizedTarget = normalizePageTargetUrl(parsed, exactHostname);
-    return {
-      apiTarget: normalizedTarget,
-      displayTarget: normalizedTarget,
-      scope: "page",
-    };
-  }
-
+  const protocol = /^http:\/\//i.test(trimmed) ? "http" : "https";
+  const pageUrl = `${protocol}://${target.urlHostname}${target.path || "/"}`;
   return {
-    apiTarget: domainHostname,
-    displayTarget: domainHostname,
-    scope: "domain",
+    apiTarget: pageUrl,
+    displayTarget: pageUrl,
+    scope: "exact_url",
+    // Irrelevant for a page target; kept true so the payload is unchanged.
+    includeSubdomains: true,
+    path: "",
   };
 }

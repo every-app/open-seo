@@ -1,6 +1,7 @@
 import { Clock, History, X } from "lucide-react";
 import { Globe } from "lucide-react";
 import type { DomainHistoryItem } from "@/client/features/domain/types";
+import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
 type Props = {
   history: DomainHistoryItem[];
@@ -58,7 +59,7 @@ export function DomainHistorySection({
                   {item.domain}
                 </p>
                 <p className="text-sm text-base-content/60 truncate">
-                  {item.subdomains ? "Include subdomains" : "Root domain only"}
+                  {RESEARCH_SCOPE_LABELS[item.scope]}
                 </p>
               </div>
             </button>

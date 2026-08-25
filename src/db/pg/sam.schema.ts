@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, pgTable, primaryKey, text } from "drizzle-orm/pg-core";
+import { index, pgTable, text } from "drizzle-orm/pg-core";
 import { user } from "./better-auth-schema";
 import { projects } from "./app.schema";
 
@@ -36,19 +36,4 @@ export const samSessions = pgTable(
       table.updatedAt,
     ),
   ],
-);
-
-// See src/db/sam.schema.ts for the role of this table (shared SAM context
-// blocks per project).
-export const samProjectMemory = pgTable(
-  "sam_project_memory",
-  {
-    projectId: text("project_id")
-      .notNull()
-      .references(() => projects.id, { onDelete: "cascade" }),
-    label: text("label").notNull(),
-    content: text("content").notNull(),
-    updatedAt: text("updated_at").notNull().default(isoNow),
-  },
-  (table) => [primaryKey({ columns: [table.projectId, table.label] })],
 );

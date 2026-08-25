@@ -1,11 +1,10 @@
-import {
-  normalizeObjectSchema,
-  safeParseAsync,
-} from "@modelcontextprotocol/sdk/server/zod-compat.js";
-import type { AuthInfo } from "@modelcontextprotocol/sdk/server/auth/types.js";
-import type { ToolExtra } from "@/server/mcp/context";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MCP_AUTH_CONTEXT_PROP } from "@/server/mcp/context";
+import { AppError } from "@/server/lib/errors";
+import { objectSchema } from "@/server/mcp/output-schemas";
+import * as researchTools from "./dataforseo-research-tools";
+import * as localSeoTools from "./local-seo-tools";
+import { getBacklinksProfileTool } from "./get-backlinks-profile";
+import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
@@ -41,32 +40,10 @@ class ProviderRow {
   ) {}
 }
 
-const authContext = {
-  userId: "user_123",
+const toolContext = makeToolContext({
   userEmail: "team@example.com",
-  organizationId: "org_123",
-  clientId: "client_123",
-  scopes: ["mcp"],
-  audience: "open-seo",
-  subject: "user_123",
   baseUrl: "https://app.example.com",
-};
-
-const authExtra: ToolExtra = {
-  signal: new AbortController().signal,
-  requestId: 1,
-  sendNotification: vi.fn(),
-  sendRequest: vi.fn(),
-  authInfo: {
-    token: "token",
-    clientId: "client_123",
-    scopes: ["mcp"],
-    resource: new URL("https://app.example.com/mcp"),
-    extra: {
-      [MCP_AUTH_CONTEXT_PROP]: authContext,
-    },
-  } satisfies AuthInfo,
-};
+});
 
 const backlinkPage = {
   rows: [
@@ -97,8 +74,6 @@ const backlinkPage = {
 };
 
 beforeEach(() => {
-  mocks.getProjectForOrganization.mockReset();
-  mocks.profileBacklinksPage.mockReset();
   mocks.getProjectForOrganization.mockResolvedValue({
     id: "project_123",
     locationCode: 2840,
@@ -114,36 +89,50 @@ describe("DataForSEO research tool output schemas", () => {
     ["search_local_businesses", "businesses"],
     ["get_google_business_questions", "questions"],
     ["get_ranked_keywords", "keywords"],
+    ["get_business_reviews", "reviews"],
+    ["get_business_updates", "updates"],
   ])(
     "%s accepts typed (non-plain-object) provider rows",
     async (toolName, field) => {
-      const tools = await import("./dataforseo-research-tools");
+      const tools = { ...researchTools, ...localSeoTools };
       const tool = Object.values(tools).find((t) => t.name === toolName);
       if (!tool) throw new Error(`tool ${toolName} not found`);
 
-      const schema = normalizeObjectSchema(tool.config.outputSchema);
-      if (!schema) throw new Error("output schema did not normalize");
+      const schema = objectSchema(tool.config.outputSchema);
 
       // Mirror the MCP server: validate structuredContent against the tool's
       // own output schema. Extra keys (e.g. get_ranked_keywords' totalCount)
       // are allowed by the passthrough schemas, so one payload covers all.
-      const result = await safeParseAsync(schema, {
+      const result = await schema.safeParseAsync({
         [field]: [new ProviderRow("example.com", 1)],
         totalCount: 1,
+        // Required by the queued business-data tools; ignored by the rest.
+        status: "completed",
+        taskId: "google:task-1",
       });
 
       expect(result.success).toBe(true);
     },
   );
 
-  it("get_backlinks_profile accepts a paginated backlinks profile payload", async () => {
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
-    const schema = normalizeObjectSchema(
-      getBacklinksProfileTool.config.outputSchema,
+  it("get_business_profile accepts a typed provider profile object", async () => {
+    const schema = objectSchema(
+      localSeoTools.getBusinessProfileTool.config.outputSchema,
     );
-    if (!schema) throw new Error("output schema did not normalize");
 
-    const result = await safeParseAsync(schema, {
+    const result = await schema.safeParseAsync({
+      profile: new ProviderRow("example.com", 1),
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it("get_backlinks_profile accepts a paginated backlinks profile payload", async () => {
+    const schema = objectSchema(getBacklinksProfileTool.config.outputSchema);
+
+    const result = await schema.safeParseAsync({
+      target: "example.com",
+      scope: "domain",
       backlinks: backlinkPage,
       meta: {
         organizationId: "org_123",
@@ -159,7 +148,6 @@ describe("DataForSEO research tool output schemas", () => {
 describe("get_backlinks_profile MCP tool", () => {
   it("returns paginated backlink rows and honors filters, sorting, and mode", async () => {
     mocks.profileBacklinksPage.mockResolvedValue(backlinkPage);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     const result = await getBacklinksProfileTool.handler(
       {
@@ -178,7 +166,7 @@ describe("get_backlinks_profile MCP tool", () => {
         mode: "as_is",
         hideSpam: false,
       },
-      authExtra,
+      toolContext,
     );
 
     expect(mocks.profileBacklinksPage).toHaveBeenCalledWith(
@@ -217,7 +205,6 @@ describe("get_backlinks_profile MCP tool", () => {
       page: 2,
     };
     mocks.profileBacklinksPage.mockResolvedValue(finalPage);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     const result = await getBacklinksProfileTool.handler(
       {
@@ -232,7 +219,7 @@ describe("get_backlinks_profile MCP tool", () => {
         mode: "one_per_domain",
         hideSpam: true,
       },
-      authExtra,
+      toolContext,
     );
 
     expect(result.structuredContent?.backlinks).toMatchObject({
@@ -244,13 +231,11 @@ describe("get_backlinks_profile MCP tool", () => {
   });
 
   it("preserves Backlinks API access and credit errors", async () => {
-    const { AppError } = await import("@/server/lib/errors");
     const error = new AppError(
       "BACKLINKS_BILLING_ISSUE",
       "The connected DataForSEO account has a billing or balance issue",
     );
     mocks.profileBacklinksPage.mockRejectedValue(error);
-    const { getBacklinksProfileTool } = await import("./get-backlinks-profile");
 
     await expect(
       getBacklinksProfileTool.handler(
@@ -266,7 +251,7 @@ describe("get_backlinks_profile MCP tool", () => {
           mode: "one_per_domain",
           hideSpam: true,
         },
-        authExtra,
+        toolContext,
       ),
     ).rejects.toMatchObject({
       code: "BACKLINKS_BILLING_ISSUE",

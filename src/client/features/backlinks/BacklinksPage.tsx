@@ -193,10 +193,6 @@ export function BacklinksPage({
         <BacklinksSearchCard
           errorMessage={overviewErrorMessage}
           initialValues={searchCardInitialValues}
-          canOpenSearch={(values) =>
-            searchTabs.canOpenTab(toBacklinksTabInput(values))
-          }
-          tabLimit={searchTabs.limit}
           onSubmit={(values) => {
             searchTabs.openTab(toBacklinksTabInput(values));
             navigateToBacklinksSearch(navigate, values);

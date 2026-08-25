@@ -60,7 +60,7 @@ export interface DataforseoTaskLike {
   [key: string]: unknown;
 }
 
-interface DataforseoResponseLike<T extends DataforseoTaskLike> {
+export interface DataforseoResponseLike<T extends DataforseoTaskLike> {
   status_code?: number;
   status_message?: string;
   tasks?: T[];
@@ -123,6 +123,17 @@ export function isNoResultsTask(task: DataforseoTaskLike): boolean {
   );
 }
 
+/** Task lifecycle codes meaning "not done yet": Task Created / Task Handed /
+ *  Task In Queue. A task_get returning one of these is pending, not failed. */
+const TASK_IN_PROGRESS_STATUS_CODES = new Set([20100, 40601, 40602]);
+
+export function isTaskInProgress(task: DataforseoTaskLike): boolean {
+  return (
+    task.status_code !== undefined &&
+    TASK_IN_PROGRESS_STATUS_CODES.has(task.status_code)
+  );
+}
+
 type AssertOkOptions = {
   /** Maps a recognised access / billing failure to a product error. */
   classify?: DataforseoErrorClassifier;
@@ -130,6 +141,9 @@ type AssertOkOptions = {
   classifyPath?: string;
   /** Treat DataForSEO's "no search results" (40501) as an empty success. */
   treatNoResultsAsEmpty?: boolean;
+  /** Task status that counts as success. Live endpoints return 20000; task_post
+   *  entries return 20100 "Task Created". */
+  okTaskStatusCode?: number;
 };
 
 /**
@@ -149,7 +163,8 @@ export function assertOk<T extends DataforseoTaskLike>(
       "DataForSEO returned an empty response",
     );
   }
-  const { classify, classifyPath, treatNoResultsAsEmpty } = options;
+  const { classify, classifyPath, treatNoResultsAsEmpty, okTaskStatusCode } =
+    options;
 
   if (response.status_code !== 20000) {
     const message = response.status_message || "DataForSEO request failed";
@@ -164,7 +179,7 @@ export function assertOk<T extends DataforseoTaskLike>(
     throw new AppError("INTERNAL_ERROR", "DataForSEO response missing task");
   }
 
-  if (task.status_code !== 20000) {
+  if (task.status_code !== (okTaskStatusCode ?? 20000)) {
     if (treatNoResultsAsEmpty && isNoResultsTask(task)) return task;
 
     const message = task.status_message || "DataForSEO task failed";

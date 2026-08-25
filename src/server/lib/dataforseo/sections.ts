@@ -7,8 +7,13 @@
 // re-enters the eager graph. SDK-free values live in shared.ts instead.
 
 export {
+  fetchBusinessDataTaskResult,
+  fetchBusinessListingsCategories,
   fetchBusinessListingsSearch,
+  fetchMyBusinessInfo,
   fetchQuestionsAnswers,
+  postGoogleReviewsTask,
+  postMyBusinessUpdatesTask,
 } from "@/server/lib/dataforseo/business";
 
 export {

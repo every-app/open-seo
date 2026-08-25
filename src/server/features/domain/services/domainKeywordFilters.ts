@@ -6,6 +6,7 @@ import {
   parseFilterTerms,
   type FilterClause,
 } from "@/server/lib/dataforseo/filters";
+import type { ScopeFilter } from "@/server/lib/dataforseo/researchScopeFilters";
 import type { DomainKeywordsFilters } from "@/types/schemas/domain";
 
 export type DomainKeywordsSortMode =
@@ -34,12 +35,14 @@ export function buildOrderBy(
 /**
  * Each include/exclude term is one ilike clause; numeric ranges add one per
  * bound; the free-text search term adds one OR-group of two (keyword OR url).
- * The client surfaces the same condition count and disables Apply when over
- * the DataForSEO budget.
+ * Scope clauses (research scope narrowing) are ANDed in front and consume
+ * part of the same budget. The client surfaces the same condition count and
+ * disables Apply when over the DataForSEO budget.
  */
 export function buildKeywordFilters(
   filters: DomainKeywordsFilters,
   searchTerm?: string,
+  scopeFilter?: ScopeFilter,
 ): unknown[] {
   const conditions: FilterClause[] = [];
 
@@ -92,11 +95,20 @@ export function buildKeywordFilters(
   const trimmedSearch = searchTerm?.trim();
   const searchGroup = trimmedSearch ? buildSearchGroup(trimmedSearch) : null;
 
-  // The search OR-group costs 2 slots; everything else is 1.
-  assertFilterConditionBudget(conditions.length + (searchGroup ? 2 : 0));
+  // The search OR-group costs 2 slots; scope clauses cost their reported
+  // count; everything else is 1.
+  assertFilterConditionBudget(
+    (scopeFilter?.conditionCount ?? 0) +
+      conditions.length +
+      (searchGroup ? 2 : 0),
+  );
 
   return joinClauses(
-    searchGroup ? [...conditions, searchGroup] : conditions,
+    [
+      ...(scopeFilter?.clauses ?? []),
+      ...conditions,
+      ...(searchGroup ? [searchGroup] : []),
+    ],
     "and",
   );
 }

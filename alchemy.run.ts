@@ -271,6 +271,7 @@ const dataEnv = {
   OPENROUTER_MODEL: optionalVar("OPENROUTER_MODEL"),
   AUTUMN_SECRET_KEY: optionalSecret("AUTUMN_SECRET_KEY"),
   AUTUMN_WEBHOOK_SECRET: optionalSecret("AUTUMN_WEBHOOK_SECRET"),
+  GDPR_ERASURE_SECRET: optionalSecret("GDPR_ERASURE_SECRET"),
   LOOPS_API_KEY: optionalSecret("LOOPS_API_KEY"),
   LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID: optionalVar(
     "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID",
@@ -280,10 +281,6 @@ const dataEnv = {
   ),
   POSTHOG_PUBLIC_KEY: optionalVar("POSTHOG_PUBLIC_KEY"),
   POSTHOG_HOST: optionalVar("POSTHOG_HOST"),
-  REDDIT_PIXEL_ID: optionalSecret("REDDIT_PIXEL_ID"),
-  REDDIT_CONVERSIONS_ACCESS_TOKEN: optionalSecret(
-    "REDDIT_CONVERSIONS_ACCESS_TOKEN",
-  ),
   TURNSTILE_SECRET_KEY: optionalSecret("TURNSTILE_SECRET_KEY"),
   TURNSTILE_SITE_KEY: optionalVar("TURNSTILE_SITE_KEY"),
   // Alchemy reconciles worker vars on every deploy, so the telemetry opt-out
@@ -400,8 +397,10 @@ export default Alchemy.Stack(
         // Prod-only: pooled Postgres via the existing Hyperdrive config.
         ...(prod ? { HYPERDRIVE: makeHyperdrive() } : {}),
 
-        // Durable Objects (Agents SDK chat agents). Alchemy backs new DO
-        // classes with SQLite storage, which both require.
+        // Durable Objects (chat agents + the per-audit crawl scratchpad).
+        // Alchemy backs new DO classes with SQLite storage, which all of
+        // them require; the `migrations` array in wrangler.jsonc only
+        // applies to the wrangler/workerd surfaces (local dev, Docker).
         ...Object.fromEntries(
           wrangler.durable_objects.bindings.map((binding) => [
             binding.name,

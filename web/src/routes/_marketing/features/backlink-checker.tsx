@@ -3,7 +3,7 @@ import { FeaturePageTemplate } from "@/components/feature-page";
 import { featurePages } from "@/lib/feature-pages";
 import { buildPageSeo } from "@/lib/seo";
 
-const page = featurePages.backlinkChecker;
+const page = featurePages.backlinks;
 
 export const Route = createFileRoute("/_marketing/features/backlink-checker")({
   head: () =>

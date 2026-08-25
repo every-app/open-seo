@@ -13,7 +13,6 @@ import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 
 const DEFAULT_DOMAIN_SEARCH = {
   domain: "",
-  subdomains: true,
   sort: "traffic",
   order: undefined,
   tab: "keywords",

@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
 import { Clock, History, Link2, X } from "lucide-react";
 import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
+import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
+import { toScopeSearchParam } from "@/shared/researchScope";
 
 type Props = {
   projectId: string;
@@ -53,7 +55,7 @@ export function BacklinksHistorySection({
               search={(prev) => ({
                 ...prev,
                 target: item.target,
-                scope: item.scope,
+                scope: toScopeSearchParam(item.target, item.scope),
                 tab: undefined,
                 page: undefined,
                 sort: undefined,
@@ -68,7 +70,7 @@ export function BacklinksHistorySection({
                   {item.target}
                 </p>
                 <p className="text-sm text-base-content/60 truncate">
-                  {item.scope === "domain" ? "Site-wide" : "Exact page"}
+                  {RESEARCH_SCOPE_LABELS[item.scope]}
                 </p>
               </div>
             </Link>
