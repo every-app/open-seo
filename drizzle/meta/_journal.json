@@ -260,6 +260,13 @@
       "when": 1784426967421,
       "tag": "0036_curvy_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1787587118685,
+      "tag": "0037_huge_cyclops",
+      "breakpoints": true
     }
   ]
 }

@@ -7,6 +7,7 @@ import * as sqliteBilling from "./billing.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteReddit from "./reddit-attribution.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
+import * as sqliteLocalSeo from "./local-seo.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgAudit from "./pg/audit.schema";
 import * as pgSam from "./pg/sam.schema";
@@ -15,6 +16,7 @@ import * as pgBilling from "./pg/billing.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgReddit from "./pg/reddit-attribution.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
+import * as pgLocalSeo from "./pg/local-seo.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
 // provider-aware `db` from "@/db", so each repository is written ONCE for both
@@ -33,7 +35,8 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteBilling &
   typeof sqliteGsc &
   typeof sqliteReddit &
-  typeof sqliteTelemetry;
+  typeof sqliteTelemetry &
+  typeof sqliteLocalSeo;
 
 const runtimeSchema =
   getDatabaseProvider() === "postgres"
@@ -46,6 +49,7 @@ const runtimeSchema =
         ...pgGsc,
         ...pgReddit,
         ...pgTelemetry,
+        ...pgLocalSeo,
       }
     : {
         ...sqliteApp,
@@ -56,6 +60,7 @@ const runtimeSchema =
         ...sqliteGsc,
         ...sqliteReddit,
         ...sqliteTelemetry,
+        ...sqliteLocalSeo,
       };
 
 // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- guarded by schema-parity.test.ts
@@ -75,6 +80,13 @@ export const {
   organizationActivationState,
   projectActivationState,
   backlinkSnapshots,
+  localBusinesses,
+  localGridConfigs,
+  localGridKeywords,
+  localGridRuns,
+  localGridRunPoints,
+  localGridResults,
+  localGridRankings,
   audits,
   auditPages,
   auditLinks,
