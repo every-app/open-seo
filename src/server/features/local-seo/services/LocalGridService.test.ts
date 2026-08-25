@@ -81,7 +81,10 @@ const repository = vi.hoisted(() => ({
     ) => Promise<void>
   >(),
   insertRunResults: vi.fn<(results: unknown[]) => Promise<void>>(),
-  getActiveRun: vi.fn<() => Promise<{ id: string } | null>>(),
+  getActiveRun:
+    vi.fn<
+      () => Promise<{ id: string; status: string; startedAt: string } | null>
+    >(),
   updateRun: vi.fn<() => Promise<void>>(),
   getLatestRun: vi.fn<() => Promise<unknown>>(),
   getRunGridResults: vi.fn<() => Promise<unknown[]>>(),
@@ -188,7 +191,11 @@ describe("LocalGridService", () => {
       keywords: [{ id: "keyword-1", keyword: "builder" }],
     });
     repository.tryCreateRun.mockResolvedValue(false);
-    repository.getActiveRun.mockResolvedValue({ id: "active-run" });
+    repository.getActiveRun.mockResolvedValue({
+      id: "active-run",
+      status: "running",
+      startedAt: "2026-08-25T00:00:00.000Z",
+    });
 
     await expect(
       LocalGridService.triggerScan({

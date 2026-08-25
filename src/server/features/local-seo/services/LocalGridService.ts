@@ -18,6 +18,7 @@ import type {
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { LocalGridRepository } from "../repositories/LocalGridRepository";
+import { reconcilePendingLocalGridRun } from "./localGridRunGuards";
 import type { z } from "zod";
 
 type CreateInput = z.infer<typeof createLocalGridConfigSchema>;
@@ -242,8 +243,8 @@ async function triggerScan(input: {
     gridSize: toLocalGridSize(details.config.gridSize),
     radiusMeters: details.config.radiusMeters,
   });
-  const runId = crypto.randomUUID();
-  const inserted = await LocalGridRepository.tryCreateRun({
+  let runId = crypto.randomUUID();
+  let inserted = await LocalGridRepository.tryCreateRun({
     id: runId,
     configId: input.configId,
     projectId: input.projectId,
@@ -251,11 +252,40 @@ async function triggerScan(input: {
   });
   if (!inserted) {
     const blocker = await LocalGridRepository.getActiveRun(input.configId);
-    return {
-      ok: false,
-      reason: "already_running",
-      blockingRunId: blocker?.id ?? null,
-    };
+    if (blocker) {
+      const reconciliation = await reconcilePendingLocalGridRun(blocker);
+      if (reconciliation === "active") {
+        return {
+          ok: false,
+          reason: "already_running",
+          blockingRunId: blocker.id,
+        };
+      }
+      if (reconciliation === "lost_race") {
+        const current = await LocalGridRepository.getActiveRun(input.configId);
+        return {
+          ok: false,
+          reason: "already_running",
+          blockingRunId: current?.id ?? null,
+        };
+      }
+    }
+
+    runId = crypto.randomUUID();
+    inserted = await LocalGridRepository.tryCreateRun({
+      id: runId,
+      configId: input.configId,
+      projectId: input.projectId,
+      taskCount: grid.length * details.keywords.length,
+    });
+    if (!inserted) {
+      const current = await LocalGridRepository.getActiveRun(input.configId);
+      return {
+        ok: false,
+        reason: "already_running",
+        blockingRunId: current?.id ?? null,
+      };
+    }
   }
 
   try {
