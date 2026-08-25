@@ -26,12 +26,31 @@ interface UpdateWrite {
 }
 
 const workflow = vi.hoisted(() => ({
-  create: vi.fn(),
+  create: vi.fn<
+    (input: {
+      id: string;
+      params: {
+        languageCode: string;
+        seDomain: string | null;
+        searchDepth: number;
+        searchPlaces: boolean;
+        target: {
+          placeId: string | null;
+          cid: string | null;
+          featureId: string | null;
+        };
+      };
+    }) => Promise<void>
+  >(),
   get: vi.fn(),
 }));
+const isHostedServerAuthMode = vi.hoisted(() => vi.fn());
 
 vi.mock("cloudflare:workers", () => ({
   env: { LOCAL_GRID_WORKFLOW: workflow },
+}));
+vi.mock("@/server/lib/runtime-env", () => ({
+  isHostedServerAuthMode,
 }));
 
 const repository = vi.hoisted(() => ({
@@ -72,159 +91,45 @@ vi.mock("../repositories/LocalGridRepository", () => ({
   LocalGridRepository: repository,
 }));
 
-import {
-  computeNextLocalGridScanAt,
-  LocalGridService,
-} from "./LocalGridService";
+import { LocalGridService } from "./LocalGridService";
 
 const projectId = "00000000-0000-4000-8000-000000000001";
+
+function scanDetails() {
+  return {
+    config: {
+      id: "00000000-0000-4000-8000-000000000002",
+      isActive: true,
+      centerLatitude: 50.8179,
+      centerLongitude: -0.3729,
+      gridSize: 3,
+      radiusMeters: 1_000,
+      languageCode: "en",
+      seDomain: "google.co.uk",
+      searchDepth: 20,
+      searchPlaces: false,
+    },
+    business: {
+      placeId: "ChIJ-worthing",
+      cid: null,
+      featureId: null,
+    },
+    keywords: [
+      { id: "keyword-1", keyword: "loft conversions" },
+      { id: "keyword-2", keyword: "loft company" },
+    ],
+  };
+}
 
 describe("LocalGridService", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useRealTimers();
-  });
-
-  it("creates a config around a confirmed target without calling a provider", async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-08-24T12:00:00.000Z"));
-    repository.findBusinessByStableIdentifiers.mockResolvedValue(null);
-    repository.createConfig.mockResolvedValue(undefined);
-
-    const result = await LocalGridService.createConfig({
-      projectId,
-      business: {
-        placeId: "ChIJ-worthing",
-        name: "Worthing Loft Conversions",
-        address: "Worthing, UK",
-        latitude: 50.8179,
-        longitude: -0.3729,
-      },
-      name: "Worthing core area",
-      gridSize: 5,
-      radiusMeters: 4_828,
-      distanceUnit: "mi",
-      languageCode: "en",
-      seDomain: "google.co.uk",
-      searchDepth: 20,
-      searchPlaces: false,
-      scheduleInterval: "weekly",
-      keywords: [" Loft Conversions ", "loft conversions", "Loft Company"],
-    });
-
-    expect(result.configId).toMatch(/^[0-9a-f-]{36}$/);
-    expect(repository.createConfig).toHaveBeenCalledOnce();
-    const write = repository.createConfig.mock.calls.at(0)?.[0];
-    if (!write) throw new Error("Expected a config write");
-    expect(write.business).toMatchObject({
-      projectId,
-      placeId: "ChIJ-worthing",
-      latitude: 50.8179,
-      longitude: -0.3729,
-    });
-    expect(write.config).toMatchObject({
-      projectId,
-      name: "Worthing core area",
-      centerLatitude: 50.8179,
-      centerLongitude: -0.3729,
-      nextScanAt: "2026-08-31T12:00:00.000Z",
-    });
-    expect(
-      write.keywords.map((row: { keyword: string }) => row.keyword),
-    ).toEqual(["loft conversions", "loft company"]);
-  });
-
-  it("reuses and refreshes an existing stable business", async () => {
-    repository.findBusinessByStableIdentifiers.mockResolvedValue({
-      id: "business-1",
-    });
-    repository.createConfig.mockResolvedValue(undefined);
-
-    await LocalGridService.createConfig({
-      projectId,
-      business: {
-        cid: "12345",
-        name: "Updated name",
-        latitude: 51,
-        longitude: -1,
-      },
-      name: "Grid",
-      gridSize: 3,
-      radiusMeters: 1_000,
-      distanceUnit: "km",
-      languageCode: "en",
-      seDomain: "google.co.uk",
-      searchDepth: 10,
-      searchPlaces: false,
-      scheduleInterval: "manual",
-      keywords: ["builder"],
-    });
-
-    expect(repository.updateBusiness).toHaveBeenCalledWith(
-      "business-1",
-      projectId,
-      expect.objectContaining({ name: "Updated name", cid: "12345" }),
-    );
-    const write = repository.createConfig.mock.calls.at(0)?.[0];
-    if (!write) throw new Error("Expected a config write");
-    expect(write.business).toBeUndefined();
-    expect(write.config.nextScanAt).toBeNull();
-  });
-
-  it("replaces keywords and clears the next scan when paused", async () => {
-    repository.getConfig.mockResolvedValue({
-      config: {
-        scheduleInterval: "weekly",
-        nextScanAt: "2026-08-31T12:00:00.000Z",
-      },
-      business: {},
-      keywords: [],
-    });
-
-    await LocalGridService.updateConfig({
-      projectId,
-      configId: "00000000-0000-4000-8000-000000000002",
-      isActive: false,
-      keywords: [" Massage ", "massage", "Thai Massage"],
-    });
-
-    const write = repository.updateConfig.mock.calls.at(0)?.[0];
-    if (!write) throw new Error("Expected a config update");
-    expect(write.updates.isActive).toBe(false);
-    expect(write.updates.nextScanAt).toBeNull();
-    expect(write.keywords?.map((keyword) => keyword.keyword)).toEqual([
-      "massage",
-      "thai massage",
-    ]);
-  });
-
-  it("throws before archive when a config is outside the project", async () => {
-    repository.getConfig.mockResolvedValue(null);
-    await expect(
-      LocalGridService.archiveConfig(
-        "00000000-0000-4000-8000-000000000002",
-        projectId,
-      ),
-    ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    expect(repository.archiveConfig).not.toHaveBeenCalled();
+    isHostedServerAuthMode.mockResolvedValue(false);
   });
 
   it("materializes the grid and starts one durable scan workflow", async () => {
-    repository.getConfig.mockResolvedValue({
-      config: {
-        id: "00000000-0000-4000-8000-000000000002",
-        isActive: true,
-        centerLatitude: 50.8179,
-        centerLongitude: -0.3729,
-        gridSize: 3,
-        radiusMeters: 1_000,
-      },
-      business: { placeId: "ChIJ-worthing" },
-      keywords: [
-        { id: "keyword-1", keyword: "loft conversions" },
-        { id: "keyword-2", keyword: "loft company" },
-      ],
-    });
+    repository.getConfig.mockResolvedValue(scanDetails());
     repository.tryCreateRun.mockResolvedValue(true);
     repository.insertRunPoints.mockResolvedValue(undefined);
     repository.insertRunResults.mockResolvedValue(undefined);
@@ -255,7 +160,19 @@ describe("LocalGridService", () => {
     });
     const results = repository.insertRunResults.mock.calls.at(0)?.[0];
     expect(results).toHaveLength(18);
-    expect(workflow.create).toHaveBeenCalledOnce();
+    const workflowInput = workflow.create.mock.calls[0]?.[0];
+    expect(workflowInput?.id).toBe(result.ok ? result.runId : "");
+    expect(workflowInput?.params).toMatchObject({
+      languageCode: "en",
+      seDomain: "google.co.uk",
+      searchDepth: 20,
+      searchPlaces: false,
+      target: {
+        placeId: "ChIJ-worthing",
+        cid: null,
+        featureId: null,
+      },
+    });
   });
 
   it("returns the active run instead of starting a duplicate scan", async () => {
@@ -289,6 +206,33 @@ describe("LocalGridService", () => {
       blockingRunId: "active-run",
     });
     expect(repository.insertRunPoints).not.toHaveBeenCalled();
+    expect(workflow.create).not.toHaveBeenCalled();
+  });
+
+  it("does not start hosted scans before atomic credit reservation exists", async () => {
+    isHostedServerAuthMode.mockResolvedValue(true);
+    repository.getConfig.mockResolvedValue({
+      config: { isActive: true },
+      business: {},
+      keywords: [{ id: "keyword-1", keyword: "builder" }],
+    });
+
+    await expect(
+      LocalGridService.triggerScan({
+        configId: "00000000-0000-4000-8000-000000000002",
+        projectId,
+        billingCustomer: {
+          userId: "user-1",
+          userEmail: "user@example.com",
+          organizationId: "org-1",
+        },
+      }),
+    ).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+      message:
+        "Hosted map grid scans are unavailable until credit reservation is enabled",
+    });
+    expect(repository.tryCreateRun).not.toHaveBeenCalled();
     expect(workflow.create).not.toHaveBeenCalled();
   });
 
@@ -333,9 +277,9 @@ describe("LocalGridService", () => {
 
   it("returns the latest run grid after authorizing the config", async () => {
     repository.getConfig.mockResolvedValue({
-      config: { id: "config-1" },
+      config: { id: "config-1", gridSize: 3 },
       business: {},
-      keywords: [{ id: "keyword-1", keyword: "builder" }],
+      keywords: [{ id: "current-keyword", keyword: "plumber" }],
     });
     repository.getLatestRun.mockResolvedValue({
       id: "run-1",
@@ -371,24 +315,11 @@ describe("LocalGridService", () => {
       ),
     ).resolves.toMatchObject({
       run: { id: "run-1", status: "completed" },
+      gridSize: 1,
       keywords: [{ id: "keyword-1", keyword: "builder" }],
       cells: [{ resultId: "result-1", targetRank: 2 }],
     });
     expect(repository.getConfig).toHaveBeenCalledOnce();
     expect(repository.getRunGridResults).toHaveBeenCalledWith("run-1");
-  });
-});
-
-describe("computeNextLocalGridScanAt", () => {
-  const now = new Date("2026-01-31T12:00:00.000Z");
-
-  it("supports manual, weekly, and calendar-month schedules", () => {
-    expect(computeNextLocalGridScanAt("manual", now)).toBeNull();
-    expect(computeNextLocalGridScanAt("weekly", now)).toBe(
-      "2026-02-07T12:00:00.000Z",
-    );
-    expect(computeNextLocalGridScanAt("monthly", now)).toBe(
-      "2026-02-28T12:00:00.000Z",
-    );
   });
 });

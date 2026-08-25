@@ -35,6 +35,7 @@ export const createLocalGridConfig = createServerFn({ method: "POST" })
     return LocalGridService.createConfig({
       ...data,
       projectId: context.projectId,
+      projectMarket: context.project,
     });
   });
 

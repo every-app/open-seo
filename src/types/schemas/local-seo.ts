@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { localGridConfigs } from "@/db/schema";
 import { LOCAL_GRID_SIZES } from "@/shared/local-seo";
+import { isSupportedLanguageCode } from "@/shared/keyword-locations";
 
 const latitude = z.number().finite().min(-85).max(85);
 const longitude = z.number().finite().min(-180).max(180);
@@ -33,15 +34,30 @@ const configFields = {
   gridSize: z.union(LOCAL_GRID_SIZES.map((value) => z.literal(value))),
   radiusMeters: z.number().int().min(100).max(100_000),
   distanceUnit: z.enum(localGridConfigs.distanceUnit.enumValues),
-  languageCode: z.string().trim().min(2).max(10),
-  seDomain: z.string().trim().min(3).max(100),
+  languageCode: z
+    .string()
+    .trim()
+    .max(10)
+    .refine(isSupportedLanguageCode, "Unsupported language code"),
+  seDomain: z.string().trim().min(3).max(100).nullable(),
   searchDepth: z.number().int().min(10).max(100).multipleOf(10),
   searchPlaces: z.boolean(),
-  scheduleInterval: z.enum(localGridConfigs.scheduleInterval.enumValues),
+  scheduleInterval: z.literal("manual"),
   isActive: z.boolean(),
 };
 
-const keywords = z.array(z.string().trim().min(1).max(200)).min(1).max(50);
+const paidSearchOperator =
+  /(^|\s)-?(?:allinanchor|allintext|allintitle|allinurl|define|filetype|inanchor|info|intext|intitle|inurl|link|site):/i;
+const keyword = z
+  .string()
+  .trim()
+  .min(1)
+  .max(200)
+  .refine(
+    (value) => !paidSearchOperator.test(value),
+    "Paid search operators are not supported in map grid keywords",
+  );
+const keywords = z.array(keyword).min(1).max(50);
 
 export const listLocalGridConfigsSchema = z.object({
   projectId: z.string().uuid(),
@@ -61,11 +77,10 @@ export const createLocalGridConfigSchema = z.object({
   gridSize: configFields.gridSize.default(7),
   radiusMeters: configFields.radiusMeters.default(4_828),
   distanceUnit: configFields.distanceUnit.default("mi"),
-  languageCode: configFields.languageCode.default("en"),
-  seDomain: configFields.seDomain.default("google.co.uk"),
+  seDomain: configFields.seDomain.default(null),
   searchDepth: configFields.searchDepth.default(20),
   searchPlaces: configFields.searchPlaces.default(false),
-  scheduleInterval: configFields.scheduleInterval.default("weekly"),
+  scheduleInterval: configFields.scheduleInterval.default("manual"),
   keywords,
 });
 
@@ -118,6 +133,7 @@ export interface LocalGridResultCell {
 }
 
 export interface LocalGridResultsResponse {
+  gridSize: number;
   run: {
     id: string;
     status: "pending" | "running" | "completed" | "failed" | "cancelled";

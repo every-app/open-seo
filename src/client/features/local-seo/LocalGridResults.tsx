@@ -54,13 +54,7 @@ function CellDetails({ cell }: { cell: LocalGridResultCell | null }) {
   );
 }
 
-export function LocalGridResults({
-  data,
-  gridSize,
-}: {
-  data: LocalGridResultsResponse;
-  gridSize: number;
-}) {
+export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
   const [keywordId, setKeywordId] = useState<string | null>(null);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
   const effectiveKeywordId = data.keywords.some(
@@ -154,7 +148,7 @@ export function LocalGridResults({
             <div
               className="mx-auto grid aspect-square w-full max-w-xl gap-2 rounded-lg bg-[radial-gradient(circle_at_center,oklch(var(--b3)/0.7)_1px,transparent_1px)] bg-[length:18px_18px] p-2"
               style={{
-                gridTemplateColumns: `repeat(${gridSize}, minmax(0, 1fr))`,
+                gridTemplateColumns: `repeat(${data.gridSize}, minmax(0, 1fr))`,
               }}
               aria-label="Local ranking map grid"
             >

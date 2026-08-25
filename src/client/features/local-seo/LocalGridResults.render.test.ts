@@ -31,6 +31,7 @@ function resultCell(
 describe("LocalGridResults", () => {
   it("renders an accessible spatial grid and summary", () => {
     const data: LocalGridResultsResponse = {
+      gridSize: 3,
       run: {
         id: "run-1",
         status: "completed",
@@ -50,7 +51,7 @@ describe("LocalGridResults", () => {
     };
 
     const markup = renderToStaticMarkup(
-      createElement(LocalGridResults, { data, gridSize: 3 }),
+      createElement(LocalGridResults, { data }),
     );
 
     expect(markup).toContain('aria-label="Local ranking map grid"');

@@ -69,14 +69,14 @@ export const localGridConfigs = pgTable(
       .notNull()
       .default("mi"),
     languageCode: text("language_code").notNull().default("en"),
-    seDomain: text("se_domain").notNull().default("google.co.uk"),
+    seDomain: text("se_domain"),
     searchDepth: integer("search_depth").notNull().default(20),
     searchPlaces: boolean("search_places").notNull().default(false),
     scheduleInterval: text("schedule_interval", {
       enum: ["manual", "weekly", "monthly"],
     })
       .notNull()
-      .default("weekly"),
+      .default("manual"),
     isActive: boolean("is_active").notNull().default(true),
     nextScanAt: timestampColumn("next_scan_at"),
     archivedAt: timestampColumn("archived_at"),

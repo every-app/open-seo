@@ -8,8 +8,7 @@ export const LOCAL_GRID_SIZES = [3, 5, 7] as const;
 type LocalGridSize = (typeof LOCAL_GRID_SIZES)[number];
 
 const EARTH_RADIUS_METERS = 6_371_008.8;
-const QUEUED_MAPS_FIRST_PAGE_USD = 0.0006;
-const QUEUED_MAPS_EXTRA_PAGE_USD = 0.00045;
+const QUEUED_MAPS_TASK_USD = 0.0006;
 
 interface LocalGridPoint {
   rowIndex: number;
@@ -140,9 +139,8 @@ export function estimateLocalGridCost(input: {
   }
 
   const taskCount = input.gridSize ** 2 * input.keywordCount;
-  const pages = input.searchDepth / 10;
-  const costPerTaskUsd =
-    QUEUED_MAPS_FIRST_PAGE_USD + (pages - 1) * QUEUED_MAPS_EXTRA_PAGE_USD;
+  // Google Maps bills one queued SERP for up to 100 desktop results.
+  const costPerTaskUsd = QUEUED_MAPS_TASK_USD;
   const rawCostUsd = roundUsdForBilling(taskCount * costPerTaskUsd);
   const hostedCostUsd = applyBillingMarkupUsd(rawCostUsd);
 

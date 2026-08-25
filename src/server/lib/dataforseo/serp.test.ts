@@ -225,7 +225,7 @@ describe("local grid Maps task queue", () => {
         },
       ],
       languageCode: "en",
-      seDomain: "google.co.uk",
+      seDomain: null,
       depth: 20,
       searchPlaces: false,
     });
@@ -238,11 +238,13 @@ describe("local grid Maps task queue", () => {
           ? request.href
           : request?.url;
     expect(requestUrl).toContain("/v3/serp/google/maps/task_post");
-    expect(parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1])).toEqual([
+    const requestBody = parseDataforseoRequestBody(
+      fetchMock.mock.calls[0]?.[1],
+    );
+    expect(requestBody).toEqual([
       expect.objectContaining({
         keyword: "loft conversions",
         location_coordinate: "50.8179000,-0.3729000,14z",
-        se_domain: "google.co.uk",
         search_this_area: true,
         search_places: false,
         priority: 1,
@@ -250,6 +252,7 @@ describe("local grid Maps task queue", () => {
       }),
       expect.objectContaining({ tag: "result-b" }),
     ]);
+    expect(JSON.stringify(requestBody)).not.toContain('"se_domain"');
     expect(
       result.data.map((task) => ({
         taskId: task.taskId,

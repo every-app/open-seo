@@ -3,7 +3,10 @@ import { useMutation } from "@tanstack/react-query";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Modal } from "@/client/components/Modal";
+import type { ProjectMarket } from "@/client/features/projects/types";
+import { useProjectMarket } from "@/client/features/projects/useProjectMarket";
 import { createLocalGridConfig } from "@/serverFunctions/local-seo";
+import { getIsoCountryCode } from "@/shared/keyword-locations";
 import { estimateLocalGridCost } from "@/shared/local-seo";
 
 function parseGridSize(value: string): 3 | 5 | 7 {
@@ -11,19 +14,45 @@ function parseGridSize(value: string): 3 | 5 | 7 {
   return parsed === 3 || parsed === 5 || parsed === 7 ? parsed : 7;
 }
 
-function parseSchedule(value: string): "manual" | "weekly" | "monthly" {
-  return value === "manual" || value === "monthly" ? value : "weekly";
-}
-
-export function LocalGridSetupModal({
-  projectId,
-  onClose,
-  onSaved,
-}: {
+type Props = {
   projectId: string;
   onClose: () => void;
   onSaved: (configId: string) => void;
-}) {
+};
+
+export function LocalGridSetupModal(props: Props) {
+  const projectMarket = useProjectMarket(props.projectId);
+  if (!projectMarket) {
+    return (
+      <Modal
+        maxWidth="max-w-2xl"
+        onClose={props.onClose}
+        labelledBy="local-grid-setup-loading-title"
+      >
+        <h2 id="local-grid-setup-loading-title" className="sr-only">
+          Loading project market
+        </h2>
+        <div className="flex min-h-40 items-center justify-center">
+          <Loader2 className="size-5 animate-spin text-base-content/50" />
+        </div>
+      </Modal>
+    );
+  }
+  return (
+    <LocalGridSetupModalContent {...props} projectMarket={projectMarket} />
+  );
+}
+
+function LocalGridSetupModalContent({
+  projectId,
+  onClose,
+  onSaved,
+  projectMarket,
+}: Props & { projectMarket: ProjectMarket }) {
+  const countryCode = getIsoCountryCode(projectMarket.locationCode);
+  const distanceUnit =
+    countryCode === "gb" || countryCode === "us" ? "mi" : "km";
+  const metersPerUnit = distanceUnit === "mi" ? 1_609.344 : 1_000;
   const [name, setName] = useState("");
   const [businessName, setBusinessName] = useState("");
   const [placeId, setPlaceId] = useState("");
@@ -31,12 +60,8 @@ export function LocalGridSetupModal({
   const [longitude, setLongitude] = useState("");
   const [keywordsText, setKeywordsText] = useState("");
   const [gridSize, setGridSize] = useState<3 | 5 | 7>(7);
-  const [radiusMiles, setRadiusMiles] = useState("3");
+  const [radius, setRadius] = useState("3");
   const [searchDepth, setSearchDepth] = useState(20);
-  const [scheduleInterval, setScheduleInterval] = useState<
-    "manual" | "weekly" | "monthly"
-  >("weekly");
-
   const keywords = useMemo(
     () =>
       keywordsText
@@ -56,15 +81,15 @@ export function LocalGridSetupModal({
     mutationFn: () => {
       const parsedLatitude = Number(latitude);
       const parsedLongitude = Number(longitude);
-      const parsedRadiusMiles = Number(radiusMiles);
+      const parsedRadius = Number(radius);
       if (
         !name.trim() ||
         !businessName.trim() ||
         !placeId.trim() ||
         !Number.isFinite(parsedLatitude) ||
         !Number.isFinite(parsedLongitude) ||
-        !Number.isFinite(parsedRadiusMiles) ||
-        parsedRadiusMiles <= 0 ||
+        !Number.isFinite(parsedRadius) ||
+        parsedRadius <= 0 ||
         keywords.length === 0
       ) {
         throw new Error("Complete all fields and add at least one keyword");
@@ -81,13 +106,12 @@ export function LocalGridSetupModal({
           },
           name: name.trim(),
           gridSize,
-          radiusMeters: Math.round(parsedRadiusMiles * 1_609.344),
-          distanceUnit: "mi",
-          languageCode: "en",
-          seDomain: "google.co.uk",
+          radiusMeters: Math.round(parsedRadius * metersPerUnit),
+          distanceUnit,
+          seDomain: null,
           searchDepth,
           searchPlaces: false,
-          scheduleInterval,
+          scheduleInterval: "manual",
           keywords,
         },
       });
@@ -190,12 +214,14 @@ export function LocalGridSetupModal({
           </select>
         </label>
         <label className="form-control">
-          <span className="label-text mb-1 text-sm">Radius (miles)</span>
+          <span className="label-text mb-1 text-sm">
+            Radius ({distanceUnit === "mi" ? "miles" : "kilometres"})
+          </span>
           <input
             className="input input-bordered w-full"
             inputMode="decimal"
-            value={radiusMiles}
-            onChange={(event) => setRadiusMiles(event.target.value)}
+            value={radius}
+            onChange={(event) => setRadius(event.target.value)}
           />
         </label>
         <label className="form-control">
@@ -210,20 +236,12 @@ export function LocalGridSetupModal({
             <option value={40}>Top 40</option>
           </select>
         </label>
-        <label className="form-control">
-          <span className="label-text mb-1 text-sm">Schedule</span>
-          <select
-            className="select select-bordered w-full"
-            value={scheduleInterval}
-            onChange={(event) =>
-              setScheduleInterval(parseSchedule(event.target.value))
-            }
-          >
-            <option value="manual">Manual</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
-        </label>
+        <div className="rounded-lg border border-base-300 p-3 text-xs">
+          <span className="font-medium">Scan mode:</span> Manual
+          <p className="mt-1 text-base-content/60">
+            Saving never starts a scan. You approve each run and its estimate.
+          </p>
+        </div>
         <label className="form-control sm:col-span-2">
           <span className="label-text mb-1 text-sm">
             Keywords (one per line or comma-separated)

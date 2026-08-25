@@ -69,7 +69,7 @@ export const localGridConfigs = sqliteTable(
       .notNull()
       .default("mi"),
     languageCode: text("language_code").notNull().default("en"),
-    seDomain: text("se_domain").notNull().default("google.co.uk"),
+    seDomain: text("se_domain"),
     searchDepth: integer("search_depth").notNull().default(20),
     searchPlaces: integer("search_places", { mode: "boolean" })
       .notNull()
@@ -78,7 +78,7 @@ export const localGridConfigs = sqliteTable(
       enum: ["manual", "weekly", "monthly"],
     })
       .notNull()
-      .default("weekly"),
+      .default("manual"),
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     nextScanAt: text("next_scan_at"),
     archivedAt: text("archived_at"),

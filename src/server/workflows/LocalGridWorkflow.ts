@@ -23,6 +23,10 @@ const COLLECT_STEP_CONFIG = {
   retries: { limit: 2, delay: "10 seconds" as const },
   timeout: "5 minutes" as const,
 };
+const RECORD_STEP_CONFIG = {
+  retries: { limit: 2, delay: "2 seconds" as const },
+  timeout: "2 minutes" as const,
+};
 const POLL_INTERVALS = [
   "4 minutes",
   "2 minutes",
@@ -38,11 +42,20 @@ interface LocalGridWorkflowParams {
   configId: string;
   projectId: string;
   billingCustomer: BillingCustomerContext;
+  languageCode: string;
+  seDomain: string | null;
+  searchDepth: number;
+  searchPlaces: boolean;
+  target: {
+    placeId: string | null;
+    cid: string | null;
+    featureId: string | null;
+  };
 }
 
 type PreparedGridScan = {
   languageCode: string;
-  seDomain: string;
+  seDomain: string | null;
   searchDepth: number;
   searchPlaces: boolean;
   target: {
@@ -76,15 +89,11 @@ async function prepareScan(
   await LocalGridRepository.updateRun(params.runId, { status: "running" });
   const taskRows = await LocalGridRepository.getRunTaskInputs(params.runId);
   return {
-    languageCode: details.config.languageCode,
-    seDomain: details.config.seDomain,
-    searchDepth: details.config.searchDepth,
-    searchPlaces: details.config.searchPlaces,
-    target: {
-      placeId: details.business.placeId,
-      cid: details.business.cid,
-      featureId: details.business.featureId,
-    },
+    languageCode: params.languageCode,
+    seDomain: params.seDomain,
+    searchDepth: params.searchDepth,
+    searchPlaces: params.searchPlaces,
+    target: params.target,
     tasks: taskRows.map((task) => ({
       resultId: task.resultId,
       pointId: task.pointId,
@@ -176,16 +185,22 @@ export class LocalGridWorkflow extends WorkflowEntrypoint<
           step,
           `post-${batchIndex}`,
           POST_STEP_CONFIG,
-          async () => {
-            const tasks = await client.serp.localGridTaskPost({
+          () =>
+            client.serp.localGridTaskPost({
               tasks: batch,
               languageCode: prepared.languageCode,
               seDomain: prepared.seDomain,
               depth: prepared.searchDepth,
               searchPlaces: prepared.searchPlaces,
-            });
-            await LocalGridRepository.recordPostedTasks(tasks);
-            const acceptedIds = new Set(tasks.map((task) => task.resultId));
+            }),
+        );
+        await pgStep(
+          step,
+          `record-post-${batchIndex}`,
+          RECORD_STEP_CONFIG,
+          async () => {
+            await LocalGridRepository.recordPostedTasks(accepted);
+            const acceptedIds = new Set(accepted.map((task) => task.resultId));
             for (const rejected of batch) {
               if (!acceptedIds.has(rejected.resultId)) {
                 await LocalGridRepository.markResultFailed(
@@ -194,7 +209,6 @@ export class LocalGridWorkflow extends WorkflowEntrypoint<
                 );
               }
             }
-            return tasks;
           },
         );
         posted.push(...accepted);

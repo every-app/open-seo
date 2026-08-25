@@ -1908,9 +1908,8 @@
           "name": "se_domain",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'google.co.uk'"
+          "notNull": false,
+          "autoincrement": false
         },
         "search_depth": {
           "name": "search_depth",
@@ -1934,7 +1933,7 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'weekly'"
+          "default": "'manual'"
         },
         "is_active": {
           "name": "is_active",

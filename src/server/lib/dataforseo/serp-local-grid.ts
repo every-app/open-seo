@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { SerpGoogleMapsTaskPostRequestInfo } from "dataforseo-client";
-import { serpApi } from "@/server/lib/dataforseo/core";
+import { serpApi, serpTaskApi } from "@/server/lib/dataforseo/core";
 import {
   isNoResultsTask,
   parseTaskItems,
@@ -145,7 +145,7 @@ function buildLocalGridTaskResult(
 export async function postLocalGridTasks(input: {
   tasks: LocalGridTaskInput[];
   languageCode: string;
-  seDomain: string;
+  seDomain: string | null;
   depth: number;
   searchPlaces: boolean;
 }): Promise<DataforseoApiResponse<PostedLocalGridTask[]>> {
@@ -156,14 +156,14 @@ export async function postLocalGridTasks(input: {
     );
   }
 
-  const response = await serpApi().googleMapsTaskPost(
+  const response = await serpTaskApi().googleMapsTaskPost(
     input.tasks.map(
       (task) =>
         new SerpGoogleMapsTaskPostRequestInfo({
           keyword: task.keyword,
           location_coordinate: task.locationCoordinate,
           language_code: input.languageCode,
-          se_domain: input.seDomain,
+          ...(input.seDomain ? { se_domain: input.seDomain } : {}),
           device: "desktop",
           os: "windows",
           depth: input.depth,

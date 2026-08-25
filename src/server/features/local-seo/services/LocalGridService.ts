@@ -16,10 +16,14 @@ import type {
   updateLocalGridConfigSchema,
 } from "@/types/schemas/local-seo";
 import { AppError } from "@/server/lib/errors";
+import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { LocalGridRepository } from "../repositories/LocalGridRepository";
 import type { z } from "zod";
 
 type CreateInput = z.infer<typeof createLocalGridConfigSchema>;
+type CreateServiceInput = CreateInput & {
+  projectMarket: { languageCode: string };
+};
 type UpdateInput = z.infer<typeof updateLocalGridConfigSchema>;
 
 function normalizeKeywords(keywords: string[]) {
@@ -82,7 +86,7 @@ function businessValues(
   };
 }
 
-async function createConfig(input: CreateInput) {
+async function createConfig(input: CreateServiceInput) {
   const now = new Date().toISOString();
   const existingBusiness =
     await LocalGridRepository.findBusinessByStableIdentifiers({
@@ -116,8 +120,8 @@ async function createConfig(input: CreateInput) {
       gridSize: input.gridSize,
       radiusMeters: input.radiusMeters,
       distanceUnit: input.distanceUnit,
-      languageCode: input.languageCode,
-      seDomain: input.seDomain,
+      languageCode: input.projectMarket.languageCode,
+      seDomain: input.seDomain ?? null,
       searchDepth: input.searchDepth,
       searchPlaces: input.searchPlaces,
       scheduleInterval: input.scheduleInterval,
@@ -225,6 +229,12 @@ async function triggerScan(input: {
       "Add at least one keyword before scanning",
     );
   }
+  if (await isHostedServerAuthMode()) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Hosted map grid scans are unavailable until credit reservation is enabled",
+    );
+  }
 
   const grid = generateLocalGrid({
     centerLatitude: details.config.centerLatitude,
@@ -277,6 +287,15 @@ async function triggerScan(input: {
           organizationId: input.billingCustomer.organizationId,
           projectId: input.billingCustomer.projectId,
         },
+        languageCode: details.config.languageCode,
+        seDomain: details.config.seDomain,
+        searchDepth: details.config.searchDepth,
+        searchPlaces: details.config.searchPlaces,
+        target: {
+          placeId: details.business.placeId,
+          cid: details.business.cid,
+          featureId: details.business.featureId,
+        },
       },
     });
     return { ok: true, runId };
@@ -304,6 +323,7 @@ async function getResults(
   const run = await LocalGridRepository.getLatestRun(configId);
   if (!run) {
     return {
+      gridSize: details.config.gridSize,
       run: null,
       keywords: details.keywords.map(({ id, keyword }) => ({ id, keyword })),
       cells: [],
@@ -311,7 +331,14 @@ async function getResults(
   }
 
   const cells = await LocalGridRepository.getRunGridResults(run.id);
+  const runKeywords = new Map<string, string>();
+  let gridSize = 0;
+  for (const cell of cells) {
+    runKeywords.set(cell.trackingKeywordId, cell.keyword);
+    gridSize = Math.max(gridSize, cell.rowIndex + 1, cell.columnIndex + 1);
+  }
   return {
+    gridSize: gridSize || details.config.gridSize,
     run: {
       id: run.id,
       status: run.status,
@@ -322,7 +349,10 @@ async function getResults(
       startedAt: run.startedAt,
       completedAt: run.completedAt,
     },
-    keywords: details.keywords.map(({ id, keyword }) => ({ id, keyword })),
+    keywords:
+      runKeywords.size > 0
+        ? [...runKeywords].map(([id, keyword]) => ({ id, keyword }))
+        : details.keywords.map(({ id, keyword }) => ({ id, keyword })),
     cells,
   };
 }

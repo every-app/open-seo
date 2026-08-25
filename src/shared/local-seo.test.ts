@@ -64,7 +64,7 @@ describe("generateLocalGrid", () => {
 });
 
 describe("estimateLocalGridCost", () => {
-  it("counts every keyword-coordinate task and prices queued pages", () => {
+  it("counts every keyword-coordinate task at the queued Maps rate", () => {
     expect(
       estimateLocalGridCost({
         gridSize: 7,
@@ -73,11 +73,18 @@ describe("estimateLocalGridCost", () => {
       }),
     ).toEqual({
       taskCount: 490,
-      costPerTaskUsd: 0.00105,
-      rawCostUsd: 0.5145,
-      hostedCostUsd: 0.65856,
-      hostedCredits: 659,
+      costPerTaskUsd: 0.0006,
+      rawCostUsd: 0.294,
+      hostedCostUsd: 0.37632,
+      hostedCredits: 377,
     });
+    expect(
+      estimateLocalGridCost({
+        gridSize: 3,
+        keywordCount: 1,
+        searchDepth: 100,
+      }).costPerTaskUsd,
+    ).toBe(0.0006);
   });
 
   it("returns zero without keywords and rejects invalid depths", () => {

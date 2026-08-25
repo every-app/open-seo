@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/client/components/Modal";
 import { LocalGridResults } from "@/client/features/local-seo/LocalGridResults";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   archiveLocalGridConfig,
   getLocalGridConfig,
@@ -93,6 +94,7 @@ function LocalGridDetail() {
   const latestRun = resultsData?.run;
   const scanIsActive =
     latestRun?.status === "pending" || latestRun?.status === "running";
+  const hostedScansDisabled = isHostedClientAuthMode();
 
   return (
     <div className="space-y-4">
@@ -121,7 +123,7 @@ function LocalGridDetail() {
             onClick={() => activeMutation.mutate(!data.config.isActive)}
             disabled={activeMutation.isPending}
           >
-            {data.config.isActive ? "Pause schedule" : "Resume schedule"}
+            {data.config.isActive ? "Disable grid" : "Enable grid"}
           </button>
           <button
             className="btn btn-ghost btn-sm gap-1 text-error"
@@ -154,8 +156,8 @@ function LocalGridDetail() {
                 <dd>Top {data.config.searchDepth}</dd>
               </div>
               <div>
-                <dt className="text-xs text-base-content/50">Schedule</dt>
-                <dd className="capitalize">{data.config.scheduleInterval}</dd>
+                <dt className="text-xs text-base-content/50">Scan mode</dt>
+                <dd>Manual</dd>
               </div>
               <div>
                 <dt className="text-xs text-base-content/50">Language</dt>
@@ -163,7 +165,7 @@ function LocalGridDetail() {
               </div>
               <div>
                 <dt className="text-xs text-base-content/50">Search domain</dt>
-                <dd>{data.config.seDomain}</dd>
+                <dd>{data.config.seDomain ?? "Automatic"}</dd>
               </div>
             </dl>
           </div>
@@ -189,14 +191,25 @@ function LocalGridDetail() {
             <button
               className="btn btn-primary btn-sm mt-2"
               onClick={() => setShowScanConfirm(true)}
-              disabled={!data.config.isActive || scanIsActive}
+              disabled={
+                hostedScansDisabled || !data.config.isActive || scanIsActive
+              }
+              title={
+                hostedScansDisabled
+                  ? "Hosted scans will be enabled after credit reservation is available"
+                  : undefined
+              }
             >
               {scanIsActive ? (
                 <Loader2 className="size-3.5 animate-spin" />
               ) : (
                 <Zap className="size-3.5" />
               )}
-              {scanIsActive ? "Scan running" : "Run scan"}
+              {hostedScansDisabled
+                ? "Hosted scans coming soon"
+                : scanIsActive
+                  ? "Scan running"
+                  : "Run scan"}
             </button>
           </div>
         </div>
@@ -216,7 +229,7 @@ function LocalGridDetail() {
       </div>
 
       {resultsData ? (
-        <LocalGridResults data={resultsData} gridSize={data.config.gridSize} />
+        <LocalGridResults data={resultsData} />
       ) : (
         <div className="skeleton h-80 w-full" aria-busy />
       )}

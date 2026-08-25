@@ -2192,8 +2192,7 @@
           "name": "se_domain",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "default": "'google.co.uk'"
+          "notNull": false
         },
         "search_depth": {
           "name": "search_depth",
@@ -2214,7 +2213,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'weekly'"
+          "default": "'manual'"
         },
         "is_active": {
           "name": "is_active",
