@@ -4,10 +4,11 @@ import { Archive, ArrowLeft, Loader2, Zap } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Modal } from "@/client/components/Modal";
+import { LocalGridResults } from "@/client/features/local-seo/LocalGridResults";
 import {
   archiveLocalGridConfig,
-  getLatestLocalGridRun,
   getLocalGridConfig,
+  getLocalGridResults,
   triggerLocalGridScan,
   updateLocalGridConfig,
 } from "@/serverFunctions/local-seo";
@@ -54,11 +55,11 @@ function LocalGridDetail() {
       toast.success(isActive ? "Schedule resumed" : "Schedule paused");
     },
   });
-  const { data: latestRun } = useQuery({
-    queryKey: ["localGridLatestRun", projectId, configId],
-    queryFn: () => getLatestLocalGridRun({ data: { projectId, configId } }),
+  const { data: resultsData } = useQuery({
+    queryKey: ["localGridResults", projectId, configId],
+    queryFn: () => getLocalGridResults({ data: { projectId, configId } }),
     refetchInterval: (query) => {
-      const run = query.state.data;
+      const run = query.state.data?.run;
       return run?.status === "pending" || run?.status === "running"
         ? 2_000
         : false;
@@ -69,7 +70,7 @@ function LocalGridDetail() {
     onSuccess: (result) => {
       setShowScanConfirm(false);
       void queryClient.invalidateQueries({
-        queryKey: ["localGridLatestRun", projectId, configId],
+        queryKey: ["localGridResults", projectId, configId],
       });
       if (result.ok) {
         toast.success("Map grid scan queued");
@@ -89,6 +90,7 @@ function LocalGridDetail() {
     keywordCount: data.keywords.length,
     searchDepth: data.config.searchDepth,
   });
+  const latestRun = resultsData?.run;
   const scanIsActive =
     latestRun?.status === "pending" || latestRun?.status === "running";
 
@@ -212,6 +214,12 @@ function LocalGridDetail() {
           </div>
         </div>
       </div>
+
+      {resultsData ? (
+        <LocalGridResults data={resultsData} gridSize={data.config.gridSize} />
+      ) : (
+        <div className="skeleton h-80 w-full" aria-busy />
+      )}
 
       {showScanConfirm ? (
         <Modal

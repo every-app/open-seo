@@ -97,10 +97,40 @@ export const triggerLocalGridScanSchema = z.object({
   configId: z.string().uuid(),
 });
 
-export const getLatestLocalGridRunSchema = z.object({
+export const getLocalGridResultsSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
 });
+
+export interface LocalGridResultCell {
+  resultId: string;
+  pointId: string;
+  trackingKeywordId: string;
+  keyword: string;
+  rowIndex: number;
+  columnIndex: number;
+  latitude: number;
+  longitude: number;
+  status: "pending" | "completed" | "failed";
+  targetRank: number | null;
+  matchedBy: "place_id" | "cid" | "feature_id" | "fallback" | "none" | null;
+  errorMessage: string | null;
+}
+
+export interface LocalGridResultsResponse {
+  run: {
+    id: string;
+    status: "pending" | "running" | "completed" | "failed" | "cancelled";
+    taskCount: number;
+    tasksCompleted: number;
+    providerCostUsd: number;
+    errorMessage: string | null;
+    startedAt: string;
+    completedAt: string | null;
+  } | null;
+  keywords: Array<{ id: string; keyword: string }>;
+  cells: LocalGridResultCell[];
+}
 
 export type LocalGridScanTriggerResult =
   | { ok: true; runId: string }

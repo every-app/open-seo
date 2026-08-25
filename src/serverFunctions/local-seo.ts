@@ -7,8 +7,8 @@ import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   archiveLocalGridConfigSchema,
   createLocalGridConfigSchema,
-  getLatestLocalGridRunSchema,
   getLocalGridConfigSchema,
+  getLocalGridResultsSchema,
   listLocalGridConfigsSchema,
   triggerLocalGridScanSchema,
   updateLocalGridConfigSchema,
@@ -73,9 +73,9 @@ export const triggerLocalGridScan = createServerFn({ method: "POST" })
     });
   });
 
-export const getLatestLocalGridRun = createServerFn({ method: "POST" })
+export const getLocalGridResults = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(getLatestLocalGridRunSchema)
+  .validator(getLocalGridResultsSchema)
   .handler(async ({ data, context }) => {
-    return LocalGridService.getLatestRun(data.configId, context.projectId);
+    return LocalGridService.getResults(data.configId, context.projectId);
   });

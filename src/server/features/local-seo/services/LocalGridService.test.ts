@@ -65,6 +65,7 @@ const repository = vi.hoisted(() => ({
   getActiveRun: vi.fn<() => Promise<{ id: string } | null>>(),
   updateRun: vi.fn<() => Promise<void>>(),
   getLatestRun: vi.fn<() => Promise<unknown>>(),
+  getRunGridResults: vi.fn<() => Promise<unknown[]>>(),
 }));
 
 vi.mock("../repositories/LocalGridRepository", () => ({
@@ -328,6 +329,53 @@ describe("LocalGridService", () => {
         errorMessage: "Failed to start map grid workflow",
       }),
     );
+  });
+
+  it("returns the latest run grid after authorizing the config", async () => {
+    repository.getConfig.mockResolvedValue({
+      config: { id: "config-1" },
+      business: {},
+      keywords: [{ id: "keyword-1", keyword: "builder" }],
+    });
+    repository.getLatestRun.mockResolvedValue({
+      id: "run-1",
+      status: "completed",
+      taskCount: 9,
+      tasksCompleted: 9,
+      providerCostUsd: 0.0054,
+      errorMessage: null,
+      startedAt: "2026-08-25T00:00:00.000Z",
+      completedAt: "2026-08-25T00:10:00.000Z",
+    });
+    repository.getRunGridResults.mockResolvedValue([
+      {
+        resultId: "result-1",
+        pointId: "point-1",
+        trackingKeywordId: "keyword-1",
+        keyword: "builder",
+        rowIndex: 0,
+        columnIndex: 0,
+        latitude: 50.8,
+        longitude: -0.3,
+        status: "completed",
+        targetRank: 2,
+        matchedBy: "place_id",
+        errorMessage: null,
+      },
+    ]);
+
+    await expect(
+      LocalGridService.getResults(
+        "00000000-0000-4000-8000-000000000002",
+        projectId,
+      ),
+    ).resolves.toMatchObject({
+      run: { id: "run-1", status: "completed" },
+      keywords: [{ id: "keyword-1", keyword: "builder" }],
+      cells: [{ resultId: "result-1", targetRank: 2 }],
+    });
+    expect(repository.getConfig).toHaveBeenCalledOnce();
+    expect(repository.getRunGridResults).toHaveBeenCalledWith("run-1");
   });
 });
 

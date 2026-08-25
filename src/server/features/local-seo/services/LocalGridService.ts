@@ -12,6 +12,7 @@ import { generateLocalGrid, toLocalGridSize } from "@/shared/local-seo";
 import type {
   createLocalGridConfigSchema,
   LocalGridScanTriggerResult,
+  LocalGridResultsResponse,
   updateLocalGridConfigSchema,
 } from "@/types/schemas/local-seo";
 import { AppError } from "@/server/lib/errors";
@@ -295,9 +296,35 @@ async function triggerScan(input: {
   }
 }
 
-async function getLatestRun(configId: string, projectId: string) {
-  await getConfig(configId, projectId);
-  return LocalGridRepository.getLatestRun(configId);
+async function getResults(
+  configId: string,
+  projectId: string,
+): Promise<LocalGridResultsResponse> {
+  const details = await getConfig(configId, projectId);
+  const run = await LocalGridRepository.getLatestRun(configId);
+  if (!run) {
+    return {
+      run: null,
+      keywords: details.keywords.map(({ id, keyword }) => ({ id, keyword })),
+      cells: [],
+    };
+  }
+
+  const cells = await LocalGridRepository.getRunGridResults(run.id);
+  return {
+    run: {
+      id: run.id,
+      status: run.status,
+      taskCount: run.taskCount,
+      tasksCompleted: run.tasksCompleted,
+      providerCostUsd: run.providerCostUsd,
+      errorMessage: run.errorMessage,
+      startedAt: run.startedAt,
+      completedAt: run.completedAt,
+    },
+    keywords: details.keywords.map(({ id, keyword }) => ({ id, keyword })),
+    cells,
+  };
 }
 
 export const LocalGridService = {
@@ -307,5 +334,5 @@ export const LocalGridService = {
   updateConfig,
   archiveConfig,
   triggerScan,
-  getLatestRun,
+  getResults,
 };

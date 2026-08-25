@@ -282,6 +282,35 @@ async function getRunTaskInputs(runId: string) {
     .where(eq(localGridRunPoints.runId, runId));
 }
 
+async function getRunGridResults(runId: string) {
+  return db
+    .select({
+      resultId: localGridResults.id,
+      pointId: localGridRunPoints.id,
+      trackingKeywordId: localGridResults.trackingKeywordId,
+      keyword: localGridResults.keyword,
+      rowIndex: localGridRunPoints.rowIndex,
+      columnIndex: localGridRunPoints.columnIndex,
+      latitude: localGridRunPoints.latitude,
+      longitude: localGridRunPoints.longitude,
+      status: localGridResults.status,
+      targetRank: localGridResults.targetRank,
+      matchedBy: localGridResults.matchedBy,
+      errorMessage: localGridResults.errorMessage,
+    })
+    .from(localGridResults)
+    .innerJoin(
+      localGridRunPoints,
+      eq(localGridResults.runPointId, localGridRunPoints.id),
+    )
+    .where(eq(localGridRunPoints.runId, runId))
+    .orderBy(
+      localGridResults.keyword,
+      localGridRunPoints.rowIndex,
+      localGridRunPoints.columnIndex,
+    );
+}
+
 async function recordPostedTasks(tasks: PostedLocalGridTask[]) {
   await executeInBatches(tasks, (tx, task) =>
     tx
@@ -367,6 +396,7 @@ export const LocalGridRepository = {
   getActiveRun,
   updateRun,
   getRunTaskInputs,
+  getRunGridResults,
   recordPostedTasks,
   recordCompletedTask,
   markResultFailed,
