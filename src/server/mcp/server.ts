@@ -127,24 +127,6 @@ function registerOpenSeoTool<Input extends ToolSchema>(
       );
     },
   );
-  server.registerTool(
-    runContentScanTool.name,
-    runContentScanTool.config,
-    instrumentMcpToolHandler(
-      runContentScanTool.name,
-      runContentScanTool.config.outputSchema,
-      runContentScanTool.handler,
-    ),
-  );
-  server.registerTool(
-    getContentScanTool.name,
-    getContentScanTool.config,
-    instrumentMcpToolHandler(
-      getContentScanTool.name,
-      getContentScanTool.config.outputSchema,
-      getContentScanTool.handler,
-    ),
-  );
 }
 
 export function createOpenSeoMcpServer(authProps: McpProps) {
@@ -220,6 +202,8 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getAuditStatusTool);
   register(getAuditIssuesTool);
   register(getAuditPagesTool);
+  register(runContentScanTool);
+  register(getContentScanTool);
 
   return server;
 }

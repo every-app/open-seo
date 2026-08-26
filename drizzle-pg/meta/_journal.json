@@ -152,22 +152,8 @@
     {
       "idx": 21,
       "version": "7",
-      "when": 1784747179648,
-      "tag": "0021_content_scans_pg",
-      "breakpoints": true
-    },
-    {
-      "idx": 22,
-      "version": "7",
-      "when": 1784757169678,
-      "tag": "0022_onpage_connection_pg",
-      "breakpoints": true
-    },
-    {
-      "idx": 23,
-      "version": "7",
-      "when": 1784767240475,
-      "tag": "0023_content_scan_indexes_pg",
+      "when": 1787716608300,
+      "tag": "0024_milky_smiling_tiger",
       "breakpoints": true
     }
   ]
