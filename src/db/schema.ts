@@ -86,6 +86,8 @@ export const {
   projectResearchLog,
   contentScans,
   onpageConnection,
+  paaScans,
+  serperConnection,
   audits,
   auditPages,
   auditIssues,

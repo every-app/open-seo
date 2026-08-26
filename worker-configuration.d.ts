@@ -11,6 +11,7 @@ declare namespace Cloudflare {
 		DB: D1Database;
 		DATAFORSEO_API_KEY: string;
 		ONPAGE_API_KEY: string;
+		SERPER_API_KEY: string;
 		PORT: string;
 		AUTH_MODE: string;
 		BETTER_AUTH_SECRET: string;

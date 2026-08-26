@@ -1,3 +1,4 @@
+/* oxlint-disable eslint/max-lines -- append-only canonical schema; the rule is loosened for this file. */
 import {
   sqliteTable,
   text,
@@ -454,6 +455,37 @@ export const contentScans = sqliteTable(
 );
 
 export const onpageConnection = sqliteTable("onpage_connection", {
+  id: text("id").primaryKey(),
+  apiKey: text("api_key"),
+  enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+  connectedAt: text("connected_at"),
+});
+
+export const paaScans = sqliteTable(
+  "paa_scans",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    scanId: text("scan_id").notNull(),
+    seed: text("seed").notNull(),
+    region: text("region").notNull().default("US"),
+    questionCount: integer("question_count"),
+    // Full demand-discovery report payload as JSON text; a completed row
+    // keeps the report readable without another provider call.
+    report: text("report"),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("paa_scans_scan_unique").on(table.scanId),
+    index("paa_scans_project_created_idx").on(table.projectId, table.createdAt),
+  ],
+);
+
+export const serperConnection = sqliteTable("serper_connection", {
   id: text("id").primaryKey(),
   apiKey: text("api_key"),
   enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),

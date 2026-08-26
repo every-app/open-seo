@@ -44,6 +44,7 @@ import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/
 import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$projectId/sam'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
+import { Route as ProjectPProjectIdPaaMiningRouteImport } from './routes/_project/p/$projectId/paa-mining'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdContentOptimizationRouteImport } from './routes/_project/p/$projectId/content-optimization'
@@ -237,6 +238,12 @@ const ProjectPProjectIdPromptExplorerRoute =
     path: '/prompt-explorer',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdPaaMiningRoute =
+  ProjectPProjectIdPaaMiningRouteImport.update({
+    id: '/paa-mining',
+    path: '/paa-mining',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -343,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/content-optimization': typeof ProjectPProjectIdContentOptimizationRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/paa-mining': typeof ProjectPProjectIdPaaMiningRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -387,6 +395,7 @@ export interface FileRoutesByTo {
   '/p/$projectId/content-optimization': typeof ProjectPProjectIdContentOptimizationRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/paa-mining': typeof ProjectPProjectIdPaaMiningRoute
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
   '/p/$projectId/saved': typeof ProjectPProjectIdSavedRoute
@@ -436,6 +445,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/content-optimization': typeof ProjectPProjectIdContentOptimizationRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/paa-mining': typeof ProjectPProjectIdPaaMiningRoute
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -484,6 +494,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/content-optimization'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/paa-mining'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/sam'
@@ -528,6 +539,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/content-optimization'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/paa-mining'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/sam'
     | '/p/$projectId/saved'
@@ -576,6 +588,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/content-optimization'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/paa-mining'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/sam'
@@ -857,6 +870,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdPromptExplorerRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/paa-mining': {
+      id: '/_project/p/$projectId/paa-mining'
+      path: '/paa-mining'
+      fullPath: '/p/$projectId/paa-mining'
+      preLoaderRoute: typeof ProjectPProjectIdPaaMiningRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/keywords': {
       id: '/_project/p/$projectId/keywords'
       path: '/keywords'
@@ -1039,6 +1059,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdContentOptimizationRoute: typeof ProjectPProjectIdContentOptimizationRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdPaaMiningRoute: typeof ProjectPProjectIdPaaMiningRoute
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
   ProjectPProjectIdSamRoute: typeof ProjectPProjectIdSamRoute
@@ -1057,6 +1078,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
       ProjectPProjectIdContentOptimizationRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdPaaMiningRoute: ProjectPProjectIdPaaMiningRoute,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,

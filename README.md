@@ -72,6 +72,8 @@ Try OpenSEO for free on our website. If you want to support the project, a hoste
 - Competitor Insights
 - Backlinks
 - Site Audits
+- Content Optimization (optional, BYO On-Page.ai)
+- PAA + Social Mining (optional, BYO Serper.dev)
 - AI Visibility
 
 ## OpenSEO MCP & Agent Skills

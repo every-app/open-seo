@@ -24,6 +24,8 @@ services:
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       # Optional: On-Page.ai (Content Optimization module, bring-your-own-key)
       - ONPAGE_API_KEY=${ONPAGE_API_KEY:-}
+      # Optional: Serper.dev (PAA + Social Mining module, bring-your-own-key)
+      - SERPER_API_KEY=${SERPER_API_KEY:-}
       # Optional: Google Search Console. See
       # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}

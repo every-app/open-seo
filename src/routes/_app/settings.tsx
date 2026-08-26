@@ -11,6 +11,10 @@ import {
   getContentOptimizationStatus,
   setContentOptimizationEnabled,
 } from "@/serverFunctions/contentOptimization";
+import {
+  getPaaMiningStatus,
+  setPaaMiningEnabled,
+} from "@/serverFunctions/paaMining";
 import { version } from "../../../package.json";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -143,10 +147,21 @@ function SettingsPage() {
 
 /**
  * Deployment-wide feature switches. Content Optimization is the optional
- * On-Page.ai module: turning it off removes its sidebar item everywhere, so
- * installs that don't want a bring-your-own-key feature keep a clean nav.
+ * On-Page.ai module; PAA + Social Mining is the optional Serper.dev module.
+ * Turning either off removes its sidebar item everywhere, so installs that
+ * don't want a bring-your-own-key feature keep a clean nav.
  */
 function FeaturesSection() {
+  return (
+    <section className="space-y-3">
+      <h2 className="text-sm font-medium text-base-content/50">Features</h2>
+      <ContentOptimizationToggle />
+      <PaaMiningToggle />
+    </section>
+  );
+}
+
+function ContentOptimizationToggle() {
   const queryClient = useQueryClient();
   const { data: moduleStatus } = useQuery({
     queryKey: ["contentOptimizationModule"],
@@ -172,27 +187,72 @@ function FeaturesSection() {
   });
 
   return (
-    <section className="space-y-3">
-      <h2 className="text-sm font-medium text-base-content/50">Features</h2>
-      <div className="flex items-start justify-between gap-6">
-        <div>
-          <p className="text-sm">Content Optimization</p>
-          <p className="mt-1 text-sm text-base-content/60">
-            Page scans via your own On-Page.ai account. Turning this off hides
-            the module everywhere.
-          </p>
-        </div>
-        <input
-          type="checkbox"
-          className="toggle toggle-primary"
-          checked={moduleStatus?.enabled ?? true}
-          disabled={moduleStatus === undefined || toggleMutation.isPending}
-          onChange={(event) => {
-            toggleMutation.mutate(event.currentTarget.checked);
-          }}
-          aria-label="Enable the Content Optimization module"
-        />
+    <div className="flex items-start justify-between gap-6">
+      <div>
+        <p className="text-sm">Content Optimization</p>
+        <p className="mt-1 text-sm text-base-content/60">
+          Page scans via your own On-Page.ai account. Turning this off hides the
+          module everywhere.
+        </p>
       </div>
-    </section>
+      <input
+        type="checkbox"
+        className="toggle toggle-primary"
+        checked={moduleStatus?.enabled ?? true}
+        disabled={moduleStatus === undefined || toggleMutation.isPending}
+        onChange={(event) => {
+          toggleMutation.mutate(event.currentTarget.checked);
+        }}
+        aria-label="Enable the Content Optimization module"
+      />
+    </div>
+  );
+}
+
+function PaaMiningToggle() {
+  const queryClient = useQueryClient();
+  const { data: moduleStatus } = useQuery({
+    queryKey: ["paaMiningModule"],
+    queryFn: () => getPaaMiningStatus(),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      setPaaMiningEnabled({ data: { enabled } }),
+    onSuccess: (result) => {
+      void queryClient.invalidateQueries({
+        queryKey: ["paaMiningModule"],
+      });
+      toast.success(
+        result.enabled
+          ? "PAA + Social Mining enabled"
+          : "PAA + Social Mining disabled",
+      );
+    },
+    onError: () => {
+      toast.error("We couldn't update the PAA + Social Mining setting.");
+    },
+  });
+
+  return (
+    <div className="flex items-start justify-between gap-6">
+      <div>
+        <p className="text-sm">PAA + Social Mining</p>
+        <p className="mt-1 text-sm text-base-content/60">
+          Demand discovery via People Also Ask and Reddit/Quora, powered by your
+          own Serper.dev account. Turning this off hides the module everywhere.
+        </p>
+      </div>
+      <input
+        type="checkbox"
+        className="toggle toggle-primary"
+        checked={moduleStatus?.enabled ?? true}
+        disabled={moduleStatus === undefined || toggleMutation.isPending}
+        onChange={(event) => {
+          toggleMutation.mutate(event.currentTarget.checked);
+        }}
+        aria-label="Enable the PAA + Social Mining module"
+      />
+    </div>
   );
 }

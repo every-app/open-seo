@@ -17,6 +17,7 @@ import {
   getProjectNavGroups,
 } from "@/client/navigation/items";
 import { getContentOptimizationStatus } from "@/serverFunctions/contentOptimization";
+import { getPaaMiningStatus } from "@/serverFunctions/paaMining";
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
@@ -89,14 +90,27 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
     staleTime: 60_000,
   });
   const hideContentOptimization = contentOptimizationStatus?.enabled === false;
+
+  // Same pattern for the PAA + Social Mining module.
+  const { data: paaMiningStatus } = useQuery({
+    queryKey: ["paaMiningModule"],
+    queryFn: () => getPaaMiningStatus(),
+    enabled: projectId !== null,
+    staleTime: 60_000,
+  });
+  const hidePaaMining = paaMiningStatus?.enabled === false;
+
   const navGroups = [
     ...(projectId ? getProjectNavGroups(projectId) : []),
     connectNavGroup,
   ].map((group) => ({
     ...group,
-    items: hideContentOptimization
-      ? group.items.filter((item) => !item.to.endsWith("/content-optimization"))
-      : group.items,
+    items: group.items.filter((item) => {
+      if (hideContentOptimization && item.to.endsWith("/content-optimization"))
+        return false;
+      if (hidePaaMining && item.to.endsWith("/paa-mining")) return false;
+      return true;
+    }),
   }));
   const navigate = useNavigate();
   const location = useLocation();

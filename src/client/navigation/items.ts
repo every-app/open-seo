@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   Link2,
   MessageSquare,
+  MessageSquareQuote,
   ScanSearch,
   Search,
   Sparkles,
@@ -52,6 +53,11 @@ const projectNavItems = [
     to: "/p/$projectId/content-optimization" as const,
     label: "Content Optimization",
     icon: ScanSearch,
+  },
+  {
+    to: "/p/$projectId/paa-mining" as const,
+    label: "PAA + Social Mining",
+    icon: MessageSquareQuote,
   },
   {
     to: "/p/$projectId/backlinks" as const,
@@ -115,6 +121,7 @@ export function getProjectNavGroups(projectId: string) {
         byPath("/p/$projectId/keywords"),
         byPath("/p/$projectId/domain"),
         byPath("/p/$projectId/content-optimization"),
+        byPath("/p/$projectId/paa-mining"),
         byPath("/p/$projectId/backlinks"),
         byPath("/p/$projectId/brand-lookup"),
         byPath("/p/$projectId/prompt-explorer"),

@@ -72,6 +72,10 @@ import {
   getContentScanTool,
   runContentScanTool,
 } from "@/server/mcp/tools/content-optimization-tools";
+import {
+  getPaaScanTool,
+  runPaaMiningTool,
+} from "@/server/mcp/tools/paa-mining-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
@@ -204,6 +208,8 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getAuditPagesTool);
   register(runContentScanTool);
   register(getContentScanTool);
+  register(runPaaMiningTool);
+  register(getPaaScanTool);
 
   return server;
 }
