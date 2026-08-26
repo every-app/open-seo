@@ -1,0 +1,10 @@
+{
+  "worktree": {
+    "setup": [
+      "corepack enable",
+      "pnpm install --frozen-lockfile",
+      "if [ ! -f .env.local ]; then main_root=\"$(dirname \"$(git rev-parse --path-format=absolute --git-common-dir)\")\"; if [ -f \"$main_root/.env.local\" ]; then cp \"$main_root/.env.local\" .env.local; else cp .env.example .env.local; fi; fi; if ! grep -q '^AUTH_MODE=' .env.local; then printf '\\nAUTH_MODE=local_noauth\\n' >> .env.local; fi",
+      "pnpm run db:migrate:local"
+    ]
+  }
+}
