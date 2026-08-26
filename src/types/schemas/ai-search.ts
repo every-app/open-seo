@@ -185,6 +185,7 @@ export const WEB_SEARCH_COUNTRY_CODES = [
   "NL",
   "PT",
   "PL",
+  "TR",
   "SE",
   "NO",
   "DK",
