@@ -36,6 +36,13 @@ function getValidatedTeamDomain(teamDomain: string) {
   return result.origin;
 }
 
+// Identity for Cloudflare Access service tokens. The prefix keeps a token's
+// synthetic user id from ever colliding with an IdP `sub`, and the RFC 2606
+// `.invalid` domain guarantees the synthetic address is unroutable, so nothing
+// downstream can email it.
+const SERVICE_TOKEN_USER_PREFIX = "access-service-token:";
+const SERVICE_TOKEN_EMAIL_DOMAIN = "service-token.invalid";
+
 export async function resolveCloudflareAccessContext(
   headers: Headers,
 ): Promise<EnsuredUserContext> {
@@ -91,6 +98,22 @@ export async function resolveCloudflareAccessContext(
   const userEmail = typeof payload.email === "string" ? payload.email : null;
 
   if (!userId || !userEmail) {
+    // Service-token requests carry no human identity: Access issues them with
+    // an empty `sub` and no `email`, only `common_name` (the token's Client
+    // ID). Machine callers — a self-hosted agent, CI — have no other way in,
+    // so map the token to a stable synthetic user. Reaching this point already
+    // means an operator wrote a Service Auth policy admitting this exact
+    // token, so the token IS the authorization.
+    const serviceTokenName =
+      typeof payload.common_name === "string" ? payload.common_name.trim() : "";
+
+    if (serviceTokenName) {
+      return resolveSharedWorkspaceContext(
+        `${SERVICE_TOKEN_USER_PREFIX}${serviceTokenName}`,
+        `${serviceTokenName}@${SERVICE_TOKEN_EMAIL_DOMAIN}`,
+      );
+    }
+
     throw new AppError("UNAUTHENTICATED");
   }
 

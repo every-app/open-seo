@@ -11,6 +11,7 @@ import { z } from "zod";
 import {
   emailAccessGate,
   HOSTED_PROD_STAGE,
+  readServiceTokenIds,
   readWorkersSubdomain,
   requireAllowedEmails,
   workerName,
@@ -241,13 +242,23 @@ const resolveSelfHostAccess = (
       const allowedEmails = yield* requireAllowedEmails(
         "Set ACCESS_ALLOWED_EMAILS to the comma-separated emails allowed through Cloudflare Access — or set TEAM_DOMAIN and POLICY_AUD to manage the Access application yourself.",
       );
+      // CUSTOM_DOMAIN hostnames are routed to the worker, so they must be
+      // gated too — the workers.dev hostname alone would leave the custom
+      // domain reachable without Access.
+      const customDomains = (yield* optionalVar("CUSTOM_DOMAIN"))
+        .split(",")
+        .map((domain) => domain.trim())
+        .filter(Boolean);
       const application = yield* emailAccessGate({
         policyId: "SelfHostAllowUsers",
+        serviceTokenPolicyId: "SelfHostAllowServiceTokens",
         applicationId: "SelfHostAccess",
         policyName: `open-seo ${stage} self-host users`,
+        serviceTokenPolicyName: `open-seo ${stage} service tokens`,
         applicationName: `open-seo ${stage}`,
-        domain: `${workerName(stage)}.${subdomain}`,
+        domains: [`${workerName(stage)}.${subdomain}`, ...customDomains],
         emails: allowedEmails,
+        serviceTokenIds: yield* readServiceTokenIds(),
       });
       policyAud = application.aud;
     }
@@ -351,10 +362,23 @@ export default Alchemy.Stack(
       workersSubdomain,
     );
 
+    // Self-hosters binding their own domain (e.g. a Cloudflare Custom Domain
+    // set up by hand) set CUSTOM_DOMAIN so alchemy's reconciliation doesn't
+    // treat "no domain configured" as the desired state and tear it down on
+    // the next deploy.
+    const customDomain = yield* optionalVar("CUSTOM_DOMAIN");
+
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
       // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod
+        ? ["app.openseo.so", "www.app.openseo.so"]
+        : customDomain
+          ? customDomain
+              .split(",")
+              .map((d) => d.trim())
+              .filter(Boolean)
+          : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
