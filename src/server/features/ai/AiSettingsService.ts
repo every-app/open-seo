@@ -32,7 +32,7 @@ export type ResolvedAiSettings = {
 export type AiModelEnvironment = {
   aiAgentProvider: string | null;
   aiAgentModel: string | null;
-  /** Per-provider model defaults from env (OPENROUTER_MODEL, OPENAI_MODEL, …). */
+  /** Per-provider model defaults from env (OPENROUTER_MODEL, OPENAI_MODEL, ...). */
   providerModelDefaults: Partial<Record<AiProviderId, string | null>>;
 };
 
@@ -122,13 +122,168 @@ export function resolveAiModel(
   });
 }
 
+// ---------------------------------------------------------------------------
+// Phase S: provider-aware effective configuration (provider/model/baseUrl/
+// credential) with field-level inheritance across project -> organization ->
+// environment. THE core invariant: a field from one scope is only used when
+// it belongs to the EFFECTIVE provider - a Gemini project never inherits an
+// OpenAI credential, and an org key for provider X never serves provider Y.
+// ---------------------------------------------------------------------------
+
+export type AiConfigSource =
+  | "project"
+  | "organization"
+  | "environment"
+  | "none";
+
+export type ScopeAiConfig = {
+  provider: string;
+  model: string | null;
+  baseUrl: string | null;
+};
+
+export type EffectiveAiConfig = {
+  provider: AiProviderId;
+  model: string | null;
+  /** Endpoint override; only set when it belongs to the effective provider. */
+  baseUrl: string | null;
+  baseUrlSource: AiConfigSource;
+  /** Plaintext credential for the effective provider (server-side only). */
+  credential: string | null;
+  credentialSource: AiConfigSource;
+  /** Which scope supplied the provider choice. */
+  providerSource: AiConfigSource;
+};
+
+export type AiCredentialEnvironment = {
+  aiAgentProvider: string | null;
+  aiAgentModel: string | null;
+  providerModelDefaults: Partial<Record<AiProviderId, string | null>>;
+  /** Per-provider env credentials (OPENROUTER_API_KEY, ...). */
+  apiKeys: Partial<Record<AiProviderId, string | null>>;
+  /** Env endpoint Base URLs (OPENAI_COMPATIBLE_BASE_URL, OLLAMA_CLOUD_BASE_URL). */
+  baseUrls: Partial<Record<AiProviderId, string | null>>;
+};
+
+function firstProviderMatch(
+  effective: AiProviderId,
+  scopes: Array<{
+    source: AiConfigSource;
+    row: ScopeAiConfig | null;
+    value: string | null | undefined;
+  }>,
+): { value: string; source: AiConfigSource } | null {
+  for (const scope of scopes) {
+    if (!scope.row || !scope.value) continue;
+    // Provider-awareness: the field is only usable when its row's provider
+    // matches the effective provider (S2/S6).
+    if (
+      isSupportedProvider(scope.row.provider) &&
+      scope.row.provider === effective
+    ) {
+      return { value: scope.value, source: scope.source };
+    }
+  }
+  return null;
+}
+
+/**
+ * Resolve the full effective configuration. Credentials arrive pre-decrypted
+ * (service caller decrypts via credentialCrypto); this function only applies
+ * the provider-aware precedence:
+ *
+ *   provider : project -> organization -> AI_AGENT_PROVIDER -> "openrouter"
+ *   model    : same-scope-as-provider model -> env model for provider -> adapter
+ *              default (null here; the adapter owns the built-in default)
+ *   baseUrl  : project -> organization (same provider) -> env per-provider -> null
+ *   key      : project -> organization (same provider) -> env per-provider -> null
+ */
+export function resolveEffectiveAiConfig(input: {
+  project: ScopeAiConfig | null;
+  organization: ScopeAiConfig | null;
+  projectCredentials: Record<string, string> | null;
+  organizationCredentials: Record<string, string> | null;
+  env: AiCredentialEnvironment;
+}): EffectiveAiConfig {
+  const { project, organization, env } = input;
+
+  const providerChoice =
+    (project?.provider
+      ? { source: "project" as AiConfigSource, provider: project.provider }
+      : null) ??
+    (organization?.provider
+      ? {
+          source: "organization" as AiConfigSource,
+          provider: organization.provider,
+        }
+      : null) ?? {
+      source: "environment" as AiConfigSource,
+      provider: AiProviderRegistry.getEnvDefaultProviderId(
+        env.aiAgentProvider,
+      ),
+    };
+  const provider: AiProviderId = isSupportedProvider(providerChoice.provider)
+    ? providerChoice.provider
+    : "openrouter";
+
+  // Model: prefer the model stored alongside the winning provider choice,
+  // then any same-provider scope, then env defaults for this provider.
+  const modelFromScopes = firstProviderMatch(provider, [
+    { source: "project", row: project, value: project?.model },
+    { source: "organization", row: organization, value: organization?.model },
+  ]);
+  const envModel =
+    (providerChoice.source === "environment" ? env.aiAgentModel : null) ??
+    env.providerModelDefaults[provider] ??
+    null;
+  const model = modelFromScopes?.value ?? envModel ?? null;
+
+  const baseUrlFromScopes = firstProviderMatch(provider, [
+    { source: "project", row: project, value: project?.baseUrl },
+    {
+      source: "organization",
+      row: organization,
+      value: organization?.baseUrl,
+    },
+  ]);
+  const envBaseUrl = env.baseUrls[provider] ?? null;
+
+  const credentialFromScopes = (
+    [
+      {
+        source: "project" as AiConfigSource,
+        map: input.projectCredentials,
+      },
+      {
+        source: "organization" as AiConfigSource,
+        map: input.organizationCredentials,
+      },
+    ] as const
+  ).find((scope) => scope.map?.[provider] !== undefined) ?? null;
+  const envCredential = env.apiKeys[provider] ?? null;
+  const scopedCredential =
+    (credentialFromScopes?.map ?? {})[provider] ?? null;
+
+  return {
+    provider,
+    model: safePair(provider, model).model,
+    baseUrl: baseUrlFromScopes?.value ?? envBaseUrl,
+    baseUrlSource: baseUrlFromScopes?.source ?? (envBaseUrl ? "environment" : "none"),
+    credential: scopedCredential ?? envCredential ?? null,
+    credentialSource:
+      credentialFromScopes?.source ?? (envCredential ? "environment" : "none"),
+    providerSource: providerChoice.source,
+  };
+}
+
 export function maskApiKey(key: string): string {
-  if (!key) return "••••••••";
-  if (key.length <= 8) return "••••••••";
-  // sk-or-v1-xxxxxxxx...xxxx — keep the scheme prefix and the last 4 chars,
+  const mask = "\u2022\u2022\u2022\u2022";
+  if (!key) return mask.repeat(2);
+  if (key.length <= 8) return mask.repeat(2);
+  // sk-or-v1-xxxxxxxx...xxxx - keep the scheme prefix and the last 4 chars,
   // never anything in between.
   const schemeEnd = Math.min(key.indexOf("-") + 1, 8);
-  return `${key.slice(0, schemeEnd)}••••${key.slice(-4)}`;
+  return `${key.slice(0, schemeEnd)}${mask}${key.slice(-4)}`;
 }
 
 async function providerStatus(
@@ -148,7 +303,7 @@ async function providerStatus(
 
 /**
  * Per-provider credential status for the settings UI. Keys are only ever
- * masked or absent — never returned in plaintext.
+ * masked or absent - never returned in plaintext.
  */
 export async function getProviderStatuses(
   apiKeys: Partial<Record<AiProviderId, string | null>>,

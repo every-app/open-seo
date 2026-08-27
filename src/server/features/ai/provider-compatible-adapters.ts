@@ -95,16 +95,40 @@ function mapProviderId(
 function createOpenAiCompatibleAdapter(
   config: OpenAiCompatibleConfig,
 ): AiProvider {
-  const cacheKey = `ai-models:${config.id}`;
+  // S17: catalog cache identity is provider + normalized Base URL — Gateway A
+  // and Gateway B must never share a cached catalog.
+  const cacheKeyFor = (base: string): string =>
+    `ai-models:${config.id}:${base}`;
   // Synchronous buildModel can't await env, so the resolved Base URL is
   // warmed by every async seam (prepare/isConfigured/listModels/test) and
   // read from this cache on the hot path.
   const state: WarmableAdapter = { baseUrlCache: null };
   const currentBase = (): string | null => state.baseUrlCache;
 
+  /**
+   * Merge the EFFECTIVE config (stored/unsaved edits) over the deployment
+   * env: explicit Base URL wins, explicit key wins, else env-resolved.
+   */
+  const resolveEndpoint = async (
+    opts?: { baseUrl?: string; apiKey?: string },
+  ): Promise<{ base: string | null; apiKey: string | null }> => {
+    if (opts?.baseUrl) {
+      const normalized = normalizeBaseUrl(opts.baseUrl);
+      const check = await checkBaseUrlForDeployment(normalized);
+      return { base: check.ok ? check.url : null, apiKey: opts.apiKey ?? (await getOptionalEnvValue(config.envApiKey)) ?? null };
+    }
+    const base =
+      (await refreshCompatibleBaseUrl(config, state)) ?? currentBase();
+    return {
+      base,
+      apiKey: opts?.apiKey ?? (await getOptionalEnvValue(config.envApiKey)) ?? null,
+    };
+  };
+
   return {
     id: config.id,
     displayName: config.displayName,
+    credentialOptional: config.keyOptional,
     capabilities: {
       toolCalling: true,
       streaming: true,
@@ -132,14 +156,14 @@ function createOpenAiCompatibleAdapter(
     async getApiKey() {
       return (await getOptionalEnvValue(config.envApiKey)) ?? null;
     },
-    async listModels() {
-      const base =
-        (await refreshCompatibleBaseUrl(config, state)) ?? currentBase();
+    async listModels(opts) {
+      const { base, apiKey } = await resolveEndpoint(opts);
       if (!base) return [];
-      const apiKey = await this.getApiKey();
       try {
-        const models = await cachedModels(cacheKey, () =>
-          fetchOpenAiCompatibleModels(base, apiKey),
+        const models = await cachedModels(
+          cacheKeyFor(base),
+          () => fetchOpenAiCompatibleModels(base, apiKey),
+          { refresh: opts?.refresh },
         );
         return mapProviderId(models, config.id);
       } catch {
@@ -147,9 +171,8 @@ function createOpenAiCompatibleAdapter(
         return [];
       }
     },
-    async testConnection(modelId) {
-      const base =
-        (await refreshCompatibleBaseUrl(config, state)) ?? currentBase();
+    async testConnection(modelId, opts) {
+      const { base, apiKey } = await resolveEndpoint(opts);
       if (!base) {
         return {
           ok: false,
@@ -164,14 +187,16 @@ function createOpenAiCompatibleAdapter(
           toolCallingVerified: false,
         };
       }
-      const apiKey = await this.getApiKey();
       if (!apiKey && !config.keyOptional) {
         return missingKeyResult(this, modelId);
       }
       return runConnectionTest(this, apiKey ?? "", modelId);
     },
-    buildModel(apiKey, modelId) {
-      const base = currentBase();
+    buildModel(apiKey, modelId, opts) {
+      const explicit = opts?.baseUrl
+        ? normalizeBaseUrl(opts.baseUrl)
+        : null;
+      const base = explicit ?? currentBase();
       if (!base) {
         throw new Error(
           config.envBaseUrl

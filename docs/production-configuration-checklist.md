@@ -135,10 +135,13 @@ PORT=3002 docker compose -f compose.dev.yaml up -d --build
 
 ## Security
 
-- **API keys are server-side**: stored only as deployment secrets; the
-  settings UI shows masked values (`sk-••••abcd`) and per-provider
-  configured/not-configured state. No plaintext key is ever stored in D1/PG
-  or returned to the browser.
+- **API keys are server-side**: stored only as deployment secrets OR as
+  **encrypted** rows in `ai_agent_settings` when entered from the UI
+  (AES-GCM via better-auth, keyed from `AI_CREDENTIALS_ENCRYPTION_KEY` or
+  `BETTER_AUTH_SECRET` — see `docs/ai-credentials-storage-audit.md`). The
+  settings UI shows masked suffixes only; plaintext keys never appear in any
+  GET response, browser state, or log line. `AI_CREDENTIALS_ENCRYPTION_KEY`
+  must be set (or BETTER_AUTH_SECRET present) for UI credential storage.
 - **Base URL SSRF protection**: user/deployment-supplied endpoints are
   validated (scheme, credentials-in-URL, metadata hosts, private ranges per
   deployment mode). Do not weaken `checkBaseUrl`.
@@ -179,7 +182,8 @@ regression — fix before shipping; do not expand the known-flake list.
 ## Pre-deployment checklist
 
 ```
-[ ] Provider credentials configured (at least one provider)
+[ ] Provider credentials configured (at least one provider — env or UI-entered)
+[ ] AI_CREDENTIALS_ENCRYPTION_KEY (or BETTER_AUTH_SECRET) set if UI credential storage is used
 [ ] Selected model supports tool calling
 [ ] Test Connection passes for the selected provider/model
 [ ] ZDR policy verified where applicable (OpenRouter)

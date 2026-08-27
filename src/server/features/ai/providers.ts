@@ -14,19 +14,16 @@ import { PROVIDER_ADAPTERS } from "./provider-adapters";
 // therefore adds only what the SDK doesn't cover: the provider list, id
 // validation, and published-cost extraction.
 
-export const SUPPORTED_PROVIDERS = [
-  "openrouter",
-  "openai",
-  "gemini",
-  "anthropic",
-  "openai_compatible",
-  "ollama_cloud",
-] as const;
-export type AiProviderId = (typeof SUPPORTED_PROVIDERS)[number];
-
-export function isSupportedProvider(id: string): id is AiProviderId {
-  return (SUPPORTED_PROVIDERS as readonly string[]).includes(id);
-}
+import {
+  SUPPORTED_PROVIDERS,
+  isSupportedProvider,
+  type AiProviderId,
+} from "@/server/features/ai/providerIds";
+export {
+  SUPPORTED_PROVIDERS,
+  isSupportedProvider,
+  type AiProviderId,
+};
 
 export type AiProviderCapabilities = {
   toolCalling: boolean;
@@ -89,6 +86,11 @@ export type AiProvider = {
   /** Whether the deployment has a credential configured for this provider. */
   isConfigured(): Promise<boolean>;
   /**
+   * True when this provider can operate without an API key given a usable
+   * endpoint (key-less local gateways via the OpenAI-Compatible adapter).
+   */
+  readonly credentialOptional?: boolean;
+  /**
    * Warm any lazily-resolved adapter config (e.g. an env-configured Base
    * URL) before synchronous model construction. Optional — adapters with
    * only static config don't need it. SamChatAgent calls it in beforeTurn.
@@ -101,25 +103,45 @@ export type AiProvider = {
    */
   baseUrl?(): Promise<string | null>;
   /**
+   * Model catalog. `opts` carries the EFFECTIVE configuration (stored or
+   * unsaved edits): an explicit Base URL for endpoint providers, an explicit
+   * API key (unsaved edit), and `refresh` to bypass the catalog cache
+   * (Refresh Models). Without opts, adapters fall back to deployment env.
+   */
+  listModels(opts?: {
+    baseUrl?: string;
+    apiKey?: string;
+    refresh?: boolean;
+  }): Promise<AiModel[]>;
+  /**
    * Server-side credential. Never returned to the client, never logged, never
-   * stored — callers pass it straight into the SDK model constructor.
+   * stored — callers pass it straight into the SDK model constructor. Reads
+   * the deployment env credential for this provider.
    */
   getApiKey(): Promise<string | null>;
-  /** Model catalog, cached server-side with a TTL. Empty when unconfigured. */
-  listModels(): Promise<AiModel[]>;
   /**
    * Cheap generation to verify the credential works and the model responds,
    * plus a best-effort tool-call probe when the provider declares tool
    * support. Never counts against OpenSEO usage credits — it's billed to the
-   * deployment's own provider key.
+   * deployment's own provider key. `opts` carries unsaved edits (explicit
+   * Base URL / API key) so Test Connection can verify exactly what the user
+   * is about to save, without persisting anything.
    */
-  testConnection(modelId: string): Promise<AiConnectionResult>;
+  testConnection(
+    modelId: string,
+    opts?: { baseUrl?: string; apiKey?: string },
+  ): Promise<AiConnectionResult>;
   /**
    * The AI SDK LanguageModel for this provider. This is the provider-neutral
    * surface the agent consumes: tool calling, streaming, and finish reasons
-   * are all normalized by the `ai` SDK.
+   * are all normalized by the `ai` SDK. `opts.baseUrl` overrides the
+   * deployment endpoint (effective stored config for endpoint providers).
    */
-  buildModel(apiKey: string, modelId: string): LanguageModel;
+  buildModel(
+    apiKey: string,
+    modelId: string,
+    opts?: { baseUrl?: string },
+  ): LanguageModel;
   /**
    * Real USD cost of a response when the provider publishes it (OpenRouter
    * usage accounting); 0 when the provider doesn't publish pricing per

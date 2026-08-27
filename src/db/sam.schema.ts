@@ -50,6 +50,14 @@ export const aiAgentSettings = sqliteTable(
   {
     provider: text("provider").notNull().default("openrouter"),
     model: text("model").notNull().default(""),
+    // Endpoint override for providers that take one (OpenAI-Compatible /
+    // Ollama Cloud). Plaintext configuration data — never a secret; only
+    // honored when the row's provider matches the effective provider.
+    baseUrl: text("base_url"),
+    // Encrypted JSON map { [providerId]: apiKey } (better-auth AES-GCM
+    // envelope; see credentialCrypto.ts). A scope may hold credentials for
+    // several providers; resolution is provider-aware. Never plaintext.
+    credentials: text("credentials"),
     organizationId: text("organization_id").references(() => organization.id, {
       onDelete: "cascade",
     }),

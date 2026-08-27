@@ -61,6 +61,10 @@ declare namespace Cloudflare {
     // HTTPS targets, self-hosted may point at local gateways.
     OPENAI_COMPATIBLE_BASE_URL?: string;
     OLLAMA_CLOUD_BASE_URL?: string;
+    // UI-entered AI credentials are encrypted at rest with this key (or
+    // derived from BETTER_AUTH_SECRET when unset). Deployment-only secret —
+    // never stored in D1, never returned to clients, never logged.
+    AI_CREDENTIALS_ENCRYPTION_KEY?: string;
 
     // In-app agent (SAM) overrides. AI_AGENT_PROVIDER picks the deployment
     // default provider (defaults to openrouter); AI_AGENT_MODEL overrides the

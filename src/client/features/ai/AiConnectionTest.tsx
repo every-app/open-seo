@@ -2,7 +2,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { testAiConnection } from "@/serverFunctions/aiSettings";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import type { AiProviderId } from "@/server/features/ai/providers";
+import type { AiProviderId } from "@/server/features/ai/providerIds";
 
 // One-off credential/model check from the settings UI: fires a minimal
 // generation (plus a best-effort tool-call probe for providers that declare

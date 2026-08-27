@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   generateText: vi.fn(),
   env: {} as Record<string, string | undefined>,
   hosted: false,
+  cache: new Map<string, unknown>(),
   create: vi.fn<(config: unknown) => {
     chatModel: (modelId: string) => { modelId: string };
   }>(),
@@ -22,8 +23,11 @@ vi.mock("@/server/lib/runtime-env", () => ({
 }));
 vi.mock("@/server/lib/r2-cache", () => ({
   CACHE_TTL: { aiModels: 43200 },
-  getCached: async () => null,
-  setCached: async () => {},
+  // Real in-memory caching so catalog identity/refresh behavior is provable.
+  getCached: async (key: string) => mocks.cache.get(key),
+  setCached: async (key: string, value: unknown) => {
+    mocks.cache.set(key, value);
+  },
 }));
 vi.mock("ai", async (importOriginal) => {
   const actual = await importOriginal<typeof Ai>();
@@ -41,6 +45,7 @@ beforeEach(() => {
   vi.stubGlobal("fetch", mocks.fetch);
   mocks.fetch.mockReset();
   mocks.generateText.mockReset();
+  mocks.cache.clear();
   compatibleFactory.create.mockReset();
   compatibleFactory.create.mockImplementation(() => ({
     chatModel: (modelId: string) => ({ modelId }),
@@ -107,6 +112,81 @@ describe("ollamaCloudProvider", () => {
     mocks.env.OLLAMA_API_KEY = "k";
     mocks.fetch.mockRejectedValue(new Error("boom"));
     expect(await provider.listModels()).toEqual([]);
+  });
+
+  it("caches catalogs PER normalized Base URL - gateways never share (S17/S26)", async () => {
+    mocks.env.OLLAMA_API_KEY = "k";
+    mocks.env.OLLAMA_CLOUD_BASE_URL = "https://gateway-a.example.com/v1/";
+    mocks.fetch.mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "model-a" }] }), { status: 200 }),
+    );
+    const a1 = await provider.listModels();
+    expect(a1.map((m) => m.id)).toEqual(["model-a"]);
+
+    // Different Base URL - different cache identity - fresh fetch.
+    mocks.env.OLLAMA_CLOUD_BASE_URL = "https://gateway-b.example.com/v1";
+    mocks.fetch.mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "model-x" }] }), { status: 200 }),
+    );
+    const b1 = await provider.listModels();
+    expect(b1.map((m) => m.id)).toEqual(["model-x"]);
+
+    // Back to Gateway A: served from ITS cache (second fetch for A happened
+    // once - the two gateway caches are independent).
+    mocks.env.OLLAMA_CLOUD_BASE_URL = "https://gateway-a.example.com/v1";
+    const a2 = await provider.listModels();
+    expect(a2.map((m) => m.id)).toEqual(["model-a"]);
+    const catalogUrls = mocks.fetch.mock.calls.map(
+      // oxlint-disable-next-line typescript/no-base-to-string -- fetch mock calls carry string URLs in these tests
+      (call) => String(call[0]),
+    );
+    expect(catalogUrls).toContain("https://gateway-a.example.com/v1/models");
+    expect(catalogUrls).toContain("https://gateway-b.example.com/v1/models");
+  });
+
+  it("explicit Base URL + key overrides drive discovery (unsaved edits, S14)", async () => {
+    mocks.fetch.mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "override-model" }] }), {
+        status: 200,
+      }),
+    );
+    const models = await provider.listModels({
+      baseUrl: "https://unsaved.example.com/v1/",
+      apiKey: "unsaved-key",
+    });
+    expect(models.map((m) => m.id)).toEqual(["override-model"]);
+    const [url, init] = mocks.fetch.mock.calls[0];
+    // oxlint-disable-next-line typescript/no-base-to-string -- fetch mock calls carry string URLs in these tests
+    expect(String(url)).toBe("https://unsaved.example.com/v1/models");
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- RequestInit shape is test-controlled
+    expect((init as { headers: Record<string, string> }).headers.Authorization).toBe(
+      "Bearer unsaved-key",
+    );
+  });
+
+  it("refresh bypasses the cache and picks up new models (S16/S31)", async () => {
+    mocks.env.OLLAMA_API_KEY = "k";
+    // First (cached) load: only model-a.
+    mocks.fetch.mockResolvedValue(
+      new Response(JSON.stringify({ data: [{ id: "model-a" }] }), { status: 200 }),
+    );
+    expect((await provider.listModels()).map((m) => m.id)).toEqual(["model-a"]);
+    // Provider gains a model; the CACHED read still returns the old catalog-
+    mocks.fetch.mockResolvedValue(
+      new Response(
+        JSON.stringify({ data: [{ id: "model-a" }, { id: "model-new" }] }),
+        { status: 200 },
+      ),
+    );
+    expect((await provider.listModels()).map((m) => m.id)).toEqual(["model-a"]);
+    // -but refresh bypasses the cache and returns the fresh catalog.
+    const refreshed = await provider.listModels({ refresh: true });
+    expect(refreshed.map((m) => m.id)).toEqual(["model-a", "model-new"]);
+    // And the refreshed catalog is now what the cache serves.
+    expect((await provider.listModels()).map((m) => m.id)).toEqual([
+      "model-a",
+      "model-new",
+    ]);
   });
 });
 

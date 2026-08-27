@@ -45,6 +45,12 @@ export const aiAgentSettings = pgTable(
   {
     provider: text("provider").notNull().default("openrouter"),
     model: text("model").notNull().default(""),
+    // Endpoint override for endpoint providers (plaintext config, not a
+    // secret); honored only when the row's provider is the effective one.
+    baseUrl: text("base_url"),
+    // Encrypted JSON map { [providerId]: apiKey } — better-auth AES-GCM
+    // envelope (see credentialCrypto.ts). Never plaintext.
+    credentials: text("credentials"),
     organizationId: text("organization_id").references(() => organization.id, {
       onDelete: "cascade",
     }),

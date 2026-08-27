@@ -281,6 +281,13 @@
       "when": 1787074052338,
       "tag": "0039_ordinary_azazel",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1787612650928,
+      "tag": "0040_condemned_khan",
+      "breakpoints": true
     }
   ]
 }

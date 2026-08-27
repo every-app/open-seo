@@ -38,14 +38,47 @@ model instead of being sent to the wrong API. Clearing a project's model
 override removes the row entirely, so the project inherits the
 organization/environment default again.
 
-Only the provider and model are persisted (table `ai_agent_settings` in both
-SQLite and Postgres, one row per scope enforced by partial unique indexes).
-Credentials are never stored — `OPENROUTER_API_KEY`, `OPENAI_API_KEY`,
-`GEMINI_API_KEY`, and `ANTHROPIC_API_KEY` remain server-side deployment
-secrets. The UI shows masked key status per provider (`sk-••••abcd` or
-"Not configured") and a "Test connection" button per provider that fires a
-minimal generation using the server-managed key; the test is billed to the
-deployment's own provider account, not to OpenSEO usage credits.
+## Configuration Scopes & Editable Credentials (Phase S)
+
+AI configuration resolves per field across three scopes, **provider-aware**:
+
+```text
+Project row → Organization row → Environment → Built-in default
+```
+
+Each scope row (`ai_agent_settings`, one per scope) persists:
+
+- `provider` + `model` (as before),
+- `base_url` — plaintext endpoint override (OpenAI-Compatible / Ollama Cloud
+  only; honored only when the row's provider is the effective one),
+- `credentials` — an **encrypted** JSON map `{providerId: apiKey}` (AES-GCM
+  via better-auth's `symmetricEncrypt`, keyed from
+  `AI_CREDENTIALS_ENCRYPTION_KEY` or `BETTER_AUTH_SECRET`, domain-separated
+  as `:ai-credentials-v1` so it can never be cross-decrypted with OAuth
+  tokens). Plaintext keys are never returned by any GET, never logged, and
+  never reach the browser; the UI shows masked suffixes and explicit
+  Change/Remove actions, with "blank = do not modify" semantics.
+
+Provider-aware credential fallback — a scope's key is used **only for its own
+provider**: project(OpenAI Compatible, custom Base URL) + organization key for
+the same provider → combined; a Gemini project never inherits an OpenAI key
+(→ falls back to the Gemini environment key, or "Not configured").
+
+- **Environment defaults** are read-only in the UI (shown on the
+  organization page); the browser never edits deployment env vars.
+- **Test Connection** always tests the current edit state (unsaved provider/
+  key/Base URL/model round-trip over TLS, never persisted), falling back to
+  the effective configuration for untouched fields.
+- **Refresh Models** bypasses the 12h catalog cache and re-fetches;
+  catalogs are cached per **provider + normalized Base URL**, so two
+  gateways never share a cached catalog.
+- **Use inherited settings** deletes the scope row; the parent scope (or
+  environment) becomes effective immediately.
+- SAM resolves the same effective configuration before each turn — saved
+  changes apply to future turns while existing conversations stay intact.
+- Deployments without a configured encryption key (neither env var set)
+  cannot store credentials; env fallback keeps working and the UI explains
+  the gap.
 
 ## Provider Support
 

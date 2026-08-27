@@ -29,10 +29,15 @@ function parsePriceUsd(raw: string | null | undefined): number | null {
 async function cachedModels(
   cacheKey: string,
   fetchModels: () => Promise<AiModel[]>,
+  opts?: { refresh?: boolean },
 ): Promise<AiModel[]> {
-  const cached: unknown = await getCached(cacheKey);
-  if (isModelRowArray(cached)) {
-    return cached;
+  // Refresh Models (S16): bypass the cache read entirely — always hit the
+  // provider, then re-populate the cache with the fresh catalog.
+  if (!opts?.refresh) {
+    const cached: unknown = await getCached(cacheKey);
+    if (isModelRowArray(cached)) {
+      return cached;
+    }
   }
   const models = await fetchModels();
   // Best-effort cache: a failed write just means a re-fetch next time.

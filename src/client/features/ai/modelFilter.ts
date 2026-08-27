@@ -1,4 +1,5 @@
-import type { AiModel, AiProviderId } from "@/server/features/ai/providers";
+import type { AiModel } from "@/server/features/ai/providers";
+import type { AiProviderId } from "@/server/features/ai/providerIds";
 
 // Pure, unit-testable model-catalog filter used by AiModelSelect. Kept free of
 // any module side effects so it can be tested without the client/server graph.

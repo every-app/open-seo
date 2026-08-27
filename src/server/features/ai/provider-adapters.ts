@@ -110,14 +110,18 @@ const openRouterProvider: AiProvider = {
   async getApiKey() {
     return (await getOptionalEnvValue("OPENROUTER_API_KEY")) ?? null;
   },
-  async listModels() {
-    const apiKey = await getOptionalEnvValue("OPENROUTER_API_KEY");
-    return cachedModels("ai-models:openrouter", () =>
-      fetchOpenRouterModels(apiKey),
+  async listModels(opts) {
+    const apiKey =
+      opts?.apiKey ?? (await getOptionalEnvValue("OPENROUTER_API_KEY")) ?? null;
+    return cachedModels(
+      "ai-models:openrouter",
+      () => fetchOpenRouterModels(apiKey),
+      { refresh: opts?.refresh },
     );
   },
-  async testConnection(modelId) {
-    const apiKey = await this.getApiKey();
+  async testConnection(modelId, opts) {
+    const apiKey =
+      opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return missingKeyResult(this, modelId);
     return runConnectionTest(this, apiKey, modelId);
   },
@@ -206,13 +210,18 @@ const openAiProvider: AiProvider = {
   async getApiKey() {
     return (await getOptionalEnvValue("OPENAI_API_KEY")) ?? null;
   },
-  async listModels() {
-    const apiKey = await this.getApiKey();
+  async listModels(opts) {
+    const apiKey = opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return [];
-    return cachedModels("ai-models:openai", () => fetchOpenAiModels(apiKey));
+    return cachedModels(
+      "ai-models:openai",
+      () => fetchOpenAiModels(apiKey),
+      { refresh: opts?.refresh },
+    );
   },
-  async testConnection(modelId) {
-    const apiKey = await this.getApiKey();
+  async testConnection(modelId, opts) {
+    const apiKey =
+      opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return missingKeyResult(this, modelId);
     return runConnectionTest(this, apiKey, modelId);
   },
@@ -290,13 +299,18 @@ const geminiProvider: AiProvider = {
   async getApiKey() {
     return (await getOptionalEnvValue("GEMINI_API_KEY")) ?? null;
   },
-  async listModels() {
-    const apiKey = await this.getApiKey();
+  async listModels(opts) {
+    const apiKey = opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return [];
-    return cachedModels("ai-models:gemini", () => fetchGeminiModels(apiKey));
+    return cachedModels(
+      "ai-models:gemini",
+      () => fetchGeminiModels(apiKey),
+      { refresh: opts?.refresh },
+    );
   },
-  async testConnection(modelId) {
-    const apiKey = await this.getApiKey();
+  async testConnection(modelId, opts) {
+    const apiKey =
+      opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return missingKeyResult(this, modelId);
     return runConnectionTest(this, apiKey, modelId);
   },
@@ -369,15 +383,18 @@ const anthropicProvider: AiProvider = {
   async getApiKey() {
     return (await getOptionalEnvValue("ANTHROPIC_API_KEY")) ?? null;
   },
-  async listModels() {
-    const apiKey = await this.getApiKey();
+  async listModels(opts) {
+    const apiKey = opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return [];
-    return cachedModels("ai-models:anthropic", () =>
-      fetchAnthropicModels(apiKey),
+    return cachedModels(
+      "ai-models:anthropic",
+      () => fetchAnthropicModels(apiKey),
+      { refresh: opts?.refresh },
     );
   },
-  async testConnection(modelId) {
-    const apiKey = await this.getApiKey();
+  async testConnection(modelId, opts) {
+    const apiKey =
+      opts?.apiKey ?? (await this.getApiKey());
     if (!apiKey) return missingKeyResult(this, modelId);
     return runConnectionTest(this, apiKey, modelId);
   },

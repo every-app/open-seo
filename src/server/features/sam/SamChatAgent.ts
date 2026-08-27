@@ -29,8 +29,7 @@ import {
   parsePositiveIntEnv,
   toolCallCap,
 } from "@/server/features/sam/samTurnControls";
-import { AiSettingsRepository } from "@/server/features/ai/AiSettingsRepository";
-import { resolveAiSettings } from "@/server/features/ai/AiSettingsService";
+import { resolveSamEffectiveConfig } from "@/server/features/sam/samEffectiveConfig";
 import {
   AiProviderRegistry,
   estimateProviderCost,
@@ -303,35 +302,19 @@ export class SamChatAgent extends Think {
       });
       this.auditPolls ??= createPollCoordinator();
 
-      // Effective settings from the rows (project > organization) or the
-      // env/built-in default via getModel(). When a row is configured we
-      // build the model per-turn through the resolved provider's adapter;
-      // otherwise TurnConfig omits it and Think resolves getModel().
-      const [projectSettings, organizationSettings] = await Promise.all([
-        AiSettingsRepository.getProjectAiSettings(ctx.project.id),
-        AiSettingsRepository.getOrganizationAiSettings(organizationId),
-      ]);
-      const resolved = resolveAiSettings(
-        { project: projectSettings, organization: organizationSettings },
-        {
-          aiAgentProvider:
-            getEnvValueSync(this.env, "AI_AGENT_PROVIDER") ?? null,
-          aiAgentModel: getEnvValueSync(this.env, "AI_AGENT_MODEL") ?? null,
-          providerModelDefaults: {
-            openrouter:
-              getEnvValueSync(this.env, "OPENROUTER_MODEL") ?? null,
-            openai: getEnvValueSync(this.env, "OPENAI_MODEL") ?? null,
-            gemini: getEnvValueSync(this.env, "GEMINI_MODEL") ?? null,
-            anthropic: getEnvValueSync(this.env, "ANTHROPIC_MODEL") ?? null,
-            openai_compatible:
-              getEnvValueSync(this.env, "OPENAI_COMPATIBLE_MODEL") ?? null,
-            ollama_cloud:
-              getEnvValueSync(this.env, "OLLAMA_CLOUD_MODEL") ?? null,
-          },
-        },
-      );
-      this.turnProviderId = resolved.provider;
-      this.turnModelId = resolved.model;
+      // Effective settings (Phase S): provider-aware resolution across
+      // project row → organization row → environment, INCLUDING stored
+      // encrypted credentials and Base URL overrides (samEffectiveConfig.ts).
+      // When a provider/model is configured we build the model per-turn
+      // through the resolved provider's adapter; otherwise TurnConfig omits
+      // it and Think resolves getModel().
+      const effective = await resolveSamEffectiveConfig({
+        env: this.env,
+        projectId: ctx.project.id,
+        organizationId,
+      });
+      this.turnProviderId = effective.provider;
+      this.turnModelId = effective.model;
 
       const maxSteps = parsePositiveIntEnv(
         getEnvValueSync(this.env, "AI_AGENT_MAX_STEPS"),
@@ -362,27 +345,32 @@ export class SamChatAgent extends Think {
       // runaway model can't fan out unbounded paid calls.
       turn.stopWhen = [toolCallCap(maxToolCalls)];
 
-      if (resolved.model) {
-        // The resolved provider is authoritative (no automatic fallback to
-        // another provider): an unready adapter is a hard, visible failure.
-        const provider = AiProviderRegistry.get(resolved.provider);
+      if (effective.model) {
+        // The effective provider is authoritative (no automatic fallback to
+        // another provider): missing credential/endpoint is a hard, visible
+        // failure — except key-optional endpoint adapters with a Base URL.
+        const provider = AiProviderRegistry.get(effective.provider);
         // Warm lazily-resolved adapter config (env Base URLs) before the
         // synchronous model build below.
         await provider.prepare?.();
         // SAM is a tool-using agent: refuse models the catalog explicitly
         // marks as tool-less (unknown capability passes — unverifiable).
-        const refusal = await toolCallingRefusalFor(provider, resolved.model);
+        const refusal = await toolCallingRefusalFor(provider, effective.model);
         if (refusal) return this.refusalTurn(refusal);
-        if (!(await provider.isConfigured())) {
+        const ready =
+          effective.credential !== null ||
+          (provider.credentialOptional === true &&
+            (effective.baseUrl ?? (await provider.baseUrl?.())) != null);
+        if (!ready) {
           throw new Error(
-            `AI provider "${resolved.provider}" is selected for this project, but its deployment configuration (${provider.envApiKey}${provider.baseUrl ? " / Base URL" : ""}) is not ready.`,
+            `AI provider "${effective.provider}" is selected for this project, but no usable credential is configured for it (stored at project/organization scope or via ${provider.envApiKey}).`,
           );
         }
-        const apiKey =
-          getEnvValueSync(this.env, provider.envApiKey) ??
-          (await provider.getApiKey()) ??
-          "";
-        turn.model = provider.buildModel(apiKey, resolved.model);
+        turn.model = provider.buildModel(
+          effective.credential ?? "",
+          effective.model,
+          { baseUrl: effective.baseUrl ?? undefined },
+        );
       }
 
       return turn;
