@@ -39,8 +39,13 @@ export const getGa4Connection = createServerFn({ method: "POST" })
         isHostedServerAuthMode(),
         hasSelfHostedGoogleOAuthConfig(),
       ]);
+    // A row existing only means it was connected once -- confirm the grant
+    // still reaches Google before telling the settings page it's fine.
+    const connected = connection
+      ? await Ga4Service.verifyConnection(connection)
+      : false;
     return {
-      connected: Boolean(connection),
+      connected,
       currentUserHasGrant,
       googleOAuthConfigured: hosted || ga4Configured,
       propertyId: connection?.propertyId ?? null,

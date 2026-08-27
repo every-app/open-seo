@@ -45,8 +45,13 @@ export const getGscConnection = createServerFn({ method: "POST" })
         isHostedServerAuthMode(),
         hasSelfHostedGoogleOAuthConfig(),
       ]);
+    // A row existing only means it was connected once -- confirm the grant
+    // still reaches Google before telling the settings page it's fine.
+    const connected = connection
+      ? await GscService.verifyConnection(connection)
+      : false;
     return {
-      connected: Boolean(connection),
+      connected,
       currentUserHasGrant,
       googleOAuthConfigured: hosted || gscConfigured,
       siteUrl: connection?.siteUrl ?? null,
