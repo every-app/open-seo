@@ -57,25 +57,75 @@ export const requireAllowedEmails = (remedy: string) =>
     return emails;
   });
 
-/** The gate itself: an email allow-policy on a self-hosted Access application. */
+/**
+ * Reads ACCESS_SERVICE_TOKEN_IDS: the Access service tokens (UUIDs, not Client
+ * IDs) allowed through the gate without an interactive login. Optional — an
+ * empty list leaves the gate email-only.
+ */
+export const readServiceTokenIds = () =>
+  Effect.gen(function* () {
+    return (yield* Config.string("ACCESS_SERVICE_TOKEN_IDS").pipe(
+      Config.withDefault(""),
+    ))
+      .split(",")
+      .map((id) => id.trim())
+      .filter(Boolean);
+  });
+
+/**
+ * The gate itself: an email allow-policy on a self-hosted Access application,
+ * plus an optional Service Auth policy for machine callers.
+ *
+ * `domains` is the full set of hostnames the gate covers. Every hostname the
+ * worker answers on must be listed — Cloudflare reconciles this app's
+ * destinations on each deploy, so a hostname missing here is a hostname that
+ * silently loses its Access gate and starts serving unauthenticated requests
+ * to the worker.
+ */
 export const emailAccessGate = (options: {
   policyId: string;
+  serviceTokenPolicyId: string;
   applicationId: string;
   policyName: string;
+  serviceTokenPolicyName: string;
   applicationName: string;
-  domain: string;
+  domains: readonly [string, ...string[]];
   emails: string[];
+  serviceTokenIds?: readonly string[];
 }) =>
   Effect.gen(function* () {
+    const [primaryDomain] = options.domains;
     const allow = yield* Cloudflare.Access.Policy(options.policyId, {
       name: options.policyName,
       decision: "allow",
       include: options.emails.map((email) => ({ email: { email } })),
     });
+
+    // `non_identity` is the API spelling of the dashboard's "Service Auth"
+    // action: match on the token alone and skip the IdP round-trip that a
+    // headless client cannot complete.
+    const serviceTokenIds = options.serviceTokenIds ?? [];
+    const serviceTokens =
+      serviceTokenIds.length > 0
+        ? yield* Cloudflare.Access.Policy(options.serviceTokenPolicyId, {
+            name: options.serviceTokenPolicyName,
+            decision: "non_identity",
+            include: serviceTokenIds.map((tokenId) => ({
+              serviceToken: { tokenId },
+            })),
+          })
+        : null;
+
     return yield* Cloudflare.Access.Application(options.applicationId, {
       type: "self_hosted",
       name: options.applicationName,
-      domain: options.domain,
-      policies: [allow.policyId],
+      domain: primaryDomain,
+      destinations: options.domains.map((uri) => ({
+        type: "public" as const,
+        uri,
+      })),
+      policies: serviceTokens
+        ? [allow.policyId, serviceTokens.policyId]
+        : [allow.policyId],
     });
   });

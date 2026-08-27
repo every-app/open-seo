@@ -4,6 +4,7 @@ import * as Effect from "effect/Effect";
 import {
   emailAccessGate,
   previewWildcard,
+  readServiceTokenIds,
   readWorkersSubdomain,
   requireAllowedEmails,
 } from "./alchemy.access.ts";
@@ -33,11 +34,14 @@ export default Alchemy.Stack(
     const hostname = previewWildcard(subdomain);
     const application = yield* emailAccessGate({
       policyId: "PreviewAllowTeam",
+      serviceTokenPolicyId: "PreviewAllowServiceTokens",
       applicationId: "PreviewAccess",
       policyName: "open-seo preview team",
+      serviceTokenPolicyName: "open-seo preview service tokens",
       applicationName: "open-seo preview environments",
-      domain: hostname,
+      domains: [hostname],
       emails: allowedEmails,
+      serviceTokenIds: yield* readServiceTokenIds(),
     });
 
     return {
