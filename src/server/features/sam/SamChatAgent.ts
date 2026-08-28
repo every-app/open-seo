@@ -7,6 +7,7 @@ import type {
   TurnContext,
 } from "@cloudflare/think";
 import { clearChatTerminal } from "agents/chat";
+import type { UIMessage } from "ai";
 import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
@@ -472,6 +473,40 @@ export class SamChatAgent extends Think {
       });
     }
     return new Error(normalized.message);
+  }
+
+  /**
+   * Sanitize the transcript at the public read boundary. A provider failure
+   * mid-turn can persist null/undefined/malformed part entries; the
+   * agents/chat client loops over `message.parts` without guarding (e.g.
+   * `collapseHydratedReplayTextParts`), and a malformed entry crashes the
+   * browser with "Cannot read properties of undefined (reading 'type')".
+   * getMessages() backs both the /get-messages HTTP endpoint and the WS
+   * replay path, so dropping invalid entries here — plus guaranteeing every
+   * message has a parts array — keeps the client renderer and Think's replay
+   * loop safe without patching node_modules.
+   */
+  override async getMessages(): Promise<UIMessage[]> {
+    const messages = await super.getMessages();
+    return (Array.isArray(messages) ? messages : []).flatMap(
+      (message): UIMessage[] => {
+        if (
+          typeof message !== "object" ||
+          message === null ||
+          typeof message.role !== "string"
+        ) {
+          return [];
+        }
+        const parts = Array.isArray(message.parts) ? message.parts : [];
+        const cleanParts = parts.filter(
+          (part): part is UIMessage["parts"][number] =>
+            typeof part === "object" &&
+            part !== null &&
+            typeof (part as { type?: unknown }).type === "string",
+        );
+        return [{ ...message, parts: cleanParts }];
+      },
+    );
   }
 
   // POST .../rewind {messageId}: delete that message and everything after it on
