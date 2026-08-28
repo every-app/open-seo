@@ -39,29 +39,11 @@ services:
       GOOGLE_SEARCH_CONSOLE_ENABLED: ${GOOGLE_SEARCH_CONSOLE_ENABLED:-false}
       BING_WEBMASTER_ENABLED: ${BING_WEBMASTER_ENABLED:-false}
       LOCAL_CRAWLER_ENABLED: ${LOCAL_CRAWLER_ENABLED:-true}
-      # Optional AI agent credentials/overrides (SAM, onboarding chat). The
-      # *_API_KEY values themselves flow from .env.docker via env_file (an
-      # `environment:` mapping would override them with the host shell's unset
-      # value); the tuning overrides below are host-shell knobs, unset = server
-      # defaults.
-      AI_AGENT_PROVIDER: ${AI_AGENT_PROVIDER:-}
-      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
-      OPENAI_MODEL: ${OPENAI_MODEL:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-}
-      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
-      OLLAMA_CLOUD_MODEL: ${OLLAMA_CLOUD_MODEL:-}
-      OPENAI_COMPATIBLE_MODEL: ${OPENAI_COMPATIBLE_MODEL:-}
-      # Base URLs are deployment configuration (never secrets); forwarded so
-      # the adapters can resolve them inside the container.
-      OPENAI_COMPATIBLE_BASE_URL: ${OPENAI_COMPATIBLE_BASE_URL:-}
-      OLLAMA_CLOUD_BASE_URL: ${OLLAMA_CLOUD_BASE_URL:-}
-      AI_AGENT_MODEL: ${AI_AGENT_MODEL:-}
-      AI_AGENT_MAX_TOOL_CALLS: ${AI_AGENT_MAX_TOOL_CALLS:-}
-      AI_AGENT_MAX_STEPS: ${AI_AGENT_MAX_STEPS:-}
-      AI_AGENT_POLL_INITIAL_MS: ${AI_AGENT_POLL_INITIAL_MS:-}
-      AI_AGENT_POLL_MAX_MS: ${AI_AGENT_POLL_MAX_MS:-}
-      AI_AGENT_MAX_POLL_ATTEMPTS: ${AI_AGENT_MAX_POLL_ATTEMPTS:-}
-      AI_AGENT_TOOL_TIMEOUT_MS: ${AI_AGENT_TOOL_TIMEOUT_MS:-}
+      # Optional AI agent overrides (SAM, onboarding chat). ALL of these flow
+      # from .env.docker via env_file ONLY — an `environment:` mapping would
+      # override the env_file value with the host shell's unset variable
+      # (the same trap that silently disabled OPENROUTER_API_KEY before).
+      # Unset inside the container = server defaults apply.
       # Keep devtools off in container logs by default.
       VITE_SHOW_DEVTOOLS: ${VITE_SHOW_DEVTOOLS:-false}
       # Polling watchers on a large bind-mounted tree (Windows/macOS Docker
