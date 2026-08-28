@@ -5,6 +5,7 @@ import {
   real,
   uniqueIndex,
   index,
+  primaryKey,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { organization, user } from "./better-auth-schema";
@@ -420,4 +421,25 @@ export const backlinkSnapshots = sqliteTable(
       table.capturedAt,
     ),
   ],
+);
+
+// Per-project default LLM version for each AI-visibility provider. One row per
+// (project, provider); a missing row means "use the app default". Written from
+// the AI Models settings page; read when Prompt Explorer resolves which
+// model_name to send to DataForSEO.
+export const projectAiModels = sqliteTable(
+  "project_ai_models",
+  {
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    provider: text("provider", {
+      enum: ["chat_gpt", "claude", "gemini", "perplexity"],
+    }).notNull(),
+    modelName: text("model_name").notNull(),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.provider] })],
 );

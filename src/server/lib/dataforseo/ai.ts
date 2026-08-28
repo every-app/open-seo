@@ -265,7 +265,7 @@ type LlmResponseModelSlug = "chat_gpt" | "claude" | "gemini" | "perplexity";
 
 /**
  * Accepted `model_name` values per slug, mirroring DataForSEO's
- * `/ai_optimization/{model}/llm_responses/models` catalog (verified 2026-06-30).
+ * `/ai_optimization/{model}/llm_responses/models` catalog (verified 2026-08-28).
  * We validate against this before dispatching because DataForSEO BILLS a task
  * that fails with `Invalid Field: 'model_name'` — a stale or mistyped model name
  * would otherwise pay for a guaranteed-rejected call. DataForSEO resolves a
@@ -275,11 +275,33 @@ const ACCEPTED_LLM_MODEL_NAMES: Record<
   LlmResponseModelSlug,
   ReadonlySet<string>
 > = {
-  chat_gpt: new Set(["gpt-5"]),
-  claude: new Set(["claude-sonnet-4-5", "claude-sonnet-4-6"]),
-  gemini: new Set(["gemini-2.5-pro"]),
+  chat_gpt: new Set(["gpt-5.5", "gpt-5.4", "gpt-5.2", "gpt-5.1", "gpt-5"]),
+  claude: new Set([
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "claude-sonnet-4-6",
+    "claude-sonnet-4-5",
+  ]),
+  gemini: new Set([
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-pro-preview",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+  ]),
   perplexity: new Set(["sonar-reasoning-pro", "sonar-pro", "sonar"]),
 };
+
+/**
+ * Exposed so tests can enforce that user-selectable catalogs (e.g. Prompt
+ * Explorer's PROMPT_EXPLORER_MODEL_VERSIONS) stay a subset of this list.
+ */
+export function isAcceptedLlmModelName(
+  modelSlug: LlmResponseModelSlug,
+  modelName: string,
+): boolean {
+  return ACCEPTED_LLM_MODEL_NAMES[modelSlug].has(modelName);
+}
 
 type LlmResponsesInput = {
   userPrompt: string;
@@ -321,7 +343,7 @@ export async function fetchLlmResponse(
 ): Promise<DataforseoApiResponse<LlmResponseResult>> {
   // Fail fast on an unknown model_name: DataForSEO charges for tasks that fail
   // with `Invalid Field: 'model_name'`, so we must never dispatch one.
-  if (!ACCEPTED_LLM_MODEL_NAMES[input.modelSlug].has(input.modelName)) {
+  if (!isAcceptedLlmModelName(input.modelSlug, input.modelName)) {
     throw new AppError(
       "VALIDATION_ERROR",
       `Unsupported DataForSEO model_name "${input.modelName}" for ${input.modelSlug}`,

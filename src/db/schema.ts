@@ -80,6 +80,7 @@ export const {
   organizationActivationState,
   projectActivationState,
   backlinkSnapshots,
+  projectAiModels,
   projectContextSections,
   projectCompetitors,
   projectKeyPages,

@@ -5,6 +5,7 @@ import {
   index,
   integer,
   pgTable,
+  primaryKey,
   real,
   serial,
   text,
@@ -408,4 +409,23 @@ export const backlinkSnapshots = pgTable(
       table.capturedAt,
     ),
   ],
+);
+
+// Per-project default LLM version for each AI-visibility provider. One row per
+// (project, provider); a missing row means "use the app default". Written from
+// the AI Models settings page; read when Prompt Explorer resolves which
+// model_name to send to DataForSEO.
+export const projectAiModels = pgTable(
+  "project_ai_models",
+  {
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    provider: text("provider", {
+      enum: ["chat_gpt", "claude", "gemini", "perplexity"],
+    }).notNull(),
+    modelName: text("model_name").notNull(),
+    updatedAt: timestampColumn("updated_at").notNull().default(isoNow),
+  },
+  (table) => [primaryKey({ columns: [table.projectId, table.provider] })],
 );

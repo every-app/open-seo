@@ -166,6 +166,119 @@ export const promptExplorerModelSchema = z.enum(PROMPT_EXPLORER_MODELS);
 export type PromptExplorerModel = z.infer<typeof promptExplorerModelSchema>;
 
 /**
+ * Model versions selectable per provider, newest first. Every entry must be a
+ * member of ACCEPTED_LLM_MODEL_NAMES in dataforseo/ai.ts (which mirrors
+ * DataForSEO's llm_responses/models catalog — verified 2026-08-28); a test
+ * enforces that subset relation because DataForSEO bills tasks rejected for an
+ * invalid model_name.
+ */
+export const PROMPT_EXPLORER_MODEL_VERSIONS = {
+  chat_gpt: ["gpt-5.5", "gpt-5.4", "gpt-5.2", "gpt-5.1", "gpt-5"],
+  claude: [
+    "claude-sonnet-5",
+    "claude-opus-5",
+    "claude-sonnet-4-6",
+    "claude-sonnet-4-5",
+  ],
+  gemini: [
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+    "gemini-3.1-pro-preview",
+    "gemini-2.5-pro",
+    "gemini-2.5-flash",
+  ],
+  perplexity: ["sonar-reasoning-pro", "sonar-pro", "sonar"],
+} as const satisfies Record<PromptExplorerModel, readonly string[]>;
+
+/**
+ * Version used when the user hasn't picked one. Track the model the provider's
+ * consumer product currently serves — visibility measured against a superseded
+ * model no longer reflects what users see.
+ */
+export const PROMPT_EXPLORER_MODEL_DEFAULTS: {
+  [M in PromptExplorerModel]: (typeof PROMPT_EXPLORER_MODEL_VERSIONS)[M][number];
+} = {
+  chat_gpt: "gpt-5",
+  claude: "claude-sonnet-5",
+  gemini: "gemini-2.5-pro",
+  perplexity: "sonar-reasoning-pro",
+};
+
+export const promptExplorerModelVersionsSchema = z.object({
+  chat_gpt: z.enum(PROMPT_EXPLORER_MODEL_VERSIONS.chat_gpt).optional(),
+  claude: z.enum(PROMPT_EXPLORER_MODEL_VERSIONS.claude).optional(),
+  gemini: z.enum(PROMPT_EXPLORER_MODEL_VERSIONS.gemini).optional(),
+  perplexity: z.enum(PROMPT_EXPLORER_MODEL_VERSIONS.perplexity).optional(),
+});
+
+export type PromptExplorerModelVersions = z.infer<
+  typeof promptExplorerModelVersionsSchema
+>;
+
+export const getAiModelSettingsSchema = z.object({
+  projectId: z.string().min(1),
+});
+
+export const updateAiModelSettingsSchema = z.object({
+  projectId: z.string().min(1),
+  modelVersions: promptExplorerModelVersionsSchema,
+});
+
+function isPromptExplorerModel(value: string): value is PromptExplorerModel {
+  return (PROMPT_EXPLORER_MODELS as readonly string[]).includes(value);
+}
+
+export function isModelVersion<M extends PromptExplorerModel>(
+  model: M,
+  version: string,
+): version is (typeof PROMPT_EXPLORER_MODEL_VERSIONS)[M][number] {
+  return (PROMPT_EXPLORER_MODEL_VERSIONS[model] as readonly string[]).includes(
+    version,
+  );
+}
+
+/**
+ * Parse "provider:version" pairs (the `mv` URL param) into a versions record.
+ * Entries with an unknown provider or version are dropped, never rejected —
+ * a stale shared link should still run with defaults.
+ */
+export function decodeModelVersionPairs(
+  pairs: readonly string[] | undefined,
+): PromptExplorerModelVersions | undefined {
+  if (!pairs || pairs.length === 0) return undefined;
+  const out: Record<string, string> = {};
+  for (const pair of pairs) {
+    const sep = pair.indexOf(":");
+    if (sep === -1) continue;
+    const provider = pair.slice(0, sep);
+    const version = pair.slice(sep + 1);
+    if (!isPromptExplorerModel(provider)) continue;
+    if (!isModelVersion(provider, version)) continue;
+    out[provider] = version;
+  }
+  return Object.keys(out).length > 0
+    ? (out as PromptExplorerModelVersions)
+    : undefined;
+}
+
+/**
+ * Inverse of decodeModelVersionPairs; returns undefined for an empty record.
+ * The record is expected to hold only deliberate choices — the form removes an
+ * entry the moment it equals the project's effective default, so URLs stay
+ * minimal without this function needing to know what that default is.
+ */
+export function encodeModelVersionPairs(
+  versions: PromptExplorerModelVersions | undefined,
+): string[] | undefined {
+  if (!versions) return undefined;
+  const pairs = PROMPT_EXPLORER_MODELS.flatMap((provider) => {
+    const version = versions[provider];
+    return version ? [`${provider}:${version}`] : [];
+  });
+  return pairs.length > 0 ? pairs : undefined;
+}
+
+/**
  * Two-letter ISO country code passed as `web_search_country_iso_code` to each
  * LLM Responses endpoint. Affects the web-search component of the answer
  * (Perplexity, GPT-5, Gemini, Claude when web search is on). DataForSEO
@@ -214,6 +327,7 @@ export const promptExplorerInputSchema = z.object({
     .optional(),
   webSearch: z.boolean().default(true),
   webSearchCountryCode: webSearchCountryCodeSchema.optional(),
+  modelVersions: promptExplorerModelVersionsSchema.optional(),
 });
 
 export type PromptExplorerInput = z.infer<typeof promptExplorerInputSchema>;
@@ -308,4 +422,14 @@ export const promptExplorerSearchSchema = z.object({
     ),
   cc: webSearchCountryCodeSchema.optional(),
   hb: z.string().optional(),
+  mv: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((value) =>
+      value === undefined
+        ? undefined
+        : encodeModelVersionPairs(
+            decodeModelVersionPairs(Array.isArray(value) ? value : [value]),
+          ),
+    ),
 });
