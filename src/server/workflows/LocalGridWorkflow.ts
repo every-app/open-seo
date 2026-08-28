@@ -35,7 +35,7 @@ const POLL_INTERVALS = [
   "2 minutes",
   "3 minutes",
 ] as const;
-const COLLECT_CONCURRENCY = 25;
+const COLLECT_BATCH_SIZE = 5;
 
 interface LocalGridWorkflowParams {
   runId: string;
@@ -104,38 +104,41 @@ async function prepareScan(
   };
 }
 
-async function collectRound(
+async function collectTask(
+  task: PostedLocalGridTask,
+  target: PreparedGridScan["target"],
+) {
+  let outcome: Awaited<ReturnType<typeof fetchLocalGridTaskResult>>;
+  try {
+    outcome = await fetchLocalGridTaskResult({ ...task, target });
+  } catch {
+    return true;
+  }
+  if (outcome.status === "pending") return true;
+  if (outcome.status === "failed") {
+    await LocalGridRepository.markResultFailed(task.resultId, outcome.message);
+  } else {
+    await LocalGridRepository.recordCompletedTask(outcome.result);
+  }
+  return false;
+}
+
+async function collectBatch(
   tasks: PostedLocalGridTask[],
   target: PreparedGridScan["target"],
-  runId: string,
 ) {
-  const pending: PostedLocalGridTask[] = [];
-  for (let offset = 0; offset < tasks.length; offset += COLLECT_CONCURRENCY) {
-    const chunk = tasks.slice(offset, offset + COLLECT_CONCURRENCY);
-    const settled = await Promise.allSettled(
-      chunk.map((task) => fetchLocalGridTaskResult({ ...task, target })),
-    );
-    for (let index = 0; index < settled.length; index += 1) {
-      const outcome = settled[index];
-      const task = chunk[index];
-      if (outcome.status === "rejected" || outcome.value.status === "pending") {
-        pending.push(task);
-      } else if (outcome.value.status === "failed") {
-        await LocalGridRepository.markResultFailed(
-          task.resultId,
-          outcome.value.message,
-        );
-      } else {
-        await LocalGridRepository.recordCompletedTask(outcome.value.result);
-      }
-    }
-  }
+  const statuses = await Promise.all(
+    tasks.map((task) => collectTask(task, target)),
+  );
+  return tasks.filter((_, index) => statuses[index]);
+}
+
+async function updateRunProgress(runId: string) {
   const progress = await LocalGridRepository.getRunProgress(runId);
   await LocalGridRepository.updateRun(runId, {
     tasksCompleted: progress.completed + progress.failed,
     providerCostUsd: progress.providerCostUsd,
   });
-  return pending;
 }
 
 async function finalizeRun(runId: string) {
@@ -221,23 +224,45 @@ export class LocalGridWorkflow extends WorkflowEntrypoint<
         round += 1
       ) {
         await step.sleep(`poll-wait-${round}`, POLL_INTERVALS[round]);
-        pending = await pgStep(
-          step,
-          `collect-${round}`,
-          COLLECT_STEP_CONFIG,
-          () => collectRound(pending, prepared.target, params.runId),
+        const nextPending: PostedLocalGridTask[] = [];
+        for (
+          let offset = 0;
+          offset < pending.length;
+          offset += COLLECT_BATCH_SIZE
+        ) {
+          const batch = pending.slice(offset, offset + COLLECT_BATCH_SIZE);
+          const batchIndex = Math.floor(offset / COLLECT_BATCH_SIZE);
+          const batchPending = await pgStep(
+            step,
+            `collect-${round}-${batchIndex}`,
+            COLLECT_STEP_CONFIG,
+            () => collectBatch(batch, prepared.target),
+          );
+          nextPending.push(...batchPending);
+        }
+        pending = nextPending;
+        await pgStep(step, `record-progress-${round}`, RECORD_STEP_CONFIG, () =>
+          updateRunProgress(params.runId),
         );
       }
 
-      if (pending.length > 0) {
-        await pgStep(step, "mark-timeouts", POST_STEP_CONFIG, async () => {
-          for (const task of pending) {
-            await LocalGridRepository.markResultFailed(
-              task.resultId,
-              "Provider task timed out after 15 minutes",
-            );
-          }
-        });
+      for (
+        let offset = 0;
+        offset < pending.length;
+        offset += COLLECT_BATCH_SIZE
+      ) {
+        const batch = pending.slice(offset, offset + COLLECT_BATCH_SIZE);
+        const batchIndex = Math.floor(offset / COLLECT_BATCH_SIZE);
+        await pgStep(step, `mark-timeout-${batchIndex}`, POST_STEP_CONFIG, () =>
+          Promise.all(
+            batch.map((task) =>
+              LocalGridRepository.markResultFailed(
+                task.resultId,
+                "Provider task timed out after 15 minutes",
+              ),
+            ),
+          ).then(() => undefined),
+        );
       }
       await pgStep(step, "finalize", POST_STEP_CONFIG, () =>
         finalizeRun(params.runId),
