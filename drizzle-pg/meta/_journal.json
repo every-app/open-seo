@@ -148,6 +148,13 @@
       "when": 1787099999115,
       "tag": "0020_project_memory",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787923466614,
+      "tag": "0021_nice_wild_child",
+      "breakpoints": true
     }
   ]
 }

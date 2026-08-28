@@ -10,12 +10,15 @@ import {
   setCached,
 } from "@/server/lib/r2-cache";
 import { safeHostname, safeHttpUrl } from "@/server/features/ai-search/safeUrl";
+import { AiModelSettingsService } from "@/server/features/ai-search/services/aiModelSettings";
 import {
+  PROMPT_EXPLORER_MODEL_DEFAULTS,
   promptExplorerModelResultSchema,
   type PromptExplorerCitation,
   type PromptExplorerInput,
   type PromptExplorerModel,
   type PromptExplorerModelResult,
+  type PromptExplorerModelVersions,
   type PromptExplorerResult,
 } from "@/types/schemas/ai-search";
 
@@ -49,6 +52,9 @@ export async function explorePrompt(
 ): Promise<PromptExplorerResult> {
   const dataforseo = createDataforseoClient(billingCustomer);
   const highlightBrand = input.highlightBrand?.trim() || null;
+  const projectVersions = await AiModelSettingsService.getSettings(
+    input.projectId,
+  );
 
   // Dedupe models so a request like ["claude","claude"] doesn't fan out to two
   // paid upstream calls for the same answer.
@@ -59,6 +65,7 @@ export async function explorePrompt(
       runModel({
         model,
         input,
+        projectVersions,
         highlightBrand,
         billingCustomer,
         dataforseo,
@@ -85,6 +92,8 @@ export async function explorePrompt(
 type RunModelArgs = {
   model: PromptExplorerModel;
   input: PromptExplorerInput;
+  /** The project's saved defaults from the AI Models settings page. */
+  projectVersions: PromptExplorerModelVersions;
   highlightBrand: string | null;
   billingCustomer: BillingCustomerContext;
   dataforseo: DataforseoClient;
@@ -93,10 +102,18 @@ type RunModelArgs = {
 async function runModel(
   args: RunModelArgs,
 ): Promise<PromptExplorerModelResult> {
+  // Per-run choice → project setting → app default.
+  const modelName =
+    args.input.modelVersions?.[args.model] ??
+    args.projectVersions[args.model] ??
+    PROMPT_EXPLORER_MODEL_DEFAULTS[args.model];
   const cacheKey = await buildCacheKey(AI_SEARCH_PROMPT_CACHE_NAMESPACE, {
     organizationId: args.billingCustomer.organizationId,
     projectId: args.input.projectId,
     model: args.model,
+    // The specific model version, so neither a user's selection nor a
+    // default bump ever serves week-old answers from a different model.
+    modelName,
     // Collapse only whitespace differences. Casing is deliberately preserved:
     // prompts like "Compare Go vs go" or case-sensitive code snippets must
     // not collide with their lowercase twins.
@@ -116,7 +133,7 @@ async function runModel(
     return reapplyHighlightBrand(cached.data, args.highlightBrand);
   }
 
-  const rawResponse = await fetchModelResponse(args);
+  const rawResponse = await fetchModelResponse(args, modelName);
   const shaped = shapeSuccess(args.model, rawResponse);
 
   waitUntil(
@@ -130,20 +147,13 @@ async function runModel(
   return reapplyHighlightBrand(shaped, args.highlightBrand);
 }
 
-// Each value must be a member of ACCEPTED_LLM_MODEL_NAMES in dataforseo/ai.ts,
-// which mirrors DataForSEO's llm_responses/models catalog. DataForSEO dropped
-// the Claude Sonnet 4.0 family, so we target the 4.5 alias (latest dated 4.5).
-const MODEL_NAMES: Record<PromptExplorerModel, string> = {
-  chat_gpt: "gpt-5",
-  claude: "claude-sonnet-4-5",
-  gemini: "gemini-2.5-pro",
-  perplexity: "sonar-reasoning-pro",
-};
-
-function fetchModelResponse(args: RunModelArgs): Promise<LlmResponseResult> {
+function fetchModelResponse(
+  args: RunModelArgs,
+  modelName: string,
+): Promise<LlmResponseResult> {
   return args.dataforseo.aiSearch.llmResponse({
     modelSlug: args.model,
-    modelName: MODEL_NAMES[args.model],
+    modelName,
     userPrompt: args.input.prompt,
     webSearch: args.input.webSearch,
     webSearchCountryCode: args.input.webSearchCountryCode,

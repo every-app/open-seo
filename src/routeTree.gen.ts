@@ -54,6 +54,7 @@ import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
 import { Route as ProjectPProjectIdSettingsIntegrationsRouteImport } from './routes/_project/p/$projectId/settings/integrations'
 import { Route as ProjectPProjectIdSettingsContextRouteImport } from './routes/_project/p/$projectId/settings/context'
+import { Route as ProjectPProjectIdSettingsAiModelsRouteImport } from './routes/_project/p/$projectId/settings/ai-models'
 import { Route as ProjectPProjectIdRankTrackingConfigIdRouteImport } from './routes/_project/p/$projectId/rank-tracking/$configId'
 import { Route as ProjectPProjectIdAuditIssuesResultIdRouteImport } from './routes/_project/p/$projectId/audit/issues/$resultId'
 
@@ -294,6 +295,12 @@ const ProjectPProjectIdSettingsContextRoute =
     path: '/context',
     getParentRoute: () => ProjectPProjectIdSettingsRoute,
   } as any)
+const ProjectPProjectIdSettingsAiModelsRoute =
+  ProjectPProjectIdSettingsAiModelsRouteImport.update({
+    id: '/ai-models',
+    path: '/ai-models',
+    getParentRoute: () => ProjectPProjectIdSettingsRoute,
+  } as any)
 const ProjectPProjectIdRankTrackingConfigIdRoute =
   ProjectPProjectIdRankTrackingConfigIdRouteImport.update({
     id: '/$configId',
@@ -345,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
+  '/p/$projectId/settings/ai-models': typeof ProjectPProjectIdSettingsAiModelsRoute
   '/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -386,6 +394,7 @@ export interface FileRoutesByTo {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId': typeof ProjectPProjectIdIndexRoute
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
+  '/p/$projectId/settings/ai-models': typeof ProjectPProjectIdSettingsAiModelsRoute
   '/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
@@ -436,6 +445,7 @@ export interface FileRoutesById {
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
   '/_project/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
+  '/_project/p/$projectId/settings/ai-models': typeof ProjectPProjectIdSettingsAiModelsRoute
   '/_project/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/_project/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
@@ -483,6 +493,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
     | '/p/$projectId/rank-tracking/$configId'
+    | '/p/$projectId/settings/ai-models'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
     | '/p/$projectId/audit/'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/p/$projectId'
     | '/p/$projectId/rank-tracking/$configId'
+    | '/p/$projectId/settings/ai-models'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
     | '/p/$projectId/audit'
@@ -573,6 +585,7 @@ export interface FileRouteTypes {
     | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/'
     | '/_project/p/$projectId/rank-tracking/$configId'
+    | '/_project/p/$projectId/settings/ai-models'
     | '/_project/p/$projectId/settings/context'
     | '/_project/p/$projectId/settings/integrations'
     | '/_project/p/$projectId/audit/'
@@ -914,6 +927,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdSettingsContextRouteImport
       parentRoute: typeof ProjectPProjectIdSettingsRoute
     }
+    '/_project/p/$projectId/settings/ai-models': {
+      id: '/_project/p/$projectId/settings/ai-models'
+      path: '/ai-models'
+      fullPath: '/p/$projectId/settings/ai-models'
+      preLoaderRoute: typeof ProjectPProjectIdSettingsAiModelsRouteImport
+      parentRoute: typeof ProjectPProjectIdSettingsRoute
+    }
     '/_project/p/$projectId/rank-tracking/$configId': {
       id: '/_project/p/$projectId/rank-tracking/$configId'
       path: '/$configId'
@@ -993,6 +1013,7 @@ const ProjectPProjectIdRankTrackingRouteWithChildren =
   )
 
 interface ProjectPProjectIdSettingsRouteChildren {
+  ProjectPProjectIdSettingsAiModelsRoute: typeof ProjectPProjectIdSettingsAiModelsRoute
   ProjectPProjectIdSettingsContextRoute: typeof ProjectPProjectIdSettingsContextRoute
   ProjectPProjectIdSettingsIntegrationsRoute: typeof ProjectPProjectIdSettingsIntegrationsRoute
   ProjectPProjectIdSettingsIndexRoute: typeof ProjectPProjectIdSettingsIndexRoute
@@ -1000,6 +1021,8 @@ interface ProjectPProjectIdSettingsRouteChildren {
 
 const ProjectPProjectIdSettingsRouteChildren: ProjectPProjectIdSettingsRouteChildren =
   {
+    ProjectPProjectIdSettingsAiModelsRoute:
+      ProjectPProjectIdSettingsAiModelsRoute,
     ProjectPProjectIdSettingsContextRoute:
       ProjectPProjectIdSettingsContextRoute,
     ProjectPProjectIdSettingsIntegrationsRoute:

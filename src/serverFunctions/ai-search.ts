@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getBrandLookup } from "@/server/features/ai-search/services/brandLookup";
 import { explorePrompt as runExplorePrompt } from "@/server/features/ai-search/services/promptExplorer";
+import { AiModelSettingsService } from "@/server/features/ai-search/services/aiModelSettings";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   brandLookupInputSchema,
+  getAiModelSettingsSchema,
   promptExplorerInputSchema,
+  updateAiModelSettingsSchema,
 } from "@/types/schemas/ai-search";
 
 /**
@@ -38,4 +41,24 @@ export const explorePrompt = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await assertPaidPlan(context.organizationId);
     return runExplorePrompt({ ...data, projectId: context.projectId }, context);
+  });
+
+// Model settings are configuration, not paid data fetches, so they aren't
+// behind the paid-plan gate.
+export const getAiModelSettings = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(getAiModelSettingsSchema)
+  .handler(async ({ context }) =>
+    AiModelSettingsService.getSettings(context.projectId),
+  );
+
+export const updateAiModelSettings = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(updateAiModelSettingsSchema)
+  .handler(async ({ data, context }) => {
+    await AiModelSettingsService.updateSettings(
+      context.projectId,
+      data.modelVersions,
+    );
+    return AiModelSettingsService.getSettings(context.projectId);
   });

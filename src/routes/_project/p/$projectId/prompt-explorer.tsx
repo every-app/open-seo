@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PromptExplorerPage } from "@/client/features/ai-search/PromptExplorerPage";
 import {
+  decodeModelVersionPairs,
+  encodeModelVersionPairs,
   PROMPT_EXPLORER_MODELS,
   promptExplorerSearchSchema,
 } from "@/types/schemas/ai-search";
@@ -25,6 +27,7 @@ function PromptExplorerRoute() {
           search.models && search.models.length > 0
             ? search.models
             : [...PROMPT_EXPLORER_MODELS],
+        modelVersions: decodeModelVersionPairs(search.mv) ?? {},
         webSearch: search.web ?? true,
         webSearchCountryCode: search.cc ?? "US",
       }}
@@ -33,6 +36,7 @@ function PromptExplorerRoute() {
           search: {
             q: values.prompt,
             models: values.models,
+            mv: encodeModelVersionPairs(values.modelVersions),
             web: values.webSearch ? undefined : false,
             cc:
               values.webSearchCountryCode === "US"

@@ -1,13 +1,17 @@
 import type { FormEvent } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   formatCountryLabel,
   formatModelLabel,
+  formatModelVersionLabel,
 } from "@/client/features/ai-search/platformLabels";
 import {
   PROMPT_EXPLORER_MAX_PROMPT_LENGTH,
+  PROMPT_EXPLORER_MODEL_VERSIONS,
   PROMPT_EXPLORER_MODELS,
   WEB_SEARCH_COUNTRY_CODES,
   type PromptExplorerModel,
+  type PromptExplorerModelVersions,
   type WebSearchCountryCode,
 } from "@/types/schemas/ai-search";
 
@@ -15,15 +19,20 @@ type FormValues = {
   prompt: string;
   highlightBrand: string;
   models: PromptExplorerModel[];
+  modelVersions: PromptExplorerModelVersions;
   webSearch: boolean;
   webSearchCountryCode: WebSearchCountryCode;
 };
 
 type Props = {
+  projectId: string;
+  /** Effective default per provider: project setting, else app default. */
+  defaultVersions: Record<PromptExplorerModel, string>;
   form: FormValues;
   onPromptChange: (value: string) => void;
   onHighlightBrandChange: (value: string) => void;
   onModelsChange: (value: PromptExplorerModel[]) => void;
+  onModelVersionChange: (model: PromptExplorerModel, version: string) => void;
   onWebSearchChange: (value: boolean) => void;
   onCountryChange: (value: WebSearchCountryCode) => void;
   onSubmit: (event: FormEvent) => void;
@@ -40,10 +49,13 @@ function parseCountryCode(value: string): WebSearchCountryCode {
 }
 
 export function PromptExplorerForm({
+  projectId,
+  defaultVersions,
   form,
   onPromptChange,
   onHighlightBrandChange,
   onModelsChange,
+  onModelVersionChange,
   onWebSearchChange,
   onCountryChange,
   onSubmit,
@@ -119,23 +131,50 @@ export function PromptExplorerForm({
           </div>
 
           <div className="space-y-1.5">
-            <span className="block text-sm font-medium">Models</span>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1.5">
+            <div className="flex items-baseline justify-between">
+              <span className="block text-sm font-medium">Models</span>
+              <Link
+                to="/p/$projectId/settings/ai-models"
+                params={{ projectId }}
+                className="text-xs text-base-content/50 underline-offset-2 hover:underline"
+              >
+                Defaults
+              </Link>
+            </div>
+            <div className="flex flex-wrap items-start gap-x-5 gap-y-2 pt-1.5">
               {PROMPT_EXPLORER_MODELS.map((model) => {
                 const isActive = form.models.includes(model);
+                const versions = PROMPT_EXPLORER_MODEL_VERSIONS[model];
+                const selectedVersion =
+                  form.modelVersions[model] ?? defaultVersions[model];
                 return (
-                  <label
-                    key={model}
-                    className="flex cursor-pointer items-center gap-2"
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={isActive}
-                      onChange={() => toggleModel(model)}
-                    />
-                    <span className="text-sm">{formatModelLabel(model)}</span>
-                  </label>
+                  <div key={model} className="space-y-1">
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        className="checkbox checkbox-sm"
+                        checked={isActive}
+                        onChange={() => toggleModel(model)}
+                      />
+                      <span className="text-sm">{formatModelLabel(model)}</span>
+                    </label>
+                    {isActive && versions.length > 1 ? (
+                      <select
+                        aria-label={`${formatModelLabel(model)} model version`}
+                        className="select select-bordered select-xs w-full max-w-36"
+                        value={selectedVersion}
+                        onChange={(event) =>
+                          onModelVersionChange(model, event.target.value)
+                        }
+                      >
+                        {versions.map((version) => (
+                          <option key={version} value={version}>
+                            {formatModelVersionLabel(version)}
+                          </option>
+                        ))}
+                      </select>
+                    ) : null}
+                  </div>
                 );
               })}
             </div>

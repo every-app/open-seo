@@ -5,6 +5,7 @@ import {
   SearchHistorySection,
 } from "@/client/features/ai-search/components/SearchHistorySection";
 import { formatModelLabel } from "@/client/features/ai-search/platformLabels";
+import { encodeModelVersionPairs } from "@/types/schemas/ai-search";
 import type { PromptExplorerSearchHistoryItem } from "@/client/hooks/usePromptExplorerSearchHistory";
 
 type Props = {
@@ -29,6 +30,7 @@ export function PromptExplorerHistorySection({ projectId, ...props }: Props) {
           search={{
             q: item.prompt,
             models: item.models,
+            mv: encodeModelVersionPairs(item.modelVersions),
             web: item.webSearch ? undefined : false,
             cc:
               item.webSearchCountryCode === "US"

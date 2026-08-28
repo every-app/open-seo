@@ -8,7 +8,10 @@ import {
   SearchCheck,
   Sparkles,
 } from "lucide-react";
-import { explorePrompt } from "@/serverFunctions/ai-search";
+import {
+  explorePrompt,
+  getAiModelSettings,
+} from "@/serverFunctions/ai-search";
 import {
   HostedPlanGate,
   type HostedPlanGateState,
@@ -21,8 +24,12 @@ import { PromptExplorerHistorySection } from "@/client/features/ai-search/compon
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
 import { usePromptExplorerSearchHistory } from "@/client/hooks/usePromptExplorerSearchHistory";
 import {
+  encodeModelVersionPairs,
+  isModelVersion,
   PROMPT_EXPLORER_MAX_PROMPT_LENGTH,
+  PROMPT_EXPLORER_MODEL_DEFAULTS,
   type PromptExplorerModel,
+  type PromptExplorerModelVersions,
   type WebSearchCountryCode,
 } from "@/types/schemas/ai-search";
 
@@ -30,6 +37,7 @@ type PromptExplorerFormValues = {
   prompt: string;
   highlightBrand: string;
   models: PromptExplorerModel[];
+  modelVersions: PromptExplorerModelVersions;
   webSearch: boolean;
   webSearchCountryCode: WebSearchCountryCode;
 };
@@ -85,12 +93,29 @@ function PromptExplorerPageInner({
   const trimmedPrompt = urlState.prompt.trim();
   const hasActivePrompt = trimmedPrompt.length > 0;
 
+  // Project defaults from the AI Models settings page. The form's dropdowns
+  // fall back to these, and the server applies the same fallback, so what the
+  // form shows is what runs.
+  const modelSettingsQuery = useQuery({
+    queryKey: ["ai-model-settings", projectId],
+    queryFn: () => getAiModelSettings({ data: { projectId } }),
+    staleTime: 60 * 1000,
+  });
+  const effectiveDefaults: Record<PromptExplorerModel, string> = {
+    ...PROMPT_EXPLORER_MODEL_DEFAULTS,
+    ...(modelSettingsQuery.data ?? {}),
+  };
+
+  const modelVersionsKey =
+    encodeModelVersionPairs(urlState.modelVersions)?.join(",") ?? "";
+
   const exploreQuery = useQuery({
     queryKey: [
       "prompt-explorer",
       projectId,
       trimmedPrompt,
       urlState.models.toSorted().join(","),
+      modelVersionsKey,
       urlState.webSearch,
       urlState.webSearchCountryCode,
       urlState.highlightBrand.trim(),
@@ -101,6 +126,7 @@ function PromptExplorerPageInner({
           projectId,
           prompt: trimmedPrompt,
           models: urlState.models,
+          modelVersions: urlState.modelVersions,
           highlightBrand: urlState.highlightBrand.trim() || undefined,
           webSearch: urlState.webSearch,
           webSearchCountryCode: urlState.webSearchCountryCode,
@@ -133,6 +159,7 @@ function PromptExplorerPageInner({
       trimmedPrompt,
       urlState.highlightBrand.trim(),
       urlState.models.toSorted().join(","),
+      modelVersionsKey,
       urlState.webSearch,
       urlState.webSearchCountryCode,
     ].join("|");
@@ -142,6 +169,7 @@ function PromptExplorerPageInner({
       prompt: trimmedPrompt,
       highlightBrand: urlState.highlightBrand.trim(),
       models: urlState.models,
+      modelVersions: urlState.modelVersions,
       webSearch: urlState.webSearch,
       webSearchCountryCode: urlState.webSearchCountryCode,
     });
@@ -151,6 +179,8 @@ function PromptExplorerPageInner({
     trimmedPrompt,
     urlState.highlightBrand,
     urlState.models,
+    modelVersionsKey,
+    urlState.modelVersions,
     urlState.webSearch,
     urlState.webSearchCountryCode,
     addSearch,
@@ -195,6 +225,19 @@ function PromptExplorerPageInner({
     if (validationError) setValidationError(null);
   };
 
+  // Picking the effective default (project setting, else app default) removes
+  // the entry so it doesn't show up in URLs or history as a deliberate choice —
+  // the server falls back to the same default.
+  const setModelVersion = (model: PromptExplorerModel, version: string) => {
+    const next = { ...form.modelVersions };
+    if (!isModelVersion(model, version) || version === effectiveDefaults[model]) {
+      delete next[model];
+    } else {
+      (next as Record<PromptExplorerModel, string>)[model] = version;
+    }
+    updateForm("modelVersions", next);
+  };
+
   return (
     <div className="px-4 py-4 pb-24 overflow-auto md:px-6 md:py-6 md:pb-8">
       <div className="mx-auto max-w-7xl space-y-4">
@@ -215,12 +258,15 @@ function PromptExplorerPageInner({
         ) : (
           <>
             <PromptExplorerForm
+              projectId={projectId}
+              defaultVersions={effectiveDefaults}
               form={form}
               onPromptChange={(value) => updateForm("prompt", value)}
               onHighlightBrandChange={(value) =>
                 updateForm("highlightBrand", value)
               }
               onModelsChange={(value) => updateForm("models", value)}
+              onModelVersionChange={setModelVersion}
               onWebSearchChange={(value) => updateForm("webSearch", value)}
               onCountryChange={(value) =>
                 updateForm("webSearchCountryCode", value)

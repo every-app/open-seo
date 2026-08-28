@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { LlmResponseResult } from "@/server/lib/dataforseoLlmSchemas";
 
-vi.mock("cloudflare:workers", () => ({ waitUntil: vi.fn() }));
+vi.mock("cloudflare:workers", () => ({
+  waitUntil: vi.fn(),
+  // The module graph now reaches @/db (via AiModelSettingsService), whose
+  // provider selection reads env at import time.
+  env: { DATABASE_PROVIDER: "d1" },
+}));
 
 const { extractCitations } = await import("./promptExplorer");
 

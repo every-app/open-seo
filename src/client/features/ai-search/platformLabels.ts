@@ -63,6 +63,27 @@ export function formatModelLabel(model: PromptExplorerModel): string {
   return MODEL_LABELS[model];
 }
 
+/**
+ * Short label for a model version shown next to its provider label:
+ * "claude-sonnet-4-6" → "Sonnet 4.6", "gpt-5.5" → "GPT 5.5",
+ * "gemini-3.6-flash" → "3.6 Flash", "sonar-reasoning-pro" → "Sonar Reasoning
+ * Pro". Derived, not a registry, so new catalog entries need no label work.
+ */
+export function formatModelVersionLabel(version: string): string {
+  return version
+    .replace(/^(claude|gemini)-/, "")
+    .replace(/(\d)-(\d)/g, "$1.$2")
+    .split("-")
+    .map((part) =>
+      part === "gpt"
+        ? "GPT"
+        : /^\d/.test(part)
+          ? part
+          : part.charAt(0).toUpperCase() + part.slice(1),
+    )
+    .join(" ");
+}
+
 export function getModelAccent(model: PromptExplorerModel): ModelAccent {
   return MODEL_ACCENTS[model];
 }
