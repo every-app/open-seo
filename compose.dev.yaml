@@ -32,9 +32,11 @@ services:
       AUTH_MODE: ${AUTH_MODE:-local_noauth}
       PORT: ${PORT:-3001}
       # Default all SEO data providers off: local dev runs on cache/internal
-      # data only unless explicitly enabled. DataForSEO stays disabled so
-      # no credits are consumed.
-      DATAFORSEO_ENABLED: ${DATAFORSEO_ENABLED:-false}
+      # data only unless explicitly enabled. DataForSEO is controlled by
+      # .env.docker (env_file) like the AI keys below — an explicit mapping
+      # here would override the env_file value with the host shell's unset
+      # variable (the same trap that silently disabled OPENROUTER_API_KEY
+      # before).
       GOOGLE_ADS_ENABLED: ${GOOGLE_ADS_ENABLED:-false}
       GOOGLE_SEARCH_CONSOLE_ENABLED: ${GOOGLE_SEARCH_CONSOLE_ENABLED:-false}
       BING_WEBMASTER_ENABLED: ${BING_WEBMASTER_ENABLED:-false}
