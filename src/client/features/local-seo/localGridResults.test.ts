@@ -3,6 +3,7 @@ import type { LocalGridResultCell } from "@/types/schemas/local-seo";
 import {
   localGridCellClass,
   localGridCellLabel,
+  localGridMarkerStyle,
   summarizeLocalGridCells,
 } from "./localGridResultUtils";
 
@@ -51,5 +52,20 @@ describe("local grid result presentation", () => {
     expect(localGridCellClass(cell(21))).toContain("bg-error");
     expect(localGridCellLabel(cell(null))).toBe("Not found");
     expect(localGridCellLabel(cell(null, "pending"))).toBe("Pending");
+  });
+
+  it("maps results to readable map marker styles", () => {
+    expect(localGridMarkerStyle(cell(3))).toMatchObject({
+      color: "#22c55e",
+      label: "3",
+    });
+    expect(localGridMarkerStyle(cell(10))).toMatchObject({
+      color: "#84cc16",
+      darkText: true,
+    });
+    expect(localGridMarkerStyle(cell(null, "failed"))).toMatchObject({
+      color: "#dc2626",
+      label: "!",
+    });
   });
 });

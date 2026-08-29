@@ -47,13 +47,15 @@ vi.mock("@/server/lib/dataforseo", () => ({
 
 import { LocalGridWorkflow } from "./LocalGridWorkflow";
 
-const taskCount = 49;
+const gridPointCount = 49;
+const keywords = ["roof repairs worthing", "roofer worthing"];
+const taskCount = gridPointCount * keywords.length;
 const tasks = Array.from({ length: taskCount }, (_, index) => ({
   resultId: `result-${index}`,
-  pointId: `point-${index}`,
-  keywordId: "keyword-1",
-  keyword: "roof repairs worthing",
-  latitude: 50.8 + index / 10_000,
+  pointId: `point-${Math.floor(index / keywords.length)}`,
+  keywordId: `keyword-${(index % keywords.length) + 1}`,
+  keyword: keywords[index % keywords.length],
+  latitude: 50.8 + Math.floor(index / keywords.length) / 10_000,
   longitude: -0.37,
   providerTaskId: null,
   status: "pending" as const,
@@ -117,7 +119,7 @@ describe("LocalGridWorkflow collection", () => {
     );
   });
 
-  it("keeps provider result fetches in bounded durable steps", async () => {
+  it("collects a 7x7 scan with two keywords in bounded durable steps", async () => {
     // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion -- mocked Worker base does not inspect constructor context
     const workflow = new LocalGridWorkflow({} as ExecutionContext, {} as Env);
     // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion -- the workflow only calls the mocked sleep method
@@ -147,6 +149,7 @@ describe("LocalGridWorkflow collection", () => {
     );
 
     expect(mocks.fetchLocalGridTaskResult).toHaveBeenCalledTimes(taskCount);
+    expect(mocks.localGridTaskPost).toHaveBeenCalledTimes(1);
     expect(
       mocks.pgStep.mock.calls.filter(([, name]) =>
         String(name).startsWith("collect-"),

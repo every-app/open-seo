@@ -94,6 +94,10 @@ function LocalGridDetail() {
   const latestRun = resultsData?.run;
   const scanIsActive =
     latestRun?.status === "pending" || latestRun?.status === "running";
+  const latestRunLabel =
+    latestRun?.status === "completed" && latestRun.errorMessage
+      ? "Partially completed"
+      : latestRun?.status;
   const hostedScansDisabled = isHostedClientAuthMode();
 
   return (
@@ -182,7 +186,7 @@ function LocalGridDetail() {
             </div>
             {latestRun ? (
               <p className="mt-2 text-xs text-base-content/60">
-                Latest: <span className="capitalize">{latestRun.status}</span>
+                Latest: <span className="capitalize">{latestRunLabel}</span>
                 {scanIsActive
                   ? ` · ${latestRun.tasksCompleted}/${latestRun.taskCount}`
                   : ""}

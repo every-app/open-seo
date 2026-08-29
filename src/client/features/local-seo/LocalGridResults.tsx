@@ -1,14 +1,14 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Clock3, MapPin } from "lucide-react";
 import type {
   LocalGridResultCell,
   LocalGridResultsResponse,
 } from "@/types/schemas/local-seo";
 import {
-  localGridCellClass,
   localGridCellLabel,
   summarizeLocalGridCells,
 } from "./localGridResultUtils";
+import { LocalGridMap } from "./LocalGridMap";
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -72,6 +72,9 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
   const summary = summarizeLocalGridCells(cells);
   const selectedCell =
     cells.find((cell) => cell.resultId === selectedResultId) ?? null;
+  const selectCell = useCallback((resultId: string) => {
+    setSelectedResultId(resultId);
+  }, []);
 
   if (!data.run) {
     return (
@@ -145,27 +148,21 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
 
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_16rem]">
           <div className="rounded-xl border border-base-300 bg-base-200/40 p-3">
-            <div
-              className="mx-auto grid aspect-square w-full max-w-xl gap-2 rounded-lg bg-[radial-gradient(circle_at_center,oklch(var(--b3)/0.7)_1px,transparent_1px)] bg-[length:18px_18px] p-2"
-              style={{
-                gridTemplateColumns: `repeat(${data.gridSize}, minmax(0, 1fr))`,
-              }}
-              aria-label="Local ranking map grid"
-            >
+            <LocalGridMap
+              cells={cells}
+              gridSize={data.gridSize}
+              onSelect={selectCell}
+            />
+            <div className="sr-only" aria-label="Local ranking grid results">
               {cells.map((cell) => (
                 <button
                   key={cell.resultId}
                   type="button"
-                  className={`flex aspect-square min-w-0 items-center justify-center rounded-full border-2 text-xs font-bold shadow-sm transition-transform hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${localGridCellClass(cell)} ${selectedResultId === cell.resultId ? "ring-2 ring-primary ring-offset-2 ring-offset-base-200" : ""}`}
-                  onClick={() => setSelectedResultId(cell.resultId)}
+                  onClick={() => selectCell(cell.resultId)}
                   title={`${cell.keyword}: ${localGridCellLabel(cell)} at ${cell.latitude.toFixed(5)}, ${cell.longitude.toFixed(5)}`}
                   aria-label={`Row ${cell.rowIndex + 1}, column ${cell.columnIndex + 1}: ${localGridCellLabel(cell)}`}
                 >
-                  {cell.status === "pending"
-                    ? "…"
-                    : cell.status === "completed" && cell.targetRank === null
-                      ? "—"
-                      : localGridCellLabel(cell)}
+                  {localGridCellLabel(cell)}
                 </button>
               ))}
             </div>
