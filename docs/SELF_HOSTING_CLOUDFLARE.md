@@ -50,6 +50,8 @@ Copy the template and fill in the required values:
 cp .env.selfhost.example .env.selfhost
 ```
 
+To serve OpenSEO on your own hostname (for example `seo.example.com`) instead of the default `open-seo-selfhost.<account>.workers.dev`, set `SELFHOST_DOMAIN=seo.example.com`. The zone must be in the same Cloudflare account; the deploy creates the DNS record and puts the Cloudflare Access application on that hostname.
+
 ## 4) Deploy
 
 ```bash
