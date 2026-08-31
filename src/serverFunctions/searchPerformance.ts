@@ -50,6 +50,7 @@ function buildGscFilters(data: {
   device?: string;
   country?: string;
   pagePath?: string;
+  excludePagePath?: string;
 }): {
   deviceFilters: GscPerformanceFilter[];
   filters: GscPerformanceFilter[];
@@ -58,9 +59,13 @@ function buildGscFilters(data: {
     ? [{ dimension: "device", operator: "equals", expression: data.device }]
     : [];
   const pagePath = normalizePagePathFilter(data.pagePath);
-  const pageFilters: GscPerformanceFilter[] = pagePath
-    ? [toPagePathGscFilter(pagePath)]
-    : [];
+  const excludePagePath = normalizePagePathFilter(data.excludePagePath);
+  const pageFilters: GscPerformanceFilter[] = [
+    ...(pagePath ? [toPagePathGscFilter(pagePath)] : []),
+    ...(excludePagePath
+      ? [{ ...toPagePathGscFilter(excludePagePath), operator: "notContains" }]
+      : []),
+  ];
   const filters: GscPerformanceFilter[] = data.country
     ? [
         ...deviceFilters,
@@ -75,7 +80,6 @@ async function fetchFilteredDimensionRows(
   data: SearchPerformanceMetricFilters & {
     dateRange: SearchPerformanceDateRange;
     dimension: SearchPerformanceTableDimension;
-    // These preserve the report-level GSC scope for table and export fetches.
     device?: string;
     country?: string;
   },
