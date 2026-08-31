@@ -10,11 +10,13 @@ describe("searchPerformanceInputSchema", () => {
     const parsed = searchPerformanceInputSchema.parse({
       projectId: "p1",
       pagePath: "/blogs/*",
+      excludePagePath: "/tag/",
       minImpressions: 10,
       maxPosition: 20,
     });
 
     expect(parsed.pagePath).toBe("/blogs/*");
+    expect(parsed.excludePagePath).toBe("/tag/");
     expect(parsed.minImpressions).toBe(10);
     expect(parsed.maxPosition).toBe(20);
   });
