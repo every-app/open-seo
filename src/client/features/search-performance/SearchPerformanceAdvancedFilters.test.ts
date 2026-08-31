@@ -30,6 +30,7 @@ describe("getAdvancedSearchPerformanceFilterErrors", () => {
     expect(
       getAdvancedSearchPerformanceFilterErrors({
         pagePath: "",
+        excludePagePath: "",
         minImpressions: "100",
         maxImpressions: "10",
         minClicks: "",
@@ -49,6 +50,7 @@ describe("compileAdvancedSearchPerformanceFilters", () => {
     expect(
       compileAdvancedSearchPerformanceFilters({
         pagePath: "/blogs/",
+        excludePagePath: "/tag/",
         minImpressions: "abc",
         maxImpressions: "",
         minClicks: "",
@@ -56,6 +58,6 @@ describe("compileAdvancedSearchPerformanceFilters", () => {
         minPosition: "",
         maxPosition: "",
       }),
-    ).toEqual({ pagePath: "/blogs/" });
+    ).toEqual({ pagePath: "/blogs/", excludePagePath: "/tag/" });
   });
 });
