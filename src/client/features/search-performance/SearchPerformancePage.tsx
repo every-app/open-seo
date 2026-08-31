@@ -142,21 +142,31 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   const [pageSize, setPageSize] = useState<number>(
     SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   );
-  const [advancedFilters, setAdvancedFilters] =
+  const [advancedFilterDraft, setAdvancedFilterDraft] =
+    useState<SearchPerformanceAdvancedFilterValues>(
+      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+    );
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] =
     useState<SearchPerformanceAdvancedFilterValues>(
       EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
     );
   const activeAdvancedFilterCount =
-    countActiveAdvancedSearchPerformanceFilters(advancedFilters);
+    countActiveAdvancedSearchPerformanceFilters(appliedAdvancedFilters);
 
   // Any change to the query set (tab, filters, page size) restarts at page 1.
   useEffect(() => {
     setPage(1);
-  }, [tab, range, device, country, pageSize, advancedFilters]);
+  }, [tab, range, device, country, pageSize, appliedAdvancedFilters]);
 
-  const filterInput = buildFilterInput(range, device, country, advancedFilters);
-  const compiledAdvancedFilters =
-    compileAdvancedSearchPerformanceFilters(advancedFilters);
+  const filterInput = buildFilterInput(
+    range,
+    device,
+    country,
+    appliedAdvancedFilters,
+  );
+  const compiledAdvancedFilters = compileAdvancedSearchPerformanceFilters(
+    appliedAdvancedFilters,
+  );
   const metricFiltersActive = hasActiveMetricFilters(filterInput);
 
   const reportQuery = useQuery({
@@ -254,14 +264,6 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         ) : (
           <>
             <TotalsCards report={report} />
-            <SearchPerformanceAdvancedFilters
-              values={advancedFilters}
-              onChange={setAdvancedFilters}
-              onClear={() =>
-                setAdvancedFilters(EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS)
-              }
-              activeFilterCount={activeAdvancedFilterCount}
-            />
             <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
               <div className="flex flex-col gap-3 border-b border-base-300 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
                 <div role="tablist" className="tabs tabs-border w-fit">
@@ -347,6 +349,24 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                     ]}
                   />
                 </div>
+              </div>
+              <div className="border-b border-base-300 px-4 py-3">
+                <SearchPerformanceAdvancedFilters
+                  values={advancedFilterDraft}
+                  onChange={setAdvancedFilterDraft}
+                  onApply={() =>
+                    setAppliedAdvancedFilters(advancedFilterDraft)
+                  }
+                  onClear={() => {
+                    setAdvancedFilterDraft(
+                      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+                    );
+                    setAppliedAdvancedFilters(
+                      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+                    );
+                  }}
+                  activeFilterCount={activeAdvancedFilterCount}
+                />
               </div>
 
               {tab === "striking" ? (
