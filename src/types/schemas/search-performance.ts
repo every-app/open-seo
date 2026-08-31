@@ -58,6 +58,7 @@ const optionalPagePath = z
 // and the paginated table calls always accept the exact same filter surface.
 const searchPerformanceMetricFilterShape = {
   pagePath: optionalPagePath,
+  excludePagePath: optionalPagePath,
   minImpressions: optionalNonNegativeInt,
   maxImpressions: optionalNonNegativeInt,
   minClicks: optionalNonNegativeInt,
