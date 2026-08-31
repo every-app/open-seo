@@ -63,7 +63,12 @@ function buildGscFilters(data: {
   const pageFilters: GscPerformanceFilter[] = [
     ...(pagePath ? [toPagePathGscFilter(pagePath)] : []),
     ...(excludePagePath
-      ? [{ ...toPagePathGscFilter(excludePagePath), operator: "notContains" }]
+      ? [
+          {
+            ...toPagePathGscFilter(excludePagePath),
+            operator: "notContains" as const,
+          },
+        ]
       : []),
   ];
   const filters: GscPerformanceFilter[] = data.country
