@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LocalGridResultCell } from "@/types/schemas/local-seo";
 import {
-  localGridCellClass,
   localGridCellLabel,
   localGridMarkerStyle,
   summarizeLocalGridCells,
@@ -45,11 +44,7 @@ describe("local grid result presentation", () => {
     });
   });
 
-  it("assigns stable labels and rank bands", () => {
-    expect(localGridCellClass(cell(3))).toContain("bg-success");
-    expect(localGridCellClass(cell(10))).toContain("bg-lime-500");
-    expect(localGridCellClass(cell(20))).toContain("bg-warning");
-    expect(localGridCellClass(cell(21))).toContain("bg-error");
+  it("assigns stable labels", () => {
     expect(localGridCellLabel(cell(null))).toBe("Not found");
     expect(localGridCellLabel(cell(null, "pending"))).toBe("Pending");
   });

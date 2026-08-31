@@ -21,28 +21,6 @@ export function summarizeLocalGridCells(cells: LocalGridResultCell[]) {
   };
 }
 
-export function localGridCellClass(cell: LocalGridResultCell) {
-  if (cell.status === "pending") {
-    return "border-base-300 bg-base-200 text-base-content/50";
-  }
-  if (cell.status === "failed") {
-    return "border-error/40 bg-error/10 text-error";
-  }
-  if (cell.targetRank === null) {
-    return "border-base-300 bg-base-300 text-base-content/60";
-  }
-  if (cell.targetRank <= 3) {
-    return "border-success/50 bg-success text-success-content";
-  }
-  if (cell.targetRank <= 10) {
-    return "border-lime-500/50 bg-lime-500 text-slate-950";
-  }
-  if (cell.targetRank <= 20) {
-    return "border-warning/50 bg-warning text-warning-content";
-  }
-  return "border-error/50 bg-error text-error-content";
-}
-
 export function localGridCellLabel(cell: LocalGridResultCell) {
   if (cell.status === "pending") return "Pending";
   if (cell.status === "failed") return "Failed";

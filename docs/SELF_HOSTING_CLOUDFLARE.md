@@ -85,7 +85,7 @@ CUSTOM_DOMAIN=openseo.example.com
 ```
 
 The zone is inferred from the hostname, so it must already be a zone on the
-same Cloudflare account. Redeploy and the domain is routed to the Worker *and*
+same Cloudflare account. Redeploy and the domain is routed to the Worker _and_
 added to the Access application, so it is gated exactly like the workers.dev
 hostname.
 

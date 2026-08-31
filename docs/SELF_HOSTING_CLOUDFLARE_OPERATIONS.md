@@ -36,7 +36,7 @@ it makes stops at the Access gate. Give it a **service token** instead.
 1. In Cloudflare Zero Trust, go to `Access controls` -> `Service auth` and
    create a service token. Save the Client ID and Client Secret — the secret is
    shown once.
-2. Put the token's **ID** (the UUID in the token's URL, *not* the Client ID) in
+2. Put the token's **ID** (the UUID in the token's URL, _not_ the Client ID) in
    `.env.selfhost`, comma-separating several:
 
    ```bash

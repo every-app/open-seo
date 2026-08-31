@@ -156,4 +156,48 @@ describe("LocalGridWorkflow collection", () => {
       ),
     ).toHaveLength(Math.ceil(taskCount / 5));
   });
+
+  it("allows normal queue tasks 50 minutes before marking them timed out", async () => {
+    mocks.fetchLocalGridTaskResult.mockResolvedValue({ status: "pending" });
+    mocks.getRunProgress.mockResolvedValue({
+      completed: 0,
+      failed: taskCount,
+      providerCostUsd: 0.049,
+    });
+    // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion -- mocked Worker base does not inspect constructor context
+    const workflow = new LocalGridWorkflow({} as ExecutionContext, {} as Env);
+    // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion -- the workflow only calls the mocked sleep method
+    const step = { sleep: mocks.sleep } as unknown as WorkflowStep;
+
+    await workflow.run(
+      {
+        instanceId: "run-1",
+        timestamp: new Date(),
+        payload: {
+          runId: "run-1",
+          configId: "config-1",
+          projectId: "project-1",
+          billingCustomer: {
+            userId: "user-1",
+            userEmail: "user@example.com",
+            organizationId: "org-1",
+          },
+          languageCode: "en",
+          seDomain: null,
+          searchDepth: 20,
+          searchPlaces: false,
+          target: { placeId: "place-1", cid: null, featureId: null },
+        },
+      },
+      step,
+    );
+
+    expect(mocks.sleep).toHaveBeenCalledTimes(13);
+    expect(mocks.sleep).toHaveBeenLastCalledWith("poll-wait-12", "5 minutes");
+    expect(mocks.markResultFailed).toHaveBeenCalledTimes(taskCount);
+    expect(mocks.markResultFailed).toHaveBeenCalledWith(
+      expect.any(String),
+      "Provider task timed out after 50 minutes",
+    );
+  });
 });

@@ -34,7 +34,15 @@ const POLL_INTERVALS = [
   "2 minutes",
   "2 minutes",
   "3 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
+  "5 minutes",
 ] as const;
+const PROVIDER_TIMEOUT_MINUTES = 50;
 const COLLECT_BATCH_SIZE = 5;
 
 interface LocalGridWorkflowParams {
@@ -258,7 +266,7 @@ export class LocalGridWorkflow extends WorkflowEntrypoint<
             batch.map((task) =>
               LocalGridRepository.markResultFailed(
                 task.resultId,
-                "Provider task timed out after 15 minutes",
+                `Provider task timed out after ${PROVIDER_TIMEOUT_MINUTES} minutes`,
               ),
             ),
           ).then(() => undefined),
@@ -269,11 +277,13 @@ export class LocalGridWorkflow extends WorkflowEntrypoint<
       );
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      await LocalGridRepository.updateRun(params.runId, {
-        status: "failed",
-        errorMessage: message.slice(0, 1_000),
-        completedAt: new Date().toISOString(),
-      });
+      await pgStep(step, "mark-failed", RECORD_STEP_CONFIG, () =>
+        LocalGridRepository.updateRun(params.runId, {
+          status: "failed",
+          errorMessage: message.slice(0, 1_000),
+          completedAt: new Date().toISOString(),
+        }),
+      );
       throw error;
     }
   }
