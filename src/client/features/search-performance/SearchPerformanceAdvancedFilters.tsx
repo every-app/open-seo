@@ -6,6 +6,7 @@ import {
 
 export type SearchPerformanceAdvancedFilterValues = {
   pagePath: string;
+  excludePagePath: string;
   minImpressions: string;
   maxImpressions: string;
   minClicks: string;
@@ -17,6 +18,7 @@ export type SearchPerformanceAdvancedFilterValues = {
 export const EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS: SearchPerformanceAdvancedFilterValues =
   {
     pagePath: "",
+    excludePagePath: "",
     minImpressions: "",
     maxImpressions: "",
     minClicks: "",
@@ -127,9 +129,11 @@ export function compileAdvancedSearchPerformanceFilters(
 ): SearchPerformanceMetricFilters {
   const errors = getAdvancedSearchPerformanceFilterErrors(values);
   const pagePath = values.pagePath.trim();
+  const excludePagePath = values.excludePagePath.trim();
   const result: SearchPerformanceMetricFilters = {};
 
   if (pagePath) result.pagePath = pagePath;
+  if (excludePagePath) result.excludePagePath = excludePagePath;
 
   if (!errors.minImpressions && !errors.maxImpressions) {
     const minImpressions = parseOptionalNonNegativeInt(values.minImpressions);
@@ -228,17 +232,20 @@ function MetricRangeField({
 export function SearchPerformanceAdvancedFilters({
   values,
   onChange,
+  onApply,
   onClear,
   activeFilterCount,
 }: {
   values: SearchPerformanceAdvancedFilterValues;
   onChange: (values: SearchPerformanceAdvancedFilterValues) => void;
+  onApply: () => void;
   onClear: () => void;
   activeFilterCount: number;
 }) {
   const errors = getAdvancedSearchPerformanceFilterErrors(values);
   const compiledFilters = compileAdvancedSearchPerformanceFilters(values);
   const metricFiltersActive = hasActiveMetricFilters(compiledFilters);
+  const canApply = Object.keys(errors).length === 0;
 
   const update = <K extends keyof SearchPerformanceAdvancedFilterValues>(
     key: K,
@@ -248,78 +255,110 @@ export function SearchPerformanceAdvancedFilters({
   };
 
   return (
-    <div className="space-y-3 rounded-lg border border-base-300 bg-base-200/40 p-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
+    <details className="rounded-lg border border-base-300 bg-base-200/40">
+      <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-2 p-3 [&::-webkit-details-marker]:hidden">
         <div className="text-sm font-medium">Path and metric filters</div>
-        <div className="flex items-center gap-2">
-          {activeFilterCount > 0 ? (
-            <span className="badge badge-sm badge-primary">
-              {activeFilterCount} active
+        {activeFilterCount > 0 ? (
+          <span className="badge badge-sm badge-primary">
+            {activeFilterCount} active
+          </span>
+        ) : null}
+      </summary>
+      <div className="space-y-3 border-t border-base-300 p-3">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs font-medium text-base-content/60">
+              Page path contains
             </span>
-          ) : null}
-          <button
-            type="button"
-            className="btn btn-ghost btn-xs"
-            onClick={onClear}
-            disabled={
-              activeFilterCount === 0 &&
-              !hasAdvancedSearchPerformanceFilterErrors(values)
-            }
-          >
-            Clear
-          </button>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full"
+              placeholder="/blogs/ or /blogs/*"
+              value={values.pagePath}
+              onChange={(event) => update("pagePath", event.target.value)}
+              aria-label="Page path contains"
+            />
+          </label>
+          <label className="flex min-w-0 flex-col gap-1">
+            <span className="text-xs font-medium text-base-content/60">
+              Page path excludes
+            </span>
+            <input
+              type="text"
+              className="input input-bordered input-sm w-full"
+              placeholder="/tag/ or /author/"
+              value={values.excludePagePath}
+              onChange={(event) =>
+                update("excludePagePath", event.target.value)
+              }
+              aria-label="Page path excludes"
+            />
+          </label>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <MetricRangeField
+            label="Impressions"
+            minValue={values.minImpressions}
+            maxValue={values.maxImpressions}
+            minError={errors.minImpressions}
+            maxError={errors.maxImpressions}
+            onMinChange={(value) => update("minImpressions", value)}
+            onMaxChange={(value) => update("maxImpressions", value)}
+          />
+          <MetricRangeField
+            label="Clicks"
+            minValue={values.minClicks}
+            maxValue={values.maxClicks}
+            minError={errors.minClicks}
+            maxError={errors.maxClicks}
+            onMinChange={(value) => update("minClicks", value)}
+            onMaxChange={(value) => update("maxClicks", value)}
+          />
+          <MetricRangeField
+            label="Avg position"
+            minValue={values.minPosition}
+            maxValue={values.maxPosition}
+            minError={errors.minPosition}
+            maxError={errors.maxPosition}
+            onMinChange={(value) => update("minPosition", value)}
+            onMaxChange={(value) => update("maxPosition", value)}
+            inputMode="decimal"
+          />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {metricFiltersActive ? (
+            <p className="text-xs text-base-content/60">
+              Tables and exports consider up to{" "}
+              {SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT.toLocaleString()} rows
+              when metric ranges are set.
+            </p>
+          ) : (
+            <span />
+          )}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={onClear}
+              disabled={
+                activeFilterCount === 0 &&
+                Object.keys(compiledFilters).length === 0 &&
+                !hasAdvancedSearchPerformanceFilterErrors(values)
+              }
+            >
+              Clear
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={onApply}
+              disabled={!canApply}
+            >
+              Apply filters
+            </button>
+          </div>
         </div>
       </div>
-      <label className="flex min-w-0 flex-col gap-1">
-        <span className="text-xs font-medium text-base-content/60">
-          Page path prefix
-        </span>
-        <input
-          type="text"
-          className="input input-bordered input-sm w-full max-w-md"
-          placeholder="/blogs/ or /blogs/*"
-          value={values.pagePath}
-          onChange={(event) => update("pagePath", event.target.value)}
-          aria-label="Page path prefix"
-        />
-      </label>
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricRangeField
-          label="Impressions"
-          minValue={values.minImpressions}
-          maxValue={values.maxImpressions}
-          minError={errors.minImpressions}
-          maxError={errors.maxImpressions}
-          onMinChange={(value) => update("minImpressions", value)}
-          onMaxChange={(value) => update("maxImpressions", value)}
-        />
-        <MetricRangeField
-          label="Clicks"
-          minValue={values.minClicks}
-          maxValue={values.maxClicks}
-          minError={errors.minClicks}
-          maxError={errors.maxClicks}
-          onMinChange={(value) => update("minClicks", value)}
-          onMaxChange={(value) => update("maxClicks", value)}
-        />
-        <MetricRangeField
-          label="Avg position"
-          minValue={values.minPosition}
-          maxValue={values.maxPosition}
-          minError={errors.minPosition}
-          maxError={errors.maxPosition}
-          onMinChange={(value) => update("minPosition", value)}
-          onMaxChange={(value) => update("maxPosition", value)}
-          inputMode="decimal"
-        />
-      </div>
-      {metricFiltersActive ? (
-        <p className="text-xs text-base-content/60">
-          Tables and exports consider up to{" "}
-          {SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT.toLocaleString()} rows
-          when metric ranges are set.
-        </p>
-      ) : null}
-    </div>
+    </details>
   );
 }
