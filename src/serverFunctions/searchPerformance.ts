@@ -75,6 +75,7 @@ async function fetchFilteredDimensionRows(
   data: SearchPerformanceMetricFilters & {
     dateRange: SearchPerformanceDateRange;
     dimension: SearchPerformanceTableDimension;
+    // These preserve the report-level GSC scope for table and export fetches.
     device?: string;
     country?: string;
   },
