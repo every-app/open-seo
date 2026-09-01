@@ -8,7 +8,7 @@ import {
   Quote,
   TrendingUp,
 } from "lucide-react";
-import { lookupBrand } from "@/serverFunctions/ai-search";
+import { getSavedBrandLookup, lookupBrand } from "@/serverFunctions/ai-search";
 import {
   HostedPlanGate,
   type HostedPlanGateState,
@@ -17,6 +17,7 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { BrandLookupResults } from "@/client/features/ai-search/components/BrandLookupResults";
 import { BrandLookupSearchCard } from "@/client/features/ai-search/components/BrandLookupSearchCard";
 import { BrandLookupHistorySection } from "@/client/features/ai-search/components/BrandLookupHistorySection";
+import { SavedBrandLookupsSection } from "@/client/features/ai-search/components/SavedBrandLookupsSection";
 import { AiSearchLoadingState } from "@/client/features/ai-search/components/AiSearchLoadingState";
 import { AiSearchPaidPlanGate } from "@/client/features/ai-search/components/AiSearchPaidPlanGate";
 import { useBrandLookupSearchHistory } from "@/client/hooks/useBrandLookupSearchHistory";
@@ -141,6 +142,19 @@ function BrandLookupPageInner({
     enabled: hasActiveQuery && !planGate.isFreePlan,
     staleTime: 5 * 60 * 1000,
     retry: false,
+  });
+
+  // A saved run opened from the Saved lookups table. Rendering it reads the
+  // stored payload, so re-opening an old run never re-charges DataForSEO.
+  const [openedRunId, setOpenedRunId] = useState<string | null>(null);
+  const savedRunQuery = useQuery({
+    queryKey: ["brand-lookup-saved-run", projectId, openedRunId],
+    queryFn: () =>
+      getSavedBrandLookup({
+        data: { projectId, runId: openedRunId ?? "" },
+      }),
+    enabled: openedRunId !== null,
+    staleTime: Infinity,
   });
 
   const {
@@ -322,13 +336,45 @@ function BrandLookupPageInner({
                 </div>
                 <BrandLookupResults result={resultData} projectId={projectId} />
               </>
+            ) : openedRunId !== null ? (
+              <>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setOpenedRunId(null)}
+                    className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+                  >
+                    <ArrowLeft className="size-4" />
+                    Recent searches
+                  </button>
+                </div>
+                {savedRunQuery.isLoading ? (
+                  <AiSearchLoadingState />
+                ) : savedRunQuery.data ? (
+                  <BrandLookupResults
+                    result={savedRunQuery.data}
+                    projectId={projectId}
+                  />
+                ) : (
+                  <div className="rounded-box border border-base-300 p-6 text-base-content/70 text-sm">
+                    That saved lookup could not be read back. It may have been
+                    written by an older version of the result format.
+                  </div>
+                )}
+              </>
             ) : !errorMessage ? (
-              <BrandLookupHistorySection
-                projectId={projectId}
-                history={history}
-                historyLoaded={historyLoaded}
-                onRemoveHistoryItem={removeHistoryItem}
-              />
+              <>
+                <BrandLookupHistorySection
+                  projectId={projectId}
+                  history={history}
+                  historyLoaded={historyLoaded}
+                  onRemoveHistoryItem={removeHistoryItem}
+                />
+                <SavedBrandLookupsSection
+                  projectId={projectId}
+                  onOpenRun={setOpenedRunId}
+                />
+              </>
             ) : null}
           </>
         )}
