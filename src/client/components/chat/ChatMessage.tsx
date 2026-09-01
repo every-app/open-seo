@@ -1,5 +1,5 @@
 import { type UIMessage } from "ai";
-import { useState } from "react";
+import { memo, useState } from "react";
 import {
   AlertTriangle,
   Check,
@@ -233,8 +233,18 @@ function ToolBadge({
  * get undo (rewind the conversation to before this message) and edit (rewind,
  * then resend the edited text) when the chat passes the handlers — both need
  * server support, so chats opt in.
+ *
+ * Memoized: during streaming, every chunk replaces the whole streaming
+ * message object, so the chat re-renders per chunk — but only THAT message's
+ * identity changes. Static history must not pay that cost. The comparator
+ * relies on reference identity of `message` (the AI SDK clones the streamed
+ * message every update, so streaming messages DO get a new reference and
+ * re-render; untouched messages keep theirs and bail out). Unstable handler
+ * props (onUndo/onEdit are fresh closures each parent render, wired only for
+ * user messages) are deliberately compared by message id: the handlers are
+ * pure `undoFrom(message.id)` bindings whose behavior depends only on the id.
  */
-export function ChatMessage({
+function ChatMessageImpl({
   message,
   resolveToolLabel,
   streaming,
@@ -359,3 +369,47 @@ export function ChatMessage({
     </div>
   );
 }
+
+/**
+ * Equality for the memoized ChatMessage. Reference-equal on everything cheap
+ * and stable; reference equality on `message` (the store clones the streamed
+ * message every update, so content changes always produce a new reference —
+ * and static messages keep theirs). The unstable handler props are compared by
+ * message id, since each is a pure `undoFrom(message.id)` binding whose
+ * behavior depends only on that id. `streaming` is a boolean and
+ * `resolveToolLabel` is a module-level constant per chat, so strict equality
+ * is correct for both.
+ */
+function chatMessagePropsEqual(
+  prev: Readonly<Record<string, unknown>>,
+  next: Readonly<Record<string, unknown>>,
+): boolean {
+  const sameMessageId = (): boolean => {
+    const prevId = getMessageId(prev.message);
+    const nextId = getMessageId(next.message);
+    return prevId !== undefined && prevId === nextId;
+  };
+  return (
+    prev.message === next.message &&
+    prev.streaming === next.streaming &&
+    prev.resolveToolLabel === next.resolveToolLabel &&
+    (prev.onUndo === next.onUndo ||
+      (prev.onUndo != null && next.onUndo != null && sameMessageId())) &&
+    (prev.onEdit === next.onEdit ||
+      (prev.onEdit != null && next.onEdit != null && sameMessageId()))
+  );
+}
+
+/** Narrow the message prop to its id without an unsafe cast: memo comparators
+ * receive unknown-shaped records, so guard the property access instead. */
+function getMessageId(message: unknown): unknown {
+  if (typeof message !== "object" || message === null) return undefined;
+  return Reflect.get(message, "id");
+}
+
+export const ChatMessage = memo(ChatMessageImpl, chatMessagePropsEqual);
+
+// Exposed for the memoization regression test: asserts the bailout rules the
+// comparator implements (static messages bail out; content/streaming changes
+// re-render) without needing a DOM test renderer.
+export { chatMessagePropsEqual as chatMessagePropsEqualForTest };

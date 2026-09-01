@@ -57,7 +57,7 @@ export function groupConsecutiveToolParts(
   const safe = safeParts(parts);
   const groups: ToolPartGroup[] = [];
   for (const part of safe) {
-    if (!isToolPart(part)) continue;
+    if (!isToolPart(part)) continue; // breaks nothing here; see buildRenderPlan
     const group = groups[groups.length - 1];
     if (group && group.type === part.type) {
       group.parts.push(part);
@@ -78,25 +78,37 @@ export type RenderPlanEntry =
  * each run of consecutive same-type tool parts collapses into one group
  * entry. This is what the chat bubble renders so interleaved
  * reasoning → tools → text sequences keep their original order.
+ *
+ * The group is built in the SAME pass that emits it (not by consuming an
+ * independently-indexed group list): indexing into a separately built list
+ * desynced when the same tool type recurred after a non-tool part —
+ * groupConsecutiveToolParts merges those into one group (it skips non-tool
+ * parts), while the old first-of-run detection here counted two runs,
+ * leaving the second `groups[i]` undefined and crashing ToolBadge on
+ * `group.type`. Single-pass construction keeps the emission and the group
+ * referentially locked together for every sequence, including
+ * [tool-A, reasoning, tool-A].
  */
 export function buildRenderPlan(parts: unknown): RenderPlanEntry[] {
   const safe = safeParts(parts);
-  const groups = groupConsecutiveToolParts(safe);
   const plan: RenderPlanEntry[] = [];
-  let groupIndex = 0;
-  for (let i = 0; i < safe.length; i++) {
-    const part = safe[i];
-    if (!part) continue;
-    if (isToolPart(part)) {
-      // Only the FIRST part of each same-type run emits the group entry.
-      const previous = i > 0 ? safe[i - 1] : undefined;
-      if (!previous || !isToolPart(previous) || previous.type !== part.type) {
-        plan.push({ kind: "tools", group: groups[groupIndex] });
-        groupIndex++;
-      }
+  let currentGroup: ToolPartGroup | null = null;
+  for (const part of safe) {
+    if (!isToolPart(part)) {
+      // Any non-tool part breaks the current run (document order matters:
+      // two same-type calls around text are distinct work, and merging them
+      // would collapse the timeline between them).
+      currentGroup = null;
+      plan.push({ kind: "part", part });
       continue;
     }
-    plan.push({ kind: "part", part });
+    if (currentGroup && currentGroup.type === part.type) {
+      currentGroup.parts.push(part);
+      currentGroup.last = part;
+      continue;
+    }
+    currentGroup = { type: part.type, parts: [part], last: part };
+    plan.push({ kind: "tools", group: currentGroup });
   }
   return plan;
 }

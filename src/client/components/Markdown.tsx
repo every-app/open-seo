@@ -1,4 +1,5 @@
 import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import { memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -17,8 +18,14 @@ type Props = {
  *
  * Anchor URLs are sanitized to http(s) only — LLMs can be coaxed into
  * emitting `javascript:` payloads.
+ *
+ * Memoized on the markdown source: chat messages re-render on every store
+ * notify (streaming coalesces at the throttle), and re-parsing remark syntax
+ * for the whole accumulated text of a streaming part on every render was a
+ * proven contributor to the streaming render storm. Settled text keeps its
+ * string reference, so history pays the parse cost exactly once.
  */
-export function Markdown({ children, className }: Props) {
+export const Markdown = memo(function Markdown({ children, className }: Props) {
   return (
     <div className={className}>
       <ReactMarkdown
@@ -29,7 +36,7 @@ export function Markdown({ children, className }: Props) {
       </ReactMarkdown>
     </div>
   );
-}
+});
 
 type AnchorProps = ComponentPropsWithoutRef<"a">;
 

@@ -122,8 +122,14 @@ export function SamConversation({
   // session id. The WebSocket is authorized in the Worker (src/server.ts) before
   // it reaches the DO; billing gates come back as normal assistant messages.
   const agent = useAgent({ agent: "sam-chat", name: sessionId });
-  const { messages, sendMessage, setMessages, clearHistory, status } =
-    useAgentChat({ agent });
+  // Multi-tool turns stream hundreds of WS chunks per assistant message (and a
+  // single tool part can carry hundreds of KB). Each chunk replaces the whole
+  // message in chat state, so an unthrottled store re-renders the chat tree
+  // per chunk — faster than the main thread can commit, which React 19 aborts
+  // as "Maximum update depth exceeded". 100ms coalesces chunk bursts to ≤10
+  // renders/s; the final message still renders in full when the stream settles.
+  const { messages, sendMessage, setMessages, clearHistory, status, error } =
+    useAgentChat({ agent, experimental_throttle: 100 });
 
   const isBusy = status === "submitted" || status === "streaming";
   const sendText = (text: string) => void sendMessage({ text });
@@ -272,7 +278,13 @@ export function SamConversation({
 
           {status === "error" ? (
             <p className="text-sm text-error">
-              Something went wrong. Please try again.
+              {/* The server normalizes provider failures into one curated,
+                  secret-free message (auth / data policy / rate limit / …)
+                  and delivers it as the terminal error body, so surface it
+                  verbatim instead of a generic dead-end. */}
+              {error?.message?.trim()
+                ? error.message
+                : "Something went wrong. Please try again."}
             </p>
           ) : null}
         </div>

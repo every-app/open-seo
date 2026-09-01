@@ -109,4 +109,59 @@ describe("buildRenderPlan", () => {
     expect(plan[0]).toMatchObject({ kind: "part" });
     expect(plan[1]).toMatchObject({ kind: "tools" });
   });
+
+  // Regression (Phase T2): the old plan builder indexed a separately built
+  // group list; a same-type tool call recurring after a non-tool part made the
+  // first-of-run counter outpace the group list, leaving `groups[i]` undefined
+  // and crashing ToolBadge on `group.type` mid-stream.
+  it("emits a defined group for every tools entry when the same tool type recurs after a non-tool part", () => {
+    const plan = buildRenderPlan([
+      toolPart("tool-get_search_console_performance"),
+      reasoningPart("thinking between calls"),
+      toolPart("tool-get_search_console_performance"),
+    ]);
+    const toolsEntries = plan.filter(
+      (entry): entry is Extract<(typeof plan)[number], { kind: "tools" }> =>
+        entry.kind === "tools",
+    );
+    expect(toolsEntries).toHaveLength(2); // document order: two distinct calls
+    for (const entry of toolsEntries) {
+      expect(entry.group).toBeDefined();
+      expect(typeof entry.group.type).toBe("string");
+      expect(entry.group.parts).toHaveLength(1);
+    }
+  });
+
+  it("never emits an undefined group for any same-type-recurs sequence (exhaustive short alphabet)", () => {
+    const filler = [textPart("x"), reasoningPart("y")];
+    const alphabet: Array<Part | undefined> = [
+      toolPart("tool-a"),
+      toolPart("tool-b"),
+      ...filler,
+      undefined, // marks "sequence ends here"
+    ];
+    const seqs: Array<Part[]> = [];
+    const pushSeq = (parts: Array<Part | undefined>) => {
+      const seq: Part[] = [];
+      for (const p of parts) {
+        if (p === undefined) break;
+        seq.push(p);
+      }
+      seqs.push(seq);
+    };
+    for (const p1 of alphabet)
+      for (const p2 of alphabet)
+        for (const p3 of alphabet)
+          for (const p4 of alphabet) pushSeq([p1, p2, p3, p4]);
+    for (const seq of seqs) {
+      const plan = buildRenderPlan(seq);
+      for (const entry of plan) {
+        if (entry.kind === "tools") {
+          expect(entry.group, `sequence ${seq.map((p) => p.type).join(",")}`).toBeDefined();
+          expect(entry.group.type.startsWith("tool-")).toBe(true);
+          expect(entry.group.parts.length).toBeGreaterThanOrEqual(1);
+        }
+      }
+    }
+  });
 });

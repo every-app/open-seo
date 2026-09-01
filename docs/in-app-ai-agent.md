@@ -239,6 +239,45 @@ The system prompt also instructs SAM to reuse already-fetched data rather than
 re-requesting tools, and to treat tool outputs as untrusted data
 (prompt-injection guidance).
 
+## Streaming Render Stability (Phase T2)
+
+Multi-tool turns stream hundreds (sometimes thousands) of WebSocket chunks per
+assistant message, and a single tool part can carry hundreds of KB. Each chunk
+replaces the whole streamed message in the chat client's store
+(`@ai-sdk/react` clones the message and the messages array on every update).
+Unthrottled, the chat tree re-renders per chunk — faster than the main thread
+can commit — which React 19 eventually aborts with "Maximum update depth
+exceeded". Three provider-neutral client/agent-side guards prevent that:
+
+1. **Streaming throttle** (`SamConversation.tsx`) — `useAgentChat` is passed
+   `experimental_throttle: 100`, so the store notifies React at most ~10×/s
+   during streaming. Text, tool-call, and badge updates coalesce at lower
+   frequency **by design**; the final message always renders in full once the
+   stream settles (the throttle has a trailing edge, so nothing is lost).
+   This is purely a render-frequency bound — it changes nothing about server
+   execution, providers, DataRouter, or MCP contracts.
+2. **Chat message memoization** (`ChatMessage.tsx`) — `ChatMessage` is wrapped
+   in `React.memo` with a comparator that re-renders a bubble only when its
+   message object is replaced (the store clones the streaming message on
+   every update, so content/tool-part/error changes always re-render), when
+   its `streaming` flag flips, or when its label resolver changes. Settled
+   history messages keep their references and bail out even while another
+   message streams and the parent rebuilds handler props per render.
+3. **Agent-side Search Console bounding** (`samGscBounding.ts`) — when SAM
+   calls `get_search_console_performance`, the result is bounded to the top
+   **50 rows** by GSC's clicks-descending order before it becomes a tool part
+   (the public MCP tool keeps its full 1000-row product contract — only the
+   agent's copy is bounded). The chosen limit is based on the tool's own
+   surface: the MCP text summary shows the top 15 rows, 50 rows covers
+   top-queries/pages, head striking-distance analysis, and date trends in
+   ~5–15KB, and the bounded note (computed from the actual returned rows —
+   never invented aggregates) tells the model the returned-row click/impression
+   totals and how to fetch the next slice with `startRow` or narrower filters.
+
+All three are provider-neutral: no behavior keys off the provider or model, so
+the guards hold identically for OpenRouter, OpenAI, Gemini, Anthropic,
+OpenAI-Compatible, and Ollama Cloud.
+
 ## Tool Surface
 
 SAM exposes the shared MCP toolset (~23 tools), including four site-audit
@@ -312,7 +351,10 @@ Focused tests cover provider catalog parsing/failure classification and the
 registry (`providers.test.ts`), settings resolution order, per-provider
 precedence, invalid-pair validation, and key masking
 (`AiSettingsService.test.ts`), the model-picker filter (`AiModelSelect.test.ts`),
-dedup cache and event logging (`samToolExecution.test.ts`), and env parsing
-plus the tool-call counter (`samTurnControls.test.ts`). Tests mock the
+dedup cache and event logging (`samToolExecution.test.ts`), env parsing
+plus the tool-call counter (`samTurnControls.test.ts`), the streaming throttle
+seam and large-tool-output behavior (`samStreamingThrottle.test.ts`), the
+ChatMessage memo comparator (`ChatMessage.memo.test.ts`), and agent-side GSC
+bounding (`samGscBounding.test.ts`). Tests mock the
 provider (`fetch`, `generateText`) and the R2 cache; no real provider or
 database calls are made.

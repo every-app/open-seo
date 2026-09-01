@@ -37,6 +37,7 @@ import {
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
+import { boundAgentGscOutput } from "@/server/features/sam/samGscBounding";
 import {
   nullToolExecutionTracker,
   type ToolExecutionTracker,
@@ -333,7 +334,15 @@ export function buildSamMcpTools(
     get_local_serp_results: adapt(getLocalSerpResultsTool),
     get_google_business_questions: adapt(getGoogleBusinessQuestionsTool),
     get_keyword_metrics: adapt(getKeywordMetricsTool),
-    get_search_console_performance: adapt(getSearchConsolePerformanceTool),
+    get_search_console_performance: adapt(getSearchConsolePerformanceTool, {
+      // The public MCP tool can return up to 1000 rows (the product contract);
+      // in the agent transcript that is a multi-hundred-KB tool part the model
+      // barely uses and the streaming client clones per chunk (the Phase T
+      // render storm). Bound only the agent's copy — the MCP route is untouched.
+      description:
+        "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. ctr is a 0-1 fraction; position is a 1-based average. Read-only; uses no credits. Agent results are bounded to the top rows by clicks — the output note says how to fetch more (startRow / narrower filters).",
+      postProcess: boundAgentGscOutput,
+    }),
     inspect_urls: adapt(inspectUrlsTool),
     run_site_audit: adapt(runSiteAuditTool, {
       // SAM-specific orchestration guidance: the shared MCP description stays
