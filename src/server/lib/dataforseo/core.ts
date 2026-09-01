@@ -131,6 +131,9 @@ function http(
 export const labsApi = () => new DataforseoLabsApi(API_BASE, http());
 export const keywordsDataApi = () => new KeywordsDataApi(API_BASE, http());
 export const serpApi = () => new SerpApi(API_BASE, http());
+// SERP task_post creates billed work. A 5xx does not prove the provider
+// skipped the charge, so task creation must never be replayed automatically.
+export const serpTaskApi = () => new SerpApi(API_BASE, http(undefined, 0));
 export const businessDataApi = () => new BusinessDataApi(API_BASE, http());
 // task_post creates a billed task. A 5xx does not prove the provider skipped
 // the charge, so this client must not replay it (same rule as Lighthouse).

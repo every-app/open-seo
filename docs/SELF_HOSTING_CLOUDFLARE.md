@@ -4,7 +4,7 @@ Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devi
 
 Related guides:
 
-- [Operations](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): connect the MCP server, telemetry.
+- [Operations](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): connect the MCP server, headless access for agents and CI, telemetry.
 - [Legacy deployments](./SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.
 
 ## Prerequisites
@@ -75,6 +75,26 @@ git pull        # or: git fetch upstream && git merge upstream/main, if you fork
 pnpm install
 pnpm deploy:selfhost --yes
 ```
+
+## Using your own domain
+
+Bind the domain in `.env.selfhost` rather than in the Cloudflare dashboard:
+
+```bash
+CUSTOM_DOMAIN=openseo.example.com
+```
+
+The zone is inferred from the hostname, so it must already be a zone on the
+same Cloudflare account. Redeploy and the domain is routed to the Worker _and_
+added to the Access application, so it is gated exactly like the workers.dev
+hostname.
+
+**A Custom Domain added by hand in the dashboard does not survive a deploy.**
+Each `pnpm deploy:selfhost` reconciles the Worker's routes and the Access
+application's destinations against what the code declares: an unset
+`CUSTOM_DOMAIN` reads as "no custom domain wanted", so the deploy removes the
+one you added. Setting the variable is what makes it stick. Comma-separate to
+bind more than one.
 
 ## Giving teammates access
 

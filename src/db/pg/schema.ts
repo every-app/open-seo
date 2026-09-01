@@ -1,5 +1,6 @@
 export * from "./app.schema";
 export * from "./project-context.schema";
+export * from "./local-seo.schema";
 export * from "./audit.schema";
 export * from "./sam.schema";
 export * from "./better-auth-schema";

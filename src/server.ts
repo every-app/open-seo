@@ -180,6 +180,7 @@ function handleFetch(
 // Export Workflow classes as named exports
 export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
+export { LocalGridWorkflow } from "./server/workflows/LocalGridWorkflow";
 // Durable Object class for the onboarding strategy chat (Agents SDK).
 export { OnboardingChatAgent } from "./server/features/onboarding/OnboardingChatAgent";
 // Durable Object class for the SAM in-app agent (Agents SDK).

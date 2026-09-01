@@ -35,6 +35,10 @@ export const fetchRankCheckTaskResult: DataforseoSections["fetchRankCheckTaskRes
   async (input) =>
     (await loadDataforseoSections()).fetchRankCheckTaskResult(input);
 
+export const fetchLocalGridTaskResult: DataforseoSections["fetchLocalGridTaskResult"] =
+  async (input) =>
+    (await loadDataforseoSections()).fetchLocalGridTaskResult(input);
+
 export const fetchBusinessDataTaskResult: DataforseoSections["fetchBusinessDataTaskResult"] =
   async (input) =>
     (await loadDataforseoSections()).fetchBusinessDataTaskResult(input);
@@ -64,6 +68,11 @@ export type {
   RankCheckTaskInput,
   PostedRankCheckTask,
 } from "@/server/lib/dataforseo/serp";
+
+export type {
+  PostedLocalGridTask,
+  CompletedLocalGridTask,
+} from "@/server/lib/dataforseo/serp-local-grid";
 
 export type {
   BacklinksSummaryItem,

@@ -44,6 +44,7 @@ import { Route as ProjectPProjectIdSavedRouteImport } from './routes/_project/p/
 import { Route as ProjectPProjectIdSamRouteImport } from './routes/_project/p/$projectId/sam'
 import { Route as ProjectPProjectIdRankTrackingRouteImport } from './routes/_project/p/$projectId/rank-tracking'
 import { Route as ProjectPProjectIdPromptExplorerRouteImport } from './routes/_project/p/$projectId/prompt-explorer'
+import { Route as ProjectPProjectIdLocalRouteImport } from './routes/_project/p/$projectId/local'
 import { Route as ProjectPProjectIdKeywordsRouteImport } from './routes/_project/p/$projectId/keywords'
 import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p/$projectId/domain'
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
@@ -51,10 +52,14 @@ import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_projec
 import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
 import { Route as ProjectPProjectIdSettingsIndexRouteImport } from './routes/_project/p/$projectId/settings/index'
 import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes/_project/p/$projectId/rank-tracking/index'
+import { Route as ProjectPProjectIdLocalIndexRouteImport } from './routes/_project/p/$projectId/local/index'
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
 import { Route as ProjectPProjectIdSettingsIntegrationsRouteImport } from './routes/_project/p/$projectId/settings/integrations'
 import { Route as ProjectPProjectIdSettingsContextRouteImport } from './routes/_project/p/$projectId/settings/context'
 import { Route as ProjectPProjectIdRankTrackingConfigIdRouteImport } from './routes/_project/p/$projectId/rank-tracking/$configId'
+import { Route as ProjectPProjectIdLocalGridRouteImport } from './routes/_project/p/$projectId/local/grid'
+import { Route as ProjectPProjectIdLocalGridIndexRouteImport } from './routes/_project/p/$projectId/local/grid/index'
+import { Route as ProjectPProjectIdLocalGridConfigIdRouteImport } from './routes/_project/p/$projectId/local/grid/$configId'
 import { Route as ProjectPProjectIdAuditIssuesResultIdRouteImport } from './routes/_project/p/$projectId/audit/issues/$resultId'
 
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
@@ -236,6 +241,11 @@ const ProjectPProjectIdPromptExplorerRoute =
     path: '/prompt-explorer',
     getParentRoute: () => ProjectPProjectIdRouteRoute,
   } as any)
+const ProjectPProjectIdLocalRoute = ProjectPProjectIdLocalRouteImport.update({
+  id: '/local',
+  path: '/local',
+  getParentRoute: () => ProjectPProjectIdRouteRoute,
+} as any)
 const ProjectPProjectIdKeywordsRoute =
   ProjectPProjectIdKeywordsRouteImport.update({
     id: '/keywords',
@@ -276,6 +286,12 @@ const ProjectPProjectIdRankTrackingIndexRoute =
     path: '/',
     getParentRoute: () => ProjectPProjectIdRankTrackingRoute,
   } as any)
+const ProjectPProjectIdLocalIndexRoute =
+  ProjectPProjectIdLocalIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProjectPProjectIdLocalRoute,
+  } as any)
 const ProjectPProjectIdAuditIndexRoute =
   ProjectPProjectIdAuditIndexRouteImport.update({
     id: '/',
@@ -299,6 +315,24 @@ const ProjectPProjectIdRankTrackingConfigIdRoute =
     id: '/$configId',
     path: '/$configId',
     getParentRoute: () => ProjectPProjectIdRankTrackingRoute,
+  } as any)
+const ProjectPProjectIdLocalGridRoute =
+  ProjectPProjectIdLocalGridRouteImport.update({
+    id: '/grid',
+    path: '/grid',
+    getParentRoute: () => ProjectPProjectIdLocalRoute,
+  } as any)
+const ProjectPProjectIdLocalGridIndexRoute =
+  ProjectPProjectIdLocalGridIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => ProjectPProjectIdLocalGridRoute,
+  } as any)
+const ProjectPProjectIdLocalGridConfigIdRoute =
+  ProjectPProjectIdLocalGridConfigIdRouteImport.update({
+    id: '/$configId',
+    path: '/$configId',
+    getParentRoute: () => ProjectPProjectIdLocalGridRoute,
   } as any)
 const ProjectPProjectIdAuditIssuesResultIdRoute =
   ProjectPProjectIdAuditIssuesResultIdRouteImport.update({
@@ -335,6 +369,7 @@ export interface FileRoutesByFullPath {
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/p/$projectId/local': typeof ProjectPProjectIdLocalRouteWithChildren
   '/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -344,13 +379,17 @@ export interface FileRoutesByFullPath {
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/p/$projectId/': typeof ProjectPProjectIdIndexRoute
+  '/p/$projectId/local/grid': typeof ProjectPProjectIdLocalGridRouteWithChildren
   '/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
+  '/p/$projectId/local/': typeof ProjectPProjectIdLocalIndexRoute
   '/p/$projectId/rank-tracking/': typeof ProjectPProjectIdRankTrackingIndexRoute
   '/p/$projectId/settings/': typeof ProjectPProjectIdSettingsIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/local/grid/$configId': typeof ProjectPProjectIdLocalGridConfigIdRoute
+  '/p/$projectId/local/grid/': typeof ProjectPProjectIdLocalGridIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -389,9 +428,12 @@ export interface FileRoutesByTo {
   '/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditIndexRoute
+  '/p/$projectId/local': typeof ProjectPProjectIdLocalIndexRoute
   '/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingIndexRoute
   '/p/$projectId/settings': typeof ProjectPProjectIdSettingsIndexRoute
   '/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
+  '/p/$projectId/local/grid/$configId': typeof ProjectPProjectIdLocalGridConfigIdRoute
+  '/p/$projectId/local/grid': typeof ProjectPProjectIdLocalGridIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -426,6 +468,7 @@ export interface FileRoutesById {
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/_project/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
   '/_project/p/$projectId/keywords': typeof ProjectPProjectIdKeywordsRoute
+  '/_project/p/$projectId/local': typeof ProjectPProjectIdLocalRouteWithChildren
   '/_project/p/$projectId/prompt-explorer': typeof ProjectPProjectIdPromptExplorerRoute
   '/_project/p/$projectId/rank-tracking': typeof ProjectPProjectIdRankTrackingRouteWithChildren
   '/_project/p/$projectId/sam': typeof ProjectPProjectIdSamRoute
@@ -435,13 +478,17 @@ export interface FileRoutesById {
   '/api/ga4/oauth/callback': typeof ApiGa4OauthCallbackRoute
   '/api/gsc/oauth/callback': typeof ApiGscOauthCallbackRoute
   '/_project/p/$projectId/': typeof ProjectPProjectIdIndexRoute
+  '/_project/p/$projectId/local/grid': typeof ProjectPProjectIdLocalGridRouteWithChildren
   '/_project/p/$projectId/rank-tracking/$configId': typeof ProjectPProjectIdRankTrackingConfigIdRoute
   '/_project/p/$projectId/settings/context': typeof ProjectPProjectIdSettingsContextRoute
   '/_project/p/$projectId/settings/integrations': typeof ProjectPProjectIdSettingsIntegrationsRoute
   '/_project/p/$projectId/audit/': typeof ProjectPProjectIdAuditIndexRoute
+  '/_project/p/$projectId/local/': typeof ProjectPProjectIdLocalIndexRoute
   '/_project/p/$projectId/rank-tracking/': typeof ProjectPProjectIdRankTrackingIndexRoute
   '/_project/p/$projectId/settings/': typeof ProjectPProjectIdSettingsIndexRoute
   '/_project/p/$projectId/audit/issues/$resultId': typeof ProjectPProjectIdAuditIssuesResultIdRoute
+  '/_project/p/$projectId/local/grid/$configId': typeof ProjectPProjectIdLocalGridConfigIdRoute
+  '/_project/p/$projectId/local/grid/': typeof ProjectPProjectIdLocalGridIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -473,6 +520,7 @@ export interface FileRouteTypes {
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
     | '/p/$projectId/keywords'
+    | '/p/$projectId/local'
     | '/p/$projectId/prompt-explorer'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/sam'
@@ -482,13 +530,17 @@ export interface FileRouteTypes {
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/p/$projectId/'
+    | '/p/$projectId/local/grid'
     | '/p/$projectId/rank-tracking/$configId'
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
     | '/p/$projectId/audit/'
+    | '/p/$projectId/local/'
     | '/p/$projectId/rank-tracking/'
     | '/p/$projectId/settings/'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/p/$projectId/local/grid/$configId'
+    | '/p/$projectId/local/grid/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -527,9 +579,12 @@ export interface FileRouteTypes {
     | '/p/$projectId/settings/context'
     | '/p/$projectId/settings/integrations'
     | '/p/$projectId/audit'
+    | '/p/$projectId/local'
     | '/p/$projectId/rank-tracking'
     | '/p/$projectId/settings'
     | '/p/$projectId/audit/issues/$resultId'
+    | '/p/$projectId/local/grid/$configId'
+    | '/p/$projectId/local/grid'
   id:
     | '__root__'
     | '/_app'
@@ -563,6 +618,7 @@ export interface FileRouteTypes {
     | '/_project/p/$projectId/brand-lookup'
     | '/_project/p/$projectId/domain'
     | '/_project/p/$projectId/keywords'
+    | '/_project/p/$projectId/local'
     | '/_project/p/$projectId/prompt-explorer'
     | '/_project/p/$projectId/rank-tracking'
     | '/_project/p/$projectId/sam'
@@ -572,13 +628,17 @@ export interface FileRouteTypes {
     | '/api/ga4/oauth/callback'
     | '/api/gsc/oauth/callback'
     | '/_project/p/$projectId/'
+    | '/_project/p/$projectId/local/grid'
     | '/_project/p/$projectId/rank-tracking/$configId'
     | '/_project/p/$projectId/settings/context'
     | '/_project/p/$projectId/settings/integrations'
     | '/_project/p/$projectId/audit/'
+    | '/_project/p/$projectId/local/'
     | '/_project/p/$projectId/rank-tracking/'
     | '/_project/p/$projectId/settings/'
     | '/_project/p/$projectId/audit/issues/$resultId'
+    | '/_project/p/$projectId/local/grid/$configId'
+    | '/_project/p/$projectId/local/grid/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -844,6 +904,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdPromptExplorerRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/local': {
+      id: '/_project/p/$projectId/local'
+      path: '/local'
+      fullPath: '/p/$projectId/local'
+      preLoaderRoute: typeof ProjectPProjectIdLocalRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/keywords': {
       id: '/_project/p/$projectId/keywords'
       path: '/keywords'
@@ -893,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdRankTrackingIndexRouteImport
       parentRoute: typeof ProjectPProjectIdRankTrackingRoute
     }
+    '/_project/p/$projectId/local/': {
+      id: '/_project/p/$projectId/local/'
+      path: '/'
+      fullPath: '/p/$projectId/local/'
+      preLoaderRoute: typeof ProjectPProjectIdLocalIndexRouteImport
+      parentRoute: typeof ProjectPProjectIdLocalRoute
+    }
     '/_project/p/$projectId/audit/': {
       id: '/_project/p/$projectId/audit/'
       path: '/'
@@ -920,6 +994,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/p/$projectId/rank-tracking/$configId'
       preLoaderRoute: typeof ProjectPProjectIdRankTrackingConfigIdRouteImport
       parentRoute: typeof ProjectPProjectIdRankTrackingRoute
+    }
+    '/_project/p/$projectId/local/grid': {
+      id: '/_project/p/$projectId/local/grid'
+      path: '/grid'
+      fullPath: '/p/$projectId/local/grid'
+      preLoaderRoute: typeof ProjectPProjectIdLocalGridRouteImport
+      parentRoute: typeof ProjectPProjectIdLocalRoute
+    }
+    '/_project/p/$projectId/local/grid/': {
+      id: '/_project/p/$projectId/local/grid/'
+      path: '/'
+      fullPath: '/p/$projectId/local/grid/'
+      preLoaderRoute: typeof ProjectPProjectIdLocalGridIndexRouteImport
+      parentRoute: typeof ProjectPProjectIdLocalGridRoute
+    }
+    '/_project/p/$projectId/local/grid/$configId': {
+      id: '/_project/p/$projectId/local/grid/$configId'
+      path: '/$configId'
+      fullPath: '/p/$projectId/local/grid/$configId'
+      preLoaderRoute: typeof ProjectPProjectIdLocalGridConfigIdRouteImport
+      parentRoute: typeof ProjectPProjectIdLocalGridRoute
     }
     '/_project/p/$projectId/audit/issues/$resultId': {
       id: '/_project/p/$projectId/audit/issues/$resultId'
@@ -974,6 +1069,40 @@ const ProjectPProjectIdAuditRouteWithChildren =
     ProjectPProjectIdAuditRouteChildren,
   )
 
+interface ProjectPProjectIdLocalGridRouteChildren {
+  ProjectPProjectIdLocalGridConfigIdRoute: typeof ProjectPProjectIdLocalGridConfigIdRoute
+  ProjectPProjectIdLocalGridIndexRoute: typeof ProjectPProjectIdLocalGridIndexRoute
+}
+
+const ProjectPProjectIdLocalGridRouteChildren: ProjectPProjectIdLocalGridRouteChildren =
+  {
+    ProjectPProjectIdLocalGridConfigIdRoute:
+      ProjectPProjectIdLocalGridConfigIdRoute,
+    ProjectPProjectIdLocalGridIndexRoute: ProjectPProjectIdLocalGridIndexRoute,
+  }
+
+const ProjectPProjectIdLocalGridRouteWithChildren =
+  ProjectPProjectIdLocalGridRoute._addFileChildren(
+    ProjectPProjectIdLocalGridRouteChildren,
+  )
+
+interface ProjectPProjectIdLocalRouteChildren {
+  ProjectPProjectIdLocalGridRoute: typeof ProjectPProjectIdLocalGridRouteWithChildren
+  ProjectPProjectIdLocalIndexRoute: typeof ProjectPProjectIdLocalIndexRoute
+}
+
+const ProjectPProjectIdLocalRouteChildren: ProjectPProjectIdLocalRouteChildren =
+  {
+    ProjectPProjectIdLocalGridRoute:
+      ProjectPProjectIdLocalGridRouteWithChildren,
+    ProjectPProjectIdLocalIndexRoute: ProjectPProjectIdLocalIndexRoute,
+  }
+
+const ProjectPProjectIdLocalRouteWithChildren =
+  ProjectPProjectIdLocalRoute._addFileChildren(
+    ProjectPProjectIdLocalRouteChildren,
+  )
+
 interface ProjectPProjectIdRankTrackingRouteChildren {
   ProjectPProjectIdRankTrackingConfigIdRoute: typeof ProjectPProjectIdRankTrackingConfigIdRoute
   ProjectPProjectIdRankTrackingIndexRoute: typeof ProjectPProjectIdRankTrackingIndexRoute
@@ -1018,6 +1147,7 @@ interface ProjectPProjectIdRouteRouteChildren {
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
   ProjectPProjectIdDomainRoute: typeof ProjectPProjectIdDomainRoute
   ProjectPProjectIdKeywordsRoute: typeof ProjectPProjectIdKeywordsRoute
+  ProjectPProjectIdLocalRoute: typeof ProjectPProjectIdLocalRouteWithChildren
   ProjectPProjectIdPromptExplorerRoute: typeof ProjectPProjectIdPromptExplorerRoute
   ProjectPProjectIdRankTrackingRoute: typeof ProjectPProjectIdRankTrackingRouteWithChildren
   ProjectPProjectIdSamRoute: typeof ProjectPProjectIdSamRoute
@@ -1034,6 +1164,7 @@ const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
     ProjectPProjectIdDomainRoute: ProjectPProjectIdDomainRoute,
     ProjectPProjectIdKeywordsRoute: ProjectPProjectIdKeywordsRoute,
+    ProjectPProjectIdLocalRoute: ProjectPProjectIdLocalRouteWithChildren,
     ProjectPProjectIdPromptExplorerRoute: ProjectPProjectIdPromptExplorerRoute,
     ProjectPProjectIdRankTrackingRoute:
       ProjectPProjectIdRankTrackingRouteWithChildren,

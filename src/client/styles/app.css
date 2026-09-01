@@ -1,4 +1,25 @@
+@import "leaflet/dist/leaflet.css";
 @import "tailwindcss";
+
+.local-grid-rank-label {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  color: white !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  margin: 0 !important;
+  pointer-events: none !important;
+}
+
+.local-grid-rank-label::before {
+  display: none !important;
+}
+
+.local-grid-rank-label-dark {
+  color: #172033 !important;
+}
 
 @theme {
   --container-8xl: 88rem;
