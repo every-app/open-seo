@@ -48,15 +48,30 @@ describe("LocalGridResults", () => {
         resultCell("result-2", 1, 5),
         resultCell("result-3", 2, null),
       ],
+      competitors: [],
     };
 
     const markup = renderToStaticMarkup(
-      createElement(LocalGridResults, { data }),
+      createElement(LocalGridResults, {
+        data,
+        reportContext: {
+          businessName: "Worthing Lofts",
+          address: "Worthing, West Sussex",
+          centerLatitude: 50.81,
+          centerLongitude: -0.37,
+          gridSize: 3,
+          radiusMeters: 1_609,
+          distanceUnit: "mi",
+          rating: 4.8,
+          reviewCount: 25,
+        },
+      }),
     );
 
     expect(markup).toContain('aria-label="Local ranking map grid"');
     expect(markup).toContain('aria-label="Grid keyword"');
     expect(markup).toContain("Visibility");
+    expect(markup).toContain("Export PDF");
     expect(markup).toContain("67%");
     expect(markup).toContain("Row 1, column 1: 1");
     expect(markup).toContain("Row 1, column 3: Not found");

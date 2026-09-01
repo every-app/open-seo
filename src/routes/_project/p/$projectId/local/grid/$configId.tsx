@@ -233,7 +233,20 @@ function LocalGridDetail() {
       </div>
 
       {resultsData ? (
-        <LocalGridResults data={resultsData} />
+        <LocalGridResults
+          data={resultsData}
+          reportContext={{
+            businessName: data.business.name,
+            address: data.business.address,
+            centerLatitude: data.config.centerLatitude,
+            centerLongitude: data.config.centerLongitude,
+            gridSize: data.config.gridSize,
+            radiusMeters: data.config.radiusMeters,
+            distanceUnit: data.config.distanceUnit,
+            rating: data.business.rating,
+            reviewCount: data.business.reviewCount,
+          }}
+        />
       ) : (
         <div className="skeleton h-80 w-full" aria-busy />
       )}

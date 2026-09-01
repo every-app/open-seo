@@ -89,9 +89,15 @@ const repository = vi.hoisted(() => ({
   getLatestRun: vi.fn<() => Promise<unknown>>(),
   getRunGridResults: vi.fn<() => Promise<unknown[]>>(),
 }));
+const rankingRepository = vi.hoisted(() => ({
+  getRunRankings: vi.fn<() => Promise<unknown[]>>(),
+}));
 
 vi.mock("../repositories/LocalGridRepository", () => ({
   LocalGridRepository: repository,
+}));
+vi.mock("../repositories/LocalGridRankingRepository", () => ({
+  LocalGridRankingRepository: rankingRepository,
 }));
 
 import { LocalGridService } from "./LocalGridService";
@@ -113,6 +119,7 @@ function scanDetails() {
       searchPlaces: false,
     },
     business: {
+      name: "Worthing Lofts",
       placeId: "ChIJ-worthing",
       cid: null,
       featureId: null,
@@ -285,7 +292,12 @@ describe("LocalGridService", () => {
   it("returns the latest run grid after authorizing the config", async () => {
     repository.getConfig.mockResolvedValue({
       config: { id: "config-1", gridSize: 3 },
-      business: {},
+      business: {
+        name: "Worthing Lofts",
+        placeId: "ChIJ-worthing",
+        cid: null,
+        featureId: null,
+      },
       keywords: [{ id: "current-keyword", keyword: "plumber" }],
     });
     repository.getLatestRun.mockResolvedValue({
@@ -314,6 +326,28 @@ describe("LocalGridService", () => {
         errorMessage: null,
       },
     ]);
+    rankingRepository.getRunRankings.mockResolvedValue([
+      {
+        trackingKeywordId: "keyword-1",
+        rank: 1,
+        placeId: "ChIJ-competitor",
+        cid: null,
+        featureId: null,
+        name: "Competitor A",
+        rating: 4.7,
+        reviewCount: 62,
+      },
+      {
+        trackingKeywordId: "keyword-1",
+        rank: 2,
+        placeId: "ChIJ-worthing",
+        cid: null,
+        featureId: null,
+        name: "Worthing Lofts",
+        rating: 4.8,
+        reviewCount: 25,
+      },
+    ]);
 
     await expect(
       LocalGridService.getResults(
@@ -325,8 +359,16 @@ describe("LocalGridService", () => {
       gridSize: 1,
       keywords: [{ id: "keyword-1", keyword: "builder" }],
       cells: [{ resultId: "result-1", targetRank: 2 }],
+      competitors: [
+        {
+          name: "Competitor A",
+          averageRank: 1,
+          coveragePercent: 100,
+        },
+      ],
     });
     expect(repository.getConfig).toHaveBeenCalledOnce();
     expect(repository.getRunGridResults).toHaveBeenCalledWith("run-1");
+    expect(rankingRepository.getRunRankings).toHaveBeenCalledWith("run-1");
   });
 });

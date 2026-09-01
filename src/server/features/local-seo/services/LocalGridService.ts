@@ -12,13 +12,13 @@ import { generateLocalGrid, toLocalGridSize } from "@/shared/local-seo";
 import type {
   createLocalGridConfigSchema,
   LocalGridScanTriggerResult,
-  LocalGridResultsResponse,
   updateLocalGridConfigSchema,
 } from "@/types/schemas/local-seo";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { LocalGridRepository } from "../repositories/LocalGridRepository";
 import { reconcilePendingLocalGridRun } from "./localGridRunGuards";
+import { getLocalGridResults } from "./LocalGridResultsService";
 import type { z } from "zod";
 
 type CreateInput = z.infer<typeof createLocalGridConfigSchema>;
@@ -345,48 +345,6 @@ async function triggerScan(input: {
   }
 }
 
-async function getResults(
-  configId: string,
-  projectId: string,
-): Promise<LocalGridResultsResponse> {
-  const details = await getConfig(configId, projectId);
-  const run = await LocalGridRepository.getLatestRun(configId);
-  if (!run) {
-    return {
-      gridSize: details.config.gridSize,
-      run: null,
-      keywords: details.keywords.map(({ id, keyword }) => ({ id, keyword })),
-      cells: [],
-    };
-  }
-
-  const cells = await LocalGridRepository.getRunGridResults(run.id);
-  const runKeywords = new Map<string, string>();
-  let gridSize = 0;
-  for (const cell of cells) {
-    runKeywords.set(cell.trackingKeywordId, cell.keyword);
-    gridSize = Math.max(gridSize, cell.rowIndex + 1, cell.columnIndex + 1);
-  }
-  return {
-    gridSize: gridSize || details.config.gridSize,
-    run: {
-      id: run.id,
-      status: run.status,
-      taskCount: run.taskCount,
-      tasksCompleted: run.tasksCompleted,
-      providerCostUsd: run.providerCostUsd,
-      errorMessage: run.errorMessage,
-      startedAt: run.startedAt,
-      completedAt: run.completedAt,
-    },
-    keywords:
-      runKeywords.size > 0
-        ? [...runKeywords].map(([id, keyword]) => ({ id, keyword }))
-        : details.keywords.map(({ id, keyword }) => ({ id, keyword })),
-    cells,
-  };
-}
-
 export const LocalGridService = {
   createConfig,
   listConfigs,
@@ -394,5 +352,5 @@ export const LocalGridService = {
   updateConfig,
   archiveConfig,
   triggerScan,
-  getResults,
+  getResults: getLocalGridResults,
 };

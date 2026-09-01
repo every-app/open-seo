@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
-import { Clock3, MapPin } from "lucide-react";
+import { Clock3, FileDown, Loader2, MapPin } from "lucide-react";
+import { toast } from "sonner";
 import type {
   LocalGridResultCell,
   LocalGridResultsResponse,
@@ -9,6 +10,7 @@ import {
   summarizeLocalGridCells,
 } from "./localGridResultUtils";
 import { LocalGridMap } from "./LocalGridMap";
+import type { LocalGridReportContext } from "./localGridReport";
 
 function Metric({ label, value }: { label: string; value: string }) {
   return (
@@ -54,9 +56,18 @@ function CellDetails({ cell }: { cell: LocalGridResultCell | null }) {
   );
 }
 
-export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
+export function LocalGridResults({
+  data,
+  reportContext,
+}: {
+  data: LocalGridResultsResponse;
+  reportContext: LocalGridReportContext;
+}) {
   const [keywordId, setKeywordId] = useState<string | null>(null);
   const [selectedResultId, setSelectedResultId] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  const mapCaptureId = "local-grid-export-map";
   const effectiveKeywordId = data.keywords.some(
     (keyword) => keyword.id === keywordId,
   )
@@ -72,8 +83,17 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
   const summary = summarizeLocalGridCells(cells);
   const selectedCell =
     cells.find((cell) => cell.resultId === selectedResultId) ?? null;
+  const selectedKeyword = data.keywords.find(
+    (keyword) => keyword.id === effectiveKeywordId,
+  );
+  const competitors = data.competitors.filter(
+    (competitor) => competitor.trackingKeywordId === effectiveKeywordId,
+  );
   const selectCell = useCallback((resultId: string) => {
     setSelectedResultId(resultId);
+  }, []);
+  const setMapExportReady = useCallback((ready: boolean) => {
+    setMapReady(ready);
   }, []);
 
   if (!data.run) {
@@ -93,6 +113,30 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
 
   const isActive =
     data.run.status === "pending" || data.run.status === "running";
+  const canExport =
+    !isActive && mapReady && cells.some((cell) => cell.status === "completed");
+  const exportPdf = async () => {
+    if (!selectedKeyword || !data.run || !canExport) return;
+    setIsExporting(true);
+    try {
+      const { downloadLocalGridPdf } = await import("./localGridPdf");
+      const mapElement = document.getElementById(mapCaptureId);
+      if (!mapElement) throw new Error("The map is not ready to export");
+      await downloadLocalGridPdf({
+        context: { ...reportContext, gridSize: data.gridSize },
+        keyword: selectedKeyword.keyword,
+        scannedAt: data.run.startedAt,
+        cells,
+        competitors,
+        mapElement,
+      });
+      toast.success("PDF report downloaded");
+    } catch {
+      toast.error("Could not create the PDF report");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   return (
     <div className="card border border-base-300 bg-base-100">
       <div className="card-body gap-4">
@@ -106,24 +150,44 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
                 : `Scanned ${new Date(data.run.startedAt).toLocaleString()}`}
             </p>
           </div>
-          <label className="form-control w-full max-w-xs">
-            <span className="label py-0 pb-1 text-xs">Keyword</span>
-            <select
-              className="select select-bordered select-sm"
-              aria-label="Grid keyword"
-              value={effectiveKeywordId ?? ""}
-              onChange={(event) => {
-                setKeywordId(event.target.value);
-                setSelectedResultId(null);
-              }}
+          <div className="flex w-full max-w-md items-end gap-2">
+            <label className="form-control min-w-0 flex-1">
+              <span className="label py-0 pb-1 text-xs">Keyword</span>
+              <select
+                className="select select-bordered select-sm"
+                aria-label="Grid keyword"
+                value={effectiveKeywordId ?? ""}
+                onChange={(event) => {
+                  setKeywordId(event.target.value);
+                  setSelectedResultId(null);
+                }}
+              >
+                {data.keywords.map((keyword) => (
+                  <option key={keyword.id} value={keyword.id}>
+                    {keyword.keyword}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm gap-1"
+              onClick={() => void exportPdf()}
+              disabled={!canExport || isExporting}
+              title={
+                canExport
+                  ? "Download a branded client report"
+                  : "PDF export is available when the scan and map finish loading"
+              }
             >
-              {data.keywords.map((keyword) => (
-                <option key={keyword.id} value={keyword.id}>
-                  {keyword.keyword}
-                </option>
-              ))}
-            </select>
-          </label>
+              {isExporting ? (
+                <Loader2 className="size-3.5 animate-spin" />
+              ) : (
+                <FileDown className="size-3.5" />
+              )}
+              Export PDF
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-2">
@@ -150,7 +214,9 @@ export function LocalGridResults({ data }: { data: LocalGridResultsResponse }) {
           <div className="rounded-xl border border-base-300 bg-base-200/40 p-3">
             <LocalGridMap
               cells={cells}
+              captureId={mapCaptureId}
               gridSize={data.gridSize}
+              onReady={setMapExportReady}
               onSelect={selectCell}
             />
             <div className="sr-only" aria-label="Local ranking grid results">

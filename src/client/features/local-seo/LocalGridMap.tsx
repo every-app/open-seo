@@ -8,11 +8,19 @@ import {
 
 interface LocalGridMapProps {
   cells: LocalGridResultCell[];
+  captureId: string;
   gridSize: number;
   onSelect: (resultId: string) => void;
+  onReady: (ready: boolean) => void;
 }
 
-export function LocalGridMap({ cells, gridSize, onSelect }: LocalGridMapProps) {
+export function LocalGridMap({
+  cells,
+  captureId,
+  gridSize,
+  onSelect,
+  onReady,
+}: LocalGridMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -23,6 +31,7 @@ export function LocalGridMap({ cells, gridSize, onSelect }: LocalGridMapProps) {
     let disposed = false;
     let map: LeafletMap | null = null;
     setLoadFailed(false);
+    onReady(false);
 
     void import("leaflet")
       .then(({ default: L }) => {
@@ -32,11 +41,15 @@ export function LocalGridMap({ cells, gridSize, onSelect }: LocalGridMapProps) {
           attributionControl: true,
           scrollWheelZoom: true,
         });
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          maxZoom: 19,
-        }).addTo(map);
+        const tiles = L.tileLayer(
+          "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+          {
+            crossOrigin: true,
+            attribution:
+              '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19,
+          },
+        ).addTo(map);
 
         const radius = gridSize <= 3 ? 19 : gridSize <= 7 ? 15 : 12;
         for (const cell of cells) {
@@ -63,6 +76,9 @@ export function LocalGridMap({ cells, gridSize, onSelect }: LocalGridMapProps) {
         const bounds = L.latLngBounds(
           cells.map((cell) => [cell.latitude, cell.longitude]),
         );
+        tiles.once("load", () => {
+          if (!disposed) onReady(true);
+        });
         map.fitBounds(bounds.pad(0.08), {
           animate: false,
           maxZoom: 15,
@@ -71,18 +87,22 @@ export function LocalGridMap({ cells, gridSize, onSelect }: LocalGridMapProps) {
         requestAnimationFrame(() => map?.invalidateSize());
       })
       .catch(() => {
-        if (!disposed) setLoadFailed(true);
+        if (!disposed) {
+          setLoadFailed(true);
+          onReady(false);
+        }
       });
 
     return () => {
       disposed = true;
       map?.remove();
     };
-  }, [cells, gridSize, onSelect]);
+  }, [cells, gridSize, onReady, onSelect]);
 
   return (
     <div className="relative overflow-hidden rounded-lg">
       <div
+        id={captureId}
         ref={containerRef}
         className="h-[34rem] min-h-96 w-full bg-base-200"
         aria-label="Local ranking map grid"

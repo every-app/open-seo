@@ -132,6 +132,16 @@ export interface LocalGridResultCell {
   errorMessage: string | null;
 }
 
+export interface LocalGridCompetitorSummary {
+  trackingKeywordId: string;
+  name: string;
+  averageRank: number;
+  appearances: number;
+  coveragePercent: number;
+  rating: number | null;
+  reviewCount: number | null;
+}
+
 export interface LocalGridResultsResponse {
   gridSize: number;
   run: {
@@ -146,6 +156,7 @@ export interface LocalGridResultsResponse {
   } | null;
   keywords: Array<{ id: string; keyword: string }>;
   cells: LocalGridResultCell[];
+  competitors: LocalGridCompetitorSummary[];
 }
 
 export type LocalGridScanTriggerResult =
