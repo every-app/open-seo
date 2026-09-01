@@ -267,10 +267,14 @@ exceeded". Three provider-neutral client/agent-side guards prevent that:
    calls `get_search_console_performance`, the result is bounded to the top
    **50 rows** by GSC's clicks-descending order before it becomes a tool part
    (the public MCP tool keeps its full 1000-row product contract — only the
-   agent's copy is bounded). The chosen limit is based on the tool's own
-   surface: the MCP text summary shows the top 15 rows, 50 rows covers
-   top-queries/pages, head striking-distance analysis, and date trends in
-   ~5–15KB, and the bounded note (computed from the actual returned rows —
+   agent's copy is bounded). Both the structured rows AND the text summary are
+   bounded: the MCP tool's own summary tabulates every fetched row, so it is
+   regenerated from the bounded rows (a compact key/clicks/impressions/CTR/
+   position table) — otherwise a 1000-row text table (~200KB) would ride into
+   the transcript even with bounded data. The chosen limit is based on the
+   tool's own surface: the MCP text summary shows the top 15 rows, 50 rows
+   covers top-queries/pages, head striking-distance analysis, and date trends
+   in ~5–15KB, and the bounded note (computed from the actual returned rows —
    never invented aggregates) tells the model the returned-row click/impression
    totals and how to fetch the next slice with `startRow` or narrower filters.
 

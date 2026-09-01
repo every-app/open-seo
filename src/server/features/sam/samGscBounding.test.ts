@@ -64,8 +64,25 @@ describe("boundAgentGscOutput", () => {
     const summary = summaryOf(out);
     expect(summary).toContain("[agent context bound]");
     expect(summary).toContain("The full result had 1000 rows");
-    // The summary keeps the tool's own text (append-only note).
-    expect(summary).toContain("site · query · 2026-01-01");
+    expect(summary).toContain("key\tclicks\timpressions\tctr\tposition");
+    expect(summary).toContain("query-0");
+  });
+
+  it("regenerates the summary from the bounded rows — the 1000-row MCP table is NOT carried into the agent transcript", () => {
+    // The crash-era failure mode: rows bounded to 50 but the tool's own text
+    // summary (a table of ALL fetched rows, ~200KB for 1000 rows) kept flowing
+    // into the transcript. The regenerated summary must stay small and contain
+    // only the bounded rows' keys.
+    const rows = Array.from({ length: 1000 }, (_, i) => row(i));
+    const out = boundAgentGscOutput(okOutput(rows));
+    const summary = summaryOf(out);
+    expect(summary.length).toBeLessThan(6000);
+    expect(summary).toContain("query-49");
+    expect(summary).not.toContain("query-50"); // row 50 is beyond the bound
+    expect(summary).not.toContain("query-999");
+    // And it still states where the data came from.
+    expect(summary).toContain("https://powersiment.ae");
+    expect(summary).toContain("2026-01-01→2026-01-28");
   });
 
   it("computes returned-row totals from actual data, never invents aggregates", () => {

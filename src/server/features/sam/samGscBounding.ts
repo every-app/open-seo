@@ -56,14 +56,29 @@ function sumField(rows: GscPerfRow[], field: "clicks" | "impressions"): number {
   return rows.reduce((acc, row) => acc + row[field], 0);
 }
 
+/** Compact per-row line for the regenerated summary — mirrors the MCP tool's
+ * own table columns (key, clicks, impressions, CTR, position) but tab-separated
+ * so 50 rows stay a few KB. Values come from the row itself, never recomputed. */
+function rowLine(row: GscPerfRow): string {
+  const key = row.keys?.join(" / ") ?? "(total)";
+  const ctr = `${(row.ctr * 100).toFixed(1)}%`;
+  const pos = row.position.toFixed(1);
+  return `${key}\t${row.clicks}\t${row.impressions}\t${ctr}\t${pos}`;
+}
+
 /**
  * Bound one SAM `get_search_console_performance` tool output. Pure: same
  * input → same output. Passes through anything that isn't a successful,
  * oversized result untouched (error payloads and small results keep their
- * original shape). When bounding applies, rows are sliced to the agent limit
- * and a `note` is prepended (before the tool's own summary text) stating the
- * returned-row totals and how to get the next slice — the only numbers in it
- * are computed from the returned rows, never fabricated.
+ * original shape). When bounding applies:
+ *   - `data.rows` is sliced to the agent limit,
+ *   - the text summary is REGENERATED from the bounded rows (the MCP tool's
+ *     own summary tabulates every fetched row — keeping it would carry the
+ *     full 1000-row text into the transcript even with bounded data, which
+ *     is exactly the payload this bound exists to prevent),
+ *   - the replacement note states the returned-row totals and how to get the
+ *     next slice — the only numbers in it are computed from the returned
+ *     rows, never fabricated.
  */
 export function boundAgentGscOutput(output: unknown): unknown {
   if (!isRecord(output) || !isRecord(output.data)) return output;
@@ -76,19 +91,30 @@ export function boundAgentGscOutput(output: unknown): unknown {
   if (rowCount <= SAM_GSC_AGENT_ROW_LIMIT) return output;
 
   const bounded = rows.slice(0, SAM_GSC_AGENT_ROW_LIMIT);
-  const summary = typeof output.summary === "string" ? output.summary : "";
+  const nextStartRow =
+    typeof data.nextStartRow === "number" ? data.nextStartRow : bounded.length;
 
   const note =
     `[agent context bound] The full result had ${rowCount} rows; the top ${bounded.length} ` +
     `by GSC's clicks-descending order are included. The ${bounded.length} returned rows ` +
     `sum to ${sumField(bounded, "clicks")} clicks and ${sumField(bounded, "impressions")} impressions ` +
     `(totals of the returned rows only, not the whole property). For deeper rows, call again ` +
-    `with startRow=${typeof data.nextStartRow === "number" ? data.nextStartRow : bounded.length} ` +
-    `or narrower filters/dates; the full dataset is in the product's Search Console page.`;
+    `with startRow=${nextStartRow} or narrower filters/dates; the full dataset is in the ` +
+    `product's Search Console page.`;
+
+  const header =
+    `site: ${typeof data.siteUrl === "string" ? data.siteUrl : ""} · ` +
+    `${Array.isArray(data.dimensions) ? data.dimensions.join("+") : ""} · ` +
+    `${typeof data.startDate === "string" ? data.startDate : ""}→${typeof data.endDate === "string" ? data.endDate : ""}`;
+  const table = [
+    header,
+    `key\tclicks\timpressions\tctr\tposition`,
+    ...bounded.map(rowLine),
+  ].join("\n");
 
   return {
     ...output,
-    summary: summary ? `${note}\n\n${summary}` : note,
+    summary: `${note}\n\n${table}`,
     data: {
       ...data,
       rows: bounded,
