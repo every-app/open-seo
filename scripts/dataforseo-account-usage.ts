@@ -7,8 +7,6 @@ loadLocalEnv();
 
 const args = parseArgs(process.argv.slice(2));
 
-await main();
-
 /**
  * Inspect real DataForSEO account spend via the FREE GET
  * /v3/appendix/user_data endpoint. Unlike the other billing:* scripts, this
@@ -114,3 +112,5 @@ function printUsageAndExit(message: string): never {
   console.error("Usage: pnpm billing:usage [--json=true]");
   process.exit(1);
 }
+
+await main();
