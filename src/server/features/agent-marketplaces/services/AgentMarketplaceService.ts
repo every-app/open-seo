@@ -8,7 +8,8 @@ import {
 
 const PLATFORM_LABELS: Record<AgentMarketplacePlatform, string> = {
   openai: "OpenAI",
-  claude: "Claude",
+  claude: "Claude hosted marketplace",
+  claude_community: "Claude community directory",
   grok: "Grok",
   cursor: "Cursor",
   mcp_directory: "MCP Directory",

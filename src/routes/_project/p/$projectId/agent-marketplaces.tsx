@@ -139,6 +139,9 @@ function MarketplaceCard({
   const [packageVersion, setPackageVersion] = React.useState(
     listing?.packageVersion ?? "",
   );
+  const [providerStatus, setProviderStatus] = React.useState(
+    listing?.providerStatus ?? "",
+  );
   const [listingUrl, setListingUrl] = React.useState(listing?.listingUrl ?? "");
   const [notes, setNotes] = React.useState(listing?.notes ?? "");
 
@@ -149,6 +152,7 @@ function MarketplaceCard({
           projectId,
           platform: marketplace.platform,
           status,
+          providerStatus: providerStatus.trim() || null,
           packageVersion: packageVersion.trim() || null,
           listingUrl: listingUrl.trim() || null,
           submittedAt:
@@ -224,6 +228,19 @@ function MarketplaceCard({
           />
         </label>
       </div>
+
+      <label className="form-control mt-3 gap-1">
+        <span className="text-xs font-medium text-base-content/60">
+          Provider-reported status
+        </span>
+        <input
+          name={`${marketplace.platform}-provider-status`}
+          className="input input-bordered w-full"
+          value={providerStatus}
+          onChange={(event) => setProviderStatus(event.target.value)}
+          placeholder="Pending…"
+        />
+      </label>
 
       <label className="form-control mt-3 gap-1">
         <span className="text-xs font-medium text-base-content/60">

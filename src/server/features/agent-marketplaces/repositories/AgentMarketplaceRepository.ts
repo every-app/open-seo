@@ -35,6 +35,7 @@ async function upsert(
       projectId: input.projectId,
       platform: input.platform,
       status: input.status,
+      providerStatus: input.providerStatus ?? null,
       packageVersion: input.packageVersion ?? null,
       listingUrl: input.listingUrl ?? null,
       submittedAt: input.submittedAt ?? null,
@@ -50,6 +51,7 @@ async function upsert(
       ],
       set: {
         status: input.status,
+        providerStatus: input.providerStatus ?? null,
         packageVersion: input.packageVersion ?? null,
         listingUrl: input.listingUrl ?? null,
         submittedAt: input.submittedAt ?? null,

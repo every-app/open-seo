@@ -169,6 +169,13 @@
       "when": 1788322521382,
       "tag": "0023_keen_silk_fever",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788324538077,
+      "tag": "0024_milky_silver_fox",
+      "breakpoints": true
     }
   ]
 }

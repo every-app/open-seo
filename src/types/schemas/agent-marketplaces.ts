@@ -3,6 +3,7 @@ import { z } from "zod";
 export const AGENT_MARKETPLACE_PLATFORMS = [
   "openai",
   "claude",
+  "claude_community",
   "grok",
   "cursor",
   "mcp_directory",
@@ -45,6 +46,7 @@ export const updateAgentMarketplaceSchema = z.object({
   projectId: z.string().min(1),
   platform: agentMarketplacePlatformSchema,
   status: agentMarketplaceStatusSchema,
+  providerStatus: z.string().trim().max(200).nullable().optional(),
   packageVersion: z.string().trim().max(100).nullable().optional(),
   listingUrl: z.url().nullable().optional(),
   submittedAt: z.iso.datetime().nullable().optional(),

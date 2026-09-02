@@ -19,6 +19,7 @@ export const agentMarketplaceListings = sqliteTable(
       enum: [
         "openai",
         "claude",
+        "claude_community",
         "grok",
         "cursor",
         "mcp_directory",
@@ -38,6 +39,7 @@ export const agentMarketplaceListings = sqliteTable(
     })
       .notNull()
       .default("not_started"),
+    providerStatus: text("provider_status"),
     packageVersion: text("package_version"),
     listingUrl: text("listing_url"),
     submittedAt: text("submitted_at"),

@@ -9,7 +9,8 @@ listing without treating a submission, clone, or install as customer adoption.
 Each project has a standard row for:
 
 - OpenAI
-- Claude
+- Claude hosted marketplace
+- Claude community directory
 - Grok
 - Cursor
 - MCP Directory
@@ -18,7 +19,13 @@ Each project has a standard row for:
 A listing moves through an explicit lifecycle: not started, preparing,
 submitted, in review, published, rejected, or paused. The record also keeps the
 package version, listing or submission URL, relevant dates, last verification,
-and operator notes.
+the exact provider-reported status, and operator notes. The normalized lifecycle
+supports comparison across providers without erasing provider language such as
+OpenAI's `pending` status.
+
+Claude is intentionally represented twice. A publisher-controlled GitHub
+marketplace can already be published while Anthropic's reviewed community
+directory remains unsubmitted or in review.
 
 Evidence is stored as dated snapshots rather than overwritten totals. A
 snapshot may record views, unique viewers, clones, unique cloners, installs,
