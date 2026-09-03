@@ -11,6 +11,18 @@ const trendsResponseSchema = z.object({
   }),
 });
 
+const relatedQueriesResponseSchema = z.object({
+  default: z.object({
+    rankedList: z.array(
+      z.object({
+        rankedKeyword: z.array(
+          z.object({ keyword: z.string(), value: z.number() }),
+        ),
+      }),
+    ),
+  }),
+});
+
 const cache = new Map<
   string,
   { expiresAt: number; result: GoogleTrendResult }
@@ -47,6 +59,7 @@ export type GoogleTrendResult = {
   geo: string;
   timeframe: string;
   points: GoogleTrendPoint[];
+  relatedQueries: Array<{ query: string; value: number }>;
   source: "google-trends";
   interpretation: "relative-interest-index";
 };
@@ -93,6 +106,29 @@ export async function fetchGoogleTrend(input: {
   timelineUrl.searchParams.set("tz", "0");
   const response = await fetchWithRetry(timelineUrl);
   const parsed = trendsResponseSchema.parse(unwrap(await response.text()));
+  const relatedWidget = widgets.find((widget) =>
+    widget.id.startsWith("RELATED_QUERIES"),
+  );
+  let relatedQueries: Array<{ query: string; value: number }> = [];
+  if (relatedWidget) {
+    const relatedUrl = new URL(
+      "https://trends.google.com/trends/api/widgetdata/relatedsearches",
+    );
+    relatedUrl.searchParams.set("req", JSON.stringify(relatedWidget.request));
+    relatedUrl.searchParams.set("token", relatedWidget.token);
+    relatedUrl.searchParams.set("tz", "0");
+    try {
+      const relatedResponse = await fetchWithRetry(relatedUrl);
+      const related = relatedQueriesResponseSchema.parse(
+        unwrap(await relatedResponse.text()),
+      );
+      relatedQueries = related.default.rankedList
+        .flatMap((list) => list.rankedKeyword)
+        .map(({ keyword: query, value }) => ({ query, value }));
+    } catch {
+      relatedQueries = [];
+    }
+  }
   const result = {
     keyword,
     geo,
@@ -101,6 +137,7 @@ export async function fetchGoogleTrend(input: {
       date: new Date(Number(point.time) * 1000).toISOString(),
       value: point.value[0] ?? 0,
     })),
+    relatedQueries,
     source: "google-trends",
     interpretation: "relative-interest-index",
   };

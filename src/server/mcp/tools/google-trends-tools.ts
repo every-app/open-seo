@@ -35,6 +35,9 @@ export const googleTrendsTool = {
       geo: z.string(),
       timeframe: z.string(),
       points: z.array(z.object({ date: z.string(), value: z.number() })),
+      relatedQueries: z.array(
+        z.object({ query: z.string(), value: z.number() }),
+      ),
       source: z.literal("google-trends"),
       interpretation: z.literal("relative-interest-index"),
     }),
@@ -48,7 +51,7 @@ export const googleTrendsTool = {
     async (args: z.infer<z.ZodObject<typeof inputSchema>>, context) => {
       const result = await fetchGoogleTrend(args);
       return mcpResponse({
-        text: `Google Trends signal for "${result.keyword}" (${result.geo}, ${result.timeframe}). Values are relative interest from 0-100, not search volume.`,
+        text: `Google Trends signal for "${result.keyword}" (${result.geo}, ${result.timeframe}). Values are relative interest from 0-100, not search volume. Includes ${result.relatedQueries.length} related queries when available.`,
         meta: buildProjectMeta(
           context,
           args.projectId,
