@@ -34,6 +34,17 @@ Optional env values:
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
+- `PAGESPEED_API_KEY` (free Lighthouse for site audits, see below)
+
+## Free Lighthouse audits (PAGESPEED_API_KEY)
+
+Site audits run Lighthouse through the metered DataForSEO OnPage endpoint by
+default. If you set a free Google PageSpeed Insights API key, Lighthouse runs
+on Google's API instead at no cost (about 25k requests/day per key):
+
+1. Create an API key (2 minutes, no billing): https://developers.google.com/speed/docs/insights/v5/get-started
+2. Set `PAGESPEED_API_KEY` in `.env`
+3. Recreate the container: `docker compose up -d --force-recreate open-seo`
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 

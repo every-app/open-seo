@@ -1,6 +1,8 @@
 import { detectUrlTemplate, canonicalUrlKey } from "./url-utils";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { fetchPagespeedLighthouse } from "@/server/lib/pagespeedLighthousePayload";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
 import { putTextToR2 } from "@/server/lib/r2";
 
@@ -55,8 +57,18 @@ export async function fetchLighthouseResult(
   billingCustomer: BillingCustomerContext,
 ): Promise<LighthouseFetchResult> {
   const dataforseo = createDataforseoClient(billingCustomer);
+  // When a (free) Google PageSpeed Insights API key is configured, run
+  // Lighthouse there instead of the metered DataForSEO OnPage endpoint. Both
+  // paths normalize to the same StoredLighthousePayload, so everything
+  // downstream (R2 payloads, scores, issue details) is provider-agnostic.
+  const usePagespeed = Boolean(
+    (await getOptionalEnvValue("PAGESPEED_API_KEY"))?.trim(),
+  );
+
   try {
-    const data = await dataforseo.lighthouse.live({ url, strategy });
+    const data = usePagespeed
+      ? await fetchPagespeedLighthouse({ url, strategy })
+      : await dataforseo.lighthouse.live({ url, strategy });
 
     return {
       result: {
