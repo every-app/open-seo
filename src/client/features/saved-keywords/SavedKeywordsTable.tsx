@@ -6,6 +6,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table";
 import { Search } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import {
   AppDataTable,
@@ -16,6 +17,7 @@ import {
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { DifficultyBadge } from "@/client/features/domain/components/DifficultyBadge";
 import { IntentBadge } from "@/client/features/keywords/components";
+import { ExecutionStatusBadge } from "@/client/features/content-execution/ExecutionStatusBadge";
 import type { KeywordIntent, SavedKeywordRow } from "@/types/keywords";
 import { TagChip } from "./TagChip";
 import {
@@ -96,6 +98,31 @@ export function SavedKeywordsTable({
           <IntentBadge intent={normalizeIntent(getValue())} />
         ),
         enableSorting: false,
+      }),
+      columnHelper.display({
+        id: "executionStatus",
+        header: () => "Work status",
+        cell: ({ row }) => {
+          const item = row.original.executionItem;
+          if (!item) {
+            return (
+              <span className="text-xs text-base-content/45">Not planned</span>
+            );
+          }
+          return (
+            <Link
+              to="/p/$projectId/execution"
+              params={{ projectId: row.original.projectId }}
+              hash={`item-${item.id}`}
+              className="inline-flex min-h-11 items-center rounded focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              title={`${item.title}${item.owner ? ` · ${item.owner}` : ""}`}
+            >
+              <ExecutionStatusBadge status={item.status} />
+            </Link>
+          );
+        },
+        enableSorting: false,
+        meta: { cellClassName: "min-w-36" },
       }),
       columnHelper.display({
         id: "tags",

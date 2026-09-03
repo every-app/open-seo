@@ -1,4 +1,5 @@
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
+import { ContentExecutionRepository } from "@/server/features/content-execution/repositories/ContentExecutionRepository";
 import { jsonCodec } from "@/shared/json";
 import type {
   DeleteSavedKeywordTagInput,
@@ -132,9 +133,14 @@ export async function getSavedKeywords(input: GetSavedKeywordsInput): Promise<{
     sort: input.sort,
     order: input.order,
   });
+  const executionByKeywordId =
+    await ContentExecutionRepository.listSummariesBySavedKeywordIds(
+      input.projectId,
+      result.rows.map(({ row }) => row.id),
+    );
 
   return {
-    rows: mapSavedKeywordRows(result.rows),
+    rows: mapSavedKeywordRows(result.rows, executionByKeywordId),
     totalCount: result.totalCount,
     tags: mapSavedKeywordTags(result.tags),
   };
@@ -159,8 +165,13 @@ export async function exportSavedKeywords(
     sort: input.sort,
     order: input.order,
   });
+  const executionByKeywordId =
+    await ContentExecutionRepository.listSummariesBySavedKeywordIds(
+      input.projectId,
+      result.rows.map(({ row }) => row.id),
+    );
 
-  return { rows: mapSavedKeywordRows(result.rows) };
+  return { rows: mapSavedKeywordRows(result.rows, executionByKeywordId) };
 }
 
 export async function updateSavedKeywordTags(
@@ -205,6 +216,9 @@ function mapSavedKeywordRows(
   rows: Awaited<
     ReturnType<typeof KeywordResearchRepository.listSavedKeywordsByProject>
   >["rows"],
+  executionByKeywordId: Awaited<
+    ReturnType<typeof ContentExecutionRepository.listSummariesBySavedKeywordIds>
+  >,
 ): SavedKeywordRow[] {
   return rows.map(({ row, metric, tags }) => ({
     id: row.id,
@@ -226,6 +240,7 @@ function mapSavedKeywordRows(
       normalizedName: tag.normalizedName,
       color: tag.color ?? null,
     })),
+    executionItem: executionByKeywordId.get(row.id) ?? null,
   }));
 }
 

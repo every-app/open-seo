@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 // Aliased: `SavedKeywordsPage` has a local `sort` const (the saved-keyword
 // sort key) that would otherwise shadow this import at the call site.
 import { sort as sortArray } from "remeda";
@@ -17,8 +17,10 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { SavedKeywordsBulkActionBar } from "@/client/features/saved-keywords/SavedKeywordsBulkActionBar";
 import { SavedKeywordsBulkTagsModal } from "@/client/features/saved-keywords/SavedKeywordsBulkTagsModal";
+import { CreateExecutionItemModal } from "@/client/features/content-execution/CreateExecutionItemModal";
 import { SavedKeywordsFilters } from "@/client/features/saved-keywords/SavedKeywordsFilters";
 import { SavedKeywordsHeader } from "@/client/features/saved-keywords/SavedKeywordsHeader";
+import { createContentExecutionItem } from "@/serverFunctions/content-execution";
 import {
   DeleteSavedKeywordsModal,
   RemoveSavedKeywordsError,
@@ -52,6 +54,7 @@ const FILTER_DEBOUNCE_MS = 350;
 
 function SavedKeywordsPage() {
   const { projectId } = Route.useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
@@ -65,6 +68,7 @@ function SavedKeywordsPage() {
   const [removeError, setRemoveError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
+  const [showExecutionModal, setShowExecutionModal] = useState(false);
 
   const filters = useSavedKeywordsFilters();
   const [committedFilterValues, setCommittedFilterValues] = useState(
@@ -211,6 +215,28 @@ function SavedKeywordsPage() {
     },
   });
 
+  const executionMutation = useMutation({
+    mutationFn: (
+      input: Parameters<typeof createContentExecutionItem>[0]["data"],
+    ) => createContentExecutionItem({ data: input }),
+    onSuccess: () => {
+      setRowSelection({});
+      setShowExecutionModal(false);
+      void invalidateSavedKeywords();
+      void queryClient.invalidateQueries({
+        queryKey: ["contentExecution", projectId],
+      });
+      toast.success("Work item created");
+      void navigate({
+        to: "/p/$projectId/execution",
+        params: { projectId },
+      });
+    },
+    onError: (error) => {
+      toast.error(getStandardErrorMessage(error, "Could not create work item"));
+    },
+  });
+
   const tagManage = useTagManage(projectId);
   const exporter = useSavedKeywordsExport({
     projectId,
@@ -322,6 +348,7 @@ function SavedKeywordsPage() {
             );
           }}
           onOpenTags={() => setShowTagModal(true)}
+          onCreateWorkItem={() => setShowExecutionModal(true)}
           onExportCsv={() => exporter.exportSelectionCsv(selectedRows)}
           onExportSheets={() =>
             void exporter.exportSelectionSheets(selectedRows)
@@ -352,6 +379,17 @@ function SavedKeywordsPage() {
                 addTags,
                 removeTagIds,
               })
+            }
+          />
+        ) : null}
+
+        {showExecutionModal ? (
+          <CreateExecutionItemModal
+            selectedRows={selectedRows}
+            isPending={executionMutation.isPending}
+            onClose={() => setShowExecutionModal(false)}
+            onCreate={(values) =>
+              executionMutation.mutate({ projectId, ...values })
             }
           />
         ) : null}

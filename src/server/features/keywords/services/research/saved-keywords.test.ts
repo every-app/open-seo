@@ -11,11 +11,20 @@ const mocks = vi.hoisted(() => ({
   upsertKeywordMetric: vi.fn(),
 }));
 
+const executionMocks = vi.hoisted(() => ({
+  listSummariesBySavedKeywordIds: vi.fn(),
+}));
+
 vi.mock(
   "@/server/features/keywords/repositories/KeywordResearchRepository",
   () => ({
     KeywordResearchRepository: mocks,
   }),
+);
+
+vi.mock(
+  "@/server/features/content-execution/repositories/ContentExecutionRepository",
+  () => ({ ContentExecutionRepository: executionMocks }),
 );
 
 const savedKeywordRow = {
@@ -31,6 +40,8 @@ describe("saved keyword service", () => {
   beforeEach(() => {
     vi.resetModules();
     for (const mock of Object.values(mocks)) mock.mockReset();
+    for (const mock of Object.values(executionMocks)) mock.mockReset();
+    executionMocks.listSummariesBySavedKeywordIds.mockResolvedValue(new Map());
   });
 
   it("attaches tags to saved keyword rows after saving", async () => {
@@ -125,6 +136,22 @@ describe("saved keyword service", () => {
         },
       ],
     });
+    executionMocks.listSummariesBySavedKeywordIds.mockResolvedValue(
+      new Map([
+        [
+          "saved_1",
+          {
+            id: "item_1",
+            title: "Technical SEO guide",
+            status: "writing",
+            owner: "Maya",
+            dueDate: "2026-09-12",
+            jiraIssueKey: "SEO-101",
+            jiraIssueUrl: "https://customerlabs.atlassian.net/browse/SEO-101",
+          },
+        ],
+      ]),
+    );
     const { getSavedKeywords } = await import("./saved-keywords");
 
     const result = await getSavedKeywords({
@@ -149,6 +176,15 @@ describe("saved keyword service", () => {
     expect(result.rows[0]?.tags).toEqual([
       { id: "tag_1", name: "Content", normalizedName: "content", color: null },
     ]);
+    expect(result.rows[0]?.executionItem).toEqual({
+      id: "item_1",
+      title: "Technical SEO guide",
+      status: "writing",
+      owner: "Maya",
+      dueDate: "2026-09-12",
+      jiraIssueKey: "SEO-101",
+      jiraIssueUrl: "https://customerlabs.atlassian.net/browse/SEO-101",
+    });
     expect(result.tags).toEqual([
       {
         id: "tag_1",

@@ -1,3 +1,5 @@
+import type { ContentExecutionSummary } from "./content-execution";
+
 export type KeywordIntent =
   | "informational"
   | "commercial"
@@ -36,6 +38,7 @@ export type SavedKeywordRow = {
   monthlySearches: MonthlySearch[];
   fetchedAt: string | null;
   tags: SavedKeywordTag[];
+  executionItem: ContentExecutionSummary | null;
 };
 
 export type SavedKeywordTag = {
