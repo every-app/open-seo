@@ -203,6 +203,10 @@ export function isCrawlableUrl(url: string): boolean {
   if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
     return false;
   }
+  const pathname = parsed.pathname.toLowerCase();
+  if (pathname === "/cdn-cgi" || pathname.startsWith("/cdn-cgi/")) {
+    return false;
+  }
   return !isBlockedHost(parsed.hostname);
 }
 
