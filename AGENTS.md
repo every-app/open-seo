@@ -2,6 +2,7 @@
 
 ## Feature log
 
+- 2026-09-03: Added related-query extraction to `search_google_trends`, with fixture coverage for ranked related terms. Timeline behavior remains unchanged; type-check, formatting, and 2/2 adapter tests pass. Local commit `5a62ae1`; push to upstream is blocked because `Noesis-Boss` has no write access to `every-app/open-seo.git`.
 - 2026-09-03: Added `search_google_trends` MCP support through `src/server/lib/google/trends.ts`. Results are labeled as relative-interest-index signals, not search volume. Existing Google Ads/Keyword Planner-compatible DataForSEO routing remains available; direct Google Ads collection is not substituted because of Google policy constraints. Type-check and formatting validation pass.
 
 ## Engineering principles
