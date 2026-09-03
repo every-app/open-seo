@@ -305,6 +305,10 @@ async function buildInventory(db: Db, user: UserRow) {
       schema.ga4Connections,
       eq(schema.ga4Connections.connectedByUserId, user.id),
     ),
+    clarity_connections: await db.$count(
+      schema.clarityConnections,
+      eq(schema.clarityConnections.connectedByUserId, user.id),
+    ),
     api_keys: await db.$count(
       schema.apikey,
       eq(schema.apikey.referenceId, user.id),
@@ -490,6 +494,9 @@ async function erasePostgres(db: Db, user: UserRow, organizationIds: string[]) {
     await tx
       .delete(schema.ga4Connections)
       .where(eq(schema.ga4Connections.connectedByUserId, user.id));
+    await tx
+      .delete(schema.clarityConnections)
+      .where(eq(schema.clarityConnections.connectedByUserId, user.id));
     // apikey.reference_id mirrors the plugin's polymorphic schema and has no
     // user FK, so keys don't cascade with the user row.
     await tx
@@ -552,12 +559,36 @@ async function verifyPostgres(
           schema.organization,
           inArray(schema.organization.id, organizationIds),
         );
-  if (userRows !== 0 || organizationRows !== 0) {
+  const gscConnectionRows = await db.$count(
+    schema.gscConnections,
+    eq(schema.gscConnections.connectedByUserId, userId),
+  );
+  const ga4ConnectionRows = await db.$count(
+    schema.ga4Connections,
+    eq(schema.ga4Connections.connectedByUserId, userId),
+  );
+  const clarityConnectionRows = await db.$count(
+    schema.clarityConnections,
+    eq(schema.clarityConnections.connectedByUserId, userId),
+  );
+  if (
+    userRows !== 0 ||
+    organizationRows !== 0 ||
+    gscConnectionRows !== 0 ||
+    ga4ConnectionRows !== 0 ||
+    clarityConnectionRows !== 0
+  ) {
     throw new Error(
-      "Postgres verification failed: user or organization rows remain.",
+      "Postgres verification failed: user, organization, or integration connection rows remain.",
     );
   }
-  return { userRows, organizationRows };
+  return {
+    userRows,
+    organizationRows,
+    gscConnectionRows,
+    ga4ConnectionRows,
+    clarityConnectionRows,
+  };
 }
 
 async function main() {

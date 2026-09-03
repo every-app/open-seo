@@ -58,9 +58,9 @@ Set these three values, then restart OpenSEO:
 | `GOOGLE_CLIENT_SECRET` | Client secret from step 3.                                              |
 | `BETTER_AUTH_SECRET`   | A random string of **at least 32 characters** (encrypts stored tokens). |
 
-`BETTER_AUTH_SECRET` is not needed for normal self-hosting — only for Search
-Console, because the stored OAuth tokens are encrypted at rest with it. Generate
-one with:
+`BETTER_AUTH_SECRET` is not needed for the base SEO tools, but it is required
+for integrations that store encrypted credentials, including Search Console
+and Microsoft Clarity. Generate one with:
 
 ```sh
 openssl rand -base64 32

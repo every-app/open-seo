@@ -27,6 +27,7 @@ import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
+import { purgeExpiredClarityData } from "@/server/features/clarity/services/ClarityMaintenanceService";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
@@ -198,6 +199,18 @@ export default {
     _ctx: ExecutionContext,
   ) {
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
+      let clarityPurgeFailed = false;
+      try {
+        const result = await withPgClient(() => purgeExpiredClarityData());
+        console.log("[clarity] purged expired report data", result);
+        if (!result.complete) {
+          throw new Error("Clarity report-data purge exceeded its batch cap.");
+        }
+      } catch {
+        clarityPurgeFailed = true;
+        console.error("[cron] Clarity report-data purge failed.");
+      }
+
       // Only hosted mode runs the OAuth provider (and has OAUTH_KV bound).
       if (isHostedAuthMode(getAuthMode(env.AUTH_MODE))) {
         const result = await openSeoOAuthProvider.purgeExpiredData(
@@ -217,6 +230,9 @@ export default {
         } catch (err) {
           console.error("[cron] Dub referral sale sweep failed:", err);
         }
+      }
+      if (clarityPurgeFailed) {
+        throw new Error("Clarity report-data purge failed.");
       }
       return;
     }

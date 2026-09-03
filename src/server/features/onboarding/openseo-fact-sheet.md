@@ -4,7 +4,7 @@ This is the factual product reference for Sam, the OpenSEO onboarding agent. If 
 
 ## What OpenSEO is
 
-OpenSEO is an open-source SEO platform for keyword research, domain research, backlinks, rank tracking, site audits, Google Search Console, and AI-agent SEO workflows.
+OpenSEO is an open-source SEO platform for keyword research, domain research, backlinks, rank tracking, site audits, Google Search Console, Google Analytics, Microsoft Clarity, and AI-agent SEO workflows.
 
 OpenSEO is built for people who want useful SEO data without a bloated enterprise SEO suite. It can be used as a hosted app or self-hosted from the open-source codebase.
 
@@ -67,6 +67,11 @@ OpenSEO uses DataForSEO as its main SEO data provider. DataForSEO powers many pa
 
 Google Search Console data comes from the user's connected Search Console property and does not use credits.
 
+Google Analytics and Microsoft Clarity data come from each project's optional
+read-only connection and do not use OpenSEO credits. Clarity reports cover only
+the previous one to three days and are cached for 24 hours because Microsoft
+limits Data Export requests.
+
 ## Google Search Console
 
 Hosted OpenSEO can connect to Google Search Console without requiring the user to create a Google Cloud project or OAuth client.
@@ -118,6 +123,8 @@ OpenSEO MCP tools cover workflows such as:
 - Backlink and referring-domain overview data for any domain, including competitors.
 - Google Search Console performance reads.
 - Google URL inspection reads.
+- Google Analytics performance and measurement reads.
+- Microsoft Clarity aggregate behavior and URL-level friction reads.
 
 OpenSEO also provides agent skills for workflows such as SEO project setup, SEO coaching, keyword research, competitive landscape analysis, competitor analysis, keyword clustering, and link prospecting.
 

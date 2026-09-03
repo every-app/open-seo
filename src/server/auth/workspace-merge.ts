@@ -6,6 +6,7 @@ import { runBatch } from "@/db/runBatch";
 import { getAuthMode } from "@/lib/auth-mode";
 import { AppError } from "@/server/lib/errors";
 import {
+  clarityConnections,
   ga4Connections,
   gscConnections,
   organization,
@@ -133,6 +134,10 @@ async function mergeLegacyWorkspaces() {
       .update(gscConnections)
       .set(repointToShared)
       .where(inArray(gscConnections.organizationId, legacyIds)),
+    tx
+      .update(clarityConnections)
+      .set(repointToShared)
+      .where(inArray(clarityConnections.organizationId, legacyIds)),
     tx
       .update(ga4Connections)
       .set(repointToShared)
