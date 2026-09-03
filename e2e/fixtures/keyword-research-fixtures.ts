@@ -1,4 +1,4 @@
-import type { KeywordResearchRow } from "@/types/keywords";
+import type { KeywordResearchRow, SerpResultItem } from "@/types/keywords";
 import type { ResolvedResearchKeywordsInput } from "@/types/schemas/keywords";
 
 const MONTHLY_SEARCHES = [
@@ -69,5 +69,32 @@ export function getKeywordResearchFixture(data: ResolvedResearchKeywordsInput) {
         },
       ],
     },
+  };
+}
+
+function makeSerpItem(keyword: string, index: number): SerpResultItem {
+  const rank = index + 1;
+  return {
+    rank,
+    title: `${keyword} - result ${rank}`,
+    url: `https://example-${rank}.com/${keyword.replace(/\s+/g, "-")}`,
+    domain: `example-${rank}.com`,
+    description: `Fixture SERP description for ${keyword}, position ${rank}.`,
+    etv: 5000 - index * 400,
+    estimatedPaidTrafficCost: Number((1200 - index * 90).toFixed(2)),
+    referringDomains: 900 - index * 60,
+    backlinks: 12_000 - index * 800,
+    isNew: false,
+    rankChange: null,
+  };
+}
+
+export function getSerpAnalysisFixture(data: { keyword: string }) {
+  const keyword = data.keyword.trim().toLowerCase();
+  return {
+    requestedKeyword: keyword,
+    items: Array.from({ length: 10 }, (_, index) =>
+      makeSerpItem(keyword, index),
+    ),
   };
 }
