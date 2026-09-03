@@ -88,11 +88,19 @@ describe("get_keyword_metrics for Google-Ads-only locations", () => {
       keyword: "hotel reykjavik",
       search_volume: 1300,
       keyword_difficulty: null,
+      keyword_difficulty_status: "not_available",
       main_intent: null,
+      main_intent_status: "not_available",
       cpc: 2.54,
       competition: 0.42,
       competition_level: "HIGH",
     });
+    expect(
+      result.content
+        .filter((item) => item.type === "text")
+        .map((item) => item.text)
+        .join("\n"),
+    ).toContain("not_available");
   });
 
   it("passes the clickstream opt-in to Labs and prefers refined volumes", async () => {

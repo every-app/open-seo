@@ -18,6 +18,7 @@ import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import { captureClientEvent } from "@/client/lib/posthog";
 import {
   AreaTrendChart,
+  GoogleAdsAvailabilityNotice,
   OverviewStats,
   SerpAnalysisCard,
 } from "@/client/features/keywords/components";
@@ -110,6 +111,9 @@ function DesktopKeywordPanel({ controller }: Props) {
             </span>
           ) : null}
         </div>
+      ) : null}
+      {lastResultSource === "google_ads" ? (
+        <GoogleAdsAvailabilityNotice />
       ) : null}
       {controller.overviewKeyword ? (
         <OverviewStats keyword={controller.overviewKeyword} />
