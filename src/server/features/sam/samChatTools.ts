@@ -6,6 +6,10 @@ import { type ToolAuthContext, type ToolContext } from "@/server/mcp/context";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
+import {
+  getMicrosoftClarityOverviewTool,
+  getMicrosoftClarityUrlInsightsTool,
+} from "@/server/mcp/tools/microsoft-clarity-tools";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-tracking-keywords";
@@ -398,6 +402,10 @@ export function buildSamMcpTools(
     ),
     get_google_analytics_audience_breakdown: adaptObjectTool(
       getGoogleAnalyticsAudienceBreakdownTool,
+    ),
+    get_microsoft_clarity_overview: adaptTool(getMicrosoftClarityOverviewTool),
+    get_microsoft_clarity_url_insights: adaptTool(
+      getMicrosoftClarityUrlInsightsTool,
     ),
     run_site_audit: adaptTool(runSiteAuditTool),
     get_audit_status: waitingAuditStatusTool(adaptTool),

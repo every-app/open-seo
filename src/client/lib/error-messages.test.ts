@@ -11,6 +11,12 @@ describe("getStandardErrorMessage", () => {
     );
   });
 
+  it("gives rejected Clarity tokens a safe actionable message", () => {
+    expect(getStandardErrorMessage(new Error("CLARITY_AUTH_FAILED"))).toBe(
+      "Microsoft Clarity rejected this token. Generate a new Data Export API token from the Clarity project's settings and try again.",
+    );
+  });
+
   it("returns custom messages when the error is not a shared code", () => {
     expect(
       getStandardErrorMessage(

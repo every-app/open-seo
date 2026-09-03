@@ -75,8 +75,10 @@ The execution order is designed for safe retries:
    Workflow instances, revokes Google grants, and erases chat/scratchpad
    Durable Objects, R2 audit payloads, KV progress entries, and MCP OAuth
    grants/tokens.
-3. Delete the organizations and user in one Postgres transaction, relying on
-   foreign-key cascades for project data, then verify the root rows are gone.
+3. Delete GSC, GA4, and Microsoft Clarity connections attributed to the user,
+   then delete the organizations and user in one Postgres transaction, relying
+   on foreign-key cascades for project data. Finally, verify the root and
+   integration-connection rows are gone.
 
 If a step fails, fix the reported credential or service error and run the same
 command again. Vendor absence and already-finished Workflows are treated as
@@ -90,6 +92,10 @@ Completed Workflow state and Workers logs expire under the Cloudflare account's
 configured retention. Database backups and billing records that must be kept
 for tax, fraud, or legal obligations should be isolated from production access
 and allowed to expire under the documented retention schedule.
+
+Microsoft Clarity report cache rows are sanitized before storage and purged by
+the daily Worker maintenance job after seven days. Disconnecting Clarity or
+deleting its OpenSEO project removes them immediately.
 
 Prompt-response cache objects written after this erasure tooling was deployed
 carry an organization tag and are deleted by the command. Older untagged cache

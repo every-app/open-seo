@@ -14,7 +14,7 @@ type PreflightLevel = "ok" | "info" | "warn" | "fail";
 
 type PreflightItem = {
   // Stable identifier shared with /api/health's check map.
-  key: "auth" | "dataforseo" | "gsc" | "ai" | "runtime";
+  key: "auth" | "dataforseo" | "gsc" | "clarity" | "ai" | "runtime";
   name: string;
   level: PreflightLevel;
   message: string;
@@ -192,6 +192,29 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
       level: "info",
       message:
         "Not configured (optional). See docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md.",
+    });
+  }
+
+  if (!betterAuthSecret) {
+    items.push({
+      key: "clarity",
+      name: "Microsoft Clarity",
+      level: "info",
+      message: `Not configured (optional). Set BETTER_AUTH_SECRET to at least ${MIN_BETTER_AUTH_SECRET_LENGTH} characters before connecting a Clarity token.`,
+    });
+  } else if (betterAuthSecret.length < MIN_BETTER_AUTH_SECRET_LENGTH) {
+    items.push({
+      key: "clarity",
+      name: "Microsoft Clarity",
+      level: "warn",
+      message: `BETTER_AUTH_SECRET is too short — Clarity stays DISABLED until it is at least ${MIN_BETTER_AUTH_SECRET_LENGTH} characters (it encrypts stored API tokens).`,
+    });
+  } else {
+    items.push({
+      key: "clarity",
+      name: "Microsoft Clarity",
+      level: "ok",
+      message: "Token encryption ready",
     });
   }
 

@@ -250,6 +250,23 @@ const toolCategories: ToolCategory[] = [
       },
     ],
   },
+  {
+    label: "Microsoft Clarity",
+    tools: [
+      {
+        name: "get_microsoft_clarity_overview",
+        title: "Get Clarity overview",
+        description:
+          "Read aggregate traffic, engagement, scroll, device, and friction metrics.",
+      },
+      {
+        name: "get_microsoft_clarity_url_insights",
+        title: "Get Clarity URL insights",
+        description:
+          "Compare page-level engagement, dead clicks, rage clicks, and errors.",
+      },
+    ],
+  },
 ];
 
 export function AvailableTools() {

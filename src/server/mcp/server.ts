@@ -13,6 +13,10 @@ import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
+import {
+  getMicrosoftClarityOverviewTool,
+  getMicrosoftClarityUrlInsightsTool,
+} from "@/server/mcp/tools/microsoft-clarity-tools";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
 import { getDomainOverviewTool } from "@/server/mcp/tools/get-domain-overview";
 import { addRankTrackingKeywordsTool } from "@/server/mcp/tools/add-rank-tracking-keywords";
@@ -130,9 +134,9 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
     {
       name: "OpenSEO MCP",
       title: "OpenSEO",
-      version: "0.0.12",
+      version: "0.0.13",
       description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, Google Search Console, Google Analytics, and Microsoft Clarity insights.",
       websiteUrl: "https://openseo.so",
       icons: [
         {
@@ -199,6 +203,8 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getGoogleAnalyticsEcommercePerformanceTool);
   register(getGoogleAnalyticsSiteSearchTool);
   register(getGoogleAnalyticsAudienceBreakdownTool);
+  register(getMicrosoftClarityOverviewTool);
+  register(getMicrosoftClarityUrlInsightsTool);
   register(runSiteAuditTool);
   register(getAuditStatusTool);
   register(getAuditIssuesTool);

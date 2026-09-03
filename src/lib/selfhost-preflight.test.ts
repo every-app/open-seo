@@ -70,6 +70,22 @@ describe("runSelfhostPreflight", () => {
 
     expect(itemFor(result, "Search Console")?.level).toBe("warn");
     expect(itemFor(result, "Search Console")?.message).toContain("32");
+    expect(itemFor(result, "Microsoft Clarity")?.level).toBe("warn");
+  });
+
+  it("reports whether Clarity token encryption is ready", () => {
+    const missing = runSelfhostPreflight({ AUTH_MODE: "local_noauth" });
+    const configured = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      BETTER_AUTH_SECRET: "x".repeat(40),
+    });
+
+    expect(itemFor(missing, "Microsoft Clarity")).toMatchObject({
+      level: "info",
+    });
+    expect(itemFor(configured, "Microsoft Clarity")).toMatchObject({
+      level: "ok",
+    });
   });
 
   it("fails hosted mode listing every missing variable", () => {
