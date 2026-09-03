@@ -3,7 +3,7 @@
   "name": "open-seo-landing",
   "compatibility_date": "2026-02-19",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "@tanstack/react-start/server-entry",
+  "main": "src/server.ts",
   "assets": {
     "directory": "./dist/client",
     "html_handling": "drop-trailing-slash",
@@ -27,10 +27,18 @@
       "custom_domain": true,
     },
   ],
-  "kv_namespaces": [
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "BACKLINK_CHECK_BUDGET",
+        "class_name": "BacklinkCheckBudget",
+      },
+    ],
+  },
+  "migrations": [
     {
-      "binding": "BACKLINK_CHECK_KV",
-      "id": "b3a051a75a7b478e93b46cdaf6da3572",
+      "tag": "v1",
+      "new_sqlite_classes": ["BacklinkCheckBudget"],
     },
   ],
   "ratelimits": [
@@ -42,18 +50,23 @@
   ],
   "env": {
     // Bindings are not inherited by named envs; keep preview's copies in sync.
-    // Shared KV id is deliberate: one global daily budget across both workers.
+    // `script_name` is the deliberate equivalent of the old shared KV id: it
+    // points preview at the production worker's Durable Object, so both share
+    // one global daily budget. Preview must not re-declare the migration.
     "preview": {
       "name": "open-seo-landing-preview",
       "workers_dev": true,
       "preview_urls": true,
       "routes": [],
-      "kv_namespaces": [
-        {
-          "binding": "BACKLINK_CHECK_KV",
-          "id": "b3a051a75a7b478e93b46cdaf6da3572",
-        },
-      ],
+      "durable_objects": {
+        "bindings": [
+          {
+            "name": "BACKLINK_CHECK_BUDGET",
+            "class_name": "BacklinkCheckBudget",
+            "script_name": "open-seo-landing",
+          },
+        ],
+      },
       "ratelimits": [
         {
           "name": "BACKLINK_CHECK_RATE_LIMIT",
