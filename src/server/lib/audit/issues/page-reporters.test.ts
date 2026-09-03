@@ -46,7 +46,7 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
     imagesMissingAlt: 0,
     images: [],
     links: [HEALTHY_LINK],
-    hasStructuredData: false,
+    hasStructuredData: true,
     hreflangTags: [],
     isIndexable: true,
     responseTimeMs: 200,
@@ -136,6 +136,42 @@ describe("runPageReporters", () => {
       contentHash: null,
     });
     expect(issueTypes(nonHtml)).toEqual([]);
+  });
+
+  it("reports missing-structured-data on an indexable page without markup", () => {
+    expect(issueTypes(makePage({ hasStructuredData: false }))).toEqual([
+      "missing-structured-data",
+    ]);
+  });
+
+  it("does not report missing-structured-data when markup is present", () => {
+    expect(issueTypes(makePage({ hasStructuredData: true }))).not.toContain(
+      "missing-structured-data",
+    );
+  });
+
+  it("does not report missing-structured-data on a noindex page", () => {
+    // The page is explicitly kept out of the index, so rich results are moot.
+    expect(
+      issueTypes(makePage({ hasStructuredData: false, isIndexable: false })),
+    ).not.toContain("missing-structured-data");
+  });
+
+  it("does not report missing-structured-data on non-HTML responses", () => {
+    expect(
+      issueTypes(
+        makePage({
+          isHtml: false,
+          hasStructuredData: false,
+          title: "",
+          metaDescription: "",
+          h1Count: 0,
+          headingOrder: [],
+          wordCount: 0,
+          contentHash: null,
+        }),
+      ),
+    ).not.toContain("missing-structured-data");
   });
 
   it("still checks empty-shell HTML pages", () => {
