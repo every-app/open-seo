@@ -19,6 +19,8 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: enables authenticated external scheduling of due rank checks.
+      - RANK_CHECK_SCHEDULER_SECRET=${RANK_CHECK_SCHEDULER_SECRET:-}
       # Optional: AI features (SAM, onboarding chat). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}

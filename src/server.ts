@@ -7,6 +7,10 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import {
+  SCHEDULED_RANK_CHECKS_PATH,
+  handleScheduledRankChecksRequest,
+} from "@/server/features/rank-tracking/services/scheduledRankChecksHttp";
 import { reconcileStaleAudits } from "@/server/features/audit/services/auditReconciler";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -150,6 +154,12 @@ function handleFetch(
 
   if (pathname === GDPR_STORAGE_ERASURE_PATH) {
     return handleGdprStorageErasure(publicRequest, env);
+  }
+
+  if (pathname === SCHEDULED_RANK_CHECKS_PATH) {
+    return handleScheduledRankChecksRequest(publicRequest, env, () =>
+      withPgClient(() => runScheduledRankChecks(env)),
+    );
   }
 
   if (pathname.startsWith("/agents/")) {

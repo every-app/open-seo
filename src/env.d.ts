@@ -49,6 +49,8 @@ declare namespace Cloudflare {
     DUB_API_KEY?: string;
     // HMAC secret for the operator-only GDPR storage-erasure endpoint.
     GDPR_ERASURE_SECRET?: string;
+    // Bearer secret for the self-hosted rank scheduler endpoint.
+    RANK_CHECK_SCHEDULER_SECRET?: string;
 
     // Cloudflare Turnstile — signup captcha (hosted only). Secret verifies
     // tokens server-side; site key is public and inlined into the client build.
