@@ -17,6 +17,7 @@ import {
   discoverUrls,
   parseRobotsTxt,
 } from "../../src/server/lib/audit/discovery";
+import { runSiteChecks } from "../../src/server/lib/audit/issues/site-checks";
 import {
   normalizeUrl,
   isSameOrigin,
@@ -68,6 +69,7 @@ async function crawl(origin: string): Promise<{
   pages: CrawledPageResult[];
   links: CrawlLink[];
   completed: boolean;
+  robotsText: string | null;
 }> {
   const { urls: sitemapUrls, robotsText } = await discoverUrls(
     origin,
@@ -146,7 +148,7 @@ async function crawl(origin: string): Promise<{
   }
 
   const completed = linkQueue.length === 0 && sitemapQueue.length === 0;
-  return { pages, links, completed };
+  return { pages, links, completed, robotsText };
 }
 
 /** In-memory equivalents of the two D1-backed multipage checks. */
@@ -243,7 +245,7 @@ async function main() {
   await warmup();
   const origin = new URL(BASE).origin;
   const startUrl = normalizeUrl(`${origin}/`) ?? `${origin}/`;
-  const { pages, links, completed } = await crawl(origin);
+  const { pages, links, completed, robotsText } = await crawl(origin);
 
   if (process.env.DEBUG_DEPTH) {
     for (const p of pages) {
@@ -382,6 +384,25 @@ async function main() {
     });
   }
 
+  // Site-level checks run once over the whole origin rather than per page, so
+  // they can't be expressed as a fixture's expectedIssues. badseo serves no
+  // /schemamap.xml and names none in robots.txt, so the check must fire.
+  {
+    const siteIssues = await runSiteChecks({ origin, robotsText });
+    const found = siteIssues.some(
+      (issue) => issue.issueType === "schemamap-missing",
+    );
+    if (!found) failures++;
+    rows.push({
+      name: "Site: no schemamap declared",
+      url: origin,
+      ok: found,
+      detail: found
+        ? c.green("schemamap-missing reported")
+        : c.red("schemamap-missing NOT reported"),
+    });
+  }
+
   // ---- report ----
   const pad = Math.max(...rows.map((r) => r.name.length));
   for (const r of rows) {
@@ -398,7 +419,13 @@ async function main() {
   );
 
   // Coverage: every audit issue type should be exercised by at least one page.
-  const exercised = new Set(allFixtures.flatMap((f) => f.expectedIssues));
+  // Site-level issues have no fixture to hang off — they're asserted directly
+  // above, so list them here rather than reporting them as forever-uncovered.
+  const SITE_LEVEL_ISSUES: IssueId[] = ["schemamap-missing"];
+  const exercised = new Set([
+    ...allFixtures.flatMap((f) => f.expectedIssues),
+    ...SITE_LEVEL_ISSUES,
+  ]);
   const allTypes = Object.keys(AUDIT_ISSUE_TYPES) as IssueId[];
   const uncovered = allTypes.filter((id) => !exercised.has(id));
   console.log(

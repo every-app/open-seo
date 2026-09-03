@@ -3,6 +3,7 @@ import type {
   PageFetchClass,
 } from "@/server/lib/audit/types";
 import { sha256Hex } from "@/server/lib/audit/ids";
+import { EMPTY_JSON_LD_SUMMARY } from "@/server/lib/audit/jsonld";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 
 const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
@@ -182,6 +183,7 @@ export async function crawlPage(
       images: analysis.images,
       links: analysis.links,
       hasStructuredData: analysis.hasStructuredData,
+      jsonLd: analysis.jsonLd,
       hreflangTags: analysis.hreflangTags,
       isIndexable,
       responseTimeMs,
@@ -280,6 +282,7 @@ function emptyPageResult(input: {
     images: [],
     links: [],
     hasStructuredData: false,
+    jsonLd: EMPTY_JSON_LD_SUMMARY,
     hreflangTags: [],
     isIndexable: false,
     responseTimeMs: input.responseTimeMs,

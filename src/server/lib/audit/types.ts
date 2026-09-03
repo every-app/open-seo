@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import type { JsonLdSummary } from "@/server/lib/audit/jsonld";
 import { MIN_AUDIT_PAGES, PAID_MAX_AUDIT_PAGES } from "@/shared/audit-limits";
 import { jsonCodec } from "@/shared/json";
 
@@ -82,6 +83,8 @@ export interface PageAnalysis {
 
   // Structured data
   hasStructuredData: boolean;
+  /** Shape of the page's JSON-LD as one graph (see jsonld.ts). */
+  jsonLd: JsonLdSummary;
 
   // Hreflang
   hreflangTags: string[];
@@ -151,6 +154,8 @@ export interface CrawledPageResult {
   images: Array<{ src: string | null; alt: string | null }>;
   links: PageLink[];
   hasStructuredData: boolean;
+  /** Shape of the page's JSON-LD as one graph (see jsonld.ts). */
+  jsonLd: JsonLdSummary;
   hreflangTags: string[];
   isIndexable: boolean;
   responseTimeMs: number;

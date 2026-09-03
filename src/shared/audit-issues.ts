@@ -232,6 +232,22 @@ export const AUDIT_ISSUE_TYPES = {
     howToFix:
       "Add links from higher-level pages (hubs, category pages, navigation) to flatten the path to this page.",
   },
+  "jsonld-not-linked-graph": {
+    severity: "info",
+    title: "Structured data is not a linked graph",
+    explanation:
+      "The page publishes several independent JSON-LD entities that never reference each other. Each block is valid on its own, but search engines and AI assistants read structured data as one graph — without links they see unrelated fragments instead of 'this Article, written by this Person, published by this Organization', which is what earns rich results and accurate citations.",
+    howToFix:
+      'Emit the page\'s entities inside a single @graph, or give each entity a stable @id and reference it from the others (for example, set the Article\'s author to {"@id": "https://example.com/#person"}).',
+  },
+  "schemamap-missing": {
+    severity: "info",
+    title: "No schemamap",
+    explanation:
+      "The site serves no /schemamap.xml and declares no Schemamap: directive in robots.txt. A schemamap points crawlers and AI agents at where a site's structured data lives, so they can find your entities without crawling every page first. It is an emerging convention, so this is an opportunity rather than a defect.",
+    howToFix:
+      "Publish a schemamap at /schemamap.xml listing the URLs that carry structured data, and reference it from robots.txt with a `Schemamap: https://example.com/schemamap.xml` line.",
+  },
 } as const satisfies Record<string, AuditIssueDescriptor>;
 
 export type AuditIssueType = keyof typeof AUDIT_ISSUE_TYPES;
