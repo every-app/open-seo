@@ -1,5 +1,9 @@
 # Agent guidance
 
+## Feature log
+
+- 2026-09-03: Added `search_google_trends` MCP support through `src/server/lib/google/trends.ts`. Results are labeled as relative-interest-index signals, not search volume. Existing Google Ads/Keyword Planner-compatible DataForSEO routing remains available; direct Google Ads collection is not substituted because of Google policy constraints. Type-check and formatting validation pass.
+
 ## Engineering principles
 
 - Prefer simple, readable, flat code with minimal indirection.
