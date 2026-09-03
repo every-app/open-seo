@@ -2,16 +2,39 @@
 // (onboarding + SAM): discover URLs from the sitemap (falling back to the
 // homepage) and extract readable text from each page via plain fetch. This is
 // enough to let the model infer what a site does. JS-heavy sites degrade
-// gracefully (less text); a Browser Rendering upgrade can slot in behind this
-// same interface later.
+// gracefully (less text).
+//
+// When FIRECRAWL_API_KEY is configured, page reads and URL discovery are routed
+// through Firecrawl (JS rendering + clean markdown, and /map for discovery)
+// behind this same interface, with the plain-fetch path as the fallback. See
+// firecrawl.ts.
 
+import { readBoundedText } from "@/server/lib/bounded-response";
 import { normalizeAndValidateStartUrl } from "@/server/lib/audit/url-policy";
+import { canonicalUrlKey, isSameOrigin } from "@/server/lib/audit/url-utils";
+import {
+  firecrawlMapUrls,
+  firecrawlScrapePage,
+  getFirecrawlApiKey,
+} from "@/server/lib/firecrawl";
 
 export const MAX_PAGES = 5;
 const PER_PAGE_CHAR_LIMIT = 4000;
 const FETCH_TIMEOUT_MS = 10_000;
-const MAX_RESPONSE_BYTES = 2_000_000;
 const USER_AGENT = "OpenSEO-Onboarding/1.0 (+https://openseo.so)";
+// Bound total time spent on Firecrawl within one readPages batch: once it's
+// exceeded (e.g. slow-but-successful responses), read remaining pages with
+// plain fetch rather than paying another Firecrawl timeout per page.
+const FIRECRAWL_BATCH_DEADLINE_MS = 45_000;
+
+/**
+ * Per-operation Firecrawl circuit breaker. Once a Firecrawl call fails at the
+ * transport level (or a batch deadline passes), it's flipped so the rest of the
+ * operation skips Firecrawl and reads via plain fetch. Shared across
+ * discoverSiteUrls + readPages within a single readSite so an outage costs one
+ * timeout for the whole call, not one per stage.
+ */
+type FirecrawlBreaker = { tripped: boolean };
 
 type ScrapedPage = {
   url: string;
@@ -24,28 +47,6 @@ type SiteReadResult = {
   /** True when we couldn't read any page (blocked, offline, etc.). */
   blocked: boolean;
 };
-
-// Bounded read: accumulate up to MAX_RESPONSE_BYTES regardless of whether
-// content-length is present (chunked / CDN responses often omit it).
-async function readBoundedText(response: Response): Promise<string | null> {
-  const reader = response.body?.getReader();
-  if (!reader) return null;
-  const decoder = new TextDecoder();
-  let result = "";
-  let bytesRead = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    bytesRead += value.byteLength;
-    if (bytesRead > MAX_RESPONSE_BYTES) {
-      await reader.cancel();
-      return null;
-    }
-    result += decoder.decode(value, { stream: true });
-  }
-  result += decoder.decode();
-  return result;
-}
 
 async function fetchText(url: string): Promise<string | null> {
   try {
@@ -162,7 +163,10 @@ async function scrapePage(url: string): Promise<ScrapedPage | null> {
 export async function readPages(
   urls: string[],
   maxPages: number = MAX_PAGES,
+  breaker: FirecrawlBreaker = { tripped: false },
 ): Promise<SiteReadResult> {
+  const apiKey = await getFirecrawlApiKey();
+  const deadline = Date.now() + FIRECRAWL_BATCH_DEADLINE_MS;
   const pages: ScrapedPage[] = [];
   for (const rawUrl of urls.slice(0, maxPages)) {
     let url: string;
@@ -172,7 +176,26 @@ export async function readPages(
     } catch {
       continue; // blocked or unparseable URL
     }
-    const page = await scrapePage(url);
+    // Prefer Firecrawl when configured; fall back to plain fetch if it's
+    // unavailable or returns nothing for this URL. Skip it once the breaker
+    // trips or the batch deadline passes so a Firecrawl outage or slow run
+    // can't stall the whole batch.
+    let page: ScrapedPage | null = null;
+    if (apiKey && !breaker.tripped) {
+      if (Date.now() >= deadline) {
+        breaker.tripped = true;
+      } else {
+        try {
+          page = await firecrawlScrapePage(apiKey, url, PER_PAGE_CHAR_LIMIT);
+        } catch {
+          // Stop trying Firecrawl for the rest of the batch.
+          breaker.tripped = true;
+        }
+      }
+    }
+    if (!page) {
+      page = await scrapePage(url);
+    }
     if (page) {
       pages.push(page);
     }
@@ -189,6 +212,7 @@ export async function readPages(
 export async function discoverSiteUrls(
   domain: string,
   limit: number,
+  breaker: FirecrawlBreaker = { tripped: false },
 ): Promise<{ urls: string[]; blocked: boolean }> {
   let rootUrl: string;
   try {
@@ -198,6 +222,37 @@ export async function discoverSiteUrls(
     return { urls: [], blocked: true };
   }
   const origin = new URL(rootUrl).origin;
+
+  // Firecrawl's /map discovers more than the sitemap when configured; fall back
+  // to sitemap parsing if it's unavailable or yields no usable extra URLs.
+  const apiKey = await getFirecrawlApiKey();
+  if (apiKey && !breaker.tripped) {
+    try {
+      const mapped = await firecrawlMapUrls(apiKey, rootUrl, limit);
+      // Keep same-origin URLs, deduped against each other and the homepage by
+      // canonical key, so equivalent variants of one page (www vs apex, http
+      // vs https, query order) don't get scraped twice. isSameOrigin treats
+      // www/apex as one site, so the dedup must too.
+      const seenKeys = new Set([canonicalUrlKey(rootUrl)]);
+      const sameOrigin = (mapped ?? []).filter((url) => {
+        if (!isSameOrigin(url, origin)) return false;
+        const key = canonicalUrlKey(url);
+        if (seenKeys.has(key)) return false;
+        seenKeys.add(key);
+        return true;
+      });
+      // Only take the map result when it actually adds pages; otherwise fall
+      // through so a map that yields nothing usable doesn't shadow the sitemap.
+      if (sameOrigin.length > 0) {
+        const urls = [rootUrl, ...sameOrigin];
+        return { urls: urls.slice(0, limit), blocked: false };
+      }
+    } catch {
+      // Firecrawl unreachable — trip the breaker (so a chained readPages skips
+      // it too) and fall through to sitemap parsing below.
+      breaker.tripped = true;
+    }
+  }
 
   const sitemap = await fetchText(`${origin}/sitemap.xml`);
   const discovered = sitemap ? parseSitemapUrls(sitemap, origin) : [];
@@ -213,9 +268,12 @@ export async function readSite(
   domain: string,
   maxPages: number = MAX_PAGES,
 ): Promise<SiteReadResult> {
-  const discovered = await discoverSiteUrls(domain, maxPages);
+  // One breaker for the whole read: if /map fails, the chained readPages skips
+  // Firecrawl instead of paying a second outage timeout on its first URL.
+  const breaker: FirecrawlBreaker = { tripped: false };
+  const discovered = await discoverSiteUrls(domain, maxPages, breaker);
   if (discovered.blocked) {
     return { pages: [], blocked: true };
   }
-  return readPages(discovered.urls, maxPages);
+  return readPages(discovered.urls, maxPages, breaker);
 }
