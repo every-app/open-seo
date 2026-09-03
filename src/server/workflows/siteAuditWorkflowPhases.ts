@@ -2,6 +2,7 @@ import type { WorkflowStep } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { discoverUrls, parseRobotsTxt } from "@/server/lib/audit/discovery";
 import {
+  failedLighthouseFetch,
   fetchLighthouseResult,
   selectLighthouseSample,
   storeLighthouseResult,
@@ -32,13 +33,14 @@ import {
   MULTIPAGE_CHECKS_STEP,
 } from "@/server/workflows/auditStepConfigs";
 
-const LEGACY_LIGHTHOUSE_URL_BATCH_SIZE = 10;
+/**
+ * URLs fetched concurrently per wave. Each URL runs mobile + desktop, so one
+ * wave holds up to 10 paid DataForSEO calls in flight; the aux worker's parse
+ * lock serializes the memory-heavy payload parsing behind them.
+ */
+const LIGHTHOUSE_URL_CONCURRENCY = 5;
 /** Frontier seeds per scratchpad RPC call. */
 const SEED_RPC_BATCH = 2_000;
-
-type LighthouseBatchBoundary =
-  | { schema: "retry-safe-v2" }
-  | { completed: number; failed: number };
 
 type AuditPhasesParams = {
   auditId: string;
@@ -197,87 +199,80 @@ export async function runLighthousePhase(
   let completedChecks = 0;
   let failedChecks = 0;
   for (
-    let batchStart = 0;
-    batchStart < lighthouseWork.length;
-    batchStart += LEGACY_LIGHTHOUSE_URL_BATCH_SIZE
+    let chunkStart = 0;
+    chunkStart < lighthouseWork.length;
+    chunkStart += LIGHTHOUSE_URL_CONCURRENCY
   ) {
-    const batchIndex = Math.floor(
-      batchStart / LEGACY_LIGHTHOUSE_URL_BATCH_SIZE,
+    const chunk = lighthouseWork.slice(
+      chunkStart,
+      chunkStart + LIGHTHOUSE_URL_CONCURRENCY,
     );
-    const boundary = await pgStep(
+
+    // The paid calls are checkpointed separately from all storage. With
+    // Workflow retries disabled, a later R2/DB/progress failure cannot replay
+    // DataForSEO. One URL groups its mobile + desktop checks into one compact
+    // checkpoint. allSettled, not all: a rejected step must not orphan the
+    // sibling paid calls mid-flight — their checkpoints complete and persist
+    // below either way.
+    const settled = await Promise.allSettled(
+      chunk.map(({ url, pageId }, chunkOffset) =>
+        pgStep(
+          step,
+          `lighthouse-fetch-${chunkStart + chunkOffset + 1}`,
+          LIGHTHOUSE_FETCH_STEP,
+          () =>
+            Promise.all([
+              fetchLighthouseResult(url, pageId, "mobile", billingCustomer),
+              fetchLighthouseResult(url, pageId, "desktop", billingCustomer),
+            ]),
+        ),
+      ),
+    );
+    const fetched = settled.flatMap((outcome, chunkOffset) => {
+      if (outcome.status === "fulfilled") return outcome.value;
+      // Step timeout or engine failure — provider errors never reject here
+      // (the audit-layer fetch converts them into errorMessage results).
+      const { url, pageId } = chunk[chunkOffset];
+      const message =
+        outcome.reason instanceof Error
+          ? outcome.reason.message
+          : String(outcome.reason);
+      return (["mobile", "desktop"] as const).map((strategy) =>
+        failedLighthouseFetch(url, pageId, strategy, message),
+      );
+    });
+
+    const chunkIndex = Math.floor(chunkStart / LIGHTHOUSE_URL_CONCURRENCY) + 1;
+    const priorCompleted = completedChecks;
+    const priorFailed = failedChecks;
+    const counts = await pgStep(
       step,
-      `lighthouse-batch-${batchIndex + 1}`,
-      DB_STEP,
-      async (): Promise<LighthouseBatchBoundary> => ({
-        schema: "retry-safe-v2",
-      }),
+      `lighthouse-persist-chunk-${chunkIndex}`,
+      LIGHTHOUSE_PERSIST_STEP,
+      async () => {
+        const results = await Promise.all(
+          fetched.map((result) =>
+            storeLighthouseResult({
+              projectId,
+              auditId,
+              fetched: result,
+            }),
+          ),
+        );
+        await AuditRepository.insertLighthouseResults(auditId, results);
+
+        const failed = results.filter((result) => result.errorMessage).length;
+        const completed = results.length - failed;
+        await AuditRepository.updateAuditProgress(auditId, workflowInstanceId, {
+          lighthouseCompleted: priorCompleted + completed,
+          lighthouseFailed: priorFailed + failed,
+        });
+        return { completed, failed };
+      },
     );
 
-    // Older deployments used this checkpoint name for a complete paid batch.
-    // If that cached shape replays under current code, all results and progress
-    // are already persisted; skip the batch instead of buying it again.
-    if ("completed" in boundary) {
-      completedChecks += boundary.completed;
-      failedChecks += boundary.failed;
-      continue;
-    }
-
-    const batch = lighthouseWork.slice(
-      batchStart,
-      batchStart + LEGACY_LIGHTHOUSE_URL_BATCH_SIZE,
-    );
-    for (const [batchOffset, { url, pageId }] of batch.entries()) {
-      const index = batchStart + batchOffset;
-      // The paid calls are checkpointed separately from all storage. With
-      // Workflow retries disabled, a later R2/DB/progress failure cannot replay
-      // DataForSEO. One URL groups its mobile + desktop checks into one compact
-      // checkpoint rather than returning a whole Lighthouse batch.
-      const fetched = await pgStep(
-        step,
-        `lighthouse-fetch-${index + 1}`,
-        LIGHTHOUSE_FETCH_STEP,
-        () =>
-          Promise.all([
-            fetchLighthouseResult(url, pageId, "mobile", billingCustomer),
-            fetchLighthouseResult(url, pageId, "desktop", billingCustomer),
-          ]),
-      );
-
-      const priorCompleted = completedChecks;
-      const priorFailed = failedChecks;
-      const counts = await pgStep(
-        step,
-        `lighthouse-persist-${index + 1}`,
-        LIGHTHOUSE_PERSIST_STEP,
-        async () => {
-          const results = await Promise.all(
-            fetched.map((result) =>
-              storeLighthouseResult({
-                projectId,
-                auditId,
-                fetched: result,
-              }),
-            ),
-          );
-          await AuditRepository.insertLighthouseResults(auditId, results);
-
-          const failed = results.filter((result) => result.errorMessage).length;
-          const completed = results.length - failed;
-          await AuditRepository.updateAuditProgress(
-            auditId,
-            workflowInstanceId,
-            {
-              lighthouseCompleted: priorCompleted + completed,
-              lighthouseFailed: priorFailed + failed,
-            },
-          );
-          return { completed, failed };
-        },
-      );
-
-      completedChecks += counts.completed;
-      failedChecks += counts.failed;
-    }
+    completedChecks += counts.completed;
+    failedChecks += counts.failed;
   }
 }
 

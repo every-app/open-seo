@@ -68,8 +68,11 @@ export function KeywordResearchMobileResults({ controller }: Props) {
             items={controller.serpResults}
             keyword={controller.activeSerpKeyword}
             loading={controller.serpLoading}
+            loadingMore={controller.serpLoadingMore}
+            canLoadMore={controller.canLoadMoreSerp}
             error={controller.serpError}
-            onRetry={() => void controller.serpQuery.refetch()}
+            onRetry={controller.retrySerp}
+            deepFetchFailed={controller.deepFetchFailed}
             page={controller.serpPage}
             pageSize={controller.SERP_PAGE_SIZE}
             onPageChange={controller.setSerpPage}

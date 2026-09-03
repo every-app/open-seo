@@ -44,6 +44,8 @@ const authContext: ToolAuthContext = {
   userId: "user-1",
   userEmail: "user@example.com",
   organizationId: "org-1",
+  role: "owner",
+  orgScope: "pinned",
   clientId: "client-1",
   scopes: ["mcp"],
   baseUrl: "https://app.openseo.so",
@@ -95,6 +97,7 @@ describe("instrumentMcpToolHandler", () => {
     await expect(wrapped({}, toolContext)).rejects.toThrow("upstream exploded");
     expect(mocks.captureServerError).toHaveBeenCalledTimes(1);
     expect(mocks.captureServerError.mock.calls[0][0]).toBe(boom);
+    expect(mocks.captureServerError.mock.calls[0][2]).toBe("user-1");
   });
 
   it("rethrows expected errors without reporting them", async () => {

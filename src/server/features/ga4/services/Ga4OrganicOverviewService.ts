@@ -142,7 +142,12 @@ async function getOrganicOverview(
         reports: reports.map((report) => report.reportMetadata),
       },
       quota: trendReport.quota ?? current.quota,
-      warnings: dateRange.warnings,
+      warnings: [
+        ...dateRange.warnings,
+        ...(trendReport.totalRowCount > trendReport.rows.length
+          ? ["trend_truncated"]
+          : []),
+      ],
     };
   } catch (error) {
     mapGa4ReportError(error);

@@ -1,4 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
+// Aliased: `SavedKeywordsPage` has a local `sort` const (the saved-keyword
+// sort key) that would otherwise shadow this import at the call site.
+import { sort as sortArray } from "remeda";
 import {
   keepPreviousData,
   useMutation,
@@ -130,7 +133,7 @@ function SavedKeywordsPage() {
         if (!map.has(tag.id)) map.set(tag.id, tag);
       }
     }
-    return [...map.values()].toSorted((a, b) =>
+    return sortArray([...map.values()], (a, b) =>
       a.normalizedName.localeCompare(b.normalizedName),
     );
   }, [selectedRows]);

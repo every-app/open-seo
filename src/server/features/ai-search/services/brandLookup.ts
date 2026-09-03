@@ -1,4 +1,5 @@
 import { waitUntil } from "cloudflare:workers";
+import { identity, sortBy } from "remeda";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import {
@@ -74,10 +75,10 @@ export async function getBrandLookup(
     // are canonical detected values too, so equivalent casing/order shares one
     // paid cache entry.
     targetValue: detected.value.toLowerCase(),
-    competitors: competitorGroups
-      .map((g) => g.detected.value.toLowerCase())
-      .toSorted()
-      .join("|"),
+    competitors: sortBy(
+      competitorGroups.map((g) => g.detected.value.toLowerCase()),
+      identity(),
+    ).join("|"),
     locationCode: input.locationCode,
     languageCode: input.languageCode,
     // Scope changes both the provider call (include_subdomains) and the

@@ -9,7 +9,7 @@ export const SHARED_WORKSPACE_ORGANIZATION_ID = "shared-workspace";
 export async function ensureSharedWorkspaceOrganization() {
   await AuthRepository.upsertDelegatedOrganization({
     id: SHARED_WORKSPACE_ORGANIZATION_ID,
-    name: "Shared workspace",
+    name: "Shared organization",
     slug: SHARED_WORKSPACE_ORGANIZATION_ID,
   });
 
@@ -21,7 +21,7 @@ function getDelegatedOrganizationId(userId: string) {
 }
 
 function getDelegatedOrganizationName(email: string, userId: string) {
-  return `${email.split("@")[0] || userId} workspace`;
+  return `${email.split("@")[0] || userId} organization`;
 }
 
 function getDelegatedOrganizationSlug(email: string, userId: string) {

@@ -8,6 +8,8 @@ export function makeToolContext(
       userId: "user_123",
       userEmail: "alice@example.com",
       organizationId: "org_123",
+      role: "owner",
+      orgScope: "pinned",
       clientId: "client_123",
       scopes: ["mcp"],
       baseUrl: "https://open-seo.test",

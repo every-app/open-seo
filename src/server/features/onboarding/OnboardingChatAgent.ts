@@ -171,11 +171,12 @@ export class OnboardingChatAgent extends AIChatAgent {
       // Cancel the (billable) LLM call if the user aborts/navigates away.
       abortSignal: options?.abortSignal,
       // Budget shared by reasoning + visible output. Reasoning tokens (enabled
-      // on the model) eat into this, so it's well above what the ~350-word
-      // strategy needs — otherwise the answer truncates mid-table once the
-      // model has spent the budget thinking. It's a ceiling, not a target: the
-      // model only generates (and we only bill) what it actually uses.
-      maxOutputTokens: 4000,
+      // on the model) eat into this, and at max effort they dwarf the ~350-word
+      // strategy — the old 4000 cap left almost no answer headroom and
+      // truncated mid-table once the model had spent the budget thinking.
+      // Deliberately roomy: it's a per-step ceiling, not a target — the model
+      // only generates (and we only bill) what it actually uses.
+      maxOutputTokens: 32_000,
       stopWhen: stepCountIs(5),
       // Meter LLM spend against the same credit pool as DataForSEO: sum the real
       // per-step cost OpenRouter reports and deduct it. Best-effort, hosted-only.

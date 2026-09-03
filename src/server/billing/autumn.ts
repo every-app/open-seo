@@ -46,6 +46,8 @@ export const autumn = {
   customers: {
     getOrCreate: (...args: Parameters<Autumn["customers"]["getOrCreate"]>) =>
       loadAutumn().then((client) => client.customers.getOrCreate(...args)),
+    get: (...args: Parameters<Autumn["customers"]["get"]>) =>
+      loadAutumn().then((client) => client.customers.get(...args)),
   },
 };
 

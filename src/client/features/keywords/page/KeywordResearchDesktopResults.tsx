@@ -8,6 +8,7 @@ import {
   Sheet,
   SlidersHorizontal,
 } from "lucide-react";
+import { sortBy } from "remeda";
 import {
   downloadKeywordResearchCsv,
   KEYWORD_RESEARCH_HEADERS,
@@ -56,9 +57,7 @@ const MONTH_SHORT_LABELS = [
 function formatTrendRangeLabel(trend: KeywordResearchRow["trend"]): string {
   if (trend.length === 0) return "Last 12 available months";
 
-  const sorted = trend.toSorted(
-    (a, b) => a.year * 100 + a.month - (b.year * 100 + b.month),
-  );
+  const sorted = sortBy(trend, (item) => item.year * 100 + item.month);
   const last12 = sorted.slice(-12);
   const start = last12[0];
   const end = last12[last12.length - 1];
@@ -374,8 +373,11 @@ function DesktopSerpPanel({ controller }: Props) {
             items={controller.serpResults}
             keyword={controller.activeSerpKeyword}
             loading={controller.serpLoading}
+            loadingMore={controller.serpLoadingMore}
+            canLoadMore={controller.canLoadMoreSerp}
             error={controller.serpError}
-            onRetry={() => void controller.serpQuery.refetch()}
+            onRetry={controller.retrySerp}
+            deepFetchFailed={controller.deepFetchFailed}
             page={controller.serpPage}
             pageSize={controller.SERP_PAGE_SIZE}
             onPageChange={controller.setSerpPage}

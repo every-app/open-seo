@@ -6,7 +6,7 @@ export function slugify(value: string) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
 
-  return slug || "workspace";
+  return slug || "organization";
 }
 
 export function toHex(value: string) {

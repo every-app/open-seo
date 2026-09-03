@@ -76,7 +76,7 @@ function IndexRedirect() {
       return (
         <div className="flex items-center justify-center h-full p-4">
           <UnauthenticatedErrorCard
-            message="Please sign in to access your OpenSEO workspace."
+            message="Please sign in to access your OpenSEO organization."
             onRetry={() => {
               void refetch();
             }}

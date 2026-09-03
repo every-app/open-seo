@@ -30,8 +30,10 @@ export function SamConversation({
   // session id. The WebSocket is authorized in the Worker (src/server.ts) before
   // it reaches the DO; billing gates come back as normal assistant messages.
   const agent = useAgent({ agent: "sam-chat", name: sessionId });
+  // SAM streams dense tool-input deltas; unthrottled per-chunk store fanout
+  // re-renders the transcript per delta and trips React #185 (cloudflare/agents#1361).
   const { messages, sendMessage, setMessages, clearHistory, status } =
-    useAgentChat({ agent });
+    useAgentChat({ agent, experimental_throttle: 50 });
 
   const isBusy = status === "submitted" || status === "streaming";
   const { scrollRef, onScroll, pinToBottom } = useStickToBottom(

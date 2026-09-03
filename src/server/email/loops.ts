@@ -58,6 +58,7 @@ async function sendLoopsTransactionalEmail({
       addToAudience: false,
       dataVariables,
     }),
+    signal: AbortSignal.timeout(10_000),
   });
 
   if (response.ok) {
@@ -123,6 +124,37 @@ export async function sendHostedVerificationEmail({
     dataVariables: {
       appName: "OpenSEO",
       confirmationUrl,
+    },
+  });
+}
+
+export async function sendHostedInvitationEmail({
+  email,
+  inviteUrl,
+  organizationName,
+  inviterName,
+  inviterEmail,
+}: {
+  email: string;
+  inviteUrl: string;
+  organizationName: string;
+  inviterName: string;
+  inviterEmail: string;
+}) {
+  // Not part of getHostedAuthEmailConfig(): that trio gates hasHostedAuthConfig
+  // and adding a new required var there would brick existing deployments.
+  const apiKey = getRequiredEnv("LOOPS_API_KEY");
+  const templateId = getRequiredEnv("LOOPS_TRANSACTIONAL_INVITATION_ID");
+  await sendLoopsTransactionalEmail({
+    apiKey,
+    email,
+    transactionalId: templateId,
+    dataVariables: {
+      appName: "OpenSEO",
+      inviteUrl,
+      organizationName,
+      inviterName,
+      inviterEmail,
     },
   });
 }

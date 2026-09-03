@@ -16,6 +16,12 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
   },
 }));
 
+// project-auth imports the repository for user-scoped (API key) credentials;
+// unused here (pinned context) but keeps the db out of the module graph.
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: { getMembership: vi.fn() },
+}));
+
 vi.mock("@/server/features/keywords/services/KeywordResearchService", () => ({
   KeywordResearchService: {
     getSavedKeywords: mocks.getSavedKeywords,

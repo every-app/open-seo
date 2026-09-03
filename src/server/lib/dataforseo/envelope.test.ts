@@ -60,6 +60,46 @@ describe("assertOk", () => {
     }
   });
 
+  it("classifies DataForSEO's own server errors as UPSTREAM_UNAVAILABLE", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    const task = {
+      status_code: 40101,
+      status_message: "Internal SE Server Error.",
+      path: ["v3", "serp", "google", "organic", "live", "advanced"],
+      cost: 0.002,
+      result_count: 0,
+    };
+    try {
+      assertOk({ status_code: 20000, tasks: [task] });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      // Still a charged-task error so the billed attempt stays metered.
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.code).toBe("UPSTREAM_UNAVAILABLE");
+      }
+    }
+  });
+
+  it("keeps 'Not Implemented' reportable — we posted a bad task", () => {
+    const task = {
+      status_code: 50100,
+      status_message: "Not Implemented.",
+      path: ["v3", "serp", "google", "organic", "live", "advanced"],
+      cost: 0.002,
+      result_count: 0,
+    };
+    try {
+      assertOk({ status_code: 20000, tasks: [task] });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toBeInstanceOf(DataforseoChargedTaskError);
+      if (error instanceof DataforseoChargedTaskError) {
+        expect(error.code).toBe("INTERNAL_ERROR");
+      }
+    }
+  });
+
   it("appends the echoed request value to opaque 'Invalid Field' failures", () => {
     const task = {
       status_code: 40501,

@@ -38,8 +38,8 @@ function ProjectsPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Projects</h1>
             <p className="mt-1 text-sm text-base-content/60">
-              Each project is a separate workspace with its own Search Console,
-              rank tracking, and audits.
+              Each project has its own Search Console, rank tracking, and
+              audits.
             </p>
           </div>
           <button

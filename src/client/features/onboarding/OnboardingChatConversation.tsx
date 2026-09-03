@@ -11,7 +11,10 @@ import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { buildCheckoutSuccessUrl } from "@/client/features/billing/checkout-url";
-import { AUTUMN_PAID_PLAN_ID } from "@/shared/billing";
+import {
+  AUTUMN_CHECKOUT_SESSION_PARAMS,
+  AUTUMN_PAID_PLAN_ID,
+} from "@/shared/billing";
 import { FREE_ONBOARDING_QUESTION_LIMIT } from "@/shared/onboardingChat";
 import {
   ChatComposer,
@@ -87,7 +90,12 @@ export function OnboardingChatConversation({
   // in the Worker (src/server.ts) before it reaches the DO; billing gates come
   // back as normal assistant messages rather than HTTP errors.
   const agent = useAgent({ agent: "onboarding-chat", name: projectId });
-  const { messages, sendMessage, status } = useAgentChat({ agent });
+  // Same constraint as SAM: dense tool-input deltas fan out one store update
+  // per chunk and trip React #185 unthrottled (cloudflare/agents#1361).
+  const { messages, sendMessage, status } = useAgentChat({
+    agent,
+    experimental_throttle: 50,
+  });
 
   // This chat is only ever the pre-upgrade free preview: once a user upgrades
   // they are routed into the GSC onboarding step and never return here, so
@@ -126,6 +134,7 @@ export function OnboardingChatConversation({
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
         successUrl: buildCheckoutSuccessUrl("/onboarding?step=3"),
+        checkoutSessionParams: AUTUMN_CHECKOUT_SESSION_PARAMS,
       });
     } catch (checkoutErr) {
       setCheckoutError(

@@ -1,15 +1,7 @@
 // Public surface of the DataForSEO integration. Internals live in the
-// per-section files (labs / serp / business / backlinks / ai / lighthouse),
-// which sit behind the single dynamic import in client.ts so the ~3 MB SDK
-// loads lazily; everything funnels through envelope.ts (status + billing) and
-// is metered in client.ts. Runtime values re-exported here must be SDK-free
-// (shared.ts) or lazy — a static value re-export from a section file would
-// drag the SDK back into the eager isolate startup graph.
-
-import {
-  loadDataforseoSections,
-  type DataforseoSections,
-} from "@/server/lib/dataforseo/client";
+// per-section files (labs / serp / business / backlinks / ai / lighthouse);
+// everything funnels through envelope.ts (status + billing) and is metered in
+// client.ts.
 
 export { createDataforseoClient } from "@/server/lib/dataforseo/client";
 
@@ -26,28 +18,20 @@ export {
   type LlmPlatform,
 } from "@/server/lib/dataforseo/shared";
 
+export { SERP_ANALYSIS_DEPTH } from "@/server/lib/dataforseo/serp";
+
 export { normalizeBacklinksTarget } from "@/server/lib/dataforseoBacklinksTarget";
 
-/** Lazy wrappers for the section fetchers called outside the metered client.
- * Task collection is free at DataForSEO (the task was charged at task_post), so
- * routing these through the metering seam would charge the customer twice. */
-export const fetchRankCheckTaskResult: DataforseoSections["fetchRankCheckTaskResult"] =
-  async (input) =>
-    (await loadDataforseoSections()).fetchRankCheckTaskResult(input);
-
-export const fetchBusinessDataTaskResult: DataforseoSections["fetchBusinessDataTaskResult"] =
-  async (input) =>
-    (await loadDataforseoSections()).fetchBusinessDataTaskResult(input);
-
-/** Free ($0) at DataForSEO, so it skips the metered client entirely — a
- *  zero-credit org can still list categories. */
-export const fetchBusinessListingsCategories: DataforseoSections["fetchBusinessListingsCategories"] =
-  async () =>
-    (await loadDataforseoSections()).fetchBusinessListingsCategories();
-
-export type {
-  BusinessTaskEndpoint,
-  BusinessTaskOutcome,
+// Section fetchers called outside the metered client. Task collection is free
+// at DataForSEO (the task was charged at task_post), so routing these through
+// the metering seam would charge the customer twice; business categories are
+// free ($0), so a zero-credit org can still list them.
+export { fetchRankCheckTaskResult } from "@/server/lib/dataforseo/serp";
+export {
+  fetchBusinessDataTaskResult,
+  fetchBusinessListingsCategories,
+  type BusinessTaskEndpoint,
+  type BusinessTaskOutcome,
 } from "@/server/lib/dataforseo/business";
 
 export type {

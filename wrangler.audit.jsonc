@@ -1,0 +1,83 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Auxiliary worker: the site-audit engine (src/audit-worker.ts) — the
+  // SiteAuditWorkflow orchestrator plus the per-audit AuditScratchpad DO.
+  // Must live at the repo root: wrangler resolves .env.local / .dev.vars
+  // relative to this file's directory, so a nested config would never see
+  // local secrets.
+  "name": "open-seo-audit",
+  "main": "src/audit-worker.ts",
+  // Only cross-script bindings from the app worker reach this worker.
+  "workers_dev": false,
+  // Match the main worker's runtime exactly.
+  "compatibility_date": "2025-09-02",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true,
+    },
+  },
+  // This worker is the code home of the site-audit workflow; the app worker
+  // binds to it cross-script via script_name (see wrangler.jsonc).
+  "workflows": [
+    {
+      "name": "site-audit-workflow",
+      "binding": "SITE_AUDIT_WORKFLOW",
+      "class_name": "SiteAuditWorkflow",
+    },
+  ],
+  // Per-audit crawl scratchpad: frontier, link edges, and a slim page mirror
+  // in the DO's SQLite. Destroyed at finalize; self-cleans via alarm if the
+  // audit dies. The app worker binds cross-script for cancel + GDPR erasure.
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "AUDIT_SCRATCHPAD",
+        "class_name": "AuditScratchpad",
+      },
+    ],
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["AuditScratchpad"],
+    },
+  ],
+  // This config serves local dev and Docker self-host only; Alchemy
+  // deployments provision the audit worker from alchemy.run.ts and never read
+  // these ids. Mirror any DB/KV/R2 resource-id edits you make in
+  // wrangler.jsonc into this file too — both workers share the same D1/KV/R2
+  // (no OAUTH_KV here; only the app worker runs OAuth), and miniflare derives
+  // local storage filenames from these ids.
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+    },
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "open-seo",
+      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "migrations_dir": "drizzle",
+    },
+  ],
+  // Postgres scale path — same rules as wrangler.jsonc: only local Postgres
+  // dev reads this block. Uncomment together with the block in wrangler.jsonc
+  // per docs/LOCAL_POSTGRES.md.
+  // "hyperdrive": [
+  //   {
+  //     "binding": "HYPERDRIVE",
+  //     "id": "9d64ccfb559f44449ce52a143912f898",
+  //     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
+  //   },
+  // ],
+  "r2_buckets": [
+    {
+      "bucket_name": "open-seo",
+      "binding": "R2",
+    },
+  ],
+}

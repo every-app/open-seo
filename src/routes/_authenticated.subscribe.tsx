@@ -10,7 +10,9 @@ import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getSubscribeRouteState } from "@/client/features/billing/route-state";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import { normalizeAuthRedirect } from "@/lib/auth-redirect";
+import { useCanManageBilling } from "@/client/features/team/organizationQueries";
 import {
+  AUTUMN_CHECKOUT_SESSION_PARAMS,
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
@@ -58,6 +60,10 @@ function SubscribePage() {
       enabled: hasSession,
     },
   });
+
+  // Checkout is owner-only; other members hitting the paywall are pointed at
+  // their organization owner instead of a Subscribe button that would 403.
+  const canManageBilling = useCanManageBilling();
 
   // Read managed access from the already-loaded Autumn customer (local, no API
   // call) instead of a separate server round-trip. Self-hosted has no Autumn
@@ -195,6 +201,7 @@ function SubscribePage() {
         planId: AUTUMN_PAID_PLAN_ID,
         redirectMode: "always",
         successUrl: successUrl.toString(),
+        checkoutSessionParams: AUTUMN_CHECKOUT_SESSION_PARAMS,
       });
     } catch (err) {
       setError(
@@ -268,13 +275,20 @@ function SubscribePage() {
 
         {error ? <p className="text-sm text-error">{error}</p> : null}
 
-        <button
-          className="btn btn-soft w-full"
-          disabled={isAttaching}
-          onClick={() => void handleSubscribe()}
-        >
-          {isAttaching ? "Redirecting..." : "Subscribe"}
-        </button>
+        {canManageBilling ? (
+          <button
+            className="btn btn-soft w-full"
+            disabled={isAttaching}
+            onClick={() => void handleSubscribe()}
+          >
+            {isAttaching ? "Redirecting..." : "Subscribe"}
+          </button>
+        ) : (
+          <p className="text-sm text-base-content/60">
+            Only the organization owner can subscribe. Ask them to upgrade this
+            organization.
+          </p>
+        )}
 
         <p className="text-center text-xs text-base-content/50">
           <span

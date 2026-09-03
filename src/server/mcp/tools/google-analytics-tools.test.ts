@@ -253,6 +253,7 @@ describe("Google Analytics MCP tools", () => {
       },
       comparison: {},
       trend: [],
+      warnings: [],
     });
     mocks.getMeasurementHealth.mockResolvedValue({
       status: "ok",

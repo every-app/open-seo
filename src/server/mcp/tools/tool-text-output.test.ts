@@ -1,13 +1,21 @@
+/* eslint-disable max-lines, max-lines-per-function -- one spec covers every service-backed MCP text table */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as researchTools from "./dataforseo-research-tools";
 import { getBacklinksOverviewTool } from "./get-backlinks-overview";
 import { getBacklinksProfileTool } from "./get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "./get-domain-keyword-suggestions";
+import {
+  getGoogleAnalyticsOrganicLandingPagesTool,
+  getGoogleAnalyticsOrganicOverviewTool,
+  getGoogleAnalyticsPagePerformanceTool,
+  getGoogleAnalyticsTrafficAcquisitionTool,
+} from "./google-analytics-tools";
 import { getRankTrackerTool } from "./get-rank-tracker";
 import { getBusinessUpdatesTool } from "./local-seo-tools";
 import { getSerpResultsTool } from "./get-serp-results";
 import { researchKeywordsTool } from "./research-keywords";
 import { makeToolContext, textContent } from "./tool-test-support";
+import { makeGa4ReportResult } from "@/server/features/ga4/services/ga4-test-fixtures";
 import type * as backlinksTargetModule from "@/server/lib/dataforseoBacklinksTarget";
 
 // Verifies that each tool renders its actual row data into the text content
@@ -29,6 +37,8 @@ const mocks = vi.hoisted(() => ({
   getLatestResults: vi.fn(),
   getTracker: vi.fn(),
   getConfigs: vi.fn(),
+  runGa4Report: vi.fn(),
+  getOrganicOverview: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -42,6 +52,7 @@ vi.mock("@/server/lib/dataforseo", async () => {
     createDataforseoClient: mocks.createDataforseoClient,
     fetchBusinessDataTaskResult: mocks.fetchBusinessDataTaskResult,
     normalizeBacklinksTarget: targets.normalizeBacklinksTarget,
+    SERP_ANALYSIS_DEPTH: 20,
   };
 });
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -78,6 +89,14 @@ vi.mock("@/server/features/rank-tracking/services/RankTrackingService", () => ({
   RankTrackingService: {
     getTracker: mocks.getTracker,
     getConfigs: mocks.getConfigs,
+  },
+}));
+vi.mock("@/server/features/ga4/services/Ga4ReportingService", () => ({
+  Ga4ReportingService: { runReport: mocks.runGa4Report },
+}));
+vi.mock("@/server/features/ga4/services/Ga4OrganicOverviewService", () => ({
+  Ga4OrganicOverviewService: {
+    getOrganicOverview: mocks.getOrganicOverview,
   },
 }));
 
@@ -385,6 +404,268 @@ describe("MCP tool text output (service-backed tools)", () => {
     expect(out).toContain("rank | domain | title | url");
     expect(out).toContain(
       "1 | example.com | Best SEO Tools | https://example.com/best",
+    );
+  });
+
+  it("get_serp_results crawls and returns rows to the requested depth", async () => {
+    const live = vi.fn().mockResolvedValue(
+      Array.from({ length: 40 }, (_, index) => ({
+        type: "organic",
+        rank_absolute: index + 1,
+        title: `Result ${index + 1}`,
+        url: `https://example.com/${index + 1}`,
+        domain: "example.com",
+        description: "desc",
+      })),
+    );
+    mocks.createDataforseoClient.mockReturnValue({ serp: { live } });
+
+    const result = await getSerpResultsTool.handler(
+      {
+        projectId: "project_1",
+        queries: [{ keyword: "seo tools" }],
+        depth: 30,
+      },
+      toolContext,
+    );
+
+    expect(live).toHaveBeenCalledWith(expect.objectContaining({ depth: 30 }));
+    // Rows are trimmed to the depth that was crawled, not the fixed top 20.
+    expect(textContent(result)).toContain('"seo tools" (30 results)');
+  });
+
+  it("get_google_analytics_organic_landing_pages renders report rows in the text table", async () => {
+    mocks.runGa4Report.mockResolvedValue(
+      makeGa4ReportResult({
+        rowCount: 2,
+        totalRowCount: 2,
+        rows: [
+          {
+            hostName: "example.com",
+            landingPage: "/home",
+            sessions: 12,
+            activeUsers: 9,
+          },
+          {
+            hostName: "example.com",
+            landingPage: "/blog",
+            sessions: 4,
+            activeUsers: 3,
+          },
+        ],
+        request: {
+          dimensions: ["hostName", "landingPage"],
+          metrics: ["sessions", "activeUsers"],
+        },
+      }),
+    );
+
+    const result = await getGoogleAnalyticsOrganicLandingPagesTool.handler(
+      { projectId: "project_1", limit: 100, offset: 0 },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      [
+        "Organic landing pages: 2 of 2 rows for 2026-07-09 through 2026-08-05.",
+        "hostName | landingPage | sessions | activeUsers",
+        "example.com | /home | 12 | 9",
+        "example.com | /blog | 4 | 3",
+      ].join("\n"),
+    );
+  });
+
+  it("get_google_analytics_organic_landing_pages renders every fetched row and points at offset paging", async () => {
+    const rows = Array.from({ length: 16 }, (_, index) => ({
+      hostName: "example.com",
+      landingPage: `/p/${index + 1}`,
+      sessions: 16 - index,
+    }));
+    mocks.runGa4Report.mockResolvedValue(
+      makeGa4ReportResult({
+        rowCount: 16,
+        totalRowCount: 40,
+        rows,
+        pageInfo: { offset: 0, limit: 16, hasMore: true, nextOffset: 16 },
+        request: {
+          dimensions: ["hostName", "landingPage"],
+          metrics: ["sessions"],
+        },
+      }),
+    );
+
+    const result = await getGoogleAnalyticsOrganicLandingPagesTool.handler(
+      { projectId: "project_1", limit: 16, offset: 0 },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      [
+        "Organic landing pages: 16 of 40 rows for 2026-07-09 through 2026-08-05. More rows are available; call again with offset to page through them.",
+        "hostName | landingPage | sessions",
+        ...rows.map(
+          (row) => `${row.hostName} | ${row.landingPage} | ${row.sessions}`,
+        ),
+      ].join("\n"),
+    );
+    expect(result.structuredContent).toMatchObject({ rows });
+  });
+
+  it("get_google_analytics_page_performance names the Organic Search filter when empty", async () => {
+    mocks.runGa4Report.mockResolvedValue(
+      makeGa4ReportResult({
+        request: {
+          reportKind: "page_performance",
+          channel: "organic_search",
+          dimensions: ["hostName", "pagePath"],
+          metrics: ["screenPageViews"],
+        },
+      }),
+    );
+
+    const result = await getGoogleAnalyticsPagePerformanceTool.handler(
+      {
+        projectId: "project_1",
+        includeDate: false,
+        channel: "organic_search",
+        limit: 100,
+        offset: 0,
+      },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      "Page performance: 0 of 0 rows for 2026-07-09 through 2026-08-05. This report is filtered to Organic Search. Pass channel=all to include every channel.",
+    );
+  });
+
+  it("get_google_analytics_organic_landing_pages names Organic Search without a channel argument", async () => {
+    mocks.runGa4Report.mockResolvedValue(makeGa4ReportResult());
+
+    const result = await getGoogleAnalyticsOrganicLandingPagesTool.handler(
+      { projectId: "project_1", limit: 100, offset: 0 },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      "Organic landing pages: 0 of 0 rows for 2026-07-09 through 2026-08-05. This report is limited to Organic Search.",
+    );
+  });
+
+  it("get_google_analytics_organic_landing_pages states an end-date clamp", async () => {
+    mocks.runGa4Report.mockResolvedValue(
+      makeGa4ReportResult({ warnings: ["end_date_clamped"] }),
+    );
+
+    const result = await getGoogleAnalyticsOrganicLandingPagesTool.handler(
+      { projectId: "project_1", limit: 100, offset: 0 },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      "Organic landing pages: 0 of 0 rows for 2026-07-09 through 2026-08-05. The requested endDate was moved back to 2026-08-05, the last complete Analytics day. This report is limited to Organic Search.",
+    );
+  });
+
+  it("get_google_analytics_traffic_acquisition does not mention Organic Search when empty", async () => {
+    mocks.runGa4Report.mockResolvedValue(
+      makeGa4ReportResult({
+        request: {
+          reportKind: "traffic_acquisition",
+          channel: "all",
+          dimensions: ["sessionDefaultChannelGroup"],
+          metrics: ["sessions"],
+        },
+      }),
+    );
+
+    const result = await getGoogleAnalyticsTrafficAcquisitionTool.handler(
+      {
+        projectId: "project_1",
+        breakdown: "channel_group",
+        comparePreviousPeriod: false,
+        limit: 100,
+        offset: 0,
+      },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      "Traffic acquisition: 0 of 0 rows for 2026-07-09 through 2026-08-05.",
+    );
+  });
+
+  it("get_google_analytics_organic_overview renders current and previous totals", async () => {
+    mocks.getOrganicOverview.mockResolvedValue({
+      status: "ok",
+      request: {
+        resolvedDateRange: { startDate: "2026-07-09", endDate: "2026-08-05" },
+        previousDateRange: { startDate: "2026-06-11", endDate: "2026-07-08" },
+      },
+      warnings: [],
+      current: {
+        sessions: 120,
+        activeUsers: 80,
+        engagedSessions: 70,
+        engagementRate: 0.58,
+        keyEvents: 9,
+        transactions: 2,
+        purchaseRevenue: 40.5,
+      },
+      previous: {
+        sessions: 100,
+        activeUsers: 70,
+        engagedSessions: 60,
+        engagementRate: 0.5,
+        keyEvents: 8,
+        transactions: 1,
+        purchaseRevenue: 20,
+      },
+      comparison: {},
+      trend: [{ date: "20260709", sessions: 5 }],
+    });
+
+    const result = await getGoogleAnalyticsOrganicOverviewTool.handler(
+      { projectId: "project_1", trend: "daily" },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      [
+        "Organic overview for 2026-07-09 through 2026-08-05, compared with 2026-06-11 through 2026-07-08.",
+        "metric | current | previous",
+        "sessions | 120 | 100",
+        "activeUsers | 80 | 70",
+        "engagedSessions | 70 | 60",
+        "engagementRate | 0.58 | 0.50",
+        "keyEvents | 9 | 8",
+        "transactions | 2 | 1",
+        "purchaseRevenue | 40.50 | 20",
+      ].join("\n"),
+    );
+  });
+
+  it("get_google_analytics_organic_overview states a truncated trend and names Organic Search when there is no current row", async () => {
+    mocks.getOrganicOverview.mockResolvedValue({
+      status: "ok",
+      request: {
+        resolvedDateRange: { startDate: "2026-07-09", endDate: "2026-08-05" },
+        previousDateRange: { startDate: "2026-06-11", endDate: "2026-07-08" },
+      },
+      warnings: ["trend_truncated"],
+      current: null,
+      previous: null,
+      comparison: {},
+      trend: [],
+    });
+
+    const result = await getGoogleAnalyticsOrganicOverviewTool.handler(
+      { projectId: "project_1", trend: "daily" },
+      toolContext,
+    );
+
+    expect(textContent(result)).toEqual(
+      "Organic overview for 2026-07-09 through 2026-08-05, compared with 2026-06-11 through 2026-07-08. The trend was cut at 0 rows; use trend=weekly or a shorter date range for the full series. No Organic Search rows for this date range.",
     );
   });
 });

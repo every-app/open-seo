@@ -1,3 +1,5 @@
+/* eslint-disable max-lines -- every local-SEO tool is covered in this one spec, matching local-seo-tools.ts */
+import { sort } from "remeda";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -39,7 +41,7 @@ vi.mock("@/server/features/projects/services/ProjectService", () => ({
 
 const toolContext = makeToolContext();
 
-const byText = (a: string, b: string) => a.localeCompare(b);
+const sorted = (values: string[]) => sort(values, (a, b) => a.localeCompare(b));
 
 beforeEach(() => {
   mocks.getProjectForOrganization.mockResolvedValue({
@@ -252,11 +254,9 @@ describe("get_local_rank_grid", () => {
     // from the spacing (13z here) so each point's viewport spans its neighbours
     // instead of hiding businesses one grid step east or west.
     expect(
-      local.mock.calls
-        .map(([input]) => input.locationCoordinate)
-        .toSorted(byText),
+      sorted(local.mock.calls.map(([input]) => input.locationCoordinate)),
     ).toEqual(
-      [
+      sorted([
         "40.0180874,-74.0234532,13z",
         "40.0180874,-74,13z",
         "40.0180874,-73.9765468,13z",
@@ -266,7 +266,7 @@ describe("get_local_rank_grid", () => {
         "39.9819126,-74.0234532,13z",
         "39.9819126,-74,13z",
         "39.9819126,-73.9765468,13z",
-      ].toSorted(byText),
+      ]),
     );
     expect(local).toHaveBeenCalledWith(
       expect.objectContaining({

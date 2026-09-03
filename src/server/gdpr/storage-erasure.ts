@@ -1,8 +1,11 @@
 import { getAuth } from "@/lib/auth";
-import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import type { OnboardingChatAgent } from "@/server/features/onboarding/OnboardingChatAgent";
 import type { SamChatAgent } from "@/server/features/sam/SamChatAgent";
 import { captureServerError } from "@/server/lib/posthog";
+import {
+  DUB_REFERRED_ORG_KV_PREFIX,
+  DUB_REFERRED_USER_KV_PREFIX,
+} from "@/server/referrals/dub";
 import {
   AI_SEARCH_PROMPT_CACHE_NAMESPACE,
   cacheObjectPrefix,
@@ -203,13 +206,23 @@ async function eraseStorage(env: Env, payload: GdprStorageErasurePayload) {
       .destroyForErasure();
   }
   for (const auditId of payload.auditIds) {
-    await getAuditScratchpad(auditId).destroyForErasure();
+    // The scratchpad DO lives in the open-seo-audit worker; destroy is the
+    // same full wipe destroyForErasure performs.
+    await env.AUDIT_ENGINE.destroyScratchpad(auditId);
     await env.KV.delete(`audit-progress:${auditId}`);
   }
   // The autumn:customer-ensured KV markers are deliberately left alone: they
   // hold no personal data (org id key, "1" value), expire on their own 24h
   // TTL, and clearing them would let an in-flight authenticated request
   // re-create the Autumn customer before the Postgres delete lands.
+
+  // Dub referral pins key on user/org ids and store a referral click
+  // identifier. The Dub-side customer record (pseudonymous external id) is
+  // removed via the erasure runbook.
+  await env.KV.delete(`${DUB_REFERRED_USER_KV_PREFIX}${payload.userId}`);
+  for (const organizationId of payload.organizationIds) {
+    await env.KV.delete(`${DUB_REFERRED_ORG_KV_PREFIX}${organizationId}`);
+  }
 
   for (let index = 0; index < payload.r2Keys.length; index += 1_000) {
     await env.R2.delete(payload.r2Keys.slice(index, index + 1_000));
@@ -290,6 +303,8 @@ export async function handleGdprStorageErasure(
     // Raw fetch handlers run outside the server-function middleware, so
     // nothing else reports failures here.
     console.error("gdpr.storage-erasure failed:", error);
+    // Deliberately anonymous: this request erases the user, so keying the
+    // exception to their distinct id would recreate the person profile.
     await captureServerError(error, { source: "gdpr_storage_erasure" });
     return Response.json({ error: "Erasure failed" }, { status: 500 });
   }

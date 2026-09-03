@@ -6,6 +6,7 @@ import {
   type Ga4PropertySelection,
 } from "@/client/features/ga4/Ga4PropertyPicker";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
+import { GoogleLinkErrorAlert } from "@/client/features/integrations/GoogleLinkErrorAlert";
 import { GoogleOAuthSetupWarning } from "@/client/features/integrations/GoogleOAuthSetupWarning";
 import { IntegrationConnectionCard } from "@/client/features/integrations/IntegrationConnectionCard";
 import { GoogleAnalyticsLogo } from "@/client/features/integrations/GoogleProductLogos";
@@ -122,6 +123,7 @@ export function GoogleAnalyticsConnectionCard({
                 : "disconnected"
         }
       >
+        <GoogleLinkErrorAlert provider="ga4" className="mb-4" />
         {connectionQuery.isLoading ? (
           <div className="flex items-center gap-2 text-sm text-base-content/50">
             <span className="loading loading-spinner loading-sm" />

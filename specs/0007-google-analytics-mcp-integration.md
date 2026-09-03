@@ -127,12 +127,14 @@ common input:
 | `offset`    | Non-negative integer; default 0                 |
 
 With no explicit dates, the range is the last 28 complete days in the GA4
-property time zone. Explicit ranges are inclusive. The report builder caps the
-end at the last complete property day and moves the start forward when the
-range exceeds 90 days. The response returns requested and resolved dates plus
-`end_date_clamped` or `start_date_clamped` warnings. Invalid date formats,
-reversed dates, and a single date without its pair return `validation_error`
-before an API call.
+property time zone. Explicit ranges are inclusive and honored in full; there is
+no maximum range. The report builder caps the end at the last complete property
+day. The response returns requested and resolved dates plus an
+`end_date_clamped` warning, which the text output also states. The organic
+overview trend is capped at 1,000 rows and reports `trend_truncated` (also
+stated in the text) when a range exceeds that. Invalid date
+formats, reversed dates, and a single date without its pair return
+`validation_error` before an API call.
 
 Only these tool-specific inputs are accepted:
 

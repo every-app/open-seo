@@ -23,6 +23,7 @@ import {
   AUTUMN_WEBHOOK_PATH,
   handleAutumnWebhookRequest,
 } from "@/server/billing/autumn-webhook";
+import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
@@ -177,15 +178,14 @@ function handleFetch(
   return appFetch(request);
 }
 
-// Export Workflow classes as named exports
-export { SiteAuditWorkflow } from "./server/workflows/SiteAuditWorkflow";
+// Export Workflow classes as named exports. SiteAuditWorkflow and the
+// AuditScratchpad DO live in the open-seo-audit aux worker
+// (src/audit-worker.ts); this worker reaches them via cross-script bindings.
 export { RankCheckWorkflow } from "./server/workflows/RankCheckWorkflow";
 // Durable Object class for the onboarding strategy chat (Agents SDK).
 export { OnboardingChatAgent } from "./server/features/onboarding/OnboardingChatAgent";
 // Durable Object class for the SAM in-app agent (Agents SDK).
 export { SamChatAgent } from "./server/features/sam/SamChatAgent";
-// Durable Object class for the per-audit crawl scratchpad.
-export { AuditScratchpad } from "./server/features/audit/AuditScratchpad";
 
 // Daily OAuth KV garbage collection; must match a trigger in wrangler.jsonc.
 const MCP_OAUTH_PURGE_CRON = "17 3 * * *";
@@ -208,6 +208,14 @@ export default {
           // The sweep only advances past live records via deletions; a
           // persistent incomplete scan means the keyspace outgrew the batch.
           console.warn("[mcp-oauth] purge did not cover the full keyspace");
+        }
+
+        // Daily referral-sale sweep: catches paid Autumn invoices the
+        // billing.updated webhook path misses (renewals, one-time top-ups).
+        try {
+          await sweepDubReferredOrganizations();
+        } catch (err) {
+          console.error("[cron] Dub referral sale sweep failed:", err);
         }
       }
       return;

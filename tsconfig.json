@@ -7,7 +7,10 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "lib": ["DOM", "DOM.Iterable", "ES2023"],
+    // ES2022 is the browser-support floor: ES2023 array methods (toSorted,
+    // toReversed, findLast, ...) crash Chromium <110. Don't bump this to fix a
+    // missing-method error — use Remeda's sort/sortBy/findLast instead.
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,

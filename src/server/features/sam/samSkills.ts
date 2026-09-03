@@ -1,3 +1,4 @@
+import { sort } from "remeda";
 import { parse as parseYaml } from "yaml";
 import { z } from "zod";
 import type { SkillSource } from "agents/skills";
@@ -75,10 +76,12 @@ let cachedSource: SkillSource | undefined;
 
 export function buildSamSkillSource(): SkillSource {
   if (cachedSource) return cachedSource;
-  const skills = Object.entries(skillFiles)
-    .map(([path, raw]) => parseSkill(path, raw))
-    .filter((skill): skill is SamSkill => skill !== null)
-    .toSorted((a, b) => a.name.localeCompare(b.name));
+  const skills = sort(
+    Object.entries(skillFiles)
+      .map(([path, raw]) => parseSkill(path, raw))
+      .filter((skill): skill is SamSkill => skill !== null),
+    (a, b) => a.name.localeCompare(b.name),
+  );
 
   return (cachedSource = {
     id: "openseo-public-skills",

@@ -17,6 +17,8 @@
   "rules": {
     "react/react-in-jsx-scope": "off",
     "react/jsx-uses-react": "off",
+    // Flags mutating .sort(); its suggested .toSorted() fix doesn't compile
+    // here (lib is ES2022) — fix with Remeda's sort/sortBy instead.
     "unicorn/no-array-sort": "error",
     "typescript/no-explicit-any": "error",
     "typescript/consistent-type-imports": "error",

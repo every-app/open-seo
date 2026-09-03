@@ -11,6 +11,7 @@ import {
   auditIssues,
   auditLighthouseResults,
   auditPages,
+  projects,
 } from "@/db/schema";
 import { executeInBatches } from "@/db/runBatch";
 import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
@@ -340,15 +341,19 @@ async function getAuditsByProject(projectId: string) {
   return rows.map(({ audit }) => audit);
 }
 
-async function getAuditUsageForUser(userId: string) {
-  const rows = await db.query.audits.findMany({
-    where: eq(audits.startedByUserId, userId),
-    columns: {
-      status: true,
-      pagesTotal: true,
-      lighthouseTotal: true,
-    },
-  });
+// Org-scoped: the free-plan quota belongs to the org (the Autumn customer),
+// so usage must aggregate across every member — counting per starting user
+// would multiply the free ceiling by the member count.
+async function getAuditUsageForOrganization(organizationId: string) {
+  const rows = await db
+    .select({
+      status: audits.status,
+      pagesTotal: audits.pagesTotal,
+      lighthouseTotal: audits.lighthouseTotal,
+    })
+    .from(audits)
+    .innerJoin(projects, eq(audits.projectId, projects.id))
+    .where(eq(projects.organizationId, organizationId));
 
   return {
     capacityUnits: rows.reduce(
@@ -437,7 +442,7 @@ export const AuditRepository = {
   countBlockedPages,
   hasPagesForAudit,
   getAuditsByProject,
-  getAuditUsageForUser,
+  getAuditUsageForOrganization,
   getAuditResultsForProject,
   getLighthouseResultById,
   deleteAuditForProject,

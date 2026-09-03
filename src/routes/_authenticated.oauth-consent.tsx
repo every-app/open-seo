@@ -17,7 +17,7 @@ const SCOPES = [
   {
     icon: KeyRound,
     label: "Act on your behalf via MCP",
-    description: "Run tools and write results back to your workspace.",
+    description: "Run tools and write results back to your organization.",
   },
 ];
 

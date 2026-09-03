@@ -20,12 +20,16 @@ type ExceptionEntry = {
   stacktrace?: { frames?: unknown[] };
 };
 
-// Unactionable exceptions we don't want polluting error tracking. They share
+// Unactionable exceptions we don't want polluting error tracking. Most share
 // the trait of not being our code: browser extensions inject promise rejections
 // and cross-origin scripts surface as a detail-less "Script error.", while the
 // global onerror handler synthesizes a stackless "undefined" when it fires
 // without a real Error object. Real app errors always carry a stack, so the
 // "undefined" rule is gated on synthetic + no frames to avoid false drops.
+// The rest are expected cancellations: TanStack Query throws "CancelledError"
+// when a route load is abandoned mid-flight (navigating away), which is normal
+// behavior, not a failure. Matched exactly so a real error that merely mentions
+// cancellation still gets captured.
 function isIgnorableException(
   properties: Record<string, unknown> | undefined,
 ): boolean {
@@ -36,6 +40,14 @@ function isIgnorableException(
     if (value.includes("Object Not Found Matching Id")) return true;
     if (value === "Script error.") return true;
     if (value.includes("signal is aborted without reason")) return true;
+    // ResizeObserver's loop warning is benign by spec (the browser defers
+    // delivery to the next frame) but surfaces as an error. Caveat: this also
+    // mutes a real ResizeObserver->setState feedback loop, if we ship one.
+    if (value.includes("ResizeObserver loop")) return true;
+    // The PostHog SDK's own network timeouts — capturing them just makes error
+    // tracking report on itself.
+    if (value.includes("PostHog request timed out")) return true;
+    if (value === "CancelledError") return true;
     const frames = entry?.stacktrace?.frames;
     return (
       value === "undefined" &&

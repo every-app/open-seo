@@ -10,6 +10,7 @@ const ensuredUserContextSchema: z.ZodType<EnsuredUserContext> = z.object({
   userEmail: z.string(),
   emailVerified: z.boolean(),
   organizationId: z.string(),
+  role: z.string(),
   project: z.any().optional(),
 });
 

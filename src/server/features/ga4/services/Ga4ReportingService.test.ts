@@ -134,7 +134,7 @@ describe("Ga4ReportingService", () => {
     });
   });
 
-  it("clamps explicit dates and nulls restricted metrics", async () => {
+  it("clamps a future endDate, keeps a long startDate, and nulls restricted metrics", async () => {
     mocks.runReport.mockResolvedValue({
       ...landingHeaders,
       rows: [
@@ -168,10 +168,10 @@ describe("Ga4ReportingService", () => {
     );
 
     expect(result.request.resolvedDateRange).toEqual({
-      startDate: "2026-05-08",
+      startDate: "2025-01-01",
       endDate: "2026-08-05",
     });
-    expect(result.warnings).toEqual(["end_date_clamped", "start_date_clamped"]);
+    expect(result.warnings).toEqual(["end_date_clamped"]);
     expect(result.rows[0]?.purchaseRevenue).toBeNull();
   });
 

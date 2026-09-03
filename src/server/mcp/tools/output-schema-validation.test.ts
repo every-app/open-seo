@@ -4,6 +4,8 @@ import { objectSchema } from "@/server/mcp/output-schemas";
 import * as researchTools from "./dataforseo-research-tools";
 import * as localSeoTools from "./local-seo-tools";
 import { getBacklinksProfileTool } from "./get-backlinks-profile";
+import { getSearchConsolePerformanceTool } from "./search-console-tools";
+import { runSiteAuditTool } from "./site-audit-tools";
 import { makeToolContext } from "./tool-test-support";
 
 const mocks = vi.hoisted(() => ({
@@ -13,6 +15,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
+  DurableObject: class {
+    readonly ctx = null;
+  },
 }));
 
 vi.mock("@/server/features/projects/services/ProjectService", () => ({
@@ -138,6 +143,37 @@ describe("DataForSEO research tool output schemas", () => {
         organizationId: "org_123",
         projectId: "project_123",
         url: "https://app.example.com/p/project_123/backlinks",
+      },
+    });
+
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("MCP output schemas with expected missing fields", () => {
+  // Google omits position for the discover and googleNews search types.
+  it("accepts Search Console rows without a position", async () => {
+    const schema = objectSchema(
+      getSearchConsolePerformanceTool.config.outputSchema,
+    );
+
+    const result = await schema.safeParseAsync({
+      ok: true,
+      rows: [{ clicks: 0, impressions: 1, ctr: 0 }],
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  // Refusals (for example, audit capacity) never start an audit, so they
+  // have no id to report.
+  it("accepts a site-audit refusal without an audit id", async () => {
+    const schema = objectSchema(runSiteAuditTool.config.outputSchema);
+
+    const result = await schema.safeParseAsync({
+      meta: {
+        organizationId: "org_123",
+        projectId: "project_123",
       },
     });
 

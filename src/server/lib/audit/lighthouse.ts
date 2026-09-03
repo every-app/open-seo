@@ -22,6 +22,32 @@ type LighthouseFetchResult = {
   payloadJson: string | null;
 };
 
+/** A check that produced no payload — provider error, or a failed fetch step. */
+export function failedLighthouseFetch(
+  url: string,
+  pageId: string,
+  strategy: "mobile" | "desktop",
+  errorMessage: string,
+): LighthouseFetchResult {
+  return {
+    result: {
+      url,
+      pageId,
+      strategy,
+      performanceScore: null,
+      accessibilityScore: null,
+      bestPracticesScore: null,
+      seoScore: null,
+      lcpMs: null,
+      cls: null,
+      inpMs: null,
+      ttfbMs: null,
+      errorMessage,
+    },
+    payloadJson: null,
+  };
+}
+
 export async function fetchLighthouseResult(
   url: string,
   pageId: string,
@@ -50,24 +76,16 @@ export async function fetchLighthouseResult(
     };
   } catch (error) {
     const failed = error instanceof Error ? error : new Error(String(error));
-    console.error(`Lighthouse failed for ${url}:`, failed.message);
-    return {
-      result: {
-        url,
-        pageId,
-        strategy,
-        performanceScore: null,
-        accessibilityScore: null,
-        bestPracticesScore: null,
-        seoScore: null,
-        lcpMs: null,
-        cls: null,
-        inpMs: null,
-        ttfbMs: null,
-        errorMessage: failed.message,
-      },
-      payloadJson: null,
-    };
+    // Lighthouse runtime errors (ERRORED_DOCUMENT_REQUEST, NOT_HTML, NO_FCP) mean the
+    // tenant's page didn't load for the provider's Chrome. The failure is already
+    // surfaced on the audit row, so there is nothing for us to act on.
+    const log = failed.message.includes(
+      "Lighthouse encountered an error with the following code",
+    )
+      ? console.warn
+      : console.error;
+    log(`Lighthouse failed for ${url} (${strategy}): ${failed.message}`);
+    return failedLighthouseFetch(url, pageId, strategy, failed.message);
   }
 }
 

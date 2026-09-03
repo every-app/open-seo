@@ -33,6 +33,12 @@ pnpm install
 pnpm run deploy
 ```
 
+`pnpm run deploy` also deploys a second worker, `open-seo-audit`, which runs site audits. Copy your `DB`, `KV`, and `R2` bindings from `wrangler.jsonc` into `wrangler.audit.jsonc` (it needs no `OAUTH_KV`) — the deploy fails on ids that don't exist in your account. Then set its DataForSEO key once, or every Lighthouse check in an audit fails:
+
+```bash
+pnpm exec wrangler secret put DATAFORSEO_API_KEY --name open-seo-audit
+```
+
 ## Giving teammates access
 
 1. Open Cloudflare Zero Trust.
@@ -59,7 +65,7 @@ Replace `open-seo` with your bucket name if you changed it.
 **Login fails or OpenSEO doesn't load.** Re-check, on your Worker under `Settings`:
 
 - `Domains & Routes`: `Cloudflare Access` is enabled for the `workers.dev` route.
-- `Variables & Secrets`: `TEAM_DOMAIN` (for example `https://your-team.cloudflareaccess.com`), `POLICY_AUD` (the Access application audience tag), and `DATAFORSEO_API_KEY` are set.
+- `Variables & Secrets`: `TEAM_DOMAIN` (for example `https://your-team.cloudflareaccess.com`), `POLICY_AUD` (the Access application audience tag), and `DATAFORSEO_API_KEY` are set. The `open-seo-audit` worker needs `DATAFORSEO_API_KEY` too.
 - Manual Wrangler deployments: the binding IDs in `wrangler.jsonc` match your resources.
 
 `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status. For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`.

@@ -176,6 +176,10 @@ export const serpAnalysisSchema = z.object({
   keyword: z.string().min(1),
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
+  // Only the two depths the app offers: the default top-20 snapshot, and the
+  // full 100 the SERP panel buys when a user pages past the loaded results.
+  // Each 10 of depth is another crawled Google page (~2.5 credits).
+  depth: z.union([z.literal(20), z.literal(100)]).default(20),
 });
 
 /* ------------------------------------------------------------------ */

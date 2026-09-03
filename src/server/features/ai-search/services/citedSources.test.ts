@@ -1,3 +1,4 @@
+import { identity, sortBy } from "remeda";
 import { describe, expect, it } from "vitest";
 import { deriveCitedSources } from "./citedSources";
 import type {
@@ -56,10 +57,12 @@ describe("deriveCitedSources", () => {
       mentions: 9,
       capturedVolume: 9000,
     });
-    expect(sources[0].keywords.map((k) => k.question).toSorted()).toEqual([
-      "best seo tools",
-      "cheap seo",
-    ]);
+    expect(
+      sortBy(
+        sources[0].keywords.map((k) => k.question),
+        identity(),
+      ),
+    ).toEqual(["best seo tools", "cheap seo"]);
   });
 
   it("dedupes sampled prompt examples and derives domains from urls", () => {

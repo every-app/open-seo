@@ -24,7 +24,7 @@ export function WorkspaceMergeBanner() {
     mutationFn: () => mergeLegacyWorkspaces(),
     onSuccess: ({ mergedWorkspaces }) => {
       toast.success(
-        `Migrated ${mergedWorkspaces} workspace${mergedWorkspaces === 1 ? "" : "s"} into the shared workspace.`,
+        `Migrated ${mergedWorkspaces} organization${mergedWorkspaces === 1 ? "" : "s"} into the shared organization.`,
       );
       // The merge changes projects, connections, and the banner's own status —
       // refetch everything rather than enumerating keys.
@@ -34,7 +34,7 @@ export function WorkspaceMergeBanner() {
       toast.error(
         getStandardErrorMessage(
           error,
-          "Couldn't migrate the workspaces. Try again.",
+          "Couldn't migrate the organizations. Try again.",
         ),
       ),
   });
@@ -57,7 +57,7 @@ export function WorkspaceMergeBanner() {
         disabled={mergeMutation.isPending}
         onClick={() => mergeMutation.mutate()}
       >
-        {mergeMutation.isPending ? "Migrating…" : "Migrate workspaces"}
+        {mergeMutation.isPending ? "Migrating…" : "Migrate organizations"}
       </button>
     </div>
   );

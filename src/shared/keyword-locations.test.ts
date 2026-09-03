@@ -1,3 +1,4 @@
+import { sort } from "remeda";
 import { describe, expect, it } from "vitest";
 import {
   LABS_LOCATION_OPTIONS,
@@ -63,7 +64,7 @@ describe("keyword locations", () => {
 
   it("keeps the picker sorted alphabetically with unique codes", () => {
     const labels = LOCATION_OPTIONS.map((option) => option.label);
-    expect(labels).toEqual(labels.toSorted((a, b) => a.localeCompare(b)));
+    expect(labels).toEqual(sort(labels, (a, b) => a.localeCompare(b)));
     const codes = LOCATION_OPTIONS.map((option) => option.code);
     expect(new Set(codes).size).toBe(codes.length);
   });

@@ -1,17 +1,5 @@
 import { z } from "zod";
-import {
-  BusinessDataBusinessListingsSearchLiveRequestInfo,
-  BusinessDataGoogleExtendedReviewsTaskPostRequestInfo,
-  BusinessDataGoogleMyBusinessInfoLiveRequestInfo,
-  BusinessDataGoogleMyBusinessUpdatesTaskPostRequestInfo,
-  BusinessDataGoogleQuestionsAndAnswersLiveRequestInfo,
-  BusinessDataGoogleReviewsTaskPostRequestInfo,
-  type BusinessDataBusinessListingsSearchLiveItem,
-} from "dataforseo-client";
-import {
-  businessDataApi,
-  businessDataTaskApi,
-} from "@/server/lib/dataforseo/core";
+import { dataforseoGet, dataforseoPost } from "@/server/lib/dataforseo/core";
 import {
   assertOk,
   buildTaskBilling,
@@ -19,12 +7,19 @@ import {
   isRecord,
   isTaskInProgress,
   type DataforseoApiResponse,
+  type DataforseoItemsTask,
   type DataforseoResponseLike,
   type DataforseoTaskLike,
 } from "@/server/lib/dataforseo/envelope";
 import { AppError } from "@/server/lib/errors";
 
-type BusinessListingItem = BusinessDataBusinessListingsSearchLiveItem;
+// Consumers pick fields generically (pickRowFields), so listing rows stay an
+// untyped record.
+type BusinessListingItem = Record<string, unknown>;
+
+// task_post creates a billed task. A 5xx does not prove the provider skipped
+// the charge, so those posts must never be replayed.
+const NO_RETRY = { maxServerErrorRetries: 0 } as const;
 
 /**
  * Location + language for the Google business_data endpoints. They accept
@@ -53,8 +48,10 @@ export async function fetchBusinessListingsSearch(input: {
   limit: number;
   offset?: number;
 }): Promise<DataforseoApiResponse<BusinessListingItem[]>> {
-  const response = await businessDataApi().businessListingsSearchLive([
-    new BusinessDataBusinessListingsSearchLiveRequestInfo({
+  const response = await dataforseoPost<
+    DataforseoItemsTask<BusinessListingItem>
+  >("/v3/business_data/business_listings/search/live", [
+    {
       categories: input.categories,
       title: input.title,
       location_coordinate: input.locationCoordinate,
@@ -63,7 +60,7 @@ export async function fetchBusinessListingsSearch(input: {
       order_by: input.orderBy,
       limit: input.limit,
       offset: input.offset,
-    }),
+    },
   ]);
   // "No Search Results" (40501) is a valid empty result for obscure
   // businesses/keywords — DataForSEO still charges for it, so treat it as an
@@ -106,14 +103,17 @@ export async function fetchQuestionsAnswers(input: {
   languageCode: string;
   depth: number;
 }): Promise<DataforseoApiResponse<Record<string, unknown>[]>> {
-  const response = await businessDataApi().googleQuestionsAndAnswersLive([
-    new BusinessDataGoogleQuestionsAndAnswersLiveRequestInfo({
-      keyword: input.keyword,
-      location_coordinate: input.locationCoordinate,
-      language_code: input.languageCode,
-      depth: input.depth,
-    }),
-  ]);
+  const response = await dataforseoPost(
+    "/v3/business_data/google/questions_and_answers/live",
+    [
+      {
+        keyword: input.keyword,
+        location_coordinate: input.locationCoordinate,
+        language_code: input.languageCode,
+        depth: input.depth,
+      },
+    ],
+  );
   // "No Search Results" (40501) is a valid empty result for obscure
   // businesses/keywords — DataForSEO still charges for it, so treat it as an
   // empty success instead of surfacing a charged-task error to the user.
@@ -127,13 +127,16 @@ export async function fetchQuestionsAnswers(input: {
 export async function fetchMyBusinessInfo(
   input: { keyword: string } & BusinessLocationInput,
 ): Promise<DataforseoApiResponse<Record<string, unknown> | null>> {
-  const response = await businessDataApi().googleMyBusinessInfoLive([
-    new BusinessDataGoogleMyBusinessInfoLiveRequestInfo({
-      keyword: input.keyword,
-      ...locationParams(input),
-      language_code: input.languageCode,
-    }),
-  ]);
+  const response = await dataforseoPost<DataforseoItemsTask<unknown>>(
+    "/v3/business_data/google/my_business_info/live",
+    [
+      {
+        keyword: input.keyword,
+        ...locationParams(input),
+        language_code: input.languageCode,
+      },
+    ],
+  );
   // 40501 = billed empty result: a business Google has no profile for.
   const task = assertOk(response, { treatNoResultsAsEmpty: true });
   const entry = task.result?.[0];
@@ -197,32 +200,40 @@ export async function postGoogleReviewsTask(
 ): Promise<DataforseoApiResponse<string>> {
   if (input.includeOtherSources) {
     return postedTaskId(
-      await businessDataTaskApi().googleExtendedReviewsTaskPost([
-        new BusinessDataGoogleExtendedReviewsTaskPostRequestInfo({
+      await dataforseoPost<DataforseoTaskLike & { id?: string }>(
+        "/v3/business_data/google/extended_reviews/task_post",
+        [
+          {
+            keyword: input.keyword,
+            cid: input.cid,
+            place_id: input.placeId,
+            ...locationParams(input),
+            language_code: input.languageCode,
+            depth: input.depth,
+            priority: TASK_PRIORITY_HIGH,
+          },
+        ],
+        NO_RETRY,
+      ),
+    );
+  }
+  return postedTaskId(
+    await dataforseoPost<DataforseoTaskLike & { id?: string }>(
+      "/v3/business_data/google/reviews/task_post",
+      [
+        {
           keyword: input.keyword,
           cid: input.cid,
           place_id: input.placeId,
           ...locationParams(input),
           language_code: input.languageCode,
           depth: input.depth,
+          sort_by: input.sortBy,
           priority: TASK_PRIORITY_HIGH,
-        }),
-      ]),
-    );
-  }
-  return postedTaskId(
-    await businessDataTaskApi().googleReviewsTaskPost([
-      new BusinessDataGoogleReviewsTaskPostRequestInfo({
-        keyword: input.keyword,
-        cid: input.cid,
-        place_id: input.placeId,
-        ...locationParams(input),
-        language_code: input.languageCode,
-        depth: input.depth,
-        sort_by: input.sortBy,
-        priority: TASK_PRIORITY_HIGH,
-      }),
-    ]),
+        },
+      ],
+      NO_RETRY,
+    ),
   );
 }
 
@@ -230,15 +241,19 @@ export async function postMyBusinessUpdatesTask(
   input: { keyword: string; depth: number } & BusinessLocationInput,
 ): Promise<DataforseoApiResponse<string>> {
   return postedTaskId(
-    await businessDataTaskApi().googleMyBusinessUpdatesTaskPost([
-      new BusinessDataGoogleMyBusinessUpdatesTaskPostRequestInfo({
-        keyword: input.keyword,
-        ...locationParams(input),
-        language_code: input.languageCode,
-        depth: input.depth,
-        priority: TASK_PRIORITY_HIGH,
-      }),
-    ]),
+    await dataforseoPost<DataforseoTaskLike & { id?: string }>(
+      "/v3/business_data/google/my_business_updates/task_post",
+      [
+        {
+          keyword: input.keyword,
+          ...locationParams(input),
+          language_code: input.languageCode,
+          depth: input.depth,
+          priority: TASK_PRIORITY_HIGH,
+        },
+      ],
+      NO_RETRY,
+    ),
   );
 }
 
@@ -257,13 +272,9 @@ export async function fetchBusinessDataTaskResult(input: {
   endpoint: BusinessTaskEndpoint;
   taskId: string;
 }): Promise<BusinessTaskOutcome> {
-  const api = businessDataApi();
-  const response =
-    input.endpoint === "reviews"
-      ? await api.googleReviewsTaskGet(input.taskId)
-      : input.endpoint === "extended_reviews"
-        ? await api.googleExtendedReviewsTaskGet(input.taskId)
-        : await api.googleMyBusinessUpdatesTaskGet(input.taskId);
+  const response = await dataforseoGet(
+    `/v3/business_data/google/${input.endpoint}/task_get/${encodeURIComponent(input.taskId)}`,
+  );
 
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
@@ -306,7 +317,9 @@ type BusinessCategoryRow = {
 export async function fetchBusinessListingsCategories(): Promise<
   DataforseoApiResponse<BusinessCategoryRow[]>
 > {
-  const response = await businessDataApi().businessListingsCategories();
+  const response = await dataforseoGet(
+    "/v3/business_data/business_listings/categories",
+  );
   const task = assertOk(response);
   // This endpoint puts rows directly on `result` rather than `result[0].items`.
   const rows = (task.result ?? []).flatMap((entry) => {

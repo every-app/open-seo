@@ -6,6 +6,7 @@ import {
   type RawLighthouseCategory,
   scoreToPercent,
   type StoredLighthousePayload,
+  storedLighthousePayloadSchema,
 } from "@/server/lib/lighthouseStoredPayload";
 
 export const requestCategories = [
@@ -17,77 +18,32 @@ export const requestCategories = [
 
 export type LighthouseStrategy = "mobile" | "desktop";
 
-const lighthouseAuditItemsSchema = z
-  .union([
-    z.array(z.record(z.string(), z.unknown())),
-    z.record(z.string(), z.unknown()),
-  ])
-  .transform((items) => (Array.isArray(items) ? items : [items]));
+const lighthouseResponseSchema = z.object({
+  requestedUrl: z.string().optional(),
+  finalUrl: z.string().optional(),
+  lighthouseVersion: z.string().optional(),
+  // Only the key map is copied here, so the multi-MB category/audit bodies stay
+  // as the provider's own objects. Deep-parsing them cloned the whole report a
+  // second time and pushed the audit worker over its memory limit.
+  categories: z
+    .record(z.string(), z.custom<RawLighthouseCategory>())
+    .optional(),
+  audits: z.record(z.string(), z.custom<RawLighthouseAudit>()).optional(),
+});
 
-const lighthouseAuditSchema = z
-  .object({
-    score: z.number().nullable().optional(),
-    displayValue: z.string().optional(),
-    numericValue: z.number().optional(),
-    title: z.string().optional(),
-    description: z.string().optional(),
-    scoreDisplayMode: z.string().optional(),
-    details: z
-      .object({
-        overallSavingsMs: z.number().optional(),
-        overallSavingsBytes: z.number().optional(),
-        items: lighthouseAuditItemsSchema.optional(),
-      })
-      .passthrough()
-      .optional(),
-  })
-  .passthrough();
+const dataforseoTaskSchema = z.object({
+  id: z.string().optional(),
+  cost: z.number().optional(),
+  status_code: z.number().optional(),
+  status_message: z.string().optional(),
+  result: z.array(lighthouseResponseSchema).optional(),
+});
 
-const lighthouseCategorySchema = z
-  .object({
-    score: z.number().nullable().optional(),
-    auditRefs: z
-      .array(
-        z
-          .object({
-            id: z.string().optional(),
-          })
-          .passthrough(),
-      )
-      .optional(),
-  })
-  .passthrough();
-
-const lighthouseResponseSchema = z
-  .object({
-    requestedUrl: z.string().optional(),
-    finalUrl: z.string().optional(),
-    lighthouseVersion: z.string().optional(),
-    categories: z
-      .record(z.string(), lighthouseCategorySchema)
-      .optional()
-      .default({}),
-    audits: z.record(z.string(), lighthouseAuditSchema).optional().default({}),
-  })
-  .passthrough();
-
-const dataforseoTaskSchema = z
-  .object({
-    id: z.string().optional(),
-    cost: z.number().optional(),
-    status_code: z.number().optional(),
-    status_message: z.string().optional(),
-    result: z.array(lighthouseResponseSchema).optional(),
-  })
-  .passthrough();
-
-const dataforseoLighthouseResponseSchema = z
-  .object({
-    status_code: z.number().optional(),
-    status_message: z.string().optional(),
-    tasks: z.array(dataforseoTaskSchema).optional(),
-  })
-  .passthrough();
+const dataforseoLighthouseResponseSchema = z.object({
+  status_code: z.number().optional(),
+  status_message: z.string().optional(),
+  tasks: z.array(dataforseoTaskSchema).optional(),
+});
 
 function summarizeZodIssues(error: z.ZodError, maxIssues = 3): string {
   return error.issues
@@ -103,6 +59,10 @@ export function parseDataforseoLighthousePayload(
   payload: unknown,
   input: { url: string; strategy: LighthouseStrategy },
 ): StoredLighthousePayload {
+  // Only the envelope scalars are validated up front. The report is reduced
+  // straight into the compact stored payload, which is then validated in full
+  // below — the same fields the old whole-report schema checked, at kilobyte
+  // size instead of multi-megabyte.
   const parsed = dataforseoLighthouseResponseSchema.safeParse(payload);
   if (!parsed.success) {
     throw new Error(
@@ -131,9 +91,8 @@ export function parseDataforseoLighthousePayload(
   }
 
   const fetchedAt = new Date().toISOString();
-  const categories: Record<string, RawLighthouseCategory> =
-    result.categories ?? {};
-  const audits: Record<string, RawLighthouseAudit> = result.audits ?? {};
+  const categories = result.categories ?? {};
+  const audits = result.audits ?? {};
   const issueReport = buildStoredLighthouseIssues({ audits, categories });
   const metrics = buildStoredLighthouseMetrics({ audits });
   const storedPayload: StoredLighthousePayload = {
@@ -165,6 +124,16 @@ export function parseDataforseoLighthousePayload(
   if (allScoresMissing) {
     throw new Error(
       `DataForSEO Lighthouse returned no category scores for ${storedPayload.metadata.finalUrl}`,
+    );
+  }
+
+  // Without this, an off-spec provider field (a numeric audit title, say) would
+  // be stored and then fail to parse on read, silently blanking the page's
+  // whole Lighthouse view instead of failing the check.
+  const validated = storedLighthousePayloadSchema.safeParse(storedPayload);
+  if (!validated.success) {
+    throw new Error(
+      `DataForSEO Lighthouse returned an invalid report: ${summarizeZodIssues(validated.error)}`,
     );
   }
 

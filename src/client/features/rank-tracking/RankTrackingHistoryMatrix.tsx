@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Loader2 } from "lucide-react";
+import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
 
 /**
@@ -131,9 +132,10 @@ function buildMatrix(cells: RankPositionMatrixCell[]): {
     }
     byRun.set(c.runId, c.position);
   }
-  const runs = [...runMap.entries()]
-    .map(([runId, checkedAt]) => ({ runId, checkedAt }))
-    .toSorted((a, b) => a.checkedAt.localeCompare(b.checkedAt));
+  const runs = sort(
+    [...runMap.entries()].map(([runId, checkedAt]) => ({ runId, checkedAt })),
+    (a, b) => a.checkedAt.localeCompare(b.checkedAt),
+  );
   return { runs, cellByKeyword };
 }
 

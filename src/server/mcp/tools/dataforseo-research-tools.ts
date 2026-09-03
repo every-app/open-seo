@@ -1,4 +1,5 @@
 /* eslint-disable max-lines */
+import { sort } from "remeda";
 import { z } from "zod";
 import {
   createDataforseoClient,
@@ -556,7 +557,7 @@ function sortCompetitors(
           ? "etv"
           : "visibility";
   const direction = sortBy === "avg_position" ? 1 : -1;
-  return items.toSorted((a, b) => {
+  return sort(items, (a, b) => {
     const aValue = typeof a[field] === "number" ? a[field] : 0;
     const bValue = typeof b[field] === "number" ? b[field] : 0;
     return (aValue - bValue) * direction;
@@ -590,7 +591,7 @@ function sortKeywordMetricRows(
   rows: McpKeywordMetricRow[],
   sortBy: NonNullable<GetKeywordMetricsArgs["sortBy"]> = "search_volume",
 ) {
-  return rows.toSorted((a, b) => {
+  return sort(rows, (a, b) => {
     const aValue = a[sortBy];
     const bValue = b[sortBy];
     const aNum = typeof aValue === "number" ? aValue : 0;

@@ -5,6 +5,7 @@ vi.mock("@/server/lib/runtime-env", () => ({
 }));
 
 import {
+  fetchLiveSerp,
   fetchRankCheckTaskResult,
   postRankCheckTasks,
 } from "@/server/lib/dataforseo/serp";
@@ -16,6 +17,43 @@ function parseDataforseoRequestBody(init: RequestInit | undefined): unknown {
   }
   return JSON.parse(body) as unknown;
 }
+
+describe("live SERP", () => {
+  // 40102 is the documented "No Search Results." code (40501 is "Invalid
+  // Field."). isNoResultsTask matches on the status message, not the code, so
+  // this stays correct whichever code DataForSEO attaches to the message.
+  it("returns an empty result for DataForSEO's no-results task", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn<typeof fetch>().mockResolvedValue(
+        Response.json({
+          status_code: 20000,
+          tasks: [
+            {
+              status_code: 40102,
+              status_message: "No Search Results.",
+              path: ["v3", "serp", "google", "organic", "live", "advanced"],
+              cost: 0.002,
+              result_count: 0,
+              result: [],
+            },
+          ],
+        }),
+      ),
+    );
+
+    await expect(
+      fetchLiveSerp({
+        keyword: "obscure query",
+        locationCode: 2840,
+        languageCode: "en",
+      }),
+    ).resolves.toMatchObject({
+      data: [],
+      billing: { costUsd: 0.002 },
+    });
+  });
+});
 
 describe("rank check task queue", () => {
   beforeEach(() => {

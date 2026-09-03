@@ -106,6 +106,7 @@ export function instrumentMcpToolHandler<TArgs>(
                 tool: toolName,
                 issues: formatValidationIssues(validation.error),
               },
+              context.auth.userId,
             ),
           );
         }
@@ -183,10 +184,14 @@ export function instrumentMcpToolHandler<TArgs>(
       if (shouldCaptureAppErrorCode(appError?.code)) {
         console.error(`mcp.tool error (${toolName}):`, error);
         waitUntil(
-          captureServerError(error, {
-            errorCode: appError?.code ?? "INTERNAL_ERROR",
-            tool: toolName,
-          }),
+          captureServerError(
+            error,
+            {
+              errorCode: appError?.code ?? "INTERNAL_ERROR",
+              tool: toolName,
+            },
+            context.auth.userId,
+          ),
         );
       }
       throw error;

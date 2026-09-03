@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { z } from "zod";
-import { serpApi } from "@/server/lib/dataforseo/core";
+import { dataforseoGet } from "@/server/lib/dataforseo/core";
 import { assertOk } from "@/server/lib/dataforseo/envelope";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 
@@ -95,7 +95,9 @@ function fillFromOrigin(iso: string): Promise<SerpLocationResult[]> {
 }
 
 async function fetchFromDataforseo(iso: string): Promise<SerpLocationResult[]> {
-  const response = await serpApi().googleLocationsCountry(iso);
+  const response = await dataforseoGet(
+    `/v3/serp/google/locations/${encodeURIComponent(iso)}`,
+  );
   const task = assertOk(response);
   return (task.result ?? [])
     .map((item) => locationItemSchema.safeParse(item))

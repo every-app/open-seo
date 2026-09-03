@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { identity, sortBy } from "remeda";
 import {
   AlertCircle,
   ArrowLeft,
@@ -90,7 +91,7 @@ function PromptExplorerPageInner({
       "prompt-explorer",
       projectId,
       trimmedPrompt,
-      urlState.models.toSorted().join(","),
+      sortBy(urlState.models, identity()).join(","),
       urlState.webSearch,
       urlState.webSearchCountryCode,
       urlState.highlightBrand.trim(),
@@ -132,7 +133,7 @@ function PromptExplorerPageInner({
     const key = [
       trimmedPrompt,
       urlState.highlightBrand.trim(),
-      urlState.models.toSorted().join(","),
+      sortBy(urlState.models, identity()).join(","),
       urlState.webSearch,
       urlState.webSearchCountryCode,
     ].join("|");

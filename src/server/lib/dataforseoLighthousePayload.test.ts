@@ -196,55 +196,71 @@ describe("parseDataforseoLighthousePayload", () => {
     ).toThrow("<root>");
   });
 
-  it("accepts audits whose details.items is an object", () => {
+  it("rejects a report whose audit fields are off-spec", () => {
     expect(() =>
       parseDataforseoLighthousePayload(
         {
           status_code: 20000,
-          status_message: "Ok.",
           tasks: [
             {
-              id: "task-1",
               status_code: 20000,
-              status_message: "Ok.",
-              cost: 0.00425,
               result: [
                 {
-                  requestedUrl: "https://everyapp.dev/",
-                  finalUrl: "https://everyapp.dev/",
-                  lighthouseVersion: "12.2.0",
                   categories: {
                     performance: {
                       score: 0.54,
-                      auditRefs: [{ id: "document-latency-insight" }],
+                      auditRefs: [{ id: "unused-javascript" }],
                     },
-                    accessibility: { score: 0.93, auditRefs: [] },
-                    "best-practices": { score: 0.79, auditRefs: [] },
-                    seo: { score: 0.92, auditRefs: [] },
                   },
                   audits: {
-                    "document-latency-insight": {
-                      title: "Document request latency",
-                      description: "Latency insight.",
-                      score: 0,
-                      scoreDisplayMode: "informative",
-                      details: {
-                        items: {
-                          latencyMs: 120,
-                        },
-                      },
-                    },
+                    "unused-javascript": { title: 42, score: 0 },
                   },
                 },
               ],
             },
           ],
         },
-        {
-          url: "https://everyapp.dev/",
-          strategy: "mobile",
-        },
+        { url: "https://everyapp.dev/", strategy: "mobile" },
       ),
-    ).not.toThrow();
+    ).toThrow("DataForSEO Lighthouse returned an invalid report");
+  });
+
+  it("reads audits whose details.items is a single object", () => {
+    const parsed = parseDataforseoLighthousePayload(
+      {
+        status_code: 20000,
+        tasks: [
+          {
+            status_code: 20000,
+            result: [
+              {
+                categories: {
+                  performance: {
+                    score: 0.54,
+                    auditRefs: [{ id: "document-latency-insight" }],
+                  },
+                },
+                audits: {
+                  "document-latency-insight": {
+                    title: "Document request latency",
+                    score: 0,
+                    scoreDisplayMode: "metricSavings",
+                    details: { items: { url: "https://everyapp.dev/" } },
+                  },
+                },
+              },
+            ],
+          },
+        ],
+      },
+      { url: "https://everyapp.dev/", strategy: "mobile" },
+    );
+
+    expect(parsed.issues).toEqual([
+      expect.objectContaining({
+        auditKey: "document-latency-insight",
+        items: ['{"url":"https://everyapp.dev/"}'],
+      }),
+    ]);
   });
 });

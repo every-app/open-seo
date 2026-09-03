@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { sort } from "remeda";
 import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
@@ -124,13 +125,15 @@ export function getBillingFeatureBreakdownRows(
     creditsByLabel.set(label, (creditsByLabel.get(label) ?? 0) + event.value);
   }
 
-  return [...creditsByLabel.entries()]
-    .map(([label, credits]) => ({
-      label,
-      usd: autumnSeoDataCreditsToUsd(credits),
-    }))
-    .filter((row) => row.usd > 0)
-    .toSorted((a, b) => b.usd - a.usd);
+  return sort(
+    [...creditsByLabel.entries()]
+      .map(([label, credits]) => ({
+        label,
+        usd: autumnSeoDataCreditsToUsd(credits),
+      }))
+      .filter((row) => row.usd > 0),
+    (a, b) => b.usd - a.usd,
+  );
 }
 
 export function BillingFeatureBreakdown() {

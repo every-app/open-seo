@@ -7,6 +7,18 @@ export type ToolAuthContext = {
   userId: string;
   userEmail: string;
   organizationId: string;
+  // Org role for permission gates (owner/admin/member, comma-joined when
+  // multiple). Hosted: stamped per request from the member row in
+  // transport.ts. Self-host/delegated: one implicit user per org → "owner".
+  role: string;
+  // How tool calls bind to an organization. "pinned": the request's
+  // organizationId is the authorization boundary — OAuth tokens (org stamped
+  // at consent) and self-host. "user": the credential is user-scoped (API
+  // keys) — project-scoped tools derive the org from the project row and
+  // authorize via the caller's membership in THAT org, so one key works
+  // across every organization the user belongs to; organizationId is only the
+  // fallback context for the few tools with no project argument.
+  orgScope: "pinned" | "user";
   scopes: string[];
   clientId: string | null;
   baseUrl: string;
@@ -23,6 +35,12 @@ const applicationAuthContextSchema = z.object({
   userId: z.string().min(1),
   userEmail: z.string().min(1),
   organizationId: z.string().min(1),
+  // Absent from OAuth grant props (role is stamped per request by the hosted
+  // transport, never baked into tokens) and from delegated modes (implicit
+  // owner).
+  role: z.string().min(1).optional(),
+  // Absent everywhere except the API-key path; absent means "pinned".
+  orgScope: z.enum(["pinned", "user"]).optional(),
   baseUrl: z.string().url(),
   // Compatibility fallback until workers-oauth-provider supplies the verified
   // context marker consumed by Agents SDK 0.20.x (the
@@ -75,10 +93,23 @@ export function createMcpToolContext(
   const authInfo = context.http?.authInfo;
   const clientId = authInfo?.clientId ?? applicationAuth.clientId ?? null;
   const scopes = authInfo?.scopes ?? applicationAuth.scopes ?? [];
+  const orgScope = applicationAuth.orgScope ?? "pinned";
+  // Delegated/self-hosted modes have no member rows and a single implicit owner
+  // per org; "pinned" without a role means owner. API keys ("user" scope) must
+  // stamp the role from the user's active org membership in api-key-auth.ts.
+  const role =
+    applicationAuth.role ?? (orgScope === "pinned" ? "owner" : undefined);
+  if (!role) {
+    throw new Error(
+      "MCP auth context is missing a role for a user-scoped credential",
+    );
+  }
 
   return {
     auth: {
       ...applicationAuth,
+      role,
+      orgScope,
       clientId,
       scopes,
     },

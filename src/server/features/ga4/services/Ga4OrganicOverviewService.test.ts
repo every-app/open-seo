@@ -36,7 +36,7 @@ describe("Ga4OrganicOverviewService", () => {
     mocks.getByProjectId.mockResolvedValue(connection);
   });
 
-  it("returns an equal-length comparison and weekly trend", async () => {
+  it("returns an equal-length comparison and flags a truncated trend", async () => {
     mocks.runReport
       .mockResolvedValueOnce({
         dimensionHeaders: [],
@@ -93,7 +93,7 @@ describe("Ga4OrganicOverviewService", () => {
             ]),
           },
         ],
-        rowCount: 1,
+        rowCount: 1200,
       });
     const result = await Ga4OrganicOverviewService.getOrganicOverview(
       {
@@ -120,6 +120,7 @@ describe("Ga4OrganicOverviewService", () => {
       sessions: 100,
     });
     expect(result.diagnostics).toEqual([]);
+    expect(result.warnings).toEqual(["trend_truncated"]);
     expect(mocks.runReport).toHaveBeenCalledTimes(3);
   });
 

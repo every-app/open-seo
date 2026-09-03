@@ -1,6 +1,29 @@
-import type { AppendixUserDataResultInfo } from "dataforseo-client";
-import { appendixApi } from "@/server/lib/dataforseo/core";
-import { assertOk } from "@/server/lib/dataforseo/envelope";
+import { dataforseoGet } from "@/server/lib/dataforseo/core";
+import {
+  assertOk,
+  type DataforseoTaskLike,
+} from "@/server/lib/dataforseo/envelope";
+
+/**
+ * Account snapshot from the free GET /v3/appendix/user_data. Every field is
+ * optional on the wire; `money.statistics.day` / `.minute` group spend by
+ * function under `total_<function>` keys, so those stay untyped records.
+ */
+interface DataforseoUserData {
+  login?: string | null;
+  timezone?: string | null;
+  money?: {
+    total?: number | null;
+    balance?: number | null;
+    statistics?: {
+      day?: Record<string, unknown> | null;
+      minute?: Record<string, unknown> | null;
+      [key: string]: unknown;
+    } | null;
+    [key: string]: unknown;
+  } | null;
+  [key: string]: unknown;
+}
 
 /**
  * Reads account spend + balance from DataForSEO's free GET
@@ -13,14 +36,11 @@ import { assertOk } from "@/server/lib/dataforseo/envelope";
  * (remaining), and `money.statistics.day` / `.minute` — spend grouped by
  * function (serp, keywords_data, backlinks, dataforseo_labs, on_page,
  * business_data, …) for the rolling day / minute window.
- *
- * SDK types are loose (every field optional + index signatures), so callers
- * must optional-chain into `.money.statistics.day`; it can be undefined.
  */
-export async function fetchUserData(): Promise<
-  AppendixUserDataResultInfo | undefined
-> {
-  const response = await appendixApi().userData();
+export async function fetchUserData(): Promise<DataforseoUserData | undefined> {
+  const response = await dataforseoGet<
+    DataforseoTaskLike & { result?: DataforseoUserData[] }
+  >("/v3/appendix/user_data");
 
   // Validates top-level + task status; the call is free so there is no billing
   // envelope to build.

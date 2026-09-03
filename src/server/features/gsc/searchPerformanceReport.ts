@@ -1,3 +1,4 @@
+import { sort } from "remeda";
 import type { GscSearchAnalyticsRow } from "@/server/lib/gscClient";
 
 /**
@@ -111,14 +112,14 @@ export function buildStrikingDistanceRows(
     });
   }
 
-  return Array.from(topPageByQuery.values())
-    .filter(
+  return sort(
+    Array.from(topPageByQuery.values()).filter(
       (row) =>
         row.position >= STRIKING_DISTANCE_MIN_POSITION &&
         row.position <= STRIKING_DISTANCE_MAX_POSITION,
-    )
-    .toSorted((a, b) => b.impressions - a.impressions)
-    .slice(0, limit);
+    ),
+    (a, b) => b.impressions - a.impressions,
+  ).slice(0, limit);
 }
 
 /** The same-length period immediately before [startDate, endDate], for the

@@ -56,7 +56,7 @@ cp .env.selfhost.example .env.selfhost
 pnpm deploy:selfhost --yes
 ```
 
-This provisions the D1 database, KV namespaces, and R2 bucket, applies the database migrations, deploys the Worker, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
+This provisions the D1 database, KV namespaces, and R2 bucket, applies the database migrations, deploys the Workers, and creates the Cloudflare Access application protecting it (allowing exactly `ACCESS_ALLOWED_EMAILS`). If the account has no Zero Trust team yet, one is created for you, named after your workers.dev subdomain.
 
 To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://your-team.cloudflareaccess.com`) and `POLICY_AUD` (the application's audience tag) in `.env.selfhost` — the deploy then provisions no Access resources.
 
@@ -86,7 +86,7 @@ Everyone allowed through Cloudflare Access works in one shared workspace and see
 
 - Login fails: re-check `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy.
 - `https://<your-worker-hostname>/api/health` reports runtime configuration checks and database status.
-- For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`.
+- For server errors, open the Worker `Logs` or run `pnpm exec wrangler tail`. Site audits run in a separate worker: `pnpm exec wrangler tail open-seo-selfhost-audit`.
 
 ## Tearing it down
 
@@ -94,7 +94,7 @@ Everyone allowed through Cloudflare Access works in one shared workspace and see
 pnpm alchemy destroy --env-file .env.selfhost --stage selfhost
 ```
 
-This deletes the Worker, the stage-suffixed D1/KV/R2 resources (including your data), and the Access application.
+This deletes the Workers, the stage-suffixed D1/KV/R2 resources (including your data), and the Access application.
 
 ## Next steps
 

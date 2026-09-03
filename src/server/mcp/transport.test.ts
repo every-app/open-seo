@@ -17,6 +17,14 @@ const selfHostedAuthMocks = vi.hoisted(() => ({
   createMcpHandler: vi.fn(),
 }));
 
+const authRepositoryMocks = vi.hoisted(() => ({
+  getMembership: vi.fn(),
+}));
+
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: authRepositoryMocks,
+}));
+
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
   resolveCloudflareAccessContext:
     selfHostedAuthMocks.resolveCloudflareAccessContext,
@@ -201,6 +209,10 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
 });
 
 describe("handleAuthenticatedOpenSeoMcpRequest", () => {
+  beforeEach(() => {
+    authRepositoryMocks.getMembership.mockResolvedValue({ role: "owner" });
+  });
+
   it("accepts the provider's encrypted identity and MCP scope fallback", async () => {
     const props = hostedProps();
 
@@ -223,9 +235,14 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
         legacy: "reject",
       }),
     );
-    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
-      props,
-    );
+    // The transport stamps the per-request role into the props it hands the
+    // server; roles are never baked into tokens.
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
+      [MCP_AUTH_CONTEXT_PROP]: {
+        ...props[MCP_AUTH_CONTEXT_PROP],
+        role: "owner",
+      },
+    });
   });
 
   it("routes modern-era requests to the SDK handler", async () => {
@@ -288,9 +305,12 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith(
-      props,
-    );
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
+      [MCP_AUTH_CONTEXT_PROP]: {
+        ...props[MCP_AUTH_CONTEXT_PROP],
+        role: "owner",
+      },
+    });
   });
 
   it.each([
@@ -333,6 +353,29 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     );
 
     expect(response.status).toBe(403);
+  });
+
+  it("rejects a token whose user is no longer a member of the granted org", async () => {
+    // Tokens pin organizationId at consent time; once the membership is gone
+    // the token must stop working and push the client back through OAuth.
+    authRepositoryMocks.getMembership.mockResolvedValue(null);
+    const props = createWorkersOAuthMcpProps({
+      userId: "user-1",
+      userEmail: "user@example.com",
+      organizationId: "org-1",
+      baseUrl: "https://open-seo.test",
+      clientId: "client-1",
+      scopes: ["mcp"],
+    });
+
+    const response = await handleAuthenticatedOpenSeoMcpRequest(
+      createMcpRequest(),
+      props,
+      {},
+      { ...ctx, props },
+    );
+
+    expect(response.status).toBe(401);
   });
 
   it("rejects an OAuth client without the MCP scope", async () => {

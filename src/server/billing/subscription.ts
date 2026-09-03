@@ -130,8 +130,9 @@ async function getUsageCreditsRemaining(customerId: string): Promise<{
   // credits out of chat (2026-07-20). The topup balance genuinely doesn't
   // exist until a first top-up, so 0 is the honest reading there.
   if (!monthlyBalance) {
+    // INTERNAL_ERROR, not UPSTREAM_UNAVAILABLE: this must stay reportable.
     throw new AppError(
-      "UPSTREAM_UNAVAILABLE",
+      "INTERNAL_ERROR",
       `Autumn check returned no ${AUTUMN_SEO_DATA_BALANCE_FEATURE_ID} balance for customer ${customerId}`,
     );
   }

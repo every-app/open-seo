@@ -197,7 +197,7 @@ function DangerSection({
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-base-content/60">
             {canArchive
-              ? "Archive this project to remove it from your workspace."
+              ? "Archive this project to remove it from your organization."
               : "You can't archive your only project."}
           </p>
           <button

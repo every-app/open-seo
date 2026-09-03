@@ -81,12 +81,16 @@ export class SiteAuditWorkflow extends WorkflowEntrypoint<Env, AuditParams> {
           "Durable Object reset because its code was updated",
         );
       if (!isDeployReset) {
-        await captureServerError(error, {
-          source: "site_audit_workflow",
-          audit_id: auditId,
-          organization_id: billingCustomer.organizationId,
-          project_id: projectId,
-        });
+        await captureServerError(
+          error,
+          {
+            source: "site_audit_workflow",
+            audit_id: auditId,
+            organization_id: billingCustomer.organizationId,
+            project_id: projectId,
+          },
+          billingCustomer.userId,
+        );
       }
       const errorInfo = classifyAuditError(error);
       await pgStep(step, "mark-failed", DB_STEP, async () => {

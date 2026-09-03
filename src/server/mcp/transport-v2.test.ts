@@ -9,6 +9,14 @@ vi.mock("@/lib/auth", () => ({
   getHostedBaseUrl: () => "https://open-seo.test",
 }));
 
+// The hosted transport re-checks membership per request; mocking the
+// repository keeps this test off `cloudflare:workers`-backed db imports.
+vi.mock("@/server/auth/repositories/AuthRepository", () => ({
+  AuthRepository: {
+    getMembership: vi.fn(async () => ({ role: "owner" })),
+  },
+}));
+
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
   resolveCloudflareAccessContext: vi.fn(),
 }));

@@ -31,21 +31,21 @@ export const CLIENT_WEBSITE_COUNT_OPTIONS = [
   "25+",
 ] as const;
 
+// Ordered by how often each source is actually reported (Aug 2026 answers).
 export const SOURCE_OPTIONS = [
-  "Product Hunt",
   "Google",
-  "Reddit",
-  "X / Twitter",
   "GitHub",
-  "AI (Claude, ChatGPT, etc)",
+  "Product Hunt",
   "Friend or colleague",
+  "X / Twitter",
+  "Instagram",
+  "AI (Claude, ChatGPT, etc)",
   "Other",
 ] as const;
 
 // Keep the mobile list short: these still count as known options, they just
 // aren't shown on small screens.
 export const SOURCE_OPTIONS_HIDDEN_ON_MOBILE = [
-  "Reddit",
   "X / Twitter",
   "AI (Claude, ChatGPT, etc)",
 ] as const;

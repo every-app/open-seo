@@ -5,6 +5,8 @@
     "alchemy.preview-access.run.ts",
     // Detect Tanstack Start Routes
     "cli-auth.ts",
+    // Site-audit aux worker entry (wrangler.audit.jsonc)
+    "src/audit-worker.ts",
     "src/start.ts",
     "src/router.tsx",
     "src/routes/**/*.ts",
@@ -20,10 +22,6 @@
     "src/db/pg/schema.ts",
     // Standalone CLI/dev scripts, invoked via package.json scripts
     "scripts/**",
-    // DataForSEO section barrel — consumed via the dynamic import in
-    // client.ts (loadDataforseoSections) + property access, which knip
-    // can't trace
-    "src/server/lib/dataforseo/sections.ts",
   ],
   // badseo/ is the standalone broken-SEO fixture worker (own deps/config),
   // like web/ it isn't part of the app's module graph.

@@ -10,10 +10,12 @@ export type AuditLimitTier = "free" | "paid" | "self_hosted";
 
 // The crawler runs on our Workers compute and isn't credit-metered, so these
 // per-tier bounds are the abuse control: free accounts cost nothing to create,
-// so they get one small audit at a time and a modest total budget. Paid gets
-// bounds sized for real sites rather than abuse (a payment method on file is
-// the deterrent). The cumulative bound is a hosted commercial policy, while
-// the per-audit page limit is also a technical Workflow/database ceiling.
+// so they get small audits, a modest burst of concurrent runs, and a modest
+// total budget — the cumulative cap bounds total work, concurrency only bounds
+// the rate. Paid gets bounds sized for real sites rather than abuse (a payment
+// method on file is the deterrent). The cumulative bound is a hosted commercial
+// policy, while the per-audit page limit is also a technical Workflow/database
+// ceiling.
 export const AUDIT_LIMITS: Record<
   AuditLimitTier,
   {
@@ -25,7 +27,7 @@ export const AUDIT_LIMITS: Record<
   free: {
     maxPagesPerAudit: FREE_MAX_AUDIT_PAGES,
     maxCapacityUnits: 2_000,
-    maxRunningAudits: 1,
+    maxRunningAudits: 5,
   },
   paid: {
     maxPagesPerAudit: PAID_MAX_AUDIT_PAGES,

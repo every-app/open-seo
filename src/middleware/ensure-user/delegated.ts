@@ -71,6 +71,9 @@ async function resolveDelegatedContext(
     // Delegated auth (Cloudflare Access / local) has no unverified state.
     emailVerified: true,
     organizationId,
+    // Delegated orgs are one-implicit-user with no member rows; that user has
+    // full control of their own workspace.
+    role: "owner",
   };
 }
 
@@ -89,6 +92,9 @@ export async function resolveSharedWorkspaceContext(
     userEmail: ensuredEmail,
     emailVerified: true,
     organizationId,
+    // The Access policy is the authorization boundary; everyone it admits has
+    // full control of the shared workspace.
+    role: "owner",
   };
 }
 

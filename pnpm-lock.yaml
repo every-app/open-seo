@@ -93,9 +93,6 @@ importers:
       daisyui:
         specifier: ^5.5.5
         version: 5.5.19
-      dataforseo-client:
-        specifier: ^2.0.19
-        version: 2.0.19
       drizzle-orm:
         specifier: ^0.45.2
         version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.22.6(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1)
@@ -3606,9 +3603,6 @@ packages:
   data-uri-to-buffer@4.0.1:
     resolution: {integrity: sha512-0R9ikRb668HB7QDxT1vkpuUBtqc53YyAwMwGeUFKRojY/NWKvdZ+9UYtRfGmhqNbRkTSVpMbmyhXipFFv2cb/A==}
     engines: {node: '>= 12'}
-
-  dataforseo-client@2.0.19:
-    resolution: {integrity: sha512-G1E1xI/EUxHkq1wMIZZ1eiZb7WanG1I9JKSXbIcdg7xuD8lLT0mXABrqHH+yvnjL439+GnrquD+ealzxm6uezw==}
 
   dayjs@1.11.21:
     resolution: {integrity: sha512-98IT+HOahAisibz/yjKbzuOBwYcjJ7BCLPzARyHiyEBmRz4fatF+KPJszEHXsGYjUG234aH/cOjW1wwTbKUZlA==}
@@ -9190,8 +9184,6 @@ snapshots:
   daisyui@5.5.19: {}
 
   data-uri-to-buffer@4.0.1: {}
-
-  dataforseo-client@2.0.19: {}
 
   dayjs@1.11.21: {}
 

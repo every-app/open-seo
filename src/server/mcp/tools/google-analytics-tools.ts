@@ -2,6 +2,7 @@
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { Ga4MeasurementHealthService } from "@/server/features/ga4/services/Ga4MeasurementHealthService";
+import { OVERVIEW_METRICS } from "@/server/features/ga4/services/Ga4ReportDefinitions";
 import { Ga4OrganicOverviewService } from "@/server/features/ga4/services/Ga4OrganicOverviewService";
 import {
   GscApiError,
@@ -11,6 +12,7 @@ import {
 import {
   Ga4ReportingService,
   type Ga4ReportInput,
+  type Ga4ReportResult,
 } from "@/server/features/ga4/services/Ga4ReportingService";
 import { Ga4ReportError } from "@/server/lib/ga4Errors";
 import { SearchOpportunityService } from "@/server/features/ga4/services/SearchOpportunityService";
@@ -19,6 +21,7 @@ import { mcpResponse } from "@/server/mcp/formatters";
 import { looseObjectOutputSchema } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { formatMcpTable, type McpTableColumn } from "@/server/mcp/table";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 
 const dateSchema = z
@@ -215,10 +218,55 @@ function errorResponse(
   });
 }
 
-function reportText(
-  label: string,
-  result: Awaited<ReturnType<typeof Ga4ReportingService.runReport>>,
-) {
+type Ga4ReportRow = Ga4ReportResult["rows"][number];
+type Ga4OverviewResult = Awaited<
+  ReturnType<typeof Ga4OrganicOverviewService.getOrganicOverview>
+>;
+
+// These four MCP tools accept channel=all. landing_pages is Organic Search
+// only and has no channel argument.
+const CHANNEL_SELECTABLE_REPORTS = new Set<
+  Ga4ReportResult["request"]["reportKind"]
+>([
+  "page_performance",
+  "key_events",
+  "ecommerce_performance",
+  "audience_breakdown",
+]);
+
+function reportTableColumns(
+  result: Ga4ReportResult,
+): McpTableColumn<Ga4ReportRow>[] {
+  return [...result.request.dimensions, ...result.request.metrics].map(
+    (key) => ({
+      header: key,
+      value: (row) => row[key],
+    }),
+  );
+}
+
+function emptyOrganicHint(result: Ga4ReportResult): string {
+  if (
+    result.totalRowCount !== 0 ||
+    result.request.channel !== "organic_search"
+  ) {
+    return "";
+  }
+  return CHANNEL_SELECTABLE_REPORTS.has(result.request.reportKind)
+    ? " This report is filtered to Organic Search. Pass channel=all to include every channel."
+    : " This report is limited to Organic Search.";
+}
+
+function endDateClampNote(result: {
+  warnings: string[];
+  request: { resolvedDateRange: { endDate: string } };
+}) {
+  return result.warnings.includes("end_date_clamped")
+    ? ` The requested endDate was moved back to ${result.request.resolvedDateRange.endDate}, the last complete Analytics day.`
+    : "";
+}
+
+function reportText(label: string, result: Ga4ReportResult) {
   const range = result.request.resolvedDateRange;
   const comparison = result.comparison
     ? ` Previous-period comparison returned ${result.comparison.rows.length} row(s).`
@@ -227,7 +275,37 @@ function reportText(
     result.diagnostics.length > 0
       ? ` ${result.diagnostics.length} diagnostic finding(s) are included.`
       : "";
-  return `${label}: ${result.rowCount} of ${result.totalRowCount} rows for ${range.startDate} through ${range.endDate}.${comparison}${diagnostics}${result.reportMetadata.hasLimitedData ? " Google marked this report as limited; inspect reportMetadata." : ""}`;
+  const limited = result.reportMetadata.hasLimitedData
+    ? " Google marked this report as limited; inspect reportMetadata."
+    : "";
+  const paginate = result.pageInfo.hasMore
+    ? " More rows are available; call again with offset to page through them."
+    : "";
+  const summary = `${label}: ${result.rowCount} of ${result.totalRowCount} rows for ${range.startDate} through ${range.endDate}.${endDateClampNote(result)}${comparison}${diagnostics}${limited}${emptyOrganicHint(result)}${paginate}`;
+  if (result.rows.length === 0) return summary;
+  return `${summary}\n${formatMcpTable(result.rows, reportTableColumns(result))}`;
+}
+
+function overviewText(result: Ga4OverviewResult) {
+  const range = result.request.resolvedDateRange;
+  const previousRange = result.request.previousDateRange;
+  const trendTruncated = result.warnings.includes("trend_truncated")
+    ? ` The trend was cut at ${result.trend.length} rows; use trend=weekly or a shorter date range for the full series.`
+    : "";
+  const summary = `Organic overview for ${range.startDate} through ${range.endDate}, compared with ${previousRange.startDate} through ${previousRange.endDate}.${endDateClampNote(result)}${trendTruncated}`;
+  if (!result.current) {
+    return `${summary} No Organic Search rows for this date range.`;
+  }
+  const rows = OVERVIEW_METRICS.map((metric) => ({
+    metric,
+    current: result.current[metric] ?? null,
+    previous: result.previous?.[metric] ?? null,
+  }));
+  return `${summary}\n${formatMcpTable(rows, [
+    { header: "metric", value: (row) => row.metric },
+    { header: "current", value: (row) => row.current },
+    { header: "previous", value: (row) => row.previous },
+  ])}`;
 }
 
 function createAnalyticsReportHandler<TArgs extends ProjectArgs>(
@@ -407,7 +485,7 @@ export const getGoogleAnalyticsOrganicOverviewTool = {
     try {
       const result = await Ga4OrganicOverviewService.getOrganicOverview(args);
       return mcpResponse({
-        text: `Organic overview for ${result.request.resolvedDateRange.startDate} through ${result.request.resolvedDateRange.endDate}, compared with ${result.request.previousDateRange.startDate} through ${result.request.previousDateRange.endDate}.`,
+        text: overviewText(result),
         meta: buildProjectMeta(context, args.projectId),
         structuredContent: result,
       });

@@ -11,7 +11,8 @@ export type RawLighthouseAudit = {
   details?: {
     overallSavingsMs?: number;
     overallSavingsBytes?: number;
-    items?: Array<Record<string, unknown>>;
+    /** Newer "insight" audits report a single object instead of a list. */
+    items?: Array<Record<string, unknown>> | Record<string, unknown>;
   };
 };
 
@@ -83,10 +84,14 @@ export type StoredLighthousePayload = z.infer<
   typeof storedLighthousePayloadSchema
 >;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export function scoreToPercent(
   score: number | null | undefined,
 ): number | null {
-  if (score == null || Number.isNaN(score)) return null;
+  if (typeof score !== "number" || Number.isNaN(score)) return null;
   return Math.round(score * 100);
 }
 
@@ -180,9 +185,10 @@ export function buildStoredLighthouseIssues(input: {
   const issues: StoredLighthouseIssue[] = [];
 
   for (const category of LIGHTHOUSE_CATEGORIES) {
-    const refs = input.categories[category]?.auditRefs ?? [];
+    const rawRefs = input.categories[category]?.auditRefs;
+    const refs = Array.isArray(rawRefs) ? rawRefs : [];
     for (const ref of refs) {
-      const auditKey = ref.id;
+      const auditKey = ref?.id;
       if (!auditKey) continue;
 
       const audit = input.audits[auditKey];
@@ -212,9 +218,13 @@ export function buildStoredLighthouseIssues(input: {
         typeof audit.details?.overallSavingsBytes === "number"
           ? audit.details.overallSavingsBytes
           : null;
-      const items = Array.isArray(audit.details?.items)
-        ? audit.details.items.slice(0, 10).map(compactItem)
-        : [];
+      const rawItems = audit.details?.items;
+      const itemList = Array.isArray(rawItems)
+        ? rawItems
+        : isRecord(rawItems)
+          ? [rawItems]
+          : [];
+      const items = itemList.filter(isRecord).slice(0, 10).map(compactItem);
 
       issues.push({
         category,

@@ -1,7 +1,7 @@
 import { getAuth, getHostedBaseUrl } from "@/lib/auth";
 import { API_KEY_PREFIX } from "@/lib/auth-api-key";
 import { MCP_OAUTH_SCOPES } from "@/lib/oauth-resource";
-import { getOrCreateDefaultHostedOrganization } from "@/server/auth/default-hosted-organization";
+import { resolveExistingActiveHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { recordMcpAuthorized } from "@/server/features/activation/mcpActivation";
 import { createWorkersOAuthMcpProps, MCP_ROUTE } from "@/server/mcp/context";
@@ -29,6 +29,7 @@ function apiKeyErrorResponse(
 
   const isLimited =
     error?.code === "RATE_LIMITED" || error?.code === "USAGE_EXCEEDED";
+  const isForbidden = error?.code === "FORBIDDEN";
   if (isLimited) {
     // The plugin reports tryAgainIn (milliseconds) for RATE_LIMITED, but its
     // published error type omits `details`, so narrow at runtime.
@@ -49,13 +50,19 @@ function apiKeyErrorResponse(
     ? error?.code === "RATE_LIMITED"
       ? "rate_limited"
       : "usage_exceeded"
-    : "invalid_api_key";
+    : isForbidden
+      ? "account_access_revoked"
+      : "invalid_api_key";
   const description = isLimited
     ? typeof error?.message === "string"
       ? error.message
       : "API key request limit reached"
-    : "The provided API key is invalid, expired, or disabled";
-  const status = isLimited ? 429 : 401;
+    : isForbidden
+      ? typeof error?.message === "string"
+        ? error.message
+        : "This API key is no longer associated with an organization"
+      : "The provided API key is invalid, expired, or disabled";
+  const status = isLimited ? 429 : isForbidden ? 403 : 401;
 
   // Bad credentials are client-side noise, so 401 logs at debug (mirroring the
   // OAuth path); a 429 means we actually cut a caller off, so warn.
@@ -95,25 +102,55 @@ export async function handleMcpApiKeyRequest(
     }
 
     const userId = result.key.referenceId;
+
+    // Per-user request throttle. The binding is declared in alchemy.run.ts
+    // (hosted prod only); local dev and self-host run without it and skip
+    // limiting, which is fine single-user. This replaces the better-auth
+    // plugin limiter, whose broken idle-gap window hard-blocked active MCP
+    // clients (see lib/auth-api-key.ts). Cloudflare's counter is per-colo
+    // best-effort, which is all this needs to be: credits bound spend, this
+    // bounds runaway request volume.
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the binding is declared as a rate limiter in alchemy.run.ts; absent outside hosted prod
+    const rateLimit = (env as { MCP_RATE_LIMIT?: RateLimit }).MCP_RATE_LIMIT;
+    if (rateLimit) {
+      const { success } = await rateLimit.limit({ key: userId });
+      if (!success) {
+        return apiKeyErrorResponse({
+          code: "RATE_LIMITED",
+          message: "Rate limit exceeded: 5000 requests per minute",
+          details: { tryAgainIn: 60_000 },
+        });
+      }
+    }
+
     const user = await AuthRepository.getHostedUser(userId);
     if (!user?.email) return apiKeyErrorResponse(null);
 
-    // API keys bill the user's default hosted workspace (their first org).
-    // The hosted product provisions exactly one org per user. Decided
-    // direction for multi-org: keys stay user-scoped and the org derives from
-    // the project each tool call names (project-level authz) — not key→org
-    // binding.
-    const organizationId = await getOrCreateDefaultHostedOrganization(
-      userId,
-      (body) => authApi.createOrganization({ body }),
-    );
+    // API keys bill the user's active organization. Keys are user-scoped and
+    // the org derives from the project each tool call names (project-level
+    // authz) — not key→org binding. Fail closed if the user has no existing
+    // memberships; we never mint a default organization for an API key.
+    const resolved = await resolveExistingActiveHostedOrganization(userId);
+    if (!resolved) {
+      return apiKeyErrorResponse({
+        code: "FORBIDDEN",
+        message: "API key is not associated with an organization",
+      });
+    }
+    const { organizationId, role } = resolved;
 
     // clientId "api_key" satisfies the hosted transport's fail-closed props
     // schema and counts these calls as external MCP clients in telemetry.
+    // orgScope "user": the key itself is the credential, not a key→org
+    // binding — project-scoped tools authorize per call via the caller's
+    // membership in the project's org, and organizationId above is only the
+    // fallback for tools with no project argument.
     const props = createWorkersOAuthMcpProps({
       userId,
       userEmail: user.email,
       organizationId,
+      role,
+      orgScope: "user",
       baseUrl: getHostedBaseUrl(),
       scopes: [...MCP_OAUTH_SCOPES],
       clientId: "api_key",

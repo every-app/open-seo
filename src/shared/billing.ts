@@ -16,6 +16,16 @@ export const AUTUMN_SEO_DATA_CREDITS_PER_USD = 1000;
 export const SEO_DATA_COST_MARKUP = 1.28;
 export const LOW_CREDITS_THRESHOLD_USD = 0.25;
 
+// Passed through to Stripe's checkout.sessions.create so checkout collects the
+// legal business name, tax ID (EU VAT etc.), and full billing address — makes
+// invoices valid for business customers. Display only, no Stripe Tax. Stripe
+// requires customer_update.name "auto" to collect tax IDs for an existing customer.
+export const AUTUMN_CHECKOUT_SESSION_PARAMS = {
+  tax_id_collection: { enabled: true },
+  billing_address_collection: "required",
+  customer_update: { name: "auto", address: "auto" },
+} as const;
+
 export function roundUsdForBilling(value: number) {
   return Math.round(value * 100000) / 100000;
 }

@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { LighthouseResult } from "@/server/lib/audit/types";
 
 const {
   fetchLighthouseResultMock,
@@ -18,11 +19,19 @@ const {
   updateAuditProgressMock: vi.fn(),
 }));
 
-vi.mock("@/server/lib/audit/lighthouse", () => ({
-  fetchLighthouseResult: fetchLighthouseResultMock,
-  selectLighthouseSample: selectLighthouseSampleMock,
-  storeLighthouseResult: storeLighthouseResultMock,
-}));
+// The real module reaches cloudflare:workers through r2.ts at import time.
+vi.mock("cloudflare:workers", () => ({ env: {} }));
+// failedLighthouseFetch stays real — the failure-path test asserts on the
+// rows it builds.
+vi.mock("@/server/lib/audit/lighthouse", async (importOriginal) => {
+  const actual = await importOriginal<Record<string, unknown>>();
+  return {
+    ...actual,
+    fetchLighthouseResult: fetchLighthouseResultMock,
+    selectLighthouseSample: selectLighthouseSampleMock,
+    storeLighthouseResult: storeLighthouseResultMock,
+  };
+});
 vi.mock("@/server/features/audit/repositories/AuditRepository", () => ({
   AuditRepository: {
     getPagesForAudit: getPagesForAuditMock,
@@ -48,6 +57,19 @@ vi.mock("@/server/workflows/siteAuditWorkflowCrawl", () => ({
 vi.mock("@/server/workflows/pgStep", () => ({ pgStep: pgStepMock }));
 
 import { runLighthousePhase } from "@/server/workflows/siteAuditWorkflowPhases";
+
+const PHASE_PARAMS = {
+  auditId: "audit-1",
+  workflowInstanceId: "workflow-1",
+  billingCustomer: {
+    userId: "user-1",
+    userEmail: "test@example.com",
+    organizationId: "org-1",
+  },
+  projectId: "project-1",
+  startUrl: "https://example.com/",
+  config: { maxPages: 50, lighthouseStrategy: "auto" as const },
+};
 
 describe("runLighthousePhase", () => {
   beforeEach(() => {
@@ -87,7 +109,7 @@ describe("runLighthousePhase", () => {
         if (name === "lighthouse-fetch-1") {
           fetchRetryLimit = config.retries?.limit;
         }
-        if (name === "lighthouse-persist-1") {
+        if (name === "lighthouse-persist-chunk-1") {
           persistenceRetryLimit = config.retries?.limit;
           persistenceAttempts += 1;
           try {
@@ -109,18 +131,7 @@ describe("runLighthousePhase", () => {
 
     // pgStep is mocked above, so the opaque WorkflowStep object is never read.
     // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
-    await runLighthousePhase({} as never, {
-      auditId: "audit-1",
-      workflowInstanceId: "workflow-1",
-      billingCustomer: {
-        userId: "user-1",
-        userEmail: "test@example.com",
-        organizationId: "org-1",
-      },
-      projectId: "project-1",
-      startUrl: "https://example.com/",
-      config: { maxPages: 50, lighthouseStrategy: "auto" },
-    });
+    await runLighthousePhase({} as never, PHASE_PARAMS);
 
     expect(fetchLighthouseResultMock).toHaveBeenCalledTimes(2);
     expect(storeLighthouseResultMock).toHaveBeenCalledTimes(4);
@@ -135,7 +146,15 @@ describe("runLighthousePhase", () => {
     );
   });
 
-  it("does not replay paid calls for a cached legacy batch", async () => {
+  it("persists sibling results when one fetch step fails", async () => {
+    getPagesForAuditMock.mockResolvedValue([
+      { id: "page-1", url: "https://example.com/", statusCode: 200 },
+      { id: "page-2", url: "https://example.com/about", statusCode: 200 },
+    ]);
+    selectLighthouseSampleMock.mockReturnValue([
+      "https://example.com/",
+      "https://example.com/about",
+    ]);
     pgStepMock.mockImplementation(
       async (
         _step: unknown,
@@ -143,8 +162,8 @@ describe("runLighthousePhase", () => {
         _config: unknown,
         callback: () => Promise<unknown>,
       ) => {
-        if (name === "lighthouse-batch-1") {
-          return { completed: 2, failed: 0 };
+        if (name === "lighthouse-fetch-2") {
+          throw new Error("step timed out");
         }
         return callback();
       },
@@ -152,25 +171,25 @@ describe("runLighthousePhase", () => {
 
     // pgStep is mocked above, so the opaque WorkflowStep object is never read.
     // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
-    await runLighthousePhase({} as never, {
-      auditId: "audit-1",
-      workflowInstanceId: "workflow-1",
-      billingCustomer: {
-        userId: "user-1",
-        userEmail: "test@example.com",
-        organizationId: "org-1",
-      },
-      projectId: "project-1",
-      startUrl: "https://example.com/",
-      config: { maxPages: 50, lighthouseStrategy: "auto" },
-    });
+    await runLighthousePhase({} as never, PHASE_PARAMS);
 
-    expect(pgStepMock).toHaveBeenCalledWith(
-      {},
-      "lighthouse-batch-1",
-      expect.anything(),
-      expect.any(Function),
+    // Only the surviving URL's pair was fetched; the failed step's checks
+    // still land as errorMessage rows in the same insert.
+    expect(fetchLighthouseResultMock).toHaveBeenCalledTimes(2);
+    expect(insertLighthouseResultsMock).toHaveBeenCalledTimes(1);
+    // vi.fn() mock calls are untyped; the mocked storeLighthouseResult above
+    // passes fetch results through as rows.
+    // oxlint-disable-next-line typescript-eslint/no-unsafe-type-assertion
+    const inserted = insertLighthouseResultsMock.mock
+      .calls[0]?.[1] as LighthouseResult[];
+    expect(inserted).toHaveLength(4);
+    expect(
+      inserted.filter((row) => row.errorMessage === "step timed out"),
+    ).toHaveLength(2);
+    expect(updateAuditProgressMock).toHaveBeenLastCalledWith(
+      "audit-1",
+      "workflow-1",
+      { lighthouseCompleted: 2, lighthouseFailed: 2 },
     );
-    expect(fetchLighthouseResultMock).not.toHaveBeenCalled();
   });
 });

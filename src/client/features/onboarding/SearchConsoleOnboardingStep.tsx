@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
+import { GoogleLinkErrorAlert } from "@/client/features/integrations/GoogleLinkErrorAlert";
 import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
 import {
   SitePicker,
@@ -178,29 +179,35 @@ function GscConnect({ projectId }: { projectId: string }) {
 
   if (hasGrant) {
     return (
-      <SitePicker
-        loading={sitesQuery.isLoading}
-        error={sitesQuery.isError}
-        accounts={accounts}
-        selection={selection}
-        onSelect={setSelection}
-        onSave={() => selection && setSiteMutation.mutate(selection)}
-        saving={setSiteMutation.isPending}
-        onRetry={() => void sitesQuery.refetch()}
-        onReconnect={handleConnect}
-      />
+      <div className="space-y-4">
+        <GoogleLinkErrorAlert provider="gsc" />
+        <SitePicker
+          loading={sitesQuery.isLoading}
+          error={sitesQuery.isError}
+          accounts={accounts}
+          selection={selection}
+          onSelect={setSelection}
+          onSave={() => selection && setSiteMutation.mutate(selection)}
+          saving={setSiteMutation.isPending}
+          onRetry={() => void sitesQuery.refetch()}
+          onReconnect={handleConnect}
+        />
+      </div>
     );
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleConnect}
-      className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      <GoogleGlyph className="size-[18px]" />
-      Connect with Google
-    </button>
+    <div className="space-y-4">
+      <GoogleLinkErrorAlert provider="gsc" />
+      <button
+        type="button"
+        onClick={handleConnect}
+        className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+      >
+        <GoogleGlyph className="size-[18px]" />
+        Connect with Google
+      </button>
+    </div>
   );
 }
 

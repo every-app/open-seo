@@ -20,6 +20,7 @@ import {
 } from "@/server/mcp/context";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
+import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
 // same CORS surface as the modern handler's.
@@ -128,6 +129,12 @@ function createRequestHandler(
     route: MCP_ROUTE,
     allowedOriginHostnames,
     legacy: "reject",
+    // MCP serving is strictly stateless: no notification is ever published,
+    // so refuse subscriptions/listen outright (in-band -32603 before the
+    // ack). The SSE streams it would otherwise hold open pin isolates for
+    // hours and turn every isolate death into a burst of exceededMemory
+    // request outcomes (EVE-95).
+    maxSubscriptions: 0,
   });
 
   return async (request: Request, env: unknown, ctx: ExecutionContext) => {
@@ -170,7 +177,32 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
     return withMcpCors(new Response("Invalid Origin", { status: 403 }));
   }
 
-  return createRequestHandler(result.data, [
+  // Tokens snapshot organizationId at consent and refresh copies it verbatim,
+  // so the grant can outlive the membership (member removed, org changed).
+  // Re-check the member row per request; 401 invalid_token pushes compliant
+  // clients back through OAuth, where consent stamps their current org.
+  const authContext = result.data[MCP_AUTH_CONTEXT_PROP];
+  const membership = await AuthRepository.getMembership(
+    authContext.userId,
+    authContext.organizationId,
+  );
+  if (!membership) {
+    return new Response("Organization access revoked", {
+      status: 401,
+      headers: { "WWW-Authenticate": 'Bearer error="invalid_token"' },
+    });
+  }
+
+  // The handler would fall back to the provider-populated ctx.props on its
+  // own; passing authContext explicitly hands it the schema-validated copy
+  // (with the per-request role stamped in — roles are never baked into
+  // tokens) and keeps this path symmetrical with self-hosted, which has no
+  // ctx.props.
+  const requestProps = createWorkersOAuthMcpProps({
+    ...authContext,
+    role: membership.role,
+  });
+  return createRequestHandler(requestProps, [
     hostedUrl.hostname,
     SURFMIND_CHROME_EXTENSION_HOSTNAME,
   ])(request, env, ctx);

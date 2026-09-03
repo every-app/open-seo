@@ -148,6 +148,20 @@
       "when": 1787099999115,
       "tag": "0020_project_memory",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1787594239250,
+      "tag": "0021_user_last_active_organization",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1787773500453,
+      "tag": "0022_third_supernaut",
+      "breakpoints": true
     }
   ]
 }

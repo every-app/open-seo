@@ -13,8 +13,16 @@ declare namespace Cloudflare {
     SAM_CHAT: DurableObjectNamespace;
 
     // Durable Object holding per-audit crawl scratch state (frontier, link
-    // edges, page mirror). Untyped here; getAuditScratchpad narrows the stub.
+    // edges, page mirror). Bound ONLY in the open-seo-audit aux worker;
+    // untyped here — getAuditScratchpad narrows the stub.
     AUDIT_SCRATCHPAD: DurableObjectNamespace;
+
+    // Service binding to the audit worker's AuditEngine entrypoint (cancel +
+    // GDPR erasure of scratchpad state). The inline import() is required: a
+    // top-level import would turn this ambient file into a module and break
+    // the global augmentation.
+    // oxlint-disable-next-line typescript-eslint/consistent-type-imports
+    AUDIT_ENGINE: Service<typeof import("./audit-worker").default>;
 
     AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
     BYPASS_EMAIL_VERIFICATION?: string;
@@ -33,8 +41,12 @@ declare namespace Cloudflare {
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;
+    LOOPS_TRANSACTIONAL_INVITATION_ID?: string;
     AUTUMN_SECRET_KEY?: string;
     AUTUMN_WEBHOOK_SECRET?: string;
+    // Dub referral conversion tracking (hosted only); all Dub code no-ops
+    // when unset.
+    DUB_API_KEY?: string;
     // HMAC secret for the operator-only GDPR storage-erasure endpoint.
     GDPR_ERASURE_SECRET?: string;
 

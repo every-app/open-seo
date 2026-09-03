@@ -144,6 +144,11 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
       ],
     },
     {
+      // The tool list is fixed per request and no list_changed notification
+      // is ever published, so don't advertise the capability — modern clients
+      // use it to decide whether to open a subscriptions/listen stream.
+      // Without the pre-declaration, registerTool defaults it to true.
+      capabilities: { tools: { listChanged: false } },
       instructions:
         "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
     },

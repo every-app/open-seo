@@ -1,8 +1,6 @@
-// SDK-free constants and target builders shared between eager server code
-// (features, workflows, MCP tools) and the lazily loaded section fetchers.
-// Keep this module free of dataforseo-client and section-file imports —
-// anything imported from here must be safe to evaluate in the eager isolate
-// startup graph.
+// Constants and target builders shared between server code (features,
+// workflows, MCP tools) and the section fetchers. Keep this module free of
+// section-file imports so both sides can import it without cycles.
 
 // ChatGPT mention/response data is only available for US/en per DataForSEO docs.
 export const CHATGPT_LOCATION_CODE = 2840;

@@ -33,7 +33,7 @@ type GscPerfRow = {
   clicks: number;
   impressions: number;
   ctr: number;
-  position: number;
+  position?: number;
 };
 
 const GSC_PERF_COLUMNS: McpTableColumn<GscPerfRow>[] = [
@@ -183,7 +183,7 @@ export const getSearchConsolePerformanceTool = {
   config: {
     title: "Get Google Search Console performance",
     description:
-      "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. ctr is a 0-1 fraction; position is a 1-based average; dates are Pacific Time; the last ~3 days may be incomplete. Read-only; uses no credits.",
+      "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. ctr is a 0-1 fraction; position is a 1-based average and is omitted from rows when type is 'discover' or 'googleNews' (Google does not report it there — treat it as unavailable, not a failure); dates are Pacific Time; the last ~3 days may be incomplete. Read-only; uses no credits.",
     inputSchema: perfInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -203,7 +203,10 @@ export const getSearchConsolePerformanceTool = {
               clicks: z.number(),
               impressions: z.number(),
               ctr: z.number(),
-              position: z.number(),
+              // Google omits position for the discover and googleNews search
+              // types even though the other metrics are present. The table
+              // already renders a missing position as an em dash.
+              position: z.number().optional(),
             })
             .passthrough(),
         )
