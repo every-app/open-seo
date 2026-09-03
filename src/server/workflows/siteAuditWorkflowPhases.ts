@@ -17,6 +17,7 @@ import { AuditRepository } from "@/server/features/audit/repositories/AuditRepos
 import { getAuditScratchpad } from "@/server/features/audit/AuditScratchpad";
 import { AuditProgressKV } from "@/server/lib/audit/progress-kv";
 import { runMultipageChecks } from "@/server/lib/audit/issues/multipage";
+import { runAiReadinessChecks } from "@/server/lib/audit/issues/ai-readiness";
 import type { DetectedIssue } from "@/server/lib/audit/issues/page-reporters";
 import type { AuditConfig } from "@/server/lib/audit/types";
 import { captureServerEvent } from "@/server/lib/posthog";
@@ -102,6 +103,7 @@ export async function runAuditPhases(
     startUrl,
     config,
     crawl,
+    robotsText: discovery.robotsText,
   });
 }
 
@@ -319,6 +321,7 @@ async function finalizeAudit(args: {
   startUrl: string;
   config: AuditConfig;
   crawl: CrawlPhaseResult;
+  robotsText: string | null;
 }) {
   const {
     step,
@@ -329,6 +332,7 @@ async function finalizeAudit(args: {
     startUrl,
     config,
     crawl,
+    robotsText,
   } = args;
 
   await pgStep(step, "multipage-checks", MULTIPAGE_CHECKS_STEP, async () => {
@@ -350,6 +354,12 @@ async function finalizeAudit(args: {
 
     const issues = await runMultipageChecks({ auditId });
     issues.push(...(await runScratchpadLinkChecks(auditId, startUrl, crawl)));
+    issues.push(
+      ...(await runAiReadinessChecks({
+        origin: getOrigin(startUrl),
+        robotsText,
+      })),
+    );
     await AuditRepository.insertIssues(auditId, issues);
     return { issueCount: issues.length };
   });
