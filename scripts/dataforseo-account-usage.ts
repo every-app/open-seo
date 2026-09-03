@@ -6,8 +6,6 @@ loadLocalEnv();
 
 const args = parseArgs(process.argv.slice(2));
 
-await main();
-
 /**
  * Inspect real DataForSEO account spend via the FREE GET
  * /v3/appendix/user_data endpoint. Unlike the other billing:* scripts, this
@@ -113,3 +111,7 @@ function printUsageAndExit(message: string): never {
   console.error("Usage: pnpm billing:usage [--json=true]");
   process.exit(1);
 }
+
+// Last, not first: `main` hoists but the `const` tables it reads do not, so
+// invoking at the top of the module throws a TDZ ReferenceError.
+await main();
