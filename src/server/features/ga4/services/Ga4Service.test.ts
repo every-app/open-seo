@@ -242,3 +242,37 @@ describe("Ga4Service", () => {
     expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
 });
+
+describe("verifyConnection", () => {
+  const connection = { connectedByUserId: "u1", ga4AccountId: "sub-a" };
+
+  it("is true when the stored grant still reaches Analytics", async () => {
+    mocks.listProperties.mockResolvedValue([]);
+
+    await expect(Ga4Service.verifyConnection(connection)).resolves.toBe(true);
+  });
+
+  it("is false when Google rejects the stored grant, without error logging", async () => {
+    mocks.listProperties.mockRejectedValue(new Ga4TokenError("revoked"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(Ga4Service.verifyConnection(connection)).resolves.toBe(
+      false,
+    );
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("is false but logs on an unexpected error", async () => {
+    mocks.listProperties.mockRejectedValue(new Error("network blip"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(Ga4Service.verifyConnection(connection)).resolves.toBe(
+      false,
+    );
+    expect(consoleError).toHaveBeenCalled();
+  });
+});
