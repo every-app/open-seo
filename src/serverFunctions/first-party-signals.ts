@@ -48,8 +48,8 @@ export const revokeFirstPartySignalSource = createServerFn({ method: "POST" })
 
 /**
  * Portable retention entrypoint for Docker and self-hosted installations that
- * do not dispatch Cloudflare scheduled events. Each invocation deletes at most
- * one page for the current project and reports whether another call is needed.
+ * do not dispatch Cloudflare scheduled events. Each invocation drains multiple
+ * pages to a stable bound and reports whether another call is needed.
  */
 export const purgeExpiredFirstPartySignalBatches = createServerFn({
   method: "POST",

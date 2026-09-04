@@ -3,9 +3,18 @@ import { FIRST_PARTY_MAX_BODY_BYTES } from "@/shared/first-party-signals";
 import { bytesToHex } from "./encoding";
 import { handleFirstPartyAggregateRequest } from "./handleAggregateRequest";
 
+type RateLimitFn = (input: { key: string }) => Promise<{ success: boolean }>;
+
 const runtime = vi.hoisted(() => ({
   env: {} as {
-    FIRST_PARTY_INGEST_RATE_LIMIT?: { limit: ReturnType<typeof vi.fn> };
+    FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED?: string;
+    FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT?: {
+      limit: RateLimitFn;
+    };
+    FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT?: {
+      limit: RateLimitFn;
+    };
+    FIRST_PARTY_INGEST_RATE_LIMIT?: { limit: RateLimitFn };
   },
 }));
 
@@ -106,6 +115,9 @@ const payload = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  delete runtime.env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED;
+  delete runtime.env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT;
+  delete runtime.env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT;
   delete runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT;
   mocks.getActiveSourceForIngest.mockResolvedValue({
     id: sourceId,
@@ -205,6 +217,13 @@ describe("first-party aggregate HTTP ingestion", () => {
 
   it("rate-limits an authenticated source before parsing or persistence", async () => {
     const limit = vi.fn().mockResolvedValue({ success: false });
+    runtime.env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED = "true";
+    runtime.env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
+    runtime.env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
     runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT = { limit };
 
     const response = await handleFirstPartyAggregateRequest(
@@ -215,6 +234,114 @@ describe("first-party aggregate HTTP ingestion", () => {
     expect(response.headers.get("Retry-After")).toBe("60");
     expect(limit).toHaveBeenCalledWith({ key: sourceId });
     expect(mocks.saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("bounds a burst of random claimed UUIDs before body, database, or secret work", async () => {
+    const globalLimit = vi
+      .fn<RateLimitFn>()
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValueOnce({ success: true })
+      .mockResolvedValue({ success: false });
+    const claimedSourceLimit = vi
+      .fn<RateLimitFn>()
+      .mockResolvedValue({ success: true });
+    runtime.env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED = "true";
+    runtime.env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT = { limit: globalLimit };
+    runtime.env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT = {
+      limit: claimedSourceLimit,
+    };
+    runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    let bodyPulls = 0;
+    const responses: Response[] = [];
+    for (let index = 0; index < 6; index += 1) {
+      const body = new ReadableStream<Uint8Array>(
+        {
+          pull(controller) {
+            bodyPulls += 1;
+            controller.enqueue(new TextEncoder().encode("{}"));
+            controller.close();
+          },
+        },
+        { highWaterMark: 0 },
+      );
+      responses.push(
+        await handleFirstPartyAggregateRequest(
+          new Request(
+            "https://app.example.com/api/site-signals/v1/aggregates",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "X-OpenSEO-Source": crypto.randomUUID(),
+              },
+              body,
+              duplex: "half",
+            } as RequestInit & { duplex: "half" },
+          ),
+        ),
+      );
+    }
+
+    expect(responses.map((response) => response.status)).toEqual([
+      401, 401, 429, 429, 429, 429,
+    ]);
+    expect(globalLimit).toHaveBeenCalledTimes(6);
+    expect(claimedSourceLimit).toHaveBeenCalledTimes(2);
+    expect(globalLimit.mock.calls.map(([input]) => input.key)).toEqual(
+      Array.from({ length: 6 }, () => "aggregate-receiver"),
+    );
+    const claimedKeys = claimedSourceLimit.mock.calls.map(
+      ([input]) => input.key,
+    );
+    expect(new Set(claimedKeys).size).toBe(2);
+    expect(claimedKeys.every((key) => /^[0-9a-f-]{36}$/.test(key))).toBe(true);
+    expect(bodyPulls).toBe(0);
+    expect(mocks.getActiveSourceForIngest).not.toHaveBeenCalled();
+    expect(mocks.decrypt).not.toHaveBeenCalled();
+    expect(mocks.saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("fails closed before body or database work when an edge binding is missing", async () => {
+    runtime.env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED = "true";
+    runtime.env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(await response.json()).toMatchObject({
+      error: "INGEST_PROTECTION_UNAVAILABLE",
+    });
+    expect(mocks.getActiveSourceForIngest).not.toHaveBeenCalled();
+    expect(mocks.decrypt).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the coarse edge limiter is unavailable", async () => {
+    runtime.env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED = "true";
+    runtime.env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT = {
+      limit: vi.fn().mockRejectedValue(new Error("provider unavailable")),
+    };
+    runtime.env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
+    runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT = {
+      limit: vi.fn().mockResolvedValue({ success: true }),
+    };
+
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(503);
+    expect(mocks.getActiveSourceForIngest).not.toHaveBeenCalled();
+    expect(mocks.decrypt).not.toHaveBeenCalled();
   });
 
   it("rejects a signature made for different JSON bytes", async () => {

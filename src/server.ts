@@ -208,10 +208,12 @@ export default {
           count: firstPartyPurge.deleted,
           hasMore: firstPartyPurge.hasMore,
           limit: firstPartyPurge.limit,
+          pages: firstPartyPurge.pages,
+          capacity: firstPartyPurge.capacity,
         });
         if (firstPartyPurge.hasMore) {
-          console.warn(
-            "[first-party-signals] retention purge reached its bounded page; another invocation is required",
+          throw new Error(
+            "First-party retention reached its bounded drain capacity; the next cron or a manual cleanup must continue it.",
           );
         }
       } catch (error) {

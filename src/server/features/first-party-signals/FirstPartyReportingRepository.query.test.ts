@@ -146,7 +146,12 @@ describe("FirstPartyReportingRepository query boundaries", () => {
     ).resolves.toBe(true);
   });
 
-  it("purges one bounded project-scoped retention page at a time", async () => {
+  it("paginates more than 250 expired receipts within one project", async () => {
+    const projectRows = Array.from(
+      { length: 251 },
+      (_, index) =>
+        `('cleanup_bulk_a_${String(index).padStart(3, "0")}', 'source_cleanup_a', '2025-01-01', 'complete', 'attempt_bulk_a_${index}')`,
+    ).join(",\n");
     await client.executeMultiple(`
       INSERT INTO first_party_signal_sources (id, project_id)
         VALUES
@@ -155,9 +160,7 @@ describe("FirstPartyReportingRepository query boundaries", () => {
       INSERT INTO first_party_signal_batches
         (id, source_id, snapshot_date, status, processing_lease_id)
         VALUES
-          ('cleanup_a_1', 'source_cleanup_a', '2025-01-01', 'complete', 'attempt_1'),
-          ('cleanup_a_2', 'source_cleanup_a', '2025-01-02', 'complete', 'attempt_2'),
-          ('cleanup_a_3', 'source_cleanup_a', '2025-01-03', 'complete', 'attempt_3'),
+          ${projectRows},
           ('cleanup_a_current', 'source_cleanup_a', '2026-09-01', 'complete', 'attempt_4'),
           ('cleanup_b_1', 'source_cleanup_b', '2025-01-01', 'complete', 'attempt_5');
     `);
@@ -165,14 +168,14 @@ describe("FirstPartyReportingRepository query boundaries", () => {
     await expect(
       FirstPartySignalsRepository.purgeOlderThan({
         cutoffDate: "2025-07-31",
-        limit: 2,
+        limit: 250,
         projectId: "project_cleanup_a",
       }),
-    ).resolves.toEqual({ deleted: 2, hasMore: true });
+    ).resolves.toEqual({ deleted: 250, hasMore: true });
     await expect(
       FirstPartySignalsRepository.purgeOlderThan({
         cutoffDate: "2025-07-31",
-        limit: 2,
+        limit: 250,
         projectId: "project_cleanup_a",
       }),
     ).resolves.toEqual({ deleted: 1, hasMore: false });

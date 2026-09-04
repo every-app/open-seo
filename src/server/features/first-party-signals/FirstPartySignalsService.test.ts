@@ -309,7 +309,9 @@ describe("FirstPartySignalsService", () => {
   });
 
   it("enforces and purges the 400-day retention window", async () => {
-    mocks.purgeOlderThan.mockResolvedValue({ deleted: 4, hasMore: false });
+    mocks.purgeOlderThan
+      .mockResolvedValueOnce({ deleted: 25, hasMore: true })
+      .mockResolvedValueOnce({ deleted: 4, hasMore: false });
     await expect(
       FirstPartySignalsService.purgeExpired({
         now: new Date("2026-09-04T12:00:00.000Z"),
@@ -317,12 +319,22 @@ describe("FirstPartySignalsService", () => {
         projectId: "project_1",
       }),
     ).resolves.toEqual({
-      deleted: 4,
+      deleted: 29,
+      pages: 2,
       hasMore: false,
+      stalled: false,
       cutoffDate: "2025-07-31",
       limit: 25,
+      maxPages: 20,
+      capacity: 500,
     });
-    expect(mocks.purgeOlderThan).toHaveBeenCalledWith({
+    expect(mocks.purgeOlderThan).toHaveBeenCalledTimes(2);
+    expect(mocks.purgeOlderThan).toHaveBeenNthCalledWith(1, {
+      cutoffDate: "2025-07-31",
+      limit: 25,
+      projectId: "project_1",
+    });
+    expect(mocks.purgeOlderThan).toHaveBeenNthCalledWith(2, {
       cutoffDate: "2025-07-31",
       limit: 25,
       projectId: "project_1",

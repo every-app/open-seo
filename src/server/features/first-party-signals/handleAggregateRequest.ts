@@ -18,6 +18,12 @@ import {
 } from "./FirstPartySignature";
 import { sha256Hex } from "./encoding";
 import { BodyLimitExceededError, readBodyCapped } from "./readBodyCapped";
+import {
+  enforceFirstPartyAuthenticatedRateLimit,
+  enforceFirstPartyPreAuthRateLimits,
+  FIRST_PARTY_INGEST_RETRY_AFTER_SECONDS,
+  type FirstPartyIngestRateLimitDecision,
+} from "./FirstPartyIngestRateLimit";
 
 const sourceIdSchema = z.string().uuid();
 
@@ -59,6 +65,23 @@ function safeError(error: unknown): Response {
   return json(500, { ok: false, error: "INTERNAL_ERROR" });
 }
 
+function rateLimitResponse(
+  decision: FirstPartyIngestRateLimitDecision,
+): Response | null {
+  if (decision === "allowed") return null;
+  return json(
+    decision === "rate_limited" ? 429 : 503,
+    {
+      ok: false,
+      error:
+        decision === "rate_limited"
+          ? "RATE_LIMITED"
+          : "INGEST_PROTECTION_UNAVAILABLE",
+    },
+    { "Retry-After": String(FIRST_PARTY_INGEST_RETRY_AFTER_SECONDS) },
+  );
+}
+
 export async function handleFirstPartyAggregateRequest(
   request: Request,
 ): Promise<Response> {
@@ -85,6 +108,13 @@ export async function handleFirstPartyAggregateRequest(
     const sourceIdResult = sourceIdSchema.safeParse(
       request.headers.get("X-OpenSEO-Source"),
     );
+    const preAuthLimitResponse = rateLimitResponse(
+      await enforceFirstPartyPreAuthRateLimits(
+        env,
+        sourceIdResult.success ? sourceIdResult.data : null,
+      ),
+    );
+    if (preAuthLimitResponse) return preAuthLimitResponse;
     const timestamp = parseSignatureTimestamp(
       request.headers.get("X-OpenSEO-Timestamp"),
     );
@@ -125,19 +155,10 @@ export async function handleFirstPartyAggregateRequest(
     ) {
       return json(401, { ok: false, error: "INVALID_SIGNATURE" });
     }
-    // The binding exists on hosted deployments. Local and self-hosted
-    // surfaces remain storage-bounded by one immutable batch per source/day.
-    const rateLimit = env.FIRST_PARTY_INGEST_RATE_LIMIT;
-    if (rateLimit) {
-      const { success } = await rateLimit.limit({ key: source.id });
-      if (!success) {
-        return json(
-          429,
-          { ok: false, error: "RATE_LIMITED" },
-          { "Retry-After": "60" },
-        );
-      }
-    }
+    const authenticatedLimitResponse = rateLimitResponse(
+      await enforceFirstPartyAuthenticatedRateLimit(env, source.id),
+    );
+    if (authenticatedLimitResponse) return authenticatedLimitResponse;
 
     let decoded: unknown;
     try {

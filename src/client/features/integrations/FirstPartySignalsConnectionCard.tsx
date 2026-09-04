@@ -192,9 +192,10 @@ export function FirstPartySignalsConnectionCard({
       ) : null}
       <div className="mt-4 border-t border-base-300 pt-4 text-sm">
         <p className="text-base-content/70">
-          Cloudflare scheduled deployments clean one bounded retention page
-          daily. Docker and other self-hosted runtimes do not dispatch that cron
-          automatically; run the same project-scoped cleanup here.
+          Cloudflare scheduled deployments drain up to 5,000 expired snapshots
+          per run. Docker and other self-hosted runtimes do not dispatch that
+          cron automatically; run the same bounded, project-scoped cleanup here
+          and repeat only when it reports more work.
         </p>
         <button
           type="button"

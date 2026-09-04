@@ -45,13 +45,22 @@ identifier-shaped path segments are rejected. Every configured path must
 appear exactly once, including paths whose six counters are all zero.
 
 Payloads are capped at 256 KiB and 1,000 landing rows. Snapshots older than 400
-days or dated in the future are rejected. Cloudflare deployments delete one
-bounded page of expired batches on the daily scheduled event and throttle
-authenticated ingestion to 120 requests per source per minute. Docker and
+days or dated in the future are rejected. Alchemy-hosted Cloudflare deployments
+apply a constant-key 600 requests/minute coarse limiter plus an opaque
+claimed-source 240 requests/minute limiter before body, database, secret, or
+HMAC work. This contains random UUID sprays without using, persisting, or
+logging IP addresses. The existing authenticated per-source 120
+requests/minute limiter remains after HMAC verification. A configured binding
+set fails closed if any limiter is missing or unavailable. Portable Docker
+runtimes omit Cloudflare bindings and should provide equivalent coarse
+protection in their trusted reverse proxy.
+
+The daily scheduled event drains up to twenty ordered pages (5,000 batches).
+If more work remains, the invocation fails observably and the next run resumes
+safely from the oldest remaining receipt without storing a cursor. Docker and
 other self-hosted runtimes do not dispatch that Cloudflare cron: an integration
-manager can invoke the same project-scoped, 250-batch cleanup page from the
-integration card. If it reports more work, run it again. Cleanup never performs
-an unbounded delete.
+manager can invoke the same bounded, project-scoped drain from the integration
+card and repeat it only while `hasMore` is true.
 
 ## Authentication and idempotency
 

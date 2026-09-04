@@ -11,10 +11,14 @@ import {
 } from "./FirstPartyPathPolicy";
 import { FirstPartySignalsRepository } from "./FirstPartySignalsRepository";
 import { randomBase64Url } from "./encoding";
+import {
+  drainRetentionPages,
+  RETENTION_DRAIN_MAX_PAGES,
+  RETENTION_DRAIN_PAGE_SIZE,
+} from "./RetentionDrain";
 
 const BATCH_LEASE_MS = 5 * 60_000;
 const MIN_RETRY_AFTER_SECONDS = 1;
-const FIRST_PARTY_RETENTION_PURGE_PAGE_SIZE = 250;
 const MAX_RETENTION_PURGE_PAGE_SIZE = 500;
 
 export class FirstPartyBatchConflictError extends Error {
@@ -376,7 +380,7 @@ async function purgeExpired(
   } = {},
 ) {
   const now = input.now ?? new Date();
-  const limit = input.limit ?? FIRST_PARTY_RETENTION_PURGE_PAGE_SIZE;
+  const limit = input.limit ?? RETENTION_DRAIN_PAGE_SIZE;
   if (
     !Number.isInteger(limit) ||
     limit < 1 ||
@@ -387,15 +391,21 @@ async function purgeExpired(
       `Retention cleanup limit must be between 1 and ${MAX_RETENTION_PURGE_PAGE_SIZE}.`,
     );
   }
-  const result = await FirstPartySignalsRepository.purgeOlderThan({
-    cutoffDate: oldestRetainedDay(now),
-    limit,
-    projectId: input.projectId,
+  const cutoffDate = oldestRetainedDay(now);
+  const result = await drainRetentionPages({
+    purgePage: () =>
+      FirstPartySignalsRepository.purgeOlderThan({
+        cutoffDate,
+        limit,
+        projectId: input.projectId,
+      }),
   });
   return {
     ...result,
-    cutoffDate: oldestRetainedDay(now),
+    cutoffDate,
     limit,
+    maxPages: RETENTION_DRAIN_MAX_PAGES,
+    capacity: limit * RETENTION_DRAIN_MAX_PAGES,
   };
 }
 

@@ -23,6 +23,9 @@ declare namespace Cloudflare {
 		// Hand-patched: Alchemy-only bindings declared in alchemy.run.ts,
 		// absent in the wrangler.jsonc surfaces (local dev and Docker).
 		MCP_RATE_LIMIT?: RateLimit;
+		FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED?: string;
+		FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT?: RateLimit;
+		FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT?: RateLimit;
 		FIRST_PARTY_INGEST_RATE_LIMIT?: RateLimit;
 		// Hand-patched: the class moved to src/audit-worker.ts and a full regen pulls
 		// unrelated runtime-type drift (see cf-typegen); keep this in sync until then.
