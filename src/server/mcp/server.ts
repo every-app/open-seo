@@ -69,6 +69,10 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getFirstPartyFunnelTool,
+  getFirstPartyLandingConversionsTool,
+} from "@/server/mcp/tools/first-party-signals-tools";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -199,6 +203,8 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getGoogleAnalyticsEcommercePerformanceTool);
   register(getGoogleAnalyticsSiteSearchTool);
   register(getGoogleAnalyticsAudienceBreakdownTool);
+  register(getFirstPartyFunnelTool);
+  register(getFirstPartyLandingConversionsTool);
   register(runSiteAuditTool);
   register(getAuditStatusTool);
   register(getAuditIssuesTool);

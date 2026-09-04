@@ -480,6 +480,16 @@ export default Alchemy.Stack(
           simple: { limit: 5000, period: 60 },
         }),
 
+        // Authenticated per-source throttle for aggregate ingestion. Storage
+        // is separately bounded to one immutable receipt per source/day.
+        FIRST_PARTY_INGEST_RATE_LIMIT: Cloudflare.RateLimit(
+          "FIRST_PARTY_INGEST_RATE_LIMIT",
+          {
+            namespaceId: 1002,
+            simple: { limit: 120, period: 60 },
+          },
+        ),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only

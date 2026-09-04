@@ -27,6 +27,7 @@ import { sweepDubReferredOrganizations } from "@/server/referrals/dub";
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
+import { FirstPartySignalsService } from "@/server/features/first-party-signals/FirstPartySignalsService";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
@@ -198,6 +199,21 @@ export default {
     _ctx: ExecutionContext,
   ) {
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
+      let firstPartyPurgeError: unknown;
+      try {
+        const purgedFirstPartyBatches = await withPgClient(() =>
+          FirstPartySignalsService.purgeExpired(),
+        );
+        console.log("[first-party-signals] purged expired batches", {
+          count: purgedFirstPartyBatches,
+        });
+      } catch (error) {
+        firstPartyPurgeError = error;
+        console.error("[first-party-signals] retention purge failed", {
+          errorName: error instanceof Error ? error.name : "UnknownError",
+        });
+      }
+
       // Only hosted mode runs the OAuth provider (and has OAUTH_KV bound).
       if (isHostedAuthMode(getAuthMode(env.AUTH_MODE))) {
         const result = await openSeoOAuthProvider.purgeExpiredData(
@@ -218,6 +234,7 @@ export default {
           console.error("[cron] Dub referral sale sweep failed:", err);
         }
       }
+      if (firstPartyPurgeError) throw firstPartyPurgeError;
       return;
     }
 

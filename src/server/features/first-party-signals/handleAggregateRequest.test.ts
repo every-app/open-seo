@@ -1,0 +1,222 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FIRST_PARTY_MAX_BODY_BYTES } from "@/shared/first-party-signals";
+import { bytesToHex } from "./encoding";
+import { handleFirstPartyAggregateRequest } from "./handleAggregateRequest";
+
+const runtime = vi.hoisted(() => ({
+  env: {} as {
+    FIRST_PARTY_INGEST_RATE_LIMIT?: { limit: ReturnType<typeof vi.fn> };
+  },
+}));
+
+vi.mock("cloudflare:workers", () => runtime);
+
+const mocks = vi.hoisted(() => ({
+  getActiveSourceForIngest: vi.fn(),
+  decrypt: vi.fn(),
+  saveSnapshot: vi.fn<
+    (input: { snapshot: unknown; payloadDigest: string }) => Promise<{
+      accepted: true;
+      duplicate: boolean;
+      rowCount: number;
+    }>
+  >(),
+}));
+
+vi.mock("./FirstPartySignalsRepository", () => ({
+  FirstPartySignalsRepository: {
+    getActiveSourceForIngest: mocks.getActiveSourceForIngest,
+  },
+}));
+
+vi.mock("./FirstPartyCredentialVault", () => ({
+  FirstPartyCredentialVault: { decrypt: mocks.decrypt },
+}));
+
+vi.mock("./FirstPartySignalsService", () => {
+  class FirstPartyBatchConflictError extends Error {}
+  return {
+    FirstPartyBatchConflictError,
+    FirstPartySignalsService: { saveSnapshot: mocks.saveSnapshot },
+  };
+});
+
+const sourceId = "2d7b09d4-884c-4b99-a2ca-56fd514fb710";
+const secret = "test-secret";
+
+async function sign(timestamp: string, rawBody: Uint8Array) {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const prefix = new TextEncoder().encode(`${timestamp}.`);
+  const message = new Uint8Array(prefix.length + rawBody.length);
+  message.set(prefix);
+  message.set(rawBody, prefix.length);
+  return bytesToHex(
+    new Uint8Array(await crypto.subtle.sign("HMAC", key, message)),
+  );
+}
+
+async function signedRequest(value: unknown, rawBody?: string) {
+  const body = new TextEncoder().encode(rawBody ?? JSON.stringify(value));
+  const timestamp = String(Date.now());
+  return new Request("https://app.example.com/api/site-signals/v1/aggregates", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-OpenSEO-Source": sourceId,
+      "X-OpenSEO-Timestamp": timestamp,
+      "X-OpenSEO-Signature": await sign(timestamp, body),
+    },
+    body,
+  });
+}
+
+const payload = {
+  schemaVersion: 1,
+  batchId: "f1a2ae17-b157-4bb9-b1a1-960ce8d4c01d",
+  snapshotDate: "2026-09-04",
+  rows: [
+    {
+      landingPath: "/pricing",
+      searchStarted: 10,
+      searchCompleted: 8,
+      searchNoResults: 1,
+      registrationsCompleted: 3,
+      checkoutStarted: 2,
+      paymentsCompleted: 1,
+    },
+  ],
+};
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  delete runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT;
+  mocks.getActiveSourceForIngest.mockResolvedValue({
+    id: sourceId,
+    projectId: "project_1",
+    encryptedSecret: "encrypted",
+    projectDomain: "example.com",
+    allowedPaths: ["/pricing"],
+  });
+  mocks.decrypt.mockResolvedValue(secret);
+  mocks.saveSnapshot.mockResolvedValue({
+    accepted: true,
+    duplicate: false,
+    rowCount: 1,
+  });
+});
+
+describe("first-party aggregate HTTP ingestion", () => {
+  it("authenticates the exact bytes before accepting a snapshot", async () => {
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(await response.json()).toMatchObject({
+      ok: true,
+      accepted: true,
+      duplicate: false,
+      rowCount: 1,
+    });
+    expect(mocks.saveSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        snapshot: payload,
+      }),
+    );
+    expect(mocks.saveSnapshot.mock.calls[0]?.[0].payloadDigest).toMatch(
+      /^[a-f\d]{64}$/,
+    );
+  });
+
+  it("returns 200 for an exact idempotent replay", async () => {
+    mocks.saveSnapshot.mockResolvedValue({
+      accepted: true,
+      duplicate: true,
+      rowCount: 1,
+    });
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ duplicate: true });
+  });
+
+  it("rate-limits an authenticated source before parsing or persistence", async () => {
+    const limit = vi.fn().mockResolvedValue({ success: false });
+    runtime.env.FIRST_PARTY_INGEST_RATE_LIMIT = { limit };
+
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(429);
+    expect(response.headers.get("Retry-After")).toBe("60");
+    expect(limit).toHaveBeenCalledWith({ key: sourceId });
+    expect(mocks.saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("rejects a signature made for different JSON bytes", async () => {
+    const signed = await signedRequest(payload);
+    const headers = new Headers(signed.headers);
+    const response = await handleFirstPartyAggregateRequest(
+      new Request(signed.url, {
+        method: "POST",
+        headers,
+        body: JSON.stringify(payload, null, 2),
+      }),
+    );
+    expect(response.status).toBe(401);
+    expect(mocks.saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("rejects unknown fields instead of accepting PII or amounts", async () => {
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest({
+        ...payload,
+        rows: [{ ...payload.rows[0], email: "person@example.com", amount: 10 }],
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({
+      ok: false,
+      error: "VALIDATION_ERROR",
+    });
+    expect(mocks.saveSnapshot).not.toHaveBeenCalled();
+  });
+
+  it("caps a streaming body before signature or JSON processing", async () => {
+    const response = await handleFirstPartyAggregateRequest(
+      new Request("https://app.example.com/api/site-signals/v1/aggregates", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-OpenSEO-Source": sourceId,
+          "X-OpenSEO-Timestamp": String(Date.now()),
+          "X-OpenSEO-Signature": "00".repeat(32),
+        },
+        body: "x".repeat(FIRST_PARTY_MAX_BODY_BYTES + 1),
+      }),
+    );
+    expect(response.status).toBe(413);
+    expect(mocks.getActiveSourceForIngest).not.toHaveBeenCalled();
+  });
+
+  it("does not distinguish an unknown or revoked source from a bad signature", async () => {
+    mocks.getActiveSourceForIngest.mockResolvedValue(null);
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      ok: false,
+      error: "INVALID_SIGNATURE",
+    });
+  });
+});

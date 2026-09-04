@@ -57,6 +57,10 @@ import {
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getFirstPartyFunnelTool,
+  getFirstPartyLandingConversionsTool,
+} from "@/server/mcp/tools/first-party-signals-tools";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
 
@@ -398,6 +402,10 @@ export function buildSamMcpTools(
     ),
     get_google_analytics_audience_breakdown: adaptObjectTool(
       getGoogleAnalyticsAudienceBreakdownTool,
+    ),
+    get_first_party_funnel: adaptTool(getFirstPartyFunnelTool),
+    get_first_party_landing_conversions: adaptTool(
+      getFirstPartyLandingConversionsTool,
     ),
     run_site_audit: adaptTool(runSiteAuditTool),
     get_audit_status: waitingAuditStatusTool(adaptTool),
