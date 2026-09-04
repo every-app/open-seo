@@ -14,6 +14,7 @@ import {
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import { resolveMarket } from "@/shared/keyword-locations";
+import { getKeywordProviderStatus } from "@/server/lib/keyword-providers";
 
 function shouldUseKeywordE2eFixtures() {
   return import.meta.env.VITE_E2E_KEYWORD_FIXTURES === "1";
@@ -38,6 +39,11 @@ export const researchKeywords = createServerFn({ method: "POST" })
     }
 
     return KeywordResearchService.research(input, context);
+  });
+
+export const getKeywordProviders = createServerFn({ method: "POST" })
+  .handler(async () => {
+    return getKeywordProviderStatus();
   });
 
 export const saveKeywords = createServerFn({ method: "POST" })
