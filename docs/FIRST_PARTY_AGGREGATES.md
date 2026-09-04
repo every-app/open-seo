@@ -45,10 +45,13 @@ identifier-shaped path segments are rejected. Every configured path must
 appear exactly once, including paths whose six counters are all zero.
 
 Payloads are capped at 256 KiB and 1,000 landing rows. Snapshots older than 400
-days or dated in the future are rejected. A daily maintenance pass deletes
-batches beyond the 400-day retention window. Cloudflare deployments provisioned
-by Alchemy also throttle authenticated ingestion to 120 requests per source per
-minute.
+days or dated in the future are rejected. Cloudflare deployments delete one
+bounded page of expired batches on the daily scheduled event and throttle
+authenticated ingestion to 120 requests per source per minute. Docker and
+other self-hosted runtimes do not dispatch that Cloudflare cron: an integration
+manager can invoke the same project-scoped, 250-batch cleanup page from the
+integration card. If it reports more work, run it again. Cleanup never performs
+an unbounded delete.
 
 ## Authentication and idempotency
 
@@ -71,11 +74,14 @@ HMAC-SHA256(secret, timestamp + "." + exactRawBody)
 OpenSEO accepts at most five minutes of clock skew. Reformatting JSON after
 signing invalidates the signature.
 
-`batchId` is an opaque UUID idempotency key within a source. Replaying the same ID and
-exact payload returns HTTP 200 without another write. Reusing an ID with
-different bytes returns HTTP 409. Treat it as an opaque technical key; never
-derive it from a user, session, order, search term, or other business
-identifier. A newly accepted batch returns HTTP 202.
+`batchId` is an opaque UUID idempotency key within a source. Replaying the same
+ID and exact payload after completion returns HTTP 200 without another write.
+An exact retry while the first request still owns the processing lease returns
+HTTP 202 with `status: "in_progress"` and a `Retry-After` header. Reusing an ID
+with different bytes, or submitting a different batch for the same UTC date,
+returns HTTP 409. Treat the ID as an opaque technical key; never derive it from
+a user, session, order, search term, or other business identifier. A newly
+accepted batch returns HTTP 202.
 
 The MCP and SAM tools `get_first_party_funnel` and
 `get_first_party_landing_conversions` expose only aggregate counts and derived

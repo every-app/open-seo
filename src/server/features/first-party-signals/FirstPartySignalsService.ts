@@ -13,6 +13,9 @@ import { FirstPartySignalsRepository } from "./FirstPartySignalsRepository";
 import { randomBase64Url } from "./encoding";
 
 const BATCH_LEASE_MS = 5 * 60_000;
+const MIN_RETRY_AFTER_SECONDS = 1;
+const FIRST_PARTY_RETENTION_PURGE_PAGE_SIZE = 250;
+const MAX_RETENTION_PURGE_PAGE_SIZE = 500;
 
 export class FirstPartyBatchConflictError extends Error {
   constructor(message: string) {
@@ -21,8 +24,45 @@ export class FirstPartyBatchConflictError extends Error {
   }
 }
 
+export class FirstPartyBatchInProgressError extends Error {
+  readonly retryAfterSeconds: number;
+  readonly rowCount: number;
+
+  constructor(input: {
+    retryAfterSeconds: number;
+    rowCount: number;
+    message?: string;
+  }) {
+    super(input.message ?? "This exact batch is still being processed.");
+    this.name = "FirstPartyBatchInProgressError";
+    this.retryAfterSeconds = Math.max(
+      MIN_RETRY_AFTER_SECONDS,
+      Math.ceil(input.retryAfterSeconds),
+    );
+    this.rowCount = input.rowCount;
+  }
+}
+
 function batchLeaseExpiry(now: Date) {
   return new Date(now.getTime() + BATCH_LEASE_MS).toISOString();
+}
+
+function retryAfterSeconds(receipt: BatchReceipt | null, now: Date): number {
+  const expiresAt = receipt?.processingLeaseExpiresAt
+    ? Date.parse(receipt.processingLeaseExpiresAt)
+    : Number.NaN;
+  if (!Number.isFinite(expiresAt)) return MIN_RETRY_AFTER_SECONDS;
+  return Math.max(
+    MIN_RETRY_AFTER_SECONDS,
+    Math.ceil((expiresAt - now.getTime()) / 1_000),
+  );
+}
+
+function inProgress(receipt: BatchReceipt | null, rowCount: number, now: Date) {
+  return new FirstPartyBatchInProgressError({
+    retryAfterSeconds: retryAfterSeconds(receipt, now),
+    rowCount,
+  });
 }
 
 function isoDay(date: Date): string {
@@ -212,9 +252,7 @@ async function saveSnapshot(input: {
         now: nowIso,
       }))
     ) {
-      throw new FirstPartyBatchConflictError(
-        "This batch is already being processed.",
-      );
+      throw inProgress(receipt, normalizedRows.length, now);
     }
   } else {
     try {
@@ -270,9 +308,7 @@ async function saveSnapshot(input: {
       ) {
         receiptId = raced.id;
       } else if (raced) {
-        throw new FirstPartyBatchConflictError(
-          "This batch is already being processed.",
-        );
+        throw inProgress(raced, normalizedRows.length, now);
       } else {
         throw error;
       }
@@ -289,9 +325,7 @@ async function saveSnapshot(input: {
         leaseExpiresAt: batchLeaseExpiry(now),
       }))
     ) {
-      throw new FirstPartyBatchConflictError(
-        "This batch processing lease was lost before persistence.",
-      );
+      throw inProgress(receipt, normalizedRows.length, now);
     }
     await FirstPartySignalsRepository.replaceBatchRows({
       batchReceiptId: receiptId,
@@ -308,9 +342,7 @@ async function saveSnapshot(input: {
         leaseExpiresAt: batchLeaseExpiry(completionNow),
       }))
     ) {
-      throw new FirstPartyBatchConflictError(
-        "This batch processing lease was lost before completion.",
-      );
+      throw inProgress(receipt, normalizedRows.length, completionNow);
     }
     if (
       !(await FirstPartySignalsRepository.completeBatch({
@@ -319,9 +351,7 @@ async function saveSnapshot(input: {
         now: completionNow.toISOString(),
       }))
     ) {
-      throw new FirstPartyBatchConflictError(
-        "This batch processing lease was lost before the snapshot became current.",
-      );
+      throw inProgress(receipt, normalizedRows.length, completionNow);
     }
   } catch (error) {
     await FirstPartySignalsRepository.failBatch(
@@ -338,8 +368,35 @@ async function saveSnapshot(input: {
   };
 }
 
-async function purgeExpired(now = new Date()) {
-  return FirstPartySignalsRepository.purgeOlderThan(oldestRetainedDay(now));
+async function purgeExpired(
+  input: {
+    now?: Date;
+    limit?: number;
+    projectId?: string;
+  } = {},
+) {
+  const now = input.now ?? new Date();
+  const limit = input.limit ?? FIRST_PARTY_RETENTION_PURGE_PAGE_SIZE;
+  if (
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > MAX_RETENTION_PURGE_PAGE_SIZE
+  ) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      `Retention cleanup limit must be between 1 and ${MAX_RETENTION_PURGE_PAGE_SIZE}.`,
+    );
+  }
+  const result = await FirstPartySignalsRepository.purgeOlderThan({
+    cutoffDate: oldestRetainedDay(now),
+    limit,
+    projectId: input.projectId,
+  });
+  return {
+    ...result,
+    cutoffDate: oldestRetainedDay(now),
+    limit,
+  };
 }
 
 export const FirstPartySignalsService = {

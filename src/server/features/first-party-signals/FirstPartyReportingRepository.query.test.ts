@@ -145,4 +145,45 @@ describe("FirstPartyReportingRepository query boundaries", () => {
       }),
     ).resolves.toBe(true);
   });
+
+  it("purges one bounded project-scoped retention page at a time", async () => {
+    await client.executeMultiple(`
+      INSERT INTO first_party_signal_sources (id, project_id)
+        VALUES
+          ('source_cleanup_a', 'project_cleanup_a'),
+          ('source_cleanup_b', 'project_cleanup_b');
+      INSERT INTO first_party_signal_batches
+        (id, source_id, snapshot_date, status, processing_lease_id)
+        VALUES
+          ('cleanup_a_1', 'source_cleanup_a', '2025-01-01', 'complete', 'attempt_1'),
+          ('cleanup_a_2', 'source_cleanup_a', '2025-01-02', 'complete', 'attempt_2'),
+          ('cleanup_a_3', 'source_cleanup_a', '2025-01-03', 'complete', 'attempt_3'),
+          ('cleanup_a_current', 'source_cleanup_a', '2026-09-01', 'complete', 'attempt_4'),
+          ('cleanup_b_1', 'source_cleanup_b', '2025-01-01', 'complete', 'attempt_5');
+    `);
+
+    await expect(
+      FirstPartySignalsRepository.purgeOlderThan({
+        cutoffDate: "2025-07-31",
+        limit: 2,
+        projectId: "project_cleanup_a",
+      }),
+    ).resolves.toEqual({ deleted: 2, hasMore: true });
+    await expect(
+      FirstPartySignalsRepository.purgeOlderThan({
+        cutoffDate: "2025-07-31",
+        limit: 2,
+        projectId: "project_cleanup_a",
+      }),
+    ).resolves.toEqual({ deleted: 1, hasMore: false });
+
+    const remaining = await client.execute({
+      sql: "SELECT id FROM first_party_signal_batches WHERE id LIKE 'cleanup_%' ORDER BY id",
+      args: [],
+    });
+    expect(remaining.rows.map((row) => row.id)).toEqual([
+      "cleanup_a_current",
+      "cleanup_b_1",
+    ]);
+  });
 });

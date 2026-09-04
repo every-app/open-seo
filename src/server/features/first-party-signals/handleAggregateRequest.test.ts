@@ -35,8 +35,19 @@ vi.mock("./FirstPartyCredentialVault", () => ({
 
 vi.mock("./FirstPartySignalsService", () => {
   class FirstPartyBatchConflictError extends Error {}
+  class FirstPartyBatchInProgressError extends Error {
+    retryAfterSeconds: number;
+    rowCount: number;
+
+    constructor(input: { retryAfterSeconds: number; rowCount: number }) {
+      super("in progress");
+      this.retryAfterSeconds = input.retryAfterSeconds;
+      this.rowCount = input.rowCount;
+    }
+  }
   return {
     FirstPartyBatchConflictError,
+    FirstPartyBatchInProgressError,
     FirstPartySignalsService: { saveSnapshot: mocks.saveSnapshot },
   };
 });
@@ -146,6 +157,50 @@ describe("first-party aggregate HTTP ingestion", () => {
     );
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ duplicate: true });
+  });
+
+  it("returns retryable 202 while the exact batch is still pending", async () => {
+    const { FirstPartyBatchInProgressError } =
+      await import("./FirstPartySignalsService");
+    mocks.saveSnapshot.mockRejectedValue(
+      new FirstPartyBatchInProgressError({
+        retryAfterSeconds: 47,
+        rowCount: 1,
+      }),
+    );
+
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(202);
+    expect(response.headers.get("Retry-After")).toBe("47");
+    expect(await response.json()).toEqual({
+      ok: true,
+      accepted: true,
+      duplicate: true,
+      status: "in_progress",
+      rowCount: 1,
+    });
+  });
+
+  it("reserves 409 for conflicting immutable batch identity or bytes", async () => {
+    const { FirstPartyBatchConflictError } =
+      await import("./FirstPartySignalsService");
+    mocks.saveSnapshot.mockRejectedValue(
+      new FirstPartyBatchConflictError("different digest or date"),
+    );
+
+    const response = await handleFirstPartyAggregateRequest(
+      await signedRequest(payload),
+    );
+
+    expect(response.status).toBe(409);
+    expect(response.headers.get("Retry-After")).toBeNull();
+    expect(await response.json()).toEqual({
+      ok: false,
+      error: "BATCH_CONFLICT",
+    });
   });
 
   it("rate-limits an authenticated source before parsing or persistence", async () => {

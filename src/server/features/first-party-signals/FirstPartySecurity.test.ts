@@ -71,6 +71,13 @@ describe("first-party landing path policy", () => {
     ).toBe("/pricing");
     expect(
       normalizePublicLandingPath({
+        value: "/pr%69cing",
+        projectDomain: "www.example.com",
+        allowedPaths,
+      }),
+    ).toBe("/pricing");
+    expect(
+      normalizePublicLandingPath({
         value: "/pricing/team",
         projectDomain: "www.example.com",
         allowedPaths,
@@ -97,6 +104,35 @@ describe("first-party landing path policy", () => {
       normalizeAllowedPaths(["/people/6ba7b810-9dad-11d1-80b4-00c04fd430c8"]),
     ).toThrow();
     expect(hasSensitivePathIdentifier("/person%2540example.com")).toBe(true);
+  });
+
+  it("canonicalizes percent encoding before private-path and uniqueness checks", () => {
+    for (const path of [
+      "/%61dmin",
+      "/%2561dmin",
+      "/d%61shboard",
+      "/profiles",
+      "/orders",
+      "/oauth/callback",
+    ]) {
+      expect(() => normalizeAllowedPaths([path])).toThrow();
+    }
+    expect(() => normalizeAllowedPaths(["/pricing", "/pr%69cing"])).toThrow();
+  });
+
+  it("rejects encoded separators and dot traversal at every decode depth", () => {
+    for (const path of [
+      "/public/%2Fadmin",
+      "/public/%252fadmin",
+      "/public/%5Cadmin",
+      "/public/%255cadmin",
+      "/public/%2e%2e/admin",
+      "/public/%252e%252e/admin",
+      "/public/../admin",
+      "/public/%EF%BC%8Fadmin",
+    ]) {
+      expect(() => normalizeAllowedPaths([path])).toThrow();
+    }
   });
 });
 

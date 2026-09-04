@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   FirstPartyBatchConflictError,
+  FirstPartyBatchInProgressError,
   FirstPartySignalsService,
 } from "./FirstPartySignalsService";
 
@@ -83,6 +84,7 @@ beforeEach(() => {
   mocks.getBatch.mockResolvedValue(null);
   mocks.getBatchForDate.mockResolvedValue(null);
   mocks.createBatch.mockResolvedValue("receipt_1");
+  mocks.claimBatchForProcessing.mockResolvedValue(false);
   mocks.renewBatchLease.mockResolvedValue(true);
   mocks.completeBatch.mockResolvedValue(true);
 });
@@ -162,6 +164,64 @@ describe("FirstPartySignalsService", () => {
       }),
     ).resolves.toEqual({ accepted: true, duplicate: true, rowCount: 1 });
     expect(mocks.createBatch).not.toHaveBeenCalled();
+    expect(mocks.replaceBatchRows).not.toHaveBeenCalled();
+  });
+
+  it("reports an exact active pending retry as in progress, not a conflict", async () => {
+    mocks.getBatch.mockResolvedValue({
+      id: "receipt_1",
+      status: "pending",
+      payloadDigest: "digest_1",
+      batchId: snapshot.batchId,
+      snapshotDate: snapshot.snapshotDate,
+      processingLeaseExpiresAt: "2026-09-04T12:00:47.000Z",
+    });
+
+    const result = FirstPartySignalsService.saveSnapshot({
+      source,
+      snapshot,
+      payloadDigest: "digest_1",
+      now: new Date("2026-09-04T12:00:00.000Z"),
+    });
+
+    await expect(result).rejects.toMatchObject({
+      name: "FirstPartyBatchInProgressError",
+      retryAfterSeconds: 47,
+      rowCount: 1,
+    });
+    await expect(result).rejects.toBeInstanceOf(FirstPartyBatchInProgressError);
+    expect(mocks.createBatch).not.toHaveBeenCalled();
+    expect(mocks.replaceBatchRows).not.toHaveBeenCalled();
+  });
+
+  it("reports an exact create race as in progress when the winner is pending", async () => {
+    const racedReceipt = {
+      id: "receipt_raced",
+      status: "pending",
+      payloadDigest: "digest_1",
+      batchId: snapshot.batchId,
+      snapshotDate: snapshot.snapshotDate,
+      processingLeaseExpiresAt: "2026-09-04T12:00:30.000Z",
+    };
+    mocks.getBatch
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(racedReceipt);
+    mocks.getBatchForDate
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(racedReceipt);
+    mocks.createBatch.mockRejectedValue(new Error("unique constraint"));
+
+    await expect(
+      FirstPartySignalsService.saveSnapshot({
+        source,
+        snapshot,
+        payloadDigest: "digest_1",
+        now: new Date("2026-09-04T12:00:00.000Z"),
+      }),
+    ).rejects.toMatchObject({
+      name: "FirstPartyBatchInProgressError",
+      retryAfterSeconds: 30,
+    });
     expect(mocks.replaceBatchRows).not.toHaveBeenCalled();
   });
 
@@ -249,13 +309,27 @@ describe("FirstPartySignalsService", () => {
   });
 
   it("enforces and purges the 400-day retention window", async () => {
-    mocks.purgeOlderThan.mockResolvedValue(4);
+    mocks.purgeOlderThan.mockResolvedValue({ deleted: 4, hasMore: false });
     await expect(
-      FirstPartySignalsService.purgeExpired(
-        new Date("2026-09-04T12:00:00.000Z"),
-      ),
-    ).resolves.toBe(4);
-    expect(mocks.purgeOlderThan).toHaveBeenCalledWith("2025-07-31");
+      FirstPartySignalsService.purgeExpired({
+        now: new Date("2026-09-04T12:00:00.000Z"),
+        limit: 25,
+        projectId: "project_1",
+      }),
+    ).resolves.toEqual({
+      deleted: 4,
+      hasMore: false,
+      cutoffDate: "2025-07-31",
+      limit: 25,
+    });
+    expect(mocks.purgeOlderThan).toHaveBeenCalledWith({
+      cutoffDate: "2025-07-31",
+      limit: 25,
+      projectId: "project_1",
+    });
+    await expect(
+      FirstPartySignalsService.purgeExpired({ limit: 501 }),
+    ).rejects.toMatchObject({ name: "AppError", code: "VALIDATION_ERROR" });
 
     await expect(
       FirstPartySignalsService.saveSnapshot({

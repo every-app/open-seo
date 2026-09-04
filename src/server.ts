@@ -201,12 +201,19 @@ export default {
     if (controller.cron === MCP_OAUTH_PURGE_CRON) {
       let firstPartyPurgeError: unknown;
       try {
-        const purgedFirstPartyBatches = await withPgClient(() =>
+        const firstPartyPurge = await withPgClient(() =>
           FirstPartySignalsService.purgeExpired(),
         );
         console.log("[first-party-signals] purged expired batches", {
-          count: purgedFirstPartyBatches,
+          count: firstPartyPurge.deleted,
+          hasMore: firstPartyPurge.hasMore,
+          limit: firstPartyPurge.limit,
         });
+        if (firstPartyPurge.hasMore) {
+          console.warn(
+            "[first-party-signals] retention purge reached its bounded page; another invocation is required",
+          );
+        }
       } catch (error) {
         firstPartyPurgeError = error;
         console.error("[first-party-signals] retention purge failed", {

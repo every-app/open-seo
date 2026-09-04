@@ -344,12 +344,42 @@ async function failBatch(batchReceiptId: string, leaseId: string, now: string) {
     );
 }
 
-async function purgeOlderThan(cutoffDate: string) {
+async function purgeOlderThan(input: {
+  cutoffDate: string;
+  limit: number;
+  projectId?: string;
+}) {
+  const candidates = await db
+    .select({ id: firstPartySignalBatches.id })
+    .from(firstPartySignalBatches)
+    .innerJoin(
+      firstPartySignalSources,
+      eq(firstPartySignalSources.id, firstPartySignalBatches.sourceId),
+    )
+    .where(
+      and(
+        lt(firstPartySignalBatches.snapshotDate, input.cutoffDate),
+        input.projectId
+          ? eq(firstPartySignalSources.projectId, input.projectId)
+          : undefined,
+      ),
+    )
+    .orderBy(
+      asc(firstPartySignalBatches.snapshotDate),
+      asc(firstPartySignalBatches.id),
+    )
+    .limit(input.limit + 1);
+  const ids = candidates.slice(0, input.limit).map((row) => row.id);
+  if (ids.length === 0) return { deleted: 0, hasMore: false };
+
   const deleted = await db
     .delete(firstPartySignalBatches)
-    .where(lt(firstPartySignalBatches.snapshotDate, cutoffDate))
+    .where(inArray(firstPartySignalBatches.id, ids))
     .returning({ id: firstPartySignalBatches.id });
-  return deleted.length;
+  return {
+    deleted: deleted.length,
+    hasMore: candidates.length > input.limit,
+  };
 }
 
 export const FirstPartySignalsRepository = {

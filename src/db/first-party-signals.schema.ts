@@ -83,6 +83,10 @@ export const firstPartySignalBatches = sqliteTable(
       table.sourceId,
       table.snapshotDate,
     ),
+    index("first_party_signal_batches_retention_idx").on(
+      table.snapshotDate,
+      table.id,
+    ),
     check(
       "first_party_signal_batches_status_check",
       sql`${table.status} IN ('pending', 'complete', 'failed')`,

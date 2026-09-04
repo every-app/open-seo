@@ -8,6 +8,7 @@ import {
 import { FirstPartyCredentialVault } from "./FirstPartyCredentialVault";
 import {
   FirstPartyBatchConflictError,
+  FirstPartyBatchInProgressError,
   FirstPartySignalsService,
 } from "./FirstPartySignalsService";
 import { FirstPartySignalsRepository } from "./FirstPartySignalsRepository";
@@ -32,6 +33,19 @@ function json(
 }
 
 function safeError(error: unknown): Response {
+  if (error instanceof FirstPartyBatchInProgressError) {
+    return json(
+      202,
+      {
+        ok: true,
+        accepted: true,
+        duplicate: true,
+        status: "in_progress",
+        rowCount: error.rowCount,
+      },
+      { "Retry-After": String(error.retryAfterSeconds) },
+    );
+  }
   if (error instanceof FirstPartyBatchConflictError) {
     return json(409, { ok: false, error: "BATCH_CONFLICT" });
   }

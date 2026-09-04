@@ -6,6 +6,7 @@ import { IntegrationConnectionCard } from "./IntegrationConnectionCard";
 import {
   configureFirstPartySignalSource,
   listFirstPartySignalSources,
+  purgeExpiredFirstPartySignalBatches,
   revokeFirstPartySignalSource,
 } from "@/serverFunctions/first-party-signals";
 
@@ -28,8 +29,8 @@ export function FirstPartySignalsConnectionCard({
   });
   const configure = useMutation({
     gcTime: 0,
-    mutationFn: () =>
-      configureFirstPartySignalSource({
+    mutationFn: async () => {
+      const result = await configureFirstPartySignalSource({
         data: {
           projectId,
           name,
@@ -38,9 +39,16 @@ export function FirstPartySignalsConnectionCard({
             .map((value) => value.trim())
             .filter(Boolean),
         },
-      }),
-    onSuccess: (result) => {
+      });
       setCredential({ sourceId: result.sourceId, secret: result.secret });
+      // Returning no value prevents React Query from ever caching the secret as
+      // mutation data. The only retained copy is the explicitly masked local UI
+      // state above, which the user dismisses after copying.
+    },
+    onSuccess: () => {
+      // The one-time secret lives only in local masked state after this tick;
+      // reset the mutation metadata as an additional defence in depth.
+      configure.reset();
       toast.success("Aggregate source configured");
       void queryClient.invalidateQueries({ queryKey });
     },
@@ -54,6 +62,20 @@ export function FirstPartySignalsConnectionCard({
       void queryClient.invalidateQueries({ queryKey });
     },
     onError: () => toast.error("Could not revoke aggregate source"),
+  });
+  const cleanup = useMutation({
+    gcTime: 0,
+    mutationFn: () =>
+      purgeExpiredFirstPartySignalBatches({ data: { projectId } }),
+    onSuccess: (result) => {
+      toast.success(
+        result.hasMore
+          ? `Deleted ${result.deleted} expired snapshots. Run cleanup again to continue.`
+          : `Retention cleanup complete: ${result.deleted} snapshots deleted.`,
+      );
+      cleanup.reset();
+    },
+    onError: () => toast.error("Could not run retention cleanup"),
   });
   const active = sources.data?.filter((source) => !source.revokedAt) ?? [];
 
@@ -75,7 +97,10 @@ export function FirstPartySignalsConnectionCard({
         identifier-shaped path segments.
       </p>
       {credential ? (
-        <div className="alert alert-warning mt-4 block text-sm">
+        <div
+          className="alert alert-warning ph-no-capture mt-4 block text-sm"
+          data-ph-mask
+        >
           <p className="font-medium">
             Copy this credential now. The 256-bit secret is shown once.
           </p>
@@ -165,6 +190,21 @@ export function FirstPartySignalsConnectionCard({
           ))}
         </div>
       ) : null}
+      <div className="mt-4 border-t border-base-300 pt-4 text-sm">
+        <p className="text-base-content/70">
+          Cloudflare scheduled deployments clean one bounded retention page
+          daily. Docker and other self-hosted runtimes do not dispatch that cron
+          automatically; run the same project-scoped cleanup here.
+        </p>
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm mt-2"
+          onClick={() => cleanup.mutate()}
+          disabled={cleanup.isPending}
+        >
+          {cleanup.isPending ? "Cleaning…" : "Run 400-day cleanup"}
+        </button>
+      </div>
     </IntegrationConnectionCard>
   );
 }

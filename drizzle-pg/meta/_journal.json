@@ -169,6 +169,13 @@
       "when": 1788524449688,
       "tag": "0023_clear_brood",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788527301467,
+      "tag": "0024_first_party_retention_index",
+      "breakpoints": true
     }
   ]
 }

@@ -45,3 +45,20 @@ export const revokeFirstPartySignalSource = createServerFn({ method: "POST" })
     );
     return { revoked: true as const };
   });
+
+/**
+ * Portable retention entrypoint for Docker and self-hosted installations that
+ * do not dispatch Cloudflare scheduled events. Each invocation deletes at most
+ * one page for the current project and reports whether another call is needed.
+ */
+export const purgeExpiredFirstPartySignalBatches = createServerFn({
+  method: "POST",
+})
+  .middleware(requireProjectContext)
+  .validator(projectSchema)
+  .handler(async ({ context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
+    return FirstPartySignalsService.purgeExpired({
+      projectId: context.projectId,
+    });
+  });
