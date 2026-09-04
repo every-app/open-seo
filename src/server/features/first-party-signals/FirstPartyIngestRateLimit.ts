@@ -9,6 +9,7 @@ type RateLimitBinding = {
 
 type FirstPartyIngestRateLimitEnv = {
   FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED?: string;
+  FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE?: string;
   FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT?: RateLimitBinding;
   FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT?: RateLimitBinding;
   FIRST_PARTY_INGEST_RATE_LIMIT?: RateLimitBinding;
@@ -22,6 +23,7 @@ export type FirstPartyIngestRateLimitDecision =
 function bindingsAreExpected(env: FirstPartyIngestRateLimitEnv): boolean {
   return (
     env.FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED === "true" ||
+    Boolean(env.FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE?.trim()) ||
     Boolean(env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT) ||
     Boolean(env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT) ||
     Boolean(env.FIRST_PARTY_INGEST_RATE_LIMIT)
@@ -34,6 +36,15 @@ function hasCompleteBindingSet(env: FirstPartyIngestRateLimitEnv): boolean {
     env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT &&
     env.FIRST_PARTY_INGEST_RATE_LIMIT,
   );
+}
+
+function getRateLimitScope(env: FirstPartyIngestRateLimitEnv): string | null {
+  const scope = env.FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE?.trim();
+  return scope ? scope : null;
+}
+
+function scopedKey(scope: string, key: string): string {
+  return `${scope}:${key}`;
 }
 
 async function applyLimit(
@@ -53,6 +64,8 @@ async function applyLimit(
  * Applies two non-identifying edge guards before body reads, database access,
  * secret decryption, or HMAC work. The constant key bounds random UUID sprays;
  * the opaque claimed-source key bounds repeated abuse without IP persistence.
+ * A trusted deployment scope isolates counters when namespace IDs are reused
+ * by other Workers in the same Cloudflare account.
  */
 export async function enforceFirstPartyPreAuthRateLimits(
   env: FirstPartyIngestRateLimitEnv,
@@ -61,15 +74,24 @@ export async function enforceFirstPartyPreAuthRateLimits(
   if (!bindingsAreExpected(env)) return "allowed";
   const globalLimit = env.FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT;
   const claimedSourceLimit = env.FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT;
-  if (!hasCompleteBindingSet(env) || !globalLimit || !claimedSourceLimit) {
+  const scope = getRateLimitScope(env);
+  if (
+    !hasCompleteBindingSet(env) ||
+    !globalLimit ||
+    !claimedSourceLimit ||
+    !scope
+  ) {
     return "unavailable";
   }
 
-  const globalDecision = await applyLimit(globalLimit, GLOBAL_RECEIVER_KEY);
+  const globalDecision = await applyLimit(
+    globalLimit,
+    scopedKey(scope, GLOBAL_RECEIVER_KEY),
+  );
   if (globalDecision !== "allowed") return globalDecision;
   return applyLimit(
     claimedSourceLimit,
-    claimedSourceId ?? INVALID_CLAIMED_SOURCE_KEY,
+    scopedKey(scope, claimedSourceId ?? INVALID_CLAIMED_SOURCE_KEY),
   );
 }
 
@@ -80,8 +102,9 @@ export async function enforceFirstPartyAuthenticatedRateLimit(
 ): Promise<FirstPartyIngestRateLimitDecision> {
   if (!bindingsAreExpected(env)) return "allowed";
   const authenticatedLimit = env.FIRST_PARTY_INGEST_RATE_LIMIT;
-  if (!hasCompleteBindingSet(env) || !authenticatedLimit) {
+  const scope = getRateLimitScope(env);
+  if (!hasCompleteBindingSet(env) || !authenticatedLimit || !scope) {
     return "unavailable";
   }
-  return applyLimit(authenticatedLimit, sourceId);
+  return applyLimit(authenticatedLimit, scopedKey(scope, sourceId));
 }

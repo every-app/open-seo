@@ -51,9 +51,13 @@ claimed-source 240 requests/minute limiter before body, database, secret, or
 HMAC work. This contains random UUID sprays without using, persisting, or
 logging IP addresses. The existing authenticated per-source 120
 requests/minute limiter remains after HMAC verification. A configured binding
-set fails closed if any limiter is missing or unavailable. Portable Docker
-runtimes omit Cloudflare bindings and should provide equivalent coarse
-protection in their trusted reverse proxy.
+set fails closed if any limiter, or its trusted deployment scope, is missing or
+unavailable. Alchemy injects the stage-specific Worker name as that scope and
+prefixes every limiter key with it, because a Cloudflare rate-limit namespace
+can share counters across Workers in the same account. The scope is deployment
+configuration and never comes from a request. Portable Docker runtimes omit
+Cloudflare bindings and should provide equivalent coarse protection in their
+trusted reverse proxy.
 
 The daily scheduled event drains up to twenty ordered pages (5,000 batches).
 If more work remains, the invocation fails observably and the next run resumes

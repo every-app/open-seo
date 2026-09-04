@@ -53,6 +53,7 @@ declare namespace Cloudflare {
     // Alchemy-hosted public aggregate-ingest abuse controls. Portable Docker
     // runtimes omit the complete set and rely on their reverse proxy instead.
     FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED?: string;
+    FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE?: string;
     FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT?: RateLimit;
     FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT?: RateLimit;
     FIRST_PARTY_INGEST_RATE_LIMIT?: RateLimit;
