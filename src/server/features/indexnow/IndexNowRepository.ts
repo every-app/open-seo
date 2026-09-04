@@ -85,6 +85,7 @@ async function recordSubmission(input: {
   uniqueUrlCount: number;
   chunkCount: number;
   receivedChunkCount: number;
+  pendingChunkCount: number;
   rejectedChunkCount: number;
   failedChunkCount: number;
   httpStatuses: number[];
@@ -101,6 +102,7 @@ async function recordSubmission(input: {
     uniqueUrlCount: input.uniqueUrlCount,
     chunkCount: input.chunkCount,
     receivedChunkCount: input.receivedChunkCount,
+    pendingChunkCount: input.pendingChunkCount,
     rejectedChunkCount: input.rejectedChunkCount,
     failedChunkCount: input.failedChunkCount,
     httpStatusesJson: JSON.stringify(
@@ -121,6 +123,7 @@ async function listRecentSubmissions(projectId: string) {
       uniqueUrlCount: indexNowSubmissions.uniqueUrlCount,
       chunkCount: indexNowSubmissions.chunkCount,
       receivedChunkCount: indexNowSubmissions.receivedChunkCount,
+      pendingChunkCount: indexNowSubmissions.pendingChunkCount,
       rejectedChunkCount: indexNowSubmissions.rejectedChunkCount,
       failedChunkCount: indexNowSubmissions.failedChunkCount,
       createdAt: indexNowSubmissions.createdAt,

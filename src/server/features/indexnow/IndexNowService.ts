@@ -179,13 +179,16 @@ async function sendChunk(
     return {
       chunkIndex,
       urlCount: urls.length,
-      status: response.ok
-        ? "received"
-        : response.status >= 400 &&
-            response.status < 500 &&
-            response.status !== 429
-          ? "rejected"
-          : "failed",
+      status:
+        response.status === 200
+          ? "received"
+          : response.status === 202
+            ? "pending"
+            : response.status === 400 ||
+                response.status === 403 ||
+                response.status === 422
+              ? "rejected"
+              : "failed",
       httpStatus: response.status,
     };
   } catch {
@@ -252,6 +255,9 @@ async function submit(input: {
   const receivedChunkCount = receipts.filter(
     (receipt) => receipt.status === "received",
   ).length;
+  const pendingChunkCount = receipts.filter(
+    (receipt) => receipt.status === "pending",
+  ).length;
   const rejectedChunkCount = receipts.filter(
     (receipt) => receipt.status === "rejected",
   ).length;
@@ -261,11 +267,15 @@ async function submit(input: {
   const status =
     receivedChunkCount === receipts.length
       ? "received"
-      : receivedChunkCount > 0
-        ? "partially_received"
-        : rejectedChunkCount > 0
-          ? "rejected"
-          : "failed";
+      : pendingChunkCount > 0
+        ? receivedChunkCount > 0
+          ? "partially_received"
+          : "pending"
+        : receivedChunkCount > 0
+          ? "partially_received"
+          : rejectedChunkCount > 0
+            ? "rejected"
+            : "failed";
   const submissionId = await IndexNowRepository.recordSubmission({
     projectId: input.projectId,
     configId: config.id,
@@ -274,6 +284,7 @@ async function submit(input: {
     uniqueUrlCount: urls.length,
     chunkCount: receipts.length,
     receivedChunkCount,
+    pendingChunkCount,
     rejectedChunkCount,
     failedChunkCount,
     httpStatuses: receipts.flatMap((receipt) =>
@@ -289,7 +300,7 @@ async function submit(input: {
     uniqueUrlCount: urls.length,
     chunks: receipts,
     meaning:
-      "received means the IndexNow endpoint accepted the notification; it does not mean the URLs were crawled or indexed.",
+      "received means HTTP 200 confirmed receipt; pending means HTTP 202 key validation is still pending and should be resubmitted after verification. Neither status means the URLs were crawled or indexed.",
   };
 }
 

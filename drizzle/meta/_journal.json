@@ -323,6 +323,13 @@
       "when": 1788523153041,
       "tag": "0045_complex_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1788531569926,
+      "tag": "0046_even_captain_cross",
+      "breakpoints": true
     }
   ]
 }

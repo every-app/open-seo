@@ -49,6 +49,7 @@ export const indexNowSubmissions = pgTable(
     uniqueUrlCount: integer("unique_url_count").notNull(),
     chunkCount: integer("chunk_count").notNull(),
     receivedChunkCount: integer("received_chunk_count").notNull(),
+    pendingChunkCount: integer("pending_chunk_count").notNull().default(0),
     rejectedChunkCount: integer("rejected_chunk_count").notNull(),
     failedChunkCount: integer("failed_chunk_count").notNull(),
     httpStatusesJson: text("http_statuses_json").notNull(),

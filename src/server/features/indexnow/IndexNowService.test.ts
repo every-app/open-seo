@@ -240,7 +240,7 @@ describe("IndexNowService", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it("deduplicates, chunks at 1,000, and reports receipt without claiming indexation", async () => {
+  it("deduplicates, chunks at 1,000, and keeps HTTP 202 pending without claiming indexation", async () => {
     const urls = Array.from(
       { length: 1_001 },
       (_, index) => `https://www.example.com/page-${index}`,
@@ -269,17 +269,50 @@ describe("IndexNowService", () => {
       .parse(JSON.parse(firstInit.body) as unknown);
     expect(firstBody.urlList).toHaveLength(1_000);
     expect(result).toMatchObject({
-      status: "received",
+      status: "partially_received",
       requestedUrlCount: 1_002,
       uniqueUrlCount: 1_001,
+      chunks: [
+        { status: "received", httpStatus: 200 },
+        { status: "pending", httpStatus: 202 },
+      ],
     });
-    expect(result.meaning).toContain("does not mean");
+    expect(result.meaning).toContain("Neither status means");
     expect(mocks.recordSubmission).toHaveBeenCalledWith(
       expect.objectContaining({
         chunkCount: 2,
-        receivedChunkCount: 2,
+        receivedChunkCount: 1,
+        pendingChunkCount: 1,
+        failedChunkCount: 0,
         httpStatuses: [200, 202],
       }),
     );
+  });
+
+  it.each([
+    [200, "received"],
+    [202, "pending"],
+    [400, "rejected"],
+    [403, "rejected"],
+    [422, "rejected"],
+    [429, "failed"],
+    [500, "failed"],
+    [204, "failed"],
+  ])("maps IndexNow HTTP %i to %s", async (httpStatus, status) => {
+    const result = await IndexNowService.submit({
+      projectId: "project_1",
+      userId: "user_1",
+      urls: ["https://www.example.com/page"],
+      confirmed: true,
+      fetcher: vi
+        .fn<IndexNowFetcher>()
+        .mockResolvedValue(new Response(null, { status: httpStatus })),
+    });
+
+    expect(result).toMatchObject({
+      status,
+      chunks: [{ status, httpStatus }],
+    });
+    expect(result.meaning).toContain("Neither status means");
   });
 });

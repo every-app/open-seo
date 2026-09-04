@@ -53,6 +53,6 @@ export const submitIndexNowSchema = indexNowProjectSchema.extend({
 export type IndexNowChunkReceipt = {
   chunkIndex: number;
   urlCount: number;
-  status: "received" | "rejected" | "failed";
+  status: "pending" | "received" | "rejected" | "failed";
   httpStatus: number | null;
 };
