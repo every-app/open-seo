@@ -1,6 +1,6 @@
 import { AppError } from "@/server/lib/errors";
 import {
-  FIRST_PARTY_RETENTION_DAYS,
+  firstPartyOldestRetainedSnapshotDate,
   type FirstPartyAggregateSnapshot,
 } from "@/shared/first-party-signals";
 import { FirstPartyCredentialVault } from "./FirstPartyCredentialVault";
@@ -73,14 +73,8 @@ function isoDay(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function oldestRetainedDay(now: Date): string {
-  const oldest = new Date(now);
-  oldest.setUTCDate(oldest.getUTCDate() - FIRST_PARTY_RETENTION_DAYS);
-  return isoDay(oldest);
-}
-
 function validateSnapshotDate(snapshotDate: string, now: Date) {
-  const oldest = oldestRetainedDay(now);
+  const oldest = firstPartyOldestRetainedSnapshotDate(now);
   const today = isoDay(now);
   if (snapshotDate > today || snapshotDate < oldest) {
     throw new AppError(
@@ -391,7 +385,7 @@ async function purgeExpired(
       `Retention cleanup limit must be between 1 and ${MAX_RETENTION_PURGE_PAGE_SIZE}.`,
     );
   }
-  const cutoffDate = oldestRetainedDay(now);
+  const cutoffDate = firstPartyOldestRetainedSnapshotDate(now);
   const result = await drainRetentionPages({
     purgePage: () =>
       FirstPartySignalsRepository.purgeOlderThan({

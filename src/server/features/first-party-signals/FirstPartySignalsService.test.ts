@@ -90,6 +90,32 @@ beforeEach(() => {
 });
 
 describe("FirstPartySignalsService", () => {
+  it("accepts the oldest of exactly 400 inclusive UTC snapshot dates", async () => {
+    await expect(
+      FirstPartySignalsService.saveSnapshot({
+        source,
+        snapshot: { ...snapshot, snapshotDate: "2025-08-01" },
+        payloadDigest: "digest_1",
+        now: new Date("2026-09-04T23:59:59.999Z"),
+      }),
+    ).resolves.toMatchObject({ accepted: true, duplicate: false });
+    expect(mocks.createBatch).toHaveBeenCalledWith(
+      expect.objectContaining({ snapshotDate: "2025-08-01" }),
+    );
+  });
+
+  it("rejects the UTC snapshot date immediately before the retention window", async () => {
+    await expect(
+      FirstPartySignalsService.saveSnapshot({
+        source,
+        snapshot: { ...snapshot, snapshotDate: "2025-07-31" },
+        payloadDigest: "digest_1",
+        now: new Date("2026-09-04T00:00:00.000Z"),
+      }),
+    ).rejects.toThrow("between 2025-08-01 and 2026-09-04");
+    expect(mocks.createBatch).not.toHaveBeenCalled();
+  });
+
   it("creates a 256-bit secret and returns it only in the creation response", async () => {
     const result = await FirstPartySignalsService.configureSource({
       projectId: "project_1",
@@ -323,19 +349,19 @@ describe("FirstPartySignalsService", () => {
       pages: 2,
       hasMore: false,
       stalled: false,
-      cutoffDate: "2025-07-31",
+      cutoffDate: "2025-08-01",
       limit: 25,
       maxPages: 20,
       capacity: 500,
     });
     expect(mocks.purgeOlderThan).toHaveBeenCalledTimes(2);
     expect(mocks.purgeOlderThan).toHaveBeenNthCalledWith(1, {
-      cutoffDate: "2025-07-31",
+      cutoffDate: "2025-08-01",
       limit: 25,
       projectId: "project_1",
     });
     expect(mocks.purgeOlderThan).toHaveBeenNthCalledWith(2, {
-      cutoffDate: "2025-07-31",
+      cutoffDate: "2025-08-01",
       limit: 25,
       projectId: "project_1",
     });

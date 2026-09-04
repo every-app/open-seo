@@ -5,6 +5,13 @@ const FIRST_PARTY_MAX_ROWS = 1_000;
 export const FIRST_PARTY_SIGNATURE_MAX_SKEW_MS = 5 * 60 * 1_000;
 export const FIRST_PARTY_RETENTION_DAYS = 400;
 
+/** Oldest UTC snapshot date retained when today counts as the first day. */
+export function firstPartyOldestRetainedSnapshotDate(now: Date): string {
+  const oldest = new Date(now);
+  oldest.setUTCDate(oldest.getUTCDate() - (FIRST_PARTY_RETENTION_DAYS - 1));
+  return oldest.toISOString().slice(0, 10);
+}
+
 const counterSchema = z.number().int().min(0).max(2_147_483_647);
 
 const firstPartyAggregateRowSchema = z
