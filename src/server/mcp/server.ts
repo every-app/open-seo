@@ -69,6 +69,11 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getCloudflareCrawlerAccessTool,
+  getCloudflareSecurityEventsTool,
+  getCloudflareTrafficHealthTool,
+} from "@/server/mcp/tools/cloudflare-analytics-tools";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -132,7 +137,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
       title: "OpenSEO",
       version: "0.0.12",
       description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, Google Search Console performance, and Cloudflare edge analytics.",
       websiteUrl: "https://openseo.so",
       icons: [
         {
@@ -199,6 +204,9 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getGoogleAnalyticsEcommercePerformanceTool);
   register(getGoogleAnalyticsSiteSearchTool);
   register(getGoogleAnalyticsAudienceBreakdownTool);
+  register(getCloudflareTrafficHealthTool);
+  register(getCloudflareSecurityEventsTool);
+  register(getCloudflareCrawlerAccessTool);
   register(runSiteAuditTool);
   register(getAuditStatusTool);
   register(getAuditIssuesTool);

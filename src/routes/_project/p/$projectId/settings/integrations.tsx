@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { GoogleAnalyticsConnectionCard } from "@/client/features/ga4/GoogleAnalyticsConnectionCard";
+import { CloudflareAnalyticsConnectionCard } from "@/client/features/cloudflare-analytics/CloudflareAnalyticsConnectionCard";
 
 export const Route = createFileRoute(
   "/_project/p/$projectId/settings/integrations",
@@ -31,6 +32,13 @@ function ProjectIntegrationsRoute() {
             </h2>
           }
         />
+      </section>
+
+      <section id="cloudflare-analytics" className="scroll-mt-6 space-y-3">
+        <h2 className="text-sm font-medium text-base-content/50">
+          Edge analytics
+        </h2>
+        <CloudflareAnalyticsConnectionCard projectId={projectId} />
       </section>
     </div>
   );

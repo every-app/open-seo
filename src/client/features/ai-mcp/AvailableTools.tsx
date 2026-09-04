@@ -1,3 +1,5 @@
+import { CLOUDFLARE_ANALYTICS_TOOL_NAMES } from "@/shared/cloudflare-analytics";
+
 type McpTool = {
   name: string;
   title: string;
@@ -250,7 +252,34 @@ const toolCategories: ToolCategory[] = [
       },
     ],
   },
+  {
+    label: "Cloudflare Analytics",
+    tools: [
+      {
+        name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.trafficHealth,
+        title: "Get Cloudflare traffic health",
+        description:
+          "Read aggregate requests, status codes, error rates, and sampling for a connected zone.",
+      },
+      {
+        name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.securityEvents,
+        title: "Get Cloudflare security events",
+        description:
+          "Review aggregate security actions and privacy-redacted paths.",
+      },
+      {
+        name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.crawlerAccess,
+        title: "Get Cloudflare crawler access",
+        description:
+          "Compare verified Googlebot and Bingbot access by status and privacy-redacted path.",
+      },
+    ],
+  },
 ];
+
+export const availableToolNames = toolCategories.flatMap(({ tools }) =>
+  tools.map(({ name }) => name),
+);
 
 export function AvailableTools() {
   return (
