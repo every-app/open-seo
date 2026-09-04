@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { BingConnectionCard } from "@/client/features/bing/BingConnectionCard";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { GoogleAnalyticsConnectionCard } from "@/client/features/ga4/GoogleAnalyticsConnectionCard";
 
@@ -31,6 +32,11 @@ function ProjectIntegrationsRoute() {
             </h2>
           }
         />
+      </section>
+
+      <section id="bing" className="scroll-mt-6 space-y-3">
+        <h2 className="text-sm font-medium text-base-content/50">Bing</h2>
+        <BingConnectionCard projectId={projectId} />
       </section>
     </div>
   );

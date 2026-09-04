@@ -44,3 +44,5 @@ dist-sourcemaps/
 
 # Alchemy local state + bundle artifacts (SaaS deploys)
 .alchemy/
+# Live tokens written by scripts/bing-oauth-spike.ts
+.bing-spike.json

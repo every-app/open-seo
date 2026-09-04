@@ -11,6 +11,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
+import { BingGlyphMuted } from "@/client/features/bing/BingGlyph";
 import { GoogleGlyphMuted } from "@/client/features/gsc/GoogleGlyph";
 
 const projectNavItems = [
@@ -41,6 +42,11 @@ const projectNavItems = [
     to: "/p/$projectId/search-performance" as const,
     label: "GSC Insights",
     icon: GoogleGlyphMuted,
+  },
+  {
+    to: "/p/$projectId/bing" as const,
+    label: "Bing Insights",
+    icon: BingGlyphMuted,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -117,6 +123,7 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/bing"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

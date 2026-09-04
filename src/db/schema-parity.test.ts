@@ -8,6 +8,7 @@ import { describe, expect, it } from "vitest";
 import * as sqliteApp from "./app.schema";
 import * as sqliteProjectContext from "./project-context.schema";
 import * as sqliteAudit from "./audit.schema";
+import * as sqliteBing from "./bing.schema";
 import * as sqliteSam from "./sam.schema";
 import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
@@ -17,6 +18,7 @@ import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
 import * as pgAudit from "./pg/audit.schema";
+import * as pgBing from "./pg/bing.schema";
 import * as pgSam from "./pg/sam.schema";
 import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
@@ -148,6 +150,7 @@ const sqliteAppTables = tablesFrom(
   sqliteApp,
   sqliteProjectContext,
   sqliteAudit,
+  sqliteBing,
   sqliteSam,
   sqliteBilling,
   sqliteGa4,
@@ -158,6 +161,7 @@ const pgAppTables = tablesFrom(
   pgApp,
   pgProjectContext,
   pgAudit,
+  pgBing,
   pgSam,
   pgBilling,
   pgGa4,
