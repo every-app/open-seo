@@ -18,10 +18,7 @@ import {
   BING_TOKEN_URL,
   decodeBingAccessToken,
 } from "@/shared/bing";
-import {
-  getBingOAuthClientConfig,
-  hasSelfHostedBingConfig,
-} from "./oauth-config";
+import { getBingOAuthClientConfig, hasBingOAuthConfig } from "./oauth-config";
 
 /**
  * Self-hosted Bing Webmaster OAuth, mirroring gsc/selfHostedOAuth.ts.
@@ -312,7 +309,7 @@ export async function createSelfHostedBingAuthorizationUrl(input: {
   publicOrigin: string;
 }) {
   const config = await getBingOAuthClientConfig();
-  if (!config || !(await hasSelfHostedBingConfig())) {
+  if (!config || !(await hasBingOAuthConfig())) {
     throw new AppError(
       "AUTH_CONFIG_MISSING",
       "Bing Webmaster is not configured. Set BING_CLIENT_ID, BING_CLIENT_SECRET, and BETTER_AUTH_SECRET.",

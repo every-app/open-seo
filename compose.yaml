@@ -27,6 +27,10 @@ services:
       - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
       - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
       - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
+      # Optional: Bing Webmaster Tools. See
+      # docs/SELF_HOSTING_BING_WEBMASTER.md
+      - BING_CLIENT_ID=${BING_CLIENT_ID:-}
+      - BING_CLIENT_SECRET=${BING_CLIENT_SECRET:-}
       # Optional: AI features (SAM, the in-app SEO agent)
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}

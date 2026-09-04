@@ -5,6 +5,7 @@ Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devi
 Related guides:
 
 - [Operations](./SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): connect the MCP server, telemetry.
+- [Bing Webmaster Tools](./SELF_HOSTING_BING_WEBMASTER.md): optional read-only Bing search data.
 - [Legacy deployments](./SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.
 
 ## Prerequisites

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function -- one provider fixture suite exercises every bounded Bing endpoint */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
@@ -230,6 +231,42 @@ describe("bingClient", () => {
     expect(error).toBeInstanceOf(BingApiError);
     if (!(error instanceof BingApiError)) throw error;
     expect(error.message).not.toContain("ssssssss");
+  });
+
+  it("maps Bing's sampled query rows without inventing a reporting window", async () => {
+    mocks.fetch.mockResolvedValue(
+      jsonResponse({
+        d: [
+          {
+            Query: "open source seo",
+            Date: "/Date(1445558400000-0700)/",
+            Clicks: 7,
+            Impressions: 90,
+            AvgClickPosition: 4.5,
+            AvgImpressionPosition: 8.25,
+          },
+        ],
+      }),
+    );
+    const { createBingClient } = await import("./bingClient");
+
+    const rows = await createBingClient({ userId: "u1" }).getQueryStats(
+      "https://example.com/",
+    );
+
+    expect(mocks.fetch.mock.calls[0][0]).toBe(
+      "https://ssl.bing.com/webmaster/api.svc/json/GetQueryStats?siteUrl=https%3A%2F%2Fexample.com%2F",
+    );
+    expect(rows).toEqual([
+      {
+        query: "open source seo",
+        date: new Date(1445558400000).toISOString(),
+        clicks: 7,
+        impressions: 90,
+        averageClickPosition: 4.5,
+        averageImpressionPosition: 8.25,
+      },
+    ]);
   });
 
   it("maps Bing crawl statistics without inventing unparseable dates", async () => {

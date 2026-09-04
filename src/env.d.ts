@@ -38,6 +38,8 @@ declare namespace Cloudflare {
     };
     GOOGLE_CLIENT_ID?: string;
     GOOGLE_CLIENT_SECRET?: string;
+    BING_CLIENT_ID?: string;
+    BING_CLIENT_SECRET?: string;
     LOOPS_API_KEY?: string;
     LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID?: string;
     LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID?: string;

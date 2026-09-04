@@ -18,6 +18,9 @@ type BingSite = Awaited<ReturnType<BingClient["listSites"]>>[number];
 type BingRankAndTrafficStatsRow = Awaited<
   ReturnType<BingClient["getRankAndTrafficStats"]>
 >[number];
+type BingQueryStatsRow = Awaited<
+  ReturnType<BingClient["getQueryStats"]>
+>[number];
 type BingCrawlStatsRow = Awaited<
   ReturnType<BingClient["getCrawlStats"]>
 >[number];
@@ -33,6 +36,12 @@ type BingCrawlStatsResult = {
   siteUrl: string;
   connectedBy: string | null;
   rows: BingCrawlStatsRow[];
+};
+
+type BingKeywordsResult = {
+  siteUrl: string;
+  connectedBy: string | null;
+  rows: BingQueryStatsRow[];
 };
 
 type BingLinksResult = BingLinkCountsResult & {
@@ -300,6 +309,20 @@ async function getCrawlStats(input: {
   };
 }
 
+async function getKeywords(input: {
+  projectId: string;
+}): Promise<BingKeywordsResult> {
+  const { connection, client } = await getOAuthClientForProject(
+    input.projectId,
+  );
+  const rows = await client.getQueryStats(connection.siteUrl);
+  return {
+    siteUrl: connection.siteUrl,
+    connectedBy: connection.connectedAccountEmail,
+    rows,
+  };
+}
+
 async function getLinks(input: {
   projectId: string;
   page: number;
@@ -323,6 +346,7 @@ export const BingService = {
   setSite,
   disconnect,
   getPerformance,
+  getKeywords,
   getCrawlStats,
   getLinks,
 };

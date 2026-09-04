@@ -311,9 +311,9 @@ export function getHostedBaseUrl() {
   return hostedBaseUrlSchema.parse(baseUrl);
 }
 
-// Required in hosted mode, and in self-hosted mode when Search Console is
-// enabled (it keys the OAuth-token encryption and is needed to build the auth
-// instance that mints/refreshes Search Console tokens).
+// Required in hosted mode, and in self-hosted mode when Search Console or Bing
+// Webmaster is enabled (it keys OAuth-token encryption and is needed to build
+// the auth instance that mints/refreshes connector tokens).
 function getHostedSecret() {
   const secret = env.BETTER_AUTH_SECRET?.trim();
 

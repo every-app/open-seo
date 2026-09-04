@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- one spec covers the project-scoped Bing service */
 import type { SQL } from "drizzle-orm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -31,6 +32,8 @@ const mocks = vi.hoisted(() => {
   };
   const listSites = vi.fn<(opts: BingClientOptions) => Promise<BingSite[]>>();
   const getRankAndTrafficStats =
+    vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
+  const getQueryStats =
     vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
   const getCrawlStats =
     vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
@@ -66,12 +69,14 @@ const mocks = vi.hoisted(() => {
     dbDelete: vi.fn(() => ({ where: deleteWhere })),
     listSites,
     getRankAndTrafficStats,
+    getQueryStats,
     getCrawlStats,
     getLinkCounts,
     getConnectedEmail,
     createBingClient: vi.fn((opts: BingClientOptions) => ({
       listSites: () => listSites(opts),
       getRankAndTrafficStats: () => getRankAndTrafficStats(opts),
+      getQueryStats: () => getQueryStats(opts),
       getCrawlStats: () => getCrawlStats(opts),
       getLinkCounts: (_siteUrl: string, page: number) =>
         getLinkCounts(opts, page),
@@ -369,7 +374,7 @@ describe("BingService.getPerformance", () => {
   });
 });
 
-describe("BingService crawl and link reads", () => {
+describe("BingService keyword, crawl, and link reads", () => {
   beforeEach(() => {
     mocks.getByProjectId.mockReset().mockResolvedValue({
       connectedByUserId: "u1",
@@ -379,11 +384,36 @@ describe("BingService crawl and link reads", () => {
       authMode: "oauth",
     });
     mocks.getCrawlStats.mockReset().mockResolvedValue([]);
+    mocks.getQueryStats.mockReset().mockResolvedValue([]);
     mocks.getLinkCounts.mockReset().mockResolvedValue({
       links: [],
       totalPages: 0,
     });
     mocks.createBingClient.mockClear();
+  });
+
+  it("reads sampled keyword rows for the selected project site", async () => {
+    const rows = [
+      {
+        query: "open source seo",
+        date: "2026-01-01T00:00:00.000Z",
+        impressions: 12,
+      },
+    ];
+    mocks.getQueryStats.mockResolvedValue(rows);
+    const { BingService } = await import("./BingService");
+
+    await expect(BingService.getKeywords({ projectId: "p1" })).resolves.toEqual(
+      {
+        siteUrl: "https://x.example/",
+        connectedBy: "a@example.com",
+        rows,
+      },
+    );
+    expect(mocks.getQueryStats).toHaveBeenCalledWith({
+      userId: "u1",
+      bingAccountId: "uid-a",
+    });
   });
 
   it("reads crawl stats for the selected project site", async () => {

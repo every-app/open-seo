@@ -72,6 +72,40 @@ describe("runSelfhostPreflight", () => {
     expect(itemFor(result, "Search Console")?.message).toContain("32");
   });
 
+  it("warns when only one Bing OAuth credential is set", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      BING_CLIENT_ID: "id",
+    });
+
+    expect(itemFor(result, "Bing Webmaster Tools")?.level).toBe("warn");
+    expect(itemFor(result, "Bing Webmaster Tools")?.message).toContain(
+      "BING_CLIENT_SECRET",
+    );
+  });
+
+  it("reports Bing configured only with both credentials and encryption", () => {
+    const configured = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      BING_CLIENT_ID: "id",
+      BING_CLIENT_SECRET: "secret",
+      BETTER_AUTH_SECRET: "x".repeat(32),
+    });
+    const missingEncryption = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      BING_CLIENT_ID: "id",
+      BING_CLIENT_SECRET: "secret",
+    });
+
+    expect(itemFor(configured, "Bing Webmaster Tools")?.level).toBe("ok");
+    expect(itemFor(missingEncryption, "Bing Webmaster Tools")?.level).toBe(
+      "warn",
+    );
+    expect(
+      itemFor(missingEncryption, "Bing Webmaster Tools")?.message,
+    ).toContain("BETTER_AUTH_SECRET");
+  });
+
   it("fails hosted mode listing every missing variable", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "hosted",

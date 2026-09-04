@@ -2,8 +2,9 @@
 
 ## Status
 
-Proposed (July 2026) — auth, identity, and `GetRankAndTrafficStats` all
-verified against the live API by `scripts/bing-oauth-spike.ts`.
+Proof of concept (July 2026). Auth, identity, and the response shapes used by
+this POC were verified against the live API. No token-bearing diagnostic script
+or local credential cache is retained in the repository.
 
 ## Context
 
@@ -75,18 +76,20 @@ per project, mirroring `gsc_connections`: `projectId`, `organizationId`,
 `connectedAccountEmail`, `authMode`. Mirrored across `src/db/` and
 `src/db/pg/`, with migrations for both dialects.
 
-**Surface.** Bing gets its own page — daily clicks and impressions in v1, with
-top queries, top pages and crawl issues left for later — rather than a source
-toggle on the existing Search Performance page.
+**Surface.** Bing gets its own page for daily clicks and impressions rather
+than a source toggle on the existing Search Performance page. Keywords are
+available through the server and MCP read surfaces; top pages and crawl issues
+remain future work.
 Bing cannot honour that page's date range, device or country controls, and its
 performance endpoint cannot paginate, so sharing the surface would mean either
 misrepresenting Bing's capabilities or degrading the Google page.
 
 **MCP tools** — read-only, free (no Autumn metering), project-scoped, matching
 the GSC tools' contract. v1 ships `get_bing_search_performance`,
-`get_bing_crawl_stats`, and `get_bing_links`. Crawl stats use Bing's native
-daily window; links expose the provider's zero-based page and total-page count
-rather than implying a complete backlink export.
+`get_bing_keywords`, `get_bing_crawl_stats`, and `get_bing_links`. Keyword
+rows are sampled over Bing's native window; crawl stats use Bing's native daily
+window; links expose the provider's zero-based page and total-page count rather
+than implying a complete backlink export.
 
 **Write operations deferred.** `SubmitUrl` / `SubmitUrlBatch` need
 `Webmaster.manage` and are a separate consent decision; they are not in v1.
@@ -127,15 +130,16 @@ rather than something Bing will grow out of.
   Pacific; the offset moves with daylight saving), not an instant. Render it in
   UTC — formatting in the viewer's timezone labels every row a day early west
   of UTC-8.
-- `GetQueryStats` and `GetPageStats` (verified live 2026-07-25, not yet used)
+- `GetQueryStats` and `GetPageStats` (verified live 2026-07-25)
   share one row shape: `Query`, `Clicks`, `Impressions`, `Date`,
   `AvgClickPosition`, `AvgImpressionPosition`. `GetPageStats` reuses the
   `QueryStats` type and puts the page URL in `Query`. `AvgClickPosition` is
   `-1` when nothing was clicked. So average position and a striking-distance
-  view ARE reachable — but these rows are SAMPLED, roughly 16 distinct dates
-  across five months, so query-level trends are lumpy and a "last 28 days"
-  slice can come back empty. Site-level daily totals remain the only dense
-  series.
+  view ARE reachable. The POC exposes `GetQueryStats` as the bounded,
+  read-only `get_bing_keywords` MCP tool, while making no custom-range or
+  completeness claim. These rows are SAMPLED, roughly 16 distinct dates across
+  five months, so query-level trends are lumpy and a "last 28 days" slice can
+  come back empty. Site-level daily totals remain the only dense series.
 - Returned scope is `"Read"`, not the requested `Webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per
@@ -146,26 +150,25 @@ rather than something Bing will grow out of.
   Bing returned no `refresh_token` on refresh in either, and the original
   survived repeated reuse. What remains untested is the multi-day complaint in
   the public reports — that an original token eventually expires
-  unpredictably. `scripts/bing-oauth-spike.ts` is retained so this can be
-  re-checked; if Bing ever starts rotating, `genericOAuth` becomes unsafe and
-  API-key mode becomes the primary path.
+  unpredictably. This time-point observation is not a permanent provider
+  guarantee; if Bing starts rotating, `genericOAuth` must be reassessed and
+  API-key mode may become the primary path. Live tokens and refresh credentials
+  must never be written to a repository-local file or printed by diagnostics.
 - `webmasteruid` doubles as the site verification code. It is an identifier,
   not a secret to be hashed, but it should not be rendered in the UI.
 
 ## Future directions (not built)
 
-`GetQueryStats` and `GetPageStats` were probed live on 2026-07-25 (shapes under
-Consequences) and put most of the Search Performance page within reach for
-Bing:
+`GetPageStats` was probed live on 2026-07-25 (shape under Consequences) and puts
+more of the Search Performance page within reach for Bing:
 
 - **Striking distance** — queries at positions 5–20 by impressions. The most
   actionable panel and the obvious first one: 840 of 1,119 query rows for one
   test site already sit in that band.
-- **Queries and Pages tables**, plus **average position** and **CTR** tiles.
-  Position comes from `AvgImpressionPosition`; CTR is derived; period
-  comparison for clicks/impressions/CTR can be computed client-side from the
-  daily series that already exists.
-- Optionally a `get_bing_queries` MCP tool alongside the three v1 read tools.
+- **Pages table**, plus **CTR** tiles and period comparison for the dense daily
+  site series. Position already comes from `AvgImpressionPosition` on the
+  sampled keyword rows; CTR can be derived without pretending Bing offers a
+  custom reporting range.
 
 What still cannot be built, and should not be faked: device and country
 filters (Bing exposes no such dimension) and a date-range control. Query and
@@ -173,7 +176,7 @@ page rows are SAMPLED at roughly 16 dates across five months, so a "last 28
 days" slice can come back nearly empty — a date picker there would promise
 precision the data does not have. Only site-level daily totals are dense.
 
-Probe any further endpoint with `scripts/bing-oauth-spike.ts --step=call
---method=<Method> --site=<url>` before coding against it. Every shape recorded
-here was pinned that way, and Microsoft's documentation has been wrong more
-than once on this integration.
+Probe any further endpoint outside the application repository, using ephemeral
+credentials and redacted output, before coding against it. Keep only the
+sanitized response contract and synthetic fixtures needed for review; never
+persist or print live access and refresh tokens.

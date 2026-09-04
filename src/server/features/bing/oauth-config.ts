@@ -25,11 +25,11 @@ export async function getBingOAuthClientConfig(): Promise<BingOAuthClientConfig 
   return { clientId, clientSecret };
 }
 
-// Self-hosted Bing Webmaster needs the Bing OAuth client AND BETTER_AUTH_SECRET
-// (>=32 chars): the secret keys OAuth-token/API-key encryption and lets us
-// build the Better Auth instance that mints/refreshes tokens. Both must be set
-// before we surface the connect flow.
-export async function hasSelfHostedBingConfig(): Promise<boolean> {
+// Bing Webmaster needs the OAuth client AND BETTER_AUTH_SECRET (>=32 chars):
+// the secret keys OAuth-token encryption and lets us build the Better Auth
+// instance that mints/refreshes tokens. Both must be set before any deployment
+// surfaces the connect flow.
+export async function hasBingOAuthConfig(): Promise<boolean> {
   if (!(await getBingOAuthClientConfig())) return false;
 
   const secret = (await getOptionalEnvValue("BETTER_AUTH_SECRET"))?.trim();

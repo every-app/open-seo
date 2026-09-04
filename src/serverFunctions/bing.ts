@@ -7,10 +7,10 @@ import {
   BingService,
   isExpectedGrantFailure,
 } from "@/server/features/bing/services/BingService";
-import { hasSelfHostedBingConfig } from "@/server/features/bing/oauth-config";
+import { hasBingOAuthConfig } from "@/server/features/bing/oauth-config";
 import { createSelfHostedBingAuthorizationUrl } from "@/server/features/bing/selfHostedOAuth";
+import { requireOrgPermission } from "@/server/auth/org-gate";
 import { captureServerEvent } from "@/server/lib/posthog";
-import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
 import {
   requireAuthenticatedContext,
@@ -30,17 +30,17 @@ export const getBingConnection = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
-    const [connection, currentUserHasGrant, hosted, bingConfigured] =
-      await Promise.all([
+    const [connection, currentUserHasGrant, bingConfigured] = await Promise.all(
+      [
         BingService.getConnection(context.projectId),
         BingService.userHasGrant(context.userId),
-        isHostedServerAuthMode(),
-        hasSelfHostedBingConfig(),
-      ]);
+        hasBingOAuthConfig(),
+      ],
+    );
     return {
       connected: Boolean(connection),
       currentUserHasGrant,
-      bingOAuthConfigured: hosted || bingConfigured,
+      bingOAuthConfigured: bingConfigured,
       siteUrl: connection?.siteUrl ?? null,
       connectedByEmail: connection?.connectedAccountEmail ?? null,
       connectedAt: connection?.createdAt ?? null,
@@ -76,6 +76,7 @@ export const setBingSite = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(setSiteSchema)
   .handler(async ({ data, context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
     const connection = await BingService.setSite({
       projectId: context.projectId,
       organizationId: context.organizationId,
@@ -98,6 +99,7 @@ export const disconnectBing = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(projectScopedSchema)
   .handler(async ({ context }) => {
+    requireOrgPermission(context, { integration: ["manage"] });
     await BingService.disconnect({
       projectId: context.projectId,
       userId: context.userId,
@@ -130,6 +132,33 @@ export const getBingPerformance = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     try {
       const result = await BingService.getPerformance({
+        projectId: context.projectId,
+      });
+      return {
+        connected: true as const,
+        siteUrl: result.siteUrl,
+        connectedBy: result.connectedBy,
+        rows: result.rows,
+      };
+    } catch (error) {
+      if (
+        error instanceof BingNotConnectedError ||
+        isExpectedGrantFailure(error)
+      ) {
+        return { connected: false as const };
+      }
+      throw error;
+    }
+  });
+
+/** Sampled keyword rows for the project's connected Bing site. Bing chooses
+ * the native reporting window and exposes no paging or date-range controls. */
+export const getBingKeywords = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(projectScopedSchema)
+  .handler(async ({ context }) => {
+    try {
+      const result = await BingService.getKeywords({
         projectId: context.projectId,
       });
       return {

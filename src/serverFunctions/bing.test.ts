@@ -1,16 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({
-  getConnection: vi.fn(),
-  userHasGrant: vi.fn(),
-  listSitesForUserWithGrantStatus: vi.fn(),
-  setSite: vi.fn(),
-  disconnect: vi.fn(),
-  hasSelfHostedBingConfig: vi.fn(),
-  isHostedServerAuthMode: vi.fn(),
-  captureServerEvent: vi.fn(),
-  waitUntil: vi.fn(),
-}));
+const mocks = vi.hoisted(() => {
+  class BingNotConnectedError extends Error {}
+  return {
+    BingNotConnectedError,
+    getConnection: vi.fn(),
+    userHasGrant: vi.fn(),
+    listSitesForUserWithGrantStatus: vi.fn(),
+    setSite: vi.fn(),
+    disconnect: vi.fn(),
+    getKeywords: vi.fn(),
+    hasBingOAuthConfig: vi.fn(),
+    captureServerEvent: vi.fn(),
+    waitUntil: vi.fn(),
+  };
+});
 
 // Reduce each server function to its bare handler so tests can invoke it with a
 // synthetic context, exactly the shape the middleware would otherwise produce.
@@ -39,21 +43,21 @@ vi.mock("@/server/features/bing/services/BingService", () => ({
     listSitesForUserWithGrantStatus: mocks.listSitesForUserWithGrantStatus,
     setSite: mocks.setSite,
     disconnect: mocks.disconnect,
+    getKeywords: mocks.getKeywords,
   },
+  BingNotConnectedError: mocks.BingNotConnectedError,
+  isExpectedGrantFailure: () => false,
 }));
 vi.mock("@/server/features/bing/oauth-config", () => ({
-  hasSelfHostedBingConfig: mocks.hasSelfHostedBingConfig,
+  hasBingOAuthConfig: mocks.hasBingOAuthConfig,
 }));
 vi.mock("@/server/lib/posthog", () => ({
   captureServerEvent: mocks.captureServerEvent,
 }));
-vi.mock("@/server/lib/runtime-env", () => ({
-  isHostedServerAuthMode: mocks.isHostedServerAuthMode,
-}));
-
 import {
   disconnectBing,
   getBingConnection,
+  getBingKeywords,
   listBingSites,
   setBingSite,
 } from "./bing";
@@ -67,28 +71,32 @@ const projectContext = {
   userEmail: "u1@example.com",
   organizationId: "org1",
   projectId: "p1",
+  role: "owner" as const,
 };
 const projectOpts = { data: { projectId: "p1" }, context: projectContext };
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.isHostedServerAuthMode.mockResolvedValue(false);
-  mocks.hasSelfHostedBingConfig.mockResolvedValue(false);
+  mocks.hasBingOAuthConfig.mockResolvedValue(false);
   mocks.userHasGrant.mockResolvedValue(false);
   mocks.getConnection.mockResolvedValue(null);
   mocks.listSitesForUserWithGrantStatus.mockResolvedValue({ accounts: [] });
+  mocks.getKeywords.mockResolvedValue({
+    siteUrl: "https://x.example/",
+    connectedBy: null,
+    rows: [],
+  });
   mocks.captureServerEvent.mockResolvedValue(undefined);
 });
 
 describe("getBingConnection", () => {
-  it("reports bingOAuthConfigured in hosted mode even without self-hosted config", async () => {
-    mocks.isHostedServerAuthMode.mockResolvedValue(true);
-    mocks.hasSelfHostedBingConfig.mockResolvedValue(false);
+  it("does not advertise OAuth when the deployment has no Bing credentials", async () => {
+    mocks.hasBingOAuthConfig.mockResolvedValue(false);
 
     await expect(getBingConnection(projectOpts)).resolves.toEqual({
       connected: false,
       currentUserHasGrant: false,
-      bingOAuthConfigured: true,
+      bingOAuthConfigured: false,
       siteUrl: null,
       connectedByEmail: null,
       connectedAt: null,
@@ -198,6 +206,42 @@ describe("listBingSites", () => {
   });
 });
 
+describe("getBingKeywords", () => {
+  it("returns sampled keyword rows from the project-scoped service", async () => {
+    const rows = [
+      {
+        query: "open source seo",
+        date: "2026-01-01T00:00:00.000Z",
+        clicks: 1,
+        impressions: 10,
+        averageClickPosition: 4,
+        averageImpressionPosition: 8,
+      },
+    ];
+    mocks.getKeywords.mockResolvedValue({
+      siteUrl: "https://x.example/",
+      connectedBy: "owner@example.com",
+      rows,
+    });
+
+    await expect(getBingKeywords(projectOpts)).resolves.toEqual({
+      connected: true,
+      siteUrl: "https://x.example/",
+      connectedBy: "owner@example.com",
+      rows,
+    });
+    expect(mocks.getKeywords).toHaveBeenCalledWith({ projectId: "p1" });
+  });
+
+  it("returns disconnected when the project has no Bing site", async () => {
+    mocks.getKeywords.mockRejectedValue(new mocks.BingNotConnectedError());
+
+    await expect(getBingKeywords(projectOpts)).resolves.toEqual({
+      connected: false,
+    });
+  });
+});
+
 describe("setBingSite", () => {
   it("passes the project and org through to BingService.setSite and reports the event", async () => {
     mocks.setSite.mockResolvedValue({ siteUrl: "https://x.example/" });
@@ -230,6 +274,22 @@ describe("setBingSite", () => {
       properties: { project_id: "p1", site_url: "https://x.example/" },
     });
   });
+
+  it("rejects members before changing the project-wide integration", async () => {
+    const setOpts = {
+      data: {
+        projectId: "p1",
+        accountId: "uid-a",
+        siteUrl: "https://x.example/",
+      },
+      context: { ...projectContext, role: "member" as const },
+    };
+
+    await expect(setBingSite(setOpts)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(mocks.setSite).not.toHaveBeenCalled();
+  });
 });
 
 describe("disconnectBing", () => {
@@ -250,5 +310,17 @@ describe("disconnectBing", () => {
       organizationId: "org1",
       properties: { project_id: "p1" },
     });
+  });
+
+  it("rejects members before disconnecting the project-wide integration", async () => {
+    const memberOpts = {
+      ...projectOpts,
+      context: { ...projectContext, role: "member" as const },
+    };
+
+    await expect(disconnectBing(memberOpts)).rejects.toMatchObject({
+      code: "FORBIDDEN",
+    });
+    expect(mocks.disconnect).not.toHaveBeenCalled();
   });
 });

@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   BingService: {
     getPerformance: vi.fn(),
+    getKeywords: vi.fn(),
     getCrawlStats: vi.fn(),
     getLinks: vi.fn(),
     getConnection: vi.fn(),
@@ -64,26 +65,34 @@ describe("bing MCP tools", () => {
       languageCode: "en",
     });
     mocks.BingService.getPerformance.mockReset();
+    mocks.BingService.getKeywords.mockReset();
     mocks.BingService.getCrawlStats.mockReset();
     mocks.BingService.getLinks.mockReset();
     mocks.BingService.getConnection.mockReset();
   });
 
-  it("exports the three planned read-only tool names", async () => {
-    const { getBingPerformanceTool, getBingCrawlStatsTool, getBingLinksTool } =
-      await import("./bing-tools");
+  it("exports the four planned read-only tool names", async () => {
+    const {
+      getBingPerformanceTool,
+      getBingKeywordsTool,
+      getBingCrawlStatsTool,
+      getBingLinksTool,
+    } = await import("./bing-tools");
 
     expect([
       getBingPerformanceTool.name,
+      getBingKeywordsTool.name,
       getBingCrawlStatsTool.name,
       getBingLinksTool.name,
     ]).toEqual([
       "get_bing_search_performance",
+      "get_bing_keywords",
       "get_bing_crawl_stats",
       "get_bing_links",
     ]);
     for (const tool of [
       getBingPerformanceTool,
+      getBingKeywordsTool,
       getBingCrawlStatsTool,
       getBingLinksTool,
     ]) {
@@ -285,6 +294,43 @@ describe("bing MCP tools", () => {
     expect(first.type === "text" && first.text).toContain(
       "crawled | in index | crawl errors",
     );
+  });
+
+  it("renders sampled Bing keyword evidence and average positions", async () => {
+    mocks.BingService.getKeywords.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      connectedBy: "alice@example.com",
+      rows: [
+        {
+          query: "open source seo",
+          date: "2026-01-01T00:00:00.000Z",
+          clicks: 4,
+          impressions: 80,
+          averageClickPosition: 3.5,
+          averageImpressionPosition: 7.25,
+        },
+      ],
+    });
+    const { getBingKeywordsTool } = await import("./bing-tools");
+
+    const result = await getBingKeywordsTool.handler(
+      { projectId: "project_1" },
+      toolContext,
+    );
+
+    expect(mocks.BingService.getKeywords).toHaveBeenCalledWith({
+      projectId: "project_1",
+    });
+    expect(result.structuredContent).toMatchObject({
+      ok: true,
+      siteUrl: "https://example.com/",
+      rowCount: 1,
+    });
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain(
+      "query | date | clicks | impressions | avg impression position",
+    );
+    expect(first.type === "text" && first.text).toContain("open source seo");
   });
 
   it("reads a bounded Bing links page and reports paging without claiming completeness", async () => {

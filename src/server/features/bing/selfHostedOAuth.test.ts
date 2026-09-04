@@ -57,8 +57,7 @@ vi.mock("@/lib/auth", () => ({
 }));
 vi.mock("./oauth-config", () => ({
   getBingOAuthClientConfig: () => Promise.resolve(mocks.state.config),
-  hasSelfHostedBingConfig: () =>
-    Promise.resolve(mocks.state.selfHostedConfigured),
+  hasBingOAuthConfig: () => Promise.resolve(mocks.state.selfHostedConfigured),
 }));
 
 const user = { userId: "user_1", userEmail: "owner@example.com" };

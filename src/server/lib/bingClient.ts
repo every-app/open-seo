@@ -60,6 +60,15 @@ type BingRankAndTrafficStatsRow = {
   impressions: number;
 };
 
+type BingQueryStatsRow = {
+  query: string;
+  date: string | null;
+  clicks: number;
+  impressions: number;
+  averageClickPosition: number;
+  averageImpressionPosition: number;
+};
+
 type BingCrawlStatsRow = {
   date: string | null;
   allOtherCodes: number;
@@ -127,6 +136,15 @@ const rankAndTrafficStatsRowSchema = z.looseObject({
   Date: z.unknown(),
   Clicks: z.number(),
   Impressions: z.number(),
+});
+
+const queryStatsRowSchema = z.looseObject({
+  Query: z.string(),
+  Date: z.unknown(),
+  Clicks: z.number(),
+  Impressions: z.number(),
+  AvgClickPosition: z.number(),
+  AvgImpressionPosition: z.number(),
 });
 
 const crawlStatsRowSchema = z.looseObject({
@@ -297,6 +315,24 @@ export function createBingClient(opts: {
         date: parseWcfDate(row.Date)?.toISOString() ?? null,
         clicks: row.Clicks,
         impressions: row.Impressions,
+      }));
+    },
+
+    /** GetQueryStats — sampled keyword rows over Bing's native reporting
+     *  window. Bing exposes no date-range or paging parameters for this
+     *  endpoint. AvgClickPosition may be -1 when a row has no clicks. */
+    async getQueryStats(siteUrl: string): Promise<BingQueryStatsRow[]> {
+      const payload = await request(
+        `${BING_API_BASE}/GetQueryStats?siteUrl=${encodeURIComponent(siteUrl)}`,
+      );
+      const rows = z.array(queryStatsRowSchema).parse(payload);
+      return rows.map((row) => ({
+        query: row.Query,
+        date: parseWcfDate(row.Date)?.toISOString() ?? null,
+        clicks: row.Clicks,
+        impressions: row.Impressions,
+        averageClickPosition: row.AvgClickPosition,
+        averageImpressionPosition: row.AvgImpressionPosition,
       }));
     },
 

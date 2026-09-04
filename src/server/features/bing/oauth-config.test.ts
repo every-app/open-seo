@@ -7,7 +7,7 @@ import {
 import {
   bingProviderConfig,
   getBingOAuthClientConfig,
-  hasSelfHostedBingConfig,
+  hasBingOAuthConfig,
 } from "@/server/features/bing/oauth-config";
 
 // oauth-config.ts imports the Workers env binding at module scope (like
@@ -50,13 +50,13 @@ describe("getBingOAuthClientConfig", () => {
   });
 });
 
-describe("hasSelfHostedBingConfig", () => {
+describe("hasBingOAuthConfig", () => {
   it("rejects a BETTER_AUTH_SECRET shorter than 32 chars", async () => {
     vi.stubEnv("BING_CLIENT_ID", "client-id");
     vi.stubEnv("BING_CLIENT_SECRET", "client-secret");
     vi.stubEnv("BETTER_AUTH_SECRET", "s".repeat(31));
 
-    await expect(hasSelfHostedBingConfig()).resolves.toBe(false);
+    await expect(hasBingOAuthConfig()).resolves.toBe(false);
   });
 
   it("rejects when the OAuth client is not configured", async () => {
@@ -64,7 +64,7 @@ describe("hasSelfHostedBingConfig", () => {
     vi.stubEnv("BING_CLIENT_SECRET", "");
     vi.stubEnv("BETTER_AUTH_SECRET", VALID_SECRET);
 
-    await expect(hasSelfHostedBingConfig()).resolves.toBe(false);
+    await expect(hasBingOAuthConfig()).resolves.toBe(false);
   });
 
   it("accepts client credentials plus a >=32 char secret", async () => {
@@ -72,7 +72,7 @@ describe("hasSelfHostedBingConfig", () => {
     vi.stubEnv("BING_CLIENT_SECRET", "client-secret");
     vi.stubEnv("BETTER_AUTH_SECRET", VALID_SECRET);
 
-    await expect(hasSelfHostedBingConfig()).resolves.toBe(true);
+    await expect(hasBingOAuthConfig()).resolves.toBe(true);
   });
 });
 

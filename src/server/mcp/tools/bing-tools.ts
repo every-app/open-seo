@@ -254,6 +254,8 @@ export const getBingCrawlStatsTool = {
   }),
 };
 
+export { getBingKeywordsTool } from "./bing-keywords-tool";
+
 export const getBingLinksTool = {
   name: "get_bing_links",
   config: {
