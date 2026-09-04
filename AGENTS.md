@@ -1,6 +1,7 @@
 # Agent guidance
 
 ## Feature log
+- 2026-09-04: Added Bing Webmaster fallback with provider badges to both app surfaces (commit `82a32fd`). `DomainService.getOverview` now degrades to `getBingPartialOverview` on `DATAFORSEO_AUTH_FAILED` (backlinks/referring domains only, traffic and keywords null) and returns a `provider` field (`dataforseo` default via Zod for old cache entries, e2e fixture updated). `profileBacklinksOverview` degrades to Bing link counts for domain/subdomains scope (rank, spam, broken, trends, and tables null/empty); subfolder scope keeps the provider error. Domain overview page shows a "Bing Webmaster" badge when the provider is Bing; backlinks overview panel shows the same badge via the new `provider` field in `backlinksOverviewSchema` (subfolder builder sets it explicitly). tsc + Biome clean; full suite matches clean-main baseline (25 pre-existing unrelated failures).
 
 - 2026-09-04: Added Bing Webmaster query-stat fallback to `get_domain_keyword_suggestions` when DataForSEO authentication is unavailable. Bing rows expose clicks and intentionally leave search volume, position, CPC, and difficulty null; output includes a provider limitation note. Typecheck/biome passed; Vitest invocation hung in this environment. Commit `894fe40` pushed to `Noesis-Boss/open-seo`.
 
