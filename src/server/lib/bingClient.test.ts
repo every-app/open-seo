@@ -366,6 +366,20 @@ describe("bingClient", () => {
     ).rejects.toBeInstanceOf(BingTokenError);
   });
 
+  it("preserves reconnect-required when refresh returns invalid_grant through a real request", async () => {
+    mocks.getAccessToken.mockRejectedValue(
+      Object.assign(new Error("invalid_grant"), {
+        body: { error: "invalid_grant" },
+      }),
+    );
+    const { createBingClient } = await import("./bingClient");
+
+    await expect(
+      createBingClient({ userId: "u1" }).listSites(),
+    ).rejects.toMatchObject({ code: "bing_reconnect_required" });
+    expect(mocks.fetch).not.toHaveBeenCalled();
+  });
+
   it("throws BingTokenError when the token response has no accessToken", async () => {
     mocks.getAccessToken.mockResolvedValue({});
     const { createBingClient, BingTokenError } = await import("./bingClient");

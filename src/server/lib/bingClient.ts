@@ -29,6 +29,8 @@ export class BingApiError extends Error {
 /** No fresh access token could be minted — the user revoked the grant, or the
  *  stored Bing grant expired. Mirrors GscTokenError. */
 export class BingTokenError extends Error {
+  public readonly code = "bing_reconnect_required" as const;
+
   constructor(
     message: string,
     public readonly cause?: unknown,
