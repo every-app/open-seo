@@ -46,6 +46,11 @@ export function BacklinksOverviewPanels({
         <span className="badge badge-outline">
           {RESEARCH_SCOPE_LABELS[data.scope]}
         </span>
+        {data.provider === "bing_webmaster" ? (
+          <span className="badge badge-outline text-warning">
+            Bing Webmaster
+          </span>
+        ) : null}
         <span>Target: {data.displayTarget}</span>
         <span>-</span>
         <span>Updated {formatRelativeTimestamp(data.fetchedAt)}</span>

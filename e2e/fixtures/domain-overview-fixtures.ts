@@ -13,6 +13,7 @@ export function getFixtureOverview(domain: string) {
     referringDomains: null,
     hasData: true,
     fetchedAt: "2026-05-19T00:00:00.000Z",
+    provider: "dataforseo" as const,
   };
 }
 

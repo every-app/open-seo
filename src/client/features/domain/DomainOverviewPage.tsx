@@ -601,6 +601,11 @@ export function DomainOverviewPage({
               <span className="badge badge-outline">
                 {RESEARCH_SCOPE_LABELS[state.overview.scope]}
               </span>
+              {state.overview.provider === "bing_webmaster" ? (
+                <span className="badge badge-outline text-warning">
+                  Bing Webmaster
+                </span>
+              ) : null}
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <StatCard
