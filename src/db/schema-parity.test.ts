@@ -14,6 +14,7 @@ import * as sqliteBilling from "./billing.schema";
 import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
+import * as sqliteFirstPartySignals from "./first-party-signals.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
 import * as pgAudit from "./pg/audit.schema";
@@ -23,6 +24,7 @@ import * as pgBilling from "./pg/billing.schema";
 import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
+import * as pgFirstPartySignals from "./pg/first-party-signals.schema";
 
 // Guards the ONE structural artifact `db:generate` does not regenerate: the
 // hand-written Postgres schema. The provider-aware `db`/`@/db/schema` barrel
@@ -153,6 +155,7 @@ const sqliteAppTables = tablesFrom(
   sqliteGa4,
   sqliteGsc,
   sqliteTelemetry,
+  sqliteFirstPartySignals,
 );
 const pgAppTables = tablesFrom(
   pgApp,
@@ -163,6 +166,7 @@ const pgAppTables = tablesFrom(
   pgGa4,
   pgGsc,
   pgTelemetry,
+  pgFirstPartySignals,
 );
 const sqliteAuthTables = tablesFrom(sqliteAuth);
 const pgAuthTables = tablesFrom(pgAuth);
@@ -205,6 +209,34 @@ describe("schema parity: application tables", () => {
           checkNames(sqliteTable, "sqlite"),
         );
       });
+    });
+  }
+});
+
+describe("first-party aggregate storage invariants", () => {
+  for (const [dialect, tables] of [
+    ["sqlite", sqliteAppTables],
+    ["pg", pgAppTables],
+  ] as const) {
+    it(`${dialect} allows only one receipt per source and UTC day`, () => {
+      const batches = tables.get("first_party_signal_batches");
+      expect(batches).toBeDefined();
+      if (!batches) return;
+      expect(uniqueColumnTuples(batches, dialect)).toContain(
+        "snapshot_date,source_id",
+      );
+    });
+
+    it(`${dialect} derives project and source ownership through the receipt`, () => {
+      const aggregates = tables.get("first_party_signal_daily_aggregates");
+      expect(aggregates).toBeDefined();
+      if (!aggregates) return;
+      expect(columnsOf(aggregates).map((column) => column.name)).not.toEqual(
+        expect.arrayContaining(["project_id", "source_id", "snapshot_date"]),
+      );
+      expect(foreignKeys(aggregates, dialect)).toEqual([
+        "batch_receipt_id->first_party_signal_batches.id onDelete=cascade",
+      ]);
     });
   }
 });

@@ -20,9 +20,14 @@ declare namespace Cloudflare {
 		LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID: string;
 		POSTHOG_HOST: string;
 		POSTHOG_PUBLIC_KEY: string;
-		// Hand-patched: hosted-prod-only binding declared in alchemy.run.ts,
-		// absent in the wrangler.jsonc surfaces (local dev, Docker self-host).
+		// Hand-patched: Alchemy-only bindings declared in alchemy.run.ts,
+		// absent in the wrangler.jsonc surfaces (local dev and Docker).
 		MCP_RATE_LIMIT?: RateLimit;
+		FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED?: string;
+		FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE?: string;
+		FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT?: RateLimit;
+		FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT?: RateLimit;
+		FIRST_PARTY_INGEST_RATE_LIMIT?: RateLimit;
 		// Hand-patched: the class moved to src/audit-worker.ts and a full regen pulls
 		// unrelated runtime-type drift (see cf-typegen); keep this in sync until then.
 		SITE_AUDIT_WORKFLOW: Workflow<Parameters<import("./src/audit-worker").SiteAuditWorkflow['run']>[0]['payload']>;

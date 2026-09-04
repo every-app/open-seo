@@ -480,6 +480,37 @@ export default Alchemy.Stack(
           simple: { limit: 5000, period: 60 },
         }),
 
+        // The receiver is public and HMAC-authenticated. A constant-key coarse
+        // guard catches random UUID sprays before body/D1/crypto work; a second
+        // opaque claimed-source guard catches repeated claims without using or
+        // retaining IP addresses. The authenticated limiter remains the final,
+        // stricter per-source guard after HMAC verification. Rate-limit
+        // namespace counters can be shared across Workers, so every key is
+        // scoped by the trusted, stage-specific Worker name.
+        FIRST_PARTY_INGEST_EDGE_LIMITS_REQUIRED: "true",
+        FIRST_PARTY_INGEST_RATE_LIMIT_SCOPE: workerName(stage),
+        FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT: Cloudflare.RateLimit(
+          "FIRST_PARTY_INGEST_GLOBAL_RATE_LIMIT",
+          {
+            namespaceId: 1003,
+            simple: { limit: 600, period: 60 },
+          },
+        ),
+        FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT: Cloudflare.RateLimit(
+          "FIRST_PARTY_INGEST_CLAIMED_SOURCE_RATE_LIMIT",
+          {
+            namespaceId: 1004,
+            simple: { limit: 240, period: 60 },
+          },
+        ),
+        FIRST_PARTY_INGEST_RATE_LIMIT: Cloudflare.RateLimit(
+          "FIRST_PARTY_INGEST_RATE_LIMIT",
+          {
+            namespaceId: 1002,
+            simple: { limit: 120, period: 60 },
+          },
+        ),
+
         // Durable Objects (the chat agents; the audit scratchpad lives
         // privately in the open-seo-audit worker). Alchemy backs new DO
         // classes with SQLite storage; wrangler.jsonc's `migrations` only

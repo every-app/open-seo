@@ -250,6 +250,23 @@ const toolCategories: ToolCategory[] = [
       },
     ],
   },
+  {
+    label: "First-party Aggregates",
+    tools: [
+      {
+        name: "get_first_party_funnel",
+        title: "Get first-party funnel",
+        description:
+          "Read daily aggregate search, registration, checkout, and payment counts.",
+      },
+      {
+        name: "get_first_party_landing_conversions",
+        title: "Get landing conversions",
+        description:
+          "Compare privacy-safe funnel counts by allowlisted public landing page.",
+      },
+    ],
+  },
 ];
 
 export function AvailableTools() {

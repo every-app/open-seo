@@ -1,0 +1,1 @@
+CREATE INDEX `first_party_signal_batches_retention_idx` ON `first_party_signal_batches` (`snapshot_date`,`id`);
