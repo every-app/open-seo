@@ -24,7 +24,7 @@ export const agentMarketplaceStatusSchema = z.enum([
   "paused",
 ]);
 
-export const agentMarketplaceSourceSchema = z.enum([
+const agentMarketplaceSourceSchema = z.enum([
   "manual",
   "github",
   "platform",
@@ -79,9 +79,6 @@ export type AgentMarketplacePlatform = z.infer<
 >;
 export type AgentMarketplaceStatus = z.infer<
   typeof agentMarketplaceStatusSchema
->;
-export type AgentMarketplaceSource = z.infer<
-  typeof agentMarketplaceSourceSchema
 >;
 export type UpdateAgentMarketplaceInput = z.infer<
   typeof updateAgentMarketplaceSchema

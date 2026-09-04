@@ -10,10 +10,8 @@ import type {
   UpdateAgentMarketplaceInput,
 } from "@/types/schemas/agent-marketplaces";
 
-export type AgentMarketplaceListing =
-  typeof agentMarketplaceListings.$inferSelect;
-export type AgentMarketplaceEvidence =
-  typeof agentMarketplaceEvidence.$inferSelect;
+type AgentMarketplaceListing = typeof agentMarketplaceListings.$inferSelect;
+type AgentMarketplaceEvidence = typeof agentMarketplaceEvidence.$inferSelect;
 
 async function listForProject(
   projectId: string,
