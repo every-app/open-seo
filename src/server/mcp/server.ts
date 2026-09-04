@@ -11,6 +11,12 @@ import {
 } from "@/server/mcp/context";
 import { objectSchema } from "@/server/mcp/output-schemas";
 import { instrumentMcpToolHandler } from "@/server/mcp/instrumentation";
+import {
+  getBingCrawlStatsTool,
+  getBingKeywordsTool,
+  getBingLinksTool,
+  getBingPerformanceTool,
+} from "@/server/mcp/tools/bing-tools";
 import { getBacklinksOverviewTool } from "@/server/mcp/tools/get-backlinks-overview";
 import { getBacklinksProfileTool } from "@/server/mcp/tools/get-backlinks-profile";
 import { getDomainKeywordSuggestionsTool } from "@/server/mcp/tools/get-domain-keyword-suggestions";
@@ -132,7 +138,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
       title: "OpenSEO",
       version: "0.0.12",
       description:
-        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
+        "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google and Bing webmaster performance.",
       websiteUrl: "https://openseo.so",
       icons: [
         {
@@ -188,6 +194,10 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(getLocalRankGridTool);
   register(getKeywordMetricsTool);
   register(getSearchConsolePerformanceTool);
+  register(getBingPerformanceTool);
+  register(getBingKeywordsTool);
+  register(getBingCrawlStatsTool);
+  register(getBingLinksTool);
   register(inspectUrlsTool);
   register(getGoogleAnalyticsOrganicLandingPagesTool);
   register(getGoogleAnalyticsPagePerformanceTool);

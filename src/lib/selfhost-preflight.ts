@@ -14,7 +14,7 @@ type PreflightLevel = "ok" | "info" | "warn" | "fail";
 
 type PreflightItem = {
   // Stable identifier shared with /api/health's check map.
-  key: "auth" | "dataforseo" | "gsc" | "ai" | "runtime";
+  key: "auth" | "dataforseo" | "gsc" | "bing" | "ai" | "runtime";
   name: string;
   level: PreflightLevel;
   message: string;
@@ -192,6 +192,45 @@ function checkOptionalFeatures(env: EnvRecord, items: PreflightItem[]): void {
       level: "info",
       message:
         "Not configured (optional). See docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md.",
+    });
+  }
+
+  const bingClientId = get(env, "BING_CLIENT_ID");
+  const bingClientSecret = get(env, "BING_CLIENT_SECRET");
+  if (bingClientId || bingClientSecret) {
+    if (!bingClientId || !bingClientSecret) {
+      items.push({
+        key: "bing",
+        name: "Bing Webmaster Tools",
+        level: "warn",
+        message:
+          "Only one of BING_CLIENT_ID / BING_CLIENT_SECRET is set — both are required.",
+      });
+    } else if (
+      !betterAuthSecret ||
+      betterAuthSecret.length < MIN_BETTER_AUTH_SECRET_LENGTH
+    ) {
+      items.push({
+        key: "bing",
+        name: "Bing Webmaster Tools",
+        level: "warn",
+        message: `Bing credentials are set, but Bing Webmaster stays DISABLED until BETTER_AUTH_SECRET is at least ${MIN_BETTER_AUTH_SECRET_LENGTH} characters (it encrypts stored OAuth tokens).`,
+      });
+    } else {
+      items.push({
+        key: "bing",
+        name: "Bing Webmaster Tools",
+        level: "ok",
+        message: "Configured",
+      });
+    }
+  } else {
+    items.push({
+      key: "bing",
+      name: "Bing Webmaster Tools",
+      level: "info",
+      message:
+        "Not configured (optional). See docs/SELF_HOSTING_BING_WEBMASTER.md.",
     });
   }
 

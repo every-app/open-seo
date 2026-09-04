@@ -3,6 +3,7 @@ import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
 import { GA4_OAUTH_PROVIDER_ID, GA4_OAUTH_SCOPES } from "@/shared/ga4";
+import { bingProviderConfig } from "@/server/features/bing/oauth-config";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
 
 type OrganizationOptions = NonNullable<Parameters<typeof organization>[0]>;
@@ -91,6 +92,10 @@ export function createBaseAuthConfig(options?: {
             prompt: "select_account consent",
             pkce: true,
           },
+          // Bing Webmaster Tools. Unlike Google there is no discovery document
+          // and no userinfo endpoint, so the endpoints are explicit and
+          // identity is decoded from the access token — see specs/0009.
+          bingProviderConfig,
         ],
       }),
     ],
