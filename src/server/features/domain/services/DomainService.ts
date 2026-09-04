@@ -4,6 +4,8 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
+import { getBingSiteData } from "@/server/lib/keyword-providers/bing-site";
+import { asAppError } from "@/server/lib/errors";
 import { buildRankedKeywordsScopeFilter } from "@/server/lib/dataforseo/researchScopeFilters";
 import { joinClauses } from "@/server/lib/dataforseo/filters";
 import { parseResearchTargetOrThrow } from "@/server/lib/domainUtils";
@@ -170,22 +172,23 @@ async function getSuggestedKeywords(
     return cached.data;
   }
 
-  const dataforseo = createDataforseoClient(billingCustomer);
+  let keywords;
+  try {
+    const dataforseo = createDataforseoClient(billingCustomer);
+    const rankedKeywordsResponse = await dataforseo.domain.rankedKeywords({
+      target: target.hostname,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      limit: 100,
+      orderBy: ["ranked_serp_element.serp_item.etv,desc"],
+      filters:
+        scopeFilter.clauses.length > 0
+          ? joinClauses(scopeFilter.clauses, "and")
+          : undefined,
+      ...metering,
+    });
 
-  const rankedKeywordsResponse = await dataforseo.domain.rankedKeywords({
-    target: target.hostname,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    limit: 100,
-    orderBy: ["ranked_serp_element.serp_item.etv,desc"],
-    filters:
-      scopeFilter.clauses.length > 0
-        ? joinClauses(scopeFilter.clauses, "and")
-        : undefined,
-    ...metering,
-  });
-
-  const keywords = rankedKeywordsResponse.items
+    keywords = rankedKeywordsResponse.items
     .map((item) => mapKeywordItem(item))
     .filter(
       (item): item is NonNullable<ReturnType<typeof mapKeywordItem>> =>
@@ -199,6 +202,19 @@ async function getSuggestedKeywords(
       cpc: item.cpc,
       keywordDifficulty: item.keywordDifficulty,
     }));
+  } catch (error) {
+    if (asAppError(error)?.code !== "DATAFORSEO_AUTH_FAILED") throw error;
+    const bing = await getBingSiteData(target.hostname);
+    if (!bing) throw error;
+    keywords = bing.queries.map((query) => ({
+      keyword: query.query,
+      position: null,
+      searchVolume: null,
+      traffic: query.clicks,
+      cpc: null,
+      keywordDifficulty: null,
+    }));
+  }
 
   if (keywords.length > 0) {
     waitUntil(
