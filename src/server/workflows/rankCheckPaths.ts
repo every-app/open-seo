@@ -11,6 +11,7 @@ import type {
   RankCheckTaskInput,
 } from "@/server/lib/dataforseo";
 import { AppError } from "@/server/lib/errors";
+import { getBingSiteData } from "@/server/lib/keyword-providers/bing-site";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { KEYWORDS_PER_BATCH } from "@/shared/rank-tracking";
 import { pgStep } from "@/server/workflows/pgStep";
@@ -101,6 +102,7 @@ async function checkBatchLive(
     ),
   );
   const results: RankCheckResultWithDevice[] = [];
+  const authFailedTasks: RankCheckTaskInput[] = [];
   settled.forEach((outcome, index) => {
     if (outcome.status === "fulfilled") {
       results.push(outcome.value);
@@ -112,12 +114,40 @@ async function checkBatchLive(
     // DataForSEO erring on its own side is a provider flake, not our bug: the
     // keyword just misses this run and finalize reports it to the user. Every
     // other rejection (no credits, bad API key) is ours and stays at error.
+    if (code === "DATAFORSEO_AUTH_FAILED") {
+      authFailedTasks.push(tasks[index]);
+      return;
+    }
     const log = code === "UPSTREAM_UNAVAILABLE" ? console.warn : console.error;
     const task = tasks[index];
     log(
       `[rank-check] ${ctx.runId} live call failed (${code}) keyword="${task.keyword}" device=${task.device}: ${message}`,
     );
   });
+  if (authFailedTasks.length > 0) {
+    // DataForSEO unconfigured is a billing/config gap, not a per-keyword
+    // flake: fall back to Bing Webmaster query stats, whose impression-weighted
+    // average position approximates the tracked keyword's rank. Requires the
+    // domain to be registered in Bing Webmaster Tools; keywords without a
+    // matching row just miss this run like any other failure.
+    const bing = await getBingSiteData(ctx.domain).catch(() => null);
+    if (bing) {
+      for (const task of authFailedTasks) {
+        const stat = bing.queries.find(
+          (q) => q.query.toLowerCase() === task.keyword.toLowerCase(),
+        );
+        if (!stat || stat.avgImpressionPosition == null) continue;
+        results.push({
+          keywordId: task.keywordId,
+          keyword: task.keyword,
+          position: Math.round(stat.avgImpressionPosition),
+          url: null,
+          serpFeatures: ["bing-query-stats-approximation"],
+          device: task.device,
+        });
+      }
+    }
+  }
   if (results.length > 0) {
     await RankTrackingRepository.insertSnapshots(
       mapResultsToSnapshotRows(ctx.runId, results),

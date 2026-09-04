@@ -3,6 +3,9 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
 import { putTextToR2 } from "@/server/lib/r2";
+import { asAppError } from "@/server/lib/errors";
+import type { StoredLighthousePayload } from "@/server/lib/lighthouseStoredPayload";
+import { fetchPagespeedLighthouse } from "@/server/lib/pagespeedLighthouse";
 
 interface LighthouseSamplePage {
   url: string;
@@ -58,22 +61,7 @@ export async function fetchLighthouseResult(
   try {
     const data = await dataforseo.lighthouse.live({ url, strategy });
 
-    return {
-      result: {
-        url,
-        pageId,
-        strategy,
-        performanceScore: data.scores.performance,
-        accessibilityScore: data.scores.accessibility,
-        bestPracticesScore: data.scores["best-practices"],
-        seoScore: data.scores.seo,
-        lcpMs: data.metrics.largestContentfulPaint.numericValue,
-        cls: data.metrics.cumulativeLayoutShift.numericValue,
-        inpMs: data.metrics.interactionToNextPaint.numericValue,
-        ttfbMs: data.metrics.serverResponseTime.numericValue,
-      },
-      payloadJson: JSON.stringify(data),
-    };
+    return storedPayloadToFetchResult(url, pageId, strategy, data);
   } catch (error) {
     const failed = error instanceof Error ? error : new Error(String(error));
     // Lighthouse runtime errors (ERRORED_DOCUMENT_REQUEST, NOT_HTML, NO_FCP) mean the
@@ -85,8 +73,47 @@ export async function fetchLighthouseResult(
       ? console.warn
       : console.error;
     log(`Lighthouse failed for ${url} (${strategy}): ${failed.message}`);
+    // DataForSEO unconfigured (or its key rejected) is a configuration gap, not
+    // a broken page: fall back to the free Google PageSpeed Insights API, which
+    // runs real Lighthouse and maps into the same stored payload. A PSI failure
+    // keeps the original DataForSEO message — that is the error the user can
+    // act on.
+    if (asAppError(failed)?.code === "DATAFORSEO_AUTH_FAILED") {
+      try {
+        const data = await fetchPagespeedLighthouse({ url, strategy });
+        return storedPayloadToFetchResult(url, pageId, strategy, data);
+      } catch (psiError) {
+        console.warn(
+          `PageSpeed Insights fallback failed for ${url} (${strategy}): ${psiError instanceof Error ? psiError.message : String(psiError)}`,
+        );
+      }
+    }
     return failedLighthouseFetch(url, pageId, strategy, failed.message);
   }
+}
+
+function storedPayloadToFetchResult(
+  url: string,
+  pageId: string,
+  strategy: "mobile" | "desktop",
+  data: StoredLighthousePayload,
+): LighthouseFetchResult {
+  return {
+    result: {
+      url,
+      pageId,
+      strategy,
+      performanceScore: data.scores.performance,
+      accessibilityScore: data.scores.accessibility,
+      bestPracticesScore: data.scores["best-practices"],
+      seoScore: data.scores.seo,
+      lcpMs: data.metrics.largestContentfulPaint.numericValue,
+      cls: data.metrics.cumulativeLayoutShift.numericValue,
+      inpMs: data.metrics.interactionToNextPaint.numericValue,
+      ttfbMs: data.metrics.serverResponseTime.numericValue,
+    },
+    payloadJson: JSON.stringify(data),
+  };
 }
 
 export async function storeLighthouseResult(input: {

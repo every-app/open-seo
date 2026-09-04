@@ -13,14 +13,12 @@ describe("Bing Webmaster site-data adapter", () => {
 
   it("parses registered sites from the fixture response", async () => {
     vi.stubEnv("BING_WEBMASTER_API_KEY", "fixture-key");
-    const fetchMock = vi
-      .spyOn(globalThis, "fetch")
-      .mockResolvedValueOnce(
-        new Response(JSON.stringify({ d: [{ Url: "https://example.com/" }] }), {
-          status: 200,
-          ...JSON_HEADERS,
-        }),
-      );
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(JSON.stringify({ d: [{ Url: "https://example.com/" }] }), {
+        status: 200,
+        ...JSON_HEADERS,
+      }),
+    );
 
     expect(await fetchBingUserSites()).toEqual(["https://example.com/"]);
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -62,27 +60,49 @@ describe("Bing Webmaster site-data adapter", () => {
       new Response(
         JSON.stringify({
           d: [
-            { Query: "seo audit", Impressions: 100, Clicks: 10, Date: "1/1" },
-            { Query: "seo audit", Impressions: 50, Clicks: 5, Date: "1/2" },
-            { Query: "backlinks", Impressions: 40, Clicks: 1, Date: "1/1" },
+            {
+              Query: "seo audit",
+              Impressions: 100,
+              Clicks: 10,
+              AvgImpressionPosition: 5,
+              Date: "1/1",
+            },
+            {
+              Query: "seo audit",
+              Impressions: 50,
+              Clicks: 5,
+              AvgImpressionPosition: 3,
+              Date: "1/2",
+            },
+            {
+              Query: "backlinks",
+              Impressions: 40,
+              Clicks: 1,
+              AvgImpressionPosition: null,
+              Date: "1/1",
+            },
           ],
         }),
         { status: 200, ...JSON_HEADERS },
       ),
     );
 
+    // avgImpressionPosition is the impression-weighted mean across rows:
+    // (5*100 + 3*50) / 150 = 4.33. Rows without a position contribute none.
     expect(await fetchBingQueryStats("example.com")).toEqual([
       {
         query: "seo audit",
         impressions: 150,
         clicks: 15,
         ctr: 0.1,
+        avgImpressionPosition: 4.33,
       },
       {
         query: "backlinks",
         impressions: 40,
         clicks: 1,
         ctr: 0.025,
+        avgImpressionPosition: null,
       },
     ]);
   });

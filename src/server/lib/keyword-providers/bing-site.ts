@@ -12,6 +12,8 @@ export type BingQueryStats = {
   impressions: number;
   clicks: number;
   ctr: number | null;
+  /** Impression-weighted average SERP position across the stats window. */
+  avgImpressionPosition: number | null;
 };
 
 type BingSitesResponse = {
@@ -30,6 +32,7 @@ type BingQueryStatsResponse = {
     Query?: string | null;
     Impressions?: number | null;
     Clicks?: number | null;
+    AvgImpressionPosition?: number | null;
   }>;
 };
 
@@ -80,27 +83,46 @@ export async function fetchBingQueryStats(
     siteUrl,
   });
 
-  const byQuery = new Map<string, BingQueryStats>();
+  type Accumulator = {
+    impressions: number;
+    clicks: number;
+    positionWeightedSum: number;
+    positionWeight: number;
+  };
+  const byQuery = new Map<string, Accumulator>();
   for (const row of payload.d ?? []) {
     const query = row.Query ?? "";
     if (!query) continue;
     const existing = byQuery.get(query) ?? {
-      query,
       impressions: 0,
       clicks: 0,
-      ctr: null,
+      positionWeightedSum: 0,
+      positionWeight: 0,
     };
-    existing.impressions += row.Impressions ?? 0;
+    const impressions = row.Impressions ?? 0;
+    existing.impressions += impressions;
     existing.clicks += row.Clicks ?? 0;
+    const position = row.AvgImpressionPosition;
+    if (position != null && impressions > 0) {
+      existing.positionWeightedSum += position * impressions;
+      existing.positionWeight += impressions;
+    }
     byQuery.set(query, existing);
   }
 
-  return [...byQuery.values()]
-    .map((row) => ({
-      ...row,
+  return [...byQuery.entries()]
+    .map(([query, acc]) => ({
+      query,
+      impressions: acc.impressions,
+      clicks: acc.clicks,
       ctr:
-        row.impressions > 0
-          ? Math.round((row.clicks / row.impressions) * 10000) / 10000
+        acc.impressions > 0
+          ? Math.round((acc.clicks / acc.impressions) * 10000) / 10000
+          : null,
+      avgImpressionPosition:
+        acc.positionWeight > 0
+          ? Math.round((acc.positionWeightedSum / acc.positionWeight) * 100) /
+            100
           : null,
     }))
     .sort((a, b) => b.impressions - a.impressions)
