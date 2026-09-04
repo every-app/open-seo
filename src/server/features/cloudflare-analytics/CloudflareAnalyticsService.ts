@@ -3,7 +3,10 @@ import {
   type CloudflareAnalyticsClient,
   type CloudflareGraphqlResult,
 } from "./CloudflareAnalyticsClient";
-import { CloudflareAnalyticsError } from "./CloudflareAnalyticsError";
+import {
+  CloudflareAnalyticsError,
+  CLOUDFLARE_MAX_RETRY_AFTER_SECONDS,
+} from "./CloudflareAnalyticsError";
 import {
   CloudflareAnalyticsRepository,
   type CloudflareAnalyticsConnection,
@@ -22,6 +25,7 @@ import type {
   CloudflareSecurityResult,
   CloudflareTrafficResult,
 } from "./schemas";
+import { CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX } from "@/shared/cloudflare-analytics";
 
 type Repository = typeof CloudflareAnalyticsRepository;
 type Vault = typeof CloudflareCredentialVault;
@@ -44,6 +48,18 @@ const unavailableCapability = (reason: string) => ({
   available: false,
   reason,
 });
+const transientCapability = (reason: string) =>
+  unavailableCapability(`${CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX}${reason}`);
+
+function isTransientCapability(
+  storedCapability: CloudflareCapabilities[keyof CloudflareCapabilities],
+) {
+  return (
+    storedCapability.reason?.startsWith(
+      CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX,
+    ) ?? false
+  );
+}
 
 const EMPTY_CLOUDFLARE_CAPABILITIES: CloudflareCapabilities = {
   traffic: unavailableCapability("not_connected"),
@@ -59,11 +75,13 @@ function capability<T>(
   return {
     available,
     reason:
-      result.errors.length > 0
-        ? boundedErrors(result.errors).join("; ")
-        : available
-          ? null
-          : "dataset_not_returned",
+      !available && result.errors.length > 0
+        ? `${CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX}provider_graphql_error`
+        : result.errors.length > 0
+          ? boundedErrors(result.errors).join("; ")
+          : available
+            ? null
+            : `${CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX}dataset_not_returned`,
   };
 }
 
@@ -72,11 +90,13 @@ function settledCapability<T>(
   present: (data: T) => boolean,
 ) {
   if (result.status === "fulfilled") return capability(result.value, present);
-  return unavailableCapability(
-    result.reason instanceof CloudflareAnalyticsError
-      ? result.reason.code
-      : "provider_probe_failed",
-  );
+  if (!(result.reason instanceof CloudflareAnalyticsError)) {
+    return transientCapability("provider_probe_failed");
+  }
+  return result.reason.code === "dataset_unavailable" ||
+    result.reason.code === "authentication_failed"
+    ? unavailableCapability(result.reason.code)
+    : transientCapability(result.reason.code);
 }
 
 function errorStatus(
@@ -91,6 +111,16 @@ function errorWarning(error: unknown): string {
   return error instanceof CloudflareAnalyticsError
     ? error.code
     : "cloudflare_request_failed";
+}
+
+function errorRetryAfterSeconds(error: unknown): number | undefined {
+  if (!(error instanceof CloudflareAnalyticsError)) return undefined;
+  const seconds = error.retryAfterSeconds;
+  if (seconds === undefined || !Number.isFinite(seconds)) return undefined;
+  return Math.min(
+    CLOUDFLARE_MAX_RETRY_AFTER_SECONDS,
+    Math.max(0, Math.ceil(seconds)),
+  );
 }
 
 export function createCloudflareAnalyticsService(
@@ -262,6 +292,7 @@ export function createCloudflareAnalyticsService(
         status: errorStatus(error),
         warning: errorWarning(error),
         window,
+        retryAfterSeconds: errorRetryAfterSeconds(error),
       });
     }
   }
@@ -274,7 +305,10 @@ export function createCloudflareAnalyticsService(
     const window = { from: input.from, to: input.to };
     try {
       const connected = await requireConnection(input.projectId);
-      if (!connected.capabilities.securityEvents.available) {
+      if (
+        !connected.capabilities.securityEvents.available &&
+        !isTransientCapability(connected.capabilities.securityEvents)
+      ) {
         return unavailableResult({
           status: "unavailable",
           warning:
@@ -292,13 +326,20 @@ export function createCloudflareAnalyticsService(
         rows: result.data?.viewer.zones[0]?.firewallEventsAdaptiveGroups,
         errors: result.errors,
         window,
-        capabilities: connected.capabilities,
+        capabilities: {
+          ...connected.capabilities,
+          securityEvents: capability(
+            result,
+            (data) => data.viewer.zones.length === 1,
+          ),
+        },
       });
     } catch (error) {
       return unavailableResult({
         status: errorStatus(error),
         warning: errorWarning(error),
         window,
+        retryAfterSeconds: errorRetryAfterSeconds(error),
       });
     }
   }
@@ -311,7 +352,10 @@ export function createCloudflareAnalyticsService(
     const window = { from: input.from, to: input.to };
     try {
       const connected = await requireConnection(input.projectId);
-      if (!connected.capabilities.crawlerAccess.available) {
+      if (
+        !connected.capabilities.crawlerAccess.available &&
+        !isTransientCapability(connected.capabilities.crawlerAccess)
+      ) {
         return unavailableResult({
           status: "unavailable",
           warning:
@@ -329,13 +373,20 @@ export function createCloudflareAnalyticsService(
         zone: result.data?.viewer.zones[0],
         errors: result.errors,
         window,
-        capabilities: connected.capabilities,
+        capabilities: {
+          ...connected.capabilities,
+          crawlerAccess: capability(
+            result,
+            (data) => data.viewer.zones.length === 1,
+          ),
+        },
       });
     } catch (error) {
       return unavailableResult({
         status: errorStatus(error),
         warning: errorWarning(error),
         window,
+        retryAfterSeconds: errorRetryAfterSeconds(error),
       });
     }
   }

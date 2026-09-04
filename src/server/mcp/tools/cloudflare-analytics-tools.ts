@@ -9,6 +9,7 @@ import { buildProjectMeta } from "@/server/mcp/context";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
+import { CLOUDFLARE_ANALYTICS_TOOL_NAMES } from "@/shared/cloudflare-analytics";
 
 const DAY_MS = 24 * 60 * 60 * 1_000;
 const MCP_MAX_ROWS = 100;
@@ -43,13 +44,21 @@ function resolveWindow(input: { from?: string; to?: string }) {
 
 function summary(
   label: string,
-  result: { status: string; warnings: string[] },
+  result: {
+    status: string;
+    warnings: string[];
+    retryAfterSeconds: number | null;
+  },
 ) {
   const warnings =
     result.warnings.length > 0
       ? ` Warnings: ${result.warnings.join(", ")}.`
       : "";
-  return `${label}: ${result.status}.${warnings}`;
+  const retry =
+    result.retryAfterSeconds === null
+      ? ""
+      : ` Retry after ${result.retryAfterSeconds} seconds.`;
+  return `${label}: ${result.status}.${retry}${warnings}`;
 }
 
 const annotations = {
@@ -63,7 +72,7 @@ const settingsPath = (projectId: string) =>
   `/p/${projectId}/settings/integrations#cloudflare-analytics`;
 
 export const getCloudflareTrafficHealthTool = {
-  name: "get_cloudflare_traffic_health",
+  name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.trafficHealth,
   config: {
     title: "Get Cloudflare traffic health",
     description:
@@ -90,7 +99,7 @@ export const getCloudflareTrafficHealthTool = {
 };
 
 export const getCloudflareSecurityEventsTool = {
-  name: "get_cloudflare_security_events",
+  name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.securityEvents,
   config: {
     title: "Get Cloudflare security events",
     description:
@@ -129,7 +138,7 @@ export const getCloudflareSecurityEventsTool = {
 };
 
 export const getCloudflareCrawlerAccessTool = {
-  name: "get_cloudflare_crawler_access",
+  name: CLOUDFLARE_ANALYTICS_TOOL_NAMES.crawlerAccess,
   config: {
     title: "Get Cloudflare crawler access",
     description:

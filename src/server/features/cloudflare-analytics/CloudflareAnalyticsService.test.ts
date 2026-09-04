@@ -96,8 +96,8 @@ describe("CloudflareAnalyticsService connection", () => {
           );
         }),
         crawlerAccess: vi.fn(async () => ({
-          data: { viewer: { zones: [{ googlebot: [], bingbot: [] }] } },
-          errors: [],
+          data: null,
+          errors: ["temporary GraphQL field failure"],
         })),
       }),
     });
@@ -125,7 +125,10 @@ describe("CloudflareAnalyticsService connection", () => {
           available: false,
           reason: "dataset_unavailable",
         },
-        crawlerAccess: { available: true, reason: null },
+        crawlerAccess: {
+          available: false,
+          reason: "transient:provider_graphql_error",
+        },
       },
       connectedByUserId: "user-1",
       now: now.toISOString(),
@@ -155,9 +158,160 @@ describe("CloudflareAnalyticsService connection", () => {
     ).rejects.toMatchObject({ code: "zone_not_accessible" });
     expect(repository.replace).not.toHaveBeenCalled();
   });
+
+  it("records transient optional-dataset probe failures as retryable", async () => {
+    const service = createCloudflareAnalyticsService({
+      now: () => now,
+      client: client({
+        traffic: vi.fn(async () => ({
+          data: { viewer: { zones: [{ httpRequestsAdaptiveGroups: [] }] } },
+          errors: [],
+        })),
+        securityEvents: vi.fn(async () => {
+          throw new CloudflareAnalyticsError(
+            "rate_limited",
+            "Rate limited",
+            42,
+          );
+        }),
+        crawlerAccess: vi.fn(async () => ({
+          data: { viewer: { zones: [{ googlebot: [], bingbot: [] }] } },
+          errors: [],
+        })),
+      }),
+    });
+
+    await service.connect({
+      projectId: "project-1",
+      organizationId: "org-1",
+      userId: "user-1",
+      apiToken: "provider-secret-token",
+      zoneId: "a".repeat(32),
+    });
+
+    expect(repository.replace).toHaveBeenCalledWith({
+      projectId: "project-1",
+      organizationId: "org-1",
+      encryptedApiToken: "ciphertext-new",
+      tokenHint: "••••oken",
+      zoneId: "a".repeat(32),
+      zoneLabel: null,
+      capabilities: {
+        traffic: { available: true, reason: null },
+        securityEvents: {
+          available: false,
+          reason: "transient:rate_limited",
+        },
+        crawlerAccess: { available: true, reason: null },
+      },
+      connectedByUserId: "user-1",
+      now: now.toISOString(),
+    });
+  });
 });
 
 describe("CloudflareAnalyticsService reports", () => {
+  it("retries a transient capability probe and reports the recovered capability", async () => {
+    const securityEvents = vi.fn(async () => ({
+      errors: [],
+      data: {
+        viewer: {
+          zones: [
+            {
+              firewallEventsAdaptiveGroups: [
+                {
+                  count: 1,
+                  dimensions: {
+                    action: "block",
+                    clientRequestHTTPHost: "example.com",
+                    clientRequestPath: "/login",
+                  },
+                },
+              ],
+            },
+          ],
+        },
+      },
+    }));
+    repository.capabilitiesFromConnection.mockReturnValue({
+      ...capabilities,
+      securityEvents: {
+        available: false,
+        reason: "transient:upstream_unavailable",
+      },
+    });
+    const service = createCloudflareAnalyticsService({
+      client: client({ securityEvents }),
+    });
+
+    const result = await service.securityEvents({
+      projectId: "project-1",
+      from: "2026-09-04T11:00:00.000Z",
+      to: now.toISOString(),
+    });
+
+    expect(securityEvents).toHaveBeenCalledOnce();
+    expect(result.status).toBe("ok");
+    expect(result.data?.capabilities.securityEvents).toEqual({
+      available: true,
+      reason: null,
+    });
+  });
+
+  it("does not retry a deterministic unavailable dataset", async () => {
+    const securityEvents = vi.fn();
+    repository.capabilitiesFromConnection.mockReturnValue({
+      ...capabilities,
+      securityEvents: {
+        available: false,
+        reason: "dataset_unavailable",
+      },
+    });
+    const service = createCloudflareAnalyticsService({
+      client: client({ securityEvents }),
+    });
+
+    const result = await service.securityEvents({
+      projectId: "project-1",
+      from: "2026-09-04T11:00:00.000Z",
+      to: now.toISOString(),
+    });
+
+    expect(securityEvents).not.toHaveBeenCalled();
+    expect(result).toMatchObject({
+      status: "unavailable",
+      warnings: ["dataset_unavailable"],
+      data: null,
+    });
+  });
+
+  it("propagates provider backoff in a bounded structured result", async () => {
+    const service = createCloudflareAnalyticsService({
+      client: client({
+        traffic: vi.fn(async () => {
+          throw new CloudflareAnalyticsError(
+            "rate_limited",
+            "Rate limited",
+            999_999,
+          );
+        }),
+      }),
+    });
+
+    await expect(
+      service.trafficHealth({
+        projectId: "project-1",
+        from: "2026-09-04T11:00:00.000Z",
+        to: now.toISOString(),
+      }),
+    ).resolves.toMatchObject({
+      status: "rate_limited",
+      retryAfterSeconds: 86_400,
+      warnings: ["rate_limited"],
+      data: null,
+    });
+  });
+
   it("aggregates HTTP health and preserves sampling plus partial errors", async () => {
     const service = createCloudflareAnalyticsService({
       client: client({
@@ -252,45 +406,6 @@ describe("CloudflareAnalyticsService reports", () => {
     });
     expect(result.status).toBe("unavailable");
     expect(result.data).toBeNull();
-  });
-
-  it("normalizes paths without retaining query strings", async () => {
-    const service = createCloudflareAnalyticsService({
-      client: client({
-        securityEvents: vi.fn(async () => ({
-          errors: [],
-          data: {
-            viewer: {
-              zones: [
-                {
-                  firewallEventsAdaptiveGroups: [
-                    {
-                      count: 4,
-                      dimensions: {
-                        action: "block",
-                        clientRequestHTTPHost: "Example.COM",
-                        clientRequestPath: "/login?email=private@example.com",
-                      },
-                    },
-                  ],
-                },
-              ],
-            },
-          },
-        })),
-      }),
-    });
-    const result = await service.securityEvents({
-      projectId: "project-1",
-      from: "2026-09-04T11:00:00.000Z",
-      to: now.toISOString(),
-    });
-
-    expect(result.data?.events[0]).toMatchObject({
-      host: "example.com",
-      pathname: "/login",
-    });
-    expect(JSON.stringify(result)).not.toContain("private@example.com");
   });
 
   it("scopes every credential lookup to the requested project", async () => {

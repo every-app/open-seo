@@ -7,6 +7,7 @@ import {
   CLOUDFLARE_TRAFFIC_QUERY,
   createCloudflareAnalyticsClient,
 } from "./CloudflareAnalyticsClient";
+import { CLOUDFLARE_MAX_RETRY_AFTER_SECONDS } from "./CloudflareAnalyticsError";
 
 function mockFetch(response: () => Response): typeof fetch {
   return vi.fn(async () => response());
@@ -98,6 +99,23 @@ describe("CloudflareAnalyticsClient", () => {
       ),
     );
     await expect(client.traffic(request)).rejects.toMatchObject({ code });
+  });
+
+  it("bounds Retry-After before returning it to callers", async () => {
+    const client = createCloudflareAnalyticsClient(
+      mockFetch(
+        () =>
+          new Response("rate limited", {
+            status: 429,
+            headers: { "retry-after": "999999" },
+          }),
+      ),
+    );
+
+    await expect(client.traffic(request)).rejects.toMatchObject({
+      code: "rate_limited",
+      retryAfterSeconds: CLOUDFLARE_MAX_RETRY_AFTER_SECONDS,
+    });
   });
 
   it.each([

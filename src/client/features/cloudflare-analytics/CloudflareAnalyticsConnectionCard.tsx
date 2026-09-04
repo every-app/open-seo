@@ -9,6 +9,7 @@ import {
   disconnectCloudflareAnalytics,
   getCloudflareAnalyticsConnection,
 } from "@/serverFunctions/cloudflare-analytics";
+import { CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX } from "@/shared/cloudflare-analytics";
 
 const DOCS_URL =
   "https://developers.cloudflare.com/analytics/graphql-api/getting-started/authentication/api-token-auth/";
@@ -214,13 +215,23 @@ function ConnectedState({
       <div className="flex flex-wrap gap-2">
         {CAPABILITY_NAMES.map((name) => {
           const capability = capabilities[name];
+          const retryable =
+            !capability.available &&
+            capability.reason?.startsWith(
+              CLOUDFLARE_TRANSIENT_CAPABILITY_PREFIX,
+            );
           return (
             <span
               key={name}
-              title={capability.reason ?? undefined}
-              className={`badge badge-sm ${capability.available ? "badge-success" : "badge-ghost"}`}
+              title={
+                retryable
+                  ? "The initial probe failed temporarily; OpenSEO retries when this dataset is requested."
+                  : (capability.reason ?? undefined)
+              }
+              className={`badge badge-sm ${capability.available ? "badge-success" : retryable ? "badge-warning" : "badge-ghost"}`}
             >
               {CAPABILITY_LABELS[name]}
+              {retryable ? " · retryable" : ""}
             </span>
           );
         })}

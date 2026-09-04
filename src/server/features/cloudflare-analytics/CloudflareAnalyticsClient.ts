@@ -1,5 +1,8 @@
 import type { z } from "zod";
-import { CloudflareAnalyticsError } from "./CloudflareAnalyticsError";
+import {
+  CloudflareAnalyticsError,
+  CLOUDFLARE_MAX_RETRY_AFTER_SECONDS,
+} from "./CloudflareAnalyticsError";
 import {
   crawlerGraphqlDataSchema,
   graphqlResponseSchema,
@@ -136,10 +139,15 @@ function retryAfterSeconds(response: Response): number | undefined {
   const value = response.headers.get("retry-after");
   if (!value) return undefined;
   const seconds = Number(value);
-  if (Number.isFinite(seconds) && seconds >= 0) return Math.ceil(seconds);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.min(CLOUDFLARE_MAX_RETRY_AFTER_SECONDS, Math.ceil(seconds));
+  }
   const date = Date.parse(value);
   return Number.isFinite(date)
-    ? Math.max(0, Math.ceil((date - Date.now()) / 1_000))
+    ? Math.min(
+        CLOUDFLARE_MAX_RETRY_AFTER_SECONDS,
+        Math.max(0, Math.ceil((date - Date.now()) / 1_000)),
+      )
     : undefined;
 }
 

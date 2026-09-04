@@ -64,6 +64,7 @@ import {
 } from "@/server/mcp/tools/cloudflare-analytics-tools";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
+import { CLOUDFLARE_ANALYTICS_TOOL_NAMES } from "@/shared/cloudflare-analytics";
 
 // SAM reads more of a site than the onboarding preview: enough pages to work
 // out what a business does, sells, and positions against on its own.
@@ -404,9 +405,15 @@ export function buildSamMcpTools(
     get_google_analytics_audience_breakdown: adaptObjectTool(
       getGoogleAnalyticsAudienceBreakdownTool,
     ),
-    get_cloudflare_traffic_health: adaptTool(getCloudflareTrafficHealthTool),
-    get_cloudflare_security_events: adaptTool(getCloudflareSecurityEventsTool),
-    get_cloudflare_crawler_access: adaptTool(getCloudflareCrawlerAccessTool),
+    [CLOUDFLARE_ANALYTICS_TOOL_NAMES.trafficHealth]: adaptTool(
+      getCloudflareTrafficHealthTool,
+    ),
+    [CLOUDFLARE_ANALYTICS_TOOL_NAMES.securityEvents]: adaptTool(
+      getCloudflareSecurityEventsTool,
+    ),
+    [CLOUDFLARE_ANALYTICS_TOOL_NAMES.crawlerAccess]: adaptTool(
+      getCloudflareCrawlerAccessTool,
+    ),
     run_site_audit: adaptTool(runSiteAuditTool),
     get_audit_status: waitingAuditStatusTool(adaptTool),
     get_audit_issues: adaptTool(getAuditIssuesTool),

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { CLOUDFLARE_MAX_RETRY_AFTER_SECONDS } from "./CloudflareAnalyticsError";
 
 const finiteNumber = z
   .union([z.number(), z.string()])
@@ -50,6 +51,12 @@ const resultMetaSchema = z.object({
     sampled: z.boolean(),
     truncated: z.boolean(),
   }),
+  retryAfterSeconds: z
+    .number()
+    .int()
+    .min(0)
+    .max(CLOUDFLARE_MAX_RETRY_AFTER_SECONDS)
+    .nullable(),
   warnings: z.array(z.string()),
 });
 

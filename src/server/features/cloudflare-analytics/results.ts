@@ -5,6 +5,7 @@ import type {
   CloudflareTrafficResult,
 } from "./schemas";
 import { sortBy } from "remeda";
+import { privacySafePath } from "./pathPrivacy";
 
 const CLOUDFLARE_QUERY_ROW_LIMIT = 500;
 
@@ -21,6 +22,7 @@ function resultMeta(input: {
   warnings?: string[];
   sampled?: boolean;
   truncated?: boolean;
+  retryAfterSeconds?: number;
 }) {
   return {
     source: "cloudflare_analytics" as const,
@@ -36,6 +38,7 @@ function resultMeta(input: {
       sampled: input.sampled ?? false,
       truncated: input.truncated ?? false,
     },
+    retryAfterSeconds: input.retryAfterSeconds ?? null,
     warnings: input.warnings ?? [],
   };
 }
@@ -61,11 +64,6 @@ function sampled(
 function normalizeHost(raw: string | undefined): string | null {
   const value = raw?.trim().toLowerCase().replace(/\.$/, "") ?? "";
   return value.length > 0 ? value : null;
-}
-
-function normalizePath(raw: string | undefined): string {
-  const value = (raw?.trim() || "/").split(/[?#]/, 1)[0] || "/";
-  return value.startsWith("/") ? value : `/${value}`;
 }
 
 export function trafficResult(input: {
@@ -199,14 +197,31 @@ export function securityResult(input: {
       data: null,
     };
   }
-  const events = input.rows.map((row) => ({
-    action: row.dimensions.action ?? "unknown",
-    source: row.dimensions.source ?? null,
-    ruleId: row.dimensions.ruleId ?? null,
-    host: normalizeHost(row.dimensions.clientRequestHTTPHost),
-    pathname: normalizePath(row.dimensions.clientRequestPath),
-    count: row.count,
-  }));
+  const eventsByKey = new Map<
+    string,
+    NonNullable<CloudflareSecurityResult["data"]>["events"][number]
+  >();
+  for (const row of input.rows) {
+    const event = {
+      action: row.dimensions.action ?? "unknown",
+      source: row.dimensions.source ?? null,
+      ruleId: row.dimensions.ruleId ?? null,
+      host: normalizeHost(row.dimensions.clientRequestHTTPHost),
+      pathname: privacySafePath(row.dimensions.clientRequestPath),
+      count: row.count,
+    };
+    const key = JSON.stringify([
+      event.action,
+      event.source,
+      event.ruleId,
+      event.host,
+      event.pathname,
+    ]);
+    const existing = eventsByKey.get(key);
+    if (existing) existing.count += event.count;
+    else eventsByKey.set(key, event);
+  }
+  const events = sortBy([...eventsByKey.values()], (event) => -event.count);
   const truncated = input.rows.length >= CLOUDFLARE_QUERY_ROW_LIMIT;
   return {
     ...resultMeta({
@@ -241,18 +256,25 @@ type CrawlerRow = {
 };
 
 function crawlerSummary(crawler: "googlebot" | "bingbot", rows: CrawlerRow[]) {
-  const pages = rows.flatMap((row) => {
+  const pagesByKey = new Map<
+    string,
+    { host: string; pathname: string; status: number; requests: number }
+  >();
+  for (const row of rows) {
     const host = normalizeHost(row.dimensions.clientRequestHTTPHost);
-    if (!host) return [];
-    return [
-      {
-        host,
-        pathname: normalizePath(row.dimensions.clientRequestPath),
-        status: Math.trunc(row.dimensions.edgeResponseStatus ?? 0),
-        requests: row.count,
-      },
-    ];
-  });
+    if (!host) continue;
+    const page = {
+      host,
+      pathname: privacySafePath(row.dimensions.clientRequestPath),
+      status: Math.trunc(row.dimensions.edgeResponseStatus ?? 0),
+      requests: row.count,
+    };
+    const key = JSON.stringify([page.host, page.pathname, page.status]);
+    const existing = pagesByKey.get(key);
+    if (existing) existing.requests += page.requests;
+    else pagesByKey.set(key, page);
+  }
+  const pages = sortBy([...pagesByKey.values()], (page) => -page.requests);
   const sum = (predicate: (status: number) => boolean) =>
     pages
       .filter((page) => predicate(page.status))
@@ -328,11 +350,13 @@ export function unavailableResult(input: {
   status: Status;
   warning: string;
   window: Window;
+  retryAfterSeconds?: number;
 }): ReturnType<typeof resultMeta> & { data: null } {
   return {
     ...resultMeta({
       status: input.status,
       window: input.window,
+      retryAfterSeconds: input.retryAfterSeconds,
       warnings: [input.warning],
     }),
     data: null,
