@@ -45,7 +45,7 @@ const TOKEN_URL = "https://www.bing.com/webmasters/oauth/token";
 // The docs show two different API hosts. Which one actually answers is itself
 // an open question, so the sites step tries both and reports.
 const API_HOSTS = ["https://ssl.bing.com", "https://www.bing.com"];
-const SCOPES = "webmaster.read";
+const SCOPES = "Webmaster.read";
 const STATE_FILE = ".bing-spike.json";
 
 type TokenResponse = {

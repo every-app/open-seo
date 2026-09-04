@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
   getProjectForOrganization: vi.fn(),
   BingService: {
     getPerformance: vi.fn(),
+    getCrawlStats: vi.fn(),
+    getLinks: vi.fn(),
     getConnection: vi.fn(),
   },
 }));
@@ -62,7 +64,34 @@ describe("bing MCP tools", () => {
       languageCode: "en",
     });
     mocks.BingService.getPerformance.mockReset();
+    mocks.BingService.getCrawlStats.mockReset();
+    mocks.BingService.getLinks.mockReset();
     mocks.BingService.getConnection.mockReset();
+  });
+
+  it("exports the three planned read-only tool names", async () => {
+    const { getBingPerformanceTool, getBingCrawlStatsTool, getBingLinksTool } =
+      await import("./bing-tools");
+
+    expect([
+      getBingPerformanceTool.name,
+      getBingCrawlStatsTool.name,
+      getBingLinksTool.name,
+    ]).toEqual([
+      "get_bing_search_performance",
+      "get_bing_crawl_stats",
+      "get_bing_links",
+    ]);
+    for (const tool of [
+      getBingPerformanceTool,
+      getBingCrawlStatsTool,
+      getBingLinksTool,
+    ]) {
+      expect(tool.config.annotations).toMatchObject({
+        readOnlyHint: true,
+        destructiveHint: false,
+      });
+    }
   });
 
   it("renders the daily rows as a table", async () => {
@@ -218,5 +247,103 @@ describe("bing MCP tools", () => {
     await expect(
       getBingPerformanceTool.handler({ projectId: "project_1" }, toolContext),
     ).rejects.toThrow("database exploded");
+  });
+
+  it("renders Bing crawl statistics with the selected site's evidence", async () => {
+    mocks.BingService.getCrawlStats.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      connectedBy: "alice@example.com",
+      rows: [
+        {
+          date: "2026-01-01T00:00:00.000Z",
+          crawledPages: 50,
+          inIndex: 40,
+          crawlErrors: 2,
+          code4xx: 1,
+          code5xx: 0,
+          blockedByRobotsTxt: 7,
+          containsMalware: 0,
+        },
+      ],
+    });
+    const { getBingCrawlStatsTool } = await import("./bing-tools");
+
+    const result = await getBingCrawlStatsTool.handler(
+      { projectId: "project_1" },
+      toolContext,
+    );
+
+    expect(mocks.BingService.getCrawlStats).toHaveBeenCalledWith({
+      projectId: "project_1",
+    });
+    expect(result.structuredContent).toMatchObject({
+      ok: true,
+      siteUrl: "https://example.com/",
+      rowCount: 1,
+    });
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain(
+      "crawled | in index | crawl errors",
+    );
+  });
+
+  it("reads a bounded Bing links page and reports paging without claiming completeness", async () => {
+    mocks.BingService.getLinks.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      connectedBy: null,
+      page: 2,
+      totalPages: 4,
+      links: [{ url: "https://ref.example/article", count: 3 }],
+    });
+    const { getBingLinksTool } = await import("./bing-tools");
+
+    const result = await getBingLinksTool.handler(
+      { projectId: "project_1", page: 2 },
+      toolContext,
+    );
+
+    expect(mocks.BingService.getLinks).toHaveBeenCalledWith({
+      projectId: "project_1",
+      page: 2,
+    });
+    expect(result.structuredContent).toMatchObject({
+      ok: true,
+      page: 2,
+      totalPages: 4,
+      linkCount: 1,
+    });
+    const first = result.content[0];
+    expect(first.type === "text" && first.text).toContain(
+      "Bing link page 2 of 4",
+    );
+  });
+
+  it("uses the common reconnect handling for crawl and link tools", async () => {
+    mocks.BingService.getCrawlStats.mockRejectedValue(
+      new BingTokenError("revoked"),
+    );
+    mocks.BingService.getLinks.mockRejectedValue(
+      new BingNotConnectedError("project_1"),
+    );
+    const { getBingCrawlStatsTool, getBingLinksTool } =
+      await import("./bing-tools");
+
+    const crawl = await getBingCrawlStatsTool.handler(
+      { projectId: "project_1" },
+      toolContext,
+    );
+    const links = await getBingLinksTool.handler(
+      { projectId: "project_1", page: 0 },
+      toolContext,
+    );
+
+    expect(crawl.structuredContent).toMatchObject({
+      ok: false,
+      reason: "api_error",
+    });
+    expect(links.structuredContent).toMatchObject({
+      ok: false,
+      reason: "not_connected",
+    });
   });
 });

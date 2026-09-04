@@ -79,6 +79,7 @@ describe("bingClient", () => {
       "https://ssl.bing.com/webmaster/api.svc/json/GetUserSites",
     );
     expect(init?.headers).toMatchObject({ Authorization: "Bearer tok_bing" });
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("targets the selected Better Auth grant by webmasteruid", async () => {
@@ -182,6 +183,142 @@ describe("bingClient", () => {
     await expect(
       createBingClient({ userId: "u1" }).listSites(),
     ).rejects.toMatchObject({ status: 429 });
+  });
+
+  it("fails closed before parsing an oversized response body", async () => {
+    mocks.fetch.mockResolvedValue(
+      new Response(new Uint8Array(1024 * 1024 + 1), { status: 200 }),
+    );
+    const { createBingClient, BingApiError } = await import("./bingClient");
+
+    const error = await createBingClient({ userId: "u1" })
+      .listSites()
+      .catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(BingApiError);
+    if (!(error instanceof BingApiError)) throw error;
+    expect(error.status).toBe(502);
+    expect(error.message).toMatch(/too large/i);
+  });
+
+  it("maps an aborted request to a bounded timeout error", async () => {
+    const timeout = new Error("timed out");
+    timeout.name = "TimeoutError";
+    mocks.fetch.mockRejectedValue(timeout);
+    const { createBingClient, BingApiError } = await import("./bingClient");
+
+    const error = await createBingClient({ userId: "u1" })
+      .listSites()
+      .catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(BingApiError);
+    if (!(error instanceof BingApiError)) throw error;
+    expect(error.status).toBe(504);
+    expect(error.message).toMatch(/timed out/i);
+  });
+
+  it("does not copy a remote error body into its diagnostic message", async () => {
+    mocks.fetch.mockResolvedValue(
+      new Response("s".repeat(1_000), { status: 500 }),
+    );
+    const { createBingClient, BingApiError } = await import("./bingClient");
+
+    const error = await createBingClient({ userId: "u1" })
+      .listSites()
+      .catch((caught: unknown) => caught);
+
+    expect(error).toBeInstanceOf(BingApiError);
+    if (!(error instanceof BingApiError)) throw error;
+    expect(error.message).not.toContain("ssssssss");
+  });
+
+  it("maps Bing crawl statistics without inventing unparseable dates", async () => {
+    mocks.fetch.mockResolvedValue(
+      jsonResponse({
+        d: [
+          {
+            Date: "/Date(1445558400000)/",
+            AllOtherCodes: 1,
+            BlockedByRobotsTxt: 2,
+            Code2xx: 30,
+            Code301: 3,
+            Code302: 4,
+            Code4xx: 5,
+            Code5xx: 6,
+            ContainsMalware: 0,
+            CrawlErrors: 11,
+            CrawledPages: 50,
+            InIndex: 40,
+            InLinks: 70,
+          },
+          {
+            Date: "unknown",
+            AllOtherCodes: 0,
+            BlockedByRobotsTxt: 0,
+            Code2xx: 0,
+            Code301: 0,
+            Code302: 0,
+            Code4xx: 0,
+            Code5xx: 0,
+            ContainsMalware: 0,
+            CrawlErrors: 0,
+            CrawledPages: 0,
+            InIndex: 0,
+            InLinks: 0,
+          },
+        ],
+      }),
+    );
+    const { createBingClient } = await import("./bingClient");
+
+    const rows = await createBingClient({ userId: "u1" }).getCrawlStats(
+      "https://example.com/",
+    );
+
+    expect(mocks.fetch.mock.calls[0][0]).toBe(
+      "https://ssl.bing.com/webmaster/api.svc/json/GetCrawlStats?siteUrl=https%3A%2F%2Fexample.com%2F",
+    );
+    expect(rows[0]).toEqual({
+      date: new Date(1445558400000).toISOString(),
+      allOtherCodes: 1,
+      blockedByRobotsTxt: 2,
+      code2xx: 30,
+      code301: 3,
+      code302: 4,
+      code4xx: 5,
+      code5xx: 6,
+      containsMalware: 0,
+      crawlErrors: 11,
+      crawledPages: 50,
+      inIndex: 40,
+      inLinks: 70,
+    });
+    expect(rows[1]?.date).toBeNull();
+  });
+
+  it("maps a page of Bing inbound-link counts", async () => {
+    mocks.fetch.mockResolvedValue(
+      jsonResponse({
+        d: {
+          Links: [{ Url: "https://example.net/linking-page", Count: 12 }],
+          TotalPages: 4,
+        },
+      }),
+    );
+    const { createBingClient } = await import("./bingClient");
+
+    const result = await createBingClient({ userId: "u1" }).getLinkCounts(
+      "https://example.com/",
+      2,
+    );
+
+    expect(mocks.fetch.mock.calls[0][0]).toBe(
+      "https://ssl.bing.com/webmaster/api.svc/json/GetLinkCounts?siteUrl=https%3A%2F%2Fexample.com%2F&page=2",
+    );
+    expect(result).toEqual({
+      links: [{ url: "https://example.net/linking-page", count: 12 }],
+      totalPages: 4,
+    });
   });
 
   it("throws BingTokenError when no access token can be minted", async () => {

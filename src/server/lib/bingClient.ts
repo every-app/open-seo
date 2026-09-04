@@ -6,6 +6,12 @@ import {
   BING_OAUTH_PROVIDER_ID,
   decodeBingAccessToken,
 } from "@/shared/bing";
+import {
+  BING_API_RESPONSE_MAX_BYTES,
+  BING_HTTP_TIMEOUT_MS,
+  BingResponseTooLargeError,
+  readBingResponseText,
+} from "@/server/lib/bingHttp";
 
 /** A Bing Webmaster REST call returned a non-2xx status, or a 2xx body that
  *  wasn't the expected WCF `d` envelope. `status` drives user-facing messaging;
@@ -14,7 +20,6 @@ export class BingApiError extends Error {
   constructor(
     public readonly status: number,
     message: string,
-    public readonly body?: string,
   ) {
     super(message);
     this.name = "BingApiError";
@@ -55,6 +60,32 @@ type BingRankAndTrafficStatsRow = {
   impressions: number;
 };
 
+type BingCrawlStatsRow = {
+  date: string | null;
+  allOtherCodes: number;
+  blockedByRobotsTxt: number;
+  code2xx: number;
+  code301: number;
+  code302: number;
+  code4xx: number;
+  code5xx: number;
+  containsMalware: number;
+  crawlErrors: number;
+  crawledPages: number;
+  inIndex: number;
+  inLinks: number;
+};
+
+type BingLinkCount = {
+  url: string;
+  count: number;
+};
+
+type BingLinkCountsResult = {
+  links: BingLinkCount[];
+  totalPages: number;
+};
+
 /** WCF serialises dates as the literal string "/Date(1445558400000)/" —
  *  milliseconds since epoch, optionally with a "+HHMM"/"-HHMM" timezone offset
  *  which is informational only (the ms value is already UTC). Returns null for
@@ -72,7 +103,7 @@ export function parseWcfDate(value: unknown): Date | null {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function messageForStatus(status: number, body: string): string {
+function messageForStatus(status: number): string {
   if (status === 401 || status === 403) {
     return "Bing Webmaster denied access (the connection was revoked, or this account has no verified permission). Reconnect Bing to continue.";
   }
@@ -82,7 +113,7 @@ function messageForStatus(status: number, body: string): string {
   if (status === 404) {
     return "Bing Webmaster site not found. It may have been removed in Bing Webmaster Tools.";
   }
-  return `Bing Webmaster API error (${status}): ${body.slice(0, 300)}`;
+  return `Bing Webmaster API error (${status}). Retry shortly.`;
 }
 
 /** Every Bing JSON response wraps its payload under a top-level `d` key
@@ -96,6 +127,32 @@ const rankAndTrafficStatsRowSchema = z.looseObject({
   Date: z.unknown(),
   Clicks: z.number(),
   Impressions: z.number(),
+});
+
+const crawlStatsRowSchema = z.looseObject({
+  Date: z.unknown(),
+  AllOtherCodes: z.number(),
+  BlockedByRobotsTxt: z.number(),
+  Code2xx: z.number(),
+  Code301: z.number(),
+  Code302: z.number(),
+  Code4xx: z.number(),
+  Code5xx: z.number(),
+  ContainsMalware: z.number(),
+  CrawlErrors: z.number(),
+  CrawledPages: z.number(),
+  InIndex: z.number(),
+  InLinks: z.number(),
+});
+
+const linkCountSchema = z.looseObject({
+  Url: z.string(),
+  Count: z.number(),
+});
+
+const linkCountsResultSchema = z.looseObject({
+  Links: z.array(linkCountSchema),
+  TotalPages: z.number().int().nonnegative(),
 });
 
 const bingSiteSchema = z.looseObject({
@@ -147,30 +204,58 @@ export function createBingClient(opts: {
   ): Promise<unknown> {
     const token = await getToken();
     const hasBody = init?.body !== undefined;
-    const response = await fetch(url, {
-      method: init?.method ?? "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-        ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      },
-      body: hasBody ? JSON.stringify(init?.body) : undefined,
-    });
-    if (!response.ok) {
-      const body = await response.text().catch(() => "");
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: init?.method ?? "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+          ...(hasBody ? { "Content-Type": "application/json" } : {}),
+        },
+        body: hasBody ? JSON.stringify(init?.body) : undefined,
+        signal: AbortSignal.timeout(BING_HTTP_TIMEOUT_MS),
+      });
+    } catch (error) {
+      const timedOut =
+        error instanceof Error &&
+        (error.name === "TimeoutError" || error.name === "AbortError");
       throw new BingApiError(
-        response.status,
-        messageForStatus(response.status, body),
-        body,
+        timedOut ? 504 : 502,
+        timedOut
+          ? "Bing Webmaster API timed out. Retry shortly."
+          : "Bing Webmaster API could not be reached. Retry shortly.",
       );
     }
-    const raw = await response.json().catch(() => undefined);
+
+    let body: string;
+    try {
+      body = await readBingResponseText(response, BING_API_RESPONSE_MAX_BYTES);
+    } catch (error) {
+      if (!(error instanceof BingResponseTooLargeError)) throw error;
+      throw new BingApiError(
+        502,
+        "Bing Webmaster returned a response that was too large to process safely.",
+      );
+    }
+
+    if (!response.ok) {
+      throw new BingApiError(
+        response.status,
+        messageForStatus(response.status),
+      );
+    }
+    let raw: unknown;
+    try {
+      raw = JSON.parse(body);
+    } catch {
+      raw = undefined;
+    }
     const envelope = bingEnvelopeSchema.safeParse(raw);
     if (!envelope.success) {
       throw new BingApiError(
         response.status,
         "Bing Webmaster returned an unexpected response (missing the `d` envelope).",
-        typeof raw === "string" ? raw : JSON.stringify(raw)?.slice(0, 300),
       );
     }
     return envelope.data.d;
@@ -213,6 +298,49 @@ export function createBingClient(opts: {
         clicks: row.Clicks,
         impressions: row.Impressions,
       }));
+    },
+
+    /** GetCrawlStats — one daily crawl/index-health row over Bing's native
+     *  reporting window (currently up to six months). */
+    async getCrawlStats(siteUrl: string): Promise<BingCrawlStatsRow[]> {
+      const payload = await request(
+        `${BING_API_BASE}/GetCrawlStats?siteUrl=${encodeURIComponent(siteUrl)}`,
+      );
+      const rows = z.array(crawlStatsRowSchema).parse(payload);
+      return rows.map((row) => ({
+        date: parseWcfDate(row.Date)?.toISOString() ?? null,
+        allOtherCodes: row.AllOtherCodes,
+        blockedByRobotsTxt: row.BlockedByRobotsTxt,
+        code2xx: row.Code2xx,
+        code301: row.Code301,
+        code302: row.Code302,
+        code4xx: row.Code4xx,
+        code5xx: row.Code5xx,
+        containsMalware: row.ContainsMalware,
+        crawlErrors: row.CrawlErrors,
+        crawledPages: row.CrawledPages,
+        inIndex: row.InIndex,
+        inLinks: row.InLinks,
+      }));
+    },
+
+    /** GetLinkCounts — inbound-link counts for the selected Bing property.
+     *  Bing pages this endpoint with a zero-based signed 16-bit page number. */
+    async getLinkCounts(
+      siteUrl: string,
+      page = 0,
+    ): Promise<BingLinkCountsResult> {
+      const payload = await request(
+        `${BING_API_BASE}/GetLinkCounts?siteUrl=${encodeURIComponent(siteUrl)}&page=${page}`,
+      );
+      const parsed = linkCountsResultSchema.parse(payload);
+      return {
+        links: parsed.Links.map((link) => ({
+          url: link.Url,
+          count: link.Count,
+        })),
+        totalPages: parsed.TotalPages,
+      };
     },
   };
 }

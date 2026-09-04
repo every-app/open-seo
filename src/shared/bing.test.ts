@@ -45,7 +45,7 @@ describe("decodeBingAccessToken", () => {
   });
 
   it("keeps Bing's capitalised scope verbatim", () => {
-    // Bing returns "Read" for a "webmaster.read" request. Anything comparing
+    // Bing returns "Read" for a "Webmaster.read" request. Anything comparing
     // these for equality is a bug, so the raw value must survive decoding.
     const claims = decodeBingAccessToken(encodeToken(liveShapedClaims));
 

@@ -132,7 +132,7 @@ describe("createSelfHostedBingAuthorizationUrl", () => {
     );
     expect(url.searchParams.get("client_id")).toBe("bing-client-id");
     expect(url.searchParams.get("response_type")).toBe("code");
-    expect(url.searchParams.get("scope")).toBe("webmaster.read");
+    expect(url.searchParams.get("scope")).toBe("Webmaster.read");
     // Bing permits one redirect URI per client; it must be this exact path.
     expect(url.searchParams.get("redirect_uri")).toBe(CALLBACK_URI);
     expect(url.searchParams.get("state")).toBeTruthy();
@@ -277,6 +277,7 @@ describe("handleSelfHostedBingOAuthCallback", () => {
         refreshToken: "refresh-1",
       }),
     );
+    expect(mocks.fetch.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
   });
 
   it("keeps the stored refresh token when Bing returns none", async () => {
@@ -305,6 +306,42 @@ describe("handleSelfHostedBingOAuthCallback", () => {
   it("surfaces a rejected code exchange rather than storing a partial grant", async () => {
     const state = await signedStateFor();
     mocks.fetch.mockResolvedValue(tokenResponse({ error: "bad code" }, 400));
+    const { handleSelfHostedBingOAuthCallback } =
+      await import("./selfHostedOAuth");
+
+    await expect(
+      handleSelfHostedBingOAuthCallback({
+        request: callbackRequest({ code: "abc", state }),
+        user,
+        publicOrigin: ORIGIN,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(mocks.insertValues).not.toHaveBeenCalled();
+  });
+
+  it("rejects an oversized token response before parsing or storing it", async () => {
+    const state = await signedStateFor();
+    mocks.fetch.mockResolvedValue(
+      new Response(new Uint8Array(64 * 1024 + 1), { status: 200 }),
+    );
+    const { handleSelfHostedBingOAuthCallback } =
+      await import("./selfHostedOAuth");
+
+    await expect(
+      handleSelfHostedBingOAuthCallback({
+        request: callbackRequest({ code: "abc", state }),
+        user,
+        publicOrigin: ORIGIN,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(mocks.insertValues).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when the token exchange cannot be reached in time", async () => {
+    const state = await signedStateFor();
+    const timeout = new Error("timed out");
+    timeout.name = "TimeoutError";
+    mocks.fetch.mockRejectedValue(timeout);
     const { handleSelfHostedBingOAuthCallback } =
       await import("./selfHostedOAuth");
 

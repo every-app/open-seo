@@ -14,10 +14,10 @@ index diagnostics plus URL submission that Google does not offer at all.
 
 Bing's API is not a second Search Console. Where GSC has one endpoint
 (`searchAnalytics.query`) taking arbitrary date ranges, dimensions, filters and
-paging, Bing has ~15 fixed-shape methods with **no date-range parameters and no
-paging**: `GetRankAndTrafficStats` (daily site totals), `GetQueryStats` /
+paging, Bing has ~15 fixed-shape methods with **no date-range parameters** and
+endpoint-specific paging: `GetRankAndTrafficStats` (daily site totals), `GetQueryStats` /
 `GetPageStats` / `GetPageQueryStats` (top rows over a fixed ~6-month window),
-`GetCrawlIssues`, `GetUrlInfo`, and the write-side `SubmitUrl` /
+`GetCrawlStats`, `GetLinkCounts` (paged), `GetCrawlIssues`, `GetUrlInfo`, and the write-side `SubmitUrl` /
 `SubmitUrlBatch`. It cannot filter by device or country, and it cannot answer a
 custom date range.
 
@@ -46,7 +46,8 @@ Add a Bing connection modelled on the GSC feature, plus read-only MCP tools.
 provider `bing-webmaster` with explicit `authorizationUrl` and `tokenUrl` —
 Bing publishes no OIDC discovery document — and a custom `getUserInfo` that
 decodes the access token to `{ id: webmasteruid, email: webmasteremail }`
-rather than making a network call. Scope `webmaster.read` for v1.
+rather than making a network call. Scope `Webmaster.read` for v1, preserving
+Microsoft's documented casing exactly.
 
 Self-hosted deployments (`cloudflare_access`, `local_noauth`) cannot use
 Better Auth's `oauth2.link`, which needs a Better Auth session they do not
@@ -77,16 +78,24 @@ per project, mirroring `gsc_connections`: `projectId`, `organizationId`,
 **Surface.** Bing gets its own page — daily clicks and impressions in v1, with
 top queries, top pages and crawl issues left for later — rather than a source
 toggle on the existing Search Performance page.
-Bing cannot honour that page's date range, device or country controls, and
-cannot paginate, so sharing the surface would mean either misrepresenting
-Bing's capabilities or degrading the Google page.
+Bing cannot honour that page's date range, device or country controls, and its
+performance endpoint cannot paginate, so sharing the surface would mean either
+misrepresenting Bing's capabilities or degrading the Google page.
 
 **MCP tools** — read-only, free (no Autumn metering), project-scoped, matching
-the GSC tools' contract. v1 ships `get_bing_performance`; a crawl-issues tool
-is deferred with the endpoint itself.
+the GSC tools' contract. v1 ships `get_bing_search_performance`,
+`get_bing_crawl_stats`, and `get_bing_links`. Crawl stats use Bing's native
+daily window; links expose the provider's zero-based page and total-page count
+rather than implying a complete backlink export.
 
 **Write operations deferred.** `SubmitUrl` / `SubmitUrlBatch` need
-`webmaster.manage` and are a separate consent decision; they are not in v1.
+`Webmaster.manage` and are a separate consent decision; they are not in v1.
+
+**Network bounds.** Bing API calls and the self-hosted OAuth code exchange
+time out after 10 seconds. API JSON is capped at 1 MiB and token responses at
+64 KiB using streaming byte counts, including when `Content-Length` is absent.
+Remote error bodies are bounded before processing and are not copied into
+diagnostic messages.
 
 ## Rationale
 
@@ -127,7 +136,7 @@ rather than something Bing will grow out of.
   across five months, so query-level trends are lumpy and a "last 28 days"
   slice can come back empty. Site-level daily totals remain the only dense
   series.
-- Returned scope is `"Read"`, not the requested `webmaster.read`; scope strings
+- Returned scope is `"Read"`, not the requested `Webmaster.read`; scope strings
   must not be compared for equality.
 - One redirect URI per OAuth client means one registered client per
   environment, and `localhost` is refused outright — local development needs a
@@ -156,7 +165,7 @@ Bing:
   Position comes from `AvgImpressionPosition`; CTR is derived; period
   comparison for clicks/impressions/CTR can be computed client-side from the
   daily series that already exists.
-- Optionally a `get_bing_queries` MCP tool alongside `get_bing_performance`.
+- Optionally a `get_bing_queries` MCP tool alongside the three v1 read tools.
 
 What still cannot be built, and should not be faked: device and country
 filters (Bing exposes no such dimension) and a date-range control. Query and

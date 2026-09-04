@@ -18,11 +18,27 @@ type BingSite = Awaited<ReturnType<BingClient["listSites"]>>[number];
 type BingRankAndTrafficStatsRow = Awaited<
   ReturnType<BingClient["getRankAndTrafficStats"]>
 >[number];
+type BingCrawlStatsRow = Awaited<
+  ReturnType<BingClient["getCrawlStats"]>
+>[number];
+type BingLinkCountsResult = Awaited<ReturnType<BingClient["getLinkCounts"]>>;
 
 type BingPerformanceResult = {
   siteUrl: string;
   connectedBy: string | null;
   rows: BingRankAndTrafficStatsRow[];
+};
+
+type BingCrawlStatsResult = {
+  siteUrl: string;
+  connectedBy: string | null;
+  rows: BingCrawlStatsRow[];
+};
+
+type BingLinksResult = BingLinkCountsResult & {
+  siteUrl: string;
+  connectedBy: string | null;
+  page: number;
 };
 
 type BingSiteListResult = {
@@ -229,6 +245,29 @@ async function disconnect(input: {
   }
 }
 
+async function getOAuthClientForProject(projectId: string): Promise<{
+  connection: BingConnection;
+  client: BingClient;
+}> {
+  const connection = await BingConnectionRepository.getByProjectId(projectId);
+  if (!connection) {
+    throw new BingNotConnectedError(projectId);
+  }
+  if (connection.authMode === "api_key") {
+    throw new AppError(
+      "CONFLICT",
+      "This project's Bing connection uses an API key, which isn't supported yet. Reconnect with a Bing account (OAuth) to read Webmaster data.",
+    );
+  }
+  return {
+    connection,
+    client: createBingClient({
+      userId: connection.connectedByUserId,
+      bingAccountId: connection.bingAccountId ?? undefined,
+    }),
+  };
+}
+
 /** Bing `GetRankAndTrafficStats` for a project's connected site: one row per
  *  day, typed by bingClient as { date, clicks, impressions }. Bing accepts no
  *  date range, dimensions, or paging here, which is why this takes only a
@@ -236,27 +275,44 @@ async function disconnect(input: {
 async function getPerformance(input: {
   projectId: string;
 }): Promise<BingPerformanceResult> {
-  const connection = await BingConnectionRepository.getByProjectId(
+  const { connection, client } = await getOAuthClientForProject(
     input.projectId,
   );
-  if (!connection) {
-    throw new BingNotConnectedError(input.projectId);
-  }
-  if (connection.authMode === "api_key") {
-    throw new AppError(
-      "CONFLICT",
-      "This project's Bing connection uses an API key, which isn't supported yet. Reconnect with a Bing account (OAuth) to view performance.",
-    );
-  }
-  const client = createBingClient({
-    userId: connection.connectedByUserId,
-    bingAccountId: connection.bingAccountId ?? undefined,
-  });
   const rows = await client.getRankAndTrafficStats(connection.siteUrl);
   return {
     siteUrl: connection.siteUrl,
     connectedBy: connection.connectedAccountEmail,
     rows,
+  };
+}
+
+async function getCrawlStats(input: {
+  projectId: string;
+}): Promise<BingCrawlStatsResult> {
+  const { connection, client } = await getOAuthClientForProject(
+    input.projectId,
+  );
+  const rows = await client.getCrawlStats(connection.siteUrl);
+  return {
+    siteUrl: connection.siteUrl,
+    connectedBy: connection.connectedAccountEmail,
+    rows,
+  };
+}
+
+async function getLinks(input: {
+  projectId: string;
+  page: number;
+}): Promise<BingLinksResult> {
+  const { connection, client } = await getOAuthClientForProject(
+    input.projectId,
+  );
+  const result = await client.getLinkCounts(connection.siteUrl, input.page);
+  return {
+    siteUrl: connection.siteUrl,
+    connectedBy: connection.connectedAccountEmail,
+    page: input.page,
+    ...result,
   };
 }
 
@@ -267,4 +323,6 @@ export const BingService = {
   setSite,
   disconnect,
   getPerformance,
+  getCrawlStats,
+  getLinks,
 };

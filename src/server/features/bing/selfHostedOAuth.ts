@@ -6,6 +6,12 @@ import { account } from "@/db/schema";
 import { getAuth } from "@/lib/auth";
 import { AppError } from "@/server/lib/errors";
 import {
+  BING_HTTP_TIMEOUT_MS,
+  BING_TOKEN_RESPONSE_MAX_BYTES,
+  BingResponseTooLargeError,
+  readBingResponseText,
+} from "@/server/lib/bingHttp";
+import {
   BING_AUTHORIZE_URL,
   BING_OAUTH_PROVIDER_ID,
   BING_OAUTH_SCOPES,
@@ -242,17 +248,37 @@ async function exchangeCode(input: {
   clientSecret: string;
   redirectUri: string;
 }) {
-  const response = await fetch(BING_TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      code: input.code,
-      client_id: input.clientId,
-      client_secret: input.clientSecret,
-      redirect_uri: input.redirectUri,
-      grant_type: "authorization_code",
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch(BING_TOKEN_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        code: input.code,
+        client_id: input.clientId,
+        client_secret: input.clientSecret,
+        redirect_uri: input.redirectUri,
+        grant_type: "authorization_code",
+      }),
+      signal: AbortSignal.timeout(BING_HTTP_TIMEOUT_MS),
+    });
+  } catch {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Bing Webmaster authorization could not be reached in time.",
+    );
+  }
+
+  let body: string;
+  try {
+    body = await readBingResponseText(response, BING_TOKEN_RESPONSE_MAX_BYTES);
+  } catch (error) {
+    if (!(error instanceof BingResponseTooLargeError)) throw error;
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Bing returned an authorization response that was too large to process safely.",
+    );
+  }
 
   if (!response.ok) {
     throw new AppError(
@@ -261,7 +287,23 @@ async function exchangeCode(input: {
     );
   }
 
-  return bingTokenResponseSchema.parse(await response.json());
+  let raw: unknown;
+  try {
+    raw = JSON.parse(body);
+  } catch {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Bing returned an invalid Webmaster authorization response.",
+    );
+  }
+  const parsed = bingTokenResponseSchema.safeParse(raw);
+  if (!parsed.success) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "Bing returned an invalid Webmaster authorization response.",
+    );
+  }
+  return parsed.data;
 }
 
 export async function createSelfHostedBingAuthorizationUrl(input: {

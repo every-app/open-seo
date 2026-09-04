@@ -82,7 +82,7 @@ describe("bingProviderConfig", () => {
     expect(bingProviderConfig.authorizationUrl).toBe(BING_AUTHORIZE_URL);
     expect(bingProviderConfig.tokenUrl).toBe(BING_TOKEN_URL);
     expect(bingProviderConfig.discoveryUrl).toBeUndefined();
-    expect(bingProviderConfig.scopes).toEqual(["webmaster.read"]);
+    expect(bingProviderConfig.scopes).toEqual(["Webmaster.read"]);
     expect(bingProviderConfig.pkce).toBe(true);
   });
 

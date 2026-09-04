@@ -32,6 +32,17 @@ const mocks = vi.hoisted(() => {
   const listSites = vi.fn<(opts: BingClientOptions) => Promise<BingSite[]>>();
   const getRankAndTrafficStats =
     vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
+  const getCrawlStats =
+    vi.fn<(opts: BingClientOptions) => Promise<Record<string, unknown>[]>>();
+  const getLinkCounts = vi.fn<
+    (
+      opts: BingClientOptions,
+      page: number,
+    ) => Promise<{
+      links: Array<{ url: string; count: number }>;
+      totalPages: number;
+    }>
+  >();
   const getConnectedEmail =
     vi.fn<(opts: BingClientOptions) => Promise<string | null>>();
   const deleteWhere = vi
@@ -55,10 +66,15 @@ const mocks = vi.hoisted(() => {
     dbDelete: vi.fn(() => ({ where: deleteWhere })),
     listSites,
     getRankAndTrafficStats,
+    getCrawlStats,
+    getLinkCounts,
     getConnectedEmail,
     createBingClient: vi.fn((opts: BingClientOptions) => ({
       listSites: () => listSites(opts),
       getRankAndTrafficStats: () => getRankAndTrafficStats(opts),
+      getCrawlStats: () => getCrawlStats(opts),
+      getLinkCounts: (_siteUrl: string, page: number) =>
+        getLinkCounts(opts, page),
       getConnectedEmail: () => getConnectedEmail(opts),
     })),
     upsert: vi.fn(),
@@ -350,5 +366,74 @@ describe("BingService.getPerformance", () => {
       BingService.getPerformance({ projectId: "p1" }),
     ).rejects.toMatchObject({ code: "CONFLICT" });
     expect(mocks.createBingClient).not.toHaveBeenCalled();
+  });
+});
+
+describe("BingService crawl and link reads", () => {
+  beforeEach(() => {
+    mocks.getByProjectId.mockReset().mockResolvedValue({
+      connectedByUserId: "u1",
+      connectedAccountEmail: "a@example.com",
+      bingAccountId: "uid-a",
+      siteUrl: "https://x.example/",
+      authMode: "oauth",
+    });
+    mocks.getCrawlStats.mockReset().mockResolvedValue([]);
+    mocks.getLinkCounts.mockReset().mockResolvedValue({
+      links: [],
+      totalPages: 0,
+    });
+    mocks.createBingClient.mockClear();
+  });
+
+  it("reads crawl stats for the selected project site", async () => {
+    const rows = [{ date: "2026-01-01T00:00:00.000Z", crawledPages: 12 }];
+    mocks.getCrawlStats.mockResolvedValue(rows);
+    const { BingService } = await import("./BingService");
+
+    await expect(
+      BingService.getCrawlStats({ projectId: "p1" }),
+    ).resolves.toEqual({
+      siteUrl: "https://x.example/",
+      connectedBy: "a@example.com",
+      rows,
+    });
+    expect(mocks.getCrawlStats).toHaveBeenCalledWith({
+      userId: "u1",
+      bingAccountId: "uid-a",
+    });
+  });
+
+  it("passes the requested link page and returns Bing's total pages", async () => {
+    mocks.getLinkCounts.mockResolvedValue({
+      links: [{ url: "https://ref.example/page", count: 4 }],
+      totalPages: 3,
+    });
+    const { BingService } = await import("./BingService");
+
+    await expect(
+      BingService.getLinks({ projectId: "p1", page: 2 }),
+    ).resolves.toEqual({
+      siteUrl: "https://x.example/",
+      connectedBy: "a@example.com",
+      page: 2,
+      links: [{ url: "https://ref.example/page", count: 4 }],
+      totalPages: 3,
+    });
+    expect(mocks.getLinkCounts).toHaveBeenCalledWith(
+      { userId: "u1", bingAccountId: "uid-a" },
+      2,
+    );
+  });
+
+  it("applies the same not-connected guard to crawl stats", async () => {
+    mocks.getByProjectId.mockResolvedValue(null);
+    const { BingService, BingNotConnectedError } =
+      await import("./BingService");
+
+    await expect(
+      BingService.getCrawlStats({ projectId: "p1" }),
+    ).rejects.toBeInstanceOf(BingNotConnectedError);
+    expect(mocks.getCrawlStats).not.toHaveBeenCalled();
   });
 });

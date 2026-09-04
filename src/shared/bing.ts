@@ -5,9 +5,9 @@ import { z } from "zod";
  *  button) can reference it without importing the server-only auth config. */
 export const BING_OAUTH_PROVIDER_ID = "bing-webmaster";
 
-/** Read-only for v1. `webmaster.manage` (URL submission) is a separate consent
+/** Read-only for v1. `Webmaster.manage` (URL submission) is a separate consent
  *  decision — see specs/0009. */
-export const BING_OAUTH_SCOPES = ["webmaster.read"] as const;
+export const BING_OAUTH_SCOPES = ["Webmaster.read"] as const;
 
 // Bing publishes no OIDC discovery document, so these are hard-coded rather
 // than resolved via `discoveryUrl`.
@@ -29,7 +29,7 @@ const bingAccessTokenClaimsSchema = z.looseObject({
   webmasteruid: z.string().min(1),
   webmasteremail: z.string().optional(),
   exp: z.number().optional(),
-  /** Bing returns "Read" here, not the requested "webmaster.read". Never
+  /** Bing returns "Read" here, not the requested "Webmaster.read". Never
    *  compare scope strings for equality. */
   scope: z.string().optional(),
 });
