@@ -1,9 +1,8 @@
 import { KeywordResearchRepository } from "@/server/features/keywords/repositories/KeywordResearchRepository";
 import { normalizeIntent } from "@/server/features/keywords/services/research/helpers";
-import {
-  createDataforseoClient,
-  fetchKeywordMetricsForList,
-} from "@/server/lib/dataforseo";
+import { fetchGoogleAdsMetricsForList, hasGoogleAdsCredentials } from "@/server/lib/keyword-providers/google-ads";
+import { fetchBingKeywordData, hasBingCredentials } from "@/server/lib/keyword-providers/bing";
+import { AppError } from "@/server/lib/errors";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { RefreshSavedKeywordMetricsInput } from "@/types/schemas/keywords";
 
@@ -14,16 +13,13 @@ const REFRESH_UPSERT_BATCH_SIZE = 100;
 
 export async function refreshSavedKeywordMetrics(
   input: RefreshSavedKeywordMetricsInput,
-  billingCustomer: BillingCustomerContext,
+  _billingCustomer: BillingCustomerContext,
 ): Promise<{ updated: number }> {
   const { rows } = await KeywordResearchRepository.listSavedKeywordsByProject({
     projectId: input.projectId,
   });
 
   if (rows.length === 0) return { updated: 0 };
-
-  const client = createDataforseoClient(billingCustomer);
-  let updated = 0;
 
   // Group by (locationCode, languageCode) so each provider call is homogeneous.
   const groups = new Map<string, typeof rows>();
@@ -34,17 +30,66 @@ export async function refreshSavedKeywordMetrics(
     groups.set(key, group);
   }
 
+  let updated = 0;
+
   for (const groupRows of groups.values()) {
     const { locationCode, languageCode } = groupRows[0].row;
-    const metrics = await fetchKeywordMetricsForList(client, {
-      keywords: groupRows.map((r) => r.row.keyword),
-      locationCode,
-      languageCode,
-      creditFeature: "keyword_research",
-    });
-    const byKeyword = new Map(
-      metrics.map((metric) => [metric.keyword.toLowerCase(), metric]),
-    );
+    const keywords = groupRows.map((r) => r.row.keyword);
+
+    // Google Ads (historical metrics) first; Bing stats as the fallback.
+    // Neither provider exposes difficulty or intent, so those stay null /
+    // "unknown" — same as the retired DataForSEO refresh path tolerated.
+    let byKeyword = new Map<
+      string,
+      {
+        searchVolume: number | null;
+        cpc: number | null;
+        competition: number | null;
+      }
+    >();
+
+    if (await hasGoogleAdsCredentials()) {
+      const metrics = await fetchGoogleAdsMetricsForList({
+        keywords,
+        locationCode,
+        languageCode,
+      });
+      byKeyword = new Map(
+        metrics.map((metric) => [
+          metric.keyword.toLowerCase(),
+          {
+            searchVolume: metric.searchVolume,
+            cpc: metric.cpc,
+            competition: metric.competition,
+          },
+        ]),
+      );
+    } else if (await hasBingCredentials()) {
+      // Bing stats are per-seed-keyword; run one query per keyword.
+      for (const keyword of keywords) {
+        const stats = await fetchBingKeywordData({
+          seedKeyword: keyword,
+          languageCode,
+          locationCode,
+          resultLimit: 1,
+        });
+        const exact = stats.find(
+          (row) => row.keyword.toLowerCase() === keyword.toLowerCase(),
+        );
+        if (exact) {
+          byKeyword.set(keyword.toLowerCase(), {
+            searchVolume: exact.searchVolume,
+            cpc: exact.cpc,
+            competition: exact.competition,
+          });
+        }
+      }
+    } else {
+      throw new AppError(
+        "DATAFORSEO_AUTH_FAILED",
+        "No keyword data provider configured. Set Google Ads (GOOGLE_ADS_*) or Bing Webmaster (BING_WEBMASTER_API_KEY) environment variables.",
+      );
+    }
 
     for (let i = 0; i < groupRows.length; i += REFRESH_UPSERT_BATCH_SIZE) {
       const chunk = groupRows.slice(i, i + REFRESH_UPSERT_BATCH_SIZE);
@@ -60,9 +105,9 @@ export async function refreshSavedKeywordMetrics(
             searchVolume: metric.searchVolume,
             cpc: metric.cpc,
             competition: metric.competition,
-            keywordDifficulty: metric.keywordDifficulty,
-            intent: normalizeIntent(metric.intent),
-            monthlySearchesJson: JSON.stringify(metric.monthlySearches),
+            keywordDifficulty: null,
+            intent: normalizeIntent(null),
+            monthlySearchesJson: JSON.stringify([]),
           });
         }),
       );

@@ -129,7 +129,7 @@ export async function fetchGoogleTrend(input: {
       relatedQueries = [];
     }
   }
-  const result = {
+  const result: GoogleTrendResult = {
     keyword,
     geo,
     timeframe,

@@ -1,22 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
-vi.mock("@/server/lib/dataforseo", () => ({
-  createDataforseoClient: vi.fn(),
-}));
+import type { KeywordIdeaItem } from "@/server/lib/keyword-providers/types";
+import { mapProviderItems } from "./research-data";
 
-import type { AdsKeywordIdeaItem } from "@/server/lib/dataforseo";
-import { mapAdsKeywordItems } from "./research-data";
-
-describe("mapAdsKeywordItems", () => {
-  it("maps Google Ads items to research rows without KD/intent", () => {
-    const rows = mapAdsKeywordItems([
+describe("mapProviderItems", () => {
+  it("maps Google Ads idea rows to research rows without KD/intent", () => {
+    const rows = mapProviderItems([
       {
         keyword: "Hotel Reykjavik",
-        search_volume: 1300,
+        searchVolume: 1300,
         cpc: 2.54,
-        competition: "HIGH",
-        competition_index: 42,
-        monthly_searches: [{ year: 2026, month: 5, search_volume: 1300 }],
+        competition: 0.42,
+        monthlySearches: [{ year: 2026, month: 5, searchVolume: 1300 }],
       },
     ]);
 
@@ -33,18 +28,61 @@ describe("mapAdsKeywordItems", () => {
     ]);
   });
 
-  it("dedupes case-variant keywords and skips empty ones", () => {
-    const items: AdsKeywordIdeaItem[] = [
-      { keyword: "northern lights tour", search_volume: 320 },
-      { keyword: "Northern Lights Tour", search_volume: 320 },
-      { keyword: undefined },
+  it("maps Bing idea rows (no monthly history) with null trend", () => {
+    const items: KeywordIdeaItem[] = [
+      {
+        keyword: "northern lights tour",
+        searchVolume: 320,
+        cpc: null,
+        competition: 0.25,
+        monthlySearches: [],
+      },
     ];
-    const rows = mapAdsKeywordItems(items);
+    const rows = mapProviderItems(items);
+
+    expect(rows).toEqual([
+      {
+        keyword: "northern lights tour",
+        searchVolume: 320,
+        trend: [],
+        cpc: null,
+        competition: 0.25,
+        keywordDifficulty: null,
+        intent: "unknown",
+      },
+    ]);
+  });
+
+  it("dedupes case-variant keywords and skips empty ones", () => {
+    const items: KeywordIdeaItem[] = [
+      {
+        keyword: "iceland itinerary",
+        searchVolume: 100,
+        cpc: null,
+        competition: null,
+        monthlySearches: [],
+      },
+      {
+        keyword: "Iceland Itinerary",
+        searchVolume: 100,
+        cpc: null,
+        competition: null,
+        monthlySearches: [],
+      },
+      {
+        keyword: "",
+        searchVolume: 50,
+        cpc: null,
+        competition: null,
+        monthlySearches: [],
+      },
+    ];
+    const rows = mapProviderItems(items);
 
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
-      keyword: "northern lights tour",
-      searchVolume: 320,
+      keyword: "iceland itinerary",
+      searchVolume: 100,
       competition: null,
       cpc: null,
       trend: [],
