@@ -57,6 +57,11 @@ import {
   inspectUrlsTool,
 } from "@/server/mcp/tools/search-console-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import {
+  getCloudflareCrawlerAccessTool,
+  getCloudflareSecurityEventsTool,
+  getCloudflareTrafficHealthTool,
+} from "@/server/mcp/tools/cloudflare-analytics-tools";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import openSeoFactSheet from "@/server/features/onboarding/openseo-fact-sheet.md?raw";
 
@@ -399,6 +404,9 @@ export function buildSamMcpTools(
     get_google_analytics_audience_breakdown: adaptObjectTool(
       getGoogleAnalyticsAudienceBreakdownTool,
     ),
+    get_cloudflare_traffic_health: adaptTool(getCloudflareTrafficHealthTool),
+    get_cloudflare_security_events: adaptTool(getCloudflareSecurityEventsTool),
+    get_cloudflare_crawler_access: adaptTool(getCloudflareCrawlerAccessTool),
     run_site_audit: adaptTool(runSiteAuditTool),
     get_audit_status: waitingAuditStatusTool(adaptTool),
     get_audit_issues: adaptTool(getAuditIssuesTool),
