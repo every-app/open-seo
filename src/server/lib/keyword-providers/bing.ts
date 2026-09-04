@@ -41,7 +41,7 @@ type BingIdeasResponse = {
   }>;
 };
 
-async function bingFetch<T>(
+export async function bingFetch<T>(
   path: string,
   params: Record<string, string>,
 ): Promise<T> {
