@@ -162,6 +162,20 @@
       "when": 1787773500453,
       "tag": "0022_third_supernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1788523154033,
+      "tag": "0023_loud_bruce_banner",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788531570685,
+      "tag": "0024_useful_black_queen",
+      "breakpoints": true
     }
   ]
 }

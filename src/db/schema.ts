@@ -7,6 +7,7 @@ import * as sqliteAuth from "./better-auth-schema";
 import * as sqliteBilling from "./billing.schema";
 import * as sqliteGa4 from "./ga4.schema";
 import * as sqliteGsc from "./gsc.schema";
+import * as sqliteIndexNow from "./indexnow.schema";
 import * as sqliteTelemetry from "./telemetry.schema";
 import * as pgApp from "./pg/app.schema";
 import * as pgProjectContext from "./pg/project-context.schema";
@@ -16,6 +17,7 @@ import * as pgAuth from "./pg/better-auth-schema";
 import * as pgBilling from "./pg/billing.schema";
 import * as pgGa4 from "./pg/ga4.schema";
 import * as pgGsc from "./pg/gsc.schema";
+import * as pgIndexNow from "./pg/indexnow.schema";
 import * as pgTelemetry from "./pg/telemetry.schema";
 
 // Canonical schema barrel. Repositories import their tables from here and the
@@ -36,6 +38,7 @@ type AppSchema = typeof sqliteApp &
   typeof sqliteBilling &
   typeof sqliteGa4 &
   typeof sqliteGsc &
+  typeof sqliteIndexNow &
   typeof sqliteTelemetry;
 
 const runtimeSchema =
@@ -49,6 +52,7 @@ const runtimeSchema =
         ...pgBilling,
         ...pgGa4,
         ...pgGsc,
+        ...pgIndexNow,
         ...pgTelemetry,
       }
     : {
@@ -60,6 +64,7 @@ const runtimeSchema =
         ...sqliteBilling,
         ...sqliteGa4,
         ...sqliteGsc,
+        ...sqliteIndexNow,
         ...sqliteTelemetry,
       };
 
@@ -100,5 +105,7 @@ export const {
   billingCustomerStatus,
   ga4Connections,
   gscConnections,
+  indexNowConfigs,
+  indexNowSubmissions,
   telemetryState,
 } = schema;

@@ -8,6 +8,7 @@ import {
 import {
   handleAuthenticatedOpenSeoMcpRequest,
   handleSelfHostedOpenSeoMcpRequest,
+  MCP_MAX_REQUEST_BODY_BYTES,
 } from "@/server/mcp/transport";
 
 const selfHostedAuthMocks = vi.hoisted(() => ({
@@ -204,6 +205,25 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     expect(
       selfHostedAuthMocks.resolveCloudflareAccessContext,
     ).not.toHaveBeenCalled();
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).not.toHaveBeenCalled();
+  });
+
+  it("rejects oversized request bodies before parsing or constructing a server", async () => {
+    const response = await handleSelfHostedOpenSeoMcpRequest(
+      new Request("https://open-seo.test/mcp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "x".repeat(MCP_MAX_REQUEST_BODY_BYTES + 1),
+      }),
+      "local_noauth",
+      {},
+      ctx,
+    );
+
+    expect(response.status).toBe(413);
+    expect(await response.json()).toMatchObject({
+      error: { message: "Request body too large." },
+    });
     expect(selfHostedAuthMocks.createOpenSeoMcpServer).not.toHaveBeenCalled();
   });
 });

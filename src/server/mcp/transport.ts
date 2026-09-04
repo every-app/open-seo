@@ -35,6 +35,7 @@ const MCP_CORS_HEADERS = {
 
 const SURFMIND_CHROME_EXTENSION_HOSTNAME = "pghallcbnfabbgfijhbcldaapmgidnaa";
 const SURFMIND_CHROME_EXTENSION_ORIGIN = `chrome-extension://${SURFMIND_CHROME_EXTENSION_HOSTNAME}`;
+export const MCP_MAX_REQUEST_BODY_BYTES = 4 * 1024 * 1024;
 
 function withMcpCors(response: Response) {
   const headers = new Headers(response.headers);
@@ -46,6 +47,58 @@ function withMcpCors(response: Response) {
     statusText: response.statusText,
     headers,
   });
+}
+
+function requestTooLargeResponse() {
+  return withMcpCors(
+    Response.json(
+      {
+        jsonrpc: "2.0",
+        error: { code: -32000, message: "Request body too large." },
+        id: null,
+      },
+      { status: 413 },
+    ),
+  );
+}
+
+async function capRequestBody(request: Request): Promise<Request | Response> {
+  if (request.method !== "POST" || !request.body) return request;
+
+  const declaredLength = request.headers.get("Content-Length");
+  if (
+    declaredLength &&
+    /^\d+$/.test(declaredLength) &&
+    Number(declaredLength) > MCP_MAX_REQUEST_BODY_BYTES
+  ) {
+    return requestTooLargeResponse();
+  }
+
+  const reader = request.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MCP_MAX_REQUEST_BODY_BYTES) {
+        await reader.cancel();
+        return requestTooLargeResponse();
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const body = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return new Request(request, { method: "POST", body });
 }
 
 // Port of the host/origin validation the agents SDK handler applies to the
@@ -144,12 +197,17 @@ function createRequestHandler(
     if (new URL(request.url).pathname !== MCP_ROUTE) {
       return withMcpCors(new Response("Not Found", { status: 404 }));
     }
-    if (!(await isLegacyRequest(request))) {
-      return modernHandler(request, env, ctx);
+    const cappedRequest = await capRequestBody(request);
+    if (cappedRequest instanceof Response) return cappedRequest;
+    if (!(await isLegacyRequest(cappedRequest))) {
+      return modernHandler(cappedRequest, env, ctx);
     }
 
-    const rejection = validateLegacyRequest(request, allowedOriginHostnames);
-    return rejection ?? handleLegacyJsonRequest(request, props);
+    const rejection = validateLegacyRequest(
+      cappedRequest,
+      allowedOriginHostnames,
+    );
+    return rejection ?? handleLegacyJsonRequest(cappedRequest, props);
   };
 }
 
