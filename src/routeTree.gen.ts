@@ -54,6 +54,7 @@ import { Route as ProjectPProjectIdDomainRouteImport } from './routes/_project/p
 import { Route as ProjectPProjectIdBrandLookupRouteImport } from './routes/_project/p/$projectId/brand-lookup'
 import { Route as ProjectPProjectIdBacklinksRouteImport } from './routes/_project/p/$projectId/backlinks'
 import { Route as ProjectPProjectIdAuditRouteImport } from './routes/_project/p/$projectId/audit'
+import { Route as ProjectPProjectIdAgentMarketplacesRouteImport } from './routes/_project/p/$projectId/agent-marketplaces'
 import { Route as ProjectPProjectIdSettingsIndexRouteImport } from './routes/_project/p/$projectId/settings/index'
 import { Route as ProjectPProjectIdRankTrackingIndexRouteImport } from './routes/_project/p/$projectId/rank-tracking/index'
 import { Route as ProjectPProjectIdAuditIndexRouteImport } from './routes/_project/p/$projectId/audit/index'
@@ -294,6 +295,12 @@ const ProjectPProjectIdAuditRoute = ProjectPProjectIdAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => ProjectPProjectIdRouteRoute,
 } as any)
+const ProjectPProjectIdAgentMarketplacesRoute =
+  ProjectPProjectIdAgentMarketplacesRouteImport.update({
+    id: '/agent-marketplaces',
+    path: '/agent-marketplaces',
+    getParentRoute: () => ProjectPProjectIdRouteRoute,
+  } as any)
 const ProjectPProjectIdSettingsIndexRoute =
   ProjectPProjectIdSettingsIndexRouteImport.update({
     id: '/',
@@ -365,6 +372,7 @@ export interface FileRoutesByFullPath {
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/settings/': typeof AppSettingsIndexRoute
   '/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/p/$projectId/agent-marketplaces': typeof ProjectPProjectIdAgentMarketplacesRoute
   '/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -413,6 +421,7 @@ export interface FileRoutesByTo {
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/settings': typeof AppSettingsIndexRoute
   '/onboarding': typeof AuthenticatedOnboardingIndexRoute
+  '/p/$projectId/agent-marketplaces': typeof ProjectPProjectIdAgentMarketplacesRoute
   '/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
   '/p/$projectId/domain': typeof ProjectPProjectIdDomainRoute
@@ -465,6 +474,7 @@ export interface FileRoutesById {
   '/api/autumn/$': typeof ApiAutumnSplatRoute
   '/_app/settings/': typeof AppSettingsIndexRoute
   '/_authenticated/onboarding/': typeof AuthenticatedOnboardingIndexRoute
+  '/_project/p/$projectId/agent-marketplaces': typeof ProjectPProjectIdAgentMarketplacesRoute
   '/_project/p/$projectId/audit': typeof ProjectPProjectIdAuditRouteWithChildren
   '/_project/p/$projectId/backlinks': typeof ProjectPProjectIdBacklinksRoute
   '/_project/p/$projectId/brand-lookup': typeof ProjectPProjectIdBrandLookupRoute
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/api/autumn/$'
     | '/settings/'
     | '/onboarding/'
+    | '/p/$projectId/agent-marketplaces'
     | '/p/$projectId/audit'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
@@ -565,6 +576,7 @@ export interface FileRouteTypes {
     | '/api/autumn/$'
     | '/settings'
     | '/onboarding'
+    | '/p/$projectId/agent-marketplaces'
     | '/p/$projectId/backlinks'
     | '/p/$projectId/brand-lookup'
     | '/p/$projectId/domain'
@@ -616,6 +628,7 @@ export interface FileRouteTypes {
     | '/api/autumn/$'
     | '/_app/settings/'
     | '/_authenticated/onboarding/'
+    | '/_project/p/$projectId/agent-marketplaces'
     | '/_project/p/$projectId/audit'
     | '/_project/p/$projectId/backlinks'
     | '/_project/p/$projectId/brand-lookup'
@@ -974,6 +987,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProjectPProjectIdAuditRouteImport
       parentRoute: typeof ProjectPProjectIdRouteRoute
     }
+    '/_project/p/$projectId/agent-marketplaces': {
+      id: '/_project/p/$projectId/agent-marketplaces'
+      path: '/agent-marketplaces'
+      fullPath: '/p/$projectId/agent-marketplaces'
+      preLoaderRoute: typeof ProjectPProjectIdAgentMarketplacesRouteImport
+      parentRoute: typeof ProjectPProjectIdRouteRoute
+    }
     '/_project/p/$projectId/settings/': {
       id: '/_project/p/$projectId/settings/'
       path: '/'
@@ -1124,6 +1144,7 @@ const ProjectPProjectIdSettingsRouteWithChildren =
   )
 
 interface ProjectPProjectIdRouteRouteChildren {
+  ProjectPProjectIdAgentMarketplacesRoute: typeof ProjectPProjectIdAgentMarketplacesRoute
   ProjectPProjectIdAuditRoute: typeof ProjectPProjectIdAuditRouteWithChildren
   ProjectPProjectIdBacklinksRoute: typeof ProjectPProjectIdBacklinksRoute
   ProjectPProjectIdBrandLookupRoute: typeof ProjectPProjectIdBrandLookupRoute
@@ -1140,6 +1161,8 @@ interface ProjectPProjectIdRouteRouteChildren {
 
 const ProjectPProjectIdRouteRouteChildren: ProjectPProjectIdRouteRouteChildren =
   {
+    ProjectPProjectIdAgentMarketplacesRoute:
+      ProjectPProjectIdAgentMarketplacesRoute,
     ProjectPProjectIdAuditRoute: ProjectPProjectIdAuditRouteWithChildren,
     ProjectPProjectIdBacklinksRoute: ProjectPProjectIdBacklinksRoute,
     ProjectPProjectIdBrandLookupRoute: ProjectPProjectIdBrandLookupRoute,
