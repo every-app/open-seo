@@ -1,4 +1,3 @@
-import { AppError } from "@/server/lib/errors";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import type { KeywordIdeaItem } from "@/server/lib/keyword-providers/types";
@@ -65,30 +64,38 @@ export async function fetchResearchRowsBySource(
   void params.source;
   void params.includeClickstreamData;
 
+  // Degraded mode: with no provider configured (or when every configured
+  // provider fails), return empty rows instead of throwing so the rest of
+  // the app (caching, selection, UI) stays exercisable for testing.
   if (await hasGoogleAdsCredentials()) {
-    return mapProviderItems(
-      await fetchGoogleAdsKeywordIdeas({
-        keyword: params.seedKeyword,
-        locationCode: params.locationCode,
-        languageCode: params.languageCode,
-        limit: params.resultLimit,
-      }),
-    );
+    try {
+      return mapProviderItems(
+        await fetchGoogleAdsKeywordIdeas({
+          keyword: params.seedKeyword,
+          locationCode: params.locationCode,
+          languageCode: params.languageCode,
+          limit: params.resultLimit,
+        }),
+      );
+    } catch {
+      // Fall through to Bing.
+    }
   }
 
   if (await hasBingCredentials()) {
-    return mapProviderItems(
-      await fetchBingKeywordIdeasAsItems({
-        keyword: params.seedKeyword,
-        languageCode: params.languageCode,
-        locationCode: params.locationCode,
-        limit: params.resultLimit,
-      }),
-    );
+    try {
+      return mapProviderItems(
+        await fetchBingKeywordIdeasAsItems({
+          keyword: params.seedKeyword,
+          languageCode: params.languageCode,
+          locationCode: params.locationCode,
+          limit: params.resultLimit,
+        }),
+      );
+    } catch {
+      // Both providers unavailable.
+    }
   }
 
-  throw new AppError(
-    "DATAFORSEO_AUTH_FAILED",
-    "No keyword data provider configured. Set Google Ads (GOOGLE_ADS_*) or Bing Webmaster (BING_WEBMASTER_API_KEY) environment variables.",
-  );
+  return [];
 }

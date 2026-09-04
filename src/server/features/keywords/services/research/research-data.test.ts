@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { KeywordIdeaItem } from "@/server/lib/keyword-providers/types";
 import { mapProviderItems } from "./research-data";
@@ -88,4 +88,61 @@ describe("mapProviderItems", () => {
       trend: [],
     });
   });
+});
+
+describe("fetchResearchRowsBySource (degraded)", () => {
+  it("returns empty rows instead of throwing when no provider is configured", async () => {
+    vi.resetModules();
+    vi.doMock("@/server/lib/keyword-providers/google-ads", () => ({
+      hasGoogleAdsCredentials: async () => false,
+      fetchGoogleAdsKeywordIdeas: async () => [],
+    }));
+    vi.doMock("@/server/lib/keyword-providers/bing", () => ({
+      hasBingCredentials: async () => false,
+      fetchBingKeywordIdeasAsItems: async () => [],
+    }));
+    const { fetchResearchRowsBySource } = await import("./research-data");
+
+    await expect(
+      fetchResearchRowsBySource({
+        seedKeyword: "test seed",
+        locationCode: 2840,
+        languageCode: "en",
+        resultLimit: 10,
+        source: "related",
+      }),
+    ).resolves.toEqual([]);
+  });
+
+  it("falls through to Bing when Google Ads fails", async () => {
+    vi.resetModules();
+    vi.doMock("@/server/lib/keyword-providers/google-ads", () => ({
+      hasGoogleAdsCredentials: async () => true,
+      fetchGoogleAdsKeywordIdeas: async () => {
+        throw new Error("transport (500)");
+      },
+    }));
+    vi.doMock("@/server/lib/keyword-providers/bing", () => ({
+      hasBingCredentials: async () => true,
+      fetchBingKeywordIdeasAsItems: async () => [
+        { keyword: "fallback row", searchVolume: 10, cpc: null, competition: null, monthlySearches: [] },
+      ],
+    }));
+    const { fetchResearchRowsBySource } = await import("./research-data");
+
+    const rows = await fetchResearchRowsBySource({
+      seedKeyword: "test seed",
+      locationCode: 2840,
+      languageCode: "en",
+      resultLimit: 10,
+      source: "related",
+    });
+    expect(rows.map((r) => r.keyword)).toEqual(["fallback row"]);
+  });
+});
+
+afterEach(() => {
+  vi.doUnmock("@/server/lib/keyword-providers/google-ads");
+  vi.doUnmock("@/server/lib/keyword-providers/bing");
+  vi.resetModules();
 });
