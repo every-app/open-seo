@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
 import { BacklinksService } from "@/server/features/backlinks/services/BacklinksService";
+import { getBingSiteData } from "@/server/lib/keyword-providers/bing-site";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -84,26 +86,86 @@ export const getBacklinksOverviewTool = {
     // referring_domains has no URL filter, so the per-domain breakdown is
     // skipped for subfolder scope (the referring-domain count in the summary
     // is still subfolder-accurate).
-    const resolvedScope = normalizeBacklinksTarget(args.target, {
+    const normalized = normalizeBacklinksTarget(args.target, {
       scope: lookup.scope,
-    }).scope;
-    const [overview, refDomains] = await Promise.all([
-      BacklinksService.profileOverview(lookup, context.billing),
-      resolvedScope === "subfolder"
-        ? Promise.resolve(null)
-        : BacklinksService.profileReferringDomainsPage(
-            {
-              ...lookup,
-              page: 1,
-              pageSize: 100,
-              sortField: "backlinks",
-              sortOrder: "desc",
-              filters: {},
+    });
+    const resolvedScope = normalized.scope;
+    const fetchProfile = async () => {
+      const [overview, refDomains] = await Promise.all([
+        BacklinksService.profileOverview(lookup, context.billing),
+        resolvedScope === "subfolder"
+          ? Promise.resolve(null)
+          : BacklinksService.profileReferringDomainsPage(
+              {
+                ...lookup,
+                page: 1,
+                pageSize: 100,
+                sortField: "backlinks",
+                sortOrder: "desc",
+                filters: {},
+              },
+              context.billing,
+              spamOptions,
+            ),
+      ]);
+      return { overview, refDomains };
+    };
+    let profile: Awaited<ReturnType<typeof fetchProfile>>;
+    try {
+      profile = await fetchProfile();
+    } catch (error) {
+      // DataForSEO unconfigured → degrade to Bing Webmaster link data.
+      const isConfigError =
+        error instanceof AppError && error.code === "DATAFORSEO_AUTH_FAILED";
+      if (!isConfigError) throw error;
+      const bing = await getBingSiteData(normalized.displayTarget).catch(
+        () => null,
+      );
+      if (!bing) throw error;
+      const links = bing.links;
+      const rows = (links?.topSources ?? []).map((source) => ({
+        domain: source.source,
+        backlinks: source.backlinks,
+      }));
+      const bingScopeNote =
+        "Data source: Bing Webmaster (free); requires the site to be registered in Bing Webmaster Tools. Referring pages and rank are unavailable from this provider.";
+      const text = [
+        `Backlinks profile for ${normalized.displayTarget} (scope: ${normalized.scope}, source: Bing Webmaster):`,
+        `- backlinks: ${links?.backlinks ?? "?"}`,
+        `- referring domains (sourced): ${links?.sourcedDomains ?? "?"}`,
+        ...(rows.length === 0
+          ? ["No referring-domain breakdown available."]
+          : [
+              `Top referring sources (${rows.length}):\n${formatMcpTable(rows, REFERRING_DOMAIN_COLUMNS)}`,
+            ]),
+        ...bing.notes,
+      ].join("\n");
+      return mcpResponse({
+        text,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/backlinks`,
+          { target: args.target, scope: normalized.scope },
+        ),
+        structuredContent: {
+          target: normalized.displayTarget,
+          scope: normalized.scope,
+          scopeNote: bingScopeNote,
+          overview: {
+            summary: {
+              backlinks: links?.backlinks ?? null,
+              referringDomains: links?.sourcedDomains ?? null,
+              referringPages: null,
+              rank: null,
             },
-            context.billing,
-            spamOptions,
-          ),
-    ]);
+            source: "bing_webmaster",
+          },
+          referringDomains: { rows },
+        },
+      });
+    }
+    const { overview, refDomains } = profile;
     const topDomains = refDomains?.rows ?? [];
     const summary = overview.overview.summary;
     const { displayTarget, scope } = overview.overview;

@@ -3,14 +3,20 @@ import { z } from "zod";
 import type { fetchKeywordMetricsForList as FetchKeywordMetricsForList } from "@/server/lib/dataforseo/keyword-metrics";
 import * as researchTools from "./dataforseo-research-tools";
 import { makeToolContext, textContent } from "./tool-test-support";
+import { AppError } from "@/server/lib/errors";
 
 const mocks = vi.hoisted(() => ({
   createDataforseoClient: vi.fn(),
   getProjectForOrganization: vi.fn(),
+  getBingSiteData: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
   env: {},
+}));
+
+vi.mock("@/server/lib/keyword-providers/bing-site", () => ({
+  getBingSiteData: mocks.getBingSiteData,
 }));
 
 // Keep the real fetchKeywordMetricsForList (it only routes provider calls onto
@@ -450,5 +456,70 @@ describe("get_ranked_keywords scope handling", () => {
     );
 
     expect(Array.isArray(rankedKeywords.mock.calls[0]?.[0].filters)).toBe(true);
+  });
+
+  it("degrades to Bing Webmaster query stats when DataForSEO is unconfigured", async () => {
+    mocks.createDataforseoClient.mockReturnValue({
+      domain: {
+        rankedKeywords: vi
+          .fn()
+          .mockRejectedValue(
+            new AppError("DATAFORSEO_AUTH_FAILED", "credentials missing"),
+          ),
+      },
+    });
+    mocks.getBingSiteData.mockResolvedValue({
+      siteUrl: "example.com",
+      registered: true,
+      links: null,
+      queries: [
+        { query: "seo automation", impressions: 120, clicks: 9, ctr: 0.075 },
+      ],
+      notes: ["Data source: Bing Webmaster (free)."],
+    });
+
+    const result = await researchTools.getRankedKeywordsTool.handler(
+      { projectId: "project_1", target: "example.com" },
+      toolContext,
+    );
+
+    const structured = z
+      .object({
+        keywords: z.array(
+          z
+            .object({ keyword: z.string(), impressions: z.number() })
+            .passthrough(),
+        ),
+      })
+      .passthrough()
+      .parse(result.structuredContent);
+    expect(structured.keywords[0]).toMatchObject({
+      keyword: "seo automation",
+      impressions: 120,
+    });
+    expect(structured.source).toBe("bing_webmaster");
+    const out = textContent(result);
+    expect(out).toContain("impressions");
+    expect(out).toContain("Bing Webmaster");
+  });
+
+  it("rethrows the config error when Bing is unavailable too", async () => {
+    mocks.createDataforseoClient.mockReturnValue({
+      domain: {
+        rankedKeywords: vi
+          .fn()
+          .mockRejectedValue(
+            new AppError("DATAFORSEO_AUTH_FAILED", "credentials missing"),
+          ),
+      },
+    });
+    mocks.getBingSiteData.mockResolvedValue(null);
+
+    await expect(
+      researchTools.getRankedKeywordsTool.handler(
+        { projectId: "project_1", target: "example.com" },
+        toolContext,
+      ),
+    ).rejects.toThrow("credentials missing");
   });
 });

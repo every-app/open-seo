@@ -108,16 +108,23 @@ export async function fetchBingQueryStats(
 }
 
 /**
- * Bing-backed partial overview used when DataForSEO is unconfigured. Returns
- * null when Bing credentials are missing so callers keep the provider error.
+ * Bing Webmaster data for a domain, used as the free fallback when DataForSEO
+ * is unconfigured. Returns null when Bing credentials are missing so callers
+ * keep the provider error. Link and query data require the site to be
+ * registered in Bing Webmaster Tools; unregistered domains come back with
+ * registered=false and null/empty payloads.
  */
-export async function getBingPartialOverview(domain: string): Promise<{
-  provider: "bing_webmaster";
-  backlinks: number | null;
-  referringDomains: number | null;
-  topQueries: BingQueryStats[];
+export type BingSiteData = {
+  siteUrl: string;
+  registered: boolean;
+  links: BingInboundLinkCounts | null;
+  queries: BingQueryStats[];
   notes: string[];
-} | null> {
+};
+
+export async function getBingSiteData(
+  domain: string,
+): Promise<BingSiteData | null> {
   if (!(await hasBingCredentials())) return null;
 
   const siteUrl = domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
@@ -135,10 +142,10 @@ export async function getBingPartialOverview(domain: string): Promise<{
         `${siteUrl} is not registered in Bing Webmaster Tools; link and query data are unavailable for it.`,
       );
       return {
-        provider: "bing_webmaster",
-        backlinks: null,
-        referringDomains: null,
-        topQueries: [],
+        siteUrl,
+        registered: false,
+        links: null,
+        queries: [],
         notes,
       };
     }
@@ -147,17 +154,29 @@ export async function getBingPartialOverview(domain: string): Promise<{
       fetchBingInboundLinkCounts(siteUrl),
       fetchBingQueryStats(siteUrl),
     ]);
-    return {
-      provider: "bing_webmaster",
-      backlinks: links.backlinks,
-      referringDomains: links.sourcedDomains,
-      topQueries: queries,
-      notes,
-    };
+    return { siteUrl, registered: true, links, queries, notes };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new AppError("UPSTREAM_UNAVAILABLE", `Bing Webmaster: ${message}`);
   }
+}
+
+export async function getBingPartialOverview(domain: string): Promise<{
+  provider: "bing_webmaster";
+  backlinks: number | null;
+  referringDomains: number | null;
+  topQueries: BingQueryStats[];
+  notes: string[];
+} | null> {
+  const data = await getBingSiteData(domain);
+  if (!data) return null;
+  return {
+    provider: "bing_webmaster",
+    backlinks: data.links?.backlinks ?? null,
+    referringDomains: data.links?.sourcedDomains ?? null,
+    topQueries: data.queries,
+    notes: data.notes,
+  };
 }
 
 export { BING_ENV };
