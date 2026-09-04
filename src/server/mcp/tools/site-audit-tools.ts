@@ -304,7 +304,9 @@ export const getAuditIssuesTool = {
       rows.length === 0
         ? args.severity || args.issueType
           ? `No issues found for audit ${audit.id} matching the given filters.`
-          : `No issues recorded for audit ${audit.id}. Note: audits run before issue checks existed have no issue data — re-run the audit with run_site_audit to get a real report.`
+          : (await AuditRepository.hasPagesForAudit(audit.id))
+            ? `Audit ${audit.id} (${audit.startUrl}): no issues found.`
+            : `No issue data for audit ${audit.id}. Note: audits run before issue checks existed have no issue data — re-run the audit with run_site_audit to get a real report.`
         : [
             `Audit ${audit.id} (${audit.startUrl}): ${rows.length} issues${rows.length > limit ? ` (showing ${limit})` : ""}.`,
             "By type:",
