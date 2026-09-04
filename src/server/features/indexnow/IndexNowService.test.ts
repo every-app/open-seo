@@ -174,6 +174,72 @@ describe("IndexNowService", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
+  it("limits submissions to the directory containing a nested key file", async () => {
+    mocks.getConfig.mockResolvedValue({
+      ...config,
+      keyLocation: "https://www.example.com/news/indexnow-key.txt",
+    });
+    const fetcher = vi
+      .fn<IndexNowFetcher>()
+      .mockResolvedValue(new Response(null, { status: 200 }));
+
+    await expect(
+      IndexNowService.submit({
+        projectId: "project_1",
+        userId: "user_1",
+        urls: ["https://www.example.com/news/article"],
+        confirmed: true,
+        fetcher,
+      }),
+    ).resolves.toMatchObject({ status: "received" });
+
+    await expect(
+      IndexNowService.submit({
+        projectId: "project_1",
+        userId: "user_1",
+        urls: ["https://www.example.com/help/article"],
+        confirmed: true,
+        fetcher,
+      }),
+    ).rejects.toThrow("within the key file directory");
+    expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it("rejects oversized URL input before reading project configuration", async () => {
+    const fetcher = vi.fn<IndexNowFetcher>();
+    await expect(
+      IndexNowService.submit({
+        projectId: "project_1",
+        userId: "user_1",
+        urls: [`https://www.example.com/${"a".repeat(2_048)}`],
+        confirmed: true,
+        fetcher,
+      }),
+    ).rejects.toThrow("at most 2048");
+    expect(mocks.getConfig).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("caps the aggregate URL payload before reading project configuration", async () => {
+    const fetcher = vi.fn<IndexNowFetcher>();
+    const urls = Array.from(
+      { length: 1_100 },
+      (_, index) => `https://www.example.com/${index}-${"a".repeat(1_950)}`,
+    );
+
+    await expect(
+      IndexNowService.submit({
+        projectId: "project_1",
+        userId: "user_1",
+        urls,
+        confirmed: true,
+        fetcher,
+      }),
+    ).rejects.toThrow("in total");
+    expect(mocks.getConfig).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
   it("deduplicates, chunks at 1,000, and reports receipt without claiming indexation", async () => {
     const urls = Array.from(
       { length: 1_001 },

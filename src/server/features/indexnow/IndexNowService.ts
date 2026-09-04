@@ -2,7 +2,9 @@ import { AppError } from "@/server/lib/errors";
 import {
   INDEXNOW_CHUNK_SIZE,
   INDEXNOW_ENDPOINT,
+  INDEXNOW_MAX_OUTBOUND_BODY_BYTES,
   INDEXNOW_MAX_URLS,
+  indexNowUrlsSchema,
   type IndexNowChunkReceipt,
 } from "@/shared/indexnow";
 import { IndexNowRepository } from "./IndexNowRepository";
@@ -151,15 +153,27 @@ async function sendChunk(
   fetcher: IndexNowFetcher,
 ): Promise<IndexNowChunkReceipt> {
   try {
+    const body = JSON.stringify({
+      host: new URL(origin).host,
+      key: config.publicKey,
+      keyLocation: config.keyLocation,
+      urlList: urls,
+    });
+    if (
+      new TextEncoder().encode(body).byteLength >
+      INDEXNOW_MAX_OUTBOUND_BODY_BYTES
+    ) {
+      return {
+        chunkIndex,
+        urlCount: urls.length,
+        status: "failed",
+        httpStatus: null,
+      };
+    }
     const response = await fetcher(INDEXNOW_ENDPOINT, {
       method: "POST",
       headers: { "Content-Type": "application/json; charset=utf-8" },
-      body: JSON.stringify({
-        host: new URL(origin).host,
-        key: config.publicKey,
-        keyLocation: config.keyLocation,
-        urlList: urls,
-      }),
+      body,
       signal: AbortSignal.timeout(15_000),
     });
     return {
@@ -197,10 +211,12 @@ async function submit(input: {
       "IndexNow submission requires confirmed: true.",
     );
   }
-  if (input.urls.length === 0 || input.urls.length > INDEXNOW_MAX_URLS) {
+  const parsedUrls = indexNowUrlsSchema.safeParse(input.urls);
+  if (!parsedUrls.success) {
     throw new AppError(
       "VALIDATION_ERROR",
-      `IndexNow accepts 1 to ${INDEXNOW_MAX_URLS} URLs.`,
+      parsedUrls.error.issues[0]?.message ??
+        `IndexNow accepts 1 to ${INDEXNOW_MAX_URLS} bounded URLs.`,
     );
   }
   const [config, domain] = await Promise.all([
@@ -215,7 +231,7 @@ async function submit(input: {
   }
   const origin = projectOrigin(domain);
   const keyLocation = validateKeyLocation(config.keyLocation, origin);
-  const urls = normalizeIndexNowUrls(input.urls, origin);
+  const urls = normalizeIndexNowUrls(parsedUrls.data, origin, keyLocation);
   const chunks = Array.from(
     { length: Math.ceil(urls.length / INDEXNOW_CHUNK_SIZE) },
     (_, index) =>
@@ -254,7 +270,7 @@ async function submit(input: {
     projectId: input.projectId,
     configId: config.id,
     status,
-    requestedUrlCount: input.urls.length,
+    requestedUrlCount: parsedUrls.data.length,
     uniqueUrlCount: urls.length,
     chunkCount: receipts.length,
     receivedChunkCount,
@@ -269,7 +285,7 @@ async function submit(input: {
   return {
     submissionId,
     status,
-    requestedUrlCount: input.urls.length,
+    requestedUrlCount: parsedUrls.data.length,
     uniqueUrlCount: urls.length,
     chunks: receipts,
     meaning:

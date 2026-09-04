@@ -156,7 +156,10 @@ export async function assertPublicDns(
 export function normalizeIndexNowUrls(
   values: string[],
   origin: string,
+  keyLocation: string,
 ): string[] {
+  const keyPathname = new URL(keyLocation).pathname;
+  const keyDirectory = keyPathname.slice(0, keyPathname.lastIndexOf("/") + 1);
   const urls = values.map((value) => {
     let url: URL;
     try {
@@ -171,6 +174,7 @@ export function normalizeIndexNowUrls(
       url.password ||
       url.search ||
       url.hash ||
+      !url.pathname.startsWith(keyDirectory) ||
       PRIVATE_PATH_PREFIXES.some(
         (prefix) =>
           url.pathname === prefix || url.pathname.startsWith(`${prefix}/`),
@@ -178,7 +182,7 @@ export function normalizeIndexNowUrls(
     ) {
       throw new AppError(
         "VALIDATION_ERROR",
-        "Every IndexNow URL must be a public HTTPS page on the exact project host, without query or fragment.",
+        "Every IndexNow URL must be a public HTTPS page on the exact project host and within the key file directory, without query or fragment.",
       );
     }
     return url.toString();

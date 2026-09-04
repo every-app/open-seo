@@ -35,6 +35,12 @@ beforeEach(() => {
 });
 
 describe("submit_urls_indexnow", () => {
+  it("does not claim idempotency while repeated calls create new submissions", () => {
+    expect(submitUrlsIndexNowTool.config.annotations).not.toHaveProperty(
+      "idempotentHint",
+    );
+  });
+
   it("submits as an owner and preserves the receipt semantics", async () => {
     const result = await submitUrlsIndexNowTool.handler(
       {

@@ -22,14 +22,20 @@ indexing claim in this POC.
 - Key verification accepts only HTTPS on the exact normalized project origin,
   performs fail-closed A and AAAA DNS checks, disables redirects, uses a 10s
   timeout, and caps the streamed body at 256 bytes.
-- Submitted URLs must use that same origin, may not include credentials, query
-  strings, fragments, or common private application path prefixes.
-- Requests accept at most 10,000 URLs, deduplicate them, and send chunks of
-  1,000 with concurrency capped at three.
+- Submitted URLs must use that same origin, stay within the directory that
+  contains the verified key file, and may not include credentials, query
+  strings, fragments, or common private application path prefixes. A key at
+  the origin root can authorize the entire host.
+- Requests accept at most 10,000 URLs, 2,048 UTF-8 bytes per URL, and 2 MiB of
+  URL input in total. MCP request bodies are capped at 4 MiB. Valid URLs are
+  deduplicated and sent in bounded chunks of 1,000 with concurrency capped at
+  three.
 - Stored submission history contains aggregate counts and numeric HTTP status
   codes only. URL lists and response bodies are not persisted.
 - `received` means the IndexNow endpoint accepted the notification. It never
   means that a URL was crawled or indexed.
+- Repeating a submission sends another notification and creates another
+  receipt, so the MCP tool does not advertise idempotency.
 
 The key is public by protocol design, so it is not encrypted or treated as an
 application secret. Project and organization deletion cascade configuration

@@ -9,11 +9,11 @@ import {
 } from "@/server/mcp/output-schemas";
 import { withMcpProjectAuth } from "@/server/mcp/project-auth";
 import { projectIdSchema } from "@/server/mcp/schemas";
-import { INDEXNOW_MAX_URLS } from "@/shared/indexnow";
+import { indexNowUrlsSchema } from "@/shared/indexnow";
 
 const inputSchema = {
   projectId: projectIdSchema,
-  urls: z.array(z.string().min(1)).min(1).max(INDEXNOW_MAX_URLS),
+  urls: indexNowUrlsSchema,
   confirmed: z
     .literal(true)
     .describe(
@@ -43,7 +43,6 @@ export const submitUrlsIndexNowTool = {
     annotations: {
       readOnlyHint: false,
       destructiveHint: false,
-      idempotentHint: true,
       openWorldHint: true,
     },
   },
