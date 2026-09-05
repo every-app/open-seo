@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, Globe, History, Search, X } from "lucide-react";
+import { Clock, Globe, History, Plug, Search, X } from "lucide-react";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
@@ -23,7 +23,44 @@ function NoResultsState({
 }: {
   controller: KeywordResearchControllerState;
 }) {
-  const { lastSearchKeyword, lastSearchLocationCode } = controller;
+  const {
+    lastSearchKeyword,
+    lastSearchLocationCode,
+    providerStatus,
+    providerStatusLoaded,
+  } = controller;
+  const providersUnconfigured =
+    providerStatusLoaded &&
+    providerStatus !== null &&
+    !providerStatus.googleAds &&
+    !providerStatus.bing;
+
+  if (providersUnconfigured) {
+    return (
+      <div className="pt-1">
+        <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4 mx-auto">
+          <Plug className="size-10 mx-auto text-base-content/40" />
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-base-content">
+              Keyword data sources not connected
+            </p>
+            <p className="text-sm text-base-content/70">
+              Volume, difficulty, and CPC metrics come from Google Ads or Bing
+              Webmaster. Neither is configured on this deployment, so searches
+              return no metric rows.
+            </p>
+            <p className="text-sm text-base-content/70">
+              Connect a Google Ads or Bing Webmaster API credential in your
+              deployment's environment settings to enable keyword research.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const keyword = lastSearchKeyword;
+  const locationCode = lastSearchLocationCode;
 
   return (
     <div className="pt-1">
@@ -36,13 +73,33 @@ function NoResultsState({
           <p className="text-sm text-base-content/70">
             We could not find keyword opportunities for
             <span className="font-medium text-base-content">
-              {` "${lastSearchKeyword}" `}
+              {` "${keyword}" `}
             </span>
             in
             <span className="font-medium text-base-content">
-              {` ${LOCATIONS[lastSearchLocationCode] || "this location"}`}
+              {` ${LOCATIONS[locationCode] || "this location"}`}
             </span>
             .
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProvidersNotConnectedState() {
+  return (
+    <div className="pt-1">
+      <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4 mx-auto">
+        <Plug className="size-10 mx-auto text-base-content/40" />
+        <div className="space-y-2">
+          <p className="text-lg font-semibold text-base-content">
+            Keyword data sources not connected
+          </p>
+          <p className="text-sm text-base-content/70 max-w-md mx-auto">
+            Volume, difficulty, and CPC metrics come from a keyword data
+            provider. Connect Google Ads or Bing Webmaster credentials in the
+            server environment to enable keyword research.
           </p>
         </div>
       </div>

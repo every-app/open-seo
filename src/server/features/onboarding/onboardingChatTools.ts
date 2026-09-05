@@ -216,14 +216,13 @@ function coreSiteTools(ctx: ToolContext): ToolSet {
               locationCode: project.locationCode,
               languageCode: project.languageCode,
               resultLimit: 150,
-              // One source (keyword_ideas) keeps onboarding spend to a single
-              // DataForSEO call; research() routes unsupported markets to the
-              // Google Ads fallback automatically.
+              // One source (keyword_ideas) keeps onboarding to a single
+              // provider call; research() collapses idea sources into the
+              // configured provider (Google Ads or Bing).
               mode: "ideas",
               clickstream: false,
             },
             billingCustomer,
-            "onboarding",
           );
 
           // Keep only keywords with a real volume — the strategy table shows

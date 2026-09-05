@@ -1,5 +1,5 @@
 import { AppError } from "@/server/lib/errors";
-import { getRequiredEnvValue } from "@/server/lib/runtime-env";
+import { getOptionalEnvValue } from "@/server/lib/runtime-env";
 import type { ErrorCode } from "@/shared/error-codes";
 // Type-only: erased at compile, so no runtime cycle with envelope.ts (which
 // imports DataforseoErrorClassifier from here the same way).
@@ -66,7 +66,14 @@ function createAuthenticatedFetch(
   maxServerErrorRetries = DATAFORSEO_MAX_RETRIES,
 ) {
   return async (url: RequestInfo, init?: RequestInit): Promise<Response> => {
-    const apiKey = await getRequiredEnvValue("DATAFORSEO_API_KEY");
+    const apiKey = await getOptionalEnvValue("DATAFORSEO_API_KEY");
+    if (!apiKey) {
+      throw new AppError(
+        "DATAFORSEO_AUTH_FAILED",
+        "DataForSEO API key is not configured. Set DATAFORSEO_API_KEY to enable this data source.",
+        { provider: "dataforseo" },
+      );
+    }
     const headers = new Headers(init?.headers);
     headers.set("Authorization", `Basic ${apiKey}`);
     // Resolve the signal once so retries share the overall request timeout

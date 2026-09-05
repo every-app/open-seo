@@ -6,6 +6,9 @@ import {
 import { useKeywordFiltering } from "@/client/features/keywords/hooks/useKeywordFiltering";
 import { useLocalKeywordFilters } from "@/client/features/keywords/hooks/useLocalKeywordFilters";
 import { useKeywordResearchData } from "@/client/features/keywords/hooks/useKeywordResearchData";
+import {
+  useKeywordProviderStatus,
+} from "@/client/features/keywords/hooks/useKeywordProviderStatus";
 import { useKeywordSelection } from "@/client/features/keywords/hooks/useKeywordSelection";
 import { useKeywordSerpAnalysis } from "@/client/features/keywords/hooks/useKeywordSerpAnalysis";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -116,6 +119,7 @@ export function useKeywordResearchController(
     },
     addSearch,
   );
+  const { providerStatus, providerStatusLoaded } = useKeywordProviderStatus();
   const setSearchParams = useKeywordSearchParams();
   const saveMutation = useKeywordSaveMutation(input.projectId);
 
@@ -237,6 +241,8 @@ export function useKeywordResearchController(
   };
 
   return {
+    providerStatus,
+    providerStatusLoaded,
     activeFilterCount,
     activeSerpKeyword,
     confirmSave,

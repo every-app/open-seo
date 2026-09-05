@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
+import { getBingPartialOverview } from "@/server/lib/keyword-providers/bing-site";
 import { DomainService } from "@/server/features/domain/services/DomainService";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
@@ -80,16 +82,65 @@ export const getDomainOverviewTool = {
         : args.includeSubdomains
           ? "subdomains"
           : "domain");
-    const result = await DomainService.getOverview(
-      {
-        projectId: args.projectId,
-        domain: args.domain,
-        scope,
-        locationCode,
-        languageCode,
-      },
-      context.billing,
-    );
+    let result;
+    try {
+      result = await DomainService.getOverview(
+        {
+          projectId: args.projectId,
+          domain: args.domain,
+          scope,
+          locationCode,
+          languageCode,
+        },
+        context.billing,
+      );
+    } catch (error) {
+      // DataForSEO unconfigured → degrade to Bing Webmaster link data.
+      const isConfigError =
+        error instanceof AppError && error.code === "DATAFORSEO_AUTH_FAILED";
+      if (!isConfigError) throw error;
+      const bing = await getBingPartialOverview(args.domain).catch(() => null);
+      if (!bing) throw error;
+      const fallback = {
+        displayTarget: args.domain,
+        scope: "subdomains" as const,
+        organicTraffic: null,
+        organicKeywords: null,
+        backlinks: bing.backlinks,
+        referringDomains: bing.referringDomains,
+        source: bing.provider as string,
+        notes: bing.notes,
+      };
+      const topQueries = bing.topQueries
+        .slice(0, 5)
+        .map(
+          (q) =>
+            `${q.query} (${q.clicks} clicks / ${q.impressions} impressions)`,
+        )
+        .join(", ");
+      const fallbackText = [
+        `Target: ${fallback.displayTarget} (scope: ${fallback.scope}, source: Bing Webmaster)`,
+        `Backlinks: ${fallback.backlinks ?? "?"}`,
+        `Referring domains (sourced): ${fallback.referringDomains ?? "?"}`,
+        `Organic traffic and organic keywords are unavailable without DataForSEO.`,
+        ...bing.notes,
+        bing.topQueries.length
+          ? `Top Bing queries: ${topQueries}`
+          : `No Bing query stats available (site may not be registered in Bing Webmaster).`,
+      ].join("\n");
+      return mcpResponse({
+        text: fallbackText,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/domain`,
+          {
+            domain: args.domain,
+          },
+        ),
+        structuredContent: fallback,
+      });
+    }
     const text = [
       `Target: ${result.displayTarget} (scope: ${result.scope})`,
       `Organic traffic: ${result.organicTraffic ?? "?"}`,

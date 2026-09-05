@@ -4,6 +4,11 @@ import { z } from "zod";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
+import {
+  getBingPartialOverview,
+  getBingSiteData,
+} from "@/server/lib/keyword-providers/bing-site";
+import { asAppError } from "@/server/lib/errors";
 import { buildRankedKeywordsScopeFilter } from "@/server/lib/dataforseo/researchScopeFilters";
 import { joinClauses } from "@/server/lib/dataforseo/filters";
 import { parseResearchTargetOrThrow } from "@/server/lib/domainUtils";
@@ -30,6 +35,8 @@ const domainOverviewResultSchema = z.object({
   referringDomains: z.number().nullable(),
   hasData: z.boolean(),
   fetchedAt: z.string(),
+  // Cache entries written before the Bing fallback lack this field.
+  provider: z.enum(["dataforseo", "bing_webmaster"]).default("dataforseo"),
 });
 
 type DomainOverviewResult = z.infer<typeof domainOverviewResultSchema> & {
@@ -74,35 +81,54 @@ async function getOverview(
   }
 
   const nowIso = new Date().toISOString();
-  const dataforseo = createDataforseoClient(billingCustomer);
 
-  const metricsResponse = await dataforseo.domain.rankOverview({
-    target: domain,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    ...metering,
-  });
+  let stored: z.infer<typeof domainOverviewResultSchema>;
+  try {
+    const dataforseo = createDataforseoClient(billingCustomer);
+    const metricsResponse = await dataforseo.domain.rankOverview({
+      target: domain,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      ...metering,
+    });
 
-  const metrics = metricsResponse[0];
+    const metrics = metricsResponse[0];
 
-  const organicTraffic =
-    metrics?.metrics?.organic?.etv != null
-      ? Math.round(metrics.metrics.organic.etv)
-      : null;
-  const organicKeywords =
-    metrics?.metrics?.organic?.count != null
-      ? Math.round(metrics.metrics.organic.count)
-      : null;
+    const organicTraffic =
+      metrics?.metrics?.organic?.etv != null
+        ? Math.round(metrics.metrics.organic.etv)
+        : null;
+    const organicKeywords =
+      metrics?.metrics?.organic?.count != null
+        ? Math.round(metrics.metrics.organic.count)
+        : null;
 
-  const stored: z.infer<typeof domainOverviewResultSchema> = {
-    domain,
-    organicTraffic,
-    organicKeywords,
-    backlinks: null,
-    referringDomains: null,
-    hasData: organicKeywords != null && organicKeywords > 0,
-    fetchedAt: nowIso,
-  };
+    stored = {
+      domain,
+      organicTraffic,
+      organicKeywords,
+      backlinks: null,
+      referringDomains: null,
+      hasData: organicKeywords != null && organicKeywords > 0,
+      fetchedAt: nowIso,
+      provider: "dataforseo",
+    };
+  } catch (error) {
+    // DataForSEO unconfigured -> degrade to Bing Webmaster link data.
+    if (asAppError(error)?.code !== "DATAFORSEO_AUTH_FAILED") throw error;
+    const bing = await getBingPartialOverview(domain).catch(() => null);
+    if (!bing) throw error;
+    stored = {
+      domain,
+      organicTraffic: null,
+      organicKeywords: null,
+      backlinks: bing.backlinks,
+      referringDomains: bing.referringDomains,
+      hasData: bing.backlinks != null || bing.referringDomains != null,
+      fetchedAt: nowIso,
+      provider: "bing_webmaster",
+    };
+  }
 
   if (stored.hasData) {
     // waitUntil, not void: workerd cancels unregistered pending I/O once the
@@ -170,22 +196,23 @@ async function getSuggestedKeywords(
     return cached.data;
   }
 
-  const dataforseo = createDataforseoClient(billingCustomer);
+  let keywords;
+  try {
+    const dataforseo = createDataforseoClient(billingCustomer);
+    const rankedKeywordsResponse = await dataforseo.domain.rankedKeywords({
+      target: target.hostname,
+      locationCode: input.locationCode,
+      languageCode: input.languageCode,
+      limit: 100,
+      orderBy: ["ranked_serp_element.serp_item.etv,desc"],
+      filters:
+        scopeFilter.clauses.length > 0
+          ? joinClauses(scopeFilter.clauses, "and")
+          : undefined,
+      ...metering,
+    });
 
-  const rankedKeywordsResponse = await dataforseo.domain.rankedKeywords({
-    target: target.hostname,
-    locationCode: input.locationCode,
-    languageCode: input.languageCode,
-    limit: 100,
-    orderBy: ["ranked_serp_element.serp_item.etv,desc"],
-    filters:
-      scopeFilter.clauses.length > 0
-        ? joinClauses(scopeFilter.clauses, "and")
-        : undefined,
-    ...metering,
-  });
-
-  const keywords = rankedKeywordsResponse.items
+    keywords = rankedKeywordsResponse.items
     .map((item) => mapKeywordItem(item))
     .filter(
       (item): item is NonNullable<ReturnType<typeof mapKeywordItem>> =>
@@ -199,6 +226,19 @@ async function getSuggestedKeywords(
       cpc: item.cpc,
       keywordDifficulty: item.keywordDifficulty,
     }));
+  } catch (error) {
+    if (asAppError(error)?.code !== "DATAFORSEO_AUTH_FAILED") throw error;
+    const bing = await getBingSiteData(target.hostname);
+    if (!bing) throw error;
+    keywords = bing.queries.map((query) => ({
+      keyword: query.query,
+      position: null,
+      searchVolume: null,
+      traffic: query.clicks,
+      cpc: null,
+      keywordDifficulty: null,
+    }));
+  }
 
   if (keywords.length > 0) {
     waitUntil(

@@ -69,6 +69,7 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import { googleTrendsTool } from "@/server/mcp/tools/google-trends-tools";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -164,6 +165,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(updateProjectContextTool);
   register(listSavedKeywordsTool);
   register(researchKeywordsTool);
+  register(googleTrendsTool);
   register(saveKeywordsTool);
   register(getDomainOverviewTool);
   register(getDomainKeywordSuggestionsTool);

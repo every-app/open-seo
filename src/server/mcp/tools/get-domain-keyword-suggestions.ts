@@ -95,10 +95,10 @@ export const getDomainKeywordSuggestionsTool = {
     const target = parsed.display;
     const scope = parsed.scope;
     const targetLabel = `${target} (scope: ${scope})`;
-    const text =
+      const text =
       keywords.length === 0
         ? `No ranked keywords found for ${targetLabel}.`
-        : `Keywords for ${targetLabel} (${keywords.length}):\n${formatMcpTable(keywords, SUGGESTION_COLUMNS)}`;
+        : `Keywords for ${targetLabel} (${keywords.length}):\n${formatMcpTable(keywords, SUGGESTION_COLUMNS)}\n\nNote: Bing fallback rows contain clicks, not search volume, position, CPC, or keyword difficulty.`;
     return mcpResponse({
       text,
       meta: buildProjectMeta(

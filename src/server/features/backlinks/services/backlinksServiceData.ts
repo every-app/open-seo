@@ -7,6 +7,8 @@ import {
   type BacklinksHistoryItem,
   type BacklinksSummaryItem,
 } from "@/server/lib/dataforseo";
+import { asAppError } from "@/server/lib/errors";
+import { getBingPartialOverview } from "@/server/lib/keyword-providers/bing-site";
 import {
   normalizeBacklinksSpamFilterOptions,
   type BacklinksLookupInput,
@@ -95,14 +97,13 @@ export async function profileBacklinksOverview(
     };
   }
 
-  const dataforseo = createDataforseoClient(billingCustomer);
-
   const now = new Date();
   const normalizedTarget = normalizeBacklinksTarget(input.target, {
     scope: input.scope,
   });
 
   if (normalizedTarget.scope === "subfolder") {
+    const dataforseo = createDataforseoClient(billingCustomer);
     const overview = await buildSubfolderOverview(
       dataforseo,
       normalizedTarget,
@@ -120,7 +121,10 @@ export async function profileBacklinksOverview(
 
   const dateRange = buildBacklinksDateRange(now);
 
-  const [summary, history] = await Promise.all([
+  try {
+    const dataforseo = createDataforseoClient(billingCustomer);
+
+    const [summary, history] = await Promise.all([
     dataforseo.backlinks.summary({
       target: normalizedTarget.apiTarget,
       includeSubdomains: normalizedTarget.includeSubdomains,
@@ -151,6 +155,52 @@ export async function profileBacklinksOverview(
   );
 
   return { overview };
+  } catch (error) {
+    // DataForSEO unconfigured -> degrade to Bing Webmaster link counts for
+    // site-level targets. Bing has no page/subfolder data, so those keep the
+    // provider error.
+    if (asAppError(error)?.code !== "DATAFORSEO_AUTH_FAILED") throw error;
+    if (
+      normalizedTarget.scope !== "domain" &&
+      normalizedTarget.scope !== "subdomains"
+    ) {
+      throw error;
+    }
+    const bing = await getBingPartialOverview(
+      normalizedTarget.apiTarget,
+    ).catch(() => null);
+    if (!bing) throw error;
+    const overview: BacklinksOverviewResult = {
+      target: normalizedTarget.apiTarget,
+      displayTarget: normalizedTarget.displayTarget,
+      scope: normalizedTarget.scope,
+      summary: {
+        rank: null,
+        backlinks: bing.backlinks,
+        referringPages: null,
+        referringDomains: bing.referringDomains,
+        brokenBacklinks: null,
+        brokenPages: null,
+        backlinksSpamScore: null,
+        targetSpamScore: null,
+        newBacklinks: null,
+        lostBacklinks: null,
+        newReferringDomains: null,
+        lostReferringDomains: null,
+      },
+      trends: [],
+      newLostTrends: [],
+      provider: "bing_webmaster",
+      fetchedAt: now.toISOString(),
+    };
+    await cacheValue(
+      cache,
+      cacheKey,
+      { overview },
+      BACKLINKS_OVERVIEW_TTL_SECONDS,
+    );
+    return { overview };
+  }
 }
 
 export async function profileBacklinksRowsPage(
@@ -370,6 +420,7 @@ function buildOverviewResult(args: {
       newReferringDomains: item.newReferringDomains,
       lostReferringDomains: item.lostReferringDomains,
     })),
+    provider: "dataforseo",
     fetchedAt: args.now.toISOString(),
   };
 }

@@ -1,6 +1,8 @@
 /* eslint-disable max-lines */
 import { sort } from "remeda";
 import { z } from "zod";
+import { AppError } from "@/server/lib/errors";
+import { getBingSiteData } from "@/server/lib/keyword-providers/bing-site";
 import {
   createDataforseoClient,
   fetchKeywordMetricsForList,
@@ -645,6 +647,20 @@ const RANKED_KEYWORD_COLUMNS: McpTableColumn<RankedKeywordRow>[] = [
   { header: "url", value: (row) => row.url },
 ];
 
+type BingQueryRow = {
+  keyword: string;
+  impressions: number;
+  clicks: number;
+  ctr: number | null;
+};
+
+const BING_QUERY_COLUMNS: McpTableColumn<BingQueryRow>[] = [
+  { header: "keyword", value: (row) => row.keyword },
+  { header: "impressions", value: (row) => row.impressions },
+  { header: "clicks", value: (row) => row.clicks },
+  { header: "ctr", value: (row) => row.ctr },
+];
+
 // Full Business Listings rows are ~9KB each (popular_times for every day,
 // attribute trees, photo URLs) — 10 of them overflow MCP clients' tool-result
 // budgets. Return only the fields a candidate list needs; get_business_profile
@@ -818,45 +834,83 @@ export const getRankedKeywordsTool = {
       : parsedDefault;
     const scopeFilter = buildRankedKeywordsScopeFilter(target);
     const market = resolveMarketSelector(args, context.project);
-    const keywords = await client.domain.rankedKeywords({
-      target: target.hostname,
-      locationCode: market.locationCode,
-      languageCode: market.languageCode,
-      limit: args.limit ?? 50,
-      offset: args.offset,
-      orderBy: sortOrderByRankedMode(args.sortBy),
-      filters: buildRankedKeywordFilters(
-        {
-          minSearchVolume: args.minSearchVolume,
-          maxRank: args.maxRank,
-          excludeBrandTerms: args.excludeBrandTerms,
-        },
-        scopeFilter,
-      ),
-      itemTypes: args.resultTypes,
-    });
+    try {
+      const keywords = await client.domain.rankedKeywords({
+        target: target.hostname,
+        locationCode: market.locationCode,
+        languageCode: market.languageCode,
+        limit: args.limit ?? 50,
+        offset: args.offset,
+        orderBy: sortOrderByRankedMode(args.sortBy),
+        filters: buildRankedKeywordFilters(
+          {
+            minSearchVolume: args.minSearchVolume,
+            maxRank: args.maxRank,
+            excludeBrandTerms: args.excludeBrandTerms,
+          },
+          scopeFilter,
+        ),
+        itemTypes: args.resultTypes,
+      });
 
-    const rankedRows = keywords.items.map(toRankedKeywordRow);
-    const targetLabel = `${target.display} (scope: ${target.scope})`;
-    const text =
-      rankedRows.length === 0
-        ? `No ranked keyword rows for ${targetLabel}.`
-        : `Found ${rankedRows.length} ranked keyword rows for ${targetLabel}${keywords.totalCount != null ? ` (of ${keywords.totalCount} total)` : ""}:\n${formatMcpTable(rankedRows, RANKED_KEYWORD_COLUMNS)}`;
-    return mcpResponse({
-      text,
-      meta: buildProjectMeta(
-        context,
-        args.projectId,
-        `/p/${args.projectId}/domain`,
-        { domain: target.display, scope: target.scope },
-      ),
-      structuredContent: {
-        keywords: keywords.items,
-        totalCount: keywords.totalCount,
-        target: target.display,
-        scope: target.scope,
-      },
-    });
+      const rankedRows = keywords.items.map(toRankedKeywordRow);
+      const targetLabel = `${target.display} (scope: ${target.scope})`;
+      const text =
+        rankedRows.length === 0
+          ? `No ranked keyword rows for ${targetLabel}.`
+          : `Found ${rankedRows.length} ranked keyword rows for ${targetLabel}${keywords.totalCount != null ? ` (of ${keywords.totalCount} total)` : ""}:\n${formatMcpTable(rankedRows, RANKED_KEYWORD_COLUMNS)}`;
+      return mcpResponse({
+        text,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/domain`,
+          { domain: target.display, scope: target.scope },
+        ),
+        structuredContent: {
+          keywords: keywords.items,
+          totalCount: keywords.totalCount,
+          target: target.display,
+          scope: target.scope,
+        },
+      });
+    } catch (error) {
+      const isConfigError =
+        error instanceof AppError && error.code === "DATAFORSEO_AUTH_FAILED";
+      if (!isConfigError) throw error;
+      const bing = await getBingSiteData(target.hostname).catch(() => null);
+      if (!bing) throw error;
+      const rows = bing.queries.map((q) => ({
+        keyword: q.query,
+        impressions: q.impressions,
+        clicks: q.clicks,
+        ctr: q.ctr,
+      }));
+      const targetLabel = `${target.display} (scope: ${target.scope})`;
+      const text = [
+        rows.length === 0
+          ? `No Bing query rows for ${targetLabel}.`
+          : `Found ${rows.length} ranked-keyword rows for ${targetLabel} from Bing Webmaster query stats (impressions/clicks, not search volume):\n${formatMcpTable(rows, BING_QUERY_COLUMNS)}`,
+        ...bing.notes,
+      ].join("\n");
+      return mcpResponse({
+        text,
+        meta: buildProjectMeta(
+          context,
+          args.projectId,
+          `/p/${args.projectId}/domain`,
+          { domain: target.display, scope: target.scope },
+        ),
+        structuredContent: {
+          keywords: rows,
+          totalCount: rows.length,
+          target: target.display,
+          scope: target.scope,
+          source: "bing_webmaster",
+          notes: bing.notes,
+        },
+      });
+    }
   }),
 };
 

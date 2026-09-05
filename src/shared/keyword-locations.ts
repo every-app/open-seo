@@ -848,9 +848,9 @@ export function isLabsLocationCode(locationCode: number): boolean {
 }
 
 /**
- * Which DataForSEO API serves keyword data for this location. Unknown codes
- * fall back to Labs so behavior for arbitrary codes is unchanged (Labs
- * rejects unsupported locations with its own error).
+ * Legacy DataForSEO provider split. DataForSEO is retired; both branches
+ * resolve to the same provider-neutral research pipeline, so this is kept
+ * only as a cache-key/routing input until call sites migrate off it.
  */
 export function getKeywordDataProvider(
   locationCode: number,

@@ -58,6 +58,7 @@ export async function buildSubfolderOverview(
     },
     trends: [],
     newLostTrends: [],
+    provider: "dataforseo" as const,
     fetchedAt: now.toISOString(),
   };
 }

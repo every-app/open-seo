@@ -74,6 +74,8 @@ export const backlinksOverviewSchema = z.object({
   trends: z.array(backlinksTrendRowSchema),
   newLostTrends: z.array(backlinksNewLostTrendRowSchema),
   fetchedAt: z.string(),
+  // Cache entries written before the Bing fallback lack this field.
+  provider: z.enum(["dataforseo", "bing_webmaster"]).default("dataforseo"),
 });
 
 export type BacklinksOverviewResult = z.infer<typeof backlinksOverviewSchema>;
