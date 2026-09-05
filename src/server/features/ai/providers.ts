@@ -19,11 +19,7 @@ import {
   isSupportedProvider,
   type AiProviderId,
 } from "@/server/features/ai/providerIds";
-export {
-  SUPPORTED_PROVIDERS,
-  isSupportedProvider,
-  type AiProviderId,
-};
+export { SUPPORTED_PROVIDERS, isSupportedProvider, type AiProviderId };
 
 export type AiProviderCapabilities = {
   toolCalling: boolean;
@@ -53,9 +49,13 @@ export type AiConnectionResult = {
     | "INVALID_BASE_URL"
     | "INVALID_RESPONSE"
     | "RATE_LIMITED"
+    | "PROVIDER_INSUFFICIENT_CREDITS"
     | "PROVIDER_UNAVAILABLE"
     | "CONNECTION_TIMEOUT"
     | "UNSUPPORTED_FEATURE"
+    // Kept in parity with the providerErrors vocabulary; a connection test
+    // never validates tool input, so this code cannot legitimately occur.
+    | "TOOL_INPUT_INVALID"
     | "unknown";
   /** Curated, user-safe explanation — never raw provider payloads. */
   message?: string;
@@ -197,7 +197,8 @@ export function validateModelForProvider(
     openai: 'an id like "gpt-5"',
     gemini: 'an id like "gemini-2.5-flash"',
     anthropic: 'an id like "claude-sonnet-4-5"',
-    openai_compatible: 'the model name your endpoint serves (e.g. "gpt-4o-mini")',
+    openai_compatible:
+      'the model name your endpoint serves (e.g. "gpt-4o-mini")',
     ollama_cloud: 'an Ollama cloud model (e.g. "qwen3-coder:480b-cloud")',
   }[providerId];
   if (!expectation) return null;

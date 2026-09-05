@@ -17,6 +17,7 @@ import {
   toolPartOutput,
   type ChatToolPart,
 } from "@/client/components/chat/toolParts";
+import { safeSamErrorMessage } from "@/client/features/sam/samErrorFallbacks";
 
 // Audit lifecycle labels: collapse the poller into one human activity
 // ("Running site audit…") with the outcome/progress as a detail suffix,
@@ -29,9 +30,7 @@ function samToolLabel(partType: string): ToolLabel | null {
     const outcome = (part: ChatToolPart): string | null => {
       const output = toolPartOutput(part);
       if (!output || typeof output.state !== "string") return null;
-      const progress = isRecord(output.progress)
-        ? output.progress
-        : undefined;
+      const progress = isRecord(output.progress) ? output.progress : undefined;
       const pages =
         progress &&
         typeof progress.current === "number" &&
@@ -280,11 +279,12 @@ export function SamConversation({
             <p className="text-sm text-error">
               {/* The server normalizes provider failures into one curated,
                   secret-free message (auth / data policy / rate limit / …)
-                  and delivers it as the terminal error body, so surface it
-                  verbatim instead of a generic dead-end. */}
-              {error?.message?.trim()
-                ? error.message
-                : "Something went wrong. Please try again."}
+                  and delivers it as the terminal error body — at the turn
+                  hook AND the stream boundary. safeSamErrorMessage is
+                  defense-in-depth: if a raw provider payload ever reaches
+                  this seam anyway, it degrades to the generic curated
+                  message instead of rendering vendor text. */}
+              {safeSamErrorMessage(error?.message)}
             </p>
           ) : null}
         </div>

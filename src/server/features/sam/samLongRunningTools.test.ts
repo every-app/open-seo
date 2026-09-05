@@ -15,8 +15,7 @@ vi.mock("cloudflare:workers", () => ({ env: {} }));
 // get_audit_status reads are stubbed at the shared MCP handler boundary: the
 // poller must go through it (never raw repositories), so the mock sits exactly
 // where the real integration point is.
-const statusHandler =
-  vi.fn<(...args: unknown[]) => Promise<CallToolResult>>();
+const statusHandler = vi.fn<(...args: unknown[]) => Promise<CallToolResult>>();
 vi.mock("@/server/mcp/tools/site-audit-tools", () => ({
   getAuditStatusTool: { handler: (...a: unknown[]) => statusHandler(...a) },
 }));
@@ -59,6 +58,7 @@ const nullTracker: ToolExecutionTracker = {
   getCached: () => undefined,
   setCached: () => {},
   log: () => {},
+  logInputRejection: () => {},
 };
 
 function makeTool(overrides: Partial<PollConfig> = {}) {
@@ -78,14 +78,14 @@ function makeTool(overrides: Partial<PollConfig> = {}) {
   });
   // The AI SDK's execute union includes AsyncIterable for streaming tools;
   // this tool resolves to a single AuditPollResult object.
-  const run = (args: { auditId?: string } = {}): Promise<AuditPollResult> =>
-    Promise.resolve(
-      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowing the SDK's streaming union for a non-streaming tool
-      (poll.execute as (input: unknown, opts: unknown) => Promise<AuditPollResult>)(
-        args,
-        { toolCallId: "t", messages: [] },
-      ),
-    );
+  const run = (args: { auditId?: string } = {}): Promise<AuditPollResult> => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- narrowing the SDK's streaming union for a non-streaming tool
+    const execute = poll.execute as (
+      input: unknown,
+      opts: unknown,
+    ) => Promise<AuditPollResult>;
+    return execute(args, { toolCallId: "t", messages: [] });
+  };
   return { run, events };
 }
 
@@ -113,7 +113,11 @@ describe("normalizeAuditStatus", () => {
       progress: { current: 0, total: 50 },
       resultReady: false,
     });
-    expect(normalizeAuditStatus(statusRow({ status: "completed", pagesCrawled: 50 }))).toEqual({
+    expect(
+      normalizeAuditStatus(
+        statusRow({ status: "completed", pagesCrawled: 50 }),
+      ),
+    ).toEqual({
       state: "completed",
       progress: { current: 50, total: 50 },
       resultReady: true,
@@ -247,9 +251,7 @@ describe("poll_site_audit", () => {
 
   it("stops at the wall-clock timeout even when attempts remain", async () => {
     queueStatuses(
-      Array.from({ length: 20 }, (_, i) =>
-        statusRow({ pagesCrawled: i * 5 }),
-      ),
+      Array.from({ length: 20 }, (_, i) => statusRow({ pagesCrawled: i * 5 })),
     );
     const { run } = makeTool({ timeoutMs: 5_000, maxAttempts: 50 });
     const result = await settle(run(), 30_000);

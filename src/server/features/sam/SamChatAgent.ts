@@ -3,6 +3,7 @@ import type {
   ChatResponseResult,
   Session,
   StepContext,
+  StreamableResult,
   TurnConfig,
   TurnContext,
 } from "@cloudflare/think";
@@ -21,8 +22,10 @@ import {
   deriveTitle,
   firstUserText,
 } from "@/server/features/sam/samSessionTitle";
+import { sanitizeTranscript } from "@/server/features/sam/samTranscript";
 import { createToolExecutionTracker } from "@/server/features/sam/samToolExecution";
 import { createPollCoordinator } from "@/server/features/sam/samLongRunningTools";
+import { samStreamErrorGuard } from "@/server/features/sam/samStreamErrorGuard";
 import {
   DEFAULT_MAX_STEPS,
   DEFAULT_MAX_TOOL_CALLS,
@@ -151,6 +154,35 @@ export class SamChatAgent extends Think {
     return provider.buildModel(apiKey, modelId);
   }
 
+  /**
+   * Stream-boundary error normalization (Phase U1). Think converts an
+   * in-stream provider failure into the error text the client renders and the
+   * DO persists (cf:chat:last-terminal) via `toUIMessageStream({ onError })`,
+   * and that seam bypasses onChatError — a raw OpenRouter 402 payload once
+   * reached the chat UI verbatim (incident 2026-09-01). Wrapping the result
+   * here funnels every in-stream error through normalizeProviderError FIRST,
+   * so only the curated, secret-free message is ever emitted or persisted.
+   * The raw error still reaches onChatError for structured logging.
+   */
+  protected override _transformInferenceResult(
+    result: StreamableResult,
+  ): StreamableResult {
+    return samStreamErrorGuard(
+      { provider: this.turnProviderId, model: this.turnModelId },
+      result,
+      // Tool-input rejections (Phase V) never reach execute(), so the
+      // sam-tool execution lines can't see them — route the structured
+      // rejection log through the same per-conversation tracker.
+      this.toolTracker
+        ? (event) =>
+            this.toolTracker?.logInputRejection({
+              toolName: event.tool,
+              errorClass: event.errorClass,
+            })
+        : undefined,
+    );
+  }
+
   configureSession(session: Session): Session {
     return session
       .withContext("soul", {
@@ -255,7 +287,8 @@ export class SamChatAgent extends Think {
 
   async beforeTurn(_ctx: TurnContext): Promise<TurnConfig> {
     this.turnCostUsd = 0;
-    this.turnMonthlyRemaining = null;    return withPgClient(async (): Promise<TurnConfig> => {
+    this.turnMonthlyRemaining = null;
+    return withPgClient(async (): Promise<TurnConfig> => {
       const ctx = await this.loadSamContext();
       if (!ctx) {
         return this.refusalTurn(
@@ -327,13 +360,18 @@ export class SamChatAgent extends Think {
       );
 
       const turn: TurnConfig = {
-        tools: buildSamMcpTools(authContext, {
-          id: ctx.project.id,
-          domain: ctx.project.domain,
-        }, this.toolTracker, {
-          poll: parsePollConfig((key) => getEnvValueSync(this.env, key)),
-          pollCoordinator: this.auditPolls,
-        }),
+        tools: buildSamMcpTools(
+          authContext,
+          {
+            id: ctx.project.id,
+            domain: ctx.project.domain,
+          },
+          this.toolTracker,
+          {
+            poll: parsePollConfig((key) => getEnvValueSync(this.env, key)),
+            pollCoordinator: this.auditPolls,
+          },
+        ),
         // SAM is meant to run complex multi-step work in one turn (site-read
         // intake plus a full research chain, multi-competitor sweeps), so give
         // it generous headroom — cost is bounded by per-step metering, the
@@ -442,6 +480,12 @@ export class SamChatAgent extends Think {
    * The normalized explanation is also persisted as an assistant note (when
    * the turn's user message was already persisted), so the transcript itself
    * carries the reason even though the react hook only surfaces status=error.
+   * The note goes through `addMessages`, NOT `saveMessages`: saveMessages
+   * enqueues a whole new model turn (an unwanted — and billed — continuation
+   * right after a failure), and its turn admission throws when called from
+   * inside an active turn (the context-overflow path fires this hook from in
+   * there), so the note was silently dropped. addMessages appends inert
+   * transcript data without a turn and is safe from inside a turn.
    */
   onChatError(
     error: unknown,
@@ -462,7 +506,7 @@ export class SamChatAgent extends Think {
       }),
     );
     if (ctx?.messagesPersisted) {
-      void this.saveMessages([
+      void this.addMessages([
         {
           id: crypto.randomUUID(),
           role: "assistant",
@@ -476,37 +520,24 @@ export class SamChatAgent extends Think {
   }
 
   /**
-   * Sanitize the transcript at the public read boundary. A provider failure
-   * mid-turn can persist null/undefined/malformed part entries; the
-   * agents/chat client loops over `message.parts` without guarding (e.g.
-   * `collapseHydratedReplayTextParts`), and a malformed entry crashes the
-   * browser with "Cannot read properties of undefined (reading 'type')".
-   * getMessages() backs both the /get-messages HTTP endpoint and the WS
-   * replay path, so dropping invalid entries here — plus guaranteeing every
-   * message has a parts array — keeps the client renderer and Think's replay
-   * loop safe without patching node_modules.
+   * Sanitize the transcript at the ONE boundary every read flows through.
+   * Think serves both client-facing transcript paths straight off the
+   * `messages` getter and never calls `getMessages()`: the /get-messages
+   * HTTP endpoint (its onRequest wrapper short-circuits with
+   * `Response.json(this.messages)`) and the WebSocket reconnect replay
+   * (`_buildIdleConnectMessages`). A provider failure mid-turn can persist
+   * null/undefined/malformed part entries, and the agents/chat client loops
+   * over `message.parts` unguarded (e.g. `collapseHydratedReplayTextParts`),
+   * so one bad entry crashes the browser with "Cannot read properties of
+   * undefined (reading 'type')". Overriding the getter — instead of
+   * `getMessages()`, which nothing on those paths invokes — covers the HTTP
+   * endpoint, the WS replay, `super.getMessages()` (which slices this
+   * getter), and server-side readers like title derivation. The sanitizer is
+   * copy-on-write: clean transcripts pass through by reference, so Think's
+   * constant internal reads pay one check pass and zero allocations.
    */
-  override async getMessages(): Promise<UIMessage[]> {
-    const messages = await super.getMessages();
-    return (Array.isArray(messages) ? messages : []).flatMap(
-      (message): UIMessage[] => {
-        if (
-          typeof message !== "object" ||
-          message === null ||
-          typeof message.role !== "string"
-        ) {
-          return [];
-        }
-        const parts = Array.isArray(message.parts) ? message.parts : [];
-        const cleanParts = parts.filter(
-          (part): part is UIMessage["parts"][number] =>
-            typeof part === "object" &&
-            part !== null &&
-            typeof (part as { type?: unknown }).type === "string",
-        );
-        return [{ ...message, parts: cleanParts }];
-      },
-    );
+  override get messages(): UIMessage[] {
+    return sanitizeTranscript(super.messages);
   }
 
   // POST .../rewind {messageId}: delete that message and everything after it on

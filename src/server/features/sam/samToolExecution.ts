@@ -16,6 +16,8 @@ export type ToolExecutionTracker = {
   setCached(toolName: string, args: unknown, output: unknown): void;
   /** Emits a structured log line for one tool execution. */
   log(event: ToolExecutionEvent): void;
+  /** Emits a structured log line for a request rejected before execute() ran. */
+  logInputRejection(event: ToolInputRejectionEvent): void;
 };
 
 export type ToolExecutionEvent = {
@@ -26,6 +28,14 @@ export type ToolExecutionEvent = {
   reused: boolean;
   status: "ok" | "error";
   durationMs: number;
+};
+
+/** A tool request rejected before execute() ran (Phase V observability). */
+export type ToolInputRejectionEvent = {
+  /** Tool the model tried to call, when the SDK reported it. */
+  toolName: string | null;
+  /** SDK error class name ("AI_InvalidToolInputError", …) or code constant. */
+  errorClass: string;
 };
 
 const DEFAULT_CACHE_CAP = 64;
@@ -79,6 +89,23 @@ export function createToolExecutionTracker(input: {
         }),
       );
     },
+    logInputRejection(event) {
+      // Tool-input rejections never reach the execute() path the sam-tool
+      // lines cover, so they get their own event type — same field
+      // vocabulary, no raw arguments (they may carry sensitive content).
+      // No execution happens, so there is no duration to report.
+      console.log(
+        JSON.stringify({
+          type: "sam-tool-input-error",
+          sessionId: input.sessionId,
+          projectId: input.projectId,
+          tool: event.toolName,
+          status: "error",
+          errorClass: event.errorClass,
+          durationMs: 0,
+        }),
+      );
+    },
   };
 }
 
@@ -88,4 +115,5 @@ export const nullToolExecutionTracker: ToolExecutionTracker = {
   getCached: () => undefined,
   setCached: () => {},
   log: () => {},
+  logInputRejection: () => {},
 };
