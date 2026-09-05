@@ -150,8 +150,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
     useState<SearchPerformanceAdvancedFilterValues>(
       EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
     );
-  const activeAdvancedFilterCount =
-    countActiveAdvancedSearchPerformanceFilters(appliedAdvancedFilters);
+  const activeAdvancedFilterCount = countActiveAdvancedSearchPerformanceFilters(
+    appliedAdvancedFilters,
+  );
 
   // Any change to the query set (tab, filters, page size) restarts at page 1.
   useEffect(() => {
@@ -164,20 +165,10 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
     country,
     appliedAdvancedFilters,
   );
-  const compiledAdvancedFilters = compileAdvancedSearchPerformanceFilters(
-    appliedAdvancedFilters,
-  );
   const metricFiltersActive = hasActiveMetricFilters(filterInput);
 
   const reportQuery = useQuery({
-    queryKey: [
-      "searchPerformance",
-      projectId,
-      range,
-      device,
-      country,
-      compiledAdvancedFilters,
-    ],
+    queryKey: ["searchPerformance", projectId, filterInput],
     queryFn: () =>
       getSearchPerformanceReport({ data: { projectId, ...filterInput } }),
     placeholderData: keepPreviousData,
@@ -354,9 +345,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                 <SearchPerformanceAdvancedFilters
                   values={advancedFilterDraft}
                   onChange={setAdvancedFilterDraft}
-                  onApply={() =>
-                    setAppliedAdvancedFilters(advancedFilterDraft)
-                  }
+                  onApply={() => setAppliedAdvancedFilters(advancedFilterDraft)}
                   onClear={() => {
                     setAdvancedFilterDraft(
                       EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
