@@ -60,6 +60,7 @@ export function mapDataforseoPathToCreditFeature(
       const endpoint = normalizedPath[3] ?? "";
       if (
         endpoint.startsWith("domain_") ||
+        endpoint === "historical_rank_overview" ||
         endpoint === "ranked_keywords" ||
         endpoint === "relevant_pages"
       ) {

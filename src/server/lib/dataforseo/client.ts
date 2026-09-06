@@ -28,6 +28,7 @@ import {
   fetchReferringDomains,
 } from "@/server/lib/dataforseo/backlinks";
 import {
+  fetchDomainHistoricalRankOverview,
   fetchDomainRankOverview,
   fetchKeywordIdeas,
   fetchKeywordOverview,
@@ -114,6 +115,11 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       adsSearchVolume: meter(customer, fetchAdsSearchVolume),
     },
     domain: {
+      historicalRankOverview: meter(
+        customer,
+        fetchDomainHistoricalRankOverview,
+        "domain_overview",
+      ),
       rankOverview: meter(customer, fetchDomainRankOverview),
       rankedKeywords: meter(customer, fetchRankedKeywords),
       relevantPages: meter(customer, fetchRelevantPages),

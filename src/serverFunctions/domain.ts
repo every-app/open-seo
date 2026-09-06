@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   domainOverviewSchema,
+  domainHistoryRequestSchema,
   domainKeywordSuggestionsSchema,
   domainKeywordsPageRequestSchema,
   domainPagesPageRequestSchema,
@@ -33,6 +34,20 @@ export const getDomainOverview = createServerFn({ method: "POST" })
 
     return DomainService.getOverview(input, context);
   });
+
+export const getDomainHistory = createServerFn({ method: "POST" })
+  .middleware(requireProjectContext)
+  .validator(domainHistoryRequestSchema)
+  .handler(async ({ data, context }) =>
+    DomainService.getHistoricalOverview(
+      {
+        ...data,
+        ...resolveLabsMarket(data, context.project),
+        projectId: context.projectId,
+      },
+      context,
+    ),
+  );
 
 export const getDomainKeywordSuggestions = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)

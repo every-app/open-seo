@@ -107,6 +107,11 @@ const toolCategories: ToolCategory[] = [
         description: "Summarize a domain's organic footprint.",
       },
       {
+        name: "get_domain_history",
+        title: "Compare domain history",
+        description: "Compare monthly traffic estimates across domains.",
+      },
+      {
         name: "get_domain_keyword_suggestions",
         title: "Get domain keywords",
         description: "Find keywords a domain already ranks for.",

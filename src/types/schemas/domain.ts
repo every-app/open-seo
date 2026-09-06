@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { isValidDomainHost, researchScopeSchema } from "@/shared/researchScope";
+import {
+  DOMAIN_HISTORY_MAX_DOMAINS,
+  DOMAIN_HISTORY_MIN_DATE,
+} from "@/shared/domain-history";
 
 /**
  * Extract and validate a bare hostname from user input that may be a full URL.
@@ -49,6 +53,43 @@ export const domainOverviewSchema = z.object({
   locationCode: z.number().int().positive().optional(),
   languageCode: z.string().min(2).max(8).optional(),
 });
+
+const isoDateSchema = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD")
+  .refine((value) => !Number.isNaN(Date.parse(`${value}T00:00:00Z`)), {
+    message: "Enter a valid date",
+  });
+
+export const domainHistoryRequestSchema = z
+  .object({
+    projectId: z.string().uuid(),
+    domains: z
+      .array(domainField)
+      .min(1)
+      .max(DOMAIN_HISTORY_MAX_DOMAINS)
+      .transform((domains) => [...new Set(domains)]),
+    dateFrom: isoDateSchema,
+    dateTo: isoDateSchema,
+    locationCode: z.number().int().positive().optional(),
+    languageCode: z.string().min(2).max(8).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.dateFrom < DOMAIN_HISTORY_MIN_DATE) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["dateFrom"],
+        message: `Historical data starts at ${DOMAIN_HISTORY_MIN_DATE}`,
+      });
+    }
+    if (value.dateFrom > value.dateTo) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["dateFrom"],
+        message: "Start date must be before end date",
+      });
+    }
+  });
 
 /* ------------------------------------------------------------------ */
 /*  URL search params schema for /p/$projectId/domain                  */

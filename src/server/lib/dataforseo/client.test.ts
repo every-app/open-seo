@@ -60,6 +60,7 @@ vi.mock("@/server/lib/dataforseo/labs", () => ({
   fetchKeywordSuggestions: vi.fn(),
   fetchKeywordIdeas: vi.fn(),
   fetchDomainRankOverview: vi.fn(),
+  fetchDomainHistoricalRankOverview: vi.fn(),
   fetchRankedKeywords: vi.fn(),
   fetchRelevantPages: vi.fn(),
   fetchKeywordOverview: vi.fn(),
@@ -399,6 +400,15 @@ describe("mapDataforseoPathToCreditFeature", () => {
         "dataforseo_labs",
         "google",
         "domain_rank_overview",
+        "live",
+      ]),
+    ).toBe("domain_overview");
+    expect(
+      mapDataforseoPathToCreditFeature([
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "historical_rank_overview",
         "live",
       ]),
     ).toBe("domain_overview");

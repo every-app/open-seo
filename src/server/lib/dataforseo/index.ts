@@ -36,6 +36,7 @@ export {
 
 export type {
   LabsKeywordDataItem,
+  DomainHistoricalRankItem,
   DomainRankedKeywordItem,
   RelevantPagesItem,
 } from "@/server/lib/dataforseo/labs";

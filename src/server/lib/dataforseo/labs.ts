@@ -64,6 +64,11 @@ type DomainMetricsItem = {
   [key: string]: unknown;
 };
 
+export interface DomainHistoricalRankItem extends DomainMetricsItem {
+  year?: number | null;
+  month?: number | null;
+}
+
 export interface RelevantPagesItem {
   page_address?: string | null;
   metrics?: LabsMetricsBlock | null;
@@ -247,6 +252,33 @@ export async function fetchDomainRankOverview(input: {
       },
     ],
   );
+  const task = assertOk(response);
+  return {
+    data: task.result?.[0]?.items ?? [],
+    billing: buildTaskBilling(task),
+  };
+}
+
+export async function fetchDomainHistoricalRankOverview(input: {
+  target: string;
+  locationCode: number;
+  languageCode: string;
+  dateFrom: string;
+  dateTo: string;
+}): Promise<DataforseoApiResponse<DomainHistoricalRankItem[]>> {
+  const response = await dataforseoPost<
+    DataforseoItemsTask<DomainHistoricalRankItem>
+  >("/v3/dataforseo_labs/google/historical_rank_overview/live", [
+    {
+      target: input.target,
+      location_code: input.locationCode,
+      language_code: input.languageCode,
+      date_from: input.dateFrom,
+      date_to: input.dateTo,
+      correlate: true,
+      include_clickstream_data: false,
+    },
+  ]);
   const task = assertOk(response);
   return {
     data: task.result?.[0]?.items ?? [],

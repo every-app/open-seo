@@ -19,6 +19,7 @@ import {
 } from "@/client/features/domain/domainSearchValidation";
 import { useDomainOverviewQuery } from "@/client/features/domain/hooks/useDomainOverviewQuery";
 import { DomainOverviewLoadingState } from "@/client/features/domain/components/DomainOverviewLoadingState";
+import { DomainTrafficHistory } from "@/client/features/domain/components/DomainTrafficHistory";
 import { DomainHistorySection } from "@/client/features/domain/components/DomainHistorySection";
 import { DomainSearchCard } from "@/client/features/domain/components/DomainSearchCard";
 import { KeywordsTab } from "@/client/features/domain/components/KeywordsTab";
@@ -620,6 +621,13 @@ export function DomainOverviewPage({
                 hint={overviewMetricsHint}
               />
             </div>
+
+            <DomainTrafficHistory
+              key={`${state.overview.domain}:${routeState.locationCode}`}
+              projectId={projectId}
+              domain={state.overview.domain}
+              locationCode={routeState.sentLocationCode}
+            />
 
             {!state.overview.hasData ? (
               <div className="alert alert-info">
