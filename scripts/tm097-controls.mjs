@@ -22,7 +22,6 @@ for (const theme of ["light", "dark"]) {
     waitUntil: "networkidle",
     timeout: 120000,
   });
-  const d = p.locator("dialog[open]");
   const state = await p.evaluate(() => {
     const r = document.documentElement;
     return {

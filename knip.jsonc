@@ -34,8 +34,6 @@
     "!badseo/**",
     // Generated release context is checked by design-client, not application code.
     "!.context/design-system/**",
-    // Review capture helpers are standalone evidence tooling.
-    "!docs/reviews/**",
   ],
   "ignore": ["drizzle-prod.config.ts"],
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers

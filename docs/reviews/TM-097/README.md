@@ -29,7 +29,7 @@ The visible changes are family blue actions, canonical neutral planes/text/borde
 
 Dashboard without the setup dialog: [light](dashboard-light.png), [dark](dashboard-dark.png).
 
-Agent-browser refused connection at 127.0.0.1:9224. The disclosed fallback was Chrome/Playwright, not deployed acceptance. Capture helpers are included; run from the repository root with the local Vite app on port 4334. PLAYWRIGHT_MODULE can select a local Playwright installation.
+Agent-browser refused connection at 127.0.0.1:9224. The disclosed fallback was Chrome/Playwright, not deployed acceptance. Capture helpers are scripts/tm097-capture.mjs and scripts/tm097-controls.mjs; run from the repository root with the local Vite app on port 4334. PLAYWRIGHT_MODULE can select a local Playwright installation.
 
 ## Verification and limitations
 

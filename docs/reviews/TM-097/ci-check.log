@@ -5,7 +5,7 @@
 Checking formatting...
 All matched files use Prettier code style!
 Found 0 warnings and 0 errors.
-Finished in 4.9s on 836 files with 184 rules using 32 threads.
+Finished in 4.0s on 836 files with 184 rules using 32 threads.
 
 > open-seo@0.1.7 sync-plugin-skills /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
 > node scripts/sync-plugin-skills.mjs

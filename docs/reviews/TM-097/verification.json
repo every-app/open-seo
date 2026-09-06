@@ -14,7 +14,9 @@
     "src/client/lib/theme.test.ts": "061918756ce46d5c924d2b65eb4ee4ca9f488f5f857be9b7175ea1368fa00d07",
     "src/routes/__root.tsx": "d9710c7fa846f9ea0614e8f2a7b9bf8933871f4f89cd559f1a5ae90d8c8028da",
     ".github/workflows/ci.yml": "a0ac354bff6423aea50a4ba9ee5bb8fe085b2f166e196752c3f22c1bcab18a74",
-    "knip.jsonc": "a8fcbacea023ee25bdeffd5dbe5145757a83b4b6f1487c2c1b7d37764a3d63ed"
+    "knip.jsonc": "4b096f105297580b44ac6a19fad23ff03e4f10824f1a5e7d5da5235e90ffa4f2",
+    "scripts/tm097-capture.mjs": "dc878a1c7b8fc6c47100662a653b5890585d7f3c574b0de48e82ada8dfd63a20",
+    "scripts/tm097-controls.mjs": "959e6c9ad4488e9d21ed14207830166808fc1b9f8492c86267b85326fa18f146"
   },
   "checks": {
     "existingTests": 1165,
@@ -34,7 +36,7 @@
     "provenance": "Original local browser captures of upstream OpenSEO UI; no real customer/provider data"
   },
   "evidenceSha256": {
-    "README.md": "ae26e6754836e1bae1984dc17973558f93b397091607b5e9500d01c9e7f84347",
+    "README.md": "809330b24ac99ddfba206a2354afa675d26179ab94f907c6c86aa8e515470678",
     "after-dark.png": "407590dd4e33e564253f750176d4e40a1dbe7072d0067ac1cd40731f0eb9fcff",
     "after-light.png": "ba215b03a98e82e3df3fd1e6271c4e91ef75b03e04b204acc4dadb6f7026e518",
     "after.json": "01cea56683357db80e671c83938d1f4896239a73ef19611e57be6b2fb71d4c1c",
@@ -42,10 +44,8 @@
     "before-light.png": "4ed71fffa4a5c5e01ebcc7f587437800e36ecd11c9aabc70312c9b44facb28ec",
     "before.json": "39ea5a096dd163d8e7ddeb4160f5c3f1ff2de5d67d07a6a7342ba8384bad5483",
     "build.log": "f1df8f6d43e2a600f3deb1985e887f7b040535b3de0428e4c5975fe4e8d83e60",
-    "capture.mjs": "dc878a1c7b8fc6c47100662a653b5890585d7f3c574b0de48e82ada8dfd63a20",
-    "ci-check.log": "46f9e187193113eb2ea7840ccd6aabe0d271af9b3d05e7719f80a98cd1afec37",
+    "ci-check.log": "6a5788b3b21f28c6e695e25378e7df7e015959ae0470af3eaabb77d97541e935",
     "controls.json": "0b70a3abffff722caf114eeaebf8c46a128dbb8a9cb52c794ce4d45fe59047df",
-    "controls.mjs": "d37d9cb9e553dff7d47aa8946abfbdf4a8e013777bf749e7e025b26de88d93dd",
     "dashboard-dark.png": "26bc66e9c3be12bfbee34a504f95b20f2a3795db426d698a9d57539fa5cd64a8",
     "dashboard-light.png": "6a09e27ca9139c8e777170ad904ac2f9921dd47e9763e285c0112576f30e2910",
     "offline-check.log": "69615f04b94dc90063b4193bb7181b8d29733ac761abc216677aea648bcba85f",
