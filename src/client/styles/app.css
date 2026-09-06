@@ -1,7 +1,11 @@
 @import "tailwindcss";
+@import "@bytedesk/design-tokens/bytedesk.css";
+@import "@bytedesk/design-tokens/fonts.local.css";
 
 @theme {
   --container-8xl: 88rem;
+  --font-sans: var(--bd-font-sans);
+  --font-mono: var(--bd-font-sans);
 }
 
 :root {
@@ -25,16 +29,16 @@
   default: true;
   prefersdark: false;
   color-scheme: light;
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(97% 0 0);
-  --color-base-300: oklch(92% 0 0);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(50% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
+  --color-base-100: var(--bd-bg-surface);
+  --color-base-200: var(--bd-bg-base);
+  --color-base-300: var(--bd-border-default);
+  --color-base-content: var(--bd-text-primary);
+  --color-primary: var(--bd-interactive-blue);
+  --color-primary-content: var(--bd-text-on-interactive);
   --color-secondary: oklch(55% 0.15 145);
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(50% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
+  --color-accent: var(--bd-interactive-blue);
+  --color-accent-content: var(--bd-text-on-interactive);
   --color-neutral: oklch(25% 0 0);
   --color-neutral-content: oklch(100% 0 0);
   --color-info: oklch(70% 0.15 230);
@@ -60,16 +64,16 @@
   name: "openseo-dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(18% 0 0);
-  --color-base-200: oklch(12% 0 0);
-  --color-base-300: oklch(27% 0 0);
-  --color-base-content: oklch(92% 0 0);
-  --color-primary: oklch(66% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
+  --color-base-100: var(--bd-bg-surface);
+  --color-base-200: var(--bd-bg-base);
+  --color-base-300: var(--bd-border-default);
+  --color-base-content: var(--bd-text-primary);
+  --color-primary: var(--bd-interactive-blue);
+  --color-primary-content: var(--bd-text-on-interactive);
   --color-secondary: oklch(60% 0.15 145);
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(66% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
+  --color-accent: var(--bd-interactive-blue);
+  --color-accent-content: var(--bd-text-on-interactive);
   --color-neutral: oklch(85% 0 0);
   --color-neutral-content: oklch(20% 0 0);
   --color-info: oklch(70% 0.15 230);

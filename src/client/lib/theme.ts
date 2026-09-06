@@ -55,9 +55,11 @@ function applyThemePreference(themePreference: ThemePreference) {
     return;
   }
 
+  const themeName = resolveThemeName(themePreference);
+  document.documentElement.setAttribute("data-theme", themeName);
   document.documentElement.setAttribute(
-    "data-theme",
-    resolveThemeName(themePreference),
+    "data-bd-theme",
+    themeName === DARK_THEME_NAME ? "dark" : "light",
   );
 }
 
@@ -127,7 +129,9 @@ export const themePreferenceInitScript = `(() => {
     else if (p === "dark") t = ${JSON.stringify(DARK_THEME_NAME)};
     else t = window.matchMedia("(prefers-color-scheme: dark)").matches ? ${JSON.stringify(DARK_THEME_NAME)} : ${JSON.stringify(LIGHT_THEME_NAME)};
     document.documentElement.setAttribute("data-theme", t);
+    document.documentElement.setAttribute("data-bd-theme", t === ${JSON.stringify(DARK_THEME_NAME)} ? "dark" : "light");
   } catch {
     document.documentElement.setAttribute("data-theme", ${JSON.stringify(LIGHT_THEME_NAME)});
+    document.documentElement.setAttribute("data-bd-theme", "light");
   }
 })();`;

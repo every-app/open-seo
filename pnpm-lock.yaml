@@ -30,6 +30,9 @@ importers:
       '@better-auth/api-key':
         specifier: 1.6.22
         version: 1.6.22(8d706e213363f271470d19db6adbe48a)
+      '@bytedesk/design-tokens':
+        specifier: 2.2.1
+        version: 2.2.1
       '@cloudflare/ai-chat':
         specifier: ^0.10.1
         version: 0.10.1(@ai-sdk/react@3.0.211(react@19.2.4)(zod@4.3.6))(agents@0.20.1(@ai-sdk/react@3.0.211(react@19.2.4)(zod@4.3.6))(@babel/core@7.29.7)(@babel/runtime@7.29.2)(@cloudflare/codemode@0.5.1(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(zod@4.3.6))(ai@6.0.199(zod@4.3.6))(zod@4.3.6))(@cloudflare/workers-types@4.20260702.1)(@modelcontextprotocol/client@2.0.0)(@modelcontextprotocol/sdk@1.30.0(@cfworker/json-schema@4.1.1)(zod@4.3.6))(@modelcontextprotocol/server@2.0.0)(ai@6.0.199(zod@4.3.6))(chat@4.32.0(ai@6.0.199(zod@4.3.6))(zod@4.3.6))(just-bash@3.0.2)(react@19.2.4)(rolldown@1.0.1)(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(zod@4.3.6))(ai@6.0.199(zod@4.3.6))(react@19.2.4)(zod@4.3.6)
@@ -157,6 +160,9 @@ importers:
         specifier: ^4.1.12
         version: 4.3.6
     devDependencies:
+      '@bytedesk/design-client':
+        specifier: 2.2.1
+        version: 2.2.1
       '@cloudflare/vite-plugin':
         specifier: ^1.42.3
         version: 1.42.3(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0))(workerd@1.20260625.1)(wrangler@4.105.0(@cloudflare/workers-types@4.20260702.1))
@@ -659,6 +665,14 @@ packages:
 
   '@borewit/text-codec@0.2.2':
     resolution: {integrity: sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==}
+
+  '@bytedesk/design-client@2.2.1':
+    resolution: {integrity: sha512-6ozBPC2+4/G1C0D1WgiQCzHV09t04uds7HNQZ4pDna1W8bSJvFqj3QuN1wPlpUwO+dLPp45C2/VPaqrfbvXFGQ==}
+    engines: {node: '>=20'}
+    hasBin: true
+
+  '@bytedesk/design-tokens@2.2.1':
+    resolution: {integrity: sha512-aNv8tsJaUNNs7lpTSmR2YFJbJUI/HtUtU/c1HaKsMO7kBEQrdHIrJeMhaC8FC/RH93W1nw5TaJ55+21xHWhd+A==}
 
   '@cfworker/json-schema@4.1.1':
     resolution: {integrity: sha512-gAmrUZSGtKc3AiBL71iNWxDsyUC5uMaKKGdvzYsBoTW/xi42JQHl7eKV2OYzCUqvc+D2RCcf7EXY2iCyFIk6og==}
@@ -6646,6 +6660,10 @@ snapshots:
   '@better-fetch/fetch@1.3.1': {}
 
   '@borewit/text-codec@0.2.2': {}
+
+  '@bytedesk/design-client@2.2.1': {}
+
+  '@bytedesk/design-tokens@2.2.1': {}
 
   '@cfworker/json-schema@4.1.1': {}
 

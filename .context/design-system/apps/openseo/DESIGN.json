@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-04T19:50:18Z",
+  "title": "Design System: OpenSEO",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "OpenSEO accent",
+        "canonical": "#19E5AD",
+        "mode": "own",
+        "inherits": null
+      },
+      "interaction-blue": {
+        "role": "primary",
+        "displayName": "Interaction blue",
+        "canonical": "#047BF4",
+        "tonalRamp": [
+          "#071221",
+          "#0E2037",
+          "#193356",
+          "#1F487C",
+          "#255DA5",
+          "#047BF4",
+          "#468CE8",
+          "#71A7EF",
+          "#9CC0F1",
+          "#C7D9F2"
+        ]
+      },
+      "brand-orange": {
+        "role": "secondary",
+        "displayName": "ByteDesk orange",
+        "canonical": "#EC4E02"
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Dark canvas",
+        "canonical": "#101316"
+      },
+      "canvas-light": {
+        "role": "neutral",
+        "displayName": "Light canvas",
+        "canonical": "#ECEDEF"
+      }
+    },
+    "typographyMeta": {
+      "body": {
+        "displayName": "Body",
+        "purpose": "Every interface surface. IBM Plex Sans."
+      },
+      "machine-text": {
+        "displayName": "Machine text",
+        "purpose": "Terminal emulation, log viewers, code, secret reveal. Nothing else."
+      }
+    },
+    "shadows": [
+      {
+        "name": "shell",
+        "value": "inset 0 1px 0 #FFFFFF0A, 0 24px 56px #05080DB8, 0 8px 20px #07182E66",
+        "purpose": "The one floating command shell."
+      },
+      {
+        "name": "raised",
+        "value": "inset 0 1px 0 #FFFFFF08, 0 8px 20px #05080D66",
+        "purpose": "Raised surfaces that explain real hierarchy."
+      },
+      {
+        "name": "focus-glow",
+        "value": "0 0 0 1px #1B84F3, 0 0 24px #1B84F34D",
+        "purpose": "Focus and selection."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Default easing."
+      },
+      {
+        "name": "duration-fast",
+        "value": "150ms",
+        "purpose": "fast transitions"
+      },
+      {
+        "name": "duration-base",
+        "value": "250ms",
+        "purpose": "base transitions"
+      },
+      {
+        "name": "duration-slow",
+        "value": "400ms",
+        "purpose": "slow transitions"
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-max",
+        "value": "719px"
+      },
+      {
+        "name": "standard-min",
+        "value": "720px"
+      },
+      {
+        "name": "wide-min",
+        "value": "1200px"
+      },
+      {
+        "name": "ultrawide-min",
+        "value": "1600px"
+      }
+    ],
+    "personality": {
+      "density": "comfortable",
+      "motion": "calm",
+      "richness": "balanced",
+      "motif": "two positions compared",
+      "icon": "an anthropomorphic search lens whose iris is a rising analysis graph"
+    },
+    "richness": {
+      "soft": {
+        "canvas": "#1B1E22",
+        "shell": "#22262A"
+      },
+      "balanced": {
+        "canvas": "#101316",
+        "shell": "#171A1D"
+      },
+      "rich": {
+        "canvas": "#090C0F",
+        "shell": "#121518"
+      }
+    }
+  },
+  "components": [],
+  "narrative": {
+    "northStar": "Black Glass + Optical Layering",
+    "overview": "OpenSEO is an agent-ready SEO marketing and analysis platform: keyword research, rank\ntracking, competitors, backlinks, site audits, and AI visibility, hosted or\nself-hosted, with MCP and reusable agent skills. Marketers, builders, and agents use\nit. Register: product. `OpenSEO` is the repository identity; no ByteDesk rename is\napproved.\n\nThe creative north star is the Campaign Observatory: the shell frames clear search\nevidence, comparisons, and agent collaboration without becoming a wall of\ninterchangeable analytics cards. The composition motif is two positions compared.\n\nPersonality: comfortable analytical density, calm crisp motion, balanced richness, and\nan anthropomorphic search lens whose iris is a rising analysis graph as the icon\nmetaphor. Read after the shared foundation; this file names only what OpenSEO adds.",
+    "keyCharacteristics": [
+      "**Material:** near-opaque graphite or pearl glass, a fine perimeter, subtle inner",
+      "**Neutrals:** no neutral in the system is `#000` or `#fff`. Every neutral is tinted",
+      "**Layering:** canvas, then floating shell, then inset region, then raised or overlay",
+      "**Energy:** electric blue carries interaction, focus, selection, agent activity, and",
+      "**Typography:** IBM Plex Sans for every interface surface: chrome, labels, paths,",
+      "**Geometry:** an 8px rhythm, 1px hairlines, restrained 8 to 16px shell radii, and",
+      "**Breathing room:** the family's resting floor is `space.6` (16px) between content and",
+      "**Motion:** short, interruptible, state-led, with one clear focal event. Ambient glow"
+    ],
+    "rules": [],
+    "dos": [],
+    "donts": []
+  }
+}

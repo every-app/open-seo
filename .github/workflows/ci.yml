@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify committed design context (offline, no credentials)
+        run: pnpm run design:check
+
       - name: Run CI checks
         run: pnpm run ci:check
 

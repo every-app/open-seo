@@ -1,0 +1,36 @@
+[
+  {
+    "theme": "light",
+    "url": "http://localhost:4334/p/3bc9ba28-b4f4-48b7-b3d9-4bee24050646",
+    "title": "OpenSEO",
+    "text": "OpenSEO\nDefault\nBrowse\nChat\nOVERVIEW\nDashboard\nRESEARCH\nKeyword Research\nDomain Overview\nBacklinks\nBrand Lookup\nPrompt Explorer\nMY SITE\nGSC Insights\nRank Tracking\nSaved Keywords\nSite Audit\nCONNECT\nAI & MCP\nHelp & Community\nSettings\nDashboard\n\nONBOARDING CHECKLIST\n\n1 / 4\nWhat site are you working on?\n\nSet your project's domain and every card on this page starts working for it — backlinks and audits.\n\nSave\nConnect your AI agent\nI already connected\n\nOpenSEO is designed to give your AI agent the data it needs to build a great SEO strategy and help you execute it.\n\nThis way you aren’t limited on “AI credits”.\n\nYou can work with your agent to figure out what automations make sense for you and it can help you write content too.\n\nSet up in AI & MCP →\nGoogle Search Console\nSetup required\n\nGoogle OAuth client not configured\n\nAdd your Google client ID and secret to this OpenSEO deployment before connecting Search Console.\n\nOpen setup guide\nGoogle Analytics\nSetup required\n\nGoogle OAuth client not configured\n\nAdd your Google client ID and secret to this OpenSEO deployment before connecting Google Analytics.\n\nOpen setup guide\nDismiss\nSite audit\n\nCrawl your site for broken links, missing tags and indexability problems.\n\nRun an audit\nOne quick setup step\n\nAdd your DataForSEO API key to start using OpenSEO.\n\nDismiss\nOpen setup guide",
+    "errors": [],
+    "styles": {
+      "theme": "openseo",
+      "primary": "oklch(50% 0.12 262)",
+      "base": "oklch(97% 0 0)",
+      "bodyBackground": "oklch(0.97 0 0)",
+      "button": "oklab(0.2 0 0 / 0.1)",
+      "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "scrollWidth": 1440,
+      "viewport": 1440
+    }
+  },
+  {
+    "theme": "dark",
+    "url": "http://localhost:4334/p/3bc9ba28-b4f4-48b7-b3d9-4bee24050646",
+    "title": "OpenSEO",
+    "text": "OpenSEO\nDefault\nBrowse\nChat\nOVERVIEW\nDashboard\nRESEARCH\nKeyword Research\nDomain Overview\nBacklinks\nBrand Lookup\nPrompt Explorer\nMY SITE\nGSC Insights\nRank Tracking\nSaved Keywords\nSite Audit\nCONNECT\nAI & MCP\nHelp & Community\nSettings\nDashboard\n\nONBOARDING CHECKLIST\n\n1 / 4\nWhat site are you working on?\n\nSet your project's domain and every card on this page starts working for it — backlinks and audits.\n\nSave\nConnect your AI agent\nI already connected\n\nOpenSEO is designed to give your AI agent the data it needs to build a great SEO strategy and help you execute it.\n\nThis way you aren’t limited on “AI credits”.\n\nYou can work with your agent to figure out what automations make sense for you and it can help you write content too.\n\nSet up in AI & MCP →\nGoogle Search Console\nSetup required\n\nGoogle OAuth client not configured\n\nAdd your Google client ID and secret to this OpenSEO deployment before connecting Search Console.\n\nOpen setup guide\nGoogle Analytics\nSetup required\n\nGoogle OAuth client not configured\n\nAdd your Google client ID and secret to this OpenSEO deployment before connecting Google Analytics.\n\nOpen setup guide\nDismiss\nSite audit\n\nCrawl your site for broken links, missing tags and indexability problems.\n\nRun an audit\nOne quick setup step\n\nAdd your DataForSEO API key to start using OpenSEO.\n\nDismiss\nOpen setup guide",
+    "errors": [],
+    "styles": {
+      "theme": "openseo-dark",
+      "primary": "oklch(66% 0.12 262)",
+      "base": "oklch(12% 0 0)",
+      "bodyBackground": "oklch(0.12 0 0)",
+      "button": "oklab(0.92 0 0 / 0.1)",
+      "font": "ui-sans-serif, system-ui, sans-serif, \"Apple Color Emoji\", \"Segoe UI Emoji\", \"Segoe UI Symbol\", \"Noto Color Emoji\"",
+      "scrollWidth": 1440,
+      "viewport": 1440
+    }
+  }
+]

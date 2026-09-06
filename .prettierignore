@@ -17,3 +17,6 @@ drizzle-pg/
 planning/
 worker-configuration.d.ts
 web/
+
+# Generated release context is hash-locked; preserve exact upstream bytes.
+.context/design-system/

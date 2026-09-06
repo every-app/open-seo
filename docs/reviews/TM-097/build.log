@@ -1,0 +1,317 @@
+
+> open-seo@0.1.7 build /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+> vite build && tsc --noEmit
+
+vite v7.3.6 building client environment for production...
+transforming...
+/*! 🌼 daisyUI 5.5.19 */
+✓ 3682 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/client/.assetsignore                                           0.02 kB
+dist/client/assets/IBMPlexMono-Regular-DY3Wevwf.woff2              39.45 kB
+dist/client/assets/IBMPlexSans-Regular-Ck16W4HR.woff2              60.13 kB
+dist/client/assets/IBMPlexSans-Medium-D0XzwJDm.woff2               63.74 kB
+dist/client/assets/IBMPlexSans-SemiBold-CdUtI8Ga.woff2             64.08 kB
+dist/client/assets/app-DqEd0fAX.css                               209.12 kB │ gzip:  33.47 kB
+dist/client/assets/auth-options-DXDo3pxd.js                         0.04 kB │ gzip:   0.06 kB
+dist/client/assets/route-ByIeYtkU.js                                0.10 kB │ gzip:   0.12 kB
+dist/client/assets/audit-DTyoLLBY.js                                0.10 kB │ gzip:   0.12 kB
+dist/client/assets/chevron-left-CEVxjZP4.js                         0.13 kB │ gzip:   0.15 kB
+dist/client/assets/plus-Sb6ixZy-.js                                 0.15 kB │ gzip:   0.15 kB
+dist/client/assets/arrow-right-DJEvbybD.js                          0.17 kB │ gzip:   0.16 kB
+dist/client/assets/arrow-left-vF4mZhRt.js                           0.17 kB │ gzip:   0.16 kB
+dist/client/assets/search-BfYF4UJI.js                               0.18 kB │ gzip:   0.17 kB
+dist/client/assets/trending-up-re-3Cbqa.js                          0.18 kB │ gzip:   0.17 kB
+dist/client/assets/useProjectMarket-bmrnXg8S.js                     0.19 kB │ gzip:   0.17 kB
+dist/client/assets/user-euFXT-by.js                                 0.20 kB │ gzip:   0.18 kB
+dist/client/assets/info-V4bBaWUv.js                                 0.21 kB │ gzip:   0.18 kB
+dist/client/assets/checkout-url-ChbrnT4C.js                         0.21 kB │ gzip:   0.18 kB
+dist/client/assets/message-square-D0tfkz7d.js                       0.23 kB │ gzip:   0.20 kB
+dist/client/assets/copy-CpDpV04O.js                                 0.24 kB │ gzip:   0.21 kB
+dist/client/assets/globe-jcaLUgEX.js                                0.24 kB │ gzip:   0.19 kB
+dist/client/assets/link-2-BbH9Ndtt.js                               0.24 kB │ gzip:   0.20 kB
+dist/client/assets/_authenticated-Cr46t_9p.js                       0.25 kB │ gzip:   0.21 kB
+dist/client/assets/archive-dWWFMtMk.js                              0.25 kB │ gzip:   0.21 kB
+dist/client/assets/monitor-D7QN2ETE.js                              0.26 kB │ gzip:   0.21 kB
+dist/client/assets/triangle-alert-BjJBKLtK.js                       0.27 kB │ gzip:   0.22 kB
+dist/client/assets/pencil-D9rF5lzR.js                               0.28 kB │ gzip:   0.23 kB
+dist/client/assets/file-down-CPCuTZuE.js                            0.30 kB │ gzip:   0.22 kB
+dist/client/assets/SafeExternalLink-BMdd47q4.js                     0.32 kB │ gzip:   0.24 kB
+dist/client/assets/refresh-cw-P9CCN9xC.js                           0.32 kB │ gzip:   0.23 kB
+dist/client/assets/save-BFdOIeRm.js                                 0.33 kB │ gzip:   0.23 kB
+dist/client/assets/active-project-y0X1H3tZ.js                       0.34 kB │ gzip:   0.19 kB
+dist/client/assets/_auth-D6X6s6nE.js                                0.35 kB │ gzip:   0.27 kB
+dist/client/assets/sheet-B3fyAddz.js                                0.37 kB │ gzip:   0.23 kB
+dist/client/assets/DifficultyBadge-BHI0oECV.js                      0.42 kB │ gzip:   0.25 kB
+dist/client/assets/route-state-DAbX3gBz.js                          0.43 kB │ gzip:   0.25 kB
+dist/client/assets/rank-tracking-Dgpik2sL.js                        0.47 kB │ gzip:   0.29 kB
+dist/client/assets/auth-error-ixAnWFuk.js                           0.47 kB │ gzip:   0.34 kB
+dist/client/assets/settings-QmbzZPw_.js                             0.49 kB │ gzip:   0.26 kB
+dist/client/assets/sparkles-BXNLOEmu.js                             0.50 kB │ gzip:   0.29 kB
+dist/client/assets/useHostedAuthRouteGuard-Do1dGCfP.js              0.51 kB │ gzip:   0.35 kB
+dist/client/assets/domain-BQlDOnqY.js                               0.56 kB │ gzip:   0.33 kB
+dist/client/assets/samQueries-Ccf9oq1O.js                           0.60 kB │ gzip:   0.40 kB
+dist/client/assets/sun-J9juqLWT.js                                  0.64 kB │ gzip:   0.35 kB
+dist/client/assets/organizationQueries-Cx1nRmbM.js                  0.74 kB │ gzip:   0.47 kB
+dist/client/assets/settings-CxHFCmHq.js                             0.82 kB │ gzip:   0.46 kB
+dist/client/assets/ProjectMarketFields-BGZ4xTtK.js                  0.87 kB │ gzip:   0.45 kB
+dist/client/assets/googleAuthErrorCopy-D7cKMg7W.js                  0.92 kB │ gzip:   0.50 kB
+dist/client/assets/integrations-eJ9uIQfq.js                         0.92 kB │ gzip:   0.47 kB
+dist/client/assets/route-C2wFd7MP.js                                1.04 kB │ gzip:   0.58 kB
+dist/client/assets/url-BRwK-vy1.js                                  1.04 kB │ gzip:   0.59 kB
+dist/client/assets/OnboardingAccountMenu-LW7wDjSt.js                1.07 kB │ gzip:   0.56 kB
+dist/client/assets/ThemePreferenceMenuItems-qIGDIeqa.js             1.13 kB │ gzip:   0.61 kB
+dist/client/assets/projects-CwsK2Rea.js                             1.16 kB │ gzip:   0.56 kB
+dist/client/assets/keywords-CBIC55sU.js                             1.28 kB │ gzip:   0.59 kB
+dist/client/assets/settings-B97iNivJ.js                             1.41 kB │ gzip:   0.69 kB
+dist/client/assets/json-QFAv15lN.js                                 1.44 kB │ gzip:   0.79 kB
+dist/client/assets/keywordControllerActions-BKN2Mr8h.js             1.63 kB │ gzip:   0.87 kB
+dist/client/assets/index-DMG-aQVj.js                                1.71 kB │ gzip:   0.75 kB
+dist/client/assets/TablePagination-D0HGfaA8.js                      1.93 kB │ gzip:   0.78 kB
+dist/client/assets/ResearchScopeSelect-DvrYf1QM.js                  2.01 kB │ gzip:   0.98 kB
+dist/client/assets/IntentBadge-DfNLGPvy.js                          2.19 kB │ gzip:   1.05 kB
+dist/client/assets/searchPerformance-C-1uGEEG.js                    2.34 kB │ gzip:   0.81 kB
+dist/client/assets/forgot-password-C8D8bgiM.js                      2.36 kB │ gzip:   1.14 kB
+dist/client/assets/CreateProjectModal-DP8S3qNm.js                   2.44 kB │ gzip:   1.11 kB
+dist/client/assets/SetupControls-ZgPCrpYC.js                        2.55 kB │ gzip:   1.00 kB
+dist/client/assets/LocationSelect-CfZRhxqU.js                       2.68 kB │ gzip:   1.29 kB
+dist/client/assets/support-Dxcb0Qm8.js                              2.77 kB │ gzip:   1.02 kB
+dist/client/assets/dataforseo-api-key-D8S0EGjS.js                   2.87 kB │ gzip:   1.00 kB
+dist/client/assets/verify-email-DhOfN6rM.js                         2.91 kB │ gzip:   1.33 kB
+dist/client/assets/route-D3BCW7Pe.js                                2.98 kB │ gzip:   1.45 kB
+dist/client/assets/openrouter-api-key-CYUA6NSB.js                   3.16 kB │ gzip:   1.08 kB
+dist/client/assets/projects-D6_8rAfr.js                             3.34 kB │ gzip:   1.32 kB
+dist/client/assets/startGoogleLink-B4EKQsbH.js                      3.36 kB │ gzip:   1.76 kB
+dist/client/assets/_auth.sign-in-B5W9cNfN.js                        3.39 kB │ gzip:   1.35 kB
+dist/client/assets/_authenticated.oauth-consent-yOPBn-oP.js         3.46 kB │ gzip:   1.50 kB
+dist/client/assets/accept-invitation._id-BtUstGTv.js                3.84 kB │ gzip:   1.28 kB
+dist/client/assets/reset-password-C8Mks4yp.js                       3.85 kB │ gzip:   1.46 kB
+dist/client/assets/index-CSYyvZH3.js                                4.20 kB │ gzip:   1.56 kB
+dist/client/assets/SitePicker-CgK42Cov.js                           4.32 kB │ gzip:   1.71 kB
+dist/client/assets/DomainFilterPanel-DdYJ18jE.js                    5.01 kB │ gzip:   1.95 kB
+dist/client/assets/useTimestampedSearchHistory-DYOdLcXN.js          5.24 kB │ gzip:   2.22 kB
+dist/client/assets/index-COW0sHTA.js                                6.23 kB │ gzip:   2.22 kB
+dist/client/assets/_auth.sign-up-DxHqrZxT.js                        6.28 kB │ gzip:   2.19 kB
+dist/client/assets/_authenticated.subscribe-qdZxkotN.js             6.78 kB │ gzip:   2.68 kB
+dist/client/assets/_authenticated.onboarding.chat-Bam5YvPq.js       6.93 kB │ gzip:   2.97 kB
+dist/client/assets/organization-DVDGTyht.js                         7.08 kB │ gzip:   2.56 kB
+dist/client/assets/index-D8XHDVQF.js                                7.75 kB │ gzip:   2.64 kB
+dist/client/assets/GoogleAnalyticsConnectionCard-BudrLrnr.js        8.75 kB │ gzip:   2.75 kB
+dist/client/assets/sam-CQTw4qT3.js                                  8.86 kB │ gzip:   3.64 kB
+dist/client/assets/SearchConsoleConnectionCard-CpEqug1L.js          9.93 kB │ gzip:   4.03 kB
+dist/client/assets/LineChart-DeWxvbRz.js                            9.98 kB │ gzip:   4.02 kB
+dist/client/assets/useSearchTabNavigation-BE21HYZN.js              10.16 kB │ gzip:   3.96 kB
+dist/client/assets/_authenticated.onboarding.index-C4CHi7LZ.js     10.27 kB │ gzip:   3.83 kB
+dist/client/assets/ErrorBarContext-CQH-Pro4.js                     11.05 kB │ gzip:   3.46 kB
+dist/client/assets/search-performance-xIlWpTLi.js                  12.58 kB │ gzip:   4.37 kB
+dist/client/assets/_resultId-CkS38yzg.js                           16.05 kB │ gzip:   5.07 kB
+dist/client/assets/context-DiVLwcQX.js                             16.68 kB │ gzip:   4.91 kB
+dist/client/assets/prompt-explorer-mKCsr6jY.js                     16.70 kB │ gzip:   5.41 kB
+dist/client/assets/ai-DPh0zgs3.js                                  19.08 kB │ gzip:   6.39 kB
+dist/client/assets/index-BQgGe03N.js                               19.83 kB │ gzip:   6.60 kB
+dist/client/assets/useOnboardingRedirect-Dx00Wsmw.js               25.23 kB │ gzip:   8.45 kB
+dist/client/assets/billing-DPNDQ7iH.js                             28.39 kB │ gzip:   9.83 kB
+dist/client/assets/brand-lookup-B0HOJGxy.js                        34.85 kB │ gzip:  10.55 kB
+dist/client/assets/RankTrackingConfigModal-9vhLm-SP.js             34.99 kB │ gzip:  10.63 kB
+dist/client/assets/saved-ylfg_V6l.js                               36.24 kB │ gzip:  10.24 kB
+dist/client/assets/_configId-CHuN7mMG.js                           37.88 kB │ gzip:  12.13 kB
+dist/client/assets/domain-B1Cw5QwN.js                              39.23 kB │ gzip:  11.50 kB
+dist/client/assets/keywords-CAtmQ7zj.js                            50.55 kB │ gzip:  13.12 kB
+dist/client/assets/backlinks-BZTF3tar.js                           59.11 kB │ gzip:  17.68 kB
+dist/client/assets/Markdown-BpHrA2eJ.js                           159.10 kB │ gzip:  48.12 kB
+dist/client/assets/OnboardingChatParts-BUtZekhf.js                170.49 kB │ gzip:  48.25 kB
+dist/client/assets/module-iUIatsTP.js                             215.25 kB │ gzip:  72.10 kB
+dist/client/assets/index-Bw2FCJR2.js                            1,274.75 kB │ gzip: 394.41 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 11.71s
+vite v7.3.6 building ssr environment for production...
+transforming...
+✓ 5083 modules transformed.
+rendering chunks...
+Using secrets defined in .dev.vars
+dist/server/.dev.vars                                                0.03 kB
+dist/server/wrangler.json                                            2.35 kB
+dist/server/assets/IBMPlexMono-Regular-DY3Wevwf.woff2               39.45 kB
+dist/server/assets/IBMPlexSans-Regular-Ck16W4HR.woff2               60.13 kB
+dist/server/assets/IBMPlexSans-Medium-D0XzwJDm.woff2                63.74 kB
+dist/server/assets/IBMPlexSans-SemiBold-CdUtI8Ga.woff2              64.08 kB
+dist/server/.vite/manifest.json                                     75.97 kB
+dist/server/assets/app-DqEd0fAX.css                                209.12 kB
+dist/server/assets/identity-BdVsRZH0.js                              0.07 kB
+dist/server/assets/empty-plugin-adapters-BFgPZ6_d.js                 0.13 kB
+dist/server/assets/kysely-migration-tables-JkVUjPF_-CnuJoF5B.js      0.19 kB
+dist/server/assets/check-DqMBFx4l.js                                 0.21 kB
+dist/server/assets/chevron-left-Cus9Vds9.js                          0.23 kB
+dist/server/assets/plus-CNqL0PpC.js                                  0.25 kB
+dist/server/assets/dashboard-CuCR1qoJ.js                             0.26 kB
+dist/server/assets/arrow-left-C31qWTp6.js                            0.27 kB
+dist/server/assets/arrow-right-CUXpB70s.js                           0.28 kB
+dist/server/assets/search-CDZsyiqx.js                                0.28 kB
+dist/server/assets/trending-up-BINthXYF.js                           0.29 kB
+dist/server/assets/user-BrZ4OTuN.js                                  0.30 kB
+dist/server/assets/createServerRpc-B97I3Qwb.js                       0.31 kB
+dist/server/assets/info-DYrawAnJ.js                                  0.32 kB
+dist/server/assets/checkout-url-QPtD72Di.js                          0.34 kB
+dist/server/assets/copy-CvNIu_l3.js                                  0.35 kB
+dist/server/assets/globe-6hIFTgB5.js                                 0.36 kB
+dist/server/assets/link-2-Czm35sCp.js                                0.36 kB
+dist/server/assets/useProjectMarket-DC8p4gni.js                      0.37 kB
+dist/server/assets/message-square-BI72fpvv.js                        0.37 kB
+dist/server/assets/archive-BjM156hj.js                               0.38 kB
+dist/server/assets/monitor-CB75lF0A.js                               0.39 kB
+dist/server/index.js                                                 0.40 kB
+dist/server/assets/pencil-B-y8bxPI.js                                0.41 kB
+dist/server/assets/triangle-alert-q5nVS5Ce.js                        0.42 kB
+dist/server/assets/file-down-D5nzgA6F.js                             0.43 kB
+dist/server/assets/audit-B_Ck1XQB.js                                 0.45 kB
+dist/server/assets/refresh-cw-BSHaPJeX.js                            0.45 kB
+dist/server/assets/route-BD5451h2.js                                 0.45 kB
+dist/server/assets/save-DerW1FQC.js                                  0.46 kB
+dist/server/assets/targetDetection-Cop70mKm.js                       0.51 kB
+dist/server/assets/sheet-DseM5ToD.js                                 0.53 kB
+dist/server/assets/chunk-DLHOm3Yn.js                                 0.54 kB
+dist/server/assets/settings-BSbnc-mx.js                              0.63 kB
+dist/server/assets/active-project-DUKzBpe_.js                        0.65 kB
+dist/server/assets/sparkles-kXnQaW1p.js                              0.65 kB
+dist/server/assets/SafeExternalLink-nxyvLFL_.js                      0.68 kB
+dist/server/assets/DifficultyBadge-Bhx2Fvbp.js                       0.75 kB
+dist/server/assets/route-state-BRTeyZpo.js                           0.79 kB
+dist/server/assets/lighthouse-Qok75V9i.js                            0.84 kB
+dist/server/assets/sun-C0AjVuTq.js                                   0.90 kB
+dist/server/assets/_authenticated-3BeZZW66.js                        1.01 kB
+dist/server/assets/rank-tracking-fUA8d4EL.js                         1.04 kB
+dist/server/assets/config-CchF_KBN.js                                1.04 kB
+dist/server/assets/Modal-t6vLLfa5.js                                 1.08 kB
+dist/server/assets/googleAuthErrorCopy-YRMoKtO0.js                   1.20 kB
+dist/server/assets/auth-error-CRelxKni.js                            1.32 kB
+dist/server/assets/audit-KQ27-Ybd.js                                 1.35 kB
+dist/server/assets/domain-DzZmBZv8.js                                1.38 kB
+dist/server/assets/_auth-pJNDex2d.js                                 1.42 kB
+dist/server/assets/start-Dq_tbjNl.js                                 1.43 kB
+dist/server/assets/useHostedAuthRouteGuard-CM2gWe1s.js               1.46 kB
+dist/server/assets/samQueries-BuVNdWKy.js                            1.49 kB
+dist/server/assets/search-performance-Ir0pe3De.js                    1.59 kB
+dist/server/assets/samAccess-CCMakjBm.js                             1.59 kB
+dist/server/assets/organizationQueries-DDTW_5yM.js                   1.76 kB
+dist/server/assets/ProjectMarketFields-BhRhxONZ.js                   1.84 kB
+dist/server/assets/integrations-CV3loNID.js                          1.91 kB
+dist/server/assets/route-D1GyQbT-.js                                 1.93 kB
+dist/server/assets/projectContext-NC37MbVq.js                        1.95 kB
+dist/server/assets/settings-BXcFBTCE.js                              1.95 kB
+dist/server/assets/OnboardingAccountMenu-B1paPdfH.js                 2.06 kB
+dist/server/assets/url-CJmHi1Ej.js                                   2.07 kB
+dist/server/assets/ThemePreferenceMenuItems-nkVfwl4N.js              2.23 kB
+dist/server/assets/useLocalHistoryStore-CZoBOlTm.js                  2.42 kB
+dist/server/assets/projects-kkWKmoK1.js                              2.63 kB
+dist/server/assets/onboardingChat-hXHfkv0W.js                        2.74 kB
+dist/server/assets/settings-CW0tWUGe.js                              2.82 kB
+dist/server/assets/sam-UIsBnDVf.js                                   3.02 kB
+dist/server/assets/keywords-D_haS38X.js                              3.05 kB
+dist/server/assets/IntentBadge-Kmt92Y9R.js                           3.23 kB
+dist/server/assets/backlinks-Jpncqh6P.js                             3.25 kB
+dist/server/assets/hook-proxy-Dogs9wbj-CcT13sHP.js                   3.38 kB
+dist/server/assets/rank-tracking-9eJRkTmG.js                         3.42 kB
+dist/server/assets/keywordControllerActions-CdS13nJr.js              3.47 kB
+dist/server/assets/domain-DNa6t8Em.js                                3.56 kB
+dist/server/assets/ahrefs-oTvsXQIZ.js                                3.64 kB
+dist/server/assets/index-BMRN5tdx.js                                 3.68 kB
+dist/server/assets/TablePagination-A5SgQd_C.js                       3.74 kB
+dist/server/assets/billing-CXiOWL-E.js                               4.02 kB
+dist/server/assets/serp-locations-Cl8SbjdH.js                        4.13 kB
+dist/server/assets/d1-sqlite-dialect-BLC8LXE6-DbHSvfhu.js            4.27 kB
+dist/server/assets/middleware-eIsaFg6g.js                            4.35 kB
+dist/server/assets/SetupControls-utwh2hSe.js                         4.49 kB
+dist/server/assets/ResearchScopeSelect-C25-ICGX.js                   4.50 kB
+dist/server/assets/forgot-password-DUBTD8-L.js                       4.72 kB
+dist/server/assets/support-CviH4yLS.js                               4.72 kB
+dist/server/assets/audit-CEAoiFOD.js                                 4.89 kB
+dist/server/assets/bun-sqlite-dialect-BW9W1_Ps-B82bjY-k.js           4.94 kB
+dist/server/assets/node-sqlite-dialect-CKmtkxmz.js                   4.95 kB
+dist/server/assets/CreateProjectModal-MM16SSyO.js                    5.04 kB
+dist/server/assets/searchPerformance-_DrfuPkp.js                     5.14 kB
+dist/server/assets/dataforseo-api-key-DsIeCBVC.js                    5.18 kB
+dist/server/assets/onboarding-DK8EzZ-X.js                            5.54 kB
+dist/server/assets/LocationSelect-beUqcBi1.js                        5.65 kB
+dist/server/assets/workspace-DGY8qgTf.js                             5.69 kB
+dist/server/assets/lighthouse-5AZkD0kw.js                            5.74 kB
+dist/server/assets/openrouter-api-key-DuaYcJD5.js                    5.80 kB
+dist/server/assets/verify-email-CnTSBxtg.js                          5.94 kB
+dist/server/assets/_authenticated.oauth-consent-C3RHtGy1.js          6.12 kB
+dist/server/assets/projects-CTJx0Udz.js                              6.19 kB
+dist/server/assets/projects-D5C2Yzog.js                              6.39 kB
+dist/server/assets/organization-CYYcXj6-.js                          6.65 kB
+dist/server/assets/route-BiQIxZ2M.js                                 6.72 kB
+dist/server/assets/gsc-sgsXSQG9.js                                   6.97 kB
+dist/server/assets/startGoogleLink-IkS8PPwW.js                       6.99 kB
+dist/server/assets/_auth.sign-in-D4rjDu3e.js                         7.20 kB
+dist/server/assets/reset-password-DTWbj-Th.js                        7.29 kB
+dist/server/assets/keywords-DluGy8ad.js                              7.45 kB
+dist/server/assets/accept-invitation._id-l3N6ex22.js                 7.50 kB
+dist/server/assets/ai-search-sN47dEba.js                             7.71 kB
+dist/server/assets/searchPerformance-T039MF0y.js                     8.41 kB
+dist/server/assets/index-CxflxNZY.js                                 8.56 kB
+dist/server/assets/SitePicker-CyRbDCDD.js                            8.82 kB
+dist/server/assets/coerce-D7bWalj9.js                                8.86 kB
+dist/server/assets/useTimestampedSearchHistory-CAMTOZVm.js           9.83 kB
+dist/server/assets/DomainFilterPanel-fvLGp3dm.js                    10.38 kB
+dist/server/assets/selfHostedOAuth-COpz2Az6.js                      10.92 kB
+dist/server/assets/dashboard-DDPWxJZt.js                            11.84 kB
+dist/server/assets/_auth.sign-up-BeZFzNRQ.js                        12.54 kB
+dist/server/assets/ga4-BCZdKXBb.js                                  12.70 kB
+dist/server/assets/_authenticated.subscribe-ux_g9YMO.js             12.71 kB
+dist/server/assets/index-aYEGtGvj.js                                12.85 kB
+dist/server/assets/index-CVEnPVQn.js                                13.75 kB
+dist/server/assets/rank-tracking-0Z5guU06.js                        13.91 kB
+dist/server/assets/_authenticated.onboarding.chat-DlFw6Jcf.js       14.78 kB
+dist/server/assets/organization-DPqBussl.js                         15.02 kB
+dist/server/assets/index-D4eqvtNf.js                                15.97 kB
+dist/server/assets/SearchConsoleConnectionCard-BxOE1hQE.js          16.78 kB
+dist/server/assets/sam-D-tBmdhn.js                                  16.88 kB
+dist/server/assets/GoogleAnalyticsConnectionCard-lMrYkgQs.js        17.98 kB
+dist/server/assets/_tanstack-start-manifest_v-DelYtU8B.js           19.01 kB
+dist/server/assets/_authenticated.onboarding.index-fB-UbMPL.js      21.02 kB
+dist/server/assets/useSearchTabNavigation-DGb-8MIQ.js               21.53 kB
+dist/server/assets/ErrorBarContext-BZaGS45I.js                      21.68 kB
+dist/server/assets/LineChart-DLkHtVuD.js                            22.35 kB
+dist/server/assets/search-performance-Bd5j-oAa.js                   25.74 kB
+dist/server/assets/ai-search-S2bkMyI6.js                            27.81 kB
+dist/server/assets/ai-BuQXsSea.js                                   28.49 kB
+dist/server/assets/_resultId-47l1s6h7.js                            32.52 kB
+dist/server/assets/prompt-explorer-CDjbx0Pi.js                      33.86 kB
+dist/server/assets/context-GLp4LoZx.js                              33.94 kB
+dist/server/assets/index-DZpNcGSa.js                                39.39 kB
+dist/server/assets/useOnboardingRedirect-BJk8cxFb.js                52.91 kB
+dist/server/assets/billing-CUffeG1U.js                              63.77 kB
+dist/server/assets/RankTrackingConfigModal-Do3ad6Ij.js              68.44 kB
+dist/server/assets/brand-lookup-g9iQ71AF.js                         69.28 kB
+dist/server/assets/saved-C1ZafdeO.js                                73.29 kB
+dist/server/assets/_configId-CJwtWOsn.js                            78.31 kB
+dist/server/assets/domain-DHOoiNoP.js                               84.05 kB
+dist/server/assets/Markdown-D-SOph7k.js                             91.14 kB
+dist/server/assets/keywords-l8bTI7mY.js                            103.36 kB
+dist/server/assets/backlinks-CsndgHZJ.js                           121.38 kB
+dist/server/assets/mimetext.node.es-Ch6vN2aW.js                    223.47 kB
+dist/server/assets/OnboardingChatParts-CvrgBFVq.js                 259.83 kB
+dist/server/assets/module-Bvs3CmIK.js                              290.91 kB
+dist/server/assets/index-CtFOAwgo.js                               747.73 kB
+dist/server/assets/fetch-UV7nC1tW.js                               856.50 kB
+dist/server/assets/router-CJ9wYIeH.js                            1,558.45 kB
+dist/server/assets/index-BA72lNF6.js                             8,586.43 kB
+✓ built in 19.95s
+vite v7.3.6 building open_seo_audit environment for production...
+transforming...
+✓ 429 modules transformed.
+rendering chunks...
+Using secrets defined in .dev.vars
+dist/open_seo_audit/.dev.vars                             0.03 kB
+dist/open_seo_audit/wrangler.json                         1.84 kB
+dist/open_seo_audit/index.js                              0.26 kB
+dist/open_seo_audit/assets/page-analyzer-DrLbzi_l.js     93.45 kB
+dist/open_seo_audit/assets/index-C-Jv35HB.js            856.77 kB
+dist/open_seo_audit/assets/worker-entry-wbn0NQPc.js   1,071.66 kB
+✓ built in 1.80s

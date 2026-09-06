@@ -1,0 +1,160 @@
+/* ByteDesk tokens, Tailwind CSS v4 adapter.
+ * Import AFTER bytedesk.css. Maps the canonical --bd-* variables
+ * into Tailwind theme tokens so utilities like bg-surface, text-secondary,
+ * text-brand, border-default, rounded-lg, font-sans resolve to family values.
+ *
+ * Usage in a consumer's root stylesheet:
+ *   @import "tailwindcss";
+ *   @import "@bytedesk/design-tokens/bytedesk.css";
+ *   @import "@bytedesk/design-tokens/tailwind/theme.css";
+ * Consumers may extend with local tokens below the import; they must not
+ * redefine a --bd-* value. That is a foundation change and lands upstream.
+ */
+@theme inline {
+  --color-bg-base: var(--bd-bg-base);
+  --color-bg-subtle: var(--bd-bg-subtle);
+  --color-bg-surface: var(--bd-bg-surface);
+  --color-bg-elevated: var(--bd-bg-elevated);
+  --color-bg-overlay: var(--bd-bg-overlay);
+  --color-bg-hover: var(--bd-bg-hover);
+
+  --color-text-primary: var(--bd-text-primary);
+  --color-text-secondary: var(--bd-text-secondary);
+  --color-text-tertiary: var(--bd-text-tertiary);
+  --color-text-disabled: var(--bd-text-disabled);
+  --color-text-on-brand: var(--bd-text-on-brand);
+  --color-text-on-interactive: var(--bd-text-on-interactive);
+
+  --color-brand: var(--bd-brand-orange);
+  --color-brand-muted: var(--bd-brand-orange-muted);
+  --color-interactive: var(--bd-interactive-blue);
+  --color-focus: var(--bd-interactive-focus);
+  --color-accent: var(--bd-accent);
+  --color-accent-subtle: var(--bd-accent-subtle);
+  --color-accent-muted: var(--bd-accent-muted);
+  --color-accent-emphasis: var(--bd-accent-emphasis);
+  --color-accent-fg: var(--bd-accent-fg);
+
+  --color-blue-50: var(--bd-blue-50);
+  --color-blue-100: var(--bd-blue-100);
+  --color-blue-200: var(--bd-blue-200);
+  --color-blue-300: var(--bd-blue-300);
+  --color-blue-400: var(--bd-blue-400);
+  --color-blue-500: var(--bd-blue-500);
+  --color-blue-600: var(--bd-blue-600);
+  --color-blue-700: var(--bd-blue-700);
+  --color-blue-800: var(--bd-blue-800);
+  --color-blue-900: var(--bd-blue-900);
+
+  --color-success: var(--bd-success);
+  --color-success-muted: var(--bd-success-muted);
+  --color-success-bg: var(--bd-success-bg);
+  --color-success-line: var(--bd-success-line);
+  --color-danger: var(--bd-danger);
+  --color-danger-bg: var(--bd-danger-bg);
+  --color-danger-line: var(--bd-danger-line);
+  --color-warning: var(--bd-warning);
+  --color-warning-bg: var(--bd-warning-bg);
+  --color-warning-line: var(--bd-warning-line);
+  --color-info: var(--bd-info);
+  --color-info-bg: var(--bd-info-bg);
+  --color-info-line: var(--bd-info-line);
+
+  --color-border-dimmest: var(--bd-border-dimmest);
+  --color-border-dimmer: var(--bd-border-dimmer);
+  --color-border-default: var(--bd-border-default);
+  --color-border-stronger: var(--bd-border-stronger);
+  --color-border-strongest: var(--bd-border-strongest);
+
+  --color-chart-1: var(--bd-chart-series-1);
+  --color-chart-2: var(--bd-chart-series-2);
+  --color-chart-3: var(--bd-chart-series-3);
+  --color-chart-4: var(--bd-chart-series-4);
+  --color-chart-5: var(--bd-chart-series-5);
+  --color-chart-6: var(--bd-chart-series-6);
+  --color-chart-7: var(--bd-chart-series-7);
+  --color-chart-8: var(--bd-chart-series-8);
+  --color-chart-grid: var(--bd-chart-grid);
+  --color-chart-axis: var(--bd-chart-axis);
+  --color-chart-plot: var(--bd-chart-plot);
+  --color-chart-selection: var(--bd-chart-selection);
+
+  --font-sans: var(--bd-font-sans);
+  --font-display: var(--bd-font-display);
+  --font-mono: var(--bd-font-mono);
+  --font-weight-regular: var(--bd-font-weight-regular);
+  --font-weight-medium: var(--bd-font-weight-medium);
+  --font-weight-semibold: var(--bd-font-weight-semibold);
+  --font-weight-bold: var(--bd-font-weight-bold);
+
+  --text-display: var(--bd-text-display);
+  --text-h1: var(--bd-text-h1);
+  --text-h2: var(--bd-text-h2);
+  --text-h3: var(--bd-text-h3);
+  --text-h4: var(--bd-text-h4);
+  --text-body-lg: var(--bd-text-body-lg);
+  --text-body: var(--bd-text-body);
+  --text-body-sm: var(--bd-text-body-sm);
+  --text-caption: var(--bd-text-caption);
+  --text-console: var(--bd-text-console);
+  --text-console-sm: var(--bd-text-console-sm);
+  --leading-tight: var(--bd-line-height-tight);
+  --leading-compact: var(--bd-line-height-compact);
+  --leading-body: var(--bd-line-height-body);
+  --tracking-tight: var(--bd-letter-spacing-tight);
+  --tracking-label: var(--bd-letter-spacing-label);
+  --tracking-caps: var(--bd-letter-spacing-caps);
+
+  --spacing-bd-0: var(--bd-space-0);
+  --spacing-bd-1: var(--bd-space-1);
+  --spacing-bd-2: var(--bd-space-2);
+  --spacing-bd-3: var(--bd-space-3);
+  --spacing-bd-4: var(--bd-space-4);
+  --spacing-bd-5: var(--bd-space-5);
+  --spacing-bd-6: var(--bd-space-6);
+  --spacing-bd-7: var(--bd-space-7);
+  --spacing-bd-8: var(--bd-space-8);
+  --spacing-bd-9: var(--bd-space-9);
+  --spacing-bd-10: var(--bd-space-10);
+  --spacing-bd-11: var(--bd-space-11);
+
+  --spacing-control-compact: var(--bd-size-control-compact);
+  --spacing-control-default: var(--bd-size-control-default);
+  --spacing-control-touch: var(--bd-size-control-touch);
+  --spacing-row-compact: var(--bd-size-row-compact);
+  --spacing-row-default: var(--bd-size-row-default);
+  --spacing-row-touch: var(--bd-size-row-touch);
+  --spacing-shell-topbar: var(--bd-size-shell-topbar);
+  --spacing-shell-statusbar: var(--bd-size-shell-statusbar);
+  --spacing-shell-commandbar: var(--bd-size-shell-commandbar);
+  --spacing-shell-rail: var(--bd-size-shell-rail);
+  --spacing-shell-sidebar: var(--bd-size-shell-sidebar);
+  --spacing-shell-inspector: var(--bd-size-shell-inspector);
+  --spacing-panel-comfortable: var(--bd-size-panel-comfortable);
+  --spacing-panel-minimum: var(--bd-size-panel-minimum);
+  --spacing-chart-minimum: var(--bd-size-chart-minimum-height);
+
+  --breakpoint-standard: 720px;
+  --breakpoint-wide: 1200px;
+  --breakpoint-ultrawide: 1600px;
+
+  --opacity-disabled: var(--bd-opacity-disabled);
+  --opacity-secondary: var(--bd-opacity-secondary);
+  --opacity-scrim: var(--bd-opacity-scrim);
+
+  --radius-sm: var(--bd-radius-sm);
+  --radius-md: var(--bd-radius-md);
+  --radius-lg: var(--bd-radius-lg);
+  --radius-xl: var(--bd-radius-xl);
+  --radius-2xl: var(--bd-radius-2xl);
+
+  --ease-out-expo: var(--bd-ease-out-expo);
+
+  --blur-shell: var(--bd-material-blur-shell);
+  --blur-overlay: var(--bd-material-blur-overlay);
+  --shadow-shell: var(--bd-shadow-shell);
+  --shadow-card: var(--bd-shadow-card);
+  --shadow-elevated: var(--bd-shadow-elevated);
+  --shadow-focus-glow: var(--bd-shadow-focus-glow);
+  --shadow-attention-glow: var(--bd-shadow-attention-glow);
+}

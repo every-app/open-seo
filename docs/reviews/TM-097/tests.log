@@ -1,0 +1,164 @@
+
+> open-seo@0.1.7 test:ci /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+> vitest run --reporter=dot
+
+
+ RUN  v3.2.6 /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+
+stderr | src/server/mcp/instrumentation.test.ts > instrumentMcpToolHandler > reports and rethrows a reportable handler error
+mcp.tool error (demo): Error: upstream exploded
+    at /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/src/server/mcp/instrumentation.test.ts:92:18
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+································stdout | src/server/features/rank-tracking/services/scheduledRankChecks.test.ts > runScheduledRankChecks > advances a free config with plan_required instead of starting a workflow
+{
+  event: 'rank_tracking_scheduler_summary',
+  candidates: 1,
+  started: 0,
+  unitsStarted: 0,
+  budget: 1000,
+  stoppedByBudget: false,
+  stoppedByDeadline: false,
+  skippedFree: 1,
+  skippedNoKeywords: 0,
+  concurrentChangeSkips: 0,
+  alreadyRunning: 0,
+  alreadyRunningConfigIds: [],
+  planCheckErrors: 0,
+  workflowStartErrors: 0,
+  configErrors: 0,
+  oldestDueAgeMs: 21437746609
+}
+
+stdout | src/server/features/rank-tracking/services/scheduledRankChecks.test.ts > runScheduledRankChecks > advances a zero-keyword config with no_keywords without consuming budget
+{
+  event: 'rank_tracking_scheduler_summary',
+  candidates: 2,
+  started: 1,
+  unitsStarted: 10,
+  budget: 1000,
+  stoppedByBudget: false,
+  stoppedByDeadline: false,
+  skippedFree: 0,
+  skippedNoKeywords: 1,
+  concurrentChangeSkips: 0,
+  alreadyRunning: 0,
+  alreadyRunningConfigIds: [],
+  planCheckErrors: 0,
+  workflowStartErrors: 0,
+  configErrors: 0,
+  oldestDueAgeMs: 21437746648
+}
+
+stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > registers a secretless client as public and completes the code exchange
+CIMD (Client ID Metadata Document) is disabled: add '"compatibility_flags": ["global_fetch_strictly_public"]' to your wrangler.jsonc to enable. See: https://developers.cloudflare.com/workers/configuration/compatibility-flags/#global-fetch-strictly-public
+
+·················stderr | src/server/lib/dataforseo/business.test.ts > Google business_data fetchers > never replays a task_post on a 5xx (a retry could double-charge)
+dataforseo.upstream-http-failed { path: '/v3/business_data/google/reviews/task_post', status: 500 }
+
+···············································stdout | src/server/features/rank-tracking/services/scheduledRankChecks.test.ts > runScheduledRankChecks > makes no billing calls in self-hosted mode
+{
+  event: 'rank_tracking_scheduler_summary',
+  candidates: 1,
+  started: 1,
+  unitsStarted: 10,
+  budget: 1000,
+  stoppedByBudget: false,
+  stoppedByDeadline: false,
+  skippedFree: 0,
+  skippedNoKeywords: 0,
+  concurrentChangeSkips: 0,
+  alreadyRunning: 0,
+  alreadyRunningConfigIds: [],
+  planCheckErrors: 0,
+  workflowStartErrors: 0,
+  configErrors: 0,
+  oldestDueAgeMs: 21437746977
+}
+
+···················································································stdout | src/server/mcp/api-key-auth.test.ts > handleMcpApiKeyRequest > returns 403 when the user has no organization membership
+[mcp-api-key] 403 account_access_revoked (FORBIDDEN)
+
+stdout | src/server/mcp/api-key-auth.test.ts > handleMcpApiKeyRequest > returns 401 for an invalid key without invoking the transport
+[mcp-api-key] 401 invalid_api_key (INVALID_API_KEY)
+
+stderr | src/server/mcp/api-key-auth.test.ts > handleMcpApiKeyRequest > returns 429 with Retry-After when the MCP_RATE_LIMIT binding denies
+[mcp-api-key] 429 rate_limited (RATE_LIMITED)
+
+stderr | src/server/mcp/api-key-auth.test.ts > handleMcpApiKeyRequest > returns a JSON 500 when auth resolution throws
+[mcp-api-key] 500 (internal): Error: db down
+    at /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/src/server/mcp/api-key-auth.test.ts:200:42
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at runSuite (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+····················stderr | src/server/lib/dataforseo/envelope.test.ts > assertOk > classifies DataForSEO's own server errors as UPSTREAM_UNAVAILABLE
+dataforseo.upstream-task-failed {
+  path: '/v3/serp/google/organic/live/advanced',
+  status: 40101,
+  message: 'Internal SE Server Error.'
+}
+
+·······················································································································stderr | src/server/lib/dataforseo/serp.test.ts > rank check task queue > posts queued tasks, maps ids by tag, and sums cost over all entries
+dataforseo.task_post.rejected-entry (40006): Task Limit Exceeded
+
+·····························································stdout | src/server/workflows/RankCheckWorkflow.test.ts > rank check workflow credit ceiling > rejects a keyword-list race before balance or DataForSEO calls
+[rank-check] run_1 starting (trigger=manual, devices=desktop)
+
+···················································································································································································stderr | src/server/workflows/RankCheckWorkflow.test.ts > rank check workflow credit ceiling > rejects a keyword-list race before balance or DataForSEO calls
+Rank check run_1 failed: AppError: The current rank check costs 15 credits, above the approved maximum of 12. Call estimate_rank_tracker_cost again and ask the user to approve the updated amount.
+    at prepareRankCheckKeywords (/home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/src/server/workflows/RankCheckWorkflow.ts:95:11)
+    at processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at RankCheckWorkflow.runScoped (/home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/src/server/workflows/RankCheckWorkflow.ts:316:29)
+    at /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/src/server/workflows/RankCheckWorkflow.test.ts:91:5
+    at file:///home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo/node_modules/.pnpm/@vitest+runner@3.2.6/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20 {
+  code: 'VALIDATION_ERROR',
+  details: undefined
+}
+
+············································································································stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > honors the previous refresh token until the rotated one is used
+[oauth] 400 invalid_grant: Invalid refresh token
+
+···stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > accepts a refresh carrying the canonical RFC 8707 resource and rejects a mismatched one
+[oauth] 400 invalid_target: The resource parameter must exactly match https://app.openseo.so/mcp
+
+·stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > rejects an RFC 3986-equivalent resource variant (upstream #282 — flips when fixed)
+[oauth] 400 invalid_target: The resource parameter must exactly match https://app.openseo.so/mcp
+
+stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > rejects a refresh that drops the mcp scope with a structured error
+[oauth] 400 invalid_scope: The mcp scope is required
+
+·········stderr | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > returns a structured error, never a 500, for a refresh at the end of the grant's life
+[oauth] 400 invalid_grant: Refresh token has expired
+
+stdout | src/server/mcp/oauth-refresh.e2e.test.ts > Codex-style OAuth token refresh (real workers-oauth-provider) > still rejects a secretless refresh from a client registered as confidential
+[oauth] 401 invalid_client: Client authentication failed
+
+·······································································································································(node:1631767) ExperimentalWarning: SQLite is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+··············stderr | src/server/lib/audit/lighthouse.test.ts > fetchLighthouseResult > does not retry an ambiguous generic failure
+Lighthouse failed for https://example.com/ (desktop): temporary failure
+
+························································································································································stderr | src/server/lib/dataforseo/lighthouse.test.ts > fetchLighthouseResult > does not retry an HTTP 5xx (the provider may have charged the task)
+dataforseo.upstream-http-failed { path: '/v3/on_page/lighthouse/live/json', status: 503 }
+
+·························································································································································································
+
+ Test Files  138 passed (138)
+      Tests  1165 passed (1165)
+   Start at  22:55:45
+   Duration  8.56s (transform 25.41s, setup 0ms, collect 122.69s, tests 17.18s, environment 38ms, prepare 16.60s)

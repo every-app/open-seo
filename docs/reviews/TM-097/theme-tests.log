@@ -1,0 +1,9 @@
+
+ RUN  v3.2.6 /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+
+ ✓ src/client/lib/theme.test.ts (5 tests) 9ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  22:56:39
+   Duration  487ms (transform 58ms, setup 0ms, collect 56ms, tests 9ms, environment 0ms, prepare 95ms)

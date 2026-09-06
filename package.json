@@ -53,7 +53,9 @@
     "gdpr:erase-user": "tsx scripts/erase-user-data.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "seed:projects": "tsx scripts/seed-projects.ts",
-    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""
+    "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\"",
+    "design:sync": "design-client sync",
+    "design:check": "design-client sync --check"
   },
   "cloudflare": {
     "bindings": {
@@ -77,6 +79,7 @@
   "dependencies": {
     "@ai-sdk/react": "^3.0.211",
     "@better-auth/api-key": "1.6.22",
+    "@bytedesk/design-tokens": "2.2.1",
     "@cloudflare/ai-chat": "^0.10.1",
     "@cloudflare/think": "0.15.1",
     "@cloudflare/workers-oauth-provider": "^0.10.2",
@@ -121,6 +124,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@bytedesk/design-client": "2.2.1",
     "@cloudflare/vite-plugin": "^1.42.3",
     "@cloudflare/workers-types": "^4.20260702.1",
     "@distilled.cloud/cloudflare": "0.28.2",

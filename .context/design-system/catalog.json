@@ -1,0 +1,2363 @@
+{
+  "schemaVersion": 1,
+  "version": "2.2.1",
+  "sourceSha": "c050abca4c35cf3355f897af9e8d3c6e5c9eec61",
+  "publishedAt": "2026-09-04T19:50:18Z",
+  "base": "https://cdn.bytedesk.ai/design/v/2.2.1/",
+  "releases": [
+    {
+      "version": "2.2.1",
+      "status": "current"
+    }
+  ],
+  "foundation": {
+    "files": {
+      "bytedesk.css": {
+        "sha256": "b021a230d6eb2e7645aa05d864622bc80580f7c8f4cedea7ca562dd9b31f5b6a",
+        "bytes": 19265
+      },
+      "components.css": {
+        "sha256": "1165f406436bb9390008408c6428a9842787cf4cfa5d632cf2f14362bf15d968",
+        "bytes": 71270
+      },
+      "tailwind/theme.css": {
+        "sha256": "ba9bed2ef2002d312fe1b68bf338f663fc10f5fb7a7b442b4b5154fe570f037a",
+        "bytes": 6556
+      },
+      "platforms/typescript/bytedesk-tokens.ts": {
+        "sha256": "5dfa51a328b6907e3ba9572925054048fb2415bca425cab51dbabd2f0c7906a8",
+        "bytes": 9030
+      },
+      "platforms/rust/bytedesk_tokens.rs": {
+        "sha256": "aa525a0e3017d60ce8c5abc8ca328940fc47db1efce6c2fd529c479bf9ab07b5",
+        "bytes": 21540
+      },
+      "platforms/go/bytedesk_tokens.go": {
+        "sha256": "b018f21fa5532b7bfa6ce2d6e6473083e6ae10cfcd7d7b9a364e031e3279dcdf",
+        "bytes": 27039
+      },
+      "tokens.json": {
+        "sha256": "9c3f4a3bc1ae86e4f8e7a480c1b368dc029799a78dac2d1dfd5e4c8a88fd3a10",
+        "bytes": 30101
+      },
+      "fonts.css": {
+        "sha256": "3268f8cb442f4a23c7d17b64bea9c4d302d6f43d3fc7e9fa91b53bf5bf2d5f38",
+        "bytes": 1039
+      },
+      "DESIGN.md": {
+        "sha256": "b156947bb41cc093d09d767aea0c23016283abff63113ae52971c686fb186b40",
+        "bytes": 13221
+      }
+    }
+  },
+  "fonts": {
+    "IBMPlexMono-Regular.woff2": {
+      "sha256": "cf3f4377cfcffdc5eba895d175d2eb1b9357e460597639a8cfa30e3c8190c495",
+      "bytes": 39452
+    },
+    "IBMPlexSans-Medium.woff2": {
+      "sha256": "18c37c3f1abfcdb1b83b135e5873b8784f746303022503be2a6e06ed368e9446",
+      "bytes": 63740
+    },
+    "IBMPlexSans-Regular.woff2": {
+      "sha256": "12ab8d600f2a1a6681820dfaa9414910fdf0a0a85c12dad4e06c36cecb69ace6",
+      "bytes": 60132
+    },
+    "IBMPlexSans-SemiBold.woff2": {
+      "sha256": "9a4e335e0302ad6afaded9a3d935f67e37cf7d6a170054b8f52a1915f7c451ea",
+      "bytes": 64084
+    }
+  },
+  "client": {
+    "files": {
+      "go/design.go": {
+        "sha256": "28c572bba1a8a635f98231bb3961fa69fa3f39c69a8595ccfb33be179d0c56e7",
+        "bytes": 6150
+      },
+      "go/go.mod": {
+        "sha256": "3690ff313f664c4c3f1283d7ae1c7d6ce46534d9c5afa5c4855948b79539246b",
+        "bytes": 62
+      },
+      "rust/Cargo.toml": {
+        "sha256": "a05abe7f65954fb0131d585aec59005c12088c4a03cbde071ea2824ca2028972",
+        "bytes": 383
+      },
+      "rust/src/lib.rs": {
+        "sha256": "40d1989a9ddb0cb364294b64d0efd53ee2fe4cd46716bb5c99ebadaecab6c52f",
+        "bytes": 6095
+      }
+    }
+  },
+  "apps": {
+    "ade": {
+      "name": "ByteDesk ADE",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "none",
+        "hex": null,
+        "light": null,
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "66e764dc47d416b2911cf57512f7d6775a7cfb2cf6d2a37e7a9800123460cb3c",
+          "bytes": 491
+        },
+        "brand/icon-light.svg": {
+          "sha256": "b1ed32b67830f533d1a335a48d2906ceba445dc4dd36d50d95e181036310407b",
+          "bytes": 531
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "c4982b791bedef75be7905f28d7629dc39fcbc894d30c17ea8903cdf94bac837",
+          "bytes": 522
+        },
+        "brand/icon-dark.png": {
+          "sha256": "339840098d9478c0cc38f249064cd0b828ee87a9f00e4a3dc064e124da86fc28",
+          "bytes": 609627
+        },
+        "brand/icon-light.png": {
+          "sha256": "c1d8377139120ce3960f103128bbb489ff038a060690e23d7e86b12a58ad9cbd",
+          "bytes": 694693
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "4bf61399a6de26f01777cc6cfbebd7d9978eaccc8c787ca00945e2a77ac622f5",
+          "bytes": 291
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "8ce073de0402c4acd9eeefc18ed7f96c06076fd2f47376c9943b0163c3148ee6",
+          "bytes": 319
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "46739ff822eef840a0d3967a3533650ae96d0f4c6be27303aca1e7c3d63ce5d9",
+          "bytes": 399
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "2bfdacf18aa88d6389f7f964ef7127627a17211900816119d80e0cc3dabd37e0",
+          "bytes": 427
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "c16417f5d82b36ffe265ba8b20e0b8f2b1382311ddf328c342334d8e8eeb1cba",
+          "bytes": 399
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "97754cf4003c6045468672f88148414bb860ce6409f129154f60525e9d0e1c83",
+          "bytes": 427
+        },
+        "brand/icon-16.png": {
+          "sha256": "6f687ff86345936ed536dbee5fc7fe69c555f730835463a3c08cd0e5351e99bc",
+          "bytes": 160
+        },
+        "brand/icon-24.png": {
+          "sha256": "7978421b0643c13585e1cf1f2edd3671e589995c94dca40a94d791258db23c1d",
+          "bytes": 269
+        },
+        "brand/icon-32.png": {
+          "sha256": "a1212502310124afcbf4de29158c547a772fb95dc8157c24dd6f2d8f1a3f7e1c",
+          "bytes": 403
+        },
+        "brand/icon-48.png": {
+          "sha256": "da7ee87ca83a7dc6c59176ff37fd72a3808bc4ac3adfc0d32a2777e94c1bbabc",
+          "bytes": 511
+        },
+        "brand/icon-64.png": {
+          "sha256": "7090cd4d7eb65d0d7ac7f4778207e23dcb9cba26c63ac7774218cb99f592519b",
+          "bytes": 4225
+        },
+        "brand/icon-128.png": {
+          "sha256": "c2e071f96827573fca9d1d7e4aff19e5ddf28d0adc3144520074b5ce5122eb25",
+          "bytes": 14271
+        },
+        "brand/icon-256.png": {
+          "sha256": "35d940477092e5fff4f5055d7e228cebefdbe6ce164d397e8e87174300e951e9",
+          "bytes": 50988
+        },
+        "brand/icon-512.png": {
+          "sha256": "fc37ccb4addfe19ee53605d668e3dc8319d029cfe5ecb84faea9dcf3cd35278b",
+          "bytes": 185066
+        },
+        "brand/icon-1024.png": {
+          "sha256": "de2b4e748552ae1f8ea4853d190eb03d3e1fd7fe2c8f78ffa546e904e476b00b",
+          "bytes": 700345
+        },
+        "brand/icon.ico": {
+          "sha256": "55e68f3bf74dc4e72d05d7a4d8e0d3e3c84fd5e8bc299f90543b9a5e7d50641a",
+          "bytes": 70945
+        },
+        "brand/icon.icns": {
+          "sha256": "6fee5a2d4d542a308b30aafed535b664b7a038587b3d205ffb3a23796614f9b7",
+          "bytes": 955522
+        },
+        "brand/tray-16.png": {
+          "sha256": "6f687ff86345936ed536dbee5fc7fe69c555f730835463a3c08cd0e5351e99bc",
+          "bytes": 160
+        },
+        "brand/tray-22.png": {
+          "sha256": "5f9f8262a58ee169f23897004ac518caaaa40e55b01e2fa6be2b6f05804740c8",
+          "bytes": 280
+        },
+        "brand/tray-24.png": {
+          "sha256": "7978421b0643c13585e1cf1f2edd3671e589995c94dca40a94d791258db23c1d",
+          "bytes": 269
+        },
+        "brand/tray-32.png": {
+          "sha256": "a1212502310124afcbf4de29158c547a772fb95dc8157c24dd6f2d8f1a3f7e1c",
+          "bytes": 403
+        },
+        "brand/tray-48.png": {
+          "sha256": "da7ee87ca83a7dc6c59176ff37fd72a3808bc4ac3adfc0d32a2777e94c1bbabc",
+          "bytes": 511
+        },
+        "DESIGN.md": {
+          "sha256": "c1648be8f65d38ca9922839d0e2d1a91e8d102fab0f8bc915afed7d7114c3af2",
+          "bytes": 10502
+        },
+        "DESIGN.json": {
+          "sha256": "b5dda8a50f769ea9394a41385d4d7de0c3a1241e72ef9337c6efa8fb51b3f3cf",
+          "bytes": 5219
+        },
+        "app.json": {
+          "sha256": "b86dc3c50c3019b76281b8c78aa0ad39fe1fdd301065ed4d871995cb0ed3ced5",
+          "bytes": 996
+        }
+      }
+    },
+    "agent-browser": {
+      "name": "Agent Browser",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#1DB6A5",
+        "light": "#0C796E",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "9823ddf5a74d6d5b3e261078d5f921ff9d4617e3463be101b7c7e06b170b95db",
+          "bytes": 601
+        },
+        "brand/icon-light.svg": {
+          "sha256": "c0e20d4864409883b7deb75b350e7685bb7b23c69647dd7a15ed63a26b4f7c48",
+          "bytes": 641
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "429c04f30a353dfcedc19a3065786356d5414e9894a540d5aed5eccb3fe42cd3",
+          "bytes": 555
+        },
+        "brand/icon-dark.png": {
+          "sha256": "50b21839578c247b550381680a53d539d46ba41e754f4004f40859eb14b5f396",
+          "bytes": 433855
+        },
+        "brand/icon-light.png": {
+          "sha256": "5a1b95993858a92ddff9741cc50c9bdf30e34e1ec674d5ebe09b66c85b127362",
+          "bytes": 533123
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "bb732ce438437300270246eed72e9f48ec9d3f9178843252a71f17ac55fa7e88",
+          "bytes": 374
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b954fefc70db15896be2eb6af7e29c66db40adc1030b8a89ded9f9656f9b28c2",
+          "bytes": 402
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "95302f85e45ce9e7000f198c267ef8fb0d321b42b9639290c3668b3029897a09",
+          "bytes": 484
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "63d93e6fbe17b797b35f29e30744348339908ce7bde593ba2d00ed71ce9dce5e",
+          "bytes": 512
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "d4369e8cd383b88bfe594cc4acf2fb97c4b5edd811cc22ed92b90c90df732299",
+          "bytes": 489
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "5f00013a0124991c6a96146e6de8cbd6943c56dec018ecfd90f472b9f871c63f",
+          "bytes": 517
+        },
+        "brand/favicon.ico": {
+          "sha256": "129fb22e614a60c39c97795d94a10d6488173c5f7b876ba7308a1eb3bf7cef4d",
+          "bytes": 1093
+        },
+        "brand/icon-192.png": {
+          "sha256": "6734a58367d9f4b7604a9a9d9c7c46bf9489a984cb6c529cd6d39c6b785ef385",
+          "bytes": 26772
+        },
+        "brand/icon-512.png": {
+          "sha256": "2d5d02ffdcfb2c16e29d01d96a9a292923af27d9da786c75b4fb4029da0dba1b",
+          "bytes": 155073
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "64860115843c0092a3347775325c86cd49f03beac582dfbfb94c879eaa88b092",
+          "bytes": 188386
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "1b270cf6ca7ad6971ba57fc71a9a2504115a0e835d24cf8e0d180443141ed5b3",
+          "bytes": 23694
+        },
+        "brand/og.png": {
+          "sha256": "1c02831d6e8346bfc1916d86c6a8e61258e388f1349b89d9aaa1cc508d245a5d",
+          "bytes": 38466
+        },
+        "DESIGN.md": {
+          "sha256": "c970961e537dd7858fc6e1ec15745db4c5fa1b571e538a84cb1d83d0d7f5f6bf",
+          "bytes": 6808
+        },
+        "DESIGN.json": {
+          "sha256": "36662a116051e7f10e95e1d44f4707c5b01efce4047f0d59e38a10dbca048043",
+          "bytes": 5092
+        },
+        "app.json": {
+          "sha256": "48e6d8660753ce11e463bd6de8699124eb524022ff874af18d3712f887bd1f2f",
+          "bytes": 1140
+        }
+      }
+    },
+    "agent-browser-website": {
+      "name": "ByteDesk Agent Browser Website",
+      "kind": "site",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#1DB6A5",
+        "light": "#0C796E",
+        "inherits": "agent-browser"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "9823ddf5a74d6d5b3e261078d5f921ff9d4617e3463be101b7c7e06b170b95db",
+          "bytes": 601
+        },
+        "brand/icon-light.svg": {
+          "sha256": "c0e20d4864409883b7deb75b350e7685bb7b23c69647dd7a15ed63a26b4f7c48",
+          "bytes": 641
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "429c04f30a353dfcedc19a3065786356d5414e9894a540d5aed5eccb3fe42cd3",
+          "bytes": 555
+        },
+        "brand/icon-dark.png": {
+          "sha256": "50b21839578c247b550381680a53d539d46ba41e754f4004f40859eb14b5f396",
+          "bytes": 433855
+        },
+        "brand/icon-light.png": {
+          "sha256": "5a1b95993858a92ddff9741cc50c9bdf30e34e1ec674d5ebe09b66c85b127362",
+          "bytes": 533123
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "bb732ce438437300270246eed72e9f48ec9d3f9178843252a71f17ac55fa7e88",
+          "bytes": 374
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b954fefc70db15896be2eb6af7e29c66db40adc1030b8a89ded9f9656f9b28c2",
+          "bytes": 402
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "95302f85e45ce9e7000f198c267ef8fb0d321b42b9639290c3668b3029897a09",
+          "bytes": 484
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "63d93e6fbe17b797b35f29e30744348339908ce7bde593ba2d00ed71ce9dce5e",
+          "bytes": 512
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "d4369e8cd383b88bfe594cc4acf2fb97c4b5edd811cc22ed92b90c90df732299",
+          "bytes": 489
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "5f00013a0124991c6a96146e6de8cbd6943c56dec018ecfd90f472b9f871c63f",
+          "bytes": 517
+        },
+        "brand/favicon.ico": {
+          "sha256": "129fb22e614a60c39c97795d94a10d6488173c5f7b876ba7308a1eb3bf7cef4d",
+          "bytes": 1093
+        },
+        "brand/icon-192.png": {
+          "sha256": "6734a58367d9f4b7604a9a9d9c7c46bf9489a984cb6c529cd6d39c6b785ef385",
+          "bytes": 26772
+        },
+        "brand/icon-512.png": {
+          "sha256": "2d5d02ffdcfb2c16e29d01d96a9a292923af27d9da786c75b4fb4029da0dba1b",
+          "bytes": 155073
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "64860115843c0092a3347775325c86cd49f03beac582dfbfb94c879eaa88b092",
+          "bytes": 188386
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "1b270cf6ca7ad6971ba57fc71a9a2504115a0e835d24cf8e0d180443141ed5b3",
+          "bytes": 23694
+        },
+        "brand/og.png": {
+          "sha256": "1c02831d6e8346bfc1916d86c6a8e61258e388f1349b89d9aaa1cc508d245a5d",
+          "bytes": 38466
+        },
+        "brand/social-1200x630.png": {
+          "sha256": "1c02831d6e8346bfc1916d86c6a8e61258e388f1349b89d9aaa1cc508d245a5d",
+          "bytes": 38466
+        },
+        "brand/wordmark.svg": {
+          "sha256": "e4c7cdd3dffe5e6c070babf26e04281abf65218b053df73940980a35171ec91a",
+          "bytes": 15528
+        },
+        "brand/wordmark-reverse.svg": {
+          "sha256": "9b074f9f280f3a2bc4804498170f143ea6e8d52cf738c8ca1cd44db936a9b0d8",
+          "bytes": 15544
+        },
+        "DESIGN.md": {
+          "sha256": "dbe5fe55d4291c449b3ece45b087b4336f0acefb18b27aef2bb7dfbc6946519c",
+          "bytes": 9742
+        },
+        "DESIGN.json": {
+          "sha256": "815e87d1b9cec94348e9103a897cb339715008e950470fdfb4449354915eafb5",
+          "bytes": 4992
+        },
+        "app.json": {
+          "sha256": "641374b6e0ed8958e5856a2671ee5ada34b16c0a4dcc5c1d7f5019810046590a",
+          "bytes": 772
+        }
+      }
+    },
+    "agent-mail": {
+      "name": "Agent Mail",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#7F95FE",
+        "light": "#5161D0",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "dc8851497298f5c95d8a2a92eaa2254e66049921026a4173fa14c5dd457d2cf9",
+          "bytes": 553
+        },
+        "brand/icon-light.svg": {
+          "sha256": "dd0607b46d010ef260177f12495e2c038bad9b53a4a3415f76325098c1fde822",
+          "bytes": 595
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "548d399547a8e393cb69b70521d707e2a813a60e0f7fa67c131f57bfbe44f6ab",
+          "bytes": 590
+        },
+        "brand/icon-dark.png": {
+          "sha256": "53a1274f8d9f12c9a083682c2953066555ed4c71037be910b9677654f8e42f96",
+          "bytes": 871671
+        },
+        "brand/icon-light.png": {
+          "sha256": "d9fbae3f305a5fe1c1e06498d90e9046a2cdd8b2738fffce6190d6e00ecfd829",
+          "bytes": 1078492
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "b7820898a5966afd8de67511114c277d7dcfb89a06df8b528b2b979aa6c6cb24",
+          "bytes": 403
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "225782489df472d73cbf2715af0ac928c4a5e246a5dcb3a7dbe30cb7bb70feff",
+          "bytes": 416
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "b1c7182a5c8f3e98afbeb6a44eab020d5203d8b589824dec58136256ad1c9974",
+          "bytes": 451
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "6e8ba6e69dbf4bf6a14fe56048cf4ea423787b17b0942ef55bf37ecac277245c",
+          "bytes": 464
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "900955c26efb11bae839c36b95b489065afc591f03cb3014d2a7575a07723b06",
+          "bytes": 461
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "4a6eb3449a2e07e38c2d6283bcb56f5e47d5ac1d03d1e214809d75fef37bc49f",
+          "bytes": 474
+        },
+        "brand/favicon.ico": {
+          "sha256": "88130ee8266b37b9f685c4e1f19d4e291cd8dafd0e20186578b521ca5f1d39d1",
+          "bytes": 1732
+        },
+        "brand/icon-192.png": {
+          "sha256": "10100b4531b9999f90e417840f0003115e15100255f876b38415ce5bae5b259e",
+          "bytes": 39760
+        },
+        "brand/icon-512.png": {
+          "sha256": "ed526fc0639f353e71769d4c5271ea5d4827ae3b1ea562247c8e2105ab0bb131",
+          "bytes": 247734
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "878bdd7051c06ed9a63997e14de9a9efa16815ac8b5d75d16c8d94c8a4e388fb",
+          "bytes": 276989
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "0f0fb04847c0a1c2bcd686f07359c4d4e30c9664d954729c968a22890bb62022",
+          "bytes": 35031
+        },
+        "brand/og.png": {
+          "sha256": "3f5c6a29516bb094e39bcc090bfe0ce22b09fc772e4688eec8837fc3b108202f",
+          "bytes": 56902
+        },
+        "DESIGN.md": {
+          "sha256": "3e8697097242c386f781205068f15c617622fbda8a2020dc8fa6f97d298b9796",
+          "bytes": 7672
+        },
+        "DESIGN.json": {
+          "sha256": "031efc191348748ffadb6f559a8568472b1f14d148981e3c2c88aeced3c6c0ca",
+          "bytes": 5247
+        },
+        "app.json": {
+          "sha256": "d7d5afb6736a952c5ee133dab9147fe3864f1345c17f2c4ead9a0ae9a77d7e02",
+          "bytes": 761
+        }
+      }
+    },
+    "agent-memory": {
+      "name": "Agent Memory",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#FA618E",
+        "light": "#BD3964",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "42447027c9ea9417fa919cb0a3f413a4dc22349ff1e8bdbc3c978ecbbb57c03e",
+          "bytes": 579
+        },
+        "brand/icon-light.svg": {
+          "sha256": "03b41ed9cba14bdc26c5e7a84c720de8dfc4d0cbc1faf5036db35fa953e1e8bb",
+          "bytes": 619
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "3206a051062a61c9c17f8183f9f83e4c1d0fb896244ffc47b1b1f0960063dd8e",
+          "bytes": 558
+        },
+        "brand/icon-dark.png": {
+          "sha256": "7735df8b3a7ad423912422953f19943506a6cf888e907004cb2831468780bb59",
+          "bytes": 516405
+        },
+        "brand/icon-light.png": {
+          "sha256": "b30b7d076ab4477738a1387ba17c5f7d11079a03f41d9d5c2f99fe97705c5602",
+          "bytes": 628054
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "d0d97f57c401ac45e7ded1dbebb13b2eee4c45aea61a5f172ccbf0ad4f3f426d",
+          "bytes": 343
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "46fc8fc18f4ff249833f42bc5a2438730305f8d08d6f4e400546e0409381338d",
+          "bytes": 371
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "2a8cc7f3315146e1b24f3da8ebbd8b4ab39d68b8c65f30b657c2e718452f565d",
+          "bytes": 479
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "78abe2a949b80cbe7c7277a0b94d3379c8ff6b4cff6580fe2917cf3a1e5eaf97",
+          "bytes": 507
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "cb979ed63d66e8e25ef6413851c2951c917966e2ddafc32e554cd4e8f39a0510",
+          "bytes": 485
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "6b970b5d226d260e4809a17af5b795e641ac4334c29edbacb28ce9b021eb05d6",
+          "bytes": 513
+        },
+        "brand/favicon.ico": {
+          "sha256": "909d41c364646a9a2d85ea93779398ab71a1e1bd17d43d6344f4cc66ec59548f",
+          "bytes": 1654
+        },
+        "brand/icon-192.png": {
+          "sha256": "01055ed65fed4fc632ebdcb2b8effc8f968fea4ab700191d1987f288ca23c4bc",
+          "bytes": 28742
+        },
+        "brand/icon-512.png": {
+          "sha256": "f7bd5ece7b164fba0548e20606d56a3621caf3e3a187be16b03d8dc71ca8bfba",
+          "bytes": 167542
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "b8af754d534ae3c1bfa655ddf721a8b74c1bf5712799fd565d173d73d0cf5420",
+          "bytes": 189612
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "31ec32ef4fb04cc9ad959f49020e8211e0f01ae26a1d5dbda55a392b7a2a8f5b",
+          "bytes": 25553
+        },
+        "brand/og.png": {
+          "sha256": "1158718c84e7e428ca5e6df124993ed18ee0dc3f85f143ff06061fa36384f123",
+          "bytes": 41086
+        },
+        "DESIGN.md": {
+          "sha256": "a64fd66d2b1e5064778b04ee953be6c4307308cda2b9f4b77b03732feb25eb22",
+          "bytes": 6486
+        },
+        "DESIGN.json": {
+          "sha256": "4580bb6d0f075ee742d75ccbe92fdae7b849cafc6f1878230df9280d4ff9ceea",
+          "bytes": 5063
+        },
+        "app.json": {
+          "sha256": "f781d26b4d0d59e7e41a883a2b5104dcc98b4588e4617cbfad8980d0e17cbae6",
+          "bytes": 779
+        }
+      }
+    },
+    "agent-memory-website": {
+      "name": "ByteDesk Agent Memory Website",
+      "kind": "site",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#FA618E",
+        "light": "#BD3964",
+        "inherits": "agent-memory"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "42447027c9ea9417fa919cb0a3f413a4dc22349ff1e8bdbc3c978ecbbb57c03e",
+          "bytes": 579
+        },
+        "brand/icon-light.svg": {
+          "sha256": "03b41ed9cba14bdc26c5e7a84c720de8dfc4d0cbc1faf5036db35fa953e1e8bb",
+          "bytes": 619
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "3206a051062a61c9c17f8183f9f83e4c1d0fb896244ffc47b1b1f0960063dd8e",
+          "bytes": 558
+        },
+        "brand/icon-dark.png": {
+          "sha256": "7735df8b3a7ad423912422953f19943506a6cf888e907004cb2831468780bb59",
+          "bytes": 516405
+        },
+        "brand/icon-light.png": {
+          "sha256": "b30b7d076ab4477738a1387ba17c5f7d11079a03f41d9d5c2f99fe97705c5602",
+          "bytes": 628054
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "d0d97f57c401ac45e7ded1dbebb13b2eee4c45aea61a5f172ccbf0ad4f3f426d",
+          "bytes": 343
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "46fc8fc18f4ff249833f42bc5a2438730305f8d08d6f4e400546e0409381338d",
+          "bytes": 371
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "2a8cc7f3315146e1b24f3da8ebbd8b4ab39d68b8c65f30b657c2e718452f565d",
+          "bytes": 479
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "78abe2a949b80cbe7c7277a0b94d3379c8ff6b4cff6580fe2917cf3a1e5eaf97",
+          "bytes": 507
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "cb979ed63d66e8e25ef6413851c2951c917966e2ddafc32e554cd4e8f39a0510",
+          "bytes": 485
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "6b970b5d226d260e4809a17af5b795e641ac4334c29edbacb28ce9b021eb05d6",
+          "bytes": 513
+        },
+        "brand/favicon.ico": {
+          "sha256": "909d41c364646a9a2d85ea93779398ab71a1e1bd17d43d6344f4cc66ec59548f",
+          "bytes": 1654
+        },
+        "brand/icon-192.png": {
+          "sha256": "01055ed65fed4fc632ebdcb2b8effc8f968fea4ab700191d1987f288ca23c4bc",
+          "bytes": 28742
+        },
+        "brand/icon-512.png": {
+          "sha256": "f7bd5ece7b164fba0548e20606d56a3621caf3e3a187be16b03d8dc71ca8bfba",
+          "bytes": 167542
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "b8af754d534ae3c1bfa655ddf721a8b74c1bf5712799fd565d173d73d0cf5420",
+          "bytes": 189612
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "31ec32ef4fb04cc9ad959f49020e8211e0f01ae26a1d5dbda55a392b7a2a8f5b",
+          "bytes": 25553
+        },
+        "brand/og.png": {
+          "sha256": "1158718c84e7e428ca5e6df124993ed18ee0dc3f85f143ff06061fa36384f123",
+          "bytes": 41086
+        },
+        "brand/social-1200x630.png": {
+          "sha256": "1158718c84e7e428ca5e6df124993ed18ee0dc3f85f143ff06061fa36384f123",
+          "bytes": 41086
+        },
+        "brand/wordmark.svg": {
+          "sha256": "57e3341c02774c325e88db1a35e436193eef15bd029f1bacff8c3c91e0209347",
+          "bytes": 21746
+        },
+        "brand/wordmark-reverse.svg": {
+          "sha256": "7ac63b59f9bd13b6532834dee10989f88b3ddbbadc293007c4dd31386f221ac5",
+          "bytes": 21766
+        },
+        "DESIGN.md": {
+          "sha256": "cedb58250e0b50d0521abc8df02b720cd7d92ff69f648bcf5fc9afbc7d43b948",
+          "bytes": 7872
+        },
+        "DESIGN.json": {
+          "sha256": "0ffdc1942e33cce52380bf300274c2ada5da782eb6b5cf90adad3f9048ac9a67",
+          "bytes": 5069
+        },
+        "app.json": {
+          "sha256": "7faefca5c6a95de654e44c2e13cc92e56fd6b1adfa99bbea19157d67efcc040f",
+          "bytes": 704
+        }
+      }
+    },
+    "agent-orchestration": {
+      "name": "Agent Orchestration",
+      "kind": "plugin-dashboard",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#C1BBFF",
+        "light": "#5339A8",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "e03e27a894fb13418611447bb18a3a7a86b30f859f5701ec4c954f71061933c9",
+          "bytes": 626
+        },
+        "brand/icon-light.svg": {
+          "sha256": "dbf7c31175e94c6d5c55d199cd01e79296345fadc691db786fcc85defb5fe599",
+          "bytes": 666
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "aa1c38b6de14b79dbb0e833451590d1586ae281ac0dca4a49c413c25329f4db9",
+          "bytes": 586
+        },
+        "brand/icon-dark.png": {
+          "sha256": "e1d2cda8b379407ee7b4947a6f9867884fdf1ea4b322ff7bc9b7e622591041b8",
+          "bytes": 657749
+        },
+        "brand/icon-light.png": {
+          "sha256": "f86e42e99d61c75c28395bdb706b045a4770e18de221ba8c1a01cdef6e12faa2",
+          "bytes": 770155
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "b4aed4db20d86eb68073a7b6dc4a9bc8a3e5217bfec9bedad928460ef0bec436",
+          "bytes": 359
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b1b543c0d3d20600543415865e505e5ca7322cab97baea90f6f0ae59a3a3f634",
+          "bytes": 387
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "f2135a3fda7f0af084cdc8029b78acad49dedab24b9c05591ace648b57ad04ab",
+          "bytes": 498
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "6f37876b3d9154926672ecf7b3383b1e75664c8c7177ad224a0b586c460de97c",
+          "bytes": 526
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "905f9c01da3e7ca864f6617a29ffbd253843b6dd117d5474a555af30963db63f",
+          "bytes": 499
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "2cff56a6e3b4470c6491ffc913535f4df3e13e56950f3fc54e07fd27ba39d8ca",
+          "bytes": 527
+        },
+        "brand/favicon.ico": {
+          "sha256": "b7758d19ad65c17b2b593971882ec4a0d3e941203e54af95a74d2bc0c1a2f45c",
+          "bytes": 1080
+        },
+        "brand/icon-192.png": {
+          "sha256": "501717debedfd3aa4df10387b0630578ff95c525d4180c12005c9e1b9b3c3c46",
+          "bytes": 31970
+        },
+        "DESIGN.md": {
+          "sha256": "069fc89955325ccb7acfbd27075d83cf4ebea1a2350c6c25fcd0c3382aca54a4",
+          "bytes": 7269
+        },
+        "DESIGN.json": {
+          "sha256": "1d782e8e8a0e2b3f903979795102a56cf7a1fe96b2846c90b3f2b53533579a3e",
+          "bytes": 5152
+        },
+        "app.json": {
+          "sha256": "d3eeccd9f74d1dee14d04fa845cb8713d65bb76c207d2359ffa01698601b28db",
+          "bytes": 824
+        }
+      }
+    },
+    "bytedesk-ai": {
+      "name": "ByteDesk.ai",
+      "kind": "site",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#EC4E02",
+        "light": null,
+        "inherits": "platform"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "e403d08d9967eed6323427d1c7d9f7be2f76b21fecf28bc3d8c5b1d372ba8aa5",
+          "bytes": 626
+        },
+        "brand/icon-light.svg": {
+          "sha256": "f82d1099aa0ef15dd7ba6cd23af0a9751d2491bf9b879710fe026bd9ce1ed2dc",
+          "bytes": 668
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "fa0c9b2b9b2889e654c5bba217651de932e3c7240fa59c18cc6cde5347996ed0",
+          "bytes": 572
+        },
+        "brand/icon-dark.png": {
+          "sha256": "80bcea52862a42504f111f5c2663d917fa9b95f783814415cfd56a53ad022555",
+          "bytes": 568074
+        },
+        "brand/icon-light.png": {
+          "sha256": "d05b2974f98c43ee9b88e5dda843f21d5d68760aa8ff1d22f0263abf428f4d5d",
+          "bytes": 892349
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "58f4e302863af4c4b1404bf2aa6984732df46dea8dbd2eb544060363d51c6ae5",
+          "bytes": 471
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "7d8a33d415c788a1e3b731616b3740b517d50da0630094ef60f2da588cfe3b72",
+          "bytes": 501
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "981c8e5fbc71d4ed91ac3260e20f7283a49713329c430475d0920c0c78d468ac",
+          "bytes": 484
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "bcdf14ebd575f9f54b2f8dbdf586aad35aa018121b3c6a04689748e2183488a3",
+          "bytes": 514
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "5acb8596c3467eb91946be228fe1d4a69f1bb870abece9b468194447e134f96a",
+          "bytes": 494
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "4c52920256c61b3b2070802e372183355c4c28dd853955089a9df980e53f61d6",
+          "bytes": 524
+        },
+        "brand/favicon.ico": {
+          "sha256": "1cae21ae7b80c44714244321b9c05bffe7fa81308f08604fe3a8b768c701738c",
+          "bytes": 999
+        },
+        "brand/icon-192.png": {
+          "sha256": "79286882023f43f76be295d1e9b7c95338c73fcd99f1005da6d99c9f21d024cc",
+          "bytes": 33036
+        },
+        "brand/icon-512.png": {
+          "sha256": "f6eb02342cd22dabb13f16d9604f9321d4d1b2352d8c82d66c85b74f82ffc82d",
+          "bytes": 191292
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "f7c80f63358a1c3096b0d720f541c34e3db67aee9166083823c252519a2575fe",
+          "bytes": 244631
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "b3c56fff3c57fa097bb775639ea87ccfa6ad9d2bca6bd9eeaa38bfb1028a1cde",
+          "bytes": 29367
+        },
+        "brand/og.png": {
+          "sha256": "f60c29eb9c8f39f37b710b8e1566cf6c8f94117ca1f14049a2f7ce07a4b8e423",
+          "bytes": 45773
+        },
+        "brand/social-1200x630.png": {
+          "sha256": "f60c29eb9c8f39f37b710b8e1566cf6c8f94117ca1f14049a2f7ce07a4b8e423",
+          "bytes": 45773
+        },
+        "brand/wordmark.svg": {
+          "sha256": "9da73aa0de8b4bdce4d697d3bf926b3960b014a25d38d451343d652a3fef6746",
+          "bytes": 12191
+        },
+        "brand/wordmark-reverse.svg": {
+          "sha256": "8bbb1591298e9d0282fe350e6b8795a80a52f8fa75422faccc856c1904393c89",
+          "bytes": 12241
+        },
+        "DESIGN.md": {
+          "sha256": "1c89ac68f1acbdb487b68cc132a96712deb91a7fc6c9833e3dae44da33aac9d2",
+          "bytes": 8754
+        },
+        "DESIGN.json": {
+          "sha256": "117a87ab59be282efafbf9562d050e291e97093319887a845492a6e8da8fe59d",
+          "bytes": 5113
+        },
+        "app.json": {
+          "sha256": "82b74fafd79b1167fa3ab7b732977ada0389e42e7040c2dcc9d51b9ed66608c6",
+          "bytes": 693
+        }
+      }
+    },
+    "capture": {
+      "name": "ByteDesk Capture",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#6AD3FF",
+        "light": "#05556F",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "26aaf64cadf4e73d31dad658932ab5a00a7562b32d4f6af0e22f9c320dedb267",
+          "bytes": 905
+        },
+        "brand/icon-light.svg": {
+          "sha256": "dec7c86b429cbe664b1642791a6d382f2de91d590bcfd75cbeea528116e2b2c1",
+          "bytes": 947
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "d736b3f4ecaf68a67a2002e659f6790ae0c9ddf585da667d93dc8d2deb3ae02e",
+          "bytes": 768
+        },
+        "brand/icon-dark.png": {
+          "sha256": "ecc3fe220ff57c3506faec10d3e6b754275cc2d1d3f0665c4ff3cc7d8e76d87e",
+          "bytes": 506942
+        },
+        "brand/icon-light.png": {
+          "sha256": "9762f841b388946fc8bc1e57baa83f69c7d2d4f95fe659f3766d8775f4c940e0",
+          "bytes": 687173
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "4c29a322d5961675fdb3723fd688e4b78aed602eea23a0ec1da12a5886d615b4",
+          "bytes": 342
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "341976b75136936ca32839f1c53a218e633c0e9faac32d4d8b94004d85854b5c",
+          "bytes": 367
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "d5a600818e3414b1a6fda0514b1af1ae5b40987884dc161f33fae01038b33549",
+          "bytes": 612
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "e5e08e5ffdcd6a4deb1de31bd3294a27613c82f2ab07de98319695d43b5551e2",
+          "bytes": 637
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "febdbb2765c3a41d273adf1cb4028d8e78cc40dd77b69a71296733a84aef5871",
+          "bytes": 617
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "cc20a385471d5f407ec65a7eda76373be369ea5b05eca203a6f537399624b4e9",
+          "bytes": 642
+        },
+        "brand/icon-16.png": {
+          "sha256": "d0d4b7b8878862125e9f0b1ff14560e00c6a413005f44704b33bf367118fd08d",
+          "bytes": 284
+        },
+        "brand/icon-24.png": {
+          "sha256": "3ed426bd88d18cdc0dfbebd06a588f0442a229c969370fe8633b1b8fb7ab9b6b",
+          "bytes": 795
+        },
+        "brand/icon-32.png": {
+          "sha256": "b86670fff4d3b05ce441e9e1c818bfb0c5f6f31a4e792964e40666399dc820b8",
+          "bytes": 1058
+        },
+        "brand/icon-48.png": {
+          "sha256": "03575c137528f45af16dd3a47cabb224efd631b236bf7210b06945b282531d8b",
+          "bytes": 1668
+        },
+        "brand/icon-64.png": {
+          "sha256": "b664e60769a58b82a05ed6047000280d8d87ded0d412c5adfd313985db4227d0",
+          "bytes": 4065
+        },
+        "brand/icon-128.png": {
+          "sha256": "523dca256327959ead9df6dbc2ab5e521f74bb96edd5cb8fcfe65273a5775c37",
+          "bytes": 13604
+        },
+        "brand/icon-256.png": {
+          "sha256": "989e208d4186b7f44eb34bc4f154815e6e61190ebd722d09fe01b290f718c844",
+          "bytes": 47397
+        },
+        "brand/icon-512.png": {
+          "sha256": "98abb06c7f91a3d15167d489b595fcf9f47d58cfa5344e33bbb6c9f0ed835f5f",
+          "bytes": 167263
+        },
+        "brand/icon-1024.png": {
+          "sha256": "dbd63bf686edff3379fb07acce5475dac4ba8520f3e06f6f73c54633b1ddb64d",
+          "bytes": 593672
+        },
+        "brand/icon.ico": {
+          "sha256": "c0a717d9bbf34f754effe664a4425a93e42e938fd99d571c930c042eac5b7127",
+          "bytes": 68989
+        },
+        "brand/icon.icns": {
+          "sha256": "4c726ee4896986443e71a9419413feb034f549c7611428dd56585f623866aaff",
+          "bytes": 827407
+        },
+        "brand/tray-16.png": {
+          "sha256": "d0d4b7b8878862125e9f0b1ff14560e00c6a413005f44704b33bf367118fd08d",
+          "bytes": 284
+        },
+        "brand/tray-22.png": {
+          "sha256": "41cc9eebf409c68d39f85df9ac1f0bbdfa34fbfc88be68c13454c5f46c50ccff",
+          "bytes": 771
+        },
+        "brand/tray-24.png": {
+          "sha256": "3ed426bd88d18cdc0dfbebd06a588f0442a229c969370fe8633b1b8fb7ab9b6b",
+          "bytes": 795
+        },
+        "brand/tray-32.png": {
+          "sha256": "b86670fff4d3b05ce441e9e1c818bfb0c5f6f31a4e792964e40666399dc820b8",
+          "bytes": 1058
+        },
+        "brand/tray-48.png": {
+          "sha256": "03575c137528f45af16dd3a47cabb224efd631b236bf7210b06945b282531d8b",
+          "bytes": 1668
+        },
+        "DESIGN.md": {
+          "sha256": "332f4d575ce40249da701a93888f8b5a4ea85191374e76df720a6a69d15ea36f",
+          "bytes": 8612
+        },
+        "DESIGN.json": {
+          "sha256": "d56c8f430535e7314d43cd9db24157d8afa92b1275c903f1c1b1654be44e4036",
+          "bytes": 5141
+        },
+        "app.json": {
+          "sha256": "f0116c1b7ba67480ee1c1d60ace7bdb0afec85175d326a3d6c133b373b8985f6",
+          "bytes": 1045
+        }
+      }
+    },
+    "capture-website": {
+      "name": "ByteDesk Capture Website",
+      "kind": "site",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#6AD3FF",
+        "light": "#05556F",
+        "inherits": "capture"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "26aaf64cadf4e73d31dad658932ab5a00a7562b32d4f6af0e22f9c320dedb267",
+          "bytes": 905
+        },
+        "brand/icon-light.svg": {
+          "sha256": "dec7c86b429cbe664b1642791a6d382f2de91d590bcfd75cbeea528116e2b2c1",
+          "bytes": 947
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "d736b3f4ecaf68a67a2002e659f6790ae0c9ddf585da667d93dc8d2deb3ae02e",
+          "bytes": 768
+        },
+        "brand/icon-dark.png": {
+          "sha256": "ecc3fe220ff57c3506faec10d3e6b754275cc2d1d3f0665c4ff3cc7d8e76d87e",
+          "bytes": 506942
+        },
+        "brand/icon-light.png": {
+          "sha256": "9762f841b388946fc8bc1e57baa83f69c7d2d4f95fe659f3766d8775f4c940e0",
+          "bytes": 687173
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "4c29a322d5961675fdb3723fd688e4b78aed602eea23a0ec1da12a5886d615b4",
+          "bytes": 342
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "341976b75136936ca32839f1c53a218e633c0e9faac32d4d8b94004d85854b5c",
+          "bytes": 367
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "d5a600818e3414b1a6fda0514b1af1ae5b40987884dc161f33fae01038b33549",
+          "bytes": 612
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "e5e08e5ffdcd6a4deb1de31bd3294a27613c82f2ab07de98319695d43b5551e2",
+          "bytes": 637
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "febdbb2765c3a41d273adf1cb4028d8e78cc40dd77b69a71296733a84aef5871",
+          "bytes": 617
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "cc20a385471d5f407ec65a7eda76373be369ea5b05eca203a6f537399624b4e9",
+          "bytes": 642
+        },
+        "brand/favicon.ico": {
+          "sha256": "84192dd1e5875665b025da2a8eb2857da21be6e49bca04f21836e71fc6a366ba",
+          "bytes": 3064
+        },
+        "brand/icon-192.png": {
+          "sha256": "ab354038a1b883212641f312827e6c838b5ce56670f72fc06323a03ec372f040",
+          "bytes": 28393
+        },
+        "brand/icon-512.png": {
+          "sha256": "98abb06c7f91a3d15167d489b595fcf9f47d58cfa5344e33bbb6c9f0ed835f5f",
+          "bytes": 167263
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "e2b1ac8213e238b82b4c00ed9ab33856f1d71e89582981846e9c7ac4c8fe3149",
+          "bytes": 196160
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "8935183c733c92c235e2916ad6dfa07670ab6bacddfae94dc7bc27f0a36e12c8",
+          "bytes": 25162
+        },
+        "brand/og.png": {
+          "sha256": "8bdc3bd69f9d41bb60f4891426439dfd9a833a8a68a2b39bad94a1bdc6595ab8",
+          "bytes": 40679
+        },
+        "brand/social-1200x630.png": {
+          "sha256": "8bdc3bd69f9d41bb60f4891426439dfd9a833a8a68a2b39bad94a1bdc6595ab8",
+          "bytes": 40679
+        },
+        "brand/wordmark.svg": {
+          "sha256": "5fc1a1ed49bed80aba20a4803a0be3dbec66e5a415ca3bea613ca32e9e8b5a96",
+          "bytes": 8789
+        },
+        "brand/wordmark-reverse.svg": {
+          "sha256": "4c4341bb384c7a9a2808ed6b361100a4df2c0f7eb828389d577dbbfd9b35a754",
+          "bytes": 8839
+        },
+        "DESIGN.md": {
+          "sha256": "64478518519a5dfd617e6b153ef839a63cc0625530754b55391305022e4988a2",
+          "bytes": 9114
+        },
+        "DESIGN.json": {
+          "sha256": "eb74a17011207f9722ab0d467bd671b3912d5f7ed66503f72b990c3816cbda98",
+          "bytes": 4970
+        },
+        "app.json": {
+          "sha256": "5fb99d1c6b35469638365a2532dcb18f1e282da408d2681c316cf831d779ccec",
+          "bytes": 716
+        }
+      }
+    },
+    "designer-studio": {
+      "name": "ByteDesk Designer Studio",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#EC4E02",
+        "light": null,
+        "inherits": "platform"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "0fd352ab55ea85b602ca01f67421f7e77bcd00e1ec0f3fd9027886d155ef6218",
+          "bytes": 514
+        },
+        "brand/icon-light.svg": {
+          "sha256": "68673f3d7989175cd3879a19ce63f1e7319113c1c59afd74dbe3ec1ec4fb0678",
+          "bytes": 554
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "e951e26508dc35f92ce1891b93a0e31c5f42c42820d65b7481c983e213f4722a",
+          "bytes": 425
+        },
+        "brand/icon-dark.png": {
+          "sha256": "24cdbf7fa79a06e0706d61d212c8268787aeac2635b378832875a443f2f8c380",
+          "bytes": 407340
+        },
+        "brand/icon-light.png": {
+          "sha256": "079fa4f2429659282289f3ad514a006b12c9ddc9db9a894d1c58cc758700b485",
+          "bytes": 431020
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "378e136383f2d0d83e0c509d3a37077b2a16fe1e48aee5b5d49c1c80beb36733",
+          "bytes": 375
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "86db28ce34b0f07211a3b41cd577c4f091060a61935c0f45c026ec8f1e6749c5",
+          "bytes": 403
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "7fb8acf1ebd2bd9909c5fd0d0a288ba8e890e9b4d9fcda6a2fbd591f9576e8ba",
+          "bytes": 376
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "b0e051f8639f5284dcd07e7c54ea6685227ba485d958816820c04781fece6d17",
+          "bytes": 404
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "02aab18bf4bd63e57fafe34ad87fdc005515eaee573ba9ede00938bfadd1a25d",
+          "bytes": 382
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "e9512b097eac5bff41a8bcee1a7056d2bbbad221103e1e7a2791e69c2562f8fc",
+          "bytes": 410
+        },
+        "brand/icon-16.png": {
+          "sha256": "8857c20c2160131b391163be54771917b8f196189565362783558270f4649fb1",
+          "bytes": 178
+        },
+        "brand/icon-24.png": {
+          "sha256": "50a7d00cffe738ba81a9e5c103f0204902beab74d26fd3918688bd3ecd256b20",
+          "bytes": 369
+        },
+        "brand/icon-32.png": {
+          "sha256": "fbbb7d9a6ef2e2faf7b8b2a73f332189429267cccb2606bb20e5377593360826",
+          "bytes": 344
+        },
+        "brand/icon-48.png": {
+          "sha256": "f8b80b913fabe9baf344b75dd7db02452eff8341c5a66ffca415614210dcf9b8",
+          "bytes": 527
+        },
+        "brand/icon-64.png": {
+          "sha256": "0878ee2d50f8266df8c431a8b6dcb4624c4d20aa17fc5aecf5d0d0eec1274710",
+          "bytes": 2810
+        },
+        "brand/icon-128.png": {
+          "sha256": "bc32182356091099538f5d243149eebc25b39c5091989455b68fe4a54db180ea",
+          "bytes": 9822
+        },
+        "brand/icon-256.png": {
+          "sha256": "ebe6ce89fc480d2f8c9f43834047cdf7ebc1094f3d4c40671d1d86157df80f94",
+          "bytes": 33569
+        },
+        "brand/icon-512.png": {
+          "sha256": "d6bcc975f1b7825cd653f5e89968f05790d641a6c2f951e94d3d5a4f66a6bf77",
+          "bytes": 122080
+        },
+        "brand/icon-1024.png": {
+          "sha256": "4e6bedbd956a8bd9d976360b537abdc5d09d9de7425ddb5c3eff31d90f93a387",
+          "bytes": 451941
+        },
+        "brand/icon.ico": {
+          "sha256": "d9f35457d2edfb5fd0126399d9c56acac954e282c78b9a69640fe2ad8d9fe13d",
+          "bytes": 47737
+        },
+        "brand/icon.icns": {
+          "sha256": "a5deee0c0f7e9aebb60951a049519e8b18eb6e9e86813b44030d2f753e06a56d",
+          "bytes": 620808
+        },
+        "brand/tray-16.png": {
+          "sha256": "8857c20c2160131b391163be54771917b8f196189565362783558270f4649fb1",
+          "bytes": 178
+        },
+        "brand/tray-22.png": {
+          "sha256": "30f87caaf1747b5f9ff51990ae5370c727f8dfb5683232ae0dd5280963cb6200",
+          "bytes": 340
+        },
+        "brand/tray-24.png": {
+          "sha256": "50a7d00cffe738ba81a9e5c103f0204902beab74d26fd3918688bd3ecd256b20",
+          "bytes": 369
+        },
+        "brand/tray-32.png": {
+          "sha256": "fbbb7d9a6ef2e2faf7b8b2a73f332189429267cccb2606bb20e5377593360826",
+          "bytes": 344
+        },
+        "brand/tray-48.png": {
+          "sha256": "f8b80b913fabe9baf344b75dd7db02452eff8341c5a66ffca415614210dcf9b8",
+          "bytes": 527
+        },
+        "DESIGN.md": {
+          "sha256": "c6a6a3bd761c6c02f83f767e384ea219f1e7c7dc896c58ce7164c4f9c1340cdd",
+          "bytes": 10822
+        },
+        "DESIGN.json": {
+          "sha256": "d55851771f7e74650282c6bffd46f40a51dccccaeac9778ca3eb3e871fe4e9c5",
+          "bytes": 5507
+        },
+        "app.json": {
+          "sha256": "2bde034e8165ff6c82de5f6d26954207e429cb155ae0848238be7a64ccf0c529",
+          "bytes": 757
+        }
+      }
+    },
+    "gateway": {
+      "name": "ByteDesk Gateway",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "family",
+        "hex": "#047BF4",
+        "light": "#255DA5",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "af4a7b352da7511b667a3157a1f72d105099f806643067ff26e5adba84b9b91f",
+          "bytes": 1075
+        },
+        "brand/icon-light.svg": {
+          "sha256": "28bd3bcb6cf795ea560f449d0e2470da4d22eb41baf144fbef2fbb769b5cd0e4",
+          "bytes": 1093
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "c49cce921ed40ba1a8a920bcaccd5fd0a9be4ac8bbc997ba4a5c33bd95ca3251",
+          "bytes": 972
+        },
+        "brand/icon-dark.png": {
+          "sha256": "14e9929fbe6de972832433456531cdfffb7601a99da3400e03f1e7dd10ee5e68",
+          "bytes": 648786
+        },
+        "brand/icon-light.png": {
+          "sha256": "82b5ad45d7aaf64c4970ed724b0b08601fb4ff57d0f111eced02618616946222",
+          "bytes": 717713
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "1f68ba3b0d869aaaaaf3f345234d67aa09a819237142da6006a004f205ed5b11",
+          "bytes": 1051
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "fe7da11bbb55bd6c39ef247ef3f33f42e03486428b785f5f446ea4fcefb7581f",
+          "bytes": 1064
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "d085be92937798dcc989f98f7422ff170e1f8219daf95139deeec0be11efca42",
+          "bytes": 1103
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "397ef4c37cc0b6d91cd2a1f89978d9c5d696d63ed906792ba9634d97d62026cc",
+          "bytes": 1116
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "e347ae2a407e1b607837dcecdc8a6e559612bbff970793e97d11fa8cd93f1132",
+          "bytes": 1238
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "029f720b872607303cada9aebe9cd1771e0884e066fde632f662a2a8f7b3c873",
+          "bytes": 1251
+        },
+        "brand/favicon.ico": {
+          "sha256": "a66174dcd448844b76f4c3f5b2384a028cca50d036bfb246cd2e58dadb3cce83",
+          "bytes": 1189
+        },
+        "brand/icon-192.png": {
+          "sha256": "df3c78977134ff026037693683d53571be08956eb4e59dee209059d3532e12b3",
+          "bytes": 31988
+        },
+        "brand/icon-512.png": {
+          "sha256": "948b5487c26e4c65a532534bca8583e545e144353674d49643b1e44d99e26a21",
+          "bytes": 186091
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "9b6619c489d082eef9ac51e7cd074736e0ec80c83c58ddd217d781c7ada59525",
+          "bytes": 203587
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "53de5edf347ceb9b013b53175b4cb855449db15bd9f3d25ccafea37a600d5de7",
+          "bytes": 28249
+        },
+        "brand/og.png": {
+          "sha256": "40855e11113fe6579fa17c3bca9e449bccdfe18346017c94f788bad8623111c2",
+          "bytes": 45506
+        },
+        "DESIGN.md": {
+          "sha256": "5c2023c9a37b17608ee4c0c7e6dae1057abc28ba11ca26572000cf7ba9851b3c",
+          "bytes": 10196
+        },
+        "DESIGN.json": {
+          "sha256": "c0feff03daef73e361357eacc284517a3b7fb6bfb36982e469bb06048d53d040",
+          "bytes": 5106
+        },
+        "app.json": {
+          "sha256": "72e29122797de2b54b499d09f5631b508b6e2aad4037e17d87cf76a729d66a8f",
+          "bytes": 1045
+        }
+      }
+    },
+    "mangodisk": {
+      "name": "MangoDisk",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#FEAF7B",
+        "light": "#7B3D05",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "ad90fd82c1e4400de1121edb908f1ae133f54086ff8afed4da218c678a752494",
+          "bytes": 702
+        },
+        "brand/icon-light.svg": {
+          "sha256": "9b317f548f1d0d8e7109e3caee3f42da460b013d035e5d43c1f45188f9260ded",
+          "bytes": 742
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "d7da9741ee38bfe6087943543c49f32369b02f06076419ec552dbe4e0894a094",
+          "bytes": 642
+        },
+        "brand/icon-dark.png": {
+          "sha256": "caf504e6b2e9819b8bd67dcd26617363a75555f7586fb1af94e7847fa01c772c",
+          "bytes": 502504
+        },
+        "brand/icon-light.png": {
+          "sha256": "074ea4eac3b4634917adf19f4ba25a15e3338537d3a58b7dc7a0a1406ac031d7",
+          "bytes": 627151
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "d5363c8c8d54f54641616e098342c2dca8fde255919ec6a329bd8f7529c71b07",
+          "bytes": 303
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "11f6c2402f19e6d0880f4373cb4580509c9bf3d7ebcea8903ce4eb5d1eecc42c",
+          "bytes": 331
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "805c8df83cde30cea68a1ec7c23fafd49a499fb4a1e998a16b61e7f5a8628686",
+          "bytes": 567
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "520ce1d93df1058aa89081a774a48df88415fe424dfc960531c619e644ad40e3",
+          "bytes": 595
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "a8321d4e1ff1d46f277ec8986758033b02cd91b7c4a928842cdc2107043e05d4",
+          "bytes": 574
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "67fb9fa2f21416b29ee97d62f2011a7c466272d369098e97f618fbb84083a3d9",
+          "bytes": 602
+        },
+        "brand/icon-16.png": {
+          "sha256": "86491375099c47f4452e20ce5e67002a0af8559bbe0edd93e7d1e28104c2f444",
+          "bytes": 128
+        },
+        "brand/icon-24.png": {
+          "sha256": "081d0983a6ad70e2fbf70f3a8ef33f4d585b2f5ad00b072dca7e00ee2ac3af00",
+          "bytes": 280
+        },
+        "brand/icon-32.png": {
+          "sha256": "dc5ae576fc5f82d96e549ca4c921f68a0d46cecb370a4e45966f5df2c7a2498a",
+          "bytes": 284
+        },
+        "brand/icon-48.png": {
+          "sha256": "bdeaeec8f778563433b461eaf156741f1662f9834b1a8ca0f4dea8bd351af840",
+          "bytes": 395
+        },
+        "brand/icon-64.png": {
+          "sha256": "80c16c7b1c2d5e739de1965f8e55b65f7a7953e3b9ce5d464e05d858ba67904a",
+          "bytes": 3475
+        },
+        "brand/icon-128.png": {
+          "sha256": "12abe5cd393212d1b2b26be05771578c20fef64d35b679064173f16442d2931a",
+          "bytes": 11807
+        },
+        "brand/icon-256.png": {
+          "sha256": "0aff4da47836b31f9a699fb98cc8f96e44b0ece8e4a860f30c5646e02ea1da44",
+          "bytes": 41285
+        },
+        "brand/icon-512.png": {
+          "sha256": "6983e3656dae36136cf0d7d8daac619746007e123ccbaeb089eef82f167c752e",
+          "bytes": 148866
+        },
+        "brand/icon-1024.png": {
+          "sha256": "da5cb4a9ecf202583b01e8760b7c2c3dde40dff20ac84359a777f2d05a13e9c2",
+          "bytes": 554285
+        },
+        "brand/icon.ico": {
+          "sha256": "b14a29f83d4aebc0e76886629bfbae118e6fdf1ddb818c369c0e09212051ef07",
+          "bytes": 57772
+        },
+        "brand/icon.icns": {
+          "sha256": "3d83d52ac6aa893ab156f2f8da2243c6ae64a31a29040de94c68823d378c47ce",
+          "bytes": 760194
+        },
+        "brand/tray-16.png": {
+          "sha256": "86491375099c47f4452e20ce5e67002a0af8559bbe0edd93e7d1e28104c2f444",
+          "bytes": 128
+        },
+        "brand/tray-22.png": {
+          "sha256": "66441ae3ac3081d52398243f1bcd53a9ecd6d6749cf974ae20bb634a44e30545",
+          "bytes": 353
+        },
+        "brand/tray-24.png": {
+          "sha256": "081d0983a6ad70e2fbf70f3a8ef33f4d585b2f5ad00b072dca7e00ee2ac3af00",
+          "bytes": 280
+        },
+        "brand/tray-32.png": {
+          "sha256": "dc5ae576fc5f82d96e549ca4c921f68a0d46cecb370a4e45966f5df2c7a2498a",
+          "bytes": 284
+        },
+        "brand/tray-48.png": {
+          "sha256": "bdeaeec8f778563433b461eaf156741f1662f9834b1a8ca0f4dea8bd351af840",
+          "bytes": 395
+        },
+        "DESIGN.md": {
+          "sha256": "5c59b5e073a2d90ec35ebb453f0037641fbdcdef6817ccdb366fe0248a63e37b",
+          "bytes": 8135
+        },
+        "DESIGN.json": {
+          "sha256": "6e673fa201d2c6ab87542e5514294dbbcbb310918698d70945d8b7b690d249d7",
+          "bytes": 5435
+        },
+        "app.json": {
+          "sha256": "ce771985d73912db93dbd2d851c2e9fe30d4b3208db06daf8a2ebbfaec4f504c",
+          "bytes": 739
+        }
+      }
+    },
+    "marketplace": {
+      "name": "ByteDesk Marketplace",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#D2CA06",
+        "light": "#535000",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "4eb0dd86be1143d88a05ffbb8fab097d758cf49115a774bb35b2e42421720ecb",
+          "bytes": 531
+        },
+        "brand/icon-light.svg": {
+          "sha256": "80ed57e69c0ce07ce207ffe51d48a5075195b26e0116ebd3c2f5ec4e89f8ddc8",
+          "bytes": 550
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "bc4d8a204b4a9c1230b49c8458b313c3f2b1cd4aba21f3d40bfe51bd4da9fbef",
+          "bytes": 417
+        },
+        "brand/icon-dark.png": {
+          "sha256": "66e45e86ce0782e605f2b3222a06df9c8d6c985eedc83418f64f81c58824319b",
+          "bytes": 640036
+        },
+        "brand/icon-light.png": {
+          "sha256": "2c2070eb82a1b41cf56264d4c348114968a6e0480041759da061a18a84e5c3eb",
+          "bytes": 722407
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "408b7a9103685e35dae6380b905eb754eccd0f3e849da9918dfdf0eb7ef553c0",
+          "bytes": 310
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b3e602474d44a87337be2109ff02d06323fa85936462a7c8428ebead85c25992",
+          "bytes": 310
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "04b1e35c033897a874a657be3476f59e9bd7b7c8e116690996314d908d0492c8",
+          "bytes": 444
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "58e48283ebfa30da3476c41f432ba082181ba937081b8280c5b4af2bc981e292",
+          "bytes": 444
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "4ae9796efea747067f6a72a8f7149e95b2a54ecad793080ab42311fb0c599c33",
+          "bytes": 451
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "c017cf9b9ecd7dbf7b41aa3c689c2d6bd123ebe40f17d8238a88271ab2abf78d",
+          "bytes": 451
+        },
+        "brand/favicon.ico": {
+          "sha256": "69025a34c2fa0a38f3689d8303de6aa8fbce9a8be2394e290b2002d69a9e7d09",
+          "bytes": 1168
+        },
+        "brand/icon-192.png": {
+          "sha256": "0bd96f7558e218dfac08df1dee4f1f99636fbba440e57a4cbc83257a1f2fb552",
+          "bytes": 30630
+        },
+        "brand/icon-512.png": {
+          "sha256": "1b7daa85650ab329533aab5f4176da51d6f36aa63119671e8768fc1f4ab903da",
+          "bytes": 187714
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "ecdecc3f5d3c39d2a81c0d248803f1c4446dadc60000d5bde0327194379a02be",
+          "bytes": 204872
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "4b648a9381dd7e1ada83ea17d7296b69d91d51f7855ebee2a1a20586f5e8c81e",
+          "bytes": 27254
+        },
+        "brand/og.png": {
+          "sha256": "87aa659621bdbbf73475933adeb47a3dce9cd8e173dd8a9c68f1018ab3bdb0e2",
+          "bytes": 44226
+        },
+        "DESIGN.md": {
+          "sha256": "d4c7fce81e3ecf26389aeccdfd3896741841d96b10da146303804d0883f91f3a",
+          "bytes": 9249
+        },
+        "DESIGN.json": {
+          "sha256": "a061f5bbfbf3d6c1b74bdbe8c598136ee18644ed97546b23665a4d3201363d43",
+          "bytes": 5219
+        },
+        "app.json": {
+          "sha256": "e38554aba16e87d9eb9764a0a0b96274574987cb28e1f7a1209bdad6bdfe142f",
+          "bytes": 714
+        }
+      }
+    },
+    "openseo": {
+      "name": "OpenSEO",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#19E5AD",
+        "light": "#0A5841",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "5b3bf404983d33ada25e3f611a120abffa15a8a3755645eadd6b2eca497c1316",
+          "bytes": 824
+        },
+        "brand/icon-light.svg": {
+          "sha256": "7b6767efcba2f3fb1e402f368c1e201fb8d5c10f398698ada3e037a8404bd500",
+          "bytes": 864
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "a3f3182819386fc603c21f046ea6af1856215ba5c5bf660098268b9d04067b36",
+          "bytes": 556
+        },
+        "brand/icon-dark.png": {
+          "sha256": "19c85191ecfb6dcd5e2883fb85c5ede6fa02ef990995c85876d56e90f257985a",
+          "bytes": 856262
+        },
+        "brand/icon-light.png": {
+          "sha256": "48e1d5a00ea03c2414ea6a08c63c3d7551c7bdbefdf3150f87c371482466344a",
+          "bytes": 861117
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "af6d706f06b6f969e6e72c821a2d7bfda1c0cb89ca48c0271a98c5614e1bdd5f",
+          "bytes": 302
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "dd837c725e3e485e80118161e9078df904d694f279d3fb167d10db4a631a0f2e",
+          "bytes": 330
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "05c73adb56703b70b1770987d262b6ffc03c5e41177bd3607b10bd646a99d7e7",
+          "bytes": 729
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "88b5b96d6045f556101903e24188eff175f40d0dd4d08b81cdb90285e4aee2b0",
+          "bytes": 757
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "7e464877ee7c5fc13bbcda5262efca61b2cc5e8d45acda3eb1790099a3db2173",
+          "bytes": 740
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "23af6a017e12ab239df064fd95fff430324306817eeaaebbec2f9ff21effa665",
+          "bytes": 768
+        },
+        "brand/favicon.ico": {
+          "sha256": "6088d6d433034be6336d2c2cdad33457f31a3f891a2bac7368f745c0b25820d4",
+          "bytes": 1502
+        },
+        "brand/icon-192.png": {
+          "sha256": "c0bb018fc39e673c708dc017991775064f6ba26230dfce9aed336845611f1392",
+          "bytes": 37052
+        },
+        "brand/icon-512.png": {
+          "sha256": "16869dfe29291b85e931428fe3a72413479025f6fb14a7fd707221961adc7092",
+          "bytes": 234080
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "6a3cb8b43e8211066b55c118e7da3052be73a5d61f0dba36d40fd4c868905849",
+          "bytes": 252369
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "e198c593caeecf65072b419896ab8790accc3348df97dacb35728ba39449702d",
+          "bytes": 32970
+        },
+        "brand/og.png": {
+          "sha256": "e3c58ffe3b5876594d7702af0766f9c74d83f7cb876ec92dff509f5d87bf6945",
+          "bytes": 53992
+        },
+        "DESIGN.md": {
+          "sha256": "c1523994a4b6fe53a714f3def66fe971e0a077faea837af677eb0e0fe26d6d02",
+          "bytes": 6589
+        },
+        "DESIGN.json": {
+          "sha256": "98cf05c9d15db8f3806bed02d0cef5b1ad9be83db9ab60f4ef6fe5d2df387fdf",
+          "bytes": 5053
+        },
+        "app.json": {
+          "sha256": "52de8a32dffc58e3c0412cf64b40ae2cae1fefedc525f4370f4211ac5c4a6131",
+          "bytes": 696
+        }
+      }
+    },
+    "passport": {
+      "name": "ByteDesk Passport",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#E26ACE",
+        "light": "#A9429A",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "043a74233a9c460f9141f7b6ad3ec59d64af5f161e5d18d99e06cf8974e9e376",
+          "bytes": 554
+        },
+        "brand/icon-light.svg": {
+          "sha256": "9933198d44a22347d7d009c9e25bb35629d7db95d5b66f1dae5040f994cc8e46",
+          "bytes": 573
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "d44c6530b43b4b3e33501d0e21990de23d622d071e879e519ba5599ca60f03fc",
+          "bytes": 432
+        },
+        "brand/icon-dark.png": {
+          "sha256": "5776098f81886b5583af05d393783fcad1d998d95d4d129d98aedd75bdf1bfd2",
+          "bytes": 827290
+        },
+        "brand/icon-light.png": {
+          "sha256": "dfd8acc0b846f36e4078434da90057441019fb2435188f6ff65fc5680cf94cfc",
+          "bytes": 810562
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "0eea0eeae535d12bfe7e9d99f1a575fff9002eb43c93f6dbde6437d9baa028fc",
+          "bytes": 331
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "94fc8ab3ea483e27f7f016676ab4c6c37b97e5a1adb7dcc64ba39d7f5cca39e2",
+          "bytes": 331
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "43b68f13530451133504cdbb615e6328d9e720e0342d9a58e568e44cab48e8f3",
+          "bytes": 464
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "d378aa3e15a16dfc90ea361c38ec5df1e5c2ff8bc0708e269c58ed12690c6e1a",
+          "bytes": 464
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "491a51fd227982de394c0b4c632a8e402171d94a96da89366c99bc26e4582782",
+          "bytes": 468
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "b252c1eab9d23d770b67a88e5f656ae7aae7b8277015491a4149e840d20990b9",
+          "bytes": 468
+        },
+        "brand/favicon.ico": {
+          "sha256": "3bf597b75faac6f68d1b4cd3f5054bbe46337897717d43a6344e68b02e99bff8",
+          "bytes": 1787
+        },
+        "brand/icon-192.png": {
+          "sha256": "71471723b7b07a5b05e1afa70f75d5e350cc7e3b003f3cdf7fa9737bf19ce044",
+          "bytes": 36097
+        },
+        "brand/icon-512.png": {
+          "sha256": "2c16d1a3d7633d87ead3e5f171e73ae535b4ec50ab9dd95ba0081ce5d86f6e5b",
+          "bytes": 225133
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "b4eaf5a0ce332b8ef1b1bcf7b11dbdb6611d9e8100ffe4618d14bec2ffa8fb59",
+          "bytes": 232118
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "1f7853dd3988e76bb11dae57b7ef49566fd4b1830b28fbb2703f8013d61f44e5",
+          "bytes": 32205
+        },
+        "brand/og.png": {
+          "sha256": "c55aa72d0843509875042d4fed3f4a71b1d361cacf5d5b582516bb80a49eade4",
+          "bytes": 52622
+        },
+        "DESIGN.md": {
+          "sha256": "91ba0011cae6f7050abc4d1d85990b35ed378478d548477b65854fc5205728fd",
+          "bytes": 10075
+        },
+        "DESIGN.json": {
+          "sha256": "c2949ce2e861ec2893a46122f3370af4ef84c9653dc2f83f529a749098087f90",
+          "bytes": 5400
+        },
+        "app.json": {
+          "sha256": "54e88ad3521399c9ffb5478d40b585f175539e6f046e2317cb3e628f1f9d2fd9",
+          "bytes": 717
+        }
+      }
+    },
+    "store": {
+      "name": "ByteDesk Store",
+      "kind": "embedded",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#8DAE00",
+        "light": "#5D7303",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "b6c97f6d63676fd749a769cf00d35e6b525aa94c39a7ab6ffdb26fa5c3f5ab25",
+          "bytes": 600
+        },
+        "brand/icon-light.svg": {
+          "sha256": "639327996d26900af8d67702dc20cf4a96be583682895dba231cbfb377dcac80",
+          "bytes": 640
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "54105e566e67ca9bb77d91105cdf3f1201d6934c5452307c62b1da8594ca7743",
+          "bytes": 558
+        },
+        "brand/icon-dark.png": {
+          "sha256": "685fabc98c4abe3583f21de10cb36a15e2efecf330abe4478feb9a6f595aa10b",
+          "bytes": 399196
+        },
+        "brand/icon-light.png": {
+          "sha256": "5cffd83d6abbd32b2edcb06c4c9221fbb0548f0982f4cd9daef9ed6c40e45255",
+          "bytes": 654006
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "169a45c42f9c8935e18aa7a39b815bc9baca0c24799ca741d29bf580f1d5c1dc",
+          "bytes": 282
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "669baedd236bcdc14b08f2015ec94db91a07799bae5204c38195191d89d249dd",
+          "bytes": 310
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "ad7a88c8fe950ce4f14a2f0fd32aa97108d0bd8265e6c54120bf37c282d0ceb9",
+          "bytes": 482
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "eb4c1fcd570d4f07a41d9aa9b6767f6caa8a8de968d3f1f98f80a2912eb94d65",
+          "bytes": 510
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "dac71f1f6b1eb53a97349ba89c0042f385aba1de9f792e03b653a2eb14890ccb",
+          "bytes": 486
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "d4dd476b021e79794ec6e2e1b4cb1dc5c79466d2d34fc8c2cdc6acd5f2015a20",
+          "bytes": 514
+        },
+        "brand/favicon.ico": {
+          "sha256": "b992b6b134f9133cbc6a2936bcc378f4e19369eb0b3e7984991e9ab6b87f9dd5",
+          "bytes": 768
+        },
+        "brand/icon-192.png": {
+          "sha256": "f0e9daf8a5f3b8c38ea336665c9bd74a1c52158c56cbc6b039193a59e9a92089",
+          "bytes": 23142
+        },
+        "DESIGN.md": {
+          "sha256": "cb3a28544ab0a8a9c70b8318e33ce10c1a45337ec021da942776f8bfe0e19d64",
+          "bytes": 9601
+        },
+        "DESIGN.json": {
+          "sha256": "3150c037298c5fd750229a8625320512c0c174756f4203f70e7142f4ee696667",
+          "bytes": 5189
+        },
+        "app.json": {
+          "sha256": "742af90fb84c6336684f311793d75f2378b47ba40e5cf113fdd11d4e31affb84",
+          "bytes": 691
+        }
+      }
+    },
+    "task-management": {
+      "name": "ByteDesk Task Management",
+      "kind": "plugin-dashboard",
+      "status": "active",
+      "accent": {
+        "mode": "inherits",
+        "hex": "#047BF4",
+        "light": "#255DA5",
+        "inherits": "gateway"
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "80f79417fc88a1ed7747afc76fbf6faf6329b1758d9ce4db3daae62cd5a8a868",
+          "bytes": 559
+        },
+        "brand/icon-light.svg": {
+          "sha256": "6a9f1aa286444bb13fed88ffff50cc0b7f103a208ff65f80ed4b05964f8f1689",
+          "bytes": 597
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "e75179f89519cb24cf7b0c8ec39b67da51a2396ea71cb89881ec94e5d80277a3",
+          "bytes": 535
+        },
+        "brand/icon-dark.png": {
+          "sha256": "ff24e70414ee747c5c5ff66c7e6ab485a52e432a33778f1fe5ff300eedc82238",
+          "bytes": 393536
+        },
+        "brand/icon-light.png": {
+          "sha256": "8d6f5c4db70fcfd3aba08b995b41b40565dc994eea6496f644a8aefce0a43a28",
+          "bytes": 594502
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "a8d670a8c7939e4e2f494bfffb259db73863b61a0d5c2bed7625b2e2da896a7f",
+          "bytes": 327
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b1ddad5a8771bf1db91e6bd0bffd6876f210412dd8d1f505481e2facf90ab789",
+          "bytes": 353
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "2e58c2fa2a115691ba08047bcd24ab5e0b021dec958052d42268b1541c652c5e",
+          "bytes": 432
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "f16f5155e61b64191718c33989238b79ce3a3e27ca1784074fbfaee5813b46b0",
+          "bytes": 458
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "c3e675c4bb6e8083556c53e32fb22a2848d263c93c493008dd0db5031d10e246",
+          "bytes": 437
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "93ac823b73deac7cb6fae672e439f9737203503fdd774b2917198b4b45f12aec",
+          "bytes": 463
+        },
+        "brand/favicon.ico": {
+          "sha256": "1584a163a571146ed3ea667f5fefffe4a2005fb46c9115a155d821f2aee2c728",
+          "bytes": 1219
+        },
+        "brand/icon-192.png": {
+          "sha256": "1fb2fcb1fd775536d90b06e326ac5e087cfc4ae74ef98cc692545b548a99fb16",
+          "bytes": 22926
+        },
+        "DESIGN.md": {
+          "sha256": "4448eb649ef9403f50480404c1f9b69f2abce7fa393513edb77fe387178bf964",
+          "bytes": 9377
+        },
+        "DESIGN.json": {
+          "sha256": "cff9741b936563546a941cf680b4ec8f071a2517011c9712101148bd6d4616dc",
+          "bytes": 5123
+        },
+        "app.json": {
+          "sha256": "317c64060d4a2ae4b90c963f0d7037c0b22b9345cd931110b055c63ad1af4793",
+          "bytes": 769
+        }
+      }
+    },
+    "terminal": {
+      "name": "ByteDesk Terminal",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "none",
+        "hex": null,
+        "light": null,
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "3604d6efd6bb070edf220ea3aa24256befaa3c95d643cd3ffaa92dd37033dda0",
+          "bytes": 480
+        },
+        "brand/icon-light.svg": {
+          "sha256": "50d10d2fd6238240fc83ecd7c5d235d76faf4fb0838c0ff7ed6e18e4dc5717f8",
+          "bytes": 520
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "36104f5ea1ce3d65d09286e76703540bb3a5a5462842cf31b7621c3d424ec674",
+          "bytes": 511
+        },
+        "brand/icon-dark.png": {
+          "sha256": "107cae9395657cc12eb43c1fe22b87907bcff218faea548138f3d5f7a8d867c2",
+          "bytes": 595615
+        },
+        "brand/icon-light.png": {
+          "sha256": "8cd88fb3f878b81e1ab11b73634a036af215fea2b2503b642cf67c79e54d158e",
+          "bytes": 595642
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "ac785403a6566056ae57a6c15fc084156d839b65c0dd5dec68c6d5e6fed31d9b",
+          "bytes": 279
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "356126ff624e31903e869f29193600f64f69f230cb2990d66c5e01ff7b4268ad",
+          "bytes": 307
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "c2cd6caeebc127a6658c2067af12c940a6c93e570336ed0dc3f9450e148258cf",
+          "bytes": 378
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "1e2753a97337301f665d342b785b0893161b7beb57b2121ad7d3f30d6cc3882f",
+          "bytes": 406
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "65b11afc1cbb710cd8775f0f3a3213c71abadb67cc656ef65a62188dc15cd193",
+          "bytes": 378
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "d1cd108d2223c92932341cdc295d87bb7882c61e4e38eda717031686f313dd63",
+          "bytes": 406
+        },
+        "brand/icon-16.png": {
+          "sha256": "b4eb5112fc783d61c26cf3cd02fd2b32c2ac9118e0bd999c89fff539b6a17ce2",
+          "bytes": 160
+        },
+        "brand/icon-24.png": {
+          "sha256": "20dc1e07adc259990937bf77ff2a7aebc63289ce1c20d898705d8524dcb7830e",
+          "bytes": 247
+        },
+        "brand/icon-32.png": {
+          "sha256": "9aa47a7a70470cb83f4486378341157cdd753c3591cff6d8703ab075130e9552",
+          "bytes": 357
+        },
+        "brand/icon-48.png": {
+          "sha256": "3268f2c8a12c5eb24325cc1a815e32f4c4dd98af83349967e14d73f2d6635a4e",
+          "bytes": 437
+        },
+        "brand/icon-64.png": {
+          "sha256": "47f6effb6e8f0137ebea1ffebb5c03ccc1612a29985b825f551626670f4a00b6",
+          "bytes": 3464
+        },
+        "brand/icon-128.png": {
+          "sha256": "9c75f9e6a73af1b124b58506c255a93657eea0e67622ff2e48847a5a80b24eb5",
+          "bytes": 12119
+        },
+        "brand/icon-256.png": {
+          "sha256": "307c2c2120f1e47cb89c66eaf122b0c90806c7d2ffc469a7237ec401aeaf919d",
+          "bytes": 44487
+        },
+        "brand/icon-512.png": {
+          "sha256": "52f49a43a810fac30873f185bba990e2d9cbfb26dc6813e53d42c74949574ba4",
+          "bytes": 165985
+        },
+        "brand/icon-1024.png": {
+          "sha256": "d0cc3bbed9aa95e37f93a2f8c92ff14a7bfc9dd38da8af90874ffc67f9466156",
+          "bytes": 650486
+        },
+        "brand/icon.ico": {
+          "sha256": "05228839499c7e34be83cf4011e7ef1d5365442573ed4fd18169a92e6c21b7bc",
+          "bytes": 61389
+        },
+        "brand/icon.icns": {
+          "sha256": "e552dd121ef50c20e9b500bf2d544a94b2deff86120b00075d503b5555ba9d11",
+          "bytes": 877122
+        },
+        "brand/tray-16.png": {
+          "sha256": "b4eb5112fc783d61c26cf3cd02fd2b32c2ac9118e0bd999c89fff539b6a17ce2",
+          "bytes": 160
+        },
+        "brand/tray-22.png": {
+          "sha256": "603426c84cc10ce85c9f9791c31da3bcd4f17106e82ba2ac9760fcacf851ed55",
+          "bytes": 255
+        },
+        "brand/tray-24.png": {
+          "sha256": "20dc1e07adc259990937bf77ff2a7aebc63289ce1c20d898705d8524dcb7830e",
+          "bytes": 247
+        },
+        "brand/tray-32.png": {
+          "sha256": "9aa47a7a70470cb83f4486378341157cdd753c3591cff6d8703ab075130e9552",
+          "bytes": 357
+        },
+        "brand/tray-48.png": {
+          "sha256": "3268f2c8a12c5eb24325cc1a815e32f4c4dd98af83349967e14d73f2d6635a4e",
+          "bytes": 437
+        },
+        "DESIGN.md": {
+          "sha256": "33b790466226a9b3f346cbc2c2dc6aeb68201e11bba50a0649e9736174ce36a5",
+          "bytes": 10940
+        },
+        "DESIGN.json": {
+          "sha256": "3dccf855040116367d4840480a804a1e9535b151684587fb88b7473910300058",
+          "bytes": 4386
+        },
+        "app.json": {
+          "sha256": "5b0e296e953316b2107faf89d7544489cff564929a6137d1d31460c584fd48a2",
+          "bytes": 861
+        }
+      }
+    },
+    "toolbox": {
+      "name": "ByteDesk Toolbox",
+      "kind": "desktop",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#B97BFD",
+        "light": "#854EBD",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "cd20b38771d0e21cf16b2d8e22585c5823a354fadcaf484e561e0da7993c2d99",
+          "bytes": 650
+        },
+        "brand/icon-light.svg": {
+          "sha256": "69b64768df6ccaf35fe8f846b79eeb381b8d94df5bf33e019cab2c62ced705c1",
+          "bytes": 692
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "ec9e9b9905dcf57016083a7998239f40d61d58f0df01c944fd3034b9ccf82289",
+          "bytes": 621
+        },
+        "brand/icon-dark.png": {
+          "sha256": "0f759dae3ef67ef1aad8159ab837e5452b2e4489cdf3ad0cf39e830b063737f6",
+          "bytes": 556537
+        },
+        "brand/icon-light.png": {
+          "sha256": "fa42d21de35620075506cb0001734415cf79608b80263c6b5ddb64305362934e",
+          "bytes": 761417
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "d6b94ff71af8118d168059ea53feca880527440054fdfdc07863309b88914fd3",
+          "bytes": 472
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "3eda9d935cd0a814b8e5c8447bf8ee79e9a4572409088b9cf6ad47c9da6383a0",
+          "bytes": 485
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "73b5c2c66fa2612e558087753cebb0777b533b688d58ad87578ff29024881fdd",
+          "bytes": 523
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "a1bd4396a571be5ff6cf8748e5edd344fde42c8c5e130062218c0b80e7574a09",
+          "bytes": 536
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "f60e7239453decdd4301db935f58d3dee4c5dee5cdf546c44cb1783aa8b8aa60",
+          "bytes": 528
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "d5bbbf74afbc14bd6638650d2bd27cf4b0d6e3960f2fc2e4f00405a776f639d6",
+          "bytes": 541
+        },
+        "brand/icon-16.png": {
+          "sha256": "5f300dfc42c9388fd6a5c93927a56c95fa9174cc8f056c84ab3f84d368b58dfd",
+          "bytes": 247
+        },
+        "brand/icon-24.png": {
+          "sha256": "86a50f6eb4f89a1717c8ac9801090115364870ecea7ee75cd90a62f08e997fd2",
+          "bytes": 314
+        },
+        "brand/icon-32.png": {
+          "sha256": "d8ca4890e6fadf4cf14900a2223d06fd2219257bde1f2b959e2c68f48dcc4eaa",
+          "bytes": 385
+        },
+        "brand/icon-48.png": {
+          "sha256": "6b64d67ec350a102570d420a75e96405870531ebc94701de889453370a997343",
+          "bytes": 523
+        },
+        "brand/icon-64.png": {
+          "sha256": "8c359f484b554cc0e7e970a06f55f712f2f25fc822edc9d0da242f2e26923dba",
+          "bytes": 4030
+        },
+        "brand/icon-128.png": {
+          "sha256": "dfa22e339bea9dc2056f408512097970240f8381156b97ecae857edae38a0fea",
+          "bytes": 13654
+        },
+        "brand/icon-256.png": {
+          "sha256": "5b4e0a8592c081fd4442a2fdac14cabbb470934be1c3d274419e7443c7f90d90",
+          "bytes": 47672
+        },
+        "brand/icon-512.png": {
+          "sha256": "4c7e735f30ba350cf0aa66d2bbb295b8e714466d171671d61686b1a1f9c69fd5",
+          "bytes": 169605
+        },
+        "brand/icon-1024.png": {
+          "sha256": "dd85d91605b1dafb709a4ac2f14dfd97aee1a6f5be63cc52a2cafd2199e8524b",
+          "bytes": 636918
+        },
+        "brand/icon.ico": {
+          "sha256": "de179d45616fb5ab44cbcf802f01619f0335a257fcc6587a6d9699aee0a0eafd",
+          "bytes": 66943
+        },
+        "brand/icon.icns": {
+          "sha256": "c3311ac31c7113f1039540729ad519ed4a2fe7b4aaece7e70993fbab9da76933",
+          "bytes": 872575
+        },
+        "brand/tray-16.png": {
+          "sha256": "5f300dfc42c9388fd6a5c93927a56c95fa9174cc8f056c84ab3f84d368b58dfd",
+          "bytes": 247
+        },
+        "brand/tray-22.png": {
+          "sha256": "d8f2079a7c1f5848af6c21b673b51d35aabe8cec60e4df5ae814023c84b79266",
+          "bytes": 332
+        },
+        "brand/tray-24.png": {
+          "sha256": "86a50f6eb4f89a1717c8ac9801090115364870ecea7ee75cd90a62f08e997fd2",
+          "bytes": 314
+        },
+        "brand/tray-32.png": {
+          "sha256": "d8ca4890e6fadf4cf14900a2223d06fd2219257bde1f2b959e2c68f48dcc4eaa",
+          "bytes": 385
+        },
+        "brand/tray-48.png": {
+          "sha256": "6b64d67ec350a102570d420a75e96405870531ebc94701de889453370a997343",
+          "bytes": 523
+        },
+        "DESIGN.md": {
+          "sha256": "9729c20debb9c904de22c01b4b295d6a4dbe38c94dcd090e9e6e022c5a6f3a4d",
+          "bytes": 10568
+        },
+        "DESIGN.json": {
+          "sha256": "e87b0ac9ea617fe3b7aa33d914917724b4b7a8dad0c0ae6ce2bcc43448aaadb6",
+          "bytes": 5512
+        },
+        "app.json": {
+          "sha256": "40cdb340fadeb8f50a8a04249e59b1ced144e844edb6e417a1e804fd49a8c577",
+          "bytes": 740
+        }
+      }
+    },
+    "vault": {
+      "name": "ByteDesk Vault",
+      "kind": "embedded",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#D98A0D",
+        "light": "#965D02",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "e0f40743cf3fa6f44677d1ebc4967be1507e1c16d749b44aee9f1294fa55af46",
+          "bytes": 505
+        },
+        "brand/icon-light.svg": {
+          "sha256": "8ab49b050e363e73c80bb1ab4297ef38c64ab6b11cc9ef01c5f21189cfd6fa63",
+          "bytes": 524
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "9ffe56bf638e0f70e73c8469b86e307ff44ccf28b57b2865b262d05c23874962",
+          "bytes": 427
+        },
+        "brand/icon-dark.png": {
+          "sha256": "31b24794e45a5608ba9bb8c264d4baaf3896c0f1e6cd8e658f9d5fb379c2bda7",
+          "bytes": 957386
+        },
+        "brand/icon-light.png": {
+          "sha256": "d43a0a25d64935380cbd4f33b31b3a1891b70e6bb246ff1ebc41db308539c4a8",
+          "bytes": 874398
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "899503385ab15d22d1de1806cc5c8e8a71d4625ce8934810efb26885c017955e",
+          "bytes": 349
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "efd572a42fcc14942c2f47ccf3021d2ccd5248c326f58e1bb51931b4bb32ae58",
+          "bytes": 349
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "df0ff3bc3ebbe82d50dd2d2eb4e5438cbeeb0001dd5779f8af304c122c1d1c08",
+          "bytes": 425
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "404b28a489e9a270dc2d7b0e24309d37f6f67c14259fb43b14f69dd93ad8cb82",
+          "bytes": 425
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "e4e8ebc4b403e0532992d8f43a317e470121a0d46d3148f9f212cc27448fd790",
+          "bytes": 440
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "048d8d7628c74035255121888a1814b28b33b852b00fccb1b42d1552f0864eae",
+          "bytes": 440
+        },
+        "brand/favicon.ico": {
+          "sha256": "e981636a83b431e32efb81cf9c1f6e14e9ef845a4a87b40bc2630a104d8125a4",
+          "bytes": 1047
+        },
+        "brand/icon-192.png": {
+          "sha256": "e4da88f52109984945db8eec00c4a482e53053ca44af945b02c62fffab6a5030",
+          "bytes": 41071
+        },
+        "DESIGN.md": {
+          "sha256": "2b3527ea8516943936ab6b6ed0d4a555a836fe466b588f3392131507dfe3888b",
+          "bytes": 9748
+        },
+        "DESIGN.json": {
+          "sha256": "e02a7134f42fb29d95a046470c22ca3d8dd759eb3e697dc6b8446272206141dc",
+          "bytes": 5119
+        },
+        "app.json": {
+          "sha256": "c027f4ab8dca0646635dcc38d584eae0a1749dfc144c213a40c62c3f13a0bd5f",
+          "bytes": 681
+        }
+      }
+    },
+    "workforce": {
+      "name": "Workforce",
+      "kind": "web-app",
+      "status": "active",
+      "accent": {
+        "mode": "own",
+        "hex": "#FEA3D0",
+        "light": "#901461",
+        "inherits": null
+      },
+      "files": {
+        "brand/icon.svg": {
+          "sha256": "554aa85919e20d73f9ab90439aefca1dbc8c0d0ffb1fccd5e41d0b67a56a0a13",
+          "bytes": 636
+        },
+        "brand/icon-light.svg": {
+          "sha256": "b18fd618c1bba912d685050bb6820e623d1de50ace277ab186236e32d902d192",
+          "bytes": 676
+        },
+        "brand/icon-mono.svg": {
+          "sha256": "1ac1906ef83f0ceb0c5b266393ae92b97264e7bbcce253fd827773440e3dd272",
+          "bytes": 578
+        },
+        "brand/icon-dark.png": {
+          "sha256": "06a955135a6b92074e3a43f86f4652a9093ef8cad437a266eba2b30a0cf91d5d",
+          "bytes": 389799
+        },
+        "brand/icon-light.png": {
+          "sha256": "779ecba14c1fa3514fdf46d48bba5556a3fcc43cb50dd93b5abb200cce4a8525",
+          "bytes": 540154
+        },
+        "brand/favicon-16.svg": {
+          "sha256": "b05d0421d9803d66142a0cb8aa813d88d6a8d4d191ee2b574ed6447f6aa567cf",
+          "bytes": 390
+        },
+        "brand/favicon-16-light.svg": {
+          "sha256": "b0d8d1ebf62b00550ddeed170e35420e05b6e00fcf09a24b9826546c2b848a70",
+          "bytes": 418
+        },
+        "brand/favicon-32.svg": {
+          "sha256": "f05ec0b91f50993bc221496886f4c21d1da8c853e2032e445c0ad2c12b0e2041",
+          "bytes": 492
+        },
+        "brand/favicon-32-light.svg": {
+          "sha256": "98726d609af47eeb6d3228a61e84668c19ec5907e6511af23139b627b21ee99e",
+          "bytes": 520
+        },
+        "brand/favicon-48.svg": {
+          "sha256": "b0bc08cbb16250d3e97cfc610ec3040342d802ad90500f0e9c60b12968a38542",
+          "bytes": 499
+        },
+        "brand/favicon-48-light.svg": {
+          "sha256": "86f8b39cd3d7d93d2a4b3e420503f115179726f01c33af9c9ea2a08d01dc0ece",
+          "bytes": 527
+        },
+        "brand/favicon.ico": {
+          "sha256": "799d61692dd25f1573888ef16e08a6024a56ede2ba982c34b8c26d03752d7fd7",
+          "bytes": 1149
+        },
+        "brand/icon-192.png": {
+          "sha256": "a5b7fa7f40942e0ffe3405cb856b2133e6f925a108fc4f54be7a07aed0cad442",
+          "bytes": 27040
+        },
+        "brand/icon-512.png": {
+          "sha256": "a154755ceed98deba0b90cd120a34af8e19160215454dab5990abe649458aebe",
+          "bytes": 151438
+        },
+        "brand/icon-512-light.png": {
+          "sha256": "ad1fc2f0352ddf7908c15c6fc919ca9c0a2aab8fe62fede7c1d5bf1ab9056831",
+          "bytes": 180103
+        },
+        "brand/apple-touch-icon.png": {
+          "sha256": "f6172e436c583ff31c2b8cc7a461f93c6a48a6c1cf89ffcdcc657ebb779d059f",
+          "bytes": 23955
+        },
+        "brand/og.png": {
+          "sha256": "ad56490a1a55e4e61bc14cff513c411f6e17dbe51e553801f85a223f9a56fb33",
+          "bytes": 38607
+        },
+        "DESIGN.md": {
+          "sha256": "c24c7fd097ef2627920272f45ae9e1f542ce0a1b3ea14d644a28b9e0fc35464f",
+          "bytes": 9893
+        },
+        "DESIGN.json": {
+          "sha256": "2cc4997f9aa962fee2a302f1dbe552097f497261f98f493068a5d3984281bc06",
+          "bytes": 5433
+        },
+        "app.json": {
+          "sha256": "7983a004a5e9bd9e7a3b179ed9a5dcf99e043c223ba3009f6de1027381e774a6",
+          "bytes": 1024
+        }
+      }
+    }
+  }
+}

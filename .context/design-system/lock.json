@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "version": "2.2.1",
+  "sourceSha": "c050abca4c35cf3355f897af9e8d3c6e5c9eec61",
+  "app": "openseo",
+  "include": [],
+  "status": "current",
+  "files": {
+    "foundation/bytedesk.css": {
+      "sha256": "b021a230d6eb2e7645aa05d864622bc80580f7c8f4cedea7ca562dd9b31f5b6a",
+      "bytes": 19265
+    },
+    "foundation/components.css": {
+      "sha256": "1165f406436bb9390008408c6428a9842787cf4cfa5d632cf2f14362bf15d968",
+      "bytes": 71270
+    },
+    "foundation/tailwind/theme.css": {
+      "sha256": "ba9bed2ef2002d312fe1b68bf338f663fc10f5fb7a7b442b4b5154fe570f037a",
+      "bytes": 6556
+    },
+    "foundation/platforms/typescript/bytedesk-tokens.ts": {
+      "sha256": "5dfa51a328b6907e3ba9572925054048fb2415bca425cab51dbabd2f0c7906a8",
+      "bytes": 9030
+    },
+    "foundation/platforms/rust/bytedesk_tokens.rs": {
+      "sha256": "aa525a0e3017d60ce8c5abc8ca328940fc47db1efce6c2fd529c479bf9ab07b5",
+      "bytes": 21540
+    },
+    "foundation/platforms/go/bytedesk_tokens.go": {
+      "sha256": "b018f21fa5532b7bfa6ce2d6e6473083e6ae10cfcd7d7b9a364e031e3279dcdf",
+      "bytes": 27039
+    },
+    "foundation/tokens.json": {
+      "sha256": "9c3f4a3bc1ae86e4f8e7a480c1b368dc029799a78dac2d1dfd5e4c8a88fd3a10",
+      "bytes": 30101
+    },
+    "foundation/fonts.css": {
+      "sha256": "3268f8cb442f4a23c7d17b64bea9c4d302d6f43d3fc7e9fa91b53bf5bf2d5f38",
+      "bytes": 1039
+    },
+    "foundation/DESIGN.md": {
+      "sha256": "b156947bb41cc093d09d767aea0c23016283abff63113ae52971c686fb186b40",
+      "bytes": 13221
+    },
+    "client/go/design.go": {
+      "sha256": "28c572bba1a8a635f98231bb3961fa69fa3f39c69a8595ccfb33be179d0c56e7",
+      "bytes": 6150
+    },
+    "client/go/go.mod": {
+      "sha256": "3690ff313f664c4c3f1283d7ae1c7d6ce46534d9c5afa5c4855948b79539246b",
+      "bytes": 62
+    },
+    "client/rust/Cargo.toml": {
+      "sha256": "a05abe7f65954fb0131d585aec59005c12088c4a03cbde071ea2824ca2028972",
+      "bytes": 383
+    },
+    "client/rust/src/lib.rs": {
+      "sha256": "40d1989a9ddb0cb364294b64d0efd53ee2fe4cd46716bb5c99ebadaecab6c52f",
+      "bytes": 6095
+    },
+    "apps/openseo/brand/icon.svg": {
+      "sha256": "5b3bf404983d33ada25e3f611a120abffa15a8a3755645eadd6b2eca497c1316",
+      "bytes": 824
+    },
+    "apps/openseo/brand/icon-light.svg": {
+      "sha256": "7b6767efcba2f3fb1e402f368c1e201fb8d5c10f398698ada3e037a8404bd500",
+      "bytes": 864
+    },
+    "apps/openseo/brand/icon-mono.svg": {
+      "sha256": "a3f3182819386fc603c21f046ea6af1856215ba5c5bf660098268b9d04067b36",
+      "bytes": 556
+    },
+    "apps/openseo/brand/icon-dark.png": {
+      "sha256": "19c85191ecfb6dcd5e2883fb85c5ede6fa02ef990995c85876d56e90f257985a",
+      "bytes": 856262
+    },
+    "apps/openseo/brand/icon-light.png": {
+      "sha256": "48e1d5a00ea03c2414ea6a08c63c3d7551c7bdbefdf3150f87c371482466344a",
+      "bytes": 861117
+    },
+    "apps/openseo/brand/favicon-16.svg": {
+      "sha256": "af6d706f06b6f969e6e72c821a2d7bfda1c0cb89ca48c0271a98c5614e1bdd5f",
+      "bytes": 302
+    },
+    "apps/openseo/brand/favicon-16-light.svg": {
+      "sha256": "dd837c725e3e485e80118161e9078df904d694f279d3fb167d10db4a631a0f2e",
+      "bytes": 330
+    },
+    "apps/openseo/brand/favicon-32.svg": {
+      "sha256": "05c73adb56703b70b1770987d262b6ffc03c5e41177bd3607b10bd646a99d7e7",
+      "bytes": 729
+    },
+    "apps/openseo/brand/favicon-32-light.svg": {
+      "sha256": "88b5b96d6045f556101903e24188eff175f40d0dd4d08b81cdb90285e4aee2b0",
+      "bytes": 757
+    },
+    "apps/openseo/brand/favicon-48.svg": {
+      "sha256": "7e464877ee7c5fc13bbcda5262efca61b2cc5e8d45acda3eb1790099a3db2173",
+      "bytes": 740
+    },
+    "apps/openseo/brand/favicon-48-light.svg": {
+      "sha256": "23af6a017e12ab239df064fd95fff430324306817eeaaebbec2f9ff21effa665",
+      "bytes": 768
+    },
+    "apps/openseo/brand/favicon.ico": {
+      "sha256": "6088d6d433034be6336d2c2cdad33457f31a3f891a2bac7368f745c0b25820d4",
+      "bytes": 1502
+    },
+    "apps/openseo/brand/icon-192.png": {
+      "sha256": "c0bb018fc39e673c708dc017991775064f6ba26230dfce9aed336845611f1392",
+      "bytes": 37052
+    },
+    "apps/openseo/brand/icon-512.png": {
+      "sha256": "16869dfe29291b85e931428fe3a72413479025f6fb14a7fd707221961adc7092",
+      "bytes": 234080
+    },
+    "apps/openseo/brand/icon-512-light.png": {
+      "sha256": "6a3cb8b43e8211066b55c118e7da3052be73a5d61f0dba36d40fd4c868905849",
+      "bytes": 252369
+    },
+    "apps/openseo/brand/apple-touch-icon.png": {
+      "sha256": "e198c593caeecf65072b419896ab8790accc3348df97dacb35728ba39449702d",
+      "bytes": 32970
+    },
+    "apps/openseo/brand/og.png": {
+      "sha256": "e3c58ffe3b5876594d7702af0766f9c74d83f7cb876ec92dff509f5d87bf6945",
+      "bytes": 53992
+    },
+    "apps/openseo/DESIGN.md": {
+      "sha256": "c1523994a4b6fe53a714f3def66fe971e0a077faea837af677eb0e0fe26d6d02",
+      "bytes": 6589
+    },
+    "apps/openseo/DESIGN.json": {
+      "sha256": "98cf05c9d15db8f3806bed02d0cef5b1ad9be83db9ab60f4ef6fe5d2df387fdf",
+      "bytes": 5053
+    },
+    "apps/openseo/app.json": {
+      "sha256": "52de8a32dffc58e3c0412cf64b40ae2cae1fefedc525f4370f4211ac5c4a6131",
+      "bytes": 696
+    },
+    "apps/openseo/PRODUCT.md": {
+      "sha256": "9395ee38742b35bc38b4699547541ff9ba4a5b9c2fefa8a3490c117c1f69cc4f",
+      "bytes": 880
+    },
+    "catalog.json": {
+      "sha256": "8c9737f7ad10fc1711c38655a0a3c6abe72abedce08084c4e8efc22058c6aa3d",
+      "bytes": 85851
+    }
+  }
+}

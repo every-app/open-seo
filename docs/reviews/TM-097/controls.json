@@ -1,0 +1,66 @@
+[
+  {
+    "theme": "light",
+    "check": "saved preference overrides opposite OS in both theme layers",
+    "pass": true,
+    "state": {
+      "bd": "light",
+      "daisy": "openseo",
+      "blue": "#255DA5",
+      "font": true
+    }
+  },
+  {
+    "theme": "light",
+    "check": "setup dialog dismisses",
+    "pass": true
+  },
+  {
+    "theme": "light",
+    "check": "keyboard focus reaches an interactive element",
+    "pass": false,
+    "focus": {
+      "tag": "BODY",
+      "role": null,
+      "tabIndex": -1,
+      "html": "<body><script type=\"module\" async=\"\" src=\"/@id/virtual:tanstack-start-dev-client-entry\"></script><div class=\"flex h-[100dvh] bg-base-200\"><div class=\"hidden shrink-0 md:block\"><div class=\"flex h-full w-60 flex-col bg-base-200\"><div class=\"flex items-center justify-between px-4 pb-2 pt-3\"><a href=\"/\" class=\"text-base font-semibold text-base-content\">OpenSEO</a></div><div class=\"px-3 pb-1\"><div clas"
+    }
+  },
+  {
+    "theme": "light",
+    "check": "Settings navigation",
+    "pass": true
+  },
+  {
+    "theme": "dark",
+    "check": "saved preference overrides opposite OS in both theme layers",
+    "pass": true,
+    "state": {
+      "bd": "dark",
+      "daisy": "openseo-dark",
+      "blue": "#047BF4",
+      "font": true
+    }
+  },
+  {
+    "theme": "dark",
+    "check": "setup dialog dismisses",
+    "pass": true
+  },
+  {
+    "theme": "dark",
+    "check": "keyboard focus reaches an interactive element",
+    "pass": false,
+    "focus": {
+      "tag": "BODY",
+      "role": null,
+      "tabIndex": -1,
+      "html": "<body><script type=\"module\" async=\"\" src=\"/@id/virtual:tanstack-start-dev-client-entry\"></script><div class=\"flex h-[100dvh] bg-base-200\"><div class=\"hidden shrink-0 md:block\"><div class=\"flex h-full w-60 flex-col bg-base-200\"><div class=\"flex items-center justify-between px-4 pb-2 pt-3\"><a href=\"/\" class=\"text-base font-semibold text-base-content\">OpenSEO</a></div><div class=\"px-3 pb-1\"><div clas"
+    }
+  },
+  {
+    "theme": "dark",
+    "check": "Settings navigation",
+    "pass": true
+  }
+]

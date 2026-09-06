@@ -1,0 +1,13 @@
+
+> open-seo@0.1.7 ci:check /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+> prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z "$(git status --porcelain -- plugins/openseo/skills)"
+
+Checking formatting...
+All matched files use Prettier code style!
+Found 0 warnings and 0 errors.
+Finished in 4.9s on 836 files with 184 rules using 32 threads.
+
+> open-seo@0.1.7 sync-plugin-skills /home/ryan/Documents/GitHub/ByteDeskAI/.tm097-adoptions/openseo
+> node scripts/sync-plugin-skills.mjs
+
+Synced 9 skills into plugins/openseo/skills/

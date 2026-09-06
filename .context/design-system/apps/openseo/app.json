@@ -1,0 +1,30 @@
+{
+  "slug": "openseo",
+  "name": "OpenSEO",
+  "kind": "web-app",
+  "status": "active",
+  "accent": {
+    "mode": "own",
+    "value": "#19E5AD",
+    "light": "#0A5841"
+  },
+  "personality": {
+    "density": "comfortable",
+    "motion": "calm",
+    "richness": "balanced",
+    "motif": "two positions compared",
+    "icon": "an anthropomorphic search lens whose iris is a rising analysis graph"
+  },
+  "source": {
+    "repository": "ByteDeskAI/design-system",
+    "path": "profiles/openseo/DESIGN.md",
+    "commit": "5283423bb2d0e2dc0a4f82fc261a638cf98f3b45"
+  },
+  "consumers": [],
+  "resolvedAccent": {
+    "mode": "own",
+    "hex": "#19E5AD",
+    "light": "#0A5841",
+    "root": "openseo"
+  }
+}

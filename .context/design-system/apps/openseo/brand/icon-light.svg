@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="openseo-light-title openseo-light-desc">
+  <title id="openseo-light-title">ByteDesk OpenSEO on light ground</title>
+  <desc id="openseo-light-desc">A landscape block with one open stadium lens and a blue precision rim.</desc>
+  <path fill="#22252A" fill-rule="evenodd" d="M4 3H28C29.657 3 31 4.343 31 6V26C31 27.657 29.657 29 28 29H4C2.343 29 1 27.657 1 26V6C1 4.343 2.343 3 4 3ZM11 11H21C23.761 11 26 13.239 26 16C26 18.761 23.761 21 21 21H11C8.239 21 6 18.761 6 16C6 13.239 8.239 11 11 11Z"/>
+  <path fill="#255DA5" fill-rule="evenodd" d="M11 11H21C23.761 11 26 13.239 26 16C26 18.761 23.761 21 21 21H11C8.239 21 6 18.761 6 16C6 13.239 8.239 11 11 11ZM11 13H21C22.657 13 24 14.343 24 16C24 17.657 22.657 19 21 19H11C9.343 19 8 17.657 8 16C8 14.343 9.343 13 11 13Z"/>
+</svg>

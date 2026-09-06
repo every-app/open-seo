@@ -1,0 +1,55 @@
+{
+  "app": "openseo",
+  "base": "3632f408528cd588fec98c3a174af8ea0ad205e8",
+  "release": "2.2.1",
+  "contextFiles": 35,
+  "sourceSha256": {
+    "package.json": "dab1b7f8b66343b59b88eea6491e6961e4b394193001fe2ec319b999d907ba7a",
+    "pnpm-lock.yaml": "bd74990476046e9bd31e0807881c1c3092f5d90f79578b3138c589a137946d4f",
+    ".npmrc": "86e768f4cb2a17348b507631e50a8482f455d65ca2c612bf11dfe14075b7c6b4",
+    ".design-system.json": "0300ee6833ab9d481dc1441acb70424f7b0828c3a2b296c9cb6892c2ce578736",
+    ".context/design-system/lock.json": "e66a225cd43fdfb51ac7c53e46fdac54664ef4bf262300dd84babeeefe3dd948",
+    "src/client/styles/app.css": "fe27c9f17f1eb868a3db2385b18a66067e06a3794fdcdc65c7fdffa469d8b99b",
+    "src/client/lib/theme.ts": "83142d76609ece16006a023cf40430cfdc4deac6d18de1e12a3a1959ac9ad11a",
+    "src/client/lib/theme.test.ts": "061918756ce46d5c924d2b65eb4ee4ca9f488f5f857be9b7175ea1368fa00d07",
+    "src/routes/__root.tsx": "d9710c7fa846f9ea0614e8f2a7b9bf8933871f4f89cd559f1a5ae90d8c8028da",
+    ".github/workflows/ci.yml": "a0ac354bff6423aea50a4ba9ee5bb8fe085b2f166e196752c3f22c1bcab18a74",
+    "knip.jsonc": "a8fcbacea023ee25bdeffd5dbe5145757a83b4b6f1487c2c1b7d37764a3d63ed"
+  },
+  "checks": {
+    "existingTests": 1165,
+    "newThemeTests": 5,
+    "build": "passed",
+    "ciCheck": "passed",
+    "offlineSync": "passed with network namespace, empty environment and HOME",
+    "browserPassed": 6,
+    "browserFailed": 2,
+    "browserFailure": "First Tab after setup dialog dismissal leaves focus on BODY in both themes"
+  },
+  "capture": {
+    "browser": "Chrome 152.0.7977.82",
+    "viewport": [1440, 1000],
+    "dpr": 1,
+    "surface": "Actual local OpenSEO TanStack/Cloudflare app with isolated local D1 and local_noauth",
+    "provenance": "Original local browser captures of upstream OpenSEO UI; no real customer/provider data"
+  },
+  "evidenceSha256": {
+    "README.md": "ae26e6754836e1bae1984dc17973558f93b397091607b5e9500d01c9e7f84347",
+    "after-dark.png": "407590dd4e33e564253f750176d4e40a1dbe7072d0067ac1cd40731f0eb9fcff",
+    "after-light.png": "ba215b03a98e82e3df3fd1e6271c4e91ef75b03e04b204acc4dadb6f7026e518",
+    "after.json": "01cea56683357db80e671c83938d1f4896239a73ef19611e57be6b2fb71d4c1c",
+    "before-dark.png": "63aff97fa4f56d970813b892a83262ebda3d8f6814e9af7d23693d9b82775fc9",
+    "before-light.png": "4ed71fffa4a5c5e01ebcc7f587437800e36ecd11c9aabc70312c9b44facb28ec",
+    "before.json": "39ea5a096dd163d8e7ddeb4160f5c3f1ff2de5d67d07a6a7342ba8384bad5483",
+    "build.log": "f1df8f6d43e2a600f3deb1985e887f7b040535b3de0428e4c5975fe4e8d83e60",
+    "capture.mjs": "dc878a1c7b8fc6c47100662a653b5890585d7f3c574b0de48e82ada8dfd63a20",
+    "ci-check.log": "46f9e187193113eb2ea7840ccd6aabe0d271af9b3d05e7719f80a98cd1afec37",
+    "controls.json": "0b70a3abffff722caf114eeaebf8c46a128dbb8a9cb52c794ce4d45fe59047df",
+    "controls.mjs": "d37d9cb9e553dff7d47aa8946abfbdf4a8e013777bf749e7e025b26de88d93dd",
+    "dashboard-dark.png": "26bc66e9c3be12bfbee34a504f95b20f2a3795db426d698a9d57539fa5cd64a8",
+    "dashboard-light.png": "6a09e27ca9139c8e777170ad904ac2f9921dd47e9763e285c0112576f30e2910",
+    "offline-check.log": "69615f04b94dc90063b4193bb7181b8d29733ac761abc216677aea648bcba85f",
+    "tests.log": "c5bff8d82d0c19901d472131094e4e0c347728b1fe7ba80a9c65cf7edea553f9",
+    "theme-tests.log": "3e4cb712992ed7377a1379966cc8fd4e6acd292ef9f5241b46b0e8c89bb36a84"
+  }
+}
