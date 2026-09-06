@@ -12,7 +12,7 @@ import {
   YAxis,
 } from "recharts";
 import { getDomainHistory } from "@/serverFunctions/domain";
-import { normalizeDomain } from "@/types/schemas/domain";
+import { normalizeDomainHistoryTarget } from "@/types/schemas/domain";
 import {
   DOMAIN_HISTORY_MAX_DOMAINS,
   type DomainHistoryResult,
@@ -232,12 +232,12 @@ export function DomainTrafficHistory({
 function parseDomains(primaryDomain: string, rawCompetitors: string) {
   try {
     const domains = [
-      normalizeDomain(primaryDomain),
+      normalizeDomainHistoryTarget(primaryDomain),
       ...rawCompetitors
         .split(",")
         .map((value) => value.trim())
         .filter(Boolean)
-        .map(normalizeDomain),
+        .map(normalizeDomainHistoryTarget),
     ];
     const unique = [...new Set(domains)];
     if (unique.length > DOMAIN_HISTORY_MAX_DOMAINS) {
@@ -250,7 +250,8 @@ function parseDomains(primaryDomain: string, rawCompetitors: string) {
   } catch {
     return {
       ok: false as const,
-      message: "Enter competitors as domains, separated by commas.",
+      message:
+        "Historical traffic supports domains and subdomains only. DataForSEO cannot return folder history such as example.com/jp.",
     };
   }
 }

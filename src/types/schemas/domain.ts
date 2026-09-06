@@ -42,6 +42,40 @@ export const domainField = z
     }
   });
 
+const DOMAIN_HISTORY_TARGET_ERROR =
+  "Historical traffic supports domains and subdomains only; folder paths such as example.com/jp are not available from DataForSEO.";
+
+export function normalizeDomainHistoryTarget(input: string): string {
+  let value = input.trim().toLowerCase();
+  if (!/^[a-z]+:\/\//.test(value)) value = `https://${value}`;
+  const url = new URL(value);
+  if (url.pathname !== "/" || url.search || url.hash) {
+    throw new Error(DOMAIN_HISTORY_TARGET_ERROR);
+  }
+  const hostname = url.hostname.replace(/^www\./, "");
+  if (!hostname.includes(".") || !isValidDomainHost(hostname)) {
+    throw new Error("Enter a valid domain like example.com");
+  }
+  return hostname;
+}
+
+export const domainHistoryTargetField = z
+  .string()
+  .min(1)
+  .max(2048)
+  .transform((value, ctx) => {
+    try {
+      return normalizeDomainHistoryTarget(value);
+    } catch (error) {
+      ctx.addIssue({
+        code: "custom",
+        message:
+          error instanceof Error ? error.message : DOMAIN_HISTORY_TARGET_ERROR,
+      });
+      return z.NEVER;
+    }
+  });
+
 export const booleanSearchParamSchema = z
   .union([z.boolean(), z.enum(["true", "false"])])
   .transform((value) => value === true || value === "true");
@@ -65,7 +99,7 @@ export const domainHistoryRequestSchema = z
   .object({
     projectId: z.string().uuid(),
     domains: z
-      .array(domainField)
+      .array(domainHistoryTargetField)
       .min(1)
       .max(DOMAIN_HISTORY_MAX_DOMAINS)
       .transform((domains) => [...new Set(domains)]),

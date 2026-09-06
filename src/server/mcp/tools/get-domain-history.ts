@@ -14,7 +14,7 @@ import {
   locationCodeSchema,
   projectIdSchema,
 } from "@/server/mcp/schemas";
-import { domainField } from "@/types/schemas/domain";
+import { domainHistoryTargetField } from "@/types/schemas/domain";
 import {
   DOMAIN_HISTORY_MAX_DOMAINS,
   DOMAIN_HISTORY_MIN_DATE,
@@ -27,11 +27,13 @@ const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD");
 const inputSchema = {
   projectId: projectIdSchema,
   domains: z
-    .array(domainField)
+    .array(domainHistoryTargetField)
     .min(1)
     .max(DOMAIN_HISTORY_MAX_DOMAINS)
     .transform((domains) => [...new Set(domains)])
-    .describe("Domains to compare. Each domain is one billed task."),
+    .describe(
+      "Domains or subdomains to compare. Folder paths are not supported by DataForSEO. Each target is one billed task.",
+    ),
   dateFrom: isoDateSchema.describe(
     `First month to return. Data starts at ${DOMAIN_HISTORY_MIN_DATE}.`,
   ),
