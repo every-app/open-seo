@@ -105,9 +105,12 @@ export function analyzeHtml(
   };
 
   const handleLinkTag = (attribs: Record<string, string>) => {
-    if (attribs["rel"] === "canonical") {
+    // `rel` is ASCII case-insensitive in HTML, so <link rel="Canonical"> is
+    // the same link type as <link rel="canonical">.
+    const rel = attribs["rel"]?.toLowerCase();
+    if (rel === "canonical") {
       canonical ??= attribs["href"] ?? null;
-    } else if (attribs["rel"] === "alternate" && attribs["hreflang"]) {
+    } else if (rel === "alternate" && attribs["hreflang"]) {
       hreflangTags.push(attribs["hreflang"]);
     }
   };
@@ -179,7 +182,8 @@ export function analyzeHtml(
               "text/javascript",
               "application/javascript",
             ].includes(attribs["type"]?.toLowerCase() ?? "");
-            if (attribs["type"] === "application/ld+json") {
+            // MIME types are case-insensitive too.
+            if (attribs["type"]?.toLowerCase() === "application/ld+json") {
               hasStructuredData = true;
             }
             break;
