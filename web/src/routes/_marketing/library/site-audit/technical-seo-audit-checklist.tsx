@@ -21,7 +21,8 @@ const faqs = [
       "Run one before and after any migration, template change, or platform upgrade, because those are the events that create critical issues. Outside of that, a quarterly crawl is enough for a stable site. Auditing monthly on a site nobody is changing produces the same report every month and trains everyone to ignore it.",
   },
   {
-    question: "What is the difference between a technical SEO audit and an SEO audit?",
+    question:
+      "What is the difference between a technical SEO audit and an SEO audit?",
     answer:
       "A technical audit asks whether search engines can reach, render, and understand your pages. A broader SEO audit adds content quality, keyword coverage, and links. The technical layer comes first because a content problem on a page Google cannot fetch is not the problem you have.",
   },
