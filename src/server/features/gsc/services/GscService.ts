@@ -302,6 +302,27 @@ async function inspectUrls(input: {
   };
 }
 
+/** Confirms a stored connection's grant still reaches Search Console, not
+ *  just that a row exists -- the same live probe listSitesForUserWithGrantStatus
+ *  uses per-account, scoped to this connection's specific grant. */
+async function verifyConnection(
+  connection: Pick<GscConnection, "connectedByUserId" | "gscAccountId">,
+): Promise<boolean> {
+  const client = createGscClient({
+    userId: connection.connectedByUserId,
+    gscAccountId: connection.gscAccountId ?? undefined,
+  });
+  try {
+    await client.listSites();
+    return true;
+  } catch (error) {
+    if (!isExpectedGrantFailure(error)) {
+      console.error("GSC connection verify failed unexpectedly", error);
+    }
+    return false;
+  }
+}
+
 export const GscService = {
   getConnection,
   userHasGrant,
@@ -310,4 +331,5 @@ export const GscService = {
   disconnect,
   getPerformance,
   inspectUrls,
+  verifyConnection,
 };

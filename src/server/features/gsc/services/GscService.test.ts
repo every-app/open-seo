@@ -430,3 +430,37 @@ describe("GscService.disconnect", () => {
     expect(mocks.dbDelete).not.toHaveBeenCalled();
   });
 });
+
+describe("verifyConnection", () => {
+  const connection = { connectedByUserId: "u1", gscAccountId: "sub-a" };
+
+  it("is true when the stored grant still reaches Search Console", async () => {
+    mocks.listSites.mockResolvedValue([]);
+
+    await expect(GscService.verifyConnection(connection)).resolves.toBe(true);
+  });
+
+  it("is false when Google rejects the stored grant, without error logging", async () => {
+    mocks.listSites.mockRejectedValue(new GscTokenError("revoked"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(GscService.verifyConnection(connection)).resolves.toBe(
+      false,
+    );
+    expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  it("is false but logs on an unexpected error", async () => {
+    mocks.listSites.mockRejectedValue(new Error("network blip"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+
+    await expect(GscService.verifyConnection(connection)).resolves.toBe(
+      false,
+    );
+    expect(consoleError).toHaveBeenCalled();
+  });
+});

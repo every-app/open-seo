@@ -170,10 +170,32 @@ async function disconnect(input: {
   }
 }
 
+/** Confirms a stored connection's grant still reaches Analytics, not just
+ *  that a row exists -- the same live probe listPropertiesForUserWithGrantStatus
+ *  uses per-account, scoped to this connection's specific grant. */
+async function verifyConnection(
+  connection: Pick<Ga4Connection, "connectedByUserId" | "ga4AccountId">,
+): Promise<boolean> {
+  const client = createGa4AdminClient({
+    userId: connection.connectedByUserId,
+    ga4AccountId: connection.ga4AccountId,
+  });
+  try {
+    await client.listProperties();
+    return true;
+  } catch (error) {
+    if (!requiresReconnect(error)) {
+      console.error("GA4 connection verify failed unexpectedly", error);
+    }
+    return false;
+  }
+}
+
 export const Ga4Service = {
   getConnection,
   userHasGrant,
   listPropertiesForUserWithGrantStatus,
   setProperty,
   disconnect,
+  verifyConnection,
 };
