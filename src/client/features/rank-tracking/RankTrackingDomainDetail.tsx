@@ -186,6 +186,16 @@ export function RankTrackingDomainDetail({
   // Fall back to the table if history disappears (e.g. device switch).
   const effectiveViewMode = historyAvailable ? viewMode : "table";
 
+  const handleCheckNow = () => {
+    const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
+    if (count > 0) {
+      requestCheck(count);
+      return;
+    }
+    setShowAddKeywords(true);
+    toast.info("Add keywords first, then check rankings");
+  };
+
   return (
     <div className="space-y-3">
       <button
@@ -287,10 +297,7 @@ export function RankTrackingDomainDetail({
             );
             toast.success("Keywords copied to clipboard");
           }}
-          onCheckNow={() => {
-            const count = costEstimate?.keywordCount ?? rows?.length ?? 0;
-            if (count > 0) requestCheck(count);
-          }}
+          onCheckNow={handleCheckNow}
           onRefreshMetrics={refreshMetrics}
           metricsRefreshing={metricsRefreshing}
           checkBusy={isBusy}
@@ -334,6 +341,9 @@ export function RankTrackingDomainDetail({
               locationCode={config.locationCode}
               locationName={config.locationName}
               serpDepth={config.serpDepth}
+              onCheckNow={handleCheckNow}
+              checkBusy={isBusy}
+              checkDisabled={isFreePlan}
             />
           )}
         </div>
