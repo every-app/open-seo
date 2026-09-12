@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppError } from "@/server/lib/errors";
 import {
+  isCrawlableUrl,
   normalizeAndValidateStartUrl,
   resolveStartUrlRedirects,
 } from "@/server/lib/audit/url-policy";
@@ -132,5 +133,27 @@ describe("resolveStartUrlRedirects", () => {
     ).rejects.toMatchObject({
       code: "CRAWL_TARGET_BLOCKED",
     } satisfies Partial<AppError>);
+  });
+});
+
+describe("isCrawlableUrl", () => {
+  it("accepts ordinary same-site content URLs", () => {
+    expect(isCrawlableUrl("https://example.com/blog/post")).toBe(true);
+  });
+
+  it("rejects Cloudflare's /cdn-cgi/ infrastructure namespace", () => {
+    expect(
+      isCrawlableUrl("https://example.com/cdn-cgi/l/email-protection"),
+    ).toBe(false);
+    expect(isCrawlableUrl("https://example.com/cdn-cgi/challenge")).toBe(false);
+  });
+
+  it("does not reject content paths that merely mention cdn-cgi", () => {
+    expect(isCrawlableUrl("https://example.com/blog/cdn-cgi")).toBe(true);
+  });
+
+  it("rejects non-http schemes and unparsable URLs", () => {
+    expect(isCrawlableUrl("mailto:hello@example.com")).toBe(false);
+    expect(isCrawlableUrl("not a url")).toBe(false);
   });
 });
