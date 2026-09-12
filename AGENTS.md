@@ -14,7 +14,7 @@
 
 ## Log papercuts
 
-When small, non-blocking repository friction occurs—a retried tool call, confusing setup step, flaky command, stale cache, misleading error, or non-obvious gotcha—use the `papercuts` skill and append it to `.agents/PAPERCUTS.md` in the moment. Continue the current task. Real bugs and tracked work are not papercuts, and sensitive data must never be logged.
+Use `papercuts` only for recurring friction that another contributor can reproduce and a change in this repository can fix. Do not invoke it for transient retries, local shell mistakes, sandbox restrictions, or third-party failures with no repository fix. Continue the current task; real bugs and tracked work are not papercuts, and sensitive data must never be logged.
 
 Do not mine an entire session for papercuts or start a broad cleanup unless the user explicitly asks.
 
