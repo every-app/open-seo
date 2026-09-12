@@ -1,4 +1,6 @@
 import type { WorkflowStep } from "cloudflare:workers";
+import { sanitizeDataforseoMessage } from "@/server/lib/dataforseo/shared";
+import { scrubGlobalTraceText } from "@/shared/globalTraceTypes";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import {
   fetchRankCheckTaskResult,
@@ -74,15 +76,41 @@ function expandToTaskInputs(
 // not touch any mutable state outside their arguments.
 // ---------------------------------------------------------------------------
 
+/** Upper bound for a captured provider failure reason (run.errorMessage). */
+const MAX_PROVIDER_REASON_LENGTH = 500;
+
+/**
+ * Reduce a per-call rejection to a safe, bounded reason string for the run
+ * record. DataForSEO HTTP failures already carry a canonical pre-scrubbed
+ * message ("DataForSEO HTTP <status> on <path>: <message> (<code>)");
+ * anything else is scrubbed and truncated here. Never credentials.
+ */
+function safeProviderReason(reason: unknown): string {
+  const raw = reason instanceof Error ? reason.message : String(reason);
+  const sanitized =
+    sanitizeDataforseoMessage(raw) ?? "DataForSEO request failed";
+  // Chain the stronger Global-trace scrubber (covers bare password=/login=
+  // pairs the SAM scrubber leaves alone). The SAM scrubber itself is
+  // untouched.
+  const scrubbed = scrubGlobalTraceText(sanitized);
+  return scrubbed.length > MAX_PROVIDER_REASON_LENGTH
+    ? `${scrubbed.slice(0, MAX_PROVIDER_REASON_LENGTH)}…`
+    : scrubbed;
+}
+
 /**
  * Check keyword/device pairs against the live endpoint and persist snapshots.
  * Per-call failures are logged and skipped (the metered client already charged
- * or refused each call individually). Returns the snapshot count written.
+ * or refused each call individually). Returns the snapshot count written plus
+ * the first sanitized provider failure reason (null when every call
+ * succeeded) so the run record can name the actual underlying error instead
+ * of a collapsed label. Observability only: same calls, same skips, same
+ * writes — no retry, scope, or billing change.
  */
 async function checkBatchLive(
   ctx: CheckContext,
   tasks: RankCheckTaskInput[],
-): Promise<number> {
+): Promise<{ written: number; firstError: string | null }> {
   const settled = await Promise.allSettled(
     tasks.map((task) =>
       ctx.client.serp
@@ -100,6 +128,7 @@ async function checkBatchLive(
     ),
   );
   const results: RankCheckResultWithDevice[] = [];
+  let firstError: string | null = null;
   for (const outcome of settled) {
     if (outcome.status === "fulfilled") {
       results.push(outcome.value);
@@ -108,6 +137,7 @@ async function checkBatchLive(
         `[rank-check] ${ctx.runId} live call failed:`,
         outcome.reason,
       );
+      firstError ??= safeProviderReason(outcome.reason);
     }
   }
   if (results.length > 0) {
@@ -115,7 +145,7 @@ async function checkBatchLive(
       mapResultsToSnapshotRows(ctx.runId, results),
     );
   }
-  return results.length;
+  return { written: results.length, firstError };
 }
 
 /**
@@ -123,11 +153,17 @@ async function checkBatchLive(
  * Snapshots are written incrementally after each batch so partial results
  * survive batch failures. ~6s per keyword batch.
  * Billing is handled per-call by the metered client.
+ *
+ * Returns the first sanitized provider failure reason across batches (null
+ * when every call succeeded) so the caller can record the actual underlying
+ * error. The persisted step result stays the written count — the reason only
+ * travels in-memory to the run record. Observability only.
  */
 export async function runLiveCheck(
   step: WorkflowStep,
   ctx: CheckContext,
-): Promise<void> {
+): Promise<string | null> {
+  let firstError: string | null = null;
   for (let i = 0; i < ctx.keywords.length; i += KEYWORDS_PER_BATCH) {
     const keywordBatch = ctx.keywords.slice(i, i + KEYWORDS_PER_BATCH);
     const batchTasks = expandToTaskInputs(keywordBatch, ctx.devices);
@@ -139,15 +175,17 @@ export async function runLiveCheck(
       `live-batch-${batchIndex}`,
       SINGLE_ATTEMPT_STEP_CONFIG,
       async () => {
-        const written = await checkBatchLive(ctx, batchTasks);
+        const batch = await checkBatchLive(ctx, batchTasks);
+        firstError ??= batch.firstError;
         // Progress for the UI; finalize recounts from the DB anyway.
         await RankTrackingRepository.updateRun(ctx.runId, {
           keywordsChecked,
         });
-        return written;
+        return batch.written;
       },
     );
   }
+  return firstError;
 }
 
 // Poll cadence for queued tasks. Standard-priority tasks complete in ~5
@@ -378,12 +416,14 @@ export async function runQueuedCheck(
     const batch = stragglers.slice(i, i + KEYWORDS_PER_BATCH);
     const batchIndex = Math.floor(i / KEYWORDS_PER_BATCH);
 
-    stats.fallbackChecked += await pgStep(
-      step,
-      `fallback-batch-${batchIndex}`,
-      SINGLE_ATTEMPT_STEP_CONFIG,
-      () => checkBatchLive(ctx, batch),
-    );
+    stats.fallbackChecked += (
+      await pgStep(
+        step,
+        `fallback-batch-${batchIndex}`,
+        SINGLE_ATTEMPT_STEP_CONFIG,
+        () => checkBatchLive(ctx, batch),
+      )
+    ).written;
   }
 
   return stats;

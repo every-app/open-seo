@@ -15,6 +15,28 @@ const DIAGNOSTICS_STORAGE_KEY = "openseo_global_diagnostics_enabled";
 
 type Listener = () => void;
 
+/**
+ * Secure-context-safe ID generation for trace/operation records.
+ * `crypto.randomUUID` only exists in secure contexts (HTTPS / localhost);
+ * on plain-HTTP origins it is undefined and would throw, which must never
+ * break the underlying SEO operation being traced.
+ */
+export function safeTraceId(): string {
+  try {
+    if (
+      typeof crypto !== "undefined" &&
+      typeof crypto.randomUUID === "function"
+    ) {
+      return crypto.randomUUID();
+    }
+  } catch {
+    // Fall through to the Math.random fallback below.
+  }
+  return `trace_${Date.now().toString(36)}_${Math.floor(
+    Math.random() * 0xffffff,
+  ).toString(36)}`;
+}
+
 export interface GlobalTraceStoreState {
   operations: GlobalTraceOperation[];
   diagnosticsEnabled: boolean;
@@ -126,12 +148,12 @@ class GlobalTraceStore {
     },
   ): string => {
     if (!this.state.diagnosticsEnabled) {
-      return input.operationId || crypto.randomUUID();
+      return input.operationId || safeTraceId();
     }
 
     try {
-      const operationId = input.operationId || crypto.randomUUID();
-      const traceId = crypto.randomUUID();
+      const operationId = input.operationId || safeTraceId();
+      const traceId = safeTraceId();
       const startedAt = input.startedAt ?? Date.now();
 
       const newOp: GlobalTraceOperation = {
@@ -154,8 +176,10 @@ class GlobalTraceStore {
       this.notify();
       return operationId;
     } catch {
-      // Diagnostic operations must never throw
-      return input.operationId || crypto.randomUUID();
+      // Diagnostic operations must never throw (and the fallback itself
+      // must not throw either — safeTraceId never uses crypto.randomUUID
+      // without a capability check).
+      return input.operationId || safeTraceId();
     }
   };
 
@@ -263,8 +287,8 @@ class GlobalTraceStore {
   ) => {
     if (!this.state.diagnosticsEnabled) return;
     try {
-      const operationId = op.operationId || crypto.randomUUID();
-      const traceId = crypto.randomUUID();
+      const operationId = op.operationId || safeTraceId();
+      const traceId = safeTraceId();
       const completedAt = op.completedAt ?? Date.now();
       const durationMs = op.durationMs ?? 0;
 

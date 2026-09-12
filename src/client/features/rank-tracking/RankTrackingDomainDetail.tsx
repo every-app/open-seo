@@ -154,6 +154,7 @@ export function RankTrackingDomainDetail({
     configId: config.id,
     isRunning,
     projectId,
+    devices: config.devices,
     onSuccess: () => setPendingCheck(null),
   });
 
@@ -166,7 +167,13 @@ export function RankTrackingDomainDetail({
       return;
     }
 
-    if (isBusy) return;
+    // Large checks go through the confirm modal — but a busy click must still
+    // tell the user why nothing happened (startCheck traces+toasts the same
+    // for the direct path).
+    if (isBusy) {
+      toast.info("A rank check is already running");
+      return;
+    }
     setPendingCheck({ count, keywordIds });
   };
 
@@ -218,6 +225,20 @@ export function RankTrackingDomainDetail({
           <AlertTriangle className="size-4" />
           <span>
             This run may be unresponsive and will be cleaned up automatically.
+          </span>
+        </div>
+      )}
+
+      {/* A failed run leaves rows in "Not checked" with no snapshot behind,
+          which is indistinguishable from "never checked" in the table. Call
+          it out explicitly so Position never stays an unexplained "-". */}
+      {latestRun?.status === "failed" && (
+        <div className="alert alert-error text-sm py-2">
+          <AlertTriangle className="size-4" />
+          <span>
+            Last rank check failed
+            {latestRun.errorMessage ? `: ${latestRun.errorMessage}` : "."} Open
+            Settings → Debug Trace for the per-keyword breakdown.
           </span>
         </div>
       )}

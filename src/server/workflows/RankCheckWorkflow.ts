@@ -342,7 +342,12 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
         if (trigger === "scheduled") {
           queueStats = await runQueuedCheck(step, checkContext);
         } else {
-          await runLiveCheck(step, checkContext);
+          const liveFirstError = await runLiveCheck(step, checkContext);
+          // Observability only: record the first sanitized provider failure
+          // reason in the run record so the trace can name the actual
+          // underlying error. No control-flow, retry, scope, or billing
+          // change — finalize still recounts from the DB.
+          batchError ??= liveFirstError;
         }
       } catch (error) {
         // Batch failure — snapshots for completed batches are already
