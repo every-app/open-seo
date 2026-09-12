@@ -5,6 +5,8 @@ import robotsParser from "robots-parser";
 import { XMLParser } from "fast-xml-parser";
 import { isSameOrigin, normalizeUrl } from "./url-utils";
 
+/** The token the crawler identifies itself with; must match crawlPage's. */
+const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
 const SITEMAP_FETCH_TIMEOUT_MS = 15_000;
 // robots.txt is checkpointed as durable Workflow step state (~1MiB cap, shared
 // with the rest of the step's return). RFC 9309 requires parsers to handle at
@@ -40,7 +42,7 @@ export interface RobotsResult {
 async function fetchRobotsTxtText(origin: string): Promise<string | null> {
   try {
     const response = await fetch(`${origin}/robots.txt`, {
-      headers: { "User-Agent": "OpenSEO-Audit/1.0" },
+      headers: { "User-Agent": CRAWL_USER_AGENT },
       signal: AbortSignal.timeout(10_000),
     });
 
@@ -63,7 +65,11 @@ export function parseRobotsTxt(
 
   const robots = robotsParser(`${origin}/robots.txt`, text);
   return {
-    isAllowed: (url: string) => robots.isAllowed(url) ?? true,
+    // Rules are matched against the token the crawler actually sends. Without
+    // it robots-parser only reads the `User-agent: *` group, so a group naming
+    // OpenSEO-Audit — to block it, or to admit it where `*` is disallowed —
+    // has no effect.
+    isAllowed: (url: string) => robots.isAllowed(url, CRAWL_USER_AGENT) ?? true,
     sitemapUrls: robots.getSitemaps(),
   };
 }
@@ -173,7 +179,7 @@ async function fetchSitemapDocumentWithRetry(sitemapUrl: string): Promise<{
   for (let attempt = 0; attempt <= SITEMAP_RETRIES; attempt++) {
     try {
       const response = await fetch(normalizedSitemapUrl, {
-        headers: { "User-Agent": "OpenSEO-Audit/1.0" },
+        headers: { "User-Agent": CRAWL_USER_AGENT },
         signal: AbortSignal.timeout(SITEMAP_FETCH_TIMEOUT_MS),
       });
 
