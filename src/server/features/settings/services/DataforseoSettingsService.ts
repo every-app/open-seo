@@ -74,6 +74,31 @@ export type DataforseoConnectionTestResult = {
     | "unknown";
 };
 
+export type DataforseoEndpointHealth = {
+  endpoint: string;
+  status: string;
+};
+
+export type DataforseoApiHealth = {
+  api: string;
+  status: string;
+  endpoints?: DataforseoEndpointHealth[] | null;
+};
+
+export type DataforseoApiStatusResult = {
+  ok: boolean;
+  status: number;
+  reason:
+    | "CONNECTED"
+    | "INVALID_CREDENTIALS"
+    | "RATE_LIMITED"
+    | "TRANSIENT_UPSTREAM"
+    | "NOT_CONFIGURED"
+    | "DISABLED";
+  endpoints: DataforseoApiHealth[];
+  checkedAt: string;
+};
+
 const DATAFORSEO_API_BASE = "https://api.dataforseo.com";
 const TEST_CONNECTION_TIMEOUT_MS = 15_000;
 
@@ -239,27 +264,30 @@ export async function saveDataforseoSettings(
   const { organizationId, projectId, patch } = input;
   const isProject = Boolean(projectId);
 
-  const existingRow = isProject && projectId
-    ? await SeoProviderSettingsRepository.getProjectProviderSettingsRow(
-        projectId,
-        "dataforseo",
-      )
-    : await SeoProviderSettingsRepository.getOrganizationProviderSettingsRow(
-        organizationId,
-        "dataforseo",
-      );
+  const existingRow =
+    isProject && projectId
+      ? await SeoProviderSettingsRepository.getProjectProviderSettingsRow(
+          projectId,
+          "dataforseo",
+        )
+      : await SeoProviderSettingsRepository.getOrganizationProviderSettingsRow(
+          organizationId,
+          "dataforseo",
+        );
 
   const existingCreds = existingRow
     ? await decryptDataforseoCredentials(existingRow.credentialsCiphertext)
     : null;
 
-  const newLogin = patch.login !== undefined && patch.login.trim().length > 0
-    ? patch.login.trim()
-    : existingCreds?.login;
+  const newLogin =
+    patch.login !== undefined && patch.login.trim().length > 0
+      ? patch.login.trim()
+      : existingCreds?.login;
 
-  const newPassword = patch.password !== undefined && patch.password.trim().length > 0
-    ? patch.password.trim()
-    : existingCreds?.password;
+  const newPassword =
+    patch.password !== undefined && patch.password.trim().length > 0
+      ? patch.password.trim()
+      : existingCreds?.password;
 
   let credentialsCiphertext: string | null | undefined = undefined;
 
@@ -293,9 +321,10 @@ export async function saveDataforseoSettings(
     );
   }
 
-  const enabled = patch.enabled !== undefined
-    ? patch.enabled
-    : (existingRow?.enabled ?? true);
+  const enabled =
+    patch.enabled !== undefined
+      ? patch.enabled
+      : (existingRow?.enabled ?? true);
 
   if (isProject && projectId) {
     await SeoProviderSettingsRepository.upsertProjectProviderSettingsRow(
@@ -508,7 +537,9 @@ export async function testDataforseoConnection(input: {
         )
         .optional(),
     });
-    const parsedPayload = appendixUserDataSchema.safeParse(await response.json());
+    const parsedPayload = appendixUserDataSchema.safeParse(
+      await response.json(),
+    );
     const payload = parsedPayload.success ? parsedPayload.data : {};
 
     if (payload.status_code === 40100) {
@@ -565,6 +596,193 @@ export async function testDataforseoConnection(input: {
       status: 503,
       reason: "TRANSIENT_UPSTREAM",
       billingStatus: "unknown",
+    };
+  }
+}
+
+/**
+ * Check DataForSEO per-API endpoint status using the free, non-billable GET /v3/appendix/status endpoint.
+ *
+ * MANDATORY SAFETY RULES:
+ * - Does NOT enter `meterDataforseoCall()`
+ * - Does NOT consume SEO credits or trigger billable calls
+ * - Does NOT write SEO cache
+ * - Does NOT trigger budget guard or SAM tool recovery
+ */
+export async function checkDataforseoApiStatus(input: {
+  organizationId: string;
+  projectId?: string | null;
+  login?: string;
+  password?: string;
+  fetchFn?: typeof fetch;
+}): Promise<DataforseoApiStatusResult> {
+  const customFetch = input.fetchFn ?? fetch;
+
+  // 1. Resolve credentials: unsaved inputs if provided, else effective config
+  let credsToTest: DataforseoCredentials | null = null;
+  if (input.login?.trim() && input.password?.trim()) {
+    credsToTest = {
+      login: input.login.trim(),
+      password: input.password.trim(),
+    };
+  } else if (input.login?.trim() && !input.password?.trim()) {
+    const effective = await resolveEffectiveDataforseoConfig({
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+    });
+    if (effective.password) {
+      credsToTest = {
+        login: input.login.trim(),
+        password: effective.password,
+      };
+    }
+  } else {
+    const effective = await resolveEffectiveDataforseoConfig({
+      organizationId: input.organizationId,
+      projectId: input.projectId,
+    });
+    if (effective.login && effective.password) {
+      credsToTest = {
+        login: effective.login,
+        password: effective.password,
+      };
+    }
+  }
+
+  const nowIso = new Date().toISOString();
+
+  if (!credsToTest) {
+    return {
+      ok: false,
+      status: 400,
+      reason: "NOT_CONFIGURED",
+      endpoints: [],
+      checkedAt: nowIso,
+    };
+  }
+
+  const basicAuth = Buffer.from(
+    `${credsToTest.login}:${credsToTest.password}`,
+  ).toString("base64");
+
+  const startedAt = Date.now();
+  try {
+    const response = await customFetch(
+      `${DATAFORSEO_API_BASE}/v3/appendix/status`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Basic ${basicAuth}`,
+          Accept: "application/json",
+        },
+        signal: AbortSignal.timeout(TEST_CONNECTION_TIMEOUT_MS),
+      },
+    );
+
+    const durationMs = Date.now() - startedAt;
+
+    if (response.status === 401) {
+      return {
+        ok: false,
+        status: 401,
+        reason: "INVALID_CREDENTIALS",
+        endpoints: [],
+        checkedAt: nowIso,
+      };
+    }
+
+    if (response.status === 429) {
+      return {
+        ok: false,
+        status: 429,
+        reason: "RATE_LIMITED",
+        endpoints: [],
+        checkedAt: nowIso,
+      };
+    }
+
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        reason: "TRANSIENT_UPSTREAM",
+        endpoints: [],
+        checkedAt: nowIso,
+      };
+    }
+
+    const appendixStatusSchema = z.object({
+      status_code: z.number().optional(),
+      tasks: z
+        .array(
+          z.object({
+            status_code: z.number().optional(),
+            result: z
+              .array(
+                z.object({
+                  api: z.string(),
+                  status: z.string(),
+                  endpoints: z
+                    .array(
+                      z.object({
+                        endpoint: z.string(),
+                        status: z.string(),
+                      }),
+                    )
+                    .nullable()
+                    .optional(),
+                }),
+              )
+              .optional(),
+          }),
+        )
+        .optional(),
+    });
+
+    const parsedPayload = appendixStatusSchema.safeParse(await response.json());
+    const payload = parsedPayload.success ? parsedPayload.data : {};
+
+    if (payload.status_code === 40100) {
+      return {
+        ok: false,
+        status: 401,
+        reason: "INVALID_CREDENTIALS",
+        endpoints: [],
+        checkedAt: nowIso,
+      };
+    }
+
+    const task = payload.tasks?.[0];
+    const rawEndpoints = task?.result ?? [];
+
+    const endpoints: DataforseoApiHealth[] = rawEndpoints.map((item) => ({
+      api: item.api,
+      status: item.status,
+      endpoints: item.endpoints ?? null,
+    }));
+
+    console.info("audit", {
+      provider: "dataforseo",
+      operation: "api_status_check",
+      status: 200,
+      durationMs,
+      endpointCount: endpoints.length,
+    });
+
+    return {
+      ok: true,
+      status: 200,
+      reason: "CONNECTED",
+      endpoints,
+      checkedAt: nowIso,
+    };
+  } catch {
+    return {
+      ok: false,
+      status: 503,
+      reason: "TRANSIENT_UPSTREAM",
+      endpoints: [],
+      checkedAt: nowIso,
     };
   }
 }

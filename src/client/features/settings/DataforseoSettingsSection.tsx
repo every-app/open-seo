@@ -1,24 +1,27 @@
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import {
-  Check,
-  Loader2,
-  RefreshCw,
-  Trash2,
-} from "lucide-react";
+import { Check, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import {
   getDataforseoSettings,
   saveDataforseoSettingsFn,
   removeDataforseoSettingsFn,
   testDataforseoConnectionFn,
+  checkDataforseoApiStatusFn,
   type DataforseoConnectionTestResult,
+  type DataforseoApiStatusResult,
 } from "@/serverFunctions/dataforseoSettings";
+import {
+  traceDataforseoConnectionTest,
+  traceDataforseoStatusCheck,
+  traceSettingsMutation,
+} from "@/client/features/tracing/settingsTrace";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   DataforseoCredentialsForm,
   DataforseoStatusCard,
   DataforseoTestAlert,
+  DataforseoApiHealthCard,
 } from "@/client/features/settings/DataforseoSettingsParts";
 
 interface DataforseoSettingsSectionProps {
@@ -47,14 +50,15 @@ export function DataforseoSettingsSection({
   const [testResult, setTestResult] =
     useState<DataforseoConnectionTestResult | null>(null);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [statusResult, setStatusResult] =
+    useState<DataforseoApiStatusResult | null>(null);
+  const [statusLastChecked, setStatusLastChecked] = useState<Date | null>(null);
 
   const data = viewQuery.data;
 
   useEffect(() => {
     if (data) {
-      setEnabledInput(
-        data.override ? data.override.enabled : data.enabled,
-      );
+      setEnabledInput(data.override ? data.override.enabled : data.enabled);
       setLoginInput("");
       setPasswordInput("");
     }
@@ -72,12 +76,33 @@ export function DataforseoSettingsSection({
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const patch: { login?: string; password?: string; enabled?: boolean } = {};
+      const patch: { login?: string; password?: string; enabled?: boolean } =
+        {};
       if (loginInput.trim()) patch.login = loginInput.trim();
       if (passwordInput) patch.password = passwordInput;
       if (enabledInput !== null) patch.enabled = enabledInput;
-      return saveDataforseoSettingsFn({
-        data: { projectId: projectId || undefined, patch },
+      // Trace is observational: single server call, no credentials in trace —
+      // only safe presence flags.
+      const hasLoginInput = loginInput.trim().length > 0;
+      const hasPasswordInput = passwordInput.length > 0;
+      return traceSettingsMutation({
+        operation: "settings.dataforseo.settings_save",
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        endpoint: "settings/dataforseo/save",
+        metadata: {
+          scope,
+          hasLoginInput,
+          hasPasswordInput,
+          enabledChanged:
+            enabledInput !== null &&
+            enabledInput !== (override?.enabled ?? data?.enabled ?? true),
+        },
+        counters: { settingsSaved: 1 },
+        call: () =>
+          saveDataforseoSettingsFn({
+            data: { projectId: projectId || undefined, patch },
+          }),
       });
     },
     onSuccess: async () => {
@@ -87,17 +112,30 @@ export function DataforseoSettingsSection({
       await queryClient.invalidateQueries({ queryKey });
     },
     onError: (err) => {
-      toast.error(getStandardErrorMessage(err, "Failed to save DataForSEO settings"));
+      toast.error(
+        getStandardErrorMessage(err, "Failed to save DataForSEO settings"),
+      );
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: async () =>
-      removeDataforseoSettingsFn({
-        data: { projectId: projectId || undefined },
+      traceSettingsMutation({
+        operation: "settings.dataforseo.settings_clear",
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        endpoint: "settings/dataforseo/clear",
+        metadata: { scope },
+        counters: { settingsCleared: 1 },
+        call: () =>
+          removeDataforseoSettingsFn({
+            data: { projectId: projectId || undefined },
+          }),
       }),
     onSuccess: async () => {
-      toast.success("Custom credentials cleared; inheriting default configuration");
+      toast.success(
+        "Custom credentials cleared; inheriting default configuration",
+      );
       setLoginInput("");
       setPasswordInput("");
       await queryClient.invalidateQueries({ queryKey });
@@ -109,12 +147,21 @@ export function DataforseoSettingsSection({
 
   const testMutation = useMutation({
     mutationFn: async () =>
-      testDataforseoConnectionFn({
-        data: {
-          projectId: projectId || undefined,
-          login: loginInput.trim() ? loginInput.trim() : undefined,
-          password: passwordInput ? passwordInput : undefined,
-        },
+      // Global Debug Trace: settings.dataforseo.connection_test.
+      // Provider DataForSEO, Billing Free, Metered NO, no SEO cache,
+      // no rank check, no budget usage. Credentials stay out of trace.
+      traceDataforseoConnectionTest({
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        scope,
+        call: () =>
+          testDataforseoConnectionFn({
+            data: {
+              projectId: projectId || undefined,
+              login: loginInput.trim() ? loginInput.trim() : undefined,
+              password: passwordInput ? passwordInput : undefined,
+            },
+          }),
       }),
     onSuccess: (res) => {
       setTestResult(res);
@@ -138,11 +185,49 @@ export function DataforseoSettingsSection({
     },
   });
 
+  const checkStatusMutation = useMutation({
+    mutationFn: async () =>
+      traceDataforseoStatusCheck({
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        scope,
+        call: () =>
+          checkDataforseoApiStatusFn({
+            data: {
+              projectId: projectId || undefined,
+              login: loginInput.trim() ? loginInput.trim() : undefined,
+              password: passwordInput ? passwordInput : undefined,
+            },
+          }),
+      }),
+    onSuccess: (res) => {
+      setStatusResult(res);
+      setStatusLastChecked(new Date());
+      if (res.ok) {
+        const operationalCount = res.endpoints.filter(
+          (e) => e.status === "ok",
+        ).length;
+        toast.success(
+          `DataForSEO API status checked (${operationalCount}/${res.endpoints.length} operational)`,
+        );
+      } else if (res.reason === "INVALID_CREDENTIALS") {
+        toast.error("DataForSEO authentication failed");
+      } else {
+        toast.error(`Status check failed: ${res.reason}`);
+      }
+    },
+    onError: (err) => {
+      toast.error(getStandardErrorMessage(err, "Failed to check API status"));
+    },
+  });
+
   if (viewQuery.isPending) {
     return (
       <div className="flex items-center gap-2 py-4">
         <span className="loading loading-spinner loading-sm" />
-        <span className="text-sm text-base-content/50">Loading DataForSEO settings…</span>
+        <span className="text-sm text-base-content/50">
+          Loading DataForSEO settings…
+        </span>
       </div>
     );
   }
@@ -159,14 +244,16 @@ export function DataforseoSettingsSection({
           </div>
           {override && (
             <span className="badge badge-sm badge-info badge-outline">
-              {scope === "project" ? "Project override" : "Organization override"}
+              {scope === "project"
+                ? "Project override"
+                : "Organization override"}
             </span>
           )}
         </div>
         <p className="text-xs text-base-content/60 leading-relaxed">
-          DataForSEO provides paid SEO data used for keyword metrics, keyword research and
-          SERP data. OpenSEO will continue using available free and cached data when
-          DataForSEO is unavailable.
+          DataForSEO provides paid SEO data used for keyword metrics, keyword
+          research and SERP data. OpenSEO will continue using available free and
+          cached data when DataForSEO is unavailable.
         </p>
       </div>
 
@@ -179,6 +266,14 @@ export function DataforseoSettingsSection({
       />
 
       {testResult && <DataforseoTestAlert result={testResult} />}
+
+      <DataforseoApiHealthCard
+        statusResult={statusResult}
+        isLoading={checkStatusMutation.isPending}
+        lastChecked={statusLastChecked}
+        onCheckStatus={() => checkStatusMutation.mutate()}
+        disabled={checkStatusMutation.isPending || saveMutation.isPending}
+      />
 
       <DataforseoCredentialsForm
         loginInput={loginInput}

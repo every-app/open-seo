@@ -6,11 +6,21 @@ import {
   saveDataforseoSettings,
   removeDataforseoSettings,
   testDataforseoConnection,
+  checkDataforseoApiStatus,
   type DataforseoSettingsView,
   type DataforseoConnectionTestResult,
+  type DataforseoApiStatusResult,
+  type DataforseoApiHealth,
+  type DataforseoEndpointHealth,
 } from "@/server/features/settings/services/DataforseoSettingsService";
 
-export type { DataforseoSettingsView, DataforseoConnectionTestResult };
+export type {
+  DataforseoSettingsView,
+  DataforseoConnectionTestResult,
+  DataforseoApiStatusResult,
+  DataforseoApiHealth,
+  DataforseoEndpointHealth,
+};
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { AppError } from "@/server/lib/errors";
 
@@ -95,11 +105,34 @@ export const testDataforseoConnectionFn = createServerFn({ method: "POST" })
       password: z.string().max(200).optional(),
     }),
   )
-  .handler(async ({ context, data }): Promise<DataforseoConnectionTestResult> => {
+  .handler(
+    async ({ context, data }): Promise<DataforseoConnectionTestResult> => {
+      if (data.projectId) {
+        await assertProjectAccess(data.projectId, context.organizationId);
+      }
+      return testDataforseoConnection({
+        organizationId: context.organizationId,
+        projectId: data.projectId ?? null,
+        login: data.login,
+        password: data.password,
+      });
+    },
+  );
+
+export const checkDataforseoApiStatusFn = createServerFn({ method: "POST" })
+  .middleware(requireAuthenticatedContext)
+  .validator(
+    z.object({
+      projectId: z.string().min(1).optional(),
+      login: z.string().max(200).optional(),
+      password: z.string().max(200).optional(),
+    }),
+  )
+  .handler(async ({ context, data }): Promise<DataforseoApiStatusResult> => {
     if (data.projectId) {
       await assertProjectAccess(data.projectId, context.organizationId);
     }
-    return testDataforseoConnection({
+    return checkDataforseoApiStatus({
       organizationId: context.organizationId,
       projectId: data.projectId ?? null,
       login: data.login,

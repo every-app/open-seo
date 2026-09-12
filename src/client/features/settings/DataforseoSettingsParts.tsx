@@ -1,9 +1,14 @@
 import {
+  Activity,
   AlertTriangle,
   CheckCircle2,
+  Loader2,
   XCircle,
 } from "lucide-react";
-import type { DataforseoConnectionTestResult } from "@/serverFunctions/dataforseoSettings";
+import type {
+  DataforseoConnectionTestResult,
+  DataforseoApiStatusResult,
+} from "@/serverFunctions/dataforseoSettings";
 
 export function formatSource(src?: string): string {
   switch (src) {
@@ -98,7 +103,9 @@ export function DataforseoStatusCard({
       </div>
 
       <div>
-        <span className="text-base-content/50 block font-medium">Last checked</span>
+        <span className="text-base-content/50 block font-medium">
+          Last checked
+        </span>
         <div className="mt-1 text-base-content/70">
           {lastChecked ? (
             lastChecked.toLocaleTimeString([], {
@@ -146,7 +153,9 @@ export function DataforseoTestAlert({
                 : `Connection error: ${result.reason}`}
         </span>
         {result.balance !== null && result.balance !== undefined && (
-          <p className="mt-0.5">Account balance: ${result.balance.toFixed(2)} USD</p>
+          <p className="mt-0.5">
+            Account balance: ${result.balance.toFixed(2)} USD
+          </p>
         )}
       </div>
     </div>
@@ -176,7 +185,10 @@ export function DataforseoCredentialsForm({
     <div className="space-y-4">
       {/* API Login */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="dataforseo-login" className="text-xs font-medium text-base-content/80">
+        <label
+          htmlFor="dataforseo-login"
+          className="text-xs font-medium text-base-content/80"
+        >
           API Login
         </label>
         <input
@@ -190,14 +202,20 @@ export function DataforseoCredentialsForm({
         />
         {loginMasked && !loginInput && (
           <p className="text-[11px] text-base-content/50">
-            Current login: <span className="font-mono text-base-content/70">{loginMasked}</span>
+            Current login:{" "}
+            <span className="font-mono text-base-content/70">
+              {loginMasked}
+            </span>
           </p>
         )}
       </div>
 
       {/* API Password */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="dataforseo-password" className="text-xs font-medium text-base-content/80">
+        <label
+          htmlFor="dataforseo-password"
+          className="text-xs font-medium text-base-content/80"
+        >
           API Password
         </label>
         <input
@@ -205,7 +223,9 @@ export function DataforseoCredentialsForm({
           type="password"
           value={passwordInput}
           onChange={(e) => onPasswordChange(e.target.value)}
-          placeholder={passwordConfigured ? "••••••••••••••••" : "API password or API key"}
+          placeholder={
+            passwordConfigured ? "••••••••••••••••" : "API password or API key"
+          }
           autoComplete="new-password"
           className="input input-bordered input-sm w-full font-mono text-xs"
         />
@@ -223,7 +243,8 @@ export function DataforseoCredentialsForm({
             DataForSEO usage
           </span>
           <p className="text-[11px] text-base-content/50">
-            When disabled, DataForSEO network requests are suspended and fallback sources are used.
+            When disabled, DataForSEO network requests are suspended and
+            fallback sources are used.
           </p>
         </div>
         <input
@@ -233,6 +254,129 @@ export function DataforseoCredentialsForm({
           onChange={(e) => onEnabledChange(e.target.checked)}
           aria-label="Toggle DataForSEO usage"
         />
+      </div>
+    </div>
+  );
+}
+
+function formatApiStatus(status: string): string {
+  switch (status.toLowerCase()) {
+    case "ok":
+      return "Operational";
+    case "major_outage":
+      return "Major outage";
+    case "partial_outage":
+      return "Partial outage";
+    case "long_response_time":
+      return "Slow response";
+    case "long_execution_time":
+      return "Slow execution";
+    case "webhook_delay":
+      return "Webhook delay";
+    case "send_delay":
+      return "Send delay";
+    default:
+      return status.replace(/_/g, " ");
+  }
+}
+
+function getApiStatusClass(status: string): string {
+  switch (status.toLowerCase()) {
+    case "ok":
+      return "text-success font-medium";
+    case "major_outage":
+      return "text-error font-medium";
+    case "partial_outage":
+    case "long_response_time":
+    case "long_execution_time":
+    case "webhook_delay":
+    case "send_delay":
+      return "text-warning font-medium";
+    default:
+      return "text-base-content/70 font-medium";
+  }
+}
+
+export function DataforseoApiHealthCard({
+  statusResult,
+  isLoading,
+  lastChecked,
+  onCheckStatus,
+  disabled,
+}: {
+  statusResult: DataforseoApiStatusResult | null;
+  isLoading: boolean;
+  lastChecked: Date | null;
+  onCheckStatus: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="rounded-lg border border-base-300 bg-base-200/30 p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Activity className="size-4 text-base-content/70" />
+          <h4 className="text-sm font-semibold text-base-content">
+            DataForSEO API Health
+          </h4>
+        </div>
+        <button
+          type="button"
+          className="btn btn-outline btn-sm h-8 min-h-8 px-3 text-xs"
+          onClick={onCheckStatus}
+          disabled={disabled || isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="size-3.5 animate-spin" />
+              Checking…
+            </>
+          ) : (
+            "Check API Status"
+          )}
+        </button>
+      </div>
+
+      <p className="text-xs text-base-content/60 leading-relaxed">
+        Per-API endpoint health from DataForSEO&apos;s free status endpoint. A
+        successful connection test above proves authentication and balance — it
+        does not prove every API is available.
+      </p>
+
+      {statusResult && statusResult.ok ? (
+        <div className="space-y-1 pt-1">
+          {statusResult.endpoints.map((ep) => (
+            <div
+              key={ep.api}
+              className="flex items-center justify-between text-xs py-0.5"
+            >
+              <span className="font-mono text-base-content/80">{ep.api}</span>
+              <span className={getApiStatusClass(ep.status)}>
+                {formatApiStatus(ep.status)}
+              </span>
+            </div>
+          ))}
+        </div>
+      ) : statusResult && !statusResult.ok ? (
+        <div className="text-xs text-error py-1">
+          Failed to retrieve API health ({statusResult.reason}). Check your
+          credentials.
+        </div>
+      ) : (
+        <div className="text-xs text-base-content/40 italic py-1">
+          Endpoint status has not been checked yet. Click &ldquo;Check API
+          Status&rdquo; above to query endpoint health.
+        </div>
+      )}
+
+      <div className="text-xs text-base-content/50 pt-1">
+        Last checked:{" "}
+        {lastChecked
+          ? lastChecked.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+          : "Not checked"}
       </div>
     </div>
   );

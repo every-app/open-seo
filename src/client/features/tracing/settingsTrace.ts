@@ -1,7 +1,13 @@
 import { traceServerCall } from "./traceServerCall";
-import type { AiConnectionResult, AiModel } from "@/server/features/ai/providers";
+import type {
+  AiConnectionResult,
+  AiModel,
+} from "@/server/features/ai/providers";
 import type { AiProviderId } from "@/server/features/ai/providerIds";
-import type { DataforseoConnectionTestResult } from "@/server/features/settings/services/DataforseoSettingsService";
+import type {
+  DataforseoConnectionTestResult,
+  DataforseoApiStatusResult,
+} from "@/server/features/settings/services/DataforseoSettingsService";
 
 // Concise, secret-safe presets for Settings executions. Callers pass only
 // safe metadata (scopes, flags, counts); credentials and raw values stay out.
@@ -124,6 +130,54 @@ export function traceDataforseoConnectionTest(input: {
   });
 }
 
+export function traceDataforseoStatusCheck(input: {
+  source: string;
+  projectId?: string;
+  scope: "organization" | "project";
+  call: () => Promise<DataforseoApiStatusResult>;
+}): Promise<DataforseoApiStatusResult> {
+  return traceServerCall<DataforseoApiStatusResult>({
+    feature: "settings",
+    operation: "settings.dataforseo.status_check",
+    source: input.source,
+    projectId: input.projectId,
+    metadata: { scope: input.scope },
+    call: input.call,
+    mapSuccess: (result) => ({
+      status: result.ok ? ("success" as const) : ("failed" as const),
+      httpStatus: result.status,
+      errorClass: result.ok ? undefined : result.reason,
+      errorMessage: result.ok
+        ? undefined
+        : `DataForSEO status check failed: ${result.reason}`,
+      billing: "Free" as const,
+      metered: false,
+      cache: "Not applicable" as const,
+      retry: { attempted: false, count: 0 },
+      providers: [
+        {
+          provider: "DataForSEO",
+          endpoint: "v3/appendix/status",
+          httpStatus: result.status,
+          billing: "Free" as const,
+          metered: false,
+        },
+      ],
+      providerCalls: 1,
+      counters: {
+        statusChecks: 1,
+        operationalApis: result.endpoints.filter((e) => e.status === "ok")
+          .length,
+      },
+      metadata: {
+        scope: input.scope,
+        reason: result.reason,
+        endpointsCount: result.endpoints.length,
+      },
+    }),
+  });
+}
+
 export function traceAiConnectionTest(input: {
   source: string;
   projectId?: string;
@@ -145,8 +199,12 @@ export function traceAiConnectionTest(input: {
     call: input.call,
     mapSuccess: (result) => ({
       status: result.ok ? ("success" as const) : ("failed" as const),
-      errorClass: result.ok ? undefined : (result.error ?? "AI_CONNECTION_FAILED"),
-      errorMessage: result.ok ? undefined : (result.message ?? "AI connection test failed"),
+      errorClass: result.ok
+        ? undefined
+        : (result.error ?? "AI_CONNECTION_FAILED"),
+      errorMessage: result.ok
+        ? undefined
+        : (result.message ?? "AI connection test failed"),
       cache: "Not applicable" as const,
       retry: { attempted: false, count: 0 },
       providers: [
