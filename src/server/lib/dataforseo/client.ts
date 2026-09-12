@@ -37,6 +37,7 @@ import {
   fetchRelevantPages,
   fetchSerpCompetitors,
 } from "@/server/lib/dataforseo/labs";
+import { fetchGlobalSearchVolume } from "@/server/lib/dataforseo/clickstream";
 import {
   fetchAdsKeywordIdeas,
   fetchAdsSearchVolume,
@@ -109,6 +110,11 @@ export function createDataforseoClient(customer: BillingCustomerContext) {
       related: meter(customer, fetchRelatedKeywords),
       suggestions: meter(customer, fetchKeywordSuggestions),
       ideas: meter(customer, fetchKeywordIdeas),
+      globalSearchVolume: meter(
+        customer,
+        fetchGlobalSearchVolume,
+        "keyword_research",
+      ),
       // Google Ads endpoints for countries Labs doesn't support.
       adsIdeas: meter(customer, fetchAdsKeywordIdeas),
       adsSearchVolume: meter(customer, fetchAdsSearchVolume),

@@ -35,6 +35,11 @@ export {
 } from "@/server/lib/dataforseo/business";
 
 export type {
+  GlobalCountryDistributionRow,
+  GlobalSearchVolumeRow,
+} from "@/server/lib/dataforseo/clickstream";
+
+export type {
   LabsKeywordDataItem,
   DomainRankedKeywordItem,
   RelevantPagesItem,

@@ -36,6 +36,12 @@ const toolCategories: ToolCategory[] = [
         description: "Get keyword ideas with volume, difficulty, and CPC.",
       },
       {
+        name: "global_search_volume",
+        title: "Worldwide search volume",
+        description:
+          "Measure global search volume and the top-country distribution.",
+      },
+      {
         name: "get_rank_tracker",
         title: "Get rank tracking positions",
         description: "Read tracked keyword positions.",

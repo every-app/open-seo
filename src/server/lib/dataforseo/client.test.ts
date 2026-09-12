@@ -65,6 +65,9 @@ vi.mock("@/server/lib/dataforseo/labs", () => ({
   fetchKeywordOverview: vi.fn(),
   fetchSerpCompetitors: vi.fn(),
 }));
+vi.mock("@/server/lib/dataforseo/clickstream", () => ({
+  fetchGlobalSearchVolume: vi.fn(),
+}));
 vi.mock("@/server/lib/dataforseo/serp", () => ({
   fetchLiveSerp: vi.fn(),
   fetchRankCheckSerp: vi.fn(),
@@ -106,6 +109,7 @@ import {
 } from "@/server/lib/dataforseo/client";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { fetchBacklinksSummary } from "@/server/lib/dataforseo/backlinks";
+import { fetchGlobalSearchVolume } from "@/server/lib/dataforseo/clickstream";
 
 const billingCustomer = {
   organizationId: "org_123",
@@ -181,6 +185,56 @@ describe("meterDataforseoCall with split balances", () => {
   const EXPECTED_CREDITS = Math.ceil(
     RAW_COST * SEO_DATA_COST_MARKUP * AUTUMN_SEO_DATA_CREDITS_PER_USD,
   );
+
+  it("meters global search volume under keyword research", async () => {
+    setupHostedMode();
+    mockBalances(5000, 3000);
+    vi.mocked(fetchGlobalSearchVolume).mockResolvedValue({
+      data: [
+        {
+          keyword: "best trails",
+          searchVolume: 8800,
+          countryDistribution: [],
+        },
+      ],
+      billing: {
+        costUsd: RAW_COST,
+        path: [
+          "v3",
+          "keywords_data",
+          "clickstream_data",
+          "global_search_volume",
+          "live",
+        ],
+      },
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    const result = await client.keywords.globalSearchVolume({
+      keywords: ["best trails"],
+      creditFeature: "keyword_research",
+    });
+
+    expect(result).toEqual([
+      {
+        keyword: "best trails",
+        searchVolume: 8800,
+        countryDistribution: [],
+      },
+    ]);
+    expect(fetchGlobalSearchVolume).toHaveBeenCalledWith({
+      keywords: ["best trails"],
+      creditFeature: "keyword_research",
+    });
+    expect(trackMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customerId: "org_123",
+        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
+        value: EXPECTED_CREDITS,
+      }),
+      expect.anything(),
+    );
+  });
 
   it("deducts entirely from monthly when monthly has enough", async () => {
     setupHostedMode();

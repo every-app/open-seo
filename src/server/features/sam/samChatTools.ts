@@ -51,6 +51,7 @@ import {
   listBusinessCategoriesTool,
 } from "@/server/mcp/tools/local-seo-tools";
 import { researchKeywordsTool } from "@/server/mcp/tools/research-keywords";
+import { globalSearchVolumeTool } from "@/server/mcp/tools/global-search-volume";
 import { saveKeywordsTool } from "@/server/mcp/tools/save-keywords";
 import {
   getSearchConsolePerformanceTool,
@@ -344,6 +345,7 @@ export function buildSamMcpTools(
     update_project_context: adaptTool(buildUpdateProjectContextTool("sam")),
     list_saved_keywords: adaptTool(listSavedKeywordsTool),
     research_keywords: adaptTool(researchKeywordsTool),
+    global_search_volume: adaptTool(globalSearchVolumeTool),
     save_keywords: adaptTool(saveKeywordsTool),
     get_domain_overview: adaptTool(getDomainOverviewTool),
     get_domain_keyword_suggestions: adaptTool(getDomainKeywordSuggestionsTool),
