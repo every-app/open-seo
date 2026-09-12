@@ -270,7 +270,8 @@ export function RankTrackingDomainDetail({
               showDesktop,
               showMobile,
               config.domain,
-              config.locationName,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-type-assertion
+              { locationName: config.locationName, lastCheckedAt: latestRun?.lastCheckedAt as string | null | undefined },
             )
           }
           onExportToSheets={() =>
@@ -279,6 +280,8 @@ export function RankTrackingDomainDetail({
               showDesktop,
               showMobile,
               config.locationName,
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-type-assertion
+              latestRun?.lastCheckedAt as string | null | undefined,
             )
           }
           onCopyKeywords={() => {
