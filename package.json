@@ -13,6 +13,8 @@
     "build": "vite build && tsc --noEmit",
     "lint": "oxlint . --type-aware",
     "lint:fix": "oxlint . --type-aware --fix",
+    "typecheck": "tsc --noEmit",
+    "ci:pr": "pnpm run lint && pnpm run typecheck && pnpm run test:ci && pnpm run build",
     "preview": "npm run build && vite preview --port 3001",
     "deploy": "npm run db:migrate:prod && npm run build && wrangler deploy -c dist/open_seo_audit/wrangler.json && wrangler deploy",
     "deploy:selfhost": "node scripts/selfhost-deploy-preflight.mjs && vite build --mode selfhost && tsc --noEmit && pnpm alchemy deploy --env-file .env.selfhost --stage selfhost",

@@ -10,8 +10,16 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Branch protection: the "Required status checks" for `main` must include:
+#   - "Lint / Typecheck / Test / Build (root)"  (job: ci)
+#   - "Website typecheck + build"               (job: web)
+#   - "Self-host Docker image build"            (job: docker-build)
+# GitHub branch-protection settings are configured in the repo settings
+# UI; this comment is the canonical reminder for whoever sets it up.
+
 jobs:
   ci:
+    name: "Lint / Typecheck / Test / Build (root)"
     runs-on: ubuntu-latest
 
     steps:
@@ -32,28 +40,76 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Run CI checks
-        run: pnpm run ci:check
+      # Named gates per BUS-19 (Roadmap T1 Foundations).
+      # `lint`       — oxlint with the type-aware plugin set (see .oxlintrc.json).
+      # `typecheck`  — tsc --noEmit on the root tsconfig.
+      # `test`       — vitest run (the CI variant uses the dot reporter).
+      # `build`      — vite build + tsc --noEmit (the worker bundle, not the static site).
+      # The job is marked required on `main` so a green run is the merge gate.
+      - name: Lint
+        run: pnpm run lint
 
-      - name: Run tests
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Test
         run: pnpm run test:ci
 
-      # Runs the leanWorkerBundle generateBundle assertion: fails if a
-      # denylisted package (dataforseo-client, autumn-js, ...) re-enters the
-      # worker's eager startup graph. See vite-plugin-lean-worker-bundle.ts.
       - name: Build worker (eager-bundle guard)
-        run: pnpm vite build
+        run: pnpm run build
 
+      # Aggregated gate: prettier + knip + tsc (badseo) + oxlint +
+      # sync-plugin-skills. Catches drift the four named scripts above
+      # don't (formatting, dead-code, generated plugin skills, badseo
+      # typecheck). Runs after the named gates so a name-gate failure
+      # surfaces first.
+      - name: Aggregated checks
+        run: pnpm run ci:check
+
+  web:
+    name: "Website typecheck + build"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install root dependencies
+        run: pnpm install --frozen-lockfile
+
+      # The `web/` workspace is the static marketing + docs site
+      # (Vite + Fumadocs). It has its own lockfile and toolchain, so we
+      # install it explicitly. The root `lint` script excludes `web/`
+      # (see .oxlintrc.json ignorePatterns), which is why these steps
+      # live in a separate job.
       - name: Install website dependencies
         run: pnpm --dir web install --frozen-lockfile
 
-      - name: Run website type checks
+      # Web prettier (`pnpm --dir web run format:check`) is intentionally
+      # NOT a required check yet — `web/` has 252 pre-existing formatting
+      # violations on `main`, so adding the gate now would make the web
+      # job red from day one. Tracked as a separate follow-up; once web/
+      # is reconciled, drop this comment and add the gate.
+
+      - name: Typecheck website
         run: pnpm --dir web run types:check
 
       - name: Build website
         run: pnpm --dir web run build
 
   docker-build:
+    name: "Self-host Docker image build"
     runs-on: ubuntu-latest
 
     steps:
