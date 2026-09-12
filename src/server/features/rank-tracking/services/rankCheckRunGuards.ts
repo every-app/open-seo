@@ -1,6 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { completeRankCheckRunFromSnapshots } from "@/server/features/rank-tracking/services/rankCheckFinalize";
 import type {
   RankCheckTriggerResult,
   RankTrackingConfig,
@@ -212,7 +213,15 @@ export async function beginRankCheckRun(input: {
         ageMs: Date.now() - new Date(blocker.startedAt).getTime(),
       });
       if (staleReason) {
-        await failRunIfActive(blocker.id, staleReason, blocker);
+        // Prefer completing from snapshots over failing — failing still hides
+        // paid DFS results (results SQL filters to status=completed).
+        const completed = await completeRankCheckRunFromSnapshots({
+          run: blocker,
+          requireFullCoverage: true,
+        });
+        if (!completed) {
+          await failRunIfActive(blocker.id, staleReason, blocker);
+        }
         continue; // slot is free now — retry insert
       }
     }

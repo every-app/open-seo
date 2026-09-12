@@ -42,7 +42,12 @@ export async function captureServerError(
   } catch (posthogError) {
     console.error("posthog server capture failed", posthogError);
   } finally {
-    await client.shutdown().catch(() => {});
+    // Bound shutdown: an indefinite PostHog flush has wedged Worker/workflow
+    // steps after the real work finished (rank-check finalize hung on this).
+    await Promise.race([
+      client.shutdown().catch(() => {}),
+      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+    ]);
   }
 }
 
@@ -71,6 +76,9 @@ export async function captureServerEvent(args: {
   } catch (posthogError) {
     console.error("posthog server capture failed", posthogError);
   } finally {
-    await client.shutdown().catch(() => {});
+    await Promise.race([
+      client.shutdown().catch(() => {}),
+      new Promise<void>((resolve) => setTimeout(resolve, 1500)),
+    ]);
   }
 }

@@ -7,6 +7,7 @@ import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { completeRankCheckRunFromSnapshots } from "@/server/features/rank-tracking/services/rankCheckFinalize";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import {
   runLiveCheck,
@@ -155,42 +156,17 @@ async function finalizeRankCheckRun(input: {
     return;
   }
 
-  const nowIso = new Date().toISOString();
-
-  // Snapshots were written incrementally by each batch step.
-  // Count from DB to get the authoritative keyword count.
-  const snapshots = await RankTrackingRepository.getSnapshotsForRun(
-    input.runId,
-  );
-  const keywordsChecked = new Set(snapshots.map((s) => s.trackingKeywordId))
-    .size;
-
-  const keywordsTotal = run.keywordsTotal || keywordsChecked;
-  const incompleteCount = keywordsTotal - keywordsChecked;
-
-  let errorMessage: string | undefined;
-  if (input.batchError) {
-    errorMessage = `Completed ${keywordsChecked} of ${keywordsTotal} keyword(s). Error: ${input.batchError}`;
-  } else if (incompleteCount > 0) {
-    errorMessage = `${incompleteCount} keyword(s) could not be checked`;
+  // Status flip first. Awaiting PostHog shutdown after DFS snapshots were
+  // written has left status=running so the API hid positions.
+  const completed = await completeRankCheckRunFromSnapshots({
+    run,
+    batchError: input.batchError,
+  });
+  if (!completed) {
+    return;
   }
 
-  // Flipping status away from 'pending'/'running' is what releases the
-  // partial-index slot for the next run.
-  await RankTrackingRepository.updateRun(input.runId, {
-    status: "completed",
-    keywordsChecked,
-    completedAt: nowIso,
-    ...(errorMessage ? { errorMessage } : {}),
-  });
-
-  // Clear any previous skip reason on success.
-  // Note: nextCheckAt is NOT set here — the cron handler advances it eagerly
-  // before starting the workflow to prevent retry storms.
-  await RankTrackingRepository.updateConfig(input.configId, input.projectId, {
-    lastCheckedAt: nowIso,
-    lastSkipReason: null,
-  });
+  const { keywordsChecked, keywordsTotal } = completed;
 
   // One-line summary per run so fallback rates are visible in Workers Logs.
   // Keys match the PostHog event properties for log/event correlation.
@@ -198,32 +174,36 @@ async function finalizeRankCheckRun(input: {
     ? ` queue_tasks=${input.queueStats.queueTasks} queue_collected=${input.queueStats.queueCollected} fallback_tasks=${input.queueStats.fallbackTasks} fallback_checked=${input.queueStats.fallbackChecked}`
     : "";
   // Error text can echo vendor/user content — keep it one line and bounded.
-  const errorSummary = errorMessage
-    ? ` error="${errorMessage.replace(/\s+/g, " ").slice(0, 200)}"`
+  const errorSummary = input.batchError
+    ? ` error="${input.batchError.replace(/\s+/g, " ").slice(0, 200)}"`
     : "";
   console.log(
     `[rank-check] ${input.runId} completed org=${input.billingCustomer.organizationId} project=${input.projectId} trigger=${input.trigger} keywords=${keywordsChecked}/${keywordsTotal}${queueSummary}${errorSummary}`,
   );
 
-  await captureServerEvent({
-    distinctId: input.billingCustomer.userId,
-    event: "rank_tracking:check_complete",
-    organizationId: input.billingCustomer.organizationId,
-    properties: {
-      project_id: input.projectId,
-      status: "completed",
-      trigger: input.trigger,
-      keywords_checked: keywordsChecked,
-      ...(input.queueStats
-        ? {
-            queue_tasks: input.queueStats.queueTasks,
-            queue_collected: input.queueStats.queueCollected,
-            fallback_tasks: input.queueStats.fallbackTasks,
-            fallback_checked: input.queueStats.fallbackChecked,
-          }
-        : {}),
-    },
-  });
+  // Never await PostHog here: shutdown flush can hang past the step timeout
+  // and leave the workflow wedged even after the DB status flip.
+  void Promise.resolve(
+    captureServerEvent({
+      distinctId: input.billingCustomer.userId,
+      event: "rank_tracking:check_complete",
+      organizationId: input.billingCustomer.organizationId,
+      properties: {
+        project_id: input.projectId,
+        status: "completed",
+        trigger: input.trigger,
+        keywords_checked: keywordsChecked,
+        ...(input.queueStats
+          ? {
+              queue_tasks: input.queueStats.queueTasks,
+              queue_collected: input.queueStats.queueCollected,
+              fallback_tasks: input.queueStats.fallbackTasks,
+              fallback_checked: input.queueStats.fallbackChecked,
+            }
+          : {}),
+      },
+    }),
+  ).catch(() => {});
 }
 
 async function markRankCheckRunFailed(input: {
@@ -247,16 +227,18 @@ async function markRankCheckRunFailed(input: {
     });
   }
 
-  await captureServerEvent({
-    distinctId: input.billingCustomer.userId,
-    event: "rank_tracking:check_complete",
-    organizationId: input.billingCustomer.organizationId,
-    properties: {
-      project_id: input.projectId,
-      status: "failed",
-      error: errorMessage,
-    },
-  });
+  void Promise.resolve(
+    captureServerEvent({
+      distinctId: input.billingCustomer.userId,
+      event: "rank_tracking:check_complete",
+      organizationId: input.billingCustomer.organizationId,
+      properties: {
+        project_id: input.projectId,
+        status: "failed",
+        error: errorMessage,
+      },
+    }),
+  ).catch(() => {});
 }
 
 export class RankCheckWorkflow extends WorkflowEntrypoint<

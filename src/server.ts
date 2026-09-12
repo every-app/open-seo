@@ -7,6 +7,7 @@ import { resolveUserContextFromHeaders } from "@/middleware/ensure-user/resolve"
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { runScheduledRankChecks } from "@/server/features/rank-tracking/services/scheduledRankChecks";
+import { reconcileStuckRankCheckRuns } from "@/server/features/rank-tracking/services/rankCheckReconciler";
 import { reconcileStaleAudits } from "@/server/features/audit/services/auditReconciler";
 import { getOrCreateOrganizationCustomer } from "@/server/billing/subscription";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
@@ -193,6 +194,7 @@ export default {
     let watchdogError: unknown;
     try {
       await withPgClient(() => reconcileStaleAudits());
+      await withPgClient(() => reconcileStuckRankCheckRuns());
     } catch (err) {
       watchdogError = err;
       console.error("[cron] Stale-audit reconcile failed:", err);
