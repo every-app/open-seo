@@ -207,6 +207,40 @@ describe("analyzeHtml parity with the DOM reference", () => {
   });
 });
 
+describe("analyzeHtml meta description contract", () => {
+  it.each(["description", "Description", "DESCRIPTION", "dEsCrIpTiOn"])(
+    "extracts the exact content for name=%s",
+    (name) => {
+      const content = "Actual text: OpenSEO keeps MiXeD case and  two spaces.";
+      const analysis = analyzeHtml(
+        `<head><meta name="${name}" content="${content}"></head>`,
+        PAGE_URL,
+        200,
+        0,
+      );
+
+      expect(analysis.metaDescription).toBe(content);
+    },
+  );
+
+  it.each(["description", "Description"])(
+    "keeps the first description when name=%s precedes a duplicate",
+    (name) => {
+      const analysis = analyzeHtml(
+        `<head>
+          <meta name="${name}" content="First description">
+          <meta name="description" content="Second description">
+        </head>`,
+        PAGE_URL,
+        200,
+        0,
+      );
+
+      expect(analysis.metaDescription).toBe("First description");
+    },
+  );
+});
+
 describe("analyzeHtml extraction caps", () => {
   it("caps links and images per page", () => {
     const links = Array.from(

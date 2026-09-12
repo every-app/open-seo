@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runPageReporters } from "@/server/lib/audit/issues/page-reporters";
+import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
 import {
   findDuplicates,
   findRedirectChainsAndLoops,
@@ -59,6 +60,44 @@ function makePage(overrides: Partial<CrawledPageResult>): CrawledPageResult {
 function issueTypes(page: CrawledPageResult): string[] {
   return runPageReporters(page).map((issue) => issue.issueType);
 }
+
+describe("meta description extraction and reporting", () => {
+  it.each(["description", "Description", "DESCRIPTION", "dEsCrIpTiOn"])(
+    "does not report a missing description for name=%s",
+    (name) => {
+      const analysis = analyzeHtml(
+        `<head><meta name="${name}" content="Actual text"></head>`,
+        "https://example.com/a",
+        200,
+        0,
+      );
+
+      expect(
+        issueTypes(makePage({ metaDescription: analysis.metaDescription })),
+      ).not.toContain("missing-meta-description");
+    },
+  );
+
+  it.each([
+    ["absent", ""],
+    ["empty", '<meta name="description" content="">'],
+    ["empty with mixed case", '<meta name="Description" content="">'],
+    ["whitespace only", '<meta name="DESCRIPTION" content="   ">'],
+    ["missing content", '<meta name="dEsCrIpTiOn">'],
+  ])("reports a missing description when %s", (_label, meta) => {
+    const analysis = analyzeHtml(
+      `<head>${meta}</head>`,
+      "https://example.com/a",
+      200,
+      0,
+    );
+
+    expect(analysis.metaDescription).toBe("");
+    expect(
+      issueTypes(makePage({ metaDescription: analysis.metaDescription })),
+    ).toContain("missing-meta-description");
+  });
+});
 
 describe("runPageReporters", () => {
   it("reports nothing for a healthy page", () => {
