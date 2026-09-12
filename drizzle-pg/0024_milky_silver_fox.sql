@@ -1,0 +1,1 @@
+ALTER TABLE "agent_marketplace_listings" ADD COLUMN "provider_status" text;

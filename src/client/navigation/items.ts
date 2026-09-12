@@ -8,6 +8,7 @@ import {
   MessageSquare,
   Search,
   Sparkles,
+  Store,
   TrendingUp,
 } from "lucide-react";
 import { linkOptions } from "@tanstack/react-router";
@@ -51,6 +52,11 @@ const projectNavItems = [
     to: "/p/$projectId/backlinks" as const,
     label: "Backlinks",
     icon: Link2,
+  },
+  {
+    to: "/p/$projectId/agent-marketplaces" as const,
+    label: "Agent Marketplaces",
+    icon: Store,
   },
   {
     to: "/p/$projectId/audit" as const,
@@ -118,6 +124,7 @@ export function getProjectNavGroups(projectId: string) {
       items: [
         byPath("/p/$projectId/search-performance"),
         byPath("/p/$projectId/rank-tracking"),
+        byPath("/p/$projectId/agent-marketplaces"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),
       ],
