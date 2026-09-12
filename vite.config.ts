@@ -32,10 +32,28 @@ export default defineConfig(({ mode }) => {
     ],
     server: {
       allowedHosts,
+      host: true,
       port,
+      watch: {
+        ignored: [
+          "**/.git/**",
+          "**/.wrangler/**",
+          "**/.agents/**",
+          "**/dist/**",
+          "**/coverage/**",
+          "**/.logs/**",
+          "**/docs/**",
+          "**/release-notes/**",
+          "**/specs/**",
+          "**/badseo/**",
+          "**/web/**",
+          "**/.pnpm-store/**",
+        ],
+      },
     },
     preview: {
       allowedHosts,
+      host: true,
       port,
     },
     build: {

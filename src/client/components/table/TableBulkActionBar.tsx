@@ -51,25 +51,30 @@ export function TableBulkActionButton({
   children,
   onClick,
   disabled,
+  title,
   variant = "default",
 }: {
   icon?: ReactNode;
   children: ReactNode;
   onClick: () => void;
   disabled?: boolean;
-  variant?: "default" | "danger";
+  title?: string;
+  variant?: "default" | "danger" | "primary";
 }) {
   const color =
     variant === "danger"
       ? "text-error hover:bg-error/10"
-      : "text-base-content/85 hover:bg-base-content/10";
+      : variant === "primary"
+        ? "text-primary-content bg-primary hover:bg-primary-focus"
+        : "text-base-content/85 hover:bg-base-content/10";
 
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm disabled:opacity-50 ${color}`}
+      title={title}
+      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed ${color}`}
     >
       {icon}
       {children}

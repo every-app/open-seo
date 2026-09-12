@@ -14,6 +14,7 @@ import {
   buildSearchAnalyticsRequest,
   type GscPerformanceInput,
 } from "@/server/features/gsc/searchAnalytics";
+import { traceGscCall } from "@/server/features/sam/samTraceBus";
 import {
   GscConnectionRepository,
   type GscConnection,
@@ -240,7 +241,12 @@ async function getPerformance(
     userId: connection.connectedByUserId,
     gscAccountId: connection.gscAccountId ?? undefined,
   });
-  const rows = await client.querySearchAnalytics(connection.siteUrl, request);
+  // Debug Trace: the GSC API call is a direct (non-router) provider
+  // execution — instrumented so the panel's provider identity comes from
+  // runtime events, never from tool-name inference.
+  const rows = await traceGscCall(() =>
+    client.querySearchAnalytics(connection.siteUrl, request),
+  );
   return {
     siteUrl: connection.siteUrl,
     connectedBy: connection.connectedAccountEmail,

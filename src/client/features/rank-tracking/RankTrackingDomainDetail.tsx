@@ -170,6 +170,13 @@ export function RankTrackingDomainDetail({
     setPendingCheck({ count, keywordIds });
   };
 
+  // Selected-scope check: the table passes the exact selected keyword IDs.
+  // They are the sole scope sent to the server — never expanded to all.
+  const handleCheckSelected = (keywordIds: string[]) => {
+    if (keywordIds.length === 0) return;
+    requestCheck(keywordIds.length, keywordIds);
+  };
+
   const rows = resultsData?.rows;
   const run = resultsData?.run;
   const hasBothDevices = config.devices === "both";
@@ -334,6 +341,9 @@ export function RankTrackingDomainDetail({
               locationCode={config.locationCode}
               locationName={config.locationName}
               serpDepth={config.serpDepth}
+              onCheckSelected={handleCheckSelected}
+              checkSelectedBusy={isBusy}
+              checkSelectedDisabled={isFreePlan}
             />
           )}
         </div>

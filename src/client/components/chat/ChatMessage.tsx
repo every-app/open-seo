@@ -12,6 +12,9 @@ import {
 import { Markdown } from "@/client/components/Markdown";
 import {
   buildRenderPlan,
+  getToolFailureDetail,
+  isToolPart,
+  isToolPartFailed,
   safeParts,
   type ChatToolPart,
   type ToolPartGroup,
@@ -56,7 +59,7 @@ export function messageHasVisibleContent(message: UIMessage): boolean {
     (part) =>
       (part.type === "text" && part.text.trim().length > 0) ||
       (part.type === "reasoning" && part.text.trim().length > 0) ||
-      part.type.startsWith("tool-"),
+      isToolPart(part),
   );
 }
 
@@ -196,11 +199,14 @@ function ToolBadge({
   const part = group.last;
   const state = "state" in part ? part.state : undefined;
   const isDone = state === "output-available";
+  const failed = isToolPartFailed(part);
   // A "running" part in a message that is no longer being generated never
   // finished — the turn was interrupted. Show it as failed, not spinning.
-  const isError = state === "output-error" || (!isDone && !live);
+  const isError = failed || state === "output-error" || (!isDone && !live);
   const isRunning = !isError && !isDone;
-  const detail = isDone && labels.detail ? labels.detail(part) : null;
+  const customDetail = isDone && labels.detail ? labels.detail(part) : null;
+  const failureDetail = isError ? getToolFailureDetail(part) : null;
+  const detail = customDetail ?? failureDetail;
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${

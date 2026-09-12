@@ -260,11 +260,15 @@ export function DashboardPage({ projectId }: { projectId: string }) {
     activation?.domain != null &&
     overview !== undefined &&
     (overview.backlinks === null || overview.backlinks.stale);
+  // refreshMutation is intentionally omitted from deps: useMutation returns a
+  // new object on every render, so listing it would make this fire every
+  // render. The ref guard already prevents double-fire per page view.
   useEffect(() => {
     if (!needsSnapshot || refreshFiredRef.current) return;
     refreshFiredRef.current = true;
     refreshMutation.mutate();
-  }, [needsSnapshot, refreshMutation]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [needsSnapshot]);
 
   if (activationQuery.isError) {
     return (

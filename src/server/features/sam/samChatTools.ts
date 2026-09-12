@@ -43,6 +43,11 @@ import {
   type ToolExecutionTracker,
 } from "@/server/features/sam/samToolExecution";
 import {
+  createToolRecoveryState,
+  type ToolRecoveryState,
+} from "@/server/features/sam/samToolRecovery";
+import { executeAdaptedTool } from "@/server/features/sam/samGuardedToolExecute";
+import {
   buildPollSiteAuditTool,
   type PollCoordinator,
   tagStartedAudit,
@@ -65,20 +70,6 @@ type McpToolDefinition<Shape extends ZodRawShape> = {
     extra: ToolExtra,
   ) => Promise<CallToolResult>;
 };
-
-// Flatten an MCP CallToolResult into a plain value for the model: the handler's
-// human-readable text summary plus the structured data it returned.
-function toModelOutput(result: CallToolResult): unknown {
-  const summary = (result.content ?? [])
-    .filter(
-      (part): part is { type: "text"; text: string } => part.type === "text",
-    )
-    .map((part) => part.text)
-    .join("\n");
-  return result.structuredContent
-    ? { summary, data: result.structuredContent }
-    : { summary };
-}
 
 // Adapt one MCP tool into an AI SDK tool. The MCP handler reads auth from `extra`
 // (via requireMcpToolAuthContext) and self-gates project access against the org,
@@ -104,6 +95,10 @@ type AdaptMcpToolContext = {
   projectId: string;
   tracker: ToolExecutionTracker;
   sessionId: string;
+  /** Per-turn failure state — blocks repeat calls to known-unavailable tools. */
+  recovery: ToolRecoveryState;
+  /** Bounded wait before the single automatic retry (injectable for tests). */
+  sleep: (ms: number) => Promise<void>;
 };
 
 type AdaptMcpToolOptions = {
@@ -116,7 +111,7 @@ function adaptMcpTool<Shape extends ZodRawShape>(
   ctx: AdaptMcpToolContext,
   opts?: AdaptMcpToolOptions,
 ): Tool {
-  const { extra, projectId, tracker, sessionId } = ctx;
+  const { extra, projectId } = ctx;
   const { projectId: _projectIdSchema, ...modelShape } = def.config.inputSchema;
   const bindsProject = "projectId" in def.config.inputSchema;
 
@@ -130,60 +125,19 @@ function adaptMcpTool<Shape extends ZodRawShape>(
       const fullArgs = (bindsProject
         ? { ...args, projectId }
         : args) as unknown as z.infer<z.ZodObject<Shape>>;
-      const startedAt = Date.now();
-      if (!FRESH_READ_TOOLS.has(def.name)) {
-        const cached = tracker.getCached(def.name, fullArgs);
-        if (cached !== undefined) {
-          tracker.log({
-            sessionId,
-            projectId,
-            toolName: def.name,
-            reused: true,
-            status: "ok",
-            durationMs: Date.now() - startedAt,
-          });
-          return cached;
-        }
-      }
-      try {
-        // Tool calls run inside Think's inference loop, outside any ambient
-        // request scope, so each execution scopes its own Postgres client
-        // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
-        const output = toModelOutput(
-          await withPgClient(() => def.handler(fullArgs, extra)),
-        );
-        const finalOutput = opts?.postProcess
-          ? opts.postProcess(output)
-          : output;
-        // Only successful outputs are cached: an error should be retryable
-        // (e.g. a transient 429) rather than served stale from memory.
-        if (!FRESH_READ_TOOLS.has(def.name)) {
-          tracker.setCached(def.name, fullArgs, finalOutput);
-        }
-        tracker.log({
-          sessionId,
-          projectId,
-          toolName: def.name,
-          reused: false,
-          status: "ok",
-          durationMs: Date.now() - startedAt,
-        });
-        return finalOutput;
-      } catch (error) {
-        tracker.log({
-          sessionId,
-          projectId,
-          toolName: def.name,
-          reused: false,
-          status: "error",
-          durationMs: Date.now() - startedAt,
-        });
-        // Surface the failure to the model so it can recover or report it,
-        // rather than aborting the whole turn on one bad tool call.
-        return {
-          error: error instanceof Error ? error.message : String(error),
-        };
-      }
+      // Tool calls run inside Think's inference loop, outside any ambient
+      // request scope, so each execution scopes its own Postgres client
+      // (no-op in D1 mode) — same rule as the DO's other DB-touching seams.
+      // Duplicate-call protection, the single bounded retry, and the curated
+      // failure signals live in the shared guarded runner (samToolRecovery).
+      return executeAdaptedTool({
+        toolName: def.name,
+        fullArgs,
+        ctx,
+        run: () => withPgClient(() => def.handler(fullArgs, extra)),
+        postProcess: opts?.postProcess,
+        cacheable: !FRESH_READ_TOOLS.has(def.name),
+      });
     },
   });
 }
@@ -273,7 +227,14 @@ export function buildSamMcpTools(
   authContext: McpToolAuthContext,
   project: { id: string; domain: string | null },
   tracker?: ToolExecutionTracker,
-  options?: { poll?: PollConfig; pollCoordinator?: PollCoordinator },
+  options?: {
+    poll?: PollConfig;
+    pollCoordinator?: PollCoordinator;
+    /** Per-turn failure state. Defaults to a fresh instance (= this turn). */
+    recovery?: ToolRecoveryState;
+    /** Bounded wait before the single automatic retry (tests inject instant). */
+    sleep?: (ms: number) => Promise<void>;
+  },
 ): ToolSet {
   const projectId = project.id;
   const sessionId = "sam";
@@ -299,6 +260,13 @@ export function buildSamMcpTools(
     projectId,
     tracker: toolTracker,
     sessionId,
+    // Fresh per build (= per turn: beforeTurn rebuilds the toolset every
+    // turn), unless the caller injected a shared instance. Never survives
+    // across turns — a tool blocked in turn A is retryable in turn B.
+    recovery: options?.recovery ?? createToolRecoveryState(sessionId),
+    sleep:
+      options?.sleep ??
+      ((ms) => new Promise((resolve) => setTimeout(resolve, ms))),
   };
   const adapt = <Shape extends ZodRawShape>(
     def: McpToolDefinition<Shape>,
@@ -374,4 +342,3 @@ export function buildSamMcpTools(
       : {}),
   };
 }
-

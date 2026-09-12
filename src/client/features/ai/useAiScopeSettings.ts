@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -7,6 +7,11 @@ import {
   testAiConnection,
 } from "@/serverFunctions/aiSettings";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  traceAiConnectionTest,
+  traceSettingsMutation,
+  traceSettingsRead,
+} from "@/client/features/tracing/settingsTrace";
 import {
   isSupportedProvider,
   type AiProviderId,
@@ -28,7 +33,16 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
   const viewQuery = useQuery({
     queryKey: ["aiScopeSettings", scope, projectId ?? null],
     queryFn: () =>
-      getScopeAiSettings({ data: { scope, projectId: projectId || undefined } }),
+      traceSettingsRead({
+        operation: "settings.ai.settings_read",
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        endpoint: "settings/ai/get",
+        metadata: { scope },
+        counters: { settingsReads: 1 },
+        call: () =>
+          getScopeAiSettings({ data: { scope, projectId: projectId || undefined } }),
+      }),
   });
 
   const [provider, setProvider] = useState<AiProviderId | null>(null);
@@ -41,7 +55,11 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
   const [testOk, setTestOk] = useState<boolean | null>(null);
 
   // Sync local state from the loaded view (server is authoritative).
-  const [loadedKey, setLoadedKey] = useState<string | null>(null);
+  // loadedKey is a ref, not state, to avoid a setState→effect→setState loop:
+  // the effect's job is to sync *once* per server loadKey change, and storing
+  // the deduplication key in state would make the effect depend on the same
+  // state it sets (Maximum update depth exceeded).
+  const loadedKeyRef = useRef<string | null>(null);
   const data = viewQuery.data;
   const loadKey = data
     ? `${data.override?.provider ?? "inherit"}|${data.override?.model ?? ""}|${
@@ -49,8 +67,8 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
       }`
     : null;
   useEffect(() => {
-    if (!data || loadKey === loadedKey) return;
-    setLoadedKey(loadKey);
+    if (!data || loadKey === loadedKeyRef.current) return;
+    loadedKeyRef.current = loadKey;
     const stored = data.override?.provider ?? null;
     setProvider(stored && isSupportedProvider(stored) ? stored : null);
     setModel(data.override?.model ?? null);
@@ -59,7 +77,7 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
     setShowKeyInput(false);
     setTestResult(null);
     setTestOk(null);
-  }, [data, loadKey, loadedKey]);
+  }, [data, loadKey]);
 
   const effective = data?.effective;
   const selectedProvider: AiProviderId =
@@ -68,8 +86,20 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
 
   const saveMutation = useMutation({
     mutationFn: (patch: SavePatch) =>
-      saveScopeAiSettingsFn({
-        data: { scope, projectId: projectId || undefined, patch },
+      traceSettingsMutation({
+        operation: "settings.ai.settings_save",
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        endpoint: "settings/ai/save",
+        metadata: { scope, changedFields: Object.keys(patch) },
+        counters: {
+          settingsSaved: 1,
+          resetToInherited: patch.resetToInherited ? 1 : 0,
+        },
+        call: () =>
+          saveScopeAiSettingsFn({
+            data: { scope, projectId: projectId || undefined, patch },
+          }),
       }),
     onSuccess: async (_result, patch) => {
       await queryClient.invalidateQueries({
@@ -95,14 +125,24 @@ export function useAiScopeSettings(scope: "organization" | "project", projectId?
     mutationFn: () => {
       // S21: test the CURRENT EDIT state (unsaved values win); fall back to
       // the effective configuration server-side when a field is untouched.
-      return testAiConnection({
-        data: {
-          provider: selectedProvider,
-          model: (model ?? effective?.model) || undefined,
-          baseUrl: isEndpoint ? (baseUrl ?? undefined) : undefined,
-          apiKey: apiKeyEntry?.trim() ? apiKeyEntry.trim() : undefined,
-          projectId: projectId || undefined,
-        },
+      // Only safe identifiers are traced; unsaved secrets stay out of trace.
+      const requestedModel = (model ?? effective?.model) || undefined;
+      return traceAiConnectionTest({
+        source: scope === "project" ? "Project settings" : "Settings",
+        projectId: projectId || undefined,
+        scope,
+        provider: selectedProvider,
+        model: requestedModel,
+        call: () =>
+          testAiConnection({
+            data: {
+              provider: selectedProvider,
+              model: requestedModel,
+              baseUrl: isEndpoint ? (baseUrl ?? undefined) : undefined,
+              apiKey: apiKeyEntry?.trim() ? apiKeyEntry.trim() : undefined,
+              projectId: projectId || undefined,
+            },
+          }),
       });
     },
     onSuccess: (result) => {

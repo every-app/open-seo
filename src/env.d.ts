@@ -94,6 +94,8 @@ interface ImportMetaEnv {
   readonly TURNSTILE_SITE_KEY?: string;
   readonly VITE_E2E_DOMAIN_FIXTURES?: string;
   readonly VITE_E2E_KEYWORD_FIXTURES?: string;
+  /** Developer-only: force the SAM Debug Trace panel on in production builds. */
+  readonly VITE_SAM_DEBUG_TRACE?: string;
 }
 
 interface ImportMeta {

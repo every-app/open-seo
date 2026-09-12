@@ -218,11 +218,41 @@ async function removeKeywords(
 // Trigger a manual check
 // ---------------------------------------------------------------------------
 
+async function validateSelectedKeywordIds(
+  configId: string,
+  keywordIds: string[] | undefined,
+): Promise<string[] | null> {
+  if (!keywordIds || keywordIds.length === 0) return null;
+
+  const configKeywords = await RankTrackingRepository.getKeywordsForConfig(
+    configId,
+  );
+  const configKeywordIds = new Set(configKeywords.map((kw) => kw.id));
+
+  const seen = new Set<string>();
+  const validated: string[] = [];
+  for (const id of keywordIds) {
+    if (seen.has(id) || !configKeywordIds.has(id)) continue;
+    seen.add(id);
+    validated.push(id);
+  }
+
+  if (validated.length === 0) {
+    throw new AppError(
+      "VALIDATION_ERROR",
+      "None of the selected keywords are tracked on this domain",
+    );
+  }
+
+  return validated;
+}
+
 async function triggerCheck(input: {
   configId: string;
   projectId: string;
   billingCustomer: BillingCustomerContext;
   keywordIds?: string[];
+  operationId?: string;
 }): Promise<RankCheckTriggerResult> {
   const config = await getValidatedConfig(input.configId, input.projectId);
 
@@ -234,7 +264,12 @@ async function triggerCheck(input: {
     );
   }
 
-  return beginRankCheckRun({
+  const requestedKeywordIds = await validateSelectedKeywordIds(
+    config.id,
+    input.keywordIds,
+  );
+
+  const runResult = await beginRankCheckRun({
     workflow: env.RANK_CHECK_WORKFLOW,
     config,
     projectId: input.projectId,
@@ -244,11 +279,34 @@ async function triggerCheck(input: {
       organizationId: input.billingCustomer.organizationId,
       projectId: input.billingCustomer.projectId,
     },
-    keywordsTotal: input.keywordIds ? input.keywordIds.length : keywords.length,
-    keywordIds: input.keywordIds,
+    keywordsTotal: requestedKeywordIds
+      ? requestedKeywordIds.length
+      : keywords.length,
+    keywordIds: requestedKeywordIds ?? undefined,
     trigger: "manual",
     workflowStartErrorMessage: "Failed to start rank check workflow",
   });
+
+  if (runResult.ok) {
+    const totalTracked = keywords.length;
+    const validatedCount = requestedKeywordIds
+      ? requestedKeywordIds.length
+      : totalTracked;
+    return {
+      ...runResult,
+      operationId: input.operationId,
+      scope: requestedKeywordIds ? "selected" : "all",
+      selectedCount: input.keywordIds?.length ?? totalTracked,
+      validatedCount,
+      validatedKeywordIds: requestedKeywordIds ?? undefined,
+      unselectedCount: totalTracked - validatedCount,
+    };
+  }
+
+  return {
+    ...runResult,
+    operationId: input.operationId,
+  };
 }
 
 async function getLatestRun(configId: string, projectId: string) {

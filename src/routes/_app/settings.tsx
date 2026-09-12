@@ -4,6 +4,9 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 import { AiSettingsSection } from "@/client/features/ai/AiSettingsSection";
+import { DataforseoSettingsSection } from "@/client/features/settings/DataforseoSettingsSection";
+import { GlobalDebugTraceSettingsSection } from "@/client/features/tracing/GlobalDebugTraceSettingsSection";
+import { traceSettingsMutation } from "@/client/features/tracing/settingsTrace";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { version } from "../../../package.json";
@@ -33,8 +36,16 @@ function SettingsPage() {
   async function updateAnalyticsPreference(enabled: boolean) {
     setIsSaving(true);
     try {
-      const result = await authClient.updateUser({
-        analyticsOptedOut: !enabled,
+      const result = await traceSettingsMutation({
+        operation: "settings.analytics.update",
+        source: "Settings",
+        endpoint: "settings/analytics/update",
+        metadata: { enabled },
+        counters: { analyticsUpdates: 1 },
+        call: () =>
+          authClient.updateUser({
+            analyticsOptedOut: !enabled,
+          }),
       });
       if (result.error) {
         toast.error("We couldn't update your analytics setting.");
@@ -58,6 +69,20 @@ function SettingsPage() {
             AI agent
           </h2>
           <AiSettingsSection />
+        </section>
+
+        <section id="dataforseo" className="space-y-3">
+          <h2 className="text-sm font-medium text-base-content/50">
+            Data provider
+          </h2>
+          <DataforseoSettingsSection />
+        </section>
+
+        <section id="debug-trace" className="space-y-3">
+          <h2 className="text-sm font-medium text-base-content/50">
+            Debug Trace
+          </h2>
+          <GlobalDebugTraceSettingsSection />
         </section>
 
         <section className="space-y-3">

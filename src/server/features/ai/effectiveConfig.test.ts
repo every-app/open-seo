@@ -17,8 +17,16 @@ const baseEnv: AiCredentialEnvironment = {
 describe("resolveEffectiveAiConfig — provider-aware precedence (S2/S3/S6)", () => {
   it("project provider + organization credential of the SAME provider combine", () => {
     const result = resolveEffectiveAiConfig({
-      project: { provider: "openai_compatible", model: "m", baseUrl: "https://a/v1" },
-      organization: { provider: "openai_compatible", model: null, baseUrl: null },
+      project: {
+        provider: "openai_compatible",
+        model: "m",
+        baseUrl: "https://a/v1",
+      },
+      organization: {
+        provider: "openai_compatible",
+        model: null,
+        baseUrl: null,
+      },
       projectCredentials: {},
       organizationCredentials: { openai_compatible: "ORG_KEY" },
       env: baseEnv,
@@ -72,8 +80,16 @@ describe("resolveEffectiveAiConfig — provider-aware precedence (S2/S3/S6)", ()
 
   it("field-level inheritance: project baseUrl + org key + project model", () => {
     const result = resolveEffectiveAiConfig({
-      project: { provider: "openai_compatible", model: "custom-model", baseUrl: "https://gw/v1" },
-      organization: { provider: "openai_compatible", model: null, baseUrl: null },
+      project: {
+        provider: "openai_compatible",
+        model: "custom-model",
+        baseUrl: "https://gw/v1",
+      },
+      organization: {
+        provider: "openai_compatible",
+        model: null,
+        baseUrl: null,
+      },
       projectCredentials: {},
       organizationCredentials: { openai_compatible: "ORG_KEY" },
       env: baseEnv,
@@ -139,5 +155,75 @@ describe("resolveEffectiveAiConfig — provider-aware precedence (S2/S3/S6)", ()
     });
     expect(result.provider).toBe("openrouter");
     expect(result.providerSource).toBe("project");
+  });
+});
+
+// Regression for the 2026-09-01 SAM incident: the org default was
+// ollama_cloud, but a stale project row (provider=openrouter, empty model)
+// silently routed this project's SAM turns to OpenRouter with the env model
+// default. This suite pins BOTH resolutions so operator confusion is caught
+// by tests, not by a production 402.
+describe("resolveEffectiveAiConfig — incident 2026-09-01 regression (project override + org default)", () => {
+  const incidentEnv: AiCredentialEnvironment = {
+    aiAgentProvider: null,
+    aiAgentModel: null,
+    providerModelDefaults: {
+      openrouter: "deepseek/deepseek-v4-flash-0731",
+    },
+    apiKeys: { openrouter: "ENV_OPENROUTER_KEY" },
+    baseUrls: {},
+  };
+
+  const orgRow = {
+    provider: "ollama_cloud",
+    model: "kimi-k2.7-code",
+    baseUrl: "https://ollama.com/v1",
+  };
+
+  const orgCredentials = { ollama_cloud: "ORG_OLLAMA_KEY" };
+
+  it("with the project OpenRouter override: provider=openrouter, model falls through to the env default", () => {
+    const result = resolveEffectiveAiConfig({
+      project: { provider: "openrouter", model: "", baseUrl: null },
+      organization: orgRow,
+      projectCredentials: { openrouter: "PROJECT_OPENROUTER_KEY" },
+      organizationCredentials: orgCredentials,
+      env: incidentEnv,
+    });
+    expect(result.provider).toBe("openrouter");
+    expect(result.providerSource).toBe("project");
+    expect(result.model).toBe("deepseek/deepseek-v4-flash-0731");
+    expect(result.credential).toBe("PROJECT_OPENROUTER_KEY");
+  });
+
+  it("after removing the project override: the org ollama_cloud default takes over", () => {
+    const result = resolveEffectiveAiConfig({
+      project: null,
+      organization: orgRow,
+      projectCredentials: {},
+      organizationCredentials: orgCredentials,
+      env: incidentEnv,
+    });
+    expect(result.provider).toBe("ollama_cloud");
+    expect(result.providerSource).toBe("organization");
+    expect(result.model).toBe("kimi-k2.7-code");
+    expect(result.credential).toBe("ORG_OLLAMA_KEY");
+    expect(result.baseUrl).toBe("https://ollama.com/v1");
+  });
+
+  it("an org provider switch invalidates the project row's provider AND its empty-model fall-through", () => {
+    // Deleting the project row is the operator remedy; flipping the org row
+    // must equally stop the project's openrouter route.
+    const result = resolveEffectiveAiConfig({
+      project: { provider: "openrouter", model: "", baseUrl: null },
+      organization: orgRow,
+      projectCredentials: { openrouter: "PROJECT_OPENROUTER_KEY" },
+      organizationCredentials: orgCredentials,
+      env: incidentEnv,
+    });
+    expect(result.provider).toBe("openrouter");
+    // The project's openrouter credential never leaks into ollama_cloud:
+    expect(result.credential).toBe("PROJECT_OPENROUTER_KEY");
+    expect(result.baseUrl).toBeNull();
   });
 });

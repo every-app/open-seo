@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Loader2, Sheet, Trash2 } from "lucide-react";
+import { FileDown, Loader2, Play, Sheet, Trash2 } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
 import {
   AppDataTable,
@@ -40,6 +40,9 @@ export function RankTrackingTable({
   locationCode,
   locationName,
   serpDepth,
+  onCheckSelected,
+  checkSelectedBusy,
+  checkSelectedDisabled,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -53,6 +56,9 @@ export function RankTrackingTable({
   locationCode: number;
   locationName?: string | null;
   serpDepth: number;
+  onCheckSelected: (keywordIds: string[]) => void;
+  checkSelectedBusy: boolean;
+  checkSelectedDisabled: boolean;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -60,6 +66,7 @@ export function RankTrackingTable({
     null,
   );
   const selectAnchorRef = useRef<SelectionAnchor | null>(null);
+  const rowSelectionRef = useRef<Record<string, boolean>>({});
 
   const handleKeywordClick = useCallback(
     (row: RankTrackingRow) =>
@@ -70,6 +77,11 @@ export function RankTrackingTable({
     [],
   );
 
+  const isChecking = useCallback(
+    (id: string) => checkSelectedBusy && Boolean(rowSelectionRef.current[id]),
+    [checkSelectedBusy],
+  );
+
   const columns = useRankTrackingColumns({
     showDesktop,
     showMobile,
@@ -77,6 +89,7 @@ export function RankTrackingTable({
     selectAnchorRef,
     onKeywordClick: handleKeywordClick,
     locationName,
+    isChecking,
   });
 
   const table = useAppTable({
@@ -90,10 +103,15 @@ export function RankTrackingTable({
     enableRowSelection: true,
   });
 
+  rowSelectionRef.current = table.getState().rowSelection;
+
   // Only includes rows that are in the current data (respects parent filtering)
   const selectedRows = table.getSelectedRowModel().rows;
   const selectedCount = selectedRows.length;
   const selectedRankRows = selectedRows.map((row) => row.original);
+  // Selection is keyed by trackingKeywordId (getRowId), so this is the exact
+  // set of checked rows — independent of sorting, filtering, or pagination.
+  const selectedKeywordIds = selectedRankRows.map((row) => row.trackingKeywordId);
 
   const exportSelectionToSheets = () => {
     const { headers, rows: exportRows } = buildRankTrackingExport(
@@ -172,6 +190,25 @@ export function RankTrackingTable({
         onClear={() => table.resetRowSelection()}
         actions={
           <div className="flex items-center px-1.5">
+            <TableBulkActionButton
+              icon={
+                checkSelectedBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Play className="size-3.5" />
+                )
+              }
+              onClick={() => onCheckSelected(selectedKeywordIds)}
+              disabled={
+                checkSelectedBusy ||
+                checkSelectedDisabled ||
+                selectedCount === 0
+              }
+              title="Check rankings for selected keywords"
+              variant="primary"
+            >
+              Check selected
+            </TableBulkActionButton>
             <TableBulkActionButton
               icon={<Trash2 className="size-3.5" />}
               onClick={() => setShowConfirm(true)}

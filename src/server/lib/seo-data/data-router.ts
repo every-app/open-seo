@@ -15,6 +15,10 @@ import {
   ProviderUnsupportedError,
 } from "./errors";
 import { getProviderFeatureFlags } from "./config";
+import {
+  traceCacheDecision,
+  traceProviderCall,
+} from "./trace";
 import type {
   SEODataProvider,
   SEODataRequest,
@@ -26,7 +30,16 @@ import type { ZodTypeAny } from "zod";
 /**
  * The priority order of providers for each data type. The first provider that
  * `supports()` the request and is enabled (feature flag) is tried first.
- * DataForSEO is always the last entry (the paid fallback).
+ *
+ * TOOL-SPECIFIC EXCEPTION (get_domain_overview / DomainService.getOverview):
+ * the order is DataForSEO → internal, the inverse of the free-first default.
+ * Domain overview is a paid-intelligence product: when no fresh R2-cache entry
+ * exists (the cache check above this walk still runs FIRST and avoids the
+ * paid call on a hit), DataForSEO is the PRIMARY source and internal
+ * snapshots serve only as the failure fallback. This is intentional and
+ * scoped to this data type alone — every other type keeps the free-first
+ * order below (do not "fix" this back to internal-first; see the
+ * get_domain_overview tool description and its tests).
  *
  * This is the deterministic provider routing policy.
  */
@@ -35,7 +48,7 @@ const PROVIDER_PRIORITY: Record<SEODataType, string[]> = {
   keyword_metrics: ["google_ads", "internal", "dataforseo"],
   serp: ["internal", "dataforseo"],
   domain_keywords: ["internal", "dataforseo"],
-  domain_overview: ["internal", "dataforseo"],
+  domain_overview: ["dataforseo", "internal"],
   domain_pages: ["internal", "dataforseo"],
   competitors: ["internal", "dataforseo"],
   backlinks: ["internal", "dataforseo"],
@@ -101,6 +114,13 @@ export class DataRouter {
         // 2. Try providers in priority order
         const priority = PROVIDER_PRIORITY[request.dataType] ?? [];
         let lastError: unknown = null;
+        // The FIRST provider's real failure (402/429/5xx/network) must survive
+        // the walk: when a later fallback provider merely has no data
+        // (ProviderUnsupportedError), that "no data" signal must not mask
+        // the primary's error — otherwise a DataForSEO 402 with an empty
+        // internal snapshot would surface as a generic unavailable error
+        // and break the recovery policy (no-retry on credits).
+        let primaryError: unknown = null;
 
         for (const providerName of priority) {
           // Skip disabled providers
@@ -111,8 +131,8 @@ export class DataRouter {
           if (!provider.supports(request)) continue;
 
           try {
-            const data = await singleFlight(cacheKey, () =>
-              provider.get(request),
+            const data = await traceProviderCall(providerName, () =>
+              singleFlight(cacheKey, () => provider.get(request)),
             );
 
             if (providerName !== "dataforseo") {
@@ -129,14 +149,12 @@ export class DataRouter {
           } catch (error) {
             if (error instanceof ProviderUnsupportedError) {
               // Expected — try the next provider
+              if (primaryError === null) lastError = error;
               continue;
             }
             if (error instanceof ProviderUnavailableError) {
               // Expected — try the next provider, record reason
-              if (providerName !== "dataforseo") {
-                // Intentionally unused; the log entry below captures the outcome
-              }
-              lastError = error;
+              if (primaryError === null) lastError = error;
               continue;
             }
             if (error instanceof BudgetExceededError) {
@@ -153,8 +171,13 @@ export class DataRouter {
               });
               throw error;
             }
-            // Unexpected error — record and try next provider
-            lastError = error;
+            // A real provider failure (billing, rate limit, upstream). Record
+            // it as the primary error the walk should surface if no fallback
+            // succeeds; later "no data" misses never overwrite it.
+            if (primaryError === null) {
+              primaryError = error;
+              lastError = error;
+            }
             continue;
           }
         }
@@ -172,8 +195,10 @@ export class DataRouter {
 
     if (cacheResult.fromCache) {
       recordCacheHit();
+      traceCacheDecision(true);
     } else {
       recordCacheMiss();
+      traceCacheDecision(false);
     }
 
     const response: SEODataResponse<T> = {

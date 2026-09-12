@@ -43,7 +43,7 @@ export const SAM_ERROR_FALLBACKS: Record<AIProviderErrorCode, string> = {
 
 /** Full curated messages exactly as the server can send them. */
 const CURATED_MESSAGES: ReadonlySet<string> = new Set(
-  (Object.values(SAM_ERROR_FALLBACKS) as string[]).map((m) =>
+  Object.values(SAM_ERROR_FALLBACKS).map((m) =>
     normalizeWhitespace(m),
   ),
 );

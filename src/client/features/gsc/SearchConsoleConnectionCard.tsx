@@ -1,9 +1,11 @@
+/* eslint-disable max-lines */
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { traceServerCall } from "@/client/features/tracing/traceServerCall";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
 import { SelfHostedSetupWarning } from "@/client/features/gsc/SelfHostedSetupWarning";
 import {
@@ -35,7 +37,39 @@ export function SearchConsoleConnectionCard({
   const connectionKey = ["gscConnection", projectId];
   const connectionQuery = useQuery({
     queryKey: connectionKey,
-    queryFn: () => getGscConnection({ data: { projectId } }),
+    queryFn: () =>
+      traceServerCall({
+        feature: "search_console",
+        operation: "search_console.connection_read",
+        source: "Project settings",
+        projectId,
+        metadata: { surface: "connection_card" },
+        call: () => getGscConnection({ data: { projectId } }),
+        mapSuccess: (connection) => ({
+          status: "success",
+          billing: "Free" as const,
+          metered: false,
+          cache: "Not applicable" as const,
+          providers: [
+            {
+              provider: "Internal",
+              endpoint: "search-console/connection/get",
+              httpStatus: 200,
+              billing: "Free" as const,
+              metered: false,
+            },
+          ],
+          providerCalls: 1,
+          counters: { connectionReads: 1 },
+          metadata: {
+            surface: "connection_card",
+            connected: connection.connected,
+            currentUserHasGrant: connection.currentUserHasGrant,
+            googleOAuthConfigured: connection.googleOAuthConfigured,
+            hasSiteUrl: Boolean(connection.siteUrl),
+          },
+        }),
+      }),
   });
   const connection = connectionQuery.data;
   const connected = Boolean(connection?.connected);
@@ -45,7 +79,47 @@ export function SearchConsoleConnectionCard({
   const showPicker = picking || (connection?.currentUserHasGrant && !connected);
   const sitesQuery = useQuery({
     queryKey: ["gscSites", projectId],
-    queryFn: () => listGscSites({ data: { projectId } }),
+    queryFn: () =>
+      traceServerCall({
+        feature: "search_console",
+        operation: "search_console.sites_list",
+        source: "Project settings",
+        projectId,
+        metadata: { surface: "site_picker" },
+        call: () => listGscSites({ data: { projectId } }),
+        mapSuccess: (siteList) => {
+          const sites = siteList.accounts.flatMap((account) => account.sites);
+          return {
+            status: "success",
+            billing: "Free" as const,
+            metered: false,
+            cache: "Not applicable" as const,
+            providers: [
+              {
+                provider: "GSC",
+                endpoint: "search-console/sites/list",
+                httpStatus: 200,
+                billing: "Free" as const,
+                metered: false,
+              },
+            ],
+            providerCalls: 1,
+            counters: {
+              siteLists: 1,
+              accounts: siteList.accounts.length,
+              sites: sites.length,
+              requiresReconnect: siteList.accounts.filter(
+                (account) => account.requiresReconnect,
+              ).length,
+            },
+            metadata: {
+              surface: "site_picker",
+              accounts: siteList.accounts.length,
+              sites: sites.length,
+            },
+          };
+        },
+      }),
     enabled: Boolean(showPicker && !selfHostedNeedsSetup),
   });
   const accounts = React.useMemo(
@@ -81,7 +155,32 @@ export function SearchConsoleConnectionCard({
 
   const setSiteMutation = useMutation({
     mutationFn: (selected: GscSiteSelection) =>
-      setGscSite({ data: { projectId, ...selected } }),
+      traceServerCall({
+        feature: "search_console",
+        operation: "search_console.site_set",
+        source: "Project settings",
+        projectId,
+        metadata: { surface: "site_picker", siteUrl: selected.siteUrl },
+        call: () => setGscSite({ data: { projectId, ...selected } }),
+        mapSuccess: (siteResult) => ({
+          status: "success",
+          billing: "Free" as const,
+          metered: false,
+          cache: "Not applicable" as const,
+          providers: [
+            {
+              provider: "Internal",
+              endpoint: "search-console/site/set",
+              httpStatus: 200,
+              billing: "Free" as const,
+              metered: false,
+            },
+          ],
+          providerCalls: 1,
+          counters: { sitesSet: 1 },
+          metadata: { surface: "site_picker", siteUrl: siteResult.siteUrl },
+        }),
+      }),
     onSuccess: () => {
       captureClientEvent("gsc:property_select");
       toast.success("Search Console connected");
@@ -109,7 +208,33 @@ export function SearchConsoleConnectionCard({
   });
 
   const disconnectMutation = useMutation({
-    mutationFn: () => disconnectGsc({ data: { projectId } }),
+    mutationFn: () =>
+      traceServerCall({
+        feature: "search_console",
+        operation: "search_console.disconnect",
+        source: "Project settings",
+        projectId,
+        metadata: { surface: "connection_card" },
+        call: () => disconnectGsc({ data: { projectId } }),
+        mapSuccess: () => ({
+          status: "success",
+          billing: "Free" as const,
+          metered: false,
+          cache: "Not applicable" as const,
+          providers: [
+            {
+              provider: "Internal",
+              endpoint: "search-console/disconnect",
+              httpStatus: 200,
+              billing: "Free" as const,
+              metered: false,
+            },
+          ],
+          providerCalls: 1,
+          counters: { disconnects: 1 },
+          metadata: { surface: "connection_card" },
+        }),
+      }),
     onSuccess: () => {
       toast.success("Search Console disconnected");
       setPicking(false);

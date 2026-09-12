@@ -24,6 +24,11 @@ type DataforseoBillingClassifier = (
  * billing error. Feature-enablement is no longer classified: Backlinks and AI
  * Optimization are included in every DataForSEO account, so the only remaining
  * account-level failure is a depleted balance.
+ *
+ * Application status 40201 (provider temporarily paused API/account access)
+ * is NEVER a billing failure: it must flow to the dedicated access-paused
+ * classification, even when the provider's message happens to mention
+ * billing-adjacent words.
  */
 export function createDataforseoBillingClassifier(config: {
   pathPrefix: string;
@@ -32,6 +37,7 @@ export function createDataforseoBillingClassifier(config: {
 }): DataforseoBillingClassifier {
   return (status, details, path) => {
     if (!path.includes(config.pathPrefix)) return null;
+    if (status === 40201) return null;
 
     const text = details.toLowerCase();
     const matchesBillingStatus =

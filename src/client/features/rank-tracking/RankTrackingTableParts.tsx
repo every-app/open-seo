@@ -1,4 +1,4 @@
-import { Sparkles } from "lucide-react";
+import { Loader2, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { buildCsv, downloadCsv } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
@@ -55,14 +55,53 @@ export function SerpFeatureTags({ features }: { features: string[] }) {
 
 export function DeviceRankCell({
   result,
+  isChecking = false,
 }: {
   result: RankTrackingDeviceResult;
+  isChecking?: boolean;
 }) {
-  const { position, previousPosition } = result;
+  const { position, previousPosition, checkedAt, status } = result;
+
+  if (isChecking || status === "checking") {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-primary font-medium">
+        <Loader2 className="size-3 animate-spin" />
+        Checking…
+      </span>
+    );
+  }
+
+  if (status === "failed") {
+    return (
+      <span
+        className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold bg-error/20 text-error"
+        title="Rank check failed"
+      >
+        Check failed
+      </span>
+    );
+  }
 
   // Nothing at all
   if (position === null && previousPosition === null) {
-    return <span className="text-base-content/40">-</span>;
+    if (status === "not_ranking" || checkedAt) {
+      return (
+        <span
+          className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium bg-base-200 text-base-content/70"
+          title="Checked: Domain is not ranking in top 100 Google organic results"
+        >
+          No ranking found
+        </span>
+      );
+    }
+    return (
+      <span
+        className="text-xs text-base-content/40 italic"
+        title="This keyword has not been checked yet"
+      >
+        Not checked
+      </span>
+    );
   }
 
   // Was ranking, now lost
@@ -70,10 +109,13 @@ export function DeviceRankCell({
     return (
       <span className="inline-flex items-center gap-1.5">
         <span className="font-mono text-xs text-base-content/40 w-6 text-right">
-          {previousPosition}
+          #{previousPosition}
         </span>
         <span className="text-base-content/30">→</span>
-        <span className="font-mono rounded px-1.5 py-0.5 text-xs font-semibold bg-error/20 text-error">
+        <span
+          className="font-mono rounded px-1.5 py-0.5 text-xs font-semibold bg-error/20 text-error"
+          title="Dropped out of top 100"
+        >
           lost
         </span>
       </span>
@@ -82,7 +124,7 @@ export function DeviceRankCell({
 
   // First check — no previous data
   if (previousPosition === null) {
-    return <span className="font-mono">{position}</span>;
+    return <span className="font-mono font-semibold">#{position}</span>;
   }
 
   // Both exist — show old → new with colored badge
@@ -94,13 +136,13 @@ export function DeviceRankCell({
   return (
     <span className="inline-flex items-center gap-1.5">
       <span className="font-mono text-xs text-base-content/40 w-6 text-right">
-        {previousPosition}
+        #{previousPosition}
       </span>
       <span className="text-base-content/30">→</span>
       <span
         className={`font-mono rounded px-1.5 py-0.5 text-xs font-semibold ${badgeClass}`}
       >
-        {position}
+        #{position}
       </span>
     </span>
   );
@@ -114,6 +156,16 @@ export function DeviceUrlCell({
   domain: string;
 }) {
   if (!result.rankingUrl) {
+    if (result.status === "not_ranking" || result.checkedAt) {
+      return (
+        <span
+          className="text-xs text-base-content/40 italic"
+          title="No ranking URL in top 100"
+        >
+          No ranking URL
+        </span>
+      );
+    }
     return <span className="text-base-content/40 text-xs">-</span>;
   }
   return (

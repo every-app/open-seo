@@ -21,6 +21,7 @@ const {
   isHostedServerAuthModeMock,
   assertSelfHostedBudgetMock,
   recordDataforseoCallMock,
+  resolveEffectiveDataforseoConfigMock,
 } = vi.hoisted(() => ({
   checkMock: vi.fn(),
   trackMock: vi.fn<(arg: TrackCallArg) => void>(),
@@ -28,11 +29,18 @@ const {
   isHostedServerAuthModeMock: vi.fn(),
   assertSelfHostedBudgetMock: vi.fn(),
   recordDataforseoCallMock: vi.fn(),
+  resolveEffectiveDataforseoConfigMock: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({
+  env: {},
   waitUntil: vi.fn(),
 }));
+
+vi.mock("@/server/features/settings/services/DataforseoSettingsService", () => ({
+  resolveEffectiveDataforseoConfig: resolveEffectiveDataforseoConfigMock,
+}));
+
 
 vi.mock("@/server/billing/autumn", () => ({
   autumn: {
@@ -98,6 +106,10 @@ vi.mock("@/server/lib/dataforseo/backlinks", () => ({
 vi.mock("@/server/lib/dataforseo/lighthouse", () => ({
   fetchLighthouseResult: vi.fn(),
 }));
+vi.mock("@/server/lib/dataforseo/google-ads", () => ({
+  fetchAdsKeywordIdeas: vi.fn(),
+  fetchAdsSearchVolume: vi.fn(),
+}));
 vi.mock("@/server/lib/dataforseo/ai", () => ({
   fetchLlmMentionsSearch: vi.fn(),
   fetchLlmAggregatedMetrics: vi.fn(),
@@ -112,6 +124,7 @@ import {
 } from "@/server/lib/dataforseo/client";
 import { DataforseoChargedTaskError } from "@/server/lib/dataforseo/envelope";
 import { fetchBacklinksSummary } from "@/server/lib/dataforseo/backlinks";
+import { ProviderUnavailableError } from "@/server/lib/seo-data/errors";
 
 const billingCustomer = {
   organizationId: "org_123",
@@ -151,6 +164,13 @@ describe("meterDataforseoCall with split balances", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     assertSelfHostedBudgetMock.mockResolvedValue(undefined);
+    resolveEffectiveDataforseoConfigMock.mockResolvedValue({
+      enabled: true,
+      login: "mock-login",
+      password: "mock-password",
+      source: "environment",
+      configured: true,
+    });
   });
 
   it("records real task cost without hosted billing in non-hosted mode", async () => {
@@ -211,6 +231,44 @@ describe("meterDataforseoCall with split balances", () => {
 
     expect(fetchBacklinksSummary).not.toHaveBeenCalled();
     expect(recordDataforseoCallMock).not.toHaveBeenCalled();
+  });
+
+  it("throws ProviderUnavailableError when DataForSEO is disabled in settings without calling provider or billing", async () => {
+    resolveEffectiveDataforseoConfigMock.mockResolvedValue({
+      enabled: false,
+      login: "mock-login",
+      password: "mock-password",
+      source: "organization",
+      configured: true,
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(client.backlinks.summary(backlinksInput)).rejects.toThrow(
+      ProviderUnavailableError,
+    );
+
+    expect(fetchBacklinksSummary).not.toHaveBeenCalled();
+    expect(recordDataforseoCallMock).not.toHaveBeenCalled();
+    expect(checkMock).not.toHaveBeenCalled();
+    expect(trackMock).not.toHaveBeenCalled();
+  });
+
+  it("throws DATAFORSEO_AUTH_FAILED AppError when DataForSEO is not configured without calling provider or billing", async () => {
+    resolveEffectiveDataforseoConfigMock.mockResolvedValue({
+      enabled: true,
+      source: "none",
+      configured: false,
+    });
+
+    const client = createDataforseoClient(billingCustomer);
+    await expect(client.backlinks.summary(backlinksInput)).rejects.toThrow(
+      "DataForSEO credentials are not configured",
+    );
+
+    expect(fetchBacklinksSummary).not.toHaveBeenCalled();
+    expect(recordDataforseoCallMock).not.toHaveBeenCalled();
+    expect(checkMock).not.toHaveBeenCalled();
+    expect(trackMock).not.toHaveBeenCalled();
   });
 
   it("checks both monthly and topup balances in parallel", async () => {

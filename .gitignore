@@ -34,6 +34,7 @@ dist-sourcemaps/
 /playwright/.cache/
 .tanstack
 .logs/
+*.log
 **/.pnpm-store/
 
 # Localflare generated files

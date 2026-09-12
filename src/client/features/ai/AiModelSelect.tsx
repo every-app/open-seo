@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { listAiModels } from "@/serverFunctions/aiSettings";
 import type { AiProviderId } from "@/server/features/ai/providerIds";
 import { filterModels } from "@/client/features/ai/modelFilter";
+import { traceAiModelCatalog } from "@/client/features/tracing/settingsTrace";
 
 // Model picker fed by the selected provider's catalog (see providers.ts),
 // resolved through the EFFECTIVE configuration (stored credentials / Base
@@ -46,6 +47,8 @@ export function AiModelSelect({
   onRefreshed?: () => void;
 }) {
   const queryClient = useQueryClient();
+  const traceScope = projectId ? "project" : "organization";
+  const traceSource = projectId ? "Project settings" : "Settings";
   const modelsQuery = useQuery({
     queryKey: [
       "aiModels",
@@ -55,14 +58,22 @@ export function AiModelSelect({
       projectId ?? null,
     ],
     queryFn: () =>
-      listAiModels({
-        data: {
-          provider,
-          baseUrl: baseUrl || undefined,
-          apiKey: apiKey || undefined,
-          refresh: refreshSignal !== undefined && refreshSignal > 0,
-          projectId: projectId || undefined,
-        },
+      traceAiModelCatalog({
+        source: traceSource,
+        projectId: projectId || undefined,
+        scope: traceScope,
+        provider,
+        refresh: refreshSignal !== undefined && refreshSignal > 0,
+        call: () =>
+          listAiModels({
+            data: {
+              provider,
+              baseUrl: baseUrl || undefined,
+              apiKey: apiKey || undefined,
+              refresh: refreshSignal !== undefined && refreshSignal > 0,
+              projectId: projectId || undefined,
+            },
+          }),
       }),
     staleTime: 12 * 60 * 60 * 1000,
   });
@@ -78,14 +89,22 @@ export function AiModelSelect({
       .fetchQuery({
         queryKey: ["aiModels", provider, "refresh", refreshSignal],
         queryFn: () =>
-          listAiModels({
-            data: {
-              provider,
-              baseUrl: baseUrl || undefined,
-              apiKey: apiKey || undefined,
-              refresh: true,
-              projectId: projectId || undefined,
-            },
+          traceAiModelCatalog({
+            source: traceSource,
+            projectId: projectId || undefined,
+            scope: traceScope,
+            provider,
+            refresh: true,
+            call: () =>
+              listAiModels({
+                data: {
+                  provider,
+                  baseUrl: baseUrl || undefined,
+                  apiKey: apiKey || undefined,
+                  refresh: true,
+                  projectId: projectId || undefined,
+                },
+              }),
           }),
       })
       .then(() => {

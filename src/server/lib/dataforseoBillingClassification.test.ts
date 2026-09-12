@@ -45,6 +45,28 @@ describe("createDataforseoBillingClassifier", () => {
     );
   });
 
+  it("never maps 40201 (temporarily paused access) to a billing error", () => {
+    // 40201 flows to the dedicated DATAFORSEO_ACCESS_PAUSED class — even
+    // when the provider message mentions billing-adjacent words.
+    expect(classify(40201, "", "/v3/backlinks/summary/live")).toBe(null);
+    expect(
+      classify(
+        40201,
+        "Account access temporarily paused for billing review",
+        "/v3/backlinks/summary/live",
+      ),
+    ).toBe(null);
+  });
+
+  it("keeps mapping 40200/40210 to the billing error (insufficient funds)", () => {
+    expect(
+      classify(40200, "Payment Required.", "/v3/backlinks/summary/live")?.code,
+    ).toBe("BACKLINKS_BILLING_ISSUE");
+    expect(
+      classify(40210, "Insufficient funds.", "/v3/backlinks/summary/live")?.code,
+    ).toBe("BACKLINKS_BILLING_ISSUE");
+  });
+
   it("returns null when neither status nor text matches", () => {
     expect(classify(500, "boom", "/v3/backlinks/summary/live")).toBe(null);
   });

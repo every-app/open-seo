@@ -17,7 +17,9 @@ describe("buildSamSystemPrompt — long-running tool protocol", () => {
 
   it("teaches the START vs FINAL RESULT distinction", () => {
     expect(prompt).toMatch(/only asked to START an audit/);
-    expect(prompt).toMatch(/starting it and reporting the audit id is a complete answer/);
+    expect(prompt).toMatch(
+      /starting it and reporting the audit id is a complete answer/,
+    );
     expect(prompt).toMatch(/those are REQUIRED/);
   });
 
@@ -33,5 +35,20 @@ describe("buildSamSystemPrompt — long-running tool protocol", () => {
   it("routes waiting through poll_site_audit and results to the read tools", () => {
     expect(prompt).toContain("poll_site_audit");
     expect(prompt).toContain("get_audit_issues");
+  });
+});
+
+describe("buildSamSystemPrompt — in-app tool guidance (Phase U7)", () => {
+  const prompt = buildSamSystemPrompt(project, { memoryIsEmpty: false });
+
+  it("forbids the unnecessary whoami call in-app (it exists for external MCP clients)", () => {
+    expect(prompt).toMatch(/never call whoami/i);
+    expect(prompt).toContain("already authenticated");
+  });
+
+  it("keeps whoami available to MCP (the prompt only discourages it in-app, never removes the tool)", () => {
+    // The tool surface is defined in samChatTools.ts; the system prompt must
+    // not pretend it doesn't exist — just that SAM itself must not call it.
+    expect(prompt).not.toMatch(/whoami (is|has been) removed/i);
   });
 });

@@ -100,7 +100,9 @@ describe("ollamaCloudProvider", () => {
       // Nothing invented for values the endpoint did not expose:
       contextLength: null,
       promptPrice: null,
-      supportsTools: false,
+      // Unknown capability must read as tool-capable so toolCallingRefusalFor
+      // never blocks a real tool-using model on a placeholder.
+      supportsTools: true,
     });
     expect(mocks.fetch).toHaveBeenCalledWith(
       "https://ollama.com/v1/models",

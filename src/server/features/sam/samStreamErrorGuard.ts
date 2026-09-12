@@ -3,7 +3,6 @@ import {
   normalizeProviderError,
   type AIProviderErrorCode,
 } from "@/server/features/ai/providerErrors";
-import type { AiProviderId } from "@/server/features/ai/providers";
 
 // Stream-boundary error normalization (Phase U1).
 //
@@ -37,7 +36,7 @@ export type ToolInputRejectionObserver = (event: {
 
 /** Curried for tests: build the onError that maps raw errors to safe text. */
 export function createStreamErrorNormalizer(input: {
-  provider: AiProviderId | string;
+  provider: string;
   model: string | null;
   normalize?: (
     error: unknown,
@@ -52,6 +51,12 @@ export function createStreamErrorNormalizer(input: {
   onToolInputError?: ToolInputRejectionObserver;
 }): StreamErrorNormalizer {
   const normalize = input.normalize ?? normalizeProviderError;
+  // Per-normalizer dedup: the AI SDK v6's toUIMessageStream calls onError
+  // TWICE per invalid tool call — once for tool-input-error and once for
+  // tool-output-error on the same tool_call. Deduplicate so the recovery
+  // budget isn't double-counted.
+  const notifiedToolRejections = new Set<string>();
+
   return (error: unknown) => {
     // Preserve Think's own in-stream sentinel strings: these are protocol
     // messages (not provider payloads) the client and recovery machinery key
@@ -66,10 +71,21 @@ export function createStreamErrorNormalizer(input: {
         input.model ?? undefined,
       );
       if (normalized.code === "TOOL_INPUT_INVALID") {
-        input.onToolInputError?.({
-          tool: normalized.toolName ?? null,
-          errorClass: errorClassOf(error),
-        });
+        const tool = normalized.toolName ?? null;
+        if (tool) {
+          if (!notifiedToolRejections.has(tool)) {
+            notifiedToolRejections.add(tool);
+            input.onToolInputError?.({
+              tool,
+              errorClass: errorClassOf(error),
+            });
+          }
+        } else {
+          input.onToolInputError?.({
+            tool: null,
+            errorClass: errorClassOf(error),
+          });
+        }
       }
       return normalized.message;
     } catch {
@@ -156,4 +172,26 @@ export function samStreamErrorGuard(
       onToolInputError,
     }),
   );
+}
+
+/**
+ * One-line DO wiring for the guard above: routes the structured rejection log
+ * through `logRejection` and counts SDK-level input rejections (which never
+ * reach tool execute()) in the per-turn recovery budget via `recordRejection`.
+ * Both callbacks are optional and no-op safe, so the call site stays small.
+ */
+export function guardSamInferenceResult(
+  turn: { provider: string; model: string | null },
+  result: StreamableResult,
+  logRejection?: (event: {
+    toolName: string | null;
+    errorClass: string;
+  }) => void,
+  recordRejection?: (toolName: string) => void,
+): StreamableResult {
+  if (!logRejection) return samStreamErrorGuard(turn, result);
+  return samStreamErrorGuard(turn, result, (event) => {
+    logRejection({ toolName: event.tool, errorClass: event.errorClass });
+    if (event.tool) recordRejection?.(event.tool);
+  });
 }

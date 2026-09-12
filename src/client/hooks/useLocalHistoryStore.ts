@@ -42,12 +42,18 @@ export function useLocalHistoryStore<TItem, TAddInput>({
   getItemKey,
 }: UseLocalHistoryStoreOptions<TItem, TAddInput>) {
   const parseRef = useRef(parse);
+  const isSameItemRef = useRef(isSameItem);
+  const createItemRef = useRef(createItem);
+  const getItemKeyRef = useRef(getItemKey);
   const [history, setHistory] = useState<TItem[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
     parseRef.current = parse;
-  }, [parse]);
+    isSameItemRef.current = isSameItem;
+    createItemRef.current = createItem;
+    getItemKeyRef.current = getItemKey;
+  }, [parse, isSameItem, createItem, getItemKey]);
 
   useEffect(() => {
     setHistory(loadHistory(storageKey, parseRef.current, maxItems));
@@ -58,25 +64,30 @@ export function useLocalHistoryStore<TItem, TAddInput>({
     (input: TAddInput) => {
       setHistory((prev) => {
         const filtered = prev.filter(
-          (existing) => !isSameItem(existing, input),
+          (existing) => !isSameItemRef.current(existing, input),
         );
-        const next = [createItem(input), ...filtered].slice(0, maxItems);
+        const next = [createItemRef.current(input), ...filtered].slice(
+          0,
+          maxItems,
+        );
         saveHistory(storageKey, next);
         return next;
       });
     },
-    [createItem, isSameItem, maxItems, storageKey],
+    [maxItems, storageKey],
   );
 
   const removeItem = useCallback(
     (itemKey: number) => {
       setHistory((prev) => {
-        const next = prev.filter((item) => getItemKey(item) !== itemKey);
+        const next = prev.filter(
+          (item) => getItemKeyRef.current(item) !== itemKey,
+        );
         saveHistory(storageKey, next);
         return next;
       });
     },
-    [getItemKey, storageKey],
+    [storageKey],
   );
 
   const clearItems = useCallback(() => {

@@ -2,9 +2,13 @@ import { useAgent } from "agents/react";
 // Think speaks the same chat protocol as @cloudflare/ai-chat, but its hook
 // variant skips the client->server transcript sync Think doesn't support.
 import { useAgentChat } from "@cloudflare/think/react";
-import { useEffect, useRef } from "react";
+import { Radio } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { ChatComposer } from "@/client/features/onboarding/OnboardingChatParts";
 import { invalidateSamSessions } from "@/client/features/sam/samQueries";
+import { SamDebugTracePanel } from "@/client/features/sam/SamDebugTrace";
+import { parseTraceFrame } from "@/client/features/sam/samTraceFormat";
+import type { SamTraceFrame } from "@/shared/samToolTraceTypes";
 import {
   ChatMessage,
   humanizeToolLabel,
@@ -23,10 +27,11 @@ import { safeSamErrorMessage } from "@/client/features/sam/samErrorFallbacks";
 // ("Running site audit…") with the outcome/progress as a detail suffix,
 // instead of exposing raw tool names for every step of the wait.
 function samToolLabel(partType: string): ToolLabel | null {
-  if (partType === "tool-run_site_audit") {
+  const normalized = partType.startsWith("tool-") ? partType : `tool-${partType}`;
+  if (normalized === "tool-run_site_audit") {
     return { running: "Starting site audit", done: "Site audit started" };
   }
-  if (partType === "tool-poll_site_audit") {
+  if (normalized === "tool-poll_site_audit") {
     const outcome = (part: ChatToolPart): string | null => {
       const output = toolPartOutput(part);
       if (!output || typeof output.state !== "string") return null;
@@ -56,18 +61,18 @@ function samToolLabel(partType: string): ToolLabel | null {
       detail: outcome,
     };
   }
-  if (partType === "tool-get_audit_issues") {
+  if (normalized === "tool-get_audit_issues") {
     return { running: "Checking issues", done: "Issues checked" };
   }
-  if (partType === "tool-get_audit_pages") {
+  if (normalized === "tool-get_audit_pages") {
     return { running: "Reading crawled pages", done: "Pages read" };
   }
-  if (partType === "tool-get_audit_status") {
+  if (normalized === "tool-get_audit_status") {
     return { running: "Checking audit status", done: "Status checked" };
   }
   // SAM exposes the full MCP tool surface, too many to hand-label — fall back
   // to generic humanized names.
-  return humanizeToolLabel(partType);
+  return humanizeToolLabel(normalized);
 }
 
 const resolveSamToolLabel: ResolveToolLabel = (partType) =>
@@ -133,6 +138,64 @@ export function SamConversation({
   const isBusy = status === "submitted" || status === "streaming";
   const sendText = (text: string) => void sendMessage({ text });
 
+  // Debug Trace (Phase DT): conversation-scoped trace frame. Always ingests
+  // `sam_trace` WebSocket frames whether the panel is currently open or not,
+  // and hydrates via HTTP GET /trace and socket replay on mount/reconnect.
+  // This guarantees opening the trace panel before, during, or after a turn
+  // immediately hydrates the authoritative current/completed turn state.
+  const [traceFrame, setTraceFrame] = useState<SamTraceFrame | null>(null);
+  const [tracePanelOpen, setTracePanelOpen] = useState(false);
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (typeof event.data === "string") {
+        const parsed = parseTraceFrame(event.data);
+        if (parsed) {
+          setTraceFrame(parsed);
+        }
+      }
+    };
+    agent.addEventListener("message", onMessage);
+    return () => agent.removeEventListener("message", onMessage);
+  }, [agent]);
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/agents/sam-chat/${sessionId}/trace`)
+      .then(async (res) => {
+        if (!res.ok) return null;
+        const raw = await res.text();
+        return parseTraceFrame(raw);
+      })
+      .then((data) => {
+        if (active && data) {
+          setTraceFrame((prev) => {
+            if (!prev) return data;
+            if (data.turnId && prev.turnId === data.turnId) return data;
+            return prev;
+          });
+        }
+      })
+      .catch(() => {
+        // Best-effort trace hydration
+      });
+
+    const requestSnapshot = () => {
+      try {
+        agent.send(JSON.stringify({ type: "sam_trace_request" }));
+      } catch {
+        // Socket may not be open yet
+      }
+    };
+    agent.addEventListener("open", requestSnapshot);
+    requestSnapshot();
+
+    return () => {
+      active = false;
+      agent.removeEventListener("open", requestSnapshot);
+    };
+  }, [agent, sessionId]);
+
   // Rewind the server-side conversation to before `messageId`: the DO aborts
   // any in-flight turn, then deletes the message and everything after it. Sync
   // the local view from the server afterwards rather than slicing locally —
@@ -187,17 +250,42 @@ export function SamConversation({
 
   return (
     <div className="relative flex min-w-0 flex-1 flex-col">
-      {import.meta.env.DEV ? (
-        // Dev-only escape hatch: wipes this session's persisted transcript on
-        // the server (Think's cf_agent_chat_clear), for testing fresh-session
-        // behavior without creating a new chat.
-        <button
-          type="button"
-          className="btn btn-ghost btn-xs absolute right-3 top-2 z-10 text-base-content/40"
-          onClick={() => clearHistory()}
-        >
-          Clear history (dev)
-        </button>
+      <div className="absolute right-3 top-2 z-10 flex items-center gap-1">
+        {(import.meta.env.DEV ||
+          import.meta.env.VITE_SAM_DEBUG_TRACE === "1") &&
+        !tracePanelOpen ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs gap-1 text-base-content/40"
+            title="Show SAM Debug Trace"
+            onClick={() => setTracePanelOpen(true)}
+          >
+            <Radio className="size-3" />
+            Trace
+          </button>
+        ) : null}
+        {import.meta.env.DEV ? (
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs text-base-content/40"
+            onClick={() => clearHistory()}
+          >
+            Clear history (dev)
+          </button>
+        ) : null}
+      </div>
+      {/* Debug Trace (developer-only, dev build or SAM_DEBUG_TRACE=1): floats
+          above the conversation; collapse/clear are local-view-only. */}
+      {(import.meta.env.DEV || import.meta.env.VITE_SAM_DEBUG_TRACE === "1") &&
+      tracePanelOpen ? (
+        <div className="pointer-events-none absolute right-3 top-8 z-20 flex justify-end">
+          <SamDebugTracePanel
+            frame={traceFrame}
+            live={isBusy}
+            onClose={() => setTracePanelOpen(false)}
+            onClear={() => setTraceFrame(null)}
+          />
+        </div>
       ) : null}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-6">
         <div className="mx-auto max-w-2xl space-y-6">

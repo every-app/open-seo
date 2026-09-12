@@ -134,6 +134,13 @@
       "when": 1787612659645,
       "tag": "0018_useful_fallen_one",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1788736900634,
+      "tag": "0019_futuristic_proudstar",
+      "breakpoints": true
     }
   ]
 }

@@ -27,7 +27,12 @@ export function RankTrackingTableToolbar({
   activeFilterCount: number;
   isRunning: boolean;
   latestRun:
-    | { status: string; keywordsChecked: number; keywordsTotal: number }
+    | {
+        status: string;
+        keywordsChecked: number;
+        keywordsTotal: number;
+        isSubsetRun?: boolean;
+      }
     | null
     | undefined;
   keywordCount: number;
@@ -88,7 +93,9 @@ export function RankTrackingTableToolbar({
           <span>
             {latestRun.status === "pending"
               ? "Preparing..."
-              : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
+              : latestRun.isSubsetRun
+                ? `Checking ${latestRun.keywordsTotal || "?"} selected keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`
+                : `Getting rankings for ${latestRun.keywordsTotal || "?"} keyword${latestRun.keywordsTotal !== 1 ? "s" : ""}...`}{" "}
             {latestRun.keywordsChecked}/{latestRun.keywordsTotal || "?"}
           </span>
           {latestRun.keywordsTotal > 0 && (

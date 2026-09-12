@@ -14,6 +14,7 @@ import {
   getBacklinksRows,
   getBacklinksTopPages,
 } from "@/serverFunctions/backlinks";
+import { globalTraceStore } from "@/client/features/tracing/globalTraceStore";
 import {
   BACKLINKS_DEFAULT_SORT,
   backlinksRowsSortFieldSchema,
@@ -92,7 +93,58 @@ export function useBacklinksPageData({
     queryKey: ["backlinksOverview", ...baseQueryKeyParts],
     enabled: targetReady,
     staleTime: BACKLINKS_QUERY_STALE_TIME_MS,
-    queryFn: () => getBacklinksOverview({ data: { projectId, target, scope } }),
+    queryFn: async () => {
+      const opId = globalTraceStore.startOperation({
+        feature: "backlinks",
+        operation: "backlinks.overview",
+        source: "Backlinks page",
+        projectId,
+        status: "running",
+        billing: "Paid",
+        metered: true,
+        budget: "PASS",
+        cache: "HIT",
+        provider: "DataForSEO",
+        metadata: { target, scope },
+      });
+
+      try {
+        const result = await getBacklinksOverview({
+          data: { projectId, target, scope },
+        });
+
+        globalTraceStore.completeOperation(opId, {
+          status: "success",
+          httpStatus: 200,
+          providerCalls: 1,
+          providerBreakdown: [{ provider: "DataForSEO", count: 1 }],
+          providers: [
+            {
+              provider: "DataForSEO",
+              endpoint: "v3/backlinks/summary/live",
+              httpStatus: 200,
+              taskStatus: 20000,
+              transport: "HTTP",
+              billing: "Paid",
+              metered: true,
+              budgetGuard: "PASS",
+            },
+          ],
+        });
+
+        return result;
+      } catch (err) {
+        globalTraceStore.completeOperation(opId, {
+          status: "failed",
+          httpStatus: 500,
+          errorMessage:
+            err instanceof Error
+              ? err.message
+              : "Failed to load backlinks overview",
+        });
+        throw err;
+      }
+    },
   });
 
   const rowsSort = toSort(

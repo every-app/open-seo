@@ -6,6 +6,7 @@ import {
   getAuditHistory,
   startAudit,
 } from "@/serverFunctions/audit";
+import { globalTraceStore } from "@/client/features/tracing/globalTraceStore";
 import {
   DEFAULT_LAUNCH_FORM_VALUES,
   getMaxPagesLimit,
@@ -115,12 +116,60 @@ function useLaunchMutations({
   historyRefetch: () => Promise<unknown>;
 }) {
   const startMutation = useMutation({
-    mutationFn: (data: {
+    mutationFn: async (data: {
       projectId: string;
       startUrl: string;
       maxPages: number;
       lighthouseStrategy: "auto" | "none";
-    }) => startAudit({ data }),
+    }) => {
+      const opId = globalTraceStore.startOperation({
+        feature: "site_audit",
+        operation: "site_audit.start",
+        source: "Site Audit page",
+        projectId: data.projectId,
+        status: "running",
+        billing: "Free",
+        metered: false,
+        budget: "PASS",
+        cache: "Not applicable",
+        provider: "Internal",
+        metadata: {
+          startUrl: data.startUrl,
+          maxPages: data.maxPages,
+          lighthouseStrategy: data.lighthouseStrategy,
+        },
+      });
+
+      try {
+        const result = await startAudit({ data });
+        globalTraceStore.completeOperation(opId, {
+          status: "success",
+          httpStatus: 200,
+          providerCalls: 1,
+          providerBreakdown: [{ provider: "Internal", count: 1 }],
+          providers: [
+            {
+              provider: "Internal",
+              endpoint: "site-audit-workflow",
+              httpStatus: 200,
+              transport: "HTTP",
+              billing: "Free",
+              metered: false,
+              budgetGuard: "PASS",
+            },
+          ],
+        });
+        return result;
+      } catch (err) {
+        globalTraceStore.completeOperation(opId, {
+          status: "failed",
+          httpStatus: 500,
+          errorMessage:
+            err instanceof Error ? err.message : "Failed to start audit",
+        });
+        throw err;
+      }
+    },
   });
 
   const deleteMutation = useMutation({

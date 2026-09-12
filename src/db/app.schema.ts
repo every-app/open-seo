@@ -482,3 +482,34 @@ export const domainOverviewSnapshots = sqliteTable(
     ),
   ],
 );
+
+// Per-scope SEO provider settings (e.g. DataForSEO credentials and usage flag).
+// Scope precedence: project row > organization row > environment defaults.
+// Credentials ciphertext is encrypted at rest via AES-GCM (see dataforseoCrypto.ts).
+export const seoProviderSettings = sqliteTable(
+  "seo_provider_settings",
+  {
+    provider: text("provider").notNull().default("dataforseo"),
+    organizationId: text("organization_id").references(() => organization.id, {
+      onDelete: "cascade",
+    }),
+    projectId: text("project_id").references(() => projects.id, {
+      onDelete: "cascade",
+    }),
+    enabled: integer("enabled", { mode: "boolean" }).notNull().default(true),
+    // Encrypted JSON { login: string, password: string }
+    credentials: text("credentials"),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(current_timestamp)`),
+  },
+  (table) => [
+    uniqueIndex("seo_provider_settings_org_idx")
+      .on(table.provider, table.organizationId)
+      .where(sql`${table.projectId} is null`),
+    uniqueIndex("seo_provider_settings_project_idx")
+      .on(table.provider, table.projectId)
+      .where(sql`${table.organizationId} is null`),
+  ],
+);
+

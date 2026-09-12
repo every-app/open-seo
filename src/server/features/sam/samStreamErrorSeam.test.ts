@@ -6,6 +6,15 @@ import {
   samStreamErrorGuard,
   withNormalizedStreamErrors,
 } from "./samStreamErrorGuard";
+import { resetSamTraceBus } from "./samTraceBus";
+
+/** Duck-typed AI_InvalidToolInputError with empty toolName for the dedup test. */
+function makeEmptyToolNameError(): Error {
+  return Object.assign(
+    new Error("Invalid input for tool x: bad field"),
+    { name: "AI_InvalidToolInputError", toolName: "" },
+  );
+}
 
 // Phase U1/U8: the DO-level stream seam.
 //
@@ -99,9 +108,10 @@ describe("samStreamErrorGuard — the SamChatAgent._transformInferenceResult com
       out.push(chunk);
     }
 
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     const errorChunk = out.find(
-      (c) => (c as { type?: string }).type === "error",
-    ) as { errorText?: string };
+      (c) => typeof c === "object" && c !== null && "type" in c && (c as { type: unknown }).type === "error",
+    ) as { errorText?: string } | undefined;
     expect(errorChunk?.errorText).toBe(CURATED_402);
     // This is the text that would land in cf:chat:last-terminal and the
     // browser error frame — it must carry no vendor payload.
@@ -144,6 +154,7 @@ describe("samStreamErrorGuard — the SamChatAgent._transformInferenceResult com
       // drain
     }
     expect(seen).toHaveLength(1);
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion
     expect((seen[0] as { statusCode?: number }).statusCode).toBe(402);
   });
 
@@ -192,6 +203,8 @@ describe("samStreamErrorGuard — the SamChatAgent._transformInferenceResult com
     expect(errorText).not.toContain("ollama_cloud");
     expect(errorText).not.toContain("does not support");
     // Observability (V15): one structured rejection event per seam crossing.
+    // The SDK double-fires onError (tool-input-error + tool-output-error);
+    // only ONE onToolInputError should be emitted despite that.
     expect(onToolInputError).toHaveBeenCalledTimes(1);
     expect(onToolInputError).toHaveBeenCalledWith({
       tool: "get_serp_results",
@@ -231,9 +244,10 @@ describe("no auto-retry of PROVIDER_INSUFFICIENT_CREDITS", () => {
           }
         }
       }
-      return normalizeProviderError(lastError, "openrouter") as {
-        code: string;
-        retryAfterSeconds: number | null;
+      const finalNorm = normalizeProviderError(lastError, "openrouter");
+      return {
+        code: finalNorm.code,
+        retryAfterSeconds: finalNorm.retryAfterSeconds ?? null,
       };
     };
 
@@ -243,6 +257,101 @@ describe("no auto-retry of PROVIDER_INSUFFICIENT_CREDITS", () => {
     // Retry-After is surfaced for user guidance instead of an auto-retry.
     expect(providerCalls).toHaveLength(1);
     expect(outcome.retryAfterSeconds).toBe(120);
+  });
+});
+
+describe("createStreamErrorNormalizer — SDK double-fire dedup", () => {
+  it("two TOOL_INPUT_INVALID calls for the same tool fire onToolInputError once", () => {
+    resetSamTraceBus();
+    const onToolInputError = vi.fn();
+    const normalizer = createStreamErrorNormalizer({
+      provider: "ollama_cloud",
+      model: "kimi-k2.7-code",
+      onToolInputError,
+    });
+    const firstError = new InvalidToolInputError({
+      toolName: "get_serp_results",
+      toolInput: JSON.stringify({ queries: [{ bad: true }] }),
+      cause: new Error("schema mismatch"),
+    });
+    const secondError = new InvalidToolInputError({
+      toolName: "get_serp_results",
+      toolInput: JSON.stringify({ queries: [{ bad: true }] }),
+      cause: new Error("schema mismatch"),
+    });
+    // SDK calls onError twice for one invalid tool-call.
+    const textFirst = normalizer(firstError);
+    const textSecond = normalizer(secondError);
+    // Both calls return the curated text (the stream needs it).
+    expect(textFirst).toContain("Invalid tool arguments for get_serp_results");
+    expect(textSecond).toContain(
+      "Invalid tool arguments for get_serp_results",
+    );
+    // But the observer callback fires exactly ONCE.
+    expect(onToolInputError).toHaveBeenCalledTimes(1);
+    expect(onToolInputError).toHaveBeenCalledWith({
+      tool: "get_serp_results",
+      errorClass: "AI_InvalidToolInputError",
+    });
+  });
+
+  it("dedup is per-tool — a second tool's rejection fires independently", () => {
+    resetSamTraceBus();
+    const onToolInputError = vi.fn();
+    const normalizer = createStreamErrorNormalizer({
+      provider: "ollama_cloud",
+      model: "kimi-k2.7-code",
+      onToolInputError,
+    });
+    normalizer(
+      new InvalidToolInputError({
+        toolName: "list_saved_keywords",
+        toolInput: "{}",
+        cause: new Error("bad input"),
+      }),
+    );
+    normalizer(
+      new InvalidToolInputError({
+        toolName: "list_saved_keywords",
+        toolInput: "{}",
+        cause: new Error("bad input"),
+      }),
+    );
+    normalizer(
+      new InvalidToolInputError({
+        toolName: "get_serp_results",
+        toolInput: "{}",
+        cause: new Error("bad input"),
+      }),
+    );
+    normalizer(
+      new InvalidToolInputError({
+        toolName: "get_serp_results",
+        toolInput: "{}",
+        cause: new Error("bad input"),
+      }),
+    );
+    // Two distinct tools × SDK double-fire = 2 notifications (1 per tool).
+    expect(onToolInputError).toHaveBeenCalledTimes(2);
+  });
+
+  it("an SDK-shaped error with empty toolName is never deduplicated (always fires)", () => {
+    resetSamTraceBus();
+    const onToolInputError = vi.fn();
+    const normalizer = createStreamErrorNormalizer({
+      provider: "openrouter",
+      model: null,
+      onToolInputError,
+    });
+    // Duck-typed AI_InvalidToolInputError with empty toolName — the
+    // normalizer maps undefined → null, which bypasses the Set dedup.
+    normalizer(makeEmptyToolNameError());
+    normalizer(makeEmptyToolNameError());
+    expect(onToolInputError).toHaveBeenCalledTimes(2);
+    expect(onToolInputError).toHaveBeenCalledWith({
+      tool: null,
+      errorClass: "AI_InvalidToolInputError",
+    });
   });
 });
 

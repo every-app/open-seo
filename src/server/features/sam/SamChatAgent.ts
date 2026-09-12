@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import { Think } from "@cloudflare/think";
 import type {
   ChatResponseResult,
@@ -7,12 +8,12 @@ import type {
   TurnConfig,
   TurnContext,
 } from "@cloudflare/think";
-import { clearChatTerminal } from "agents/chat";
+import type { Connection, ConnectionContext, WSMessage } from "agents";
 import type { UIMessage } from "ai";
-import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, withPgClient } from "@/db";
 import { user } from "@/db/schema";
+import { handleRewindRequest } from "@/server/features/sam/samRewind";
 import { SamSessionRepository } from "@/server/features/sam/SamSessionRepository";
 import { SamProjectMemoryRepository } from "@/server/features/sam/SamProjectMemoryRepository";
 import { ProjectRepository } from "@/server/features/projects/repositories/ProjectRepository";
@@ -25,7 +26,19 @@ import {
 import { sanitizeTranscript } from "@/server/features/sam/samTranscript";
 import { createToolExecutionTracker } from "@/server/features/sam/samToolExecution";
 import { createPollCoordinator } from "@/server/features/sam/samLongRunningTools";
-import { samStreamErrorGuard } from "@/server/features/sam/samStreamErrorGuard";
+import {
+  createToolRecoveryState,
+  type ToolRecoveryState,
+} from "@/server/features/sam/samToolRecovery";
+import { getSamTraceBus } from "@/server/features/sam/samTraceBus";
+import {
+  createTraceFlushScheduler,
+  handleTraceHttpRequest,
+  handleTraceWebSocketMessage,
+  sendTraceSnapshotOnConnect,
+} from "@/server/features/sam/samTraceBroadcast";
+import { buildSamTurnModel } from "@/server/features/sam/samTurnModel";
+import { guardSamInferenceResult } from "@/server/features/sam/samStreamErrorGuard";
 import {
   DEFAULT_MAX_STEPS,
   DEFAULT_MAX_TOOL_CALLS,
@@ -37,7 +50,6 @@ import { resolveSamEffectiveConfig } from "@/server/features/sam/samEffectiveCon
 import {
   AiProviderRegistry,
   estimateProviderCost,
-  toolCallingRefusalFor,
   type AiProviderId,
 } from "@/server/features/ai/providers";
 import { normalizeProviderError } from "@/server/features/ai/providerErrors";
@@ -113,9 +125,20 @@ export class SamChatAgent extends Think {
   private toolTracker: ReturnType<typeof createToolExecutionTracker> | null =
     null;
 
+  // Per-turn tool failure state (tool-recovery policy). Rebuilt in beforeTurn
+  // so a tool blocked in turn A is retryable again in turn B; the stream seam
+  // below also feeds SDK-level input rejections into it.
+  private turnRecovery: ToolRecoveryState | null = null;
+
   // Single-flight/terminal-memo for long-running tool waits (audit polling).
   // Same lifecycle as toolTracker: per conversation, reset on DO eviction.
   private auditPolls: ReturnType<typeof createPollCoordinator> | null = null;
+
+  // Debug Trace (Phase DT): the coalescing flush scheduler broadcasts the
+  // current-turn snapshot to connected clients (samTraceBroadcast.ts).
+  private traceFlush = createTraceFlushScheduler({
+    broadcast: (message) => this.broadcast(message),
+  });
 
   // Record the app origin for the deep links tools attach to responses,
   // derived from the requests this DO serves instead of env config. DO storage
@@ -167,19 +190,35 @@ export class SamChatAgent extends Think {
   protected override _transformInferenceResult(
     result: StreamableResult,
   ): StreamableResult {
-    return samStreamErrorGuard(
+    return guardSamInferenceResult(
       { provider: this.turnProviderId, model: this.turnModelId },
       result,
       // Tool-input rejections (Phase V) never reach execute(), so the
       // sam-tool execution lines can't see them — route the structured
-      // rejection log through the same per-conversation tracker.
-      this.toolTracker
-        ? (event) =>
-            this.toolTracker?.logInputRejection({
-              toolName: event.tool,
-              errorClass: event.errorClass,
-            })
-        : undefined,
+      // rejection log through the same per-conversation tracker, and count
+      // them in the per-turn recovery budget (one correction, then the tool
+      // is unavailable for the turn). Debug Trace: the same seam emits the
+      // model_attempt + gate-blocked events so the panel's attempt counts
+      // include SDK-level rejections (Handler: 0 / Provider: 0).
+      (event) => this.toolTracker?.logInputRejection(event),
+      (tool) => {
+        this.turnRecovery?.recordInputRejection(tool);
+        if (tool) {
+          const bus = getSamTraceBus();
+          bus.push({ event: "model_attempt", toolName: tool });
+          // Only emit gate_blocked when the rejection actually blocks the
+          // tool — one correction is allowed before blocking.
+          const state = this.turnRecovery?.getState(tool);
+          if (state?.unavailableForTurn) {
+            bus.push({
+              event: "gate_blocked",
+              toolName: tool,
+              blocked: true,
+              errorCode: "TOOL_INPUT_INVALID",
+            });
+          }
+        }
+      },
     );
   }
 
@@ -335,6 +374,14 @@ export class SamChatAgent extends Think {
         projectId: ctx.project.id,
       });
       this.auditPolls ??= createPollCoordinator();
+      // Fresh per-turn failure state: a tool that exhausted its retry budget
+      // in an earlier turn is callable again now.
+      this.turnRecovery = createToolRecoveryState(this.name, ctx.project.id);
+
+      // Debug Trace: a fresh event scope per user turn. The AI identity is
+      // set right after the effective config resolves below (before any tool
+      // can run).
+      getSamTraceBus().startTurn();
 
       // Effective settings (Phase S): provider-aware resolution across
       // project row → organization row → environment, INCLUDING stored
@@ -349,6 +396,18 @@ export class SamChatAgent extends Think {
       });
       this.turnProviderId = effective.provider;
       this.turnModelId = effective.model;
+
+      // Debug Trace: the effective AI identity (never hardcoded — exactly
+      // what this turn's model calls will use). Data providers are tracked
+      // separately, per tool event.
+      const aiAdapter = AiProviderRegistry.get(effective.provider);
+      getSamTraceBus().setAi({
+        provider: aiAdapter.displayName,
+        model: effective.model,
+      });
+      // Broadcast the initial turn state immediately so the trace panel
+      // displays the effective AI provider/model right away.
+      this.traceFlush.flushNow();
 
       const maxSteps = parsePositiveIntEnv(
         getEnvValueSync(this.env, "AI_AGENT_MAX_STEPS"),
@@ -370,6 +429,7 @@ export class SamChatAgent extends Think {
           {
             poll: parsePollConfig((key) => getEnvValueSync(this.env, key)),
             pollCoordinator: this.auditPolls,
+            recovery: this.turnRecovery,
           },
         ),
         // SAM is meant to run complex multi-step work in one turn (site-read
@@ -385,31 +445,16 @@ export class SamChatAgent extends Think {
       turn.stopWhen = [toolCallCap(maxToolCalls)];
 
       if (effective.model) {
-        // The effective provider is authoritative (no automatic fallback to
-        // another provider): missing credential/endpoint is a hard, visible
-        // failure — except key-optional endpoint adapters with a Base URL.
-        const provider = AiProviderRegistry.get(effective.provider);
-        // Warm lazily-resolved adapter config (env Base URLs) before the
-        // synchronous model build below.
-        await provider.prepare?.();
-        // SAM is a tool-using agent: refuse models the catalog explicitly
-        // marks as tool-less (unknown capability passes — unverifiable).
-        const refusal = await toolCallingRefusalFor(provider, effective.model);
-        if (refusal) return this.refusalTurn(refusal);
-        const ready =
-          effective.credential !== null ||
-          (provider.credentialOptional === true &&
-            (effective.baseUrl ?? (await provider.baseUrl?.())) != null);
-        if (!ready) {
-          throw new Error(
-            `AI provider "${effective.provider}" is selected for this project, but no usable credential is configured for it (stored at project/organization scope or via ${provider.envApiKey}).`,
-          );
+        // The effective provider is authoritative: missing credential is a
+        // hard, visible failure. Implementation lives in samTurnModel.ts
+        // (lint budget).
+        const modelResult = await buildSamTurnModel(effective);
+        if (modelResult.kind === "refusal") {
+          return this.refusalTurn(modelResult.message);
         }
-        turn.model = provider.buildModel(
-          effective.credential ?? "",
-          effective.model,
-          { baseUrl: effective.baseUrl ?? undefined },
-        );
+        if (modelResult.kind === "model") {
+          turn.model = modelResult.model;
+        }
       }
 
       return turn;
@@ -422,9 +467,16 @@ export class SamChatAgent extends Think {
       this.turnProviderId,
       ctx.providerMetadata,
     );
+    // Debug Trace: steps are the natural mid-turn flush point — each model
+    // step boundary is also when new tool parts become visible, so the trace
+    // panel updates in step-cadence rather than per event.
+    this.traceFlush.request();
   }
 
   async onChatResponse(result: ChatResponseResult): Promise<void> {
+    // Debug Trace: synchronous final flush — the last tool events (fallback/completion)
+    // land with zero delay.
+    this.traceFlush.flushNow();
     await withPgClient(async () => {
       const ctx = await this.loadSamContext();
       if (!ctx) return;
@@ -540,45 +592,43 @@ export class SamChatAgent extends Think {
     return sanitizeTranscript(super.messages);
   }
 
+  override async onConnect(
+    connection: Connection,
+    ctx: ConnectionContext,
+  ): Promise<void> {
+    await super.onConnect?.(connection, ctx);
+    sendTraceSnapshotOnConnect(connection);
+  }
+
+  override async onMessage(
+    connection: Connection,
+    message: WSMessage,
+  ): Promise<void> {
+    if (handleTraceWebSocketMessage(connection, message)) return;
+    await super.onMessage?.(connection, message);
+  }
+
   // POST .../rewind {messageId}: delete that message and everything after it on
   // the active branch. Backs the client's undo (rewind past a user message) and
   // edit (rewind, then resend the edited text). Authorized in the Worker like
   // every other HTTP request to this DO. Think's own onRequest wrapper handles
-  // /get-messages before delegating here.
+  // /get-messages before delegating here. The implementation lives in
+  // samRewind.ts (lint budget).
   async onRequest(request: Request): Promise<Response> {
-    if (
-      request.method === "POST" &&
-      new URL(request.url).pathname.endsWith("/rewind")
-    ) {
-      const body = z
-        .object({ messageId: z.string().min(1) })
-        .safeParse(await request.json().catch(() => null));
-      if (!body.success) {
-        return Response.json({ error: "messageId required" }, { status: 400 });
-      }
-      const { messageId } = body.data;
-      // A rewind can race an in-flight turn (the user undoes while the agent
-      // is still working, e.g. after the stream stalled client-side). Abort
-      // the turn and wait for it to settle BEFORE deleting, or its still-
-      // running loop keeps streaming chunks and persists a fresh assistant
-      // message right after the delete — an orphaned reply to nothing.
-      this.cancelAllChats();
-      await this.waitUntilStable({ timeout: 5000 });
-      const index = this.messages.findIndex(
-        (message) => message.id === messageId,
-      );
-      if (index === -1) {
-        return Response.json({ error: "message not found" }, { status: 404 });
-      }
-      const ids = this.messages.slice(index).map((message) => message.id);
-      await this.session.deleteMessages(ids);
-      // Drop the stored how-the-last-turn-ended record too. It exists so a
-      // reconnecting client can learn the last turn errored — but that turn
-      // was just undone, and leaving it makes every future connection replay
-      // a "Something went wrong" for a message that no longer exists.
-      await clearChatTerminal(this.ctx.storage);
-      return Response.json({ ok: true });
-    }
-    return super.onRequest(request);
+    const trace = handleTraceHttpRequest(request);
+    if (trace) return trace;
+    // The rewind helper needs the protected waitUntilStable; bind it here so
+    // the helper sees a plain async function (lint-safe structural typing).
+    const rewind = await handleRewindRequest(
+      {
+        messages: this.messages,
+        cancelAllChats: () => this.cancelAllChats(),
+        waitUntilStable: (input) => this.waitUntilStable(input),
+        session: this.session,
+        ctx: this.ctx,
+      },
+      request,
+    );
+    return rewind ?? super.onRequest(request);
   }
 }

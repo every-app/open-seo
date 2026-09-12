@@ -137,6 +137,7 @@ function makeKeywordColumn(
 
 function makeDeviceColumn(
   device: "desktop" | "mobile",
+  isChecking?: (keywordId: string) => boolean,
 ): ColumnDef<RankTrackingRow> {
   const id = device === "desktop" ? "desktopPosition" : "mobilePosition";
   return {
@@ -147,7 +148,12 @@ function makeDeviceColumn(
     ),
     size: 120,
     maxSize: 140,
-    cell: ({ row }) => <DeviceRankCell result={row.original[device]} />,
+    cell: ({ row }) => (
+      <DeviceRankCell
+        result={row.original[device]}
+        isChecking={isChecking?.(row.original.trackingKeywordId)}
+      />
+    ),
     sortUndefined: "last",
   };
 }
@@ -203,6 +209,7 @@ export function useRankTrackingColumns(options: {
   selectAnchorRef: MutableRefObject<SelectionAnchor | null>;
   onKeywordClick: (row: RankTrackingRow) => void;
   locationName?: string | null;
+  isChecking?: (keywordId: string) => boolean;
 }): ColumnDef<RankTrackingRow>[] {
   const {
     showDesktop,
@@ -211,6 +218,7 @@ export function useRankTrackingColumns(options: {
     selectAnchorRef,
     onKeywordClick,
     locationName,
+    isChecking,
   } = options;
   const locationLabel = locationName
     ? formatLocationLabel(locationName, 2)
@@ -221,11 +229,11 @@ export function useRankTrackingColumns(options: {
       makeKeywordColumn(onKeywordClick),
     ];
     if (showDesktop) {
-      cols.push(makeDeviceColumn("desktop"));
+      cols.push(makeDeviceColumn("desktop", isChecking));
       cols.push(makeUrlColumn("desktop", domain));
     }
     if (showMobile) {
-      cols.push(makeDeviceColumn("mobile"));
+      cols.push(makeDeviceColumn("mobile", isChecking));
       cols.push(makeUrlColumn("mobile", domain));
     }
     cols.push(makeVolumeColumn(locationLabel), kdColumn, cpcColumn);
@@ -243,5 +251,6 @@ export function useRankTrackingColumns(options: {
     selectAnchorRef,
     onKeywordClick,
     locationLabel,
+    isChecking,
   ]);
 }

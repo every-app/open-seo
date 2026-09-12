@@ -81,7 +81,12 @@ async function fetchOpenAiCompatibleModels(
     contextLength: null,
     promptPrice: null,
     completionPrice: null,
-    supportsTools: false,
+    // The OpenAI wire /models route exposes no capability data — anything
+    // written here would be invented. The catalog marks every entry as
+    // tool-capable-unknown, and `toolCallingRefusalFor` deliberately treats
+    // an ABSENT capability as a pass so real tool-capable models (glm,
+    // qwen, deepseek, …) are never blocked by a placeholder.
+    supportsTools: true,
   }));
 }
 

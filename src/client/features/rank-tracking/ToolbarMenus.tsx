@@ -108,8 +108,8 @@ export function MoreMenu({
       {!checkDisabled && (
         <MenuItem
           icon={<Play className="size-3.5" />}
-          label={checkBusy ? "Running..." : "Check rankings"}
-          description="Fetch current Google positions"
+          label={checkBusy ? "Running..." : "Check all rankings"}
+          description="Fetch current Google positions for every tracked keyword"
           onClick={onCheckNow}
           disabled={checkBusy}
         />

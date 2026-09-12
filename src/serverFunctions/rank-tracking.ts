@@ -138,6 +138,7 @@ export const triggerRankCheck = createServerFn({ method: "POST" })
       projectId: context.projectId,
       billingCustomer: context,
       keywordIds: data.keywordIds,
+      operationId: data.operationId,
     });
 
     if (result.ok) {
@@ -150,6 +151,8 @@ export const triggerRankCheck = createServerFn({ method: "POST" })
             project_id: context.projectId,
             config_id: data.configId,
             run_id: result.runId,
+            scope: data.keywordIds?.length ? "selected" : "all",
+            selected_count: data.keywordIds?.length ?? undefined,
           },
         }),
       );

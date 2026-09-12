@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { AppError } from "@/server/lib/errors";
 import type { DataforseoErrorClassifier } from "@/server/lib/dataforseo/core";
+import {
+  attachDataforseoDiagnostics,
+  extractSafeRequestMetadata,
+  sanitizeDataforseoMessage,
+  type DataforseoCallDiagnostics,
+} from "@/server/lib/dataforseo/shared";
 
 // ---------------------------------------------------------------------------
 // Billing envelope — the load-bearing seam that carries each call's USD cost
@@ -133,11 +139,53 @@ type AssertOkOptions = {
 };
 
 /**
+ * Build the sanitized diagnostics record for an application-level failure
+ * (HTTP 200 + DataForSEO status_code != 20000, or a failed task inside an OK
+ * response). Reads the endpoint/path, API family, and the task's echo of our
+ * request params — never the full body.
+ */
+function appFailureDiagnostics(
+  path: string | undefined,
+  statusCode: number | undefined,
+  statusMessage: string | undefined,
+  task: DataforseoTaskLike | null,
+): DataforseoCallDiagnostics {
+  const endpoint =
+    path !== undefined && path.startsWith("/")
+      ? path.slice(1)
+      : (path || undefined);
+  const api = endpoint?.split("/");
+  const diagnostics: DataforseoCallDiagnostics = {
+    endpoint,
+    api: api && api[0] === "v3" && api.length > 1 ? api[1] : undefined,
+    httpStatus: 200,
+    dataforseoStatus: statusCode ?? null,
+    dataforseoMessage: sanitizeDataforseoMessage(statusMessage),
+  };
+  const requestMeta = extractSafeRequestMetadata(task?.data);
+  if (requestMeta) diagnostics.request = requestMeta;
+  return diagnostics;
+}
+
+function appFailurePath(
+  responsePath: string | undefined,
+  taskPath: string | undefined,
+): string | undefined {
+  if (responsePath && responsePath !== "") return responsePath;
+  return taskPath;
+}
+
+/**
  * Validates that the top-level response and its first task both succeeded, and
  * returns that (SDK-typed) task. The single status / billing ladder shared by
  * every endpoint:
  *  - access / balance failure -> classified AppError
  *  - charged-but-failed task (cost present) -> DataforseoChargedTaskError
+ *
+ * Every application-level failure leaves here carrying a sanitized
+ * `dataforseoDiagnostics` record (endpoint, HTTP 200, DataForSEO
+ * status_code/status_message, safe request metadata) so the SAM Debug Trace
+ * shows the exact application error instead of a collapsed label.
  */
 export function assertOk<T extends DataforseoTaskLike>(
   response: DataforseoResponseLike<T> | null,
@@ -153,10 +201,15 @@ export function assertOk<T extends DataforseoTaskLike>(
 
   if (response.status_code !== 20000) {
     const message = response.status_message || "DataForSEO request failed";
-    throw (
-      classify?.(response.status_code, message, classifyPath ?? "") ??
-      new AppError("INTERNAL_ERROR", message)
+    const path = classifyPath ?? "";
+    const error =
+      classify?.(response.status_code, message, path) ??
+      new AppError("INTERNAL_ERROR", message);
+    attachDataforseoDiagnostics(
+      error,
+      appFailureDiagnostics(path, response.status_code, response.status_message, null),
     );
+    throw error;
   }
 
   const task = response.tasks?.[0];
@@ -168,20 +221,40 @@ export function assertOk<T extends DataforseoTaskLike>(
     if (treatNoResultsAsEmpty && isNoResultsTask(task)) return task;
 
     const message = task.status_message || "DataForSEO task failed";
-    const path = classifyPath ?? (task.path ? `/${task.path.join("/")}` : "");
-    const classified = classify?.(task.status_code, message, path);
-    if (classified) throw classified;
+    const path = appFailurePath(
+      classifyPath,
+      task.path ? `/${task.path.join("/")}` : undefined,
+    );
+    const error = classify?.(task.status_code, message, path ?? "");
+    if (error) {
+      attachDataforseoDiagnostics(
+        error,
+        appFailureDiagnostics(path, task.status_code, task.status_message, task),
+      );
+      throw error;
+    }
 
     const detailedMessage = describeInvalidField(message, task);
     const billing = tryBuildTaskBilling(task);
-    if (billing)
-      throw new DataforseoChargedTaskError(
+    const diagnostics = appFailureDiagnostics(
+      path,
+      task.status_code,
+      task.status_message,
+      task,
+    );
+    if (billing) {
+      const chargedError = new DataforseoChargedTaskError(
         detailedMessage,
         billing,
         INVALID_FIELD_MESSAGE_RE.test(message),
       );
+      attachDataforseoDiagnostics(chargedError, diagnostics);
+      throw chargedError;
+    }
 
-    throw new AppError("INTERNAL_ERROR", detailedMessage);
+    const appError = new AppError("INTERNAL_ERROR", detailedMessage);
+    attachDataforseoDiagnostics(appError, diagnostics);
+    throw appError;
   }
 
   return task;

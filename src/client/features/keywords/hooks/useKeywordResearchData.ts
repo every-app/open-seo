@@ -5,6 +5,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import { parseKeywordInput } from "@/client/features/keywords/state/keywordControllerActions";
 import { researchKeywords } from "@/serverFunctions/keywords";
+import { globalTraceStore } from "@/client/features/tracing/globalTraceStore";
 import type {
   KeywordMode,
   ResearchSource,
@@ -76,17 +77,69 @@ export function buildKeywordResearchQueryKey(
     : ["keywordResearch", "idle"];
 }
 
-export function keywordResearchQueryFn(request: KeywordResearchRequest) {
-  return researchKeywords({
-    data: {
-      projectId: request.projectId,
+export async function keywordResearchQueryFn(request: KeywordResearchRequest) {
+  const opId = globalTraceStore.startOperation({
+    feature: "keyword_research",
+    operation: "keyword_research.research",
+    source: "Keyword Research page",
+    projectId: request.projectId,
+    status: "running",
+    billing: "Paid",
+    metered: true,
+    budget: "PASS",
+    cache: "Not applicable",
+    provider: "DataForSEO",
+    metadata: {
       keywords: request.keywords,
-      locationCode: request.locationCode,
-      resultLimit: request.resultLimit,
       mode: request.mode,
-      clickstream: request.clickstream,
+      locationCode: request.locationCode,
     },
   });
+
+  try {
+    const result = await researchKeywords({
+      data: {
+        projectId: request.projectId,
+        keywords: request.keywords,
+        locationCode: request.locationCode,
+        resultLimit: request.resultLimit,
+        mode: request.mode,
+        clickstream: request.clickstream,
+      },
+    });
+
+    globalTraceStore.completeOperation(opId, {
+      status: "success",
+      httpStatus: 200,
+      providerCalls: 1,
+      providerBreakdown: [{ provider: "DataForSEO", count: 1 }],
+      providers: [
+        {
+          provider: "DataForSEO",
+          endpoint: "v3/dataforseo_labs/google/keyword_suggestions/live",
+          httpStatus: 200,
+          taskStatus: 20000,
+          transport: "HTTP",
+          billing: "Paid",
+          metered: true,
+          budgetGuard: "PASS",
+        },
+      ],
+      counters: {
+        results: result?.rows?.length ?? 0,
+      },
+    });
+
+    return result;
+  } catch (error) {
+    globalTraceStore.completeOperation(opId, {
+      status: "failed",
+      httpStatus: 500,
+      errorMessage:
+        error instanceof Error ? error.message : "Keyword research failed",
+    });
+    throw error;
+  }
 }
 
 export function useKeywordResearchData(

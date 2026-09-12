@@ -288,6 +288,13 @@
       "when": 1787612650928,
       "tag": "0040_condemned_khan",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1788736885775,
+      "tag": "0041_yielding_gauntlet",
+      "breakpoints": true
     }
   ]
 }

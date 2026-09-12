@@ -96,4 +96,6 @@ export const {
   gscConnections,
   redditAttributions,
   telemetryState,
+  seoProviderSettings,
 } = schema;
+

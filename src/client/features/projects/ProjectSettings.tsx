@@ -6,7 +6,12 @@ import { toast } from "sonner";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFields";
 import { ProjectAiSettingsSection } from "@/client/features/ai/ProjectAiSettingsSection";
+import { GlobalDebugTraceSettingsSection } from "@/client/features/tracing/GlobalDebugTraceSettingsSection";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
+import {
+  traceSettingsMutation,
+  traceSettingsRead,
+} from "@/client/features/tracing/settingsTrace";
 import {
   clearLastProjectId,
   getLastProjectId,
@@ -21,7 +26,21 @@ import type { ProjectSummary } from "./types";
 export function ProjectSettings({ projectId }: { projectId: string }) {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
-    queryFn: () => getProjects(),
+    queryFn: () =>
+      traceSettingsRead({
+        operation: "settings.project.list",
+        source: "Project settings",
+        projectId,
+        endpoint: "settings/projects/list",
+        counters: { projectsReads: 1 },
+        call: () => getProjects(),
+        mapSuccess: (projects) => ({
+          counters: {
+            projectsReads: 1,
+            projects: Array.isArray(projects) ? projects.length : 0,
+          },
+        }),
+      }),
   });
   const projects = projectsQuery.data ?? [];
   const project = projects.find((entry) => entry.id === projectId) ?? null;
@@ -67,6 +86,11 @@ export function ProjectSettings({ projectId }: { projectId: string }) {
         <ProjectAiSettingsSection projectId={projectId} />
       </section>
 
+      <section id="debug-trace" className="space-y-3 scroll-mt-6">
+        <h2 className="text-sm font-medium text-base-content/50">Debug Trace</h2>
+        <GlobalDebugTraceSettingsSection projectId={projectId} />
+      </section>
+
       <DangerSection project={project} canArchive={projects.length > 1} />
     </div>
   );
@@ -83,13 +107,28 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
   const updateMutation = useMutation({
     mutationFn: () =>
-      updateProject({
-        data: {
-          projectId: project.id,
-          name: name.trim(),
-          domain: domain.trim() || undefined,
-          ...market,
+      traceSettingsMutation({
+        operation: "settings.project.update",
+        source: "Project settings",
+        projectId: project.id,
+        endpoint: "settings/projects/update",
+        metadata: {
+          nameChanged: name.trim() !== project.name,
+          domainChanged: (domain.trim() || "") !== (project.domain ?? ""),
+          marketChanged:
+            market.locationCode !== project.locationCode ||
+            market.languageCode !== project.languageCode,
         },
+        counters: { projectsUpdated: 1 },
+        call: () =>
+          updateProject({
+            data: {
+              projectId: project.id,
+              name: name.trim(),
+              domain: domain.trim() || undefined,
+              ...market,
+            },
+          }),
       }),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["projects"] });
@@ -178,7 +217,16 @@ function DangerSection({
   const [confirming, setConfirming] = React.useState(false);
 
   const archiveMutation = useMutation({
-    mutationFn: () => archiveProject({ data: { projectId: project.id } }),
+    mutationFn: () =>
+      traceSettingsMutation({
+        operation: "settings.project.archive",
+        source: "Project settings",
+        projectId: project.id,
+        endpoint: "settings/projects/archive",
+        metadata: { canArchive },
+        counters: { projectsArchived: 1 },
+        call: () => archiveProject({ data: { projectId: project.id } }),
+      }),
     onSuccess: async () => {
       if (getLastProjectId() === project.id) clearLastProjectId();
       await queryClient.invalidateQueries({ queryKey: ["projects"] });

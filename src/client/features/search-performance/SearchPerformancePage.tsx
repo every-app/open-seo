@@ -28,6 +28,7 @@ import {
   getSearchPerformanceReport,
   getSearchPerformanceTable,
 } from "@/serverFunctions/searchPerformance";
+import { globalTraceStore } from "@/client/features/tracing/globalTraceStore";
 import {
   GSC_DEVICES,
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
@@ -140,8 +141,57 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
 
   const reportQuery = useQuery({
     queryKey: ["searchPerformance", projectId, range, device, country],
-    queryFn: () =>
-      getSearchPerformanceReport({ data: { projectId, ...filterInput } }),
+    queryFn: async () => {
+      const opId = globalTraceStore.startOperation({
+        feature: "search_console",
+        operation: "search_console.performance",
+        source: "Search Performance page",
+        projectId,
+        status: "running",
+        billing: "Free",
+        metered: false,
+        budget: "PASS",
+        cache: "HIT",
+        provider: "GSC",
+        metadata: { range, device, country },
+      });
+
+      try {
+        const result = await getSearchPerformanceReport({
+          data: { projectId, ...filterInput },
+        });
+
+        globalTraceStore.completeOperation(opId, {
+          status: "success",
+          httpStatus: 200,
+          providerCalls: 1,
+          providerBreakdown: [{ provider: "GSC", count: 1 }],
+          providers: [
+            {
+              provider: "GSC",
+              endpoint: "searchAnalytics/query",
+              httpStatus: 200,
+              transport: "HTTP",
+              billing: "Free",
+              metered: false,
+              budgetGuard: "PASS",
+            },
+          ],
+        });
+
+        return result;
+      } catch (err) {
+        globalTraceStore.completeOperation(opId, {
+          status: "failed",
+          httpStatus: 500,
+          errorMessage:
+            err instanceof Error
+              ? err.message
+              : "Failed to fetch search performance",
+        });
+        throw err;
+      }
+    },
     placeholderData: keepPreviousData,
   });
   const report = reportQuery.data;

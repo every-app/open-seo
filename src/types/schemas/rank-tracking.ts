@@ -18,11 +18,18 @@ export type RankCheckTriggerResult =
   | {
       ok: true;
       runId: string;
+      operationId?: string;
+      scope?: "selected" | "all";
+      selectedCount?: number;
+      validatedCount?: number;
+      validatedKeywordIds?: string[];
+      unselectedCount?: number;
     }
   | {
       ok: false;
       reason: "already_running";
       blockingRunId: string | null;
+      operationId?: string;
     };
 
 export interface RankTrackingDeviceResult {
@@ -30,6 +37,8 @@ export interface RankTrackingDeviceResult {
   previousPosition: number | null;
   rankingUrl: string | null;
   serpFeatures: string[];
+  checkedAt?: string | null;
+  status?: "not_checked" | "ranked" | "not_ranking" | "failed" | "checking";
 }
 
 export interface RankTrackingRow {
@@ -80,6 +89,7 @@ export const triggerCheckSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
   keywordIds: z.array(z.string().uuid()).max(2000).optional(),
+  operationId: z.string().optional(),
 });
 
 export const comparePeriodSchema = z.enum(["1d", "7d", "30d", "90d"]);
