@@ -24,6 +24,14 @@ async function assertPaidPlan(organizationId: string) {
   );
 }
 
+function shouldUsePromptExplorerE2eFixtures() {
+  return import.meta.env.VITE_E2E_PROMPT_EXPLORER_FIXTURES === "1";
+}
+
+async function getPromptExplorerE2eFixtures() {
+  return import("../../e2e/fixtures/prompt-explorer-fixtures");
+}
+
 export const lookupBrand = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(brandLookupInputSchema)
@@ -36,6 +44,14 @@ export const explorePrompt = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(promptExplorerInputSchema)
   .handler(async ({ data, context }) => {
+    if (shouldUsePromptExplorerE2eFixtures()) {
+      const fixtures = await getPromptExplorerE2eFixtures();
+      return fixtures.getPromptExplorerFixture({
+        ...data,
+        projectId: context.projectId,
+      });
+    }
+
     await assertPaidPlan(context.organizationId);
     return runExplorePrompt({ ...data, projectId: context.projectId }, context);
   });
