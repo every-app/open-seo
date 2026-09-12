@@ -9,7 +9,9 @@
 // workflow's Access verify step).
 
 import * as Cloudflare from "alchemy/Cloudflare";
+import * as ZeroTrust from "@distilled.cloud/cloudflare/zero-trust";
 import * as Config from "effect/Config";
+import * as Console from "effect/Console";
 import * as Effect from "effect/Effect";
 
 const WORKER_PREFIX = "open-seo";
@@ -57,6 +59,31 @@ export const requireAllowedEmails = (remedy: string) =>
     return emails;
   });
 
+/**
+ * Whether the live application currently has Managed OAuth turned on.
+ *
+ * Read *before* the Access.Application resource reconciles, because that
+ * reconcile is what clears it: alchemy exposes no `oauthConfiguration` prop,
+ * and its update sends a PUT-style body assembled only from declared props, so
+ * Cloudflare drops the setting every deploy.
+ *
+ * Best-effort by construction — a failure here must never fail a deploy, and
+ * false only costs the operator the warning they get today (none).
+ */
+const readManagedOauthEnabled = (accountId: string, domain: string) =>
+  ZeroTrust.listAccessApplicationsForAccount({ accountId }).pipe(
+    Effect.map((response) =>
+      (response.result ?? []).some(
+        (app) =>
+          "domain" in app &&
+          app.domain === domain &&
+          "oauthConfiguration" in app &&
+          app.oauthConfiguration?.enabled === true,
+      ),
+    ),
+    Effect.catch(() => Effect.succeed(false)),
+  );
+
 /** The gate itself: an email allow-policy on a self-hosted Access application. */
 export const emailAccessGate = (options: {
   policyId: string;
@@ -67,15 +94,32 @@ export const emailAccessGate = (options: {
   emails: string[];
 }) =>
   Effect.gen(function* () {
+    const { accountId } = yield* yield* Cloudflare.CloudflareEnvironment;
     const allow = yield* Cloudflare.Access.Policy(options.policyId, {
       name: options.policyName,
       decision: "allow",
       include: options.emails.map((email) => ({ email: { email } })),
     });
-    return yield* Cloudflare.Access.Application(options.applicationId, {
-      type: "self_hosted",
-      name: options.applicationName,
-      domain: options.domain,
-      policies: [allow.policyId],
-    });
+    const hadManagedOauth = yield* readManagedOauthEnabled(
+      accountId,
+      options.domain,
+    );
+    const application = yield* Cloudflare.Access.Application(
+      options.applicationId,
+      {
+        type: "self_hosted",
+        name: options.applicationName,
+        domain: options.domain,
+        policies: [allow.policyId],
+      },
+    );
+    // Say so at deploy time. The symptom otherwise surfaces much later, in an
+    // MCP client, as `Unexpected content type: text/html` (Access serving its
+    // login page) with nothing connecting it back to a deploy.
+    if (hadManagedOauth) {
+      yield* Console.log(
+        `Managed OAuth on the Access application for ${options.domain} was cleared by this deploy — re-enable it in Zero Trust (Access controls -> Applications -> Edit -> Additional settings -> OAuth) or MCP clients cannot authenticate.`,
+      );
+    }
+    return application;
   });
