@@ -17,3 +17,6 @@ drizzle-pg/
 planning/
 worker-configuration.d.ts
 web/
+# heartbeat/scratch logs the CTO writes from Paperclip runs;
+# never committed, but Prettier scans them by default. (CTO papercut 2026-09-09.)
+.agents/runs/

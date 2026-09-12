@@ -9,7 +9,7 @@ Everybody has spent fifteen years complaining that SEO tools cost too much, so y
 
 I spent years inside this problem. [Raven Tools](https://raventools.com/) brought me out of Homes.com and out to Tennessee, and back in 2008 to 2010, alongside [Moz](https://moz.com/), before [Ahrefs](https://ahrefs.com/) was a thought anybody had had, we were one of the better known SaaS tools in the space. I watched what happened to every indie tool that came after us, and it was always the same two questions.
 
-Is that already in Semrush or Ahrefs? And do I need to pay for this *on top of* Semrush?
+Is that already in Semrush or Ahrefs? And do I need to pay for this _on top of_ Semrush?
 
 If you want an agent to run the audit at the end of this post, connect the [OpenSEO MCP](/docs/mcp) first so it can pull your live ranking and Search Console data.
 
@@ -25,7 +25,7 @@ Price under $99 and you were a toy, useful but not something a team would build 
 
 That ceiling was real and it held for a decade. [Moz Pro has listed a $99 entry tier continuously since at least February 2016](https://moz.com/products/pro/pricing), which four separate archived snapshots confirm, and the tier above it drifted between $149 and $179 over the same period. The stability of the $99 line is the notable part.
 
-One correction to the story I used to tell, though. The market converged *on* $99 rather than starting there. Ahrefs Lite was $79 a month in December 2015 and Semrush Pro was $69.95 in mid-2015. Both climbed to roughly $99 by 2017 and stopped. So this was a ceiling the market found, not one it was born with.
+One correction to the story I used to tell, though. The market converged _on_ $99 rather than starting there. Ahrefs Lite was $79 a month in December 2015 and Semrush Pro was $69.95 in mid-2015. Both climbed to roughly $99 by 2017 and stopped. So this was a ceiling the market found, not one it was born with.
 
 ## What actually changed
 
@@ -102,4 +102,4 @@ The tooling got cheap. Your attention did not.
 
 ---
 
-*Ben Senescu is the founder of OpenSEO. He joined me on The Unscripted SEO Interview Podcast on 13 August 2026; [the full conversation is here](https://unscriptedseo.com/ben-senescu-open-source-seo-99-ceiling/). Historical pricing was checked against archived vendor pages, and current pricing against each vendor's own pricing page, on 2 September 2026.*
+_Ben Senescu is the founder of OpenSEO. He joined me on The Unscripted SEO Interview Podcast on 13 August 2026; [the full conversation is here](https://unscriptedseo.com/ben-senescu-open-source-seo-99-ceiling/). Historical pricing was checked against archived vendor pages, and current pricing against each vendor's own pricing page, on 2 September 2026._

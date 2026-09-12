@@ -175,9 +175,9 @@ function KeywordResearchLibraryPage() {
           </a>{" "}
           lets a compatible AI assistant query both sources while it works
           through the workflow. Quality SEO data is why the big suites run
-          $100/month and up; OpenSEO's paid plan starts at $10/month and includes
-          $10 of usage, with top-ups available if you need more. You can start
-          for free.
+          $100/month and up; OpenSEO's paid plan starts at $10/month and
+          includes $10 of usage, with top-ups available if you need more. You
+          can start for free.
         </p>
       </section>
 

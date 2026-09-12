@@ -45,7 +45,7 @@ The obvious next question is whether the pages that get cited are the pages that
 
 [Ahrefs](https://ahrefs.com/blog/ai-overview-citations-top-10) put it at 38%, from 863,000 SERPs and 4 million citation URLs. [Surfer](https://surferseo.com/blog/ai-overviews-study/) measured 52% across 405,576 AI Overviews. [seoClarity](https://www.seoclarity.net/research/aio-rankings-overlap) reports 56% from the top 20, across 362,000 queries and 5.1 million citations.
 
-I do not think any of them is wrong. They cut at different top-N thresholds on different days. The seoClarity study also reports that 94% of queries showed *at least one* overlap, which is a much weaker claim than the 56% figure and gets quoted as though it were the same finding.
+I do not think any of them is wrong. They cut at different top-N thresholds on different days. The seoClarity study also reports that 94% of queries showed _at least one_ overlap, which is a much weaker claim than the 56% figure and gets quoted as though it were the same finding.
 
 The number that matters is none of those three. Ahrefs measured roughly 76% in July 2025 and 38% in March 2026 using their own method both times, and they attribute the fall to query fan-out. The overlap is a moving trend rather than a constant, so anything you build on a single overlap figure has a shelf life of about a quarter.
 
@@ -55,7 +55,7 @@ Where citations concentrate is steadier and more useful. Research by Tom Wells o
 
 So what about the training side? This is where I expected a number and did not find one.
 
-The mechanism is well studied. *Dated Data*, from a Johns Hopkins team, shows that a model's [effective knowledge cutoff differs from its reported one](https://arxiv.org/abs/2403.12958), because CommonCrawl dumps carry meaningful amounts of older data and deduplication is imperfect. The boundary is fuzzy. That work does not tell you how long a new brand takes to cross it.
+The mechanism is well studied. _Dated Data_, from a Johns Hopkins team, shows that a model's [effective knowledge cutoff differs from its reported one](https://arxiv.org/abs/2403.12958), because CommonCrawl dumps carry meaningful amounts of older data and deduplication is imperfect. The boundary is fuzzy. That work does not tell you how long a new brand takes to cross it.
 
 As far as I can tell, nobody has published that figure. If you see a confident claim that it takes two years to enter the training data, ask where the number came from.
 
@@ -65,7 +65,7 @@ That is a control result rather than the paper's headline, so I am careful about
 
 ## The court drew the same line
 
-The distinction has become load-bearing enough to turn up in the remedies opinion in *United States v. Google*. Judge Mehta ordered Google to make search index and user-interaction data available to qualified competitors, and in weighing publisher remedies the court considered letting publishers opt out of crawling "for inclusion in Google's search index and for training its GenAI models and products."
+The distinction has become load-bearing enough to turn up in the remedies opinion in _United States v. Google_. Judge Mehta ordered Google to make search index and user-interaction data available to qualified competitors, and in weighing publisher remedies the court considered letting publishers opt out of crawling "for inclusion in Google's search index and for training its GenAI models and products."
 
 Index and training, named separately, as two things a publisher might refuse independently. Google's own patent for [generative summaries](https://patents.google.com/patent/US11769017B1/en) describes selecting result documents using "query-dependent measure(s), query-independent measure(s), and/or user-dependent measure(s)" and then linking back to the documents that verify the summary.
 
@@ -121,4 +121,4 @@ Optimising content while the crawler gets a 429 is an expensive way to feel prod
 
 ---
 
-*Sources are linked inline. First-party crawler data is from my own servers, August 2026. The panel referenced here was recorded 28 August 2026 for The Unscripted SEO Interview Podcast with [Patrick Stox](https://unscriptedseo.com/patrick-stox-on-building-in-the-geo-era/), Ben Senescu of OpenSEO, and [Ben Wills](https://unscriptedseo.com/ben-wills-one-word-prompt-llm-testing/) of OppAlerts. Every cited URL was verified on 2 September 2026.*
+_Sources are linked inline. First-party crawler data is from my own servers, August 2026. The panel referenced here was recorded 28 August 2026 for The Unscripted SEO Interview Podcast with [Patrick Stox](https://unscriptedseo.com/patrick-stox-on-building-in-the-geo-era/), Ben Senescu of OpenSEO, and [Ben Wills](https://unscriptedseo.com/ben-wills-one-word-prompt-llm-testing/) of OppAlerts. Every cited URL was verified on 2 September 2026._
