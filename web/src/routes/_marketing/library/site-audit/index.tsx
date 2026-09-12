@@ -57,7 +57,7 @@ export const Route = createFileRoute("/_marketing/library/site-audit/")({
     buildPageSeo({
       title: "Technical SEO Audit: The Strategy Library",
       description:
-        "Four site audit strategies for turning a crawl into scheduled work: triage by severity, report it so it gets approved, decide what to delete, and check the crawler was served at all. Each includes a workflow and an OpenSEO MCP prompt.",
+        "Three site audit strategies for turning a crawl into scheduled work: triage by severity, report it so it gets approved, and decide what to delete. Each includes a workflow and an OpenSEO MCP prompt.",
       path: PATH,
       titleSuffix: "OpenSEO",
     }),
@@ -84,11 +84,10 @@ function SiteAuditLibraryPage() {
           The Site Audit Strategy Library
         </h1>
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
-          Four strategies for turning a crawl into scheduled work: triage the
-          findings by severity, write the report so it gets approved, decide
-          which pages should stop existing, and confirm the crawler was served
-          the real site before you trust any of it. Each one includes a workflow
-          and a copy-paste OpenSEO MCP prompt.
+          Three strategies for turning a crawl into scheduled work: triage the
+          findings by severity, write the report so it gets approved, and decide
+          which pages should stop existing. Each one includes a workflow and a
+          copy-paste OpenSEO MCP prompt.
         </p>
       </header>
 
@@ -97,11 +96,9 @@ function SiteAuditLibraryPage() {
           How do you run a site audit that ends in fixes?
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          In the order below, and the order is the point. Confirm the crawler
-          was served the real pages, sort what came back by severity, decide
-          which findings are worth someone&rsquo;s sprint, and write the case so
-          the work gets authorised. Deleting pages is a separate decision that
-          needs its own evidence.
+          Sort the findings by severity, decide which are worth someone&rsquo;s
+          sprint, and write the case so the work gets authorised. Deleting pages
+          is a separate decision that needs its own evidence.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {siteAuditStrategies.map((strategy, index) => {

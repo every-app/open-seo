@@ -44,7 +44,6 @@ import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes
 import { Route as MarketingLibrarySiteAuditIndexRouteImport } from './routes/_marketing/library/site-audit/index'
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
 import { Route as MarketingLibraryCompetitiveAnalysisIndexRouteImport } from './routes/_marketing/library/competitive-analysis/index'
-import { Route as MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport } from './routes/_marketing/library/site-audit/when-your-crawler-gets-blocked'
 import { Route as MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport } from './routes/_marketing/library/site-audit/technical-seo-audit-checklist'
 import { Route as MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport } from './routes/_marketing/library/site-audit/seo-audit-report-template'
 import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './routes/_marketing/library/site-audit/index-bloat'
@@ -249,12 +248,6 @@ const MarketingLibraryCompetitiveAnalysisIndexRoute =
     path: '/library/competitive-analysis/',
     getParentRoute: () => MarketingRoute,
   } as any)
-const MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute =
-  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport.update({
-    id: '/library/site-audit/when-your-crawler-gets-blocked',
-    path: '/library/site-audit/when-your-crawler-gets-blocked',
-    getParentRoute: () => MarketingRoute,
-  } as any)
 const MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute =
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport.update({
     id: '/library/site-audit/technical-seo-audit-checklist',
@@ -397,7 +390,6 @@ export interface FileRoutesByFullPath {
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
-  '/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
   '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
@@ -449,7 +441,6 @@ export interface FileRoutesByTo {
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
-  '/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/library/competitive-analysis': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
   '/library/site-audit': typeof MarketingLibrarySiteAuditIndexRoute
@@ -503,7 +494,6 @@ export interface FileRoutesById {
   '/_marketing/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/_marketing/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/_marketing/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
-  '/_marketing/library/site-audit/when-your-crawler-gets-blocked': typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   '/_marketing/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
   '/_marketing/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
@@ -557,7 +547,6 @@ export interface FileRouteTypes {
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
-    | '/library/site-audit/when-your-crawler-gets-blocked'
     | '/library/competitive-analysis/'
     | '/library/keyword-research/'
     | '/library/site-audit/'
@@ -609,7 +598,6 @@ export interface FileRouteTypes {
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
-    | '/library/site-audit/when-your-crawler-gets-blocked'
     | '/library/competitive-analysis'
     | '/library/keyword-research'
     | '/library/site-audit'
@@ -662,7 +650,6 @@ export interface FileRouteTypes {
     | '/_marketing/library/site-audit/index-bloat'
     | '/_marketing/library/site-audit/seo-audit-report-template'
     | '/_marketing/library/site-audit/technical-seo-audit-checklist'
-    | '/_marketing/library/site-audit/when-your-crawler-gets-blocked'
     | '/_marketing/library/competitive-analysis/'
     | '/_marketing/library/keyword-research/'
     | '/_marketing/library/site-audit/'
@@ -931,13 +918,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRouteImport
       parentRoute: typeof MarketingRoute
     }
-    '/_marketing/library/site-audit/when-your-crawler-gets-blocked': {
-      id: '/_marketing/library/site-audit/when-your-crawler-gets-blocked'
-      path: '/library/site-audit/when-your-crawler-gets-blocked'
-      fullPath: '/library/site-audit/when-your-crawler-gets-blocked'
-      preLoaderRoute: typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRouteImport
-      parentRoute: typeof MarketingRoute
-    }
     '/_marketing/library/site-audit/technical-seo-audit-checklist': {
       id: '/_marketing/library/site-audit/technical-seo-audit-checklist'
       path: '/library/site-audit/technical-seo-audit-checklist'
@@ -1081,7 +1061,6 @@ interface MarketingRouteChildren {
   MarketingLibrarySiteAuditIndexBloatRoute: typeof MarketingLibrarySiteAuditIndexBloatRoute
   MarketingLibrarySiteAuditSeoAuditReportTemplateRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
-  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute: typeof MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute
   MarketingLibraryCompetitiveAnalysisIndexRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
   MarketingLibrarySiteAuditIndexRoute: typeof MarketingLibrarySiteAuditIndexRoute
@@ -1138,8 +1117,6 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibrarySiteAuditSeoAuditReportTemplateRoute,
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute:
     MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute,
-  MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute:
-    MarketingLibrarySiteAuditWhenYourCrawlerGetsBlockedRoute,
   MarketingLibraryCompetitiveAnalysisIndexRoute:
     MarketingLibraryCompetitiveAnalysisIndexRoute,
   MarketingLibraryKeywordResearchIndexRoute:

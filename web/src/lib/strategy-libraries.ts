@@ -110,10 +110,4 @@ export const siteAuditStrategies: StrategyLibraryItem[] = [
       "Five million pages came out of one site and it recovered. On a small site the same instinct usually wastes a weekend. How to tell which you have.",
     href: "/library/site-audit/index-bloat",
   },
-  {
-    title: "When your own crawler gets blocked",
-    description:
-      "784 of 867 pages came back blocked by the site's own edge. What that flag means, and what it says about every other crawler.",
-    href: "/library/site-audit/when-your-crawler-gets-blocked",
-  },
 ];

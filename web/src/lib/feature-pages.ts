@@ -255,12 +255,6 @@ export const featurePages = {
             "Check what Google actually indexed before you remove anything.",
           href: "/library/site-audit/index-bloat",
         },
-        {
-          label: "When your own crawler gets blocked",
-          description:
-            "Read the blocked flag, find the WAF rule, and bound every other number.",
-          href: "/library/site-audit/when-your-crawler-gets-blocked",
-        },
       ],
       cta: {
         label: "Browse all site audit strategies",
