@@ -3,16 +3,18 @@ import { buildPageSeo } from "@/lib/seo";
 import {
   competitiveAnalysisStrategies,
   keywordResearchStrategies,
+  rankTrackingStrategies,
   siteAuditStrategies,
 } from "@/lib/strategy-libraries";
 
 const PATH = "/library";
 const description =
-  "Browse practical SEO strategies for finding search demand, sizing up competitors, auditing a site, mapping intent, and planning pages.";
+  "Browse practical SEO strategies for finding search demand, sizing up competitors, auditing a site, tracking rankings, mapping intent, and planning pages.";
 const featuredStrategies = [
   ...keywordResearchStrategies.slice(0, 2),
   ...competitiveAnalysisStrategies.slice(0, 1),
   ...siteAuditStrategies.slice(0, 1),
+  ...rankTrackingStrategies.slice(0, 1),
 ];
 
 export const Route = createFileRoute("/_marketing/library/")({
@@ -94,6 +96,23 @@ function StrategyLibraryIndexPage() {
             </p>
             <p className="mt-5 text-sm font-medium text-neutral-950">
               View all {siteAuditStrategies.length} strategies{" "}
+              <span aria-hidden="true">&rarr;</span>
+            </p>
+          </a>
+          <a
+            href="/library/rank-tracking"
+            className="block rounded-lg border border-[var(--color-border-subtle)] bg-white p-6 transition-colors hover:border-neutral-900"
+          >
+            <h3 className="text-2xl font-semibold tracking-tight text-neutral-950">
+              Rank Tracking
+            </h3>
+            <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
+              Pick the keywords worth watching, know where Search Console stops,
+              track local positions from where customers stand, and write the
+              ranking report that gets read.
+            </p>
+            <p className="mt-5 text-sm font-medium text-neutral-950">
+              View all {rankTrackingStrategies.length} strategies{" "}
               <span aria-hidden="true">&rarr;</span>
             </p>
           </a>

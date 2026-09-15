@@ -42,11 +42,16 @@ import { Route as MarketingFeaturesBacklinkCheckerRouteImport } from './routes/_
 import { Route as MarketingFeaturesAiSearchPromptsRouteImport } from './routes/_marketing/features/ai-search-prompts'
 import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes/_marketing/features/ai-brand-visibility'
 import { Route as MarketingLibrarySiteAuditIndexRouteImport } from './routes/_marketing/library/site-audit/index'
+import { Route as MarketingLibraryRankTrackingIndexRouteImport } from './routes/_marketing/library/rank-tracking/index'
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
 import { Route as MarketingLibraryCompetitiveAnalysisIndexRouteImport } from './routes/_marketing/library/competitive-analysis/index'
 import { Route as MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport } from './routes/_marketing/library/site-audit/technical-seo-audit-checklist'
 import { Route as MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport } from './routes/_marketing/library/site-audit/seo-audit-report-template'
 import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './routes/_marketing/library/site-audit/index-bloat'
+import { Route as MarketingLibraryRankTrackingWhichKeywordsToTrackRouteImport } from './routes/_marketing/library/rank-tracking/which-keywords-to-track'
+import { Route as MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRouteImport } from './routes/_marketing/library/rank-tracking/search-console-vs-rank-tracker'
+import { Route as MarketingLibraryRankTrackingLocalRankTrackingRouteImport } from './routes/_marketing/library/rank-tracking/local-rank-tracking'
+import { Route as MarketingLibraryRankTrackingKeywordRankingReportRouteImport } from './routes/_marketing/library/rank-tracking/keyword-ranking-report'
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
 import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
@@ -236,6 +241,12 @@ const MarketingLibrarySiteAuditIndexRoute =
     path: '/library/site-audit/',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryRankTrackingIndexRoute =
+  MarketingLibraryRankTrackingIndexRouteImport.update({
+    id: '/library/rank-tracking/',
+    path: '/library/rank-tracking/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibraryKeywordResearchIndexRoute =
   MarketingLibraryKeywordResearchIndexRouteImport.update({
     id: '/library/keyword-research/',
@@ -264,6 +275,30 @@ const MarketingLibrarySiteAuditIndexBloatRoute =
   MarketingLibrarySiteAuditIndexBloatRouteImport.update({
     id: '/library/site-audit/index-bloat',
     path: '/library/site-audit/index-bloat',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryRankTrackingWhichKeywordsToTrackRoute =
+  MarketingLibraryRankTrackingWhichKeywordsToTrackRouteImport.update({
+    id: '/library/rank-tracking/which-keywords-to-track',
+    path: '/library/rank-tracking/which-keywords-to-track',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute =
+  MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRouteImport.update({
+    id: '/library/rank-tracking/search-console-vs-rank-tracker',
+    path: '/library/rank-tracking/search-console-vs-rank-tracker',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryRankTrackingLocalRankTrackingRoute =
+  MarketingLibraryRankTrackingLocalRankTrackingRouteImport.update({
+    id: '/library/rank-tracking/local-rank-tracking',
+    path: '/library/rank-tracking/local-rank-tracking',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryRankTrackingKeywordRankingReportRoute =
+  MarketingLibraryRankTrackingKeywordRankingReportRouteImport.update({
+    id: '/library/rank-tracking/keyword-ranking-report',
+    path: '/library/rank-tracking/keyword-ranking-report',
     getParentRoute: () => MarketingRoute,
   } as any)
 const MarketingLibraryKeywordResearchSeedFromConversationRoute =
@@ -387,11 +422,16 @@ export interface FileRoutesByFullPath {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/rank-tracking/keyword-ranking-report': typeof MarketingLibraryRankTrackingKeywordRankingReportRoute
+  '/library/rank-tracking/local-rank-tracking': typeof MarketingLibraryRankTrackingLocalRankTrackingRoute
+  '/library/rank-tracking/search-console-vs-rank-tracker': typeof MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute
+  '/library/rank-tracking/which-keywords-to-track': typeof MarketingLibraryRankTrackingWhichKeywordsToTrackRoute
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
   '/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/rank-tracking/': typeof MarketingLibraryRankTrackingIndexRoute
   '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesByTo {
@@ -438,11 +478,16 @@ export interface FileRoutesByTo {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/library/rank-tracking/keyword-ranking-report': typeof MarketingLibraryRankTrackingKeywordRankingReportRoute
+  '/library/rank-tracking/local-rank-tracking': typeof MarketingLibraryRankTrackingLocalRankTrackingRoute
+  '/library/rank-tracking/search-console-vs-rank-tracker': typeof MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute
+  '/library/rank-tracking/which-keywords-to-track': typeof MarketingLibraryRankTrackingWhichKeywordsToTrackRoute
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
   '/library/competitive-analysis': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/library/rank-tracking': typeof MarketingLibraryRankTrackingIndexRoute
   '/library/site-audit': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRoutesById {
@@ -491,11 +536,16 @@ export interface FileRoutesById {
   '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  '/_marketing/library/rank-tracking/keyword-ranking-report': typeof MarketingLibraryRankTrackingKeywordRankingReportRoute
+  '/_marketing/library/rank-tracking/local-rank-tracking': typeof MarketingLibraryRankTrackingLocalRankTrackingRoute
+  '/_marketing/library/rank-tracking/search-console-vs-rank-tracker': typeof MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute
+  '/_marketing/library/rank-tracking/which-keywords-to-track': typeof MarketingLibraryRankTrackingWhichKeywordsToTrackRoute
   '/_marketing/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/_marketing/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/_marketing/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
   '/_marketing/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
+  '/_marketing/library/rank-tracking/': typeof MarketingLibraryRankTrackingIndexRoute
   '/_marketing/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
 }
 export interface FileRouteTypes {
@@ -544,11 +594,16 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/rank-tracking/keyword-ranking-report'
+    | '/library/rank-tracking/local-rank-tracking'
+    | '/library/rank-tracking/search-console-vs-rank-tracker'
+    | '/library/rank-tracking/which-keywords-to-track'
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
     | '/library/competitive-analysis/'
     | '/library/keyword-research/'
+    | '/library/rank-tracking/'
     | '/library/site-audit/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -595,11 +650,16 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
+    | '/library/rank-tracking/keyword-ranking-report'
+    | '/library/rank-tracking/local-rank-tracking'
+    | '/library/rank-tracking/search-console-vs-rank-tracker'
+    | '/library/rank-tracking/which-keywords-to-track'
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
     | '/library/competitive-analysis'
     | '/library/keyword-research'
+    | '/library/rank-tracking'
     | '/library/site-audit'
   id:
     | '__root__'
@@ -647,11 +707,16 @@ export interface FileRouteTypes {
     | '/_marketing/library/keyword-research/positioning-to-demand'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
+    | '/_marketing/library/rank-tracking/keyword-ranking-report'
+    | '/_marketing/library/rank-tracking/local-rank-tracking'
+    | '/_marketing/library/rank-tracking/search-console-vs-rank-tracker'
+    | '/_marketing/library/rank-tracking/which-keywords-to-track'
     | '/_marketing/library/site-audit/index-bloat'
     | '/_marketing/library/site-audit/seo-audit-report-template'
     | '/_marketing/library/site-audit/technical-seo-audit-checklist'
     | '/_marketing/library/competitive-analysis/'
     | '/_marketing/library/keyword-research/'
+    | '/_marketing/library/rank-tracking/'
     | '/_marketing/library/site-audit/'
   fileRoutesById: FileRoutesById
 }
@@ -904,6 +969,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibrarySiteAuditIndexRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/rank-tracking/': {
+      id: '/_marketing/library/rank-tracking/'
+      path: '/library/rank-tracking'
+      fullPath: '/library/rank-tracking/'
+      preLoaderRoute: typeof MarketingLibraryRankTrackingIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/keyword-research/': {
       id: '/_marketing/library/keyword-research/'
       path: '/library/keyword-research'
@@ -937,6 +1009,34 @@ declare module '@tanstack/react-router' {
       path: '/library/site-audit/index-bloat'
       fullPath: '/library/site-audit/index-bloat'
       preLoaderRoute: typeof MarketingLibrarySiteAuditIndexBloatRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/rank-tracking/which-keywords-to-track': {
+      id: '/_marketing/library/rank-tracking/which-keywords-to-track'
+      path: '/library/rank-tracking/which-keywords-to-track'
+      fullPath: '/library/rank-tracking/which-keywords-to-track'
+      preLoaderRoute: typeof MarketingLibraryRankTrackingWhichKeywordsToTrackRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/rank-tracking/search-console-vs-rank-tracker': {
+      id: '/_marketing/library/rank-tracking/search-console-vs-rank-tracker'
+      path: '/library/rank-tracking/search-console-vs-rank-tracker'
+      fullPath: '/library/rank-tracking/search-console-vs-rank-tracker'
+      preLoaderRoute: typeof MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/rank-tracking/local-rank-tracking': {
+      id: '/_marketing/library/rank-tracking/local-rank-tracking'
+      path: '/library/rank-tracking/local-rank-tracking'
+      fullPath: '/library/rank-tracking/local-rank-tracking'
+      preLoaderRoute: typeof MarketingLibraryRankTrackingLocalRankTrackingRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/rank-tracking/keyword-ranking-report': {
+      id: '/_marketing/library/rank-tracking/keyword-ranking-report'
+      path: '/library/rank-tracking/keyword-ranking-report'
+      fullPath: '/library/rank-tracking/keyword-ranking-report'
+      preLoaderRoute: typeof MarketingLibraryRankTrackingKeywordRankingReportRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/library/keyword-research/seed-from-conversation': {
@@ -1058,11 +1158,16 @@ interface MarketingRouteChildren {
   MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
+  MarketingLibraryRankTrackingKeywordRankingReportRoute: typeof MarketingLibraryRankTrackingKeywordRankingReportRoute
+  MarketingLibraryRankTrackingLocalRankTrackingRoute: typeof MarketingLibraryRankTrackingLocalRankTrackingRoute
+  MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute: typeof MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute
+  MarketingLibraryRankTrackingWhichKeywordsToTrackRoute: typeof MarketingLibraryRankTrackingWhichKeywordsToTrackRoute
   MarketingLibrarySiteAuditIndexBloatRoute: typeof MarketingLibrarySiteAuditIndexBloatRoute
   MarketingLibrarySiteAuditSeoAuditReportTemplateRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
   MarketingLibraryCompetitiveAnalysisIndexRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
+  MarketingLibraryRankTrackingIndexRoute: typeof MarketingLibraryRankTrackingIndexRoute
   MarketingLibrarySiteAuditIndexRoute: typeof MarketingLibrarySiteAuditIndexRoute
 }
 
@@ -1111,6 +1216,14 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchSearchIntentMappingRoute,
   MarketingLibraryKeywordResearchSeedFromConversationRoute:
     MarketingLibraryKeywordResearchSeedFromConversationRoute,
+  MarketingLibraryRankTrackingKeywordRankingReportRoute:
+    MarketingLibraryRankTrackingKeywordRankingReportRoute,
+  MarketingLibraryRankTrackingLocalRankTrackingRoute:
+    MarketingLibraryRankTrackingLocalRankTrackingRoute,
+  MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute:
+    MarketingLibraryRankTrackingSearchConsoleVsRankTrackerRoute,
+  MarketingLibraryRankTrackingWhichKeywordsToTrackRoute:
+    MarketingLibraryRankTrackingWhichKeywordsToTrackRoute,
   MarketingLibrarySiteAuditIndexBloatRoute:
     MarketingLibrarySiteAuditIndexBloatRoute,
   MarketingLibrarySiteAuditSeoAuditReportTemplateRoute:
@@ -1121,6 +1234,8 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryCompetitiveAnalysisIndexRoute,
   MarketingLibraryKeywordResearchIndexRoute:
     MarketingLibraryKeywordResearchIndexRoute,
+  MarketingLibraryRankTrackingIndexRoute:
+    MarketingLibraryRankTrackingIndexRoute,
   MarketingLibrarySiteAuditIndexRoute: MarketingLibrarySiteAuditIndexRoute,
 }
 

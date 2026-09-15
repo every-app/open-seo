@@ -535,6 +535,40 @@ export const featurePages = {
           "Start with keywords tied to important pages, active content work, and competitor opportunities discovered in keyword research.",
       },
     ],
+    guides: {
+      title: "The Rank Tracking Strategy Library",
+      description:
+        "Practitioner strategies for tracking what matters and reporting it so it gets read. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "Which keywords to track, and how many",
+          description:
+            "Twenty to fifty terms from Search Console, priced before they go in.",
+          href: "/library/rank-tracking/which-keywords-to-track",
+        },
+        {
+          label: "Is Search Console a rank tracker?",
+          description:
+            "What the free average position hides, and when it is enough.",
+          href: "/library/rank-tracking/search-console-vs-rank-tracker",
+        },
+        {
+          label: "Local rank tracking",
+          description: "Why a local business needs a grid before a tracker.",
+          href: "/library/rank-tracking/local-rank-tracking",
+        },
+        {
+          label: "The keyword ranking report your CEO will read",
+          description:
+            "Lead with the business number and use rankings to explain it.",
+          href: "/library/rank-tracking/keyword-ranking-report",
+        },
+      ],
+      cta: {
+        label: "Browse all rank tracking strategies",
+        href: "/library/rank-tracking",
+      },
+    },
   },
   savedKeywords: {
     slug: FEATURE_PAGE_SLUGS.savedKeywords,

@@ -111,3 +111,35 @@ export const siteAuditStrategies: StrategyLibraryItem[] = [
     href: "/library/site-audit/index-bloat",
   },
 ];
+
+export const RANK_TRACKING_LIBRARY = {
+  name: "Rank Tracking",
+  path: "/library/rank-tracking",
+};
+
+export const rankTrackingStrategies: StrategyLibraryItem[] = [
+  {
+    title: "Which keywords to track, and how many",
+    description:
+      "Twenty to fifty terms from Search Console, tied to pages that earn money, priced before they go in. A 500-row tracker is a report nobody reads.",
+    href: "/library/rank-tracking/which-keywords-to-track",
+  },
+  {
+    title: "Is Search Console a rank tracker? Where the free data stops",
+    description:
+      "Search Console gives an average across every searcher and device, three days late. Enough for many sites. How to tell whether yours needs more.",
+    href: "/library/rank-tracking/search-console-vs-rank-tracker",
+  },
+  {
+    title: "Local rank tracking: position depends on where the searcher stands",
+    description:
+      "Nine points three kilometres apart, three different businesses at number one. Why a local business needs a grid before a tracker.",
+    href: "/library/rank-tracking/local-rank-tracking",
+  },
+  {
+    title: "The keyword ranking report your CEO will read",
+    description:
+      "Lead with the business number, group movement into four counts, explain three rows, say what happens next. One page, every month.",
+    href: "/library/rank-tracking/keyword-ranking-report",
+  },
+];
