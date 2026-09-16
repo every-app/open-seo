@@ -1,0 +1,109 @@
+---
+title: "Anchor text: what 4,871 links said about the words in the link"
+description: "A study across 25 sites found no relationship between the words in a link and what the linked page earned from search. What did predict it was how many different sites linked. What that means for the anchor text you ask for, and the one place the wording still matters."
+---
+
+## Does anchor text still matter for SEO?
+
+For ranking a page on a particular query, less than almost everyone assumes. For describing what a page is about to a reader and a crawler, yes, in the same way a headline does. The two claims get mixed together, and the mixing is where the wasted effort goes.
+
+Here is the measurement. Across 25 websites run by one operator, [a study of 4,871 in-content links](https://seoarcade.com/anchor-text-ranking-study/) pointing at 1,011 pages compared the words in each link with the queries the linked page earned clicks from in Search Console. If anchor text drove rankings, pages whose inbound anchors matched their queries should have earned more.
+
+They did not. The correlation between anchor-query overlap and clicks was 0.04, with a p-value of 0.55, which is nothing. Against organic sessions in analytics it was negative 0.02. A second cut tested whether the share of branded anchors predicted non-brand traffic, and it did not either; and pages with a high share of exact-match anchors showed no penalty. The one variable that did predict clicks, strongly, was the number of distinct sites linking in. [Referring domains](/library/link-building/referring-domains) covers that.
+
+## The trap that produces a false yes
+
+The raw numbers look very different, and it is worth knowing why, because every anchor text study that finds an effect may have fallen into the same hole.
+
+Compare anchor-query overlap with impressions instead of clicks, without controlling for anything, and the correlation is 0.52. That reads as proof. It is an artifact: a page that ranks for 40 queries has 40 chances for one of its anchor words to match one of them, and a page ranking for 3 queries has 3. Control for how many queries a page ranks for and the relationship collapses. If you run your own version of this, control for query count, or you will rediscover the phantom.
+
+## What the practitioners say, and where they agree
+
+The people who build links for a living stopped chasing exact-match anchors years ago, for a different reason: it looked manufactured. Bradley Benner, who tests link tactics on his own sites:
+
+> almost every single link that should be pointed direct to the money site should be a brand anchor or some variation of a brand anchor
+
+His episode on relevance over DR is [on the Unscripted SEO podcast](https://unscriptedseo.com/bradley-benner-on-relevance-over-dr/). Note what he is optimising for: a profile that looks like the profile of a site people link to naturally, which is mostly brand names and page titles. That is a description of what not to do with anchors, and it is right. It is not a claim that the brand anchor lifts the page.
+
+Paul Baterina, who spent thirteen years doing SEO at Revolve, lists the anchor as one signal among several that a crawler reads around a link:
+
+> distance to seed. anchor text, co-occurring text before and after gives context.
+
+His episode is [here](https://unscriptedseo.com/13-years-at-revolve-what-paul-baterina-learned-about-long-tail-pages-link-building-llm-visibility/). The words before and after the link, and the page the link sits on, carry the topic. The anchor is one of them, and the study above suggests it is not the one doing the work.
+
+Cyrus Shepard, who ran correlation studies at Moz, sees a different relationship in the update data:
+
+> I think there's a huge correlation between branded anchor text and performance in these Google updates.
+
+![A quote card reading: I think there's a huge correlation between branded anchor text and performance in these Google updates. Attributed to Cyrus Shepard, founder of Zyppy SEO, from The Unscripted SEO Interview Podcast.](/library/link-building/quote-branded-anchor-updates.png "Cyrus Shepard on branded anchors and updates")
+
+His episode on brand signals is [here](https://unscriptedseo.com/cyrus-shepard-brand-signals-disavow/). Those two findings are not in conflict. Cyrus is describing which sites hold up across a core update, a site-level question about whether a domain reads as a brand. The 4,871-link study is describing whether one page earns more from one query because of the anchor pointing at it. A branded profile is good hygiene for the first. It does nothing measurable for the second.
+
+## What to do with anchor text
+
+Four rules, none of which involve asking for a keyword.
+
+**Let the linking site write it.** When someone links to you, the anchor they choose is a signal about how they read the page. A link that says "the complete resource guide" from a marketing blog and a link that says "park cleanups" from a podcast recap are both telling you something. On a real profile, that is what the legitimate rows look like:
+
+![OpenSEO backlinks table for seoarcade.com, one row per referring domain with the spam rows filtered out: anchors read Local SEO home service marketing, the complete resource guide; link building services; most location pages are still wrong; Park Cleanups; link building and authority resource guide; local-versus-national divide, each on the page it describes](/library/link-building/backlink-anchors-openseo.png "Backlink anchors in OpenSEO")
+
+**Describe the page, once, when you are asked.** If a partner asks what to use, give them the page's title or the brand name and the topic. "SEO Arcade's guide to local SEO for home services" is fine. "local seo home services" is not better, and it is what a bought link looks like.
+
+**Fix wasted anchors on your own site.** The study found one page with 44 inbound internal links and 43 of them reading "see how it works". That is not a ranking problem; it is a reader who cannot tell what the link is. Your own site is the one place you control every anchor, and the fix is to make each one say where it goes.
+
+**Stop reporting anchor distribution as a KPI.** A pie chart of branded, exact-match, partial-match and generic anchors describes a profile. It does not predict anything the business cares about. Report [referring domains](/library/link-building/referring-domains) instead.
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). Backlink rows carry the anchor text, so this is a read of data you may already have pulled for an audit; a page of 100 rows is about 30 credits.
+
+```text
+Using the OpenSEO MCP on project [name], review anchor text for
+[domain]:
+
+1. Call get_backlinks_profile, mode as_is, hideSpam true, 200 rows,
+   sorted by rank descending. Group the rows by anchor text and give
+   me the top 20 anchors with their counts.
+
+2. Classify each of the 20 as brand, page title or description,
+   exact keyword, or generic ("click here", "website", a bare URL).
+
+3. For every exact-keyword anchor, list the source domain and spam
+   score. Tell me which of them look bought.
+
+4. Pull Search Console performance by page and query for the last
+   3 months and, for the five pages with the most inbound rows, show
+   me whether their top query words appear in their inbound anchors.
+
+5. Do not recommend anchors to request. Tell me which of my own
+   pages have inbound links from my own site with anchors that do not
+   describe the destination.
+```
+
+Step 4 usually shows the same thing the study did: the pages that rank do so for queries their anchors never mention. Step 5 is the one that produces work.
+
+## The words are not the lever
+
+The people linking to you decide the words, and the study says the words do not move the page. What moves it is how many of them there are and how many different sites they come from. Spend the effort there, and let the anchor say what the page is.
+
+## Anchor text FAQ
+
+### Does anchor text affect rankings?
+
+Not measurably at the page level, in a study of 4,871 links across 25 sites: the overlap between anchor words and the linked page's queries had a correlation of 0.04 with clicks. The number of distinct linking sites had a correlation of 0.33. Anchor text describes a link; it does not appear to rank the destination.
+
+### What is the best anchor text for backlinks?
+
+Whatever the linking site would naturally write: your brand name, the page title, or a short description of the page. Exact-match keyword anchors do not show a measurable benefit and are the pattern that bought links follow.
+
+### Is exact-match anchor text bad for SEO?
+
+The same study found no penalty for pages with a high share of exact-match anchors, and no benefit. It is inert. The risk is that a profile made of exact-match anchors looks manufactured, which is a reason not to build one, not a reason to fear the ones that arrive on their own.
+
+### Should I use branded anchor text?
+
+As the default, yes, because it is what a natural profile looks like and there is evidence that sites reading as brands hold up better in core updates. As a tactic to lift a particular page for a particular query, no; the branded share of a page's anchors did not predict its non-brand traffic.
+
+### Does OpenSEO show anchor text?
+
+Yes. Every backlink row carries the anchor text, the source page, the target page, dofollow or nofollow, domain rank and spam score, and the table can be filtered and exported.

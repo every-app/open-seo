@@ -1,0 +1,133 @@
+---
+title: "How to get backlinks: start from the pages that already earn them"
+description: "On one site a free traffic calculator has links from 17 domains and a page about park cleanups has 270 backlinks from 29. Neither was pitched. How to read your own top pages before you write an outreach email, and the four plays that earned links on tape."
+---
+
+## Where do backlinks come from?
+
+Mostly from things that already exist. Before you plan an outreach campaign, look at which of your pages have earned links without one. The backlinks tool lists them, and the list is usually a surprise.
+
+Here is seoarcade.com, a small SEO consultancy site, by pages that attract links:
+
+![OpenSEO top pages by backlinks for seoarcade.com: the homepage with 710 backlinks from 151 referring domains, a park cleanup services page with 270 from 29, two podcast service pages, then a free SEO traffic estimate calculator with 34 backlinks from 17 domains, and a partner reports page with 30 from 22](/library/link-building/top-pages-by-backlinks-openseo.png "Top pages by backlinks in OpenSEO")
+
+Two rows stand out once you skip the homepage. A page describing a local park-cleanup service has 270 backlinks from 29 domains, more than any article on the site. And a free calculator that gives a rough estimate of potential SEO traffic has 34 backlinks from 17 domains, more referring domains than any piece of long-form content on the site.
+
+Neither page was the subject of an outreach campaign. One is an event that gave local sites a reason to mention it. The other is a tool. That is the pattern across most profiles: the pages that earn links are the ones that do something for the linking site's reader, and the pages that get pitched are the ones that do something for you.
+
+## Four plays that earned links on tape
+
+Guests on the Unscripted SEO podcast have described what worked for them with enough specificity to copy. Four of them, in rough order of effort.
+
+### 1. Build a tool instead of a post
+
+Christopher Gimmer built a SaaS company on this and says it without hedging:
+
+> people are more willing and likely to link out to a really good tool that actually solves a problem versus a yet another blog post with a wall of text.
+
+![A quote card reading: People are more willing and likely to link out to a really good tool that actually solves a problem versus yet another blog post with a wall of text. Attributed to Christopher Gimmer, founder of Snappa and GoodMetrics, from The Unscripted SEO Interview Podcast.](/library/link-building/quote-link-out-to-a-tool.png "Christopher Gimmer on linkable tools")
+
+His episode is [on the podcast](https://unscriptedseo.com/christopher-gimmer-bootstrapped-saas-ai-overviews/). The calculator in the table above is the small version of that idea. Steven Schneider, whose agency builds calculators for clients, adds the test that keeps it honest:
+
+> can a client rank for this keyword and can they actually find value in the calculator? Because, you know, there's tons of calculator keywords out there.
+
+His episode on calculators as link assets is [here](https://unscriptedseo.com/seo-calculators-assets-steven-schneider/). A tool nobody searches for earns links from nobody. Check the demand for the tool's name before building it; [keyword research](/library/keyword-research) covers how.
+
+### 2. Do something in the real world and let the web report it
+
+The park-cleanup page did not earn 270 backlinks by being well written. The business ran cleanups, and the city, the chamber of commerce, event listings and local news mentioned them. The site's owner described the mechanism on air:
+
+> we got a few links from City Hall and Chamber of Commerce, and we also walked away with multiple bags of trash from that park, and that felt good.
+
+Sponsorships, memberships, events and community work produce links from the sites that report on them, and those sites are exactly the local, relevant sources that [a backlink audit](/library/link-building/backlink-audit) says count for most. The link is a by-product. That is why it works.
+
+### 3. Map the businesses that share your customer
+
+Greg Digneo, who teaches founders to build an audience they own, has a document he asks every client to write before any outreach:
+
+> I can recommend this SOP to sit down and create a Nexus document.
+
+His episode is [here](https://unscriptedseo.com/greg-digneo-on-building-an-audience-you-actually-own/). The nexus is every business that reaches your customer and does not compete with you. A realtor's nexus is inspectors, painters, movers and lenders. A SaaS company's is the tools its customers already pay for, the consultants who set them up, the newsletters they read. Each one is a site with a reason to mention you, because you are useful to their reader, and each mention is a link from a relevant domain.
+
+Write the list before you write a single email. The email to a nexus business is short, because you can name the reason the link helps their reader. The email to a random blog is long, because there is no reason.
+
+### 4. Make it personal enough that nobody else could have sent it
+
+Mike Montague built links for a software company the slow way and got a perfect hit rate:
+
+> I got 10 links for Raven Tools by writing 10 letters.
+
+Ten for ten, he confirmed when asked. Handwritten, on paper, to people whose work he had read. His episode is [here](https://unscriptedseo.com/mike-montague-ai-iron-man-not-terminator/). The lesson is not the postage. It is that ten letters to ten right people beat a thousand emails to a list, and the emails cost more once you count the reputation they spend.
+
+Katie Wagner, who spent fifteen years as a journalist before opening an agency, describes the receiving end of a pitch:
+
+> if you make it easier for them, that is a welcome thing
+
+Her episode is [here](https://unscriptedseo.com/katie-wagner-seo-journalism-are-the-answer-to-llms-and-google-too/). A pitch that includes the quote, the data and the image, so the writer has to do nothing but paste, gets used. A pitch that asks them to look at your site does not.
+
+## What to skip
+
+Buying links from the people who email you about buying links. The [backlink audit](/library/link-building/backlink-audit) shows what those look like on a real profile: casino domains and "premium PBN network" anchors, with spam scores in the 60s, that Google is built to ignore. Patrick Stox of Ahrefs raised the newer risk when talking about AI search systems:
+
+> How long will they hold a grudge against you? Um, so I think you gotta be a little careful on that kind of stuff too.
+
+His episode is [here](https://unscriptedseo.com/patrick-stox-on-building-in-the-geo-era/). Google eventually forgave a cleaned-up profile. There is no evidence yet that the AI systems that now cite sources will.
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). The [link-prospecting](/docs/skills/link-prospecting) skill packages the competitor side of this; the prompt below starts from your own profile, which is cheaper and usually better.
+
+```text
+Using the OpenSEO MCP on project [name], find where my next links
+should come from, for [domain]:
+
+1. Call get_backlinks_overview with scope "domain", then list my top
+   10 pages by referring domains (not backlinks). For each, tell me
+   whether it is a tool, an event or service page, an article, or a
+   company page.
+
+2. Call get_backlinks_profile for the top two non-homepage pages,
+   mode one_per_domain, hideSpam true. For each linking site, say in
+   one line why it linked: cited data, used a tool, reported an event,
+   listed a partner, or something else.
+
+3. From those reasons, tell me which of my pages could earn more of
+   the same kind of link, and what would have to be true for it to.
+
+4. Pull Search Console performance by query for the last 3 months and
+   list any query containing "calculator", "template", "checklist",
+   "tool" or "estimate" where I have impressions. Those are tools
+   people already want from me.
+
+5. Give me a list of 20 businesses that share my customer and do not
+   compete with me, from the referring domains I already have and the
+   domains linking to my two closest competitors.
+```
+
+Step 5 is the nexus document. Step 2 is what makes the outreach email short.
+
+## Earn the first ten before you pitch the hundredth
+
+The profile you already have tells you what people link to on your site and why. Build more of that: a tool someone searches for, a thing you did that a local site can report, a list of the businesses that share your customer, and ten personal notes to ten right people. Then count [referring domains](/library/link-building/referring-domains), not backlinks, and check the [anchor text](/library/link-building/anchor-text) only to make sure nobody bought anything in your name.
+
+## Getting backlinks FAQ
+
+### How do I get backlinks for a new website?
+
+Start with the businesses that share your customer and do not compete with you: partners, suppliers, the tools your customers use, the communities they belong to. Ask for a mention where it helps their reader. Then build one thing worth linking to, a tool or a piece of data, and tell the ten people most likely to use it.
+
+### What is a linkable asset?
+
+A page that does something for another site's reader that a paragraph of prose cannot: a calculator, a template, a dataset, a checklist, a tool. On the site above, a traffic calculator has links from 17 domains; no article on the site has more than 10.
+
+### Does link building outreach still work?
+
+Personal outreach to a short list works. One guest reported ten links from ten handwritten letters. Mass email to a purchased list mostly produces replies from people selling links, and those are the links that show up in an audit with spam scores in the 60s.
+
+### Should I buy backlinks?
+
+No. The sellers who email you produce links from casino and PBN domains that search engines ignore and that make your profile look manufactured. Practitioners on the podcast also warn that AI search systems may not forgive a manipulated profile the way Google eventually did.
+
+### How does OpenSEO help with link building?
+
+The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. The MCP exposes both to an assistant, and the link-prospecting skill packages the competitor workflow.

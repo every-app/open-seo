@@ -312,6 +312,40 @@ export const featurePages = {
       "Self-host or adapt backlink reporting for your team's workflow.",
       "MCP support lets an AI agent pull backlink context during SEO research.",
     ],
+    guides: {
+      title: "The Link Building Strategy Library",
+      description:
+        "Practitioner strategies for reading a backlink profile and earning links that count. Each guide includes a full walkthrough and a copy-paste MCP prompt.",
+      items: [
+        {
+          label: "The backlink audit",
+          description:
+            "Sort by first seen, bucket the junk, read the rows that matter.",
+          href: "/library/link-building/backlink-audit",
+        },
+        {
+          label: "Referring domains, not backlinks",
+          description:
+            "The count to report, and what the top of the list is made of.",
+          href: "/library/link-building/referring-domains",
+        },
+        {
+          label: "Anchor text",
+          description: "What 4,871 links said about the words in the link.",
+          href: "/library/link-building/anchor-text",
+        },
+        {
+          label: "How to get backlinks",
+          description:
+            "Start from the pages that already earn them. Four plays from the podcast.",
+          href: "/library/link-building/how-to-get-backlinks",
+        },
+      ],
+      cta: {
+        label: "Browse all link building strategies",
+        href: "/library/link-building",
+      },
+    },
     featuredLink: {
       title: "Free backlink checker",
       description:

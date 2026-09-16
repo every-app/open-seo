@@ -111,3 +111,35 @@ export const siteAuditStrategies: StrategyLibraryItem[] = [
     href: "/library/site-audit/index-bloat",
   },
 ];
+
+export const LINK_BUILDING_LIBRARY = {
+  name: "Link Building",
+  path: "/library/link-building",
+};
+
+export const linkBuildingStrategies: StrategyLibraryItem[] = [
+  {
+    title: "The backlink audit: sort by first seen, then by relevance",
+    description:
+      "The three newest links to a real site were a casino domain and two link sellers. Underneath them were the links that count. How to tell them apart in an hour.",
+    href: "/library/link-building/backlink-audit",
+  },
+  {
+    title: "Referring domains, not backlinks: the count that moves rankings",
+    description:
+      "2,393 backlinks, 308 referring domains, 872 from one site the owner also runs. Why the second number is the one to report.",
+    href: "/library/link-building/referring-domains",
+  },
+  {
+    title: "Anchor text: what 4,871 links said about the words in the link",
+    description:
+      "A study across 25 sites found no relationship between the words in a link and what the page earned. What did predict it, and the one place wording still matters.",
+    href: "/library/link-building/anchor-text",
+  },
+  {
+    title: "How to get backlinks: start from the pages that already earn them",
+    description:
+      "A free calculator with links from 17 domains, a park-cleanup page with 270 backlinks. Neither was pitched. Four plays that earned links on tape.",
+    href: "/library/link-building/how-to-get-backlinks",
+  },
+];

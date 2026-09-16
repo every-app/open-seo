@@ -1,0 +1,115 @@
+---
+title: "Referring domains, not backlinks: the count that moves rankings"
+description: "One site shows 2,393 backlinks and 308 referring domains, and 872 of those backlinks come from a single domain its owner also runs. Why the second number is the one to report, what a study of 4,871 links found about diversity, and how far from a trusted site you are."
+---
+
+## What is a referring domain?
+
+A website that links to yours at least once. The backlink count is every individual link; the referring domain count is how many different sites those links come from. A site with 2,000 backlinks from 20 domains has 20 votes, cast repeatedly. A site with 300 backlinks from 300 domains has 300 votes.
+
+Here is the difference on a real site. seoarcade.com shows 2,393 backlinks and 308 referring domains. The top referring domain, unscriptedseo.com, accounts for 872 of those backlinks on its own, and the site's owner runs both:
+
+![OpenSEO referring domains table for seoarcade.com: unscriptedseo.com 872 backlinks from 831 pages, castos.com 515, semanticjuice.com 145, jeremyriveraseo.com 80, then a long tail of podcast directories and partner sites, each with rank, spam score and first-seen date](/library/link-building/referring-domains-openseo.png "Referring domains in OpenSEO")
+
+The first four domains supply 1,612 backlinks, two thirds of the total. Two of the four are the owner's own properties and one is the podcast host. A report that says "2,393 backlinks" is describing a site with a few hundred real endorsements and a lot of repetition. That is normal and it is not a problem. It only becomes one when the big number is the one that gets reported.
+
+## Why diversity is the lever
+
+The intuition that more distinct sources beat more links from the same source is old. What is newer is a measurement on a network where every other variable could be held still.
+
+Across 25 sites run by one operator, a [study of 4,871 in-content links](https://seoarcade.com/anchor-text-ranking-study/) pointing at 1,011 pages tested what predicted a page's clicks from search. The count of inbound links from the network predicted performance weakly. The **number of distinct sites** linking to a page predicted it far more strongly, at a correlation of 0.33 with a p-value below one in a hundred million. Anchor wording, tested in the same study, predicted nothing. [Anchor text](/library/link-building/anchor-text) has the detail.
+
+The practical reading: a second link from a site that already links to you is worth something. A first link from a site that has never linked to you is worth more, and it is the number to grow.
+
+Rob Bonham puts the endpoint of that logic plainly:
+
+> whoever has the bigger footprint and the more people talking about them across the web in a positive way, that is the ultimate and all be all of winning and dominating the SERPs.
+
+![A quote card reading: Whoever has the bigger footprint and the more people talking about them across the web in a positive way, that is the ultimate and all be all of winning and dominating the SERPs. Attributed to Rob Bonham, fractional SEO consultant, from The Unscripted SEO Interview Podcast.](/library/link-building/quote-bigger-footprint.png "Rob Bonham on footprint")
+
+His episode on SEO in the agentic age is [on the Unscripted SEO podcast](https://unscriptedseo.com/rob-bonham-seo-agentic-age/). Footprint is a count of places, not a count of links.
+
+## Which referring domains count for more
+
+Not all 308 are equal, and the difference is not the domain's authority score. Two practitioners on the podcast, independently, described the same idea: how many links stand between a site and the sites Google trusts most in its field.
+
+Christopher Gimmer, who bootstrapped a SaaS company, calls it what it is:
+
+> it's a like Kevin Bacon for backlinks.
+
+Nick Eubanks arrived at it from the other direction while working out why a set of sites lost rankings in one update:
+
+> a large factor was actually distance to seed on the link side.
+
+Their episodes are [here](https://unscriptedseo.com/christopher-gimmer-bootstrapped-saas-ai-overviews/) and [here](https://unscriptedseo.com/nick-eubanks-distribution-is-the-last-moat/). The idea is that Google keeps a set of trusted seed sites per field, and a link counts for more the fewer hops it is from one. A referring domain that is itself linked from the trade press in your industry is close. A referring domain with a high score earned in an unrelated field is far away, whatever its number says.
+
+You cannot see the seed list. You can see, in the referring domains table, which of your linking sites are themselves the kind of site people in your field cite. Those rows are worth more than their rank column shows.
+
+## What to do with the table
+
+Three things, in this order.
+
+**Report referring domains, not backlinks.** In the monthly report, the line is "308 referring domains, up from 290" and not "2,393 backlinks". Then add one row: how many of the new domains are ones you had nothing to do with.
+
+**Find the concentration.** Sort by backlinks and look at the top five. If they are your own properties, your host, or a directory that lists every page, they are context, not endorsements. The site above has three of the four in that category. Knowing that stops you from reading a jump in backlinks as a jump in authority when it was a new template link on a site you own.
+
+**Watch first seen.** The column tells you which domains are new this month. The growth chart on the overview shows both lines over a year; on this site, backlinks climbed from around 1,900 to 2,393 over the year while referring domains went from around 110 to 308, most of that in the last two months, which is a different story from the backlink line alone. When the two lines diverge, the referring domains line is the one that describes what changed.
+
+![OpenSEO backlinks overview for seoarcade.com: 2,393 backlinks, 308 referring domains, 2,137 referring pages, rank 41, spam score 5.0, 17 broken backlinks and 47 broken pages, with a year of backlink and referring-domain growth and a new-versus-lost chart](/library/link-building/backlink-overview-openseo.png "Backlinks overview in OpenSEO")
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). The overview is about 50 credits per domain and includes the referring domain breakdown; a page of 100 backlink rows is about 30.
+
+```text
+Using the OpenSEO MCP on project [name], report on referring domains
+for [domain]:
+
+1. Call get_backlinks_overview with scope "domain". Give me backlinks,
+   referring domains, and the ratio between them.
+
+2. From the top referring domains in that response, list the top 10
+   by backlink count with their share of total backlinks. Flag any
+   that are my own properties, my hosting or podcast platform, or a
+   directory.
+
+3. Call get_backlinks_profile, mode one_per_domain, sorted by
+   firstSeen descending, 100 rows, hideSpam true. Tell me how many
+   distinct referring domains first linked in the last 30 days and
+   list them with anchor text and target page.
+
+4. For each new domain, say whether its linking page is about the
+   same topic as the page it links to. Mark the ones that are.
+
+5. Write the two-line report: referring domains now versus 30 days
+   ago, and how many of the new ones are relevant sites I did not
+   arrange.
+```
+
+Step 5 is the number the business should see. Step 2 is what stops you from over-reading it.
+
+## One number, and the story behind it
+
+A backlink total goes up when you add a link to your own footer. A referring domain total goes up when someone new decides your page is worth pointing at. Report the second, know what the top of the list is made of, and spend the link building effort on [sites that have not linked to you yet](/library/link-building/how-to-get-backlinks).
+
+## Referring domains FAQ
+
+### What is the difference between backlinks and referring domains?
+
+A backlink is one link from one page. A referring domain is one website that links to you, however many times. Two thousand backlinks can come from twenty sites. Referring domains is the count of distinct sources and the better measure of how many sites endorse yours.
+
+### How many referring domains do I need?
+
+Enough to match the pages that outrank you for the terms you want, from sites in the same field. Check the competitors' profiles for the number; a [backlink gap analysis](/library/competitive-analysis/backlink-gap-analysis) shows the domains that link to them and not to you.
+
+### Are links from my own other websites worth anything?
+
+A little, and less each time. They are real links, but a search engine can see common ownership and hosting, and the diversity that moves rankings comes from sites you do not control. Count them separately so they do not inflate the total.
+
+### What is distance to seed?
+
+The number of link hops between a site and the sites a search engine trusts most in a field. A link from a site that is itself cited by the industry's authorities is close to the seed and counts for more than a link from a high-scoring site in an unrelated field. You cannot see the seed list; you can judge whether a linking site is one your industry cites.
+
+### Does OpenSEO show referring domains?
+
+Yes. The backlinks overview reports the referring domain count and the top referring domains with their backlink count, rank, spam score and first-seen date, and the growth chart shows backlinks and referring domains over the last year. The free backlink checker shows the summary without an account.

@@ -1,0 +1,119 @@
+---
+title: "The backlink audit: sort by first seen, then by relevance"
+description: "The three newest links to a real site were from a casino domain and two link sellers, with spam scores of 45 to 70. Underneath them were the links that count. How to tell the two apart in an hour, and why relevance beats every third-party score."
+---
+
+## What is a backlink audit for?
+
+Two things, and they pull in different directions. The first is to find out which links are doing anything for the site, so you can get more like them. The second is to find out whether anything pointed at the site is a liability. Most audits spend their time on the second and produce a disavow file. Most sites need the first.
+
+Here is what the newest links to seoarcade.com, a small SEO consultancy site, looked like on the day this was written, sorted by the date they were first seen:
+
+![OpenSEO backlinks table for seoarcade.com sorted by first seen: the three newest links come from a link seller, a PBN reseller and a casino domain with spam scores of 45, 60 and 70, followed by links from a marketing blog, a podcast recap and a related site with spam scores of 0 to 5](/library/link-building/backlink-profile-newest-links-openseo.png "Newest backlinks in OpenSEO")
+
+The three newest are from a link seller, a "premium PBN network service" and a casino domain, with spam scores of 45, 60 and 70 and anchor text that is an advert for buying links. Nobody at the site asked for them. The three below are a marketing blog citing a resource guide, a related site linking a services page, and a podcast recap. Spam scores 0 to 5, anchor text that describes the page.
+
+That is the whole audit in six rows. The junk arrives on its own and announces itself. The links that matter look like someone chose to make them.
+
+## The score is not the audit
+
+Every backlink tool carries an authority number for the linking domain. OpenSEO shows DataForSEO's domain rank alongside a spam score. They are useful for sorting. They are not the verdict.
+
+Bradley Benner, who builds links for a living and tests what works on his own sites, is blunt about what he learned:
+
+> it's not some stupid third party metric like DA or DR or trust flow or anything else that matters about whether a link is valuable or not. What matters is whether it's relevant.
+
+![A quote card reading: It's not some stupid third party metric like DA or DR or trust flow or anything else that matters about whether a link is valuable or not. What matters is whether it's relevant. Attributed to Bradley Benner of Semantic Mastery and Semantic Links, from The Unscripted SEO Interview Podcast.](/library/link-building/quote-whether-its-relevant.png "Bradley Benner on relevance over metrics")
+
+His episode on relevance over DR is [on the Unscripted SEO podcast](https://unscriptedseo.com/bradley-benner-on-relevance-over-dr/). The point holds in the table above: the casino domain has a domain rank of 40, higher than every legitimate link visible beneath it. Sort by rank and the worst link on the page floats to the top.
+
+So the audit has two passes. The first uses the scores to sort. The second reads the rows.
+
+## Pass one: sort and bucket
+
+Pull the full profile with one row per referring domain, which is the default in OpenSEO. Then make four buckets.
+
+**Obvious junk.** Spam score above 30, or anchor text that is an advert, or a source domain whose name has nothing to do with anything. On the profile above, that bucket was three of the newest six and a long tail of `/all/2585/6.html`-shaped URLs on throwaway domains. You will recognise the pattern after ten rows.
+
+**Broken and lost.** OpenSEO flags both. Broken links point at a page that now returns an error; the site above had 17 of them across 47 broken target pages. Those are links someone gave you that you are currently throwing away. A redirect fixes each one in a minute.
+
+**Nofollow and syndication.** Podcast directories, aggregators, social profiles. Real, harmless, and not what you build a strategy on. Count them so they do not inflate the total in your head.
+
+**Everything else.** This is the bucket you audit properly.
+
+## Pass two: read the links that might matter
+
+For each row in the last bucket, the question is not "how strong is this domain" but "would a person on that page have a reason to click through." Jeremy Moser, who runs a link building agency, describes what his team looks for before the anchor text even comes up: whether the linking site is a real business with real traffic, and whether the page is about the same thing yours is. His words on where local businesses get the most from links:
+
+> The typical plays that we see working well for local is definitely more local publication.
+
+His episode is [here](https://unscriptedseo.com/jeremy-moser-it-was-always-just-good-seo/). A link from a town newspaper to a plumber is worth more than a link from a DR 70 marketing blog to the same plumber, and no score will tell you that. The row will, if you open it.
+
+Read the anchor and the surrounding text. Read what the linking page is about. Note whether your link is the only outbound link or one of two hundred. Twenty rows takes twenty minutes and tells you more than any composite.
+
+## What about disavowing?
+
+Less than you think. Cyrus Shepard, formerly of Moz, ran the test people talk about running and did not:
+
+> if I disavow every link to my site, nothing happens.
+
+His episode on brand signals and the disavow tool is [on the podcast](https://unscriptedseo.com/cyrus-shepard-brand-signals-disavow/). Google's own position is that it ignores links it decides are spam, and the disavow tool is for a site that has received a manual action or knows it bought links. The junk in the table above is the kind Google is built to ignore, and the site has never been penalised for it.
+
+If you do build a disavow file, build it from the junk bucket only, at the domain level, and expect nothing visible to happen. OpenSEO exports the rows; it does not write the file, and it should not, because that decision belongs to a person.
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). The overview costs about 50 credits for a domain and each page of 100 backlink rows about 30, so a full audit of a small site is a few hundred credits. The [link-prospecting](/docs/skills/link-prospecting) skill packages the outreach side of this.
+
+```text
+Using the OpenSEO MCP on project [name], audit the backlinks for
+[domain]:
+
+1. Call get_backlinks_overview with scope "domain". Report backlinks,
+   referring domains, rank, spam score, broken backlinks and broken
+   pages.
+
+2. Call get_backlinks_profile, mode one_per_domain, sorted by
+   firstSeen descending, 100 rows. Bucket every row: junk (spam score
+   over 30, or advert-style anchor text), broken or lost, nofollow,
+   or worth reading.
+
+3. For the "worth reading" bucket, list source domain, source page
+   title, anchor text and target page. Flag any target page that
+   returns an error.
+
+4. Pull the next page of 100 with filters maxSpamScore 10 and
+   minDomainRank 20, and tell me which referring domains link to more
+   than one of my pages.
+
+5. Give me two lists: broken target pages to redirect, and the ten
+   linking pages I should read in full.
+```
+
+Step 3 is the one that matters and the one an agent cannot finish for you. It can list the rows. Reading them is the audit.
+
+## The audit is a reading exercise
+
+A backlink profile is a list of decisions other people made about your site. The scores help you sort the list. They do not tell you what anyone decided or why. An hour with the rows does, and it ends with two things you can act on this week: the broken pages to redirect, and a short list of sites that already chose to link to you, which is where [more links usually come from](/library/link-building/how-to-get-backlinks).
+
+## Backlink audit FAQ
+
+### How do I do a backlink audit?
+
+Pull the full profile with one row per referring domain, sorted by first seen. Bucket rows into junk, broken or lost, nofollow, and worth reading. Redirect the broken target pages. Then read the worth-reading rows one at a time, asking whether a person on that page would have a reason to click through.
+
+### What is a toxic backlink?
+
+A link from a page that exists only to sell or host links: link seller listings, PBN adverts, casino and pharmacy domains, and pages with hundreds of unrelated outbound links. They tend to have high spam scores and anchor text that reads like an advert. Google generally ignores them.
+
+### Should I disavow toxic backlinks?
+
+Only if the site has a manual action, or you know links were bought and want them gone. For links that arrived on their own, Google's position is that it ignores them, and practitioners who have tested mass disavows report no visible change. Build the file from the junk bucket at the domain level if you do it at all.
+
+### Is domain rank or DA a good measure of a backlink?
+
+It is a sorting aid, not a verdict. A spam domain can carry a higher rank than a relevant small site. Use the score to order the list, then judge each link on whether the linking page is about the same thing as yours and whether a real site published it.
+
+### Does OpenSEO show broken and lost backlinks?
+
+Yes. The backlinks overview reports broken backlinks and broken target pages, and each row in the profile carries lost and broken status, dofollow or nofollow, domain rank, spam score and first-seen date. The free backlink checker shows the summary and top 15 links without an account.
