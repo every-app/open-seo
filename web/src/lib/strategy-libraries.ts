@@ -133,7 +133,7 @@ export const rankTrackingStrategies: StrategyLibraryItem[] = [
   {
     title: "Local rank tracking: position depends on where the searcher stands",
     description:
-      "Nine points three kilometres apart, three different businesses at number one. Why a local business needs a grid before a tracker.",
+      "Nine points three kilometres apart, four different businesses at number one. Why a local business needs a grid before a tracker.",
     href: "/library/rank-tracking/local-rank-tracking",
   },
   {
