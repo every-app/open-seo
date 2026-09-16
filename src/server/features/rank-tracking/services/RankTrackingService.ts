@@ -41,6 +41,7 @@ async function createConfig(input: {
   projectId: string;
   projectMarket: { locationCode: number; languageCode: string };
   domain: string;
+  searchEngine?: RankTrackingConfig["searchEngine"];
   locationCode?: number;
   languageCode?: string;
   locationName?: string;
@@ -49,6 +50,7 @@ async function createConfig(input: {
   scheduleInterval?: RankTrackingConfig["scheduleInterval"];
 }) {
   const normalizedDomain = normalizeDomain(input.domain);
+  const searchEngine = input.searchEngine ?? "google";
 
   const { locationCode, languageCode } = resolveMarket(
     input,
@@ -64,20 +66,22 @@ async function createConfig(input: {
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
       normalizedDomain,
+      searchEngine,
       locationCode,
       locationName,
     );
-  // The (project, domain, location) row still exists when a domain is
+  // The (project, domain, engine, location) row still exists when a domain is
   // archived — archiving only flips isActive to false. So re-adding an
   // archived domain reactivates that row (keeping its keyword/ranking
   // history) with the freshly chosen settings, rather than colliding with
   // the unique index. An already-active row is a genuine duplicate.
   if (existing?.isActive) {
+    const engineLabel = searchEngine === "bing" ? "Bing" : "Google";
     throw new AppError(
       "VALIDATION_ERROR",
       locationName
-        ? "This domain + city combination is already being tracked"
-        : "This domain + country combination is already being tracked",
+        ? `This domain + city combination is already being tracked on ${engineLabel}`
+        : `This domain + country combination is already being tracked on ${engineLabel}`,
     );
   }
 
@@ -114,6 +118,7 @@ async function createConfig(input: {
     id: configId,
     projectId: input.projectId,
     domain: normalizedDomain,
+    searchEngine,
     locationCode,
     languageCode,
     locationName,
@@ -146,6 +151,19 @@ async function updateConfig(
     isActive?: boolean;
   },
 ) {
+  if (input.locationName) {
+    // searchEngine is create-only, so the existing config's engine is the
+    // only one that can ever apply — check it directly rather than trusting
+    // a caller-supplied engine.
+    const existing = await getValidatedConfig(configId, projectId);
+    if (existing.searchEngine === "bing") {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Local (city) targeting isn't available for Bing — track nationally instead",
+      );
+    }
+  }
+
   const updates: typeof input & { nextCheckAt?: string | null } = {};
 
   if (input.domain !== undefined)

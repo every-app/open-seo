@@ -330,6 +330,20 @@
       "when": 1788651415740,
       "tag": "0046_plain_the_watchers",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1789583703122,
+      "tag": "0047_cultured_sister_grimm",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1789594258738,
+      "tag": "0048_gorgeous_karen_page",
+      "breakpoints": true
     }
   ]
 }

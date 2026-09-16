@@ -50,6 +50,7 @@ export interface RankTrackingRow {
 
 const devicesEnum = z.enum(rankTrackingConfigs.devices.enumValues);
 const scheduleEnum = z.enum(rankTrackingConfigs.scheduleInterval.enumValues);
+const searchEngineEnum = z.enum(rankTrackingConfigs.searchEngine.enumValues);
 // Rank tracking runs against the SERP API, which serves any language in any
 // country — but an unknown code is a *charged* DataForSEO failure, so reject
 // it here at cost 0.
@@ -62,17 +63,29 @@ export const getConfigsSchema = z.object({
   projectId: z.string().uuid(),
 });
 
-export const createConfigSchema = z.object({
-  projectId: z.string().uuid(),
-  domain: domainField,
-  locationCode: z.number().int().positive().optional(),
-  languageCode: languageCodeField.optional(),
-  locationName: z.string().min(1).max(200).optional(),
-  devices: devicesEnum.optional(),
-  serpDepth: z.number().int().min(10).max(100).multipleOf(10),
-  scheduleInterval: scheduleEnum.optional(),
-});
+export const createConfigSchema = z
+  .object({
+    projectId: z.string().uuid(),
+    domain: domainField,
+    searchEngine: searchEngineEnum.optional(),
+    locationCode: z.number().int().positive().optional(),
+    languageCode: languageCodeField.optional(),
+    locationName: z.string().min(1).max(200).optional(),
+    devices: devicesEnum.optional(),
+    serpDepth: z.number().int().min(10).max(100).multipleOf(10),
+    scheduleInterval: scheduleEnum.optional(),
+  })
+  // Bing rank tracking here only supports national-level targeting — no
+  // city/local granularity like Google. Enforced here (not just UI/MCP) so a
+  // direct server-function or API call can't request local tracking on Bing.
+  .refine((input) => !(input.searchEngine === "bing" && input.locationName), {
+    message: "Local (city) targeting isn't available for Bing — track nationally instead",
+    path: ["locationName"],
+  });
 
+// searchEngine is create-only: RankTrackingService.updateConfig never applies
+// it, so it is deliberately absent here rather than accepted and silently
+// ignored.
 export const updateConfigSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),

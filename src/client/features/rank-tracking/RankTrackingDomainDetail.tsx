@@ -334,6 +334,7 @@ export function RankTrackingDomainDetail({
               locationCode={config.locationCode}
               locationName={config.locationName}
               serpDepth={config.serpDepth}
+              searchEngine={config.searchEngine}
             />
           )}
         </div>

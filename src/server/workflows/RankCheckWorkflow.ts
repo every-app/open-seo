@@ -39,6 +39,7 @@ interface RankCheckParams {
   billingCustomer: BillingCustomerContext;
   projectId: string;
   domain: string;
+  searchEngine: "google" | "bing";
   locationCode: number;
   languageCode: string;
   locationName?: string;
@@ -280,6 +281,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
       billingCustomer,
       projectId,
       domain,
+      searchEngine,
       locationCode,
       languageCode,
       locationName,
@@ -345,6 +347,7 @@ export class RankCheckWorkflow extends WorkflowEntrypoint<
           devices,
           serpDepth,
           domain,
+          searchEngine,
           locationCode,
           languageCode,
           locationName,

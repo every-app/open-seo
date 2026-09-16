@@ -47,6 +47,7 @@ interface CheckContext {
   devices: RankTrackingConfig["devices"];
   serpDepth: number;
   domain: string;
+  searchEngine: RankTrackingConfig["searchEngine"];
   locationCode: number;
   languageCode: string;
   locationName?: string;
@@ -96,6 +97,7 @@ async function checkBatchLive(
           device: task.device,
           targetDomain: ctx.domain,
           depth: ctx.serpDepth,
+          engine: ctx.searchEngine,
         })
         .then((r) => ({ ...r, device: task.device })),
     ),
@@ -217,6 +219,7 @@ async function collectQueuedRound(
           keywordId: task.keywordId,
           keyword: task.keyword,
           targetDomain: ctx.domain,
+          engine: ctx.searchEngine,
         }),
       ),
     );
@@ -307,6 +310,7 @@ export async function runQueuedCheck(
             locationName: ctx.locationName,
             depth: ctx.serpDepth,
             targetDomain: ctx.domain,
+            engine: ctx.searchEngine,
           }),
       );
     } catch (error) {

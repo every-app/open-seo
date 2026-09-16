@@ -22,6 +22,16 @@ import { AppError } from "@/server/lib/errors";
 // replaces the shallow snapshot rather than extending it.
 export const SERP_ANALYSIS_DEPTH = 20;
 
+// Rank tracking supports Google and Bing organic SERPs. Both are billed the
+// same way (see src/shared/rank-tracking.ts) and share the same location_code
+// numbering, but they are separate DataForSEO API surfaces
+// (/v3/serp/{engine}/organic/...).
+export type SerpEngine = "google" | "bing";
+
+function serpPath(engine: SerpEngine, suffix: string): string {
+  return `/v3/serp/${engine}/organic/${suffix}`;
+}
+
 /** DataForSEO bills SERPs in pages of 10; depth outside 10-100 is rejected. */
 function clampSerpDepth(depth: number): number {
   return Math.min(100, Math.max(10, depth));
@@ -34,14 +44,21 @@ function clampSerpDepth(depth: number): number {
  * with_subdomains, mirroring buildRankCheckResult exactly: without
  * find_targets_in, a sitelink or PAA mention could stop the crawl before the
  * domain's organic listing and record a false "not ranking".
+ *
+ * Bing: DataForSEO's published Bing SERP docs list stop_crawl_on_match but do
+ * not document find_targets_in for that endpoint. Omit it there until a live
+ * call confirms Bing accepts (or ignores) the field — DataForSEO bills a
+ * rejected "Invalid Field" task, so sending an unverified param on every Bing
+ * rank check is a real cost risk, not just a lint nit.
  */
-function stopCrawlOnTarget(targetDomain: string) {
-  return {
+function stopCrawlOnTarget(engine: SerpEngine, targetDomain: string) {
+  const base = {
     stop_crawl_on_match: [
       { match_value: targetDomain, match_type: "with_subdomains" },
     ],
-    find_targets_in: ["organic"],
   };
+  if (engine === "bing") return base;
+  return { ...base, find_targets_in: ["organic"] };
 }
 
 // Kept as a hand-written schema: the SDK's BaseSerpApiElementItem type omits
@@ -157,31 +174,30 @@ export async function fetchRankCheckSerp(input: {
   device: "desktop" | "mobile";
   targetDomain: string;
   depth: number;
+  engine?: SerpEngine;
 }): Promise<DataforseoApiResponse<RankCheckResult>> {
+  const engine = input.engine ?? "google";
   const depth = clampSerpDepth(input.depth);
   const locationParams = input.locationName
     ? { location_name: input.locationName }
     : { location_code: input.locationCode };
-  const response = await dataforseoPost(
-    "/v3/serp/google/organic/live/advanced",
-    [
-      {
-        keyword: input.keyword,
-        ...locationParams,
-        language_code: input.languageCode,
-        device: input.device,
-        os: input.device === "desktop" ? "windows" : "android",
-        depth,
-        ...stopCrawlOnTarget(input.targetDomain),
-      },
-    ],
-  );
+  const response = await dataforseoPost(serpPath(engine, "live/advanced"), [
+    {
+      keyword: input.keyword,
+      ...locationParams,
+      language_code: input.languageCode,
+      device: input.device,
+      os: input.device === "desktop" ? "windows" : "android",
+      depth,
+      ...stopCrawlOnTarget(engine, input.targetDomain),
+    },
+  ]);
 
   // "No Search Results" (40501) is valid for obscure/new keywords — treat as an
   // empty result set rather than failing the whole rank-tracking run.
   const task = assertOk(response, { treatNoResultsAsEmpty: true });
   const items = parseTaskItems(
-    "google-organic-live-advanced",
+    `${engine}-organic-live-advanced`,
     task,
     serpSnapshotItemSchema,
   );
@@ -216,6 +232,7 @@ export async function postRankCheckTasks(input: {
   locationName?: string;
   depth: number;
   targetDomain: string;
+  engine?: SerpEngine;
 }): Promise<DataforseoApiResponse<PostedRankCheckTask[]>> {
   if (input.tasks.length === 0 || input.tasks.length > MAX_TASKS_PER_POST) {
     throw new AppError(
@@ -223,6 +240,7 @@ export async function postRankCheckTasks(input: {
       `task_post accepts 1-${MAX_TASKS_PER_POST} tasks, got ${input.tasks.length}`,
     );
   }
+  const engine = input.engine ?? "google";
   const depth = clampSerpDepth(input.depth);
   const locationParams = input.locationName
     ? { location_name: input.locationName }
@@ -230,7 +248,7 @@ export async function postRankCheckTasks(input: {
   const response = await dataforseoPost<
     DataforseoTaskLike & { id?: string; data?: Record<string, unknown> }
   >(
-    "/v3/serp/google/organic/task_post",
+    serpPath(engine, "task_post"),
     input.tasks.map((task) => ({
       keyword: task.keyword,
       ...locationParams,
@@ -242,7 +260,7 @@ export async function postRankCheckTasks(input: {
       // task_get later reports the reduced actual cost when the crawl
       // stopped early. We meter customers on the post-time amount —
       // collection-time metering is a possible future optimization.
-      ...stopCrawlOnTarget(input.targetDomain),
+      ...stopCrawlOnTarget(engine, input.targetDomain),
       // Echoed back on the response entry and task_get; used to map a
       // DataForSEO task id back to our keyword without relying on order.
       tag: `${task.keywordId}:${task.device}`,
@@ -282,7 +300,7 @@ export async function postRankCheckTasks(input: {
   return {
     data: posted,
     billing: {
-      path: ["v3", "serp", "google", "organic", "task_post"],
+      path: ["v3", "serp", engine, "organic", "task_post"],
       costUsd,
     },
   };
@@ -305,9 +323,11 @@ export async function fetchRankCheckTaskResult(input: {
   keywordId: string;
   keyword: string;
   targetDomain: string;
+  engine?: SerpEngine;
 }): Promise<RankCheckTaskOutcome> {
+  const engine = input.engine ?? "google";
   const response = await dataforseoGet(
-    `/v3/serp/google/organic/task_get/advanced/${encodeURIComponent(input.taskId)}`,
+    `${serpPath(engine, "task_get/advanced")}/${encodeURIComponent(input.taskId)}`,
   );
   const task = response?.tasks?.[0];
   if (!response || response.status_code !== 20000 || !task) {
@@ -338,7 +358,7 @@ export async function fetchRankCheckTaskResult(input: {
   }
 
   const items = parseTaskItems(
-    "google-organic-task-get-advanced",
+    `${engine}-organic-task-get-advanced`,
     task,
     serpSnapshotItemSchema,
   );

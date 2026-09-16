@@ -44,7 +44,12 @@ export function RankTrackingDetailHeader({
   return (
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 px-4 pt-4 pb-3">
       <div>
-        <h2 className="text-lg font-semibold">{config.domain}</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          {config.domain}
+          {config.searchEngine === "bing" && (
+            <span className="badge badge-sm badge-outline">Bing</span>
+          )}
+        </h2>
         <p className="text-xs text-base-content/60">
           {config.locationName
             ? formatLocationLabel(config.locationName, 2)

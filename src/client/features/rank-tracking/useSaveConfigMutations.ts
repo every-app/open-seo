@@ -9,6 +9,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 
 type ConfigFields = {
+  searchEngine: RankTrackingConfig["searchEngine"];
   devices: "both" | "desktop" | "mobile";
   serpDepth: number;
   locationCode: number;
@@ -27,6 +28,7 @@ export function useSaveConfigMutations(input: {
 }) {
   const { projectId, existingConfig, fields, onCreated, onUpdated } = input;
   const common = {
+    searchEngine: fields.searchEngine,
     devices: fields.devices,
     serpDepth: fields.serpDepth,
     locationCode: fields.locationCode,
@@ -62,7 +64,13 @@ export function useSaveConfigMutations(input: {
           projectId,
           configId: existingConfig!.id,
           domain: normalizedDomain,
-          ...common,
+          // searchEngine is create-only — omitted here on purpose, not sent
+          // for update.
+          devices: fields.devices,
+          serpDepth: fields.serpDepth,
+          locationCode: fields.locationCode,
+          languageCode: fields.languageCode,
+          scheduleInterval: fields.schedule,
           // null clears a previously-set local target; undefined would leave
           // the old location_name in the DB and silently keep city targeting.
           locationName:

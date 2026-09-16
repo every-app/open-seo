@@ -40,6 +40,7 @@ export function RankTrackingTable({
   locationCode,
   locationName,
   serpDepth,
+  searchEngine,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -53,6 +54,7 @@ export function RankTrackingTable({
   locationCode: number;
   locationName?: string | null;
   serpDepth: number;
+  searchEngine?: "google" | "bing";
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -77,6 +79,7 @@ export function RankTrackingTable({
     selectAnchorRef,
     onKeywordClick: handleKeywordClick,
     locationName,
+    searchEngine,
   });
 
   const table = useAppTable({
