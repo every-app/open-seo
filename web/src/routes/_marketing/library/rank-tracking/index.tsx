@@ -229,7 +229,15 @@ function RankTrackingLibraryPage() {
             >
               programmatic discovery with Search Console
             </a>{" "}
-            is how to read it at scale.
+            is how to read it at scale. It is an incomplete record: a share of
+            clicks arrive on queries Search Console never reports, which{" "}
+            <a
+              href="/blogs/dark-queries"
+              className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
+            >
+              The Dark Query Problem
+            </a>{" "}
+            explains and works around.
           </li>
           <li>
             Whether the keyword was worth it. A term can move from 14 to 4 and
