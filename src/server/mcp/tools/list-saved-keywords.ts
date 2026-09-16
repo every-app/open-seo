@@ -69,7 +69,7 @@ export const listSavedKeywordsTool = {
                   row.tags.length > 0
                     ? `  tags:${row.tags.map((tag) => tag.name).join(",")}`
                     : "";
-                return `- ${row.keyword}  vol:${row.searchVolume ?? "?"}  kd:${row.keywordDifficulty ?? "?"}  cpc:${row.cpc != null ? `$${row.cpc.toFixed(2)}` : "?"}${tagText}`;
+                return `- ${row.keyword}  id:${row.id}  vol:${row.searchVolume ?? "?"}  kd:${row.keywordDifficulty ?? "?"}  cpc:${row.cpc != null ? `$${row.cpc.toFixed(2)}` : "?"}${tagText}`;
               })
               .join("\n");
       return mcpResponse({
