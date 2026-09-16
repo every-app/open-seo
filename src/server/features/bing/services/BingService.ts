@@ -33,6 +33,13 @@ async function userHasKey(userId: string): Promise<boolean> {
   return Boolean(await BingApiKeyRepository.getByUserId(userId));
 }
 
+/** Only a verified site can be reported on or connected — an unverified one
+ *  is still pending ownership proof at Bing and must never be offered for
+ *  selection. */
+function onlyVerified(sites: BingSite[]): BingSite[] {
+  return sites.filter((site) => site.IsVerified);
+}
+
 async function getClientForUser(userId: string) {
   const row = await BingApiKeyRepository.getByUserId(userId);
   if (!row) {
@@ -56,7 +63,7 @@ async function saveApiKey(input: {
   const client = createBingWebmasterClient({ apiKey: trimmed });
   let sites: BingSite[];
   try {
-    sites = await client.getUserSites();
+    sites = onlyVerified(await client.getUserSites());
   } catch (error) {
     if (error instanceof BingAuthError) {
       throw new AppError(
@@ -73,7 +80,7 @@ async function saveApiKey(input: {
 
 async function listSitesForUser(userId: string): Promise<BingSite[]> {
   const client = await getClientForUser(userId);
-  return client.getUserSites();
+  return onlyVerified(await client.getUserSites());
 }
 
 /** Map a verified site to a project. Rejects a site not present on the
@@ -85,7 +92,7 @@ async function setSite(input: {
   userId: string;
 }): Promise<BingConnection> {
   const client = await getClientForUser(input.userId);
-  const sites = await client.getUserSites();
+  const sites = onlyVerified(await client.getUserSites());
   const match = sites.find((s) => s.Url === input.siteUrl);
   if (!match) {
     throw new AppError(

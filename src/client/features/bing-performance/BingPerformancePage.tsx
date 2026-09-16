@@ -75,8 +75,20 @@ export function BingPerformancePage({ projectId }: { projectId: string }) {
         downloadCsv(
           `bing-pages-${projectId}.csv`,
           buildCsv(
-            ["Page", "Distinct queries"],
-            data.rows.map((row) => [row.page, row.queryCount]),
+            [
+              "Page",
+              "Impressions",
+              "Clicks",
+              "Avg click position",
+              "Avg impression position",
+            ],
+            data.rows.map((row) => [
+              row.page,
+              row.impressions,
+              row.clicks,
+              row.avgClickPosition,
+              row.avgImpressionPosition,
+            ]),
           ),
         );
       }

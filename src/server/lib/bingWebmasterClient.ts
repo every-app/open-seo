@@ -3,9 +3,12 @@ import { BingApiError, BingAuthError } from "./bingErrors";
 
 export { BingApiError, BingAuthError } from "./bingErrors";
 
-/** One verified site on the API key's Bing Webmaster account. */
+/** One site on the API key's Bing Webmaster account. `IsVerified` is false
+ *  for a site added but not yet ownership-verified — those must be filtered
+ *  out wherever sites are presented for selection. */
 export type BingSite = {
   Url: string;
+  IsVerified: boolean;
 };
 
 /** `GetRankAndTrafficStats` row. Updated daily; Bing gives no start/end date
@@ -28,11 +31,35 @@ export type BingQueryStatsRow = {
   Date: string;
 };
 
-/** `GetPageStats` row. */
+/** `GetPageStats` / `GetQueryPageStats` row. Bing reuses the `QueryStats`
+ *  wire shape for these endpoints, so `Query` holds the PAGE URL here (not a
+ *  search query) and the row carries real click/impression metrics per page —
+ *  there is no separate `Page` field and no (query, page) pairing. */
 export type BingPageStatsRow = {
   Query: string;
-  Page: string;
+  Clicks: number;
+  Impressions: number;
+  AvgClickPosition: number;
+  AvgImpressionPosition: number;
+  Date: string;
 };
+
+/** Bing returns HTTP 400 with `{"ErrorCode":3,"Message":"...InvalidApiKey..."}`
+ *  for a bad key, on top of the more conventional 401/403 — this parses that
+ *  body shape so a 400 invalid-key response isn't treated as an unrelated
+ *  validation error. */
+function isInvalidApiKeyBody(body: string): boolean {
+  try {
+    const parsed: { ErrorCode?: number; Message?: string } = JSON.parse(body);
+    return (
+      parsed.ErrorCode === 3 ||
+      (typeof parsed.Message === "string" &&
+        parsed.Message.toLowerCase().includes("invalidapikey"))
+    );
+  } catch {
+    return false;
+  }
+}
 
 function messageForStatus(status: number, body: string): string {
   if (status === 401 || status === 403) {
@@ -64,6 +91,9 @@ export function createBingWebmasterClient(opts: { apiKey: string }) {
     if (!response.ok) {
       const body = await response.text().catch(() => "");
       if (response.status === 401 || response.status === 403) {
+        throw new BingAuthError();
+      }
+      if (response.status === 400 && isInvalidApiKeyBody(body)) {
         throw new BingAuthError();
       }
       throw new BingApiError(

@@ -12,7 +12,13 @@ type BingQueryRow = {
   avgImpressionPosition: number;
 };
 
-type BingPageRow = { page: string; queryCount: number };
+type BingPageRow = {
+  page: string;
+  clicks: number;
+  impressions: number;
+  avgClickPosition: number;
+  avgImpressionPosition: number;
+};
 
 type BingStrikingRow = {
   query: string;
@@ -199,14 +205,24 @@ export function PageTable({ rows }: { rows: BingPageRow[] }) {
         <thead>
           <tr>
             <th>Page</th>
-            <th className="text-right">Distinct queries</th>
+            <th className="text-right">Impressions</th>
+            <th className="text-right">Clicks</th>
+            <th className="text-right">Avg. click position</th>
+            <th className="text-right">Avg. impression position</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((row) => (
             <tr key={row.page}>
               <td className="max-w-md truncate">{row.page}</td>
-              <td className="text-right">{formatCount(row.queryCount)}</td>
+              <td className="text-right">{formatCount(row.impressions)}</td>
+              <td className="text-right">{formatCount(row.clicks)}</td>
+              <td className="text-right">
+                {formatPosition(row.avgClickPosition)}
+              </td>
+              <td className="text-right">
+                {formatPosition(row.avgImpressionPosition)}
+              </td>
             </tr>
           ))}
         </tbody>

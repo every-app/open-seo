@@ -103,15 +103,40 @@ describe("toQueryRows / toPageRows", () => {
     ]);
   });
 
-  it("collapses query x page rows to distinct-query counts per page, sorted", () => {
+  it("maps page stats (Query field holds the page URL) verbatim, sorted by impressions desc", () => {
     const rows = toPageRows([
-      { Query: "a", Page: "/page-1" },
-      { Query: "b", Page: "/page-1" },
-      { Query: "c", Page: "/page-2" },
+      {
+        Query: "/page-1",
+        Clicks: 2,
+        Impressions: 30,
+        AvgClickPosition: 3.1,
+        AvgImpressionPosition: 5.4,
+        Date: "/Date(1704067200000)/",
+      },
+      {
+        Query: "/page-2",
+        Clicks: 5,
+        Impressions: 90,
+        AvgClickPosition: 1.2,
+        AvgImpressionPosition: 2.3,
+        Date: "/Date(1704067200000)/",
+      },
     ]);
     expect(rows).toEqual([
-      { page: "/page-1", queryCount: 2 },
-      { page: "/page-2", queryCount: 1 },
+      {
+        page: "/page-2",
+        clicks: 5,
+        impressions: 90,
+        avgClickPosition: 1.2,
+        avgImpressionPosition: 2.3,
+      },
+      {
+        page: "/page-1",
+        clicks: 2,
+        impressions: 30,
+        avgClickPosition: 3.1,
+        avgImpressionPosition: 5.4,
+      },
     ]);
   });
 });

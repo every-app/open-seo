@@ -40,10 +40,10 @@ type BingQueryRow = {
 
 type BingPageRow = {
   page: string;
-  /** `GetPageStats` returns (query, page) pairs with no click/impression
-   *  counts of its own, so the only honest metric here is how many distinct
-   *  queries surfaced this page. */
-  queryCount: number;
+  clicks: number;
+  impressions: number;
+  avgClickPosition: number;
+  avgImpressionPosition: number;
 };
 
 type BingStrikingDistanceRow = {
@@ -113,21 +113,19 @@ export function toQueryRows(rows: BingQueryStatsRow[]): BingQueryRow[] {
   }));
 }
 
-/** `GetPageStats` returns one row per (query, page) pair; collapse to one row
- *  per page counting the distinct queries that surfaced it. */
+/** `GetPageStats` returns one row per page, reusing the `QueryStats` wire
+ *  shape so `Query` holds the page URL — sorted by impressions desc like the
+ *  query table. */
 export function toPageRows(rows: BingPageStatsRow[]): BingPageRow[] {
-  const queriesByPage = new Map<string, Set<string>>();
-  for (const row of rows) {
-    const queries = queriesByPage.get(row.Page) ?? new Set<string>();
-    queries.add(row.Query);
-    queriesByPage.set(row.Page, queries);
-  }
   return sort(
-    Array.from(queriesByPage.entries()).map(([page, queries]) => ({
-      page,
-      queryCount: queries.size,
+    rows.map((row) => ({
+      page: row.Query,
+      clicks: row.Clicks,
+      impressions: row.Impressions,
+      avgClickPosition: row.AvgClickPosition,
+      avgImpressionPosition: row.AvgImpressionPosition,
     })),
-    (a, b) => b.queryCount - a.queryCount,
+    (a, b) => b.impressions - a.impressions,
   );
 }
 
