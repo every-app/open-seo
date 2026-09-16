@@ -110,7 +110,6 @@ export const updateRankTrackingConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await RankTrackingService.updateConfig(data.configId, context.projectId, {
       domain: data.domain,
-      searchEngine: data.searchEngine,
       locationCode: data.locationCode,
       languageCode: data.languageCode,
       locationName: data.locationName,

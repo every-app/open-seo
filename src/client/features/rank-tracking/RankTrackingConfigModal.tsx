@@ -218,20 +218,26 @@ function RankTrackingConfigModalContent({
             <span className="label-text font-medium">Search Engine</span>
           </label>
           <div className="flex gap-2">
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label
+              className={`flex items-center gap-2 ${isEdit ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+            >
               <input
                 type="radio"
                 className="radio radio-sm"
                 checked={searchEngine === "google"}
+                disabled={isEdit}
                 onChange={() => setSearchEngine("google")}
               />
               <span className="text-sm">Google</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label
+              className={`flex items-center gap-2 ${isEdit ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+            >
               <input
                 type="radio"
                 className="radio radio-sm"
                 checked={searchEngine === "bing"}
+                disabled={isEdit}
                 onChange={() => {
                   setSearchEngine("bing");
                   // Local (city) targeting isn't available for Bing yet.
@@ -242,6 +248,12 @@ function RankTrackingConfigModalContent({
               <span className="text-sm">Bing</span>
             </label>
           </div>
+          {isEdit && (
+            <div className="mt-1.5 text-xs text-base-content/50">
+              Search engine can't be changed after a domain is added — remove
+              and re-add it to track on a different engine.
+            </div>
+          )}
         </div>
 
         <div className="form-control">

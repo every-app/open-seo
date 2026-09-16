@@ -142,7 +142,6 @@ async function updateConfig(
   projectId: string,
   input: {
     domain?: string;
-    searchEngine?: RankTrackingConfig["searchEngine"];
     locationCode?: number;
     languageCode?: string;
     locationName?: string | null;
@@ -152,12 +151,23 @@ async function updateConfig(
     isActive?: boolean;
   },
 ) {
+  if (input.locationName) {
+    // searchEngine is create-only, so the existing config's engine is the
+    // only one that can ever apply — check it directly rather than trusting
+    // a caller-supplied engine.
+    const existing = await getValidatedConfig(configId, projectId);
+    if (existing.searchEngine === "bing") {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Local (city) targeting isn't available for Bing — track nationally instead",
+      );
+    }
+  }
+
   const updates: typeof input & { nextCheckAt?: string | null } = {};
 
   if (input.domain !== undefined)
     updates.domain = normalizeDomain(input.domain);
-  if (input.searchEngine !== undefined)
-    updates.searchEngine = input.searchEngine;
   if (input.locationCode !== undefined)
     updates.locationCode = input.locationCode;
   if (input.languageCode !== undefined)

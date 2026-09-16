@@ -64,7 +64,13 @@ export function useSaveConfigMutations(input: {
           projectId,
           configId: existingConfig!.id,
           domain: normalizedDomain,
-          ...common,
+          // searchEngine is create-only — omitted here on purpose, not sent
+          // for update.
+          devices: fields.devices,
+          serpDepth: fields.serpDepth,
+          locationCode: fields.locationCode,
+          languageCode: fields.languageCode,
+          scheduleInterval: fields.schedule,
           // null clears a previously-set local target; undefined would leave
           // the old location_name in the DB and silently keep city targeting.
           locationName:
