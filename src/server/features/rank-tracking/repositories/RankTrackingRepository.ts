@@ -70,6 +70,7 @@ async function getConfigById({
 async function getConfigByProjectDomainLocation(
   projectId: string,
   domain: string,
+  searchEngine: "google" | "bing",
   locationCode: number,
   locationName: string | null,
 ) {
@@ -80,10 +81,12 @@ async function getConfigByProjectDomainLocation(
       and(
         eq(rankTrackingConfigs.projectId, projectId),
         eq(rankTrackingConfigs.domain, domain),
+        eq(rankTrackingConfigs.searchEngine, searchEngine),
         eq(rankTrackingConfigs.locationCode, locationCode),
         // National (NULL) and per-city configs are distinct rows — mirrors
         // the partial unique indexes, so a national config and any number of
-        // city configs can coexist for the same domain.
+        // city configs can coexist for the same domain. Same-market configs
+        // on different search engines are also distinct rows.
         locationName === null
           ? isNull(rankTrackingConfigs.locationName)
           : eq(rankTrackingConfigs.locationName, locationName),
@@ -127,6 +130,7 @@ async function getDueConfigsWithOrganization(nowIso: string) {
         id: rankTrackingConfigs.id,
         projectId: rankTrackingConfigs.projectId,
         domain: rankTrackingConfigs.domain,
+        searchEngine: rankTrackingConfigs.searchEngine,
         locationCode: rankTrackingConfigs.locationCode,
         languageCode: rankTrackingConfigs.languageCode,
         locationName: rankTrackingConfigs.locationName,

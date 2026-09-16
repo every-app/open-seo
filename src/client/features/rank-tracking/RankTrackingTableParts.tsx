@@ -19,6 +19,9 @@ const FEATURE_SHORT_LABELS: Record<string, string> = {
   images: "Img",
   shopping: "Shop",
   top_stories: "News",
+  // Bing-only item types (google-organic never returns these).
+  answer_box: "Answer",
+  related_searches: "Related",
 };
 
 const FEATURE_TOOLTIPS: Record<string, string> = {
@@ -32,6 +35,8 @@ const FEATURE_TOOLTIPS: Record<string, string> = {
   images: "Images — image results shown in the SERP",
   shopping: "Shopping — product listings with prices",
   top_stories: "Top Stories — news articles carousel",
+  answer_box: "Answer Box — Bing's direct-answer box at top of results",
+  related_searches: "Related Searches — suggested related queries",
 };
 
 export function SerpFeatureTags({ features }: { features: string[] }) {

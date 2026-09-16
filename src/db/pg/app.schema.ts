@@ -217,6 +217,11 @@ export const rankTrackingConfigs = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     domain: text("domain").notNull(),
+    searchEngine: text("search_engine", {
+      enum: ["google", "bing"],
+    })
+      .notNull()
+      .default("google"),
     locationCode: integer("location_code").notNull().default(2840),
     languageCode: text("language_code").notNull().default("en"),
     devices: text("devices", {
@@ -244,10 +249,16 @@ export const rankTrackingConfigs = pgTable(
       table.createdAt,
     ),
     uniqueIndex("rank_tracking_configs_national_idx")
-      .on(table.projectId, table.domain, table.locationCode)
+      .on(table.projectId, table.domain, table.searchEngine, table.locationCode)
       .where(sql`${table.locationName} IS NULL`),
     uniqueIndex("rank_tracking_configs_local_idx")
-      .on(table.projectId, table.domain, table.locationCode, table.locationName)
+      .on(
+        table.projectId,
+        table.domain,
+        table.searchEngine,
+        table.locationCode,
+        table.locationName,
+      )
       .where(sql`${table.locationName} IS NOT NULL`),
   ],
 );

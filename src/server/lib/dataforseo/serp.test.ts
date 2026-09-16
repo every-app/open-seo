@@ -213,3 +213,95 @@ describe("rank check task queue", () => {
     });
   });
 });
+
+describe("bing engine", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("posts queued tasks to the bing organic path and omits find_targets_in", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [
+          {
+            id: "task-a",
+            status_code: 20100,
+            cost: 0.0006,
+            data: { tag: "kw-1:desktop" },
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const result = await postRankCheckTasks({
+      tasks: [{ keyword: "alpha", keywordId: "kw-1", device: "desktop" }],
+      locationCode: 2840,
+      languageCode: "en",
+      depth: 20,
+      targetDomain: "example.com",
+      engine: "bing",
+    });
+
+    expect(
+      fetchMock.mock.calls.map(([url]) =>
+        typeof url === "string" || url instanceof URL
+          ? url.toString()
+          : url.url,
+      ),
+    ).toEqual(["https://api.dataforseo.com/v3/serp/bing/organic/task_post"]);
+
+    // Bing omits find_targets_in until a live call confirms DataForSEO
+    // accepts it — see stopCrawlOnTarget in serp.ts.
+    expect(
+      parseDataforseoRequestBody(fetchMock.mock.calls[0]?.[1]),
+    ).toMatchObject([
+      {
+        stop_crawl_on_match: [
+          { match_value: "example.com", match_type: "with_subdomains" },
+        ],
+      },
+    ]);
+    const [body] = parseDataforseoRequestBody(
+      fetchMock.mock.calls[0]?.[1],
+    ) as Record<string, unknown>[];
+    expect(body?.find_targets_in).toBeUndefined();
+    expect(result.billing.path).toEqual([
+      "v3",
+      "serp",
+      "bing",
+      "organic",
+      "task_post",
+    ]);
+  });
+
+  it("fetches queued task results from the bing task_get path", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json({
+        status_code: 20000,
+        tasks: [{ id: "task-a", status_code: 40602 }],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const outcome = await fetchRankCheckTaskResult({
+      taskId: "task-a",
+      keywordId: "kw-1",
+      keyword: "alpha",
+      targetDomain: "example.com",
+      engine: "bing",
+    });
+
+    expect(outcome).toEqual({ status: "pending" });
+    expect(
+      fetchMock.mock.calls.map(([url]) =>
+        typeof url === "string" || url instanceof URL
+          ? url.toString()
+          : url.url,
+      ),
+    ).toEqual([
+      "https://api.dataforseo.com/v3/serp/bing/organic/task_get/advanced/task-a",
+    ]);
+  });
+});

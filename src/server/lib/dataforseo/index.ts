@@ -47,6 +47,7 @@ export type {
   RankCheckResult,
   RankCheckTaskInput,
   PostedRankCheckTask,
+  SerpEngine,
 } from "@/server/lib/dataforseo/serp";
 
 export type {

@@ -9,6 +9,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 
 type ConfigFields = {
+  searchEngine: RankTrackingConfig["searchEngine"];
   devices: "both" | "desktop" | "mobile";
   serpDepth: number;
   locationCode: number;
@@ -27,6 +28,7 @@ export function useSaveConfigMutations(input: {
 }) {
   const { projectId, existingConfig, fields, onCreated, onUpdated } = input;
   const common = {
+    searchEngine: fields.searchEngine,
     devices: fields.devices,
     serpDepth: fields.serpDepth,
     locationCode: fields.locationCode,

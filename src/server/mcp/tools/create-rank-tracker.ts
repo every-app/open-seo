@@ -24,6 +24,10 @@ const inputSchema = {
     .describe(
       "Domain to track. Defaults to the project's domain. Accepts a hostname or URL and stores the normalized hostname.",
     ),
+  searchEngine: z
+    .enum(["google", "bing"])
+    .optional()
+    .describe("Search engine to track rankings on. Defaults to google."),
   locationCode: locationCodeSchema.optional(),
   languageCode: languageCodeSchema.optional(),
   locationName: z
@@ -32,7 +36,9 @@ const inputSchema = {
     .min(1)
     .max(200)
     .optional()
-    .describe("Optional city or region name for local rank tracking."),
+    .describe(
+      "Optional city or region name for local rank tracking. Bing configs are national-only in v1 and ignore this.",
+    ),
   devices: z
     .enum(["desktop", "mobile", "both"])
     .optional()
@@ -88,9 +94,11 @@ export const createRankTrackerTool = {
       projectId: args.projectId,
       projectMarket: context.project,
       domain,
+      searchEngine: args.searchEngine,
       locationCode: args.locationCode,
       languageCode: args.languageCode,
-      locationName: args.locationName,
+      locationName:
+        args.searchEngine === "bing" ? undefined : args.locationName,
       devices: args.devices ?? "mobile",
       serpDepth: args.serpDepth ?? 40,
       scheduleInterval: args.scheduleInterval ?? "manual",
@@ -103,6 +111,7 @@ export const createRankTrackerTool = {
         properties: {
           project_id: args.projectId,
           domain: config.domain,
+          search_engine: config.searchEngine,
           devices: config.devices,
           schedule: config.scheduleInterval,
           source: "mcp",

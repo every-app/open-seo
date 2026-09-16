@@ -50,6 +50,7 @@ export interface RankTrackingRow {
 
 const devicesEnum = z.enum(rankTrackingConfigs.devices.enumValues);
 const scheduleEnum = z.enum(rankTrackingConfigs.scheduleInterval.enumValues);
+const searchEngineEnum = z.enum(rankTrackingConfigs.searchEngine.enumValues);
 // Rank tracking runs against the SERP API, which serves any language in any
 // country — but an unknown code is a *charged* DataForSEO failure, so reject
 // it here at cost 0.
@@ -65,6 +66,7 @@ export const getConfigsSchema = z.object({
 export const createConfigSchema = z.object({
   projectId: z.string().uuid(),
   domain: domainField,
+  searchEngine: searchEngineEnum.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: languageCodeField.optional(),
   locationName: z.string().min(1).max(200).optional(),
@@ -77,6 +79,7 @@ export const updateConfigSchema = z.object({
   projectId: z.string().uuid(),
   configId: z.string().uuid(),
   domain: domainField.optional(),
+  searchEngine: searchEngineEnum.optional(),
   locationCode: z.number().int().positive().optional(),
   languageCode: languageCodeField.optional(),
   locationName: z.string().min(1).max(200).nullable().optional(),

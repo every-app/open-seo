@@ -111,6 +111,7 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.getConfigByProjectDomainLocation).toHaveBeenCalledWith(
       "project_1",
       "acme.com",
+      "google",
       2840,
       "Enid,Oklahoma,United States",
     );
@@ -120,6 +121,7 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.getConfigByProjectDomainLocation).toHaveBeenLastCalledWith(
       "project_1",
       "acme.com",
+      "google",
       2840,
       null,
     );

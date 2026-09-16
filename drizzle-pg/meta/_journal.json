@@ -183,6 +183,13 @@
       "when": 1789583706588,
       "tag": "0025_wild_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789594261588,
+      "tag": "0026_old_jamie_braddock",
+      "breakpoints": true
     }
   ]
 }

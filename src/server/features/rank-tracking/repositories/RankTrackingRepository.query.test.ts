@@ -45,6 +45,7 @@ beforeAll(async () => {
       id TEXT PRIMARY KEY,
       project_id TEXT NOT NULL,
       domain TEXT NOT NULL,
+      search_engine TEXT NOT NULL DEFAULT 'google',
       location_code INTEGER NOT NULL DEFAULT 2840,
       language_code TEXT NOT NULL DEFAULT 'en',
       devices TEXT NOT NULL DEFAULT 'both',

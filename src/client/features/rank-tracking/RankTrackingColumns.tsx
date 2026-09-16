@@ -64,21 +64,28 @@ export function SortableHeader({
 // Local configs fetch volume scoped to the tracked city, so the header must
 // say which number the user is looking at — national volume can overstate
 // local demand by orders of magnitude.
-function makeVolumeColumn(locationLabel?: string): ColumnDef<RankTrackingRow> {
+function makeVolumeColumn(
+  locationLabel?: string,
+  // Keyword volume/CPC always comes from Google-based Labs/Ads endpoints —
+  // DataForSEO has no Bing volume source — so a Bing tracker's numbers are
+  // still Google demand, not Bing's.
+  searchEngine?: "google" | "bing",
+): ColumnDef<RankTrackingRow> {
+  const label = locationLabel
+    ? "Local volume"
+    : searchEngine === "bing"
+      ? "Google volume"
+      : "Volume";
+  const tooltip = locationLabel
+    ? `Estimated monthly searches in ${locationLabel} from Google Ads`
+    : searchEngine === "bing"
+      ? "Estimated monthly Google searches from Google Ads — no Bing volume source exists"
+      : undefined;
   return {
     id: "volume",
     accessorFn: (row) => row.searchVolume ?? undefined,
     header: ({ column }) => (
-      <SortableHeader
-        column={column}
-        label={locationLabel ? "Local volume" : "Volume"}
-        id="volume"
-        tooltip={
-          locationLabel
-            ? `Estimated monthly searches in ${locationLabel} from Google Ads`
-            : undefined
-        }
-      />
+      <SortableHeader column={column} label={label} id="volume" tooltip={tooltip} />
     ),
     size: 90,
     cell: ({ getValue }) => (
@@ -213,6 +220,7 @@ export function useRankTrackingColumns(options: {
   selectAnchorRef: MutableRefObject<SelectionAnchor | null>;
   onKeywordClick: (row: RankTrackingRow) => void;
   locationName?: string | null;
+  searchEngine?: "google" | "bing";
 }): ColumnDef<RankTrackingRow>[] {
   const {
     showDesktop,
@@ -221,6 +229,7 @@ export function useRankTrackingColumns(options: {
     selectAnchorRef,
     onKeywordClick,
     locationName,
+    searchEngine,
   } = options;
   const locationLabel = locationName
     ? formatLocationLabel(locationName, 2)
@@ -238,7 +247,7 @@ export function useRankTrackingColumns(options: {
       cols.push(makeDeviceColumn("mobile"));
       cols.push(makeUrlColumn("mobile", domain));
     }
-    cols.push(makeVolumeColumn(locationLabel), kdColumn, cpcColumn);
+    cols.push(makeVolumeColumn(locationLabel, searchEngine), kdColumn, cpcColumn);
     if (showDesktop) {
       cols.push(makeSerpColumn("desktop"));
     }
@@ -253,5 +262,6 @@ export function useRankTrackingColumns(options: {
     selectAnchorRef,
     onKeywordClick,
     locationLabel,
+    searchEngine,
   ]);
 }

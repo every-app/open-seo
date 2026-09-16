@@ -213,7 +213,12 @@ function DomainRow({
         aria-label={`Open ${summary.domain}`}
       />
       <div className="min-w-0 flex-1 pointer-events-none">
-        <p className="font-medium truncate">{summary.domain}</p>
+        <p className="font-medium truncate flex items-center gap-2">
+          {summary.domain}
+          {summary.searchEngine === "bing" && (
+            <span className="badge badge-xs badge-outline">Bing</span>
+          )}
+        </p>
         <p className="text-xs text-base-content/60">
           {summary.locationName
             ? formatLocationLabel(summary.locationName, 2)

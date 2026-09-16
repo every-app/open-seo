@@ -77,6 +77,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
       projectId: context.projectId,
       projectMarket: context.project,
       domain: data.domain,
+      searchEngine: data.searchEngine,
       locationCode: data.locationCode,
       languageCode: data.languageCode,
       locationName: data.locationName,
@@ -93,6 +94,7 @@ export const createRankTrackingConfig = createServerFn({ method: "POST" })
         properties: {
           project_id: context.projectId,
           domain: data.domain,
+          search_engine: data.searchEngine ?? "google",
           devices: data.devices ?? "both",
           schedule: data.scheduleInterval ?? "weekly",
         },
@@ -108,6 +110,7 @@ export const updateRankTrackingConfig = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     await RankTrackingService.updateConfig(data.configId, context.projectId, {
       domain: data.domain,
+      searchEngine: data.searchEngine,
       locationCode: data.locationCode,
       languageCode: data.languageCode,
       locationName: data.locationName,

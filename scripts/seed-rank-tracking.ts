@@ -82,6 +82,7 @@ async function main() {
       id: configId,
       projectId,
       domain,
+      searchEngine: "google",
       locationCode: LOCATION_CODE,
       languageCode: "en",
       devices: "both",
