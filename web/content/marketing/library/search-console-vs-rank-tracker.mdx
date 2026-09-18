@@ -1,6 +1,6 @@
 ---
 title: "Is Search Console a rank tracker? Where the free data stops"
-description: "Search Console tells you an average position across every searcher, device, and country, three days late, for the queries it chooses to show you. That is enough for a lot of sites. Here is how to tell whether yours is one of them."
+description: "Search Console tells you an average position across searchers, devices, and countries, for the queries it chooses to show you. That is enough for a lot of sites. Here is how to tell whether yours is one of them."
 ---
 
 ## Can you check keyword rankings for free?
@@ -17,9 +17,9 @@ So a query at "position 8.4" might be position 3 on desktop in one state and pos
 
 Three other properties of the data shape what you can do with it:
 
-- **It runs two to three days behind.** Yesterday's results are not there yet, and the most recent days can be revised.
+- **Recent data can be preliminary.** The [24-hour view](https://developers.google.com/search/blog/2024/12/recent-data-search-console) shows data within hours. Finalized reports arrive later, and recent figures can change.
 - **It keeps 16 months.** Grant Simmons, who ran search at Homes.com and now works with Fiat Growth, points out that this is the part people waste: "generally you get a lot more information when you look at the 16 months of Google search console data to have an understanding of if the article has been around for that long all the queries that have mapped not just the most recent queries I think that's often forgotten." His episode on measurement is [on the Unscripted SEO podcast](https://unscriptedseo.com/grant-simmons-on-entity-seo-llms-and-the-future-of-search-visibility/).
-![A quote card reading: You get a lot more information when you look at the 16 months of Google Search Console data. Attributed to Grant Simmons of Fiat Growth, formerly Homes.com, from The Unscripted SEO Interview Podcast.](/library/rank-tracking/quote-sixteen-months-search-console.png "Grant Simmons on 16 months of Search Console data")
+  ![A quote card reading: You get a lot more information when you look at the 16 months of Google Search Console data. Attributed to Grant Simmons of Fiat Growth, formerly Homes.com, from The Unscripted SEO Interview Podcast.](/library/rank-tracking/quote-sixteen-months-search-console.png "Grant Simmons on 16 months of Search Console data")
 
 - **It does not show every query.** A share of your clicks arrive on queries Search Console never reports, for privacy reasons. I have a post that earns about a hundred clicks a month, and the query report explains twelve of them. [The Dark Query Problem](/blogs/dark-queries) is about what to do with the rest.
 
@@ -29,10 +29,10 @@ There is one more thing worth knowing if you compare Search Console across time.
 
 A tracker asks Google a specific question on a schedule you set: for this keyword, from this location, on this device, where does this domain appear, and what else is on the page? It records the answer as a number, not an average.
 
-That gets you five things Search Console will not give you:
+A tracker puts these measurements together for each scheduled check:
 
 1. **A single position** for one keyword on one device in one place, comparable week to week.
-2. **The ranking URL.** Which of your pages Google chose, which tells you when two pages are competing.
+2. **The ranking URL for that check.** Search Console also reports URLs when you group by query and page; a tracker records which URL appeared in the specific search it ran.
 3. **The previous position**, so movement is a number in a column rather than a chart you squint at.
 4. **SERP features** on the page: an AI overview, a local pack, a video carousel, a shopping block. When your position holds and your clicks fall, this column is usually the reason.
 5. **Competitors' positions**, for terms you do not rank for at all. Search Console has nothing to say about a query you never appeared for.
@@ -106,7 +106,7 @@ Everything a tracker reports is a description of a results page. Search Console 
 
 ### Is Google Search Console a rank tracker?
 
-Not in the usual sense. It reports an average position per query or page, blended across devices, countries, and dates, with a two to three day delay, for your own verified site only. A rank tracker records one position per keyword, device, and location on a schedule, and can include sites you do not own.
+Not in the usual sense. It reports an average position per query or page, blended across devices, countries, and dates, for your own verified site only. Its 24-hour view shows recent preliminary data; finalized reports arrive later. A rank tracker records one position per keyword, device, and location on a schedule, and can include sites you do not own.
 
 ### Why does my Search Console position not match the rank tracker?
 

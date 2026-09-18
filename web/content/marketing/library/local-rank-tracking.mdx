@@ -31,19 +31,21 @@ The company I was checking on appeared at none of the eighteen points. The grid'
 
 ## Storefront or service area
 
-The other thing that changes the map is what kind of business Google thinks you are. A storefront ranks from its address. A service-area business, one that travels to the customer, has no fixed point to rank from, and Melissa is direct about the consequence:
+Set up your Business Profile to match how you serve customers. [Google allows eligible hybrid businesses](https://support.google.com/business/answer/9157481) to show a storefront address and a service area when they both receive customers and travel or deliver to them. If customers do not visit your address, hide it and list the area you serve.
+
+Melissa describes the difficulty of competing across locations:
 
 > it can be a lot easier to rank an actual brick and mortar location than it can be a service area page because you open up the competitiveness
 
-Two decisions follow from it. Do not register a storefront as a service area to "reach further", because you are trading a strong signal at one point for a weak one everywhere. And if you are a service-area business, build location pages for the neighbourhoods and towns you serve, so you show up in the organic results where the map pack is not going to favour you. [Map positioning to real demand](/library/keyword-research/positioning-to-demand) covers finding which of those towns search for it.
+Choose the profile settings that describe your business accurately. You can also build useful location pages for the neighbourhoods and towns you serve to reach customers through organic website results. [Map positioning to real demand](/library/keyword-research/positioning-to-demand) covers finding which of those towns search for it.
 
 ## Which points to track
 
-A grid is a survey, not a schedule. Run one to learn the shape of your visibility, then set up ongoing tracking at the points that matter, which are the ones your customers search from. Melissa's method for finding them:
+Run a Maps grid to survey your visibility, then repeat it with the same settings to compare positions over time. Choose points where your customers search. Melissa's method for finding them:
 
 > there's also testing that needs to be involved there to figure out, know, like what areas, you know, looking in GA4 and other analytics tools, you know, where are people searching from down to at that city level
 
-That gives you two to five named places. In OpenSEO each tracker has a location, so a business serving three towns runs three small trackers rather than one tracker guessing from the middle. Twenty keywords in three locations is 60 checks a week, which on the queued schedule is about $0.60 a month.
+That gives you two to five named places. Separately, OpenSEO rank trackers measure your website's organic rankings from a chosen location. They do not track your Business Profile's Maps position. A business serving three towns can use three small trackers to follow its organic results. Twenty keywords in three locations is 60 checks a week, which on the queued schedule is about $0.60 a month.
 
 The grid itself is priced per point: a 3x3 grid is nine Maps searches, a 5x5 is twenty-five, and the app shows the cost before it runs. Use the 3x3 for a quarterly survey and the 5x5 when you are deciding whether to open or list a second location.
 
@@ -59,7 +61,7 @@ A local grid and three small trackers are a few dollars of that, and they are wh
 
 ## Run this with the OpenSEO MCP
 
-Connect the [OpenSEO MCP](/docs/mcp) and use the local SEO tools together: the grid to survey, the tracker to follow up. The [local-seo](/docs/skills/local-seo) skill packages this workflow.
+Connect the [OpenSEO MCP](/docs/mcp): use the grid for Maps positions and a rank tracker for organic website rankings. The [local-seo](/docs/skills/local-seo) skill packages this workflow.
 
 ```text
 Using the OpenSEO MCP on project [name] for [business name] at
@@ -79,9 +81,10 @@ Using the OpenSEO MCP on project [name] for [business name] at
 4. Summarise: at how many of the 9 points am I in the top 3, how
    many in the top 10, and which competitors hold #1 where I do not.
 
-5. Create one rank tracker per location I name, weekly, mobile,
-   depth 20, and estimate the cost with 20 keywords each before
-   adding anything.
+5. For organic website rankings, separately create one rank tracker
+   per location I name, weekly, mobile, depth 20. Estimate the cost
+   with 20 keywords each before adding anything. Explain that these
+   trackers do not measure Maps positions.
 ```
 
 Step 1 is the one that would have saved the company above a quarter of guessing. Match on the cid, not the name, once you have it.
@@ -102,8 +105,8 @@ Nine, spaced to cover the area you serve, is enough to see the shape. Use twenty
 
 ### Should a service-area business set up a service area or an address on Google?
 
-Whichever is true. A storefront that lists a service area dilutes the proximity signal it would have had at its address. A business that travels to customers has to use a service area, and should build location pages on its site for the places it serves.
+Use the settings that match how you serve customers. An eligible storefront that also visits or delivers to customers can show both an address and a service area. If customers do not visit your address, hide it and list your service area.
 
 ### Does OpenSEO do local rank tracking?
 
-Yes. Each rank tracker takes a location, so you can track the same keywords from several towns, and the MCP includes a local rank grid tool that runs one Maps search per grid point. Grid searches and rank checks use credits, and the app shows the cost before either runs; on the hosted app they need the $10/month plan, which includes $10 of credits.
+Yes. The MCP local rank grid measures Business Profile positions in Maps. Scheduled rank trackers measure organic website rankings from a chosen location. Both use credits. On the hosted app, scheduled and live rank-tracker checks require the $10/month plan, which includes $10 of credits.

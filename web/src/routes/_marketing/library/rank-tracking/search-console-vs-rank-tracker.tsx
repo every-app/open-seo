@@ -13,7 +13,7 @@ const faqs = [
   {
     question: "Is Google Search Console a rank tracker?",
     answer:
-      "Not in the usual sense. It reports an average position per query or page, blended across devices, countries, and dates, with a two to three day delay, for your own verified site only. A rank tracker records one position per keyword, device, and location on a schedule, and can include sites you do not own.",
+      "Not in the usual sense. It reports an average position per query or page, blended across devices, countries, and dates, for your own verified site only. Its 24-hour view shows recent preliminary data; finalized reports arrive later. A rank tracker records one position per keyword, device, and location on a schedule, and can include sites you do not own.",
   },
   {
     question: "Why does my Search Console position not match the rank tracker?",
@@ -23,7 +23,7 @@ const faqs = [
   {
     question: "How accurate is Search Console average position?",
     answer:
-      "It is Google's own count of where your result appeared, so the impressions and clicks are as accurate as any data you will get. The position is accurate as an average; it is just not a rank. Filter by device and country and the average becomes much closer to what a searcher sees.",
+      "It is Google's own count of where your result appeared, so the impressions and clicks are as accurate as any data you will get. The position is accurate as an average; it is not a rank. Filter by device and country and the average becomes much closer to what a searcher sees.",
   },
   {
     question: "How do I check keyword rankings for free?",

@@ -24,18 +24,18 @@ const faqs = [
   {
     question: "How many points should a local rank grid have?",
     answer:
-      "Nine, spaced to cover the area you actually serve, is enough to see the shape. Use twenty-five when you are making a location decision. Beyond that you are paying for resolution you will not act on.",
+      "Nine, spaced to cover the area you serve, is enough to see the shape. Use twenty-five when you are making a location decision. Beyond that you are paying for resolution you will not act on.",
   },
   {
     question:
       "Should a service-area business set up a service area or an address on Google?",
     answer:
-      "Whichever is true. A storefront that lists a service area dilutes the proximity signal it would have had at its address. A business that genuinely travels to customers has to use a service area, and should build location pages on its site for the places it serves.",
+      "Use the settings that match how you serve customers. An eligible storefront that also visits or delivers to customers can show both an address and a service area. If customers do not visit your address, hide it and list your service area.",
   },
   {
     question: "Does OpenSEO do local rank tracking?",
     answer:
-      "Yes. Each rank tracker takes a location, so you can track the same keywords from several towns, and the MCP includes a local rank grid tool that runs one Maps search per grid point. Grid searches and rank checks use credits, and the app shows the cost before either runs; on the hosted app they need the $10/month plan, which includes $10 of credits.",
+      "Yes. The MCP local rank grid measures Business Profile positions in Maps. Scheduled rank trackers measure organic website rankings from a chosen location. Both use credits. On the hosted app, scheduled and live rank-tracker checks require the $10/month plan, which includes $10 of credits.",
   },
 ];
 

@@ -34,7 +34,7 @@ Rankings come next, as counts rather than rows. Of the keywords tracked this per
 - how many dropped off page one
 - how many did not move
 
-Four numbers. A reader can hold them, and they say whether the month was good before anyone looks at a keyword. In OpenSEO every tracked keyword carries its previous position, so the buckets are a sort, not a spreadsheet exercise.
+Label the comparison period next to these counts. The OpenSEO MCP currently compares ranks against a seven-day baseline, falling back to the earliest available snapshot when history is sparse. In a monthly report, present this as the latest weekly movement alongside the monthly click totals. It is not a month-over-month ranking comparison.
 
 ### 3. The three rows that explain the number
 
@@ -78,8 +78,13 @@ Connect Search Console to the project and the [OpenSEO MCP](/docs/mcp) to your a
 Using the OpenSEO MCP on project [name], write this month's ranking
 report for [company].
 
-1. Call get_rank_tracker and pull every tracked keyword with
-   position, previous position, and ranking URL.
+1. Call get_rank_tracker to list trackers, then read the relevant
+   ones with trackerId. Pull every tracked keyword with position,
+   previous position, and ranking URL. Label this section "Latest
+   weekly ranking movement": the comparison uses a seven-day
+   baseline, with an earliest-available fallback for sparse history.
+   Do not present it as monthly movement or assume a full week of
+   history when that is not established.
 
 2. Pull Search Console performance for the last 28 days and the 28
    days before, by page, filtered to the URLs from step 1. Give me
@@ -93,8 +98,11 @@ report for [company].
    Console clicks on its URL changed by more than 30%. Include SERP
    features for that third row.
 
-5. Split everything above into brand (queries containing "[brand]")
-   and non-brand, and report the non-brand clicks on their own line.
+5. Pull Search Console query data for the same two 28-day periods,
+   filtered to the same URLs from step 1. Split reported queries into
+   brand (containing "[brand]") and non-brand. Report non-brand clicks
+   separately. Note that query totals can omit anonymized queries
+   and differ from page totals.
 
 6. Do not compute an average position across keywords. Do not
    invent a score. Put the full table in a separate block at the end.

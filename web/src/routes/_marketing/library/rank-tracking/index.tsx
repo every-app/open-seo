@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "How often should rankings be checked?",
     answer:
-      "Weekly is the useful default. Positions move day to day for reasons that have nothing to do with your work, and a daily check mostly records that noise at thirty times the cost. Check daily during a migration or a launch, then go back to weekly.",
+      "Weekly is the useful default. Positions move day to day for reasons that have nothing to do with your work, and a daily check mostly records that noise at about seven times the cost. Check daily during a migration or a launch, then go back to weekly.",
   },
   {
     question: "Should I track mobile or desktop rankings?",
@@ -28,7 +28,7 @@ const faqs = [
   {
     question: "Is Google Search Console a rank tracker?",
     answer:
-      "Not quite. It reports an average position per query blended across devices, countries, and dates, with a delay of two to three days, for your own site only. That is enough for a single-location site that wants direction. A tracker adds a precise position per keyword and device, the ranking URL, SERP features, and competitors, and costs money for each check.",
+      "Not quite. It reports an average position per query blended across devices, countries, and dates, for your own site only. Its 24-hour view shows recent preliminary data; finalized reports arrive later. That is enough for a single-location site that wants direction. A tracker adds a precise position per keyword and device, the ranking URL, SERP features, and competitors, and costs money for each check.",
   },
   {
     question: "How much does rank tracking cost in OpenSEO?",
@@ -38,7 +38,7 @@ const faqs = [
   {
     question: "Can I track local rankings for a specific city?",
     answer:
-      "Yes. Each tracker in OpenSEO has a location, so you can track the same keywords from several towns, and the MCP includes a local rank grid that runs a Maps search from each point of a 3x3 or 5x5 grid to show how far your visibility reaches.",
+      "Yes. Each rank tracker measures organic website rankings from a chosen location, so you can track the same keywords from several towns. For Business Profile positions in Maps, use the separate MCP local rank grid, which searches from each point of a 3x3 or 5x5 grid.",
   },
 ];
 

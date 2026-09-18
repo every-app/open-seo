@@ -127,7 +127,7 @@ export const rankTrackingStrategies: StrategyLibraryItem[] = [
   {
     title: "Is Search Console a rank tracker? Where the free data stops",
     description:
-      "Search Console gives an average across every searcher and device, three days late. Enough for many sites. How to tell whether yours needs more.",
+      "Search Console gives an average across searchers and devices, with preliminary recent data. Enough for many sites. How to tell whether yours needs more.",
     href: "/library/rank-tracking/search-console-vs-rank-tracker",
   },
   {
