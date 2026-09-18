@@ -87,7 +87,7 @@ export function analyzeHtml(
 
   const handleMetaTag = (attribs: Record<string, string>) => {
     const content = attribs["content"];
-    if (attribs["name"] === "description") {
+    if (attribs["name"]?.toLowerCase() === "description") {
       metaDescription ??= content?.trim() ?? "";
     } else if (attribs["name"] === "robots") {
       robotsMeta ??= content ?? null;
