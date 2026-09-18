@@ -138,8 +138,15 @@ export async function crawlPage(
       });
     }
 
-    const contentType = response.headers.get("content-type") ?? "";
-    const isHtml = contentType.includes("text/html");
+    // Media types are case-insensitive, and the crawl Accept header asks for
+    // application/xhtml+xml as well — a page served as either is a document
+    // the analyzer can read.
+    const contentType = (
+      response.headers.get("content-type") ?? ""
+    ).toLowerCase();
+    const isHtml =
+      contentType.includes("text/html") ||
+      contentType.includes("application/xhtml+xml");
     // Cap what we read: the first 1 MiB still contains the SEO metadata and
     // navigation needed by the audit in normal documents.
     const body = isHtml ? await readTextUpTo(response, MAX_HTML_BYTES) : "";
