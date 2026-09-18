@@ -74,9 +74,28 @@ export function formatTooltipValue(value: unknown) {
   return "-";
 }
 
+const DATE_ONLY = /^(\d{4})-(\d{2})(?:-(\d{2}))?$/;
+
+/**
+ * A calendar date, read in the reader's own timezone.
+ *
+ * `new Date("2026-03-01")` is UTC midnight, and rendering that with
+ * `toLocaleDateString` shows the day before anywhere west of UTC: the whole of
+ * the Americas sees "Feb 28". These values are calendar dates rather than
+ * instants — `normalizeHistoryDate` slices every history date to `YYYY-MM-DD`
+ * before it reaches the client — so they are built as local dates. A value that
+ * does carry a time is left to `Date` to parse, where the offset is real.
+ */
+export function parseDisplayDate(value: string) {
+  const dateOnly = DATE_ONLY.exec(value);
+  if (!dateOnly) return new Date(value);
+  const [, year, month, day] = dateOnly;
+  return new Date(Number(year), Number(month) - 1, Number(day ?? "1"));
+}
+
 export function formatCompactDate(value: string | null | undefined) {
   if (!value) return "-";
-  const parsed = new Date(value);
+  const parsed = parseDisplayDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString(undefined, {
     month: "short",
@@ -86,7 +105,7 @@ export function formatCompactDate(value: string | null | undefined) {
 }
 
 export function formatMonthLabel(value: string) {
-  const parsed = new Date(value);
+  const parsed = parseDisplayDate(value);
   if (Number.isNaN(parsed.getTime())) return value;
   return parsed.toLocaleDateString(undefined, {
     month: "short",
