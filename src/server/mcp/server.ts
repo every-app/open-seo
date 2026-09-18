@@ -42,6 +42,7 @@ import {
   updateProjectContextTool,
 } from "@/server/mcp/tools/project-context";
 import { listSavedKeywordsTool } from "@/server/mcp/tools/list-saved-keywords";
+import { removeSavedKeywordsTool } from "@/server/mcp/tools/remove-saved-keywords";
 import {
   findSerpCompetitorsTool,
   getGoogleBusinessQuestionsTool,
@@ -175,6 +176,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
   register(listSavedKeywordsTool);
   register(researchKeywordsTool);
   register(saveKeywordsTool);
+  register(removeSavedKeywordsTool);
   register(getDomainOverviewTool);
   register(getDomainKeywordSuggestionsTool);
   register(getBacklinksOverviewTool);
