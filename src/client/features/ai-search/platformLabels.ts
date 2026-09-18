@@ -80,6 +80,7 @@ const COUNTRY_LABELS: Record<WebSearchCountryCode, string> = {
   NL: "Netherlands",
   PT: "Portugal",
   PL: "Poland",
+  TR: "Türkiye",
   SE: "Sweden",
   NO: "Norway",
   DK: "Denmark",
