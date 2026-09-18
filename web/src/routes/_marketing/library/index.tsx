@@ -108,8 +108,8 @@ function StrategyLibraryIndexPage() {
             </h3>
             <p className="mt-3 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
               Read a backlink profile without trusting the score, report the
-              number that moves rankings, stop chasing anchor text, and earn
-              links from the pages that already get them.
+              number that moves rankings, and earn links from the pages that
+              already get them.
             </p>
             <p className="mt-5 text-sm font-medium text-neutral-950">
               View all {linkBuildingStrategies.length} strategies{" "}

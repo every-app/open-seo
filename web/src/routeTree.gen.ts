@@ -51,7 +51,6 @@ import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './route
 import { Route as MarketingLibraryLinkBuildingReferringDomainsRouteImport } from './routes/_marketing/library/link-building/referring-domains'
 import { Route as MarketingLibraryLinkBuildingHowToGetBacklinksRouteImport } from './routes/_marketing/library/link-building/how-to-get-backlinks'
 import { Route as MarketingLibraryLinkBuildingBacklinkAuditRouteImport } from './routes/_marketing/library/link-building/backlink-audit'
-import { Route as MarketingLibraryLinkBuildingAnchorTextRouteImport } from './routes/_marketing/library/link-building/anchor-text'
 import { Route as MarketingLibraryKeywordResearchSeedFromConversationRouteImport } from './routes/_marketing/library/keyword-research/seed-from-conversation'
 import { Route as MarketingLibraryKeywordResearchSearchIntentMappingRouteImport } from './routes/_marketing/library/keyword-research/search-intent-mapping'
 import { Route as MarketingLibraryKeywordResearchPositioningToDemandRouteImport } from './routes/_marketing/library/keyword-research/positioning-to-demand'
@@ -295,12 +294,6 @@ const MarketingLibraryLinkBuildingBacklinkAuditRoute =
     path: '/library/link-building/backlink-audit',
     getParentRoute: () => MarketingRoute,
   } as any)
-const MarketingLibraryLinkBuildingAnchorTextRoute =
-  MarketingLibraryLinkBuildingAnchorTextRouteImport.update({
-    id: '/library/link-building/anchor-text',
-    path: '/library/link-building/anchor-text',
-    getParentRoute: () => MarketingRoute,
-  } as any)
 const MarketingLibraryKeywordResearchSeedFromConversationRoute =
   MarketingLibraryKeywordResearchSeedFromConversationRouteImport.update({
     id: '/library/keyword-research/seed-from-conversation',
@@ -422,7 +415,6 @@ export interface FileRoutesByFullPath {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
-  '/library/link-building/anchor-text': typeof MarketingLibraryLinkBuildingAnchorTextRoute
   '/library/link-building/backlink-audit': typeof MarketingLibraryLinkBuildingBacklinkAuditRoute
   '/library/link-building/how-to-get-backlinks': typeof MarketingLibraryLinkBuildingHowToGetBacklinksRoute
   '/library/link-building/referring-domains': typeof MarketingLibraryLinkBuildingReferringDomainsRoute
@@ -478,7 +470,6 @@ export interface FileRoutesByTo {
   '/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
-  '/library/link-building/anchor-text': typeof MarketingLibraryLinkBuildingAnchorTextRoute
   '/library/link-building/backlink-audit': typeof MarketingLibraryLinkBuildingBacklinkAuditRoute
   '/library/link-building/how-to-get-backlinks': typeof MarketingLibraryLinkBuildingHowToGetBacklinksRoute
   '/library/link-building/referring-domains': typeof MarketingLibraryLinkBuildingReferringDomainsRoute
@@ -536,7 +527,6 @@ export interface FileRoutesById {
   '/_marketing/library/keyword-research/positioning-to-demand': typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   '/_marketing/library/keyword-research/search-intent-mapping': typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   '/_marketing/library/keyword-research/seed-from-conversation': typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
-  '/_marketing/library/link-building/anchor-text': typeof MarketingLibraryLinkBuildingAnchorTextRoute
   '/_marketing/library/link-building/backlink-audit': typeof MarketingLibraryLinkBuildingBacklinkAuditRoute
   '/_marketing/library/link-building/how-to-get-backlinks': typeof MarketingLibraryLinkBuildingHowToGetBacklinksRoute
   '/_marketing/library/link-building/referring-domains': typeof MarketingLibraryLinkBuildingReferringDomainsRoute
@@ -594,7 +584,6 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
-    | '/library/link-building/anchor-text'
     | '/library/link-building/backlink-audit'
     | '/library/link-building/how-to-get-backlinks'
     | '/library/link-building/referring-domains'
@@ -650,7 +639,6 @@ export interface FileRouteTypes {
     | '/library/keyword-research/positioning-to-demand'
     | '/library/keyword-research/search-intent-mapping'
     | '/library/keyword-research/seed-from-conversation'
-    | '/library/link-building/anchor-text'
     | '/library/link-building/backlink-audit'
     | '/library/link-building/how-to-get-backlinks'
     | '/library/link-building/referring-domains'
@@ -707,7 +695,6 @@ export interface FileRouteTypes {
     | '/_marketing/library/keyword-research/positioning-to-demand'
     | '/_marketing/library/keyword-research/search-intent-mapping'
     | '/_marketing/library/keyword-research/seed-from-conversation'
-    | '/_marketing/library/link-building/anchor-text'
     | '/_marketing/library/link-building/backlink-audit'
     | '/_marketing/library/link-building/how-to-get-backlinks'
     | '/_marketing/library/link-building/referring-domains'
@@ -1032,13 +1019,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryLinkBuildingBacklinkAuditRouteImport
       parentRoute: typeof MarketingRoute
     }
-    '/_marketing/library/link-building/anchor-text': {
-      id: '/_marketing/library/link-building/anchor-text'
-      path: '/library/link-building/anchor-text'
-      fullPath: '/library/link-building/anchor-text'
-      preLoaderRoute: typeof MarketingLibraryLinkBuildingAnchorTextRouteImport
-      parentRoute: typeof MarketingRoute
-    }
     '/_marketing/library/keyword-research/seed-from-conversation': {
       id: '/_marketing/library/keyword-research/seed-from-conversation'
       path: '/library/keyword-research/seed-from-conversation'
@@ -1158,7 +1138,6 @@ interface MarketingRouteChildren {
   MarketingLibraryKeywordResearchPositioningToDemandRoute: typeof MarketingLibraryKeywordResearchPositioningToDemandRoute
   MarketingLibraryKeywordResearchSearchIntentMappingRoute: typeof MarketingLibraryKeywordResearchSearchIntentMappingRoute
   MarketingLibraryKeywordResearchSeedFromConversationRoute: typeof MarketingLibraryKeywordResearchSeedFromConversationRoute
-  MarketingLibraryLinkBuildingAnchorTextRoute: typeof MarketingLibraryLinkBuildingAnchorTextRoute
   MarketingLibraryLinkBuildingBacklinkAuditRoute: typeof MarketingLibraryLinkBuildingBacklinkAuditRoute
   MarketingLibraryLinkBuildingHowToGetBacklinksRoute: typeof MarketingLibraryLinkBuildingHowToGetBacklinksRoute
   MarketingLibraryLinkBuildingReferringDomainsRoute: typeof MarketingLibraryLinkBuildingReferringDomainsRoute
@@ -1216,8 +1195,6 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibraryKeywordResearchSearchIntentMappingRoute,
   MarketingLibraryKeywordResearchSeedFromConversationRoute:
     MarketingLibraryKeywordResearchSeedFromConversationRoute,
-  MarketingLibraryLinkBuildingAnchorTextRoute:
-    MarketingLibraryLinkBuildingAnchorTextRoute,
   MarketingLibraryLinkBuildingBacklinkAuditRoute:
     MarketingLibraryLinkBuildingBacklinkAuditRoute,
   MarketingLibraryLinkBuildingHowToGetBacklinksRoute:

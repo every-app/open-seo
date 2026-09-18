@@ -26,19 +26,9 @@ const faqs = [
       "As many referring domains as the pages that outrank you have, from sites in the same field. The count of backlinks is a poor guide because a single site can supply hundreds of them. Check a competitor's profile for the referring domain number and the backlink gap analysis for the domains that link to them and not to you.",
   },
   {
-    question: "Does anchor text matter?",
-    answer:
-      "For ranking a page on a particular query, a study of 4,871 links across 25 sites found no measurable relationship. Let the linking site choose the words, use your brand or the page title when asked, and never request a keyword. Exact-match anchors showed no penalty and no benefit.",
-  },
-  {
-    question: "Should I disavow bad backlinks?",
-    answer:
-      "Only after a manual action, or if you bought links and want them gone. Google says it ignores spam links on its own, and practitioners who disavowed every link to a site report no visible change. Build the file from the obvious junk at the domain level if you do it, and expect nothing to happen.",
-  },
-  {
     question: "How does OpenSEO help with link building?",
     answer:
-      "The backlinks tool shows any domain's backlinks, referring domains, top linked pages, anchor text, dofollow or nofollow, domain rank, spam score and broken or lost status, with filters and export. A free backlink checker shows the summary without an account. The MCP exposes the same data to an AI assistant, and the link-prospecting skill packages the competitor workflow.",
+      "The backlinks tool shows any domain's backlinks, referring domains, top linked pages, anchor text, dofollow or nofollow, domain rank, spam score and broken status, with filters and export. A free backlink checker shows the summary without an account. The MCP provides backlink summaries and individual backlink rows; use the app for the Top Pages table. The link-prospecting skill packages the competitor workflow.",
   },
 ];
 
@@ -62,7 +52,7 @@ export const Route = createFileRoute("/_marketing/library/link-building/")({
     buildPageSeo({
       title: "Link Building: The Strategy Library",
       description:
-        "Four link building strategies from practitioners who build links for a living: audit a backlink profile without trusting the score, report referring domains instead of backlinks, stop chasing anchor text, and earn links from the pages that already get them. Each includes a workflow and an OpenSEO MCP prompt.",
+        "Three link building strategies from practitioners who build links for a living: audit a backlink profile without trusting the score, report referring domains instead of backlinks, and earn links from the pages that already get them. Each includes a workflow and an OpenSEO MCP prompt.",
       path: PATH,
       titleSuffix: "OpenSEO",
     }),
@@ -89,12 +79,11 @@ function LinkBuildingLibraryPage() {
           The Link Building Strategy Library
         </h1>
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
-          Four strategies for the person who has to grow a site&rsquo;s
+          Three strategies for the person who has to grow a site&rsquo;s
           authority without a link budget: how to read a backlink profile
-          without trusting the score, which number to report, what a study of
-          4,871 links found about anchor text, and where the next links come
-          from. Each one is built on a real profile and includes a copy-paste
-          OpenSEO MCP prompt.
+          without trusting the score, which number to report, and where the next
+          links come from. Each one is built on a real profile and includes a
+          copy-paste OpenSEO MCP prompt.
         </p>
       </header>
 
@@ -103,9 +92,8 @@ function LinkBuildingLibraryPage() {
           How do you build links that count?
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          Read what you already have, count sources rather than links, let the
-          linking site write the words, and go where your pages are already
-          earning attention.
+          Read what you already have, count distinct sources, and look at which
+          pages are already earning attention.
         </p>
         <div className="mt-6 grid gap-4 md:grid-cols-2">
           {linkBuildingStrategies.map((strategy, index) => {
@@ -154,8 +142,7 @@ function LinkBuildingLibraryPage() {
           links for clients and test on their own sites, describe a different
           order of operations. Relevance first: a link from a site about your
           subject, to a page about that subject. Then diversity: how many
-          different sites, not how many links. Then the words in the link, which
-          matter far less than anyone assumed. The four strategies above follow
+          different sites, not how many links. The three strategies above follow
           that order, and each one starts from a real backlink profile rather
           than a hypothetical one.
         </p>
@@ -197,16 +184,16 @@ function LinkBuildingLibraryPage() {
           >
             backlink checker
           </a>{" "}
-          page, or through the{" "}
+          page. The{" "}
           <a
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
             OpenSEO MCP
-          </a>
-          , which gives an AI assistant the overview and the profile with the
-          same filters, alongside Search Console and keyword data in one
-          conversation. The{" "}
+          </a>{" "}
+          gives an AI assistant the overview and backlink rows, alongside Search
+          Console and keyword data in one conversation. Use the app for the Top
+          Pages table. The{" "}
           <a
             href="/docs/skills/link-prospecting"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"

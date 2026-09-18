@@ -18,7 +18,7 @@ const faqs = [
   {
     question: "How many referring domains do I need?",
     answer:
-      "Enough to match the pages that outrank you for the terms you want, from sites in the same field. Check the competitors' profiles for the number; a [backlink gap analysis](/library/competitive-analysis/backlink-gap-analysis) shows the domains that link to them and not to you.",
+      "Enough to match the pages that outrank you for the terms you want, from sites in the same field. Check the competitors' profiles for the number; a backlink gap analysis shows the domains that link to them and not to you.",
   },
   {
     question: "Are links from my own other websites worth anything?",

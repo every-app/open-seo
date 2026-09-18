@@ -1,6 +1,6 @@
 ---
 title: "Referring domains, not backlinks: the count that moves rankings"
-description: "One site shows 2,393 backlinks and 308 referring domains, and 872 of those backlinks come from a single domain its owner also runs. Why the second number is the one to report, what a study of 4,871 links found about diversity, and how far from a trusted site you are."
+description: "One site shows 2,393 backlinks and 308 referring domains, and 872 of those backlinks come from a single domain its owner also runs. How to report the number of distinct sources and spot a profile dominated by a few sites."
 ---
 
 ## What is a referring domain?
@@ -13,13 +13,9 @@ Here is the difference on a real site. seoarcade.com shows 2,393 backlinks and 3
 
 The first four domains supply 1,612 backlinks, two thirds of the total. Two of the four are the owner's own properties and one is the podcast host. A report that says "2,393 backlinks" is describing a site with a few hundred real endorsements and a lot of repetition. That is normal and it is not a problem. It only becomes one when the big number is the one that gets reported.
 
-## Why diversity is the lever
+## Why count distinct sources?
 
-The intuition that more distinct sources beat more links from the same source is old. What is newer is a measurement on a network where every other variable could be held still.
-
-Across 25 sites run by one operator, a [study of 4,871 in-content links](https://seoarcade.com/anchor-text-ranking-study/) pointing at 1,011 pages tested what predicted a page's clicks from search. The count of inbound links from the network predicted performance weakly. The **number of distinct sites** linking to a page predicted it far more strongly, at a correlation of 0.33 with a p-value below one in a hundred million. Anchor wording, tested in the same study, predicted nothing. [Anchor text](/library/link-building/anchor-text) has the detail.
-
-The practical reading: a second link from a site that already links to you is worth something. A first link from a site that has never linked to you is worth more, and it is the number to grow.
+Referring-domain count helps distinguish broad coverage from repeated links on a few sites. It is useful context, but it does not tell you how much any individual link helps rankings. Look at who is linking and why before treating an increase as progress.
 
 Rob Bonham puts the endpoint of that logic plainly:
 
@@ -51,7 +47,7 @@ Three things, in this order.
 
 **Find the concentration.** Sort by backlinks and look at the top five. If they are your own properties, your host, or a directory that lists every page, they are context, not endorsements. The site above has three of the four in that category. Knowing that stops you from reading a jump in backlinks as a jump in authority when it was a new template link on a site you own.
 
-**Watch first seen.** The column tells you which domains are new this month. The growth chart on the overview shows both lines over a year; on this site, backlinks climbed from around 1,900 to 2,393 over the year while referring domains went from around 110 to 308, most of that in the last two months, which is a different story from the backlink line alone. When the two lines diverge, the referring domains line is the one that describes what changed.
+**Check first-seen dates.** In the referring-domains table, the date describes the domain. In backlink rows, it describes that individual link; a recent backlink does not prove a domain is new. The growth chart on the overview shows both lines over a year; on this site, backlinks climbed from around 1,900 to 2,393 over the year while referring domains went from around 110 to 308, most of that in the last two months, which is a different story from the backlink line alone. When the two lines diverge, the referring domains line is the one that describes what changed.
 
 ![OpenSEO backlinks overview for seoarcade.com: 2,393 backlinks, 308 referring domains, 2,137 referring pages, rank 41, spam score 5.0, 17 broken backlinks and 47 broken pages, with a year of backlink and referring-domain growth and a new-versus-lost chart](/library/link-building/backlink-overview-openseo.png "Backlinks overview in OpenSEO")
 
@@ -71,17 +67,20 @@ for [domain]:
    that are my own properties, my hosting or podcast platform, or a
    directory.
 
-3. Call get_backlinks_profile, mode one_per_domain, sorted by
-   firstSeen descending, 100 rows, hideSpam true. Tell me how many
-   distinct referring domains first linked in the last 30 days and
-   list them with anchor text and target page.
+3. Call get_backlinks_profile with scope "domain", mode
+   one_per_domain, sorted by firstSeen descending, page 1, 100 rows,
+   hideSpam true. List the domains represented by backlinks first
+   discovered in the last 30 days in this sample, with anchor text
+   and target page. Do not call them newly acquired domains: the
+   date belongs to the selected backlink, not the domain.
 
-4. For each new domain, say whether its linking page is about the
-   same topic as the page it links to. Mark the ones that are.
+4. For each sampled domain, check whether its linking page is about
+   the same topic as its target. Mark any you cannot verify.
 
-5. Write the two-line report: referring domains now versus 30 days
-   ago, and how many of the new ones are relevant sites I did not
-   arrange.
+5. Report the current referring-domain total, then the number of
+   sampled domains with recent backlinks that appear relevant. Label
+   the sample size and filters. Do not infer a monthly acquisition
+   count from this sample.
 ```
 
 Step 5 is the number the business should see. Step 2 is what stops you from over-reading it.

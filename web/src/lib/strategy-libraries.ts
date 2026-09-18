@@ -131,12 +131,6 @@ export const linkBuildingStrategies: StrategyLibraryItem[] = [
     href: "/library/link-building/referring-domains",
   },
   {
-    title: "Anchor text: what 4,871 links said about the words in the link",
-    description:
-      "A study across 25 sites found no relationship between the words in a link and what the page earned. What did predict it, and the one place wording still matters.",
-    href: "/library/link-building/anchor-text",
-  },
-  {
     title: "How to get backlinks: start from the pages that already earn them",
     description:
       "A free calculator with links from 17 domains, a park-cleanup page with 270 backlinks. Neither was pitched. Four plays that earned links on tape.",

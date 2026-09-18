@@ -81,19 +81,24 @@ His episode is [here](https://unscriptedseo.com/patrick-stox-on-building-in-the-
 
 Connect the [OpenSEO MCP](/docs/mcp). The [link-prospecting](/docs/skills/link-prospecting) skill packages the competitor side of this; the prompt below starts from your own profile, which is cheaper and usually better.
 
+In OpenSEO, open Backlinks, choose Top Pages, and sort by referring domains, highest first. Copy the first ten rows, including each URL and its referring-domain count, into your assistant with this prompt.
+
 ```text
 Using the OpenSEO MCP on project [name], find where my next links
 should come from, for [domain]:
 
-1. Call get_backlinks_overview with scope "domain", then list my top
-   10 pages by referring domains (not backlinks). For each, tell me
-   whether it is a tool, an event or service page, an article, or a
-   company page.
+1. Use the Top Pages rows I pasted to list my ten leading pages by
+   referring domains. Read each page and classify it as a tool, an
+   event or service page, an article, or a company page. Mark any
+   unreadable page as unverified. If I have not supplied the rows,
+   ask for them before continuing.
 
-2. Call get_backlinks_profile for the top two non-homepage pages,
-   mode one_per_domain, hideSpam true. For each linking site, say in
-   one line why it linked: cited data, used a tool, reported an event,
-   listed a partner, or something else.
+2. Call get_backlinks_profile for the two non-homepage URLs with the
+   most referring domains in that list, using scope "page",
+   mode one_per_domain, hideSpam true. Read the linking pages and
+   suggest why each linked: cited data, used a tool, reported an
+   event, listed a partner, or something else. Mark uncertain reasons
+   as hypotheses and unreadable pages as unverified.
 
 3. From those reasons, tell me which of my pages could earn more of
    the same kind of link, and what would have to be true for it to.
@@ -112,7 +117,7 @@ Step 5 is the nexus document. Step 2 is what makes the outreach email short.
 
 ## Earn the first ten before you pitch the hundredth
 
-The profile you already have tells you what people link to on your site and why. Build more of that: a tool someone searches for, a thing you did that a local site can report, a list of the businesses that share your customer, and ten personal notes to ten right people. Then count [referring domains](/library/link-building/referring-domains), not backlinks, and check the [anchor text](/library/link-building/anchor-text) only to make sure nobody bought anything in your name.
+The profile you already have tells you what people link to on your site and why. Build more of that: a tool someone searches for, a thing you did that a local site can report, a list of the businesses that share your customer, and ten personal notes to ten right people. Then count [referring domains](/library/link-building/referring-domains), not backlinks, and read the linking pages to understand why they chose to mention you.
 
 ## Getting backlinks FAQ
 
@@ -134,4 +139,4 @@ No. The sellers who email you produce links from casino and PBN domains that sea
 
 ### How does OpenSEO help with link building?
 
-The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. The MCP exposes both to an assistant, and the link-prospecting skill packages the competitor workflow.
+The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. Use the app’s Top Pages table to compare referring-domain counts by page; the MCP provides backlink summaries and individual backlink rows. The link-prospecting skill packages the competitor workflow.

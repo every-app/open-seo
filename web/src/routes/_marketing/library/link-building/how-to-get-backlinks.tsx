@@ -23,7 +23,7 @@ const faqs = [
   {
     question: "Does link building outreach still work?",
     answer:
-      "Personal outreach to a short list works. One guest reported ten links from ten handwritten letters. Mass email to a purchased list mostly produces replies from people selling links, and those are the links that show up in an audit with spam scores in the 60s.",
+      "Personal outreach to a short list works. The podcast's host once got ten links from ten handwritten letters. Mass email to a purchased list mostly produces replies from people selling links, and those are the links that show up in an audit with spam scores in the 60s.",
   },
   {
     question: "Should I buy backlinks?",
@@ -33,7 +33,7 @@ const faqs = [
   {
     question: "How does OpenSEO help with link building?",
     answer:
-      "The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. The MCP exposes both to an assistant, and the link-prospecting skill packages the competitor workflow.",
+      "The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. Use the app’s Top Pages table to compare referring-domain counts by page; the MCP provides backlink summaries and individual backlink rows. The link-prospecting skill packages the competitor workflow.",
   },
 ];
 

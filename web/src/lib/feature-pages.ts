@@ -330,11 +330,6 @@ export const featurePages = {
           href: "/library/link-building/referring-domains",
         },
         {
-          label: "Anchor text",
-          description: "What 4,871 links said about the words in the link.",
-          href: "/library/link-building/anchor-text",
-        },
-        {
           label: "How to get backlinks",
           description:
             "Start from the pages that already earn them. Four plays from the podcast.",

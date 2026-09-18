@@ -13,7 +13,7 @@ const faqs = [
   {
     question: "How do I do a backlink audit?",
     answer:
-      "Pull the full profile with one row per referring domain, sorted by first seen. Bucket rows into junk, broken or lost, nofollow, and worth reading. Redirect the broken target pages. Then read the worth-reading rows one at a time, asking whether a person on that page would have a reason to click through.",
+      "Start with a page of backlink rows, one per referring domain, sorted by first seen, with spam filtering off. Sort them into suspected junk, broken targets, nofollow, and worth reading. Check broken pages before restoring them or choosing a relevant redirect. Read the remaining rows and decide whether a person on the source page would have a reason to click through.",
   },
   {
     question: "What is a toxic backlink?",
@@ -21,19 +21,14 @@ const faqs = [
       "A link from a page that exists only to sell or host links: link seller listings, PBN adverts, casino and pharmacy domains, and pages with hundreds of unrelated outbound links. They tend to have high spam scores and anchor text that reads like an advert. Google generally ignores them.",
   },
   {
-    question: "Should I disavow toxic backlinks?",
-    answer:
-      "Only if the site has a manual action, or you know links were bought and want them gone. For links that simply arrived, Google's position is that it ignores them, and practitioners who have tested mass disavows report no visible change. Build the file from the junk bucket at the domain level if you do it at all.",
-  },
-  {
     question: "Is domain rank or DA a good measure of a backlink?",
     answer:
       "It is a sorting aid, not a verdict. A spam domain can carry a higher rank than a relevant small site. Use the score to order the list, then judge each link on whether the linking page is about the same thing as yours and whether a real site published it.",
   },
   {
-    question: "Does OpenSEO show broken and lost backlinks?",
+    question: "Does OpenSEO show broken backlinks?",
     answer:
-      "Yes. The backlinks overview reports broken backlinks and broken target pages, and each row in the profile carries lost and broken status, dofollow or nofollow, domain rank, spam score and first-seen date. The free backlink checker shows the summary and top 15 links without an account.",
+      "The overview reports broken backlinks and broken target pages. Profile rows include broken status, dofollow or nofollow, domain rank, spam score and first-seen date. The profile request used here returns live backlinks, so it cannot list lost links. The free backlink checker shows the summary and top 15 links without an account.",
   },
 ];
 
