@@ -170,12 +170,28 @@ export function csvChange(
   return previous - current;
 }
 
+/**
+ * Formats an ISO-8601 timestamp as a sortable YYYY-MM-DD date string.
+ * Returns an empty string when the value is nullish so spreadsheet tools
+ * treat the cell as blank rather than showing an error.
+ */
+function formatCheckedAt(lastCheckedAt?: string | null): string {
+  if (!lastCheckedAt) return "";
+  try {
+    return new Date(lastCheckedAt).toISOString().slice(0, 10);
+  } catch {
+    return "";
+  }
+}
+
 export function buildRankTrackingExport(
   sorted: RankTrackingRow[],
   showDesktop: boolean,
   showMobile: boolean,
   locationName?: string | null,
+  lastCheckedAt?: string | null,
 ): { headers: string[]; rows: (string | number)[][] } {
+  const checkedAtValue = formatCheckedAt(lastCheckedAt);
   const headers = [
     "Keyword",
     // Exports lack the table's tooltip, so name the city inline.
@@ -200,6 +216,7 @@ export function buildRankTrackingExport(
           "Mobile SERP Features",
         ]
       : []),
+    "Last checked at",
   ];
   // Emit empty cells (not "Not ranking" strings) so Sheets infers a numeric
   // column type and the user can sort by position.
@@ -224,6 +241,7 @@ export function buildRankTrackingExport(
           row.mobile.serpFeatures.join(", "),
         ]
       : []),
+    checkedAtValue,
   ]);
   return { headers, rows };
 }
@@ -233,12 +251,14 @@ export function exportRankTrackingToSheets(
   showDesktop: boolean,
   showMobile: boolean,
   locationName?: string | null,
+  lastCheckedAt?: string | null,
 ) {
   const { headers, rows } = buildRankTrackingExport(
     sorted,
     showDesktop,
     showMobile,
     locationName,
+    lastCheckedAt,
   );
   void exportTableToSheets({ headers, rows, feature: "rank_tracking" });
 }
@@ -249,6 +269,7 @@ export function exportRankTrackingCsv(
   showMobile: boolean,
   domain: string,
   locationName?: string | null,
+  lastCheckedAt?: string | null,
 ) {
   if (sorted.length === 0) {
     toast.error("No data to export");
@@ -259,6 +280,7 @@ export function exportRankTrackingCsv(
     showDesktop,
     showMobile,
     locationName,
+    lastCheckedAt,
   );
   // CSV file download keeps cents-formatted CPC for human readability;
   // clipboard/Sheets export uses raw numbers (see buildRankTrackingExport).
