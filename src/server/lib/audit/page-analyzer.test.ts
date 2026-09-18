@@ -176,6 +176,15 @@ describe("analyzeHtml parity with the DOM reference", () => {
       </head><body><p>text</p></body></html>`);
   });
 
+  it("matches when rel and type differ only in case", () => {
+    expectParity(`<html><head>
+      <link rel="Canonical" href="/canonical">
+      <link rel="ALTERNATE" hreflang="de" href="/de">
+      <link rel="alternate" hreflang="fr" href="/fr">
+      <script type="application/LD+JSON">{"@type":"Article"}</script>
+      </head><body><p>text</p></body></html>`);
+  });
+
   it("matches on unclosed and misnested tags", () => {
     expectParity(`<html><body>
       <h1>Unclosed heading
