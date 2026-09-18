@@ -207,6 +207,26 @@ describe("analyzeHtml parity with the DOM reference", () => {
   });
 });
 
+describe("analyzeHtml link resolution", () => {
+  const linkTargets = (html: string) =>
+    analyzeHtml(html, PAGE_URL, 200, 0).links.map((link) => link.targetUrl);
+
+  it("resolves relative links against <base href>", () => {
+    expect(
+      linkTargets(
+        `<html><head><base href="https://example.com/en/"></head>
+         <body><a href="guide">Guide</a></body></html>`,
+      ),
+    ).toEqual(["https://example.com/en/guide"]);
+  });
+
+  it("resolves relative links against the page URL without a <base>", () => {
+    expect(
+      linkTargets(`<html><body><a href="guide">Guide</a></body></html>`),
+    ).toEqual(["https://example.com/blog/guide"]);
+  });
+});
+
 describe("analyzeHtml extraction caps", () => {
   it("caps links and images per page", () => {
     const links = Array.from(

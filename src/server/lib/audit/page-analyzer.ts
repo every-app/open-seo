@@ -66,6 +66,10 @@ export function analyzeHtml(
   let ogImage: string | null = null;
   let hasStructuredData = false;
   const hreflangTags: string[] = [];
+  // Resolution base for relative link targets. HTML lets a document override
+  // it with <base href>, which sits in <head> and so is always parsed before
+  // the links it governs; the first <base> with an href wins.
+  let linkBase: string | null = null;
 
   const h1s: string[] = [];
   const headingOrder: number[] = [];
@@ -113,7 +117,7 @@ export function analyzeHtml(
     const { href, rel, text } = openAnchor;
     openAnchor = null;
     if (linksByTarget.size >= MAX_EXTRACTED_LINKS) return;
-    const resolved = normalizeUrl(href, pageUrl);
+    const resolved = normalizeUrl(href, linkBase ?? pageUrl);
     if (!resolved || linksByTarget.has(resolved)) return;
     const anchor = text
       .join("")
@@ -156,6 +160,11 @@ export function analyzeHtml(
             break;
           case "link":
             handleLinkTag(attribs);
+            break;
+          case "base":
+            if (linkBase === null && attribs["href"]) {
+              linkBase = normalizeUrl(attribs["href"], pageUrl);
+            }
             break;
           case "img":
             if (images.length < MAX_EXTRACTED_IMAGES) {
