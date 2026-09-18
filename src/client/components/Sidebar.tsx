@@ -82,10 +82,9 @@ function SidebarNavLink({
 }
 
 export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
-  const navGroups = [
-    ...(projectId ? getProjectNavGroups(projectId) : []),
-    connectNavGroup,
-  ];
+  const navGroups = projectId
+    ? getProjectNavGroups(projectId)
+    : [connectNavGroup];
   const navigate = useNavigate();
   const location = useLocation();
   const onSamRoute = location.pathname.includes("/sam");

@@ -44,6 +44,27 @@ async function getProjectForOrganization(
   return project ?? null;
 }
 
+// The archived counterpart of getProjectForOrganization, for the surfaces that
+// owe the reader "this project is archived" instead of a bare not-found. Still
+// org-scoped, so it adds no cross-org existence oracle.
+async function getArchivedProjectForOrganization(
+  projectId: string,
+  organizationId: string,
+) {
+  const [project] = await db
+    .select()
+    .from(projects)
+    .where(
+      and(
+        eq(projects.id, projectId),
+        eq(projects.organizationId, organizationId),
+        isNotNull(projects.archivedAt),
+      ),
+    )
+    .limit(1);
+  return project ?? null;
+}
+
 // Look up a project by id alone (no org scoping). Only for trusted server
 // contexts that have already authorized access another way — e.g. the
 // SAM chat Durable Object, whose connections are authorized in the Worker
@@ -193,6 +214,7 @@ export const ProjectRepository = {
   listArchivedProjects,
   countProjects,
   getProjectForOrganization,
+  getArchivedProjectForOrganization,
   getProjectById,
   createProject,
   updateProject,

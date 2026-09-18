@@ -26,6 +26,10 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable with `update_project_context` — new or corrected `addKeyPages` entries with the topic each page now targets — and append a research log entry: `{ appendResearchLog: { summary: "Keyword clustering: <keyword set>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "keyword-clustering"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `list_saved_keywords`: fetch an existing keyword set, optionally filtered by tags.
@@ -57,25 +61,18 @@ The project-context tools are free and shared with the app and other agents.
 
 ## Output format
 
-Start with a short mapping summary:
+`h1`: the site or keyword set.
 
-- Number of clusters
-- Pages to create
-- Existing pages to update
-- Cannibalization or consolidation issues
+If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Then include:
+Sections in this order:
 
-| Cluster | Primary keyword | Secondary keywords | Intent | Target page | Priority | Notes |
-| ------- | --------------- | ------------------ | ------ | ----------- | -------- | ----- |
-
-For each cluster, include a recommended page brief:
-
-- Page type
-- Searcher problem
-- Required sections
-- Internal-link opportunities
-- Save/tag suggestion
+1. **The map** — one or two opening sentences: how many clusters, how many pages to create, how many to update, and any cannibalization found.
+2. **Clusters** — a table of cluster, primary keyword, intent, target page, and priority. Keep secondary keywords in the per-cluster briefs, not in this table.
+3. **Page briefs** — one finding per cluster: the page type and the searcher's problem, then the page to create or update. List required sections and internal links underneath.
+4. **Cannibalization** — a table of the query, the competing URLs, and which one to keep, only when there is real evidence for it.
+5. **What to do next** — an ordered list, including the tag suggestions and the explicit ask before applying them.
+6. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-clustering` ("OpenSEO Keyword Clustering skill"), then where the keywords came from, and a note labelling target pages as proposed when no URL data was supplied.
 
 ## Guardrails
 

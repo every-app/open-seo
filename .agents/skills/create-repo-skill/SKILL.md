@@ -11,7 +11,7 @@ metadata:
 
 - **`.agents/skills/<kebab-name>/SKILL.md` is the only canonical home for every skill** — public product skills (SEO workflows customers install) and internal repo skills (agent workflows like `merge-ready`, `papercuts`, this one) alike. Users install from this tree via `npx skills add every-app/open-seo`.
 - **`.claude/skills/` contains only symlinks into `.agents/skills/`** — one per skill that Claude Code agents working in this repo should auto-load. Never copy files: `.agents/skills/` is prettier-ignored (vendored skills are hash-pinned) while `.claude/skills/` is not, so a copy gets reformatted on the `.claude` side and the trees drift — this happened to three skills before symlinks became the rule. `prettier --check .` does not descend into the symlinks, so a symlink stays byte-identical to its canonical source by construction.
-- **Vendored skills** (external origin) are hash-pinned in `skills-lock.json` (currently only `webapp-testing`, from `anthropics/skills`). Never hand-edit a vendored skill's content; re-vendor with the `skills` CLI so the lock hash stays valid.
+- **Vendored skills** (external origin) are hash-pinned in `skills-lock.json`. Never hand-edit a vendored skill's content; re-vendor with the `skills` CLI so the lock hash stays valid.
 - `.agents/skills/**` is part of the **review control plane** (see `AGENTS.md`): changes require explicit maintainer review via CODEOWNERS. Make the change on a branch and call it out in the PR — never treat skill edits as incidental.
 
 ## Creating a skill

@@ -28,6 +28,27 @@ const RANK_RESULT_COLUMNS: McpTableColumn<unknown>[] = [
   },
 ];
 
+/**
+ * `lastCheckedAt` comes from the newest snapshot, so a run that finished
+ * without saving any (e.g. every keyword errored) would otherwise read
+ * "never". Report the run's own state instead.
+ */
+function formatLatestRun(
+  run: {
+    status: "pending" | "running" | "completed" | "failed";
+    completedAt: string | null;
+    lastCheckedAt: string | null;
+    errorMessage: string | null;
+  } | null,
+): string {
+  if (!run) return "Latest run: never";
+  if (run.status === "failed")
+    return `Latest run: failed — ${run.errorMessage ?? "Unknown error"}`;
+  if (run.status === "completed")
+    return `Latest run: ${run.completedAt ?? run.lastCheckedAt ?? "completed"}`;
+  return `Latest run: ${run.status}`;
+}
+
 const inputSchema = {
   projectId: projectIdSchema,
   trackerId: z
@@ -59,6 +80,7 @@ export const getRankTrackerTool = {
               .object({
                 id: z.string(),
                 lastCheckedAt: z.string().nullable(),
+                completedAt: z.string().nullable(),
                 status: z.enum(["pending", "running", "completed", "failed"]),
                 errorMessage: z.string().nullable(),
               })
@@ -85,7 +107,7 @@ export const getRankTrackerTool = {
             configs
               .map(
                 (c) =>
-                  `- ${c.id}  ${c.domain}  loc:${c.locationCode}  schedule:${c.scheduleInterval}`,
+                  `- ${c.id}  ${c.domain}  loc:${c.locationCode}${c.locationName ? `  location:"${c.locationName}"` : ""}  schedule:${c.scheduleInterval}`,
               )
               .join("\n");
       return mcpResponse({
@@ -104,19 +126,14 @@ export const getRankTrackerTool = {
       args.projectId,
     );
     const text = [
-      `Tracker ${config.id} (${config.domain}):`,
+      `Tracker ${config.id} (${config.domain}${config.locationName ? `, ${config.locationName}` : ""}):`,
       `Schedule: ${config.scheduleInterval}, devices: ${config.devices}, depth: ${config.serpDepth}`,
-      `Latest run: ${results.run?.lastCheckedAt ?? "never"}`,
-      results.run?.status === "failed"
-        ? `Latest run failed: ${results.run.errorMessage ?? "Unknown error"}`
-        : null,
+      formatLatestRun(results.run),
       `Keywords (${results.rows.length}):`,
       results.rows.length === 0
         ? "No keywords tracked yet."
         : formatMcpTable(results.rows, RANK_RESULT_COLUMNS),
-    ]
-      .filter((line): line is string => line !== null)
-      .join("\n");
+    ].join("\n");
     return mcpResponse({
       text,
       meta: buildProjectMeta(

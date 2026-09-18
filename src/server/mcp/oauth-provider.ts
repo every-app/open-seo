@@ -333,6 +333,9 @@ async function handleOAuthConsentResponse(
     );
   }
 
+  // organizationId is only the fallback context for tools with no project
+  // argument; the hosted transport re-resolves it and stamps orgScope per
+  // request, so one authorization follows the user across every organization.
   const props = createWorkersOAuthMcpProps({
     userId: context.userId,
     userEmail: context.userEmail,

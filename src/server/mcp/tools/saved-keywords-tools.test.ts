@@ -196,8 +196,10 @@ describe("saved keyword MCP tools", () => {
     });
     expect(result.structuredContent).toMatchObject({
       totalCount: 1,
-      rows: [{ keyword: "technical seo" }],
+      rows: [{ keyword: "technical seo", tags: ["Content"] }],
+      tags: [{ name: "Content", keywordCount: 1 }],
     });
+    expect(result.structuredContent?.rows?.[0]).not.toHaveProperty("id");
     const [content] = result.content;
     expect(content).toMatchObject({ type: "text" });
     expect(content?.type === "text" ? content.text : "").toContain(

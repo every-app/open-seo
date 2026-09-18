@@ -13,7 +13,7 @@ OpenSEO gives your agent real SEO data and guided workflows, so its advice is gr
 - Track organic and Google Maps rankings
 - Work with Google Search Console and Analytics data
 
-The plugin includes nine skills that guide Cursor through complete SEO workflows, plus the hosted OpenSEO MCP server for live data and project management.
+The plugin includes ten skills that guide Cursor through complete SEO workflows, plus the hosted OpenSEO MCP server for live data and project management.
 
 ## Connect
 
@@ -40,6 +40,7 @@ You need an OpenSEO account. The plugin package is free and open source. Hosted 
 - SEO audit
 - SEO coach
 - SEO project setup
+- SEO report
 
 ## Links
 

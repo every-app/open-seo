@@ -139,6 +139,7 @@ describe("withMcpProjectAuth with a user-scoped credential", () => {
 
   it("rebinds auth and billing to the project's org and the member's role there", async () => {
     const { withMcpProjectAuth } = await import("@/server/mcp/project-auth");
+    const userContext = makeToolContext({ orgScope: "user" });
     const handler = vi.fn<
       (
         args: { projectId: string },
@@ -151,7 +152,7 @@ describe("withMcpProjectAuth with a user-scoped credential", () => {
 
     await withMcpProjectAuth(handler)(
       { projectId: "project_123" },
-      userScopedContext,
+      userContext,
     );
 
     expect(mocks.getMembership).toHaveBeenCalledWith("user_123", "org_other");
@@ -160,6 +161,9 @@ describe("withMcpProjectAuth with a user-scoped credential", () => {
     expect(context.auth.organizationId).toBe("org_other");
     expect(context.auth.role).toBe("admin");
     expect(context.billing.organizationId).toBe("org_other");
+    // Written back so instrumentation credits the project's org.
+    expect(userContext.auth.organizationId).toBe("org_other");
+    expect(userContext.auth.role).toBe("admin");
   });
 
   it("rejects when the caller has no membership in the project's org", async () => {

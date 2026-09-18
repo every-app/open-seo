@@ -215,6 +215,16 @@ export function RankTrackingDomainDetail({
         </div>
       )}
 
+      {latestRun?.status === "failed" && !isRunning && (
+        <div className="alert alert-error text-sm py-2">
+          <AlertTriangle className="size-4" />
+          <span>
+            <span className="font-medium">Last check failed.</span>{" "}
+            {latestRun.errorMessage}
+          </span>
+        </div>
+      )}
+
       <FreePlanAlert visible={isFreePlan} />
 
       {/* Results card */}

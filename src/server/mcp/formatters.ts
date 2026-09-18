@@ -52,3 +52,13 @@ export function mcpResponse(opts: {
   }
   return result;
 }
+
+/**
+ * A short preview of a long text field for a list response. mcpResponse puts
+ * `text` AND `structuredContent` on the wire and clients count both, so a list
+ * page carries every preview twice — full summaries or instructions at their
+ * caps would be tens of KB on the one call every agent is told to make first.
+ * The single-item read is where the whole field is returned.
+ */
+export const truncatePreview = (value: string, max = 300) =>
+  value.length <= max ? value : `${value.slice(0, max).trimEnd()}…`;

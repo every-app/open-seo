@@ -117,6 +117,55 @@ function describeGscError(error: unknown): string {
 // get_search_console_performance
 // ---------------------------------------------------------------------------
 
+type MetricFilter = {
+  minPosition?: number;
+  maxPosition?: number;
+  minImpressions?: number;
+};
+
+function pickMetricFilter(args: MetricFilter): MetricFilter | null {
+  const { minPosition, maxPosition, minImpressions } = args;
+  if (
+    minPosition === undefined &&
+    maxPosition === undefined &&
+    minImpressions === undefined
+  ) {
+    return null;
+  }
+  return { minPosition, maxPosition, minImpressions };
+}
+
+// Rows without a position (discover/googleNews) never match a position bound.
+function matchesMetricFilter(row: GscPerfRow, filter: MetricFilter): boolean {
+  if (
+    filter.minImpressions !== undefined &&
+    row.impressions < filter.minImpressions
+  ) {
+    return false;
+  }
+  if (filter.minPosition !== undefined) {
+    if (row.position === undefined || row.position < filter.minPosition)
+      return false;
+  }
+  if (filter.maxPosition !== undefined) {
+    if (row.position === undefined || row.position > filter.maxPosition)
+      return false;
+  }
+  return true;
+}
+
+// Google returns full-precision floats (0.041237113402061855); four decimals of
+// CTR and one of position is all anyone reads and trims ~40 bytes per row.
+function roundMetrics<T extends GscPerfRow>(row: T): T {
+  return {
+    ...row,
+    ctr: Math.round(row.ctr * 10_000) / 10_000,
+    ...(row.position === undefined
+      ? {}
+      : { position: Math.round(row.position * 10) / 10 }),
+  };
+}
+
 const filterSchema = z.object({
   dimension: z.enum(GSC_DIMENSIONS),
   operator: z.enum(GSC_FILTER_OPERATORS).default("equals"),
@@ -163,9 +212,27 @@ const perfInputSchema = {
     .max(GSC_MAX_ROW_LIMIT)
     .optional()
     .describe(
-      "Rows per call (default 1000, max 1000). GSC sorts by clicks desc and can't filter by position — filter 'striking distance' positions client-side, and paginate with startRow when hasMore is true.",
+      `Rows per call (default ${GSC_DEFAULT_ROW_LIMIT}, max ${GSC_MAX_ROW_LIMIT}). GSC sorts by clicks desc; paginate with startRow when hasMore is true.`,
     ),
   startRow: z.number().int().min(0).optional().describe("Pagination offset."),
+  minPosition: z
+    .number()
+    .min(1)
+    .optional()
+    .describe(
+      "Keep rows with average position >= this. For 'striking distance' queries use minPosition 5, maxPosition 20, minImpressions 50.",
+    ),
+  maxPosition: z
+    .number()
+    .min(1)
+    .optional()
+    .describe("Keep rows with average position <= this."),
+  minImpressions: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe("Keep rows with at least this many impressions."),
   type: z
     .enum(GSC_SEARCH_TYPES)
     .optional()
@@ -183,7 +250,7 @@ export const getSearchConsolePerformanceTool = {
   config: {
     title: "Get Google Search Console performance",
     description:
-      "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. ctr is a 0-1 fraction; position is a 1-based average and is omitted from rows when type is 'discover' or 'googleNews' (Google does not report it there — treat it as unavailable, not a failure); dates are Pacific Time; the last ~3 days may be incomplete. Read-only; uses no credits.",
+      "Query the connected Search Console property's Search Analytics: clicks, impressions, CTR, and average position by query/page/country/device/date. First-party data — use it for what already ranks, near-ranking queries, and pages with real demand. Google sorts by clicks and can't filter by position, so minPosition/maxPosition/minImpressions are applied server-side over the top 1000 rows of the window — use them instead of fetching everything. ctr is a 0-1 fraction; position is a 1-based average and is omitted from rows when type is 'discover' or 'googleNews' (Google does not report it there — treat it as unavailable, not a failure); dates are Pacific Time; the last ~3 days may be incomplete. Read-only; uses no credits.",
     inputSchema: perfInputSchema,
     outputSchema: {
       ok: z.boolean(),
@@ -255,20 +322,47 @@ export const getSearchConsolePerformanceTool = {
     }
 
     try {
-      const result = await GscService.getPerformance(
-        args satisfies GscPerformanceInput,
-      );
+      const requestedLimit = args.rowLimit ?? GSC_DEFAULT_ROW_LIMIT;
+      const metricFilter = pickMetricFilter(args);
+      // Google can't filter by position or impressions, so with a metric filter
+      // we fetch the full window and filter here; fetched == returned otherwise.
+      const fetchLimit = metricFilter ? GSC_MAX_ROW_LIMIT : requestedLimit;
+      const result = await GscService.getPerformance({
+        projectId: args.projectId,
+        dimensions: args.dimensions,
+        dateRange: args.dateRange,
+        startDate: args.startDate,
+        endDate: args.endDate,
+        filters: args.filters,
+        rowLimit: fetchLimit,
+        startRow: args.startRow,
+        type: args.type,
+        dataState: args.dataState,
+      } satisfies GscPerformanceInput);
       const dimensions = result.request.dimensions ?? ["query"];
-      // rowLimit is clamped to the agent cap in buildSearchAnalyticsRequest, so
-      // result.rows is already <= the cap — every count below reflects what we return.
-      const rows = result.rows;
-      const requestedLimit = result.request.rowLimit ?? GSC_DEFAULT_ROW_LIMIT;
-      const hasMore = rows.length >= requestedLimit;
-      const nextStartRow = (result.request.startRow ?? 0) + rows.length;
+      const startRow = result.request.startRow ?? 0;
+      const fetched = result.rows;
+      const kept = metricFilter
+        ? fetched.filter((row) => matchesMetricFilter(row, metricFilter))
+        : fetched;
+      const rows = kept.slice(0, requestedLimit).map(roundMetrics);
+      // Pagination stays in Google's row space: the next page starts right after
+      // the last row we returned (which may be well past rows.length when a
+      // metric filter dropped rows before it).
+      const lastReturned = kept[rows.length - 1];
+      const truncated = kept.length > rows.length;
+      const hasMore = truncated || fetched.length >= fetchLimit;
+      const nextStartRow =
+        truncated && lastReturned
+          ? startRow + fetched.indexOf(lastReturned) + 1
+          : startRow + fetched.length;
 
+      const filterText = metricFilter
+        ? ` · filtered ${fetched.length} rows → ${kept.length}`
+        : "";
       const header =
         `${result.siteUrl} · ${dimensions.join("+")} · ${result.request.startDate}→${result.request.endDate} · ` +
-        `${rows.length} row${rows.length === 1 ? "" : "s"}${hasMore ? " (more available — paginate with startRow)" : ""}`;
+        `${rows.length} row${rows.length === 1 ? "" : "s"}${filterText}${hasMore ? " (more available — paginate with startRow)" : ""}`;
       const text =
         rows.length > 0
           ? `${header}\n${formatMcpTable(rows, GSC_PERF_COLUMNS)}`

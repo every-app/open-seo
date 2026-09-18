@@ -8,6 +8,7 @@ import {
   fetchKeywordMetricsForList,
 } from "@/server/lib/dataforseo";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { assertSerpLocationNameAccepted } from "@/server/lib/dataforseo/serp-location-validate";
 import { AppError } from "@/server/lib/errors";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import type {
@@ -26,6 +27,7 @@ import {
   rankCheckCostApprovalError,
 } from "@/shared/rank-tracking";
 import {
+  getIsoCountryCode,
   resolveKeywordDataLanguage,
   resolveMarket,
 } from "@/shared/keyword-locations";
@@ -60,6 +62,16 @@ async function createConfig(input: {
     : null;
 
   const locationName = input.locationName ?? null;
+  // Before the duplicate/limit checks so an unusable location name is the
+  // error the caller sees.
+  if (locationName) {
+    await assertSerpLocationNameAccepted({
+      locationName,
+      languageCode,
+      countryCode: getIsoCountryCode(locationCode),
+    });
+  }
+
   const existing =
     await RankTrackingRepository.getConfigByProjectDomainLocation(
       input.projectId,
@@ -147,6 +159,29 @@ async function updateConfig(
   },
 ) {
   const updates: typeof input & { nextCheckAt?: string | null } = {};
+
+  // A location name is only valid together with its market, so re-check the
+  // resulting (name, language, country) whenever any of the three changes.
+  const marketChanged =
+    input.locationName !== undefined ||
+    input.locationCode !== undefined ||
+    input.languageCode !== undefined;
+  if (marketChanged) {
+    const existing = await getValidatedConfig(configId, projectId);
+    const locationName =
+      input.locationName === undefined
+        ? existing.locationName
+        : input.locationName;
+    if (locationName) {
+      await assertSerpLocationNameAccepted({
+        locationName,
+        languageCode: input.languageCode ?? existing.languageCode,
+        countryCode: getIsoCountryCode(
+          input.locationCode ?? existing.locationCode,
+        ),
+      });
+    }
+  }
 
   if (input.domain !== undefined)
     updates.domain = normalizeDomain(input.domain);

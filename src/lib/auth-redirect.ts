@@ -73,6 +73,18 @@ export function getCurrentAuthRedirectFromHref(href: string) {
   return normalizeAuthRedirect(`${url.pathname}${url.search}${url.hash}`);
 }
 
+/**
+ * Routes served as a raw document by a server handler, with no client
+ * component. They are still matchable in the generated client route tree, where
+ * a route with no component renders an empty shell — so an SPA navigation to
+ * one lands the user on a blank page. Navigate to these with a document load.
+ */
+export function isDocumentRoute(redirectTo: string) {
+  // Every componentless route the app can navigate to must reload; /r/ is the
+  // only one (/s/<token>/raw is never a router destination).
+  return redirectTo.startsWith("/r/");
+}
+
 export function getSignInSearch(redirectTo: string) {
   return redirectTo === "/" ? {} : { redirect: redirectTo };
 }

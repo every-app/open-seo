@@ -112,6 +112,70 @@ export const siteAuditStrategies: StrategyLibraryItem[] = [
   },
 ];
 
+export const RANK_TRACKING_LIBRARY = {
+  name: "Rank Tracking",
+  path: "/library/rank-tracking",
+};
+
+export const rankTrackingStrategies: StrategyLibraryItem[] = [
+  {
+    title: "Which keywords to track, and how many",
+    description:
+      "Twenty to fifty terms from Search Console, tied to pages that earn money, priced before they go in. A 500-row tracker is a report nobody reads.",
+    href: "/library/rank-tracking/which-keywords-to-track",
+  },
+  {
+    title: "Is Search Console a rank tracker? Where the free data stops",
+    description:
+      "Search Console gives an average across searchers and devices, with preliminary recent data. Enough for many sites. How to tell whether yours needs more.",
+    href: "/library/rank-tracking/search-console-vs-rank-tracker",
+  },
+  {
+    title: "Local rank tracking: position depends on where the searcher stands",
+    description:
+      "Nine points three kilometres apart, four different businesses at number one. Why a local business needs a grid before a tracker.",
+    href: "/library/rank-tracking/local-rank-tracking",
+  },
+  {
+    title: "The keyword ranking report your CEO will read",
+    description:
+      "Lead with the business number, group movement into four counts, explain three rows, say what happens next. One page, every month.",
+    href: "/library/rank-tracking/keyword-ranking-report",
+  },
+];
+
+export const AI_AGENT_SEO_LIBRARY = {
+  name: "AI-Agent SEO",
+  path: "/library/ai-agent-seo",
+};
+
+export const aiAgentSeoStrategies: StrategyLibraryItem[] = [
+  {
+    title: "Run SEO from your AI assistant: the MCP workflow",
+    description:
+      "Connect one server and the assistant you already use can read Search Console, pull keyword data and check rankings in the same conversation. The first five prompts, and the row that shows why a human still reads the output.",
+    href: "/library/ai-agent-seo/run-seo-from-your-ai-assistant",
+  },
+  {
+    title: "What to automate and what to keep: the dispatcher rule",
+    description:
+      "A scheduled rank check runs without anyone watching. A decision about which keywords go in it does not. Three layers, not two.",
+    href: "/library/ai-agent-seo/what-to-automate",
+  },
+  {
+    title: "Human in the loop content: the brief is the job",
+    description:
+      "Most teams run the loop backwards. Humans write the brief, the model drafts, humans edit, and the two checks that catch the draft that reads like everyone else's.",
+    href: "/library/ai-agent-seo/human-in-the-loop-content",
+  },
+  {
+    title: "Skills, memory and the trace: make the good run repeatable",
+    description:
+      "Save the workflow as a skill, give the agent a memory it reads every run, make it write down every step. Plus the two checks that catch the confident wrong answer.",
+    href: "/library/ai-agent-seo/skills-memory-and-the-trace",
+  },
+];
+
 export const LINK_BUILDING_LIBRARY = {
   name: "Link Building",
   path: "/library/link-building",

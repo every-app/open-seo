@@ -1,0 +1,142 @@
+---
+title: "Human in the loop content: the brief is the job"
+description: "Most agencies run the loop backwards: AI writes the brief, a person writes the draft, AI edits. The practitioners with results do the opposite. What goes in a brief the model cannot write, what the model is good at once it has one, and the two checks that catch the draft that reads like everyone else's."
+---
+
+## How should AI be used for SEO content?
+
+Humans write the brief. The model writes the draft. Humans edit. That order, and only that order.
+
+It sounds like a slogan and it is a finding. Nick Eubanks, global CMO of Digistore24 and an advisor to six agencies, describes the version most teams settle into and why it fails:
+
+> when you look at the human in the loop process where you've got the start, have to create the brief with AI and a human writes the draft and then an AI does the proofreading and editing and then they publish it, I think it's completely backwards.
+
+And the version that works:
+
+> the best results that I've seen from a content perspective is where it's humans actually doing the brief still and then it's AI writing the draft and then it's humans doing the editing.
+
+![A quote card reading: The best results that I've seen from a content perspective is where it's humans actually doing the brief still and then it's AI writing the draft and then it's humans doing the editing. Attributed to Nick Eubanks, global CMO of Digistore24, from The Unscripted SEO Interview Podcast.](/library/ai-agent-seo/quote-humans-do-the-brief.png "Nick Eubanks on who does the brief")
+
+His episode is [on the Unscripted SEO podcast](https://unscriptedseo.com/nick-eubanks-distribution-is-the-last-moat/). The reason is simple once said. The brief is where the knowledge lives: what the reader needs, what the business knows that competitors do not, which claims are true. A model cannot supply any of that, and if it writes the brief it writes a generic one and every draft that follows is generic. The draft, by contrast, is mostly labour, and the model is good at labour.
+
+## What goes in the brief
+
+Malte Landwehr, who runs product and research at Peec AI and watches what gets cited, gives the test that decides whether a page deserves to exist:
+
+> if you can create it with a prompt, why would chat GPT or open AI or Google crawl index and rank it, right? They could just use that prompt on their own.
+
+And the mindset for the brief:
+
+> think about how you would do briefings for a new author who is very smart but doesn't know anything about your business and will try to bullshit you unless you give them very explicit instructions and then also have still someone double check it.
+
+His episode is [here](https://unscriptedseo.com/episode-recap-malte-landwehr-of-peec-ai-on-consensus-query-fan-outs-and-ai-content-guardrails/). Data and quotes are the two things the model cannot invent without lying, so they are the two things that make a page different from the ten pages already ranking. A brief that carries them produces a draft with something in it. A brief that says "write 1,500 words about X" produces the eleventh page.
+
+The rest of the brief is what you would tell a good freelance writer on their first day:
+
+- **Who reads it** and what they already know. The reader of this library owns a KPI and not the site; the reader of a plumber's page owns a leak.
+- **What the reader should be able to do** after reading. One thing.
+- **The data.** Your Search Console numbers, your tracker, your audit, a customer's actual words. Pulled through the [MCP](/docs/mcp) if you have it connected, pasted if not.
+- **The quotes**, verbatim, with who said them and where.
+- **What not to say.** The claims you cannot back, the competitors you do not name, the product features that do not exist yet.
+
+Jeremy Moser, who runs a content and link agency, on why the brief cannot be skipped:
+
+> AI works really good if you have the expertise to relay to it and feed through it.
+
+His episode is [here](https://unscriptedseo.com/jeremy-moser-it-was-always-just-good-seo/). The expertise is relayed in the brief. If you do not have it, the model does not either.
+
+## What the model is good at
+
+Once the brief exists, the model earns its place. Erika Braeger, manager of organic growth strategy at Tenspeed, names what it removes:
+
+> through all of my agency experience, what I consistently ran into is it it's the pre-work that can burn a lot of time, a lot of energy.
+
+Her episode is [here](https://unscriptedseo.com/erika-braeger-tenspeed-unscripted-seo/). The pre-work is pulling the data into one place, outlining against the brief, writing the first draft of every section, drafting the FAQ from the questions people ask, formatting. An afternoon becomes a minute, and the afternoon was never where the value was.
+
+Tom Malesic, founder of EZMarketing, describes what it did to his team's job titles:
+
+> Asking our team from being self creators of things whether it's you came up with a designer you handcrafted all that copy to become editors of things
+
+His episode is [here](https://unscriptedseo.com/tom-malesic-the-website-is-the-center-of-everything-unscripted-seo-podcast/). Editors, not writers. The role did not disappear; it moved to the two ends of the loop where the judgement is.
+
+## The edit: two checks that catch the generic draft
+
+The model's draft has a signature. It hedges, it lists in threes, it opens paragraphs with a throat-clearing phrase, it reaches for the same dozen adjectives every other draft reaches for. A reader may not name what is wrong with it, but they stop reading.
+
+Two checks, in order.
+
+**First, the fact pass.** Every number traces to a source in the brief. Every quote matches its transcript. Every product claim is true today, not last quarter. This is the check the model cannot run on itself, because it does not know which of its sentences it invented. On this site the rule is written into the review process: if a reader trusted every claim and opened the product right now, where would reality not match?
+
+**Second, the slop pass.** A list of the phrases and structures that mark a machine draft, applied to the text. OpenSEO keeps one in its repository and runs it on every page before it ships; the phrase catalogue is a few hundred entries and the structural one covers the rhythms, the false contrasts, the rhetorical questions the draft asks itself. Malte adds four measurements you can have the assistant compute against a set of your own human-written pages: perplexity, compression ratio, and Jaccard and cosine similarity between texts. A draft that scores far from the human set on any of them needs another pass. Here is what the rule and the catalogue look like in the source:
+
+![The OpenSEO repository's agent skills directory listed in a terminal, with the deslop skill's reference files and the first entries of its phrases catalogue: filler openers, binary contrasts, and vocabulary the skill removes from every draft before it ships](/library/ai-agent-seo/deslop-skill-catalogue-openseo.png "The deslop skill in the OpenSEO repository")
+
+Holly Homer, who runs organic and AI visibility at Digistore24, has a cheaper version of the second pass that works before you read a word:
+
+> one of my favorite things to do is is after I, you know, been working for a while with something is saying, what is the feedback I'm gonna give you about this?
+
+Her episode is [here](https://unscriptedseo.com/holly-homer-on-affiliate-marketing-ai-slop-and-being-replaced-by-your-own-words/). Mike Montague, who runs a human-first AI marketing practice, on why the whole loop matters to being cited at all:
+
+> if AI can write a blog for you, it already has that knowledge. So what why would it index it? Why would it cite your version if it can already write one that doesn't need to be cited?
+
+His episode is [here](https://unscriptedseo.com/mike-montague-ai-iron-man-not-terminator/). Run both passes and what remains is a draft that a person briefed, a model wrote, and a person checked. That is the loop. Adrian Nikolov, on who he hires now:
+
+> Of course, we still need editors, but the way I will hire an editor today is that I want one that knows AI, that uses AI constantly.
+
+His episode is [here](https://unscriptedseo.com/adrian-nikolov-organic-growth-engineering/).
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). This prompt makes the assistant assemble the brief's data half and then refuse to draft until the human half exists.
+
+```text
+Using the OpenSEO MCP on project [name], prepare a brief for a page
+about [topic]:
+
+1. Pull Search Console performance for the last 3 months by query,
+   filtered to queries containing [topic word]. Show me the top 15
+   with clicks, impressions and position, and the URL that ranks.
+
+2. Call get_keyword_metrics for the 15 plus five variants you think
+   are missing. Give me volume, difficulty and intent.
+
+3. Call get_serp_results for the top 3 terms and list the ranking
+   URLs with their titles. Tell me in one line what each page has
+   that the others do not.
+
+4. Stop. Ask me for: who the reader is, the one thing they should be
+   able to do afterwards, two to four verbatim quotes with sources,
+   and anything the page must not claim. Do not draft until I answer.
+
+5. After I answer, write the brief as a one-page document with those
+   answers at the top and the data underneath. Then, and only then,
+   draft the page from the brief.
+```
+
+Step 4 is the human in the loop, made mandatory. An assistant that skips it produces the backwards version Nick described, and it will skip it unless told not to.
+
+## The brief is where you are
+
+A page is worth reading because of what the writer knew. The model knows nothing about your reader, your data or your customers until you put it in the brief, and everything it drafts after that is only as good as what you put there. Write the brief, let it draft, edit it hard. [Skills, memory and the trace](/library/ai-agent-seo/skills-memory-and-the-trace) is how to make the second and third steps repeatable.
+
+## AI content FAQ
+
+### How do I use AI for SEO content without producing generic pages?
+
+Write the brief yourself: the reader, the one thing they should do, your own data, verbatim quotes, and what not to claim. Let the model draft from that. Then run a fact pass against the brief and a pass for machine-writing phrases before anything ships. Every skipped step shows in the result.
+
+### Should AI write the brief or the draft?
+
+The draft. A brief written by a model contains only what the model already knew, which is what every competing page already says. A brief written by a person carries the data and quotes that make the page different. The draft is labour; the brief is knowledge.
+
+### What is human in the loop content?
+
+A workflow where a person owns the two ends, briefing and editing, and a model does the middle. It is the opposite of the common pattern where the model briefs and edits while a person writes, which produces polished pages with nothing in them.
+
+### How do I check an AI draft?
+
+Two passes. Fact: every number, quote and product claim traces to the brief or the source. Slop: remove the phrases and structures that mark machine writing, such as filler openers, false contrasts and stacked rhetorical questions. OpenSEO keeps a catalogue of both in its repository and runs it on every page.
+
+### Does OpenSEO write content?
+
+No. The MCP pulls the data half of a brief: Search Console performance, keyword metrics, SERP results, competitors, audit findings. The assistant you connect writes from the brief you complete. The product's own pages follow the same loop and the review rules are public in its repository.

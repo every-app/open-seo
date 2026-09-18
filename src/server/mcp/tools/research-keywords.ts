@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
+import type { EnrichedKeyword } from "@/server/features/keywords/services/research/helpers";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import {
@@ -54,9 +55,23 @@ type ResearchRow = {
   intent: string;
 };
 
-// The full rows (including trend data) still ship in structuredContent; this
-// table exists so MCP clients that surface only text content see every keyword
-// and its metrics, not just the count summary.
+// The 12-month trend array is ~80% of the bytes per row and no MCP consumer
+// reads it; get_keyword_metrics returns trends for the few keywords that need
+// them.
+function toResearchRow(row: EnrichedKeyword): ResearchRow {
+  return {
+    keyword: row.keyword,
+    searchVolume: row.searchVolume,
+    keywordDifficulty: row.keywordDifficulty,
+    cpc: row.cpc,
+    competition: row.competition,
+    intent: row.intent,
+  };
+}
+
+// The rows also ship in structuredContent; this table exists so MCP clients
+// that surface only text content see every keyword and its metrics, not just
+// the count summary.
 const RESEARCH_COLUMNS: McpTableColumn<ResearchRow>[] = [
   { header: "keyword", value: (row) => row.keyword },
   { header: "volume", value: (row) => row.searchVolume },
@@ -130,7 +145,7 @@ export const researchKeywordsTool = {
             rowCount: data.rows.length,
             source: data.source,
             usedFallback: data.usedFallback,
-            rows: data.rows,
+            rows: data.rows.map(toResearchRow),
           };
         } catch (error) {
           return {

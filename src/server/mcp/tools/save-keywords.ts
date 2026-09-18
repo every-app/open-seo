@@ -24,7 +24,7 @@ const inputSchema = {
     .max(100)
     .optional()
     .describe(
-      "Optional metrics for the saved keywords. Copy keyword, searchVolume, keywordDifficulty, cpc, competition, and intent from research_keywords rows; map each row's trend to monthlySearches. Match each metric using its keyword field.",
+      "Optional metrics for the saved keywords. Copy keyword, searchVolume, keywordDifficulty, cpc, competition, and intent from research_keywords or get_keyword_metrics rows. monthlySearches is optional. Match each metric using its keyword field.",
     ),
   tags: z
     .array(z.string().min(1).max(64))

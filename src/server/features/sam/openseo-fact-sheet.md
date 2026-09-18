@@ -131,6 +131,7 @@ OpenSEO's app includes these practical workflows:
 - Rank tracking: track keyword positions over time.
 - Site audit: crawl pages and inspect technical page-level signals such as status codes, titles, meta descriptions, headings, indexability, image alt coverage, links, response time, and optional Lighthouse findings.
 - Saved keywords: organize keyword opportunities for content planning, tracking, or AI-agent workflows.
+- Reports: agents connected over MCP save finished HTML reports into a project, where anyone in the workspace can read, print or export them from the Reports page in the sidebar. You cannot save reports yourself. Reports use no credits, and each project holds up to 10,000.
 - AI and MCP setup: connect OpenSEO to agents and install OpenSEO skills.
 
 ## What users can do after subscribing

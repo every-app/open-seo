@@ -47,10 +47,11 @@ const inputSchema = {
 
 type Args = z.infer<z.ZodObject<typeof inputSchema>>;
 
-// Which organization gets the project. Pinned credentials (OAuth tokens,
-// self-host, SAM) are bound to one org. User-scoped credentials (API keys)
-// span organizations, so an ambiguous target is an error listing the options —
-// the agent must confirm the choice with the user rather than guessing.
+// Which organization gets the project. Pinned credentials (self-host, SAM)
+// are bound to one org. User-scoped credentials (hosted OAuth tokens and API
+// keys) span organizations, so an ambiguous target is an error listing the
+// options — the agent must confirm the choice with the user rather than
+// guessing.
 async function resolveTargetOrganization(
   auth: Omit<ToolContext["auth"], "baseUrl">,
   organizationId: string | undefined,
@@ -126,6 +127,9 @@ export const createProjectTool = {
   handler: async (args: Args, context: ToolContext) => {
     const { baseUrl, ...auth } = context.auth;
     const target = await resolveTargetOrganization(auth, args.organizationId);
+    // Same as withMcpProjectAuth: instrumentation reads context.auth after
+    // the handler, so telemetry credits the target org.
+    context.auth = { ...context.auth, ...target };
     // Same gate as the createProject server function — MCP and the dashboard
     // must agree on who can create projects. The role is the caller's role
     // in the TARGET organization, not the request-level one.

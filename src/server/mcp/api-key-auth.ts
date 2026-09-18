@@ -141,16 +141,14 @@ export async function handleMcpApiKeyRequest(
 
     // clientId "api_key" satisfies the hosted transport's fail-closed props
     // schema and counts these calls as external MCP clients in telemetry.
-    // orgScope "user": the key itself is the credential, not a key→org
-    // binding — project-scoped tools authorize per call via the caller's
-    // membership in the project's org, and organizationId above is only the
-    // fallback for tools with no project argument.
+    // The key is the credential, not a key→org binding: the hosted transport
+    // stamps orgScope "user", and organizationId above is only the fallback
+    // for tools with no project argument.
     const props = createWorkersOAuthMcpProps({
       userId,
       userEmail: user.email,
       organizationId,
       role,
-      orgScope: "user",
       baseUrl: getHostedBaseUrl(),
       scopes: [...MCP_OAUTH_SCOPES],
       clientId: "api_key",

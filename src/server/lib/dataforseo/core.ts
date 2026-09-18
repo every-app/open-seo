@@ -160,6 +160,9 @@ type DataforseoRequestOptions = {
    * be replayed. Defaults to retrying idempotent reads on transient 5xx.
    */
   maxServerErrorRetries?: number;
+  /** The sandbox host validates requests like production at zero cost. */
+  baseUrl?: string;
+  signal?: AbortSignal;
 };
 
 async function requestDataforseo<TTask extends DataforseoTaskLike>(
@@ -172,13 +175,14 @@ async function requestDataforseo<TTask extends DataforseoTaskLike>(
     options.classify,
     options.maxServerErrorRetries,
   );
-  const response = await doFetch(`${API_BASE}${path}`, {
+  const response = await doFetch(`${options.baseUrl ?? API_BASE}${path}`, {
     method,
     headers: {
       Accept: "application/json",
       ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
     },
     body: method === "POST" ? JSON.stringify(body) : undefined,
+    signal: options.signal,
   });
   const text = await response.text();
   if (text === "") return null;

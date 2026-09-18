@@ -1,6 +1,7 @@
 import { runBatch } from "@/db/runBatch";
 import { ProjectContextRepository } from "@/server/features/project-context/repositories/ProjectContextRepository";
 import { resolveContextUpdates } from "@/server/features/project-context/services/contextUpdateOps";
+import { ReportTemplateRepository } from "@/server/features/reports/repositories/ReportTemplateRepository";
 import {
   CUSTOM_SECTION_KEY_PREFIX,
   PROJECT_CONTEXT_SECTION_KEYS,
@@ -10,7 +11,6 @@ import {
   type ProjectContextSectionKey,
   type ProjectContextUpdate,
 } from "@/types/schemas/projectContext";
-
 // Project memory: the qualitative context SAM, MCP clients and the settings UI
 // share. Reading, writing and rendering it all go through here; the per-op
 // caps and normalization live in contextUpdateOps.
@@ -56,17 +56,25 @@ type ProjectContext = {
     summary: string;
     createdBy: ContextAuthor;
   }[];
+  /**
+   * The project's report templates. They belong to the reports feature, but
+   * this digest is the one block every skill already reads, so it is where
+   * agents discover them.
+   */
+  reportTemplates: { name: string; description: string }[];
 };
 
 export async function getProjectContext(
   projectId: string,
 ): Promise<ProjectContext> {
-  const [sectionRows, competitors, keyPages, researchLog] = await Promise.all([
-    ProjectContextRepository.listSections(projectId),
-    ProjectContextRepository.listCompetitors(projectId),
-    ProjectContextRepository.listKeyPages(projectId),
-    ProjectContextRepository.listResearchLog(projectId, RESEARCH_LOG_LIMIT),
-  ]);
+  const [sectionRows, competitors, keyPages, researchLog, reportTemplates] =
+    await Promise.all([
+      ProjectContextRepository.listSections(projectId),
+      ProjectContextRepository.listCompetitors(projectId),
+      ProjectContextRepository.listKeyPages(projectId),
+      ProjectContextRepository.listResearchLog(projectId, RESEARCH_LOG_LIMIT),
+      ReportTemplateRepository.listTemplates(projectId),
+    ]);
 
   const stored = new Map(sectionRows.map((row) => [row.key, row]));
   // Typed sections keep their declared order, which is also the order the
@@ -106,6 +114,10 @@ export async function getProjectContext(
       entryDate: row.entryDate,
       summary: row.summary,
       createdBy: row.createdBy,
+    })),
+    reportTemplates: reportTemplates.map((template) => ({
+      name: template.name,
+      description: template.description,
     })),
   };
 }
@@ -229,6 +241,9 @@ function pushSection(lines: string[], heading: string, body: string[]) {
  * `text` payload and for SAM's read-only context block. Typed sections are
  * always listed — an empty one shows up as missing, which is the signal agents
  * use to offer setup.
+ *
+ * The report-templates section is omitted entirely when there are none, so a
+ * project with no templates reads exactly as it did before.
  */
 export function renderProjectContextMarkdown(context: ProjectContext): string {
   const lines = ["# Project context", ""];
@@ -292,6 +307,16 @@ export function renderProjectContextMarkdown(context: ProjectContext): string {
         : []),
     ],
   );
+
+  if (context.reportTemplates.length > 0) {
+    pushSection(
+      lines,
+      "Report templates",
+      context.reportTemplates.map(
+        (template) => `- ${template.name}: ${template.description}`,
+      ),
+    );
+  }
 
   lines.push(
     context.missingSections.length > 0

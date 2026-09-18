@@ -5,6 +5,7 @@ import {
   desc,
   eq,
   gt,
+  inArray,
   lt,
   notExists,
   sql,
@@ -93,6 +94,15 @@ async function getHostedUser(userId: string) {
     },
     where: eq(authUser.id, userId),
   });
+}
+
+/** Names for a set of user ids in one query; missing ids are simply absent. */
+async function getHostedUserNames(userIds: string[]) {
+  if (userIds.length === 0) return [];
+  return db
+    .select({ id: authUser.id, name: authUser.name })
+    .from(authUser)
+    .where(inArray(authUser.id, userIds));
 }
 
 // The per-request membership check: session.activeOrganizationId is only an
@@ -184,5 +194,6 @@ export const AuthRepository = {
   getLastActiveOrganizationId,
   setLastActiveOrganization,
   getHostedUser,
+  getHostedUserNames,
   hasPendingInvitationForEmail,
 } as const;

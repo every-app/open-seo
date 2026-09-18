@@ -30,6 +30,14 @@ vi.mock("@/server/features/gsc/services/GscService", () => ({
 }));
 const toolContext = makeToolContext();
 
+const gscRow = (position: number, impressions = 100) => ({
+  keys: [`q${position}`],
+  clicks: 1,
+  impressions,
+  ctr: 0.041237113402061855,
+  position,
+});
+
 describe("search console MCP tools", () => {
   beforeEach(() => {
     mocks.getProjectForOrganization.mockResolvedValue({
@@ -101,6 +109,58 @@ describe("search console MCP tools", () => {
     );
     expect(text?.type === "text" && text.text).toContain("seo tools");
     expect(text?.type === "text" && text.text).toContain("4.0%");
+  });
+
+  it("applies position/impression filters server-side over the full window and paginates in Google row space", async () => {
+    mocks.GscService.getPerformance.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      connectedBy: "alice@example.com",
+      request: {
+        dimensions: ["query"],
+        startDate: "2026-04-27",
+        endDate: "2026-05-25",
+        rowLimit: 1000,
+        startRow: 10,
+      },
+      rows: [
+        gscRow(2),
+        gscRow(7),
+        gscRow(12, 5),
+        gscRow(15),
+        gscRow(18),
+        gscRow(30),
+      ],
+    });
+
+    const result =
+      await searchConsoleTools.getSearchConsolePerformanceTool.handler(
+        {
+          projectId: "project_1",
+          rowLimit: 2,
+          startRow: 10,
+          minPosition: 5,
+          maxPosition: 20,
+          minImpressions: 50,
+        },
+        toolContext,
+      );
+
+    expect(mocks.GscService.getPerformance).toHaveBeenCalledWith(
+      expect.objectContaining({ rowLimit: 1000, startRow: 10 }),
+    );
+    expect(mocks.GscService.getPerformance).toHaveBeenCalledWith(
+      expect.not.objectContaining({ minPosition: 5 }),
+    );
+    expect(result.structuredContent).toMatchObject({
+      rowCount: 2,
+      rows: [
+        { keys: ["q7"], ctr: 0.0412, position: 7 },
+        { keys: ["q15"], ctr: 0.0412, position: 15 },
+      ],
+      hasMore: true,
+      // q15 was Google row index 3 of this window; next page starts after it.
+      nextStartRow: 14,
+    });
   });
 
   it("surfaces a not-connected message with a connect URL", async () => {

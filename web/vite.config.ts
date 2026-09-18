@@ -6,6 +6,16 @@ import tsConfigPaths from "vite-tsconfig-paths";
 import tailwindcss from "@tailwindcss/vite";
 import mdx from "fumadocs-mdx/vite";
 
+const mdxPlugin = mdx(await import("./source.config"));
+const transformMdx = mdxPlugin.transform;
+if (typeof transformMdx === "function") {
+  mdxPlugin.transform = function (code, id, options) {
+    // Leave raw prompt files to Vite instead of compiling them as MDX pages.
+    if (new URLSearchParams(id.split("?")[1]).has("raw")) return;
+    return transformMdx.call(this, code, id, options);
+  };
+}
+
 export default defineConfig({
   server: {
     port: 4322,
@@ -16,7 +26,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    mdx(await import("./source.config")),
+    mdxPlugin,
     tailwindcss(),
     tsConfigPaths({
       projects: ["./tsconfig.json"],

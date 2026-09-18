@@ -27,6 +27,10 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable with `update_project_context` — an `addCompetitors` upsert for this domain with a short note on its strengths and where it is vulnerable — and append a research log entry: `{ appendResearchLog: { summary: "Competitor analysis: <domain>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "competitor-analysis"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `get_domain_overview`: baseline organic traffic and keyword count.
@@ -63,24 +67,19 @@ The project-context tools are free and shared with the app and other agents.
 
 ## Output format
 
-Start with:
+`h1`: the competitor domain.
 
-- Competitor snapshot
-- Biggest lesson
-- Best opportunity to beat them
+If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Then include:
+Sections in this order:
 
-| Area | Competitor pattern | Evidence | OpenSEO opportunity |
-| ---- | ------------------ | -------- | ------------------- |
-
-Include sections for:
-
-- Top keyword themes
-- Content/page types working for them
-- Backlink/authority notes
-- Head-to-head SERP observations
-- Priority actions for the user
+1. **Snapshot** — one or two opening sentences, then a table of the competitor's organic footprint (traffic estimate, keyword count, referring domains). Add the user's domain as a second row when comparing.
+2. **The biggest lesson** — one finding.
+3. **Where they are vulnerable** — one finding per opening, ordered by how winnable it is.
+4. **Keyword themes** — a table of theme, example keywords, volume, and whether the user competes there. A bar chart when a few themes dominate the footprint.
+5. **Content patterns and authority** — prose, with a note for anything inferred from keyword rows rather than seen on a page.
+6. **What to do next** — an ordered list, shortest useful.
+7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/competitor-analysis` ("OpenSEO Competitor Analysis skill"), then which tools reported what, and what you checked yourself.
 
 ## Guardrails
 

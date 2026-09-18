@@ -11,6 +11,7 @@
 - Use idiomatic TypeScript. Use Zod to validate untrusted data and narrow runtime values at trust boundaries.
 - Prefer established project helpers and libraries over hand-rolled implementations.
 - Prefer idiomatic TanStack Query, Router, and Form patterns for server state, routing, and submitted forms.
+- Specs under `specs/` are public design records: what a feature does, how it works, the alternatives considered and why they lost. No line numbers, migration mechanics, test plans, incidents, costs, or internal infrastructure details.
 
 ## Testing
 
