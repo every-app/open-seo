@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCustomer } from "autumn-js/react";
 import {
   getLatestRankResults,
   getRankPositionMatrix,
   estimateRankCheckCost,
 } from "@/serverFunctions/rank-tracking";
 import { AlertTriangle, ArrowLeft } from "lucide-react";
-import { useSession } from "@/lib/auth-client";
-import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
+import {
+  HostedPlanGate,
+  type HostedPlanGateState,
+} from "@/client/features/billing/HostedPlanGate";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { FreePlanAlert } from "./FreePlanAlert";
 import { RankTrackingDetailHeader } from "./RankTrackingDetailHeader";
@@ -57,24 +58,35 @@ function deviceVisibility(
   };
 }
 
-export function RankTrackingDomainDetail({
-  config,
-  projectId,
-  onBack,
-  onEdit,
-}: {
+export function RankTrackingDomainDetail(props: {
   config: RankTrackingConfig;
   projectId: string;
   onBack: () => void;
   onEdit: () => void;
 }) {
-  const { data: session } = useSession();
-  const customerQuery = useCustomer({
-    queryOptions: { enabled: Boolean(session?.user?.id) },
-  });
-  const isFreePlan =
-    !!customerQuery.data &&
-    getCustomerPlanStatus(customerQuery.data) === "free";
+  return (
+    <HostedPlanGate>
+      {(planGate) => (
+        <RankTrackingDomainDetailInner {...props} planGate={planGate} />
+      )}
+    </HostedPlanGate>
+  );
+}
+
+function RankTrackingDomainDetailInner({
+  config,
+  projectId,
+  onBack,
+  onEdit,
+  planGate,
+}: {
+  config: RankTrackingConfig;
+  projectId: string;
+  onBack: () => void;
+  onEdit: () => void;
+  planGate: HostedPlanGateState;
+}) {
+  const { isFreePlan } = planGate;
 
   const queryClient = useQueryClient();
   const [showAddKeywords, setShowAddKeywords] = useState(false);
