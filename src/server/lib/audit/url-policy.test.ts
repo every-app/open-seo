@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppError } from "@/server/lib/errors";
 import {
+  isCrawlableUrl,
   normalizeAndValidateStartUrl,
   resolveStartUrlRedirects,
 } from "@/server/lib/audit/url-policy";
@@ -132,5 +133,50 @@ describe("resolveStartUrlRedirects", () => {
     ).rejects.toMatchObject({
       code: "CRAWL_TARGET_BLOCKED",
     } satisfies Partial<AppError>);
+  });
+});
+
+describe("isCrawlableUrl", () => {
+  it("allows standard http and https URLs", () => {
+    expect(isCrawlableUrl("https://example.com/blog/post")).toBe(true);
+    expect(isCrawlableUrl("http://example.com/about")).toBe(true);
+  });
+
+  it("blocks Cloudflare internal /cdn-cgi/ namespace", () => {
+    expect(
+      isCrawlableUrl("https://example.com/cdn-cgi/l/email-protection#1234"),
+    ).toBe(false);
+    expect(
+      isCrawlableUrl("https://example.com/cdn-cgi/challenge-platform/h/g"),
+    ).toBe(false);
+    expect(isCrawlableUrl("https://example.com/cdn-cgi")).toBe(false);
+    expect(isCrawlableUrl("https://example.com/CDN-CGI/trace")).toBe(false);
+  });
+
+  it("allows similar non-internal paths", () => {
+    expect(isCrawlableUrl("https://example.com/cdn-assets/logo.png")).toBe(
+      true,
+    );
+    expect(isCrawlableUrl("https://example.com/cdn/styles.css")).toBe(true);
+    expect(isCrawlableUrl("https://example.com/cdn-cgi-images/photo.jpg")).toBe(
+      true,
+    );
+  });
+
+  it("blocks non-http schemes", () => {
+    expect(isCrawlableUrl("mailto:user@example.com")).toBe(false);
+    expect(isCrawlableUrl("javascript:void(0)")).toBe(false);
+    expect(isCrawlableUrl("ftp://example.com/file")).toBe(false);
+  });
+
+  it("blocks private hostnames and IP literals", () => {
+    expect(isCrawlableUrl("http://localhost:3000/page")).toBe(false);
+    expect(isCrawlableUrl("https://192.168.1.1/admin")).toBe(false);
+    expect(isCrawlableUrl("https://127.0.0.1/test")).toBe(false);
+  });
+
+  it("handles malformed URLs gracefully", () => {
+    expect(isCrawlableUrl("not-a-url")).toBe(false);
+    expect(isCrawlableUrl("")).toBe(false);
   });
 });
