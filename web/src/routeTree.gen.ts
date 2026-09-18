@@ -44,6 +44,7 @@ import { Route as MarketingFeaturesAiBrandVisibilityRouteImport } from './routes
 import { Route as MarketingLibrarySiteAuditIndexRouteImport } from './routes/_marketing/library/site-audit/index'
 import { Route as MarketingLibraryKeywordResearchIndexRouteImport } from './routes/_marketing/library/keyword-research/index'
 import { Route as MarketingLibraryCompetitiveAnalysisIndexRouteImport } from './routes/_marketing/library/competitive-analysis/index'
+import { Route as MarketingLibraryAiAgentSeoIndexRouteImport } from './routes/_marketing/library/ai-agent-seo/index'
 import { Route as MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport } from './routes/_marketing/library/site-audit/technical-seo-audit-checklist'
 import { Route as MarketingLibrarySiteAuditSeoAuditReportTemplateRouteImport } from './routes/_marketing/library/site-audit/seo-audit-report-template'
 import { Route as MarketingLibrarySiteAuditIndexBloatRouteImport } from './routes/_marketing/library/site-audit/index-bloat'
@@ -59,6 +60,10 @@ import { Route as MarketingLibraryCompetitiveAnalysisKeywordGapAnalysisRouteImpo
 import { Route as MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRouteImport } from './routes/_marketing/library/competitive-analysis/find-your-real-competitors'
 import { Route as MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRouteImport } from './routes/_marketing/library/competitive-analysis/competitor-traffic-estimates'
 import { Route as MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRouteImport } from './routes/_marketing/library/competitive-analysis/backlink-gap-analysis'
+import { Route as MarketingLibraryAiAgentSeoWhatToAutomateRouteImport } from './routes/_marketing/library/ai-agent-seo/what-to-automate'
+import { Route as MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRouteImport } from './routes/_marketing/library/ai-agent-seo/skills-memory-and-the-trace'
+import { Route as MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRouteImport } from './routes/_marketing/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+import { Route as MarketingLibraryAiAgentSeoHumanInTheLoopContentRouteImport } from './routes/_marketing/library/ai-agent-seo/human-in-the-loop-content'
 
 const TermsAndConditionsRoute = TermsAndConditionsRouteImport.update({
   id: '/terms-and-conditions',
@@ -248,6 +253,12 @@ const MarketingLibraryCompetitiveAnalysisIndexRoute =
     path: '/library/competitive-analysis/',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryAiAgentSeoIndexRoute =
+  MarketingLibraryAiAgentSeoIndexRouteImport.update({
+    id: '/library/ai-agent-seo/',
+    path: '/library/ai-agent-seo/',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 const MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute =
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRouteImport.update({
     id: '/library/site-audit/technical-seo-audit-checklist',
@@ -342,6 +353,30 @@ const MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute =
     path: '/library/competitive-analysis/backlink-gap-analysis',
     getParentRoute: () => MarketingRoute,
   } as any)
+const MarketingLibraryAiAgentSeoWhatToAutomateRoute =
+  MarketingLibraryAiAgentSeoWhatToAutomateRouteImport.update({
+    id: '/library/ai-agent-seo/what-to-automate',
+    path: '/library/ai-agent-seo/what-to-automate',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute =
+  MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRouteImport.update({
+    id: '/library/ai-agent-seo/skills-memory-and-the-trace',
+    path: '/library/ai-agent-seo/skills-memory-and-the-trace',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute =
+  MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRouteImport.update({
+    id: '/library/ai-agent-seo/run-seo-from-your-ai-assistant',
+    path: '/library/ai-agent-seo/run-seo-from-your-ai-assistant',
+    getParentRoute: () => MarketingRoute,
+  } as any)
+const MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute =
+  MarketingLibraryAiAgentSeoHumanInTheLoopContentRouteImport.update({
+    id: '/library/ai-agent-seo/human-in-the-loop-content',
+    path: '/library/ai-agent-seo/human-in-the-loop-content',
+    getParentRoute: () => MarketingRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof MarketingIndexRoute
@@ -375,6 +410,10 @@ export interface FileRoutesByFullPath {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features/': typeof MarketingFeaturesIndexRoute
   '/library/': typeof MarketingLibraryIndexRoute
+  '/library/ai-agent-seo/human-in-the-loop-content': typeof MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute
+  '/library/ai-agent-seo/run-seo-from-your-ai-assistant': typeof MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute
+  '/library/ai-agent-seo/skills-memory-and-the-trace': typeof MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute
+  '/library/ai-agent-seo/what-to-automate': typeof MarketingLibraryAiAgentSeoWhatToAutomateRoute
   '/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
   '/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
   '/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
@@ -390,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/ai-agent-seo/': typeof MarketingLibraryAiAgentSeoIndexRoute
   '/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
   '/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
@@ -426,6 +466,10 @@ export interface FileRoutesByTo {
   '/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/features': typeof MarketingFeaturesIndexRoute
   '/library': typeof MarketingLibraryIndexRoute
+  '/library/ai-agent-seo/human-in-the-loop-content': typeof MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute
+  '/library/ai-agent-seo/run-seo-from-your-ai-assistant': typeof MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute
+  '/library/ai-agent-seo/skills-memory-and-the-trace': typeof MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute
+  '/library/ai-agent-seo/what-to-automate': typeof MarketingLibraryAiAgentSeoWhatToAutomateRoute
   '/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
   '/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
   '/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
@@ -441,6 +485,7 @@ export interface FileRoutesByTo {
   '/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/library/ai-agent-seo': typeof MarketingLibraryAiAgentSeoIndexRoute
   '/library/competitive-analysis': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/library/keyword-research': typeof MarketingLibraryKeywordResearchIndexRoute
   '/library/site-audit': typeof MarketingLibrarySiteAuditIndexRoute
@@ -479,6 +524,10 @@ export interface FileRoutesById {
   '/_marketing/features/site-audit': typeof MarketingFeaturesSiteAuditRoute
   '/_marketing/features/': typeof MarketingFeaturesIndexRoute
   '/_marketing/library/': typeof MarketingLibraryIndexRoute
+  '/_marketing/library/ai-agent-seo/human-in-the-loop-content': typeof MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute
+  '/_marketing/library/ai-agent-seo/run-seo-from-your-ai-assistant': typeof MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute
+  '/_marketing/library/ai-agent-seo/skills-memory-and-the-trace': typeof MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute
+  '/_marketing/library/ai-agent-seo/what-to-automate': typeof MarketingLibraryAiAgentSeoWhatToAutomateRoute
   '/_marketing/library/competitive-analysis/backlink-gap-analysis': typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
   '/_marketing/library/competitive-analysis/competitor-traffic-estimates': typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
   '/_marketing/library/competitive-analysis/find-your-real-competitors': typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
@@ -494,6 +543,7 @@ export interface FileRoutesById {
   '/_marketing/library/site-audit/index-bloat': typeof MarketingLibrarySiteAuditIndexBloatRoute
   '/_marketing/library/site-audit/seo-audit-report-template': typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   '/_marketing/library/site-audit/technical-seo-audit-checklist': typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  '/_marketing/library/ai-agent-seo/': typeof MarketingLibraryAiAgentSeoIndexRoute
   '/_marketing/library/competitive-analysis/': typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   '/_marketing/library/keyword-research/': typeof MarketingLibraryKeywordResearchIndexRoute
   '/_marketing/library/site-audit/': typeof MarketingLibrarySiteAuditIndexRoute
@@ -532,6 +582,10 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features/'
     | '/library/'
+    | '/library/ai-agent-seo/human-in-the-loop-content'
+    | '/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+    | '/library/ai-agent-seo/skills-memory-and-the-trace'
+    | '/library/ai-agent-seo/what-to-automate'
     | '/library/competitive-analysis/backlink-gap-analysis'
     | '/library/competitive-analysis/competitor-traffic-estimates'
     | '/library/competitive-analysis/find-your-real-competitors'
@@ -547,6 +601,7 @@ export interface FileRouteTypes {
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/ai-agent-seo/'
     | '/library/competitive-analysis/'
     | '/library/keyword-research/'
     | '/library/site-audit/'
@@ -583,6 +638,10 @@ export interface FileRouteTypes {
     | '/features/site-audit'
     | '/features'
     | '/library'
+    | '/library/ai-agent-seo/human-in-the-loop-content'
+    | '/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+    | '/library/ai-agent-seo/skills-memory-and-the-trace'
+    | '/library/ai-agent-seo/what-to-automate'
     | '/library/competitive-analysis/backlink-gap-analysis'
     | '/library/competitive-analysis/competitor-traffic-estimates'
     | '/library/competitive-analysis/find-your-real-competitors'
@@ -598,6 +657,7 @@ export interface FileRouteTypes {
     | '/library/site-audit/index-bloat'
     | '/library/site-audit/seo-audit-report-template'
     | '/library/site-audit/technical-seo-audit-checklist'
+    | '/library/ai-agent-seo'
     | '/library/competitive-analysis'
     | '/library/keyword-research'
     | '/library/site-audit'
@@ -635,6 +695,10 @@ export interface FileRouteTypes {
     | '/_marketing/features/site-audit'
     | '/_marketing/features/'
     | '/_marketing/library/'
+    | '/_marketing/library/ai-agent-seo/human-in-the-loop-content'
+    | '/_marketing/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+    | '/_marketing/library/ai-agent-seo/skills-memory-and-the-trace'
+    | '/_marketing/library/ai-agent-seo/what-to-automate'
     | '/_marketing/library/competitive-analysis/backlink-gap-analysis'
     | '/_marketing/library/competitive-analysis/competitor-traffic-estimates'
     | '/_marketing/library/competitive-analysis/find-your-real-competitors'
@@ -650,6 +714,7 @@ export interface FileRouteTypes {
     | '/_marketing/library/site-audit/index-bloat'
     | '/_marketing/library/site-audit/seo-audit-report-template'
     | '/_marketing/library/site-audit/technical-seo-audit-checklist'
+    | '/_marketing/library/ai-agent-seo/'
     | '/_marketing/library/competitive-analysis/'
     | '/_marketing/library/keyword-research/'
     | '/_marketing/library/site-audit/'
@@ -918,6 +983,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/ai-agent-seo/': {
+      id: '/_marketing/library/ai-agent-seo/'
+      path: '/library/ai-agent-seo'
+      fullPath: '/library/ai-agent-seo/'
+      preLoaderRoute: typeof MarketingLibraryAiAgentSeoIndexRouteImport
+      parentRoute: typeof MarketingRoute
+    }
     '/_marketing/library/site-audit/technical-seo-audit-checklist': {
       id: '/_marketing/library/site-audit/technical-seo-audit-checklist'
       path: '/library/site-audit/technical-seo-audit-checklist'
@@ -1023,6 +1095,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRouteImport
       parentRoute: typeof MarketingRoute
     }
+    '/_marketing/library/ai-agent-seo/what-to-automate': {
+      id: '/_marketing/library/ai-agent-seo/what-to-automate'
+      path: '/library/ai-agent-seo/what-to-automate'
+      fullPath: '/library/ai-agent-seo/what-to-automate'
+      preLoaderRoute: typeof MarketingLibraryAiAgentSeoWhatToAutomateRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/ai-agent-seo/skills-memory-and-the-trace': {
+      id: '/_marketing/library/ai-agent-seo/skills-memory-and-the-trace'
+      path: '/library/ai-agent-seo/skills-memory-and-the-trace'
+      fullPath: '/library/ai-agent-seo/skills-memory-and-the-trace'
+      preLoaderRoute: typeof MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/ai-agent-seo/run-seo-from-your-ai-assistant': {
+      id: '/_marketing/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+      path: '/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+      fullPath: '/library/ai-agent-seo/run-seo-from-your-ai-assistant'
+      preLoaderRoute: typeof MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRouteImport
+      parentRoute: typeof MarketingRoute
+    }
+    '/_marketing/library/ai-agent-seo/human-in-the-loop-content': {
+      id: '/_marketing/library/ai-agent-seo/human-in-the-loop-content'
+      path: '/library/ai-agent-seo/human-in-the-loop-content'
+      fullPath: '/library/ai-agent-seo/human-in-the-loop-content'
+      preLoaderRoute: typeof MarketingLibraryAiAgentSeoHumanInTheLoopContentRouteImport
+      parentRoute: typeof MarketingRoute
+    }
   }
 }
 
@@ -1046,6 +1146,10 @@ interface MarketingRouteChildren {
   MarketingFeaturesSiteAuditRoute: typeof MarketingFeaturesSiteAuditRoute
   MarketingFeaturesIndexRoute: typeof MarketingFeaturesIndexRoute
   MarketingLibraryIndexRoute: typeof MarketingLibraryIndexRoute
+  MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute: typeof MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute
+  MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute: typeof MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute
+  MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute: typeof MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute
+  MarketingLibraryAiAgentSeoWhatToAutomateRoute: typeof MarketingLibraryAiAgentSeoWhatToAutomateRoute
   MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute: typeof MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute
   MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute: typeof MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute
   MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute: typeof MarketingLibraryCompetitiveAnalysisFindYourRealCompetitorsRoute
@@ -1061,6 +1165,7 @@ interface MarketingRouteChildren {
   MarketingLibrarySiteAuditIndexBloatRoute: typeof MarketingLibrarySiteAuditIndexBloatRoute
   MarketingLibrarySiteAuditSeoAuditReportTemplateRoute: typeof MarketingLibrarySiteAuditSeoAuditReportTemplateRoute
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute: typeof MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute
+  MarketingLibraryAiAgentSeoIndexRoute: typeof MarketingLibraryAiAgentSeoIndexRoute
   MarketingLibraryCompetitiveAnalysisIndexRoute: typeof MarketingLibraryCompetitiveAnalysisIndexRoute
   MarketingLibraryKeywordResearchIndexRoute: typeof MarketingLibraryKeywordResearchIndexRoute
   MarketingLibrarySiteAuditIndexRoute: typeof MarketingLibrarySiteAuditIndexRoute
@@ -1087,6 +1192,14 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingFeaturesSiteAuditRoute: MarketingFeaturesSiteAuditRoute,
   MarketingFeaturesIndexRoute: MarketingFeaturesIndexRoute,
   MarketingLibraryIndexRoute: MarketingLibraryIndexRoute,
+  MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute:
+    MarketingLibraryAiAgentSeoHumanInTheLoopContentRoute,
+  MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute:
+    MarketingLibraryAiAgentSeoRunSeoFromYourAiAssistantRoute,
+  MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute:
+    MarketingLibraryAiAgentSeoSkillsMemoryAndTheTraceRoute,
+  MarketingLibraryAiAgentSeoWhatToAutomateRoute:
+    MarketingLibraryAiAgentSeoWhatToAutomateRoute,
   MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute:
     MarketingLibraryCompetitiveAnalysisBacklinkGapAnalysisRoute,
   MarketingLibraryCompetitiveAnalysisCompetitorTrafficEstimatesRoute:
@@ -1117,6 +1230,7 @@ const MarketingRouteChildren: MarketingRouteChildren = {
     MarketingLibrarySiteAuditSeoAuditReportTemplateRoute,
   MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute:
     MarketingLibrarySiteAuditTechnicalSeoAuditChecklistRoute,
+  MarketingLibraryAiAgentSeoIndexRoute: MarketingLibraryAiAgentSeoIndexRoute,
   MarketingLibraryCompetitiveAnalysisIndexRoute:
     MarketingLibraryCompetitiveAnalysisIndexRoute,
   MarketingLibraryKeywordResearchIndexRoute:
