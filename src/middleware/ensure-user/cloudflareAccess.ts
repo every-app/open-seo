@@ -90,9 +90,23 @@ export async function resolveCloudflareAccessContext(
   const userId = typeof payload.sub === "string" ? payload.sub : null;
   const userEmail = typeof payload.email === "string" ? payload.email : null;
 
-  if (!userId || !userEmail) {
-    throw new AppError("UNAUTHENTICATED");
+  if (userId && userEmail) {
+    return resolveSharedWorkspaceContext(userId, userEmail);
   }
 
-  return resolveSharedWorkspaceContext(userId, userEmail);
+  // Service tokens (Access "Service Auth" policies) carry no email: only a
+  // `common_name` equal to the token's client id. Exactly one configured token
+  // is allowed in, as its own user inside the shared workspace. The email must
+  // be dedicated to the token: user emails are unique, so reusing a person's
+  // address would block that person's own login.
+  const serviceClientId = env.MCP_SERVICE_TOKEN_CLIENT_ID?.trim();
+  const serviceEmail = env.MCP_SERVICE_TOKEN_EMAIL?.trim();
+  const commonName =
+    typeof payload.common_name === "string" ? payload.common_name : null;
+
+  if (serviceClientId && serviceEmail && commonName === serviceClientId) {
+    return resolveSharedWorkspaceContext(`service:${commonName}`, serviceEmail);
+  }
+
+  throw new AppError("UNAUTHENTICATED");
 }
