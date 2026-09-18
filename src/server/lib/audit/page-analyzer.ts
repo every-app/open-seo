@@ -36,6 +36,23 @@ const MAX_ANCHOR_CHARS = 200;
 const MAX_EXTRACTED_LINKS = 1_000;
 const MAX_EXTRACTED_IMAGES = 1_000;
 
+// Locale-independent across CJK and Latin text, so the runtime default is fine.
+const WORD_SEGMENTER = new Intl.Segmenter(undefined, { granularity: "word" });
+
+/**
+ * Count words in extracted text. Whitespace splitting collapses scripts
+ * without inter-word spaces (Japanese, Chinese, Korean) into a handful of
+ * "words", so segment into word-like segments instead; for Latin prose the
+ * count matches the whitespace split.
+ */
+export function countWords(text: string): number {
+  let count = 0;
+  for (const segment of WORD_SEGMENTER.segment(text)) {
+    if (segment.isWordLike) count += 1;
+  }
+  return count;
+}
+
 interface OpenAnchor {
   href: string;
   rel: string;
@@ -235,7 +252,7 @@ export function analyzeHtml(
 
   const rawText = (sawBody ? bodyParts : fallbackParts).join("");
   const bodyText = rawText.replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = bodyText ? countWords(bodyText) : 0;
 
   return {
     url: pageUrl,
