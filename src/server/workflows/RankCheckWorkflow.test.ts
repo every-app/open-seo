@@ -10,6 +10,8 @@ const mocks = vi.hoisted(() => ({
   getRunById: vi.fn(),
   getKeywordsForConfig: vi.fn(),
   updateRun: vi.fn(),
+  updateConfig: vi.fn(),
+  getSnapshotsForRun: vi.fn(),
   autumnCheck: vi.fn(),
   createDataforseoClient: vi.fn(),
   runLiveCheck: vi.fn(),
@@ -159,5 +161,62 @@ describe("rank check workflow credit ceiling", () => {
 
     expect(result.keywords).toHaveLength(5);
     expect(mocks.autumnCheck).not.toHaveBeenCalled();
+  });
+});
+
+describe("rank check finalization", () => {
+  beforeEach(() => {
+    mocks.getConfigById.mockResolvedValue({ isActive: true });
+    mocks.getRunById.mockResolvedValue({
+      ...activeRun,
+      keywordsTotal: 3,
+      // Recorded by the batch step on the first rejected keyword.
+      errorMessage: "Invalid Field: 'location_name'.",
+    });
+    mocks.getKeywordsForConfig.mockResolvedValue(
+      Array.from({ length: 3 }, (_, index) => ({
+        id: `kw_${index}`,
+        keyword: `keyword ${index}`,
+      })),
+    );
+    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    mocks.updateRun.mockResolvedValue(undefined);
+    mocks.isHostedServerAuthMode.mockResolvedValue(true);
+    mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });
+  });
+
+  it("fails a run where no keyword produced a snapshot, keeping the recorded reason", async () => {
+    // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- the mocked base class does not inspect Worker constructor context
+    const workflow = new RankCheckWorkflow({} as ExecutionContext, {} as Env);
+
+    await workflow.run(
+      {
+        instanceId: "run_1",
+        timestamp: new Date(),
+        payload: {
+          runId: "run_1",
+          configId: "config_1",
+          billingCustomer,
+          projectId: "project_1",
+          domain: "example.com",
+          locationCode: 2840,
+          languageCode: "en",
+          devices: "desktop",
+          serpDepth: 10,
+          trigger: "manual",
+        },
+      },
+      // oxlint-disable-next-line typescript/no-unsafe-type-assertion -- workflow steps are executed directly by the pgStep mock
+      {} as WorkflowStep,
+    );
+
+    expect(mocks.updateRun).toHaveBeenCalledWith(
+      "run_1",
+      expect.objectContaining({
+        status: "failed",
+        errorMessage: "Invalid Field: 'location_name'.",
+      }),
+    );
+    expect(mocks.updateConfig).not.toHaveBeenCalled();
   });
 });

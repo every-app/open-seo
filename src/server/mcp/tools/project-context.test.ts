@@ -1,5 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { updateProjectContextTool } from "./project-context";
+import {
+  getProjectContextTool,
+  updateProjectContextTool,
+} from "./project-context";
 import { makeToolContext, textContent } from "./tool-test-support";
 
 // The repository is the seam, not the service: the tool's contract is that an
@@ -12,6 +15,7 @@ const mocks = vi.hoisted(() => ({
   listCompetitors: vi.fn(),
   listKeyPages: vi.fn(),
   listResearchLog: vi.fn(),
+  listTemplates: vi.fn(),
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
@@ -30,6 +34,12 @@ vi.mock(
   "@/server/features/project-context/repositories/ProjectContextRepository",
   () => ({ ProjectContextRepository: mocks }),
 );
+// The digest lists the project's report templates, which live in the reports
+// feature's own store.
+vi.mock(
+  "@/server/features/reports/repositories/ReportTemplateRepository",
+  () => ({ ReportTemplateRepository: mocks }),
+);
 
 beforeEach(() => {
   mocks.getProjectForOrganization.mockResolvedValue({ id: "project_1" });
@@ -37,6 +47,7 @@ beforeEach(() => {
   mocks.listCompetitors.mockResolvedValue([]);
   mocks.listKeyPages.mockResolvedValue([]);
   mocks.listResearchLog.mockResolvedValue([]);
+  mocks.listTemplates.mockResolvedValue([]);
 });
 
 describe("update_project_context", () => {
@@ -75,5 +86,35 @@ describe("update_project_context", () => {
       }),
     );
     expect(textContent(result)).toContain("Grow signups");
+  });
+});
+
+describe("get_project_context", () => {
+  // Templates are discovered through the digest and nowhere else, so an agent
+  // that cannot read the menu here will never follow a template.
+  it("lists the project's report templates", async () => {
+    mocks.listTemplates.mockResolvedValue([
+      {
+        id: "template_1",
+        projectId: "project_1",
+        name: "Monthly client check-in",
+        description: "The monthly update we send retainer clients.",
+        instructions: "Audience: the client's marketing lead.",
+        createdBy: "OpenSEO app",
+        createdByUserId: "user_1",
+        createdAt: "2026-09-01T10:00:00.000Z",
+        updatedAt: "2026-09-01T10:00:00.000Z",
+      },
+    ]);
+
+    const result = await getProjectContextTool.handler(
+      { projectId: "project_1" },
+      makeToolContext(),
+    );
+
+    expect(textContent(result)).toContain("## Report templates");
+    expect(textContent(result)).toContain(
+      "- Monthly client check-in: The monthly update we send retainer clients.",
+    );
   });
 });

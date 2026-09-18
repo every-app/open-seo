@@ -32,7 +32,9 @@ const inputSchema = {
     .min(1)
     .max(200)
     .optional()
-    .describe("Optional city or region name for local rank tracking."),
+    .describe(
+      'Exact DataForSEO location name for local rank tracking, e.g. "Catonsville,Maryland,United States". Must come from search_serp_locations; free-form names like "Catonsville, MD" are rejected.',
+    ),
   devices: z
     .enum(["desktop", "mobile", "both"])
     .optional()
@@ -60,7 +62,7 @@ export const createRankTrackerTool = {
   config: {
     title: "Create rank tracker",
     description:
-      "Create a rank tracking configuration for a project. Creating an empty tracker uses no credits and starts no check, but daily, weekly, and monthly trackers will spend credits after keywords are added. The domain defaults to the project's domain; market defaults to the project's market; devices default to mobile, search depth to 40, and schedule to manual. Use estimate_rank_tracker_cost before adding keywords to a scheduled tracker or starting a live run. Call get_rank_tracker first to avoid duplicates.",
+      "Create a rank tracking configuration for a project. Creating an empty tracker uses no credits and starts no check, but daily, weekly, and monthly trackers will spend credits after keywords are added. The domain defaults to the project's domain; market defaults to the project's market; devices default to mobile, search depth to 40, and schedule to manual. Use estimate_rank_tracker_cost before adding keywords to a scheduled tracker or starting a live run. Call get_rank_tracker first to avoid duplicates. For local (city-level) tracking, call search_serp_locations first and pass its locationName verbatim.",
     inputSchema,
     outputSchema: z
       .object({
@@ -111,7 +113,7 @@ export const createRankTrackerTool = {
     );
 
     return mcpResponse({
-      text: `Created rank tracker ${config.id} for ${config.domain} (${config.devices}, top ${config.serpDepth}, ${config.scheduleInterval}). No keywords were added, no check was started, and no credits were used.${config.scheduleInterval === "manual" ? "" : " Scheduled checks will spend credits after keywords are added; estimate and obtain approval before adding them."}`,
+      text: `Created rank tracker ${config.id} for ${config.domain} (${config.devices}, top ${config.serpDepth}, ${config.scheduleInterval}). No keywords were added, no check was started, and no credits were used.${config.locationName ? ` Local tracking for ${config.locationName}.` : ""}${config.scheduleInterval === "manual" ? "" : " Scheduled checks will spend credits after keywords are added; estimate and obtain approval before adding them."}`,
       meta: buildProjectMeta(
         context,
         args.projectId,

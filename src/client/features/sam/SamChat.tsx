@@ -87,7 +87,7 @@ export function SamChat({
             {activeTitle ?? "Chat"}
           </span>
           <Link
-            to="/p/$projectId/settings/context"
+            to="/p/$projectId/context"
             params={{ projectId }}
             className="flex shrink-0 items-center gap-1.5 text-xs text-base-content/60 transition-colors hover:text-base-content"
           >

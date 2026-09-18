@@ -1,0 +1,128 @@
+---
+title: "What to automate and what to keep: the dispatcher rule"
+description: "A scheduled rank check runs without anyone watching. A decision about which keywords go in it does not. How to split SEO work into what a schedule does, what an agent does, and what stays with a person, with a rule from someone who builds these systems for a living."
+---
+
+## Which SEO tasks should be automated?
+
+The ones with a fixed input, a fixed output and no judgement in between. Everything else needs either an agent with a person reading its work, or a person.
+
+That sounds obvious and it is where most SEO automation goes wrong, because the temptation is to automate the interesting part. Mason McCumber, an AI automation specialist, describes the agent as a truck driver and you as the dispatcher, and the failure mode in one line:
+
+> The driver's up so high in the truck and it just drove over someone's grass, but it doesn't know it just drove over someone's grass.
+
+His episode is [on the Unscripted Small Business podcast](https://unscriptedsmallbusiness.com/mason-mccumber-on-ai-agents-agentic-workflows-building-smarter-business-systems-show-notes/). You are the dispatcher. The agent drives. You tell it where to go and you tell it when it went over the grass, and the second part is not optional, because the agent has a hard time noticing on its own.
+
+## Three layers, not two
+
+Most advice splits work into "automate" and "do by hand". The useful split has three layers.
+
+**Schedules.** Fixed input, fixed output, no model involved. A rank tracker checking 25 keywords every Monday. A Search Console property that syncs on its own. A monthly audit you start with one call. These run without an agent and without a person, and they are the cheapest thing in SEO. The only decision is what goes in, and that decision is made once.
+
+**Agents.** Variable input, structured output, a person reads it. Summarise what moved in this week's tracker check. Bucket the audit's 1,180 findings by cause. Draft the report from the numbers. The agent does in a minute what took an afternoon, and the person reads the result the way an editor reads a draft.
+
+**People.** Deciding what to track, what to build, what to say to the client, what to ignore. Anything where being wrong costs more than being slow.
+
+Mason is blunt about the first layer, and it is the opposite of what the market is selling:
+
+> if there's a repeated task that you have to keep doing, it doesn't have to be AI. Everyone's putting AI in everything. AI is not for everything.
+
+Patrick Stox, formerly of Ahrefs, on where the second layer starts:
+
+> anything that, you know, is taking too much of your time that you're having to do repeatedly, go just try and you know, build a skill, try and improve it.
+
+His episode is [here](https://unscriptedseo.com/patrick-stox-on-building-in-the-geo-era/).
+
+Here is the first layer on a real tracker. Twenty-five keywords, mobile, checking the top 40 results, weekly. The estimate before it runs, from the app:
+
+![OpenSEO rank tracker cost estimate through the MCP for the seoarcade.com tracker: 25 keywords on mobile at depth 40, a live check and the queued weekly check priced separately, with the monthly recurring cost](/library/ai-agent-seo/mcp-rank-tracker-estimate-openseo.png "Rank tracker cost estimate through the OpenSEO MCP")
+
+That is a schedule. Nobody prompts it. It runs on Monday and the results wait. The agent's job is Tuesday: read what changed and say so. The person's job was two weeks ago, choosing the 25. Choosing them is that decision; reading the [rank tracker](/features/rank-tracking) and writing three sentences is the agent's Tuesday.
+
+## What not to automate
+
+Two things, and they are the two most people try first.
+
+**A process that is not written down.** Bradley Benner, who runs a link building service, on why automation fails in businesses that are not ready for it:
+
+> If if they don't have clear processes in their own business, you can't automate it because then you're just automating a sloppy process
+
+His episode is [here](https://unscriptedseo.com/bradley-benner-on-relevance-over-dr/). If you cannot write the steps down for a new hire, you cannot hand them to an agent. The agent will do something, confidently, and you will not know which step it invented.
+
+**The decision itself.** Kate Hendrickson of The Strategy Lane, on where the human sits:
+
+> AIs can't be like a Waymo. Like we can't just let it drive itself. We still have to be the driver of a lot of that.
+
+![A quote card reading: AIs can't be like a Waymo. We can't just let it drive itself. We still have to be the driver of a lot of that. Attributed to Kate Hendrickson of The Strategy Lane, from The Unscripted SEO Interview Podcast.](/library/ai-agent-seo/quote-cant-be-a-waymo.png "Kate Hendrickson on staying the driver")
+
+Her episode is [on the Unscripted Small Business podcast](https://unscriptedsmallbusiness.com/kate-hendrickson-markets-through-conversations/). She and Mason disagree on the metaphor and agree on the point. Whether you call yourself the driver or the dispatcher, there is a person in the loop at the moment a choice is made, and the systems that skip that person produce work that is fast and wrong.
+
+One more thing to know about the market: a lot of what is sold as an "SEO agent" is a schedule and a prompt in a wrapper. That is fine, as long as you know that is what you bought and a person still reads the output.
+
+## Putting the three layers on OpenSEO
+
+Map the product to the layers and the plan writes itself.
+
+| Layer    | In OpenSEO                                                                                                    | Who acts                             |
+| -------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Schedule | Rank tracker (daily, weekly, monthly), the connected Search Console property                                  | Nobody. It runs.                     |
+| Agent    | The MCP tools: read the tracker, read Search Console, bucket audit issues, pull competitors, draft the report | The assistant, with a person reading |
+| Person   | Which keywords, which pages, which competitors, what to build, what to tell the client                        | You                                  |
+
+The schedule layer costs credits per check and the app shows the price before you commit. The agent layer costs nothing for reads (Search Console, tracker results, audit results) and credits for research. The person layer costs the most, which is the reason to keep it small and to give it good inputs.
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp). This prompt sets up the schedule layer once and defines the agent's weekly job; the person's job is answering the questions in step 1.
+
+```text
+Using the OpenSEO MCP on project [name]:
+
+1. Ask me three questions and wait: which 20 to 40 keywords to
+   track, which device, and what day of the week I read reports.
+
+2. Call get_rank_tracker. If a tracker exists for my domain, add the
+   keywords to it; otherwise create one: weekly, the device I named,
+   depth 40. Call estimate_rank_tracker_cost first and show me the
+   monthly figure before adding anything.
+
+3. Call run_site_audit if the last audit is older than 30 days, and
+   tell me when it will finish.
+
+4. Write down, as a saved prompt I can paste every week: pull the
+   tracker results, bucket the movement (entered top 3, entered page
+   1, left page 1, unchanged), pull Search Console clicks for the
+   tracked pages this week versus last, and write three sentences.
+
+5. Tell me which of the things you just did will run again without
+   me, which need me to paste the weekly prompt, and which need me to
+   decide something.
+```
+
+Step 5 is the three layers, said back to you by the agent. If it puts a decision in the "runs without me" list, that is the grass.
+
+## Automate the schedule, read the agent, keep the decision
+
+The tracker runs. The audit runs when asked. The agent reads them and writes the draft. You choose the keywords, read the draft and decide. The work that used to fill the week now fills an hour, and the hour is the part that was always worth paying for. [Human in the loop content](/library/ai-agent-seo/human-in-the-loop-content) applies the same split to writing.
+
+## SEO automation FAQ
+
+### What SEO tasks can be automated?
+
+Anything with a fixed input and output and no judgement: scheduled rank checks, Search Console pulls, site audits started on a fixed day, data exports. An agent can add a second layer, summarising and drafting from that data, as long as a person reads the result. Choosing what to track, what to build and what to tell a client stays with a person.
+
+### What is the difference between SEO automation and an AI SEO agent?
+
+Automation runs the same job on a schedule with no model involved, like a weekly rank check. An agent takes variable input and produces structured output using a language model, like reading the check and writing the summary. Many products sold as agents are a schedule plus a prompt; that is useful, but it still needs a reader.
+
+### Can I automate SEO reporting?
+
+The data collection, yes: the tracker and Search Console pulls run on their own and use no credits to read. The draft, yes, with an agent and a saved prompt. The sentence that says what it means for the business should still be written or at least read by a person before it goes out.
+
+### How much does scheduled rank tracking cost in OpenSEO?
+
+The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app need the $10/month plan.
+
+### Should I automate content production?
+
+Not end to end. The strategy on [human in the loop content](/library/ai-agent-seo/human-in-the-loop-content) covers the split that works: a person writes the brief, the agent drafts, a person edits. Automating the brief or the edit produces content that reads like every other automated site.

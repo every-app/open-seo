@@ -78,6 +78,14 @@ The execution order is designed for safe retries:
 3. Delete the organizations and user in one Postgres transaction, relying on
    foreign-key cascades for project data, then verify the root rows are gone.
 
+Reports and report templates have no user foreign key, so step 3 re-attributes
+them rather than deleting them: `created_by_user_id` becomes
+`gdpr-deleted-user`, share links on the user's reports are revoked in the same
+statement, and a surviving multi-member organization keeps the rows. The dry run
+counts them as `attributed_reports` and `attributed_report_templates`, alongside
+the `reports` and `report_templates` in the target's own projects, which cascade
+away with the project when its organization is deleted.
+
 If a step fails, fix the reported credential or service error and run the same
 command again. Vendor absence and already-finished Workflows are treated as
 successful no-ops.
@@ -90,6 +98,11 @@ Completed Workflow state and Workers logs expire under the Cloudflare account's
 configured retention. Database backups and billing records that must be kept
 for tax, fraud, or legal obligations should be isolated from production access
 and allowed to expire under the documented retention schedule.
+
+Reports the erased user created survive in a multi-member organization with
+their attribution wiped, and the same statement revokes any public share link
+on those reports, so `/s/<token>` stops resolving. A link another member opened
+on a report they created is untouched.
 
 Prompt-response cache objects written after this erasure tooling was deployed
 carry an organization tag and are deleted by the command. Older untagged cache

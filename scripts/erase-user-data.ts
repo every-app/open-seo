@@ -26,7 +26,7 @@ import {
   or,
   sql,
 } from "drizzle-orm";
-import { alias } from "drizzle-orm/pg-core";
+import { alias, type PgColumn, type PgTable } from "drizzle-orm/pg-core";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { z } from "zod";
@@ -254,7 +254,8 @@ async function buildInventory(db: Db, user: UserRow) {
           )
           .orderBy(schema.rankCheckRuns.id);
 
-  const projectCount = async (table: typeof schema.savedKeywords) =>
+  // Any table with a `project_id`: the counts differ only in which table.
+  const projectCount = async (table: PgTable & { projectId: PgColumn }) =>
     projectIds.length === 0
       ? 0
       : db.$count(table, inArray(table.projectId, projectIds));
@@ -273,13 +274,7 @@ async function buildInventory(db: Db, user: UserRow) {
     ),
     projects: projectIds.length,
     saved_keywords: await projectCount(schema.savedKeywords),
-    audits:
-      projectIds.length === 0
-        ? 0
-        : await db.$count(
-            schema.audits,
-            inArray(schema.audits.projectId, projectIds),
-          ),
+    audits: await projectCount(schema.audits),
     rank_snapshots:
       projectIds.length === 0
         ? 0
@@ -296,6 +291,23 @@ async function buildInventory(db: Db, user: UserRow) {
     attributed_audits: await db.$count(
       schema.audits,
       eq(schema.audits.startedByUserId, user.id),
+    ),
+    reports: await projectCount(schema.reports),
+    attributed_reports: await db.$count(
+      schema.reports,
+      eq(schema.reports.createdByUserId, user.id),
+    ),
+    report_templates: await projectCount(schema.reportTemplates),
+    attributed_report_templates: await db.$count(
+      schema.reportTemplates,
+      eq(schema.reportTemplates.createdByUserId, user.id),
+    ),
+    shared_reports: await db.$count(
+      schema.reports,
+      and(
+        eq(schema.reports.createdByUserId, user.id),
+        isNotNull(schema.reports.shareToken),
+      ),
     ),
     gsc_connections: await db.$count(
       schema.gscConnections,
@@ -498,6 +510,23 @@ async function erasePostgres(db: Db, user: UserRow, organizationIds: string[]) {
       .update(schema.audits)
       .set({ startedByUserId: "gdpr-deleted-user" })
       .where(eq(schema.audits.startedByUserId, user.id));
+    // reports.created_by_user_id has no FK either (same reason as audits), so a
+    // surviving multi-member org keeps its reports with the attribution wiped.
+    // Any public link on a report they created is revoked in the same
+    // statement: the link is a capability published from their work, and it
+    // must not outlive them.
+    await tx
+      .update(schema.reports)
+      .set({
+        createdByUserId: "gdpr-deleted-user",
+        shareToken: null,
+        sharedAt: null,
+      })
+      .where(eq(schema.reports.createdByUserId, user.id));
+    await tx
+      .update(schema.reportTemplates)
+      .set({ createdByUserId: "gdpr-deleted-user" })
+      .where(eq(schema.reportTemplates.createdByUserId, user.id));
     if (organizationIds.length > 0) {
       // Re-assert the solo-membership guard at delete time: anyone who
       // accepted an invite after the inventory was taken must abort the

@@ -151,13 +151,19 @@ describe("create_project with a user-scoped credential", () => {
   });
 
   it("creates in the named organization when the user is a member of it", async () => {
+    const userContext = makeToolContext({ orgScope: "user" });
     await createProjectTool.handler(
       { name: "Acme", organizationId: "org_b" },
-      userScopedContext,
+      userContext,
     );
 
     expect(mocks.createProject).toHaveBeenCalledWith("org_b", {
       name: "Acme",
+    });
+    // Written back so instrumentation credits the target org.
+    expect(userContext.auth).toMatchObject({
+      organizationId: "org_b",
+      role: "admin",
     });
   });
 

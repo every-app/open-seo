@@ -7,7 +7,7 @@ OpenSEO Agent Skills let you hand repeatable SEO workflows to your AI agent.
 
 Run a slash command when you need keyword research, clustering, competitor analysis, link prospecting, or project setup. The skill gives your agent the workflow instructions.
 
-You stay in charge of strategy. Your agent uses OpenSEO data and the skill instructions to return a recommendation, plan, or shortlist.
+You stay in charge of strategy. Your agent uses OpenSEO data and the skill instructions to research the answer, then saves the result as a report in your project.
 
 ## Set up OpenSEO Agent Skills
 
@@ -38,6 +38,10 @@ MCP connects your agent to OpenSEO data. Skills tell your agent which SEO workfl
 ## Promotion workflows
 
 - [Link Prospecting](/docs/skills/link-prospecting): find qualified outreach prospects and the angle that makes each one relevant.
+
+## How the results reach you
+
+- [SEO Report](/docs/skills/seo-report): the shared report-writing skill every workflow above delivers through. Your agent writes one self-contained HTML page and saves it to your project's Reports page, where anyone can read or print it.
 
 ## Learn more about skills
 

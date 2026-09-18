@@ -21,8 +21,17 @@ const authRepositoryMocks = vi.hoisted(() => ({
   getMembership: vi.fn(),
 }));
 
+const hostedOrganizationMocks = vi.hoisted(() => ({
+  resolveExistingActiveHostedOrganization: vi.fn(),
+}));
+
 vi.mock("@/server/auth/repositories/AuthRepository", () => ({
   AuthRepository: authRepositoryMocks,
+}));
+
+vi.mock("@/server/auth/default-hosted-organization", () => ({
+  resolveExistingActiveHostedOrganization:
+    hostedOrganizationMocks.resolveExistingActiveHostedOrganization,
 }));
 
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
@@ -235,12 +244,13 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
         legacy: "reject",
       }),
     );
-    // The transport stamps the per-request role into the props it hands the
-    // server; roles are never baked into tokens.
+    // The transport stamps the per-request role and user scope into the props
+    // it hands the server; neither is baked into tokens.
     expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
       [MCP_AUTH_CONTEXT_PROP]: {
         ...props[MCP_AUTH_CONTEXT_PROP],
         role: "owner",
+        orgScope: "user",
       },
     });
   });
@@ -309,6 +319,7 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
       [MCP_AUTH_CONTEXT_PROP]: {
         ...props[MCP_AUTH_CONTEXT_PROP],
         role: "owner",
+        orgScope: "user",
       },
     });
   });
@@ -355,10 +366,44 @@ describe("handleAuthenticatedOpenSeoMcpRequest", () => {
     expect(response.status).toBe(403);
   });
 
-  it("rejects a token whose user is no longer a member of the granted org", async () => {
-    // Tokens pin organizationId at consent time; once the membership is gone
-    // the token must stop working and push the client back through OAuth.
+  it("rebinds a token to the user's active org when the consent-time membership is gone", async () => {
     authRepositoryMocks.getMembership.mockResolvedValue(null);
+    hostedOrganizationMocks.resolveExistingActiveHostedOrganization.mockResolvedValue(
+      { organizationId: "org-2", role: "member" },
+    );
+    // No orgScope: a grant minted before the flag existed heals the same way.
+    const props = createWorkersOAuthMcpProps({
+      userId: "user-1",
+      userEmail: "user@example.com",
+      organizationId: "org-1",
+      baseUrl: "https://open-seo.test",
+      clientId: "client-1",
+      scopes: ["mcp"],
+    });
+
+    const response = await handleAuthenticatedOpenSeoMcpRequest(
+      createMcpRequest(),
+      props,
+      {},
+      { ...ctx, props },
+    );
+
+    expect(response.status).toBe(200);
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).toHaveBeenCalledWith({
+      [MCP_AUTH_CONTEXT_PROP]: {
+        ...props[MCP_AUTH_CONTEXT_PROP],
+        organizationId: "org-2",
+        role: "member",
+        orgScope: "user",
+      },
+    });
+  });
+
+  it("rejects a token whose user belongs to no organization", async () => {
+    authRepositoryMocks.getMembership.mockResolvedValue(null);
+    hostedOrganizationMocks.resolveExistingActiveHostedOrganization.mockResolvedValue(
+      null,
+    );
     const props = createWorkersOAuthMcpProps({
       userId: "user-1",
       userEmail: "user@example.com",

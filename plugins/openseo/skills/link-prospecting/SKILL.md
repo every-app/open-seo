@@ -26,6 +26,10 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable — the linkable asset via `addKeyPages`, any competitor whose backlink profile proved useful via `addCompetitors` — and append a research log entry: `{ appendResearchLog: { summary: "Link prospecting: <asset/target page>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "link-prospecting"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `get_serp_results`: find ranking articles, listicles, resource pages, comparisons, and topical publishers.
@@ -90,22 +94,19 @@ Use `get_serp_results` in batches for the most relevant patterns. Send at most 1
 
 ## Output format
 
-Start with:
+`h1`: the linkable asset.
 
-- Best outreach angle
-- Highest-priority prospect type
-- Any data limitations
+If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Then include:
+Sections in this order:
 
-| Prospect URL | Site/domain | Source | Relevance | Suggested angle | Contact path | Priority |
-| ------------ | ----------- | ------ | --------- | --------------- | ------------ | -------- |
-
-Then provide 2-3 reusable outreach drafts:
-
-- Resource/list inclusion
-- Article update/reference suggestion
-- Competitor alternative/comparison angle
+1. **The angle** — one or two opening sentences naming the best outreach angle and the prospect type to work first.
+2. **Prospects** — a table of prospect URL, site, source, suggested angle, contact path, and priority. Keep it under about eight columns; drop the ones that add nothing for this run.
+3. **Why these** — one finding per prospect worth explaining: the evidence that they link to things like this, then the exact ask.
+4. **Outreach drafts** — the message text for each of two or three reusable angles: resource or list inclusion, an article update, and a comparison mention.
+5. **Limitations** — notes: contact paths not found, prospects that are direct competitors or likely paid placements, and which source found each contact detail.
+6. **What to do next** — an ordered list: who to send to first, and in what order.
+7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/link-prospecting` ("OpenSEO Link Prospecting skill"), then which tools returned prospects and which came from the web or the browser.
 
 ## Guardrails
 

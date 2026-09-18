@@ -114,6 +114,11 @@ export function buildTaskBilling(
 
 const INVALID_FIELD_MESSAGE_RE = /Invalid Field:\s*'([^']+)'/i;
 
+/** The request field a DataForSEO validation rejection names, if any. */
+export function invalidFieldName(message: string): string | null {
+  return message.match(INVALID_FIELD_MESSAGE_RE)?.[1] ?? null;
+}
+
 /**
  * DataForSEO echoes the posted request params back on `task.data`. Its
  * validation rejections are opaque ("Invalid Field: 'target'.") and name the
@@ -125,10 +130,8 @@ function describeInvalidField(
   message: string,
   task: DataforseoTaskLike,
 ): string {
-  const match = message.match(INVALID_FIELD_MESSAGE_RE);
-  if (!match) return message;
-  const field = match[1];
-  if (!isRecord(task.data)) return message;
+  const field = invalidFieldName(message);
+  if (!field || !isRecord(task.data)) return message;
   const value = task.data[field];
   if (value === undefined) return message;
   return `${message} (sent ${field}=${JSON.stringify(value)})`;

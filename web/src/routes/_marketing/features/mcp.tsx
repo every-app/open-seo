@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { aiAgentSeoStrategies } from "@/lib/strategy-libraries";
 import { buildPageSeo } from "@/lib/seo";
 
 const mcpDescription =
@@ -190,6 +191,38 @@ function McpPage() {
               </ul>
             </div>
           ))}
+        </div>
+      </section>
+
+      <section className="mt-12">
+        <h2 className="text-xl font-semibold">AI-Agent SEO strategy library</h2>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-600">
+          Practitioner strategies for running SEO through an agent: what to
+          connect, what to automate, where the human stays, and how to make a
+          good run repeatable. Each includes a copy-paste MCP prompt.
+        </p>
+        <ul className="mt-5 space-y-3">
+          {aiAgentSeoStrategies.map((strategy) => (
+            <li key={strategy.href}>
+              <a
+                href={strategy.href}
+                className="text-sm font-medium text-neutral-900 underline decoration-neutral-300 underline-offset-4 transition-colors hover:text-neutral-700"
+              >
+                {strategy.title}
+              </a>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-600">
+                {strategy.description}
+              </p>
+            </li>
+          ))}
+        </ul>
+        <div className="mt-4">
+          <a
+            href="/library/ai-agent-seo"
+            className="inline-flex h-9 items-center justify-center rounded-md border border-neutral-300 px-4 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900"
+          >
+            Browse all AI-agent SEO strategies
+          </a>
         </div>
       </section>
 

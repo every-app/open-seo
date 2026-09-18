@@ -1,0 +1,153 @@
+---
+title: "Skills, memory and the trace: make the good run repeatable"
+description: "The perfect output you got once is worth nothing if the agent cannot do it again. Three habits from people who run SEO through agents every day: save the workflow as a skill, give the agent a memory it reads every run, and make it write down every step it took. Plus the two checks that catch the confident wrong answer."
+---
+
+## Why does the agent do it differently every time?
+
+Because you asked it to. A chat box with a blank prompt is the highest-variance way to use a model. The same instruction, pasted on two days, produces two different routes to two different outputs, and the second one is not worse because the model got worse; it is different because nothing told it to be the same.
+
+Mason McCumber, an AI automation specialist, has the sentence for it:
+
+> So repeatability is scalability. And that's the number one thing people are forgetting to realize. They're doing something and they're doing it once.
+
+And the cost of not fixing it:
+
+> If we get the perfect output from like some sort of AI model and we can't repeat that you'll you're just kind of battling that Chasing that one high that you got that one time
+
+![A quote card reading: Repeatability is scalability. And that's the number one thing people are forgetting to realize. They're doing something and they're doing it once. Attributed to Mason McCumber of BuildWithMM, from The Unscripted SEO Interview Podcast.](/library/ai-agent-seo/quote-repeatability-is-scalability.png "Mason McCumber on repeatability")
+
+His episode is [on the Unscripted Small Business podcast](https://unscriptedsmallbusiness.com/mason-mccumber-on-ai-agents-agentic-workflows-building-smarter-business-systems-show-notes/). Three habits fix it. None of them is clever.
+
+## 1. Save the workflow as a skill
+
+A skill is a file that tells the assistant how to do one job: what to pull, in what order, what to check, what the output looks like. OpenSEO ships a set of them for the SEO jobs the MCP supports, and they are the reason the same prompt produces the same shape of work on Monday and on Thursday:
+
+![The OpenSEO agent skills listed in a terminal: competitive-landscape, competitor-analysis, keyword-clustering, keyword-research, link-prospecting, local-seo, seo-audit, seo-coach and seo-project-setup, each a SKILL.md file the assistant reads before doing that job](/library/ai-agent-seo/openseo-agent-skills-openseo.png "The OpenSEO agent skills")
+
+Erika Braeger, manager of organic growth strategy at Tenspeed, builds them for her team and is precise about what they are for:
+
+> the innovation that I work on for my strategy team is clot skills that take away that pre-work so the strategist has all of that time back to focus on what really matters
+
+Her episode is [here](https://unscriptedseo.com/erika-braeger-tenspeed-unscripted-seo/). The skill does the fetching and arranging. The strategist does the thinking. And the skill does it the same way every time, which is the point.
+
+Patrick Stox, formerly of Ahrefs and now consulting on his own, on where to start:
+
+> anything that, you know, is taking too much of your time that you're having to do repeatedly, go just try and you know, build a skill, try and improve it.
+
+His episode is [here](https://unscriptedseo.com/patrick-stox-on-building-in-the-geo-era/). If you have pasted the same prompt three times, it is a skill. Write it down, name it, and stop pasting.
+
+## 2. Give it a memory it reads every run
+
+An agent forgets between conversations, and inside a long one. Mason's fix is a plain-text store the agent reads before it starts:
+
+> The way that we do it is we do it with Obsidian. Obsidian is a markdown platform that manages uh all of our files. So we make logs of transcripts. We make logs of every single thing that we're working on and that we're doing.
+
+Markdown, because every model reads it and every editor opens it. Logs of transcripts, decisions, what the client said, what you decided last month and why. OpenSEO's version is the project context: business overview, goal, positioning, competitors, key pages, and a research log so the assistant does not re-buy research it already bought. The [project setup](/docs/skills/seo-project-setup) skill fills it once; every other skill reads it.
+
+Holly Homer, who runs organic and AI visibility at Digistore24, describes the loop that memory makes possible:
+
+> where the magic happens is when you are building things that have feedback loops. And so you're like, no, that sucked for these s five reasons. You know, go ahead and redo it now.
+
+Her episode is [here](https://unscriptedseo.com/holly-homer-on-affiliate-marketing-ai-slop-and-being-replaced-by-your-own-words/). Feedback you give once and the agent forgets is a complaint. Feedback written into the memory it reads every run is a rule.
+
+## 3. Make it write down every step
+
+The third habit is the one almost nobody does, and Mason is specific about why it matters:
+
+> You have to tell it to leave clear traces of everything it does. Cause AI a lot of times will just go. It just goes and then doesn't leave a good trace on how it got to the perfect destination.
+
+A trace is a log: which tool it called, with what arguments, what came back, what it did with it. It costs a few lines per step. It buys you two things. When the output is right, the trace is the skill you should have written. When the output is wrong, the trace is where you find the step it invented.
+
+Bradley Benner, who builds AI operating systems for contractors, runs the same discipline before anything executes:
+
+> I always work in plan mode to begin with, anyways. And so it ends up a a sometimes a very lengthy discussion back and forth before we ever agree to a build plan
+
+His episode is [here](https://unscriptedseo.com/bradley-benner-on-relevance-over-dr/). Plan, agree, then run, with the plan written down. The trace is the same idea after the fact.
+
+## The two checks the trace makes possible
+
+Knight Lancaster, an attorney and CPA in Nashville, on why the confident answer is the dangerous one:
+
+> the old saying, know, often wrong but never in doubt. You get a confident response, but the second you say, hey, I don't think that's right, I mean, you don't have to push that hard.
+
+His episode is [on the Unscripted Small Business podcast](https://unscriptedsmallbusiness.com/knight-lancaster-navigating-finances-marketing-law-in-tennessee/). He has watched lawyers file briefs with invented citations, and his diagnosis is not the model:
+
+> I really think the fundamental issue is it's just a gap in the process.
+
+The gap is the last check. Two of them, both cheap once the trace exists.
+
+**The source check.** Every number in the output traces to a tool call in the log. If the agent says a keyword has 1,600 searches, the trace shows `get_keyword_metrics` returning 1,600. If it does not, the number came from the model's memory of the world, which is not a data source. Knight again, on why reading the first five facts is not enough:
+
+> when somebody hands you a fact sheet that has 27 facts on them and you look at the first four or five and they look right and the rest of them sound good you know you can kind of go sleep mentally
+
+**The domain check.** Chris Garrett, who has been a programmer and a content marketer for thirty years, sets the boundary:
+
+> AI tools are really helpful in domains that you're well versed in, but don't try to use it in a domain that you don't know very well because you don't spot the inaccuracies and the hallucinations.
+
+His episode is [here](https://unscriptedseo.com/chris-garrett-on-the-over-caffeinated-human-brain/). If you cannot tell whether a step in the trace is wrong, the workflow needs someone who can, or it needs to stay smaller than your expertise.
+
+Erika, after building a library of skills for her team, still ends every run the same way:
+
+> I still find even with all of my Clawed skills or Claude usage, I still need to run a thorough QA.
+
+And a practical limit Dan Kurtz hit that no amount of memory prevents:
+
+> Until you go to bulk update all of your metas and then your hosting provider shuts off that IP range.
+
+His episode is [here](https://unscriptedseo.com/dan-kurtz-bots-as-a-customer-segment-markdown-agentic-flywheel/). The agent can do anything to your site through an API. Your host may have opinions about how fast.
+
+## Run this with the OpenSEO MCP
+
+Connect the [OpenSEO MCP](/docs/mcp) and install the [skills](/docs/skills/setup). This prompt turns a one-off run into a repeatable one and produces the trace.
+
+```text
+Using the OpenSEO MCP on project [name]:
+
+1. Call get_project_context. If the goal, positioning, competitors or
+   key pages are missing, run the seo-project-setup skill and ask me
+   for them before doing anything else.
+
+2. Run the [keyword-research | seo-audit | competitor-analysis] skill
+   for [topic or domain]. As you go, keep a log: every tool called,
+   the arguments, the row count that came back, and what you did with
+   it. Print the log at the end.
+
+3. For every number in your summary, cite the log line it came from.
+   Any number without a log line, mark as "not from data".
+
+4. Tell me which two steps you would change if you ran this again,
+   and write the whole run as a SKILL.md I can save, with the steps
+   in order and the checks at the end.
+
+5. Call update_project_context to add one line to the research log:
+   what was run, when, and where the output is.
+```
+
+Step 3 is the source check, automated. Step 4 is the skill you should have had. Step 5 is the memory the next run reads.
+
+## The run is the asset
+
+The output of an agent run is one document. The skill, the memory and the trace are the things that make the next hundred runs cheaper and the wrong ones catchable. Save all three, or you are paying for the same afternoon every week and trusting a confident voice you cannot audit. [Run SEO from your AI assistant](/library/ai-agent-seo/run-seo-from-your-ai-assistant) is where the first run starts; this is how it becomes the second.
+
+## Skills and memory FAQ
+
+### What is an agent skill?
+
+A file, usually SKILL.md, that tells an AI assistant how to do one job: which tools to call in what order, what to check, and what the output should look like. OpenSEO ships skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup, so the assistant runs each workflow the same way every time.
+
+### Why does ChatGPT or Claude give different answers to the same prompt?
+
+Because a blank chat is designed to vary; nothing constrains the route from prompt to answer. Saving the workflow as a skill, giving the assistant a memory it reads before each run, and asking it to log each step all reduce that variance. A skill in particular runs the same steps in the same order.
+
+### How do I give an AI agent memory?
+
+A plain-text store it reads before it starts: markdown files of decisions, transcripts and rules, or a structured project context like OpenSEO's, which holds goal, positioning, competitors, key pages and a research log. Feedback written into that store becomes a rule; feedback given once in chat is forgotten.
+
+### How do I know if an AI SEO report is accurate?
+
+Make the assistant log every tool call and cite the log line for every number. A figure with no tool call behind it came from the model rather than the data. Then read the whole thing, not the first five rows, and only trust it in a domain where you would spot a wrong answer yourself.
+
+### Does OpenSEO have project memory?
+
+Yes. Each project holds a shared context: business overview, current goal, positioning, writing preferences, competitors, key pages and a research log. The MCP reads it with get_project_context and updates it with update_project_context, and the seo-project-setup skill fills it in on the first run.

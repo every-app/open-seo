@@ -107,7 +107,7 @@ describe("buildSearchAnalyticsRequest", () => {
     expect(request.dimensions).toEqual(["query"]);
     expect(request.type).toBe("web");
     expect(request.dataState).toBe("all");
-    expect(request.rowLimit).toBe(1000);
+    expect(request.rowLimit).toBe(250);
   });
 
   it("clamps rowLimit to the 1000 ceiling", () => {

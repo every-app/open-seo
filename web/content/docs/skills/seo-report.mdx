@@ -1,0 +1,52 @@
+---
+title: "SEO Report Agent Skill"
+description: "The report-writing skill every OpenSEO workflow delivers through: one self-contained HTML page, saved to your project, readable and printable by anyone."
+---
+
+The SEO Report Agent Skill is how the other OpenSEO workflows hand you their finished work.
+
+You do not run it on its own. When your agent finishes an audit, a keyword study, or a competitor analysis, this skill tells it how to write the result as one self-contained HTML page and save it to your project. The page shows up on the project's Reports page in OpenSEO, where anyone on your team can open it, read it on a phone, and print it to PDF.
+
+## What this skill helps your agent do
+
+- Write one HTML page instead of a wall of chat text, using a shared starter template so every report looks the same.
+- Save it to the project with `save_report`, so it is tied to the site it is about and findable tomorrow.
+- Check `list_reports` first and update the existing report when it is correcting its own run, instead of leaving you with three near-identical copies.
+- Keep the report self-contained: all the styling is inside the file, nothing is fetched from the web, and it prints correctly with no network at all.
+- Write a short summary alongside the page, so the agent, or the next agent, can pick the work back up without re-reading the whole report.
+- Reply in chat with the link, the verdict, and the top action, and leave the tables where they belong.
+
+## What you get back
+
+A report page in your project with a title that names the subject and the period, like "badseo.dev SEO audit, Sep 2026". Open it from the Reports page in the sidebar. The menu beside it exports a PDF, opens the report full screen, or opens it in its own tab.
+
+Reports are free. They do not spend credits, and there is no practical limit on how many a project holds. The Reports page shows the 100 most recent.
+
+## Sharing a report
+
+On openseo.so, open a report, click Share and turn on Public link. Send the link to a client or a teammate; they do not need an OpenSEO account. It always shows the latest saved version, and it is not indexed by search engines. Turn the toggle off and the link stops working, stopping new visitors within a minute.
+
+## How to get the best result
+
+- Ask for a workflow, not for a report: "audit badseo.dev" produces one on its own.
+- If you want the report corrected rather than duplicated, say so, and the agent will update the same page.
+- Say who the report is for. The agent puts it in the byline and pitches the language to match.
+- Reports have no version history and no undo, so a correction overwrites what was there.
+
+## Report templates
+
+A template is a reusable brief for a kind of report: who it is for, which sections it has and in what order, how it should sound, and how to sign off. Create one on the Templates page, reached from the Reports page in your project. Templates belong to a project; to reuse one somewhere else, ask your agent to list it in the first project and save a copy in the second.
+
+Your agent sees a project's templates and follows one when you name it, or when you ask for the kind of report it describes ("write the client-ready audit summary for badseo.dev"). A plain "audit this site" still uses the skill's own format. The template replaces the sections and the tone; it never changes how the page is built, so the report still prints and still opens on a phone.
+
+## Read the actual skill
+
+The source `SKILL.md`, including the starter template, lives on GitHub:
+
+- [SEO Report skill](https://github.com/every-app/open-seo/tree/main/.agents/skills/seo-report)
+
+## Related skills
+
+- [SEO Audit](/docs/skills/seo-audit), the workflow most people meet this skill through.
+- [Competitor Analysis](/docs/skills/competitor-analysis) and [Keyword Research](/docs/skills/keyword-research), which deliver the same way.
+- [SEO Coach](/docs/skills/seo-coach) if you are not sure which workflow to run first.

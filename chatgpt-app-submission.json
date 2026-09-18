@@ -164,6 +164,18 @@
         "destructive_justification": "May use metered research credits but does not delete, overwrite, revoke access, send, or publish anything."
       }
     },
+    "search_serp_locations": {
+      "annotations": {
+        "readOnlyHint": true,
+        "openWorldHint": false,
+        "destructiveHint": false
+      },
+      "justifications": {
+        "read_only_justification": "Only reads Google's public location registry to resolve a place name; uses no credits.",
+        "open_world_justification": "Operates only on private OpenSEO state or private provider data and cannot change publicly visible internet state.",
+        "destructive_justification": "Does not delete, overwrite, revoke access, send messages, or perform irreversible actions."
+      }
+    },
     "create_rank_tracker": {
       "annotations": {
         "readOnlyHint": false,

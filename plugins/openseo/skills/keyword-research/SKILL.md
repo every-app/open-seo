@@ -26,12 +26,16 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable — a sharpened `business_overview` or `current_goal`, competitors that kept appearing in the SERPs via `addCompetitors`, pages the keywords should land on via `addKeyPages` — and append a research log entry: `{ appendResearchLog: { summary: "Keyword research: <seeds/market>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "keyword-research"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `research_keywords`: primary discovery tool. Use 1-5 seeds per call and prefer 150 results unless the user asks for exhaustive research.
 - `get_keyword_metrics`: hydrate up to 700 known keywords with volume, keyword difficulty (KD), search intent, CPC, and monthly trends in one call. Use it to score candidate or known terms — including the Search Console striking-distance queries from step 1.
 - `get_ranked_keywords`: pull exact ranking keyword rows when a target domain or page is part of the research brief.
-- `get_search_console_performance`: when Search Console is connected, start from the project's real first-party demand — queries already earning impressions and near-ranking ("striking distance") terms. Request a high `rowLimit` and filter average position 5-20 client-side, since the API sorts by clicks and can't filter by position. Then hydrate those striking-distance queries with `get_keyword_metrics` to attach difficulty and intent.
+- `get_search_console_performance`: when Search Console is connected, start from the project's real first-party demand — queries already earning impressions and near-ranking ("striking distance") terms. Pass `minPosition: 5, maxPosition: 20, minImpressions: 50` so the server filters the striking-distance rows for you (Google sorts by clicks and can't filter by position itself). Then hydrate those striking-distance queries with `get_keyword_metrics` to attach difficulty and intent.
 - `get_serp_results`: inspect SERPs for the top candidate terms, especially when intent is ambiguous.
 - `search_local_businesses`, `get_local_serp_results`, and `get_google_business_questions`: use for local SEO topics when a business/location radius matters.
 - `list_saved_keywords`: avoid duplicating already-saved work or use existing tags as context.
@@ -39,7 +43,7 @@ The project-context tools are free and shared with the app and other agents.
 
 ## Workflow
 
-1. Normalize seeds into a small set of distinct research angles. If Search Console is connected for the project, first pull `get_search_console_performance` (high `rowLimit`, default lookback), filter to striking-distance positions (~5–20) client-side, and hydrate those queries with `get_keyword_metrics` to attach KD and intent. That ranked, hydrated list is your fastest opportunity set — work it before broad discovery.
+1. Normalize seeds into a small set of distinct research angles. If Search Console is connected for the project, first pull `get_search_console_performance` with `minPosition: 5, maxPosition: 20, minImpressions: 50` (default lookback), and hydrate those queries with `get_keyword_metrics` to attach KD and intent. That ranked, hydrated list is your fastest opportunity set — work it before broad discovery.
 2. If the request is local SEO, identify the business, location/coordinates or service area, and local categories. Use `search_local_businesses` and `get_local_serp_results` for the most important location/keyword set instead of relying only on national keyword/SERP data.
 3. Call `research_keywords` for exploratory seeds. Use bulk calls when possible.
 4. Use `get_keyword_metrics` to hydrate a fixed keyword list — or the striking-distance queries from step 1 — with volume, KD, and intent before prioritizing.
@@ -58,19 +62,19 @@ The project-context tools are free and shared with the app and other agents.
 
 ## Output format
 
-Start with the highest-signal recommendation:
+`h1`: the site or topic.
 
-- Best opportunity theme
-- Top keywords to target now
-- Keywords to save
-- Risks or SERP caveats
+If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Then include a compact table:
+Sections in this order:
 
-| Keyword | Intent | Volume |  KD | CPC | Priority | Notes |
-| ------- | ------ | -----: | --: | --: | -------- | ----- |
-
-End with next actions, including whether to run keyword clustering, create a content brief, or save the chosen keywords.
+1. **The opportunity** — one or two opening sentences naming the best theme and why the site can win it now.
+2. **Target these now** — a table of keyword, intent, volume, KD, CPC, and the page to make. Add a bar chart comparing the volumes of the shortlist.
+3. **Why these** — one finding per keyword that needs justifying: the SERP or metric evidence, then the page to build.
+4. **The longer opportunity list** — a second table, same columns.
+5. **Risks and caveats** — notes: SERP intent that would change the recommendation, missing metrics written as `unknown`, close-variant volumes that are one bucket rather than several.
+6. **What to do next** — an ordered list, including whether to run keyword clustering, write a content brief, or save the chosen keywords.
+7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/keyword-research` ("OpenSEO Keyword Research skill"), then which tools returned what.
 
 ## Guardrails
 

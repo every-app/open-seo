@@ -32,7 +32,9 @@ export const GSC_DATE_RANGES = [
   "last_16_months",
 ] as const;
 
-export const GSC_DEFAULT_ROW_LIMIT = 1000;
+// 250 rows fits comfortably inside one MCP tool result; the agent opts into
+// more with `rowLimit` or paginates with `startRow`.
+export const GSC_DEFAULT_ROW_LIMIT = 250;
 // v1 caps rows-per-call at 1000 to protect the MCP context window. The GSC API
 // supports up to 25000, but we keep fetched == returned so counts stay honest;
 // the agent paginates with `startRow` for more.

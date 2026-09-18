@@ -27,6 +27,10 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable with `update_project_context` — local competitors that have a website via `addCompetitors` (competitor rows are keyed by domain, so skip listings without one), a corrected `business_overview` — and append a research log entry: `{ appendResearchLog: { summary: "Local SEO: <business> near <area>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "local-seo"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `search_local_businesses`: nearby listings, filterable by `minRating`, `minReviews`, and `isClaimed` — use `isClaimed: false` to find unclaimed listings when prospecting. One call with the brand name as `query` and a wide radius returns category, rating, review count, claimed status, coordinates, and `cid` for every location of a chain — usually enough that per-location `get_business_profile` calls are unnecessary.
@@ -58,18 +62,19 @@ Always build the profile snapshot table for the whole chain — one `search_loca
 
 ## Output format
 
-Start with:
+`h1`: the business name.
 
-- Profile snapshot (category, rating, reviews, claimed) — one row per location for chains
-- Where visibility drops off, per the grid
-- The one fix to do this week
+If a report template applies (see `seo-report`), its sections and tone replace this list.
 
-Then include:
+Sections in this order:
 
-| Signal | This business | Best competitor | Gap | Action |
-| ------ | ------------- | --------------- | --- | ------ |
-
-Cover: categories, reviews (count, recency, owner replies), hours and profile completeness, listing website links, Maps coverage from the grid, Q&A and posting hygiene.
+1. **Snapshot** — one or two opening sentences, then a table of category, rating, review count, and claimed status. One row per location for a chain.
+2. **The one fix** — one finding. Category and claim problems outrank posting cadence every time.
+3. **Head to head** — a table of signal, this business, the best competitor, and the gap. Cover categories, reviews (count, recency, owner replies), hours and profile completeness, and the listing's website link.
+4. **Maps coverage** — what the grid shows, where visibility drops off, and who wins there. A bar chart of ranks by direction reads faster than a paragraph; label every value.
+5. **Q&A and posting** — only when the basics are already competitive.
+6. **What to do next** — an ordered list.
+7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/local-seo` ("OpenSEO Local SEO skill"), then which tools returned what, plus a note reading each missing grid rank against that point's `resultsCount` rather than calling it invisibility.
 
 ## Guardrails
 

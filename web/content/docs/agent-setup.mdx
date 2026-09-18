@@ -1,0 +1,136 @@
+---
+title: "Agent setup"
+description: "Connect your AI agent to OpenSEO and keep its SEO skills up to date."
+---
+
+OpenSEO connects your agent to live SEO data through MCP. Skills give it reusable workflows for keyword research, audits, competitor research, and other SEO tasks.
+
+## Set up your agent
+
+Copy this prompt into Claude Code, Codex, Grok Bot, Hermes, or another agent. It asks your agent to use its supported installation method and guide you through any steps you need to do yourself.
+
+<AgentPrompt kind="setup" />
+
+Approve the OpenSEO sign-in in your browser when prompted. Once setup is complete, ask your agent to use **SEO Coach** to help you choose what to do next.
+
+You can also copy this prompt from [Agent setup in OpenSEO](https://app.openseo.so/ai). For a self-hosted instance, use its Agent setup page so the prompt includes your own server address.
+
+Prefer to set it up yourself? Follow the instructions for your agent below. If the setup prompt already completed installation, skip to [Update your skills](#update-your-skills).
+
+### Claude Code
+
+Run inside Claude Code to install MCP and the public SEO skills:
+
+```text
+/plugin marketplace add every-app/open-seo
+/plugin install openseo@openseo
+```
+
+If Claude asks you to activate the plugin, run `/reload-plugins`. Follow the sign-in prompt, then try `/openseo:seo-coach`. See the [Claude Code plugin guide](/docs/claude-code-plugin) for troubleshooting.
+
+### Codex CLI
+
+Run in your terminal:
+
+```bash
+codex plugin marketplace add every-app/open-seo
+codex plugin add openseo@openseo
+```
+
+Reload or restart Codex if the plugin is not available yet, then sign in:
+
+```bash
+codex mcp login openseo
+```
+
+Ask Codex to use SEO Coach. See the [Codex plugin guide](/docs/codex-plugin) for troubleshooting. For plugins installed through a desktop directory, use that directory's controls.
+
+### Hermes
+
+Use the setup prompt above to connect MCP. To install SEO Coach through the Hermes skills hub, run in your terminal:
+
+```bash
+hermes skills install every-app/open-seo/plugins/openseo/skills/seo-coach
+```
+
+Repeat with the names of other [OpenSEO skills](/docs/skills) you want. Hub installations retain their source so Hermes can check for updates later. See [Hermes skill management](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills).
+
+### Grok Bot
+
+Paste the setup prompt into your Bot. Open **Marketplace** in the sidebar to manage packaged skills and connectors. Find private skills under **Your plugins → Manage plugins and skills → Private skills**. Private skills are shared across your Bots.
+
+Follow the Bot's instructions for any steps you need to complete yourself. See [Grok Bot skills](https://docs.x.ai/grok-bot/skills-routines-and-automations).
+
+### Claude web/Desktop and other agents
+
+Follow the [MCP connection guide](/docs/mcp), then install skills through your agent's supported skill manager. Claude web/Desktop manages custom skills under **Customize → Skills**; its flow differs from the Claude Code plugin.
+
+For agents using the skills CLI, choose public OpenSEO skills interactively:
+
+```bash
+npx skills add https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills
+```
+
+Choose the current agent and your preferred installation scope. Skip this if the OpenSEO plugin already supplies your skills. See [manual skill setup](/docs/skills/setup) for other options.
+
+## Update your skills
+
+When OpenSEO releases improved skills, update the copies installed in your agent. Updating the MCP connection alone does not update those files.
+
+Paste this prompt into the agent where you use OpenSEO. It asks the agent to check how the skills were installed and preserve your connection settings and personal edits.
+
+<AgentPrompt kind="update" />
+
+To update manually, use the method that matches your installation below.
+
+### Update the Claude Code plugin
+
+Run inside Claude Code:
+
+```text
+/plugin marketplace update openseo
+/plugin update openseo@openseo
+/reload-plugins
+```
+
+You can enable automatic updates in `/plugin` → **Marketplaces** → **openseo** → **Enable auto-update**. Third-party marketplaces have this off by default. Reload when Claude prompts you to activate an update. See [Claude's plugin update documentation](https://code.claude.com/docs/en/discover-plugins#configure-auto-updates).
+
+### Update the Codex CLI plugin
+
+Run in your terminal:
+
+```bash
+codex plugin marketplace upgrade openseo
+```
+
+Reload or restart Codex if the updated skills are not available. If your CLI rejects a command, check `codex plugin --help` for the commands supported by your version. See [OpenAI's marketplace documentation](https://developers.openai.com/plugins/build/plugins).
+
+### Update Hermes hub skills
+
+Check for updates, then update each installed OpenSEO skill by name. For example:
+
+```bash
+hermes skills check
+hermes skills update seo-coach
+```
+
+Repeat for your other installed OpenSEO skills. Hermes skips locally edited skills by default. Review those edits before replacing them; only add `--force` if you want to discard them. See [Hermes's update lifecycle](https://hermes-agent.nousresearch.com/docs/user-guide/features/skills#update-lifecycle).
+
+### Update skills installed with the skills CLI
+
+List your installations, then update the OpenSEO skills by name. For example:
+
+```bash
+npx skills list
+npx skills update seo-coach seo-audit
+```
+
+Use the names you actually installed and choose the same project or global scope. Pass `-g` for global skills or `-p` for project skills. Back up personal edits before updating. Run the setup command to select any newly added workflows separately. See the [skills CLI documentation](https://github.com/vercel-labs/skills#skills-update).
+
+### Update Grok Bot or manually copied skills
+
+Use the update prompt above. For Grok Bot, open **Marketplace → Your plugins → Manage plugins and skills** to find the installed skill or plugin. Its public documentation does not currently specify an upstream skill-update command, so use the management controls available in your version.
+
+For manually copied skills, compare your installed copies with the [public OpenSEO skill folders](https://github.com/every-app/open-seo/tree/main/plugins/openseo/skills). Preserve personal edits and replace the complete skill folder, including supporting files. Use your agent's skill manager for uploaded skills, such as Claude's **Customize → Skills**.
+
+After updating, reload the skills or start a new session if needed. Ask the agent to confirm it can find the updated OpenSEO skills before starting your next SEO task.

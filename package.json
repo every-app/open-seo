@@ -2,7 +2,7 @@
   "name": "open-seo",
   "private": true,
   "sideEffects": false,
-  "version": "0.1.8",
+  "version": "0.1.9",
   "type": "module",
   "packageManager": "pnpm@10.30.1",
   "scripts": {
@@ -50,6 +50,7 @@
     "billing:usage": "tsx scripts/dataforseo-account-usage.ts",
     "cleanup:default-projects:d1": "tsx scripts/d1-default-project-cleanup.ts",
     "gdpr:erase-user": "tsx scripts/erase-user-data.ts",
+    "repair:rank-locations": "tsx scripts/repair-rank-tracking-locations.ts",
     "seed:rank-tracking": "tsx scripts/seed-rank-tracking.ts",
     "seed:projects": "tsx scripts/seed-projects.ts",
     "ci:check": "prettier --check . && knip && tsc --noEmit && tsc --noEmit -p badseo/tsconfig.json && oxlint . --type-aware && pnpm sync-plugin-skills && test -z \"$(git status --porcelain -- plugins/openseo/skills)\""

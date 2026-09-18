@@ -69,6 +69,10 @@ You can also review the source skills on GitHub:
 
 Each skill page also links to its source `SKILL.md`.
 
+## Update installed skills
+
+Use the [update prompt or commands for your installation method](/docs/agent-setup#update-your-skills). Update the OpenSEO plugin if it supplies your skills; otherwise use the installer you originally chose or update your manual copies.
+
 ## Run a skill
 
 After the skill files are available to your agent, run the matching slash command:

@@ -6,10 +6,10 @@ import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
 import { buildDashboardUrl } from "@/server/mcp/urls";
 import { z } from "zod";
 
-// The org(s) whose projects the caller can see. Pinned credentials (OAuth
-// tokens, self-host) see the bound org; user-scoped credentials (API keys)
-// see every organization the user belongs to, labeled so the agent can tell
-// same-named projects apart.
+// The org(s) whose projects the caller can see. Pinned credentials (self-host,
+// SAM) see the bound org; user-scoped credentials (hosted OAuth tokens and API
+// keys) see every organization the user belongs to, labeled so the agent can
+// tell same-named projects apart.
 async function listVisibleProjects(auth: Omit<ToolContext["auth"], "baseUrl">) {
   if (auth.orgScope !== "user") {
     const projects = await ProjectService.listProjects(auth.organizationId);

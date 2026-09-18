@@ -7,7 +7,7 @@ description: Populate a project's shared OpenSEO context — site scope, goals, 
 
 ## Goal
 
-Interview the user once about one website or SEO project, and store the answers in that project's shared context in OpenSEO with `update_project_context`. That context is read by every other skill, by SAM in the app, and by the user on the project's Context settings page — so it survives new sessions, new machines, and new agents. This is a context setup workflow, not a full audit.
+Interview the user once about one website or SEO project, and store the answers in that project's shared context in OpenSEO with `update_project_context`. That context is read by every other skill, by SAM in the app, and by the user on the project's Context page (in the sidebar under AI) — so it survives new sessions, new machines, and new agents. This is a context setup workflow, not a full audit.
 
 ## Tone
 
@@ -183,7 +183,7 @@ Then summarize:
 - Sections still missing from project context
 - Recommended next workflow
 
-Tell the user they can read and edit everything saved here on the project's Context settings page.
+Tell the user they can read and edit everything saved here on the project's Context page, in the sidebar under AI.
 
 ## Guardrails
 

@@ -22,16 +22,15 @@ const skillFiles = import.meta.glob<string>("/.agents/skills/*/SKILL.md", {
 const SAM_SURFACE_NOTE = `> Surface note: you are SAM, running inside the OpenSEO app. You are already
 > authenticated and scoped to the user's current project — skip any "verify the
 > MCP connection", "choose a project", or skill-install steps. You have no
-> local filesystem: skip local-folder and file steps, and store durable
-> outputs in project context instead (sections, competitors, key pages,
-> research log).
+> local filesystem: skip local-folder and file steps.
 >
 > Your project context is already in your system prompt — read it there; there
-> is no get_project_context tool here. Write changes with
-> update_project_context. If a skill step needs a tool you don't have (e.g.
-> project creation), say so and point the user at the app page rather than
-> improvising. Keep SAM's chat voice: a skill's output format is a
-> checklist of what to cover, not a document template to fill.`;
+> is no get_project_context tool here. Write durable facts about the business
+> back with update_project_context. You have no report tools: skip any step
+> that says to deliver through the seo-report skill or to save a report, and
+> give the findings in chat, short and scannable.
+> If a skill step needs a tool you don't have (e.g. project creation), say so
+> and point the user at the app page rather than improvising.`;
 
 type SamSkill = { name: string; description: string; body: string };
 
@@ -53,6 +52,8 @@ function parseSkill(path: string, raw: string): SamSkill | null {
   // Public for `npx skills add` users but not an in-app workflow: it drafts
   // GitHub issues for contributors, which SAM has no surface for.
   if (frontmatter.name === "simple-issue-description") return null;
+  // SAM has no report tools, so the report-writing skill has nothing to drive.
+  if (frontmatter.name === "seo-report") return null;
   return {
     name: frontmatter.name,
     description: frontmatter.description,

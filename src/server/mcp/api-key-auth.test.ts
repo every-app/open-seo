@@ -103,9 +103,6 @@ describe("handleMcpApiKeyRequest", () => {
         userEmail: "person@example.com",
         organizationId: "org-1",
         role: "owner",
-        // The key is user-scoped: project tools authorize per call via
-        // membership in the project's org, not this request-level org.
-        orgScope: "user",
         scopes: [...MCP_OAUTH_SCOPES],
         clientId: "api_key",
         baseUrl: "https://app.openseo.so",

@@ -1,3 +1,10 @@
 {
-  "pages": ["mcp", "claude-code-plugin", "codex-plugin", "skills", "self-hosting"]
+  "pages": [
+    "agent-setup",
+    "mcp",
+    "claude-code-plugin",
+    "codex-plugin",
+    "skills",
+    "self-hosting"
+  ]
 }

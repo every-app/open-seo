@@ -25,6 +25,10 @@ The project-context tools are free and shared with the app and other agents.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
 4. On finish, write back what is durable — a corrected `business_overview`, the pages the report singles out via `addKeyPages` — and append a research log entry: `{ appendResearchLog: { summary: "Site audit: <domain>. Verdict: <conclusion>" } }`.
 
+## Deliver as a report
+
+Deliver through the `seo-report` skill, saving with `skill: "seo-audit"`. If that skill is not available, say so and stop before writing HTML.
+
 ## OpenSEO MCP tools
 
 - `whoami`: confirm connection and remaining credits before spending anything. If OpenSEO is not connected, stop and ask the user to connect it.
@@ -49,18 +53,26 @@ Keep total spend modest: one audit, one backlinks overview, at most one domain o
    - Blocked or noindexed pages: remove the block.
    It must be doable this week by a non-technical person, with copy-paste-ready mechanics included.
 7. When the site is healthy, propose a starting focus area: run one `research_keywords` call seeded from the site's actual topic, then pick one theme and 3 to 5 specific, low-difficulty keywords the site can realistically rank for, each with the page or post to make. This is a starting direction, not a keyword strategy; point the user at the `keyword-research` skill for the full workflow. Skip this step entirely when the site is down — the one thing is all that matters there.
-8. Write the report using `template.html` in this skill directory (see Output format).
-9. Review before delivering: run an adversarial pass with a second agent or model if your environment has one, otherwise do a fresh self-review. Give the reviewer the verified facts and have it attack four things: claims beyond the facts, unglossed jargon, anything overwhelming for a beginner, and dramatic language. The reviewer may also flag true facts it was not given; check those against your evidence instead of "fixing" them.
-10. Deliver the report: if your environment can publish or preview HTML (for example as an artifact), do that; otherwise save the HTML file and tell the user to open it in their browser.
+8. Review before delivering: run an adversarial pass with a second agent or model if your environment has one, otherwise do a fresh self-review. Give the reviewer the verified facts and have it attack four things: claims beyond the facts, unglossed jargon, anything overwhelming for a beginner, and dramatic language. The reviewer may also flag true facts it was not given; check those against your evidence instead of "fixing" them.
+9. Write and save the report through the `seo-report` skill (see Output format).
 
 ## Output format
 
-Use `template.html` next to this file. Fill in content; keep the CSS and structure as they are (light palette only, no dark mode).
+`h1`: the domain. Then one or two opening sentences: the overall state and the one thing.
 
-- Header: domain as the title, the review date on its own line under it, then a 2-3 sentence summary of the whole report (overall state; the main gap and the one thing; what the report covers).
-- Section order: verdict, the one thing, small fixes (5 to 10 max, ordered by impact), where to focus first (healthy sites only), already working, method footer.
-- Each fix row shows the exact evidence (a quoted tag or number) and concrete steps a non-technical person can follow.
-- "Where to focus first" names one topic area and 3 to 5 keywords, each with its search volume in plain words and the page or post to make. Omit the section when the site is down.
+If a report template applies (see `seo-report`), its sections and tone replace this list.
+
+Sections in this order:
+
+1. **Verdict** — three to five bullets, one line each: the state of the site, the numbers that matter (pages crawled and indexable, search terms and estimated visits, linking sites), and the biggest gap. No prose.
+2. **Top priority** — one finding, with copy-paste-ready mechanics.
+3. **Small fixes** — one finding each, 5 to 10 max, ordered by impact. Each shows the exact evidence: a quoted tag, a number, or a URL.
+4. **Where to focus first** (healthy sites only) — one sentence, then a table of 3 to 5 keywords with volume and difficulty and the page or post to make for each, plus a bar chart when the volumes are worth comparing. Omit the whole section when the site is down.
+5. **What's working now** — a short list.
+6. **What to do next** — an ordered list, the one thing first.
+7. **How this report was made** — opens with the skill link line from `seo-report`, pointing at `https://openseo.so/docs/skills/seo-audit` ("OpenSEO SEO Audit skill"), then what the tools reported and what you verified by hand.
+
+Use a note for anything you could not verify or where the site's goal makes a standard recommendation the wrong call.
 
 ## Guardrails
 

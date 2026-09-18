@@ -37,7 +37,7 @@ export function AgentSetupPanel({
       </div>
       <div className="mt-4 text-center">
         <a
-          href="https://openseo.so/docs/mcp"
+          href="https://openseo.so/docs/agent-setup"
           target="_blank"
           rel="noreferrer"
           className="text-xs text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"

@@ -28,6 +28,8 @@ import * as listSavedKeywords from "./list-saved-keywords";
 import * as localSeoTools from "./local-seo-tools";
 import * as projectContext from "./project-context";
 import * as removeRankTrackingKeywords from "./remove-rank-tracking-keywords";
+import * as reportTemplateTools from "./report-template-tools";
+import * as reportTools from "./report-tools";
 import * as researchKeywords from "./research-keywords";
 import * as runRankTracker from "./run-rank-tracker";
 import * as saveKeywords from "./save-keywords";
@@ -53,6 +55,8 @@ const toolExports: Record<string, unknown> = {
   ...localSeoTools,
   ...projectContext,
   ...removeRankTrackingKeywords,
+  ...reportTemplateTools,
+  ...reportTools,
   ...researchKeywords,
   ...runRankTracker,
   ...saveKeywords,
@@ -78,14 +82,20 @@ function isToolDefinition(value: unknown): value is ToolDefinition {
 
 const TOOLS_DIR = join(import.meta.dirname, ".");
 
-/** Every `export const <name>Tool = {` in a tools file, with the character
- *  offset where that tool's source begins. */
+/** Every tool's source start in a tools file: `export const <name>Tool =`, and
+ *  the `export function build<Name>Tool(` factories, whose handler body sits
+ *  before the `export const` that calls them (update_project_context). */
 function toolSpans(source: string): { exportName: string; start: number }[] {
   const spans: { exportName: string; start: number }[] = [];
-  const pattern = /export const (\w+Tool)\s*=/g;
+  const pattern =
+    /export (?:const (\w+Tool)\s*=|function build(\w+Tool)\s*\()/g;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(source)) !== null) {
-    spans.push({ exportName: match[1], start: match.index });
+    const built = match[2];
+    spans.push({
+      exportName: match[1] ?? `${built[0].toLowerCase()}${built.slice(1)}`,
+      start: match.index,
+    });
   }
   return spans;
 }
@@ -153,8 +163,8 @@ function toolsReturningMetaOnly(): string[] {
  * output schema that accepts a meta-only payload.
  *
  * Asserting the reverse (that *every* tool tolerates a meta-only payload) would
- * be wrong: 43 of the 46 tools legitimately require output fields they always
- * populate, and loosening those would forfeit real validation.
+ * be wrong: most of the 50 registered tools legitimately require output fields
+ * they always populate, and loosening those would forfeit real validation.
  */
 describe("tools that answer with meta but no structured content", () => {
   it("declare an output schema that accepts a meta-only response", async () => {

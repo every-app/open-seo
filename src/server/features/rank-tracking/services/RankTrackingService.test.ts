@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock("cloudflare:workers", () => ({ env: {} }));
+vi.mock("@/server/lib/runtime-env", () => ({
+  getRequiredEnvValue: () => Promise.resolve("basic-key"),
+  isHostedServerAuthMode: () => Promise.resolve(false),
+}));
 vi.mock("@/server/lib/dataforseo", () => ({ createDataforseoClient: vi.fn() }));
 vi.mock(
   "@/server/features/rank-tracking/repositories/RankTrackingRepository",
@@ -41,8 +45,25 @@ const baseInput = {
   scheduleInterval: "daily" as const,
 };
 
+/** The DataForSEO sandbox reply the location validator parses. */
+function stubSandbox(statusCode: number, statusMessage = "Ok.") {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          tasks: [{ status_code: statusCode, status_message: statusMessage }],
+        }),
+        { status: 200 },
+      ),
+    ),
+  );
+}
+
 describe("RankTrackingService.createConfig", () => {
-  beforeEach(() => {});
+  beforeEach(() => {
+    stubSandbox(20000);
+  });
 
   it("reactivates an archived config instead of throwing, applying the new settings", async () => {
     mocks.getConfigByProjectDomainLocation.mockResolvedValue(archivedConfig);
@@ -197,5 +218,20 @@ describe("RankTrackingService.createConfig", () => {
     expect(mocks.createConfig).toHaveBeenCalledWith(
       expect.objectContaining({ locationCode: 2276, languageCode: "de" }),
     );
+  });
+
+  it("rejects a locationName the sandbox refuses, pointing at search_serp_locations", async () => {
+    stubSandbox(40501, "Invalid Field: 'location_name'.");
+    mocks.getConfigByProjectDomainLocation.mockResolvedValue(null);
+    mocks.getConfigsForProject.mockResolvedValue([]);
+
+    const error = await RankTrackingService.createConfig({
+      ...baseInput,
+      locationName: "Catonsville, MD",
+    }).catch((thrown: unknown) => thrown);
+
+    expect(error).toMatchObject({ code: "VALIDATION_ERROR" });
+    expect(String(error)).toContain("search_serp_locations");
+    expect(mocks.createConfig).not.toHaveBeenCalled();
   });
 });

@@ -13,10 +13,10 @@ async function requireProjectAccess(
 ) {
   const { baseUrl, ...auth } = toolContext.auth;
 
-  // User-scoped credentials (API keys) have no org binding: derive the org
-  // from the project row, then authorize via the caller's membership in that
-  // org. The returned auth is rebound to the project's org + the member's
-  // role there, so billing and every downstream org read follow the project.
+  // User-scoped credentials have no org binding: derive the org from the
+  // project row, then authorize via the caller's membership in that org. The
+  // returned auth is rebound to the project's org + the member's role there,
+  // so billing and every downstream org read follow the project.
   if (auth.orgScope === "user") {
     const resolved = await ProjectService.getProjectWithOrganization(projectId);
     const membership = resolved
@@ -33,6 +33,10 @@ async function requireProjectAccess(
       organizationId: resolved.organizationId,
       role: membership.role,
     };
+    // instrumentMcpToolHandler wraps outside this gate and reads
+    // toolContext.auth after the handler returns, so the usage event and the
+    // activation milestone credit the project's org, not the fallback one.
+    toolContext.auth = { ...projectAuth, baseUrl };
     return {
       auth: projectAuth,
       baseUrl,

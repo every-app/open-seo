@@ -101,7 +101,7 @@ export function AgentSetup({
           {intent === "no" && (
             <p className="mt-4 text-sm text-base-content/60">
               You can use the dashboard on its own and connect an agent anytime
-              from AI &amp; MCP.
+              from Agent setup.
             </p>
           )}
         </>
