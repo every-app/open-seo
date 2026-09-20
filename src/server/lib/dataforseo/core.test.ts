@@ -30,6 +30,26 @@ describe("DataForSEO transport", () => {
     );
   });
 
+  // 40104 ("verify your account") arrives as HTTP 403. Mapped to INTERNAL_ERROR
+  // it read as an app bug and told the operator nothing about the fix.
+  it("maps a 403 to DATAFORSEO_AUTH_FAILED", async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      Response.json(
+        {
+          status_code: 40104,
+          status_message: "Please verify your account before using the API.",
+        },
+        { status: 403 },
+      ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      dataforseoPost("/v3/backlinks/summary/live", []),
+    ).rejects.toMatchObject({ code: "DATAFORSEO_AUTH_FAILED" });
+    expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
   // The request-deadline abort arrives as a bare DOMException. Left unclassified
   // it escapes as an anonymous INTERNAL_ERROR; retrying it would replay a call
   // DataForSEO may already have billed. Both names are reachable: the shared

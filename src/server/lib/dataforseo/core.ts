@@ -118,12 +118,17 @@ function createAuthenticatedFetch(
       const classified = classify?.(response.status, rawText, path);
       if (classified) throw classified;
 
+      // 403 joins 401: DataForSEO answers an unverified account with it
+      // (status_code 40104, "Please verify your account before using the API"),
+      // and an account-level rejection is never an internal fault. Left as
+      // INTERNAL_ERROR it reached the user as "an unexpected error occurred"
+      // and kept the local-SEO grid firing 24 more doomed, billable calls.
       const code: ErrorCode =
         response.status >= 500
           ? "UPSTREAM_UNAVAILABLE"
           : response.status === 429
             ? "RATE_LIMITED"
-            : response.status === 401
+            : response.status === 401 || response.status === 403
               ? "DATAFORSEO_AUTH_FAILED"
               : "INTERNAL_ERROR";
       const error = new AppError(

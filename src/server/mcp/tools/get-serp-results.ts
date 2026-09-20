@@ -3,6 +3,7 @@ import {
   createDataforseoClient,
   SERP_ANALYSIS_DEPTH,
 } from "@/server/lib/dataforseo";
+import { asAppError } from "@/server/lib/errors";
 import { mcpResponse } from "@/server/mcp/formatters";
 import { buildProjectMeta } from "@/server/mcp/context";
 import { optionalMetaOutputSchema } from "@/server/mcp/output-schemas";
@@ -127,6 +128,16 @@ export const getSerpResultsTool = {
           }));
           return { keyword: q.keyword, ok: true as const, items: trimmed };
         } catch (error) {
+          // This tool degrades per keyword instead of failing the batch, so the
+          // throw never reaches the instrumentation wrapper and nothing about
+          // it lands in the logs. Warn here: a provider outage, an account-level
+          // rejection, or a call DataForSEO already billed would otherwise leave
+          // no server-side trace at all.
+          console.warn("mcp.serp.keyword_failed", {
+            keyword: q.keyword,
+            errorCode: asAppError(error)?.code ?? "INTERNAL_ERROR",
+            message: error instanceof Error ? error.message : String(error),
+          });
           return {
             keyword: q.keyword,
             ok: false as const,

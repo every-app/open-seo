@@ -95,6 +95,20 @@ project.
 
 ## Troubleshooting
 
+**"Connection expired" / "Couldn't load properties" straight after connecting**
+— the grant is healthy; the call behind the picker is being refused. The usual
+cause is the **Google Search Console API not being enabled** in the Cloud
+project that owns your `GOOGLE_CLIENT_ID` (step 1). Google answers `sites.list`
+with 403, and the picker can only report that properties failed to load. Enable
+it in the
+[API Library](https://console.cloud.google.com/apis/library/searchconsole.googleapis.com),
+give it a minute, then press **Try again** — there is no need to reconnect, and
+removing and re-linking the account never helps, because nothing is wrong with
+the account. The server log names it:
+`Failed to list Search Console sites for account`. A row showing
+`Google account · <digits>` instead of an email is the same symptom: the email
+lookup is failing alongside everything else.
+
 **`redirect_uri_mismatch` from Google** — the redirect URI in your OAuth client
 must exactly equal `<your-origin>/api/gsc/oauth/callback`. Re-check scheme
 (`http` vs `https`), host, port, and that there's no trailing slash.
