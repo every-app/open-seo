@@ -26,11 +26,13 @@ import {
   EMPTY_PERFORMANCE_FILTERS,
   filterPerformanceRows,
   isLighthouseFailure,
-  nullableNumberSort,
-  nullableStringSort,
   type PerformanceFilters,
   type PerformanceRowData,
 } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
+import {
+  numericNullsLast,
+  stringNullsLast,
+} from "@/client/components/table/nullSafeSort";
 
 const performanceColumnHelper = createColumnHelper<PerformanceRowData>();
 
@@ -126,7 +128,7 @@ function buildPerformanceColumns({
       cell: ({ getValue }) => (
         <span className="text-xs">{getValue() ?? "-"}</span>
       ),
-      sortingFn: nullableStringSort,
+      sortingFn: stringNullsLast,
       meta: { cellClassName: "max-w-[180px] truncate" },
     }),
     performanceColumnHelper.accessor("strategy", {
@@ -161,17 +163,17 @@ function buildPerformanceColumns({
     performanceColumnHelper.accessor("performanceScore", {
       header: ({ column }) => <SortableHeader column={column} label="Perf" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("accessibilityScore", {
       header: ({ column }) => <SortableHeader column={column} label="A11y" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("seoScore", {
       header: ({ column }) => <SortableHeader column={column} label="SEO" />,
       cell: ({ getValue }) => <LighthouseScoreBadge score={getValue()} />,
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("lcpMs", {
       header: ({ column }) => <SortableHeader column={column} label="LCP" />,
@@ -183,7 +185,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("cls", {
       header: ({ column }) => <SortableHeader column={column} label="CLS" />,
@@ -195,7 +197,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("inpMs", {
       header: ({ column }) => <SortableHeader column={column} label="INP" />,
@@ -207,7 +209,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.accessor("ttfbMs", {
       header: ({ column }) => <SortableHeader column={column} label="TTFB" />,
@@ -219,7 +221,7 @@ function buildPerformanceColumns({
           <span className="text-xs text-base-content/40">-</span>
         );
       },
-      sortingFn: nullableNumberSort,
+      sortingFn: numericNullsLast,
     }),
     performanceColumnHelper.display({
       id: "issues",
