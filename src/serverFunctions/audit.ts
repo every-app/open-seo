@@ -13,6 +13,14 @@ import {
   startAuditSchema,
 } from "@/types/schemas/audit";
 
+function useAuditE2eFixtures() {
+  return import.meta.env.VITE_E2E_AUDIT_FIXTURES === "1";
+}
+
+function getAuditE2eFixtures() {
+  return import("../../e2e/fixtures/audit-results-fixtures");
+}
+
 export const startAudit = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(startAuditSchema)
@@ -50,6 +58,10 @@ export const getAuditStatus = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(getAuditStatusSchema)
   .handler(async ({ data, context }) => {
+    if (useAuditE2eFixtures()) {
+      const fixtures = await getAuditE2eFixtures();
+      return fixtures.getAuditStatusFixture(data.auditId);
+    }
     return AuditService.getStatus(data.auditId, context.projectId);
   });
 
@@ -57,6 +69,10 @@ export const getAuditResults = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(getAuditResultsSchema)
   .handler(async ({ data, context }) => {
+    if (useAuditE2eFixtures()) {
+      const fixtures = await getAuditE2eFixtures();
+      return fixtures.getAuditResultsFixture(data.auditId);
+    }
     return AuditService.getResults(data.auditId, context.projectId);
   });
 
