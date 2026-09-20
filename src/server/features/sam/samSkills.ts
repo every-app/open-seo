@@ -40,8 +40,13 @@ const frontmatterSchema = z.looseObject({
   metadata: z.looseObject({ internal: z.boolean().optional() }).optional(),
 });
 
-function parseSkill(path: string, raw: string): SamSkill | null {
-  const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
+// `\r?\n`, not `\n`: a checkout with CRLF endings starts the file `---\r\n`,
+// and the LF-only pattern rejected a file whose frontmatter is perfectly well
+// formed. `.gitattributes` now keeps the tree on LF, but an existing Windows
+// working tree keeps the endings it was cloned with, and refusing a skill over
+// its line endings is a defect on its own terms. (#331)
+export function parseSkill(path: string, raw: string): SamSkill | null {
+  const match = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(raw);
   if (!match) throw new Error(`Skill has no frontmatter: ${path}`);
   const parsed = frontmatterSchema.safeParse(parseYaml(match[1]));
   if (!parsed.success) {
