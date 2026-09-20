@@ -14,6 +14,44 @@ export type DataforseoApiCallCost = {
   costUsd: number;
 };
 
+/**
+ * Envelope-level refusals of the whole account, as opposed to a task failing.
+ * The credentials parse fine, so core.ts's HTTP-401 mapping never fires: the
+ * refusal arrives as a 200 whose envelope carries the code and no task at all
+ * (`tasks: null`, `tasks_count: 0`).
+ *
+ * Matched by exact code, never by 401xx prefix — DataForSEO reuses that range
+ * for task-level search-engine failures (40101 "Internal SE Server Error",
+ * 40103 "Task execution failed"), which UPSTREAM_FAILURE_STATUS_CODES above
+ * already classifies and which mean the opposite: retry, don't go fix the
+ * account.
+ */
+const ACCOUNT_ACCESS_STATUS_CODES = new Set([
+  40104, // Please verify your account before using the API.
+]);
+
+/**
+ * DATAFORSEO_AUTH_FAILED carrying the provider's own text, which
+ * CLIENT_DETAIL_ERROR_CODES lets through to the user — the message names the
+ * exact account action to take, and the static fallback can only guess at a
+ * malformed key. The code also stops local-SEO grids mid-run
+ * (GRID_ABORT_ERROR_CODES), which is right: every remaining point would be
+ * refused identically.
+ *
+ * Warns for the same reason the upstream-failure branch below does: the error
+ * handlers log only what they capture, so this is the sole record of the
+ * provider's message.
+ */
+function accountAccessError(
+  status: number | undefined,
+  message: string,
+  path: string,
+): AppError | null {
+  if (status == null || !ACCOUNT_ACCESS_STATUS_CODES.has(status)) return null;
+  console.warn("dataforseo.account-access-denied", { path, status, message });
+  return new AppError("DATAFORSEO_AUTH_FAILED", message);
+}
+
 export type DataforseoApiResponse<T> = {
   data: T;
   billing: DataforseoApiCallCost;
@@ -229,6 +267,7 @@ export function assertOk<T extends DataforseoTaskLike>(
     const message = response.status_message || "DataForSEO request failed";
     throw (
       classify?.(response.status_code, message, classifyPath ?? "") ??
+      accountAccessError(response.status_code, message, classifyPath ?? "") ??
       new AppError("INTERNAL_ERROR", message)
     );
   }

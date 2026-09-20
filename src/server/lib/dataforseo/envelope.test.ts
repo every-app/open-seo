@@ -60,6 +60,24 @@ describe("assertOk", () => {
     }
   });
 
+  it("surfaces an unverified-account refusal with the provider's own message", () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+    // Shape DataForSEO actually returns: the code is on the envelope and no
+    // task is carried, so this never reaches the task ladder.
+    try {
+      assertOk({
+        status_code: 40104,
+        status_message: "Please verify your account before using the API.",
+      });
+      throw new Error("expected assertOk to throw");
+    } catch (error) {
+      expect(error).toMatchObject({
+        code: "DATAFORSEO_AUTH_FAILED",
+        message: "Please verify your account before using the API.",
+      });
+    }
+  });
+
   it("classifies DataForSEO's own server errors as UPSTREAM_UNAVAILABLE", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
     const task = {
