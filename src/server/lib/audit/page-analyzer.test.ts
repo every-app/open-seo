@@ -5,7 +5,7 @@
  */
 import * as cheerio from "cheerio";
 import { describe, expect, it } from "vitest";
-import { analyzeHtml } from "@/server/lib/audit/page-analyzer";
+import { analyzeHtml, countWords } from "@/server/lib/audit/page-analyzer";
 import { normalizeUrl, isSameOrigin } from "@/server/lib/audit/url-utils";
 import type { PageAnalysis, PageLink } from "@/server/lib/audit/types";
 
@@ -45,7 +45,7 @@ function analyzeHtmlWithCheerio(html: string, pageUrl: string): PageAnalysis {
   const bodyClone = $("body").clone();
   bodyClone.find("script, style, noscript, svg").remove();
   const bodyText = bodyClone.text().replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = bodyText ? countWords(bodyText) : 0;
 
   const images: Array<{ src: string | null; alt: string | null }> = [];
   $("img").each((_, el) => {
@@ -204,6 +204,32 @@ describe("analyzeHtml parity with the DOM reference", () => {
       </p>
       <ul><li>four</li><li>five</li></ul>
     </body>`);
+  });
+
+  it("counts CJK text that carries no inter-word spaces", () => {
+    const analysis = analyzeHtml(
+      `<html><body>
+        <h1>ウイスキーの添加剂表記について</h1>
+        <p>グレーンウイスキーの添加剂表記について、近年の法改正と表示の変化を解説する。シングルモルトとブレンデッドの違い、熟成年数が風味に与える影響、そしてラベルの読み方を実例とともに説明する。ウイスキー好きの読者にとって、ボトル選びの参考になる情報をまとめた。海外の蒸留所では、樽詰め前のろ過方法が香りの残り方を大きく左右する。冷却ろ過を行わないノンチルフィルタードの製品は、味わいに厚みが出る一方で、低温で濁りが生じやすくなる。この濁りは品質上の問題ではないが、見た目を気にする消費者向けに説明が必要となる。また、焦げた樽の内側で熟成させる過程で、原酒は琥珀色へと変化していく。色の濃さと品質は必ずしも比例しないことも、知っておくと良い。カラメル色素による色調調整が認められている地域では、ラベルだけでは熟成期間を判断できない。だからこそ、蒸留所が公開する情報と独立系の評価を組み合わせて判断することが大切になる。本記事では、そうした判断材料をひとつずつ確認していく。</p>
+      </body></html>`,
+      PAGE_URL,
+      200,
+      0,
+    );
+    // The old whitespace split counted this body as ~3 "words" (the runs of
+    // whitespace between the h1 and the paragraph), tripping thin-content on
+    // a long-form article.
+    expect(analysis.wordCount).toBeGreaterThan(150);
+  });
+
+  it("keeps Latin word counts on the whitespace split", () => {
+    const analysis = analyzeHtml(
+      `<body><p>Some visible body text with bold words here.</p></body>`,
+      PAGE_URL,
+      200,
+      0,
+    );
+    expect(analysis.wordCount).toBe(8);
   });
 });
 
