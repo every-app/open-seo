@@ -67,7 +67,7 @@ These are enforced by the viewer, not by taste. A report that breaks them render
 ## After you save
 
 - `save_report` returns `{ reportId, url, htmlBytes }`. The whole reply is at most three short bullets, then the link last on its own line as `Read the full report: <url>`. The bullets: the verdict, the leading recommendation and expected benefit if supported, and anything the user has to act on (a project you created, a question you need answered). Nothing else: no account of the run, no reviewer notes, no list of what worked, no restating the report. The report is how they learn; chat only points at it.
-- The skill you are running appends its own research-log line; add one only if it does not: `{ appendResearchLog: { summary: "Report: <title>. Verdict: <conclusion>" } }`.
+- The skill you are running appends its own research-log line; add one only if it does not: `{ updates: [{ appendResearchLog: { summary: "Report: <title>. Verdict: <conclusion>" } }] }`.
 - If the save fails, the error names the limit and the value. Fix that one thing and save again. Never paste the report into chat instead.
 
 ## Starter template

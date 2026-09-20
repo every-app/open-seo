@@ -25,7 +25,7 @@ The project-context tools are free and shared with the app and other agents.
 1. Call `get_project_context` first and ground the analysis in it — the saved competitors say whether this domain is already known and what was concluded about it before.
 2. This skill needs competitors. If none are saved, run a minimal inline setup: save the competitor being analyzed, and ask the user (or infer from `find_serp_competitors` and confirm) whether there are others, write them back with `update_project_context` (`addCompetitors`), then continue the analysis. Never front-load the full interview; suggest `seo-project-setup` at the end for the rest.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
-4. On finish, write back what is durable with `update_project_context` — an `addCompetitors` upsert for this domain with a short note on its strengths and where it is vulnerable — and append a research log entry: `{ appendResearchLog: { summary: "Competitor analysis: <domain>. Verdict: <conclusion>" } }`.
+4. On finish, write back what is durable with `update_project_context` — an `addCompetitors` upsert for this domain with a short note on its strengths and where it is vulnerable — and append a research log entry: `{ updates: [{ appendResearchLog: { summary: "Competitor analysis: <domain>. Verdict: <conclusion>" } }] }`.
 
 ## Deliver as a report
 
