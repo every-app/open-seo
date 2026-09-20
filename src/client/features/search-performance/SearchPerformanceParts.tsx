@@ -158,31 +158,39 @@ export function TotalsCards({ report }: { report: Report }) {
   const { totals, prevTotals, range } = report;
   const deltaTitle = `vs ${range.prevStartDate} to ${range.prevEndDate}`;
   return (
-    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-      <TotalCard
-        label="Clicks"
-        value={formatCount(totals.clicks)}
-        delta={percentDelta(totals.clicks, prevTotals.clicks)}
-        deltaTitle={deltaTitle}
-      />
-      <TotalCard
-        label="Impressions"
-        value={formatCount(totals.impressions)}
-        delta={percentDelta(totals.impressions, prevTotals.impressions)}
-        deltaTitle={deltaTitle}
-      />
-      <TotalCard
-        label="CTR"
-        value={formatCtr(totals.ctr)}
-        delta={percentDelta(totals.ctr, prevTotals.ctr)}
-        deltaTitle={deltaTitle}
-      />
-      <TotalCard
-        label="Avg position"
-        value={formatPosition(totals.position)}
-        delta={positionDelta(totals.position, prevTotals.position)}
-        deltaTitle={deltaTitle}
-      />
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <TotalCard
+          label="Clicks"
+          value={formatCount(totals.clicks)}
+          delta={percentDelta(totals.clicks, prevTotals.clicks)}
+          deltaTitle={deltaTitle}
+        />
+        <TotalCard
+          label="Impressions"
+          value={formatCount(totals.impressions)}
+          delta={percentDelta(totals.impressions, prevTotals.impressions)}
+          deltaTitle={deltaTitle}
+        />
+        <TotalCard
+          label="CTR"
+          value={formatCtr(totals.ctr)}
+          delta={percentDelta(totals.ctr, prevTotals.ctr)}
+          deltaTitle={deltaTitle}
+        />
+        <TotalCard
+          label="Avg position"
+          value={formatPosition(totals.position)}
+          delta={positionDelta(totals.position, prevTotals.position)}
+          deltaTitle={deltaTitle}
+        />
+      </div>
+      {report.metricFiltersActive ? (
+        <p className="text-xs text-base-content/60">
+          Totals reflect date, device, country, and page-path filters. Metric
+          ranges apply to tables and exports only.
+        </p>
+      ) : null}
     </div>
   );
 }

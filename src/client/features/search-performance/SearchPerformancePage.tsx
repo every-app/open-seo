@@ -13,6 +13,13 @@ import { TablePagination } from "@/client/components/table/TablePagination";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { SearchPerformanceLoadingState } from "@/client/features/search-performance/SearchPerformanceLoadingState";
 import {
+  compileAdvancedSearchPerformanceFilters,
+  countActiveAdvancedSearchPerformanceFilters,
+  EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+  SearchPerformanceAdvancedFilters,
+  type SearchPerformanceAdvancedFilterValues,
+} from "@/client/features/search-performance/SearchPerformanceAdvancedFilters";
+import {
   DimensionTable,
   exportDimensionRows,
   exportStriking,
@@ -30,11 +37,14 @@ import {
 } from "@/serverFunctions/searchPerformance";
 import {
   GSC_DEVICES,
+  hasActiveMetricFilters,
   SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
+  SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT,
   SEARCH_PERFORMANCE_PAGE_SIZES,
   SEARCH_PERFORMANCE_RANGES,
   type SearchPerformanceDateRange,
   type SearchPerformanceDevice,
+  type SearchPerformanceMetricFilters,
   type SearchPerformanceTableDimension,
 } from "@/types/schemas/search-performance";
 
@@ -77,18 +87,20 @@ type FilterInput = {
   dateRange: SearchPerformanceDateRange;
   device?: SearchPerformanceDevice;
   country?: string;
-};
+} & SearchPerformanceMetricFilters;
 
 // The server filter payload: drop device/country when set to the "ALL" sentinel.
 function buildFilterInput(
   range: SearchPerformanceDateRange,
   device: SearchPerformanceDevice | typeof ALL,
   country: string,
+  advanced: SearchPerformanceAdvancedFilterValues,
 ): FilterInput {
   return {
     dateRange: range,
     ...(device === ALL ? {} : { device }),
     ...(country === ALL ? {} : { country }),
+    ...compileAdvancedSearchPerformanceFilters(advanced),
   };
 }
 
@@ -130,16 +142,33 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
   const [pageSize, setPageSize] = useState<number>(
     SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
   );
+  const [advancedFilterDraft, setAdvancedFilterDraft] =
+    useState<SearchPerformanceAdvancedFilterValues>(
+      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+    );
+  const [appliedAdvancedFilters, setAppliedAdvancedFilters] =
+    useState<SearchPerformanceAdvancedFilterValues>(
+      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+    );
+  const activeAdvancedFilterCount = countActiveAdvancedSearchPerformanceFilters(
+    appliedAdvancedFilters,
+  );
 
   // Any change to the query set (tab, filters, page size) restarts at page 1.
   useEffect(() => {
     setPage(1);
-  }, [tab, range, device, country, pageSize]);
+  }, [tab, range, device, country, pageSize, appliedAdvancedFilters]);
 
-  const filterInput = buildFilterInput(range, device, country);
+  const filterInput = buildFilterInput(
+    range,
+    device,
+    country,
+    appliedAdvancedFilters,
+  );
+  const metricFiltersActive = hasActiveMetricFilters(filterInput);
 
   const reportQuery = useQuery({
-    queryKey: ["searchPerformance", projectId, range, device, country],
+    queryKey: ["searchPerformance", projectId, filterInput],
     queryFn: () =>
       getSearchPerformanceReport({ data: { projectId, ...filterInput } }),
     placeholderData: keepPreviousData,
@@ -167,10 +196,10 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         "query",
         1,
         SEARCH_PERFORMANCE_DEFAULT_PAGE_SIZE,
-        buildFilterInput(range, device, country),
+        filterInput,
       ),
     );
-  }, [report?.connected, projectId, range, device, country, queryClient]);
+  }, [report?.connected, projectId, filterInput, queryClient]);
 
   const handleExport = async (target: ExportTarget) => {
     if (!report?.connected) return;
@@ -311,12 +340,34 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   />
                 </div>
               </div>
+              <div className="border-b border-base-300 px-4 py-3">
+                <SearchPerformanceAdvancedFilters
+                  values={advancedFilterDraft}
+                  onChange={setAdvancedFilterDraft}
+                  onApply={() => setAppliedAdvancedFilters(advancedFilterDraft)}
+                  onClear={() => {
+                    setAdvancedFilterDraft(
+                      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+                    );
+                    setAppliedAdvancedFilters(
+                      EMPTY_SEARCH_PERFORMANCE_ADVANCED_FILTERS,
+                    );
+                  }}
+                  activeFilterCount={activeAdvancedFilterCount}
+                />
+              </div>
 
               {tab === "striking" ? (
-                <StrikingDistanceTable
-                  projectId={projectId}
-                  rows={report.strikingDistance}
-                />
+                report.strikingDistance.length === 0 ? (
+                  <p className="p-4 text-sm text-base-content/60">
+                    No rows match these filters.
+                  </p>
+                ) : (
+                  <StrikingDistanceTable
+                    projectId={projectId}
+                    rows={report.strikingDistance}
+                  />
+                )
               ) : tableQuery.isPending ? (
                 <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
                   <Loader2 className="size-4 animate-spin" /> Loading…
@@ -332,10 +383,16 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
               ) : (
                 <>
                   <div className="p-4">
-                    <DimensionTable
-                      rows={tableRows}
-                      keyLabel={tab === "queries" ? "Query" : "Page"}
-                    />
+                    {tableRows.length === 0 ? (
+                      <p className="text-sm text-base-content/60">
+                        No rows match these filters.
+                      </p>
+                    ) : (
+                      <DimensionTable
+                        rows={tableRows}
+                        keyLabel={tab === "queries" ? "Query" : "Page"}
+                      />
+                    )}
                   </div>
                   <TablePagination
                     page={page}
@@ -347,6 +404,13 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                     onPageChange={setPage}
                     onPageSizeChange={setPageSize}
                   />
+                  {metricFiltersActive ? (
+                    <p className="border-t border-base-300 px-4 py-2 text-xs text-base-content/60">
+                      Pagination and export use up to{" "}
+                      {SEARCH_PERFORMANCE_METRIC_FILTER_ROW_LIMIT.toLocaleString()}{" "}
+                      matching rows when metric ranges are set.
+                    </p>
+                  ) : null}
                 </>
               )}
             </div>
