@@ -176,6 +176,16 @@ describe("analyzeHtml parity with the DOM reference", () => {
       </head><body><p>text</p></body></html>`);
   });
 
+  it("treats meta description names case-insensitively", () => {
+    const analysis = analyzeHtml(
+      `<html><head><meta name="Description" content="Case-preserved description"></head><body><p>text</p></body></html>`,
+      PAGE_URL,
+      200,
+      0,
+    );
+    expect(analysis.metaDescription).toBe("Case-preserved description");
+  });
+
   it("matches on unclosed and misnested tags", () => {
     expectParity(`<html><body>
       <h1>Unclosed heading
