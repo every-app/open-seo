@@ -11,6 +11,7 @@ import {
 const PROVIDER_LABELS: Record<GoogleLinkProvider, string> = {
   gsc: "Search Console",
   ga4: "Google Analytics",
+  gads: "Google Ads",
 };
 
 /**

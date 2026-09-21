@@ -13,6 +13,9 @@ vi.mock("@/serverFunctions/gsc", () => ({
 vi.mock("@/serverFunctions/ga4", () => ({
   startSelfHostedGa4Link: selfHosted,
 }));
+vi.mock("@/serverFunctions/google-ads", () => ({
+  startSelfHostedGoogleAdsLink: selfHosted,
+}));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 // Browser checks exercise React subscriptions; here read the real pending snapshot
 // to test network and navigation timing without a DOM.

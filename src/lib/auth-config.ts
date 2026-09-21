@@ -3,6 +3,10 @@ import { genericOAuth, organization } from "better-auth/plugins";
 import { baseAuthOptions } from "@/lib/auth-options";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
 import { GA4_OAUTH_PROVIDER_ID, GA4_OAUTH_SCOPES } from "@/shared/ga4";
+import {
+  GOOGLE_ADS_OAUTH_PROVIDER_ID,
+  GOOGLE_ADS_OAUTH_SCOPES,
+} from "@/shared/google-ads";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
 
 type OrganizationOptions = NonNullable<Parameters<typeof organization>[0]>;
@@ -87,6 +91,19 @@ export function createBaseAuthConfig(options?: {
             discoveryUrl:
               "https://accounts.google.com/.well-known/openid-configuration",
             scopes: [...GA4_OAUTH_SCOPES],
+            accessType: "offline",
+            prompt: "select_account consent",
+            pkce: true,
+          },
+          // Registered in both auth modes: token refresh for self-hosted
+          // grants also runs through this provider config.
+          {
+            providerId: GOOGLE_ADS_OAUTH_PROVIDER_ID,
+            clientId: env.GOOGLE_CLIENT_ID?.trim() ?? "",
+            clientSecret: env.GOOGLE_CLIENT_SECRET?.trim() ?? "",
+            discoveryUrl:
+              "https://accounts.google.com/.well-known/openid-configuration",
+            scopes: [...GOOGLE_ADS_OAUTH_SCOPES],
             accessType: "offline",
             prompt: "select_account consent",
             pkce: true,
