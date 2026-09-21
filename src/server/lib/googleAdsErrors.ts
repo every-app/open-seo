@@ -62,3 +62,30 @@ export class GoogleAdsConfigError extends Error {
     this.name = "GoogleAdsConfigError";
   }
 }
+
+type GoogleAdsReportErrorCode =
+  | "validation_error"
+  | "google_ads_not_connected"
+  | "google_ads_setup_required"
+  | "google_ads_reconnect_required"
+  // Developer token or Cloud project awaiting Google approval, or the Ads
+  // API not yet enabled on the OAuth client's Cloud project — expected until
+  // onboarding finishes.
+  | "google_ads_access_pending"
+  | "google_ads_account_inaccessible"
+  | "google_ads_quota_exhausted"
+  // Google 400 / INVALID_ARGUMENT: the request itself is rejected (bad field,
+  // bad query). Retrying the same call cannot succeed.
+  | "google_ads_request_rejected"
+  | "google_ads_upstream_unavailable"
+  | "google_ads_malformed_response";
+
+export class GoogleAdsReportError extends Error {
+  constructor(
+    public readonly code: GoogleAdsReportErrorCode,
+    message: string,
+  ) {
+    super(message);
+    this.name = "GoogleAdsReportError";
+  }
+}
