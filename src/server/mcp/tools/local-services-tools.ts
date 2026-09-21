@@ -10,7 +10,10 @@ import { buildDashboardUrl } from "@/server/mcp/urls";
 import { hasSelfHostedGoogleOAuthConfig } from "@/server/features/google/oauth-config";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import {
+  DISSATISFIED_REASONS,
   LocalServicesReportingService,
+  SATISFIED_REASONS,
+  SURVEY_ANSWERS,
   type LocalServicesLead,
 } from "@/server/features/google-ads/services/LocalServicesReportingService";
 import { GoogleAdsReportError } from "@/server/lib/googleAdsErrors";
@@ -417,6 +420,118 @@ export const getLocalServicesLeadsTool = {
           endDate: range.endDate,
           leadCount: leads.length,
           leads,
+        },
+      });
+    } catch (error) {
+      return reportErrorResponse(error, meta, connectUrl);
+    }
+  }),
+};
+
+// ---------------------------------------------------------------------------
+// provide_lead_feedback
+// ---------------------------------------------------------------------------
+
+const feedbackInputSchema = {
+  projectId: projectIdSchema,
+  leadId: z
+    .string()
+    .regex(/^\d{1,19}$/)
+    .describe(
+      "Numeric Local Services lead id (from get_local_services_leads).",
+    ),
+  surveyAnswer: z
+    .enum(SURVEY_ANSWERS)
+    .describe(
+      "Live, irreversible survey answer. Dispute filings use VERY_DISSATISFIED. There is no dry run.",
+    ),
+  surveyDissatisfiedReason: z
+    .enum(DISSATISFIED_REASONS)
+    .optional()
+    .describe(
+      "Required for DISSATISFIED / VERY_DISSATISFIED. Use the audit finding's suggestedReason verbatim.",
+    ),
+  surveySatisfiedReason: z
+    .enum(SATISFIED_REASONS)
+    .optional()
+    .describe("Required for SATISFIED / VERY_SATISFIED."),
+  otherReasonComment: z
+    .string()
+    .max(200)
+    .optional()
+    .describe(
+      "Required only for OTHER_* reasons. Generic phrasing only — never call content, caller details, or transcripts.",
+    ),
+} as const;
+
+type FeedbackArgs = z.infer<z.ZodObject<typeof feedbackInputSchema>>;
+
+export const provideLeadFeedbackTool = {
+  name: "provide_lead_feedback",
+  config: {
+    title: "Provide Local Services lead feedback",
+    description:
+      "File Google's one-shot Local Services Ads lead-feedback survey (ProvideLeadFeedback). Live and irreversible: the v25 request has no validate_only, and Google accepts one survey per lead. Refuses when lead_feedback_submitted is already true. Returns creditIssuanceDecision verbatim (SUCCESS_NOT_REACHED_THRESHOLD, SUCCESS_REACHED_THRESHOLD, FAIL_OVER_THRESHOLD, FAIL_NOT_ELIGIBLE). Do not put transcripts or caller details in otherReasonComment; enum-only by default. Uses no OpenSEO credits.",
+    inputSchema: feedbackInputSchema,
+    outputSchema: z.looseObject({
+      ok: z.boolean(),
+      reason: z.string().optional(),
+      connectUrl: z.string().optional(),
+      setupDocsUrl: z.string().optional(),
+      leadId: z.string().optional(),
+      creditIssuanceDecision: z.string().optional(),
+      leadFeedbackSubmitted: z.boolean().nullable().optional(),
+      creditState: z.string().nullable().optional(),
+      charged: z.boolean().optional(),
+      ...optionalMetaOutputSchema,
+    }),
+    annotations: {
+      readOnlyHint: false,
+      openWorldHint: false,
+      destructiveHint: true,
+    },
+  },
+  handler: withMcpProjectAuth(async (args: FeedbackArgs, context) => {
+    const blocked = await missingSelfHostedGoogleClientResponse(
+      context,
+      args.projectId,
+    );
+    if (blocked) return blocked;
+
+    const connectUrl = connectGoogleAdsUrl(context.baseUrl, args.projectId);
+    const meta = buildProjectMeta(
+      context,
+      args.projectId,
+      `/p/${args.projectId}/settings/integrations`,
+    );
+
+    try {
+      const result = await LocalServicesReportingService.provideLeadFeedback({
+        projectId: args.projectId,
+        leadId: args.leadId,
+        surveyAnswer: args.surveyAnswer,
+        surveyDissatisfiedReason: args.surveyDissatisfiedReason,
+        surveySatisfiedReason: args.surveySatisfiedReason,
+        otherReasonComment: args.otherReasonComment,
+      });
+      const submitted =
+        result.leadFeedbackSubmitted === null
+          ? ""
+          : ` · lead_feedback_submitted=${result.leadFeedbackSubmitted}`;
+      const credit =
+        result.creditState == null
+          ? ""
+          : ` · credit_state=${result.creditState}`;
+      return mcpResponse({
+        text: `LSA feedback · lead ${result.leadId} · ${result.creditIssuanceDecision}${submitted}${credit}`,
+        meta,
+        structuredContent: {
+          ok: true,
+          leadId: result.leadId,
+          creditIssuanceDecision: result.creditIssuanceDecision,
+          leadFeedbackSubmitted: result.leadFeedbackSubmitted,
+          creditState: result.creditState,
+          charged: result.charged,
         },
       });
     } catch (error) {
