@@ -1,3 +1,4 @@
+/* eslint-disable max-lines -- LSA performance and lead reporting share one test module */
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GoogleAdsApiError } from "@/server/lib/googleAdsErrors";
 import { LocalServicesReportingService } from "./LocalServicesReportingService";
