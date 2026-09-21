@@ -81,6 +81,11 @@ beforeAll(async () => {
       project_id TEXT NOT NULL,
       organization_id TEXT NOT NULL REFERENCES organization(id) ON DELETE CASCADE
     );
+    CREATE TABLE google_ads_connections (
+      id TEXT PRIMARY KEY,
+      project_id TEXT NOT NULL,
+      organization_id TEXT NOT NULL REFERENCES organization(id) ON DELETE CASCADE
+    );
   `);
 
   ({ WorkspaceMergeService } = await import("./workspace-merge"));
@@ -98,6 +103,7 @@ beforeEach(async () => {
     DELETE FROM organization_activation_state;
     DELETE FROM gsc_connections;
     DELETE FROM ga4_connections;
+    DELETE FROM google_ads_connections;
     DELETE FROM organization;
   `);
 });

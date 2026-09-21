@@ -3,11 +3,11 @@ import { captureClientEvent } from "@/client/lib/posthog";
 /**
  * Marker appended to the errorCallbackURL so a failed Google link redirect can
  * be told apart from any other `error` query param. Its value is the provider
- * key ("gsc" | "ga4").
+ * key ("gsc" | "ga4" | "gads").
  */
 export const GOOGLE_LINK_ERROR_PARAM = "google_link_error";
 
-export type GoogleLinkProvider = "gsc" | "ga4";
+export type GoogleLinkProvider = "gsc" | "ga4" | "gads";
 
 type CapturedLinkError = {
   provider: GoogleLinkProvider;
@@ -27,7 +27,9 @@ function captureLinkErrorFromLocation(): CapturedLinkError | null {
   if (typeof window === "undefined") return null;
   const url = new URL(window.location.href);
   const provider = url.searchParams.get(GOOGLE_LINK_ERROR_PARAM);
-  if (provider !== "gsc" && provider !== "ga4") return null;
+  if (provider !== "gsc" && provider !== "ga4" && provider !== "gads") {
+    return null;
+  }
   // OAuth can append &error= after an existing #connect-gsc anchor.
   // Retain the anchor so the dashboard can reopen the connection step.
   const [anchor, ...fragmentParts] = url.hash.slice(1).split("&");
