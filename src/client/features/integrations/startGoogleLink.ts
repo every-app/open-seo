@@ -5,8 +5,10 @@ import { GOOGLE_LINK_ERROR_PARAM } from "@/client/features/integrations/googleLi
 import { authClient } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { startSelfHostedGa4Link } from "@/serverFunctions/ga4";
+import { startSelfHostedGoogleAdsLink } from "@/serverFunctions/google-ads";
 import { startSelfHostedGscLink } from "@/serverFunctions/gsc";
 import { GA4_OAUTH_PROVIDER_ID } from "@/shared/ga4";
+import { GOOGLE_ADS_OAUTH_PROVIDER_ID } from "@/shared/google-ads";
 import { GSC_OAUTH_PROVIDER_ID } from "@/shared/gsc";
 
 const googleProviders = {
@@ -18,11 +20,15 @@ const googleProviders = {
     providerId: GA4_OAUTH_PROVIDER_ID,
     startSelfHosted: startSelfHostedGa4Link,
   },
+  gads: {
+    providerId: GOOGLE_ADS_OAUTH_PROVIDER_ID,
+    startSelfHosted: startSelfHostedGoogleAdsLink,
+  },
 } as const;
 
 function withGoogleLinkErrorParam(
   callbackURL: string,
-  provider: "gsc" | "ga4",
+  provider: "gsc" | "ga4" | "gads",
 ): string {
   const url = new URL(callbackURL, window.location.origin);
   url.searchParams.set(GOOGLE_LINK_ERROR_PARAM, provider);
@@ -64,7 +70,7 @@ export function useGoogleLinkPending() {
  * analytics and dismissal behavior.
  */
 export async function startGoogleLink(
-  provider: "gsc" | "ga4",
+  provider: "gsc" | "ga4" | "gads",
   callbackURL: string,
 ): Promise<boolean> {
   if (linkRedirectPending) return false;

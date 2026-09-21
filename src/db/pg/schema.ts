@@ -7,5 +7,6 @@ export * from "./sam.schema";
 export * from "./better-auth-schema";
 export * from "./billing.schema";
 export * from "./ga4.schema";
+export * from "./google-ads.schema";
 export * from "./gsc.schema";
 export * from "./telemetry.schema";
