@@ -1,4 +1,4 @@
-/* eslint-disable max-lines -- LSA performance and lead reporting share one Ads connection, query set, and error map */
+/* eslint-disable max-lines -- LSA reporting and ProvideLeadFeedback share the Ads connection and error map */
 import { z } from "zod";
 import { createGoogleAdsClient } from "@/server/lib/googleAdsClient";
 import {
@@ -72,6 +72,68 @@ const conversationRowSchema = z.looseObject({
       .optional(),
   }),
 });
+
+const leadFeedbackStateRowSchema = z.looseObject({
+  localServicesLead: z.looseObject({
+    id: z.string(),
+    leadCharged: z.boolean().optional(),
+    leadFeedbackSubmitted: z.boolean().optional(),
+  }),
+});
+
+const leadCreditStateRowSchema = z.looseObject({
+  localServicesLead: z.looseObject({
+    id: z.string(),
+    creditDetails: z
+      .looseObject({
+        creditState: z.string().optional(),
+      })
+      .optional(),
+  }),
+});
+
+// Word-for-word from googleads/v25 enums protos (2026-09-10). UNSPECIFIED
+// and UNKNOWN are return-only and are not accepted as input.
+export const SURVEY_ANSWERS = [
+  "VERY_SATISFIED",
+  "SATISFIED",
+  "NEUTRAL",
+  "DISSATISFIED",
+  "VERY_DISSATISFIED",
+] as const;
+export const DISSATISFIED_REASONS = [
+  "OTHER_DISSATISFIED_REASON",
+  "GEO_MISMATCH",
+  "JOB_TYPE_MISMATCH",
+  "NOT_READY_TO_BOOK",
+  "SPAM",
+  "DUPLICATE",
+  "SOLICITATION",
+] as const;
+export const SATISFIED_REASONS = [
+  "OTHER_SATISFIED_REASON",
+  "BOOKED_CUSTOMER",
+  "LIKELY_BOOKED_CUSTOMER",
+  "SERVICE_RELATED",
+  "HIGH_VALUE_SERVICE",
+] as const;
+
+type SurveyAnswer = (typeof SURVEY_ANSWERS)[number];
+type DissatisfiedReason = (typeof DISSATISFIED_REASONS)[number];
+type SatisfiedReason = (typeof SATISFIED_REASONS)[number];
+
+const LEAD_ID_PATTERN = /^\d{1,19}$/;
+const MAX_OTHER_REASON_COMMENT_LENGTH = 200;
+
+type LeadFeedbackResult = {
+  leadId: string;
+  creditIssuanceDecision: string;
+  /** Post-file re-read of lead_feedback_submitted; null if Google rejected the field. */
+  leadFeedbackSubmitted: boolean | null;
+  /** Pre-file credit_details.credit_state when Google allows that leaf; null if unread. */
+  creditState: string | null;
+  charged: boolean;
+};
 
 type LocalServicesCampaign = {
   id: string;
@@ -149,7 +211,7 @@ function isProhibitedSelectField(error: unknown): boolean {
 
 function mapGoogleAdsError(
   error: unknown,
-  context: { report: "performance" | "leads"; projectId: string },
+  context: { report: "performance" | "leads" | "feedback"; projectId: string },
 ): GoogleAdsReportError {
   if (error instanceof GoogleAdsReportError) return error;
   // Everything past here reaches the user (dashboard card, both MCP tools) as
@@ -190,6 +252,18 @@ function mapGoogleAdsError(
       );
     }
     if (error.status === 400) {
+      // Observed on a live re-file: lead_feedback_submitted stayed false and
+      // Google still 400'd RESOURCE_ALREADY_EXISTS. Treat that as
+      // already-submitted so a re-file isn't "rejected report request."
+      if (
+        context.report === "feedback" &&
+        error.upstreamReason === "RESOURCE_ALREADY_EXISTS"
+      ) {
+        return new GoogleAdsReportError(
+          "lead_feedback_already_submitted",
+          "Feedback was already submitted for this lead. Google accepts one survey per lead.",
+        );
+      }
       return new GoogleAdsReportError(
         "google_ads_request_rejected",
         "Google Ads rejected this report request. Retrying won't help.",
@@ -606,7 +680,319 @@ async function listLeads(input: {
   }
 }
 
+function assertLeadId(leadId: string): string {
+  if (!LEAD_ID_PATTERN.test(leadId)) {
+    throw new GoogleAdsReportError(
+      "validation_error",
+      "leadId must be the numeric Local Services lead id.",
+    );
+  }
+  return leadId;
+}
+
+type ProvideLeadFeedbackInput = {
+  projectId: string;
+  leadId: string;
+  surveyAnswer: string;
+  surveyDissatisfiedReason?: string;
+  surveySatisfiedReason?: string;
+  otherReasonComment?: string;
+};
+
+function pickAllowed<T extends string>(
+  value: string | undefined,
+  allowed: readonly T[],
+): T | undefined {
+  return allowed.find((item) => item === value);
+}
+
+function validateSurvey(input: ProvideLeadFeedbackInput): {
+  surveyAnswer: SurveyAnswer;
+  surveyDissatisfiedReason?: DissatisfiedReason;
+  surveySatisfiedReason?: SatisfiedReason;
+  otherReasonComment?: string;
+} {
+  const surveyAnswer = pickAllowed(input.surveyAnswer, SURVEY_ANSWERS);
+  if (!surveyAnswer) {
+    throw new GoogleAdsReportError(
+      "validation_error",
+      "surveyAnswer is not a valid Local Services survey answer.",
+    );
+  }
+  const comment = input.otherReasonComment?.trim() ?? "";
+  if (comment.length > MAX_OTHER_REASON_COMMENT_LENGTH) {
+    throw new GoogleAdsReportError(
+      "validation_error",
+      `otherReasonComment must be at most ${MAX_OTHER_REASON_COMMENT_LENGTH} characters.`,
+    );
+  }
+
+  const dissatisfied =
+    surveyAnswer === "DISSATISFIED" || surveyAnswer === "VERY_DISSATISFIED";
+  const satisfied =
+    surveyAnswer === "SATISFIED" || surveyAnswer === "VERY_SATISFIED";
+
+  if (dissatisfied) {
+    if (input.surveySatisfiedReason) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "surveySatisfiedReason does not apply to a dissatisfied survey.",
+      );
+    }
+    const surveyDissatisfiedReason = pickAllowed(
+      input.surveyDissatisfiedReason,
+      DISSATISFIED_REASONS,
+    );
+    if (!surveyDissatisfiedReason) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "A dissatisfied survey requires surveyDissatisfiedReason.",
+      );
+    }
+    if (surveyDissatisfiedReason === "OTHER_DISSATISFIED_REASON") {
+      if (!comment) {
+        throw new GoogleAdsReportError(
+          "validation_error",
+          "OTHER_DISSATISFIED_REASON requires otherReasonComment.",
+        );
+      }
+      return {
+        surveyAnswer,
+        surveyDissatisfiedReason,
+        otherReasonComment: comment,
+      };
+    }
+    if (comment) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "otherReasonComment is only sent with OTHER_DISSATISFIED_REASON. Leave it off for enum-only filings.",
+      );
+    }
+    return { surveyAnswer, surveyDissatisfiedReason };
+  }
+
+  if (satisfied) {
+    if (input.surveyDissatisfiedReason) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "surveyDissatisfiedReason does not apply to a satisfied survey.",
+      );
+    }
+    const surveySatisfiedReason = pickAllowed(
+      input.surveySatisfiedReason,
+      SATISFIED_REASONS,
+    );
+    if (!surveySatisfiedReason) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "A satisfied survey requires surveySatisfiedReason.",
+      );
+    }
+    if (surveySatisfiedReason === "OTHER_SATISFIED_REASON") {
+      if (!comment) {
+        throw new GoogleAdsReportError(
+          "validation_error",
+          "OTHER_SATISFIED_REASON requires otherReasonComment.",
+        );
+      }
+      return {
+        surveyAnswer,
+        surveySatisfiedReason,
+        otherReasonComment: comment,
+      };
+    }
+    if (comment) {
+      throw new GoogleAdsReportError(
+        "validation_error",
+        "otherReasonComment is only sent with OTHER_SATISFIED_REASON. Leave it off for enum-only filings.",
+      );
+    }
+    return { surveyAnswer, surveySatisfiedReason };
+  }
+
+  // NEUTRAL: no survey_details.
+  if (
+    input.surveyDissatisfiedReason ||
+    input.surveySatisfiedReason ||
+    comment
+  ) {
+    throw new GoogleAdsReportError(
+      "validation_error",
+      "A NEUTRAL survey does not take a reason or comment.",
+    );
+  }
+  return { surveyAnswer };
+}
+
+async function fetchLeadFeedbackState(
+  client: ReturnType<typeof createGoogleAdsClient>,
+  connection: { customerId: string; loginCustomerId: string | null },
+  leadId: string,
+): Promise<{
+  found: boolean;
+  charged: boolean;
+  submitted: boolean | null;
+}> {
+  const options = { loginCustomerId: connection.loginCustomerId };
+  const withSubmitted = `SELECT local_services_lead.id, local_services_lead.lead_charged,
+            local_services_lead.lead_feedback_submitted
+     FROM local_services_lead
+     WHERE local_services_lead.id = ${leadId}`;
+  const withoutSubmitted = `SELECT local_services_lead.id, local_services_lead.lead_charged
+     FROM local_services_lead
+     WHERE local_services_lead.id = ${leadId}`;
+
+  const parse = (rows: unknown[]) => {
+    if (rows.length === 0) {
+      return {
+        found: false,
+        charged: false,
+        submitted: null as boolean | null,
+      };
+    }
+    const lead = leadFeedbackStateRowSchema.parse(rows[0]).localServicesLead;
+    return {
+      found: true,
+      charged: lead.leadCharged ?? false,
+      submitted: lead.leadFeedbackSubmitted ?? false,
+    };
+  };
+
+  try {
+    return parse(
+      await client.search(connection.customerId, withSubmitted, options),
+    );
+  } catch (error) {
+    if (!isProhibitedSelectField(error)) throw error;
+    // Google's field reference is not a guarantee this leaf is served (see
+    // the LEAD_SELECT_EXTRAS fallback). Don't block filing if it is
+    // rejected; Google will still error on a re-file.
+    console.error("google_ads.lead_feedback_submitted_unreadable", {
+      leadId,
+      ...errorLogDetails(error),
+    });
+    const fallback = parse(
+      await client.search(connection.customerId, withoutSubmitted, options),
+    );
+    return { ...fallback, submitted: null };
+  }
+}
+
+async function fetchCreditState(
+  client: ReturnType<typeof createGoogleAdsClient>,
+  connection: { customerId: string; loginCustomerId: string | null },
+  leadId: string,
+): Promise<string | null> {
+  try {
+    const rows = await client.search(
+      connection.customerId,
+      `SELECT local_services_lead.id, local_services_lead.credit_details.credit_state
+       FROM local_services_lead
+       WHERE local_services_lead.id = ${leadId}`,
+      { loginCustomerId: connection.loginCustomerId },
+    );
+    if (rows.length === 0) return null;
+    return (
+      leadCreditStateRowSchema.parse(rows[0]).localServicesLead.creditDetails
+        ?.creditState ?? null
+    );
+  } catch (error) {
+    if (!isProhibitedSelectField(error)) throw error;
+    // The parent credit_details field is SELECT-prohibited on the Ads API.
+    // The leaf is listed as selectable; a 400 here means it isn't, so credit
+    // state stays null rather than blocking the filing.
+    console.error("google_ads.credit_state_unreadable", {
+      leadId,
+      ...errorLogDetails(error),
+    });
+    return null;
+  }
+}
+
+async function provideLeadFeedback(
+  input: ProvideLeadFeedbackInput,
+): Promise<LeadFeedbackResult> {
+  const leadId = assertLeadId(input.leadId);
+  const survey = validateSurvey(input);
+  try {
+    const { connection, client } = await getConnectedClient(input.projectId);
+    const state = await fetchLeadFeedbackState(client, connection, leadId);
+    if (!state.found) {
+      throw new GoogleAdsReportError(
+        "lead_not_found",
+        `No Local Services lead ${leadId} in the connected Ads account.`,
+      );
+    }
+    if (state.submitted === true) {
+      throw new GoogleAdsReportError(
+        "lead_feedback_already_submitted",
+        `Feedback was already submitted for lead ${leadId}. Google accepts one survey per lead.`,
+      );
+    }
+
+    const creditState = await fetchCreditState(client, connection, leadId);
+
+    const body =
+      survey.surveyDissatisfiedReason !== undefined
+        ? {
+            surveyAnswer: survey.surveyAnswer,
+            surveyDissatisfied: {
+              surveyDissatisfiedReason: survey.surveyDissatisfiedReason,
+              ...(survey.otherReasonComment
+                ? { otherReasonComment: survey.otherReasonComment }
+                : {}),
+            },
+          }
+        : survey.surveySatisfiedReason !== undefined
+          ? {
+              surveyAnswer: survey.surveyAnswer,
+              surveySatisfied: {
+                surveySatisfiedReason: survey.surveySatisfiedReason,
+                ...(survey.otherReasonComment
+                  ? { otherReasonComment: survey.otherReasonComment }
+                  : {}),
+              },
+            }
+          : { surveyAnswer: survey.surveyAnswer };
+
+    const { creditIssuanceDecision } = await client.provideLeadFeedback(
+      connection.customerId,
+      leadId,
+      body,
+      { loginCustomerId: connection.loginCustomerId },
+    );
+
+    // Re-read is best-effort: Google already accepted the survey. A failed
+    // read must not turn a successful filing into an error the caller retries.
+    let leadFeedbackSubmitted: boolean | null = null;
+    try {
+      leadFeedbackSubmitted = (
+        await fetchLeadFeedbackState(client, connection, leadId)
+      ).submitted;
+    } catch (error) {
+      console.error("google_ads.lead_feedback_reread_failed", {
+        leadId,
+        ...errorLogDetails(error),
+      });
+    }
+
+    return {
+      leadId,
+      creditIssuanceDecision,
+      leadFeedbackSubmitted,
+      creditState,
+      charged: state.charged,
+    };
+  } catch (error) {
+    throw mapGoogleAdsError(error, {
+      report: "feedback",
+      projectId: input.projectId,
+    });
+  }
+}
+
 export const LocalServicesReportingService = {
   getPerformance,
   listLeads,
+  provideLeadFeedback,
 };

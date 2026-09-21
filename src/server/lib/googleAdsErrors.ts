@@ -78,7 +78,11 @@ type GoogleAdsReportErrorCode =
   // bad query). Retrying the same call cannot succeed.
   | "google_ads_request_rejected"
   | "google_ads_upstream_unavailable"
-  | "google_ads_malformed_response";
+  | "google_ads_malformed_response"
+  // ProvideLeadFeedback pre-check: no local_services_lead row for that id.
+  | "lead_not_found"
+  // ProvideLeadFeedback pre-check: Google already has a survey for this lead.
+  | "lead_feedback_already_submitted";
 
 export class GoogleAdsReportError extends Error {
   constructor(
