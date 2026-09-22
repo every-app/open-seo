@@ -2,6 +2,7 @@ import {
   createOpenRouter,
   type LanguageModelV3,
 } from "@openrouter/ai-sdk-provider";
+import { getEnvValueSync } from "@/server/lib/runtime-env";
 
 // OpenRouter model slug used for the SAM in-app chat agent. Override with
 // OPENROUTER_MODEL to swap models without a code change.
@@ -30,9 +31,12 @@ export function buildChatAgentModel(
   apiKey: string,
   modelId?: string,
   reasoningEffort: "max" | "low" = "max",
+  baseURL?: string,
 ): LanguageModelV3 {
   const model = modelId ?? DEFAULT_CHAT_AGENT_MODEL;
-  const openrouter = createOpenRouter({ apiKey });
+  // Optional custom endpoint: any OpenAI-compatible API (self-hosted
+  // alternatives, gateways, proxies). Defaults to openrouter.ai when unset.
+  const openrouter = createOpenRouter({ apiKey, ...(baseURL && { baseURL }) });
 
   // MiniMax M3 (env-override path only): `provider.order` prefers Together,
   // then Atlas Cloud (fp8); `zdr: true` restricts routing to Zero-Data-
@@ -54,8 +58,35 @@ export function buildChatAgentModel(
     });
   }
 
+  // Custom endpoints may not implement OpenRouter usage accounting or the
+  // `reasoning` body param — skip both and send a plain request instead.
+  if (baseURL) {
+    return openrouter(model);
+  }
+
   return openrouter(model, {
     usage: { include: true },
     extraBody: { reasoning: { effort: reasoningEffort } },
   });
+}
+
+/**
+ * Builds the chat agent model from an env record (the SAM agent's DO env):
+ * OPENROUTER_API_KEY (required), plus the optional OPENROUTER_MODEL and
+ * OPENROUTER_BASE_URL overrides.
+ */
+export function buildChatAgentModelFromEnv(
+  env: object,
+  reasoningEffort: "max" | "low" = "max",
+): LanguageModelV3 {
+  const apiKey = getEnvValueSync(env, "OPENROUTER_API_KEY");
+  if (!apiKey) {
+    throw new Error("OPENROUTER_API_KEY is required for the SAM agent");
+  }
+  return buildChatAgentModel(
+    apiKey,
+    getEnvValueSync(env, "OPENROUTER_MODEL"),
+    reasoningEffort,
+    getEnvValueSync(env, "OPENROUTER_BASE_URL"),
+  );
 }
