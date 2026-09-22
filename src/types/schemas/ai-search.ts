@@ -47,11 +47,23 @@ export const brandLookupInputSchema = z.object({
   // have no URL to scope. Omitted = derive from the query (root → domain, path
   // → subfolder).
   scope: researchScopeSchema.optional(),
-  locationCode: z.number().int().positive().default(2840),
-  languageCode: z.string().min(2).max(8).default("en"),
+  // Optional overrides; the server falls back to the project's market.
+  locationCode: z.number().int().positive().optional(),
+  languageCode: z.string().min(2).max(8).optional(),
 });
 
 export type BrandLookupInput = z.infer<typeof brandLookupInputSchema>;
+
+// getBrandLookup and its helpers always operate on resolved location/language
+// values — the server function fills in the project's market before calling
+// it, so locationCode/languageCode are never undefined by that point.
+export type BrandLookupServiceInput = Omit<
+  BrandLookupInput,
+  "locationCode" | "languageCode"
+> & {
+  locationCode: number;
+  languageCode: string;
+};
 
 const brandPlatformBreakdownSchema = z.object({
   platform: z.enum(["chat_gpt", "google"]),
