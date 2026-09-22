@@ -1,4 +1,11 @@
+<!-- Generated from AGENTS.md; do not edit directly.
+Regenerate: python3 .github/sync-agent-instructions.py --write
+A full copy keeps Claude startup instructions available from subdirectories. -->
+
 # Agent guidance
+
+This is the canonical instruction source. After editing it, run
+`python3 .github/sync-agent-instructions.py --write` to regenerate `CLAUDE.md`.
 
 ## Engineering principles
 
