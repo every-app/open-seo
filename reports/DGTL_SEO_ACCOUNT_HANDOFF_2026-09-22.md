@@ -1,6 +1,6 @@
 # DGTL SEO Tool — account handoff and remaining development
 
-**Snapshot:** 22 September 2026, Asia/Colombo. This is a handoff for a new Codex account working on the **same local checkout**. It contains no credential values. Recheck external dashboards before changing production because their state can change after this snapshot.
+**Snapshot:** 22 September 2026, Asia/Colombo. This is a handoff for a new Codex account using either this local checkout or a fresh clone of the pushed `dev-seo` branch. It contains no credential values. Recheck external dashboards before changing production because their state can change after this snapshot.
 
 ## 1. Product goal and ownership
 
@@ -15,10 +15,10 @@ The requested journey is: DGTL creates a client → invites the client's email �
 | Local checkout | `/Users/sandaluthushan/Documents/ChatGPT/CEO Tool` |
 | Repository | `https://github.com/Sandalu-DGTL/DGTL-SEO-Tool` |
 | Branch | `dev-seo`, tracking `origin/dev-seo` |
-| Last committed HEAD | `84e4705` (`release: v0.1.9 (#626)`, 2026-09-17) |
-| Working tree | **Dirty:** 30 modified tracked files and 15 untracked entries before this handoff was added. Most DGTL implementation is not committed. |
+| DGTL implementation commit | `ca7b662` (`feat: add DGTL SEO client portal foundation`, 2026-09-22), pushed to `origin/dev-seo` |
+| Working tree | Clean at handoff after the implementation and report update were pushed. Check `git status --short` for the latest state. |
 
-**Do not clone `origin/dev-seo` and assume it contains this work.** Continue in the existing checkout, or deliberately commit and push after reviewing the diff and checking for secrets. The new Codex account must be given this local folder as its workspace. Do not reset, clean, switch branches, or overwrite files before preserving the changes. `.env.local` is private and should never be committed or pasted into a chat.
+The new Codex account can use the existing local checkout or clone `origin/dev-seo`; the DGTL implementation is now on GitHub. `.env.local` and Cloudflare secrets are **not** in Git, so a fresh clone still needs private local configuration. Do not paste secret values into a chat.
 
 The root `AGENTS.md` asks for simple TypeScript, Zod at trust boundaries, and new backend work organized as TanStack server function → service → repository. Keep SQLite/D1 and Postgres schema/query compatibility. Do not reorganize unrelated files just to make a folder tree look tidy.
 
@@ -84,7 +84,7 @@ Cloudflare secrets are encrypted in the dashboard; name presence does not reveal
 
 ## 7. Remaining development, recommended order
 
-1. **Preserve and validate the checkout.** Review `git diff` and untracked files, run checks, ensure no secret file is staged, then commit and push `dev-seo` when ready. Until then, the work exists only on this machine.
+1. **Validate the pushed baseline.** Check `git status`, branch/upstream, build, and key flows. Keep subsequent changes on `dev-seo` or a review branch. Review staged files for secrets before every future push.
 2. **Finish admin access and client lifecycle.** Set `SUPER_ADMIN_EMAILS` for DGTL staff; test server-side deny/allow. Add audited create-client, create-first-project, invite, client-detail, suspend/reactivate, and staff-assignment flows. Keep cross-client queries tenant-safe and test isolation with two organizations.
 3. **Finish email.** Verify a DGTL sender domain in Loops; create and publish verification, reset, and invitation templates with exactly the variables the code sends; add secrets locally and to Cloudflare; test delivery and expiry/error paths. Do not use local email-verification bypass in production.
 4. **Prepare Google OAuth for external clients.** Complete Branding and publishing in Google Cloud, confirm domain ownership/privacy URLs, settle duplicate clients, and create a separate local OAuth client for `http://localhost:3001/api/auth/callback/google`. Keep Google login scopes minimal; request GA4/GSC read-only scopes only when connecting those features.
@@ -123,4 +123,4 @@ Do not run `pnpm run deploy` simply to test the report. It runs production D1 mi
 
 ## 10. Paste this into the new Codex account
 
-> Continue the DGTL SEO Tool project in `/Users/sandaluthushan/Documents/ChatGPT/CEO Tool`, branch `dev-seo`. Read `AGENTS.md` and `reports/DGTL_SEO_ACCOUNT_HANDOFF_2026-09-22.md` first. The working tree is dirty and most DGTL changes are not committed; preserve them. The product is a multi-client SEO portal at `seo.dgtl.lk` with Better Auth, D1, DataForSEO, GA4/GSC, a super-admin area, and a planned Clarity module. Do not treat the dummy overview or Clarity placeholder as live data. Never print or commit secrets. First review the current diff and validate the app, then help finish `SUPER_ADMIN_EMAILS`, Loops transactional email, Google OAuth publishing for external clients, and the client lifecycle. Keep each client isolated by organization/project and use the server function → service → repository pattern. Ask me for any provider access or business choice you cannot infer; do not reset my local work.
+> Continue the DGTL SEO Tool project on branch `dev-seo` in `https://github.com/Sandalu-DGTL/DGTL-SEO-Tool` (or the existing checkout at `/Users/sandaluthushan/Documents/ChatGPT/CEO Tool`). Read `AGENTS.md` and `reports/DGTL_SEO_ACCOUNT_HANDOFF_2026-09-22.md` first. The DGTL implementation was pushed as commit `ca7b662`; private `.env.local` and Cloudflare secrets are not in Git. The product is a multi-client SEO portal at `seo.dgtl.lk` with Better Auth, D1, DataForSEO, GA4/GSC, a super-admin area, and a planned Clarity module. Do not treat the dummy overview or Clarity placeholder as live data. Never print or commit secrets. First validate the pushed baseline, then help finish `SUPER_ADMIN_EMAILS`, Loops transactional email, Google OAuth publishing for external clients, and the client lifecycle. Keep each client isolated by organization/project and use the server function → service → repository pattern. Ask me for any provider access or business choice you cannot infer.
