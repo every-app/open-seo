@@ -12,6 +12,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
 import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
+import { LOCAL_DEMO_ACCOUNTS } from "@/shared/demo-auth";
 
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
@@ -30,7 +31,7 @@ function SignInPage() {
     search.redirect,
   );
   const authCallbackURL = redirectTo;
-  const [showEmailForm, setShowEmailForm] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(!isHostedMode);
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
 
@@ -45,6 +46,28 @@ function SignInPage() {
     onSubmit: async ({ formApi, value }) => {
       try {
         const email = value.email.trim();
+        if (!isHostedMode) {
+          const response = await fetch("/api/demo-auth", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password: value.password }),
+          });
+          if (!response.ok) {
+            const body = (await response.json().catch(() => null)) as
+              | { error?: string }
+              | null;
+            formApi.setErrorMap({
+              onSubmit: {
+                form: body?.error ?? "We couldn't sign you in.",
+                fields: {},
+              },
+            });
+            return;
+          }
+          window.location.assign("/");
+          return;
+        }
         captureClientEvent("auth:sign_in_submit", {
           redirect_to: redirectTo,
         });
@@ -148,7 +171,30 @@ function SignInPage() {
               Create account
             </Link>
           </div>
-        ) : null
+        ) : (
+          <div className="space-y-3 text-sm text-white/55">
+            <p>Local demonstration accounts</p>
+            <DemoCredentialButton
+              label="Super admin"
+              email={LOCAL_DEMO_ACCOUNTS.superAdmin.email}
+              password={LOCAL_DEMO_ACCOUNTS.superAdmin.password}
+              onSelect={(email, password) => {
+                form.setFieldValue("email", email);
+                form.setFieldValue("password", password);
+              }}
+            />
+            <DemoCredentialButton
+              label="Client"
+              email={LOCAL_DEMO_ACCOUNTS.client.email}
+              password={LOCAL_DEMO_ACCOUNTS.client.password}
+              onSelect={(email, password) => {
+                form.setFieldValue("email", email);
+                form.setFieldValue("password", password);
+              }}
+            />
+            <Link to="/" className="inline-block underline underline-offset-2">Back to DGTL SEO Tools</Link>
+          </div>
+        )
       }
     >
       {!showEmailForm ? (
@@ -190,7 +236,7 @@ function SignInPage() {
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="email"
-                    disabled={!isHostedMode}
+                    disabled={false}
                     required
                   />
                   {error ? (
@@ -214,7 +260,7 @@ function SignInPage() {
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="current-password"
-                    disabled={!isHostedMode}
+                    disabled={false}
                     required
                   />
                   {error ? (
@@ -240,7 +286,7 @@ function SignInPage() {
                   ) : null}
                   <button
                     className="btn btn-soft w-full"
-                    disabled={!isHostedMode || isSubmitting}
+                    disabled={isSubmitting}
                   >
                     {isSubmitting ? "Signing in..." : "Sign in"}
                   </button>
@@ -251,5 +297,29 @@ function SignInPage() {
         </form>
       )}
     </AuthPageCard>
+  );
+}
+
+function DemoCredentialButton({
+  label,
+  email,
+  password,
+  onSelect,
+}: {
+  label: string;
+  email: string;
+  password: string;
+  onSelect: (email: string, password: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(email, password)}
+      className="block w-full rounded-lg border border-white/10 bg-white/5 p-3 text-left transition hover:bg-white/10"
+    >
+      <span className="font-medium text-white">{label}</span>
+      <span className="mt-1 block font-mono text-xs">{email}</span>
+      <span className="block font-mono text-xs">{password}</span>
+    </button>
   );
 }

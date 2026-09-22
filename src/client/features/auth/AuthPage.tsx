@@ -100,11 +100,12 @@ export function AuthPageCard({
   return (
     <div className="w-full max-w-xs space-y-6">
       <div className="text-center space-y-3">
-        <img
-          src="/transparent-logo.png"
-          alt="OpenSEO"
-          className="mx-auto size-10 rounded-lg"
-        />
+        <div
+          aria-label="DGTL SEO Tools"
+          className="mx-auto grid size-10 place-items-center rounded-xl bg-emerald-400 text-sm font-black text-black"
+        >
+          D
+        </div>
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
           {helperText ? (
@@ -126,7 +127,8 @@ export function AuthPageShell({ children }: { children: React.ReactNode }) {
     // auto-margin child centers when it fits but stays fully reachable (top and
     // bottom) when it's taller than the viewport. Plain `justify-center` clips
     // the overflow with no way to scroll to it.
-    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto p-4 bg-base-200">
+    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto bg-[#070909] p-4 text-white">
+      <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(52,211,153,0.10),transparent_30%)]" />
       <div className="m-auto flex w-full flex-col items-center">{children}</div>
     </div>
   );

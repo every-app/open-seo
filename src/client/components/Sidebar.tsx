@@ -11,6 +11,7 @@ import {
   LogOut,
   MessageCircle,
   Settings,
+  ShieldCheck,
   User,
   X,
 } from "lucide-react";
@@ -27,6 +28,12 @@ import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
+import { getSuperAdminAccess } from "@/serverFunctions/superAdmin";
+import {
+  isLocalDemoAuthEnabled,
+  signOutDemoSession,
+  useDemoSession,
+} from "@/client/features/auth/demoAuth";
 
 interface SidebarProps {
   projectId: string | null;
@@ -130,7 +137,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
           onClick={onNavigate}
           className="text-base font-semibold text-base-content"
         >
-          OpenSEO
+          DGTL SEO
         </Link>
         {onClose ? (
           <button
@@ -231,12 +238,23 @@ function SidebarViewTab({
 function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
-  const email = session?.user?.email;
+  const isDemoMode = isLocalDemoAuthEnabled();
+  const demoSession = useDemoSession(isDemoMode);
+  const email = isHostedMode
+    ? session?.user?.email
+    : isDemoMode
+      ? demoSession.data?.email ?? undefined
+      : undefined;
   const [isSwitching, setIsSwitching] = useState(false);
 
   const orgContextQuery = useQuery({
     ...organizationContextQueryOptions(),
     enabled: isHostedMode && Boolean(email),
+  });
+  const superAdminAccess = useQuery({
+    queryKey: ["superAdmin", "access"],
+    queryFn: () => getSuperAdminAccess(),
+    retry: false,
   });
   const organizations = orgContextQuery.data?.organizations ?? [];
   const activeOrganizationId = orgContextQuery.data?.organizationId;
@@ -261,6 +279,14 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
+      {superAdminAccess.data?.allowed ? (
+        <SidebarNavLink
+          icon={ShieldCheck}
+          label="Super Admin"
+          onNavigate={onNavigate}
+          linkProps={{ to: "/admin/clients" }}
+        />
+      ) : null}
       <SidebarNavLink
         icon={CircleHelp}
         label="Help & Community"
@@ -329,6 +355,17 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
                   <CreditCard className="h-4 w-4" />
                   Billing
                 </Link>
+              </li>
+            ) : isDemoMode ? (
+              <li>
+                <button
+                  type="button"
+                  className="text-error"
+                  onClick={() => void signOutDemoSession()}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </button>
               </li>
             ) : null}
             <ThemePreferenceMenuItems />

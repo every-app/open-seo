@@ -5,7 +5,7 @@
   // Must live at the repo root: wrangler resolves .env.local / .dev.vars
   // relative to this file's directory, so a nested config would never see
   // local secrets.
-  "name": "open-seo-audit",
+  "name": "ceo-dgtl-audit",
   "main": "src/audit-worker.ts",
   // Only cross-script bindings from the app worker reach this worker.
   "workers_dev": false,
@@ -22,7 +22,7 @@
   // binds to it cross-script via script_name (see wrangler.jsonc).
   "workflows": [
     {
-      "name": "site-audit-workflow",
+      "name": "dgtl-site-audit-workflow",
       "binding": "SITE_AUDIT_WORKFLOW",
       "class_name": "SiteAuditWorkflow",
     },
@@ -53,14 +53,14 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "f707718298cc463c9720838f8a1603d7",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_name": "dgtl-seo",
+      "database_id": "df07bf2f-bce0-4d9f-9f94-cd8c52064492",
       "migrations_dir": "drizzle",
     },
   ],
@@ -74,10 +74,6 @@
   //     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
   //   },
   // ],
-  "r2_buckets": [
-    {
-      "bucket_name": "open-seo",
-      "binding": "R2",
-    },
-  ],
+  // R2 is not enabled on this Cloudflare account yet. Add the shared R2
+  // binding after activation; authentication does not depend on this worker.
 }

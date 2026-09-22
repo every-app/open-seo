@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "open-seo",
+  "name": "ceo-dgtl",
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -19,6 +19,12 @@
   "placement": {
     "mode": "smart",
   },
+  "vars": {
+    "AUTH_MODE": "hosted",
+    "DATABASE_PROVIDER": "d1",
+    "BETTER_AUTH_URL": "https://seo.dgtl.lk",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAE_i0FRXR5Y4pIzs",
+  },
   "workflows": [
     // The site-audit engine lives in the open-seo-audit aux worker
     // (wrangler.audit.jsonc) — its memory spikes (multi-MB Lighthouse
@@ -26,13 +32,13 @@
     // heap. This is a cross-script binding for starting audits and reading
     // instance status.
     {
-      "name": "site-audit-workflow",
+      "name": "dgtl-site-audit-workflow",
       "binding": "SITE_AUDIT_WORKFLOW",
       "class_name": "SiteAuditWorkflow",
-      "script_name": "open-seo-audit",
+      "script_name": "ceo-dgtl-audit",
     },
     {
-      "name": "rank-check-workflow",
+      "name": "dgtl-rank-check-workflow",
       "binding": "RANK_CHECK_WORKFLOW",
       "class_name": "RankCheckWorkflow",
     },
@@ -58,7 +64,7 @@
   "services": [
     {
       "binding": "AUDIT_ENGINE",
-      "service": "open-seo-audit",
+      "service": "ceo-dgtl-audit",
     },
   ],
   "migrations": [
@@ -109,18 +115,18 @@
   "kv_namespaces": [
     {
       "binding": "KV",
-      "id": "4abd52f3f2c549ac83cc2cb4ceec8620",
+      "id": "f707718298cc463c9720838f8a1603d7",
     },
     {
       "binding": "OAUTH_KV",
-      "id": "bd1759494309474a9b423b029967b0db",
+      "id": "24b79185e4be4c1abcd6d351c76bd256",
     },
   ],
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "open-seo",
-      "database_id": "37bee90a-e1aa-404f-b01e-b0d1d479bda1",
+      "database_name": "dgtl-seo",
+      "database_id": "df07bf2f-bce0-4d9f-9f94-cd8c52064492",
       "migrations_dir": "drizzle",
     },
   ],
@@ -140,10 +146,6 @@
   //     "localConnectionString": "postgres://openseo:openseo@localhost:5433/openseo",
   //   },
   // ],
-  "r2_buckets": [
-    {
-      "bucket_name": "open-seo",
-      "binding": "R2",
-    },
-  ],
+  // R2 is not enabled on this Cloudflare account yet. Add the R2 binding
+  // after activation; authentication and the main dashboard use D1/KV.
 }

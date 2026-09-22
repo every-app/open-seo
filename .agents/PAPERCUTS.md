@@ -10,6 +10,8 @@ data, or sensitive paths.
 
 ## Open
 
+- [ ] `2026-09-22T04:41:50Z` — `codex` — Setting `TURNSTILE_SITE_KEY` only in the Worker dashboard leaves the hosted signup widget absent because Vite reads it at build time. Clarify the production build-time value and redeploy requirement in the Better Auth setup guide.
+- [ ] `2026-09-19T09:03:37Z` — `codex` — Running `pnpm dev` with global pnpm 9.5.0 fails with the misleading `packages field missing or empty` error because this repo requires pnpm 10.30.1. Add that exact error and a Corepack recovery command to `docs/LOCAL_DEVELOPMENT.md` so contributors can diagnose it quickly.
 - [ ] `2026-09-03T00:00:00Z` — `claude` — `pnpm ci:check` does not run `pnpm build`, so a route file that pulls `cloudflare:workers` into the client bundle passes every check and still breaks the build (hit on the dynamic-reports branch). Add a build step to `ci:check`, or document that `pnpm build` must be run separately before opening a PR.
 - [ ] `2026-09-11T00:13:05Z` — `codex` — The web-content review skill points to the removed `src/server/features/onboarding/openseo-fact-sheet.md`; the reference now lives at `src/server/features/sam/openseo-fact-sheet.md`. Update the skill's pointer so content reviews reach the current fact sheet.
 

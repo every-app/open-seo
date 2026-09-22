@@ -14,6 +14,8 @@ declare namespace Cloudflare {
 		AUTH_MODE: string;
 		BETTER_AUTH_SECRET: string;
 		BETTER_AUTH_URL: string;
+		// Hand-patched: optional Better Auth Infrastructure dashboard secret.
+		BETTER_AUTH_API_KEY?: string;
 		AUTUMN_SECRET_KEY: string;
 		LOOPS_API_KEY: string;
 		LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID: string;
@@ -34,7 +36,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "DATAFORSEO_API_KEY" | "PORT" | "AUTH_MODE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "AUTUMN_SECRET_KEY" | "LOOPS_API_KEY" | "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID" | "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID" | "POSTHOG_HOST" | "POSTHOG_PUBLIC_KEY">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "DATAFORSEO_API_KEY" | "PORT" | "AUTH_MODE" | "BETTER_AUTH_SECRET" | "BETTER_AUTH_URL" | "BETTER_AUTH_API_KEY" | "AUTUMN_SECRET_KEY" | "LOOPS_API_KEY" | "LOOPS_TRANSACTIONAL_VERIFY_EMAIL_ID" | "LOOPS_TRANSACTIONAL_RESET_PASSWORD_ID" | "POSTHOG_HOST" | "POSTHOG_PUBLIC_KEY">> {}
 }
 
 // Begin runtime types

@@ -19,7 +19,7 @@ function SeoApiStatusBanners({
             <div className="alert alert-warning">
               <AlertTriangle className="size-4 shrink-0" />
               <span className="text-sm">
-                Setup needed: add your DataForSEO API key to use OpenSEO
+                Setup needed: add your DataForSEO API key to use DGTL SEO
                 features. See the quick steps on the{" "}
                 <Link
                   {...dataforseoHelpLinkOptions}
@@ -119,7 +119,7 @@ const MissingSeoSetupModal = React.forwardRef<
               id="dataforseo-setup-description"
               className="text-sm text-base-content/75"
             >
-              Add your DataForSEO API key to start using OpenSEO.
+              Add your DataForSEO API key to start using DGTL SEO.
             </p>
           </div>
         </div>

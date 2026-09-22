@@ -9,6 +9,7 @@ import {
 } from "@/client/features/dashboard/DashboardCards";
 import { Ga4Card } from "@/client/features/dashboard/Ga4Card";
 import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
+import { DgtlOverview } from "@/client/features/dashboard/DgtlOverview";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
   getDashboardActivation,
@@ -133,19 +134,27 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
   return (
     <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-5">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+        <DgtlOverview projectId={projectId} />
 
         <WorkspaceMergeBanner />
 
-        <DashboardOnboarding
-          key={projectId}
-          projectId={projectId}
-          activation={activation}
-        />
+        <section className="space-y-3 pt-2">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Workspace setup</p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">Connect live data</h2>
+          </div>
+          <DashboardOnboarding
+            key={projectId}
+            projectId={projectId}
+            activation={activation}
+          />
+        </section>
 
-        {/* Every card is half width on large screens (only the checklist spans).
-          Cards with data render before setup pitches and empty states. */}
+        <div className="pt-2">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Live integrations</p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">Connected workspace</h2>
+        </div>
         <div className="grid items-start gap-5 lg:grid-cols-2">
           {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(
             (card) => (

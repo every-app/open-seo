@@ -14,8 +14,8 @@ export function GoogleOAuthSetupWarning({
       <div className="space-y-1">
         <p className="font-medium">Google OAuth client not configured</p>
         <p className="text-base-content/70">
-          Add your Google client ID and secret to this OpenSEO deployment before
-          connecting {integrationName}.
+          Add your Google client ID and secret to this DGTL SEO deployment
+          before connecting {integrationName}.
         </p>
         <SafeExternalLink
           url={docsUrl}

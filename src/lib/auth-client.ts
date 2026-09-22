@@ -1,5 +1,6 @@
 import { createAuthClient } from "better-auth/react";
 import { apiKeyClient } from "@better-auth/api-key/client";
+import { dashClient } from "@better-auth/infra/client";
 import {
   genericOAuthClient,
   inferAdditionalFields,
@@ -14,6 +15,7 @@ export const authClient = createAuthClient({
   baseURL: typeof window !== "undefined" ? window.location.origin : "",
   plugins: [
     apiKeyClient(),
+    dashClient(),
     // ac/roles must match the server plugin exactly, otherwise the client's
     // synchronous checkRolePermission evaluates against the defaults and
     // disagrees with the server.

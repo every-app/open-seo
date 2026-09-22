@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { dash } from "@better-auth/infra";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { captcha } from "better-auth/plugins";
@@ -47,6 +48,10 @@ function createAuth() {
     ? getHostedBaseUrl()
     : "http://localhost";
   const bypassEmail = Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true";
+  const hostedPasswordAuthEnabled =
+    !isHostedAuthMode(env.AUTH_MODE) ||
+    (hasHostedTurnstileConfig(env) &&
+      (bypassEmail || hasHostedAuthEmailConfig()));
   const baseAuthConfig = createBaseAuthConfig(
     isHostedAuthMode(env.AUTH_MODE)
       ? {
@@ -120,6 +125,7 @@ function createAuth() {
   // the client widget without the matching server secret fail configuration
   // checks instead of presenting a bypassable captcha.
   const turnstileSecretKey = getHostedTurnstileSecretKey(env);
+  const betterAuthDashboardApiKey = env.BETTER_AUTH_API_KEY?.trim();
 
   const database =
     getDatabaseProvider() === "postgres"
@@ -161,7 +167,8 @@ function createAuth() {
     ...baseAuthConfig,
     emailAndPassword: {
       ...baseAuthConfig.emailAndPassword,
-      requireEmailVerification: !bypassEmail,
+      enabled: hostedPasswordAuthEnabled,
+      requireEmailVerification: hostedPasswordAuthEnabled && !bypassEmail,
       resetPasswordTokenExpiresIn: 60 * 60,
       revokeSessionsOnPasswordReset: true,
       sendResetPassword: async ({ user, url }) => {
@@ -171,7 +178,7 @@ function createAuth() {
         });
       },
     },
-    emailVerification: bypassEmail
+    emailVerification: !hostedPasswordAuthEnabled || bypassEmail
       ? undefined
       : {
           sendOnSignUp: true,
@@ -197,6 +204,9 @@ function createAuth() {
     plugins: [
       ...baseAuthConfig.plugins,
       ...(isHostedAuthMode(env.AUTH_MODE) ? [createApiKeyPlugin()] : []),
+      ...(isHostedAuthMode(env.AUTH_MODE) && betterAuthDashboardApiKey
+        ? [dash({ apiKey: betterAuthDashboardApiKey })]
+        : []),
       ...(turnstileSecretKey
         ? [
             captcha({
@@ -338,14 +348,17 @@ function getSocialProviders() {
     return {};
   }
 
-  return {
-    google: getGoogleSocialProviderConfig(),
-  };
+  const google = getGoogleSocialProviderConfig();
+  return google ? { google } : {};
 }
 
 function getGoogleSocialProviderConfig() {
   const googleClientId = env.GOOGLE_CLIENT_ID?.trim();
   const googleClientSecret = env.GOOGLE_CLIENT_SECRET?.trim();
+
+  if (!googleClientId && !googleClientSecret) {
+    return null;
+  }
 
   if (!googleClientId) {
     throw new Error("GOOGLE_CLIENT_ID is required in hosted mode");
@@ -382,11 +395,7 @@ export function hasHostedAuthConfig() {
     getHostedBaseUrl();
     getHostedSecret();
     getGoogleSocialProviderConfig();
-    return (
-      hasHostedTurnstileConfig(env) &&
-      (Reflect.get(env, "BYPASS_EMAIL_VERIFICATION") === "true" ||
-        hasHostedAuthEmailConfig())
-    );
+    return Boolean(env.BETTER_AUTH_API_KEY?.trim());
   } catch {
     return false;
   }

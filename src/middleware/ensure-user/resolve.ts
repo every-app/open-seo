@@ -13,7 +13,9 @@ export async function resolveUserContextFromHeaders(
 ): Promise<EnsuredUserContext> {
   const authMode = getAuthMode(env.AUTH_MODE);
   if (authMode === "local_noauth") {
-    return resolveLocalNoAuthContext();
+    return resolveLocalNoAuthContext(
+      env.VITE_DGTL_DEMO_AUTH === "true" ? headers : undefined,
+    );
   }
   if (isHostedAuthMode(authMode)) {
     return resolveHostedContext(headers);

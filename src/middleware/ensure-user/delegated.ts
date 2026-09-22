@@ -6,6 +6,11 @@ import {
 } from "@/server/auth/delegated-organization";
 import { eq } from "drizzle-orm";
 import type { EnsuredUserContext } from "./types";
+import { AppError } from "@/server/lib/errors";
+import {
+  getLocalDemoAccountBySession,
+  LOCAL_DEMO_COOKIE,
+} from "@/shared/demo-auth";
 
 const LOCAL_ADMIN_USER_ID = "local-admin";
 const LOCAL_ADMIN_EMAIL = "admin@localhost";
@@ -98,6 +103,23 @@ export async function resolveSharedWorkspaceContext(
   };
 }
 
-export async function resolveLocalNoAuthContext(): Promise<EnsuredUserContext> {
+export async function resolveLocalNoAuthContext(
+  headers?: Headers,
+): Promise<EnsuredUserContext> {
+  // Local demo sessions exist only to exercise the hosted role flow safely on
+  // localhost. Production AUTH_MODE=hosted never reaches this code.
+  if (headers) {
+    const cookies = headers.get("cookie") ?? "";
+    const token = cookies
+      .split(";")
+      .map((part) => part.trim().split("="))
+      .find(([name]) => name === LOCAL_DEMO_COOKIE)?.[1];
+    const account = getLocalDemoAccountBySession(
+      token ? decodeURIComponent(token) : undefined,
+    );
+    if (!account) throw new AppError("UNAUTHENTICATED");
+    return resolveDelegatedContext(`local-${account.role}`, account.email);
+  }
+
   return resolveDelegatedContext(LOCAL_ADMIN_USER_ID, LOCAL_ADMIN_EMAIL);
 }

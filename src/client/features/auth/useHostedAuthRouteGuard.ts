@@ -11,7 +11,7 @@ import {
   getVerifyEmailSearch,
 } from "@/lib/auth-redirect";
 
-export function useHostedAuthRouteGuard() {
+export function useHostedAuthRouteGuard(enabled = true) {
   const navigate = useNavigate();
   const { data: session, isPending } = useSession();
   const isHostedMode = isHostedClientAuthMode();
@@ -19,7 +19,7 @@ export function useHostedAuthRouteGuard() {
     session?.user?.emailVerified === true || isEmailVerificationBypassed();
 
   useEffect(() => {
-    if (isPending || !isHostedMode) {
+    if (!enabled || isPending || !isHostedMode) {
       return;
     }
 
@@ -42,6 +42,7 @@ export function useHostedAuthRouteGuard() {
       });
     }
   }, [
+    enabled,
     isPending,
     isHostedMode,
     emailVerified,
@@ -55,6 +56,7 @@ export function useHostedAuthRouteGuard() {
 
   return {
     isHostedMode,
-    canRenderAuthenticatedContent: !isHostedMode || hasVerifiedHostedSession,
+    canRenderAuthenticatedContent:
+      !enabled || !isHostedMode || hasVerifiedHostedSession,
   };
 }

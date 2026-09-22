@@ -203,7 +203,18 @@ function SignUpPage() {
         ) : null
       }
     >
-      {!showEmailForm ? (
+      {!isHostedMode ? (
+        <div className="space-y-4 rounded-xl border border-white/10 bg-white/5 p-4 text-center">
+          <p className="text-sm leading-6 text-white/60">
+            Public registration is available when DGTL deploys hosted
+            authentication. Use one of the local demonstration accounts to
+            preview role-based access now.
+          </p>
+          <Link to="/sign-in" className="btn w-full border-0 bg-emerald-400 text-black hover:bg-emerald-300">
+            Open demo login
+          </Link>
+        </div>
+      ) : !showEmailForm ? (
         <>
           <AuthMethodChooser
             googleLabel="Continue with Google"

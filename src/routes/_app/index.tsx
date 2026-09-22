@@ -13,6 +13,10 @@ import {
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
+import { DgtlLandingPage } from "@/client/features/landing/DgtlLandingPage";
+import { isLocalDemoAuthEnabled, useDemoSession } from "@/client/features/auth/demoAuth";
+import { useSession } from "@/lib/auth-client";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
@@ -20,15 +24,30 @@ export const Route = createFileRoute("/_app/")({
 
 function IndexRedirect() {
   const navigate = useNavigate();
+  const isHostedMode = isHostedClientAuthMode();
+  const isDemoMode = isLocalDemoAuthEnabled();
+  const hostedSession = useSession();
+  const demoSession = useDemoSession(isDemoMode);
+  const sessionReady = isHostedMode
+    ? !hostedSession.isPending
+    : isDemoMode
+      ? !demoSession.isPending
+      : true;
+  const isAuthenticated = isHostedMode
+    ? Boolean(hostedSession.data?.user?.id)
+    : isDemoMode
+      ? demoSession.data?.authenticated === true
+      : true;
 
   const { data, error, isError, refetch } = useQuery({
     queryKey: ["projects"],
     queryFn: () => getProjects(),
+    enabled: sessionReady && isAuthenticated,
     retry: false,
   });
 
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (!isAuthenticated || !data || data.length === 0) return;
 
     // localStorage is untrusted — only honor the remembered project if it's
     // actually in the org's list; otherwise fall back to the most recent and
@@ -43,7 +62,7 @@ function IndexRedirect() {
       to: "/p/$projectId",
       params: { projectId: (target ?? data[0]).id },
     });
-  }, [data, navigate]);
+  }, [data, isAuthenticated, navigate]);
 
   useEffect(() => {
     if (getErrorCode(error) !== "PAYMENT_REQUIRED") {
@@ -52,6 +71,16 @@ function IndexRedirect() {
 
     void navigate({ href: SUBSCRIBE_ROUTE });
   }, [error, navigate]);
+
+  if (!sessionReady) {
+    return (
+      <div className="grid h-[100dvh] place-items-center bg-[#070909]">
+        <span className="loading loading-spinner loading-md text-white" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return <DgtlLandingPage />;
 
   if (isError) {
     const errorCode = getErrorCode(error);
@@ -76,7 +105,7 @@ function IndexRedirect() {
       return (
         <div className="flex items-center justify-center h-full p-4">
           <UnauthenticatedErrorCard
-            message="Please sign in to access your OpenSEO organization."
+            message="Please sign in to access your DGTL SEO organization."
             onRetry={() => {
               void refetch();
             }}

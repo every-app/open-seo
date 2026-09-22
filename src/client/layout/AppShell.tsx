@@ -57,6 +57,7 @@ export function AuthenticatedAppLayout({
   const sidebarProjectId =
     projectId ?? fallbackProjectId ?? rememberedProjectId;
   const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
+  const isProjectDashboard = /^\/p\/[^/]+\/?$/.test(location.pathname);
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],
     queryFn: () => getSeoApiKeyStatus(),
@@ -69,7 +70,7 @@ export function AuthenticatedAppLayout({
     shouldCheckSeoApiKeyStatus && seoApiKeyStatusQuery.isError;
 
   React.useEffect(() => {
-    if (!shouldCheckSeoApiKeyStatus) {
+    if (!shouldCheckSeoApiKeyStatus || isProjectDashboard) {
       setShowMissingSeoApiKeyModal(false);
       return;
     }
@@ -83,6 +84,7 @@ export function AuthenticatedAppLayout({
     setShowMissingSeoApiKeyModal(!seoApiKeyStatusQuery.data.configured);
   }, [
     location.pathname,
+    isProjectDashboard,
     seoApiKeyStatusQuery.data,
     seoApiKeyStatusQuery.isError,
     seoApiKeyStatusQuery.isSuccess,
@@ -90,7 +92,9 @@ export function AuthenticatedAppLayout({
   ]);
 
   const shouldShowMissingSeoApiKeyModal =
-    showMissingSeoApiKeyModal && location.pathname !== DATAFORSEO_HELP_PATH;
+    showMissingSeoApiKeyModal &&
+    !isProjectDashboard &&
+    location.pathname !== DATAFORSEO_HELP_PATH;
 
   const shouldShowSeoApiWarning =
     !seoApiKeyStatusError &&
@@ -181,7 +185,7 @@ function MobileTopBar({
         <Menu className="h-5 w-5" />
       </button>
       <Link to="/" className="ml-1 font-semibold text-base-content">
-        OpenSEO
+        DGTL SEO
       </Link>
     </div>
   );
