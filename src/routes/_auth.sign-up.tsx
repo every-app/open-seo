@@ -12,6 +12,7 @@ import {
   TurnstileWidget,
   useTurnstileCaptcha,
 } from "@/client/features/auth/TurnstileWidget";
+import { useGoogleSignUp } from "@/client/features/auth/useGoogleSignUp";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -210,7 +211,10 @@ function SignUpPage() {
             authentication. Use one of the local demonstration accounts to
             preview role-based access now.
           </p>
-          <Link to="/sign-in" className="btn w-full border-0 bg-emerald-400 text-black hover:bg-emerald-300">
+          <Link
+            to="/sign-in"
+            className="btn w-full border-0 bg-emerald-400 text-black hover:bg-emerald-300"
+          >
             Open demo login
           </Link>
         </div>
@@ -377,50 +381,4 @@ function SignUpPage() {
       )}
     </AuthPageCard>
   );
-}
-
-// Google sign-up: kicks off the social OAuth redirect and surfaces its error.
-function useGoogleSignUp({
-  redirectTo,
-  postSignupRedirect,
-}: {
-  redirectTo: string;
-  postSignupRedirect: string;
-}) {
-  const [isStarting, setIsStarting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const start = async () => {
-    setError(null);
-    setIsStarting(true);
-
-    try {
-      captureClientEvent("auth:sign_up_google_start", {
-        redirect_to: redirectTo,
-      });
-      const result = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: redirectTo,
-        newUserCallbackURL: postSignupRedirect,
-        requestSignUp: true,
-      });
-
-      if (result.error) {
-        setError(
-          result.error.message || "Google sign up is not available right now.",
-        );
-        setIsStarting(false);
-      }
-    } catch {
-      setError("Google sign up is not available right now.");
-      setIsStarting(false);
-    }
-  };
-
-  return {
-    isStarting,
-    error,
-    start,
-    clearError: () => setError(null),
-  };
 }

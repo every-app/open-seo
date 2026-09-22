@@ -14,7 +14,10 @@ import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 import { DgtlLandingPage } from "@/client/features/landing/DgtlLandingPage";
-import { isLocalDemoAuthEnabled, useDemoSession } from "@/client/features/auth/demoAuth";
+import {
+  isLocalDemoAuthEnabled,
+  useDemoSession,
+} from "@/client/features/auth/demoAuth";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 

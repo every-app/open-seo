@@ -243,7 +243,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const email = isHostedMode
     ? session?.user?.email
     : isDemoMode
-      ? demoSession.data?.email ?? undefined
+      ? (demoSession.data?.email ?? undefined)
       : undefined;
   const [isSwitching, setIsSwitching] = useState(false);
 

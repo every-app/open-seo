@@ -8,20 +8,20 @@ organizations and every client can see only their own websites and reports.
 
 Use this production stack:
 
-| Need | Recommended service | Why |
-| --- | --- | --- |
-| Web application and backend | Cloudflare Workers | The repository is already built for Workers and uses Cloudflare bindings. |
-| Main database | Managed PostgreSQL through Cloudflare Hyperdrive | Suitable for a growing shared application and already supported by the code. |
-| Authentication | Existing Better Auth hosted mode | Email/password, verification, sessions, invitations and organization roles are already implemented. |
-| Transactional email | Existing Loops integration | Verification, password reset and invitation emails are already implemented. |
-| SEO data | DataForSEO | The existing keyword, domain, backlink and rank-tracking code uses it. |
-| Search performance | Google Search Console OAuth | Gives actual Google clicks, impressions, queries and positions. |
-| Web analytics | GA4 OAuth and Data API | Gives traffic, landing pages, engagement and conversions. |
-| Behavior analytics | Microsoft Clarity | Use its tracking script and export summaries; link users to native heatmaps. |
-| Files and report artifacts | Cloudflare R2 | The repository already declares an R2 binding. |
-| Scheduled work | Cloudflare Cron and Workflows | The current audit and rank-tracking jobs already use them. |
-| Secrets | Cloudflare Worker secrets | API keys and tokens stay encrypted and server-side. |
-| Monitoring | Cloudflare logs plus PostHog | Track failures, connector health and product activity. |
+| Need                        | Recommended service                              | Why                                                                                                 |
+| --------------------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Web application and backend | Cloudflare Workers                               | The repository is already built for Workers and uses Cloudflare bindings.                           |
+| Main database               | Managed PostgreSQL through Cloudflare Hyperdrive | Suitable for a growing shared application and already supported by the code.                        |
+| Authentication              | Existing Better Auth hosted mode                 | Email/password, verification, sessions, invitations and organization roles are already implemented. |
+| Transactional email         | Existing Loops integration                       | Verification, password reset and invitation emails are already implemented.                         |
+| SEO data                    | DataForSEO                                       | The existing keyword, domain, backlink and rank-tracking code uses it.                              |
+| Search performance          | Google Search Console OAuth                      | Gives actual Google clicks, impressions, queries and positions.                                     |
+| Web analytics               | GA4 OAuth and Data API                           | Gives traffic, landing pages, engagement and conversions.                                           |
+| Behavior analytics          | Microsoft Clarity                                | Use its tracking script and export summaries; link users to native heatmaps.                        |
+| Files and report artifacts  | Cloudflare R2                                    | The repository already declares an R2 binding.                                                      |
+| Scheduled work              | Cloudflare Cron and Workflows                    | The current audit and rank-tracking jobs already use them.                                          |
+| Secrets                     | Cloudflare Worker secrets                        | API keys and tokens stay encrypted and server-side.                                                 |
+| Monitoring                  | Cloudflare logs plus PostHog                     | Track failures, connector health and product activity.                                              |
 
 For the first staging deployment, D1 is acceptable. Before onboarding many
 paying clients, load-test D1 against the expected number of websites and jobs.
@@ -126,13 +126,13 @@ platform-admin assignment and record every cross-client action.
 
 Do not merge every metric into one unexplained score.
 
-| Report | Source | What it means |
-| --- | --- | --- |
-| SEO research | DataForSEO | Third-party keyword, domain and backlink estimates. |
-| Search performance | Search Console | Actual Google search clicks, impressions and positions. |
-| Web analytics | GA4 | Sessions, engagement, landing pages and key events. |
-| Technical SEO | Site audit workflow | Crawl problems tied to affected URLs and an audit date. |
-| Behavior | Clarity | Recent engagement, scroll and frustration summaries. |
+| Report              | Source                              | What it means                                                      |
+| ------------------- | ----------------------------------- | ------------------------------------------------------------------ |
+| SEO research        | DataForSEO                          | Third-party keyword, domain and backlink estimates.                |
+| Search performance  | Search Console                      | Actual Google search clicks, impressions and positions.            |
+| Web analytics       | GA4                                 | Sessions, engagement, landing pages and key events.                |
+| Technical SEO       | Site audit workflow                 | Crawl problems tied to affected URLs and an audit date.            |
+| Behavior            | Clarity                             | Recent engagement, scroll and frustration summaries.               |
 | DGTL problem report | Joined evidence plus analyst review | A tracked issue with source links, owner, status and verification. |
 
 Every displayed number should name its provider, property/site, date range,

@@ -141,8 +141,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
 
         <section className="space-y-3 pt-2">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Workspace setup</p>
-            <h2 className="mt-1 text-xl font-semibold tracking-tight">Connect live data</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+              Workspace setup
+            </p>
+            <h2 className="mt-1 text-xl font-semibold tracking-tight">
+              Connect live data
+            </h2>
           </div>
           <DashboardOnboarding
             key={projectId}
@@ -152,8 +156,12 @@ export function DashboardPage({ projectId }: { projectId: string }) {
         </section>
 
         <div className="pt-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Live integrations</p>
-          <h2 className="mt-1 text-xl font-semibold tracking-tight">Connected workspace</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">
+            Live integrations
+          </p>
+          <h2 className="mt-1 text-xl font-semibold tracking-tight">
+            Connected workspace
+          </h2>
         </div>
         <div className="grid items-start gap-5 lg:grid-cols-2">
           {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(

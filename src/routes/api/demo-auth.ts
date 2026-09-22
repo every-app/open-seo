@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { getAuthMode } from "@/lib/auth-mode";
 import {
+  demoCredentialsSchema,
   getLocalDemoAccountBySession,
   LOCAL_DEMO_ACCOUNTS,
   LOCAL_DEMO_COOKIE,
@@ -44,11 +45,11 @@ async function getDemoSession(request: Request) {
 
 async function createDemoSession(request: Request) {
   if (!isDemoAuthEnabled()) return unavailable();
-  const body = (await request.json().catch(() => null)) as
-    | { email?: unknown; password?: unknown }
-    | null;
-  const email = typeof body?.email === "string" ? body.email.trim() : "";
-  const password = typeof body?.password === "string" ? body.password : "";
+  const result = demoCredentialsSchema.safeParse(
+    await request.json().catch(() => null),
+  );
+  const email = result.success ? result.data.email.trim() : "";
+  const password = result.success ? result.data.password : "";
   const account = Object.values(LOCAL_DEMO_ACCOUNTS).find(
     (candidate) =>
       candidate.email.toLowerCase() === email.toLowerCase() &&

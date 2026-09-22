@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export const LOCAL_DEMO_ACCOUNTS = {
   superAdmin: {
     email: "superadmin@dgtl.local",
@@ -15,8 +17,23 @@ export const LOCAL_DEMO_ACCOUNTS = {
 
 export const LOCAL_DEMO_COOKIE = "dgtl_demo_session";
 
-export type LocalDemoRole =
-  (typeof LOCAL_DEMO_ACCOUNTS)[keyof typeof LOCAL_DEMO_ACCOUNTS]["role"];
+export const demoCredentialsSchema = z.object({
+  email: z.string(),
+  password: z.string(),
+});
+
+export const demoSessionSchema = z.discriminatedUnion("authenticated", [
+  z.object({
+    authenticated: z.literal(true),
+    email: z.string(),
+    role: z.enum(["super_admin", "client"]),
+  }),
+  z.object({
+    authenticated: z.literal(false),
+    email: z.null(),
+    role: z.null(),
+  }),
+]);
 
 export function getLocalDemoAccountBySession(session: string | undefined) {
   return Object.values(LOCAL_DEMO_ACCOUNTS).find(

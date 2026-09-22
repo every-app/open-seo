@@ -1,7 +1,15 @@
-import { Outlet, createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  Outlet,
+  createFileRoute,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useHostedAuthRouteGuard } from "@/client/features/auth/useHostedAuthRouteGuard";
-import { isLocalDemoAuthEnabled, useDemoSession } from "@/client/features/auth/demoAuth";
+import {
+  isLocalDemoAuthEnabled,
+  useDemoSession,
+} from "@/client/features/auth/demoAuth";
 import { AuthenticatedAppLayout } from "@/client/layout/AppShell";
 import { useOnboardingRedirect } from "@/client/features/onboarding/useOnboardingRedirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
@@ -27,16 +35,23 @@ function AppRouteLayout() {
       isLanding ||
       demoSession.isPending ||
       demoSession.data?.authenticated
-    ) return;
+    )
+      return;
     void navigate({ to: "/sign-in", replace: true });
-  }, [demoSession.data?.authenticated, demoSession.isPending, isDemoMode, isHostedMode, isLanding, navigate]);
+  }, [
+    demoSession.data?.authenticated,
+    demoSession.isPending,
+    isDemoMode,
+    isHostedMode,
+    isLanding,
+    navigate,
+  ]);
 
   if (isLanding) return <Outlet />;
 
   if (
     !authGate.canRenderAuthenticatedContent ||
-    (isDemoMode &&
-      (demoSession.isPending || !demoSession.data?.authenticated))
+    (isDemoMode && (demoSession.isPending || !demoSession.data?.authenticated))
   ) {
     return null;
   }

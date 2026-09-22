@@ -178,18 +178,19 @@ function createAuth() {
         });
       },
     },
-    emailVerification: !hostedPasswordAuthEnabled || bypassEmail
-      ? undefined
-      : {
-          sendOnSignUp: true,
-          autoSignInAfterVerification: true,
-          sendVerificationEmail: async ({ user, url }) => {
-            await sendHostedVerificationEmail({
-              email: user.email,
-              confirmationUrl: url,
-            });
+    emailVerification:
+      !hostedPasswordAuthEnabled || bypassEmail
+        ? undefined
+        : {
+            sendOnSignUp: true,
+            autoSignInAfterVerification: true,
+            sendVerificationEmail: async ({ user, url }) => {
+              await sendHostedVerificationEmail({
+                email: user.email,
+                confirmationUrl: url,
+              });
+            },
           },
-        },
     socialProviders: getSocialProviders(),
     // Where OAuth redirect-flow failures land when Better Auth can't honor a
     // per-flow errorCallbackURL (Google-side errors like a canceled consent

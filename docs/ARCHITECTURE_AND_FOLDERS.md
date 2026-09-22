@@ -19,6 +19,8 @@ src/
   client/
     components/                 shared visual components
     features/
+      dashboard/
+        dgtl-overview/          overview composition, panels, and demo data
       super-admin/              super-admin screens and client-side state
       clarity/                  Clarity connection and report UI
       ga4/                      Google Analytics UI
@@ -32,6 +34,9 @@ src/
       clarity/
         repositories/           saved connector and snapshots
         services/               Clarity API adapter and normalization
+      onboarding/
+        repositories/           onboarding persistence and storage encoding
+        services/               onboarding state and completion workflows
     auth/                       identity and organization authorization
     lib/                        infrastructure shared by server features
   serverFunctions/              validated client-to-server entry points
@@ -40,6 +45,7 @@ src/
     *.schema.ts                 SQLite/D1 schema
     pg/*.schema.ts              matching PostgreSQL schema
   shared/                       browser/server contracts and constants
+  types/schemas/                Zod schemas at request/data boundaries
 docs/                           architecture and operating guides
 ```
 

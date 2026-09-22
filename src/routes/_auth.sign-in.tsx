@@ -7,6 +7,7 @@ import {
   authRedirectSearchSchema,
   useAuthPageState,
 } from "@/client/features/auth/AuthPage";
+import { signInDemoSession } from "@/client/features/auth/demoAuth";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
@@ -47,19 +48,14 @@ function SignInPage() {
       try {
         const email = value.email.trim();
         if (!isHostedMode) {
-          const response = await fetch("/api/demo-auth", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password: value.password }),
+          const result = await signInDemoSession({
+            email,
+            password: value.password,
           });
-          if (!response.ok) {
-            const body = (await response.json().catch(() => null)) as
-              | { error?: string }
-              | null;
+          if (!result.ok) {
             formApi.setErrorMap({
               onSubmit: {
-                form: body?.error ?? "We couldn't sign you in.",
+                form: result.error,
                 fields: {},
               },
             });
@@ -192,7 +188,9 @@ function SignInPage() {
                 form.setFieldValue("password", password);
               }}
             />
-            <Link to="/" className="inline-block underline underline-offset-2">Back to DGTL SEO Tools</Link>
+            <Link to="/" className="inline-block underline underline-offset-2">
+              Back to DGTL SEO Tools
+            </Link>
           </div>
         )
       }

@@ -15,5 +15,7 @@ dist/
 drizzle/
 drizzle-pg/
 planning/
+# Generated research/report artifacts preserve their exported layout.
+reports/
 worker-configuration.d.ts
 web/
