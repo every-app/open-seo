@@ -6,6 +6,7 @@ import { googleAuthErrorCopy } from "@/client/features/integrations/googleAuthEr
 const authErrorSearchSchema = z.object({
   error: z.string().optional(),
   error_description: z.string().optional(),
+  provider: z.enum(["dgtl"]).optional(),
 });
 
 export const Route = createFileRoute("/auth-error")({
@@ -22,8 +23,11 @@ export const Route = createFileRoute("/auth-error")({
  * errorCallbackURL).
  */
 function AuthErrorPage() {
-  const { error } = Route.useSearch();
-  const copy = googleAuthErrorCopy(error ?? "unknown");
+  const { error, provider } = Route.useSearch();
+  const copy =
+    provider === "dgtl"
+      ? getDgtlAuthErrorCopy(error)
+      : googleAuthErrorCopy(error ?? "unknown");
 
   return (
     <AuthPageShell>
@@ -38,10 +42,35 @@ function AuthErrorPage() {
           ) : undefined
         }
       >
-        <Link to="/" className="btn btn-soft w-full">
-          Back to OpenSEO
-        </Link>
+        {provider === "dgtl" ? (
+          <Link
+            to="/sign-in"
+            search={{ sso: "off" }}
+            className="btn btn-soft w-full"
+          >
+            Back to SEO sign-in
+          </Link>
+        ) : (
+          <Link to="/" className="btn btn-soft w-full">
+            Back to OpenSEO
+          </Link>
+        )}
       </AuthPageCard>
     </AuthPageShell>
   );
+}
+
+function getDgtlAuthErrorCopy(error: string | undefined) {
+  if (error === "signup_disabled" || error === "account_not_linked") {
+    return {
+      title: "DGTL account not linked",
+      description:
+        "Sign in to your existing SEO account first, then link your DGTL account in Settings.",
+    };
+  }
+  return {
+    title: "DGTL sign-in didn't finish",
+    description:
+      "The authorization was canceled or expired. Try again, or use your existing SEO sign-in.",
+  };
 }

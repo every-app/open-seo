@@ -1,19 +1,45 @@
 import { env } from "cloudflare:workers";
 import { genericOAuth, organization } from "better-auth/plugins";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { baseAuthOptions } from "@/lib/auth-options";
+import { getDgtlSsoProviderConfig } from "@/lib/dgtl-sso";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
 import { GA4_OAUTH_PROVIDER_ID, GA4_OAUTH_SCOPES } from "@/shared/ga4";
 import { GSC_OAUTH_PROVIDER_ID, GSC_OAUTH_SCOPES } from "@/shared/gsc";
+import { z } from "zod";
 
 type OrganizationOptions = NonNullable<Parameters<typeof organization>[0]>;
 
 const INVITATION_EXPIRES_IN_SECONDS = 60 * 60 * 24 * 7;
+const unlinkAccountBodySchema = z.object({ providerId: z.string() });
 
 export function createBaseAuthConfig(options?: {
   organization?: Pick<OrganizationOptions, "organizationHooks">;
 }) {
+  const dgtlSsoProvider = getDgtlSsoProviderConfig(env);
   return {
     ...baseAuthOptions,
+    emailAndPassword: {
+      ...baseAuthOptions.emailAndPassword,
+      // Hiding login forms is not an API restriction. Keep password auth only
+      // for the supported non-mandatory/self-hosted configurations.
+      enabled: !(dgtlSsoProvider && env.DGTL_SSO_REQUIRED === "true"),
+    },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (
+          dgtlSsoProvider &&
+          ctx.path === "/unlink-account" &&
+          unlinkAccountBodySchema.safeParse(ctx.body).data?.providerId ===
+            "dgtl-sso"
+        ) {
+          throw new APIError("FORBIDDEN", {
+            message:
+              "Contact your DGTL administrator to change your linked identity.",
+          });
+        }
+      }),
+    },
     advanced: {
       ipAddress: {
         // On Cloudflare Workers the client IP arrives in CF-Connecting-IP;
@@ -41,6 +67,13 @@ export function createBaseAuthConfig(options?: {
         // Allow connecting a Google account whose email differs from the
         // logged-in user's (agency/freelancer managing a client's property).
         allowDifferentEmails: true,
+        // Use Better Auth's verified-email matching for Google/DGTL sign-in.
+        // Both the incoming identity and the existing local email must be
+        // verified. Never trust an unverified provider or overwrite user data.
+        disableImplicitLinking: false,
+        requireLocalEmailVerified: true,
+        trustedProviders: [],
+        updateUserInfoOnLink: false,
       },
     },
     plugins: [
@@ -91,6 +124,7 @@ export function createBaseAuthConfig(options?: {
             prompt: "select_account consent",
             pkce: true,
           },
+          ...(dgtlSsoProvider ? [dgtlSsoProvider] : []),
         ],
       }),
     ],

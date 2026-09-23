@@ -27,6 +27,9 @@ function PersonalSettings() {
   const { themePreference, setThemePreference } = useThemePreference();
   const { data: session, isPending: isSessionPending } = useSession();
   const [isSaving, setIsSaving] = useState(false);
+  const [isLinkingDgtl, setIsLinkingDgtl] = useState(false);
+  const dgtlSsoEnabled =
+    isHosted && import.meta.env.VITE_DGTL_SSO_ENABLED === "true";
 
   const analyticsEnabled = session?.user?.analyticsOptedOut !== true;
 
@@ -87,6 +90,45 @@ function PersonalSettings() {
 
       {isHosted ? (
         <>
+          {dgtlSsoEnabled ? (
+            <section className="space-y-3">
+              <h2 className="text-sm font-medium text-base-content/50">
+                DGTL account
+              </h2>
+              <p className="text-sm text-base-content/60">
+                Link your existing SEO account to the central DGTL login before
+                single sign-on is enabled for everyone.
+              </p>
+              <button
+                type="button"
+                className="btn btn-soft"
+                disabled={isLinkingDgtl}
+                onClick={async () => {
+                  setIsLinkingDgtl(true);
+                  try {
+                    const result = await authClient.oauth2.link({
+                      providerId: "dgtl-sso",
+                      callbackURL: "/settings",
+                      errorCallbackURL: "/auth-error?provider=dgtl",
+                    });
+                    if (result.error || !result.data?.url) {
+                      toast.error(
+                        result.error?.message || "Could not link DGTL account.",
+                      );
+                      setIsLinkingDgtl(false);
+                      return;
+                    }
+                    window.location.assign(result.data.url);
+                  } catch {
+                    toast.error("Could not link DGTL account.");
+                    setIsLinkingDgtl(false);
+                  }
+                }}
+              >
+                {isLinkingDgtl ? "Opening DGTL..." : "Link DGTL account"}
+              </button>
+            </section>
+          ) : null}
           <ApiKeySettings />
 
           <section className="space-y-3">

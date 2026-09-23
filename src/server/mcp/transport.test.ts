@@ -9,6 +9,11 @@ import {
   handleAuthenticatedOpenSeoMcpRequest,
   handleSelfHostedOpenSeoMcpRequest,
 } from "@/server/mcp/transport";
+import { requireDgtlSeoAccess } from "@/server/auth/dgtl-access";
+
+vi.mock("@/server/auth/dgtl-access", () => ({
+  requireDgtlSeoAccess: vi.fn(async () => {}),
+}));
 
 const selfHostedAuthMocks = vi.hoisted(() => ({
   resolveCloudflareAccessContext: vi.fn(),
@@ -218,6 +223,24 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
 });
 
 describe("handleAuthenticatedOpenSeoMcpRequest", () => {
+  it("denies a valid MCP grant when central SEO access is revoked", async () => {
+    vi.mocked(requireDgtlSeoAccess).mockRejectedValueOnce(new Error("revoked"));
+    const response = await handleAuthenticatedOpenSeoMcpRequest(
+      createMcpRequest(),
+      createWorkersOAuthMcpProps({
+        userId: "u",
+        organizationId: "o",
+        userEmail: "u@example.com",
+        baseUrl: "https://open-seo.test",
+        clientId: "test-client",
+        scopes: ["mcp"],
+      }),
+      {},
+      ctx,
+    );
+    expect(response.status).toBe(403);
+    expect(await response.text()).toContain("DGTL SEO access");
+  });
   beforeEach(() => {
     authRepositoryMocks.getMembership.mockResolvedValue({ role: "owner" });
   });

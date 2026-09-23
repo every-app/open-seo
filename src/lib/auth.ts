@@ -396,7 +396,7 @@ export function hasHostedAuthConfig() {
     getHostedBaseUrl();
     getHostedSecret();
     getGoogleSocialProviderConfig();
-    return Boolean(env.BETTER_AUTH_API_KEY?.trim());
+    return true;
   } catch {
     return false;
   }

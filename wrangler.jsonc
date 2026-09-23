@@ -1,6 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ceo-dgtl",
+  "routes": [
+    { "pattern": "seo.dgtl.lk", "custom_domain": true },
+  ],
   "main": "src/server.ts",
   "compatibility_date": "2025-09-02",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
@@ -23,6 +26,11 @@
     "AUTH_MODE": "hosted",
     "DATABASE_PROVIDER": "d1",
     "BETTER_AUTH_URL": "https://seo.dgtl.lk",
+    "DGTL_SSO_ENABLED": "true",
+    "DGTL_SSO_REQUIRED": "true",
+    "DGTL_SSO_DISCOVERY_URL": "https://tzrvssbpkcdfovrualxm.supabase.co/auth/v1/.well-known/openid-configuration",
+    "DGTL_SSO_CLIENT_ID": "633f7563-1202-40f2-9cdc-2634874f6275",
+    "DGTL_SSO_ACCESS_CHECK_URL": "https://api.dgtl.lk/v1/me",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAE_i0FRXR5Y4pIzs",
   },
   "workflows": [

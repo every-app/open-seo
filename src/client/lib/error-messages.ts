@@ -3,6 +3,8 @@ import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
 
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
+  DGTL_LINK_REQUIRED: "Connect your existing SEO account to DGTL to keep access to your projects.",
+  DGTL_REAUTH_REQUIRED: "Your DGTL session needs to be renewed. Reconnect to continue.",
   AUTH_CONFIG_MISSING:
     "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
   PAYMENT_REQUIRED:

@@ -27,6 +27,7 @@ import { Route as AuthenticatedSubscribeRouteImport } from './routes/_authentica
 import { Route as AuthenticatedOauthConsentRouteImport } from './routes/_authenticated.oauth-consent'
 import { Route as AuthSignUpRouteImport } from './routes/_auth.sign-up'
 import { Route as AuthSignInRouteImport } from './routes/_auth.sign-in'
+import { Route as AppUserRouteImport } from './routes/_app/user'
 import { Route as AppTeamRouteImport } from './routes/_app/team'
 import { Route as AppSupportRouteImport } from './routes/_app/support'
 import { Route as AppSettingsRouteImport } from './routes/_app/settings'
@@ -158,6 +159,11 @@ const AuthSignInRoute = AuthSignInRouteImport.update({
   id: '/sign-in',
   path: '/sign-in',
   getParentRoute: () => AuthRoute,
+} as any)
+const AppUserRoute = AppUserRouteImport.update({
+  id: '/user',
+  path: '/user',
+  getParentRoute: () => AppRouteRoute,
 } as any)
 const AppTeamRoute = AppTeamRouteImport.update({
   id: '/team',
@@ -414,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AppSettingsRouteWithChildren
   '/support': typeof AppSupportRoute
   '/team': typeof AppTeamRoute
+  '/user': typeof AppUserRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -473,6 +480,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AppProjectsRoute
   '/support': typeof AppSupportRoute
   '/team': typeof AppTeamRoute
+  '/user': typeof AppUserRoute
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -533,6 +541,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/support': typeof AppSupportRoute
   '/_app/team': typeof AppTeamRoute
+  '/_app/user': typeof AppUserRoute
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_authenticated/oauth-consent': typeof AuthenticatedOauthConsentRoute
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/support'
     | '/team'
+    | '/user'
     | '/sign-in'
     | '/sign-up'
     | '/oauth-consent'
@@ -655,6 +665,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/support'
     | '/team'
+    | '/user'
     | '/sign-in'
     | '/sign-up'
     | '/oauth-consent'
@@ -714,6 +725,7 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/support'
     | '/_app/team'
+    | '/_app/user'
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_authenticated/oauth-consent'
@@ -913,6 +925,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sign-in'
       preLoaderRoute: typeof AuthSignInRouteImport
       parentRoute: typeof AuthRoute
+    }
+    '/_app/user': {
+      id: '/_app/user'
+      path: '/user'
+      fullPath: '/user'
+      preLoaderRoute: typeof AppUserRouteImport
+      parentRoute: typeof AppRouteRoute
     }
     '/_app/team': {
       id: '/_app/team'
@@ -1246,6 +1265,7 @@ interface AppRouteRouteChildren {
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppSupportRoute: typeof AppSupportRoute
   AppTeamRoute: typeof AppTeamRoute
+  AppUserRoute: typeof AppUserRoute
   AppIndexRoute: typeof AppIndexRoute
   AppAdminClientsRoute: typeof AppAdminClientsRoute
   AppHelpDataforseoApiKeyRoute: typeof AppHelpDataforseoApiKeyRoute
@@ -1259,6 +1279,7 @@ const AppRouteRouteChildren: AppRouteRouteChildren = {
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppSupportRoute: AppSupportRoute,
   AppTeamRoute: AppTeamRoute,
+  AppUserRoute: AppUserRoute,
   AppIndexRoute: AppIndexRoute,
   AppAdminClientsRoute: AppAdminClientsRoute,
   AppHelpDataforseoApiKeyRoute: AppHelpDataforseoApiKeyRoute,

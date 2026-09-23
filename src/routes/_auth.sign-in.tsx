@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   AuthPageCard,
   AuthMethodChooser,
@@ -11,6 +11,7 @@ import { signInDemoSession } from "@/client/features/auth/demoAuth";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient } from "@/lib/auth-client";
+import { DGTL_SSO_PROVIDER_ID } from "@/lib/dgtl-sso";
 import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 import { LOCAL_DEMO_ACCOUNTS } from "@/shared/demo-auth";
@@ -34,7 +35,29 @@ function SignInPage() {
   const authCallbackURL = redirectTo;
   const [showEmailForm, setShowEmailForm] = useState(!isHostedMode);
   const [isStartingGoogle, setIsStartingGoogle] = useState(false);
+  const [isStartingDgtl, setIsStartingDgtl] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
+  const dgtlSsoEnabled =
+    isHostedMode && import.meta.env.VITE_DGTL_SSO_ENABLED === "true";
+
+  const startDgtlSso = useCallback(async () => {
+    setSocialError(null);
+    setIsStartingDgtl(true);
+    try {
+      const result = await authClient.signIn.oauth2({
+        providerId: DGTL_SSO_PROVIDER_ID,
+        callbackURL: authCallbackURL,
+        errorCallbackURL: "/auth-error?provider=dgtl",
+      });
+      if (result.error) {
+        setSocialError(result.error.message || "DGTL sign-in is unavailable.");
+        setIsStartingDgtl(false);
+      }
+    } catch {
+      setSocialError("DGTL sign-in is unavailable. Try again or use email.");
+      setIsStartingDgtl(false);
+    }
+  }, [authCallbackURL]);
 
   const form = useForm({
     defaultValues: {
@@ -195,6 +218,16 @@ function SignInPage() {
         )
       }
     >
+      {dgtlSsoEnabled ? (
+        <button
+          type="button"
+          className="btn w-full mb-3"
+          disabled={isStartingDgtl}
+          onClick={() => void startDgtlSso()}
+        >
+          {isStartingDgtl ? "Connecting to DGTL..." : "Continue with DGTL"}
+        </button>
+      ) : null}
       {!showEmailForm ? (
         <>
           <AuthMethodChooser

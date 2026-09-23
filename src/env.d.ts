@@ -31,6 +31,12 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     BETTER_AUTH_API_KEY?: string;
+    DGTL_SSO_ENABLED?: string;
+    DGTL_SSO_REQUIRED?: string;
+    DGTL_SSO_DISCOVERY_URL?: string;
+    DGTL_SSO_CLIENT_ID?: string;
+    DGTL_SSO_CLIENT_SECRET?: string;
+    DGTL_SSO_ACCESS_CHECK_URL?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
     HYPERDRIVE?: {
       connectionString: string;
@@ -69,6 +75,8 @@ declare namespace Cloudflare {
 interface ImportMetaEnv {
   readonly AUTH_MODE?: "cloudflare_access" | "local_noauth" | "hosted";
   readonly VITE_DGTL_DEMO_AUTH?: string;
+  readonly VITE_DGTL_SSO_ENABLED?: string;
+  readonly VITE_DGTL_SSO_AUTO_REDIRECT?: string;
   readonly DATABASE_PROVIDER?: "d1" | "postgres";
   readonly BYPASS_EMAIL_VERIFICATION?: string;
   readonly POSTHOG_PUBLIC_KEY?: string;

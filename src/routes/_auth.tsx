@@ -1,4 +1,9 @@
-import { Outlet, createFileRoute, useNavigate } from "@tanstack/react-router";
+import {
+  Outlet,
+  createFileRoute,
+  useLocation,
+  useNavigate,
+} from "@tanstack/react-router";
 import { useEffect } from "react";
 import {
   AuthPageShell,
@@ -7,6 +12,7 @@ import {
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getCurrentAuthRedirect, isDocumentRoute } from "@/lib/auth-redirect";
+import { DgtlSsoRedirect } from "@/client/features/auth/DgtlSsoRedirect";
 
 export const Route = createFileRoute("/_auth")({
   validateSearch: authRedirectSearchSchema,
@@ -16,6 +22,7 @@ export const Route = createFileRoute("/_auth")({
 function AuthPageLayout() {
   const search = Route.useSearch();
   const navigate = useNavigate();
+  const pathname = useLocation({ select: (location) => location.pathname });
   const { data: session, isPending } = useSession();
   const isHostedMode = isHostedClientAuthMode();
   const redirectTo = getCurrentAuthRedirect(search.redirect);
@@ -40,6 +47,20 @@ function AuthPageLayout() {
 
   if (isHostedMode && (isPending || session?.user?.id)) {
     return null;
+  }
+
+  if (
+    isHostedMode &&
+    import.meta.env.VITE_DGTL_SSO_ENABLED === "true" &&
+    import.meta.env.VITE_DGTL_SSO_AUTO_REDIRECT === "true" &&
+    (pathname === "/sign-in" || pathname === "/sign-up")
+  ) {
+    return (
+      <DgtlSsoRedirect
+        redirectTo={redirectTo}
+        signedOut={search.sso === "off"}
+      />
+    );
   }
 
   return (

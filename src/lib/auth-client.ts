@@ -34,7 +34,10 @@ export function signOutAndRedirect() {
   void authClient.signOut({
     fetchOptions: {
       onSuccess: () => {
-        window.location.assign(signInHref);
+        // A local sign-out must not immediately trigger the automatic SSO
+        // round-trip and silently sign the user back into SEO.
+        const separator = signInHref.includes("?") ? "&" : "?";
+        window.location.assign(`${signInHref}${separator}sso=off`);
       },
     },
   });

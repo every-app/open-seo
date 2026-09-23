@@ -7,6 +7,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
+  sso: z.enum(["off"]).optional(),
 });
 
 export function useAuthPageState(redirect: string | undefined) {

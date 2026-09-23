@@ -3,6 +3,7 @@ import { getActiveOrganizationId } from "@/lib/auth-session";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { resolveActiveHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { AppError } from "@/server/lib/errors";
+import { requireDgtlSeoAccess } from "@/server/auth/dgtl-access";
 import type { EnsuredUserContext } from "./types";
 
 async function requireHostedSession(headers: Headers) {
@@ -26,6 +27,7 @@ export async function resolveHostedContext(
   headers: Headers,
 ): Promise<EnsuredUserContext> {
   const session = await requireHostedSession(headers);
+  await requireDgtlSeoAccess(session.user.id);
   const activeOrganizationId = getActiveOrganizationId(session);
 
   if (activeOrganizationId) {

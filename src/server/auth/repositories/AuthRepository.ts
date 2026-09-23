@@ -12,6 +12,7 @@ import {
 } from "drizzle-orm";
 import { db } from "@/db";
 import {
+  account,
   invitation,
   member,
   organization,
@@ -185,6 +186,15 @@ async function setLastActiveOrganization(
 }
 
 export const AuthRepository = {
+  async getDgtlAccount(userId: string) {
+    return db
+      .select({ accountId: account.accountId })
+      .from(account)
+      .where(
+        and(eq(account.userId, userId), eq(account.providerId, "dgtl-sso")),
+      )
+      .limit(2);
+  },
   upsertDelegatedOrganization,
   findFirstOrganizationIdForUser,
   findFirstFoundedOrganizationIdForUser,

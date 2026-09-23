@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { env } from "cloudflare:workers";
 import { getAuth, hasHostedAuthConfig } from "@/lib/auth";
 import { isHostedAuthMode } from "@/lib/auth-mode";
+import { requireDgtlSeoAccess } from "@/server/auth/dgtl-access";
 
 async function handleAuthRequest(request: Request) {
   if (!isHostedAuthMode(env.AUTH_MODE)) {
@@ -17,6 +18,19 @@ async function handleAuthRequest(request: Request) {
   }
 
   const auth = getAuth();
+  if (new URL(request.url).pathname.startsWith("/api/auth/organization/")) {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (session?.user) {
+      try {
+        await requireDgtlSeoAccess(session.user.id);
+      } catch {
+        return Response.json(
+          { message: "DGTL SEO access unavailable or revoked" },
+          { status: 403 },
+        );
+      }
+    }
+  }
   return auth.handler(request);
 }
 

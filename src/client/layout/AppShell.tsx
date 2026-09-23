@@ -13,6 +13,10 @@ import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 import { getProjects } from "@/serverFunctions/projects";
 import { getLastProjectId } from "@/client/lib/active-project";
+import {
+  DgtlAccessRecovery,
+  isDgtlRecoveryError,
+} from "@/client/features/auth/DgtlAccessRecovery";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 
@@ -117,6 +121,11 @@ export function AuthenticatedAppLayout({
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [shouldShowMissingSeoApiKeyModal]);
+
+  const recoveryError = [projectsQuery.error, seoApiKeyStatusQuery.error].find(
+    isDgtlRecoveryError,
+  );
+  if (recoveryError) return <DgtlAccessRecovery error={recoveryError} />;
 
   return (
     <div className="flex h-[100dvh] bg-base-200">

@@ -20,6 +20,10 @@ import {
 } from "@/client/features/auth/demoAuth";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
+import {
+  DgtlAccessRecovery,
+  isDgtlRecoveryError,
+} from "@/client/features/auth/DgtlAccessRecovery";
 
 export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
@@ -41,6 +45,21 @@ function IndexRedirect() {
     : isDemoMode
       ? demoSession.data?.authenticated === true
       : true;
+  const shouldStartSso =
+    isHostedMode &&
+    sessionReady &&
+    !isAuthenticated &&
+    import.meta.env.VITE_DGTL_SSO_ENABLED === "true" &&
+    import.meta.env.VITE_DGTL_SSO_AUTO_REDIRECT === "true";
+
+  useEffect(() => {
+    if (shouldStartSso)
+      void navigate({
+        to: "/sign-in",
+        search: { redirect: "/" },
+        replace: true,
+      });
+  }, [shouldStartSso, navigate]);
 
   const { data, error, isError, refetch } = useQuery({
     queryKey: ["projects"],
@@ -75,7 +94,7 @@ function IndexRedirect() {
     void navigate({ href: SUBSCRIBE_ROUTE });
   }, [error, navigate]);
 
-  if (!sessionReady) {
+  if (!sessionReady || shouldStartSso) {
     return (
       <div className="grid h-[100dvh] place-items-center bg-[#070909]">
         <span className="loading loading-spinner loading-md text-white" />
@@ -86,6 +105,7 @@ function IndexRedirect() {
   if (!isAuthenticated) return <DgtlLandingPage />;
 
   if (isError) {
+    if (isDgtlRecoveryError(error)) return <DgtlAccessRecovery error={error} />;
     const errorCode = getErrorCode(error);
 
     if (errorCode === "AUTH_CONFIG_MISSING") {

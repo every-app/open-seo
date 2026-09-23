@@ -8,6 +8,7 @@ import {
   WebStandardStreamableHTTPServerTransport,
 } from "@modelcontextprotocol/server";
 import { getHostedBaseUrl } from "@/lib/auth";
+import { requireDgtlSeoAccess } from "@/server/auth/dgtl-access";
 import { MCP_SCOPE } from "@/lib/oauth-resource";
 import { resolveCloudflareAccessContext } from "@/middleware/ensure-user/cloudflareAccess";
 import { resolveLocalNoAuthContext } from "@/middleware/ensure-user/delegated";
@@ -196,6 +197,13 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   // Re-resolve per request; 401 invalid_token only once the user belongs to
   // no organization, pushing compliant clients back through OAuth.
   const authContext = result.data[MCP_AUTH_CONTEXT_PROP];
+  try {
+    await requireDgtlSeoAccess(authContext.userId);
+  } catch {
+    return withMcpCors(
+      new Response("DGTL SEO access unavailable or revoked", { status: 403 }),
+    );
+  }
   const organization = await resolveRequestOrganization(
     authContext.userId,
     authContext.organizationId,
