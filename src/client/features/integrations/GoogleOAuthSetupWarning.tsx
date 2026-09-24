@@ -11,10 +11,10 @@ export function GoogleOAuthSetupWarning({
 }) {
   return (
     <Alert variant="warning" className="text-sm">
-      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+      <AlertTriangle className="size-4 shrink-0" />
       <AlertDescription className="space-y-1">
         <p className="font-medium">Google OAuth client not configured</p>
-        <p className="text-muted-foreground">
+        <p className="text-foreground/80">
           Add your Google client ID and secret to this OpenSEO deployment before
           connecting {integrationName}.
         </p>

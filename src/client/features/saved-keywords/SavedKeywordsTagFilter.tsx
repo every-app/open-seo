@@ -5,7 +5,7 @@ import {
   Tag as TagIcon,
   X,
 } from "@/client/components/icons";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef } from "react";
 import {
   resolveTagColor,
   tagDotClass,
@@ -62,12 +62,26 @@ export function SavedKeywordsTagFilter({
     selectedTagIds.includes(tag.id),
   );
   const hasSelection = selectedTagIds.length > 0;
+  const chipsRef = useRef<HTMLDivElement>(null);
 
   return (
     <div>
       <Popover
         open={open}
-        onOpenChange={(nextOpen) => {
+        onOpenChange={(nextOpen, details) => {
+          // The selected-tag chips sit below the trigger, outside the popup.
+          // Upstream kept the list open while you remove one, so a press on
+          // a chip does not dismiss it.
+          const target = details.event.target;
+          if (
+            !nextOpen &&
+            details.reason === "outside-press" &&
+            target instanceof Node &&
+            chipsRef.current?.contains(target)
+          ) {
+            details.cancel();
+            return;
+          }
           setOpen(nextOpen);
           if (!nextOpen) setManagingTagId(null);
         }}
@@ -91,7 +105,10 @@ export function SavedKeywordsTagFilter({
         </PopoverTrigger>
 
         {selectedTags.length > 0 ? (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div
+            ref={chipsRef}
+            className="mt-2 flex flex-wrap items-center gap-1.5"
+          >
             {selectedTags.map((tag) => (
               <TagChip
                 key={tag.id}
