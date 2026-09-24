@@ -141,7 +141,7 @@
   --input: oklch(0.2 0.004 286 / 0.05);
   --ring: oklch(0.62 0.2 256);
   --halo: oklch(0.55 0.08 256);
-  --shade: oklch(0.32 0.03 264 / 0.4);
+  --shade: oklch(0.4 0.025 264 / 0.2);
   /* App tokens: on a light ground, text tints go darker to keep WCAG AA. */
   --success: oklch(0.42 0.11 152);
   --warning: oklch(0.43 0.1 60);
