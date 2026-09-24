@@ -126,17 +126,49 @@ export async function hasDgtlSeoAccess(
   token: string,
   subject: string,
 ): Promise<boolean> {
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-    signal: AbortSignal.timeout(10_000),
-  });
-  if (!response.ok) return false;
-  const access = accessSchema.safeParse(await response.json());
-  return (
-    access.success &&
-    access.data.id === subject &&
-    access.data.status === "active" &&
-    access.data.services.some((service) => service.key === "seo")
+  return (await checkDgtlSeoAccess(url, token, subject)) === "allowed";
+}
+
+/** Log only fixed reason codes, never tokens, identities, or response bodies. */
+export async function checkDgtlSeoAccess(
+  url: string,
+  token: string,
+  subject: string,
+): Promise<"allowed" | "reauth" | "denied" | "unavailable"> {
+  let response: Response;
+  try {
+    response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+      signal: AbortSignal.timeout(10_000),
+    });
+  } catch {
+    console.warn("DGTL access check: network_failure");
+    return "unavailable";
+  }
+  if (!response.ok) {
+    console.warn(`DGTL access check: http_${response.status}`);
+    if (response.status === 401) return "reauth";
+    return response.status === 403 ? "denied" : "unavailable";
+  }
+  const access = accessSchema.safeParse(
+    await response.json().catch(() => null),
   );
+  if (!access.success) {
+    console.warn("DGTL access check: invalid_profile_response");
+    return "unavailable";
+  }
+  const reason =
+    access.data.id !== subject
+      ? "identity_mismatch"
+      : access.data.status !== "active"
+        ? "inactive_account"
+        : !access.data.services.some((service) => service.key === "seo")
+          ? "seo_not_assigned"
+          : null;
+  if (reason) {
+    console.warn(`DGTL access check: ${reason}`);
+    return "denied";
+  }
+  return "allowed";
 }

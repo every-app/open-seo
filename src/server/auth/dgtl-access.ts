@@ -3,7 +3,7 @@ import { getAuth } from "@/lib/auth";
 import {
   DGTL_SSO_PROVIDER_ID,
   getDgtlSsoProviderConfig,
-  hasDgtlSeoAccess,
+  checkDgtlSeoAccess,
 } from "@/lib/dgtl-sso";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { AppError } from "@/server/lib/errors";
@@ -32,16 +32,12 @@ export async function requireDgtlSeoAccess(userId: string): Promise<void> {
     throw new AppError("DGTL_REAUTH_REQUIRED");
   }
   if (!accessToken) throw new AppError("DGTL_REAUTH_REQUIRED");
-  try {
-    if (
-      !(await hasDgtlSeoAccess(
-        env.DGTL_SSO_ACCESS_CHECK_URL!.trim(),
-        accessToken,
-        accounts[0].accountId,
-      ))
-    )
-      throw new AppError("FORBIDDEN");
-  } catch {
-    throw new AppError("FORBIDDEN");
-  }
+  const access = await checkDgtlSeoAccess(
+    env.DGTL_SSO_ACCESS_CHECK_URL!.trim(),
+    accessToken,
+    accounts[0].accountId,
+  );
+  if (access === "reauth") throw new AppError("DGTL_REAUTH_REQUIRED");
+  if (access === "unavailable") throw new AppError("UPSTREAM_UNAVAILABLE");
+  if (access === "denied") throw new AppError("FORBIDDEN");
 }

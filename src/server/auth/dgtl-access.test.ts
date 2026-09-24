@@ -31,15 +31,13 @@ describe("central SEO authorization", () => {
     mocks.token.mockResolvedValue({ accessToken: "current-token" });
     vi.stubGlobal(
       "fetch",
-      vi
-        .fn()
-        .mockResolvedValue(
-          Response.json({
-            id: "central-user",
-            status: "active",
-            services: [{ key: "seo" }],
-          }),
-        ),
+      vi.fn().mockResolvedValue(
+        Response.json({
+          id: "central-user",
+          status: "active",
+          services: [{ key: "seo" }],
+        }),
+      ),
     );
   });
 
@@ -84,7 +82,25 @@ describe("central SEO authorization", () => {
     );
     vi.mocked(fetch).mockRejectedValueOnce(new Error("offline"));
     await expect(requireDgtlSeoAccess("local-user")).rejects.toThrow(
-      "FORBIDDEN",
+      "UPSTREAM_UNAVAILABLE",
+    );
+  });
+  it("requests reauthentication when the central API rejects a token", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 401 }));
+    await expect(requireDgtlSeoAccess("local-user")).rejects.toThrow(
+      "DGTL_REAUTH_REQUIRED",
+    );
+  });
+  it("distinguishes malformed and unavailable profiles from permission denial", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce(
+      Response.json({ error: "unexpected" }),
+    );
+    await expect(requireDgtlSeoAccess("local-user")).rejects.toThrow(
+      "UPSTREAM_UNAVAILABLE",
+    );
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(null, { status: 503 }));
+    await expect(requireDgtlSeoAccess("local-user")).rejects.toThrow(
+      "UPSTREAM_UNAVAILABLE",
     );
   });
   it("does not affect self-hosted mode", async () => {

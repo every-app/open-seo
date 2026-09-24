@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { authClient } from "@/lib/auth-client";
 import { DGTL_SSO_PROVIDER_ID } from "@/lib/dgtl-sso";
 import {
@@ -16,8 +16,9 @@ export function DgtlAccessRecovery({ error }: { error: unknown }) {
   const linking = getErrorCode(error) === "DGTL_LINK_REQUIRED";
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
+  const started = useRef(false);
 
-  async function recover() {
+  const recover = useCallback(async () => {
     setBusy(true);
     setFailed(false);
     try {
@@ -33,7 +34,24 @@ export function DgtlAccessRecovery({ error }: { error: unknown }) {
       setFailed(true);
       setBusy(false);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (linking || started.current) return;
+    started.current = true;
+    // Survives the OAuth round trip. A persistently rejected identity must not
+    // bounce between the two applications indefinitely.
+    try {
+      const key = "dgtl:last-auto-renewal";
+      const previous = Number(window.sessionStorage.getItem(key));
+      if (previous && Date.now() - previous < 60_000) return;
+      window.sessionStorage.setItem(key, String(Date.now()));
+    } catch {
+      // If storage is unavailable, keep the explicit reconnect button.
+      return;
+    }
+    void recover();
+  }, [linking, recover]);
 
   // Re-enter central authentication; the server only matches verified emails.
   // Never link whichever central user happens to be logged in to this session.

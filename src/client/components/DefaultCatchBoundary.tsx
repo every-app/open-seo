@@ -9,6 +9,10 @@ import {
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { captureClientError } from "@/client/lib/posthog";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
+import {
+  DgtlAccessRecovery,
+  isDgtlRecoveryError,
+} from "@/client/features/auth/DgtlAccessRecovery";
 
 export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
   const router = useRouter();
@@ -37,6 +41,8 @@ export function DefaultCatchBoundary({ error }: ErrorComponentProps) {
 
   const showAuthConfigHelp = errorCode === "AUTH_CONFIG_MISSING";
   const showSignInHelp = errorCode === "UNAUTHENTICATED";
+
+  if (isDgtlRecoveryError(error)) return <DgtlAccessRecovery error={error} />;
 
   if (showAuthConfigHelp) {
     return (

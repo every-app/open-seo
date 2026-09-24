@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { authClient } from "@/lib/auth-client";
+import { authClient, isSigningOut } from "@/lib/auth-client";
 import { DGTL_SSO_PROVIDER_ID } from "@/lib/dgtl-sso";
 
 /** Central authentication handoff; never renders local credentials or signup. */
@@ -27,7 +27,7 @@ export function DgtlSsoRedirect({
   }, [redirectTo]);
 
   useEffect(() => {
-    if (signedOut || started.current) return;
+    if (signedOut || started.current || isSigningOut()) return;
     started.current = true;
     void start();
   }, [signedOut, start]);

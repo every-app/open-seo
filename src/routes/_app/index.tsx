@@ -18,7 +18,7 @@ import {
   isLocalDemoAuthEnabled,
   useDemoSession,
 } from "@/client/features/auth/demoAuth";
-import { useSession } from "@/lib/auth-client";
+import { isSigningOut, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import {
   DgtlAccessRecovery,
@@ -49,6 +49,7 @@ function IndexRedirect() {
     isHostedMode &&
     sessionReady &&
     !isAuthenticated &&
+    !isSigningOut() &&
     import.meta.env.VITE_DGTL_SSO_ENABLED === "true" &&
     import.meta.env.VITE_DGTL_SSO_AUTO_REDIRECT === "true";
 

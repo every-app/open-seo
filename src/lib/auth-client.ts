@@ -10,6 +10,7 @@ import { captureClientEvent, resetAnalyticsUser } from "@/client/lib/posthog";
 import { userAdditionalFields } from "@/lib/auth-options";
 import { orgAccessControl, orgRoles } from "@/lib/org-permissions";
 import { getSignInHrefForLocation } from "@/lib/auth-redirect";
+import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export const authClient = createAuthClient({
   baseURL: typeof window !== "undefined" ? window.location.origin : "",
@@ -27,13 +28,31 @@ export const authClient = createAuthClient({
 
 export const { useSession } = authClient;
 
+let signingOut = false;
+export function isSigningOut() {
+  return signingOut;
+}
+
 export function signOutAndRedirect() {
+  signingOut = true;
   const signInHref = getSignInHrefForLocation(window.location);
   captureClientEvent("auth:sign_out");
   resetAnalyticsUser();
   void authClient.signOut({
     fetchOptions: {
+      onError: () => {
+        signingOut = false;
+      },
       onSuccess: () => {
+        // End only this application's session. The hub keeps its own cookie
+        // and decides whether My services or central login should be shown.
+        if (
+          isHostedClientAuthMode() &&
+          import.meta.env.VITE_DGTL_SSO_ENABLED === "true"
+        ) {
+          window.location.assign("https://auth.dgtl.lk/user");
+          return;
+        }
         // A local sign-out must not immediately trigger the automatic SSO
         // round-trip and silently sign the user back into SEO.
         const separator = signInHref.includes("?") ? "&" : "?";

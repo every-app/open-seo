@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useSession } from "@/lib/auth-client";
+import { isSigningOut, useSession } from "@/lib/auth-client";
 import {
   isEmailVerificationBypassed,
   isHostedClientAuthMode,
@@ -19,7 +19,7 @@ export function useHostedAuthRouteGuard(enabled = true) {
     session?.user?.emailVerified === true || isEmailVerificationBypassed();
 
   useEffect(() => {
-    if (!enabled || isPending || !isHostedMode) {
+    if (!enabled || isPending || !isHostedMode || isSigningOut()) {
       return;
     }
 

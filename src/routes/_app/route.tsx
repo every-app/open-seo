@@ -26,7 +26,7 @@ function AppRouteLayout() {
   const isDemoMode = isLocalDemoAuthEnabled();
   const authGate = useHostedAuthRouteGuard(!isLanding);
   const demoSession = useDemoSession(isDemoMode && !isLanding);
-  useOnboardingRedirect();
+  const awaitingOnboarding = useOnboardingRedirect();
 
   useEffect(() => {
     if (
@@ -46,6 +46,16 @@ function AppRouteLayout() {
     isLanding,
     navigate,
   ]);
+
+  if (awaitingOnboarding)
+    return (
+      <div className="grid min-h-dvh place-items-center">
+        <span
+          className="loading loading-spinner"
+          aria-label="Opening your workspace"
+        />
+      </div>
+    );
 
   if (isLanding) return <Outlet />;
 

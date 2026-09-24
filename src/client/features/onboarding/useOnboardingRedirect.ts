@@ -14,9 +14,11 @@ export function useOnboardingRedirect() {
   const isHostedMode = isHostedClientAuthMode();
   const isEmailVerified =
     session?.user?.emailVerified === true || isEmailVerificationBypassed();
+  const enabled = isHostedMode && Boolean(session?.user?.id) && isEmailVerified;
   const onboardingQuery = useQuery({
     ...onboardingAnswersQueryOptions(),
-    enabled: isHostedMode && Boolean(session?.user?.id) && isEmailVerified,
+    enabled,
+    retry: false,
   });
 
   useEffect(() => {
@@ -24,7 +26,7 @@ export function useOnboardingRedirect() {
       !isHostedMode ||
       !session?.user?.id ||
       !isEmailVerified ||
-      onboardingQuery.isLoading ||
+      !onboardingQuery.data ||
       onboardingQuery.isError ||
       onboardingQuery.data?.completedAt ||
       window.location.pathname === "/onboarding"
@@ -37,9 +39,15 @@ export function useOnboardingRedirect() {
     isHostedMode,
     navigate,
     onboardingQuery.data?.completedAt,
+    onboardingQuery.data,
     onboardingQuery.isError,
     onboardingQuery.isLoading,
     isEmailVerified,
     session?.user?.id,
   ]);
+
+  // Do not mount a second redirect (the project route) while deciding whether
+  // this user must finish onboarding. Errors go through the shared recovery UI.
+  if (enabled && onboardingQuery.error) throw onboardingQuery.error;
+  return enabled && !onboardingQuery.data?.completedAt;
 }
