@@ -33,7 +33,7 @@ export function ExternalUrlCell({
   value,
   label,
   baseDomain,
-  className = "link text-link inline-flex items-center gap-1",
+  className = "underline underline-offset-4 text-link inline-flex items-center gap-1",
   display = "formatted",
   empty = "-",
 }: {

@@ -44,12 +44,12 @@ export function SavedKeywordsHeader({
       <div className="flex items-center gap-2">
         <DropdownMenu>
           <DropdownMenuTrigger
+            disabled={disabled || metricsRefreshing}
             render={
               <Button
                 variant="ghost"
                 size="sm"
                 type="button"
-                disabled={disabled || metricsRefreshing}
                 aria-haspopup="menu"
                 className="gap-1.5"
               />
@@ -79,12 +79,12 @@ export function SavedKeywordsHeader({
 
         <DropdownMenu>
           <DropdownMenuTrigger
+            disabled={disabled}
             render={
               <Button
                 variant="ghost"
                 size="sm"
                 type="button"
-                disabled={disabled}
                 aria-haspopup="menu"
                 className="gap-1.5"
               />

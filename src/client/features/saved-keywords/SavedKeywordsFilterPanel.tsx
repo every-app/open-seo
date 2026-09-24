@@ -194,7 +194,7 @@ function TermsTokenInput({
                 onKeyDown={handleKeyDown}
                 onBlur={addFromDraft}
                 placeholder={terms.length === 0 ? placeholder : ""}
-                className="h-7 min-w-[6rem] px-1 text-xs"
+                className="h-7 w-auto min-w-[6rem] flex-1 rounded-none border-0 bg-transparent px-1 text-xs shadow-none hover:bg-transparent focus-visible:shadow-none"
               />
             </div>
           );

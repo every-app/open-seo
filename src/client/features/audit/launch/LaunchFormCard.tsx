@@ -8,12 +8,7 @@ import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
+import { Card, CardContent } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 import { InputGroup } from "@/client/components/ui/input-group";
 import { Switch } from "@/client/components/ui/switch";
@@ -30,10 +25,9 @@ export function LaunchFormCard({
 }: Props) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Start New Audit</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 pt-6">
+        <h2 className="text-base font-semibold">Start New Audit</h2>
+
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
           onSubmit={(event) => {

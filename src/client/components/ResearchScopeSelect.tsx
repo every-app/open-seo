@@ -1,4 +1,4 @@
-import { ChevronDown } from "@/client/components/icons";
+import { Check, ChevronDown } from "@/client/components/icons";
 import { Button } from "@/client/components/ui/button";
 import {
   DropdownMenu,
@@ -62,10 +62,12 @@ export function ResearchScopeSelect({
           }}
         >
           {RESEARCH_SCOPES.map((scope) => (
+            // The selected option shows a trailing check, so the radio dot
+            // (the item's first <span>) is hidden.
             <DropdownMenuRadioItem
               key={scope}
               value={scope}
-              className="items-start"
+              className="items-start gap-2 px-2 [&>span:first-child]:hidden"
             >
               <span className="flex-1">
                 <span className="block">{RESEARCH_SCOPE_LABELS[scope]}</span>
@@ -76,6 +78,9 @@ export function ResearchScopeSelect({
                   {RESEARCH_SCOPE_EXAMPLES[scope]}
                 </span>
               </span>
+              {scope === value ? (
+                <Check className="mt-1 size-4 shrink-0 text-link" />
+              ) : null}
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>

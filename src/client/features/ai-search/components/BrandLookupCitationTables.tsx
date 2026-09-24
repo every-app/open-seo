@@ -325,10 +325,7 @@ export function buildTopQueriesColumns({
         <Tooltip>
           <TooltipTrigger
             render={
-              <span
-                className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-                tabIndex={0}
-              />
+              <span className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100" />
             }
           >
             <Link

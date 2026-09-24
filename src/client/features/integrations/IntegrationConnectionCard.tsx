@@ -1,11 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/client/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/client/components/ui/card";
 
 type IntegrationConnectionStatus =
   | "connected"
@@ -33,7 +28,7 @@ export function IntegrationConnectionCard({
               {icon}
             </span>
           ) : null}
-          <CardTitle className="text-base leading-tight">{title}</CardTitle>
+          <h2 className="text-base font-semibold leading-tight">{title}</h2>
         </div>
         {status ? <ConnectionStatusPill status={status} /> : null}
       </CardHeader>

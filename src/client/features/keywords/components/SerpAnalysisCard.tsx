@@ -106,7 +106,7 @@ export function SerpAnalysisCard({
 function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
   return (
     <div className="overflow-x-auto">
-      <Table className="w-full">
+      <Table className="w-full text-xs [&_td]:px-2 [&_td]:py-1.5 [&_th]:h-8 [&_th]:px-2">
         <TableHeader>
           <TableRow className="text-xs text-muted-foreground">
             <TableHead className="w-8">#</TableHead>

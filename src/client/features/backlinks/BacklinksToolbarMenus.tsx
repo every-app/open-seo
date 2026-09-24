@@ -11,7 +11,7 @@ import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 import { exportBacklinksTabCsv } from "./export";
 
-import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Button } from "@/client/components/ui/button";
 import { Spinner } from "@/client/components/ui/spinner";
 import {
   DropdownMenu,
@@ -19,6 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/client/components/ui/dropdown-menu";
+
 export function BacklinksExportMenu({
   activeTab,
   exportTarget,
@@ -50,13 +51,12 @@ export function BacklinksExportMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        disabled={rows.length === 0}
         render={
-          <div
-            className={buttonVariants({
-              variant: "ghost",
-              size: "sm",
-              className: "gap-1",
-            })}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1"
             aria-label="Export backlinks table"
           />
         }

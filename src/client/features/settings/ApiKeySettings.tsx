@@ -204,11 +204,13 @@ export function ApiKeySettings() {
       {isCreateOpen ? (
         <Dialog
           open
+          // No backdrop close on the reveal step: the key is shown once.
+          disablePointerDismissal={createdKey !== null}
           onOpenChange={(open) => {
             if (!open) closeCreateModal();
           }}
         >
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md" showClose={createdKey === null}>
             {createdKey ? (
               <>
                 <DialogHeader>

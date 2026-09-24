@@ -30,7 +30,7 @@ import {
 
 import { Alert } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
-import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
 import {
   DropdownMenu,
@@ -55,11 +55,13 @@ export function KeywordResearchMobileResults({ controller }: Props) {
         }
         className="shrink-0 border-b border-border bg-card px-3 py-2"
       >
-        <TabsList>
-          <TabsTrigger value="keywords">
+        <TabsList className="flex w-full">
+          <TabsTrigger value="keywords" className="flex-1">
             Keywords ({filteredRows.length})
           </TabsTrigger>
-          <TabsTrigger value="serp">SERP Analysis</TabsTrigger>
+          <TabsTrigger value="serp" className="flex-1">
+            SERP Analysis
+          </TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -165,13 +167,12 @@ function MobileKeywordResults({ controller }: Props) {
         <div className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger
+            disabled={!canExport}
             render={
-              <div
-                className={buttonVariants({
-                  variant: "ghost",
-                  size: "sm",
-                  className: "h-7 px-2.5 gap-1",
-                })}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2.5 gap-1"
                 aria-label="Export"
               />
             }

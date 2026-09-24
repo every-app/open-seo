@@ -41,7 +41,7 @@ import {
 
 import { Alert } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
-import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Button } from "@/client/components/ui/button";
 import {
   Card,
   CardContent,
@@ -203,15 +203,8 @@ function DesktopTableCard({ controller }: Props) {
         <div className="flex-1" />
         <DropdownMenu>
           <DropdownMenuTrigger
-            render={
-              <div
-                className={buttonVariants({
-                  variant: "ghost",
-                  size: "sm",
-                  className: "gap-1",
-                })}
-              />
-            }
+            disabled={!canExport}
+            render={<Button variant="ghost" size="sm" className="gap-1" />}
           >
             <Download className="size-3.5" />
             <span className="hidden lg:inline">Export</span>

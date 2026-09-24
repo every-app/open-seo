@@ -20,6 +20,7 @@ import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+
 type FilterValues = Record<string, string>;
 
 type FilterTextField<TValues extends FilterValues> = {
@@ -240,7 +241,11 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             }
           >
             Apply filters
-            {meta.isDirty ? <Badge>{meta.dirtyCount}</Badge> : null}
+            {meta.isDirty ? (
+              <Badge className="bg-primary-foreground/20 text-primary-foreground">
+                {meta.dirtyCount}
+              </Badge>
+            ) : null}
           </Button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Info, Loader2 } from "@/client/components/icons";
+import { Info, Loader2, X } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { domainField, normalizeDomain } from "@/types/schemas/domain";
@@ -192,10 +192,21 @@ function RankTrackingConfigModalContent({
       onClose={onClose}
       labelledBy="rank-config-modal-title"
     >
-      {/* The Modal renders its own close button in the corner. */}
-      <h2 id="rank-config-modal-title" className="pr-6 text-lg font-semibold">
-        {isEdit ? "Edit Domain Config" : "Add Domain"}
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 id="rank-config-modal-title" className="text-lg font-semibold">
+          {isEdit ? "Edit Domain Config" : "Add Domain"}
+        </h2>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field>

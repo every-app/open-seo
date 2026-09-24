@@ -18,7 +18,7 @@ export function FilterIntentSelect({
     <div
       role="group"
       aria-labelledby="keyword-intent-filter-label"
-      className="space-y-1.5"
+      className="rounded-lg border border-border bg-card p-2.5 space-y-2"
     >
       <p
         id="keyword-intent-filter-label"
@@ -101,7 +101,7 @@ export function FilterRangeInputs({
   step?: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>

@@ -264,6 +264,7 @@ export function GooglePropertyPicker({
                               variant="ghost"
                               key={property.id}
                               data-property
+                              type="button"
                               aria-pressed={chosen}
                               disabled={
                                 readOnly || !property.selectable || saving

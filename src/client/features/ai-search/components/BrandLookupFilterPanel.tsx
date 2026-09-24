@@ -58,7 +58,7 @@ function FilterRangeInputs({
   maxName: string;
 }) {
   return (
-    <div className="space-y-1.5">
+    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>

@@ -13,7 +13,7 @@ import { ProjectMarketFields } from "@/client/features/projects/ProjectMarketFie
 import { createProject } from "@/serverFunctions/projects";
 
 import { Button } from "@/client/components/ui/button";
-import { DialogFooter, DialogTitle } from "@/client/components/ui/dialog";
+import { DialogTitle } from "@/client/components/ui/dialog";
 import { Field, FieldDescription } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
 import { Label } from "@/client/components/ui/label";
@@ -118,7 +118,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
           </FieldDescription>
         </Field>
 
-        <DialogFooter className="gap-2 sm:space-x-0">
+        <div className="flex justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -131,7 +131,7 @@ export function CreateProjectModal({ onClose }: { onClose: () => void }) {
           <Button size="sm" type="submit" disabled={isPending}>
             Create project
           </Button>
-        </DialogFooter>
+        </div>
       </form>
     </Modal>
   );

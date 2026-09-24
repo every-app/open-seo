@@ -6,6 +6,7 @@ import { DOMAIN_KEYWORDS_PAGE_SIZES } from "@/types/schemas/domain";
 import { NativeSelect } from "@/client/components/ui/native-select";
 import { Spinner } from "@/client/components/ui/spinner";
 import { buttonVariants } from "@/client/components/ui/button";
+
 type Props = {
   page: number;
   pageSize: number;
@@ -122,7 +123,7 @@ function PageLink({
       className={buttonVariants({
         variant: "ghost",
         size: "icon",
-        className: "size-8",
+        className: `size-8 ${disabled ? "pointer-events-none opacity-40" : ""}`,
       })}
       onClick={(event) => {
         if (disabled) {

@@ -45,7 +45,7 @@ export function SearchTabStrip({
     <Tabs value={activeTabId} className="min-w-0">
       <TabsList
         aria-label="Search tabs"
-        className="max-w-full justify-start overflow-x-auto"
+        className="flex w-full justify-start overflow-x-auto"
       >
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;

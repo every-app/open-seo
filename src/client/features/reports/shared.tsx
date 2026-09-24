@@ -1,6 +1,6 @@
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink } from "@/client/components/icons";
+import { Copy, ExternalLink, X } from "@/client/components/icons";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/client/components/ConfirmDeleteModal";
 import { Modal } from "@/client/components/Modal";
@@ -156,12 +156,25 @@ export function ShareReportModal({
       labelledBy="share-report-title"
       maxWidth="max-w-lg"
     >
-      {/* The Modal renders its own close button in the corner. */}
-      <div className="min-w-0 pr-6">
-        <h3 id="share-report-title" className="text-base font-semibold">
-          Share
-        </h3>
-        <p className="truncate text-sm text-muted-foreground">{report.title}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h3 id="share-report-title" className="text-base font-semibold">
+            Share
+          </h3>
+          <p className="truncate text-sm text-muted-foreground">
+            {report.title}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="-mr-2 -mt-1 size-8"
+          aria-label="Close"
+          onClick={onClose}
+        >
+          <X className="size-4" />
+        </Button>
       </div>
 
       <div className="rounded-lg border border-border">

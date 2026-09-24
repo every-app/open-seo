@@ -80,7 +80,6 @@ export function makeSelectionColumn<TData>(
     header: ({ table }) => (
       <Checkbox
         checked={table.getIsAllRowsSelected()}
-        indeterminate={table.getIsSomeRowsSelected()}
         onCheckedChange={(checked) => table.toggleAllRowsSelected(checked)}
         aria-label="Select all rows"
       />

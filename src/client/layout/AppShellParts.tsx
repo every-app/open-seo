@@ -84,8 +84,13 @@ function MobileSidebarDrawer({
         if (!nextOpen) onClose();
       }}
     >
-      <SheetContent side="left" className="w-auto max-w-none p-0 md:hidden">
-        <Sidebar projectId={projectId} onNavigate={onClose} />
+      {/* The sidebar header carries its own close button, so the Sheet's
+          corner one (its only direct <button> child) is hidden. */}
+      <SheetContent
+        side="left"
+        className="w-auto max-w-none p-0 md:hidden [&>button]:hidden"
+      >
+        <Sidebar projectId={projectId} onNavigate={onClose} onClose={onClose} />
       </SheetContent>
     </Sheet>
   );
@@ -101,12 +106,13 @@ function MissingSeoSetupModal({
   return (
     <Dialog
       open={isOpen}
+      disablePointerDismissal
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
-      <DialogContent className="max-w-lg">
-        <DialogHeader className="flex-row items-start gap-3 space-y-0">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-lg" showClose={false}>
+        <DialogHeader className="flex-row items-start gap-3 space-y-0 text-left">
           <div className="rounded-full bg-warning/20 p-2 text-warning">
             <AlertTriangle className="size-5" />
           </div>
@@ -117,7 +123,7 @@ function MissingSeoSetupModal({
             </DialogDescription>
           </div>
         </DialogHeader>
-        <DialogFooter className="gap-2">
+        <DialogFooter className="mt-1 gap-2 sm:space-x-0">
           <Button variant="ghost" onClick={onClose}>
             Dismiss
           </Button>

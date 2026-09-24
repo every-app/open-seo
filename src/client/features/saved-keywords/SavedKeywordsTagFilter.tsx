@@ -73,7 +73,14 @@ export function SavedKeywordsTagFilter({
         }}
       >
         <PopoverTrigger
-          render={<Button variant="outline" className="gap-2 px-3" />}
+          render={
+            <Button
+              variant="outline"
+              className={`gap-2 px-3 ${
+                hasSelection ? "border-primary/50 bg-primary/10" : ""
+              }`}
+            />
+          }
         >
           <TagIcon className="size-3.5 opacity-70" />
           <span className="font-medium">Tags</span>

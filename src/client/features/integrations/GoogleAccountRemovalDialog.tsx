@@ -11,8 +11,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/client/components/ui/dialog";
 
@@ -69,19 +67,19 @@ export function GoogleAccountRemovalDialog({
   return (
     <Dialog
       open
+      // The native dialog closed on Escape only, never on a backdrop click.
+      disablePointerDismissal
       onOpenChange={(open) => {
         if (!open && !removal.isPending) onClose();
       }}
     >
       <DialogContent aria-labelledby={titleId} className="max-w-md">
-        <DialogHeader>
-          <DialogTitle id={titleId}>Remove Google account?</DialogTitle>
-          <p className="break-all text-sm font-medium">{label}</p>
-          <DialogDescription>
-            This removes the account’s {name} connection from OpenSEO. You can
-            reconnect it anytime.
-          </DialogDescription>
-        </DialogHeader>
+        <DialogTitle id={titleId}>Remove Google account?</DialogTitle>
+        <p className="break-all text-sm font-medium">{label}</p>
+        <DialogDescription>
+          This removes the account’s {name} connection from OpenSEO. You can
+          reconnect it anytime.
+        </DialogDescription>
         {impact.isPending ? (
           <p role="status" className="text-sm text-muted-foreground">
             Checking connected projects…
@@ -113,7 +111,7 @@ export function GoogleAccountRemovalDialog({
             {getStandardErrorMessage(removal.error)}
           </p>
         ) : null}
-        <DialogFooter className="gap-2 sm:space-x-0">
+        <div className="flex flex-wrap justify-end gap-2">
           <Button
             variant="ghost"
             size="sm"
@@ -134,7 +132,7 @@ export function GoogleAccountRemovalDialog({
           >
             {removal.isPending ? "Removing…" : "Remove account"}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

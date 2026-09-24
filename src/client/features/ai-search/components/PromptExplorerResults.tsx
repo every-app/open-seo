@@ -46,9 +46,14 @@ function ModelResultCard({
   modelResult: PromptExplorerModelResult;
   highlightBrand: string | null;
 }) {
+  const accent = getModelAccent(modelResult.model);
+
   if (modelResult.status === "error") {
     return (
-      <Card role="article" className="overflow-hidden">
+      <Card
+        role="article"
+        className={`overflow-hidden border-l-4 ${accent.border}`}
+      >
         <ModelHeader
           model={modelResult.model}
           modelName={null}
@@ -67,7 +72,10 @@ function ModelResultCard({
   }
 
   return (
-    <Card role="article" className="overflow-hidden">
+    <Card
+      role="article"
+      className={`overflow-hidden border-l-4 ${accent.border}`}
+    >
       <ModelHeader
         model={modelResult.model}
         modelName={modelResult.modelName}

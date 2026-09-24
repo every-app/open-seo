@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Check, ExternalLink } from "@/client/components/icons";
+import { Check, ExternalLink, X } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import {
   closeExportToSheetsModal,
@@ -9,12 +9,7 @@ import {
 } from "@/client/lib/exportToSheets";
 
 import { Button } from "@/client/components/ui/button";
-import {
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/client/components/ui/dialog";
+import { DialogDescription, DialogTitle } from "@/client/components/ui/dialog";
 
 export function ExportToSheetsModal() {
   const state = useExportToSheetsModalState();
@@ -41,10 +36,8 @@ export function ExportToSheetsModal() {
       onClose={closeExportToSheetsModal}
       labelledBy="export-to-sheets-title"
     >
-      {/* Modal renders the corner close button; pr-8 keeps the title clear of
-          it, and pl-10 lines the description up under the title text. */}
-      <DialogHeader className="text-left">
-        <div className="flex items-center gap-2 pr-8">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
           <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="size-4" />
           </span>
@@ -52,12 +45,23 @@ export function ExportToSheetsModal() {
             Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
           </DialogTitle>
         </div>
-        <DialogDescription className="pl-10">
-          Open a new Google Sheet and paste to fill it.
-        </DialogDescription>
-      </DialogHeader>
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          className="size-6 shrink-0"
+          onClick={closeExportToSheetsModal}
+          aria-label="Close"
+        >
+          <X className="size-4" />
+        </Button>
+      </div>
 
-      <DialogFooter>
+      <DialogDescription>
+        Open a new Google Sheet and paste to fill it.
+      </DialogDescription>
+
+      <div className="flex justify-end">
         <Button
           size="sm"
           type="button"
@@ -67,7 +71,7 @@ export function ExportToSheetsModal() {
           Open new Google Sheet
           <ExternalLink className="size-3.5" />
         </Button>
-      </DialogFooter>
+      </div>
     </Modal>
   );
 }

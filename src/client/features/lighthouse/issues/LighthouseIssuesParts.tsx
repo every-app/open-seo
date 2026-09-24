@@ -356,7 +356,7 @@ export function LighthouseIssueList({
     );
   }
   return (
-    <Table className="w-full">
+    <Table className="w-full table-fixed">
       <colgroup>
         <col className="w-8" />
         <col className="w-24" />

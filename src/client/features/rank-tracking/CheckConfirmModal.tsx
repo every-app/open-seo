@@ -55,7 +55,7 @@ export function CheckConfirmModal({
 
       <Button
         variant="outline"
-        className="h-auto w-full justify-start gap-4 whitespace-normal p-4 text-left font-normal"
+        className="h-auto w-full justify-start gap-4 whitespace-normal rounded-xl p-4 text-left font-normal"
         onClick={onRunNow}
         disabled={isPending}
       >
@@ -78,7 +78,7 @@ export function CheckConfirmModal({
       <Button
         variant="ghost"
         size="sm"
-        className="self-center"
+        className="self-center justify-self-center"
         onClick={onCancel}
       >
         Cancel

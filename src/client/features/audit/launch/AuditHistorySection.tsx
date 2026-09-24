@@ -6,12 +6,7 @@ import { formatDate, StatusBadge } from "@/client/features/audit/shared";
 
 import { Badge } from "@/client/components/ui/badge";
 import { buttonVariants } from "@/client/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
+import { Card, CardContent } from "@/client/components/ui/card";
 import {
   Table,
   TableBody,
@@ -47,10 +42,8 @@ export function AuditHistorySection({
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="text-base">Previous Audits</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3 pt-6">
+        <h2 className="text-base font-semibold">Previous Audits</h2>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>

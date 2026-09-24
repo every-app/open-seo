@@ -6,13 +6,6 @@ import {
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 import { Button } from "@/client/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-} from "@/client/components/ui/card";
 
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
@@ -109,29 +102,25 @@ export function AuthPageCard({
   footer?: React.ReactNode;
 }) {
   return (
-    <Card className="w-full max-w-sm">
-      <CardHeader className="items-center space-y-3 text-center">
+    <div className="w-full max-w-xs space-y-6">
+      <div className="text-center space-y-3">
         <img
           src="/transparent-logo.png"
           alt="OpenSEO"
           className="mx-auto size-10 rounded-lg"
         />
         <div>
-          <h1 className="text-xl font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-xl font-semibold">{title}</h1>
           {helperText ? (
-            <CardDescription className="mt-1">{helperText}</CardDescription>
+            <p className="text-sm text-muted-foreground mt-1">{helperText}</p>
           ) : null}
         </div>
-      </CardHeader>
+      </div>
 
-      <CardContent className="space-y-6">{children}</CardContent>
+      {children}
 
-      {footer ? (
-        <CardFooter className="flex-col items-stretch text-center">
-          {footer}
-        </CardFooter>
-      ) : null}
-    </Card>
+      {footer ? <div className="text-center">{footer}</div> : null}
+    </div>
   );
 }
 
@@ -141,7 +130,7 @@ export function AuthPageShell({ children }: { children: React.ReactNode }) {
     // auto-margin child centers when it fits but stays fully reachable (top and
     // bottom) when it's taller than the viewport. Plain `justify-center` clips
     // the overflow with no way to scroll to it.
-    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto bg-background p-4">
+    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto p-4 bg-muted">
       <div className="m-auto flex w-full flex-col items-center">{children}</div>
     </div>
   );

@@ -13,11 +13,7 @@ import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
 import { buttonVariants } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
-import {
-  StatCard,
-  StatCardLabel,
-  StatCardValue,
-} from "@/client/components/ui/stat-card";
+
 type SummaryStat = { label: string; value: string; description: string };
 
 export function BacklinksOverviewPanels({
@@ -99,29 +95,42 @@ function OverviewGrid({
   const domainScope = data.scope === "domain" || data.scope === "subdomains";
 
   return (
-    <div className="space-y-3">
-      <SummaryStatsGrid summaryStats={summaryStats} />
-      {domainScope ? (
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          <TrendPanels data={data} />
-        </div>
-      ) : null}
+    <div
+      className={`grid grid-cols-1 gap-3 ${domainScope ? "md:grid-cols-2 xl:grid-cols-3" : ""}`}
+    >
+      <SummaryStatsGrid data={data} summaryStats={summaryStats} />
+      {domainScope ? <TrendPanels data={data} /> : null}
     </div>
   );
 }
 
-function SummaryStatsGrid({ summaryStats }: { summaryStats: SummaryStat[] }) {
+function SummaryStatsGrid({
+  data,
+  summaryStats,
+}: {
+  data: BacklinksOverviewData;
+  summaryStats: SummaryStat[];
+}) {
+  const hasTrendPanels = data.scope === "domain" || data.scope === "subdomains";
+
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      {summaryStats.map((item) => (
-        <StatCard key={item.label}>
-          <StatCardLabel>
-            <HeaderHelpLabel label={item.label} helpText={item.description} />
-          </StatCardLabel>
-          <StatCardValue className="tabular-nums">{item.value}</StatCardValue>
-        </StatCard>
-      ))}
-    </div>
+    <Card className={hasTrendPanels ? "md:col-span-2 xl:col-span-1" : ""}>
+      <CardContent className="p-4 xl:h-full">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-5 xl:gap-y-6">
+          {summaryStats.map((item) => (
+            <div key={item.label}>
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                <HeaderHelpLabel
+                  label={item.label}
+                  helpText={item.description}
+                />
+              </div>
+              <p className="text-2xl font-semibold">{item.value}</p>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

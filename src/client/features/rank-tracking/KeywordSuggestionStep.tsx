@@ -5,7 +5,7 @@ import {
   type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table";
-import { Loader2, AlertCircle } from "@/client/components/icons";
+import { Loader2, AlertCircle, X } from "@/client/components/icons";
 import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
@@ -233,7 +233,7 @@ export function KeywordSuggestionStep({
   if (!labsSupported) {
     return (
       <>
-        {sectionHeader("Add keywords manually")}
+        {sectionHeader("Add keywords manually", onClose)}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <p className="text-xs text-muted-foreground">
             Ranked-keyword suggestions aren't available for this country.
@@ -251,7 +251,7 @@ export function KeywordSuggestionStep({
   if (suggestionsQuery.isLoading) {
     return (
       <>
-        {sectionHeader("Finding your top keywords...")}
+        {sectionHeader("Finding your top keywords...", onClose)}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <Spinner size="lg" />
           <p className="text-xs text-muted-foreground">
@@ -266,7 +266,7 @@ export function KeywordSuggestionStep({
   if (suggestionsQuery.isError) {
     return (
       <>
-        {sectionHeader("Couldn't fetch keywords")}
+        {sectionHeader("Couldn't fetch keywords", onClose)}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <AlertCircle className="size-8 text-negative" />
           <p className="text-xs text-muted-foreground">
@@ -286,7 +286,7 @@ export function KeywordSuggestionStep({
   if (data.length === 0) {
     return (
       <>
-        {sectionHeader("No rankings found")}
+        {sectionHeader("No rankings found", onClose)}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <p className="text-xs text-muted-foreground">
             We couldn't find any keywords {domain} currently ranks for. You can
@@ -303,7 +303,7 @@ export function KeywordSuggestionStep({
   // Data loaded
   return (
     <div className="flex flex-col gap-3">
-      {sectionHeader("Choose keywords to track")}
+      {sectionHeader("Choose keywords to track", onClose)}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           We found {data.length} keywords {domain} ranks for.
@@ -353,12 +353,22 @@ export function KeywordSuggestionStep({
   );
 }
 
-// The Modal renders its own close button in the corner, so the title keeps
-// clear of it.
-function sectionHeader(title: string) {
+function sectionHeader(title: string, onClose: () => void) {
   return (
-    <h2 id="keyword-suggestions-title" className="pr-6 text-lg font-semibold">
-      {title}
-    </h2>
+    <div className="flex items-center justify-between">
+      <h2 id="keyword-suggestions-title" className="text-lg font-semibold">
+        {title}
+      </h2>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        className="size-8"
+        aria-label="Close"
+        onClick={onClose}
+      >
+        <X className="size-4" />
+      </Button>
+    </div>
   );
 }

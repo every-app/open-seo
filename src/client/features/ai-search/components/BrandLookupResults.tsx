@@ -18,11 +18,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/client/components/ui/card";
-import {
-  StatCard,
-  StatCardLabel,
-  StatCardValue,
-} from "@/client/components/ui/stat-card";
 import { cn } from "@/client/lib/utils";
 import {
   Tooltip,
@@ -154,24 +149,26 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
 
 function StatsCard({ result }: { result: BrandLookupResult }) {
   return (
-    <div className="flex h-full flex-col gap-4">
-      <StatBlock
-        label="Mentions"
-        tooltip="Estimated count of AI answers where the searched brand or domain appeared in the answer text or cited sources."
-        value={result.totalMentions}
-        perPlatform={result.perPlatform}
-        metric="mentions"
-        isDomainLevel={result.aggregatesAreDomainLevel}
-      />
-      <StatBlock
-        label="AI search volume"
-        tooltip="Estimated monthly search demand for prompts where the searched brand or domain appears in AI answers. This is prompt demand, not mention count."
-        value={result.totalAiSearchVolume}
-        perPlatform={result.perPlatform}
-        metric="aiSearchVolume"
-        isDomainLevel={result.aggregatesAreDomainLevel}
-      />
-    </div>
+    <Card>
+      <div className="flex h-full flex-col divide-y divide-border">
+        <StatBlock
+          label="Mentions"
+          tooltip="Estimated count of AI answers where the searched brand or domain appeared in the answer text or cited sources."
+          value={result.totalMentions}
+          perPlatform={result.perPlatform}
+          metric="mentions"
+          isDomainLevel={result.aggregatesAreDomainLevel}
+        />
+        <StatBlock
+          label="AI search volume"
+          tooltip="Estimated monthly search demand for prompts where the searched brand or domain appears in AI answers. This is prompt demand, not mention count."
+          value={result.totalAiSearchVolume}
+          perPlatform={result.perPlatform}
+          metric="aiSearchVolume"
+          isDomainLevel={result.aggregatesAreDomainLevel}
+        />
+      </div>
+    </Card>
   );
 }
 
@@ -191,8 +188,8 @@ function StatBlock({
   isDomainLevel: boolean;
 }) {
   return (
-    <StatCard className="flex flex-1 flex-col justify-center">
-      <StatCardLabel className="inline-flex items-center gap-1">
+    <div className="flex flex-1 flex-col justify-center p-4">
+      <p className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         {label}
         <Tooltip>
           <TooltipTrigger
@@ -203,16 +200,16 @@ function StatBlock({
           <TooltipContent className="max-w-64">{tooltip}</TooltipContent>
         </Tooltip>
         {isDomainLevel ? <DomainLevelBadge /> : null}
-      </StatCardLabel>
-      <StatCardValue className="tabular-nums">
+      </p>
+      <p className="mt-1 text-3xl font-semibold tabular-nums">
         {formatCount(value)}
-      </StatCardValue>
+      </p>
       <div className="mt-3 space-y-1 border-t border-border pt-2.5">
         {perPlatform.map((row) => (
           <PlatformStatRow key={row.platform} row={row} metric={metric} />
         ))}
       </div>
-    </StatCard>
+    </div>
   );
 }
 
