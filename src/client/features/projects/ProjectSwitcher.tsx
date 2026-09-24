@@ -191,7 +191,7 @@ export function ProjectSwitcher({
       {/* A pill like the Browse/Chat tabs below it, so the stacked sidebar
           controls share one shape. overflow-hidden clips the children's hover
           fills to that shape; their focus rings are inset so the clip keeps them. */}
-      <PopoverAnchor className="flex w-full items-stretch overflow-hidden rounded-full border border-border bg-card">
+      <PopoverAnchor className="flex w-full items-stretch overflow-hidden rounded-full border border-border">
         <PopoverTrigger
           render={
             <Button
@@ -200,7 +200,7 @@ export function ProjectSwitcher({
               aria-label="Switch project"
               aria-haspopup="listbox"
               onKeyDown={handleTriggerKeyDown}
-              className="h-auto min-w-0 flex-1 justify-between gap-2 whitespace-normal rounded-none py-1.5 pl-4 pr-3 text-left font-normal focus-visible:ring-inset"
+              className="h-auto min-w-0 flex-1 justify-between gap-2 whitespace-normal rounded-none px-4 py-1.5 text-left font-normal focus-visible:ring-inset"
             />
           }
         >
@@ -208,11 +208,11 @@ export function ProjectSwitcher({
             <span className="truncate text-sm font-medium text-foreground">
               {activeProject?.name ?? "Select project"}
             </span>
-            {activeProject?.domain ? (
-              <span className="truncate text-xs font-normal text-muted-foreground">
-                {activeProject.domain}
-              </span>
-            ) : null}
+            {/* Always two lines, so the tabs below do not jump (and their
+                pill does not slide) when the project loads. */}
+            <span className="truncate text-xs font-normal text-muted-foreground">
+              {activeProject?.domain ?? "\u00a0"}
+            </span>
           </span>
           <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
         </PopoverTrigger>
@@ -230,7 +230,7 @@ export function ProjectSwitcher({
               variant: "ghost",
               size: "icon",
               className:
-                "h-auto w-11 rounded-none border-l border-border pr-1 focus-visible:ring-inset",
+                "h-auto w-12 rounded-none border-l border-border px-0 focus-visible:ring-inset",
             })}
           >
             <Settings className="size-4" />

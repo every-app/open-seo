@@ -9,8 +9,8 @@ const StatCard = React.forwardRef<
     ref={ref}
     className={cn(
       "rounded-2xl p-6",
-      "backdrop-blur-xl bg-white/[0.06] border border-white/10",
-      "shadow-[inset_0_0_8px_oklch(1_0_0/0.06)]",
+      "backdrop-blur-xl bg-foreground/[0.06] border border-border",
+      "shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
       className,
     )}
     {...props}

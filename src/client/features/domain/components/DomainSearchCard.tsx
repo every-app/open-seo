@@ -98,7 +98,7 @@ export function DomainSearchCard({
           <controlsForm.Field name="sort">
             {(field) => (
               <NativeSelect
-                className="shrink-0"
+                className="w-full lg:w-36 lg:shrink-0"
                 value={field.state.value}
                 onChange={(event) => {
                   const next = toSortMode(event.target.value) ?? "traffic";

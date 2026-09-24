@@ -8,20 +8,20 @@ const toggleVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium",
     "transition-all duration-200",
-    "hover:bg-white/[0.08] hover:text-foreground",
+    "hover:bg-foreground/[0.08] hover:text-foreground",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
     "disabled:pointer-events-none disabled:opacity-50",
-    "data-pressed:bg-white/[0.1] data-pressed:text-foreground",
-    "data-pressed:shadow-[inset_0_0_8px_oklch(1_0_0/0.12)]",
+    "data-pressed:bg-foreground/[0.1] data-pressed:text-foreground",
+    "data-pressed:shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_12%,transparent)]",
   ].join(" "),
   {
     variants: {
       variant: {
         default: "bg-transparent text-muted-foreground",
         outline:
-          "border border-white/10 bg-transparent text-muted-foreground " +
-          "hover:border-white/[0.2] " +
-          "data-pressed:border-white/[0.2]",
+          "border border-border bg-transparent text-muted-foreground " +
+          "hover:border-foreground/[0.2] " +
+          "data-pressed:border-foreground/[0.2]",
       },
       size: {
         sm: "h-8 px-2.5",

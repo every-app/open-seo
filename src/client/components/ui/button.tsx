@@ -12,7 +12,7 @@ const buttonVariants = cva(
   [
     "relative inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
     "text-sm font-semibold tracking-tight leading-none",
-    "rounded-sm transition-all duration-200 ease-out",
+    "rounded-full transition-all duration-200 ease-out",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
     "disabled:pointer-events-none disabled:opacity-40",
     "active:scale-[0.98]",
@@ -21,34 +21,36 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
+        // Filled variants use the -strong fills: white text on plain
+        // primary/destructive misses WCAG AA (3.8:1 and 4.2:1).
         default:
-          "bg-gradient-to-t from-primary to-primary/85 text-primary-foreground " +
-          "border border-white/20 " +
-          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "bg-gradient-to-t from-primary-strong to-primary-strong/85 text-primary-foreground " +
+          "border border-primary-foreground/20 " +
+          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_1px_0_oklch(1_0_0/0.18)] " +
           "hover:brightness-110",
         primary:
-          "bg-gradient-to-t from-primary to-primary/85 text-primary-foreground " +
-          "border border-white/20 " +
-          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "bg-gradient-to-t from-primary-strong to-primary-strong/85 text-primary-foreground " +
+          "border border-primary-foreground/20 " +
+          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_1px_0_oklch(1_0_0/0.18)] " +
           "hover:brightness-110",
         secondary:
-          "backdrop-blur-xl bg-white/[0.08] text-foreground " +
-          "border border-white/10 " +
+          "backdrop-blur-xl bg-foreground/[0.08] text-foreground " +
+          "border border-border " +
           "shadow-[inset_0_1px_0_oklch(1_0_0/0.08)] " +
-          "hover:bg-white/[0.12]",
+          "hover:bg-foreground/[0.12]",
         outline:
           "bg-transparent text-foreground " +
-          "border border-white/[0.15] " +
-          "hover:bg-white/[0.06] hover:border-white/[0.25]",
+          "border border-foreground/[0.15] " +
+          "hover:bg-foreground/[0.06] hover:border-foreground/[0.25]",
         ghost:
           "bg-transparent text-muted-foreground " +
-          "hover:bg-white/[0.06] hover:text-foreground",
+          "hover:bg-foreground/[0.06] hover:text-foreground",
         destructive:
-          "bg-gradient-to-t from-destructive to-destructive/85 text-destructive-foreground " +
-          "border border-white/15 " +
-          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25)] " +
+          "bg-gradient-to-t from-destructive-strong to-destructive-strong/85 text-destructive-foreground " +
+          "border border-destructive-foreground/15 " +
+          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent)] " +
           "hover:brightness-110",
-        link: "text-primary underline-offset-4 hover:underline",
+        link: "text-link underline-offset-4 hover:underline",
       },
       size: {
         sm: "h-8 px-3 text-xs",

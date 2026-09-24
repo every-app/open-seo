@@ -59,35 +59,32 @@ const PopoverContent = React.forwardRef<
       ...props
     },
     ref,
-  ) => {
-    const anchor = React.useContext(PopoverAnchorContext)?.anchor ?? undefined;
-    return (
-      <PopoverPrimitive.Portal>
-        <PopoverPrimitive.Positioner
-          anchor={anchor}
-          align={align}
-          alignOffset={alignOffset}
-          side={side}
-          sideOffset={sideOffset}
-          className="isolate z-50"
-        >
-          <PopoverPrimitive.Popup
-            ref={ref}
-            className={cn(
-              "z-50 w-72 p-4",
-              "rounded-xl border border-white/10",
-              "backdrop-blur-3xl backdrop-saturate-200 bg-zinc-900/80 supports-[backdrop-filter]:bg-zinc-900/45",
-              "text-popover-foreground",
-              "shadow-[0_8px_32px_oklch(0_0_0/0.5),inset_0_0_8px_oklch(1_0_0/0.06)]",
-              "outline-none transition-[transform,translate,scale,opacity] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=top]:data-starting-style:translate-y-2",
-              className,
-            )}
-            {...props}
-          />
-        </PopoverPrimitive.Positioner>
-      </PopoverPrimitive.Portal>
-    );
-  },
+  ) => (
+    <PopoverPrimitive.Portal>
+      <PopoverPrimitive.Positioner
+        anchor={React.useContext(PopoverAnchorContext)?.anchor ?? undefined}
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        className="isolate z-50"
+      >
+        <PopoverPrimitive.Popup
+          ref={ref}
+          className={cn(
+            "z-50 w-72 p-4",
+            "rounded-xl border border-border",
+            "backdrop-blur-3xl backdrop-saturate-200 bg-popover supports-[backdrop-filter]:bg-popover/50",
+            "text-popover-foreground",
+            "shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+            "outline-none transition-[transform,translate,scale,opacity] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=top]:data-starting-style:translate-y-2",
+            className,
+          )}
+          {...props}
+        />
+      </PopoverPrimitive.Positioner>
+    </PopoverPrimitive.Portal>
+  ),
 );
 PopoverContent.displayName = "PopoverContent";
 

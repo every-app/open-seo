@@ -15,7 +15,7 @@ const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
       data-collapsed={collapsed}
       className={cn(
         "flex h-full flex-col",
-        "backdrop-blur-xl bg-white/[0.06] border-r border-white/10",
+        "backdrop-blur-xl bg-foreground/[0.06] border-r border-border",
         "transition-[width] duration-200",
         collapsed ? "w-16" : "w-60",
         className,
@@ -35,7 +35,7 @@ const SidebarHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex h-14 items-center border-b border-white/10 px-4",
+      "flex h-14 items-center border-b border-border px-4",
       className,
     )}
     {...props}
@@ -61,7 +61,7 @@ const SidebarFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("border-t border-white/10 p-2", className)}
+    className={cn("border-t border-border p-2", className)}
     {...props}
   />
 ));
@@ -76,12 +76,17 @@ interface SidebarItemProps extends React.HTMLAttributes<HTMLButtonElement> {
 
 // Exported so navigation links (router <Link>s) can take the item look
 // without nesting an anchor inside the item's <button>.
-function sidebarItemClassName(active?: boolean, className?: string) {
+function sidebarItemClassName(
+  active?: boolean,
+  className?: string,
+  collapsed?: boolean,
+) {
   return cn(
     "flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200",
     active
-      ? "bg-white/[0.1] text-foreground shadow-[inset_0_0_8px_oklch(1_0_0/0.12)]"
-      : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+      ? "bg-foreground/[0.1] text-foreground shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_12%,transparent)]"
+      : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground",
+    collapsed && "justify-center px-2",
     className,
   );
 }
@@ -90,10 +95,7 @@ const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
   ({ className, icon, label, active, collapsed, ...props }, ref) => (
     <button
       ref={ref}
-      className={sidebarItemClassName(
-        active,
-        cn(collapsed && "justify-center px-2", className),
-      )}
+      className={sidebarItemClassName(active, className, collapsed)}
       {...props}
     >
       {icon && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>}

@@ -16,7 +16,7 @@ const SheetOverlay = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Backdrop
     className={cn(
-      "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-150 data-starting-style:opacity-0 data-ending-style:opacity-0",
+      "fixed inset-0 z-50 bg-[color-mix(in_oklch,var(--shade)_60%,transparent)] backdrop-blur-sm transition-opacity duration-150 data-starting-style:opacity-0 data-ending-style:opacity-0",
       className,
     )}
     {...props}
@@ -28,8 +28,8 @@ SheetOverlay.displayName = "SheetOverlay";
 const sheetVariants = cva(
   [
     "fixed z-50 gap-4 px-8 py-6",
-    "backdrop-blur-3xl backdrop-saturate-200 bg-zinc-900/80 supports-[backdrop-filter]:bg-zinc-900/45 border-white/10",
-    "shadow-[0_8px_32px_oklch(0_0_0/0.5),inset_0_0_8px_oklch(1_0_0/0.06)]",
+    "backdrop-blur-3xl backdrop-saturate-200 bg-popover supports-[backdrop-filter]:bg-popover/50 border-border",
+    "shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
     "transition ease-in-out data-open:duration-500 data-closed:duration-300",
   ].join(" "),
   {
@@ -66,7 +66,7 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 opacity-70 transition-all hover:opacity-100 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 opacity-70 transition-all hover:opacity-100 hover:bg-foreground/[0.08] focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
           <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>

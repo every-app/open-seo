@@ -9,14 +9,14 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       <textarea
         className={cn(
           "flex min-h-[80px] w-full rounded-sm px-3.5 py-2 text-sm text-foreground",
-          "backdrop-blur-xl bg-white/[0.06]",
-          "border border-white/10",
-          "shadow-[inset_0_1px_2px_oklch(0_0_0/0.18)]",
+          "backdrop-blur-xl bg-foreground/[0.06]",
+          "border border-border",
+          "shadow-[inset_0_1px_2px_color-mix(in_oklch,var(--shade)_18%,transparent)]",
           "placeholder:text-muted-foreground",
           "transition-all duration-200 ease-out",
-          "hover:bg-white/[0.08] hover:border-white/[0.15]",
+          "hover:bg-foreground/[0.08] hover:border-foreground/[0.15]",
           "focus-visible:outline-none focus-visible:border-primary/60",
-          "focus-visible:shadow-[inset_0_1px_2px_oklch(0_0_0/0.18),0_0_0_3px_oklch(0.62_0.2_256/0.25)]",
+          "focus-visible:shadow-[inset_0_1px_2px_color-mix(in_oklch,var(--shade)_18%,transparent),0_0_0_3px_color-mix(in_oklch,var(--primary)_25%,transparent)]",
           "disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}

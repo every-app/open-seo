@@ -34,7 +34,7 @@ export function TableBulkActionBar({
   // 4px use rounded-lg so their fills stay concentric with this rounded-xl.
   const toolbarClass =
     placement === "fixed"
-      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_8px_32px_oklch(0_0_0/0.5)] backdrop-blur-3xl"
+      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent)] backdrop-blur-3xl"
       : "flex items-stretch rounded-xl border border-border bg-muted";
 
   const bar = (

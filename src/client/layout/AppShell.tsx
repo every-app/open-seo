@@ -152,25 +152,25 @@ function MobileTopBar({
   onOpenDrawer: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        className="size-8"
-        aria-label="Toggle sidebar"
-        aria-expanded={drawerOpen}
-        onClick={onOpenDrawer}
-      >
-        <Menu className="h-5 w-5" />
-      </Button>
-      <Link
-        to="/"
-        className="ml-1 font-semibold tracking-tight text-foreground"
-      >
-        OpenSEO
-      </Link>
-      <ThemeToggle className="ml-auto size-8" />
+    <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-2 py-1 md:hidden">
+      <div className="flex items-center gap-1">
+        {/* 44px hit areas: this bar is the touch layout. */}
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          className="size-11"
+          aria-label="Toggle sidebar"
+          aria-expanded={drawerOpen}
+          onClick={onOpenDrawer}
+        >
+          <Menu className="size-5" />
+        </Button>
+        <Link to="/" className="font-semibold tracking-tight text-foreground">
+          OpenSEO
+        </Link>
+      </div>
+      <ThemeToggle className="size-11" />
     </div>
   );
 }

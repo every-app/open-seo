@@ -46,12 +46,6 @@ const DEFAULT_QUERIES_SORT: SortingState = [
   { id: "aiSearchVolume", desc: true },
 ];
 
-// DaisyUI focus-dropdowns stay open until the active element blurs.
-function closeExportMenu(): void {
-  const active = document.activeElement;
-  if (active instanceof HTMLElement) active.blur();
-}
-
 export function CitationTabsCard({
   result,
   projectId,
@@ -145,7 +139,6 @@ export function CitationTabsCard({
 
   const handleExportCsv = () => {
     downloadBrandLookupCsv(activeTab, result.resolvedTarget, exportTable);
-    closeExportMenu();
   };
 
   const handleExportSheets = () => {
@@ -154,7 +147,6 @@ export function CitationTabsCard({
       rows: exportTable.rows,
       feature: `brand_lookup_${activeTab}`,
     });
-    closeExportMenu();
   };
 
   const canExport = exportTable.rows.length > 0;
@@ -171,7 +163,7 @@ export function CitationTabsCard({
 
   return (
     <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <Tabs value={queriesActive ? "queries" : "pages"}>
           <TabsList className="w-fit">
             <TabsTrigger

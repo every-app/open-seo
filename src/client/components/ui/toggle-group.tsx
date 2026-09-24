@@ -26,7 +26,7 @@ function ToggleGroup({
     <ToggleGroupPrimitive
       className={cn(
         "inline-flex items-center gap-1 rounded-full p-1",
-        "backdrop-blur-xl bg-white/[0.04]",
+        "backdrop-blur-xl bg-foreground/[0.04]",
         className,
       )}
       {...props}

@@ -10,26 +10,27 @@ const badgeVariants = cva(
   "inline-flex items-center justify-center rounded-full font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
   {
     variants: {
-      // Tinted variants use the 300 shade for text: the base hue on its own
-      // 20% tint misses WCAG AA on Halo's dark glass.
       variant: {
+        // Tinted text reads the app's theme-aware text tokens: the base hues on
+        // their own 20% tint miss WCAG AA in both themes.
         default:
-          "backdrop-blur-xl bg-white/[0.08] text-foreground " +
-          "shadow-[inset_0_0_6px_oklch(1_0_0/0.1)]",
+          "backdrop-blur-xl bg-foreground/[0.08] text-foreground " +
+          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--halo)_10%,transparent)]",
         primary:
-          "backdrop-blur-xl bg-primary/20 text-blue-300 " +
-          "shadow-[inset_0_0_6px_oklch(0.62_0.2_256/0.18)]",
+          "backdrop-blur-xl bg-primary/20 text-link " +
+          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--primary)_18%,transparent)]",
         signature:
-          "backdrop-blur-xl bg-signature/20 text-orange-300 " +
-          "shadow-[inset_0_0_6px_oklch(0.72_0.19_52/0.2)]",
-        secondary: "bg-white/[0.05] text-secondary-foreground",
-        destructive: "bg-destructive/20 text-red-300",
-        "destructive-light": "bg-destructive/10 text-red-300",
-        success: "bg-emerald-500/20 text-emerald-300",
-        "success-light": "bg-emerald-500/10 text-emerald-300",
-        warning: "bg-orange-500/20 text-orange-300",
-        "warning-light": "bg-orange-500/10 text-orange-300",
-        outline: "border border-white/[0.15] text-foreground bg-transparent",
+          "backdrop-blur-xl bg-signature/20 text-signature " +
+          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--signature)_20%,transparent)]",
+        secondary: "bg-foreground/[0.05] text-secondary-foreground",
+        destructive: "bg-destructive/20 text-negative",
+        "destructive-light": "bg-destructive/10 text-negative",
+        success: "bg-emerald-500/20 text-success",
+        "success-light": "bg-emerald-500/10 text-success",
+        warning: "bg-orange-500/20 text-warning",
+        "warning-light": "bg-orange-500/10 text-warning",
+        outline:
+          "border border-foreground/[0.15] text-foreground bg-transparent",
       },
       size: {
         sm: "h-4 gap-1 px-1.5 text-[10px] uppercase tracking-wide",

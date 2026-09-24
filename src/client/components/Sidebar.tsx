@@ -138,19 +138,21 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         >
           OpenSEO
         </Link>
-        <ThemeToggle className="ml-auto size-8" />
-        {onClose ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            onClick={onClose}
-            className="size-8"
-            aria-label="Close sidebar"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-1">
+          <ThemeToggle className="size-8" />
+          {onClose ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              onClick={onClose}
+              className="size-8"
+              aria-label="Close sidebar"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          ) : null}
+        </div>
       </SidebarHeader>
 
       <div className="px-3 pb-1 pt-3">

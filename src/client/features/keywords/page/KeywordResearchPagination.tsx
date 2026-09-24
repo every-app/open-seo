@@ -36,7 +36,7 @@ export function KeywordResearchPagination({
         {start.toLocaleString()}-{end.toLocaleString()} of{" "}
         {totalCount.toLocaleString()}
       </div>
-      <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="whitespace-nowrap">Rows per page</span>
           <NativeSelect

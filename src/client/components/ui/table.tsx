@@ -12,7 +12,7 @@ const Table = React.forwardRef<
 >(({ className, containerClassName, ...props }, ref) => (
   <div
     className={cn(
-      "relative w-full overflow-auto rounded-xl border border-white/10 backdrop-blur-xl bg-white/[0.03]",
+      "relative w-full overflow-auto rounded-xl border border-border backdrop-blur-xl bg-foreground/[0.03]",
       containerClassName,
     )}
   >
@@ -31,7 +31,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead
     ref={ref}
-    className={cn("[&_tr]:border-b [&_tr]:border-white/10", className)}
+    className={cn("[&_tr]:border-b [&_tr]:border-border", className)}
     {...props}
   />
 ));
@@ -56,7 +56,7 @@ const TableFooter = React.forwardRef<
   <tfoot
     ref={ref}
     className={cn(
-      "border-t border-white/10 bg-white/[0.03] font-medium [&>tr]:last:border-b-0",
+      "border-t border-border bg-foreground/[0.03] font-medium [&>tr]:last:border-b-0",
       className,
     )}
     {...props}
@@ -71,9 +71,9 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b border-white/10 transition-colors",
-      "hover:bg-white/[0.04]",
-      "data-[state=selected]:bg-white/[0.06]",
+      "border-b border-border transition-colors",
+      "hover:bg-foreground/[0.04]",
+      "data-[state=selected]:bg-foreground/[0.06]",
       className,
     )}
     {...props}
