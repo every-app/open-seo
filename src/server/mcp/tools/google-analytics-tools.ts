@@ -436,7 +436,7 @@ export const getSearchOpportunitiesTool = {
   config: {
     title: "Get search opportunities",
     description:
-      "Join Search Console pages ranking in positions 4–20 with GA4 organic landing-page outcomes, then score matched opportunities by demand, business value, and reachability. Unmatched pages remain visible and unscored. Read-only and uses no OpenSEO credits.",
+      "List Search Console pages ranking in positions 4–20. When GA4 is connected, join organic landing-page outcomes and score matched opportunities by demand, business value, and reachability. Without GA4, return unscored Search Console opportunities. Read-only and uses no OpenSEO credits.",
     inputSchema: opportunityInputSchema,
     outputSchema: opportunityOutputSchema,
     annotations: {
@@ -448,8 +448,12 @@ export const getSearchOpportunitiesTool = {
   handler: withMcpProjectAuth(async (args: OpportunityArgs, context) => {
     try {
       const result = await SearchOpportunityService.getOpportunities(args);
+      const coverageText =
+        result.source?.googleAnalyticsPropertyId === null
+          ? "GA4 is not connected; candidates are unscored."
+          : `${result.coverage.matchedRows} candidates matched GA4 landing pages.`;
       return mcpResponse({
-        text: `Search opportunities: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${result.coverage.matchedRows} candidates matched GA4 landing pages.`,
+        text: `Search opportunities: ${result.rowCount} returned from ${result.totalCandidateRows} candidates. ${coverageText}`,
         meta: buildProjectMeta(context, args.projectId),
         structuredContent: result,
       });

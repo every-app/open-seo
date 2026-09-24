@@ -227,6 +227,50 @@ describe("SearchOpportunityService", () => {
     );
   });
 
+  it("returns unscored Search Console opportunities when GA4 is not connected", async () => {
+    mocks.getGa4Connection.mockResolvedValue(null);
+    mocks.getPerformance.mockResolvedValue({
+      siteUrl: "https://example.com/",
+      rows: [
+        {
+          keys: ["https://example.com/buyer-guide"],
+          clicks: 0,
+          impressions: 120,
+          ctr: 0,
+          position: 11,
+        },
+      ],
+    });
+
+    const result = await SearchOpportunityService.getOpportunities(
+      { projectId: "project_1" },
+      { now: new Date("2026-08-06T12:00:00Z") },
+    );
+
+    expect(mocks.getPerformance).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: "2026-07-07",
+        endDate: "2026-08-03",
+      }),
+    );
+    expect(mocks.runGa4Report).not.toHaveBeenCalled();
+    expect(result.rows[0]).toMatchObject({
+      page: "https://example.com/buyer-guide",
+      joinStatus: "gsc_only",
+      score: null,
+      ga4: null,
+    });
+    expect(result.source.googleAnalyticsPropertyId).toBeNull();
+    expect(result.coverage).toMatchObject({
+      gscRowsConsidered: 1,
+      ga4RowsConsidered: 0,
+      unmatchedGscRows: 1,
+    });
+    expect(result.warnings).toContain(
+      "ga4_not_connected; rows are unscored Search Console opportunities",
+    );
+  });
+
   it("fails before querying GA4 when Search Console is not connected", async () => {
     mocks.getGscConnection.mockResolvedValue(null);
     await expect(

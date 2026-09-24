@@ -23,6 +23,12 @@ property. SAM uses OpenRouter (`src/server/lib/openrouter.ts`) and requires a
 separate model API key; an interactive Codex session cannot serve as a durable
 VPS endpoint or transfer ChatGPT/Codex credits to OpenRouter or the OpenAI API.
 
+The `get_search_opportunities` MCP tool lists Search Console pages in positions
+4–20 even when GA4 is not connected. In that case every row is explicitly
+unscored and has no conversion metrics; once GA4 is connected, the existing
+cross-source scoring applies. Search Console impressions are exposure for the
+verified site, not market-wide search volume.
+
 The first independent provider implemented here is Lighthouse. Set
 `LOCAL_LIGHTHOUSE_URL=http://lighthouse-runner:4181` and run the optional
 Compose `local-lighthouse` profile. With no DataForSEO key in self-hosted mode,
