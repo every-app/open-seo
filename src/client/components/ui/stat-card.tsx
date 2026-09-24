@@ -1,36 +1,41 @@
-import * as React from "react"
-import { Icon } from "@iconify/react"
+import * as React from "react";
+import { Icon } from "@iconify/react";
 
-import { cn } from "@/client/lib/utils"
+import { cn } from "@/client/lib/utils";
 
 export interface StatCardProps extends React.HTMLAttributes<HTMLDivElement> {
-  label: string
-  value: React.ReactNode
-  icon?: string
+  label: string;
+  value: React.ReactNode;
+  icon?: string;
   change?: {
-    value: string | number
-    direction?: "up" | "down" | "neutral"
-  }
-  description?: React.ReactNode
+    value: string | number;
+    direction?: "up" | "down" | "neutral";
+  };
+  description?: React.ReactNode;
 }
 
 /** Narrows a stat delta to a number, so a negative one points the trend down. */
 function isNumericDelta<TValue>(value: TValue | number): value is number {
-  return typeof value === "number"
+  return typeof value === "number";
 }
 
 const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
   ({ className, label, value, icon, change, description, ...props }, ref) => {
-    const delta = change?.value
-    const direction = change?.direction ?? (isNumericDelta(delta) && delta < 0 ? "down" : "up")
+    const delta = change?.value;
+    const direction =
+      change?.direction ?? (isNumericDelta(delta) && delta < 0 ? "down" : "up");
     const changeColor =
       direction === "up"
         ? "text-[oklch(0.78_0.15_145)]"
         : direction === "down"
-        ? "text-destructive"
-        : "text-muted-foreground"
+          ? "text-destructive"
+          : "text-muted-foreground";
     const changeIcon =
-      direction === "up" ? "ph:arrow-up" : direction === "down" ? "ph:arrow-down" : "ph:minus"
+      direction === "up"
+        ? "ph:arrow-up"
+        : direction === "down"
+          ? "ph:arrow-down"
+          : "ph:minus";
 
     return (
       <div
@@ -40,7 +45,7 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
           "[box-shadow:var(--shadow-s)]",
           "transition-[background-color,box-shadow] duration-200",
           "hover:[box-shadow:var(--shadow-m)]",
-          className
+          className,
         )}
         {...props}
       >
@@ -54,22 +59,31 @@ const StatCard = React.forwardRef<HTMLDivElement, StatCardProps>(
             </div>
           )}
         </div>
-        <div className="mt-3 text-2xl font-semibold tracking-tight">{value}</div>
+        <div className="mt-3 text-2xl font-semibold tracking-tight">
+          {value}
+        </div>
         {(change || description) && (
           <div className="mt-2 flex items-center gap-2 text-xs">
             {change && (
-              <span className={cn("inline-flex items-center gap-0.5 font-medium", changeColor)}>
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 font-medium",
+                  changeColor,
+                )}
+              >
                 <Icon icon={changeIcon} className="h-3 w-3" />
                 {change.value}
               </span>
             )}
-            {description && <span className="text-muted-foreground">{description}</span>}
+            {description && (
+              <span className="text-muted-foreground">{description}</span>
+            )}
           </div>
         )}
       </div>
-    )
-  }
-)
-StatCard.displayName = "StatCard"
+    );
+  },
+);
+StatCard.displayName = "StatCard";
 
-export { StatCard }
+export { StatCard };

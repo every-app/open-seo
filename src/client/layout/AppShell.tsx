@@ -115,7 +115,7 @@ export function AuthenticatedAppLayout({
   }, [shouldShowMissingSeoApiKeyModal]);
 
   return (
-    <div className="flex h-[100dvh] bg-base-200">
+    <div className="flex h-[100dvh] bg-background">
       <div className="hidden shrink-0 md:block">
         <Sidebar projectId={sidebarProjectId} />
       </div>
@@ -126,10 +126,9 @@ export function AuthenticatedAppLayout({
           onOpenDrawer={() => setDrawerOpen(true)}
         />
 
-        {/* PostHog-style cutout: the main content sits on a raised panel with a
-            thin strip of the sidebar background above it and a hairline border. */}
-        <div className="flex min-h-0 flex-1 flex-col md:pt-2">
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-base-100 md:rounded-tl-lg md:border-l md:border-t md:border-base-300">
+        {/* Atelier layout: white sidebar, content straight on the cream canvas. */}
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <SeoApiStatusBanners
               shouldShowSeoApiWarning={shouldShowSeoApiWarning}
               seoApiKeyStatusError={seoApiKeyStatusError}
@@ -170,7 +169,7 @@ function MobileTopBar({
   onOpenDrawer: () => void;
 }) {
   return (
-    <div className="flex shrink-0 items-center gap-1 border-b border-base-300 bg-base-100 px-2 py-1.5 md:hidden">
+    <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
       <button
         type="button"
         className="btn btn-square btn-ghost btn-sm"
@@ -180,7 +179,10 @@ function MobileTopBar({
       >
         <Menu className="h-5 w-5" />
       </button>
-      <Link to="/" className="ml-1 font-semibold text-base-content">
+      <Link
+        to="/"
+        className="ml-1 font-semibold tracking-tight text-foreground"
+      >
         OpenSEO
       </Link>
     </div>

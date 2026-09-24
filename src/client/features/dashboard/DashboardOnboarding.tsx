@@ -11,6 +11,7 @@ import type { DashboardActivation } from "@/server/features/dashboard/services/D
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
 import { getStepStatus, setupSteps } from "./dashboardSteps";
 import { DashboardSetupAction } from "./DashboardSetupAction";
+import { Card } from "@/client/components/ui/card";
 
 export function DashboardOnboarding({
   projectId,
@@ -65,21 +66,26 @@ export function DashboardOnboarding({
   if (remaining.length === 0) return null;
 
   return (
-    <section
+    <Card
+      role="region"
       aria-label="Onboarding checklist"
-      className="overflow-hidden rounded-xl border border-base-300 bg-base-100"
+      className="overflow-hidden"
     >
-      <header className="border-b border-base-300 px-5 py-5 sm:px-6">
-        <h2 className="text-lg font-semibold">Set up your workspace</h2>
-        <p className="mt-1 text-sm text-base-content/65">
-          Add your website, connect your tools, and invite your team.
-        </p>
+      <header className="border-b border-border px-6 py-5">
+        <div className="flex items-baseline justify-between gap-3">
+          <h2 className="text-base font-semibold tracking-tight">
+            Finish setting up
+          </h2>
+          <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
+            {completed.length} of {steps.length} done
+          </p>
+        </div>
       </header>
       {remaining.map((item) => {
         const active = selected === item.id;
         const Icon = item.icon;
         return (
-          <div key={item.id} className="border-b border-base-300">
+          <div key={item.id} className="border-b border-border last:border-b-0">
             <button
               type="button"
               aria-expanded={active}
@@ -91,14 +97,14 @@ export function DashboardOnboarding({
                     step: item.id,
                   });
               }}
-              className={`flex w-full items-center gap-3 px-5 py-4 text-left sm:px-6 ${active ? "bg-primary/5" : "hover:bg-base-200/50"}`}
+              className={`flex w-full items-center gap-3 px-6 py-3.5 text-left transition-colors ${active ? "bg-accent/50" : "hover:bg-muted"}`}
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-base-200">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">{item.label}</span>
-                <span className="mt-1 hidden text-xs text-base-content/65 sm:block">
+                <span className="mt-0.5 hidden text-xs text-muted-foreground sm:block">
                   {item.detail}
                 </span>
               </span>
@@ -108,18 +114,18 @@ export function DashboardOnboarding({
                 </span>
               )}
               <ChevronRight
-                className={`size-4 shrink-0 text-base-content/60 transition-transform ${active ? "rotate-90" : ""}`}
+                className={`size-4 shrink-0 text-muted-foreground transition-transform ${active ? "rotate-90" : ""}`}
               />
             </button>
             <div id={`setup-${item.id}`} hidden={!active}>
               {active && (
-                <div className="space-y-5 px-5 py-5 sm:px-6">
+                <div className="space-y-5 px-6 py-5">
                   <DashboardSetupAction
                     step={item.id}
                     projectId={projectId}
                     onComplete={() => setSelected(null)}
                   />
-                  <div className="border-t border-base-300 pt-3">
+                  <div className="border-t border-border pt-3">
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm text-base-content/60"
@@ -140,16 +146,16 @@ export function DashboardOnboarding({
         );
       })}
       {deferred.length > 0 && (
-        <details className="group border-t border-base-300">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-sm text-base-content/65 sm:px-6 [&::-webkit-details-marker]:hidden">
+        <details className="group border-t border-border">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-3.5 text-sm text-muted-foreground [&::-webkit-details-marker]:hidden">
             <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
             {deferred.length} saved for later
           </summary>
-          <ul className="space-y-1 px-5 pb-4 sm:px-6">
+          <ul className="space-y-1 px-6 pb-4">
             {deferred.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center justify-between gap-3 rounded-lg bg-base-200/40 px-3 py-2"
+                className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2"
               >
                 <span className="text-sm">{item.label}</span>
                 <button
@@ -169,17 +175,17 @@ export function DashboardOnboarding({
         </details>
       )}
       {completed.length > 0 && (
-        <details className="group border-t border-base-300">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-5 py-4 text-sm sm:px-6 [&::-webkit-details-marker]:hidden">
+        <details className="group border-t border-border">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-6 py-3.5 text-sm [&::-webkit-details-marker]:hidden">
             <Check className="size-4 text-success" />
             {completed.length} completed
-            <ChevronRight className="ml-auto size-4 text-base-content/60 transition-transform group-open:rotate-90" />
+            <ChevronRight className="ml-auto size-4 text-muted-foreground transition-transform group-open:rotate-90" />
           </summary>
-          <ul className="space-y-3 px-5 pb-5 sm:px-6">
+          <ul className="space-y-3 px-6 pb-5">
             {completed.map((item) => (
               <li
                 key={item.id}
-                className="flex items-center gap-3 text-sm text-base-content/65"
+                className="flex items-center gap-3 text-sm text-muted-foreground"
               >
                 <Check className="size-4 shrink-0 text-success" />
                 {item.label}
@@ -188,6 +194,6 @@ export function DashboardOnboarding({
           </ul>
         </details>
       )}
-    </section>
+    </Card>
   );
 }

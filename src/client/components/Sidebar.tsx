@@ -27,27 +27,22 @@ import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
+import {
+  Sidebar as SidebarPanel,
+  SidebarContent,
+  SidebarFooter as SidebarPanelFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarItem,
+  sidebarItemClassName,
+} from "@/client/components/ui/sidebar";
 
 interface SidebarProps {
   projectId: string | null;
   onNavigate?: () => void;
   onClose?: () => void;
 }
-
-const navItemBaseClass =
-  "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
-
-// Hover uses a lighter tint than the active background (bg-base-300/50) so a
-// hovered item next to the active one stays visually distinct instead of
-// merging into a single block.
-const navItemClass = `${navItemBaseClass} transition-colors hover:bg-base-300/30 hover:text-base-content`;
-
-const navItemActiveProps = {
-  // Keep the active tint on hover so the active item does not fall back to the
-  // lighter hover background of navItemClass.
-  className:
-    "bg-base-300/50 hover:bg-base-300/50 font-medium text-base-content",
-};
 
 function SidebarNavLink({
   icon: Icon,
@@ -65,17 +60,17 @@ function SidebarNavLink({
       onClick={onNavigate}
       activeOptions={{ exact: false, includeSearch: false }}
       {...linkProps}
-      className={navItemClass}
-      activeProps={navItemActiveProps}
     >
       {({ isActive }: { isActive: boolean }) => (
-        <>
-          {isActive ? (
-            <div className="absolute left-0 top-1 bottom-1 w-[3px] rounded-r-full bg-primary" />
-          ) : null}
-          <Icon className="h-4 w-4 shrink-0" />
-          <span className="truncate">{label}</span>
-        </>
+        <span
+          className={sidebarItemClassName(
+            isActive,
+            isActive ? "font-medium" : undefined,
+          )}
+        >
+          <Icon className="size-4 shrink-0" />
+          <span className="flex-1 truncate">{label}</span>
+        </span>
       )}
     </Link>
   );
@@ -123,12 +118,12 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-60 flex-col bg-base-200">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
+    <SidebarPanel aria-label="Main navigation">
+      <SidebarHeader className="justify-between">
         <Link
           to="/"
           onClick={onNavigate}
-          className="text-base font-semibold text-base-content"
+          className="text-base font-semibold tracking-tight text-foreground"
         >
           OpenSEO
         </Link>
@@ -142,9 +137,9 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
             <X className="h-5 w-5" />
           </button>
         ) : null}
-      </div>
+      </SidebarHeader>
 
-      <div className="px-3 pb-1">
+      <div className="px-3 pb-1 pt-3">
         <ProjectSwitcher
           activeProjectId={projectId}
           onCloseDrawer={onNavigate}
@@ -175,31 +170,31 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
       {view === "chat" && projectId ? (
         <SamSidebarPanel projectId={projectId} onNavigate={onNavigate} />
       ) : (
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-          {navGroups.map((group) => (
-            <div key={group.label} className="mb-1">
-              <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
-                {group.label}
-              </div>
-              {group.items.map((item) => {
-                const { icon, label, ...linkProps } = item;
-                return (
-                  <SidebarNavLink
-                    key={linkProps.to}
-                    icon={icon}
-                    label={label}
-                    onNavigate={onNavigate}
-                    linkProps={linkProps}
-                  />
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+        <SidebarContent className="min-h-0">
+          <nav aria-label="Project tools">
+            {navGroups.map((group) => (
+              <SidebarGroup key={group.label}>
+                <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+                {group.items.map((item) => {
+                  const { icon, label, ...linkProps } = item;
+                  return (
+                    <SidebarNavLink
+                      key={linkProps.to}
+                      icon={icon}
+                      label={label}
+                      onNavigate={onNavigate}
+                      linkProps={linkProps}
+                    />
+                  );
+                })}
+              </SidebarGroup>
+            ))}
+          </nav>
+        </SidebarContent>
       )}
 
       <SidebarFooter onNavigate={onNavigate} />
-    </div>
+    </SidebarPanel>
   );
 }
 
@@ -260,7 +255,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   }
 
   return (
-    <div className="shrink-0 border-t border-base-300 px-2 py-2 pb-safe">
+    <SidebarPanelFooter className="shrink-0 px-2 py-2 pb-safe">
       <SidebarNavLink
         icon={CircleHelp}
         label="Help & Community"
@@ -270,17 +265,13 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
 
       {email ? (
         <div className="dropdown dropdown-top w-full">
-          <button
-            type="button"
+          <SidebarItem
             tabIndex={0}
-            className={`${navItemClass} w-full`}
             aria-label="Open account menu"
+            icon={<User className="size-4" />}
           >
-            <User className="h-4 w-4 shrink-0" />
-            <span className="truncate" data-ph-mask>
-              {email}
-            </span>
-          </button>
+            <span data-ph-mask>{email}</span>
+          </SidebarItem>
           <ul
             tabIndex={0}
             className="dropdown-content z-30 menu mb-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
@@ -360,6 +351,6 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
           linkProps={{ to: "/settings" }}
         />
       )}
-    </div>
+    </SidebarPanelFooter>
   );
 }
