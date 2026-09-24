@@ -1,7 +1,91 @@
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap");
 @import "tailwindcss";
 
 @theme {
   --container-8xl: 88rem;
+  --font-sans:
+    "Instrument Sans", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  /* Atelier radius scale (--radius: 1rem). */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+}
+
+/* Atelier design-system tokens. Names follow the shadcn contract the
+   components in client/components/ui read; primary, secondary and accent come
+   from the daisyUI themes below, which carry the same values. */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+}
+
+:root,
+[data-theme="openseo"] {
+  --background: oklch(0.9731 0.0036 91);
+  --foreground: oklch(0.245 0.0055 106);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.245 0.0055 106);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.245 0.0055 106);
+  --primary-foreground: oklch(0.9821 0.0061 155);
+  --secondary-foreground: oklch(0.3253 0.0064 106);
+  --muted: oklch(0.9594 0.0035 95);
+  --muted-foreground: oklch(0.5174 0.0058 106);
+  --accent-foreground: oklch(0.3702 0.0608 157);
+  --destructive: oklch(0.5478 0.1843 28);
+  --destructive-foreground: oklch(0.985 0.008 28);
+  --border: oklch(0.9183 0.004 95);
+  --input: oklch(0.9883 0.0022 95);
+  --ring: oklch(0.5642 0.0855 157);
+  --shadow-s: 0 1px 2px oklch(0.2 0.01 110 / 0.06);
+  --shadow-m:
+    0 1px 2px oklch(0.2 0.01 110 / 0.05),
+    0 8px 24px -6px oklch(0.2 0.01 110 / 0.08);
+  --shadow-button:
+    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
+    0 3px 10px -2px oklch(0.25 0.05 156 / 0.1);
+}
+
+/* Atelier ships light only; this dark set keeps its warm neutrals and green
+   hue so the existing dark-mode preference still works. */
+[data-theme="openseo-dark"] {
+  --background: oklch(0.19 0.006 100);
+  --foreground: oklch(0.94 0.006 95);
+  --card: oklch(0.225 0.006 100);
+  --card-foreground: oklch(0.94 0.006 95);
+  --popover: oklch(0.225 0.006 100);
+  --popover-foreground: oklch(0.94 0.006 95);
+  --primary-foreground: oklch(0.2 0.03 158);
+  --secondary-foreground: oklch(0.9 0.006 95);
+  --muted: oklch(0.26 0.006 100);
+  --muted-foreground: oklch(0.72 0.008 95);
+  --accent-foreground: oklch(0.9 0.05 156);
+  --destructive: oklch(0.68 0.17 28);
+  --destructive-foreground: oklch(0.2 0.03 28);
+  --border: oklch(0.31 0.006 100);
+  --input: oklch(0.25 0.006 100);
+  --ring: oklch(0.72 0.1 158);
+  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-m:
+    0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -6px oklch(0 0 0 / 0.4);
+  --shadow-button:
+    inset 0 1px 0 oklch(1 0 0 / 0.12), 0 1px 2px oklch(0 0 0 / 0.3);
 }
 
 :root {
@@ -19,35 +103,35 @@
   exclude: properties;
 }
 
-/* Light theme */
+/* Light theme: Atelier */
 @plugin "daisyui/theme" {
   name: "openseo";
   default: true;
   prefersdark: false;
   color-scheme: light;
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(97% 0 0);
-  --color-base-300: oklch(92% 0 0);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(50% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(55% 0.15 145);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(50% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(25% 0 0);
-  --color-neutral-content: oklch(100% 0 0);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.18 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(65% 0.2 25);
-  --color-error-content: oklch(100% 0 0);
+  --color-base-100: oklch(1 0 0);
+  --color-base-200: oklch(0.9731 0.0036 91);
+  --color-base-300: oklch(0.9183 0.004 95);
+  --color-base-content: oklch(0.245 0.0055 106);
+  --color-primary: oklch(0.44 0.08 158);
+  --color-primary-content: oklch(0.9821 0.0061 155);
+  --color-secondary: oklch(0.9572 0.0042 95);
+  --color-secondary-content: oklch(0.3253 0.0064 106);
+  --color-accent: oklch(0.9135 0.0608 156);
+  --color-accent-content: oklch(0.3702 0.0608 157);
+  --color-neutral: oklch(0.245 0.0055 106);
+  --color-neutral-content: oklch(0.9821 0.0061 155);
+  --color-info: oklch(0.55 0.09 240);
+  --color-info-content: oklch(0.98 0.01 240);
+  --color-success: oklch(0.5 0.1 152);
+  --color-success-content: oklch(0.98 0.01 152);
+  --color-warning: oklch(0.86 0.1 82);
+  --color-warning-content: oklch(0.34 0.06 70);
+  --color-error: oklch(0.5478 0.1843 28);
+  --color-error-content: oklch(0.985 0.008 28);
   --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -55,39 +139,47 @@
   --noise: 0;
 }
 
-/* Dark theme - auto-activates via prefers-color-scheme */
+/* Dark theme: Atelier neutrals, dark set. Auto-activates via prefers-color-scheme */
 @plugin "daisyui/theme" {
   name: "openseo-dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(18% 0 0);
-  --color-base-200: oklch(12% 0 0);
-  --color-base-300: oklch(27% 0 0);
-  --color-base-content: oklch(92% 0 0);
-  --color-primary: oklch(66% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(60% 0.15 145);
-  --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(66% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(85% 0 0);
-  --color-neutral-content: oklch(20% 0 0);
-  --color-info: oklch(70% 0.15 230);
-  --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.18 145);
-  --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.15 80);
-  --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(65% 0.2 25);
-  --color-error-content: oklch(100% 0 0);
+  --color-base-100: oklch(0.225 0.006 100);
+  --color-base-200: oklch(0.19 0.006 100);
+  --color-base-300: oklch(0.31 0.006 100);
+  --color-base-content: oklch(0.94 0.006 95);
+  --color-primary: oklch(0.72 0.1 158);
+  --color-primary-content: oklch(0.2 0.03 158);
+  --color-secondary: oklch(0.27 0.006 100);
+  --color-secondary-content: oklch(0.9 0.006 95);
+  --color-accent: oklch(0.32 0.05 158);
+  --color-accent-content: oklch(0.9 0.05 156);
+  --color-neutral: oklch(0.88 0.006 95);
+  --color-neutral-content: oklch(0.2 0.006 100);
+  --color-info: oklch(0.7 0.1 240);
+  --color-info-content: oklch(0.2 0.03 240);
+  --color-success: oklch(0.72 0.12 152);
+  --color-success-content: oklch(0.2 0.03 152);
+  --color-warning: oklch(0.8 0.12 82);
+  --color-warning-content: oklch(0.25 0.05 70);
+  --color-error: oklch(0.68 0.17 28);
+  --color-error-content: oklch(0.2 0.03 28);
   --radius-selector: 0.5rem;
-  --radius-field: 0.5rem;
-  --radius-box: 0.75rem;
+  --radius-field: 0.75rem;
+  --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
   --depth: 0;
   --noise: 0;
+}
+
+/* Atelier buttons are pills with a soft lift on the primary. */
+.btn {
+  border-radius: 9999px;
+}
+.btn-primary {
+  box-shadow: var(--shadow-button);
 }
 
 html,

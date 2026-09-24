@@ -51,6 +51,9 @@ importers:
       '@every-app/sdk':
         specifier: ^0.1.14
         version: 0.1.14(@tanstack/react-router@1.170.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(@tanstack/react-start@1.168.26(esbuild@0.28.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.0.1)(rollup@4.59.0)(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)))(jose@6.1.3)(react@19.2.4)
+      '@iconify/react':
+        specifier: ^6.0.2
+        version: 6.0.2(react@19.2.4)
       '@modelcontextprotocol/client':
         specifier: 2.0.0
         version: 2.0.0
@@ -96,9 +99,15 @@ importers:
       better-auth:
         specifier: ^1.6.22
         version: 1.6.22(@cloudflare/workers-types@4.20260702.1)(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.26(esbuild@0.28.1)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(rolldown@1.0.1)(rollup@4.59.0)(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@cloudflare/workers-types@4.20260702.1)(@libsql/client@0.15.15)(@opentelemetry/api@1.9.1)(kysely@0.29.2)(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(postgres@3.4.9)(sql.js@1.14.1))(mongodb@7.2.0(@aws-sdk/credential-providers@3.1080.0)(@mongodb-js/zstd@7.0.0))(mysql2@3.24.4(@types/node@22.19.11))(pg@8.22.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(solid-js@1.9.11)(vitest@4.1.11(@opentelemetry/api@1.9.1)(@types/node@22.19.11)(vite@7.3.6(@types/node@22.19.11)(jiti@2.7.0)(lightningcss@1.32.0)(tsx@4.22.4)(yaml@2.9.0)))
+      class-variance-authority:
+        specifier: ^0.7.1
+        version: 0.7.1
       cloudflare:
         specifier: ^5.2.0
         version: 5.2.0
+      clsx:
+        specifier: ^2.1.1
+        version: 2.1.1
       daisyui:
         specifier: ^5.5.5
         version: 5.5.19
@@ -153,6 +162,9 @@ importers:
       sonner:
         specifier: ^2.0.7
         version: 2.0.7(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      tailwind-merge:
+        specifier: ^3.7.0
+        version: 3.7.0
       tailwindcss:
         specifier: ^4.1.16
         version: 4.2.1
@@ -1251,6 +1263,14 @@ packages:
     engines: {node: '>=18.14.1'}
     peerDependencies:
       hono: ^4.13.5
+
+  '@iconify/react@6.0.2':
+    resolution: {integrity: sha512-SMmC2sactfpJD427WJEDN6PMyznTFMhByK9yLW0gOTtnjzzbsi/Ke/XqsumsavFPwNiXs8jSiYeZTmLCLwO+Fg==}
+    peerDependencies:
+      react: '>=16'
+
+  '@iconify/types@2.0.0':
+    resolution: {integrity: sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==}
 
   '@img/colour@1.1.0':
     resolution: {integrity: sha512-Td76q7j57o/tLVdgS746cYARfSyxk8iEfRxewL9h4OMzYhbW4TAcppl0mT4eyqXddh6L/jwoM75mo7ixa/pCeQ==}
@@ -3381,6 +3401,9 @@ packages:
 
   chownr@1.1.4:
     resolution: {integrity: sha512-jJ0bqzaylmJtVnNgzTeSOs8DPavpbYgEr/b0YL8/2GO3xJEhInFmhKMUnEJQjZumK7KXGFhUy89PrsJWlakBVg==}
+
+  class-variance-authority@0.7.1:
+    resolution: {integrity: sha512-Ka+9Trutv7G8M6WT6SeiRWz792K5qEqIGEGzXKhAE6xOWAY6pPH8U+9IY3oCMv6kqTmLsv7Xh/2w2RigkePMsg==}
 
   clean-git-ref@2.0.1:
     resolution: {integrity: sha512-bLSptAy2P0s6hU4PzuIMKmMJJSE6gLXGH1cntDu7bWJUksvuM+7ReOK61mozULErYvP6a15rnYl0zFDef+pyPw==}
@@ -5514,6 +5537,9 @@ packages:
     resolution: {integrity: sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==}
     engines: {node: '>=20'}
 
+  tailwind-merge@3.7.0:
+    resolution: {integrity: sha512-XPPUyAc+cvspz3lHTcR/QgPfW2A0lv/xQNIjX3HGhLR+Nq2lHaLq5MtTesHn8GUr3W3DguT2KT5x3NVgRtYwmA==}
+
   tailwindcss@4.2.1:
     resolution: {integrity: sha512-/tBrSQ36vCleJkAOsy9kbNTgaxvGbyOamC30PRePTQe/o1MFwEKHQk4Cn7BNGaPtjp+PuUrByJehM1hgxfq4sw==}
 
@@ -6990,6 +7016,13 @@ snapshots:
   '@hono/node-server@1.19.17(hono@4.13.7)':
     dependencies:
       hono: 4.13.7
+
+  '@iconify/react@6.0.2(react@19.2.4)':
+    dependencies:
+      '@iconify/types': 2.0.0
+      react: 19.2.4
+
+  '@iconify/types@2.0.0': {}
 
   '@img/colour@1.1.0': {}
 
@@ -8928,6 +8961,10 @@ snapshots:
 
   chownr@1.1.4:
     optional: true
+
+  class-variance-authority@0.7.1:
+    dependencies:
+      clsx: 2.1.1
 
   clean-git-ref@2.0.1: {}
 
@@ -11310,6 +11347,8 @@ snapshots:
       use-sync-external-store: 1.6.0(react@19.2.4)
 
   tagged-tag@1.0.0: {}
+
+  tailwind-merge@3.7.0: {}
 
   tailwindcss@4.2.1: {}
 
