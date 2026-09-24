@@ -19,8 +19,8 @@ function SeoApiStatusBanners({
             <div className="alert alert-warning">
               <AlertTriangle className="size-4 shrink-0" />
               <span className="text-sm">
-                Setup needed: add your DataForSEO API key to use OpenSEO
-                features. See the quick steps on the{" "}
+                This research feature needs a DataForSEO API key. Search Console
+                insights and site audits can still work without one. See the{" "}
                 <Link
                   {...dataforseoHelpLinkOptions}
                   className="link link-primary font-medium"
@@ -113,13 +113,14 @@ const MissingSeoSetupModal = React.forwardRef<
               id="dataforseo-setup-title"
               className="text-lg font-semibold text-base-content"
             >
-              One quick setup step
+              Research data setup
             </h2>
             <p
               id="dataforseo-setup-description"
               className="text-sm text-base-content/75"
             >
-              Add your DataForSEO API key to start using OpenSEO.
+              This research feature needs a DataForSEO API key. You can use
+              Search Console insights and site audits without one.
             </p>
           </div>
         </div>

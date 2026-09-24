@@ -4,6 +4,7 @@ import { discoverUrls, parseRobotsTxt } from "@/server/lib/audit/discovery";
 import {
   failedLighthouseFetch,
   fetchLighthouseResult,
+  getLocalLighthouseUrl,
   selectLighthouseSample,
   storeLighthouseResult,
 } from "@/server/lib/audit/lighthouse";
@@ -195,17 +196,22 @@ export async function runLighthousePhase(
     startUrl,
     strategy: config.lighthouseStrategy,
   });
+  // The VPS runs one Chrome process at a time; paid provider calls can remain
+  // parallel. One chunk still pairs mobile and desktop for a URL.
+  const lighthouseConcurrency = (await getLocalLighthouseUrl())
+    ? 1
+    : LIGHTHOUSE_URL_CONCURRENCY;
 
   let completedChecks = 0;
   let failedChecks = 0;
   for (
     let chunkStart = 0;
     chunkStart < lighthouseWork.length;
-    chunkStart += LIGHTHOUSE_URL_CONCURRENCY
+    chunkStart += lighthouseConcurrency
   ) {
     const chunk = lighthouseWork.slice(
       chunkStart,
-      chunkStart + LIGHTHOUSE_URL_CONCURRENCY,
+      chunkStart + lighthouseConcurrency,
     );
 
     // The paid calls are checkpointed separately from all storage. With
@@ -242,7 +248,7 @@ export async function runLighthousePhase(
       );
     });
 
-    const chunkIndex = Math.floor(chunkStart / LIGHTHOUSE_URL_CONCURRENCY) + 1;
+    const chunkIndex = Math.floor(chunkStart / lighthouseConcurrency) + 1;
     const priorCompleted = completedChecks;
     const priorFailed = failedChecks;
     const counts = await pgStep(

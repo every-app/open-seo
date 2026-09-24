@@ -19,6 +19,7 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      - LOCAL_LIGHTHOUSE_URL=${LOCAL_LIGHTHOUSE_URL:-}
       # Optional: AI features (the SAM agent). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
@@ -35,5 +36,14 @@ services:
       - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
     volumes:
       - open_seo_data:/app/.wrangler
+  # Start with: docker compose --profile local-lighthouse up -d
+  lighthouse-runner:
+    profiles: [local-lighthouse]
+    build: ./selfhost/lighthouse-runner
+    restart: unless-stopped
+    shm_size: 1gb
+    mem_limit: 2g
+    security_opt:
+      - no-new-privileges:true
 volumes:
   open_seo_data:

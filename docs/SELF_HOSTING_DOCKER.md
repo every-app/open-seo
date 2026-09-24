@@ -11,7 +11,7 @@ The default `compose.yaml` uses the published GHCR image:
 ## Prerequisites
 
 - Docker Desktop (or Docker Engine + Docker Compose)
-- A DataForSEO API key (see [`DATAFORSEO_API_KEY.md`](./DATAFORSEO_API_KEY.md))
+- A DataForSEO API key only if you want DataForSEO-backed research features
 
 ## Quickstart
 
@@ -19,7 +19,7 @@ The default `compose.yaml` uses the published GHCR image:
 cp .env.example .env
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md), then start OpenSEO:
+For DataForSEO-backed keyword, rank, backlink, business, and AI visibility data, set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md). The site crawler, Search Console integration, and AI Discoverability check can run without it. Start OpenSEO:
 
 ```bash
 docker compose up -d
@@ -34,6 +34,31 @@ Optional env values:
 - `AUTH_MODE=local_noauth` (already set in compose)
 - `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
+
+## Local Lighthouse without DataForSEO
+
+To run Lighthouse audits on your own Docker host, build this repository's app image and start the optional private Chromium runner:
+
+```bash
+docker build -f Dockerfile.selfhost -t open-seo:local .
+```
+
+Set these values in `.env`:
+
+```dotenv
+OPEN_SEO_IMAGE=open-seo:local
+LOCAL_LIGHTHOUSE_URL=http://lighthouse-runner:4181
+```
+
+Then start both services:
+
+```bash
+docker compose --profile local-lighthouse up -d --build
+```
+
+With no `DATAFORSEO_API_KEY`, site audits use the local runner for mobile and desktop Lighthouse checks. The runner has no published host port and runs one Chromium check at a time, so an audit can take longer than a DataForSEO-backed one. Its Compose service has a 2 GB memory limit. Other DataForSEO-backed research views still require their own data source.
+
+The project’s **AI Discoverability** page checks a public URL’s `robots.txt` rules for search and AI crawlers, then records the HTTP response and basic page signals visible from the OpenSEO server. This is a readiness check, not a measurement of mentions in ChatGPT or other AI answers. A hosting firewall can challenge the server even when `robots.txt` allows crawlers; check your hosting provider’s bot logs when the page fetch reports a challenge.
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
@@ -101,9 +126,9 @@ To confirm Docker Compose is using the expected environment variables:
 docker compose config
 ```
 
-Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64
-encoded value of your DataForSEO email and API password in this format:
-`email:password`.
+Check that `AUTH_MODE=local_noauth`. If you use DataForSEO, check that
+`DATAFORSEO_API_KEY` is the base64-encoded value of your DataForSEO email and
+API password in this format: `email:password`.
 
 If you changed `.env`, recreate the container so Compose reapplies it:
 

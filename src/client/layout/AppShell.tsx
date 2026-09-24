@@ -15,6 +15,8 @@ import { getProjects } from "@/serverFunctions/projects";
 import { getLastProjectId } from "@/client/lib/active-project";
 
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
+const DATAFORSEO_RESEARCH_PATH =
+  /^\/p\/[^/]+\/(?:keywords|rank-tracking|domain|backlinks|brand-lookup|prompt-explorer)(?:\/|$)/;
 
 export function AuthenticatedAppLayout({
   children,
@@ -56,7 +58,9 @@ export function AuthenticatedAppLayout({
   // builds links that self-correct via the route guard once data arrives.
   const sidebarProjectId =
     projectId ?? fallbackProjectId ?? rememberedProjectId;
-  const shouldCheckSeoApiKeyStatus = location.pathname !== BILLING_ROUTE;
+  const shouldCheckSeoApiKeyStatus =
+    location.pathname !== BILLING_ROUTE &&
+    DATAFORSEO_RESEARCH_PATH.test(location.pathname);
   const seoApiKeyStatusQuery = useQuery({
     queryKey: ["seoApiKeyStatus"],
     queryFn: () => getSeoApiKeyStatus(),

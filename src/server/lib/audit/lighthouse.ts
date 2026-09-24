@@ -3,6 +3,11 @@ import type { BillingCustomerContext } from "@/server/billing/subscription";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import type { LighthouseResult, LighthouseStrategy } from "./types";
 import { putTextToR2 } from "@/server/lib/r2";
+import { fetchLocalLighthouse } from "@/server/lib/localLighthouse";
+import {
+  getOptionalEnvValue,
+  isHostedServerAuthMode,
+} from "@/server/lib/runtime-env";
 
 interface LighthouseSamplePage {
   url: string;
@@ -48,15 +53,26 @@ export function failedLighthouseFetch(
   };
 }
 
+export async function getLocalLighthouseUrl(): Promise<string | undefined> {
+  if (await isHostedServerAuthMode()) return undefined;
+  if (await getOptionalEnvValue("DATAFORSEO_API_KEY")) return undefined;
+  return getOptionalEnvValue("LOCAL_LIGHTHOUSE_URL");
+}
+
 export async function fetchLighthouseResult(
   url: string,
   pageId: string,
   strategy: "mobile" | "desktop",
   billingCustomer: BillingCustomerContext,
 ): Promise<LighthouseFetchResult> {
-  const dataforseo = createDataforseoClient(billingCustomer);
   try {
-    const data = await dataforseo.lighthouse.live({ url, strategy });
+    const runnerUrl = await getLocalLighthouseUrl();
+    const data = runnerUrl
+      ? await fetchLocalLighthouse({ url, strategy, runnerUrl })
+      : await createDataforseoClient(billingCustomer).lighthouse.live({
+          url,
+          strategy,
+        });
 
     return {
       result: {

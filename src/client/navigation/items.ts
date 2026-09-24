@@ -2,6 +2,7 @@ import {
   Bookmark,
   Bot,
   Brain,
+  ScanSearch,
   ClipboardCheck,
   FileText,
   Globe,
@@ -43,6 +44,11 @@ const projectNavItems = [
     to: "/p/$projectId/search-performance" as const,
     label: "GSC Insights",
     icon: GoogleGlyphMuted,
+  },
+  {
+    to: "/p/$projectId/ai-discoverability" as const,
+    label: "AI Discoverability",
+    icon: ScanSearch,
   },
   {
     to: "/p/$projectId/domain" as const,
@@ -132,6 +138,7 @@ export function getProjectNavGroups(projectId: string) {
       label: "My Site",
       items: [
         byPath("/p/$projectId/search-performance"),
+        byPath("/p/$projectId/ai-discoverability"),
         byPath("/p/$projectId/rank-tracking"),
         byPath("/p/$projectId/saved"),
         byPath("/p/$projectId/audit"),

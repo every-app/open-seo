@@ -1,0 +1,12 @@
+{
+  "name": "open-seo-lighthouse-runner",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "chrome-launcher": "1.2.1",
+    "lighthouse": "13.5.0"
+  }
+}
