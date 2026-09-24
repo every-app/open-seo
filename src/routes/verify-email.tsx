@@ -15,6 +15,9 @@ import {
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 const verificationIssueSchema = z
   .enum(["invalid_token", "token_expired", "user_not_found", "unknown"])
   .catch("unknown");
@@ -196,7 +199,7 @@ function VerifyEmailPage() {
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="text-base-content/50 hover:text-base-content transition-colors"
+              className="text-muted-foreground/70 hover:text-foreground transition-colors"
             >
               Back to sign in
             </Link>
@@ -205,30 +208,34 @@ function VerifyEmailPage() {
       >
         {!isHostedMode ? null : errorMessage ? (
           <div className="space-y-3">
-            <div className="alert alert-error">
-              <span>{errorMessage}</span>
-            </div>
+            <Alert variant="destructive">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="btn btn-soft w-full"
+              className={buttonVariants({
+                variant: "secondary",
+                className: "w-full",
+              })}
             >
               Back to sign in
             </Link>
           </div>
         ) : isPending || isRedirecting ? (
           <div className="flex justify-center py-4">
-            <span className="loading loading-spinner loading-md" />
+            <Spinner />
           </div>
         ) : email ? (
-          <button
+          <Button
+            variant="secondary"
             type="button"
-            className="btn btn-soft w-full"
+            className="w-full"
             onClick={() => void handleResend()}
             disabled={isResending}
           >
             {isResending ? "Sending email..." : "Resend email"}
-          </button>
+          </Button>
         ) : null}
       </AuthPageCard>
     </AuthPageShell>

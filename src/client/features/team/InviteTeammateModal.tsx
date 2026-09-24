@@ -1,10 +1,19 @@
 import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useId } from "react";
 import { toast } from "sonner";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { sendTeamInvitation } from "@/serverFunctions/organization";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+import { Field, FieldLabel } from "@/client/components/ui/field";
 export function inviteErrorMessage(error: Error) {
   const code = getErrorCode(error);
   if (code === "RATE_LIMITED") {
@@ -23,6 +32,7 @@ export function InviteTeammateModal({
   onClose: () => void;
   onInvited: () => void;
 }) {
+  const inviteEmailId = useId();
   const [email, setEmail] = useState("");
 
   // Server function (not authClient.inviteMember): it enforces the daily send
@@ -44,8 +54,13 @@ export function InviteTeammateModal({
   });
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box max-w-md">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent className="max-w-md">
         <form
           onSubmit={(event) => {
             event.preventDefault();
@@ -53,44 +68,38 @@ export function InviteTeammateModal({
             if (trimmed) inviteMutation.mutate(trimmed);
           }}
         >
-          <h3 className="text-lg font-bold">Invite a teammate</h3>
-          <p className="mt-2 text-sm text-base-content/60">
+          <DialogTitle>Invite a teammate</DialogTitle>
+          <p className="mt-2 text-sm text-muted-foreground">
             They&rsquo;ll join as an Admin with full access to each project
             except for billing. The invitation link expires in 7 days.
           </p>
-          <label className="form-control mt-4 w-full">
-            <span className="label-text pb-1 text-xs text-base-content/60">
-              Email
-            </span>
-            <input
+          <Field className="mt-4">
+            <FieldLabel htmlFor={inviteEmailId}>Email</FieldLabel>
+            <Input
+              id={inviteEmailId}
               type="email"
-              className="input input-sm input-bordered w-full"
+              className="w-full h-8 text-sm"
               placeholder="teammate@company.com"
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
               required
               autoFocus
             />
-          </label>
-          <div className="modal-action">
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={onClose}
-            >
+          </Field>
+          <DialogFooter className="mt-2">
+            <Button variant="ghost" size="sm" type="button" onClick={onClose}>
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
+              size="sm"
               type="submit"
-              className="btn btn-primary btn-sm"
               disabled={inviteMutation.isPending || !email.trim()}
             >
               {inviteMutation.isPending ? "Sending…" : "Send invite"}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-      <div className="modal-backdrop" onClick={onClose} />
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -4,6 +4,7 @@ import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSear
 import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 import { toScopeSearchParam } from "@/shared/researchScope";
 
+import { Button } from "@/client/components/ui/button";
 type Props = {
   projectId: string;
   history: BacklinksSearchHistoryItem[];
@@ -23,9 +24,9 @@ export function BacklinksHistorySection({
 
   if (history.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/55 space-y-2">
+      <section className="rounded-2xl border border-dashed border-border bg-card/70 p-6 text-center text-muted-foreground space-y-2">
         <Link2 className="size-9 mx-auto opacity-35" />
-        <p className="text-base font-medium text-base-content/80">
+        <p className="text-base font-medium text-foreground">
           Enter a domain or URL to get started
         </p>
       </section>
@@ -33,11 +34,11 @@ export function BacklinksHistorySection({
   }
 
   return (
-    <section className="rounded-2xl border border-base-300 bg-base-100 p-5 md:p-6">
+    <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <History className="size-4 text-base-content/45" />
-          <span className="text-sm text-base-content/60">
+          <History className="size-4 text-muted-foreground/70" />
+          <span className="text-sm text-muted-foreground">
             {history.length} recent search{history.length !== 1 ? "es" : ""}
           </span>
         </div>
@@ -47,7 +48,7 @@ export function BacklinksHistorySection({
         {history.map((item) => (
           <div
             key={item.timestamp}
-            className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
+            className="group flex items-center gap-2 rounded-lg border border-border bg-card p-2"
           >
             <Link
               to="/p/$projectId/backlinks"
@@ -62,32 +63,34 @@ export function BacklinksHistorySection({
                 order: undefined,
               })}
               replace
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted"
             >
-              <Clock className="size-4 text-base-content/40 shrink-0" />
+              <Clock className="size-4 text-muted-foreground/70 shrink-0" />
               <div className="min-w-0">
-                <p className="font-medium text-base-content truncate">
+                <p className="font-medium text-foreground truncate">
                   {item.target}
                 </p>
-                <p className="text-sm text-base-content/60 truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   {RESEARCH_SCOPE_LABELS[item.scope]}
                 </p>
               </div>
             </Link>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-base-content/40">
+              <span className="text-xs text-muted-foreground/70">
                 {new Date(item.timestamp).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
                 })}
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 type="button"
-                className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
+                className="h-7 px-2.5 opacity-0 group-hover:opacity-100 p-1"
                 onClick={() => onRemoveHistoryItem(item.timestamp)}
               >
                 <X className="size-3" />
-              </button>
+              </Button>
             </div>
           </div>
         ))}

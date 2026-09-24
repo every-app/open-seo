@@ -19,6 +19,16 @@ import {
   SUPPORT_EMAIL,
 } from "@/client/features/audit/shared";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { Progress } from "@/client/components/ui/progress";
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/client/components/ui/alert";
 export const Route = createFileRoute<"/_project/p/$projectId/audit/">(
   "/_project/p/$projectId/audit/",
 )({
@@ -99,7 +109,7 @@ function AuditDetail({
   if (statusQuery.isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <span className="loading loading-spinner loading-lg" />
+        <Spinner size="lg" />
       </div>
     );
   }
@@ -108,13 +118,15 @@ function AuditDetail({
     return (
       <div className="px-4 py-6 md:px-6">
         <div className="mx-auto max-w-3xl space-y-4">
-          <div className="alert alert-error">
+          <Alert variant="destructive">
             <AlertCircle className="size-5" />
-            <span>We could not load this audit. It may have been deleted.</span>
-          </div>
-          <button className="btn btn-ghost btn-sm" onClick={onBack}>
+            <AlertDescription>
+              We could not load this audit. It may have been deleted.
+            </AlertDescription>
+          </Alert>
+          <Button variant="ghost" size="sm" onClick={onBack}>
             &larr; Back to audits
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -135,9 +147,9 @@ function AuditDetail({
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto max-w-5xl space-y-4">
         <div className="space-y-1">
-          <button className="btn btn-ghost btn-sm px-0" onClick={onBack}>
+          <Button variant="ghost" size="sm" className="px-0" onClick={onBack}>
             &larr; All audits
-          </button>
+          </Button>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h1 className="text-2xl font-semibold">
               {status ? extractHostname(status.startUrl) : "Site Audit"}
@@ -147,7 +159,7 @@ function AuditDetail({
             )}
           </div>
           {status && (
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-muted-foreground">
               Site audit &middot; Started {formatStartedAt(status.startedAt)}
             </p>
           )}
@@ -162,20 +174,18 @@ function AuditDetail({
         )}
 
         {showSupportCta && (
-          <div
-            className={isFailed ? "alert alert-error" : "alert alert-warning"}
-          >
+          <Alert variant={isFailed ? "destructive" : "warning"}>
             <AlertCircle className="size-5" />
-            <div className="space-y-1">
-              <p className="font-medium">
-                Site audit couldn't fully crawl this website.
-              </p>
+            <AlertTitle>
+              Site audit couldn't fully crawl this website.
+            </AlertTitle>
+            <AlertDescription className="space-y-1">
               <p>
                 Sorry! This site's bot protection blocked our crawler. We don't
                 have a workaround for this yet. Desktop crawlers run from your
                 own machine and usually get past it: try{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href="https://github.com/PhialsBasement/LibreCrawl"
                   target="_blank"
                   rel="noreferrer"
@@ -184,7 +194,7 @@ function AuditDetail({
                 </a>{" "}
                 (free, open source) or{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href="https://www.screamingfrog.co.uk/seo-spider/"
                   target="_blank"
                   rel="noreferrer"
@@ -193,14 +203,14 @@ function AuditDetail({
                 </a>{" "}
                 (free up to 500 URLs).
               </p>
-            </div>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         {failedWithResults && (
-          <div className="alert alert-warning">
+          <Alert variant="warning">
             <AlertCircle className="size-5" />
-            <div className="space-y-1">
+            <AlertDescription className="space-y-1">
               <p className="font-medium">
                 This audit stopped early after {partialPageCount} page
                 {partialPageCount === 1 ? "" : "s"}.
@@ -209,15 +219,15 @@ function AuditDetail({
                 The results below cover everything crawled before it stopped.
                 Run a new audit to try again, or email{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href={`mailto:${SUPPORT_EMAIL}`}
                 >
                   {SUPPORT_EMAIL}
                 </a>{" "}
                 if this keeps happening.
               </p>
-            </div>
-          </div>
+            </AlertDescription>
+          </Alert>
         )}
 
         {(isComplete || failedWithResults) && resultsQuery.data && (
@@ -281,8 +291,8 @@ function ProgressCard({
 
   return (
     <div className="space-y-3">
-      <div className="card bg-base-100 border border-base-300">
-        <div className="card-body gap-3">
+      <Card>
+        <CardContent className="pt-6 gap-3">
           <div className="flex items-center justify-between">
             <h2 className="font-medium flex items-center gap-2">
               <Loader2 className="size-4 animate-spin text-primary" />
@@ -290,14 +300,12 @@ function ProgressCard({
                 ? "Running Lighthouse checks"
                 : "Crawling pages"}
             </h2>
-            <span className="badge badge-ghost badge-sm">{phaseLabel}</span>
+            <Badge variant="secondary" className="px-2 text-[11px]">
+              {phaseLabel}
+            </Badge>
           </div>
 
-          <progress
-            className="progress progress-primary w-full"
-            value={progress}
-            max={100}
-          />
+          <Progress className="w-full" value={progress} max={100} />
 
           <div className="flex items-center justify-between text-sm">
             {isLighthousePhase ? (
@@ -312,18 +320,18 @@ function ProgressCard({
                 {status.pagesCrawled} / {status.pagesTotal} pages
               </span>
             )}
-            <span className="text-base-content/60">{progress}%</span>
+            <span className="text-muted-foreground">{progress}%</span>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {crawledUrls.length > 0 && (
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-2 p-4">
-            <h3 className="text-sm font-medium text-base-content/70">
+        <Card>
+          <CardContent className="gap-2 p-4">
+            <h3 className="text-sm font-medium text-muted-foreground">
               Crawled Pages ({crawledUrls.length})
             </h3>
-            <p className="text-xs text-base-content/50">
+            <p className="text-xs text-muted-foreground/70">
               Updated {new Date(crawledUrls[0].crawledAt).toLocaleTimeString()}
             </p>
             <div className="max-h-[400px] overflow-y-auto -mx-1">
@@ -335,8 +343,8 @@ function ProgressCard({
                 />
               ))}
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
@@ -366,14 +374,14 @@ function ProgressRow({
     >
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <HttpStatusBadge code={entry.statusCode} />
-        <span className="truncate text-base-content/80" title={entry.url}>
+        <span className="truncate text-foreground" title={entry.url}>
           {pathname}
         </span>
       </div>
       <div className="flex items-center gap-3 shrink-0">
         {entry.title && (
           <span
-            className="text-xs text-base-content/40 truncate max-w-[260px] hidden md:block"
+            className="text-xs text-muted-foreground/70 truncate max-w-[260px] hidden md:block"
             title={entry.title}
           >
             {entry.title}

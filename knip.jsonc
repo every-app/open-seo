@@ -47,6 +47,5 @@
   "ignoreDependencies": [
     // Tailwindcss used via @tailwindcss/vite plugin
     "tailwindcss",
-    "daisyui",
   ],
 }

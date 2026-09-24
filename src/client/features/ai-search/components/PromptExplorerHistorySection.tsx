@@ -44,10 +44,8 @@ export function PromptExplorerHistorySection({ projectId, ...props }: Props) {
       )}
       renderItem={(item) => (
         <>
-          <p className="font-medium text-base-content truncate">
-            {item.prompt}
-          </p>
-          <p className="text-sm text-base-content/60 truncate">
+          <p className="font-medium text-foreground truncate">{item.prompt}</p>
+          <p className="text-sm text-muted-foreground truncate">
             {item.models.map(formatModelLabel).join(", ")}
           </p>
         </>

@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 
 interface SegmentedToggleItem<T extends string> {
   value: T;
@@ -18,18 +22,27 @@ export function SegmentedToggle<T extends string>({
   showLabels?: boolean;
 }) {
   return (
-    <div className="inline-flex rounded-lg bg-base-300 p-0.5">
+    <ToggleGroup
+      size="sm"
+      value={[value]}
+      onValueChange={(next) => {
+        // Clicking the pressed item empties the group; keep one selected.
+        const item = items.find((option) => option.value === next[0]);
+        if (item) onChange(item.value);
+      }}
+    >
       {items.map((item) => (
-        <button
+        <ToggleGroupItem
           key={item.value}
-          className={`btn btn-xs gap-1.5 px-2 ${value === item.value ? "bg-primary/20 text-primary shadow-sm" : "btn-ghost text-base-content/40"}`}
-          onClick={() => onChange(item.value)}
+          value={item.value}
           title={item.label}
+          aria-label={item.label}
+          className="gap-1.5"
         >
           {item.icon}
           {showLabels && item.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }

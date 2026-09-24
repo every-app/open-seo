@@ -31,6 +31,7 @@ import {
   type ResearchScope,
 } from "@/shared/researchScope";
 
+import { buttonVariants } from "@/client/components/ui/button";
 type Props = {
   projectId: string;
   initialQuery: string;
@@ -261,7 +262,7 @@ function BrandLookupPageInner({
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Brand Lookup</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             See how AI search cites any brand name or domain.
           </p>
         </div>
@@ -296,7 +297,7 @@ function BrandLookupPageInner({
             {errorMessage ? (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error"
+                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>{errorMessage}</span>
@@ -314,7 +315,12 @@ function BrandLookupPageInner({
                     params={{ projectId }}
                     search={{ q: undefined, c: undefined, scope: undefined }}
                     replace
-                    className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+                    className={buttonVariants({
+                      variant: "ghost",
+                      size: "sm",
+                      className:
+                        "gap-2 px-0 text-muted-foreground hover:bg-transparent",
+                    })}
                   >
                     <ArrowLeft className="size-4" />
                     Recent searches

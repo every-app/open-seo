@@ -1,4 +1,11 @@
 import { Monitor, Moon, Sun } from "lucide-react";
+import {
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+} from "@/client/components/ui/dropdown-menu";
 import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 
 const THEME_OPTIONS: {
@@ -16,45 +23,31 @@ export function ThemePreferenceMenuItems() {
 
   return (
     <>
-      <li className="menu-title pt-2">
-        <span>Theme</span>
-      </li>
-
-      <li>
-        <div
-          role="radiogroup"
-          aria-label="Theme preference"
-          className="flex gap-0.5 rounded-lg bg-base-200 p-0.5"
+      <DropdownMenuSeparator />
+      <DropdownMenuGroup>
+        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={themePreference}
+          onValueChange={(value) => {
+            const option = THEME_OPTIONS.find((item) => item.value === value);
+            if (option) setThemePreference(option.value);
+          }}
         >
           {THEME_OPTIONS.map((option) => {
-            const isActive = option.value === themePreference;
             const Icon = option.icon;
-
             return (
-              <div
+              <DropdownMenuRadioItem
                 key={option.value}
-                className="tooltip tooltip-bottom flex flex-1 before:whitespace-nowrap"
-                data-tip={option.label}
+                value={option.value}
+                closeOnClick={false}
               >
-                <button
-                  type="button"
-                  role="radio"
-                  aria-checked={isActive}
-                  aria-label={option.label}
-                  className={`flex flex-1 cursor-pointer items-center justify-center rounded-md px-2.5 py-1.5 transition-colors ${
-                    isActive
-                      ? "bg-base-100 text-base-content shadow-sm"
-                      : "text-base-content/50 hover:text-base-content/80"
-                  }`}
-                  onClick={() => setThemePreference(option.value)}
-                >
-                  <Icon className="size-4" />
-                </button>
-              </div>
+                <Icon className="size-4" />
+                {option.label}
+              </DropdownMenuRadioItem>
             );
           })}
-        </div>
-      </li>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuGroup>
     </>
   );
 }

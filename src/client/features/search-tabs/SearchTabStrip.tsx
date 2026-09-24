@@ -11,6 +11,7 @@ import {
 } from "@/client/features/keywords/hooks/useKeywordResearchData";
 import { getBacklinksOverview } from "@/serverFunctions/backlinks";
 import { getDomainOverview } from "@/serverFunctions/domain";
+import { Button } from "@/client/components/ui/button";
 export type { SearchTab } from "./types";
 
 type Props = {
@@ -40,7 +41,7 @@ export function SearchTabStrip({
   if (tabs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-base-300 bg-base-100 p-1">
+    <div className="rounded-xl border border-border bg-card p-1">
       <div
         role="tablist"
         aria-label="Search tabs"
@@ -54,16 +55,16 @@ export function SearchTabStrip({
               data-search-tab-id={tab.id}
               className={`group flex shrink-0 items-stretch overflow-hidden rounded-md text-sm transition ${
                 active
-                  ? "bg-base-300 text-base-content shadow-sm"
-                  : "text-base-content/80 hover:bg-base-200"
+                  ? "bg-border text-foreground shadow-sm"
+                  : "text-foreground hover:bg-muted"
               }`}
             >
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 role="tab"
                 data-search-tab-id={tab.id}
                 aria-selected={active}
-                className="flex min-w-0 items-center gap-1.5 px-2.5 py-1.5 text-left"
+                className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex min-w-0 items-center gap-1.5 px-2.5 py-1.5 text-left"
                 onClick={() => onSelect(tab)}
               >
                 <SearchTabStatus
@@ -78,16 +79,16 @@ export function SearchTabStrip({
                 >
                   {tab.label}
                 </span>
-              </button>
-              <button
-                type="button"
+              </Button>
+              <Button
+                variant="ghost"
                 data-search-tab-id={tab.id}
-                className="flex items-center px-1.5 text-base-content/50 opacity-60 transition hover:bg-base-content/10 hover:text-base-content hover:opacity-100 group-hover:opacity-100"
+                className="h-auto rounded-md flex items-center px-1.5 text-muted-foreground/70 opacity-60 transition hover:bg-foreground/10 hover:text-foreground hover:opacity-100 group-hover:opacity-100"
                 onClick={() => onClose(tab.id)}
                 aria-label={`Close ${tab.label} tab`}
               >
                 <X className="size-3.5" />
-              </button>
+              </Button>
             </div>
           );
         })}
@@ -155,9 +156,9 @@ function SearchTabStatusIndicator({
       aria-hidden
     >
       {status === "loading" ? (
-        <Loader2 className="size-3 animate-spin text-base-content/50" />
+        <Loader2 className="size-3 animate-spin text-muted-foreground/70" />
       ) : status === "error" ? (
-        <span className="size-2 rounded-full bg-error" />
+        <span className="size-2 rounded-full bg-destructive" />
       ) : status === "unviewed" ? (
         <span className="size-2 rounded-full bg-primary" />
       ) : null}

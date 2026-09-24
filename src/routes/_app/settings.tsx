@@ -1,4 +1,10 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useMatchRoute,
+} from "@tanstack/react-router";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 export const Route = createFileRoute("/_app/settings")({
@@ -17,29 +23,30 @@ function SettingsLayout() {
       : []),
   ];
 
+  const matchRoute = useMatchRoute();
+  const activeTab = tabs.find((tab) =>
+    matchRoute({ to: tab.to, fuzzy: !tab.exact }),
+  )?.to;
+
   return (
-    <div className="h-full overflow-auto bg-base-100">
+    <div className="h-full overflow-auto bg-card">
       <div className="mx-auto w-full max-w-4xl space-y-8 p-4 py-8 pb-24 sm:p-6 md:py-12 md:pb-12">
         <div className="space-y-4">
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-          <div role="tablist" className="tabs tabs-border">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.to}
-                role="tab"
-                to={tab.to}
-                activeOptions={{ exact: tab.exact ?? false }}
-                className="tab"
-                activeProps={{
-                  className: "tab-active",
-                  "aria-selected": true,
-                }}
-                inactiveProps={{ "aria-selected": false }}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
+          <Tabs value={activeTab}>
+            <TabsList>
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.to}
+                  value={tab.to}
+                  nativeButton={false}
+                  render={<Link to={tab.to} />}
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         <Outlet />

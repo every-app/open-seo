@@ -6,6 +6,7 @@ import {
 } from "@/shared/tag-colors";
 import type { SavedKeywordTag } from "@/types/keywords";
 
+import { Button } from "@/client/components/ui/button";
 type Size = "xs" | "sm" | "md";
 
 const SIZE_CLASS: Record<Size, string> = {
@@ -34,7 +35,7 @@ export function TagChip({
   const interactive = onClick
     ? "cursor-pointer hover:brightness-110 transition"
     : "";
-  const ring = selected ? "ring-2 ring-offset-1 ring-offset-base-100" : "";
+  const ring = selected ? "ring-2 ring-offset-1 ring-offset-card" : "";
 
   const content = (
     <>
@@ -48,14 +49,14 @@ export function TagChip({
 
   if (onClick) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         title={title}
-        className={`${base} ${interactive} ${ring}`}
+        className={`h-auto rounded-md text-inherit px-0 hover:bg-transparent ${base} ${interactive} ${ring}`}
         onClick={onClick}
       >
         {content}
-      </button>
+      </Button>
     );
   }
   return (

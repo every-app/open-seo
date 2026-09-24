@@ -252,7 +252,7 @@ function SavedKeywordsPage() {
           onRefreshMetrics={() => refreshMetricsMutation.mutate()}
         />
 
-        <div className="overflow-hidden rounded-lg border border-base-300 bg-base-100">
+        <div className="overflow-hidden rounded-lg border border-border bg-card">
           <SavedKeywordsFilters
             filtersForm={filters.filtersForm}
             activeFilterCount={filters.activeFilterCount}

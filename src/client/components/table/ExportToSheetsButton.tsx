@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { CsvValue } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 
+import { Button } from "@/client/components/ui/button";
 type Props = {
   headers: string[];
   /**
@@ -42,9 +43,11 @@ export function ExportToSheetsButton({
   };
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       type="button"
-      className={`btn btn-ghost btn-xs gap-1 ${className ?? ""}`}
+      className={`h-7 px-2.5 gap-1 ${className ?? ""}`}
       onClick={handleClick}
       disabled={disabled || rows.length === 0 || busy}
       title="Copy table and open a new Google Sheet"
@@ -52,6 +55,6 @@ export function ExportToSheetsButton({
     >
       <Sheet className="size-3.5" />
       {iconOnly ? null : label}
-    </button>
+    </Button>
   );
 }

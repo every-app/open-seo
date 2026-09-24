@@ -4,6 +4,18 @@ import type { getAuditHistory } from "@/serverFunctions/audit";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { formatDate, StatusBadge } from "@/client/features/audit/shared";
 
+import { Badge } from "@/client/components/ui/badge";
+import { buttonVariants } from "@/client/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
 export function AuditHistorySection({
   projectId,
   history,
@@ -18,7 +30,7 @@ export function AuditHistorySection({
   if (history.length === 0 && !isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="text-center text-base-content/40 space-y-3">
+        <div className="text-center text-muted-foreground/70 space-y-3">
           <ScanSearch className="size-12 mx-auto opacity-30" />
           <p className="text-lg font-medium">No audits yet</p>
         </div>
@@ -29,51 +41,57 @@ export function AuditHistorySection({
   if (history.length === 0) return null;
 
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-3">
-        <h2 className="card-title text-base">Previous Audits</h2>
+    <Card>
+      <CardContent className="pt-6 gap-3">
+        <CardTitle className="text-base">Previous Audits</CardTitle>
         <div className="overflow-x-auto">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>URL</th>
-                <th>Status</th>
-                <th>Pages</th>
-                <th>Lighthouse</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Date</TableHead>
+                <TableHead>URL</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Pages</TableHead>
+                <TableHead>Lighthouse</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {history.map((audit) => (
-                <tr key={audit.id} className="hover group">
-                  <td className="text-xs text-base-content/70">
+                <TableRow key={audit.id} className="hover group">
+                  <TableCell className="text-xs text-muted-foreground">
                     {formatDate(audit.startedAt)}
-                  </td>
-                  <td className="max-w-[220px] truncate">{audit.startUrl}</td>
-                  <td>
+                  </TableCell>
+                  <TableCell className="max-w-[220px] truncate">
+                    {audit.startUrl}
+                  </TableCell>
+                  <TableCell>
                     <StatusBadge status={audit.status} />
-                  </td>
-                  <td>{audit.pagesTotal || audit.pagesCrawled}</td>
-                  <td>
+                  </TableCell>
+                  <TableCell>
+                    {audit.pagesTotal || audit.pagesCrawled}
+                  </TableCell>
+                  <TableCell>
                     {audit.ranLighthouse ? (
-                      <span className="badge badge-ghost badge-xs">Yes</span>
+                      <Badge variant="secondary" className="px-2 text-[11px]">
+                        Yes
+                      </Badge>
                     ) : null}
-                  </td>
-                  <td>
+                  </TableCell>
+                  <TableCell>
                     <HistoryActions
                       projectId={projectId}
                       auditId={audit.id}
                       onDelete={onDelete}
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
 
@@ -92,24 +110,22 @@ function HistoryActions({
         to="/p/$projectId/audit"
         params={{ projectId }}
         search={{ auditId, tab: "pages" }}
-        className="btn btn-primary btn-xs"
+        className={buttonVariants({ size: "sm", className: "h-7 px-2.5" })}
       >
         View
       </Link>
       <PortalMenu ariaLabel="Audit actions">
         {(close) => (
-          <li>
-            <button
-              className="text-error"
-              onClick={() => {
-                close();
-                onDelete(auditId);
-              }}
-            >
-              <Trash2 className="size-3.5" />
-              Delete audit
-            </button>
-          </li>
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={() => {
+              close();
+              onDelete(auditId);
+            }}
+          >
+            <Trash2 className="size-3.5" />
+            Delete audit
+          </DropdownMenuItem>
         )}
       </PortalMenu>
     </div>

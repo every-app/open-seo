@@ -17,6 +17,21 @@ import {
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
 
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 const SUPPORT_EMAIL = "ben@openseo.so";
 
 const PLAN_FEATURES = [
@@ -142,13 +157,16 @@ function SubscribePage() {
         <h1 className="text-xl font-semibold">
           Finalizing your subscription&hellip;
         </h1>
-        <span className="loading loading-spinner loading-md" />
-        <p className="text-sm text-base-content/60">
+        <Spinner />
+        <p className="text-sm text-muted-foreground">
           This usually takes a few seconds.
         </p>
-        <p className="text-xs text-base-content/50">
+        <p className="text-xs text-muted-foreground/70">
           Taking longer?{" "}
-          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
+          <a
+            className="underline underline-offset-4"
+            href={`mailto:${SUPPORT_EMAIL}`}
+          >
             Email {SUPPORT_EMAIL}
           </a>
           .
@@ -169,22 +187,23 @@ function SubscribePage() {
           <h1 className="text-xl font-semibold">Billing unavailable</h1>
         </div>
 
-        <p className="text-sm text-center text-base-content/70">
+        <p className="text-sm text-center text-muted-foreground">
           {getStandardErrorMessage(
             customerQuery.error,
             "We couldn't verify your billing status right now. Please try again.",
           )}
         </p>
 
-        <button
+        <Button
+          variant="secondary"
           type="button"
-          className="btn btn-soft w-full"
+          className="w-full"
           onClick={() => {
             void customerQuery.refetch();
           }}
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -233,12 +252,12 @@ function SubscribePage() {
               ? `Welcome to OpenSEO, ${firstName}!`
               : "Welcome to OpenSEO!"}
         </h1>
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           SEO on your terms. All your SEO tools in one place at a fair price.
         </p>
       </div>
 
-      <div className="rounded-lg border border-base-300 p-5 space-y-4">
+      <div className="rounded-lg border border-border p-5 space-y-4">
         <div className="flex items-baseline justify-between gap-4">
           <span className="font-semibold">Base Plan</span>
           <span className="text-lg font-semibold tabular-nums">$10/month</span>
@@ -248,9 +267,9 @@ function SubscribePage() {
           {PLAN_FEATURES.map((item) => (
             <li
               key={item}
-              className="flex gap-2.5 text-sm text-base-content/70"
+              className="flex gap-2.5 text-sm text-muted-foreground"
             >
-              <span className="text-base-content/40 mt-[2px] shrink-0">
+              <span className="text-muted-foreground/70 mt-[2px] shrink-0">
                 &mdash;
               </span>
               {item}
@@ -259,7 +278,7 @@ function SubscribePage() {
           {/* Sub-bullet of the Usage Credits line above. */}
           <li className="-mt-1 pl-6 text-xs">
             <a
-              className="text-base-content/60 underline decoration-base-content/40 decoration-dotted underline-offset-4 transition-colors hover:text-base-content"
+              className="text-muted-foreground underline decoration-muted-foreground/70 decoration-dotted underline-offset-4 transition-colors hover:text-foreground"
               href="https://openseo.so/pricing"
               target="_blank"
               rel="noreferrer"
@@ -273,49 +292,50 @@ function SubscribePage() {
           </li>
         </ul>
 
-        {error ? <p className="text-sm text-error">{error}</p> : null}
+        {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
         {canManageBilling ? (
-          <button
-            className="btn btn-soft w-full"
+          <Button
+            variant="secondary"
+            className="w-full"
             disabled={isAttaching}
             onClick={() => void handleSubscribe()}
           >
             {isAttaching ? "Redirecting..." : "Subscribe"}
-          </button>
+          </Button>
         ) : (
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             Only the organization owner can subscribe. Ask them to upgrade this
             organization.
           </p>
         )}
 
-        <p className="text-center text-xs text-base-content/50">
-          <span
-            className="tooltip before:max-w-60 before:whitespace-normal"
-            data-tip={`Not for you yet? Email ${SUPPORT_EMAIL} within 30 days of your charge and we'll refund your subscription.`}
-          >
-            <span className="cursor-help underline decoration-dotted">
-              30-day money-back guarantee
-            </span>
-          </span>
+        <p className="text-center text-xs text-muted-foreground/70">
+          <Tooltip>
+            <TooltipTrigger render={<span tabIndex={0} />}>
+              <span className="cursor-help underline decoration-dotted">
+                30-day money-back guarantee
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-64">{`Not for you yet? Email ${SUPPORT_EMAIL} within 30 days of your charge and we'll refund your subscription.`}</TooltipContent>
+          </Tooltip>
           . Cancel anytime. Powered by Stripe.
         </p>
       </div>
 
       <div className="text-center space-y-2">
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           Questions? Email {SUPPORT_EMAIL}.
         </p>
         {isUpgradeFlow ? (
-          <button
-            type="button"
-            className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-base-content/70 hover:text-base-content transition-colors"
+          <Button
+            variant="ghost"
+            className="h-auto rounded-md px-0 hover:bg-transparent inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             onClick={() => void navigate({ to: "/", replace: true })}
           >
             <ArrowRight className="size-3.5 rotate-180" />
             Back to app
-          </button>
+          </Button>
         ) : null}
       </div>
     </div>
@@ -329,42 +349,43 @@ function SubscribePageAccountMenu({ email }: { email: string | undefined }) {
 
   return (
     <div className="fixed top-4 right-4">
-      <div className="dropdown dropdown-end">
-        <button
-          type="button"
-          tabIndex={0}
-          className="btn btn-ghost btn-circle"
-          aria-label="Open account menu"
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              type="button"
+              aria-label="Open account menu"
+            />
+          }
         >
           <User className="h-5 w-5" />
-        </button>
-        <ul
-          tabIndex={0}
-          className="dropdown-content z-20 menu mt-3 min-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-        >
-          <li className="menu-title max-w-full">
-            <span className="truncate text-base-content" data-ph-mask>
-              {email}
-            </span>
-          </li>
-          <li>
-            <Link to="/settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Settings
-            </Link>
-          </li>
-          <ThemePreferenceMenuItems />
-          <li>
-            <button
-              type="button"
-              className="text-error"
-              onClick={handleSignOut}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="min-w-56">
+          <DropdownMenuGroup>
+            <DropdownMenuLabel
+              className="truncate normal-case tracking-normal text-foreground"
+              data-ph-mask
             >
-              Sign out
-            </button>
-          </li>
-        </ul>
-      </div>
+              {email}
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
+          <DropdownMenuItem
+            render={<Link to="/settings" className="flex items-center gap-2" />}
+          >
+            <Settings className="h-4 w-4" />
+            Settings
+          </DropdownMenuItem>
+          <ThemePreferenceMenuItems />
+          <DropdownMenuItem
+            className="text-destructive"
+            onClick={handleSignOut}
+          >
+            Sign out
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

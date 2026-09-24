@@ -5,6 +5,10 @@ import type {
   PerformanceFilters,
 } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { NativeSelect } from "@/client/components/ui/native-select";
 export function PagesFilterBar({
   filters,
   onChange,
@@ -141,7 +145,7 @@ export function PerformanceFilterBar({
 }
 
 export function EmptyTableMessage({ label }: { label: string }) {
-  return <div className="py-6 text-center text-base-content/60">{label}</div>;
+  return <div className="py-6 text-center text-muted-foreground">{label}</div>;
 }
 
 export function TableFilterToggle({
@@ -158,9 +162,11 @@ export function TableFilterToggle({
   totalCount: number;
 }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-base-300 px-4 py-2.5">
-      <button
-        className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
+    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`gap-1.5 ${showFilters ? "bg-secondary text-foreground" : ""}`}
         onClick={onToggle}
         title="Toggle filters"
         type="button"
@@ -168,12 +174,15 @@ export function TableFilterToggle({
         <SlidersHorizontal className="size-3.5" />
         Filters
         {activeFilterCount > 0 ? (
-          <span className="badge badge-xs badge-primary border-0 text-primary-content">
+          <Badge
+            variant="primary"
+            className="px-2 text-[11px] border-0 text-primary-foreground"
+          >
             {activeFilterCount}
-          </span>
+          </Badge>
         ) : null}
-      </button>
-      <span className="text-sm tabular-nums text-base-content/60">
+      </Button>
+      <span className="text-sm tabular-nums text-muted-foreground">
         {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
       </span>
     </div>
@@ -200,25 +209,30 @@ function FilterPanel({
   children: ReactNode;
 }) {
   return (
-    <div className="space-y-3 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3">
+    <div className="space-y-3 border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+            <Badge
+              variant="primary"
+              className="px-2 text-[11px] border-0 text-primary-foreground"
+            >
               {activeFilterCount} active
-            </span>
+            </Badge>
           ) : null}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-xs btn-ghost gap-1"
+          className="h-7 px-2.5 gap-1"
           onClick={onReset}
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
       {children}
     </div>
@@ -240,11 +254,11 @@ function TextFilter({
 }) {
   return (
     <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
-      <input
-        className="input input-bordered input-sm w-full bg-base-100"
+      <Input
+        className="w-full bg-card h-8 text-sm"
         type={type}
         value={value}
         placeholder={placeholder}
@@ -268,20 +282,20 @@ function RangeFilter({
   onMaxChange: (value: string) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-base-300 bg-base-100 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <div className="space-y-2 rounded-lg border border-border bg-card p-2.5">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <div className="grid grid-cols-2 gap-2">
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="bg-card h-7 text-xs"
           type="number"
           value={min}
           placeholder="Min"
           onChange={(event) => onMinChange(event.target.value)}
         />
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="bg-card h-7 text-xs"
           type="number"
           value={max}
           placeholder="Max"
@@ -305,11 +319,11 @@ function SelectFilter<T extends string>({
 }) {
   return (
     <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
-      <select
-        className="select select-bordered select-sm w-full bg-base-100"
+      <NativeSelect
+        className="w-full bg-card h-8 text-sm"
         value={value}
         onChange={(event) => {
           const selected = options.find(
@@ -323,7 +337,7 @@ function SelectFilter<T extends string>({
             {optionLabel}
           </option>
         ))}
-      </select>
+      </NativeSelect>
     </label>
   );
 }

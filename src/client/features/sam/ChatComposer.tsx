@@ -7,6 +7,8 @@ import {
 } from "react";
 import { ArrowUp, Loader2, Square } from "lucide-react";
 
+import { Button } from "@/client/components/ui/button";
+import { Textarea } from "@/client/components/ui/textarea";
 export function ChatComposer({
   busy,
   onSend,
@@ -53,39 +55,42 @@ export function ChatComposer({
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 rounded-box border border-base-300 bg-base-100 px-3 py-2 focus-within:border-primary"
+      className="flex items-end gap-2 rounded-xl border border-border bg-card px-3 py-2 focus-within:border-primary"
     >
-      <textarea
+      <Textarea
         ref={textareaRef}
         value={value}
         onChange={(event) => setValue(event.target.value)}
         onKeyDown={handleKey}
         rows={1}
         placeholder={placeholder}
-        className="max-h-40 flex-1 resize-none border-0 bg-transparent px-1 py-1 text-sm leading-relaxed outline-none placeholder:text-base-content/50 focus:outline-none"
+        className="min-h-0 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 max-h-40 flex-1 resize-none  px-1 py-1 text-sm leading-relaxed  placeholder:text-muted-foreground/70 focus:"
       />
       {busy && onStop ? (
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           type="button"
           aria-label="Stop"
           onClick={onStop}
-          className="btn btn-neutral btn-circle btn-sm"
+          className="size-8"
         >
           <Square className="size-3.5 fill-current" />
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
+          size="icon"
           type="submit"
           aria-label="Send message"
           disabled={busy || !value.trim()}
-          className="btn btn-primary btn-circle btn-sm"
+          className="size-8"
         >
           {busy ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
             <ArrowUp className="size-4" />
           )}
-        </button>
+        </Button>
       )}
     </form>
   );

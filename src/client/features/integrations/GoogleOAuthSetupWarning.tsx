@@ -1,6 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 export function GoogleOAuthSetupWarning({
   integrationName,
   docsUrl,
@@ -9,11 +10,11 @@ export function GoogleOAuthSetupWarning({
   docsUrl: string;
 }) {
   return (
-    <div className="alert alert-warning items-start text-sm">
+    <Alert variant="warning" className="text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-      <div className="space-y-1">
+      <AlertDescription className="space-y-1">
         <p className="font-medium">Google OAuth client not configured</p>
-        <p className="text-base-content/70">
+        <p className="text-muted-foreground">
           Add your Google client ID and secret to this OpenSEO deployment before
           connecting {integrationName}.
         </p>
@@ -22,7 +23,7 @@ export function GoogleOAuthSetupWarning({
           label="Open setup guide"
           className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
         />
-      </div>
-    </div>
+      </AlertDescription>
+    </Alert>
   );
 }

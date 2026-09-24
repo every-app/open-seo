@@ -2,6 +2,8 @@ import { useEffect } from "react";
 import { getSignInHref, getSignInHrefForLocation } from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
 type UnauthenticatedErrorCardProps = {
   message: string;
   onRetry?: () => void;
@@ -30,22 +32,22 @@ export function UnauthenticatedErrorCard({
   }
 
   return (
-    <div className="card w-full max-w-md bg-base-100 border border-base-300 shadow-xl">
-      <div className="card-body gap-4">
-        <h2 className="card-title">Authentication required</h2>
-        <p className="text-sm text-base-content/70">{message}</p>
-        <p className="text-sm text-base-content/70">
+    <Card className="w-full max-w-md shadow-xl">
+      <CardContent className="pt-6 gap-4">
+        <CardTitle>Authentication required</CardTitle>
+        <p className="text-sm text-muted-foreground">{message}</p>
+        <p className="text-sm text-muted-foreground">
           This deployment uses external authentication. Refresh your access
           session, then try again.
         </p>
         {onRetry ? (
-          <div className="card-actions justify-end">
-            <button className="btn btn-primary btn-sm" onClick={onRetry}>
+          <div className="flex flex-wrap items-center gap-2 justify-end">
+            <Button size="sm" onClick={onRetry}>
               Try Again
-            </button>
+            </Button>
           </div>
         ) : null}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

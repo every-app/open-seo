@@ -36,6 +36,7 @@ import {
 } from "@/types/schemas/search-performance";
 import { saveKeywords } from "@/serverFunctions/keywords";
 
+import { TabsTrigger } from "@/client/components/ui/tabs";
 export type Tab = "striking" | "queries" | "pages";
 export type ExportTarget = "csv" | "sheets";
 
@@ -114,24 +115,18 @@ export function exportDimensionRows(
 }
 
 export function TabButton({
-  active,
+  value,
   onClick,
   label,
 }: {
-  active: boolean;
+  value: string;
   onClick: () => void;
   label: string;
 }) {
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      className={`tab ${active ? "tab-active" : ""}`}
-      onClick={onClick}
-    >
+    <TabsTrigger value={value} onClick={onClick}>
       {label}
-    </button>
+    </TabsTrigger>
   );
 }
 
@@ -199,15 +194,15 @@ function TotalCard({
   deltaTitle: string;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-4">
-      <div className="text-xs uppercase tracking-wide text-base-content/60">
+    <div className="rounded-lg border border-border bg-card p-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
         {label}
       </div>
       <div className="mt-1 flex items-baseline gap-2">
         <span className="text-2xl font-semibold">{value}</span>
         {delta ? (
           <span
-            className={`text-xs ${delta.improved ? "text-success" : "text-error"}`}
+            className={`text-xs ${delta.improved ? "text-success" : "text-destructive"}`}
             title={deltaTitle}
           >
             {delta.text}
@@ -235,10 +230,10 @@ export function DimensionTable({
   return (
     <AppDataTable
       table={table}
-      className="table table-zebra table-sm"
+      striped
       wrapperClassName="overflow-x-auto"
       empty={
-        <p className="p-6 text-sm text-base-content/60">
+        <p className="p-6 text-sm text-muted-foreground">
           No data for this period yet. Search Console data trails by a few days.
         </p>
       }
@@ -319,7 +314,7 @@ export function StrikingDistanceTable({
 
   if (rows.length === 0) {
     return (
-      <p className="p-6 text-sm text-base-content/60">
+      <p className="p-6 text-sm text-muted-foreground">
         No striking-distance queries in this period. These are queries ranking
         at positions 5 to 20, where an improvement is most likely to move
         traffic.
@@ -330,13 +325,13 @@ export function StrikingDistanceTable({
   return (
     <>
       <div className="p-4">
-        <p className="mb-3 text-sm text-base-content/60">
+        <p className="mb-3 text-sm text-muted-foreground">
           Queries ranking at positions 5 to 20, sorted by impressions. Improve
           the listed page to move them into the top results.
         </p>
         <AppDataTable
           table={table}
-          className="table table-zebra table-sm"
+          striped
           wrapperClassName="overflow-x-auto"
         />
       </div>

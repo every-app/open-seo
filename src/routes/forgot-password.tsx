@@ -11,6 +11,9 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
 });
@@ -90,7 +93,7 @@ function ForgotPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-base-content/50 hover:text-base-content transition-colors"
+                    className="text-muted-foreground/70 hover:text-foreground transition-colors"
                   >
                     Back to sign in
                   </Link>
@@ -98,12 +101,12 @@ function ForgotPasswordPage() {
               }
             >
               {isSuccess ? (
-                <div className="alert alert-success">
-                  <span>
+                <Alert variant="success">
+                  <AlertDescription>
                     If an account exists for that email, you'll receive password
                     reset instructions shortly.
-                  </span>
-                </div>
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <form
                   className="space-y-4"
@@ -118,9 +121,9 @@ function ForgotPasswordPage() {
 
                       return (
                         <div>
-                          <input
+                          <Input
                             type="email"
-                            className="input input-bordered w-full"
+                            className="w-full"
                             placeholder="Email address..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -131,7 +134,9 @@ function ForgotPasswordPage() {
                             required
                           />
                           {error ? (
-                            <p className="mt-1 text-sm text-error">{error}</p>
+                            <p className="mt-1 text-sm text-destructive">
+                              {error}
+                            </p>
                           ) : null}
                         </div>
                       );
@@ -139,14 +144,15 @@ function ForgotPasswordPage() {
                   </form.Field>
 
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <p className="text-sm text-destructive">{errorMessage}</p>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    variant="secondary"
+                    className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
                     {isSubmitting ? "Sending reset link..." : "Send reset link"}
-                  </button>
+                  </Button>
                 </form>
               )}
             </AuthPageCard>

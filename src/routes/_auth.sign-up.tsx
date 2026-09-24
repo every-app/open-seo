@@ -22,6 +22,8 @@ import {
 } from "@/lib/auth-options";
 import { z } from "zod";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 const signUpSchema = z
   .object({
     name: z.string().trim(),
@@ -154,25 +156,25 @@ function SignUpPage() {
       footer={
         isHostedMode ? (
           showEmailForm ? (
-            <button
-              type="button"
-              className="text-sm text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
               onClick={() => {
                 setShowEmailForm(false);
                 google.clearError();
               }}
             >
               Back to signup
-            </button>
+            </Button>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm leading-relaxed text-base-content/60">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 By signing up, you agree to our{" "}
                 <a
                   href="https://openseo.so/terms-and-conditions"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Terms
                 </a>{" "}
@@ -181,19 +183,19 @@ function SignUpPage() {
                   href="https://openseo.so/privacy"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Privacy Policy
                 </a>
                 .
               </p>
 
-              <p className="text-sm text-base-content/50">
+              <p className="text-sm text-muted-foreground/70">
                 Already have an account?{" "}
                 <Link
                   to="/sign-in"
                   search={getSignInSearch(redirectTo)}
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Sign in
                 </Link>
@@ -218,7 +220,7 @@ function SignUpPage() {
             }}
           />
           {google.error ? (
-            <p className="text-sm text-error">{google.error}</p>
+            <p className="text-sm text-destructive">{google.error}</p>
           ) : null}
         </>
       ) : (
@@ -235,9 +237,9 @@ function SignUpPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="text"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Name (optional)..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -245,7 +247,7 @@ function SignUpPage() {
                     disabled={!isHostedMode}
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -258,9 +260,9 @@ function SignUpPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="email"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Email address..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -269,7 +271,7 @@ function SignUpPage() {
                     required
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -282,9 +284,9 @@ function SignUpPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="password"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -295,7 +297,7 @@ function SignUpPage() {
                     maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -308,9 +310,9 @@ function SignUpPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="password"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Confirm password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -321,7 +323,7 @@ function SignUpPage() {
                     maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -346,10 +348,11 @@ function SignUpPage() {
               return (
                 <>
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <p className="text-sm text-destructive">{errorMessage}</p>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    variant="secondary"
+                    className="w-full"
                     disabled={
                       !isHostedMode ||
                       isSubmitting ||
@@ -357,7 +360,7 @@ function SignUpPage() {
                     }
                   >
                     {isSubmitting ? "Creating account..." : "Create account"}
-                  </button>
+                  </Button>
                 </>
               );
             }}

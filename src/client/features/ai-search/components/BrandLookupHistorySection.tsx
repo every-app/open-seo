@@ -7,6 +7,7 @@ import {
 import type { BrandLookupSearchHistoryItem } from "@/client/hooks/useBrandLookupSearchHistory";
 import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
+import { Badge } from "@/client/components/ui/badge";
 type Props = {
   projectId: string;
   history: BrandLookupSearchHistoryItem[];
@@ -42,18 +43,18 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
       )}
       renderItem={(item) => (
         <div className="min-w-0">
-          <p className="flex items-center gap-2 truncate font-medium text-base-content">
+          <p className="flex items-center gap-2 truncate font-medium text-foreground">
             {item.query}
             {/* Only non-default scopes are stored, so this badge always adds
                 information the query string doesn't already carry. */}
             {item.scope ? (
-              <span className="badge badge-ghost badge-sm shrink-0">
+              <Badge variant="secondary" className="px-2 text-[11px] shrink-0">
                 {RESEARCH_SCOPE_LABELS[item.scope]}
-              </span>
+              </Badge>
             ) : null}
           </p>
           {item.competitors.length > 0 ? (
-            <p className="truncate text-xs text-base-content/50">
+            <p className="truncate text-xs text-muted-foreground/70">
               vs {item.competitors.join(", ")}
             </p>
           ) : null}

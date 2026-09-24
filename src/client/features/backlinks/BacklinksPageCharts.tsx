@@ -176,7 +176,7 @@ function useChartWidth() {
 
 function EmptyChartState() {
   return (
-    <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-base-300 text-sm text-base-content/55">
+    <div className="flex h-56 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
       Not enough historical data yet.
     </div>
   );

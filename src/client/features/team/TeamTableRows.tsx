@@ -2,6 +2,8 @@ import { Send, Trash2 } from "lucide-react";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { hasOrgPermission } from "@/lib/org-permissions";
 
+import { Badge } from "@/client/components/ui/badge";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
   admin: "Admin",
@@ -57,19 +59,19 @@ export function MemberRow({
         <p className="truncate font-medium" data-ph-mask>
           {member.user.name || member.user.email}
           {isSelf ? (
-            <span className="font-normal text-base-content/50"> (you)</span>
+            <span className="font-normal text-muted-foreground/70"> (you)</span>
           ) : null}
         </p>
-        <p className="truncate text-xs text-base-content/50" data-ph-mask>
+        <p className="truncate text-xs text-muted-foreground/70" data-ph-mask>
           {member.user.email}
         </p>
       </td>
       <td>
-        <span className="badge badge-ghost badge-sm">
+        <Badge variant="secondary" className="px-2 text-[11px]">
           {formatRole(member.role)}
-        </span>
+        </Badge>
       </td>
-      <td className="text-xs text-base-content/70">Active</td>
+      <td className="text-xs text-muted-foreground">Active</td>
       <td>
         {canRemove ? (
           <PortalMenu
@@ -77,25 +79,23 @@ export function MemberRow({
             menuClassName="w-52"
           >
             {(close) => (
-              <li>
-                <button
-                  className="text-error"
-                  disabled={isRemoving}
-                  onClick={() => {
-                    close();
-                    if (
-                      window.confirm(
-                        `Remove ${member.user.email} from this organization? They lose access immediately.`,
-                      )
-                    ) {
-                      onRemove();
-                    }
-                  }}
-                >
-                  <Trash2 className="size-3.5" />
-                  Remove member
-                </button>
-              </li>
+              <DropdownMenuItem
+                className="text-destructive"
+                disabled={isRemoving}
+                onClick={() => {
+                  close();
+                  if (
+                    window.confirm(
+                      `Remove ${member.user.email} from this organization? They lose access immediately.`,
+                    )
+                  ) {
+                    onRemove();
+                  }
+                }}
+              >
+                <Trash2 className="size-3.5" />
+                Remove member
+              </DropdownMenuItem>
             )}
           </PortalMenu>
         ) : null}
@@ -127,11 +127,11 @@ export function InvitationRow({
         </p>
       </td>
       <td>
-        <span className="badge badge-ghost badge-sm">
+        <Badge variant="secondary" className="px-2 text-[11px]">
           {formatRole(invitation.role ?? "member")}
-        </span>
+        </Badge>
       </td>
-      <td className="text-xs text-base-content/70">
+      <td className="text-xs text-muted-foreground">
         Invited &middot; expires{" "}
         {new Date(invitation.expiresAt).toLocaleDateString()}
       </td>
@@ -143,31 +143,27 @@ export function InvitationRow({
           >
             {(close) => (
               <>
-                <li>
-                  <button
-                    disabled={isResending}
-                    onClick={() => {
-                      close();
-                      onResend();
-                    }}
-                  >
-                    <Send className="size-3.5" />
-                    Resend invitation
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="text-error"
-                    disabled={isCanceling}
-                    onClick={() => {
-                      close();
-                      onCancel();
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Cancel invitation
-                  </button>
-                </li>
+                <DropdownMenuItem
+                  disabled={isResending}
+                  onClick={() => {
+                    close();
+                    onResend();
+                  }}
+                >
+                  <Send className="size-3.5" />
+                  Resend invitation
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  disabled={isCanceling}
+                  onClick={() => {
+                    close();
+                    onCancel();
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                  Cancel invitation
+                </DropdownMenuItem>
               </>
             )}
           </PortalMenu>

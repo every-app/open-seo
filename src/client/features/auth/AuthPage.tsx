@@ -5,6 +5,7 @@ import {
 } from "@/lib/auth-redirect";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
+import { Button } from "@/client/components/ui/button";
 export const authRedirectSearchSchema = z.object({
   redirect: z.string().optional(),
 });
@@ -41,24 +42,26 @@ export function AuthMethodChooser({
 }) {
   return (
     <div className="space-y-3">
-      <button
+      <Button
+        variant="outline"
         type="button"
-        className="btn w-full border border-black/10 bg-white text-neutral-900 hover:border-black/20 hover:bg-neutral-50 disabled:bg-white disabled:text-neutral-500 disabled:opacity-70"
+        className="w-full border border-black/10 bg-white text-neutral-900 hover:border-black/20 hover:bg-neutral-50 disabled:bg-white disabled:text-neutral-500 disabled:opacity-70"
         onClick={onContinueWithGoogle}
         disabled={disabled || isBusy}
       >
         <GoogleLogo />
         {isBusy ? "Opening Google..." : googleLabel}
-      </button>
+      </Button>
 
-      <button
+      <Button
+        variant="outline"
         type="button"
-        className="btn w-full"
+        className="w-full"
         onClick={onContinueWithEmail}
         disabled={disabled || isBusy}
       >
         {emailLabel}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -108,7 +111,7 @@ export function AuthPageCard({
         <div>
           <h1 className="text-xl font-semibold">{title}</h1>
           {helperText ? (
-            <p className="text-sm text-base-content/60 mt-1">{helperText}</p>
+            <p className="text-sm text-muted-foreground mt-1">{helperText}</p>
           ) : null}
         </div>
       </div>
@@ -126,7 +129,7 @@ export function AuthPageShell({ children }: { children: React.ReactNode }) {
     // auto-margin child centers when it fits but stays fully reachable (top and
     // bottom) when it's taller than the viewport. Plain `justify-center` clips
     // the overflow with no way to scroll to it.
-    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto p-4 bg-base-200">
+    <div className="h-[100dvh] flex flex-col items-center overflow-y-auto p-4 bg-muted">
       <div className="m-auto flex w-full flex-col items-center">{children}</div>
     </div>
   );

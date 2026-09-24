@@ -9,6 +9,8 @@ import {
 } from "@/client/features/sam/samQueries";
 import { useSamBetaOptIn } from "./samBetaOptIn";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
 const BETA_NOTICE_DISMISSED_KEY = "sam-beta-notice-dismissed";
 
 // Beta framing + the MCP power-path nudge, pinned to the bottom of the Chat
@@ -22,26 +24,33 @@ function BetaNotice() {
   if (dismissed) return null;
 
   return (
-    <div className="mx-2 mb-2 rounded-lg border border-base-300 bg-base-100 p-3">
+    <div className="mx-2 mb-2 rounded-lg border border-border bg-card p-3">
       <div className="flex items-center justify-between">
-        <span className="badge badge-primary badge-sm">Beta</span>
-        <button
+        <Badge variant="primary" className="px-2 text-[11px]">
+          Beta
+        </Badge>
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
           aria-label="Dismiss"
-          className="btn btn-ghost btn-xs btn-square text-base-content/40"
+          className="size-7 text-muted-foreground/70"
           onClick={() => {
             localStorage.setItem(BETA_NOTICE_DISMISSED_KEY, "1");
             setDismissed(true);
           }}
         >
           <X className="size-3.5" />
-        </button>
+        </Button>
       </div>
-      <p className="mt-1.5 text-xs text-base-content/70">
+      <p className="mt-1.5 text-xs text-muted-foreground">
         For more powerful AI workflows, use the OpenSEO MCP with your own agent
         like Claude Code or Hermes.
       </p>
-      <Link to="/ai" className="link link-primary mt-1.5 inline-block text-xs">
+      <Link
+        to="/ai"
+        className="underline underline-offset-4 text-primary mt-1.5 inline-block text-xs"
+      >
         Set up the MCP →
       </Link>
     </div>
@@ -114,7 +123,7 @@ export function SamSidebarPanel({
   // points there instead of offering a chat list that can't be used yet.
   if (!optedIn) {
     return (
-      <p className="px-4 py-6 text-center text-xs text-base-content/50">
+      <p className="px-4 py-6 text-center text-xs text-muted-foreground/70">
         Sam is in beta and opt-in. Open Chat to read more and decide.
       </p>
     );
@@ -125,9 +134,11 @@ export function SamSidebarPanel({
       <div className="px-2 pb-1">
         {/* Ghost row styled like a list item so the sidebar header doesn't
             stack three heavy full-width controls. */}
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-ghost btn-sm btn-block justify-start gap-2 font-normal text-base-content/70 hover:text-base-content"
+          className="w-full justify-start gap-2 font-normal text-muted-foreground hover:text-foreground"
           disabled={createSession.isPending}
           onClick={() => createSession.mutate()}
         >
@@ -137,16 +148,16 @@ export function SamSidebarPanel({
             <Plus className="size-4" />
           )}
           New chat
-        </button>
+        </Button>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-1">
         {sessionsQuery.isLoading ? (
-          <div className="flex justify-center py-6 text-base-content/50">
+          <div className="flex justify-center py-6 text-muted-foreground/70">
             <Loader2 className="size-4 animate-spin" />
           </div>
         ) : sessions.length === 0 ? (
-          <p className="px-2 py-6 text-center text-xs text-base-content/50">
+          <p className="px-2 py-6 text-center text-xs text-muted-foreground/70">
             No chats yet. Start a new one.
           </p>
         ) : (
@@ -156,28 +167,30 @@ export function SamSidebarPanel({
               <div
                 key={session.id}
                 className={`group flex items-center gap-1 rounded-md px-1 ${
-                  isActive ? "bg-base-300/50" : "hover:bg-base-300/40"
+                  isActive ? "bg-border/50" : "hover:bg-border/40"
                 }`}
               >
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   onClick={() => goToSession(session.id)}
-                  className="min-w-0 flex-1 truncate px-2 py-1.5 text-left text-sm text-base-content/80"
+                  className="h-auto rounded-md justify-start whitespace-normal text-left font-normal min-w-0 flex-1 truncate px-2 py-1.5 text-left text-sm text-foreground"
                 >
                   {session.title}
-                </button>
-                <span className="shrink-0 text-xs text-base-content/40 group-hover:hidden">
+                </Button>
+                <span className="shrink-0 text-xs text-muted-foreground/70 group-hover:hidden">
                   {ageLabel(session.updatedAt)}
                 </span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   type="button"
                   aria-label="Archive chat"
-                  className="btn btn-ghost btn-xs btn-square hidden group-hover:inline-flex"
+                  className="size-7 hidden group-hover:inline-flex"
                   disabled={archiveSession.isPending}
                   onClick={() => archiveSession.mutate(session.id)}
                 >
-                  <Archive className="size-3.5 text-base-content/50" />
-                </button>
+                  <Archive className="size-3.5 text-muted-foreground/70" />
+                </Button>
               </div>
             );
           })

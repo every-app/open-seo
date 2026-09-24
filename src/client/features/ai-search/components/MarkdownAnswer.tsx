@@ -4,6 +4,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MARKDOWN_COMPONENTS } from "@/client/components/Markdown";
 
+import { Button } from "@/client/components/ui/button";
 type Props = {
   text: string;
 };
@@ -43,7 +44,7 @@ export function MarkdownAnswer({ text }: Props) {
 
   if (normalized.trim().length === 0 && thinking.length === 0) {
     return (
-      <p className="text-sm text-base-content/60 italic">
+      <p className="text-sm text-muted-foreground italic">
         Model returned an empty response.
       </p>
     );
@@ -77,17 +78,17 @@ export function MarkdownAnswer({ text }: Props) {
           {isCollapsed ? (
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base-100 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-card to-transparent"
             />
           ) : null}
         </div>
       ) : null}
 
       {needsCollapse ? (
-        <button
-          type="button"
+        <Button
+          variant="link"
           onClick={() => setExpanded((prev) => !prev)}
-          className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+          className="h-auto p-0 mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary hover:underline"
           aria-expanded={expanded}
         >
           {expanded ? (
@@ -101,7 +102,7 @@ export function MarkdownAnswer({ text }: Props) {
               Read more
             </>
           )}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -111,13 +112,13 @@ function ThinkingBlock({ text }: { text: string }) {
   return (
     <details
       open
-      className="group mb-3 rounded-lg border border-base-300 bg-base-200/40"
+      className="group mb-3 rounded-lg border border-border bg-muted/40"
     >
-      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-medium text-base-content/70 hover:text-base-content">
+      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-medium text-muted-foreground hover:text-foreground">
         <ChevronDown className="size-3.5 transition-transform group-open:rotate-180" />
         Model Thinking
       </summary>
-      <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-b-lg border-t border-base-300 bg-base-200/60 px-3 py-2.5 text-xs font-mono text-base-content/80">
+      <pre className="overflow-x-auto whitespace-pre-wrap break-words rounded-b-lg border-t border-border bg-muted/60 px-3 py-2.5 text-xs font-mono text-foreground">
         {text}
       </pre>
     </details>

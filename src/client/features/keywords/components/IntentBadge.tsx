@@ -7,7 +7,7 @@ const COLORS: Record<KeywordIntent, string> = {
   commercial: "border-warning/35 bg-warning/20 text-warning",
   transactional: "border-success/30 bg-success/15 text-success",
   navigational: "border-primary/30 bg-primary/15 text-primary",
-  unknown: "border-base-300 bg-base-200 text-base-content/60",
+  unknown: "border-border bg-muted text-muted-foreground",
 };
 
 const SHORT_LABELS: Record<KeywordIntent, string> = {

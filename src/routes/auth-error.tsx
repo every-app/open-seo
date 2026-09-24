@@ -3,6 +3,7 @@ import { z } from "zod";
 import { AuthPageCard, AuthPageShell } from "@/client/features/auth/AuthPage";
 import { googleAuthErrorCopy } from "@/client/features/integrations/googleAuthErrorCopy";
 
+import { buttonVariants } from "@/client/components/ui/button";
 const authErrorSearchSchema = z.object({
   error: z.string().optional(),
   error_description: z.string().optional(),
@@ -32,13 +33,19 @@ function AuthErrorPage() {
         helperText={copy.description}
         footer={
           error ? (
-            <p className="font-mono text-xs text-base-content/40">
+            <p className="font-mono text-xs text-muted-foreground/70">
               Code: {error}
             </p>
           ) : undefined
         }
       >
-        <Link to="/" className="btn btn-soft w-full">
+        <Link
+          to="/"
+          className={buttonVariants({
+            variant: "secondary",
+            className: "w-full",
+          })}
+        >
           Back to OpenSEO
         </Link>
       </AuthPageCard>

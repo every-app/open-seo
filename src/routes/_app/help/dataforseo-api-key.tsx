@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import { Separator } from "@/client/components/ui/separator";
 const DATAFORSEO_API_ACCESS_URL = "https://app.dataforseo.com/api-access";
 
 export const Route = createFileRoute("/_app/help/dataforseo-api-key")({
@@ -10,26 +12,26 @@ function DataforseoApiKeyHelpPage() {
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto max-w-3xl space-y-4">
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-3">
+        <Card>
+          <CardContent className="pt-6 gap-3">
             <h1 className="text-2xl font-semibold">
               Set up your DataForSEO API key
             </h1>
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-muted-foreground">
               OpenSEO needs the <code>DATAFORSEO_API_KEY</code> secret before
               keyword, domain, and SEO data workflows can run.
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-4">
-            <h2 className="card-title text-base">Steps</h2>
-            <ol className="list-decimal pl-5 text-sm space-y-3 text-base-content/80">
+        <Card>
+          <CardContent className="pt-6 gap-4">
+            <CardTitle className="text-base">Steps</CardTitle>
+            <ol className="list-decimal pl-5 text-sm space-y-3 text-foreground">
               <li>
                 Go to{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href={DATAFORSEO_API_ACCESS_URL}
                   target="_blank"
                   rel="noreferrer"
@@ -41,7 +43,7 @@ function DataforseoApiKeyHelpPage() {
               <li>
                 Base64 encode your DataForSEO login and API password in this
                 format:
-                <pre className="mt-2 p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
+                <pre className="mt-2 p-3 rounded bg-muted border border-border overflow-x-auto text-xs">
                   <code>printf '%s' 'YOUR_LOGIN:YOUR_PASSWORD' | base64</code>
                 </pre>
               </li>
@@ -50,15 +52,15 @@ function DataforseoApiKeyHelpPage() {
                 your environment.
               </li>
             </ol>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-2 text-sm text-base-content/75">
-            <h2 className="card-title text-base">
+        <Card>
+          <CardContent className="pt-6 gap-2 text-sm text-muted-foreground">
+            <CardTitle className="text-base">
               Cloudflare Workers (Dashboard UI)
-            </h2>
-            <ol className="list-decimal pl-5 space-y-2 text-sm text-base-content/80">
+            </CardTitle>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground">
               <li>
                 In Cloudflare, go to <code>Compute</code> -&gt;{" "}
                 <code>Workers &amp; Pages</code>
@@ -77,17 +79,17 @@ function DataforseoApiKeyHelpPage() {
               </li>
             </ol>
 
-            <div className="divider my-1" />
+            <Separator className="my-1" />
 
             <p>Or set the same secret from your terminal with:</p>
-            <pre className="p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
+            <pre className="p-3 rounded bg-muted border border-border overflow-x-auto text-xs">
               <code>npx wrangler secret put DATAFORSEO_API_KEY</code>
             </pre>
             <p>
               Use the base64 value of <code>login:password</code> when prompted.
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

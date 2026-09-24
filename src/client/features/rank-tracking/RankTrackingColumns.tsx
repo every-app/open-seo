@@ -14,6 +14,8 @@ import {
 } from "./RankTrackingTableParts";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
   volume: "Estimated monthly search volume from Google",
@@ -43,9 +45,9 @@ export function SortableHeader({
 }) {
   const sorted = column.getIsSorted();
   return (
-    <button
-      type="button"
-      className="inline-flex items-center gap-1 text-xs uppercase tracking-wide font-medium text-base-content/60 transition-colors hover:text-base-content"
+    <Button
+      variant="ghost"
+      className="h-auto rounded-md px-0 hover:bg-transparent inline-flex items-center gap-1 text-xs uppercase tracking-wide font-medium text-muted-foreground transition-colors hover:text-foreground"
       onClick={column.getToggleSortingHandler()}
       title={tooltip ?? HEADER_TOOLTIPS[id]}
       aria-label={`Sort by ${label}`}
@@ -57,7 +59,7 @@ export function SortableHeader({
       ) : sorted === "desc" ? (
         <ArrowDown className="size-3 shrink-0" />
       ) : null}
-    </button>
+    </Button>
   );
 }
 
@@ -123,21 +125,22 @@ function makeKeywordColumn(
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1.5">
-        <button
-          type="button"
-          className="font-medium text-left link link-hover decoration-dotted underline-offset-2"
+        <Button
+          variant="link"
+          className="h-auto p-0 justify-start whitespace-normal text-left font-normal font-medium text-left underline-offset-4 no-underline hover:underline decoration-dotted underline-offset-2"
           onClick={() => onKeywordClick(row.original)}
           title="View position history"
         >
           {row.original.keyword}
-        </button>
+        </Button>
         {row.original.matchCase && (
-          <span
-            className="badge badge-xs cursor-help bg-base-300 border-0 text-base-content/70"
+          <Badge
+            variant="secondary"
+            className="px-2 text-[11px] cursor-help bg-border border-0 text-muted-foreground"
             title="Tracked exactly as typed, not lowercased"
           >
             Aa
-          </span>
+          </Badge>
         )}
       </div>
     ),
@@ -171,7 +174,7 @@ function makeUrlColumn(
     enableSorting: false,
     header: () => (
       <span
-        className="text-xs uppercase tracking-wide font-medium text-base-content/60 cursor-help"
+        className="text-xs uppercase tracking-wide font-medium text-muted-foreground cursor-help"
         title={HEADER_TOOLTIPS.url}
       >
         URL
@@ -192,7 +195,7 @@ function makeSerpColumn(
     enableSorting: false,
     header: () => (
       <span
-        className="text-xs uppercase tracking-wide font-medium text-base-content/60 cursor-help"
+        className="text-xs uppercase tracking-wide font-medium text-muted-foreground cursor-help"
         title={HEADER_TOOLTIPS.serp}
       >
         SERP Features

@@ -23,10 +23,19 @@ import {
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
-import { closeDropdown } from "@/client/lib/dropdown";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 import {
   Sidebar as SidebarPanel,
   SidebarContent,
@@ -38,6 +47,7 @@ import {
   sidebarItemClassName,
 } from "@/client/components/ui/sidebar";
 
+import { Button } from "@/client/components/ui/button";
 interface SidebarProps {
   projectId: string | null;
   onNavigate?: () => void;
@@ -128,14 +138,16 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
           OpenSEO
         </Link>
         {onClose ? (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             onClick={onClose}
-            className="btn btn-ghost btn-sm btn-circle"
+            className="size-8"
             aria-label="Close sidebar"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         ) : null}
       </SidebarHeader>
 
@@ -147,23 +159,25 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
       </div>
 
       {projectId ? (
-        // Same underline tab idiom as the in-page tab strips (e.g. Domain
-        // Overview's Top Keywords / Top Pages).
+        // Atelier Tabs, the same control as the in-page tab strips.
         <div className="px-3 pb-1">
-          <div role="tablist" className="tabs tabs-border w-full">
-            <SidebarViewTab
-              icon={LayoutGrid}
-              label="Browse"
-              active={view === "browse"}
-              onClick={openBrowse}
-            />
-            <SidebarViewTab
-              icon={MessageCircle}
-              label="Chat"
-              active={view === "chat"}
-              onClick={openChat}
-            />
-          </div>
+          <Tabs
+            value={view}
+            onValueChange={(value) =>
+              value === "chat" ? openChat() : openBrowse()
+            }
+          >
+            <TabsList>
+              <TabsTrigger value="browse" className="gap-1.5">
+                <LayoutGrid className="size-4" />
+                Browse
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="gap-1.5">
+                <MessageCircle className="size-4" />
+                Chat
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       ) : null}
 
@@ -198,31 +212,6 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
   );
 }
 
-function SidebarViewTab({
-  icon: Icon,
-  label,
-  active,
-  onClick,
-}: {
-  icon: ComponentType<{ className?: string }>;
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={`tab flex-1 gap-1.5 ${active ? "tab-active" : ""}`}
-    >
-      <Icon className="size-4" />
-      {label}
-    </button>
-  );
-}
-
 function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   const { data: session } = useSession();
   const isHostedMode = isHostedClientAuthMode();
@@ -235,11 +224,6 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
   });
   const organizations = orgContextQuery.data?.organizations ?? [];
   const activeOrganizationId = orgContextQuery.data?.organizationId;
-
-  const closeMenu = () => {
-    closeDropdown();
-    onNavigate?.();
-  };
 
   async function handleSwitchOrganization(organizationId: string) {
     if (isSwitching || organizationId === activeOrganizationId) return;
@@ -264,28 +248,28 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
       />
 
       {email ? (
-        <div className="dropdown dropdown-top w-full">
-          <SidebarItem
-            tabIndex={0}
-            aria-label="Open account menu"
-            icon={<User className="size-4" />}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <SidebarItem
+                aria-label="Open account menu"
+                icon={<User className="size-4" />}
+              />
+            }
           >
             <span data-ph-mask>{email}</span>
-          </SidebarItem>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-30 menu mb-1 w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-          >
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="start" className="w-56">
             {organizations.length > 1 ? (
               <>
-                <li className="menu-title flex flex-row items-center gap-1.5 max-w-full">
-                  <ArrowLeftRight className="h-3 w-3" />
-                  Organization
-                </li>
-                {organizations.map((organization) => (
-                  <li key={organization.organizationId}>
-                    <button
-                      type="button"
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel className="flex items-center gap-1.5">
+                    <ArrowLeftRight className="size-3" />
+                    Organization
+                  </DropdownMenuLabel>
+                  {organizations.map((organization) => (
+                    <DropdownMenuItem
+                      key={organization.organizationId}
                       disabled={isSwitching}
                       onClick={() =>
                         void handleSwitchOrganization(
@@ -297,52 +281,43 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
                         {organization.organizationName}
                       </span>
                       {organization.organizationId === activeOrganizationId ? (
-                        <Check className="h-4 w-4 shrink-0" />
+                        <Check className="ml-auto size-4 shrink-0" />
                       ) : null}
-                    </button>
-                  </li>
-                ))}
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+                <DropdownMenuSeparator />
               </>
             ) : null}
-            <li>
-              <Link to="/settings" onClick={closeMenu}>
-                <Settings className="h-4 w-4" />
-                Settings
-              </Link>
-            </li>
+            <DropdownMenuItem
+              render={<Link to="/settings" onClick={onNavigate} />}
+            >
+              <Settings className="size-4" />
+              Settings
+            </DropdownMenuItem>
             {isHostedMode ? (
-              <li>
-                <Link to={BILLING_ROUTE} onClick={closeMenu}>
-                  <CreditCard className="h-4 w-4" />
-                  Billing
-                </Link>
-              </li>
+              <DropdownMenuItem
+                render={<Link to={BILLING_ROUTE} onClick={onNavigate} />}
+              >
+                <CreditCard className="size-4" />
+                Billing
+              </DropdownMenuItem>
             ) : null}
             <ThemePreferenceMenuItems />
             {isHostedMode ? (
               <>
-                <li
-                  aria-hidden
-                  className="pointer-events-none my-1 h-px bg-base-300 p-0"
-                />
-                <li>
-                  <button
-                    type="button"
-                    className="text-error"
-                    onClick={() => signOutAndRedirect()}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </button>
-                </li>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={() => signOutAndRedirect()}
+                >
+                  <LogOut className="size-4" />
+                  Sign out
+                </DropdownMenuItem>
               </>
             ) : null}
-          </ul>
-        </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
       ) : (
         <SidebarNavLink
           icon={Settings}

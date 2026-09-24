@@ -18,6 +18,9 @@ import {
   refreshDashboardBacklinkSnapshot,
 } from "@/serverFunctions/dashboard";
 
+import { Alert } from "@/client/components/ui/alert";
+import { buttonVariants } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 export function DashboardPage({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
 
@@ -57,9 +60,9 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   if (activationQuery.isError) {
     return (
       <div className="px-4 py-4 md:px-6 md:py-6">
-        <div className="alert alert-error">
+        <Alert variant="destructive">
           {getStandardErrorMessage(activationQuery.error)}
-        </div>
+        </Alert>
       </div>
     );
   }
@@ -73,15 +76,15 @@ export function DashboardPage({ projectId }: { projectId: string }) {
         className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 md:px-8 md:py-8"
         aria-busy
       >
-        <div className="skeleton h-9 w-52" />
+        <Skeleton className="h-9 w-52" />
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-28" />
+            <Skeleton key={i} className="h-28" />
           ))}
         </div>
         <div className="grid gap-6 lg:grid-cols-3">
-          <div className="skeleton h-64 lg:col-span-2" />
-          <div className="skeleton h-64" />
+          <Skeleton className="h-64 lg:col-span-2" />
+          <Skeleton className="h-64" />
         </div>
       </div>
     );
@@ -167,7 +170,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
             <Link
               to="/p/$projectId/audit"
               params={{ projectId }}
-              className="btn btn-primary"
+              className={buttonVariants()}
             >
               Open site audit
             </Link>
@@ -175,7 +178,7 @@ export function DashboardPage({ projectId }: { projectId: string }) {
             <Link
               to="/p/$projectId/audit"
               params={{ projectId }}
-              className="btn btn-primary"
+              className={buttonVariants()}
             >
               Run a site audit
             </Link>

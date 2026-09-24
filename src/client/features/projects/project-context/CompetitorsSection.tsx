@@ -13,6 +13,8 @@ import {
   type ContextCompetitor,
 } from "./shared";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 export function CompetitorsSection({
   projectId,
   competitors,
@@ -57,14 +59,16 @@ export function CompetitorsSection({
         title="Competitors"
         hint="The sites you measure yourself against."
         action={
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-xs"
+            className="h-7 px-2.5"
             onClick={() => setAdding(true)}
           >
             <Plus className="size-3.5" />
             Add competitor
-          </button>
+          </Button>
         }
       />
 
@@ -108,13 +112,13 @@ export function CompetitorsSection({
                       {competitor.domain}
                     </span>
                     {competitor.name ? (
-                      <span className="truncate text-xs text-base-content/60">
+                      <span className="truncate text-xs text-muted-foreground">
                         {competitor.name}
                       </span>
                     ) : null}
                   </div>
                   {competitor.notes ? (
-                    <p className="text-sm text-base-content/70">
+                    <p className="text-sm text-muted-foreground">
                       {competitor.notes}
                     </p>
                   ) : null}
@@ -124,14 +128,16 @@ export function CompetitorsSection({
                   />
                 </div>
                 <RowActions>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     type="button"
-                    className="btn btn-ghost btn-xs"
+                    className="h-7 px-2.5"
                     aria-label={`Edit ${competitor.domain}`}
                     onClick={() => setEditingId(competitor.id)}
                   >
                     <Pencil className="size-3.5" />
-                  </button>
+                  </Button>
                   <ConfirmDeleteButton
                     label={`Remove ${competitor.domain}`}
                     pending={update.isPending}
@@ -172,7 +178,7 @@ function CompetitorForm({
 
   return (
     <form
-      className="space-y-2 bg-base-200/40 p-3"
+      className="space-y-2 bg-muted/40 p-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!draft.domain.trim() || pending) return;
@@ -180,7 +186,7 @@ function CompetitorForm({
       }}
     >
       <div className="grid gap-2 sm:grid-cols-2">
-        <input
+        <Input
           autoFocus
           type="text"
           value={draft.domain}
@@ -189,26 +195,26 @@ function CompetitorForm({
           }
           placeholder="competitor.com"
           maxLength={255}
-          className="input input-bordered input-sm w-full"
+          className="w-full h-8 text-sm"
           aria-label="Competitor domain"
         />
-        <input
+        <Input
           type="text"
           value={draft.name}
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           placeholder="Name (optional)"
           maxLength={120}
-          className="input input-bordered input-sm w-full"
+          className="w-full h-8 text-sm"
           aria-label="Competitor name"
         />
       </div>
-      <input
+      <Input
         type="text"
         value={draft.notes}
         onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
         placeholder="Why they matter — e.g. wins every comparison keyword (optional)"
         maxLength={500}
-        className="input input-bordered input-sm w-full"
+        className="w-full h-8 text-sm"
         aria-label="Competitor notes"
       />
       <FormActions

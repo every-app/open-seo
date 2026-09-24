@@ -9,6 +9,14 @@ import { LocationSelect } from "@/client/components/LocationSelect";
 import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
 import type { ResearchScope } from "@/shared/researchScope";
 
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { NativeSelect } from "@/client/components/ui/native-select";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
 type Props = {
   controlsForm: DomainOverviewControlsForm;
   isLoading: boolean;
@@ -29,8 +37,8 @@ export function DomainSearchCard({
   onLocationChange,
 }: Props) {
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
+    <Card>
+      <CardContent className="pt-6 gap-4">
         <form
           className="flex flex-col gap-3 lg:flex-row lg:items-center"
           onSubmit={onSubmit}
@@ -40,12 +48,13 @@ export function DomainSearchCard({
               const domainError = getFieldError(field.state.meta.errors);
 
               return (
-                <label
-                  className={`input input-bordered flex items-center gap-2 w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${domainError ? "input-error" : ""}`}
+                <InputGroup
+                  className={`w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${domainError ? "border-destructive" : ""}`}
                 >
-                  <Search className="size-4 text-base-content/60" />
-                  <input
-                    className="grow min-w-0"
+                  <InputGroupAddon className="border-r-0 bg-transparent pr-0">
+                    <Search className="size-4 text-muted-foreground" />
+                  </InputGroupAddon>
+                  <InputGroupInput
                     placeholder="Enter a domain or URL"
                     value={field.state.value}
                     onChange={(event) => {
@@ -57,7 +66,7 @@ export function DomainSearchCard({
                       domainError ? "domain-input-error" : undefined
                     }
                   />
-                </label>
+                </InputGroup>
               );
             }}
           </controlsForm.Field>
@@ -91,8 +100,8 @@ export function DomainSearchCard({
 
           <controlsForm.Field name="sort">
             {(field) => (
-              <select
-                className="select select-bordered shrink-0"
+              <NativeSelect
+                className="shrink-0"
                 value={field.state.value}
                 onChange={(event) => {
                   const next = toSortMode(event.target.value) ?? "traffic";
@@ -105,19 +114,19 @@ export function DomainSearchCard({
                 <option value="volume">By Volume</option>
                 <option value="score">By Score</option>
                 <option value="cpc">By CPC</option>
-              </select>
+              </NativeSelect>
             )}
           </controlsForm.Field>
 
           <controlsForm.Subscribe selector={(state) => state.isSubmitting}>
             {(isSubmitting) => (
-              <button
+              <Button
                 type="submit"
-                className="btn btn-primary shrink-0 px-6"
+                className="shrink-0 px-6"
                 disabled={isLoading || isSubmitting}
               >
                 {isLoading || isSubmitting ? "Loading..." : "Search"}
-              </button>
+              </Button>
             )}
           </controlsForm.Subscribe>
         </form>
@@ -127,7 +136,7 @@ export function DomainSearchCard({
             const domainError = getFieldError(field.state.meta.errors);
 
             return domainError ? (
-              <p id="domain-input-error" className="text-sm text-error">
+              <p id="domain-input-error" className="text-sm text-destructive">
                 {domainError}
               </p>
             ) : null;
@@ -139,14 +148,14 @@ export function DomainSearchCard({
             const errorMessage = getFormError(submitError);
 
             return errorMessage ? (
-              <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error flex items-start gap-2">
+              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
                 <AlertCircle className="size-4 shrink-0 mt-0.5" />
                 <span>{errorMessage}</span>
               </div>
             ) : null;
           }}
         </controlsForm.Subscribe>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

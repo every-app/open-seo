@@ -6,6 +6,14 @@ import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
 import type { ResearchScope } from "@/shared/researchScope";
 import { BRAND_LOOKUP_MAX_INPUT_LENGTH } from "@/types/schemas/ai-search";
 
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
+import { Input } from "@/client/components/ui/input";
 type Props = {
   query: string;
   onQueryChange: (next: string) => void;
@@ -61,17 +69,17 @@ export function BrandLookupSearchCard({
   const competitorsError = validationError?.field === "competitors";
 
   return (
-    <div className="card border border-base-300 bg-base-100">
-      <div className="card-body gap-4">
+    <Card>
+      <CardContent className="pt-6 gap-4">
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
-            <label
-              className={`input input-bordered flex flex-1 items-center gap-2 ${
-                queryError ? "input-error" : ""
-              }`}
+            <InputGroup
+              className={`flex-1 ${queryError ? "border-destructive" : ""}`}
             >
-              <Search className="size-4 text-base-content/60" />
-              <input
+              <InputGroupAddon className="border-r-0 bg-transparent pr-0">
+                <Search className="size-4 text-muted-foreground" />
+              </InputGroupAddon>
+              <InputGroupInput
                 type="text"
                 placeholder="Enter a brand name or domain"
                 value={query}
@@ -83,9 +91,8 @@ export function BrandLookupSearchCard({
                 }
                 autoComplete="off"
                 spellCheck={false}
-                className="grow"
               />
-            </label>
+            </InputGroup>
 
             <ResearchScopeSelect
               value={scope}
@@ -93,33 +100,31 @@ export function BrandLookupSearchCard({
               disabledReason={scopeDisabledReason}
             />
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary shrink-0 px-6"
+              className="shrink-0 px-6"
               disabled={isLoading}
             >
               {isLoading ? "Looking up..." : "Look up"}
-            </button>
+            </Button>
           </div>
 
           <div className="flex flex-col gap-1">
-            <input
+            <Input
               type="text"
               placeholder="Add competitors (comma-separated)"
               value={competitors}
               onChange={(event) => onCompetitorsChange(event.target.value)}
               autoComplete="off"
               spellCheck={false}
-              className={`input input-bordered w-full ${
-                competitorsError ? "input-error" : ""
-              }`}
+              className={`w-full ${competitorsError ? "border-destructive" : ""}`}
               aria-label="Competitors"
               aria-invalid={competitorsError || undefined}
               aria-describedby={
                 competitorsError ? "brand-lookup-input-error" : undefined
               }
             />
-            <p className="text-xs text-base-content/60">
+            <p className="text-xs text-muted-foreground">
               Add up to 5 competitor brands or domains to see your Share of
               Voice.
             </p>
@@ -127,15 +132,15 @@ export function BrandLookupSearchCard({
         </form>
 
         {validationError ? (
-          <p id="brand-lookup-input-error" className="text-sm text-error">
+          <p id="brand-lookup-input-error" className="text-sm text-destructive">
             {validationError.message}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3 text-xs text-base-content/60">
+        <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <p className="tabular-nums">
             Est.{" "}
-            <span className="font-medium text-base-content/80">
+            <span className="font-medium text-foreground">
               ${BRAND_LOOKUP_DISPLAYED_COST_USD.toFixed(2)}
             </span>
             {hasCompetitors ? (
@@ -148,7 +153,7 @@ export function BrandLookupSearchCard({
             ) : null}
           </p>
         </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

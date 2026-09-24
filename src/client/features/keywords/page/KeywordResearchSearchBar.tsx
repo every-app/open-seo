@@ -12,6 +12,16 @@ import { isLabsLocationCode } from "@/client/features/keywords/locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { NativeSelect } from "@/client/components/ui/native-select";
+import { Switch } from "@/client/components/ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
+import { Textarea } from "@/client/components/ui/textarea";
 type Props = {
   controller: KeywordResearchControllerState;
 };
@@ -26,8 +36,8 @@ export function KeywordResearchSearchBar({ controller }: Props) {
   const { controlsForm, handleSearchSubmit } = controller;
 
   return (
-    <div className="card border border-base-300 bg-base-100">
-      <div className="card-body gap-2">
+    <Card>
+      <CardContent className="pt-6 gap-2">
         <form
           className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start lg:gap-2"
           onSubmit={handleSearchSubmit}
@@ -39,13 +49,13 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
               return (
                 <label
-                  className={`flex w-full lg:flex-1 lg:min-w-0 lg:max-w-md items-start gap-2 rounded-lg border bg-base-100 px-4 py-3 transition-colors focus-within:border-primary ${
-                    keywordError ? "border-error" : "border-base-300"
+                  className={`flex w-full lg:flex-1 lg:min-w-0 lg:max-w-md items-start gap-2 rounded-lg border bg-card px-4 py-3 transition-colors focus-within:border-primary ${
+                    keywordError ? "border-destructive" : "border-border"
                   }`}
                 >
-                  <Search className="mt-0.5 size-4 shrink-0 text-base-content/60" />
-                  <textarea
-                    className="grow min-w-0 resize-none bg-transparent text-sm leading-6 outline-none placeholder:text-base-content/40"
+                  <Search className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                  <Textarea
+                    className="min-h-0 grow min-w-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
                     rows={rows}
                     placeholder="Enter a keyword"
                     value={field.state.value}
@@ -78,8 +88,8 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
             <controlsForm.Field name="resultLimit">
               {(field) => (
-                <select
-                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                <NativeSelect
+                  className="w-full lg:w-auto lg:shrink-0"
                   value={field.state.value}
                   onChange={(event) => {
                     const next = Number(event.target.value);
@@ -91,14 +101,14 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                       {limit} results
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               )}
             </controlsForm.Field>
 
             <controlsForm.Field name="mode">
               {(field) => (
-                <select
-                  className="select select-bordered w-full lg:w-auto lg:shrink-0"
+                <NativeSelect
+                  className="w-full lg:w-auto lg:shrink-0"
                   value={field.state.value}
                   onChange={(event) =>
                     field.handleChange(normalizeKeywordMode(event.target.value))
@@ -108,16 +118,13 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                   <option value="related">Related keywords</option>
                   <option value="suggestions">Suggestions</option>
                   <option value="ideas">Ideas</option>
-                </select>
+                </NativeSelect>
               )}
             </controlsForm.Field>
 
-            <button
-              type="submit"
-              className="btn btn-primary w-full px-6 lg:w-auto lg:shrink-0"
-            >
+            <Button type="submit" className="w-full px-6 lg:w-auto lg:shrink-0">
               Search
-            </button>
+            </Button>
           </div>
         </form>
         <controlsForm.Field name="keyword">
@@ -125,7 +132,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
             const keywordError = getFieldError(field.state.meta.errors);
 
             return keywordError ? (
-              <p className="text-sm text-error">{keywordError}</p>
+              <p className="text-sm text-destructive">{keywordError}</p>
             ) : null;
           }}
         </controlsForm.Field>
@@ -135,31 +142,34 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               <controlsForm.Field name="clickstream">
                 {(field) => (
                   <div className="flex items-center gap-2">
-                    <label className="label cursor-pointer justify-start gap-2 p-0">
-                      <input
-                        type="checkbox"
-                        className="toggle toggle-sm toggle-primary"
+                    <label className="flex cursor-pointer items-center justify-start gap-2 p-0">
+                      <Switch
                         checked={field.state.value}
-                        onChange={(event) =>
-                          field.handleChange(event.target.checked)
+                        onCheckedChange={(checked) =>
+                          field.handleChange(checked)
                         }
                       />
-                      <span className="text-sm font-medium text-base-content/80">
+                      <span className="text-sm font-medium text-foreground">
                         Clickstream-refined volumes
                       </span>
                     </label>
-                    <div
-                      className="tooltip tooltip-right"
-                      data-tip="Google reports one combined search volume for similar keywords (e.g. 'seo tool' and 'seo tools'). Turn this on to estimate each keyword's own volume. Costs 2x the credits."
-                    >
-                      <Info className="size-3.5 text-base-content/50" />
-                    </div>
+                    <Tooltip>
+                      <TooltipTrigger render={<div tabIndex={0} />}>
+                        <Info className="size-3.5 text-muted-foreground/70" />
+                      </TooltipTrigger>
+                      <TooltipContent side="right" className="max-w-64">
+                        Google reports one combined search volume for similar
+                        keywords (e.g. 'seo tool' and 'seo tools'). Turn this on
+                        to estimate each keyword's own volume. Costs 2x the
+                        credits.
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
               </controlsForm.Field>
             ) : (
               <div
-                className="flex items-start gap-2 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-sm text-base-content/80"
+                className="flex items-start gap-2 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-sm text-foreground"
                 role="status"
               >
                 <Info className="mt-0.5 size-4 shrink-0 text-info" />
@@ -172,7 +182,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
             )
           }
         </controlsForm.Field>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

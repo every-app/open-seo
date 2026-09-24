@@ -3,6 +3,7 @@ import { Clock, Globe, History, Search, X } from "lucide-react";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Button } from "@/client/components/ui/button";
 type Props = {
   controller: KeywordResearchControllerState;
   projectId: string;
@@ -27,19 +28,19 @@ function NoResultsState({
 
   return (
     <div className="pt-1">
-      <div className="w-full max-w-2xl rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8 text-center space-y-4 mx-auto">
-        <Globe className="size-10 mx-auto text-base-content/40" />
+      <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 md:p-8 text-center space-y-4 mx-auto">
+        <Globe className="size-10 mx-auto text-muted-foreground/70" />
         <div className="space-y-2">
-          <p className="text-lg font-semibold text-base-content">
+          <p className="text-lg font-semibold text-foreground">
             Not enough keyword data for this query yet
           </p>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             We could not find keyword opportunities for
-            <span className="font-medium text-base-content">
+            <span className="font-medium text-foreground">
               {` "${lastSearchKeyword}" `}
             </span>
             in
-            <span className="font-medium text-base-content">
+            <span className="font-medium text-foreground">
               {` ${LOCATIONS[lastSearchLocationCode] || "this location"}`}
             </span>
             .
@@ -66,11 +67,11 @@ function SearchHistoryState({
   return (
     <div className="space-y-4 pt-1">
       {history.length > 0 ? (
-        <section className="rounded-2xl border border-base-300 bg-base-100 p-5 md:p-6">
+        <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <History className="size-4 text-base-content/45" />
-              <span className="text-sm text-base-content/60">
+              <History className="size-4 text-muted-foreground/70" />
+              <span className="text-sm text-muted-foreground">
                 {history.length} recent search
                 {history.length !== 1 ? "es" : ""}
               </span>
@@ -80,7 +81,7 @@ function SearchHistoryState({
             {history.map((item) => (
               <div
                 key={item.timestamp}
-                className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
+                className="group flex items-center gap-2 rounded-lg border border-border bg-card p-2"
               >
                 <Link
                   from="/p/$projectId/keywords"
@@ -91,41 +92,43 @@ function SearchHistoryState({
                     loc: item.locationCode,
                   }}
                   replace
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted"
                 >
-                  <Clock className="size-4 shrink-0 text-base-content/40" />
+                  <Clock className="size-4 shrink-0 text-muted-foreground/70" />
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-base-content">
+                    <p className="truncate font-medium text-foreground">
                       {item.keyword}
                     </p>
-                    <p className="truncate text-sm text-base-content/60">
+                    <p className="truncate text-sm text-muted-foreground">
                       {item.locationName}
                     </p>
                   </div>
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-xs text-base-content/40">
+                  <span className="text-xs text-muted-foreground/70">
                     {new Date(item.timestamp).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
                     })}
                   </span>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     type="button"
-                    className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
+                    className="h-7 px-2.5 opacity-0 group-hover:opacity-100 p-1"
                     onClick={() => removeHistoryItem(item.timestamp)}
                   >
                     <X className="size-3" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}
           </div>
         </section>
       ) : (
-        <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/50 space-y-3">
+        <section className="rounded-2xl border border-dashed border-border bg-card/70 p-6 text-center text-muted-foreground/70 space-y-3">
           <Search className="size-10 mx-auto opacity-40" />
-          <p className="text-lg font-medium text-base-content/80">
+          <p className="text-lg font-medium text-foreground">
             Enter a keyword to get started
           </p>
           <p className="text-sm max-w-md mx-auto">

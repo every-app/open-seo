@@ -14,6 +14,9 @@ import {
 } from "@/serverFunctions/reports";
 import { sharePath } from "@/shared/report-share";
 
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Switch } from "@/client/components/ui/switch";
 // Query keys for both reports pages. staleTime is 0 wherever these are used:
 // the pages exist to inspect what an agent just wrote, so the app-wide
 // five-minute staleTime would show a pre-save list as current.
@@ -157,50 +160,50 @@ export function ShareReportModal({
           <h3 id="share-report-title" className="text-base font-semibold">
             Share
           </h3>
-          <p className="truncate text-sm text-base-content/60">
+          <p className="truncate text-sm text-muted-foreground">
             {report.title}
           </p>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
-          className="btn btn-ghost btn-sm btn-square -mr-2 -mt-1"
+          className="size-8 -mr-2 -mt-1"
           aria-label="Close"
           onClick={onClose}
         >
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
-      <div className="rounded-lg border border-base-300">
+      <div className="rounded-lg border border-border">
         <label className="flex cursor-pointer items-center justify-between gap-4 p-4">
           <span className="min-w-0">
             <span className="block text-sm font-medium">Public link</span>
-            <span className="block text-xs text-base-content/60">
+            <span className="block text-xs text-muted-foreground">
               {shared
                 ? "Anyone with the link can view. No sign-in needed."
                 : "Only members of your organization can open it. A link that was open can keep loading for up to a minute."}
             </span>
           </span>
-          <input
-            type="checkbox"
-            className="toggle toggle-primary"
+          <Switch
             checked={mutation.isPending ? mutation.variables : shared}
             disabled={mutation.isPending}
-            onChange={(event) => mutation.mutate(event.target.checked)}
+            onCheckedChange={(checked) => mutation.mutate(checked)}
           />
         </label>
 
         {shared ? (
-          <div className="space-y-3 border-t border-base-300 p-4">
+          <div className="space-y-3 border-t border-border p-4">
             {/* The field wraps onto its own line when the row gets narrow, so
                 the link stays readable on a phone instead of shrinking. */}
             <div className="flex flex-wrap items-stretch gap-2">
-              <input
+              <Input
                 readOnly
                 value={url}
                 aria-label="Share link"
                 onFocus={(event) => event.target.select()}
-                className="input input-sm input-bordered min-w-0 flex-1 basis-64 text-sm"
+                className="min-w-0 flex-1 basis-64 text-sm h-8 text-sm"
               />
               <div className="ml-auto flex items-stretch">
                 <a
@@ -209,21 +212,26 @@ export function ShareReportModal({
                   rel="noreferrer"
                   aria-label="Open link"
                   title="Open"
-                  className="btn btn-sm btn-ghost rounded-r-none border border-r-0 border-base-300"
+                  className={buttonVariants({
+                    variant: "ghost",
+                    size: "sm",
+                    className: "rounded-r-none border border-r-0 border-border",
+                  })}
                 >
                   <ExternalLink className="size-4" />
                 </a>
-                <button
+                <Button
+                  size="sm"
                   type="button"
                   onClick={() => void copy()}
-                  className="btn btn-sm btn-primary rounded-l-none"
+                  className="rounded-l-none"
                 >
                   <Copy className="size-4" />
                   Copy link
-                </button>
+                </Button>
               </div>
             </div>
-            <p className="text-xs text-base-content/50">
+            <p className="text-xs text-muted-foreground/70">
               Shows the latest saved version. Hidden from search engines.
               {report.sharedAt
                 ? ` Link created ${formatRelativeTime(report.sharedAt)}.`
@@ -236,7 +244,7 @@ export function ShareReportModal({
       {/* Shown in place rather than as a toast: the message belongs next to
           the toggle that would not move. */}
       {mutation.isError ? (
-        <p className="text-sm text-error">
+        <p className="text-sm text-destructive">
           {getStandardErrorMessage(mutation.error, "Failed to update sharing")}
         </p>
       ) : null}

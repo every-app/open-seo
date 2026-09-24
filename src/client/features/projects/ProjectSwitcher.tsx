@@ -14,6 +14,18 @@ import { getProjects } from "@/serverFunctions/projects";
 import { setLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
 import type { ProjectSummary } from "./types";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
+import {
+  Popover,
+  PopoverAnchor,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/client/components/ui/popover";
 
 // Below this many projects the plain list is faster to scan than a search box.
 const SEARCH_THRESHOLD = 8;
@@ -32,14 +44,11 @@ export function ProjectSwitcher({
   // a value only a click needs.
   const router = useRouter();
   const [creating, setCreating] = React.useState(false);
-  // Controlled open state rather than daisyUI's CSS focus-within dropdown:
-  // focus-within can't guarantee the search input ends up focused on open
-  // (Safari never focuses buttons on click, and moving focus into the panel
-  // is exactly what a combobox needs).
+  // Controlled open state: the effect below moves the caret into the search
+  // box on open, which a combobox needs.
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [highlightIndex, setHighlightIndex] = React.useState(0);
-  const rootRef = React.useRef<HTMLDivElement>(null);
   const triggerRef = React.useRef<HTMLButtonElement>(null);
   const searchInputRef = React.useRef<HTMLInputElement>(null);
   const listRef = React.useRef<HTMLUListElement>(null);
@@ -167,39 +176,6 @@ export function ProjectSwitcher({
     }
   };
 
-  // Escape closes the panel from anywhere inside the switcher — trigger,
-  // search box, project list, or footer. When the create-project modal is up
-  // the panel is already closed, so this never swallows the modal's own
-  // Escape handling.
-  const handleRootKeyDown = (event: React.KeyboardEvent) => {
-    if (event.key !== "Escape" || !open) return;
-    event.preventDefault();
-    closePanel();
-    triggerRef.current?.focus();
-  };
-
-  // Close on clicks outside the switcher. Focus loss alone isn't used for
-  // this (clicking a non-focusable spot inside the panel blurs to <body>),
-  // so pointerdown containment is the single source of truth for "outside".
-  React.useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node) || !rootRef.current?.contains(target)) {
-        closePanel();
-      }
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
-  }, [open]);
-
-  // Also close when keyboard focus tabs out of the switcher entirely.
-  const handleRootBlur = (event: React.FocusEvent) => {
-    if (!open) return;
-    const next = event.relatedTarget;
-    if (next instanceof Node && !rootRef.current?.contains(next)) closePanel();
-  };
-
   // Keep the keyboard highlight visible while arrowing through a scrolled
   // list.
   React.useEffect(() => {
@@ -210,39 +186,35 @@ export function ProjectSwitcher({
   }, [highlightIndex]);
 
   return (
-    <div
-      ref={rootRef}
-      onBlur={handleRootBlur}
-      onKeyDown={handleRootKeyDown}
-      // Hand-rolled positioning instead of daisyUI's .dropdown: its CSS also
-      // shows the panel on :focus-within, which fights the controlled `open`
-      // state (e.g. the panel would stay visible after closing while the
-      // trigger still has focus).
-      className="relative w-full"
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => (nextOpen ? openPanel() : closePanel())}
     >
-      <div className="flex items-stretch rounded-lg border border-base-300 bg-base-100">
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-label="Switch project"
-          aria-expanded={open}
-          aria-haspopup="listbox"
-          onClick={() => (open ? closePanel() : openPanel())}
-          onKeyDown={handleTriggerKeyDown}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-l-lg px-3 py-1.5 text-left transition-colors hover:bg-base-200"
+      <PopoverAnchor className="flex w-full items-stretch rounded-lg border border-border bg-card">
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              ref={triggerRef}
+              aria-label="Switch project"
+              aria-haspopup="listbox"
+              onKeyDown={handleTriggerKeyDown}
+              className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex min-w-0 flex-1 items-center justify-between gap-2 rounded-l-lg px-3 py-1.5 text-left transition-colors hover:bg-muted"
+            />
+          }
         >
           <span className="flex min-w-0 flex-col">
-            <span className="truncate text-sm font-medium text-base-content">
+            <span className="truncate text-sm font-medium text-foreground">
               {activeProject?.name ?? "Select project"}
             </span>
             {activeProject?.domain ? (
-              <span className="truncate text-xs font-normal text-base-content/50">
+              <span className="truncate text-xs font-normal text-muted-foreground/70">
                 {activeProject.domain}
               </span>
             ) : null}
           </span>
-          <ChevronsUpDown className="size-3.5 shrink-0 text-base-content/40" />
-        </button>
+          <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground/70" />
+        </PopoverTrigger>
         {activeProject ? (
           <Link
             to="/p/$projectId/settings"
@@ -253,132 +225,138 @@ export function ProjectSwitcher({
               closePanel();
               onCloseDrawer?.();
             }}
-            className="flex shrink-0 items-center justify-center rounded-r-lg border-l border-base-300 px-2.5 text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+            className={buttonVariants({
+              variant: "ghost",
+              size: "icon",
+              className:
+                "h-auto rounded-l-none rounded-r-lg border-l border-border",
+            })}
           >
             <Settings className="size-4" />
           </Link>
         ) : null}
-      </div>
+      </PopoverAnchor>
 
-      {open ? (
-        <div className="absolute left-0 right-0 top-full z-30 mt-1 overflow-hidden rounded-box border border-base-300 bg-base-100 shadow-lg">
-          {showSearch ? (
-            <div className="border-b border-base-300 p-2">
-              <label className="input input-sm w-full">
-                <Search className="size-3.5 shrink-0 text-base-content/40" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  value={query}
-                  placeholder="Find project…"
-                  aria-label="Filter projects"
-                  aria-controls="project-switcher-listbox"
-                  aria-activedescendant={
-                    filteredProjects[highlightIndex]
-                      ? `project-option-${filteredProjects[highlightIndex].id}`
-                      : undefined
-                  }
-                  className="grow"
-                  onChange={(event) => {
-                    setQuery(event.target.value);
-                    setHighlightIndex(0);
-                  }}
-                  onKeyDown={handleSearchKeyDown}
-                />
-              </label>
-            </div>
-          ) : null}
+      <PopoverContent
+        align="start"
+        sideOffset={4}
+        className="w-(--anchor-width) overflow-hidden p-0"
+      >
+        {showSearch ? (
+          <div className="border-b border-border p-2">
+            <InputGroup>
+              <InputGroupAddon>
+                <Search className="size-3.5" />
+              </InputGroupAddon>
+              <InputGroupInput
+                ref={searchInputRef}
+                type="text"
+                value={query}
+                placeholder="Find project…"
+                aria-label="Filter projects"
+                aria-controls="project-switcher-listbox"
+                aria-activedescendant={
+                  filteredProjects[highlightIndex]
+                    ? `project-option-${filteredProjects[highlightIndex].id}`
+                    : undefined
+                }
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setHighlightIndex(0);
+                }}
+                onKeyDown={handleSearchKeyDown}
+              />
+            </InputGroup>
+          </div>
+        ) : null}
 
-          {projects.length > 0 ? (
-            // Long project lists scroll inside the dropdown; without the cap the
-            // menu grows past the viewport and the footer becomes unreachable.
-            // flex-nowrap because daisyUI menus wrap into columns by default.
-            <ul
-              ref={listRef}
-              id="project-switcher-listbox"
-              role="listbox"
-              aria-label="Projects"
-              className="menu max-h-[min(60vh,21rem)] w-full flex-nowrap overflow-y-auto p-2"
-            >
-              {filteredProjects.map((project, index) => {
-                const isActive = project.id === activeProjectId;
-                const isHighlighted = showSearch && index === highlightIndex;
-                return (
-                  <li key={project.id} role="presentation">
-                    <button
-                      type="button"
-                      id={`project-option-${project.id}`}
-                      role="option"
-                      aria-selected={isActive}
-                      data-highlighted={isHighlighted || undefined}
-                      onClick={() => handleSelect(project)}
-                      onMouseEnter={
-                        showSearch ? () => setHighlightIndex(index) : undefined
-                      }
-                      className={
-                        isActive ? "active" : isHighlighted ? "bg-base-200" : ""
-                      }
-                    >
-                      <span className="flex min-w-0 flex-1 flex-col">
-                        <span className="truncate">{project.name}</span>
-                        {project.domain ? (
-                          <span className="truncate text-xs text-base-content/50">
-                            {project.domain}
-                          </span>
-                        ) : null}
-                      </span>
-                      {isActive ? (
-                        <Check className="size-4 shrink-0 text-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-              {filteredProjects.length === 0 ? (
-                <li className="menu-disabled">
-                  <span className="text-base-content/50">
-                    No projects match “{query.trim()}”
-                  </span>
-                </li>
-              ) : null}
-            </ul>
-          ) : null}
-
+        {projects.length > 0 ? (
+          // Long project lists scroll inside the panel; without the cap it
+          // grows past the viewport and the footer becomes unreachable.
           <ul
-            className={`menu w-full shrink-0 p-2 ${
-              projects.length > 0 ? "border-t border-base-300" : ""
-            }`}
+            ref={listRef}
+            id="project-switcher-listbox"
+            role="listbox"
+            aria-label="Projects"
+            className="flex max-h-[min(60vh,21rem)] w-full flex-col gap-0.5 overflow-y-auto p-2"
           >
-            <li>
-              <button
-                type="button"
-                onClick={() => {
-                  closePanel();
-                  // Deliberately leave the mobile drawer open: the modal is
-                  // rendered inside it, so closing the drawer would unmount the
-                  // modal. The drawer closes when the modal does.
-                  setCreating(true);
-                }}
-              >
-                <Plus className="size-4" />
-                New project
-              </button>
-            </li>
-            <li>
-              <Link
-                to="/projects"
-                onClick={() => {
-                  closePanel();
-                  onCloseDrawer?.();
-                }}
-              >
-                <FolderCog className="size-4" />
-                Manage projects
-              </Link>
-            </li>
+            {filteredProjects.map((project, index) => {
+              const isActive = project.id === activeProjectId;
+              const isHighlighted = showSearch && index === highlightIndex;
+              return (
+                <li key={project.id} role="presentation">
+                  <Button
+                    variant="ghost"
+                    id={`project-option-${project.id}`}
+                    role="option"
+                    aria-selected={isActive}
+                    data-highlighted={isHighlighted || undefined}
+                    onClick={() => handleSelect(project)}
+                    onMouseEnter={
+                      showSearch ? () => setHighlightIndex(index) : undefined
+                    }
+                    className={`h-auto w-full justify-between rounded-md px-2 py-1.5 text-left text-foreground ${
+                      isActive ? "bg-accent" : isHighlighted ? "bg-muted" : ""
+                    }`}
+                  >
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate">{project.name}</span>
+                      {project.domain ? (
+                        <span className="truncate text-xs font-normal text-muted-foreground">
+                          {project.domain}
+                        </span>
+                      ) : null}
+                    </span>
+                    {isActive ? (
+                      <Check className="size-4 shrink-0 text-primary" />
+                    ) : null}
+                  </Button>
+                </li>
+              );
+            })}
+            {filteredProjects.length === 0 ? (
+              <li className="px-2 py-1.5 text-sm text-muted-foreground">
+                No projects match “{query.trim()}”
+              </li>
+            ) : null}
           </ul>
+        ) : null}
+
+        <div
+          className={`flex flex-col gap-0.5 p-2 ${
+            projects.length > 0 ? "border-t border-border" : ""
+          }`}
+        >
+          <Button
+            variant="ghost"
+            className="w-full justify-start rounded-md px-2"
+            onClick={() => {
+              closePanel();
+              // Deliberately leave the mobile drawer open: the modal is
+              // rendered inside it, so closing the drawer would unmount the
+              // modal. The drawer closes when the modal does.
+              setCreating(true);
+            }}
+          >
+            <Plus className="size-4" />
+            New project
+          </Button>
+          <Link
+            to="/projects"
+            onClick={() => {
+              closePanel();
+              onCloseDrawer?.();
+            }}
+            className={buttonVariants({
+              variant: "ghost",
+              className: "w-full justify-start rounded-md px-2",
+            })}
+          >
+            <FolderCog className="size-4" />
+            Manage projects
+          </Link>
         </div>
-      ) : null}
+      </PopoverContent>
 
       {creating ? (
         <CreateProjectModal
@@ -388,6 +366,6 @@ export function ProjectSwitcher({
           }}
         />
       ) : null}
-    </div>
+    </Popover>
   );
 }

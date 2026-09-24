@@ -17,6 +17,10 @@ import {
   type ContextKeyPage,
 } from "./shared";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { NativeSelect } from "@/client/components/ui/native-select";
 const ROLE_LABELS: Record<KeyPageRole, string> = {
   hub: "Hub page",
   spoke: "Supporting page",
@@ -69,14 +73,16 @@ export function KeyPagesSection({
         title="Key pages"
         hint="A shortlist of the pages that carry the site — not an inventory."
         action={
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-xs"
+            className="h-7 px-2.5"
             onClick={() => setAdding(true)}
           >
             <Plus className="size-3.5" />
             Add page
-          </button>
+          </Button>
         }
       />
 
@@ -119,29 +125,36 @@ export function KeyPagesSection({
                     <span className="truncate text-sm font-medium">
                       {page.url}
                     </span>
-                    <span className="badge badge-ghost badge-sm shrink-0">
+                    <Badge
+                      variant="secondary"
+                      className="px-2 text-[11px] shrink-0"
+                    >
                       {ROLE_LABELS[page.role]}
-                    </span>
+                    </Badge>
                   </div>
                   {page.topic ? (
-                    <p className="text-sm text-base-content/70">
+                    <p className="text-sm text-muted-foreground">
                       Target: {page.topic}
                     </p>
                   ) : null}
                   {page.notes ? (
-                    <p className="text-sm text-base-content/70">{page.notes}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {page.notes}
+                    </p>
                   ) : null}
                   <Provenance by={page.updatedBy} at={page.updatedAt} />
                 </div>
                 <RowActions>
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     type="button"
-                    className="btn btn-ghost btn-xs"
+                    className="h-7 px-2.5"
                     aria-label={`Edit ${page.url}`}
                     onClick={() => setEditingId(page.id)}
                   >
                     <Pencil className="size-3.5" />
-                  </button>
+                  </Button>
                   <ConfirmDeleteButton
                     label={`Remove ${page.url}`}
                     pending={update.isPending}
@@ -186,25 +199,25 @@ function KeyPageForm({
 
   return (
     <form
-      className="space-y-2 bg-base-200/40 p-3"
+      className="space-y-2 bg-muted/40 p-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!draft.url.trim() || pending) return;
         onSave(draft);
       }}
     >
-      <input
+      <Input
         autoFocus
         type="text"
         value={draft.url}
         onChange={(event) => setDraft({ ...draft, url: event.target.value })}
         placeholder="example.com/pricing"
         maxLength={2048}
-        className="input input-bordered input-sm w-full"
+        className="w-full h-8 text-sm"
         aria-label="Page URL"
       />
       <div className="grid gap-2 sm:grid-cols-2">
-        <select
+        <NativeSelect
           value={draft.role}
           onChange={(event) =>
             setDraft({
@@ -214,7 +227,7 @@ function KeyPageForm({
                 draft.role,
             })
           }
-          className="select select-bordered select-sm w-full"
+          className="w-full h-8 text-sm"
           aria-label="Page role"
         >
           {KEY_PAGE_ROLES.map((role) => (
@@ -222,8 +235,8 @@ function KeyPageForm({
               {ROLE_LABELS[role]}
             </option>
           ))}
-        </select>
-        <input
+        </NativeSelect>
+        <Input
           type="text"
           value={draft.topic}
           onChange={(event) =>
@@ -231,17 +244,17 @@ function KeyPageForm({
           }
           placeholder="Target topic (optional)"
           maxLength={200}
-          className="input input-bordered input-sm w-full"
+          className="w-full h-8 text-sm"
           aria-label="Target topic"
         />
       </div>
-      <input
+      <Input
         type="text"
         value={draft.notes}
         onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
         placeholder="Notes (optional)"
         maxLength={500}
-        className="input input-bordered input-sm w-full"
+        className="w-full h-8 text-sm"
         aria-label="Page notes"
       />
       <FormActions

@@ -27,6 +27,7 @@ import {
   type WebSearchCountryCode,
 } from "@/types/schemas/ai-search";
 
+import { buttonVariants } from "@/client/components/ui/button";
 type PromptExplorerFormValues = {
   prompt: string;
   highlightBrand: string;
@@ -201,7 +202,7 @@ function PromptExplorerPageInner({
       <div className="mx-auto max-w-7xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Prompt Explorer</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Ask any prompt across ChatGPT, Claude, Gemini, and Perplexity
             side-by-side.
           </p>
@@ -234,7 +235,7 @@ function PromptExplorerPageInner({
             {errorMessage ? (
               <div
                 role="alert"
-                className="flex items-start gap-2 rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error"
+                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
               >
                 <AlertCircle className="mt-0.5 size-4 shrink-0" />
                 <span>{errorMessage}</span>
@@ -252,7 +253,12 @@ function PromptExplorerPageInner({
                     params={{ projectId }}
                     search={{}}
                     replace
-                    className="btn btn-ghost btn-sm gap-2 px-0 text-base-content/70 hover:bg-transparent"
+                    className={buttonVariants({
+                      variant: "ghost",
+                      size: "sm",
+                      className:
+                        "gap-2 px-0 text-muted-foreground hover:bg-transparent",
+                    })}
                   >
                     <ArrowLeft className="size-4" />
                     Recent searches

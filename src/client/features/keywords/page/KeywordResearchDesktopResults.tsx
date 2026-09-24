@@ -39,6 +39,14 @@ import {
   TableBulkExportMenu,
 } from "@/client/components/table/TableBulkActionBar";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 const MONTH_SHORT_LABELS = [
   "Jan",
   "Feb",
@@ -97,14 +105,14 @@ function DesktopKeywordPanel({ controller }: Props) {
     <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5">
       {showApproximateMatchNotice ? (
         <div
-          className="rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-base-content"
+          className="rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-foreground"
           role="status"
         >
           No exact match for{" "}
           <span className="font-medium">"{searchedKeyword}"</span>. Showing
           closest related keywords instead.
           {lastUsedFallback ? (
-            <span className="text-base-content/75">
+            <span className="text-muted-foreground">
               {" "}
               Source: {lastResultSource} fallback.
             </span>
@@ -166,53 +174,63 @@ function DesktopTableCard({ controller }: Props) {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
-      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-base-300">
-        <button
-          className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
+    <div className="flex-1 flex flex-col min-w-0 border border-border rounded-xl bg-card overflow-hidden">
+      <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`gap-1.5 ${showFilters ? "bg-secondary text-foreground" : ""}`}
           onClick={() => controller.setShowFilters((current) => !current)}
           title="Toggle table filters"
         >
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+            <Badge
+              variant="primary"
+              className="px-2 text-[11px] border-0 text-primary-foreground"
+            >
               {activeFilterCount}
-            </span>
+            </Badge>
           ) : null}
-        </button>
-        <span className="text-sm text-base-content/60">
+        </Button>
+        <span className="text-sm text-muted-foreground">
           {keywordCountLabel}
         </span>
         <div className="flex-1" />
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className={`btn btn-ghost btn-sm gap-1 ${!canExport ? "btn-disabled" : ""}`}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <div
+                className={buttonVariants({
+                  variant: "ghost",
+                  size: "sm",
+                  className: "gap-1",
+                })}
+              />
+            }
           >
             <Download className="size-3.5" />
             <span className="hidden lg:inline">Export</span>
             <ChevronDown className="size-3 opacity-60" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56"
-          >
-            <li>
-              <button onClick={handleExportToSheets} disabled={!canExport}>
-                <Sheet className="size-4" />
-                Export to Sheets
-              </button>
-            </li>
-            <li>
-              <button onClick={controller.exportCsv} disabled={!canExport}>
-                <FileDown className="size-4" />
-                Export CSV
-              </button>
-            </li>
-          </ul>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem
+              onClick={handleExportToSheets}
+              disabled={!canExport}
+            >
+              <Sheet className="size-4" />
+              Export to Sheets
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={controller.exportCsv}
+              disabled={!canExport}
+            >
+              <FileDown className="size-4" />
+              Export CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       <TableBulkActionBar
@@ -274,24 +292,29 @@ function DesktopFilters({ controller }: Props) {
   const { activeFilterCount, filtersForm } = controller;
 
   return (
-    <div className="shrink-0 border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3">
+    <div className="shrink-0 border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+            <Badge
+              variant="primary"
+              className="px-2 text-[11px] border-0 text-primary-foreground"
+            >
               {activeFilterCount} active
-            </span>
+            </Badge>
           ) : null}
         </div>
-        <button
-          className="btn btn-xs btn-ghost gap-1"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 px-2.5 gap-1"
           onClick={controller.resetFilters}
           disabled={activeFilterCount === 0}
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -345,10 +368,10 @@ function DesktopSerpPanel({ controller }: Props) {
   return (
     <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:basis-2/5 xl:overflow-y-auto">
       {overviewKeyword && overviewKeyword.trend.length > 0 ? (
-        <div className="shrink-0 overflow-hidden border border-base-300 rounded-xl bg-base-100 px-4 py-3">
+        <div className="shrink-0 overflow-hidden border border-border rounded-xl bg-card px-4 py-3">
           <h4 className="text-sm font-semibold mb-1">
             Search Trends{" "}
-            <span className="font-normal text-base-content/50">
+            <span className="font-normal text-muted-foreground/70">
               {trendRangeLabel}
             </span>
           </h4>
@@ -356,13 +379,13 @@ function DesktopSerpPanel({ controller }: Props) {
         </div>
       ) : null}
 
-      <div className="flex flex-col overflow-hidden border border-base-300 rounded-xl bg-base-100">
-        <div className="shrink-0 px-4 py-3 border-b border-base-300">
+      <div className="flex flex-col overflow-hidden border border-border rounded-xl bg-card">
+        <div className="shrink-0 px-4 py-3 border-b border-border">
           <h3 className="text-sm font-semibold flex items-center gap-1.5">
             <Globe className="size-3.5" />
             SERP Analysis
             {controller.activeSerpKeyword ? (
-              <span className="font-normal text-base-content/50 truncate">
+              <span className="font-normal text-muted-foreground/70 truncate">
                 : {controller.activeSerpKeyword}
               </span>
             ) : null}

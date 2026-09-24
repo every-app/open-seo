@@ -10,6 +10,8 @@ import {
 import { CopyButton } from "@/client/features/ai-mcp/SetupControls";
 import { AgentList } from "@/client/features/ai-mcp/AgentList";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
 const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
 const SKILLS = [
@@ -48,40 +50,35 @@ function AiPage() {
   const [tab, setTab] = useState<"setup" | "skills">("setup");
 
   return (
-    <div className="h-full overflow-auto bg-base-100 px-4 py-12 md:px-6 md:py-16 pb-24 md:pb-12">
+    <div className="h-full overflow-auto bg-card px-4 py-12 md:px-6 md:py-16 pb-24 md:pb-12">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-semibold tracking-tight">Agent setup</h1>
-        <p className="mt-3 text-pretty text-sm leading-relaxed text-base-content/70">
+        <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground">
           The most powerful way to use OpenSEO is through the AI agent you
           already use. Set it up once, then ask it anything.
         </p>
 
-        <div role="tablist" className="tabs tabs-border mt-8 w-fit">
-          {(
-            [
-              ["setup", "Set up your agent"],
-              ["skills", "Skills"],
-            ] as const
-          ).map(([id, label]) => (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              className={`tab ${tab === id ? "tab-active" : ""}`}
-              onClick={() => setTab(id)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <Tabs value={tab} className="mt-8">
+          <TabsList>
+            {(
+              [
+                ["setup", "Set up your agent"],
+                ["skills", "Skills"],
+              ] as const
+            ).map(([id, label]) => (
+              <TabsTrigger key={id} value={id} onClick={() => setTab(id)}>
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
 
         {tab === "setup" ? (
           <>
             <div className="mt-6 space-y-5">
-              <section className="rounded-xl border border-base-300 p-5 sm:p-6">
+              <section className="rounded-xl border border-border p-5 sm:p-6">
                 <h2 className="text-base font-semibold">Set up your agent</h2>
-                <p className="mt-2 text-sm leading-relaxed text-base-content/60">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Paste the setup prompt into your agent to connect OpenSEO and
                   install its SEO skills. It will guide you through any manual
                   steps.
@@ -99,19 +96,19 @@ function AiPage() {
                     href={`${DOCS_URL}#set-up-your-agent`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"
+                    className="inline-flex items-center gap-1 text-sm text-muted-foreground underline decoration-muted-foreground/70 underline-offset-4 hover:text-foreground"
                   >
                     Setup instructions
                     <ArrowUpRight className="size-3.5" />
                   </a>
                 </div>
-                <p className="mt-5 border-t border-base-300 pt-4 text-sm leading-relaxed text-base-content/60">
+                <p className="mt-5 border-t border-border pt-4 text-sm leading-relaxed text-muted-foreground">
                   Once connected, ask your agent to use{" "}
                   <a
                     href={COACH_DOCS_URL}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-base-content underline decoration-base-content/25 underline-offset-4 hover:decoration-base-content"
+                    className="text-foreground underline decoration-muted-foreground/70 underline-offset-4 hover:decoration-foreground"
                   >
                     SEO Coach
                   </a>{" "}
@@ -119,9 +116,9 @@ function AiPage() {
                 </p>
               </section>
 
-              <section className="rounded-xl border border-base-300 p-5 sm:p-6">
+              <section className="rounded-xl border border-border p-5 sm:p-6">
                 <h2 className="text-base font-semibold">Update your skills</h2>
-                <p className="mt-2 text-sm leading-relaxed text-base-content/60">
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Already connected? Paste the update prompt into your agent to
                   get the latest OpenSEO skills while preserving your connection
                   settings and personal edits.
@@ -138,7 +135,7 @@ function AiPage() {
                     href={`${DOCS_URL}#update-your-skills`}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-sm text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"
+                    className="inline-flex items-center gap-1 text-sm text-muted-foreground underline decoration-muted-foreground/70 underline-offset-4 hover:text-foreground"
                   >
                     Update instructions
                     <ArrowUpRight className="size-3.5" />
@@ -148,9 +145,9 @@ function AiPage() {
             </div>
 
             {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
-              <div className="alert alert-warning mt-8 text-sm" role="alert">
+              <Alert variant="warning" className="mt-8 text-sm" role="alert">
                 <ShieldAlert className="size-4 shrink-0" />
-                <span>
+                <AlertDescription>
                   This instance is behind Cloudflare Access. MCP clients cannot
                   connect until Managed OAuth is enabled on your Access
                   application.{" "}
@@ -158,18 +155,18 @@ function AiPage() {
                     href="https://openseo.so/docs/self-hosting/cloudflare#connect-the-mcp-server-through-cloudflare-access"
                     target="_blank"
                     rel="noreferrer"
-                    className="link font-medium"
+                    className="underline underline-offset-4 font-medium"
                   >
                     Setup guide
                   </a>
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
-            <div className="mt-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-base-300 pt-5 text-xs text-base-content/55">
+            <div className="mt-10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 border-t border-border pt-5 text-xs text-muted-foreground">
               <span>
                 MCP server URL for this instance:{" "}
-                <code className="font-mono text-base-content/80">{mcpUrl}</code>
+                <code className="font-mono text-foreground">{mcpUrl}</code>
               </span>
               <CopyButton
                 value={mcpUrl}
@@ -180,7 +177,7 @@ function AiPage() {
           </>
         ) : (
           <section className="mt-6">
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-muted-foreground">
               The setup prompt installs these. Run one by name when you want a
               full report instead of a quick answer.
             </p>
@@ -194,11 +191,11 @@ function AiPage() {
                     href={`https://openseo.so/docs/skills/${name}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="shrink-0 font-mono text-[13px] text-base-content underline decoration-base-content/25 underline-offset-4 hover:decoration-base-content sm:w-48"
+                    className="shrink-0 font-mono text-[13px] text-foreground underline decoration-muted-foreground/70 underline-offset-4 hover:decoration-foreground sm:w-48"
                   >
                     /{name}
                   </a>
-                  <span className="text-base-content/60">{blurb}</span>
+                  <span className="text-muted-foreground">{blurb}</span>
                 </li>
               ))}
             </ul>

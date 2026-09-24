@@ -8,6 +8,7 @@ import {
   useExportToSheetsModalState,
 } from "@/client/lib/exportToSheets";
 
+import { Button } from "@/client/components/ui/button";
 export function ExportToSheetsModal() {
   const state = useExportToSheetsModalState();
   // Close any stale modal when the user navigates away mid-flow. Deps must
@@ -42,29 +43,32 @@ export function ExportToSheetsModal() {
             Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
           </h3>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
-          className="btn btn-ghost btn-xs btn-square"
+          className="size-7"
           onClick={closeExportToSheetsModal}
           aria-label="Close"
         >
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
-      <p className="text-sm text-base-content/75">
+      <p className="text-sm text-muted-foreground">
         Open a new Google Sheet and paste to fill it.
       </p>
 
       <div className="flex justify-end">
-        <button
+        <Button
+          size="sm"
           type="button"
-          className="btn btn-primary btn-sm gap-1.5"
+          className="gap-1.5"
           onClick={handleOpenSheet}
         >
           Open new Google Sheet
           <ExternalLink className="size-3.5" />
-        </button>
+        </Button>
       </div>
     </Modal>
   );

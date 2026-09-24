@@ -17,6 +17,15 @@ import {
   type TrendSeries,
 } from "./RankTrackingTrendChart";
 
+import { Button } from "@/client/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
 const DEVICE_STYLE: Record<
   "desktop" | "mobile",
   { label: string; color: string }
@@ -148,7 +157,7 @@ export function KeywordTrendModal({
           <h3 id="keyword-trend-title" className="text-lg font-semibold">
             {target.keyword}
           </h3>
-          <p className="text-xs text-base-content/60">
+          <p className="text-xs text-muted-foreground">
             {domain} &middot;{" "}
             {locationName
               ? formatLocationLabel(locationName, 2)
@@ -161,7 +170,7 @@ export function KeywordTrendModal({
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-base-content/50" />
+          <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
         </div>
       ) : maxPerDevice <= 1 ? (
         <EmptyState count={maxPerDevice} />
@@ -183,30 +192,37 @@ export function KeywordTrendModal({
           />
 
           <div className="flex items-center justify-end gap-2">
-            <button className="btn btn-ghost btn-xs gap-1" onClick={handleCopy}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2.5 gap-1"
+              onClick={handleCopy}
+            >
               <Copy className="size-3.5" />
               Copy
-            </button>
-            <button
-              className="btn btn-ghost btn-xs gap-1"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2.5 gap-1"
               onClick={handleExport}
             >
               <Download className="size-3.5" />
               Export CSV
-            </button>
+            </Button>
           </div>
 
-          <div className="max-h-64 overflow-auto rounded-lg border border-base-300">
-            <table className="table table-sm">
-              <thead className="sticky top-0 bg-base-100">
-                <tr>
-                  <th>Date</th>
-                  {devices.length > 1 && <th>Device</th>}
-                  <th>Position</th>
-                  <th>Δ vs previous check</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className="max-h-64 overflow-auto rounded-lg border border-border">
+            <Table>
+              <TableHeader className="sticky top-0 bg-card">
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  {devices.length > 1 && <TableHead>Device</TableHead>}
+                  <TableHead>Position</TableHead>
+                  <TableHead>Δ vs previous check</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {historyRows.map((r, idx) => {
                   // No prior ranking to compare against (first check, or the
                   // previous check was unranked): show the lone position as a
@@ -215,18 +231,18 @@ export function KeywordTrendModal({
                   const noPrevious =
                     r.position !== null && r.previousPosition === null;
                   return (
-                    <tr key={`${r.device}-${r.checkedAt}-${idx}`}>
-                      <td className="whitespace-nowrap text-xs">
+                    <TableRow key={`${r.device}-${r.checkedAt}-${idx}`}>
+                      <TableCell className="whitespace-nowrap text-xs">
                         {new Date(r.checkedAt).toLocaleDateString()}
-                      </td>
+                      </TableCell>
                       {devices.length > 1 && (
-                        <td className="text-xs">
+                        <TableCell className="text-xs">
                           {DEVICE_STYLE[r.device].label}
-                        </td>
+                        </TableCell>
                       )}
-                      <td>
+                      <TableCell>
                         {r.position === null ? (
-                          <span className="text-base-content/40 text-xs">
+                          <span className="text-muted-foreground/70 text-xs">
                             Not in top {serpDepth}
                           </span>
                         ) : (
@@ -234,8 +250,8 @@ export function KeywordTrendModal({
                             {r.position}
                           </span>
                         )}
-                      </td>
-                      <td>
+                      </TableCell>
+                      <TableCell>
                         {noPrevious ? (
                           // Invisible placeholders matching the "before → after"
                           // layout so the lone pill lines up under the position
@@ -245,7 +261,7 @@ export function KeywordTrendModal({
                             <span aria-hidden className="opacity-0">
                               →
                             </span>
-                            <span className="font-mono rounded bg-base-200 px-1.5 py-0.5 text-xs font-semibold text-base-content/70">
+                            <span className="font-mono rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">
                               {r.position}
                             </span>
                           </span>
@@ -259,20 +275,20 @@ export function KeywordTrendModal({
                             }}
                           />
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </>
       )}
 
       <div className="flex justify-end">
-        <button className="btn btn-ghost btn-sm" onClick={onClose}>
+        <Button variant="ghost" size="sm" onClick={onClose}>
           Close
-        </button>
+        </Button>
       </div>
     </Modal>
   );
@@ -280,7 +296,7 @@ export function KeywordTrendModal({
 
 function EmptyState({ count }: { count: number }) {
   return (
-    <div className="rounded-lg border border-dashed border-base-300 p-10 text-center text-sm text-base-content/60">
+    <div className="rounded-lg border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
       {count === 0
         ? "No history yet — run a check to start tracking position over time."
         : "Only 1 check so far — the trend chart fills in after the next check."}
@@ -300,8 +316,8 @@ function ChartTooltip({
   bottomBandKeys: Set<string>;
 }) {
   return (
-    <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
-      <p className="text-xs text-base-content/60">
+    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm space-y-0.5">
+      <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -318,7 +334,7 @@ function ChartTooltip({
           <p key={String(e.dataKey)} className="text-sm font-medium">
             {device}:{" "}
             {inBottomBand ? (
-              <span className="text-base-content/60">
+              <span className="text-muted-foreground">
                 Not in top {serpDepth}
               </span>
             ) : (

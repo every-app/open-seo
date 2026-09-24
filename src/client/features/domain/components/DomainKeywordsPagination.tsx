@@ -3,6 +3,9 @@ import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { DOMAIN_KEYWORDS_PAGE_SIZES } from "@/types/schemas/domain";
 
+import { NativeSelect } from "@/client/components/ui/native-select";
+import { Spinner } from "@/client/components/ui/spinner";
+import { buttonVariants } from "@/client/components/ui/button";
 type Props = {
   page: number;
   pageSize: number;
@@ -42,19 +45,17 @@ export function DomainKeywordsPagination({
   const canGoNext = totalPages != null ? page < totalPages : hasNextPage;
 
   return (
-    <div className="flex flex-col gap-3 border-t border-base-300 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="flex items-center gap-2 text-sm text-base-content/70 tabular-nums">
+    <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
         <span>{formatRange(page, pageSize, totalCount)}</span>
-        {isLoading ? (
-          <span className="loading loading-spinner loading-xs" />
-        ) : null}
+        {isLoading ? <Spinner size="sm" className="[&_svg]:size-3" /> : null}
       </div>
 
       <div className="flex items-center gap-6">
-        <label className="flex items-center gap-2 text-sm text-base-content/70">
+        <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="whitespace-nowrap">Rows per page</span>
-          <select
-            className="select select-bordered select-sm w-20"
+          <NativeSelect
+            className="w-20 h-8 text-sm"
             value={pageSize}
             onChange={(event) => onPageSizeChange(Number(event.target.value))}
           >
@@ -63,11 +64,11 @@ export function DomainKeywordsPagination({
                 {size}
               </option>
             ))}
-          </select>
+          </NativeSelect>
         </label>
 
         <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-sm tabular-nums text-base-content/70">
+          <span className="whitespace-nowrap text-sm tabular-nums text-muted-foreground">
             Page {page.toLocaleString()}
             {totalPages != null ? ` of ${totalPages.toLocaleString()}` : ""}
           </span>
@@ -118,7 +119,11 @@ function PageLink({
       })}
       aria-label={label}
       aria-disabled={disabled}
-      className={`btn btn-ghost btn-sm btn-square ${disabled ? "btn-disabled" : ""}`}
+      className={buttonVariants({
+        variant: "ghost",
+        size: "icon",
+        className: "size-8",
+      })}
       onClick={(event) => {
         if (disabled) {
           event.preventDefault();

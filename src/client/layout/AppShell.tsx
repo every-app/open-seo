@@ -14,6 +14,7 @@ import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 import { getProjects } from "@/serverFunctions/projects";
 import { getLastProjectId } from "@/client/lib/active-project";
 
+import { Button } from "@/client/components/ui/button";
 const DATAFORSEO_HELP_PATH = "/help/dataforseo-api-key";
 
 export function AuthenticatedAppLayout({
@@ -27,7 +28,6 @@ export function AuthenticatedAppLayout({
 }) {
   const location = useLocation();
   const [drawerOpen, setDrawerOpen] = React.useState(false);
-  const setupModalRef = React.useRef<HTMLDivElement | null>(null);
   const [showMissingSeoApiKeyModal, setShowMissingSeoApiKeyModal] =
     React.useState(false);
   // On non-project pages (e.g. /settings) there's no projectId in the URL, so
@@ -97,23 +97,6 @@ export function AuthenticatedAppLayout({
     isSeoApiKeyConfigured === false &&
     !shouldShowMissingSeoApiKeyModal;
 
-  React.useEffect(() => {
-    if (!shouldShowMissingSeoApiKeyModal) return;
-
-    setupModalRef.current?.focus();
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setShowMissingSeoApiKeyModal(false);
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [shouldShowMissingSeoApiKeyModal]);
-
   return (
     <div className="flex h-[100dvh] bg-background">
       <div className="hidden shrink-0 md:block">
@@ -148,7 +131,6 @@ export function AuthenticatedAppLayout({
       />
 
       <MissingSeoSetupModal
-        ref={setupModalRef}
         isOpen={shouldShowMissingSeoApiKeyModal}
         onClose={() => setShowMissingSeoApiKeyModal(false)}
       />
@@ -170,15 +152,17 @@ function MobileTopBar({
 }) {
   return (
     <div className="flex shrink-0 items-center gap-1 border-b border-border bg-card px-2 py-1.5 md:hidden">
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
-        className="btn btn-square btn-ghost btn-sm"
+        className="size-8"
         aria-label="Toggle sidebar"
         aria-expanded={drawerOpen}
         onClick={onOpenDrawer}
       >
         <Menu className="h-5 w-5" />
-      </button>
+      </Button>
       <Link
         to="/"
         className="ml-1 font-semibold tracking-tight text-foreground"

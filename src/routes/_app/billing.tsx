@@ -24,6 +24,8 @@ import {
   autumnSeoDataCreditsToUsd,
 } from "@/shared/billing";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 export const Route = createFileRoute("/_app/billing")({
   beforeLoad: () => {
     if (!isHostedClientAuthMode()) {
@@ -79,21 +81,22 @@ function BillingPage() {
     return (
       <div className="mx-auto w-full max-w-2xl space-y-4 p-4 py-10 md:p-6 md:py-12">
         <h1 className="text-xl font-semibold">Billing unavailable</h1>
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           {getStandardErrorMessage(
             customerQuery.error,
             "We couldn't load your billing details right now. Please try again.",
           )}
         </p>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           type="button"
-          className="btn btn-soft btn-sm"
           onClick={() => {
             void customerQuery.refetch();
           }}
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -127,7 +130,9 @@ function BillingPage() {
   if (isPending) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-base-content/50">Redirecting to Stripe...</p>
+        <p className="text-sm text-muted-foreground/70">
+          Redirecting to Stripe...
+        </p>
       </div>
     );
   }
@@ -138,16 +143,16 @@ function BillingPage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         {/* Subscription card */}
-        <div className="flex flex-col justify-between rounded-lg border border-base-300 bg-base-100 p-4 gap-4">
+        <div className="flex flex-col justify-between rounded-lg border border-border bg-card p-4 gap-4">
           <div>
             <div className="text-2xl font-semibold tabular-nums">
               ${totalRemaining.toFixed(2)}{" "}
-              <span className="text-sm font-normal text-base-content/50">
+              <span className="text-sm font-normal text-muted-foreground/70">
                 remaining
               </span>
             </div>
             {!isFreePlan ? (
-              <div className="mt-1 flex gap-3 text-xs text-base-content/50">
+              <div className="mt-1 flex gap-3 text-xs text-muted-foreground/70">
                 <span className="tabular-nums">
                   Monthly ${monthlyRemaining.toFixed(2)}
                 </span>
@@ -158,7 +163,7 @@ function BillingPage() {
               </div>
             ) : null}
             {totalRemaining <= 0 ? (
-              <p className="mt-2 text-xs text-error">
+              <p className="mt-2 text-xs text-destructive">
                 You&rsquo;ve used all your credits.{" "}
                 {isFreePlan
                   ? "Upgrade your plan to continue."
@@ -176,18 +181,18 @@ function BillingPage() {
 
           <div className="text-sm">
             <span className="font-medium">Plan</span>{" "}
-            <span className="text-base-content/50">
+            <span className="text-muted-foreground/70">
               {isFreePlan ? "Free Plan" : "Base Plan"}
             </span>
           </div>
 
           {!canManageBilling ? (
-            <p className="border-t border-base-300 pt-3 text-sm text-base-content/60">
+            <p className="border-t border-border pt-3 text-sm text-muted-foreground">
               Only the organization owner can change the plan or buy credits.
               Ask them if you need more.
             </p>
           ) : isFreePlan ? (
-            <div className="space-y-3 border-t border-base-300 pt-3">
+            <div className="space-y-3 border-t border-border pt-3">
               <div className="flex items-baseline justify-between gap-4">
                 <span className="text-sm font-medium">Base Plan</span>
                 <span className="text-sm font-medium tabular-nums">
@@ -201,17 +206,19 @@ function BillingPage() {
                 ].map((item) => (
                   <li
                     key={item}
-                    className="flex gap-2 text-xs text-base-content/60"
+                    className="flex gap-2 text-xs text-muted-foreground"
                   >
-                    <span className="text-base-content/30 mt-[1px] shrink-0">
+                    <span className="text-muted-foreground/70 mt-[1px] shrink-0">
                       &mdash;
                     </span>
                     {item}
                   </li>
                 ))}
               </ul>
-              <button
-                className="btn btn-soft btn-sm w-full"
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full"
                 disabled={isPending}
                 onClick={() =>
                   void runAction(
@@ -221,11 +228,13 @@ function BillingPage() {
                 }
               >
                 Upgrade Plan
-              </button>
+              </Button>
             </div>
           ) : (
-            <button
-              className="btn btn-soft btn-sm w-full"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
               disabled={isPending}
               onClick={() =>
                 void runAction(
@@ -238,16 +247,16 @@ function BillingPage() {
               }
             >
               Manage subscription
-            </button>
+            </Button>
           )}
         </div>
 
         {/* Buy credits card — paid plan only, owner-only */}
         {!isFreePlan && canManageBilling ? (
-          <div className="rounded-lg border border-base-300 bg-base-100 p-4 space-y-3">
+          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
             <div>
               <span className="font-semibold">Buy credits</span>
-              <p className="mt-1 text-sm text-base-content/60">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Top-up credits never expire and are used after your monthly
                 credits.
               </p>
@@ -255,27 +264,29 @@ function BillingPage() {
 
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm text-base-content/60">$</span>
-                <input
+                <span className="text-sm text-muted-foreground">$</span>
+                <Input
                   type="number"
                   min={10}
                   max={99}
                   step={1}
                   inputMode="numeric"
-                  className="input input-bordered input-sm w-full"
+                  className="w-full h-8 text-sm"
                   value={topUpAmount}
                   onChange={(e) => setTopUpAmount(e.target.value)}
                 />
               </div>
               {topUpAmount.trim() !== "" && !isValidTopUp ? (
-                <p className="mt-1 text-xs text-error">
+                <p className="mt-1 text-xs text-destructive">
                   Enter between $10–$99.
                 </p>
               ) : null}
             </div>
 
-            <button
-              className="btn btn-soft btn-sm w-full"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-full"
               disabled={isPending || !isValidTopUp}
               onClick={() =>
                 void runAction(
@@ -299,7 +310,7 @@ function BillingPage() {
               }
             >
               Buy credits
-            </button>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -310,9 +321,9 @@ function BillingPage() {
       {/* Per-feature usage breakdown */}
       <BillingFeatureBreakdown />
 
-      {error ? <p className="text-sm text-error">{error}</p> : null}
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <p className="text-xs text-base-content/40">
+      <p className="text-xs text-muted-foreground/70">
         Billing is powered by Stripe.
       </p>
     </div>

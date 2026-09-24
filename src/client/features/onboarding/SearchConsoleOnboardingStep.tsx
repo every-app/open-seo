@@ -22,6 +22,8 @@ import {
 } from "@/serverFunctions/gsc";
 import { getProjects } from "@/serverFunctions/projects";
 
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
 /**
@@ -49,7 +51,7 @@ export function SearchConsoleOnboardingStep(props: NavigationProps) {
         <h1 className="text-2xl font-semibold tracking-tight">
           Connect Google Search Console now?
         </h1>
-        <p className="mt-3 text-sm leading-relaxed text-base-content/60">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Bring your real clicks and queries into OpenSEO and your AI agent. You
           can also do this later from the dashboard.
         </p>
@@ -142,13 +144,14 @@ function GscConnect({
       ) : connectionQuery.isError && !connection ? (
         <div role="alert" className="text-sm">
           <p>Couldn't check your Google connection.</p>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-sm"
             onClick={() => void connectionQuery.refetch()}
           >
             Try again
-          </button>
+          </Button>
         </div>
       ) : needsSetup ? (
         <SelfHostedSetupWarning />
@@ -157,7 +160,7 @@ function GscConnect({
           <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
             <Check className="size-3.5" />
           </span>
-          <span className="text-base-content/80">
+          <span className="text-foreground">
             Connected to{" "}
             <span className="font-mono">{connection?.siteUrl}</span>.
           </span>
@@ -190,20 +193,20 @@ function GscConnect({
               onReconnect={handleConnect}
             />
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={handleConnect}
               disabled={linking}
               aria-busy={linking}
-              className="inline-flex items-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-primary"
+              className="h-auto inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm text-foreground transition hover:bg-muted hover:shadow focus-visible:outline-2 focus-visible:outline-primary"
             >
               {linking ? (
-                <span className="loading loading-spinner loading-xs" />
+                <Spinner size="sm" className="[&_svg]:size-3" />
               ) : (
                 <GoogleGlyph className="size-[18px]" />
               )}
               {linking ? "Opening Google…" : "Connect with Google"}
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -228,32 +231,34 @@ function StepNavigation({
 }: NavigationProps & { connected?: boolean; saveAction?: React.ReactNode }) {
   return (
     <div className="mt-8 flex items-center justify-between gap-3">
-      <button
-        type="button"
-        className="flex min-h-10 items-center gap-1.5 text-xs text-base-content/60 hover:text-base-content"
+      <Button
+        variant="ghost"
+        className="rounded-md flex min-h-10 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
         onClick={onBack}
       >
         <ArrowLeft className="size-3.5" /> Back
-      </button>
+      </Button>
       <div className="flex items-center gap-2">
         {connected ? (
-          <button type="button" className="btn btn-primary" onClick={onNext}>
+          <Button type="button" onClick={onNext}>
             Continue <ArrowRight className="size-4" />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-sm text-base-content/55"
+            className="text-muted-foreground"
             onClick={onSkip}
           >
             Skip for now
-          </button>
+          </Button>
         )}
         {!connected &&
           (saveAction ?? (
-            <button type="button" className="btn btn-primary btn-sm" disabled>
+            <Button size="sm" type="button" disabled>
               Save and continue
-            </button>
+            </Button>
           ))}
       </div>
     </div>
@@ -262,8 +267,8 @@ function StepNavigation({
 
 function Checking() {
   return (
-    <div className="flex items-center gap-2 text-sm text-base-content/50">
-      <span className="loading loading-spinner loading-sm" />
+    <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
+      <Spinner size="sm" />
       Checking…
     </div>
   );

@@ -15,6 +15,8 @@ import {
 } from "@/lib/auth-options";
 import { z } from "zod";
 
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 const resetPasswordSchema = z
   .object({
     password: z
@@ -176,7 +178,7 @@ function ResetPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-base-content/50 hover:text-base-content transition-colors"
+                    className="text-muted-foreground/70 hover:text-foreground transition-colors"
                   >
                     Sign in
                   </Link>
@@ -190,7 +192,10 @@ function ResetPasswordPage() {
                       ? "/sign-in"
                       : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
                   }
-                  className="btn btn-soft w-full"
+                  className={buttonVariants({
+                    variant: "secondary",
+                    className: "w-full",
+                  })}
                 >
                   Continue to sign in
                 </a>
@@ -198,7 +203,10 @@ function ResetPasswordPage() {
                 <Link
                   to="/forgot-password"
                   search={getSignInSearch(redirectTo)}
-                  className="btn btn-soft w-full"
+                  className={buttonVariants({
+                    variant: "secondary",
+                    className: "w-full",
+                  })}
                 >
                   Request a new reset link
                 </Link>
@@ -216,9 +224,9 @@ function ResetPasswordPage() {
 
                       return (
                         <div>
-                          <input
+                          <Input
                             type="password"
-                            className="input input-bordered w-full"
+                            className="w-full"
                             placeholder="New password..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -230,7 +238,9 @@ function ResetPasswordPage() {
                             required
                           />
                           {error ? (
-                            <p className="mt-1 text-sm text-error">{error}</p>
+                            <p className="mt-1 text-sm text-destructive">
+                              {error}
+                            </p>
                           ) : null}
                         </div>
                       );
@@ -243,9 +253,9 @@ function ResetPasswordPage() {
 
                       return (
                         <div>
-                          <input
+                          <Input
                             type="password"
-                            className="input input-bordered w-full"
+                            className="w-full"
                             placeholder="Confirm new password..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -257,7 +267,9 @@ function ResetPasswordPage() {
                             required
                           />
                           {error ? (
-                            <p className="mt-1 text-sm text-error">{error}</p>
+                            <p className="mt-1 text-sm text-destructive">
+                              {error}
+                            </p>
                           ) : null}
                         </div>
                       );
@@ -265,14 +277,15 @@ function ResetPasswordPage() {
                   </form.Field>
 
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <p className="text-sm text-destructive">{errorMessage}</p>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    variant="secondary"
+                    className="w-full"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Updating password..." : "Update password"}
-                  </button>
+                  </Button>
                 </form>
               )}
             </AuthPageCard>

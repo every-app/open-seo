@@ -8,6 +8,8 @@ import {
 } from "@/shared/tag-colors";
 import type { SavedKeywordTagSummary } from "@/types/keywords";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 export function ManageTagRow({
   tag,
   isBusy,
@@ -29,34 +31,34 @@ export function ManageTagRow({
   const canSave = (nameChanged || colorChanged) && !isBusy;
 
   return (
-    <div className="space-y-2 border-y border-base-300 bg-base-200/40 px-3 py-2.5">
+    <div className="space-y-2 border-y border-border bg-muted/40 px-3 py-2.5">
       <div className="space-y-1">
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Rename
         </label>
         <div className="flex items-center gap-1.5">
           <Pencil className="size-3 opacity-50" />
-          <input
+          <Input
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="min-w-0 flex-1 rounded border border-base-300 bg-base-100 px-2 py-1 text-sm outline-none focus:border-primary"
+            className="h-7 flex-1 text-sm"
           />
         </div>
       </div>
 
       <div className="space-y-1">
-        <label className="text-[11px] font-semibold uppercase tracking-wide text-base-content/55">
+        <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           Color
         </label>
         <div className="flex flex-wrap items-center gap-1.5">
           {TAG_COLOR_KEYS.map((key) => (
-            <button
+            <Button
+              variant="ghost"
               key={key}
-              type="button"
               aria-label={key}
-              className={`size-5 rounded-full transition ${tagSwatchClass(key)} ${
+              className={`text-inherit size-5 rounded-full transition ${tagSwatchClass(key)} ${
                 color === key
-                  ? "ring-2 ring-offset-2 ring-offset-base-200 ring-base-content/40"
+                  ? "ring-2 ring-offset-2 ring-offset-muted ring-foreground/40"
                   : "hover:scale-110"
               }`}
               onClick={() => setColor(key)}
@@ -66,26 +68,25 @@ export function ManageTagRow({
       </div>
 
       <div className="flex items-center justify-between pt-1">
-        <button
-          type="button"
-          className="inline-flex items-center gap-1 text-xs text-error hover:underline disabled:opacity-50"
+        <Button
+          variant="link"
+          className="h-auto p-0 inline-flex items-center gap-1 text-xs text-destructive hover:underline disabled:opacity-50"
           onClick={onDelete}
           disabled={isBusy}
         >
           <Trash2 className="size-3" />
           Delete
-        </button>
+        </Button>
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            className="rounded px-2 py-1 text-xs text-base-content/70 hover:bg-base-300"
+          <Button
+            variant="ghost"
+            className="h-auto rounded px-2 py-1 text-xs text-muted-foreground hover:bg-border"
             onClick={onCancel}
           >
             Cancel
-          </button>
-          <button
-            type="button"
-            className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-content disabled:opacity-50"
+          </Button>
+          <Button
+            className="h-auto rounded px-2 py-1 text-xs disabled:opacity-50"
             disabled={!canSave}
             onClick={() =>
               onSave({
@@ -95,7 +96,7 @@ export function ManageTagRow({
             }
           >
             Save
-          </button>
+          </Button>
         </div>
       </div>
     </div>

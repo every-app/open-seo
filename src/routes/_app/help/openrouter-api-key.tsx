@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import { Separator } from "@/client/components/ui/separator";
 const OPENROUTER_KEYS_URL = "https://openrouter.ai/settings/keys";
 
 export const Route = createFileRoute("/_app/help/openrouter-api-key")({
@@ -10,27 +12,27 @@ function OpenrouterApiKeyHelpPage() {
   return (
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto max-w-3xl space-y-4">
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-3">
+        <Card>
+          <CardContent className="pt-6 gap-3">
             <h1 className="text-2xl font-semibold">
               Set up your OpenRouter API key
             </h1>
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-muted-foreground">
               OpenSEO needs the <code>OPENROUTER_API_KEY</code> secret before AI
               features like SAM, the in-app SEO agent, can run. It is optional —
               everything else in OpenSEO works without it.
             </p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-4">
-            <h2 className="card-title text-base">Steps</h2>
-            <ol className="list-decimal pl-5 text-sm space-y-3 text-base-content/80">
+        <Card>
+          <CardContent className="pt-6 gap-4">
+            <CardTitle className="text-base">Steps</CardTitle>
+            <ol className="list-decimal pl-5 text-sm space-y-3 text-foreground">
               <li>
                 Create an account at{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href="https://openrouter.ai"
                   target="_blank"
                   rel="noreferrer"
@@ -42,7 +44,7 @@ function OpenrouterApiKeyHelpPage() {
               <li>
                 Go to{" "}
                 <a
-                  className="link link-primary"
+                  className="underline underline-offset-4 text-primary"
                   href={OPENROUTER_KEYS_URL}
                   target="_blank"
                   rel="noreferrer"
@@ -66,15 +68,15 @@ function OpenrouterApiKeyHelpPage() {
               </li>
               <li>Restart OpenSEO.</li>
             </ol>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-2 text-sm text-base-content/75">
-            <h2 className="card-title text-base">
+        <Card>
+          <CardContent className="pt-6 gap-2 text-sm text-muted-foreground">
+            <CardTitle className="text-base">
               Cloudflare Workers (Dashboard UI)
-            </h2>
-            <ol className="list-decimal pl-5 space-y-2 text-sm text-base-content/80">
+            </CardTitle>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-foreground">
               <li>
                 In Cloudflare, go to <code>Compute</code> -&gt;{" "}
                 <code>Workers &amp; Pages</code>
@@ -91,15 +93,15 @@ function OpenrouterApiKeyHelpPage() {
               <li>Paste your OpenRouter API key and save.</li>
             </ol>
 
-            <div className="divider my-1" />
+            <Separator className="my-1" />
 
             <p>Or set the same secret from your terminal with:</p>
-            <pre className="p-3 rounded bg-base-200 border border-base-300 overflow-x-auto text-xs">
+            <pre className="p-3 rounded bg-muted border border-border overflow-x-auto text-xs">
               <code>npx wrangler secret put OPENROUTER_API_KEY</code>
             </pre>
             <p>Paste your OpenRouter API key when prompted.</p>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

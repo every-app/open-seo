@@ -1,4 +1,10 @@
-import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useMatchRoute,
+} from "@tanstack/react-router";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronLeft } from "lucide-react";
 import { getProjects } from "@/serverFunctions/projects";
@@ -20,13 +26,18 @@ function ProjectSettingsLayout() {
   });
   const project = projectsQuery.data?.find((entry) => entry.id === projectId);
 
+  const matchRoute = useMatchRoute();
+  const activeTab = tabs.find((tab) =>
+    matchRoute({ to: tab.to, params: { projectId }, fuzzy: !tab.exact }),
+  )?.to;
+
   return (
-    <div className="h-full overflow-auto bg-base-100">
+    <div className="h-full overflow-auto bg-card">
       <div className="mx-auto w-full max-w-2xl space-y-8 p-4 py-8 pb-24 sm:p-6 md:py-12 md:pb-12">
         <div className="space-y-4">
           <Link
             to="/projects"
-            className="inline-flex items-center gap-1 text-sm text-base-content/60 transition-colors hover:text-base-content"
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             <ChevronLeft className="size-4" />
             Projects
@@ -35,29 +46,24 @@ function ProjectSettingsLayout() {
             <h1 className="text-2xl font-bold tracking-tight">
               Project settings
             </h1>
-            <p className="text-sm text-base-content/60">
+            <p className="text-sm text-muted-foreground">
               {project?.name ?? " "}
             </p>
           </div>
-          <div role="tablist" className="tabs tabs-border">
-            {tabs.map((tab) => (
-              <Link
-                key={tab.to}
-                role="tab"
-                to={tab.to}
-                params={{ projectId }}
-                activeOptions={{ exact: tab.exact ?? false }}
-                className="tab"
-                activeProps={{
-                  className: "tab-active",
-                  "aria-selected": true,
-                }}
-                inactiveProps={{ "aria-selected": false }}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
+          <Tabs value={activeTab}>
+            <TabsList>
+              {tabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.to}
+                  value={tab.to}
+                  nativeButton={false}
+                  render={<Link to={tab.to} params={{ projectId }} />}
+                >
+                  {tab.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
         </div>
 
         <Outlet />

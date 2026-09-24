@@ -4,9 +4,18 @@ import { cn } from "@/client/lib/utils";
 
 const Table = React.forwardRef<
   HTMLTableElement,
-  React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-lg border border-border bg-card [box-shadow:var(--shadow-s)]">
+  React.HTMLAttributes<HTMLTableElement> & {
+    // The scroll container around the table; callers that own scrolling
+    // (sticky headers, fixed heights) pass their overflow classes here.
+    containerClassName?: string;
+  }
+>(({ className, containerClassName, ...props }, ref) => (
+  <div
+    className={cn(
+      "relative w-full overflow-auto rounded-lg border border-border bg-card [box-shadow:var(--shadow-s)]",
+      containerClassName,
+    )}
+  >
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}

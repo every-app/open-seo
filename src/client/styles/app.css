@@ -1,21 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap");
 @import "tailwindcss";
+
+/* The app picks its theme with data-theme (see client/lib/theme.ts). */
+@custom-variant dark (&:is([data-theme="openseo-dark"] *));
 
 @theme {
   --container-8xl: 88rem;
   --font-sans:
     "Instrument Sans", ui-sans-serif, system-ui, -apple-system,
     BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  /* Atelier radius scale (--radius: 1rem). */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.25rem;
 }
 
-/* Atelier design-system tokens. Names follow the shadcn contract the
-   components in client/components/ui read; primary, secondary and accent come
-   from the daisyUI themes below, which carry the same values. */
+/* Atelier design-system tokens (Better Design registry: atelier/globals). */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -23,71 +19,101 @@
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --shadow-s: var(--shadow-s);
+  --shadow-m: var(--shadow-m);
+  --shadow-l: var(--shadow-l);
+  --shadow-inset: var(--shadow-inset);
+  --shadow-button: var(--shadow-button);
+  --shadow-button-hover: var(--shadow-button-hover);
+  --shadow-primary: var(--shadow-primary);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root,
 [data-theme="openseo"] {
+  color-scheme: light;
   --background: oklch(0.9731 0.0036 91);
   --foreground: oklch(0.245 0.0055 106);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.245 0.0055 106);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.245 0.0055 106);
+  --primary: oklch(0.44 0.08 158);
   --primary-foreground: oklch(0.9821 0.0061 155);
+  --primary-hover: oklch(0.4 0.078 158);
+  --secondary: oklch(0.9572 0.0042 95);
   --secondary-foreground: oklch(0.3253 0.0064 106);
   --muted: oklch(0.9594 0.0035 95);
   --muted-foreground: oklch(0.5174 0.0058 106);
+  --accent: oklch(0.9135 0.0608 156);
   --accent-foreground: oklch(0.3702 0.0608 157);
   --destructive: oklch(0.5478 0.1843 28);
   --destructive-foreground: oklch(0.985 0.008 28);
   --border: oklch(0.9183 0.004 95);
   --input: oklch(0.9883 0.0022 95);
   --ring: oklch(0.5642 0.0855 157);
+  --radius: 1rem;
+  --chart-1: var(--primary);
+  --chart-2: oklch(0.87 0.0993 156);
+  --chart-3: oklch(0.6864 0.0455 152);
+  --chart-4: oklch(0.8585 0.0035 95);
+  --chart-5: oklch(0.4 0.006 106);
   --shadow-s: 0 1px 2px oklch(0.2 0.01 110 / 0.06);
   --shadow-m:
     0 1px 2px oklch(0.2 0.01 110 / 0.05),
     0 8px 24px -6px oklch(0.2 0.01 110 / 0.08);
+  --shadow-l:
+    0 2px 4px oklch(0.2 0.01 110 / 0.05),
+    0 24px 48px -12px oklch(0.2 0.01 110 / 0.12);
+  --shadow-inset: inset 0 1px 2px oklch(0.2 0.01 110 / 0.05);
   --shadow-button:
     inset 0 1px 0 oklch(1 0 0 / 0.16), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
     0 3px 10px -2px oklch(0.25 0.05 156 / 0.1);
-}
-
-/* Atelier ships light only; this dark set keeps its warm neutrals and green
-   hue so the existing dark-mode preference still works. */
-[data-theme="openseo-dark"] {
-  --background: oklch(0.19 0.006 100);
-  --foreground: oklch(0.94 0.006 95);
-  --card: oklch(0.225 0.006 100);
-  --card-foreground: oklch(0.94 0.006 95);
-  --popover: oklch(0.225 0.006 100);
-  --popover-foreground: oklch(0.94 0.006 95);
-  --primary-foreground: oklch(0.2 0.03 158);
-  --secondary-foreground: oklch(0.9 0.006 95);
-  --muted: oklch(0.26 0.006 100);
-  --muted-foreground: oklch(0.72 0.008 95);
-  --accent-foreground: oklch(0.9 0.05 156);
-  --destructive: oklch(0.68 0.17 28);
-  --destructive-foreground: oklch(0.2 0.03 28);
-  --border: oklch(0.31 0.006 100);
-  --input: oklch(0.25 0.006 100);
-  --ring: oklch(0.72 0.1 158);
-  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.3);
-  --shadow-m: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -6px oklch(0 0 0 / 0.4);
-  --shadow-button:
-    inset 0 1px 0 oklch(1 0 0 / 0.12), 0 1px 2px oklch(0 0 0 / 0.3);
-}
-
-:root {
+  --shadow-button-hover:
+    inset 0 1px 0 oklch(1 0 0 / 0.2), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
+    0 5px 14px -2px oklch(0.25 0.05 156 / 0.12);
+  --shadow-primary:
+    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
+    0 3px 10px -2px oklch(0.25 0.05 156 / 0.1);
+  /* Status colours the app needs beyond Atelier's set (success, warning,
+     info). Atelier's Badge and Alert carry the same hues. */
+  --success: oklch(0.5 0.1 152);
+  --success-foreground: oklch(0.98 0.01 152);
+  --warning: oklch(0.72 0.14 75);
+  --warning-foreground: oklch(0.3 0.06 70);
+  --info: oklch(0.55 0.09 240);
+  --info-foreground: oklch(0.98 0.01 240);
   --trend-grid-color: oklch(56% 0.01 255 / 0.28);
   --trend-axis-color: oklch(42% 0.01 255 / 0.85);
   --trend-fill-start-opacity: 0.32;
@@ -97,93 +123,73 @@
   --trend-tooltip-shadow: oklch(0% 0 0 / 0.1);
 }
 
-@plugin "daisyui" {
-  /* @property isn't supported by some browsers and gives a noisy warning https://github.com/saadeghi/daisyui/issues/3882 */
-  exclude: properties;
-}
-
-/* Light theme: Atelier */
-@plugin "daisyui/theme" {
-  name: "openseo";
-  default: true;
-  prefersdark: false;
-  color-scheme: light;
-  --color-base-100: oklch(1 0 0);
-  --color-base-200: oklch(0.9731 0.0036 91);
-  --color-base-300: oklch(0.9183 0.004 95);
-  --color-base-content: oklch(0.245 0.0055 106);
-  --color-primary: oklch(0.44 0.08 158);
-  --color-primary-content: oklch(0.9821 0.0061 155);
-  --color-secondary: oklch(0.9572 0.0042 95);
-  --color-secondary-content: oklch(0.3253 0.0064 106);
-  --color-accent: oklch(0.9135 0.0608 156);
-  --color-accent-content: oklch(0.3702 0.0608 157);
-  --color-neutral: oklch(0.245 0.0055 106);
-  --color-neutral-content: oklch(0.9821 0.0061 155);
-  --color-info: oklch(0.55 0.09 240);
-  --color-info-content: oklch(0.98 0.01 240);
-  --color-success: oklch(0.5 0.1 152);
-  --color-success-content: oklch(0.98 0.01 152);
-  --color-warning: oklch(0.86 0.1 82);
-  --color-warning-content: oklch(0.34 0.06 70);
-  --color-error: oklch(0.5478 0.1843 28);
-  --color-error-content: oklch(0.985 0.008 28);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.75rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
-}
-
-/* Dark theme: Atelier neutrals, dark set. Auto-activates via prefers-color-scheme */
-@plugin "daisyui/theme" {
-  name: "openseo-dark";
-  prefersdark: true;
+/* Atelier ships light only; this dark set keeps its warm neutrals and green
+   hue so the app's existing dark-mode preference still works. */
+[data-theme="openseo-dark"] {
   color-scheme: dark;
-  --color-base-100: oklch(0.225 0.006 100);
-  --color-base-200: oklch(0.19 0.006 100);
-  --color-base-300: oklch(0.31 0.006 100);
-  --color-base-content: oklch(0.94 0.006 95);
-  --color-primary: oklch(0.72 0.1 158);
-  --color-primary-content: oklch(0.2 0.03 158);
-  --color-secondary: oklch(0.27 0.006 100);
-  --color-secondary-content: oklch(0.9 0.006 95);
-  --color-accent: oklch(0.32 0.05 158);
-  --color-accent-content: oklch(0.9 0.05 156);
-  --color-neutral: oklch(0.88 0.006 95);
-  --color-neutral-content: oklch(0.2 0.006 100);
-  --color-info: oklch(0.7 0.1 240);
-  --color-info-content: oklch(0.2 0.03 240);
-  --color-success: oklch(0.72 0.12 152);
-  --color-success-content: oklch(0.2 0.03 152);
-  --color-warning: oklch(0.8 0.12 82);
-  --color-warning-content: oklch(0.25 0.05 70);
-  --color-error: oklch(0.68 0.17 28);
-  --color-error-content: oklch(0.2 0.03 28);
-  --radius-selector: 0.5rem;
-  --radius-field: 0.75rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 0;
-  --noise: 0;
+  --background: oklch(0.19 0.006 100);
+  --foreground: oklch(0.94 0.006 95);
+  --card: oklch(0.225 0.006 100);
+  --card-foreground: oklch(0.94 0.006 95);
+  --popover: oklch(0.225 0.006 100);
+  --popover-foreground: oklch(0.94 0.006 95);
+  --primary: oklch(0.72 0.1 158);
+  --primary-foreground: oklch(0.2 0.03 158);
+  --primary-hover: oklch(0.76 0.1 158);
+  --secondary: oklch(0.27 0.006 100);
+  --secondary-foreground: oklch(0.9 0.006 95);
+  --muted: oklch(0.26 0.006 100);
+  --muted-foreground: oklch(0.72 0.008 95);
+  --accent: oklch(0.32 0.05 158);
+  --accent-foreground: oklch(0.9 0.05 156);
+  --destructive: oklch(0.68 0.17 28);
+  --destructive-foreground: oklch(0.2 0.03 28);
+  --border: oklch(0.31 0.006 100);
+  --input: oklch(0.25 0.006 100);
+  --ring: oklch(0.72 0.1 158);
+  --chart-2: oklch(0.5 0.08 156);
+  --chart-3: oklch(0.6 0.05 152);
+  --chart-4: oklch(0.4 0.006 95);
+  --chart-5: oklch(0.8 0.006 106);
+  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-m: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -6px oklch(0 0 0 / 0.4);
+  --shadow-l:
+    0 2px 4px oklch(0 0 0 / 0.3), 0 24px 48px -12px oklch(0 0 0 / 0.5);
+  --shadow-inset: inset 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-button:
+    inset 0 1px 0 oklch(1 0 0 / 0.12), 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow-button-hover:
+    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 2px 6px oklch(0 0 0 / 0.35);
+  --shadow-primary: var(--shadow-button);
+  --success: oklch(0.72 0.12 152);
+  --success-foreground: oklch(0.2 0.03 152);
+  --warning: oklch(0.8 0.12 82);
+  --warning-foreground: oklch(0.25 0.05 70);
+  --info: oklch(0.7 0.1 240);
+  --info-foreground: oklch(0.2 0.03 240);
+  --trend-tooltip-bg: oklch(25% 0.005 100 / 0.96);
+  --trend-tooltip-border: oklch(35% 0.005 100 / 0.7);
 }
 
-/* Atelier buttons are pills with a soft lift on the primary. */
-.btn {
-  border-radius: 9999px;
-}
-.btn-primary {
-  box-shadow: var(--shadow-button);
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    letter-spacing: -0.01em;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+  ::selection {
+    background-color: var(--primary);
+    color: var(--primary-foreground);
+  }
 }
 
 html,
 body {
-  @apply m-0 bg-base-200;
+  @apply m-0 bg-background;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   height: 100%;
@@ -197,16 +203,6 @@ select {
   @apply text-base;
 }
 
-/* Global input focus styling - use primary color instead of default ring */
-.input:focus,
-.input:focus-visible,
-.textarea:focus,
-.textarea:focus-visible {
-  outline: none;
-  border-color: var(--color-primary);
-  background-color: color-mix(in oklab, var(--color-primary) 10%, transparent);
-}
-
 /* Safe area utilities for mobile devices */
 @layer utilities {
   .pb-safe {
@@ -217,18 +213,6 @@ select {
   }
 }
 
-/* Override DaisyUI dock's fixed positioning to use flex layout instead */
-/* This allows the TabBar to work correctly with Safari's browser toolbar */
-.dock {
-  position: relative;
-  bottom: auto;
-  left: auto;
-  right: auto;
-  border-top: none;
-  height: 4rem;
-  padding-bottom: 0;
-}
-
 /* Touch device optimizations */
 @media (pointer: coarse) {
   html {
@@ -237,66 +221,6 @@ select {
   body {
     touch-action: pan-x pan-y;
   }
-}
-
-/* Dark mode: neutral interactive surfaces should lift above the panel, not
-   sink below it. DaisyUI derives default buttons and the tabs-box well from
-   base-200, which is darker than the base-100 content panel in dark mode,
-   so they read as sunken/disabled. Colored variants (primary, error, ...)
-   set their own --btn-color and are excluded. */
-html[data-theme="openseo-dark"]
-  .btn:not(
-    .btn-primary,
-    .btn-error,
-    .btn-neutral,
-    .btn-ghost,
-    .btn-outline,
-    .btn-soft
-  ) {
-  --btn-color: oklch(25% 0 0);
-}
-
-/* Light mode: the base-200 default button is nearly invisible on the
-   base-100 content panel; use a white surface with a visible border,
-   matching inputs/selects. */
-html[data-theme="openseo"]
-  .btn:not(
-    .btn-primary,
-    .btn-error,
-    .btn-neutral,
-    .btn-ghost,
-    .btn-outline,
-    .btn-soft
-  ) {
-  --btn-color: var(--color-base-100);
-  --btn-border: var(--color-base-300);
-}
-
-/* Underline tabs: DaisyUI's tabs-border underlines the active tab with
-   currentColor; use the primary accent instead (PostHog-style). */
-.tabs-border > .tab.tab-active::before {
-  --tab-border-color: var(--color-primary);
-}
-
-/* Custom alert styling with darker borders and transparent background */
-.alert {
-  @apply flex gap-3 rounded-lg border p-4 text-base-content/70;
-}
-
-.alert-warning {
-  @apply border-warning/70 bg-warning/40 text-base-content/90;
-}
-
-.alert-info {
-  @apply border-info/70 bg-info/40 text-base-content/90;
-}
-
-.alert-success {
-  @apply border-success/70 bg-success/40 text-base-content/90;
-}
-
-.alert-error {
-  @apply border-error/70 bg-error/40 text-base-content/90;
 }
 
 /* Tag chip colors — muted background + readable text in both themes.
@@ -444,20 +368,4 @@ html[data-theme="openseo-dark"] {
   --trend-tooltip-bg: oklch(21% 0.01 255 / 0.95);
   --trend-tooltip-border: oklch(40% 0.01 255 / 0.65);
   --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
-}
-
-html[data-theme="openseo-dark"] .alert-warning {
-  @apply border-warning/60 bg-warning/20;
-}
-
-html[data-theme="openseo-dark"] .alert-info {
-  @apply border-info/60 bg-info/20;
-}
-
-html[data-theme="openseo-dark"] .alert-success {
-  @apply border-success/60 bg-success/20;
-}
-
-html[data-theme="openseo-dark"] .alert-error {
-  @apply border-error/60 bg-error/20;
 }

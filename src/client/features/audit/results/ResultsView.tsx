@@ -17,6 +17,8 @@ import {
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
 
+import { Card, CardContent } from "@/client/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 type ResultsTab = "issues" | "pages" | "performance";
 
 export function ResultsView({
@@ -57,7 +59,7 @@ export function ResultsView({
           couldn't be audited. We don't have a workaround for this yet. Desktop
           crawlers run from your own machine and usually get past it: try{" "}
           <a
-            className="link link-primary"
+            className="underline underline-offset-4 text-primary"
             href="https://github.com/PhialsBasement/LibreCrawl"
             target="_blank"
             rel="noreferrer"
@@ -66,7 +68,7 @@ export function ResultsView({
           </a>{" "}
           (free, open source) or{" "}
           <a
-            className="link link-primary"
+            className="underline underline-offset-4 text-primary"
             href="https://www.screamingfrog.co.uk/seo-spider/"
             target="_blank"
             rel="noreferrer"
@@ -101,8 +103,8 @@ export function ResultsView({
         lighthouseSummary={stats.lighthouseSummary}
       />
 
-      <div className="card bg-base-100 border border-base-300">
-        <div className="card-body gap-3">
+      <Card>
+        <CardContent className="pt-6 gap-3">
           <ResultsHeader
             issueCount={issues.length}
             pageCount={pages.length}
@@ -139,8 +141,8 @@ export function ResultsView({
               pages={pages}
             />
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -158,7 +160,7 @@ function CrawlWarning({
       <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" />
       <p>
         <span className="font-medium">{headline}</span>{" "}
-        <span className="text-base-content/70">{children}</span>
+        <span className="text-muted-foreground">{children}</span>
       </p>
     </div>
   );
@@ -240,24 +242,21 @@ function ResultsHeader({
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-      <div role="tablist" className="tabs tabs-border w-fit">
-        {tabs.map(({ label, tab }) => {
-          const isActive = activeTab === tab;
-
-          return (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              className={`tab ${isActive ? "tab-active" : ""}`}
-              onClick={() => onTabChange(tab)}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={activeTab}>
+        <TabsList className="w-fit">
+          {tabs.map(({ label, tab }) => {
+            return (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                onClick={() => onTabChange(tab)}
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       <ExportDropdown onExport={onExport} />
     </div>
@@ -305,11 +304,14 @@ function StatsStrip({
       valueClass: issues.length === 0 ? "text-success" : "",
       sub: issues.length > 0 && (
         <span className="flex items-center gap-2.5">
-          <SeverityCount count={severityCounts.critical} dotClass="bg-error" />
+          <SeverityCount
+            count={severityCounts.critical}
+            dotClass="bg-destructive"
+          />
           <SeverityCount count={severityCounts.warning} dotClass="bg-warning" />
           <SeverityCount
             count={severityCounts.info}
-            dotClass="bg-base-content/30"
+            dotClass="bg-foreground/30"
           />
         </span>
       ),
@@ -348,7 +350,7 @@ function StatsStrip({
         label: "Lighthouse failures",
         value: String(lighthouseSummary.failed),
         valueClass:
-          lighthouseSummary.failed > 0 ? "text-error" : "text-success",
+          lighthouseSummary.failed > 0 ? "text-destructive" : "text-success",
       },
     );
   }
@@ -360,11 +362,11 @@ function StatsStrip({
 
   return (
     <div
-      className={`grid ${columnsClass} gap-px rounded-lg border border-base-300 bg-base-300/70 overflow-hidden`}
+      className={`grid ${columnsClass} gap-px rounded-lg border border-border bg-border/70 overflow-hidden`}
     >
       {items.map((item) => (
-        <div key={item.label} className="bg-base-100 px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wider text-base-content/50">
+        <div key={item.label} className="bg-card px-4 py-3">
+          <p className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
             {item.label}
           </p>
           <p
@@ -373,7 +375,7 @@ function StatsStrip({
             {item.value}
           </p>
           {item.sub && (
-            <div className="text-xs text-base-content/60 mt-1">{item.sub}</div>
+            <div className="text-xs text-muted-foreground mt-1">{item.sub}</div>
           )}
         </div>
       ))}
@@ -401,5 +403,5 @@ function scoreClass(score: number | null) {
   if (score == null) return "";
   if (score >= 90) return "text-success";
   if (score >= 50) return "text-warning";
-  return "text-error";
+  return "text-destructive";
 }

@@ -32,6 +32,8 @@ import {
   type PerformanceRowData,
 } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 
+import { Badge } from "@/client/components/ui/badge";
+import { buttonVariants } from "@/client/components/ui/button";
 const performanceColumnHelper = createColumnHelper<PerformanceRowData>();
 
 export function PerformanceTable({
@@ -104,7 +106,6 @@ export function PerformanceTable({
       ) : null}
       <AppDataTable
         table={table}
-        className="table table-sm"
         empty={
           <EmptyTableMessage label="No performance results match these filters." />
         }
@@ -143,14 +144,17 @@ function buildPerformanceColumns({
         const failureMessage =
           row.original.errorMessage ?? "Lighthouse returned no category scores";
         return isFailed ? (
-          <span
-            className="badge badge-error badge-outline text-xs"
+          <Badge
+            variant="destructive"
+            className="text-xs"
             title={failureMessage}
           >
             failed
-          </span>
+          </Badge>
         ) : (
-          <span className="badge badge-success badge-outline text-xs">ok</span>
+          <Badge variant="success" className="text-xs">
+            ok
+          </Badge>
         );
       },
       enableSorting: true,
@@ -180,7 +184,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{(value / 1000).toFixed(1)}s</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground/70">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -192,7 +196,7 @@ function buildPerformanceColumns({
         return value != null ? (
           <span className="text-xs">{value.toFixed(3)}</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground/70">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -204,7 +208,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground/70">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -216,7 +220,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground/70">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -227,7 +231,7 @@ function buildPerformanceColumns({
       cell: ({ row }) =>
         row.original.r2Key && !isLighthouseFailure(row.original) ? (
           <Link
-            className="btn btn-primary btn-xs"
+            className={buttonVariants({ size: "sm", className: "h-7 px-2.5" })}
             to="/p/$projectId/audit/issues/$resultId"
             params={{ projectId, resultId: row.original.id }}
             search={{ auditId, category: "performance" }}
@@ -235,7 +239,7 @@ function buildPerformanceColumns({
             View issues
           </Link>
         ) : (
-          <span className="text-xs text-base-content/40">-</span>
+          <span className="text-xs text-muted-foreground/70">-</span>
         ),
     }),
   ];
@@ -248,8 +252,8 @@ export function ExportDropdown({
 }) {
   return (
     <TableExportMenu
-      buttonClassName="btn btn-sm btn-ghost gap-1"
-      menuClassName="dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-52"
+      buttonVariant="ghost"
+      menuClassName="w-52"
       actions={[
         { label: "Export to Sheets", onClick: () => onExport("sheets") },
         { label: "CSV", onClick: () => onExport("csv") },

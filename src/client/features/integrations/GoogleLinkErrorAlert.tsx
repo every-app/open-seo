@@ -8,6 +8,7 @@ import {
   type GoogleLinkProvider,
 } from "./googleLinkError";
 
+import { Button } from "@/client/components/ui/button";
 const PROVIDER_LABELS: Record<GoogleLinkProvider, string> = {
   gsc: "Search Console",
   ga4: "Google Analytics",
@@ -41,23 +42,25 @@ export function GoogleLinkErrorAlert({
   return (
     <div
       role="alert"
-      className={`flex items-start justify-between gap-3 rounded-lg border border-error/30 bg-error/10 p-3.5 text-sm ${className ?? ""}`}
+      className={`flex items-start justify-between gap-3 rounded-lg border border-destructive/30 bg-destructive/10 p-3.5 text-sm ${className ?? ""}`}
     >
       <div className="space-y-1">
-        <p className="font-semibold text-error">{copy.title}</p>
-        <p className="text-base-content/70">{copy.description}</p>
+        <p className="font-semibold text-destructive">{copy.title}</p>
+        <p className="text-muted-foreground">{copy.description}</p>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         type="button"
         aria-label="Dismiss"
-        className="btn btn-ghost btn-xs shrink-0 px-1.5"
+        className="h-7 px-2.5 shrink-0 px-1.5"
         onClick={() => {
           setDismissed(true);
           clearGoogleLinkError();
         }}
       >
         <X className="size-3.5" />
-      </button>
+      </Button>
     </div>
   );
 }

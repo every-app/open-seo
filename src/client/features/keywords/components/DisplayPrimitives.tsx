@@ -14,6 +14,7 @@ import type { MonthlySearch } from "@/types/keywords";
 import { formatCompactNumber } from "../utils";
 import { FloatingTooltip, useFloatingTooltip } from "./FloatingTooltip";
 
+import { Button } from "@/client/components/ui/button";
 export type SortField =
   | "keyword"
   | "searchVolume"
@@ -204,9 +205,10 @@ export function SortHeader({
   });
 
   return (
-    <button
+    <Button
+      variant="ghost"
       ref={tooltip.triggerRef}
-      className={`inline-flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer select-none ${className ?? ""}`}
+      className={`h-auto rounded-md text-inherit px-0 hover:bg-transparent inline-flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer select-none ${className ?? ""}`}
       onClick={() => onToggle(field)}
       onMouseEnter={tooltip.scheduleOpen}
       onMouseLeave={tooltip.close}
@@ -234,6 +236,6 @@ export function SortHeader({
             document.body,
           )
         : null}
-    </button>
+    </Button>
   );
 }

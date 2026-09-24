@@ -13,6 +13,8 @@ import { authClient } from "@/lib/auth-client";
 import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(1, "Enter your password."),
@@ -127,15 +129,15 @@ function SignInPage() {
           <div
             className={
               showEmailForm
-                ? "flex justify-between text-sm text-base-content/50"
-                : "text-sm text-base-content/50"
+                ? "flex justify-between text-sm text-muted-foreground/70"
+                : "text-sm text-muted-foreground/70"
             }
           >
             {showEmailForm ? (
               <Link
                 to="/forgot-password"
                 search={getSignInSearch(redirectTo)}
-                className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 Forgot password?
               </Link>
@@ -143,7 +145,7 @@ function SignInPage() {
             <Link
               to="/sign-up"
               search={getSignInSearch(redirectTo)}
-              className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+              className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
             >
               Create account
             </Link>
@@ -166,7 +168,7 @@ function SignInPage() {
             }}
           />
           {socialError ? (
-            <p className="text-sm text-error">{socialError}</p>
+            <p className="text-sm text-destructive">{socialError}</p>
           ) : null}
         </>
       ) : (
@@ -183,9 +185,9 @@ function SignInPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="email"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Email address..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -194,7 +196,7 @@ function SignInPage() {
                     required
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -207,9 +209,9 @@ function SignInPage() {
 
               return (
                 <div>
-                  <input
+                  <Input
                     type="password"
-                    className="input input-bordered w-full"
+                    className="w-full"
                     placeholder="Password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -218,7 +220,7 @@ function SignInPage() {
                     required
                   />
                   {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
+                    <p className="mt-1 text-sm text-destructive">{error}</p>
                   ) : null}
                 </div>
               );
@@ -236,14 +238,15 @@ function SignInPage() {
               return (
                 <>
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <p className="text-sm text-destructive">{errorMessage}</p>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    variant="secondary"
+                    className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
                     {isSubmitting ? "Signing in..." : "Sign in"}
-                  </button>
+                  </Button>
                 </>
               );
             }}

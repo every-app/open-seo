@@ -44,8 +44,8 @@ function shareDescription(summary: string): string {
 // product without loading its stylesheet. Dark follows the OS: an anonymous
 // reader has no stored preference.
 const STYLES = `
-:root{color-scheme:light dark;--bg:oklch(97% 0 0);--surface:oklch(100% 0 0);--border:oklch(92% 0 0);--text:oklch(20% 0 0);--muted:oklch(20% 0 0 / .5);--primary:oklch(50% 0.12 262);--primary-text:oklch(100% 0 0);--ghost-hover:oklch(20% 0 0 / .08)}
-@media (prefers-color-scheme:dark){:root{--bg:oklch(12% 0 0);--surface:oklch(18% 0 0);--border:oklch(27% 0 0);--text:oklch(92% 0 0);--muted:oklch(92% 0 0 / .5);--primary:oklch(66% 0.12 262);--ghost-hover:oklch(92% 0 0 / .1)}}
+:root{color-scheme:light dark;--bg:oklch(0.9731 0.0036 91);--surface:oklch(1 0 0);--border:oklch(0.9183 0.004 95);--text:oklch(0.245 0.0055 106);--muted:oklch(0.5174 0.0058 106);--primary:oklch(0.44 0.08 158);--primary-text:oklch(0.9821 0.0061 155);--ghost-hover:oklch(0.9572 0.0042 95)}
+@media (prefers-color-scheme:dark){:root{--bg:oklch(0.19 0.006 100);--surface:oklch(0.225 0.006 100);--border:oklch(0.31 0.006 100);--text:oklch(0.94 0.006 95);--muted:oklch(0.72 0.008 95);--primary:oklch(0.72 0.1 158);--primary-text:oklch(0.2 0.03 158);--ghost-hover:oklch(0.27 0.006 100)}}
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
 body{display:flex;flex-direction:column;background:var(--bg);color:var(--text);font:14px/1.5 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -55,7 +55,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 h1{margin:0;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meta{margin:0;font-size:12px;color:var(--muted)}
 .actions{display:flex;flex-shrink:0;align-items:center;gap:8px}
-.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border:1px solid transparent;border-radius:6px;font:inherit;font-weight:600;color:inherit;background:transparent;cursor:pointer;text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border:1px solid transparent;border-radius:9999px;font:inherit;font-weight:600;color:inherit;background:transparent;cursor:pointer;text-decoration:none}
 .btn:hover{background:var(--ghost-hover)}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-text)}
 .btn.primary:hover{filter:brightness(.92)}

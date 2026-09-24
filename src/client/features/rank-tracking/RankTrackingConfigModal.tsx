@@ -21,6 +21,10 @@ import { SearchTargetingField } from "./SearchTargetingField";
 import { KeywordSuggestionStep } from "./KeywordSuggestionStep";
 import { useSaveConfigMutations } from "./useSaveConfigMutations";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { NativeSelect } from "@/client/components/ui/native-select";
+import { Field, FieldLabel } from "@/client/components/ui/field";
 type Props = {
   projectId: string;
   existingConfig?: RankTrackingConfig | null;
@@ -49,7 +53,7 @@ export function RankTrackingConfigModal({
           Add Domain
         </h2>
         <div className="flex min-h-40 items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-base-content/50" />
+          <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
         </div>
       </Modal>
     );
@@ -189,30 +193,31 @@ function RankTrackingConfigModalContent({
         <h2 id="rank-config-modal-title" className="text-lg font-semibold">
           {isEdit ? "Edit Domain Config" : "Add Domain"}
         </h2>
-        <button className="btn btn-ghost btn-sm btn-square" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-8"
+          onClick={onClose}
+        >
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Target Domain</span>
-          </label>
-          <input
+        <Field>
+          <FieldLabel>Target Domain</FieldLabel>
+          <Input
             type="text"
             placeholder="example.com"
-            className="input input-bordered w-full"
+            className="w-full"
             value={domain}
             onChange={(e) => setDomain(e.target.value)}
             onBlur={handleDomainBlur}
           />
-        </div>
+        </Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Country</span>
-          </label>
+        <Field>
+          <FieldLabel>Country</FieldLabel>
           <LocationSelect
             value={locationCode}
             onChange={(newLocationCode) => {
@@ -222,7 +227,7 @@ function RankTrackingConfigModalContent({
               setLocationName(undefined);
             }}
           />
-        </div>
+        </Field>
 
         <SearchTargetingField
           mode={targetingMode}
@@ -232,12 +237,10 @@ function RankTrackingConfigModalContent({
           countryCode={selectedCountryCode}
         />
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Language</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
+        <Field>
+          <FieldLabel>Language</FieldLabel>
+          <NativeSelect
+            className="w-full"
             value={languageCode}
             onChange={(e) => setLanguageCode(e.target.value)}
           >
@@ -246,19 +249,17 @@ function RankTrackingConfigModalContent({
                 {language.label}
               </option>
             ))}
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
+          </NativeSelect>
+          <div className="mt-1.5 text-xs text-muted-foreground/70">
             Defaults to the country's language. Any language can be tracked in
             any country — pick the one your customers search in.
           </div>
-        </div>
+        </Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Devices</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
+        <Field>
+          <FieldLabel>Devices</FieldLabel>
+          <NativeSelect
+            className="w-full"
             value={devices}
             onChange={(e) => {
               const value = e.target.value;
@@ -274,8 +275,8 @@ function RankTrackingConfigModalContent({
             <option value="both">Desktop + Mobile</option>
             <option value="desktop">Desktop only</option>
             <option value="mobile">Mobile only</option>
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
+          </NativeSelect>
+          <div className="mt-1.5 text-xs text-muted-foreground/70">
             Most Google searches come from mobile, but select this based on your
             customer.
           </div>
@@ -287,14 +288,12 @@ function RankTrackingConfigModalContent({
               </span>
             </div>
           )}
-        </div>
+        </Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Schedule</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
+        <Field>
+          <FieldLabel>Schedule</FieldLabel>
+          <NativeSelect
+            className="w-full"
             value={schedule}
             onChange={(e) => {
               const value = e.target.value;
@@ -312,21 +311,19 @@ function RankTrackingConfigModalContent({
             <option value="weekly">Weekly</option>
             <option value="monthly">Monthly (end of month)</option>
             <option value="manual">Manual only</option>
-          </select>
+          </NativeSelect>
           {schedule === "daily" && (
             <div className="mt-1.5 flex items-start gap-1.5 text-xs text-warning">
               <Info className="size-3.5 shrink-0 mt-0.5" />
               <span>Daily checks use 7x more credits than weekly</span>
             </div>
           )}
-        </div>
+        </Field>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text font-medium">Search Depth</span>
-          </label>
-          <select
-            className="select select-bordered w-full"
+        <Field>
+          <FieldLabel>Search Depth</FieldLabel>
+          <NativeSelect
+            className="w-full"
             value={depthToPages(serpDepth)}
             onChange={(e) => setSerpDepth(pagesToDepth(Number(e.target.value)))}
           >
@@ -336,11 +333,11 @@ function RankTrackingConfigModalContent({
                 results)
               </option>
             ))}
-          </select>
-          <div className="mt-1.5 text-xs text-base-content/50">
+          </NativeSelect>
+          <div className="mt-1.5 text-xs text-muted-foreground/70">
             10 pages is ~8x more expensive than 1 page
           </div>
-        </div>
+        </Field>
 
         {(() => {
           // Scheduled checks run through the cheaper task queue; manual
@@ -354,9 +351,9 @@ function RankTrackingConfigModalContent({
           const checksPerMonth =
             schedule === "daily" ? 30 : schedule === "weekly" ? 4 : 1;
           return (
-            <div className="rounded-lg bg-base-200/50 px-3 py-2.5 text-xs text-base-content/70 space-y-0.5">
+            <div className="rounded-lg bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground space-y-0.5">
               <div>
-                <span className="font-mono font-semibold text-base-content">
+                <span className="font-mono font-semibold text-foreground">
                   ~${costPerKeyword.toFixed(4)}
                 </span>{" "}
                 per keyword per check
@@ -364,7 +361,7 @@ function RankTrackingConfigModalContent({
               {schedule !== "manual" && (
                 <div>
                   50 keywords would cost{" "}
-                  <span className="font-mono font-semibold text-base-content">
+                  <span className="font-mono font-semibold text-foreground">
                     ~${(costPerKeyword * 50 * checksPerMonth).toFixed(2)}
                   </span>
                   /month
@@ -375,21 +372,17 @@ function RankTrackingConfigModalContent({
         })()}
 
         <div className="flex justify-end gap-2 pt-2">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="sm" type="button" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             type="submit"
-            className="btn btn-primary btn-sm"
             disabled={isPending || !domain.trim()}
           >
             {isPending && <Loader2 className="size-3.5 animate-spin" />}
             {isEdit ? "Save Changes" : "Add Domain"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>

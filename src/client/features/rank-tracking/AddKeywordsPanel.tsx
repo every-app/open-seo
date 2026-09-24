@@ -6,6 +6,9 @@ import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { Loader2 } from "lucide-react";
 
+import { Button } from "@/client/components/ui/button";
+import { Textarea } from "@/client/components/ui/textarea";
+import { Checkbox } from "@/client/components/ui/checkbox";
 export function AddKeywordsPanel({
   configId,
   projectId,
@@ -36,8 +39,8 @@ export function AddKeywordsPanel({
   return (
     <div className="flex gap-2 items-end">
       <div className="flex flex-col gap-1 flex-1">
-        <textarea
-          className="textarea textarea-bordered textarea-sm w-full"
+        <Textarea
+          className="w-full text-sm"
           rows={3}
           placeholder="Enter keywords, one per line"
           value={keywordInput}
@@ -47,18 +50,16 @@ export function AddKeywordsPanel({
           className="flex items-center gap-2 text-xs cursor-pointer w-fit"
           title="Track these keywords exactly as typed instead of lowercasing them. Google can return different results for a capitalized brand name."
         >
-          <input
-            type="checkbox"
-            className="checkbox checkbox-xs [--radius-selector:0.25rem]"
+          <Checkbox
             checked={matchCase}
-            onChange={(e) => setMatchCase(e.target.checked)}
+            onCheckedChange={(checked) => setMatchCase(checked)}
           />
           Match case
         </label>
       </div>
       <div className="flex flex-col gap-1">
-        <button
-          className="btn btn-primary btn-sm"
+        <Button
+          size="sm"
           onClick={() => {
             const lines = keywordInput
               .split("\n")
@@ -76,10 +77,10 @@ export function AddKeywordsPanel({
         >
           {isPending && <Loader2 className="size-3 animate-spin" />}
           Add
-        </button>
-        <button className="btn btn-ghost btn-sm" onClick={onCancel}>
+        </Button>
+        <Button variant="ghost" size="sm" onClick={onCancel}>
           Cancel
-        </button>
+        </Button>
       </div>
     </div>
   );

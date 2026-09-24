@@ -65,7 +65,7 @@ export function RankTrackingOverview({
 
   return (
     <div className="px-4 pt-4 pb-4">
-      <div className="rounded-lg border border-base-300 p-3 space-y-2">
+      <div className="rounded-lg border border-border p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">Position distribution</span>
           <TrendRangeToggle value={sinceDays} onChange={setSinceDays} />
@@ -75,7 +75,7 @@ export function RankTrackingOverview({
           {BUCKETS.map((b) => (
             <span
               key={b.key}
-              className="inline-flex items-center gap-1 text-[11px] text-base-content/60"
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
             >
               <span
                 className="size-2 rounded-sm"
@@ -88,10 +88,10 @@ export function RankTrackingOverview({
 
         {trendLoading ? (
           <div className="flex items-center justify-center p-8">
-            <Loader2 className="size-4 animate-spin text-base-content/50" />
+            <Loader2 className="size-4 animate-spin text-muted-foreground/70" />
           </div>
         ) : chartData.length <= 1 ? (
-          <div className="rounded-lg border border-dashed border-base-300 p-8 text-center text-xs text-base-content/60">
+          <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
             {chartData.length === 0
               ? "No history yet — run a check to start tracking positions over time."
               : "Only 1 check so far — the trend fills in after the next check."}
@@ -183,8 +183,8 @@ function DistributionTooltip({
   byKey: Map<string, number>;
 }) {
   return (
-    <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
-      <p className="text-xs text-base-content/60">
+    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm space-y-0.5">
+      <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
@@ -197,7 +197,7 @@ function DistributionTooltip({
             className="size-2 rounded-sm"
             style={{ backgroundColor: b.color }}
           />
-          <span className="text-base-content/60">{b.label}:</span>
+          <span className="text-muted-foreground">{b.label}:</span>
           <span className="font-medium tabular-nums">
             {byKey.get(b.key) ?? 0}
           </span>

@@ -15,6 +15,7 @@ import {
 } from "@/client/components/chat/ChatMessage";
 import { useStickToBottom } from "@/client/components/chat/useStickToBottom";
 
+import { Button } from "@/client/components/ui/button";
 const SUGGESTIONS = [
   "What keywords should I focus on next?",
   "Who are my top SERP competitors?",
@@ -152,13 +153,15 @@ export function SamConversation({
         // Dev-only escape hatch: wipes this session's persisted transcript on
         // the server (Think's cf_agent_chat_clear), for testing fresh-session
         // behavior without creating a new chat.
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-ghost btn-xs absolute right-3 top-2 z-10 text-base-content/40"
+          className="h-7 px-2.5 absolute right-3 top-2 z-10 text-muted-foreground/70"
           onClick={() => clearHistory()}
         >
           Clear history (dev)
-        </button>
+        </Button>
       ) : null}
       <div
         ref={scrollRef}
@@ -167,7 +170,7 @@ export function SamConversation({
       >
         <div className="mx-auto max-w-2xl space-y-6">
           {messages.length === 0 ? (
-            <div className="space-y-2 text-sm text-base-content/80">
+            <div className="space-y-2 text-sm text-foreground">
               <p>
                 Hey, I’m SAM — your in-app SEO agent. I can research keywords,
                 size up competitors, read your SERPs, backlinks, rank tracking
@@ -205,7 +208,7 @@ export function SamConversation({
           ))}
 
           {showTyping ? (
-            <div className="flex items-center gap-2 pt-1 text-base-content/40">
+            <div className="flex items-center gap-2 pt-1 text-muted-foreground/70">
               <span className="flex items-center gap-1.5">
                 <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
                 <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
@@ -215,24 +218,26 @@ export function SamConversation({
           ) : null}
 
           {isRecovering ? (
-            <p className="text-xs text-base-content/50">
+            <p className="text-xs text-muted-foreground/70">
               Saving the reply that got cut off…
             </p>
           ) : null}
 
           {status === "error" ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm text-error">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-destructive">
               <span>SAM stopped before finishing this reply.</span>
               {lastUserMessage ? (
-                <button
+                <Button
+                  variant="outline"
+                  size="sm"
                   type="button"
-                  className="btn btn-outline btn-error btn-xs gap-1"
+                  className="text-destructive h-7 px-2.5 gap-1"
                   disabled={isBusy}
                   onClick={retryLast}
                 >
                   <RotateCcw className="size-3" />
                   Retry
-                </button>
+                </Button>
               ) : null}
             </div>
           ) : null}
@@ -240,21 +245,21 @@ export function SamConversation({
           {showSuggestions ? (
             <div className="flex flex-wrap gap-2">
               {SUGGESTIONS.map((question) => (
-                <button
+                <Button
+                  variant="outline"
                   key={question}
-                  type="button"
-                  className="rounded-full border border-base-300 bg-base-100 px-3 py-1.5 text-xs font-medium text-base-content/70 transition-colors hover:border-primary/50 hover:text-base-content"
+                  className="h-auto rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
                   onClick={() => sendText(question, "suggestion")}
                 >
                   {question}
-                </button>
+                </Button>
               ))}
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="flex-shrink-0 border-t border-base-300 px-5 py-3">
+      <div className="flex-shrink-0 border-t border-border px-5 py-3">
         <div className="mx-auto w-full max-w-2xl">
           <ChatComposer
             busy={isBusy}

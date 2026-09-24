@@ -5,6 +5,7 @@ import {
   CardTitle,
 } from "@/client/components/ui/card";
 
+import { buttonVariants } from "@/client/components/ui/button";
 // Shared building blocks for the dashboard cards, on the Atelier Card.
 export function CardShell({
   title,
@@ -62,7 +63,11 @@ export function Stat({
   sub?: React.ReactNode;
 }) {
   const toneClass =
-    tone === "success" ? "text-success" : tone === "error" ? "text-error" : "";
+    tone === "success"
+      ? "text-success"
+      : tone === "error"
+        ? "text-destructive"
+        : "";
   return (
     <div>
       <p className="text-sm text-muted-foreground">{label}</p>
@@ -87,7 +92,8 @@ export function PercentDelta({
   const pct = ((current - previous) / previous) * 100;
   if (!Number.isFinite(pct)) return null;
   const rounded = Math.round(pct);
-  const tone = rounded > 0 ? "text-success" : rounded < 0 ? "text-error" : "";
+  const tone =
+    rounded > 0 ? "text-success" : rounded < 0 ? "text-destructive" : "";
   return (
     <p className={`text-xs tabular-nums ${tone}`}>
       {rounded > 0 ? "▲" : rounded < 0 ? "▼" : ""} {Math.abs(rounded)}%
@@ -95,7 +101,11 @@ export function PercentDelta({
   );
 }
 
-export const moreDetailsClass = "btn btn-ghost btn-sm text-primary";
+export const moreDetailsClass = buttonVariants({
+  variant: "ghost",
+  size: "sm",
+  className: "text-primary",
+});
 
 export function newLost(value: number | null): string {
   return value === null ? "—" : String(value);

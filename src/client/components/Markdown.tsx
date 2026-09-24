@@ -2,6 +2,7 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
+import { Table } from "@/client/components/ui/table";
 type Props = {
   /** Raw Markdown source to render. */
   children: string;
@@ -44,7 +45,7 @@ function SafeAnchor({ href, children, ...rest }: AnchorProps) {
       href={safeHref}
       target="_blank"
       rel="noreferrer"
-      className="link link-primary"
+      className="underline underline-offset-4 text-primary"
     >
       {children}
     </a>
@@ -98,11 +99,11 @@ export const MARKDOWN_COMPONENTS = {
     <em className="italic">{children}</em>
   ),
   blockquote: ({ children }: { children?: ReactNode }) => (
-    <blockquote className="my-2 border-l-2 border-base-300 pl-3 text-base-content/80 italic">
+    <blockquote className="my-2 border-l-2 border-border pl-3 text-foreground italic">
       {children}
     </blockquote>
   ),
-  hr: () => <hr className="my-3 border-base-300" />,
+  hr: () => <hr className="my-3 border-border" />,
   code: ({ children, className }: ComponentPropsWithoutRef<"code">) => {
     // Inline code (no `language-*` className from remark) gets the badge style;
     // block code is rendered by `pre` with a different shell.
@@ -110,27 +111,25 @@ export const MARKDOWN_COMPONENTS = {
       return <code className={className}>{children}</code>;
     }
     return (
-      <code className="rounded bg-base-200 px-1 py-0.5 text-xs font-mono">
+      <code className="rounded bg-muted px-1 py-0.5 text-xs font-mono">
         {children}
       </code>
     );
   },
   pre: ({ children }: { children?: ReactNode }) => (
-    <pre className="my-2 overflow-x-auto rounded-lg bg-base-200 p-3 text-xs font-mono">
+    <pre className="my-2 overflow-x-auto rounded-lg bg-muted p-3 text-xs font-mono">
       {children}
     </pre>
   ),
   table: ({ children }: { children?: ReactNode }) => (
     <div className="my-3 overflow-x-auto">
-      <table className="table table-sm border border-base-300">
-        {children}
-      </table>
+      <Table className="border border-border">{children}</Table>
     </div>
   ),
   thead: ({ children }: { children?: ReactNode }) => <thead>{children}</thead>,
   tbody: ({ children }: { children?: ReactNode }) => <tbody>{children}</tbody>,
   tr: ({ children }: { children?: ReactNode }) => (
-    <tr className="border-b border-base-300 last:border-0">{children}</tr>
+    <tr className="border-b border-border last:border-0">{children}</tr>
   ),
   th: ({ children }: { children?: ReactNode }) => (
     <th className="px-2 py-1.5 text-left font-semibold">{children}</th>

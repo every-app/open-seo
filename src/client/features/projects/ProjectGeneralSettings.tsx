@@ -15,6 +15,9 @@ import {
 } from "@/serverFunctions/projects";
 import type { ProjectSummary } from "./types";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Spinner } from "@/client/components/ui/spinner";
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -26,7 +29,7 @@ export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
   if (!project) {
     return (
       <div className="flex justify-center py-10">
-        <span className="loading loading-spinner loading-md" />
+        <Spinner />
       </div>
     );
   }
@@ -85,49 +88,49 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-base-content/50">General</h2>
+      <h2 className="text-sm font-medium text-muted-foreground/70">General</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium">Name</span>
-          <input
+          <Input
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={120}
-            className="input input-bordered w-full"
+            className="w-full"
           />
         </label>
 
         <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium">
-            Domain <span className="text-base-content/50">(optional)</span>
+            Domain <span className="text-muted-foreground/70">(optional)</span>
           </span>
-          <input
+          <Input
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
             placeholder="example.com"
             maxLength={255}
-            className="input input-bordered w-full"
+            className="w-full"
           />
         </label>
 
         <div className="flex flex-col gap-1.5">
           <ProjectMarketFields value={market} onChange={setMarket} />
-          <span className="text-xs text-base-content/50">
+          <span className="text-xs text-muted-foreground/70">
             Keyword, SERP, and domain data uses this country and language unless
             a call asks for a different one.
           </span>
         </div>
 
         <div className="flex justify-end">
-          <button
+          <Button
+            size="sm"
             type="submit"
-            className="btn btn-primary btn-sm"
             disabled={updateMutation.isPending || !isDirty}
           >
             Save changes
-          </button>
+          </Button>
         </div>
       </form>
     </section>
@@ -159,55 +162,57 @@ function DangerSection({
   });
 
   return (
-    <section className="space-y-3 border-t border-base-300 pt-8">
-      <h2 className="text-sm font-medium text-base-content/50">
+    <section className="space-y-3 border-t border-border pt-8">
+      <h2 className="text-sm font-medium text-muted-foreground/70">
         Archive project
       </h2>
 
       {confirming ? (
         <div className="space-y-3">
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Archiving{" "}
-            <span className="font-medium text-base-content">
-              {project.name}
-            </span>{" "}
+            <span className="font-medium text-foreground">{project.name}</span>{" "}
             removes it from your workspace and stops its scheduled rank
             tracking. You can restore it later from the Projects page.
           </p>
           <div className="flex gap-2">
-            <button
+            <Button
+              variant="destructive"
+              size="sm"
               type="button"
-              className="btn btn-error btn-sm"
               onClick={() => archiveMutation.mutate()}
               disabled={archiveMutation.isPending}
             >
               Yes, archive project
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm"
               onClick={() => setConfirming(false)}
               disabled={archiveMutation.isPending}
             >
               Cancel
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-base-content/60">
+          <p className="text-sm text-muted-foreground">
             {canArchive
               ? "Archive this project to remove it from your organization."
               : "You can't archive your only project."}
           </p>
-          <button
+          <Button
+            variant="outline"
+            size="sm"
             type="button"
-            className="btn btn-outline btn-error btn-sm shrink-0"
+            className="text-destructive shrink-0"
             onClick={() => setConfirming(true)}
             disabled={!canArchive}
           >
             Archive project
-          </button>
+          </Button>
         </div>
       )}
     </section>

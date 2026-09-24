@@ -6,6 +6,9 @@ import {
 import { INTENT_LABELS } from "@/client/features/keywords/components/IntentBadge";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Toggle } from "@/client/components/ui/toggle";
 export function FilterIntentSelect({
   form,
 }: {
@@ -15,11 +18,11 @@ export function FilterIntentSelect({
     <div
       role="group"
       aria-labelledby="keyword-intent-filter-label"
-      className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2"
+      className="rounded-lg border border-border bg-card p-2.5 space-y-2"
     >
       <p
         id="keyword-intent-filter-label"
-        className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60"
+        className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"
       >
         Intent
       </p>
@@ -31,23 +34,19 @@ export function FilterIntentSelect({
               {KEYWORD_INTENT_ORDER.map((intent) => {
                 const isActive = selected.includes(intent);
                 return (
-                  <button
+                  <Toggle
                     key={intent}
-                    type="button"
-                    aria-pressed={isActive}
-                    className={`btn btn-xs ${
-                      isActive
-                        ? "btn-primary"
-                        : "btn-ghost border border-base-300"
-                    }`}
-                    onClick={() =>
+                    size="sm"
+                    variant="outline"
+                    pressed={isActive}
+                    onPressedChange={() =>
                       field.handleChange(
                         toggleIntentFilter(field.state.value, intent),
                       )
                     }
                   >
                     {INTENT_LABELS[intent]}
-                  </button>
+                  </Toggle>
                 );
               })}
             </div>
@@ -71,13 +70,13 @@ export function FilterTextInput({
 }) {
   return (
     <label className="form-control gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <form.Field name={name}>
         {(field) => (
-          <input
-            className="input input-bordered input-sm bg-base-100"
+          <Input
+            className="bg-card h-8 text-sm"
             placeholder={placeholder}
             value={field.state.value}
             onChange={(event) => field.handleChange(event.target.value)}
@@ -102,8 +101,8 @@ export function FilterRangeInputs({
   step?: string;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -138,8 +137,8 @@ function CompactRangeInput({
   return (
     <form.Field name={name}>
       {(field) => (
-        <input
-          className="input input-bordered input-xs bg-base-100"
+        <Input
+          className="bg-card h-7 text-xs"
           placeholder={placeholder}
           type="number"
           step={step}
@@ -159,14 +158,14 @@ export function EmptyFilterResults({
   resetFilters: () => void;
 }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-base-content/50 gap-3">
+    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-muted-foreground/70 gap-3">
       <p className="text-sm font-medium">
         No keywords match your current filters.
       </p>
       {activeFilterCount > 0 ? (
-        <button className="btn btn-ghost btn-sm" onClick={resetFilters}>
+        <Button variant="ghost" size="sm" onClick={resetFilters}>
           Clear filters
-        </button>
+        </Button>
       ) : null}
     </div>
   );

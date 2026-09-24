@@ -13,6 +13,7 @@ import { getStepStatus, setupSteps } from "./dashboardSteps";
 import { DashboardSetupAction } from "./DashboardSetupAction";
 import { Card } from "@/client/components/ui/card";
 
+import { Button } from "@/client/components/ui/button";
 export function DashboardOnboarding({
   projectId,
   activation,
@@ -86,8 +87,8 @@ export function DashboardOnboarding({
         const Icon = item.icon;
         return (
           <div key={item.id} className="border-b border-border last:border-b-0">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               aria-expanded={active}
               aria-controls={`setup-${item.id}`}
               onClick={() => {
@@ -97,7 +98,7 @@ export function DashboardOnboarding({
                     step: item.id,
                   });
               }}
-              className={`flex w-full items-center gap-3 px-6 py-3.5 text-left transition-colors ${active ? "bg-accent/50" : "hover:bg-muted"}`}
+              className={`h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-3 px-6 py-3.5 text-left transition-colors ${active ? "bg-accent/50" : "hover:bg-muted"}`}
             >
               <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
                 <Icon className="size-4" />
@@ -116,7 +117,7 @@ export function DashboardOnboarding({
               <ChevronRight
                 className={`size-4 shrink-0 text-muted-foreground transition-transform ${active ? "rotate-90" : ""}`}
               />
-            </button>
+            </Button>
             <div id={`setup-${item.id}`} hidden={!active}>
               {active && (
                 <div className="space-y-5 px-6 py-5">
@@ -126,9 +127,11 @@ export function DashboardOnboarding({
                     onComplete={() => setSelected(null)}
                   />
                   <div className="border-t border-border pt-3">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="sm"
                       type="button"
-                      className="btn btn-ghost btn-sm text-base-content/60"
+                      className="text-muted-foreground"
                       disabled={dismiss.isPending}
                       onClick={() =>
                         dismiss.mutate({ step: item.id, dismissed: true })
@@ -137,7 +140,7 @@ export function DashboardOnboarding({
                       {item.id === "project"
                         ? "I only need one project"
                         : "Skip for now"}
-                    </button>
+                    </Button>
                   </div>
                 </div>
               )}
@@ -158,17 +161,19 @@ export function DashboardOnboarding({
                 className="flex items-center justify-between gap-3 rounded-md bg-muted px-3 py-2"
               >
                 <span className="text-sm">{item.label}</span>
-                <button
+                <Button
+                  variant="ghost"
+                  size="sm"
                   type="button"
                   aria-label={`Restore ${item.label}`}
-                  className="btn btn-ghost btn-sm shrink-0"
+                  className="shrink-0"
                   disabled={dismiss.isPending}
                   onClick={() =>
                     dismiss.mutate({ step: item.id, dismissed: false })
                   }
                 >
                   <RotateCcw className="size-3.5" /> Restore
-                </button>
+                </Button>
               </li>
             ))}
           </ul>

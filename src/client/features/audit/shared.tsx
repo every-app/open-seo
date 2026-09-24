@@ -1,5 +1,6 @@
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 
+import { Badge } from "@/client/components/ui/badge";
 export const SUPPORT_EMAIL = "ben@openseo.so";
 
 export function extractPathname(url: string): string {
@@ -38,43 +39,67 @@ export function formatStartedAt(dateStr: string): string {
 export function StatusBadge({ status }: { status: string }) {
   if (status === "running") {
     return (
-      <span className="badge badge-info badge-sm gap-1">
+      <Badge variant="default" className="px-2 text-[11px] gap-1">
         <Loader2 className="size-3 animate-spin" /> Running
-      </span>
+      </Badge>
     );
   }
 
   if (status === "completed") {
     return (
-      <span className="badge badge-outline badge-sm gap-1 text-success/80 border-success/30 bg-success/5">
+      <Badge
+        variant="outline"
+        className="px-2 text-[11px] gap-1 text-success/80 border-success/30 bg-success/5"
+      >
         <CheckCircle className="size-3" /> Done
-      </span>
+      </Badge>
     );
   }
 
   return (
-    <span className="badge badge-error badge-sm gap-1">
+    <Badge variant="destructive" className="px-2 text-[11px] gap-1">
       <AlertCircle className="size-3" /> Failed
-    </span>
+    </Badge>
   );
 }
 
 export function HttpStatusBadge({ code }: { code: number | null }) {
-  if (!code) return <span className="badge badge-ghost badge-sm">-</span>;
+  if (!code)
+    return (
+      <Badge variant="secondary" className="px-2 text-[11px]">
+        -
+      </Badge>
+    );
   if (code >= 200 && code < 300) {
-    return <span className="badge badge-success badge-sm">{code}</span>;
+    return (
+      <Badge variant="success" className="px-2 text-[11px]">
+        {code}
+      </Badge>
+    );
   }
   if (code >= 300 && code < 400) {
-    return <span className="badge badge-warning badge-sm">{code}</span>;
+    return (
+      <Badge variant="warning" className="px-2 text-[11px]">
+        {code}
+      </Badge>
+    );
   }
-  return <span className="badge badge-error badge-sm">{code}</span>;
+  return (
+    <Badge variant="destructive" className="px-2 text-[11px]">
+      {code}
+    </Badge>
+  );
 }
 
 export function LighthouseScoreBadge({ score }: { score: number | null }) {
   if (score == null) {
-    return <span className="text-xs text-base-content/40">-</span>;
+    return <span className="text-xs text-muted-foreground/70">-</span>;
   }
   const color =
-    score >= 90 ? "text-success" : score >= 50 ? "text-warning" : "text-error";
+    score >= 90
+      ? "text-success"
+      : score >= 50
+        ? "text-warning"
+        : "text-destructive";
   return <span className={`font-medium text-sm ${color}`}>{score}</span>;
 }

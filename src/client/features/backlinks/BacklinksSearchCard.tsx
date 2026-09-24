@@ -14,6 +14,13 @@ import {
 } from "@/shared/researchScope";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
 type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 
 function getBacklinksValidationErrors(
@@ -76,8 +83,8 @@ export function BacklinksSearchCard({
   }, [form, initialValues]);
 
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-4">
+    <Card>
+      <CardContent className="pt-6 gap-4">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -92,11 +99,13 @@ export function BacklinksSearchCard({
                   const targetError = getFieldError(field.state.meta.errors);
 
                   return (
-                    <label
-                      className={`input input-bordered flex flex-1 items-center gap-2 ${targetError ? "input-error" : ""}`}
+                    <InputGroup
+                      className={`flex-1 ${targetError ? "border-destructive" : ""}`}
                     >
-                      <Search className="size-4 text-base-content/60" />
-                      <input
+                      <InputGroupAddon className="border-r-0 bg-transparent pr-0">
+                        <Search className="size-4 text-muted-foreground" />
+                      </InputGroupAddon>
+                      <InputGroupInput
                         placeholder="Enter a domain or URL"
                         value={field.state.value}
                         onChange={(event) => {
@@ -110,7 +119,7 @@ export function BacklinksSearchCard({
                           }
                         }}
                       />
-                    </label>
+                    </InputGroup>
                   );
                 }}
               </form.Field>
@@ -129,13 +138,13 @@ export function BacklinksSearchCard({
 
               <form.Subscribe selector={(state) => state.isSubmitting}>
                 {(isSubmitting) => (
-                  <button
+                  <Button
                     type="submit"
-                    className="btn btn-primary shrink-0 px-6"
+                    className="shrink-0 px-6"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? "Loading..." : "Search"}
-                  </button>
+                  </Button>
                 )}
               </form.Subscribe>
             </div>
@@ -145,7 +154,7 @@ export function BacklinksSearchCard({
                 const targetError = getFieldError(field.state.meta.errors);
 
                 return targetError ? (
-                  <p className="text-sm text-error">{targetError}</p>
+                  <p className="text-sm text-destructive">{targetError}</p>
                 ) : null;
               }}
             </form.Field>
@@ -155,7 +164,7 @@ export function BacklinksSearchCard({
                 const formError = getFormError(submitError);
 
                 return formError ? (
-                  <p className="text-sm text-error">{formError}</p>
+                  <p className="text-sm text-destructive">{formError}</p>
                 ) : null;
               }}
             </form.Subscribe>
@@ -163,11 +172,11 @@ export function BacklinksSearchCard({
         </form>
 
         {errorMessage ? (
-          <div className="rounded-lg border border-error/30 bg-error/10 p-3 text-sm text-error">
+          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
             {errorMessage}
           </div>
         ) : null}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }

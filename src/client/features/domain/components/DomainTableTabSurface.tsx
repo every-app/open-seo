@@ -3,6 +3,8 @@ import { SlidersHorizontal } from "lucide-react";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TableLoadingRows } from "@/client/features/domain/components/TableLoadingRows";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
 type DomainTableExportAction = {
   label: string;
   icon: ReactNode;
@@ -40,9 +42,11 @@ export function DomainTableTabSurface({
 }: Props) {
   return (
     <>
-      <div className="flex items-center gap-2 px-4 py-2 border-b border-base-300">
-        <button
-          className={`btn btn-ghost btn-sm gap-1.5 ${showFilters ? "btn-active" : ""}`}
+      <div className="flex items-center gap-2 px-4 py-2 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`gap-1.5 ${showFilters ? "bg-secondary text-foreground" : ""}`}
           onClick={onToggleFilters}
           title="Toggle filters"
           type="button"
@@ -50,12 +54,15 @@ export function DomainTableTabSurface({
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+            <Badge
+              variant="primary"
+              className="px-2 text-[11px] border-0 text-primary-foreground"
+            >
               {activeFilterCount}
-            </span>
+            </Badge>
           ) : null}
-        </button>
-        <span className="text-sm text-base-content/60">
+        </Button>
+        <span className="text-sm text-muted-foreground">
           {(totalCount ?? fallbackCount).toLocaleString()} {countLabel}
         </span>
         <div className="flex-1" />

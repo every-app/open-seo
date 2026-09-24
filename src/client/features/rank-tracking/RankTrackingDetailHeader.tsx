@@ -8,6 +8,8 @@ import type {
   RankTrackingConfig,
 } from "@/types/schemas/rank-tracking";
 
+import { Button } from "@/client/components/ui/button";
+import { NativeSelect } from "@/client/components/ui/native-select";
 const COMPARE_PERIODS: ReadonlySet<string> = new Set([
   "1d",
   "7d",
@@ -45,7 +47,7 @@ export function RankTrackingDetailHeader({
     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 px-4 pt-4 pb-3">
       <div>
         <h2 className="text-lg font-semibold">{config.domain}</h2>
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-muted-foreground">
           {config.locationName
             ? formatLocationLabel(config.locationName, 2)
             : (LOCATIONS[config.locationCode] ?? "US")}{" "}
@@ -81,8 +83,8 @@ export function RankTrackingDetailHeader({
             onChange={onActiveDeviceChange}
           />
         )}
-        <select
-          className="select select-bordered select-sm text-xs w-auto"
+        <NativeSelect
+          className="text-xs w-auto h-8 text-sm"
           title="Comparison period"
           value={comparePeriod}
           onChange={(e) => {
@@ -94,19 +96,16 @@ export function RankTrackingDetailHeader({
           <option value="7d">vs last week</option>
           <option value="30d">vs last month</option>
           <option value="90d">vs 90 days ago</option>
-        </select>
-        <div className="hidden sm:block h-6 w-px bg-base-300" />
-        <button className="btn btn-sm gap-1" onClick={onEdit}>
+        </NativeSelect>
+        <div className="hidden sm:block h-6 w-px bg-border" />
+        <Button variant="outline" size="sm" className="gap-1" onClick={onEdit}>
           <Settings className="size-3.5" />
           Configure
-        </button>
-        <button
-          className="btn btn-primary btn-sm gap-1"
-          onClick={onToggleAddKeywords}
-        >
+        </Button>
+        <Button size="sm" className="gap-1" onClick={onToggleAddKeywords}>
           <Plus className="size-3.5" />
           Add Keywords
-        </button>
+        </Button>
       </div>
     </div>
   );

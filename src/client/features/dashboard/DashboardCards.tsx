@@ -33,6 +33,8 @@ import type {
   DashboardBacklinkSummary,
 } from "@/server/features/dashboard/services/DashboardService";
 
+import { buttonVariants } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 // Plain string-keyed view of the registry: issue types from the DB are not
 // statically guaranteed to be registry keys.
 const issueTitles: Record<string, string | undefined> = Object.fromEntries(
@@ -84,7 +86,7 @@ export function GscCard({
       {reportQuery.isPending ? (
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-20" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
       ) : reportQuery.isError ? (
@@ -140,7 +142,7 @@ export function AuditHealthCard({
             <Link
               to="/p/$projectId/audit"
               params={{ projectId }}
-              className="btn btn-primary btn-sm"
+              className={buttonVariants({ size: "sm" })}
             >
               Run an audit
             </Link>
@@ -246,7 +248,7 @@ export function BacklinkPulseCard({
       <CardShell title="Backlink changes" stamp="Taking your first snapshot…">
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="skeleton h-20" />
+            <Skeleton key={i} className="h-20" />
           ))}
         </div>
       </CardShell>
@@ -331,7 +333,7 @@ function BacklinkRow({
         {gained ? `+${gained.toLocaleString()}` : newLost(gained)}
       </TableCell>
       <TableCell
-        className={`text-right tabular-nums ${lost ? "text-error" : ""}`}
+        className={`text-right tabular-nums ${lost ? "text-destructive" : ""}`}
       >
         {lost ? `−${lost.toLocaleString()}` : newLost(lost)}
       </TableCell>

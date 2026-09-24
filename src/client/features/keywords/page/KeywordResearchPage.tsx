@@ -26,6 +26,13 @@ import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
 type ControllerProps = Omit<KeywordResearchControllerInput, "onFormSubmit">;
 type Props = Omit<
   ControllerProps,
@@ -181,7 +188,7 @@ export function KeywordResearchPage(input: Props) {
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
         <div>
           <h1 className="text-2xl font-semibold">Keyword Research</h1>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Discover keyword ideas, search demand, and ranking opportunities.
           </p>
         </div>
@@ -189,15 +196,17 @@ export function KeywordResearchPage(input: Props) {
         <KeywordResearchSearchBar controller={controller} />
         {controller.hasSearched ? (
           <div className="flex flex-col gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
               data-testid="keyword-research-recent-searches"
-              className="btn btn-ghost btn-sm w-fit gap-2 px-0 text-base-content/70 hover:bg-transparent"
+              className="w-fit gap-2 px-0 text-muted-foreground hover:bg-transparent"
               onClick={showRecentSearches}
             >
               <ArrowLeft className="size-4" />
               Recent searches
-            </button>
+            </Button>
             <SearchTabStrip
               projectId={projectId}
               tabs={searchTabs.tabs}
@@ -235,19 +244,26 @@ function KeywordResearchContent({
 
     return (
       <div className="flex-1 flex items-center justify-center pt-1">
-        <div className="w-full max-w-xl rounded-xl border border-error/30 bg-error/10 p-5 text-error space-y-3">
+        <div className="w-full max-w-xl rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive space-y-3">
           <div className="flex items-start gap-2">
             <AlertCircle className="mt-0.5 size-4 shrink-0" />
             <p className="text-sm">{controller.researchError}</p>
           </div>
           {isCreditsError ? (
-            <Link to={BILLING_ROUTE} className="btn btn-sm">
+            <Link
+              to={BILLING_ROUTE}
+              className={buttonVariants({ variant: "outline", size: "sm" })}
+            >
               Go to Billing
             </Link>
           ) : (
-            <button className="btn btn-sm" onClick={controller.retrySearch}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={controller.retrySearch}
+            >
               Try again
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -274,32 +290,29 @@ function KeywordSaveDialog({
   if (!controller.showSaveDialog) return null;
 
   return (
-    <div className="modal modal-open">
-      <div className="modal-box">
-        <h3 className="font-bold text-lg">
-          Save {controller.selectedRows.size} Keywords
-        </h3>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) controller.setShowSaveDialog(false);
+      }}
+    >
+      <DialogContent>
+        <DialogTitle>Save {controller.selectedRows.size} Keywords</DialogTitle>
         <div className="py-4">
-          <p className="text-base-content/70 text-sm">
+          <p className="text-muted-foreground text-sm">
             These keywords will be saved to your current project.
           </p>
         </div>
-        <div className="modal-action">
-          <button
-            className="btn"
+        <DialogFooter className="mt-2">
+          <Button
+            variant="outline"
             onClick={() => controller.setShowSaveDialog(false)}
           >
             Cancel
-          </button>
-          <button className="btn btn-primary" onClick={controller.confirmSave}>
-            Save
-          </button>
-        </div>
-      </div>
-      <div
-        className="modal-backdrop"
-        onClick={() => controller.setShowSaveDialog(false)}
-      />
-    </div>
+          </Button>
+          <Button onClick={controller.confirmSave}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

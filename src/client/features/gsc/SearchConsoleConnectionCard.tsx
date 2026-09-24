@@ -18,6 +18,7 @@ import {
 } from "@/client/features/gsc/SitePicker";
 import { disconnectGsc, listGscSites, setGscSite } from "@/serverFunctions/gsc";
 
+import { Button } from "@/client/components/ui/button";
 const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
 export function SearchConsoleConnectionCard({
@@ -167,21 +168,22 @@ export function SearchConsoleConnectionCard({
           aria-label="Loading connection"
           className="space-y-3 animate-pulse"
         >
-          <div className="h-4 w-2/3 rounded bg-base-200" />
-          <div className="h-9 w-24 rounded bg-base-200" />
+          <div className="h-4 w-2/3 rounded bg-muted" />
+          <div className="h-9 w-24 rounded bg-muted" />
         </div>
       ) : connectionQuery.isError && !connection ? (
         <div role="alert" className="space-y-3 text-sm">
-          <p className="text-error">
+          <p className="text-destructive">
             Couldn't check this project's connection.
           </p>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-ghost btn-sm"
             onClick={() => void connectionQuery.refetch()}
           >
             Try again
-          </button>
+          </Button>
         </div>
       ) : selfHostedNeedsSetup ? (
         <SelfHostedSetupWarning />
@@ -245,14 +247,14 @@ export function SearchConsoleConnectionCard({
         ></GoogleProjectEmptyState>
       )}
       {setSiteMutation.isError || disconnectMutation.isError ? (
-        <p role="alert" className="mt-3 text-sm text-error">
+        <p role="alert" className="mt-3 text-sm text-destructive">
           {getStandardErrorMessage(
             setSiteMutation.error ?? disconnectMutation.error,
           )}
         </p>
       ) : null}
       {connectionQuery.isSuccess && !selfHostedNeedsSetup && !canManage ? (
-        <p className="mt-3 text-sm text-base-content/60">
+        <p className="mt-3 text-sm text-muted-foreground">
           Ask an organization owner or admin to change this project's
           connection.
         </p>

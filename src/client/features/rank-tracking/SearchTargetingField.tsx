@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { SerpLocationCombobox } from "@/client/components/SerpLocationCombobox";
 import { prewarmSerpLocations } from "@/serverFunctions/serp-locations";
 
+import { Field, FieldLabel } from "@/client/components/ui/field";
+import { RadioGroup, RadioGroupItem } from "@/client/components/ui/radio-group";
 type TargetingMode = "national" | "local";
 
 export function SearchTargetingField({
@@ -29,34 +31,31 @@ export function SearchTargetingField({
     retry: false,
   });
   return (
-    <div className="form-control">
-      <label className="label">
-        <span className="label-text font-medium">Search Targeting</span>
-      </label>
-      <div className="flex gap-2">
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            className="radio radio-sm"
-            checked={mode === "national"}
-            onChange={() => {
-              onModeChange("national");
-              onLocationNameChange(undefined);
-            }}
-          />
+    <Field>
+      <FieldLabel>Search Targeting</FieldLabel>
+      <RadioGroup
+        value={mode}
+        onValueChange={(value) => {
+          if (value === "national") {
+            onModeChange("national");
+            onLocationNameChange(undefined);
+          } else if (value === "local") {
+            onModeChange("local");
+          }
+        }}
+        className="flex gap-4"
+        aria-label="Search targeting"
+      >
+        <label className="flex cursor-pointer items-center gap-2">
+          <RadioGroupItem value="national" />
           <span className="text-sm">National</span>
         </label>
-        <label className="flex items-center gap-2 cursor-pointer">
-          <input
-            type="radio"
-            className="radio radio-sm"
-            checked={mode === "local"}
-            onChange={() => onModeChange("local")}
-          />
+        <label className="flex cursor-pointer items-center gap-2">
+          <RadioGroupItem value="local" />
           <span className="text-sm">Local</span>
         </label>
-      </div>
-      <p className="text-xs text-base-content/50 mt-1.5">
+      </RadioGroup>
+      <p className="text-xs text-muted-foreground/70 mt-1.5">
         {mode === "local" ? (
           <>
             <span className="text-success font-medium">Best for:</span> "near
@@ -78,6 +77,6 @@ export function SearchTargetingField({
           />
         </div>
       )}
-    </div>
+    </Field>
   );
 }

@@ -33,7 +33,7 @@ export function ExternalUrlCell({
   value,
   label,
   baseDomain,
-  className = "link link-primary inline-flex items-center gap-1",
+  className = "link text-primary inline-flex items-center gap-1",
   display = "formatted",
   empty = "-",
 }: {
@@ -46,7 +46,7 @@ export function ExternalUrlCell({
 }) {
   const href = resolveUrlHref(value, baseDomain);
   if (!value || !href) {
-    return <span className="text-base-content/40">{empty}</span>;
+    return <span className="text-muted-foreground/70">{empty}</span>;
   }
 
   const visibleLabel = label ?? getUrlDisplayLabel(value, display);

@@ -22,6 +22,7 @@ import {
   type SelectionAnchor,
 } from "@/client/components/table/tableSelection";
 
+import { Button } from "@/client/components/ui/button";
 type SuggestedKeyword = {
   keyword: string;
   position: number | null;
@@ -64,7 +65,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return pos != null ? (
         pos
       ) : (
-        <span className="text-base-content/40">—</span>
+        <span className="text-muted-foreground/70">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -89,7 +90,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return vol != null ? (
         vol.toLocaleString()
       ) : (
-        <span className="text-base-content/40">—</span>
+        <span className="text-muted-foreground/70">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -114,7 +115,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return traffic != null ? (
         Math.round(traffic).toLocaleString()
       ) : (
-        <span className="text-base-content/40">—</span>
+        <span className="text-muted-foreground/70">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -232,9 +233,9 @@ export function KeywordSuggestionStep({
       <h2 id="keyword-suggestions-title" className="text-lg font-semibold">
         {title}
       </h2>
-      <button className="btn btn-ghost btn-sm btn-square" onClick={onClose}>
+      <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
         <X className="size-4" />
-      </button>
+      </Button>
     </div>
   );
 
@@ -243,13 +244,13 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("Add keywords manually")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <p className="text-xs text-base-content/50">
+          <p className="text-xs text-muted-foreground/70">
             Ranked-keyword suggestions aren't available for this country.
             Continue and add the keywords you want to track manually.
           </p>
-          <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
+          <Button size="sm" className="mt-2" onClick={onClose}>
             Continue
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -262,7 +263,7 @@ export function KeywordSuggestionStep({
         {sectionHeader("Finding your top keywords...")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
           <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-xs text-base-content/50">
+          <p className="text-xs text-muted-foreground/70">
             This usually takes a few seconds
           </p>
         </div>
@@ -276,14 +277,14 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("Couldn't fetch keywords")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <AlertCircle className="size-8 text-error" />
-          <p className="text-xs text-base-content/50">
+          <AlertCircle className="size-8 text-destructive" />
+          <p className="text-xs text-muted-foreground/70">
             You can skip this step and add keywords manually later.
           </p>
           <div className="flex gap-2 mt-2">
-            <button className="btn btn-primary btn-sm" onClick={onClose}>
+            <Button size="sm" onClick={onClose}>
               Skip
-            </button>
+            </Button>
           </div>
         </div>
       </>
@@ -296,13 +297,13 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("No rankings found")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <p className="text-xs text-base-content/50">
+          <p className="text-xs text-muted-foreground/70">
             We couldn't find any keywords {domain} currently ranks for. You can
             add keywords manually.
           </p>
-          <button className="btn btn-primary btn-sm mt-2" onClick={onClose}>
+          <Button size="sm" className="mt-2" onClick={onClose}>
             Skip
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -313,18 +314,19 @@ export function KeywordSuggestionStep({
     <div className="flex flex-col gap-3">
       {sectionHeader("Choose keywords to track")}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-base-content/60">
+        <p className="text-sm text-muted-foreground">
           We found {data.length} keywords {domain} ranks for.
         </p>
       </div>
 
       <AppDataTable
         table={table}
-        className="table table-xs table-pin-rows w-full"
-        wrapperClassName="overflow-y-auto max-h-[400px] border border-base-300 rounded-lg"
+        density="xs"
+        className="w-full"
+        wrapperClassName="overflow-y-auto max-h-[400px] border border-border rounded-lg"
         stickyHeader
         getRowProps={(row) => ({
-          className: "hover:bg-base-200/50 cursor-pointer",
+          className: "hover:bg-muted/50 cursor-pointer",
           onClick: (event) => {
             if (applyShiftRangeSelection(event, row, table, selectAnchorRef)) {
               return;
@@ -336,16 +338,16 @@ export function KeywordSuggestionStep({
       />
 
       <div className="flex items-center justify-between gap-3 pt-1">
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-muted-foreground">
           {selectedCount} of {data.length} selected
         </p>
         <div className="flex items-center gap-2">
-          <button className="btn btn-ghost btn-sm" onClick={onClose}>
+          <Button variant="ghost" size="sm" onClick={onClose}>
             Skip
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             type="button"
-            className="btn btn-primary btn-sm"
             onClick={handleAdd}
             disabled={addMutation.isPending || selectedCount === 0}
           >
@@ -353,7 +355,7 @@ export function KeywordSuggestionStep({
               <Loader2 className="size-3.5 animate-spin" />
             )}
             Save Keyword{selectedCount !== 1 ? "s" : ""}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

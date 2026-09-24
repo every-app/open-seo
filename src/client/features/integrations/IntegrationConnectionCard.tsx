@@ -18,11 +18,11 @@ export function IntegrationConnectionCard({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100 shadow-sm">
+    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <div className="flex flex-col items-start justify-between gap-3 p-5 sm:flex-row sm:gap-4 sm:p-6">
         <div className="flex min-w-0 items-center gap-2.5">
           {icon ? (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-base-300 bg-base-100 shadow-sm">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-card shadow-sm">
               {icon}
             </span>
           ) : null}
@@ -30,7 +30,7 @@ export function IntegrationConnectionCard({
         </div>
         {status ? <ConnectionStatusPill status={status} /> : null}
       </div>
-      <div className="border-t border-base-300 p-5 sm:p-6">{children}</div>
+      <div className="border-t border-border p-5 sm:p-6">{children}</div>
     </div>
   );
 }
@@ -50,7 +50,7 @@ function ConnectionStatusPill({
           ? "border-success/30 bg-success/10 text-success"
           : setupRequired
             ? "border-warning/30 bg-warning/10 text-warning"
-            : "border-base-300 bg-base-200 text-base-content/60",
+            : "border-border bg-muted text-muted-foreground",
       ].join(" ")}
     >
       <span
@@ -60,7 +60,7 @@ function ConnectionStatusPill({
             ? "bg-success"
             : setupRequired
               ? "bg-warning"
-              : "bg-base-content/40",
+              : "bg-foreground/40",
         ].join(" ")}
       />
       {connected

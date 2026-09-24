@@ -115,7 +115,7 @@ export function BacklinksTable({
       fixedLayout
       getRowClassName={(row) =>
         row.original.kind !== "link" || row.original.depth > 0
-          ? "bg-base-200/30"
+          ? "bg-muted/30"
           : undefined
       }
     />

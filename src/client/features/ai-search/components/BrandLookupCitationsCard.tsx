@@ -26,6 +26,15 @@ import { useBrandLookupFilters } from "@/client/features/ai-search/useBrandLooku
 import type { CitationTab } from "@/client/features/ai-search/brandLookupFilterTypes";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
+import { Badge } from "@/client/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
+import { Button } from "@/client/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 const DEFAULT_PAGES_SORT: SortingState = [{ id: "capturedVolume", desc: true }];
 const DEFAULT_QUERIES_SORT: SortingState = [
   { id: "aiSearchVolume", desc: true },
@@ -155,90 +164,81 @@ export function CitationTabsCard({
     activePlatforms.length === 1 ? activePlatforms[0] : null;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
-      <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-3">
-        <div role="tablist" className="tabs tabs-border w-fit">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={queriesActive}
-            className={`tab ${queriesActive ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("queries")}
-          >
-            Queries
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={pagesActive}
-            className={`tab ${pagesActive ? "tab-active" : ""}`}
-            onClick={() => setActiveTab("pages")}
-          >
-            Cited sources
-          </button>
-        </div>
+    <section className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <Tabs value={queriesActive ? "queries" : "pages"}>
+          <TabsList className="w-fit">
+            <TabsTrigger
+              value={"queries"}
+              onClick={() => setActiveTab("queries")}
+            >
+              Queries
+            </TabsTrigger>
+            <TabsTrigger value={"pages"} onClick={() => setActiveTab("pages")}>
+              Cited sources
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-        <div className="dropdown dropdown-end">
-          <div
-            tabIndex={0}
-            role="button"
-            className={`btn btn-ghost btn-sm gap-1.5 ${canExport ? "" : "btn-disabled"}`}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1.5"
+                disabled={!canExport}
+              />
+            }
           >
             <Download className="size-3.5" />
             Export
             <ChevronDown className="size-3.5" />
-          </div>
-          <ul
-            tabIndex={0}
-            className="menu dropdown-content z-10 mt-1 w-48 rounded-box border border-base-300 bg-base-100 p-1 shadow"
-          >
-            <li>
-              <button
-                type="button"
-                onClick={handleExportSheets}
-                disabled={!canExport}
-              >
-                <Sheet className="size-4" />
-                Google Sheets
-              </button>
-            </li>
-            <li>
-              <button
-                type="button"
-                onClick={handleExportCsv}
-                disabled={!canExport}
-              >
-                <Download className="size-4" />
-                CSV
-              </button>
-            </li>
-          </ul>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={handleExportSheets}
+              disabled={!canExport}
+            >
+              <Sheet className="size-4" />
+              Google Sheets
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleExportCsv} disabled={!canExport}>
+              <Download className="size-4" />
+              CSV
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      <div className="flex items-center gap-2 border-b border-base-300 px-4 py-2">
-        <button
+      <div className="flex items-center gap-2 border-b border-border px-4 py-2">
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
+          className={`gap-1.5 ${filters.showFilters ? "bg-secondary text-foreground" : ""}`}
           onClick={() => filters.setShowFilters((current) => !current)}
           title="Toggle table filters"
         >
           <SlidersHorizontal className="size-3.5" />
           Filters
           {currentFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
+            <Badge
+              variant="primary"
+              className="px-2 text-[11px] border-0 text-primary-foreground"
+            >
               {currentFilterCount}
-            </span>
+            </Badge>
           ) : null}
-        </button>
+        </Button>
       </div>
 
-      <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-2 text-xs text-base-content/60">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2 text-xs text-muted-foreground">
         <span>
           {activeTab === "pages" ? (
             <>
               {isUrlScoped ? "Cited pages within " : "Pages cited alongside "}
-              <strong className="text-base-content/80">
+              <strong className="text-foreground">
                 {result.resolvedTarget}
               </strong>
               {isUrlScoped ? "." : " in AI answers."} Prompt examples come from
@@ -248,7 +248,7 @@ export function CitationTabsCard({
             <>
               Fetched sample of prompts whose AI answer cited{" "}
               {isUrlScoped ? "a page within " : null}
-              <strong className="text-base-content/80">
+              <strong className="text-foreground">
                 {result.resolvedTarget}
               </strong>
               {isUrlScoped ? "." : " in its text or sources."}
@@ -256,7 +256,7 @@ export function CitationTabsCard({
           )}
         </span>
         {captionPlatform ? (
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-base-content/70">
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground">
             <span
               className={`size-1.5 rounded-full ${PLATFORM_DOT_CLASS[captionPlatform]}`}
             />

@@ -27,6 +27,7 @@ import {
 } from "./KeywordTrendModal";
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
+import { Button } from "@/client/components/ui/button";
 export function RankTrackingTable({
   totalCount,
   rows,
@@ -150,14 +151,14 @@ export function RankTrackingTable({
   if (resultsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="size-5 animate-spin text-base-content/50" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
       </div>
     );
   }
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-base-300 p-10 text-center text-sm text-base-content/55">
+      <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
         {totalCount === 0
           ? 'No rank data yet. Click "Check Now" to run your first check.'
           : "No keywords match your search."}
@@ -206,20 +207,23 @@ export function RankTrackingTable({
           <h3 id="remove-keywords-title" className="text-lg font-semibold">
             Remove keywords?
           </h3>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             This will stop tracking {selectedCount} keyword
             {selectedCount !== 1 ? "s" : ""}. Historical ranking data is
             preserved but won't appear in the table.
           </p>
           <div className="flex justify-end gap-2">
-            <button
-              className="btn btn-ghost btn-sm"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowConfirm(false)}
             >
               Cancel
-            </button>
-            <button
-              className="btn btn-error btn-sm gap-1"
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1"
               onClick={() =>
                 removeMutation.mutate(selectedRows.map((r) => r.id))
               }
@@ -230,7 +234,7 @@ export function RankTrackingTable({
               )}
               Remove {selectedCount} keyword
               {selectedCount !== 1 ? "s" : ""}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}
@@ -249,7 +253,7 @@ export function RankTrackingTable({
       )}
 
       <AppDataTable table={table} getCellClassName={() => "align-top"} />
-      <p className="text-xs text-base-content/60 pt-2">
+      <p className="text-xs text-muted-foreground pt-2">
         {rows.length} of {totalCount} keywords
       </p>
     </>

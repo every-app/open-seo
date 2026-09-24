@@ -8,7 +8,7 @@ export function SavedKeywordsStatus({
   isFetching: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 text-xs text-base-content/60">
+    <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
       <span>
         {totalCount.toLocaleString()} saved keyword
         {totalCount === 1 ? "" : "s"}

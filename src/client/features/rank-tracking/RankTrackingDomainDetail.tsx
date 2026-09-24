@@ -41,6 +41,8 @@ import { useMetricsRefresh } from "./useMetricsRefresh";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
 function deviceVisibility(
   devices: RankTrackingConfig["devices"],
   activeDevice: "desktop" | "mobile",
@@ -188,47 +190,49 @@ export function RankTrackingDomainDetail({
 
   return (
     <div className="space-y-3">
-      <button
-        className="btn btn-ghost btn-xs gap-1 -ml-2 text-base-content/60"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2.5 gap-1 -ml-2 text-muted-foreground"
         onClick={onBack}
       >
         <ArrowLeft className="size-3" />
         Back to domains
-      </button>
+      </Button>
 
       {config.lastSkipReason === "insufficient_credits" && (
-        <div className="alert alert-warning text-sm py-2">
+        <Alert variant="warning" className="text-sm py-2">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             Last scheduled check was skipped due to insufficient credits. Top up
             your balance to resume automatic tracking.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {latestRun?.maybeStale && (
-        <div className="alert alert-warning text-sm py-2">
+        <Alert variant="warning" className="text-sm py-2">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             This run may be unresponsive and will be cleaned up automatically.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {latestRun?.status === "failed" && !isRunning && (
-        <div className="alert alert-error text-sm py-2">
+        <Alert variant="destructive" className="text-sm py-2">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             <span className="font-medium">Last check failed.</span>{" "}
             {latestRun.errorMessage}
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       <FreePlanAlert visible={isFreePlan} />
 
       {/* Results card */}
-      <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 border border-border rounded-xl bg-card overflow-hidden">
         {/* Domain header */}
         <RankTrackingDetailHeader
           config={config}

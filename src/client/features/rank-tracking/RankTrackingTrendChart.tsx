@@ -10,6 +10,10 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts";
 
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
 export interface TrendSeries {
   /** key into each data row holding the position value (1 = best, serpDepth = bottom band) */
   dataKey: string;
@@ -62,7 +66,7 @@ export function RankTrendChart({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-[11px] text-base-content/50">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground/70">
         <span>Google position (1 = best)</span>
         <span className="inline-flex items-center gap-1">
           Better <span aria-hidden>↑</span>
@@ -195,19 +199,19 @@ export function TrendRangeToggle({
   onChange: (sinceDays: number) => void;
 }) {
   return (
-    <div className="join">
+    <ToggleGroup
+      size="sm"
+      value={[String(value)]}
+      onValueChange={(next) => {
+        const range = TREND_RANGES.find((r) => String(r.sinceDays) === next[0]);
+        if (range) onChange(range.sinceDays);
+      }}
+    >
       {TREND_RANGES.map((range) => (
-        <button
-          key={range.label}
-          type="button"
-          className={`btn btn-xs join-item ${
-            value === range.sinceDays ? "btn-active" : "btn-ghost"
-          }`}
-          onClick={() => onChange(range.sinceDays)}
-        >
+        <ToggleGroupItem key={range.label} value={String(range.sinceDays)}>
           {range.label}
-        </button>
+        </ToggleGroupItem>
       ))}
-    </div>
+    </ToggleGroup>
   );
 }

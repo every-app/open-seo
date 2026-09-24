@@ -9,6 +9,7 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getGscGrantStatus } from "@/serverFunctions/gsc";
 import { dismissGscNudge } from "@/serverFunctions/onboarding";
 
+import { Button } from "@/client/components/ui/button";
 /**
  * One-time re-engagement prompt nudging users who finished onboarding *before*
  * the Search Console step existed to connect GSC. Hosted-only because this is
@@ -105,24 +106,24 @@ export function GscReEngagementModal({
         <h2 id="gsc-nudge-title" className="text-lg font-semibold">
           New: Connect Google Search Console
         </h2>
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           Bring your real clicks, impressions, and rankings into OpenSEO and
           query them from Claude or Codex over MCP. It never uses credits.
         </p>
       </div>
 
       <div className="mt-2 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-        <button type="button" className="btn btn-ghost" onClick={handleDismiss}>
+        <Button variant="ghost" type="button" onClick={handleDismiss}>
           Maybe later
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="outline"
           onClick={handleConnect}
-          className="inline-flex items-center justify-center gap-2.5 rounded-lg border border-base-300 bg-base-100 px-4 py-2.5 text-sm font-semibold text-base-content shadow-sm transition hover:bg-base-200 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          className="h-auto inline-flex items-center justify-center gap-2.5 rounded-lg px-4 py-2.5 text-sm text-foreground transition hover:bg-muted hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
         >
           <GoogleGlyph className="size-[18px]" />
           Connect with Google
-        </button>
+        </Button>
       </div>
     </Modal>
   );

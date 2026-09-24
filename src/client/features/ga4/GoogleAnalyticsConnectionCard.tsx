@@ -23,6 +23,7 @@ import {
 } from "@/serverFunctions/ga4";
 import { GA4_SELF_HOSTED_SETUP_DOCS_URL } from "@/shared/ga4";
 
+import { Button } from "@/client/components/ui/button";
 export function GoogleAnalyticsConnectionCard({
   projectId,
   onDismiss,
@@ -145,21 +146,22 @@ export function GoogleAnalyticsConnectionCard({
             aria-label="Loading connection"
             className="space-y-3 animate-pulse"
           >
-            <div className="h-4 w-2/3 rounded bg-base-200" />
-            <div className="h-9 w-24 rounded bg-base-200" />
+            <div className="h-4 w-2/3 rounded bg-muted" />
+            <div className="h-9 w-24 rounded bg-muted" />
           </div>
         ) : connectionUnavailable ? (
           <div role="alert" className="space-y-3 text-sm">
-            <p className="text-error">
+            <p className="text-destructive">
               Couldn't check this project's connection.
             </p>
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               type="button"
-              className="btn btn-ghost btn-sm"
               onClick={() => void connectionQuery.refetch()}
             >
               Try again
-            </button>
+            </Button>
           </div>
         ) : selfHostedNeedsSetup ? (
           <div className="space-y-3">
@@ -235,14 +237,14 @@ export function GoogleAnalyticsConnectionCard({
           <DismissButton onClick={onDismiss} disabled={dismissDisabled} />
         ) : null}
         {setPropertyMutation.isError || disconnectMutation.isError ? (
-          <p role="alert" className="mt-3 text-sm text-error">
+          <p role="alert" className="mt-3 text-sm text-destructive">
             {getStandardErrorMessage(
               setPropertyMutation.error ?? disconnectMutation.error,
             )}
           </p>
         ) : null}
         {connectionQuery.isSuccess && !selfHostedNeedsSetup && !canManage ? (
-          <p className="mt-3 text-sm text-base-content/60">
+          <p className="mt-3 text-sm text-muted-foreground">
             Ask an organization owner or admin to change this project's
             connection.
           </p>
@@ -261,13 +263,15 @@ function DismissButton({
 }) {
   if (!onClick) return null;
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       type="button"
-      className="btn btn-ghost btn-sm text-base-content/60"
+      className="text-muted-foreground"
       onClick={onClick}
       disabled={disabled}
     >
       Dismiss
-    </button>
+    </Button>
   );
 }

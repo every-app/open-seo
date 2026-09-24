@@ -1,5 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Search } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
+import { Button } from "@/client/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/client/components/ui/input-group";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/client/components/ui/popover";
 import { LOCATION_OPTIONS } from "@/shared/keyword-locations";
 
 type LocationOption = (typeof LOCATION_OPTIONS)[number];
@@ -36,7 +47,6 @@ export function LocationSelect({
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -53,19 +63,6 @@ export function LocationSelect({
     setQuery("");
     setActiveIndex(0);
     inputRef.current?.focus();
-  }, [open]);
-
-  // Close on outside click so it behaves like the surrounding native selects.
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (target instanceof Node && !containerRef.current?.contains(target)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [open]);
 
   // Keep the highlighted option in view as the user arrows through results.
@@ -104,71 +101,75 @@ export function LocationSelect({
   };
 
   return (
-    <div ref={containerRef} className={`relative ${className}`}>
-      <button
-        type="button"
-        className="select select-bordered flex w-full items-center justify-between gap-2 text-left font-normal"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        onClick={() => setOpen((prev) => !prev)}
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="outline"
+            className={`justify-between gap-2 rounded-md px-3 font-normal ${className}`}
+            aria-haspopup="listbox"
+          />
+        }
       >
         <span className="truncate">{selected?.label ?? "Select country"}</span>
-      </button>
+        <ChevronDown className="size-4 shrink-0 opacity-60" />
+      </PopoverTrigger>
 
-      {open ? (
-        <div className="fixed z-30 mt-2 w-full max-w-56 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg">
-          <label className="flex items-center gap-2 rounded-lg border border-base-300 px-3 py-2 focus-within:border-primary">
-            <Search className="size-4 shrink-0 text-base-content/50" />
-            <input
-              ref={inputRef}
-              type="text"
-              className="grow min-w-0 bg-transparent text-sm outline-none placeholder:text-base-content/40"
-              placeholder="Search countries"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value);
-                setActiveIndex(0);
-              }}
-              onKeyDown={handleKeyDown}
-            />
-          </label>
+      <PopoverContent align="start" className="w-56 p-2">
+        <InputGroup>
+          <InputGroupAddon className="border-r-0 bg-transparent pr-0">
+            <Search className="size-4" />
+          </InputGroupAddon>
+          <InputGroupInput
+            ref={inputRef}
+            type="text"
+            placeholder="Search countries"
+            aria-label="Search countries"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setActiveIndex(0);
+            }}
+            onKeyDown={handleKeyDown}
+          />
+        </InputGroup>
 
-          <ul
-            ref={listRef}
-            role="listbox"
-            className="menu mt-2 max-h-64 w-full flex-nowrap overflow-y-auto p-0"
-          >
-            {filtered.length === 0 ? (
-              <li className="w-full break-all px-3 py-2 text-sm text-base-content/50">
-                No countries match “{query.trim()}”
-              </li>
-            ) : (
-              filtered.map((option, index) => {
-                const isSelected = option.code === value;
-                return (
-                  <li
-                    key={option.code}
-                    role="option"
-                    aria-selected={isSelected}
+        <ul
+          ref={listRef}
+          role="listbox"
+          aria-label="Countries"
+          className="mt-2 flex max-h-64 w-full flex-col gap-0.5 overflow-y-auto"
+        >
+          {filtered.length === 0 ? (
+            <li className="w-full break-all px-3 py-2 text-sm text-muted-foreground">
+              No countries match “{query.trim()}”
+            </li>
+          ) : (
+            filtered.map((option, index) => {
+              const isSelected = option.code === value;
+              return (
+                <li key={option.code} role="option" aria-selected={isSelected}>
+                  <Button
+                    variant="ghost"
+                    className={`h-auto w-full justify-between rounded-md px-3 py-1.5 font-normal text-foreground ${
+                      index === activeIndex ? "bg-muted" : ""
+                    }`}
+                    onClick={() => select(option)}
+                    onMouseEnter={() => setActiveIndex(index)}
                   >
-                    <button
-                      type="button"
-                      className={`w-full ${index === activeIndex ? "menu-focus" : ""}`}
-                      onClick={() => select(option)}
-                      onMouseEnter={() => setActiveIndex(index)}
-                    >
-                      <span className="flex-1 truncate">{option.label}</span>
-                      {isSelected ? (
-                        <Check className="size-4 shrink-0 text-primary" />
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })
-            )}
-          </ul>
-        </div>
-      ) : null}
-    </div>
+                    <span className="flex-1 truncate text-left">
+                      {option.label}
+                    </span>
+                    {isSelected ? (
+                      <Check className="size-4 shrink-0 text-primary" />
+                    ) : null}
+                  </Button>
+                </li>
+              );
+            })
+          )}
+        </ul>
+      </PopoverContent>
+    </Popover>
   );
 }

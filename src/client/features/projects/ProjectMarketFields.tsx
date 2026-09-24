@@ -5,6 +5,7 @@ import {
 } from "@/client/features/keywords/locations";
 import type { ProjectMarket } from "@/client/features/projects/types";
 
+import { NativeSelect } from "@/client/components/ui/native-select";
 /**
  * The project's default market: country plus the language served for it.
  * Shared by project settings and onboarding so the pair — and the rule that
@@ -40,7 +41,7 @@ export function ProjectMarketFields({
         className={`${hideLanguageOnMobile ? "hidden sm:flex" : "flex"} flex-col gap-1.5 text-sm`}
       >
         <span className="font-medium">Language</span>
-        <select
+        <NativeSelect
           value={value.languageCode}
           onChange={(event) =>
             onChange({ ...value, languageCode: event.target.value })
@@ -48,14 +49,14 @@ export function ProjectMarketFields({
           // Most countries have exactly one language DataForSEO serves, so the
           // select is only a real choice where there's more than one.
           disabled={languageOptions.length <= 1}
-          className="select select-bordered w-full"
+          className="w-full"
         >
           {languageOptions.map((option) => (
             <option key={option.code} value={option.code}>
               {option.label}
             </option>
           ))}
-        </select>
+        </NativeSelect>
       </label>
     </div>
   );
