@@ -1,12 +1,10 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/client/components/ui/card";
-
 import { buttonVariants } from "@/client/components/ui/button";
-// Shared building blocks for the dashboard cards, on the Atelier Card.
+import { Card } from "@/client/components/ui/card";
+
+// Shared building blocks for the dashboard cards. Same visual language as
+// the GSC IntegrationCard (rounded-xl, shadow-sm, header row + divider) so
+// the embedded SearchConsoleConnectionCard doesn't read as a different
+// design system.
 export function CardShell({
   title,
   stamp,
@@ -20,18 +18,16 @@ export function CardShell({
 }) {
   return (
     <Card className="overflow-hidden">
-      <CardHeader className="flex-row items-center justify-between gap-4 pb-4">
-        <CardTitle>
-          <h2>{title}</h2>
-        </CardTitle>
+      <div className="flex items-center justify-between gap-4 px-5 py-4">
+        <h2 className="text-base font-semibold leading-tight">{title}</h2>
         {action}
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="border-t border-border p-5">
         {children}
         {stamp ? (
-          <p className="mt-4 text-xs text-muted-foreground">{stamp}</p>
+          <p className="mt-4 text-[11px] text-muted-foreground">{stamp}</p>
         ) : null}
-      </CardContent>
+      </div>
     </Card>
   );
 }
@@ -70,10 +66,10 @@ export function Stat({
         : "";
   return (
     <div>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p
-        className={`mt-1 text-2xl font-semibold tracking-tight tabular-nums ${toneClass}`}
-      >
+      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className={`text-2xl font-semibold tabular-nums ${toneClass}`}>
         {value}
       </p>
       {sub}
@@ -104,7 +100,6 @@ export function PercentDelta({
 export const moreDetailsClass = buttonVariants({
   variant: "ghost",
   size: "sm",
-  className: "text-link",
 });
 
 export function newLost(value: number | null): string {

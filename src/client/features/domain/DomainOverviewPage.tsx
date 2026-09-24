@@ -646,7 +646,7 @@ export function DomainOverviewPage({
             </div>
 
             {!state.overview.hasData ? (
-              <Alert className="[&>svg]:text-info">
+              <Alert variant="info">
                 <AlertDescription>
                   Not enough data for this scope yet. Try another domain or a
                   broader scope.

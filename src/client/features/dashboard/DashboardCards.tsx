@@ -1,17 +1,10 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Check } from "@/client/components/icons";
-import { Badge } from "@/client/components/ui/badge";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/client/components/ui/table";
 import { SearchConsoleConnectionCard } from "@/client/features/gsc/SearchConsoleConnectionCard";
 import { AUDIT_ISSUE_TYPES } from "@/shared/audit-issues";
+import { buttonVariants } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 
 import {
   formatCount,
@@ -33,8 +26,6 @@ import type {
   DashboardBacklinkSummary,
 } from "@/server/features/dashboard/services/DashboardService";
 
-import { buttonVariants } from "@/client/components/ui/button";
-import { Skeleton } from "@/client/components/ui/skeleton";
 // Plain string-keyed view of the registry: issue types from the DB are not
 // statically guaranteed to be registry keys.
 const issueTitles: Record<string, string | undefined> = Object.fromEntries(
@@ -72,7 +63,7 @@ export function GscCard({
   return (
     <CardShell
       title="Search performance"
-      stamp="Google Search Console, last 28 days"
+      stamp="Google Search Console · last 28 days"
       action={
         <Link
           to="/p/$projectId/search-performance"
@@ -155,20 +146,20 @@ export function AuditHealthCard({
   return (
     <CardShell
       title="Site audit"
-      stamp={
+      stamp={`Site audit · ${
         audit.status === "completed"
-          ? `Crawled ${audit.pagesCrawled.toLocaleString()} pages on ${formatDay(audit.startedAt)}`
+          ? `crawled ${audit.pagesCrawled} pages · ${formatDay(audit.startedAt)}`
           : audit.status === "running"
-            ? "Crawl in progress"
-            : "The last crawl failed"
-      }
+            ? "crawl in progress"
+            : "last crawl failed"
+      }`}
       action={
         <Link
           to="/p/$projectId/audit"
           params={{ projectId }}
           className={moreDetailsClass}
         >
-          Open audit
+          More details
         </Link>
       }
     >
@@ -178,61 +169,42 @@ export function AuditHealthCard({
           No issues found — your site looks healthy.
         </div>
       ) : (
-        <>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Issue</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead className="text-right">Pages</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {audit.topIssues.map((issue) => (
-                <TableRow key={issue.issueType}>
-                  <TableCell className="font-medium">
-                    {issueTitles[issue.issueType] ?? issue.issueType}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={severityBadge[issue.severity].variant}>
-                      {severityBadge[issue.severity].label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {issue.count.toLocaleString()}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {criticalSummary(audit)}
-          </p>
-        </>
+        <ul className="space-y-2">
+          {audit.topIssues.map((issue) => (
+            <li
+              key={issue.issueType}
+              className="flex items-center justify-between gap-2 text-sm"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <span
+                  className={`size-2 shrink-0 rounded-full ${
+                    issue.severity === "critical"
+                      ? "bg-destructive"
+                      : issue.severity === "warning"
+                        ? "bg-warning"
+                        : "bg-foreground/30"
+                  }`}
+                />
+                <span className="truncate">
+                  {issueTitles[issue.issueType] ?? issue.issueType}
+                </span>
+              </span>
+              <span className="shrink-0 tabular-nums text-muted-foreground">
+                {issue.count} {issue.count === 1 ? "page" : "pages"}
+              </span>
+            </li>
+          ))}
+          {audit.totalIssueTypes > audit.topIssues.length ? (
+            <li className="text-xs text-muted-foreground">
+              + {audit.totalIssueTypes - audit.topIssues.length} more issue
+              {audit.totalIssueTypes - audit.topIssues.length === 1 ? "" : "s"}
+            </li>
+          ) : null}
+        </ul>
       )}
     </CardShell>
   );
 }
-
-// Top issues arrive sorted critical-first, so the critical count is exact
-// once a non-critical issue appears in the list (or the list is complete).
-function criticalSummary(audit: DashboardAuditSummary): string {
-  const critical = audit.topIssues.filter(
-    (issue) => issue.severity === "critical",
-  ).length;
-  const exact =
-    critical < audit.topIssues.length ||
-    audit.totalIssueTypes === audit.topIssues.length;
-  const types =
-    audit.totalIssueTypes === 1 ? "issue type is" : "issue types are";
-  return `${exact ? "" : "At least "}${critical} of ${audit.totalIssueTypes} ${types} critical.`;
-}
-
-const severityBadge = {
-  critical: { label: "Critical", variant: "destructive" },
-  warning: { label: "Warning", variant: "warning" },
-  info: { label: "Info", variant: "secondary" },
-} as const;
 
 export function BacklinkPulseCard({
   projectId,
@@ -245,7 +217,7 @@ export function BacklinkPulseCard({
 }) {
   if (!backlinks && refreshing) {
     return (
-      <CardShell title="Backlink changes" stamp="Taking your first snapshot…">
+      <CardShell title="Backlink pulse" stamp="Taking your first snapshot…">
         <div className="grid grid-cols-2 gap-3" aria-busy>
           {Array.from({ length: 4 }, (_, i) => (
             <Skeleton key={i} className="h-20" />
@@ -257,7 +229,7 @@ export function BacklinkPulseCard({
 
   if (!backlinks) {
     return (
-      <CardShell title="Backlink changes">
+      <CardShell title="Backlink pulse">
         <p className="text-sm text-muted-foreground">
           We&rsquo;ll snapshot who links to your domain — nothing to set up.
         </p>
@@ -267,9 +239,9 @@ export function BacklinkPulseCard({
 
   return (
     <CardShell
-      title="Backlink changes"
-      stamp={`Snapshot from ${formatDay(backlinks.capturedAt)}${
-        refreshing ? ", refreshing…" : ""
+      title="Backlink pulse"
+      stamp={`Backlinks · snapshot ${formatDay(backlinks.capturedAt)}${
+        refreshing ? " · refreshing…" : ""
       }`}
       action={
         <Link
@@ -278,65 +250,46 @@ export function BacklinkPulseCard({
           search={{ target: backlinks.domain, scope: "domain" }}
           className={moreDetailsClass}
         >
-          Open backlinks
+          More details
         </Link>
       }
     >
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Links</TableHead>
-            <TableHead className="text-right">Total</TableHead>
-            <TableHead className="text-right">New</TableHead>
-            <TableHead className="text-right">Lost</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <BacklinkRow
-            label="Backlinks"
-            total={backlinks.backlinks}
-            gained={backlinks.newBacklinks}
-            lost={backlinks.lostBacklinks}
-          />
-          <BacklinkRow
-            label="Referring domains"
-            total={backlinks.referringDomains}
-            gained={backlinks.newReferringDomains}
-            lost={backlinks.lostReferringDomains}
-          />
-        </TableBody>
-      </Table>
+      <div className="grid grid-cols-2 gap-3">
+        <Stat
+          label="Ref. domains"
+          value={
+            backlinks.referringDomains === null
+              ? "—"
+              : backlinks.referringDomains.toLocaleString()
+          }
+        />
+        <Stat
+          label="Backlinks"
+          value={
+            backlinks.backlinks === null
+              ? "—"
+              : backlinks.backlinks.toLocaleString()
+          }
+        />
+        <Stat
+          label="New links"
+          value={`▲ ${newLost(backlinks.newBacklinks)}`}
+          tone={
+            backlinks.newBacklinks && backlinks.newBacklinks > 0
+              ? "success"
+              : undefined
+          }
+        />
+        <Stat
+          label="Lost links"
+          value={`▼ ${newLost(backlinks.lostBacklinks)}`}
+          tone={
+            backlinks.lostBacklinks && backlinks.lostBacklinks > 0
+              ? "error"
+              : undefined
+          }
+        />
+      </div>
     </CardShell>
-  );
-}
-
-function BacklinkRow({
-  label,
-  total,
-  gained,
-  lost,
-}: {
-  label: string;
-  total: number | null;
-  gained: number | null;
-  lost: number | null;
-}) {
-  return (
-    <TableRow>
-      <TableCell className="font-medium">{label}</TableCell>
-      <TableCell className="text-right tabular-nums">
-        {total === null ? "—" : total.toLocaleString()}
-      </TableCell>
-      <TableCell
-        className={`text-right tabular-nums ${gained ? "text-success" : ""}`}
-      >
-        {gained ? `+${gained.toLocaleString()}` : newLost(gained)}
-      </TableCell>
-      <TableCell
-        className={`text-right tabular-nums ${lost ? "text-negative" : ""}`}
-      >
-        {lost ? `−${lost.toLocaleString()}` : newLost(lost)}
-      </TableCell>
-    </TableRow>
   );
 }

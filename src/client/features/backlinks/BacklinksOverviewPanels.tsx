@@ -68,7 +68,7 @@ export function BacklinksOverviewPanels({
       </div>
       <OverviewGrid data={data} summaryStats={summaryStats} />
       {data.scope === "exact_url" ? (
-        <Alert className="[&>svg]:text-info">
+        <Alert variant="info">
           <AlertDescription>
             Showing backlinks for this exact page. Switch the scope to Domain or
             Subdomains for site-wide results — trend charts need one of those.
@@ -76,7 +76,7 @@ export function BacklinksOverviewPanels({
         </Alert>
       ) : null}
       {data.scope === "subfolder" ? (
-        <Alert className="[&>svg]:text-info">
+        <Alert variant="info">
           <AlertDescription>
             Showing backlinks pointing into this subfolder. Counts come from
             filtered backlink totals; rank, trends, and the referring-domains

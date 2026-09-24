@@ -112,7 +112,8 @@ function DesktopKeywordPanel({ controller }: Props) {
     <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5">
       {showApproximateMatchNotice ? (
         <Alert
-          className="border-warning/30 bg-warning/10 px-3 py-2 text-sm"
+          variant="warning"
+          className="px-3 py-2 text-sm [&>svg]:top-2.5"
           role="status"
         >
           No exact match for{" "}

@@ -158,10 +158,7 @@ function GscConnect({
       ) : needsSetup ? (
         <SelfHostedSetupWarning />
       ) : connected ? (
-        <Alert
-          role="status"
-          className="border-success/30 bg-success/10 [&>svg]:text-success"
-        >
+        <Alert role="status" variant="success">
           <Check className="size-4" />
           <AlertDescription>
             Connected to{" "}

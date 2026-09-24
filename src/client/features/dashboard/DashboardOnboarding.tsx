@@ -72,15 +72,11 @@ export function DashboardOnboarding({
       aria-label="Onboarding checklist"
       className="overflow-hidden"
     >
-      <header className="border-b border-border px-6 py-5">
-        <div className="flex items-baseline justify-between gap-3">
-          <h2 className="text-base font-semibold tracking-tight">
-            Finish setting up
-          </h2>
-          <p className="shrink-0 text-sm tabular-nums text-muted-foreground">
-            {completed.length} of {steps.length} done
-          </p>
-        </div>
+      <header className="border-b border-border px-5 py-5 sm:px-6">
+        <h2 className="text-lg font-semibold">Set up your workspace</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add your website, connect your tools, and invite your team.
+        </p>
       </header>
       {remaining.map((item) => {
         const active = selected === item.id;

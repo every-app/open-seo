@@ -10,7 +10,7 @@ export function GoogleOAuthSetupWarning({
   docsUrl: string;
 }) {
   return (
-    <Alert className="border-warning/40 [&>svg]:text-warning text-sm">
+    <Alert variant="warning" className="text-sm">
       <AlertTriangle className="mt-0.5 size-4 shrink-0" />
       <AlertDescription className="space-y-1">
         <p className="font-medium">Google OAuth client not configured</p>

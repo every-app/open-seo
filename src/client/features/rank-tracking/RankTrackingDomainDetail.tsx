@@ -203,7 +203,7 @@ export function RankTrackingDomainDetail({
       </Button>
 
       {config.lastSkipReason === "insufficient_credits" && (
-        <Alert className="[&>svg]:text-warning">
+        <Alert variant="warning">
           <AlertTriangle className="size-4" />
           <AlertDescription>
             Last scheduled check was skipped due to insufficient credits. Top up
@@ -213,7 +213,7 @@ export function RankTrackingDomainDetail({
       )}
 
       {latestRun?.maybeStale && (
-        <Alert className="[&>svg]:text-warning">
+        <Alert variant="warning">
           <AlertTriangle className="size-4" />
           <AlertDescription>
             This run may be unresponsive and will be cleaned up automatically.

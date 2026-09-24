@@ -8,7 +8,9 @@ const alertVariants = cva(
     "relative w-full rounded-xl p-4",
     "backdrop-blur-xl border border-border",
     "shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
-    "[&>svg~*]:pl-7 [&>svg+div]:translate-y-[-3px] [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-4 [&>svg]:text-foreground",
+    // The icon centres on the first 20px text line (16px padding + 2px), so a
+    // one-line alert sits centred in its box; the text is not nudged.
+    "[&>svg~*]:pl-7 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[18px] [&>svg]:text-foreground",
   ].join(" "),
   {
     variants: {
@@ -16,6 +18,13 @@ const alertVariants = cva(
         default: "bg-foreground/[0.04] text-foreground",
         destructive:
           "bg-destructive/10 border-destructive/20 text-destructive [&>svg]:text-destructive",
+        // Status tints for notices; the text stays foreground so it reads in
+        // both themes, and the icon carries the status colour.
+        warning:
+          "bg-warning/10 border-warning/30 text-foreground [&>svg]:text-warning",
+        info: "bg-info/10 border-info/30 text-foreground [&>svg]:text-info",
+        success:
+          "bg-success/10 border-success/30 text-foreground [&>svg]:text-success",
       },
     },
     defaultVariants: {

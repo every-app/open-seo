@@ -1,5 +1,4 @@
 import { useEffect, useRef } from "react";
-import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { sort } from "remeda";
 import { DashboardOnboarding } from "./DashboardOnboarding";
@@ -8,7 +7,6 @@ import {
   BacklinkPulseCard,
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
-import { DashboardMetrics } from "@/client/features/dashboard/DashboardMetrics";
 import { Ga4Card } from "@/client/features/dashboard/Ga4Card";
 import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -17,10 +15,9 @@ import {
   getDashboardOverview,
   refreshDashboardBacklinkSnapshot,
 } from "@/serverFunctions/dashboard";
-
 import { Alert } from "@/client/components/ui/alert";
-import { buttonVariants } from "@/client/components/ui/button";
 import { Skeleton } from "@/client/components/ui/skeleton";
+
 export function DashboardPage({ projectId }: { projectId: string }) {
   const queryClient = useQueryClient();
 
@@ -73,18 +70,14 @@ export function DashboardPage({ projectId }: { projectId: string }) {
   if (!activation || overviewQuery.isPending) {
     return (
       <div
-        className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 md:px-8 md:py-8"
+        className="mx-auto flex max-w-5xl flex-col gap-5 px-4 py-4 md:px-6 md:py-6"
         aria-busy
       >
-        <Skeleton className="h-9 w-52" />
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {Array.from({ length: 4 }, (_, i) => (
-            <Skeleton key={i} className="h-28" />
-          ))}
-        </div>
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Skeleton className="h-64 lg:col-span-2" />
-          <Skeleton className="h-64" />
+        <Skeleton className="h-8 w-52" />
+        <Skeleton className="h-36" />
+        <div className="grid gap-5 lg:grid-cols-2">
+          <Skeleton className="h-44" />
+          <Skeleton className="h-44" />
         </div>
       </div>
     );
@@ -140,80 +133,28 @@ export function DashboardPage({ projectId }: { projectId: string }) {
       : []),
   ];
 
-  const sortedCards = sort(
-    cards,
-    (a, b) => Number(b.hasData) - Number(a.hasData),
-  );
-  const dataCards = sortedCards.filter((card) => card.hasData);
-  const setupCards = sortedCards.filter((card) => !card.hasData);
-  const onboarding = (
-    <DashboardOnboarding
-      key={projectId}
-      projectId={projectId}
-      activation={activation}
-    />
-  );
-
   return (
-    <div className="px-4 py-6 pb-24 md:px-8 md:py-8">
-      <div className="mx-auto flex max-w-6xl flex-col gap-6">
-        <header className="flex flex-wrap items-end justify-between gap-4">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {activation.domain
-                ? `Search health for ${activation.domain}`
-                : "Add your website to see its search health."}
-            </p>
-          </div>
-          {overview?.audit ? (
-            <Link
-              to="/p/$projectId/audit"
-              params={{ projectId }}
-              className={buttonVariants()}
-            >
-              Open site audit
-            </Link>
-          ) : (
-            <Link
-              to="/p/$projectId/audit"
-              params={{ projectId }}
-              className={buttonVariants()}
-            >
-              Run a site audit
-            </Link>
-          )}
-        </header>
+    <div className="px-4 py-4 pb-24 md:px-6 md:py-6 md:pb-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-5">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
 
         <WorkspaceMergeBanner />
 
-        <DashboardMetrics overview={overview} />
+        <DashboardOnboarding
+          key={projectId}
+          projectId={projectId}
+          activation={activation}
+        />
 
-        {dataCards.length > 0 ? (
-          // Data leads in the wide column; setup work sits in the side column.
-          <div className="grid items-start gap-6 lg:grid-cols-3">
-            <div className="flex min-w-0 flex-col gap-6 lg:col-span-2">
-              {dataCards.map((card) => (
-                <div key={card.key}>{card.node}</div>
-              ))}
-            </div>
-            <div className="flex min-w-0 flex-col gap-6">
-              {onboarding}
-              {setupCards.map((card) => (
-                <div key={card.key}>{card.node}</div>
-              ))}
-            </div>
-          </div>
-        ) : (
-          <>
-            {onboarding}
-            <div className="grid items-start gap-6 lg:grid-cols-2">
-              {setupCards.map((card) => (
-                <div key={card.key}>{card.node}</div>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Every card is half width on large screens (only the checklist spans).
+          Cards with data render before setup pitches and empty states. */}
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          {sort(cards, (a, b) => Number(b.hasData) - Number(a.hasData)).map(
+            (card) => (
+              <div key={card.key}>{card.node}</div>
+            ),
+          )}
+        </div>
       </div>
     </div>
   );

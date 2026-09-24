@@ -136,7 +136,8 @@ function MobileKeywordResults({ controller }: Props) {
     <div className="flex-1 flex flex-col overflow-hidden">
       {controller.showApproximateMatchNotice ? (
         <Alert
-          className="mx-4 mt-2 w-auto border-warning/30 bg-warning/10 px-3 py-2 text-xs"
+          variant="warning"
+          className="mx-4 mt-2 w-auto px-3 py-2 text-xs [&>svg]:top-2.5"
           role="status"
         >
           No exact match for{" "}

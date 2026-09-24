@@ -8,7 +8,7 @@ export function FreePlanAlert({ visible }: { visible: boolean }) {
   if (!visible) return null;
 
   return (
-    <Alert className="[&>svg]:text-warning">
+    <Alert variant="warning">
       <AlertTriangle className="size-4" />
       <AlertDescription>
         We only start to track keyword positions once you{" "}

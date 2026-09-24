@@ -91,7 +91,7 @@ export function Ga4Card({
   return (
     <CardShell
       title="Organic traffic"
-      stamp="Google Analytics, last 28 days"
+      stamp="Google Analytics · last 28 days"
       action={
         <Link
           to="/p/$projectId/settings"

@@ -169,10 +169,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                 )}
               </controlsForm.Field>
             ) : (
-              <Alert
-                className="border-info/30 bg-info/10 [&>svg]:text-info"
-                role="status"
-              >
+              <Alert variant="info" role="status">
                 <Info className="size-4" />
                 <AlertDescription>
                   Keyword data for this country comes from Google Ads — search

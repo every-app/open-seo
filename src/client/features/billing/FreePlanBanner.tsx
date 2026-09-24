@@ -113,10 +113,7 @@ function BannerShell({
   return (
     <div className="shrink-0 px-4 py-2.5 md:px-6">
       <div className="mx-auto max-w-7xl">
-        <Alert
-          variant={variant === "error" ? "destructive" : "default"}
-          className={variant === "warning" ? "border-warning/40" : undefined}
-        >
+        <Alert variant={variant === "error" ? "destructive" : variant}>
           <AlertDescription>{children}</AlertDescription>
         </Alert>
       </div>

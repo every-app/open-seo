@@ -304,7 +304,7 @@ export function KeywordsTab({
       />
 
       {filtersOverBudget ? (
-        <Alert className="mx-4 my-3 w-auto border-warning/30 bg-warning/10 [&>svg]:text-warning">
+        <Alert variant="warning" className="mx-4 my-3 w-auto">
           <AlertDescription>
             Saved filters exceed this scope&apos;s {maxConditions}-condition
             limit and were not applied. Open Filters to trim them.

@@ -211,7 +211,7 @@ function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
           const errorMessage = getFormError(submitError);
 
           return errorMessage ? (
-            <Alert variant="destructive" className="py-2">
+            <Alert variant="destructive" className="py-2 [&>svg]:top-2.5">
               <AlertDescription className="text-sm">
                 {errorMessage}
               </AlertDescription>

@@ -75,7 +75,7 @@ export function BrandLookupResults({ result, projectId }: Props) {
 
     if (allPlatformsErrored) {
       return (
-        <Alert className="border-warning/30 bg-warning/10 text-sm">
+        <Alert variant="warning" className="text-sm">
           AI mention data is temporarily unavailable for{" "}
           <strong>{result.resolvedTarget}</strong>. Please try again shortly.
         </Alert>
@@ -83,7 +83,7 @@ export function BrandLookupResults({ result, projectId }: Props) {
     }
     return (
       <div className="space-y-3">
-        <Alert role="status" className="border-info/30 bg-info/10 text-sm">
+        <Alert role="status" variant="info" className="text-sm">
           No AI mentions found for <strong>{result.resolvedTarget}</strong>.
         </Alert>
         {erroredPlatforms.length > 0 ? (

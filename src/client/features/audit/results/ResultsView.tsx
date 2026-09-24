@@ -165,7 +165,7 @@ function CrawlWarning({
   children: ReactNode;
 }) {
   return (
-    <Alert className="[&>svg]:text-warning">
+    <Alert variant="warning">
       <ShieldAlert className="size-4" />
       <AlertDescription>
         <span className="font-medium">{headline}</span>{" "}
