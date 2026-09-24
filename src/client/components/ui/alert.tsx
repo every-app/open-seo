@@ -18,13 +18,15 @@ const alertVariants = cva(
         default: "bg-foreground/[0.04] text-foreground",
         destructive:
           "bg-destructive/10 border-destructive/20 text-destructive [&>svg]:text-destructive",
-        // Status tints for notices; the text stays foreground so it reads in
-        // both themes, and the icon carries the status colour.
+        // Status notices: the surface takes a bright hue at low strength, so
+        // it reads as amber, sky or green on both themes (the status text
+        // tokens go dark in light mode and would wash out to grey). The text
+        // stays foreground; the icon carries the theme-aware status colour.
         warning:
-          "bg-warning/10 border-warning/30 text-foreground [&>svg]:text-warning",
-        info: "bg-info/10 border-info/30 text-foreground [&>svg]:text-info",
+          "bg-amber-400/15 border-amber-500/35 text-foreground [&>svg]:text-warning",
+        info: "bg-sky-400/15 border-sky-500/30 text-foreground [&>svg]:text-info",
         success:
-          "bg-success/10 border-success/30 text-foreground [&>svg]:text-success",
+          "bg-emerald-400/15 border-emerald-500/30 text-foreground [&>svg]:text-success",
       },
     },
     defaultVariants: {
