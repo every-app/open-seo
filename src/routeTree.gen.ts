@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VerifyEmailRouteImport } from './routes/verify-email'
+import { Route as SsoRouteImport } from './routes/sso'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as AuthErrorRouteImport } from './routes/auth-error'
@@ -76,6 +77,11 @@ import { Route as ProjectPProjectIdAuditIssuesResultIdRouteImport } from './rout
 const VerifyEmailRoute = VerifyEmailRouteImport.update({
   id: '/verify-email',
   path: '/verify-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SsoRoute = SsoRouteImport.update({
+  id: '/sso',
+  path: '/sso',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -412,6 +418,7 @@ export interface FileRoutesByFullPath {
   '/auth-error': typeof AuthErrorRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sso': typeof SsoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
@@ -473,6 +480,7 @@ export interface FileRoutesByTo {
   '/auth-error': typeof AuthErrorRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sso': typeof SsoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/ai': typeof AppAiRoute
@@ -533,6 +541,7 @@ export interface FileRoutesById {
   '/auth-error': typeof AuthErrorRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/sso': typeof SsoRoute
   '/verify-email': typeof VerifyEmailRoute
   '/.well-known/openai-apps-challenge': typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   '/_app/ai': typeof AppAiRoute
@@ -597,6 +606,7 @@ export interface FileRouteTypes {
     | '/auth-error'
     | '/forgot-password'
     | '/reset-password'
+    | '/sso'
     | '/verify-email'
     | '/.well-known/openai-apps-challenge'
     | '/ai'
@@ -658,6 +668,7 @@ export interface FileRouteTypes {
     | '/auth-error'
     | '/forgot-password'
     | '/reset-password'
+    | '/sso'
     | '/verify-email'
     | '/.well-known/openai-apps-challenge'
     | '/ai'
@@ -717,6 +728,7 @@ export interface FileRouteTypes {
     | '/auth-error'
     | '/forgot-password'
     | '/reset-password'
+    | '/sso'
     | '/verify-email'
     | '/.well-known/openai-apps-challenge'
     | '/_app/ai'
@@ -783,6 +795,7 @@ export interface RootRouteChildren {
   AuthErrorRoute: typeof AuthErrorRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  SsoRoute: typeof SsoRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute: typeof Char91DotwellKnownChar93OpenaiAppsChallengeRoute
   AcceptInvitationIdRoute: typeof AcceptInvitationIdRoute
@@ -805,6 +818,13 @@ declare module '@tanstack/react-router' {
       path: '/verify-email'
       fullPath: '/verify-email'
       preLoaderRoute: typeof VerifyEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sso': {
+      id: '/sso'
+      path: '/sso'
+      fullPath: '/sso'
+      preLoaderRoute: typeof SsoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1443,6 +1463,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthErrorRoute: AuthErrorRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  SsoRoute: SsoRoute,
   VerifyEmailRoute: VerifyEmailRoute,
   Char91DotwellKnownChar93OpenaiAppsChallengeRoute:
     Char91DotwellKnownChar93OpenaiAppsChallengeRoute,
