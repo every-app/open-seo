@@ -68,6 +68,25 @@ To manage the Access application yourself instead, set `TEAM_DOMAIN` (`https://y
 
 If it doesn't, see Troubleshooting below.
 
+## Custom domain
+
+Serve OpenSEO on your own hostname instead of the `workers.dev` URL by adding `SELFHOST_DOMAIN` to `.env.selfhost`:
+
+```dotenv
+SELFHOST_DOMAIN=seo.example.com
+```
+
+The hostname's zone must already exist in your Cloudflare account — the deploy infers the zone from the name and fails if it cannot find one. The custom domain replaces the `workers.dev` URL rather than adding to it, so the deployment has exactly one public hostname.
+
+Cloudflare Access is hostname-scoped, so the hostname must be covered by the Access application protecting your deployment:
+
+- **Access provisioned by the deploy** (no `TEAM_DOMAIN`/`POLICY_AUD`): nothing to do — the application is created for `SELFHOST_DOMAIN`.
+- **Your own Access application** (`TEAM_DOMAIN` and `POLICY_AUD` set): add the hostname to it in Zero Trust (`Access controls` → `Applications` → your application → `Add public hostname`), then redeploy.
+
+Do not add the domain in the Workers dashboard instead: each deploy reconciles a Worker's custom domains to the ones `alchemy.run.ts` declares, so a dashboard-only domain is removed on the next `pnpm deploy:selfhost`.
+
+If you had already connected an MCP client through the old URL, connect it again — the OAuth resource is derived from the hostname.
+
 ## Updating to the latest OpenSEO version
 
 ```bash

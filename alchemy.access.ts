@@ -19,6 +19,11 @@ const WORKER_PREFIX = "open-seo";
 // self-hoster's stage name can't collide with the adoption path.
 export const HOSTED_PROD_STAGE = "hosted-prod";
 
+// The stage `pnpm deploy:selfhost` deploys (see package.json). Only this stage
+// honors SELFHOST_DOMAIN: previews share one wildcard Access application, and
+// two concurrent stages cannot serve the same hostname.
+export const SELF_HOST_STAGE= "selfhost";
+
 export const workerName = (stage: string) =>
   stage === HOSTED_PROD_STAGE ? WORKER_PREFIX : `${WORKER_PREFIX}-${stage}`;
 
