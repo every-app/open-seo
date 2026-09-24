@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2 } from "@/client/components/icons";
 
 import { Badge } from "@/client/components/ui/badge";
 export const SUPPORT_EMAIL = "ben@openseo.so";
@@ -47,10 +47,7 @@ export function StatusBadge({ status }: { status: string }) {
 
   if (status === "completed") {
     return (
-      <Badge
-        variant="outline"
-        className="px-2 text-[11px] gap-1 text-success/80 border-success/30 bg-success/5"
-      >
+      <Badge variant="success" className="px-2 text-[11px] gap-1">
         <CheckCircle className="size-3" /> Done
       </Badge>
     );
@@ -93,13 +90,13 @@ export function HttpStatusBadge({ code }: { code: number | null }) {
 
 export function LighthouseScoreBadge({ score }: { score: number | null }) {
   if (score == null) {
-    return <span className="text-xs text-muted-foreground/70">-</span>;
+    return <span className="text-xs text-muted-foreground">-</span>;
   }
   const color =
     score >= 90
       ? "text-success"
       : score >= 50
         ? "text-warning"
-        : "text-destructive";
+        : "text-negative";
   return <span className={`font-medium text-sm ${color}`}>{score}</span>;
 }

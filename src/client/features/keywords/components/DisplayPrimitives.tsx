@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp } from "@/client/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { sortBy } from "remeda";
@@ -125,12 +125,12 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
             <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
               <stop
                 offset="0%"
-                stopColor="var(--color-primary)"
+                stopColor="var(--primary)"
                 stopOpacity="var(--trend-fill-start-opacity)"
               />
               <stop
                 offset="100%"
-                stopColor="var(--color-primary)"
+                stopColor="var(--primary)"
                 stopOpacity="var(--trend-fill-end-opacity)"
               />
             </linearGradient>
@@ -162,19 +162,19 @@ export function AreaTrendChart({ trend }: { trend: MonthlySearch[] }) {
               border: "1px solid var(--trend-tooltip-border)",
               borderRadius: "10px",
               boxShadow: "0 8px 24px var(--trend-tooltip-shadow)",
-              color: "var(--color-base-content)",
+              color: "var(--foreground)",
             }}
           />
           <Area
             type="monotone"
             dataKey="searchVolume"
             name="Search volume"
-            stroke="var(--color-primary)"
+            stroke="var(--primary)"
             strokeWidth={2}
             fill="url(#trendGrad)"
             isAnimationActive={false}
-            dot={{ r: 3, fill: "var(--color-primary)", strokeWidth: 0 }}
-            activeDot={{ r: 5, fill: "var(--color-primary)" }}
+            dot={{ r: 3, fill: "var(--primary)", strokeWidth: 0 }}
+            activeDot={{ r: 5, fill: "var(--primary)" }}
           />
         </AreaChart>
       ) : null}
@@ -208,7 +208,7 @@ export function SortHeader({
     <Button
       variant="ghost"
       ref={tooltip.triggerRef}
-      className={`h-auto rounded-md text-inherit px-0 hover:bg-transparent inline-flex items-center gap-0.5 hover:text-primary transition-colors cursor-pointer select-none ${className ?? ""}`}
+      className={`h-auto rounded-md text-inherit px-0 hover:bg-transparent inline-flex items-center gap-0.5 hover:text-link transition-colors cursor-pointer select-none ${className ?? ""}`}
       onClick={() => onToggle(field)}
       onMouseEnter={tooltip.scheduleOpen}
       onMouseLeave={tooltip.close}

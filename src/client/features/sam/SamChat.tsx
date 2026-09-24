@@ -1,7 +1,8 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Suspense, useCallback, useEffect, useRef } from "react";
-import { Brain, Loader2 } from "lucide-react";
+import { Brain } from "@/client/components/icons";
+import { Spinner } from "@/client/components/ui/spinner";
 import { createSamSession } from "@/serverFunctions/sam";
 import {
   invalidateSamSessions,
@@ -108,7 +109,7 @@ export function SamChat({
     // redirects into it.
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+        <Spinner />
       </div>
     );
   }
@@ -141,7 +142,7 @@ export function SamChat({
         <Suspense
           fallback={
             <div className="flex flex-1 items-center justify-center">
-              <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+              <Spinner />
             </div>
           }
         >

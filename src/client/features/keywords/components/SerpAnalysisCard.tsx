@@ -1,8 +1,14 @@
-import { ChevronLeft, ChevronRight, ExternalLink } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ExternalLink,
+} from "@/client/components/icons";
 import { ExportToSheetsButton } from "@/client/components/table/ExportToSheetsButton";
 import type { SerpResultItem } from "@/types/keywords";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { Skeleton } from "@/client/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -45,19 +51,21 @@ export function SerpAnalysisCard({
   if (loading) return <SerpAnalysisLoadingState />;
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive space-y-2">
-        <p>{error}</p>
-        {onRetry ? (
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 px-2.5"
-            onClick={onRetry}
-          >
-            {deepFetchFailed ? "Show top 20" : "Retry"}
-          </Button>
-        ) : null}
-      </div>
+      <Alert variant="destructive">
+        <AlertDescription className="space-y-2">
+          <p>{error}</p>
+          {onRetry ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 px-2.5"
+              onClick={onRetry}
+            >
+              {deepFetchFailed ? "Show top 20" : "Retry"}
+            </Button>
+          ) : null}
+        </AlertDescription>
+      </Alert>
     );
   }
   if (items.length === 0) return <SerpAnalysisEmptyState keyword={keyword} />;
@@ -65,7 +73,7 @@ export function SerpAnalysisCard({
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <div className="text-xs text-muted-foreground/70">
+        <div className="text-xs text-muted-foreground">
           {items.length} organic results
         </div>
         <ExportToSheetsButton
@@ -111,7 +119,7 @@ function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
               key={`${item.rank}-${item.url}`}
               className="hover:bg-muted/50"
             >
-              <TableCell className="font-mono text-muted-foreground/70 text-xs">
+              <TableCell className="font-mono text-muted-foreground text-xs">
                 {item.rank}
               </TableCell>
               <TableCell className="min-w-0 max-w-0">
@@ -120,13 +128,13 @@ function SerpAnalysisTable({ items }: { items: SerpResultItem[] }) {
                     href={item.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-primary hover:underline truncate flex items-center gap-1"
+                    className="font-medium text-link hover:underline truncate flex items-center gap-1"
                     title={item.title}
                   >
                     {item.title || item.url}
                     <ExternalLink className="size-3 shrink-0 opacity-40" />
                   </a>
-                  <span className="text-xs text-muted-foreground/70 truncate">
+                  <span className="text-xs text-muted-foreground truncate">
                     {item.domain}
                   </span>
                 </div>
@@ -161,7 +169,7 @@ function SerpAnalysisPagination({
 
   return (
     <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-      <span className="text-xs text-muted-foreground/70">
+      <span className="text-xs text-muted-foreground">
         {loadingMore ? (
           "Loading more results…"
         ) : (
@@ -200,9 +208,9 @@ function SerpAnalysisLoadingState() {
   return (
     <div className="space-y-2">
       {Array.from({ length: 8 }).map((_, index) => (
-        <div
+        <Skeleton
           key={index}
-          className="h-8 rounded bg-muted animate-pulse"
+          className="h-8"
           style={{ animationDelay: `${index * 50}ms` }}
         />
       ))}
@@ -212,7 +220,7 @@ function SerpAnalysisLoadingState() {
 
 function SerpAnalysisEmptyState({ keyword }: { keyword?: string | null }) {
   return (
-    <div className="text-sm text-muted-foreground/70 text-center py-8">
+    <div className="text-sm text-muted-foreground text-center py-8">
       <p>No SERP details available for this keyword yet.</p>
       {keyword ? (
         <p className="mt-1">Try clicking another keyword to load data.</p>

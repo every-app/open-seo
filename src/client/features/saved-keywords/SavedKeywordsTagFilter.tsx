@@ -1,11 +1,10 @@
 import {
-  Check,
   ChevronDown,
   MoreHorizontal,
   Search,
   Tag as TagIcon,
   X,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { useMemo, useState } from "react";
 import {
   resolveTagColor,
@@ -18,13 +17,16 @@ import { TagChip } from "./TagChip";
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import { Input } from "@/client/components/ui/input";
 import { InputGroup } from "@/client/components/ui/input-group";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/client/components/ui/popover";
-import { Input } from "@/client/components/ui/input";
+import { Toggle } from "@/client/components/ui/toggle";
+
 export function SavedKeywordsTagFilter({
   availableTags,
   selectedTagIds,
@@ -71,21 +73,12 @@ export function SavedKeywordsTagFilter({
         }}
       >
         <PopoverTrigger
-          render={
-            <Button
-              variant="outline"
-              className={`gap-2 rounded-md px-3 ${
-                hasSelection ? "border-primary/50 bg-primary/10" : ""
-              }`}
-            />
-          }
+          render={<Button variant="outline" className="gap-2 px-3" />}
         >
           <TagIcon className="size-3.5 opacity-70" />
           <span className="font-medium">Tags</span>
           {hasSelection ? (
-            <Badge variant="primary" className="px-1.5 py-0 text-[11px]">
-              {selectedTags.length}
-            </Badge>
+            <Badge variant="primary">{selectedTags.length}</Badge>
           ) : null}
           <ChevronDown className="size-3.5 opacity-60" />
         </PopoverTrigger>
@@ -115,7 +108,7 @@ export function SavedKeywordsTagFilter({
 
         <PopoverContent
           align="end"
-          className="w-80 max-w-[calc(100vw-2rem)] p-0"
+          className="w-80 max-w-[calc(100vw-2rem)] overflow-hidden p-0"
         >
           <TagFilterPopover
             availableTags={availableTags}
@@ -176,7 +169,22 @@ function TagFilterPopover({
   return (
     <div className="overflow-hidden">
       <div className="border-b border-border p-2">
-        <InputGroup prefix={<Search className="size-3.5" />}>
+        <InputGroup
+          prefix={<Search className="size-3.5" />}
+          suffix={
+            query ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-6"
+                aria-label="Clear tag search"
+                onClick={() => onQueryChange("")}
+              >
+                <X className="size-3.5" />
+              </Button>
+            ) : undefined
+          }
+        >
           <Input
             autoFocus
             value={query}
@@ -184,15 +192,6 @@ function TagFilterPopover({
             placeholder="Search tags…"
             aria-label="Search tags"
           />
-          {query ? (
-            <Button
-              variant="ghost"
-              className="h-auto rounded-md px-0 hover:bg-transparent text-muted-foreground/70 hover:text-foreground"
-              onClick={() => onQueryChange("")}
-            >
-              <X className="size-3.5" />
-            </Button>
-          ) : null}
         </InputGroup>
       </div>
 
@@ -227,7 +226,8 @@ function TagFilterPopover({
           </span>
           <Button
             variant="ghost"
-            className="h-auto rounded px-2 py-1 text-muted-foreground hover:bg-muted"
+            size="sm"
+            className="h-7 px-2 text-xs"
             onClick={onClearSelection}
           >
             Clear all
@@ -260,39 +260,26 @@ function TagFilterRow({
   const color = resolveTagColor(tag);
   return (
     <div>
-      <div className="group flex items-center gap-2 px-2 py-1.5 hover:bg-muted">
-        <Button
-          variant="ghost"
-          className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit px-0 flex min-w-0 flex-1 items-center gap-2 text-left"
-          onClick={onToggle}
-        >
-          <span
-            className={`flex size-4 shrink-0 items-center justify-center rounded border ${
-              checked
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-border"
-            }`}
-          >
-            {checked ? <Check className="size-3" /> : null}
-          </span>
+      <div className="group flex items-center gap-2 px-2 py-1 transition-colors hover:bg-accent">
+        <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+          <Checkbox checked={checked} onCheckedChange={() => onToggle()} />
           <span
             className={`size-2 shrink-0 rounded-full ${tagDotClass(color)}`}
           />
           <span className="min-w-0 flex-1 truncate text-sm">{tag.name}</span>
-          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground/70">
+          <span className="shrink-0 text-[11px] tabular-nums text-muted-foreground">
             {tag.keywordCount}
           </span>
-        </Button>
-        <Button
-          variant="ghost"
-          className={`h-auto rounded p-1 text-muted-foreground/70 hover:bg-border hover:text-foreground ${
-            isManaging ? "bg-border text-foreground" : ""
-          }`}
-          onClick={() => onStartManaging(isManaging ? null : tag.id)}
+        </label>
+        <Toggle
+          size="sm"
+          className="size-7 px-0"
+          pressed={isManaging}
+          onPressedChange={() => onStartManaging(isManaging ? null : tag.id)}
           aria-label={`Manage ${tag.name}`}
         >
           <MoreHorizontal className="size-3.5" />
-        </Button>
+        </Toggle>
       </div>
 
       {isManaging ? (

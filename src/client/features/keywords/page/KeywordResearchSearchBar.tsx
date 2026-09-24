@@ -1,4 +1,4 @@
-import { Info, Search } from "lucide-react";
+import { Info, Search } from "@/client/components/icons";
 import { getFieldError } from "@/client/lib/forms";
 import {
   isResultLimit,
@@ -12,6 +12,7 @@ import { isLabsLocationCode } from "@/client/features/keywords/locations";
 import { LocationSelect } from "@/client/components/LocationSelect";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { NativeSelect } from "@/client/components/ui/native-select";
@@ -37,7 +38,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
 
   return (
     <Card>
-      <CardContent className="pt-6 gap-2">
+      <CardContent className="flex flex-col pt-6 gap-2">
         <form
           className="flex flex-col gap-3 lg:flex-row lg:flex-wrap lg:items-start lg:gap-2"
           onSubmit={handleSearchSubmit}
@@ -48,14 +49,12 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               const rows = getTextareaRows(field.state.value);
 
               return (
-                <label
-                  className={`flex w-full lg:flex-1 lg:min-w-0 lg:max-w-md items-start gap-2 rounded-lg border bg-card px-4 py-3 transition-colors focus-within:border-primary ${
-                    keywordError ? "border-destructive" : "border-border"
-                  }`}
-                >
-                  <Search className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
+                <label className="relative block w-full lg:flex-1 lg:min-w-0 lg:max-w-md">
+                  <Search className="pointer-events-none absolute left-3.5 top-3 z-10 size-4 text-muted-foreground" />
                   <Textarea
-                    className="min-h-0 grow min-w-0 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+                    className={`min-h-0 resize-none pl-10 leading-6 ${
+                      keywordError ? "border-destructive" : ""
+                    }`}
                     rows={rows}
                     placeholder="Enter a keyword"
                     value={field.state.value}
@@ -132,7 +131,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
             const keywordError = getFieldError(field.state.meta.errors);
 
             return keywordError ? (
-              <p className="text-sm text-destructive">{keywordError}</p>
+              <p className="text-sm text-negative">{keywordError}</p>
             ) : null;
           }}
         </controlsForm.Field>
@@ -155,7 +154,7 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                     </label>
                     <Tooltip>
                       <TooltipTrigger render={<div tabIndex={0} />}>
-                        <Info className="size-3.5 text-muted-foreground/70" />
+                        <Info className="size-3.5 text-muted-foreground" />
                       </TooltipTrigger>
                       <TooltipContent side="right" className="max-w-64">
                         Google reports one combined search volume for similar
@@ -168,17 +167,17 @@ export function KeywordResearchSearchBar({ controller }: Props) {
                 )}
               </controlsForm.Field>
             ) : (
-              <div
-                className="flex items-start gap-2 rounded-lg border border-info/30 bg-info/10 px-3 py-2 text-sm text-foreground"
+              <Alert
+                className="border-info/30 bg-info/10 [&>svg]:text-info"
                 role="status"
               >
-                <Info className="mt-0.5 size-4 shrink-0 text-info" />
-                <span>
+                <Info className="size-4" />
+                <AlertDescription>
                   Keyword data for this country comes from Google Ads — search
                   volume, CPC, and trends are available, but difficulty and
                   intent are not.
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             )
           }
         </controlsForm.Field>

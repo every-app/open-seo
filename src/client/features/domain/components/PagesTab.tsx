@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { Copy, Download, FileSpreadsheet, Sheet } from "lucide-react";
+import {
+  Copy,
+  Download,
+  FileSpreadsheet,
+  Sheet,
+} from "@/client/components/icons";
 import { toast } from "sonner";
 import { DomainKeywordsPagination } from "@/client/features/domain/components/DomainKeywordsPagination";
 import { DomainFilterPanel } from "@/client/features/domain/components/DomainFilterPanel";
@@ -199,7 +204,7 @@ export function PagesTab({
   return (
     <>
       {filtersOverBudget ? (
-        <Alert className="border-warning/40 [&>svg]:text-warning mb-3">
+        <Alert className="mx-4 my-3 w-auto border-warning/30 bg-warning/10 [&>svg]:text-warning">
           <AlertDescription>
             Saved filters exceed this scope&apos;s {maxConditions}-condition
             limit and were not applied. Open Filters to trim them.

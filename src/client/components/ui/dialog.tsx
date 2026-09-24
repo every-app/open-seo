@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
-import { Icon } from "@iconify/react";
+import { X } from "@/client/components/icons";
 
 import { cn } from "@/client/lib/utils";
 
@@ -48,7 +48,7 @@ const DialogContent = React.forwardRef<
       {children}
       {showClose ? (
         <DialogPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 opacity-70 transition-all hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
-          <Icon icon="tabler:x" className="h-4 w-4" />
+          <X className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </DialogPrimitive.Close>
       ) : null}

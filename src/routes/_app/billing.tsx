@@ -24,8 +24,19 @@ import {
   autumnSeoDataCreditsToUsd,
 } from "@/shared/billing";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
+import { Field, FieldError } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { InputGroup } from "@/client/components/ui/input-group";
+
 export const Route = createFileRoute("/_app/billing")({
   beforeLoad: () => {
     if (!isHostedClientAuthMode()) {
@@ -130,7 +141,7 @@ function BillingPage() {
   if (isPending) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground/70">
+        <p className="text-sm text-muted-foreground">
           Redirecting to Stripe...
         </p>
       </div>
@@ -143,16 +154,16 @@ function BillingPage() {
 
       <div className="grid gap-5 md:grid-cols-2">
         {/* Subscription card */}
-        <div className="flex flex-col justify-between rounded-lg border border-border bg-card p-4 gap-4">
+        <Card className="flex flex-col justify-between gap-4 p-5">
           <div>
             <div className="text-2xl font-semibold tabular-nums">
               ${totalRemaining.toFixed(2)}{" "}
-              <span className="text-sm font-normal text-muted-foreground/70">
+              <span className="text-sm font-normal text-muted-foreground">
                 remaining
               </span>
             </div>
             {!isFreePlan ? (
-              <div className="mt-1 flex gap-3 text-xs text-muted-foreground/70">
+              <div className="mt-1 flex gap-3 text-xs text-muted-foreground">
                 <span className="tabular-nums">
                   Monthly ${monthlyRemaining.toFixed(2)}
                 </span>
@@ -163,14 +174,14 @@ function BillingPage() {
               </div>
             ) : null}
             {totalRemaining <= 0 ? (
-              <p className="mt-2 text-xs text-destructive">
+              <p className="mt-2 text-xs text-negative">
                 You&rsquo;ve used all your credits.{" "}
                 {isFreePlan
                   ? "Upgrade your plan to continue."
                   : "Buy more credits below to continue."}
               </p>
             ) : totalRemaining < LOW_CREDITS_THRESHOLD_USD ? (
-              <p className="mt-2 text-xs text-amber-600">
+              <p className="mt-2 text-xs text-warning">
                 You&rsquo;re running low on credits.{" "}
                 {isFreePlan
                   ? "Upgrade to get $10/month."
@@ -181,7 +192,7 @@ function BillingPage() {
 
           <div className="text-sm">
             <span className="font-medium">Plan</span>{" "}
-            <span className="text-muted-foreground/70">
+            <span className="text-muted-foreground">
               {isFreePlan ? "Free Plan" : "Base Plan"}
             </span>
           </div>
@@ -208,7 +219,7 @@ function BillingPage() {
                     key={item}
                     className="flex gap-2 text-xs text-muted-foreground"
                   >
-                    <span className="text-muted-foreground/70 mt-[1px] shrink-0">
+                    <span className="shrink-0" aria-hidden="true">
                       &mdash;
                     </span>
                     {item}
@@ -216,8 +227,8 @@ function BillingPage() {
                 ))}
               </ul>
               <Button
-                variant="secondary"
                 size="sm"
+                type="button"
                 className="w-full"
                 disabled={isPending}
                 onClick={() =>
@@ -234,6 +245,7 @@ function BillingPage() {
             <Button
               variant="secondary"
               size="sm"
+              type="button"
               className="w-full"
               disabled={isPending}
               onClick={() =>
@@ -249,69 +261,74 @@ function BillingPage() {
               Manage subscription
             </Button>
           )}
-        </div>
+        </Card>
 
         {/* Buy credits card — paid plan only, owner-only */}
         {!isFreePlan && canManageBilling ? (
-          <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-            <div>
-              <span className="font-semibold">Buy credits</span>
-              <p className="mt-1 text-sm text-muted-foreground">
+          <Card>
+            <CardHeader className="p-5 pb-3">
+              <CardTitle className="text-base">Buy credits</CardTitle>
+              <CardDescription>
                 Top-up credits never expire and are used after your monthly
                 credits.
-              </p>
-            </div>
+              </CardDescription>
+            </CardHeader>
 
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">$</span>
-                <Input
-                  type="number"
-                  min={10}
-                  max={99}
-                  step={1}
-                  inputMode="numeric"
-                  className="w-full h-8 text-sm"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                />
-              </div>
-              {topUpAmount.trim() !== "" && !isValidTopUp ? (
-                <p className="mt-1 text-xs text-destructive">
-                  Enter between $10–$99.
-                </p>
-              ) : null}
-            </div>
+            <CardContent className="space-y-3 p-5 pt-0">
+              <Field>
+                <InputGroup
+                  prefix="$"
+                  error={topUpAmount.trim() !== "" && !isValidTopUp}
+                >
+                  <Input
+                    type="number"
+                    min={10}
+                    max={99}
+                    step={1}
+                    inputMode="numeric"
+                    aria-label="Top-up amount in dollars"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                  />
+                </InputGroup>
+                {topUpAmount.trim() !== "" && !isValidTopUp ? (
+                  <FieldError className="text-xs">
+                    Enter between $10–$99.
+                  </FieldError>
+                ) : null}
+              </Field>
 
-            <Button
-              variant="secondary"
-              size="sm"
-              className="w-full"
-              disabled={isPending || !isValidTopUp}
-              onClick={() =>
-                void runAction(
-                  () =>
-                    customerQuery.attach({
-                      planId: AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
-                      redirectMode: "always",
-                      successUrl: window.location.href,
-                      checkoutSessionParams: AUTUMN_CHECKOUT_SESSION_PARAMS,
-                      featureQuantities: [
-                        {
-                          featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-                          quantity: Math.round(
-                            parsedTopUpAmount * AUTUMN_SEO_DATA_CREDITS_PER_USD,
-                          ),
-                        },
-                      ],
-                    }),
-                  "We couldn't start the checkout. Please try again.",
-                )
-              }
-            >
-              Buy credits
-            </Button>
-          </div>
+              <Button
+                size="sm"
+                type="button"
+                className="w-full"
+                disabled={isPending || !isValidTopUp}
+                onClick={() =>
+                  void runAction(
+                    () =>
+                      customerQuery.attach({
+                        planId: AUTUMN_SEO_DATA_TOP_UP_PLAN_ID,
+                        redirectMode: "always",
+                        successUrl: window.location.href,
+                        checkoutSessionParams: AUTUMN_CHECKOUT_SESSION_PARAMS,
+                        featureQuantities: [
+                          {
+                            featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
+                            quantity: Math.round(
+                              parsedTopUpAmount *
+                                AUTUMN_SEO_DATA_CREDITS_PER_USD,
+                            ),
+                          },
+                        ],
+                      }),
+                    "We couldn't start the checkout. Please try again.",
+                  )
+                }
+              >
+                Buy credits
+              </Button>
+            </CardContent>
+          </Card>
         ) : null}
       </div>
 
@@ -321,9 +338,13 @@ function BillingPage() {
       {/* Per-feature usage breakdown */}
       <BillingFeatureBreakdown />
 
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? (
+        <Alert variant="destructive">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      ) : null}
 
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-xs text-muted-foreground">
         Billing is powered by Stripe.
       </p>
     </div>

@@ -1,4 +1,11 @@
 import type { ReactNode } from "react";
+import { Badge } from "@/client/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 
 type IntegrationConnectionStatus =
   | "connected"
@@ -18,20 +25,22 @@ export function IntegrationConnectionCard({
   children: ReactNode;
 }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-      <div className="flex flex-col items-start justify-between gap-3 p-5 sm:flex-row sm:gap-4 sm:p-6">
+    <Card className="overflow-hidden">
+      <CardHeader className="items-start justify-between gap-3 space-y-0 p-5 sm:flex-row sm:gap-4 sm:p-6">
         <div className="flex min-w-0 items-center gap-2.5">
           {icon ? (
-            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-card shadow-sm">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg border border-border bg-card">
               {icon}
             </span>
           ) : null}
-          <h2 className="text-base font-semibold leading-tight">{title}</h2>
+          <CardTitle className="text-base leading-tight">{title}</CardTitle>
         </div>
         {status ? <ConnectionStatusPill status={status} /> : null}
-      </div>
-      <div className="border-t border-border p-5 sm:p-6">{children}</div>
-    </div>
+      </CardHeader>
+      <CardContent className="border-t border-border p-5 sm:p-6">
+        {children}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -43,31 +52,17 @@ function ConnectionStatusPill({
   const connected = status === "connected";
   const setupRequired = status === "setup_required";
   return (
-    <span
-      className={[
-        "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium",
-        connected
-          ? "border-success/30 bg-success/10 text-success"
-          : setupRequired
-            ? "border-warning/30 bg-warning/10 text-warning"
-            : "border-border bg-muted text-muted-foreground",
-      ].join(" ")}
+    <Badge
+      size="lg"
+      variant={connected ? "success" : setupRequired ? "warning" : "secondary"}
+      className="shrink-0"
     >
-      <span
-        className={[
-          "size-1.5 rounded-full",
-          connected
-            ? "bg-success"
-            : setupRequired
-              ? "bg-warning"
-              : "bg-foreground/40",
-        ].join(" ")}
-      />
+      <span className="size-1.5 rounded-full bg-current" aria-hidden="true" />
       {connected
         ? "Connected"
         : setupRequired
           ? "Setup required"
           : "Not connected"}
-    </span>
+    </Badge>
   );
 }

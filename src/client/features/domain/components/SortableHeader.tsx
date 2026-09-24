@@ -1,4 +1,4 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "@/client/components/icons";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import type { SortOrder } from "@/client/features/domain/types";
 

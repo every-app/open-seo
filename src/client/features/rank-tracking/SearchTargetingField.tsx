@@ -2,9 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 import { SerpLocationCombobox } from "@/client/components/SerpLocationCombobox";
 import { prewarmSerpLocations } from "@/serverFunctions/serp-locations";
 
-import { Field } from "@/client/components/ui/field";
+import { Field, FieldDescription } from "@/client/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/client/components/ui/radio-group";
 import { Label } from "@/client/components/ui/label";
+
 type TargetingMode = "national" | "local";
 
 export function SearchTargetingField({
@@ -56,7 +57,7 @@ export function SearchTargetingField({
           <span className="text-sm">Local</span>
         </label>
       </RadioGroup>
-      <p className="text-xs text-muted-foreground/70 mt-1.5">
+      <FieldDescription className="text-xs">
         {mode === "local" ? (
           <>
             <span className="text-success font-medium">Best for:</span> "near
@@ -67,16 +68,14 @@ export function SearchTargetingField({
             Local targeting can understate rankings for non-geo-modified terms.
           </>
         )}
-      </p>
+      </FieldDescription>
       {mode === "local" && (
-        <div className="mt-2">
-          <SerpLocationCombobox
-            value={locationName}
-            onChange={onLocationNameChange}
-            countryCode={countryCode}
-            placeholder="Search cities..."
-          />
-        </div>
+        <SerpLocationCombobox
+          value={locationName}
+          onChange={onLocationNameChange}
+          countryCode={countryCode}
+          placeholder="Search cities..."
+        />
       )}
     </Field>
   );

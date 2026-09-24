@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil } from "lucide-react";
+import { Pencil } from "@/client/components/icons";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { getProjectContext } from "@/serverFunctions/projectContext";
 import {
@@ -26,9 +26,13 @@ import {
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+import { Field, FieldDescription } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
 import { Spinner } from "@/client/components/ui/spinner";
 import { Textarea } from "@/client/components/ui/textarea";
+
 const SECTION_HINTS: Record<ProjectContextSectionKey, string> = {
   business_overview: "What you sell, who buys it, and where.",
   current_goal: "What you're pushing for right now, and by when.",
@@ -175,23 +179,20 @@ function ProseSections({
       {PROJECT_CONTEXT_SECTION_KEYS.map((key) => {
         const section = stored.get(key);
         return (
-          <div key={key} className="space-y-1.5">
+          <Field key={key} className="space-y-1.5">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
-              <label
-                htmlFor={`context-${key}`}
-                className="text-sm font-medium text-foreground"
-              >
+              <Label htmlFor={`context-${key}`}>
                 {PROJECT_CONTEXT_SECTION_LABELS[key]}
-              </label>
+              </Label>
               {section ? (
                 <Provenance by={section.updatedBy} at={section.updatedAt} />
               ) : (
-                <span className="text-xs text-muted-foreground/70">Empty</span>
+                <span className="text-xs text-muted-foreground">Empty</span>
               )}
             </div>
-            <p className="text-xs text-muted-foreground/70">
+            <FieldDescription className="text-xs">
               {SECTION_HINTS[key]}
-            </p>
+            </FieldDescription>
             <Textarea
               id={`context-${key}`}
               value={draftOf(key)}
@@ -211,9 +212,8 @@ function ProseSections({
               rows={4}
               maxLength={PROSE_MAX_CHARS}
               placeholder={SECTION_PLACEHOLDERS[key]}
-              className="w-full text-sm"
             />
-          </div>
+          </Field>
         );
       })}
 
@@ -269,10 +269,7 @@ function CustomSections({
                 }
               />
             ) : (
-              <div
-                key={custom.slug}
-                className="space-y-2 rounded-lg border border-border p-3"
-              >
+              <Card key={custom.slug} className="space-y-2 px-4 py-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <h3 className="truncate text-sm font-medium">
@@ -303,7 +300,7 @@ function CustomSections({
                 <p className="whitespace-pre-wrap text-sm text-muted-foreground">
                   {custom.content}
                 </p>
-              </div>
+              </Card>
             ),
           )}
         </div>
@@ -327,37 +324,38 @@ function CustomSectionForm({
   const [content, setContent] = React.useState(custom.content);
 
   return (
-    <form
-      className="space-y-2 rounded-lg border border-border bg-muted/40 p-3"
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (pending || !content.trim()) return;
-        onSave(title.trim() || custom.slug, content);
-      }}
-    >
-      <Input
-        type="text"
-        value={title}
-        onChange={(event) => setTitle(event.target.value)}
-        placeholder={custom.slug}
-        maxLength={120}
-        className="w-full h-8 text-sm"
-        aria-label="Section title"
-      />
-      <Textarea
-        value={content}
-        onChange={(event) => setContent(event.target.value)}
-        rows={5}
-        maxLength={PROSE_MAX_CHARS}
-        className="w-full text-sm"
-        aria-label="Section content"
-      />
-      <FormActions
-        pending={pending}
-        disabled={!content.trim()}
-        onCancel={onCancel}
-      />
-    </form>
+    <Card>
+      <form
+        className="space-y-2 px-4 py-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (pending || !content.trim()) return;
+          onSave(title.trim() || custom.slug, content);
+        }}
+      >
+        <Input
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder={custom.slug}
+          maxLength={120}
+          className="h-8"
+          aria-label="Section title"
+        />
+        <Textarea
+          value={content}
+          onChange={(event) => setContent(event.target.value)}
+          rows={5}
+          maxLength={PROSE_MAX_CHARS}
+          aria-label="Section content"
+        />
+        <FormActions
+          pending={pending}
+          disabled={!content.trim()}
+          onCancel={onCancel}
+        />
+      </form>
+    </Card>
   );
 }
 
@@ -382,31 +380,33 @@ function ResearchLog({
           Nothing logged yet. Agents record paid research here as they run it.
         </EmptyState>
       ) : (
-        <ul className={listClass}>
-          {researchLog.map((entry) => (
-            <li
-              key={entry.id}
-              className="flex items-start justify-between gap-3 p-3"
-            >
-              <div className="min-w-0 space-y-0.5">
-                <p className="text-sm text-foreground">{entry.summary}</p>
-                <div className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground/70">
-                  <span>{entry.entryDate}</span>
-                  <Provenance by={entry.createdBy} />
+        <Card className="overflow-hidden">
+          <ul className={listClass}>
+            {researchLog.map((entry) => (
+              <li
+                key={entry.id}
+                className="flex items-start justify-between gap-3 px-4 py-3"
+              >
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-sm text-foreground">{entry.summary}</p>
+                  <div className="flex flex-wrap items-baseline gap-x-2 text-xs text-muted-foreground">
+                    <span>{entry.entryDate}</span>
+                    <Provenance by={entry.createdBy} />
+                  </div>
                 </div>
-              </div>
-              <RowActions>
-                <ConfirmDeleteButton
-                  label={`Delete log entry from ${entry.entryDate}`}
-                  pending={update.isPending}
-                  onConfirm={() =>
-                    update.mutate([{ removeResearchLog: [entry.id] }])
-                  }
-                />
-              </RowActions>
-            </li>
-          ))}
-        </ul>
+                <RowActions>
+                  <ConfirmDeleteButton
+                    label={`Delete log entry from ${entry.entryDate}`}
+                    pending={update.isPending}
+                    onConfirm={() =>
+                      update.mutate([{ removeResearchLog: [entry.id] }])
+                    }
+                  />
+                </RowActions>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
     </section>
   );

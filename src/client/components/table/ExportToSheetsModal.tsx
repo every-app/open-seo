@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Check, ExternalLink, X } from "lucide-react";
+import { Check, ExternalLink } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import {
   closeExportToSheetsModal,
@@ -9,6 +9,13 @@ import {
 } from "@/client/lib/exportToSheets";
 
 import { Button } from "@/client/components/ui/button";
+import {
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+
 export function ExportToSheetsModal() {
   const state = useExportToSheetsModalState();
   // Close any stale modal when the user navigates away mid-flow. Deps must
@@ -34,32 +41,23 @@ export function ExportToSheetsModal() {
       onClose={closeExportToSheetsModal}
       labelledBy="export-to-sheets-title"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex size-8 items-center justify-center rounded-full bg-success/15 text-success">
+      {/* Modal renders the corner close button; pr-8 keeps the title clear of
+          it, and pl-10 lines the description up under the title text. */}
+      <DialogHeader className="text-left">
+        <div className="flex items-center gap-2 pr-8">
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="size-4" />
           </span>
-          <h3 id="export-to-sheets-title" className="text-base font-semibold">
+          <DialogTitle id="export-to-sheets-title" className="text-base">
             Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
-          </h3>
+          </DialogTitle>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          type="button"
-          className="size-7"
-          onClick={closeExportToSheetsModal}
-          aria-label="Close"
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
+        <DialogDescription className="pl-10">
+          Open a new Google Sheet and paste to fill it.
+        </DialogDescription>
+      </DialogHeader>
 
-      <p className="text-sm text-muted-foreground">
-        Open a new Google Sheet and paste to fill it.
-      </p>
-
-      <div className="flex justify-end">
+      <DialogFooter>
         <Button
           size="sm"
           type="button"
@@ -69,7 +67,7 @@ export function ExportToSheetsModal() {
           Open new Google Sheet
           <ExternalLink className="size-3.5" />
         </Button>
-      </div>
+      </DialogFooter>
     </Modal>
   );
 }

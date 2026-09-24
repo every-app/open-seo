@@ -21,10 +21,10 @@ export function FilterTextInput({
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <FilterFieldLabel>{label}</FilterFieldLabel>
       <Input
-        className="w-full bg-card h-8 text-sm"
+        className="w-full h-8 text-sm"
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -46,7 +46,7 @@ export function FilterNumberInput({
 }) {
   return (
     <Input
-      className="bg-card h-7 text-xs"
+      className="h-8 text-sm"
       type="text"
       inputMode="decimal"
       step={step}
@@ -65,7 +65,7 @@ export function FilterRangeGroup({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+    <div className="space-y-1.5">
       <FilterFieldLabel>{title}</FilterFieldLabel>
       <div className="grid grid-cols-2 gap-2">{children}</div>
     </div>

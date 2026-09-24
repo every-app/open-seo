@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "@/client/components/icons";
 import { toast } from "sonner";
 import { GoogleGlyph } from "@/client/features/gsc/GoogleGlyph";
 import { GoogleLinkErrorAlert } from "@/client/features/integrations/GoogleLinkErrorAlert";
@@ -22,8 +22,10 @@ import {
 } from "@/serverFunctions/gsc";
 import { getProjects } from "@/serverFunctions/projects";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Spinner } from "@/client/components/ui/spinner";
+
 const GRANT_STATUS_KEY = ["gscGrantStatus"];
 
 /**
@@ -156,15 +158,16 @@ function GscConnect({
       ) : needsSetup ? (
         <SelfHostedSetupWarning />
       ) : connected ? (
-        <div className="flex items-center gap-3 rounded-lg border border-success/30 bg-success/10 p-3.5 text-sm">
-          <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-success/20 text-success">
-            <Check className="size-3.5" />
-          </span>
-          <span className="text-foreground">
+        <Alert
+          role="status"
+          className="border-success/30 bg-success/10 [&>svg]:text-success"
+        >
+          <Check className="size-4" />
+          <AlertDescription>
             Connected to{" "}
             <span className="font-mono">{connection?.siteUrl}</span>.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : (
         <div className="space-y-4">
           <GoogleLinkErrorAlert provider="gsc" />
@@ -195,13 +198,14 @@ function GscConnect({
           ) : (
             <Button
               variant="outline"
+              type="button"
               onClick={handleConnect}
               disabled={linking}
               aria-busy={linking}
-              className="h-auto inline-flex items-center gap-2.5 rounded-lg px-4 py-2.5 text-sm text-foreground transition hover:bg-muted hover:shadow focus-visible:outline-2 focus-visible:outline-primary"
+              className="gap-2.5"
             >
               {linking ? (
-                <Spinner size="sm" className="[&_svg]:size-3" />
+                <Spinner size="sm" />
               ) : (
                 <GoogleGlyph className="size-[18px]" />
               )}
@@ -231,11 +235,7 @@ function StepNavigation({
 }: NavigationProps & { connected?: boolean; saveAction?: React.ReactNode }) {
   return (
     <div className="mt-8 flex items-center justify-between gap-3">
-      <Button
-        variant="ghost"
-        className="rounded-md flex min-h-10 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-        onClick={onBack}
-      >
+      <Button variant="ghost" size="sm" type="button" onClick={onBack}>
         <ArrowLeft className="size-3.5" /> Back
       </Button>
       <div className="flex items-center gap-2">
@@ -244,13 +244,7 @@ function StepNavigation({
             Continue <ArrowRight className="size-4" />
           </Button>
         ) : (
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            className="text-muted-foreground"
-            onClick={onSkip}
-          >
+          <Button variant="ghost" size="sm" type="button" onClick={onSkip}>
             Skip for now
           </Button>
         )}
@@ -267,7 +261,7 @@ function StepNavigation({
 
 function Checking() {
   return (
-    <div className="flex items-center gap-2 text-sm text-muted-foreground/70">
+    <div className="flex items-center gap-2 text-sm text-muted-foreground">
       <Spinner size="sm" />
       Checking…
     </div>

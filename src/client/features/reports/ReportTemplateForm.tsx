@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 import { z } from "zod";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -189,7 +189,7 @@ function Labelled({
       <span className="block text-sm font-medium">{label}</span>
       {children}
       {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
-      {error ? <p className="text-sm text-destructive">{error}</p> : null}
+      {error ? <p className="text-sm text-negative">{error}</p> : null}
     </label>
   );
 }

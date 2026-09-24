@@ -1,10 +1,11 @@
-import { Minus, Plus, RotateCcw, X } from "lucide-react";
+import { Minus, Plus, RotateCcw, X } from "@/client/components/icons";
 import { useState, type KeyboardEvent } from "react";
 import type { SavedKeywordsFilterValues } from "./savedKeywordsFilterTypes";
 import type { SavedKeywordsFilterForm } from "./useSavedKeywordsFilters";
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 
 export function SavedKeywordsFilterPanel({
@@ -22,12 +23,7 @@ export function SavedKeywordsFilterPanel({
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount} active
-            </Badge>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           ) : null}
         </div>
         <Button
@@ -136,7 +132,7 @@ function TermsTokenInput({
   const Icon = styles.icon;
 
   return (
-    <div className="space-y-2 rounded-lg border border-border bg-card p-2.5">
+    <Card className="space-y-2 p-2.5">
       <div className="flex items-center gap-2">
         <span
           className={`inline-flex size-4 items-center justify-center rounded ${styles.iconBg}`}
@@ -204,7 +200,7 @@ function TermsTokenInput({
           );
         }}
       </form.Field>
-    </div>
+    </Card>
   );
 }
 
@@ -231,7 +227,7 @@ function FilterRangeInputs({
   max?: number;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-border bg-card p-2.5">
+    <Card className="space-y-2 p-2.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
@@ -253,7 +249,7 @@ function FilterRangeInputs({
           max={max}
         />
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -276,7 +272,7 @@ function CompactRangeInput({
     <form.Field name={name}>
       {(field) => (
         <Input
-          className="bg-card h-7 text-xs"
+          className="h-7 text-xs"
           placeholder={placeholder}
           type="number"
           step={step}

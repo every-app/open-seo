@@ -14,7 +14,10 @@ import { getSignInSearch, getVerifyEmailSearch } from "@/lib/auth-redirect";
 import { z } from "zod";
 
 import { Button } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
   password: z.string().min(1, "Enter your password."),
@@ -129,8 +132,8 @@ function SignInPage() {
           <div
             className={
               showEmailForm
-                ? "flex justify-between text-sm text-muted-foreground/70"
-                : "text-sm text-muted-foreground/70"
+                ? "flex justify-between text-sm text-muted-foreground"
+                : "text-sm text-muted-foreground"
             }
           >
             {showEmailForm ? (
@@ -168,7 +171,7 @@ function SignInPage() {
             }}
           />
           {socialError ? (
-            <p className="text-sm text-destructive">{socialError}</p>
+            <p className="text-sm text-negative">{socialError}</p>
           ) : null}
         </>
       ) : (
@@ -184,10 +187,11 @@ function SignInPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
+                <Field>
+                  <Label htmlFor="sign-in-email">Email</Label>
                   <Input
+                    id="sign-in-email"
                     type="email"
-                    className="w-full"
                     placeholder="Email address..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -195,10 +199,8 @@ function SignInPage() {
                     disabled={!isHostedMode}
                     required
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-destructive">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -208,10 +210,11 @@ function SignInPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
+                <Field>
+                  <Label htmlFor="sign-in-password">Password</Label>
                   <Input
+                    id="sign-in-password"
                     type="password"
-                    className="w-full"
                     placeholder="Password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -219,10 +222,8 @@ function SignInPage() {
                     disabled={!isHostedMode}
                     required
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-destructive">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -238,10 +239,10 @@ function SignInPage() {
               return (
                 <>
                   {errorMessage ? (
-                    <p className="text-sm text-destructive">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
                   <Button
-                    variant="secondary"
+                    type="submit"
                     className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >

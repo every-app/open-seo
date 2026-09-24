@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check } from "@/client/components/icons";
 import { Badge } from "@/client/components/ui/badge";
 import {
   Table,
@@ -333,7 +333,7 @@ function BacklinkRow({
         {gained ? `+${gained.toLocaleString()}` : newLost(gained)}
       </TableCell>
       <TableCell
-        className={`text-right tabular-nums ${lost ? "text-destructive" : ""}`}
+        className={`text-right tabular-nums ${lost ? "text-negative" : ""}`}
       >
         {lost ? `−${lost.toLocaleString()}` : newLost(lost)}
       </TableCell>

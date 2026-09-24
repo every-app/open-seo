@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { QueryKey } from "@tanstack/react-query";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X } from "@/client/components/icons";
 import type { SearchTab } from "./types";
 import {
   KEYWORD_RESEARCH_STALE_TIME_MS,
@@ -12,6 +12,7 @@ import {
 import { getBacklinksOverview } from "@/serverFunctions/backlinks";
 import { getDomainOverview } from "@/serverFunctions/domain";
 import { Button } from "@/client/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 export type { SearchTab } from "./types";
 
 type Props = {
@@ -41,11 +42,10 @@ export function SearchTabStrip({
   if (tabs.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-border bg-card p-1">
-      <div
-        role="tablist"
+    <Tabs value={activeTabId} className="min-w-0">
+      <TabsList
         aria-label="Search tabs"
-        className="flex min-w-0 items-stretch gap-1 overflow-x-auto"
+        className="max-w-full justify-start overflow-x-auto"
       >
         {tabs.map((tab) => {
           const active = tab.id === activeTabId;
@@ -53,37 +53,31 @@ export function SearchTabStrip({
             <div
               key={tab.id}
               data-search-tab-id={tab.id}
-              className={`group flex shrink-0 items-stretch overflow-hidden rounded-md text-sm transition ${
-                active
-                  ? "bg-border text-foreground shadow-sm"
-                  : "text-foreground hover:bg-muted"
-              }`}
+              className="flex shrink-0 items-center"
             >
-              <Button
-                variant="ghost"
-                role="tab"
+              <TabsTrigger
+                value={tab.id}
                 data-search-tab-id={tab.id}
-                aria-selected={active}
-                className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex min-w-0 items-center gap-1.5 px-2.5 py-1.5 text-left"
+                className="px-3"
                 onClick={() => onSelect(tab)}
               >
-                <SearchTabStatus
-                  tab={tab}
-                  projectId={projectId}
-                  active={active}
-                  onViewed={onViewed}
-                />
-                <span
-                  className="max-w-[10rem] truncate font-medium"
-                  title={tab.label}
-                >
-                  {tab.label}
+                <span className="flex items-center gap-1.5">
+                  <SearchTabStatus
+                    tab={tab}
+                    projectId={projectId}
+                    active={active}
+                    onViewed={onViewed}
+                  />
+                  <span className="max-w-[10rem] truncate" title={tab.label}>
+                    {tab.label}
+                  </span>
                 </span>
-              </Button>
+              </TabsTrigger>
               <Button
                 variant="ghost"
+                size="icon"
                 data-search-tab-id={tab.id}
-                className="h-auto rounded-md flex items-center px-1.5 text-muted-foreground/70 opacity-60 transition hover:bg-foreground/10 hover:text-foreground hover:opacity-100 group-hover:opacity-100"
+                className="size-7 rounded-full"
                 onClick={() => onClose(tab.id)}
                 aria-label={`Close ${tab.label} tab`}
               >
@@ -92,8 +86,8 @@ export function SearchTabStrip({
             </div>
           );
         })}
-      </div>
-    </div>
+      </TabsList>
+    </Tabs>
   );
 }
 
@@ -156,7 +150,7 @@ function SearchTabStatusIndicator({
       aria-hidden
     >
       {status === "loading" ? (
-        <Loader2 className="size-3 animate-spin text-muted-foreground/70" />
+        <Loader2 className="size-3 animate-spin text-muted-foreground" />
       ) : status === "error" ? (
         <span className="size-2 rounded-full bg-destructive" />
       ) : status === "unviewed" ? (

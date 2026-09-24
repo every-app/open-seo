@@ -1,7 +1,14 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 
 import { Button } from "@/client/components/ui/button";
+import {
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/client/components/ui/dialog";
+
 /** Confirm-by-name modal for a delete with no undo. */
 export function ConfirmDeleteModal({
   title,
@@ -20,11 +27,11 @@ export function ConfirmDeleteModal({
 }) {
   return (
     <Modal onClose={onClose} labelledBy="confirm-delete-title">
-      <h3 id="confirm-delete-title" className="text-lg font-semibold">
-        {title}
-      </h3>
-      <p className="text-sm text-muted-foreground">{detail}</p>
-      <div className="flex justify-end gap-2">
+      <DialogHeader>
+        <DialogTitle id="confirm-delete-title">{title}</DialogTitle>
+        <DialogDescription>{detail}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter className="gap-2 sm:space-x-0">
         <Button variant="ghost" size="sm" type="button" onClick={onClose}>
           Cancel
         </Button>
@@ -39,7 +46,7 @@ export function ConfirmDeleteModal({
           {isPending ? <Loader2 className="size-3 animate-spin" /> : null}
           {confirmLabel}
         </Button>
-      </div>
+      </DialogFooter>
     </Modal>
   );
 }

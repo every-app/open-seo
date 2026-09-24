@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { ArrowUpRight, ShieldAlert } from "lucide-react";
+import { ArrowUpRight, ShieldAlert } from "@/client/components/icons";
 import { getAuthMode } from "@/lib/auth-mode";
 import { captureClientEvent } from "@/client/lib/posthog";
 import {
@@ -11,7 +11,14 @@ import { CopyButton } from "@/client/features/ai-mcp/SetupControls";
 import { AgentList } from "@/client/features/ai-mcp/AgentList";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
-import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { Card } from "@/client/components/ui/card";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/client/components/ui/tabs";
+
 const DOCS_URL = "https://openseo.so/docs/agent-setup";
 const COACH_DOCS_URL = "https://openseo.so/docs/skills/seo-coach";
 const SKILLS = [
@@ -50,7 +57,7 @@ function AiPage() {
   const [tab, setTab] = useState<"setup" | "skills">("setup");
 
   return (
-    <div className="h-full overflow-auto bg-card px-4 py-12 md:px-6 md:py-16 pb-24 md:pb-12">
+    <div className="h-full overflow-auto px-4 py-12 pb-24 md:px-6 md:py-16 md:pb-12">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-semibold tracking-tight">Agent setup</h1>
         <p className="mt-3 text-pretty text-sm leading-relaxed text-muted-foreground">
@@ -58,25 +65,19 @@ function AiPage() {
           already use. Set it up once, then ask it anything.
         </p>
 
-        <Tabs value={tab} className="mt-8">
+        <Tabs
+          value={tab}
+          onValueChange={(value: "setup" | "skills") => setTab(value)}
+          className="mt-8"
+        >
           <TabsList>
-            {(
-              [
-                ["setup", "Set up your agent"],
-                ["skills", "Skills"],
-              ] as const
-            ).map(([id, label]) => (
-              <TabsTrigger key={id} value={id} onClick={() => setTab(id)}>
-                {label}
-              </TabsTrigger>
-            ))}
+            <TabsTrigger value="setup">Set up your agent</TabsTrigger>
+            <TabsTrigger value="skills">Skills</TabsTrigger>
           </TabsList>
-        </Tabs>
 
-        {tab === "setup" ? (
-          <>
+          <TabsContent value="setup" className="mt-0">
             <div className="mt-6 space-y-5">
-              <section className="rounded-xl border border-border p-5 sm:p-6">
+              <Card className="p-5 sm:p-6">
                 <h2 className="text-base font-semibold">Set up your agent</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Paste the setup prompt into your agent to connect OpenSEO and
@@ -84,13 +85,14 @@ function AiPage() {
                   steps.
                 </p>
                 <AgentList />
-                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 [&>button]:h-11 [&>button]:gap-2 [&>button]:text-sm">
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
                   <CopyButton
                     primary
                     value={prompt}
                     label="Copy setup prompt"
                     successMessage="Setup prompt copied"
                     onCopy={() => captureClientEvent("mcp:setup_prompt_copy")}
+                    className="h-11 gap-2"
                   />
                   <a
                     href={`${DOCS_URL}#set-up-your-agent`}
@@ -114,22 +116,23 @@ function AiPage() {
                   </a>{" "}
                   to help you choose what to do next.
                 </p>
-              </section>
+              </Card>
 
-              <section className="rounded-xl border border-border p-5 sm:p-6">
+              <Card className="p-5 sm:p-6">
                 <h2 className="text-base font-semibold">Update your skills</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
                   Already connected? Paste the update prompt into your agent to
                   get the latest OpenSEO skills while preserving your connection
                   settings and personal edits.
                 </p>
-                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3 [&>button]:h-11 [&>button]:gap-2 [&>button]:text-sm">
+                <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
                   <CopyButton
                     primary
                     value={agentUpdatePrompt}
                     label="Copy update prompt"
                     successMessage="Update prompt copied"
                     onCopy={() => captureClientEvent("mcp:update_prompt_copy")}
+                    className="h-11 gap-2"
                   />
                   <a
                     href={`${DOCS_URL}#update-your-skills`}
@@ -141,7 +144,7 @@ function AiPage() {
                     <ArrowUpRight className="size-3.5" />
                   </a>
                 </div>
-              </section>
+              </Card>
             </div>
 
             {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
@@ -177,9 +180,9 @@ function AiPage() {
                 onCopy={() => captureClientEvent("mcp:setup_url_copy")}
               />
             </div>
-          </>
-        ) : (
-          <section className="mt-6">
+          </TabsContent>
+
+          <TabsContent value="skills" className="mt-6">
             <p className="text-sm text-muted-foreground">
               The setup prompt installs these. Run one by name when you want a
               full report instead of a quick answer.
@@ -202,8 +205,8 @@ function AiPage() {
                 </li>
               ))}
             </ul>
-          </section>
-        )}
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

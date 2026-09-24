@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Checkbox as CheckboxPrimitive } from "@base-ui/react/checkbox";
-import { Icon } from "@iconify/react";
+import { Check } from "@/client/components/icons";
 
 import { cn } from "@/client/lib/utils";
 
@@ -28,7 +28,7 @@ function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
         data-slot="checkbox-indicator"
         className={cn("flex items-center justify-center text-current")}
       >
-        <Icon icon="tabler:check" className="size-full h-3.5 w-3.5" />
+        <Check className="size-full h-3.5 w-3.5" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

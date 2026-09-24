@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/client/components/icons";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TableLoadingRows } from "@/client/features/domain/components/TableLoadingRows";
 
@@ -54,12 +54,7 @@ export function DomainTableTabSurface({
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </Button>
         <span className="text-sm text-muted-foreground">

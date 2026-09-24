@@ -1,4 +1,5 @@
 import { Button } from "@/client/components/ui/button";
+
 export function GoogleConnectedState({
   property,
   detail,
@@ -27,7 +28,7 @@ export function GoogleConnectedState({
           {property || detail}
         </p>
         {detail ? (
-          <p className="mt-1 text-xs text-muted-foreground/70">
+          <p className="mt-1 text-xs text-muted-foreground">
             ID {detail.replace(/^properties\//, "")}
           </p>
         ) : null}
@@ -42,13 +43,7 @@ export function GoogleConnectedState({
           disabled={disconnecting || disabled}
           className="flex flex-wrap items-center gap-1"
         >
-          <Button
-            variant="outline"
-            size="sm"
-            type="button"
-            className="border-border"
-            onClick={onChange}
-          >
+          <Button variant="outline" size="sm" type="button" onClick={onChange}>
             {canManage
               ? "Change property or account"
               : "Manage Google accounts"}
@@ -58,7 +53,7 @@ export function GoogleConnectedState({
               variant="ghost"
               size="sm"
               type="button"
-              className="text-destructive hover:bg-destructive/10"
+              className="text-negative hover:bg-destructive/10"
               onClick={onDisconnect}
             >
               {disconnecting ? "Disconnecting…" : "Disconnect project"}

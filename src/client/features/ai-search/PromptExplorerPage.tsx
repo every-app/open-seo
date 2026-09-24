@@ -8,7 +8,7 @@ import {
   Columns3,
   SearchCheck,
   Sparkles,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { explorePrompt } from "@/serverFunctions/ai-search";
 import {
   HostedPlanGate,
@@ -27,6 +27,7 @@ import {
   type WebSearchCountryCode,
 } from "@/types/schemas/ai-search";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { buttonVariants } from "@/client/components/ui/button";
 type PromptExplorerFormValues = {
   prompt: string;
@@ -233,13 +234,10 @@ function PromptExplorerPageInner({
             />
 
             {errorMessage ? (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-              >
-                <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
             ) : null}
 
             {isLoading ? (

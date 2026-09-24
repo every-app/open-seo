@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Link, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Menu } from "lucide-react";
+import { Menu } from "@/client/components/icons";
 import {
   MissingSeoSetupModal,
   MobileSidebarDrawer,

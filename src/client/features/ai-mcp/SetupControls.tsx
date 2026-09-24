@@ -1,8 +1,10 @@
-import { Check, Copy } from "lucide-react";
+import { Check, Copy } from "@/client/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/client/components/ui/button";
+import { cn } from "@/client/lib/utils";
+
 export function CopyButton({
   value,
   successMessage,
@@ -10,6 +12,7 @@ export function CopyButton({
   iconOnly = false,
   primary = false,
   onCopy,
+  className,
 }: {
   value: string;
   successMessage: string;
@@ -17,6 +20,7 @@ export function CopyButton({
   iconOnly?: boolean;
   primary?: boolean;
   onCopy?: () => void;
+  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -40,9 +44,10 @@ export function CopyButton({
     return (
       <Button
         variant="ghost"
+        size="icon"
         onClick={handleCopy}
         aria-label={label}
-        className="flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        className={cn("size-7", className)}
       >
         {copied ? (
           <Check className="size-3.5 text-success" />
@@ -58,7 +63,7 @@ export function CopyButton({
       variant={primary ? "default" : "outline"}
       size={primary ? "default" : "sm"}
       onClick={handleCopy}
-      className={primary ? undefined : "h-7 gap-1.5 px-2 text-xs"}
+      className={cn(!primary && "h-7 gap-1.5 px-2 text-xs", className)}
     >
       {copied ? (
         <Check className="size-3 text-success" />

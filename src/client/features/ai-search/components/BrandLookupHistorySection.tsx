@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/client/components/icons";
 import {
   HISTORY_ITEM_LINK_CLASS,
   SearchHistorySection,
@@ -43,18 +43,18 @@ export function BrandLookupHistorySection({ projectId, ...props }: Props) {
       )}
       renderItem={(item) => (
         <div className="min-w-0">
-          <p className="flex items-center gap-2 truncate font-medium text-foreground">
+          <div className="flex items-center gap-2 truncate font-medium text-foreground">
             {item.query}
             {/* Only non-default scopes are stored, so this badge always adds
                 information the query string doesn't already carry. */}
             {item.scope ? (
-              <Badge variant="secondary" className="px-2 text-[11px] shrink-0">
+              <Badge variant="secondary" className="shrink-0">
                 {RESEARCH_SCOPE_LABELS[item.scope]}
               </Badge>
             ) : null}
-          </p>
+          </div>
           {item.competitors.length > 0 ? (
-            <p className="truncate text-xs text-muted-foreground/70">
+            <p className="truncate text-xs text-muted-foreground">
               vs {item.competitors.join(", ")}
             </p>
           ) : null}

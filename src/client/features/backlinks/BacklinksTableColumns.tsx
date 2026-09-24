@@ -1,5 +1,5 @@
 import type { ColumnDef } from "@tanstack/react-table";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/client/components/icons";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 import { BacklinksSourceLink } from "./BacklinksPageLinks";
@@ -33,26 +33,13 @@ export type BacklinksDisplayRow =
 function BacklinkFlags({ row }: { row: BacklinksRow }) {
   return (
     <div className="flex flex-wrap gap-1">
-      {row.isLost ? (
-        <Badge variant="destructive" className="px-2 text-[11px]">
-          Lost
-        </Badge>
-      ) : null}
-      {row.isBroken ? (
-        <Badge variant="warning" className="px-2 text-[11px]">
-          Broken
-        </Badge>
-      ) : null}
+      {row.isLost ? <Badge variant="destructive">Lost</Badge> : null}
+      {row.isBroken ? <Badge variant="warning">Broken</Badge> : null}
       {row.isDofollow === false ? (
-        <Badge variant="outline" className="px-2 text-[11px]">
-          Nofollow
-        </Badge>
+        <Badge variant="outline">Nofollow</Badge>
       ) : null}
       {row.linksCount != null && row.linksCount > 1 ? (
-        <Badge
-          variant="outline"
-          className="px-2 text-[11px] min-w-fit whitespace-nowrap"
-        >
+        <Badge variant="outline" className="min-w-fit whitespace-nowrap">
           {row.linksCount} links
         </Badge>
       ) : null}
@@ -64,7 +51,7 @@ function StatusCell({ status }: { status: "loading" | "error" | "empty" }) {
   if (status === "loading") {
     return (
       <span className="flex items-center gap-2 pl-6 text-sm text-muted-foreground">
-        <Spinner size="sm" className="[&_svg]:size-3" />
+        <Spinner size="sm" />
         Loading links…
       </span>
     );

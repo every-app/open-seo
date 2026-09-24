@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 import { MIN_PAGES } from "@/client/features/audit/launch/types";
 import type { useLaunchController } from "@/client/features/audit/launch/useLaunchController";
 import { getFieldError, getFormError } from "@/client/lib/forms";
@@ -8,7 +8,12 @@ import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 import { InputGroup } from "@/client/components/ui/input-group";
 import { Switch } from "@/client/components/ui/switch";
@@ -25,9 +30,10 @@ export function LaunchFormCard({
 }: Props) {
   return (
     <Card>
-      <CardContent className="pt-6 gap-4">
+      <CardHeader>
         <CardTitle className="text-base">Start New Audit</CardTitle>
-
+      </CardHeader>
+      <CardContent className="space-y-4">
         <form
           className="grid grid-cols-1 gap-3 lg:grid-cols-12 lg:items-center"
           onSubmit={(event) => {
@@ -129,7 +135,7 @@ function LaunchOptions({
           )}
         </launchForm.Field>
       </div>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-xs text-muted-foreground">
         Enter any value from {MIN_PAGES} to {maxPagesLimit.toLocaleString()}.
         {isFreeLimited ? (
           <>
@@ -137,7 +143,7 @@ function LaunchOptions({
             <Link
               to={SUBSCRIBE_ROUTE}
               search={{ upgrade: true }}
-              className="underline underline-offset-4 text-primary"
+              className="underline underline-offset-4 text-link"
             >
               Upgrade
             </Link>{" "}
@@ -195,7 +201,7 @@ function LaunchErrors({ launchForm }: Pick<Props, "launchForm">) {
           const urlError = getFieldError(field.state.meta.errors);
 
           return urlError ? (
-            <p className="text-sm text-destructive">{urlError}</p>
+            <p className="text-sm text-negative">{urlError}</p>
           ) : null;
         }}
       </launchForm.Field>

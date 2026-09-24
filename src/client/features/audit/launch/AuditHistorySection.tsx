@@ -1,12 +1,17 @@
 import { Link } from "@tanstack/react-router";
-import { ScanSearch, Trash2 } from "lucide-react";
+import { ScanSearch, Trash2 } from "@/client/components/icons";
 import type { getAuditHistory } from "@/serverFunctions/audit";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { formatDate, StatusBadge } from "@/client/features/audit/shared";
 
 import { Badge } from "@/client/components/ui/badge";
 import { buttonVariants } from "@/client/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 import {
   Table,
   TableBody,
@@ -30,7 +35,7 @@ export function AuditHistorySection({
   if (history.length === 0 && !isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
-        <div className="text-center text-muted-foreground/70 space-y-3">
+        <div className="text-center text-muted-foreground space-y-3">
           <ScanSearch className="size-12 mx-auto opacity-30" />
           <p className="text-lg font-medium">No audits yet</p>
         </div>
@@ -42,8 +47,10 @@ export function AuditHistorySection({
 
   return (
     <Card>
-      <CardContent className="pt-6 gap-3">
+      <CardHeader>
         <CardTitle className="text-base">Previous Audits</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -58,7 +65,7 @@ export function AuditHistorySection({
             </TableHeader>
             <TableBody>
               {history.map((audit) => (
-                <TableRow key={audit.id} className="hover group">
+                <TableRow key={audit.id} className="group">
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDate(audit.startedAt)}
                   </TableCell>
@@ -117,7 +124,7 @@ function HistoryActions({
       <PortalMenu ariaLabel="Audit actions">
         {(close) => (
           <DropdownMenuItem
-            className="text-destructive"
+            className="text-negative"
             onClick={() => {
               close();
               onDelete(auditId);

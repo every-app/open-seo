@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/client/components/icons";
 import { sort } from "remeda";
 import {
   getIssueDescriptor,
@@ -9,6 +9,7 @@ import {
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 
 import { Button } from "@/client/components/ui/button";
+
 type AuditIssueRow = AuditResultsData["issues"][number];
 
 const MAX_RENDERED_URLS = 100;
@@ -132,7 +133,7 @@ function IssueSection({
         <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
           {SEVERITY_LABEL[section.severity]}
         </span>
-        <span className="text-[11px] tabular-nums text-muted-foreground/70">
+        <span className="text-[11px] tabular-nums text-muted-foreground">
           {issueCount}
         </span>
       </div>
@@ -158,7 +159,7 @@ function IssueRow({ group }: { group: IssueGroup }) {
     >
       <Button
         variant="ghost"
-        className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-muted/40 transition-colors"
+        className="h-auto w-full justify-start gap-3 whitespace-normal rounded-none px-4 py-2.5 text-left font-normal text-inherit"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
       >
@@ -168,11 +169,11 @@ function IssueRow({ group }: { group: IssueGroup }) {
         <span className="text-sm font-medium flex-1 min-w-0 truncate">
           {group.title}
         </span>
-        <span className="text-xs tabular-nums text-muted-foreground/70 shrink-0">
+        <span className="text-xs tabular-nums text-muted-foreground shrink-0">
           {group.issues.length} {group.issues.length === 1 ? "page" : "pages"}
         </span>
         <ChevronRight
-          className={`size-4 shrink-0 text-muted-foreground/70 transition-transform ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${
             open ? "rotate-90" : ""
           }`}
         />
@@ -203,7 +204,7 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
   const remaining = issues.length - rendered.length;
 
   return (
-    <div className="max-h-[320px] overflow-y-auto rounded border border-border/60 bg-card">
+    <div className="max-h-[320px] overflow-y-auto rounded-md border border-border bg-muted/40">
       {rendered.map((issue) => (
         <div
           key={issue.id}
@@ -222,7 +223,7 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
         </div>
       ))}
       {remaining > 0 && (
-        <div className="px-3 py-2 text-xs text-muted-foreground/70">
+        <div className="px-3 py-2 text-xs text-muted-foreground">
           …and {remaining} more — export the issues CSV for the full list.
         </div>
       )}
@@ -260,7 +261,7 @@ function IssueDetails({ detailsJson }: { detailsJson: string | null }) {
   if (entries.length === 0) return null;
 
   return (
-    <span className="text-xs text-muted-foreground/70 truncate">
+    <span className="text-xs text-muted-foreground truncate">
       {entries
         .map(([key, value]) => {
           const rendered = Array.isArray(value)

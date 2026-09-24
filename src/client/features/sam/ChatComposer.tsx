@@ -5,10 +5,11 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from "react";
-import { ArrowUp, Loader2, Square } from "lucide-react";
+import { ArrowUp, Loader2, Square } from "@/client/components/icons";
 
 import { Button } from "@/client/components/ui/button";
 import { Textarea } from "@/client/components/ui/textarea";
+
 export function ChatComposer({
   busy,
   onSend,
@@ -52,10 +53,12 @@ export function ChatComposer({
     }
   }
 
+  // The composer is the field's surface; the textarea inside drops its own so
+  // the send button sits inside the same frame.
   return (
     <form
       onSubmit={handleSubmit}
-      className="flex items-end gap-2 rounded-xl border border-border bg-card px-3 py-2 focus-within:border-primary"
+      className="flex items-end gap-2 rounded-xl border border-border bg-input px-3 py-2 backdrop-blur-xl transition-colors focus-within:border-primary/60 focus-within:ring-[3px] focus-within:ring-ring/25"
     >
       <Textarea
         ref={textareaRef}
@@ -64,7 +67,7 @@ export function ChatComposer({
         onKeyDown={handleKey}
         rows={1}
         placeholder={placeholder}
-        className="min-h-0 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 max-h-40 flex-1 resize-none  px-1 py-1 text-sm leading-relaxed  placeholder:text-muted-foreground/70 focus:"
+        className="max-h-40 min-h-0 flex-1 resize-none rounded-none border-0 bg-transparent px-1 py-1 leading-relaxed shadow-none hover:bg-transparent focus-visible:shadow-none"
       />
       {busy && onStop ? (
         <Button
@@ -75,7 +78,7 @@ export function ChatComposer({
           onClick={onStop}
           className="size-8"
         >
-          <Square className="size-3.5 fill-current" />
+          <Square className="size-3.5 [&_path]:fill-current" />
         </Button>
       ) : (
         <Button

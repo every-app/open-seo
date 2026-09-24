@@ -48,10 +48,7 @@ function SignedOutInvitationCard({ invitationId }: { invitationId: string }) {
         <Link
           to="/sign-up"
           search={{ redirect }}
-          className={buttonVariants({
-            variant: "secondary",
-            className: "w-full",
-          })}
+          className={buttonVariants({ className: "w-full" })}
         >
           Create account
         </Link>
@@ -230,11 +227,10 @@ function InvitationCard({
         on OpenSEO.
       </p>
       {actionError ? (
-        <p className="text-sm text-destructive">{actionError}</p>
+        <p className="text-sm text-negative">{actionError}</p>
       ) : null}
       <div className="space-y-2">
         <Button
-          variant="secondary"
           type="button"
           className="w-full"
           disabled={isSubmitting}

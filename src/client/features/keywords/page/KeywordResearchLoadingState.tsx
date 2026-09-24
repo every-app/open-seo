@@ -1,13 +1,14 @@
+import { Card } from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
 export function KeywordResearchLoadingState() {
   return (
     <div className="flex-1 w-full">
       <div className="hidden md:flex h-full gap-4">
         <div className="flex-1 flex flex-col min-w-0 gap-2">
-          <div className="rounded-xl border border-border bg-card p-4">
+          <Card className="p-4">
             <Skeleton className="h-5 w-56" />
-          </div>
-          <div className="flex-1 rounded-xl border border-border bg-card overflow-hidden">
+          </Card>
+          <Card className="flex-1 overflow-hidden">
             <div className="border-b border-border px-4 py-3 flex items-center gap-3">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-40" />
@@ -27,14 +28,14 @@ export function KeywordResearchLoadingState() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         </div>
         <div className="flex-1 flex flex-col min-w-0 gap-2">
-          <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+          <Card className="p-4 space-y-3">
             <Skeleton className="h-4 w-36" />
             <Skeleton className="h-56 w-full" />
-          </div>
-          <div className="flex-1 rounded-xl border border-border bg-card p-4 space-y-3">
+          </Card>
+          <Card className="flex-1 p-4 space-y-3">
             <Skeleton className="h-4 w-44" />
             {Array.from({ length: 6 }).map((_, index) => (
               <div key={index} className="grid grid-cols-[24px_1fr_72px] gap-2">
@@ -43,16 +44,16 @@ export function KeywordResearchLoadingState() {
                 <Skeleton className="h-3 w-12 justify-self-end" />
               </div>
             ))}
-          </div>
+          </Card>
         </div>
       </div>
 
       <div className="md:hidden space-y-3">
-        <div className="rounded-xl border border-border bg-card p-4 space-y-3">
+        <Card className="p-4 space-y-3">
           <Skeleton className="h-8 w-full" />
           <Skeleton className="h-8 w-2/3" />
-        </div>
-        <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+        </Card>
+        <Card className="p-4 space-y-2">
           {Array.from({ length: 8 }).map((_, index) => (
             <div
               key={index}
@@ -66,7 +67,7 @@ export function KeywordResearchLoadingState() {
               </div>
             </div>
           ))}
-        </div>
+        </Card>
       </div>
     </div>
   );

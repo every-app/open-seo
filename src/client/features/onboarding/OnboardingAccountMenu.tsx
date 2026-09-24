@@ -1,4 +1,4 @@
-import { Settings, User } from "lucide-react";
+import { Settings, User } from "@/client/components/icons";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { signOutAndRedirect } from "@/lib/auth-client";
 

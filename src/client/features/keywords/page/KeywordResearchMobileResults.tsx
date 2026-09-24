@@ -6,7 +6,7 @@ import {
   Save,
   Sheet,
   SlidersHorizontal,
-} from "lucide-react";
+} from "@/client/components/icons";
 import {
   downloadKeywordResearchCsv,
   KEYWORD_RESEARCH_HEADERS,
@@ -28,6 +28,7 @@ import {
   TableBulkExportMenu,
 } from "@/client/components/table/TableBulkActionBar";
 
+import { Alert } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
 import { Button, buttonVariants } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
@@ -134,14 +135,14 @@ function MobileKeywordResults({ controller }: Props) {
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {controller.showApproximateMatchNotice ? (
-        <div
-          className="mx-4 mt-2 rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-xs text-foreground"
+        <Alert
+          className="mx-4 mt-2 w-auto border-warning/30 bg-warning/10 px-3 py-2 text-xs"
           role="status"
         >
           No exact match for{" "}
           <span className="font-medium">"{controller.searchedKeyword}"</span>.
           Showing closest related keywords.
-        </div>
+        </Alert>
       ) : null}
 
       <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border bg-card">
@@ -154,12 +155,7 @@ function MobileKeywordResults({ controller }: Props) {
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </Button>
         <span className="text-xs text-muted-foreground">
@@ -266,12 +262,7 @@ function MobileFilters({ controller }: Props) {
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </div>
         <Button
@@ -290,7 +281,7 @@ function MobileFilters({ controller }: Props) {
         <filtersForm.Field name="include">
           {(field) => (
             <Input
-              className="bg-card h-8 text-sm"
+              className="h-8 text-sm"
               placeholder="Include terms (audit, checker)"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -300,7 +291,7 @@ function MobileFilters({ controller }: Props) {
         <filtersForm.Field name="exclude">
           {(field) => (
             <Input
-              className="bg-card h-8 text-sm"
+              className="h-8 text-sm"
               placeholder="Exclude terms (jobs, course)"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
@@ -364,7 +355,7 @@ function MobileRangeInput({
     <form.Field name={name}>
       {(field) => (
         <Input
-          className="bg-card h-8 text-sm"
+          className="h-8 text-sm"
           placeholder={placeholder}
           type="number"
           step={step}

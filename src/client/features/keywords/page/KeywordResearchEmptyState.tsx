@@ -1,9 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, Globe, History, Search, X } from "lucide-react";
+import { Clock, Globe, History, Search, X } from "@/client/components/icons";
 import { LOCATIONS } from "@/client/features/keywords/utils";
 import type { KeywordResearchControllerState } from "./types";
 
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 type Props = {
   controller: KeywordResearchControllerState;
   projectId: string;
@@ -28,8 +29,8 @@ function NoResultsState({
 
   return (
     <div className="pt-1">
-      <div className="w-full max-w-2xl rounded-2xl border border-border bg-card p-6 md:p-8 text-center space-y-4 mx-auto">
-        <Globe className="size-10 mx-auto text-muted-foreground/70" />
+      <Card className="w-full max-w-2xl p-6 md:p-8 text-center space-y-4 mx-auto">
+        <Globe className="size-10 mx-auto text-muted-foreground" />
         <div className="space-y-2">
           <p className="text-lg font-semibold text-foreground">
             Not enough keyword data for this query yet
@@ -46,7 +47,7 @@ function NoResultsState({
             .
           </p>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -67,10 +68,10 @@ function SearchHistoryState({
   return (
     <div className="space-y-4 pt-1">
       {history.length > 0 ? (
-        <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
+        <Card className="p-5 md:p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <History className="size-4 text-muted-foreground/70" />
+              <History className="size-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">
                 {history.length} recent search
                 {history.length !== 1 ? "es" : ""}
@@ -81,7 +82,7 @@ function SearchHistoryState({
             {history.map((item) => (
               <div
                 key={item.timestamp}
-                className="group flex items-center gap-2 rounded-lg border border-border bg-card p-2"
+                className="group flex items-center gap-2 rounded-xl border border-border p-2"
               >
                 <Link
                   from="/p/$projectId/keywords"
@@ -92,9 +93,9 @@ function SearchHistoryState({
                     loc: item.locationCode,
                   }}
                   replace
-                  className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted"
+                  className="flex min-w-0 flex-1 items-center gap-3 rounded-sm px-1 py-1 text-left transition-colors hover:bg-muted"
                 >
-                  <Clock className="size-4 shrink-0 text-muted-foreground/70" />
+                  <Clock className="size-4 shrink-0 text-muted-foreground" />
                   <div className="min-w-0">
                     <p className="truncate font-medium text-foreground">
                       {item.keyword}
@@ -105,7 +106,7 @@ function SearchHistoryState({
                   </div>
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
-                  <span className="text-xs text-muted-foreground/70">
+                  <span className="text-xs text-muted-foreground">
                     {new Date(item.timestamp).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -124,9 +125,9 @@ function SearchHistoryState({
               </div>
             ))}
           </div>
-        </section>
+        </Card>
       ) : (
-        <section className="rounded-2xl border border-dashed border-border bg-card/70 p-6 text-center text-muted-foreground/70 space-y-3">
+        <Card className="p-6 text-center text-muted-foreground space-y-3">
           <Search className="size-10 mx-auto opacity-40" />
           <p className="text-lg font-medium text-foreground">
             Enter a keyword to get started
@@ -135,7 +136,7 @@ function SearchHistoryState({
             Search for any keyword to see volume, difficulty, CPC, and related
             keyword ideas.
           </p>
-        </section>
+        </Card>
       )}
     </div>
   );

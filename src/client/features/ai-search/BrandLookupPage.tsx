@@ -7,7 +7,7 @@ import {
   BarChart3,
   Quote,
   TrendingUp,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { lookupBrand } from "@/serverFunctions/ai-search";
 import {
   HostedPlanGate,
@@ -31,6 +31,7 @@ import {
   type ResearchScope,
 } from "@/shared/researchScope";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { buttonVariants } from "@/client/components/ui/button";
 type Props = {
   projectId: string;
@@ -295,13 +296,10 @@ function BrandLookupPageInner({
             />
 
             {errorMessage ? (
-              <div
-                role="alert"
-                className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-              >
-                <AlertCircle className="mt-0.5 size-4 shrink-0" />
-                <span>{errorMessage}</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
             ) : null}
 
             {isLoading ? (

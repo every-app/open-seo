@@ -2,7 +2,15 @@ import type { ComponentPropsWithoutRef, ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import { Table } from "@/client/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+
 type Props = {
   /** Raw Markdown source to render. */
   children: string;
@@ -13,8 +21,9 @@ type Props = {
  * Shared Markdown renderer with explicit per-element Tailwind classes.
  *
  * OpenSEO doesn't ship `@tailwindcss/typography`, so `prose` classes are
- * no-ops — every block element is styled here instead. Tables use daisyUI's
- * `table table-sm` so model- and strategy-generated tables stay readable.
+ * no-ops — every block element is styled here instead. Tables use the Halo
+ * Table at a compact density so model- and strategy-generated tables stay
+ * readable.
  *
  * Anchor URLs are sanitized to http(s) only — LLMs can be coaxed into
  * emitting `javascript:` payloads.
@@ -45,7 +54,7 @@ function SafeAnchor({ href, children, ...rest }: AnchorProps) {
       href={safeHref}
       target="_blank"
       rel="noreferrer"
-      className="underline underline-offset-4 text-primary"
+      className="underline underline-offset-4 text-link"
     >
       {children}
     </a>
@@ -122,19 +131,23 @@ export const MARKDOWN_COMPONENTS = {
     </pre>
   ),
   table: ({ children }: { children?: ReactNode }) => (
-    <div className="my-3 overflow-x-auto">
-      <Table className="border border-border">{children}</Table>
-    </div>
+    <Table containerClassName="my-3">{children}</Table>
   ),
-  thead: ({ children }: { children?: ReactNode }) => <thead>{children}</thead>,
-  tbody: ({ children }: { children?: ReactNode }) => <tbody>{children}</tbody>,
+  thead: ({ children }: { children?: ReactNode }) => (
+    <TableHeader>{children}</TableHeader>
+  ),
+  tbody: ({ children }: { children?: ReactNode }) => (
+    <TableBody>{children}</TableBody>
+  ),
   tr: ({ children }: { children?: ReactNode }) => (
-    <tr className="border-b border-border last:border-0">{children}</tr>
+    <TableRow>{children}</TableRow>
   ),
   th: ({ children }: { children?: ReactNode }) => (
-    <th className="px-2 py-1.5 text-left font-semibold">{children}</th>
+    <TableHead className="h-auto px-2 py-1.5 font-semibold text-foreground">
+      {children}
+    </TableHead>
   ),
   td: ({ children }: { children?: ReactNode }) => (
-    <td className="px-2 py-1.5 align-top">{children}</td>
+    <TableCell className="px-2 py-1.5 align-top">{children}</TableCell>
   ),
 };

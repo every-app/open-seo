@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft } from "@/client/components/icons";
 import { getProjects } from "@/serverFunctions/projects";
 
 export const Route = createFileRoute("/_project/p/$projectId/settings")({
@@ -32,7 +32,7 @@ function ProjectSettingsLayout() {
   )?.to;
 
   return (
-    <div className="h-full overflow-auto bg-card">
+    <div className="h-full overflow-auto">
       <div className="mx-auto w-full max-w-2xl space-y-8 p-4 py-8 pb-24 sm:p-6 md:py-12 md:pb-12">
         <div className="space-y-4">
           <Link
@@ -46,7 +46,7 @@ function ProjectSettingsLayout() {
             <h1 className="text-2xl font-bold tracking-tight">
               Project settings
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-1 text-sm text-muted-foreground">
               {project?.name ?? " "}
             </p>
           </div>

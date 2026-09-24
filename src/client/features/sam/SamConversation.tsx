@@ -3,7 +3,7 @@ import { useAgent } from "agents/react";
 // variant skips the client->server transcript sync Think doesn't support.
 import { useAgentChat } from "@cloudflare/think/react";
 import { useEffect, useRef } from "react";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@/client/components/icons";
 import { findLast } from "remeda";
 import { ChatComposer } from "@/client/features/sam/ChatComposer";
 import { invalidateSamSessions } from "@/client/features/sam/samQueries";
@@ -157,7 +157,7 @@ export function SamConversation({
           variant="ghost"
           size="sm"
           type="button"
-          className="h-7 px-2.5 absolute right-3 top-2 z-10 text-muted-foreground/70"
+          className="h-7 px-2.5 absolute right-3 top-2 z-10 text-muted-foreground"
           onClick={() => clearHistory()}
         >
           Clear history (dev)
@@ -208,7 +208,7 @@ export function SamConversation({
           ))}
 
           {showTyping ? (
-            <div className="flex items-center gap-2 pt-1 text-muted-foreground/70">
+            <div className="flex items-center gap-2 pt-1 text-muted-foreground">
               <span className="flex items-center gap-1.5">
                 <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.3s]" />
                 <span className="size-1.5 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
@@ -218,20 +218,20 @@ export function SamConversation({
           ) : null}
 
           {isRecovering ? (
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               Saving the reply that got cut off…
             </p>
           ) : null}
 
           {status === "error" ? (
-            <div className="flex flex-wrap items-center gap-3 text-sm text-destructive">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-negative">
               <span>SAM stopped before finishing this reply.</span>
               {lastUserMessage ? (
                 <Button
                   variant="outline"
                   size="sm"
                   type="button"
-                  className="text-destructive h-7 px-2.5 gap-1"
+                  className="text-negative h-7 px-2.5 gap-1"
                   disabled={isBusy}
                   onClick={retryLast}
                 >
@@ -247,8 +247,10 @@ export function SamConversation({
               {SUGGESTIONS.map((question) => (
                 <Button
                   variant="outline"
+                  size="sm"
+                  type="button"
                   key={question}
-                  className="h-auto rounded-full px-3 py-1.5 text-xs text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground"
+                  className="h-auto whitespace-normal rounded-full py-1.5 text-left font-normal text-muted-foreground hover:text-foreground"
                   onClick={() => sendText(question, "suggestion")}
                 >
                   {question}

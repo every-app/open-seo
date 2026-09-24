@@ -10,6 +10,7 @@ import { getGscGrantStatus } from "@/serverFunctions/gsc";
 import { dismissGscNudge } from "@/serverFunctions/onboarding";
 
 import { Button } from "@/client/components/ui/button";
+
 /**
  * One-time re-engagement prompt nudging users who finished onboarding *before*
  * the Search Console step existed to connect GSC. Hosted-only because this is
@@ -116,11 +117,7 @@ export function GscReEngagementModal({
         <Button variant="ghost" type="button" onClick={handleDismiss}>
           Maybe later
         </Button>
-        <Button
-          variant="outline"
-          onClick={handleConnect}
-          className="h-auto inline-flex items-center justify-center gap-2.5 rounded-lg px-4 py-2.5 text-sm text-foreground transition hover:bg-muted hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-        >
+        <Button variant="outline" onClick={handleConnect} className="gap-2.5">
           <GoogleGlyph className="size-[18px]" />
           Connect with Google
         </Button>

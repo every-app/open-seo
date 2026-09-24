@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { ChevronLeft, Plus } from "lucide-react";
+import { ChevronLeft, Plus } from "@/client/components/icons";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/client/components/ConfirmDeleteModal";
 import { ReportTemplateForm } from "@/client/features/reports/ReportTemplateForm";

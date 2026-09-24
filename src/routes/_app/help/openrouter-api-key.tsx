@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 
 import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
 import { Separator } from "@/client/components/ui/separator";
+
 const OPENROUTER_KEYS_URL = "https://openrouter.ai/settings/keys";
 
 export const Route = createFileRoute("/_app/help/openrouter-api-key")({
@@ -13,7 +14,7 @@ function OpenrouterApiKeyHelpPage() {
     <div className="px-4 py-4 md:px-6 md:py-6 pb-24 md:pb-8 overflow-auto">
       <div className="mx-auto max-w-3xl space-y-4">
         <Card>
-          <CardContent className="pt-6 gap-3">
+          <CardContent className="space-y-3 pt-6">
             <h1 className="text-2xl font-semibold">
               Set up your OpenRouter API key
             </h1>
@@ -26,13 +27,13 @@ function OpenrouterApiKeyHelpPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6 gap-4">
+          <CardContent className="space-y-4 pt-6">
             <CardTitle className="text-base">Steps</CardTitle>
             <ol className="list-decimal pl-5 text-sm space-y-3 text-foreground">
               <li>
                 Create an account at{" "}
                 <a
-                  className="underline underline-offset-4 text-primary"
+                  className="underline underline-offset-4 text-link"
                   href="https://openrouter.ai"
                   target="_blank"
                   rel="noreferrer"
@@ -44,7 +45,7 @@ function OpenrouterApiKeyHelpPage() {
               <li>
                 Go to{" "}
                 <a
-                  className="underline underline-offset-4 text-primary"
+                  className="underline underline-offset-4 text-link"
                   href={OPENROUTER_KEYS_URL}
                   target="_blank"
                   rel="noreferrer"
@@ -72,7 +73,7 @@ function OpenrouterApiKeyHelpPage() {
         </Card>
 
         <Card>
-          <CardContent className="pt-6 gap-2 text-sm text-muted-foreground">
+          <CardContent className="space-y-3 pt-6 text-sm text-muted-foreground">
             <CardTitle className="text-base">
               Cloudflare Workers (Dashboard UI)
             </CardTitle>
@@ -93,7 +94,7 @@ function OpenrouterApiKeyHelpPage() {
               <li>Paste your OpenRouter API key and save.</li>
             </ol>
 
-            <Separator className="my-1" />
+            <Separator />
 
             <p>Or set the same secret from your terminal with:</p>
             <pre className="p-3 rounded bg-muted border border-border overflow-x-auto text-xs">

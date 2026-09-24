@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/client/components/icons";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { BacklinksFilterPanel } from "./BacklinksFilterPanel";
 import { BacklinksTable } from "./BacklinksTable";
@@ -33,6 +33,7 @@ import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
 import { Skeleton } from "@/client/components/ui/skeleton";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 const BACKLINKS_RESULTS_TABS: Array<{
   tab: BacklinksSearchState["tab"];
@@ -115,7 +116,7 @@ export function BacklinksResultsCard({
   }, [domainRatings, ratableDomains, loadRatings]);
 
   return (
-    <div className="border border-border rounded-xl bg-card overflow-hidden">
+    <Card className="overflow-hidden">
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-border">
         <div className="space-y-2">
           <Tabs value={activeTab}>
@@ -166,12 +167,7 @@ export function BacklinksResultsCard({
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </Button>
         {activeTab === "backlinks" ? (
@@ -263,7 +259,7 @@ export function BacklinksResultsCard({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
-    </div>
+    </Card>
   );
 }
 

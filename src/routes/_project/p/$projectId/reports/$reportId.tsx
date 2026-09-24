@@ -11,7 +11,7 @@ import {
   Minimize2,
   MoreHorizontal,
   Trash2,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { z } from "zod";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { ReportViewer } from "@/client/features/reports/ReportViewer";
@@ -34,7 +34,11 @@ import { getReport } from "@/serverFunctions/reports";
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button, buttonVariants } from "@/client/components/ui/button";
 import { Spinner } from "@/client/components/ui/spinner";
-import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/client/components/ui/dropdown-menu";
+
 // Expand lives in the URL, not in state, so a refresh (or a link someone
 // pasted) comes back expanded.
 const reportDetailSearchSchema = z.object({ full: z.boolean().optional() });
@@ -166,7 +170,7 @@ function ReportDetailPage() {
 
   if (full) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-card">
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
         <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
           <span className="truncate text-sm font-medium">{report.title}</span>
           <Button
@@ -208,17 +212,17 @@ function ReportDetailPage() {
             <h1 className="text-2xl font-semibold">{report.title}</h1>
             <dl className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-muted-foreground/70">Created by</dt>
+                <dt className="text-muted-foreground">Created by</dt>
                 <dd>{formatCreatedBy(report)}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-muted-foreground/70">Type</dt>
+                <dt className="text-muted-foreground">Type</dt>
                 {/* As in the list's Type column: the template name when the
                     report followed one, else the skill, else an em dash. */}
                 <dd>{report.templateName ?? report.skill ?? "—"}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-muted-foreground/70">Updated</dt>
+                <dt className="text-muted-foreground">Updated</dt>
                 <dd title={new Date(report.updatedAt).toLocaleString()}>
                   {formatRelativeTime(report.updatedAt)}
                 </dd>
@@ -275,14 +279,11 @@ function ReportDetailPage() {
                         <FileDown className="size-4" />
                         Export
                       </DropdownMenuItem>
-                      <li
-                        role="separator"
-                        className="mx-1 my-1 h-px bg-border"
-                      />
+                      <DropdownMenuSeparator />
                     </>
                   ) : null}
                   <DropdownMenuItem
-                    className="text-destructive"
+                    className="text-negative"
                     onClick={() => {
                       close();
                       setShowDelete(true);
@@ -304,7 +305,7 @@ function ReportDetailPage() {
             iframe instead of being injected into it. Placed before the iframe
             so keyboard focus reaches them without tabbing through the report;
             inset from the edge so they clear a classic scrollbar. */}
-        <div className="absolute top-1 right-5 flex items-center gap-0.5 rounded-md border border-border bg-card/95 p-0.5 shadow-sm backdrop-blur">
+        <div className="absolute top-1 right-5 flex items-center gap-0.5 rounded-md border border-border bg-popover p-0.5 shadow-sm backdrop-blur-xl">
           <Button
             variant="ghost"
             size="icon"

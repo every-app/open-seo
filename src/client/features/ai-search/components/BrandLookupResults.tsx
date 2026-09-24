@@ -1,4 +1,4 @@
-import { Info } from "lucide-react";
+import { Info } from "@/client/components/icons";
 import { BrandLookupMentionTrendCard } from "@/client/features/ai-search/components/BrandLookupMentionTrendCard";
 import { BrandLookupShareOfVoice } from "@/client/features/ai-search/components/BrandLookupShareOfVoice";
 import { CitationTabsCard } from "@/client/features/ai-search/components/BrandLookupCitationsCard";
@@ -10,7 +10,20 @@ import {
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
-import { Badge } from "@/client/components/ui/badge";
+import { Alert } from "@/client/components/ui/alert";
+import { Badge, badgeVariants } from "@/client/components/ui/badge";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
+import {
+  StatCard,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
+import { cn } from "@/client/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -36,9 +49,11 @@ function DomainLevelBadge() {
     <Tooltip>
       <TooltipTrigger
         render={
-          <Badge
-            variant="secondary"
-            className="px-2 text-[11px] shrink-0 normal-case"
+          <span
+            className={cn(
+              badgeVariants({ variant: "secondary" }),
+              "shrink-0 normal-case",
+            )}
           />
         }
       >
@@ -60,17 +75,17 @@ export function BrandLookupResults({ result, projectId }: Props) {
 
     if (allPlatformsErrored) {
       return (
-        <div className="rounded-lg border border-warning/30 bg-warning/10 p-4 text-sm">
+        <Alert className="border-warning/30 bg-warning/10 text-sm">
           AI mention data is temporarily unavailable for{" "}
           <strong>{result.resolvedTarget}</strong>. Please try again shortly.
-        </div>
+        </Alert>
       );
     }
     return (
       <div className="space-y-3">
-        <div className="rounded-lg border border-info/30 bg-info/10 p-4 text-sm">
+        <Alert role="status" className="border-info/30 bg-info/10 text-sm">
           No AI mentions found for <strong>{result.resolvedTarget}</strong>.
-        </div>
+        </Alert>
         {erroredPlatforms.length > 0 ? (
           <p className="text-xs text-muted-foreground">
             Note:{" "}
@@ -123,16 +138,14 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
         <h2 className="text-3xl font-semibold tracking-tight">
           {result.resolvedTarget}
         </h2>
-        <Badge variant="secondary" className="px-2 text-[11px]">
-          {result.detectedTargetType}
-        </Badge>
+        <Badge variant="secondary">{result.detectedTargetType}</Badge>
         {result.scope ? (
-          <Badge variant="secondary" className="px-2 text-[11px]">
+          <Badge variant="secondary">
             {RESEARCH_SCOPE_LABELS[result.scope]}
           </Badge>
         ) : null}
       </div>
-      <p className="text-xs text-muted-foreground/70">
+      <p className="text-xs text-muted-foreground">
         Updated {formatRelative(result.fetchedAt)}
       </p>
     </section>
@@ -141,26 +154,24 @@ function BrandHeader({ result }: { result: BrandLookupResult }) {
 
 function StatsCard({ result }: { result: BrandLookupResult }) {
   return (
-    <section className="rounded-xl border border-border bg-card">
-      <div className="flex h-full flex-col divide-y divide-border">
-        <StatBlock
-          label="Mentions"
-          tooltip="Estimated count of AI answers where the searched brand or domain appeared in the answer text or cited sources."
-          value={result.totalMentions}
-          perPlatform={result.perPlatform}
-          metric="mentions"
-          isDomainLevel={result.aggregatesAreDomainLevel}
-        />
-        <StatBlock
-          label="AI search volume"
-          tooltip="Estimated monthly search demand for prompts where the searched brand or domain appears in AI answers. This is prompt demand, not mention count."
-          value={result.totalAiSearchVolume}
-          perPlatform={result.perPlatform}
-          metric="aiSearchVolume"
-          isDomainLevel={result.aggregatesAreDomainLevel}
-        />
-      </div>
-    </section>
+    <div className="flex h-full flex-col gap-4">
+      <StatBlock
+        label="Mentions"
+        tooltip="Estimated count of AI answers where the searched brand or domain appeared in the answer text or cited sources."
+        value={result.totalMentions}
+        perPlatform={result.perPlatform}
+        metric="mentions"
+        isDomainLevel={result.aggregatesAreDomainLevel}
+      />
+      <StatBlock
+        label="AI search volume"
+        tooltip="Estimated monthly search demand for prompts where the searched brand or domain appears in AI answers. This is prompt demand, not mention count."
+        value={result.totalAiSearchVolume}
+        perPlatform={result.perPlatform}
+        metric="aiSearchVolume"
+        isDomainLevel={result.aggregatesAreDomainLevel}
+      />
+    </div>
   );
 }
 
@@ -180,28 +191,28 @@ function StatBlock({
   isDomainLevel: boolean;
 }) {
   return (
-    <div className="flex flex-1 flex-col justify-center p-4">
-      <p className="inline-flex items-center gap-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+    <StatCard className="flex flex-1 flex-col justify-center">
+      <StatCardLabel className="inline-flex items-center gap-1">
         {label}
         <Tooltip>
           <TooltipTrigger
             render={<span className="inline-flex normal-case" tabIndex={0} />}
           >
-            <Info className="size-3 text-muted-foreground/70" />
+            <Info className="size-3 text-muted-foreground" />
           </TooltipTrigger>
           <TooltipContent className="max-w-64">{tooltip}</TooltipContent>
         </Tooltip>
         {isDomainLevel ? <DomainLevelBadge /> : null}
-      </p>
-      <p className="mt-1 text-3xl font-semibold tabular-nums">
+      </StatCardLabel>
+      <StatCardValue className="tabular-nums">
         {formatCount(value)}
-      </p>
+      </StatCardValue>
       <div className="mt-3 space-y-1 border-t border-border pt-2.5">
         {perPlatform.map((row) => (
           <PlatformStatRow key={row.platform} row={row} metric={metric} />
         ))}
       </div>
-    </div>
+    </StatCard>
   );
 }
 
@@ -226,7 +237,7 @@ function PlatformStatRow({
             <TooltipTrigger
               render={<span className="inline-flex" tabIndex={0} />}
             >
-              <Info className="size-3 text-muted-foreground/70" />
+              <Info className="size-3 text-muted-foreground" />
             </TooltipTrigger>
             <TooltipContent className="max-w-64">
               DataForSEO indexes ChatGPT mentions for US English only — country
@@ -235,7 +246,7 @@ function PlatformStatRow({
           </Tooltip>
         ) : null}
         {row.status === "error" ? (
-          <span className="text-destructive">unavailable</span>
+          <span className="text-negative">unavailable</span>
         ) : null}
       </span>
       <span className="font-medium tabular-nums text-foreground">
@@ -247,17 +258,17 @@ function PlatformStatRow({
 
 function MentionTrendCard({ result }: { result: BrandLookupResult }) {
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
-      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
-        <h3 className="text-sm font-semibold">
+    <Card className="overflow-hidden">
+      <CardHeader className="flex-row items-center justify-between gap-2 space-y-0 border-b border-border px-4 py-3">
+        <CardTitle className="text-sm font-semibold tracking-normal">
           Mention trend (last 12 months)
-        </h3>
+        </CardTitle>
         {result.aggregatesAreDomainLevel ? <DomainLevelBadge /> : null}
-      </div>
-      <div className="p-4">
+      </CardHeader>
+      <CardContent className="p-4">
         <BrandLookupMentionTrendCard result={result} />
-      </div>
-    </section>
+      </CardContent>
+    </Card>
   );
 }
 

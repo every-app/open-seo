@@ -199,7 +199,7 @@ function VerifyEmailPage() {
             <Link
               to="/sign-in"
               search={getSignInSearch(redirectTo)}
-              className="text-muted-foreground/70 hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               Back to sign in
             </Link>

@@ -18,7 +18,7 @@ export function FilterIntentSelect({
     <div
       role="group"
       aria-labelledby="keyword-intent-filter-label"
-      className="rounded-lg border border-border bg-card p-2.5 space-y-2"
+      className="space-y-1.5"
     >
       <p
         id="keyword-intent-filter-label"
@@ -69,14 +69,14 @@ export function FilterTextInput({
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <form.Field name={name}>
         {(field) => (
           <Input
-            className="bg-card h-8 text-sm"
+            className="h-8 text-sm"
             placeholder={placeholder}
             value={field.state.value}
             onChange={(event) => field.handleChange(event.target.value)}
@@ -101,7 +101,7 @@ export function FilterRangeInputs({
   step?: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+    <div className="space-y-1.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
@@ -138,7 +138,7 @@ function CompactRangeInput({
     <form.Field name={name}>
       {(field) => (
         <Input
-          className="bg-card h-7 text-xs"
+          className="h-8 text-sm"
           placeholder={placeholder}
           type="number"
           step={step}
@@ -158,7 +158,7 @@ export function EmptyFilterResults({
   resetFilters: () => void;
 }) {
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-muted-foreground/70 gap-3">
+    <div className="h-full flex flex-col items-center justify-center text-center px-4 text-muted-foreground gap-3">
       <p className="text-sm font-medium">
         No keywords match your current filters.
       </p>

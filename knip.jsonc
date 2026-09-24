@@ -42,6 +42,7 @@
   "ignoreIssues": {
     "src/client/components/ui/**": ["exports", "types"],
     "src/client/lib/motion.ts": ["exports"],
+    "src/client/components/icons/**": ["exports", "types"],
   },
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,

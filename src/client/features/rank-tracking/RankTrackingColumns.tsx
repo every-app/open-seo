@@ -1,5 +1,5 @@
 import { useMemo, type MutableRefObject } from "react";
-import { ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown } from "@/client/components/icons";
 import type { ColumnDef } from "@tanstack/react-table";
 import { makeSelectionColumn } from "@/client/components/table/AppDataTable";
 import type { RankTrackingRow } from "@/types/schemas/rank-tracking";
@@ -16,6 +16,7 @@ import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+
 const HEADER_TOOLTIPS: Record<string, string> = {
   keyword: "The search term being tracked in Google",
   volume: "Estimated monthly search volume from Google",
@@ -136,7 +137,7 @@ function makeKeywordColumn(
         {row.original.matchCase && (
           <Badge
             variant="secondary"
-            className="px-2 text-[11px] cursor-help bg-border border-0 text-muted-foreground"
+            className="cursor-help px-2 text-[11px]"
             title="Tracked exactly as typed, not lowercased"
           >
             Aa

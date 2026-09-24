@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { useCallback, useMemo } from "react";
-import { AlertCircle, ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "@/client/components/icons";
 import { getErrorCode } from "@/client/lib/error-messages";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { useKeywordResearchController } from "@/client/features/keywords/state/useKeywordResearchController";
@@ -26,6 +26,7 @@ import { KeywordResearchResults } from "./KeywordResearchResults";
 import { KeywordResearchSearchBar } from "./KeywordResearchSearchBar";
 import type { KeywordResearchControllerState } from "./types";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button, buttonVariants } from "@/client/components/ui/button";
 import {
   Dialog,
@@ -244,28 +245,28 @@ function KeywordResearchContent({
 
     return (
       <div className="flex-1 flex items-center justify-center pt-1">
-        <div className="w-full max-w-xl rounded-xl border border-destructive/30 bg-destructive/10 p-5 text-destructive space-y-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="mt-0.5 size-4 shrink-0" />
-            <p className="text-sm">{controller.researchError}</p>
-          </div>
-          {isCreditsError ? (
-            <Link
-              to={BILLING_ROUTE}
-              className={buttonVariants({ variant: "outline", size: "sm" })}
-            >
-              Go to Billing
-            </Link>
-          ) : (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={controller.retrySearch}
-            >
-              Try again
-            </Button>
-          )}
-        </div>
+        <Alert variant="destructive" className="w-full max-w-xl">
+          <AlertCircle className="size-4" />
+          <AlertDescription className="space-y-3">
+            <p>{controller.researchError}</p>
+            {isCreditsError ? (
+              <Link
+                to={BILLING_ROUTE}
+                className={buttonVariants({ variant: "outline", size: "sm" })}
+              >
+                Go to Billing
+              </Link>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={controller.retrySearch}
+              >
+                Try again
+              </Button>
+            )}
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

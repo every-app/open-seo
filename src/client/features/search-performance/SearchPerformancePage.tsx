@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Download, Loader2, Sheet } from "lucide-react";
+import { Download, Sheet } from "@/client/components/icons";
 import { toast } from "sonner";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TablePagination } from "@/client/components/table/TablePagination";
@@ -39,8 +39,11 @@ import {
 } from "@/types/schemas/search-performance";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Card } from "@/client/components/ui/card";
 import { NativeSelect } from "@/client/components/ui/native-select";
+import { Spinner } from "@/client/components/ui/spinner";
 import { Tabs, TabsList } from "@/client/components/ui/tabs";
+
 const RANGE_LABELS: Record<SearchPerformanceDateRange, string> = {
   last_7_days: "Last 7 days",
   last_28_days: "Last 28 days",
@@ -228,7 +231,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         ) : (
           <>
             <TotalsCards report={report} />
-            <div className="overflow-hidden rounded-xl border border-border bg-card">
+            <Card className="overflow-hidden">
               <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
                 <Tabs value={tab}>
                   <TabsList className="w-fit">
@@ -251,7 +254,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                 </Tabs>
                 <div className="flex flex-wrap items-center gap-2">
                   {reportQuery.isFetching && !reportQuery.isPending ? (
-                    <Loader2 className="size-4 animate-spin text-muted-foreground/70" />
+                    <Spinner size="sm" />
                   ) : null}
                   <NativeSelect
                     className="w-36 h-8 text-sm"
@@ -324,7 +327,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                 />
               ) : tableQuery.isPending ? (
                 <div className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
-                  <Loader2 className="size-4 animate-spin" /> Loading…
+                  <Spinner size="sm" /> Loading…
                 </div>
               ) : tableQuery.isError ? (
                 <div className="p-4">
@@ -354,7 +357,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   />
                 </>
               )}
-            </div>
+            </Card>
           </>
         )}
       </div>

@@ -1,4 +1,10 @@
-import { Bot, FolderPlus, Globe, Search, Users } from "lucide-react";
+import {
+  Bot,
+  FolderPlus,
+  Globe,
+  Search,
+  Users,
+} from "@/client/components/icons";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
 

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Loader2, Search } from "lucide-react";
+import { Loader2, Search } from "@/client/components/icons";
 import { searchSerpLocations } from "@/serverFunctions/serp-locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 import type { SerpLocationResult } from "@/server/lib/dataforseo/serp-locations";
@@ -185,7 +185,7 @@ export function SerpLocationCombobox({
         className="w-(--anchor-width) p-1"
       >
         {isError ? (
-          <p className="px-3 py-2 text-sm text-destructive">
+          <p className="px-3 py-2 text-sm text-negative">
             Unable to load locations
           </p>
         ) : results.length === 0 ? (
@@ -206,17 +206,15 @@ export function SerpLocationCombobox({
               >
                 <Button
                   variant="ghost"
-                  className={`h-auto w-full justify-between gap-2 rounded-md px-3 py-1.5 font-normal text-foreground ${
+                  type="button"
+                  className={`h-auto w-full justify-between gap-2 rounded-lg px-3 py-1.5 font-normal text-foreground ${
                     index === activeIndex ? "bg-muted" : ""
                   }`}
                   onClick={() => select(loc)}
                   onMouseEnter={() => setActiveIndex(index)}
                 >
                   <span className="truncate text-left">{loc.displayLabel}</span>
-                  <Badge
-                    variant="secondary"
-                    className="shrink-0 px-2 text-[11px]"
-                  >
+                  <Badge variant="secondary" className="shrink-0">
                     {loc.locationType}
                   </Badge>
                 </Button>

@@ -5,7 +5,7 @@ import {
   Loader2,
   RefreshCw,
   Sheet,
-} from "lucide-react";
+} from "@/client/components/icons";
 
 import {
   DropdownMenu,
@@ -69,7 +69,7 @@ export function SavedKeywordsHeader({
               <RefreshCw className="size-4" />
               <span className="flex flex-col items-start">
                 <span>Update keyword stats</span>
-                <span className="text-xs text-muted-foreground/70">
+                <span className="text-xs text-muted-foreground">
                   Volume, difficulty &amp; CPC
                 </span>
               </span>

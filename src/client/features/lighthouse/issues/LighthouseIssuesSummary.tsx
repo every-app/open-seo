@@ -30,7 +30,7 @@ export function LighthouseIssuesSummary({
               key={metric.label}
               className="flex items-baseline justify-between gap-2 py-1"
             >
-              <span className="text-xs text-muted-foreground/70 uppercase tracking-wide">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">
                 {metric.label}
               </span>
               <span className="text-sm font-semibold tabular-nums text-foreground">
@@ -45,10 +45,10 @@ export function LighthouseIssuesSummary({
 }
 
 function scoreColor(score: number | null) {
-  if (score == null) return "text-muted-foreground/70";
+  if (score == null) return "text-muted-foreground";
   if (score >= 90) return "text-success";
   if (score >= 50) return "text-warning";
-  return "text-destructive";
+  return "text-negative";
 }
 
 function scoreStrokeColor(score: number | null) {

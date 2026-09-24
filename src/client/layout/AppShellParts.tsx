@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle, ExternalLink } from "lucide-react";
+import { AlertTriangle, ExternalLink } from "@/client/components/icons";
 import { Sidebar } from "@/client/components/Sidebar";
 import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
 
@@ -33,7 +33,7 @@ function SeoApiStatusBanners({
                 features. See the quick steps on the{" "}
                 <Link
                   {...dataforseoHelpLinkOptions}
-                  className="underline underline-offset-4 text-primary font-medium"
+                  className="underline underline-offset-4 text-link font-medium"
                 >
                   help page
                 </Link>
@@ -54,7 +54,7 @@ function SeoApiStatusBanners({
                 working, check the setup steps on the{" "}
                 <Link
                   {...dataforseoHelpLinkOptions}
-                  className="underline underline-offset-4 text-primary font-medium"
+                  className="underline underline-offset-4 text-link font-medium"
                 >
                   help page
                 </Link>

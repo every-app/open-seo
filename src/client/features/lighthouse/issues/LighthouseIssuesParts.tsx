@@ -6,7 +6,7 @@ import {
   Info,
   Sheet,
   TriangleAlert,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import type {
   CategoryTab,
@@ -67,7 +67,7 @@ export function LighthouseIssuesHeader({
       </div>
 
       <Card>
-        <CardContent className="py-5 gap-4">
+        <CardContent className="space-y-4 py-5">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold">Lighthouse Issues</h1>
             <p className="text-sm text-muted-foreground break-all">
@@ -76,24 +76,15 @@ export function LighthouseIssuesHeader({
           </div>
           <LighthouseIssuesSummary scores={scores} metrics={metrics} />
           <div className="flex flex-wrap gap-2 text-xs">
-            <Badge
-              variant="secondary"
-              className="border border-destructive/30 bg-destructive/10 text-destructive/80 gap-1"
-            >
+            <Badge variant="destructive" className="gap-1">
               <FileWarning className="size-3" />
               Critical {severityCounts.critical}
             </Badge>
-            <Badge
-              variant="secondary"
-              className="border border-warning/30 bg-warning/10 text-warning/80 gap-1"
-            >
+            <Badge variant="warning" className="gap-1">
               <TriangleAlert className="size-3" />
               Warning {severityCounts.warning}
             </Badge>
-            <Badge
-              variant="secondary"
-              className="border border-info/30 bg-info/10 text-info/80 gap-1"
-            >
+            <Badge variant="secondary" className="gap-1 text-info">
               <Info className="size-3" />
               Info {severityCounts.info}
             </Badge>
@@ -138,7 +129,7 @@ export function LighthouseIssuesToolbar({
   const categoryLabelLower = selectedCategoryLabel.toLowerCase();
 
   return (
-    <div className="sticky top-0 z-[2] -mx-2 px-2 py-2 bg-card/95 backdrop-blur-sm border-b border-border/60">
+    <div className="sticky top-0 z-[2] -mx-2 px-2 py-2 bg-popover backdrop-blur-xl border-b border-border">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CategoryTabs
           category={category}
@@ -180,9 +171,7 @@ function CategoryTabs({
             onClick={() => onCategoryChange(tab)}
           >
             <span>{categoryLabel(tab)}</span>
-            <span className="ml-1 text-xs opacity-70">
-              ({categoryCounts[tab]})
-            </span>
+            <span className="ml-1 text-xs">({categoryCounts[tab]})</span>
           </TabsTrigger>
         ))}
       </TabsList>
@@ -377,7 +366,7 @@ export function LighthouseIssueList({
         <col className="w-14" />
       </colgroup>
       <TableHeader>
-        <TableRow className="text-xs text-muted-foreground/70 uppercase tracking-wide border-b border-border">
+        <TableRow className="text-xs text-muted-foreground uppercase tracking-wide">
           <TableHead />
           <TableHead className="font-medium">Severity</TableHead>
           <TableHead className="font-medium">Issue</TableHead>
@@ -390,7 +379,7 @@ export function LighthouseIssueList({
           <TableHead className="font-medium text-right">Score</TableHead>
         </TableRow>
       </TableHeader>
-      <TableBody className="divide-y divide-border/60">
+      <TableBody>
         {issues.map((issue, issueIndex) => (
           <LighthouseIssueRow
             key={`${issue.category}-${issue.auditKey}-${issueIndex}`}

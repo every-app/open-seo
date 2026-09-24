@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { Search } from "lucide-react";
+import { Search } from "@/client/components/icons";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { applyBillingMarkupUsd } from "@/shared/billing";
 import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
@@ -66,7 +66,7 @@ export function BrandLookupSearchCard({
 
   return (
     <Card>
-      <CardContent className="pt-6 gap-4">
+      <CardContent className="flex flex-col pt-6 gap-4">
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <InputGroup
@@ -127,7 +127,7 @@ export function BrandLookupSearchCard({
         </form>
 
         {validationError ? (
-          <p id="brand-lookup-input-error" className="text-sm text-destructive">
+          <p id="brand-lookup-input-error" className="text-sm text-negative">
             {validationError.message}
           </p>
         ) : null}

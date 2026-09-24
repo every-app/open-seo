@@ -66,7 +66,7 @@ export function Stat({
     tone === "success"
       ? "text-success"
       : tone === "error"
-        ? "text-destructive"
+        ? "text-negative"
         : "";
   return (
     <div>
@@ -93,7 +93,7 @@ export function PercentDelta({
   if (!Number.isFinite(pct)) return null;
   const rounded = Math.round(pct);
   const tone =
-    rounded > 0 ? "text-success" : rounded < 0 ? "text-destructive" : "";
+    rounded > 0 ? "text-success" : rounded < 0 ? "text-negative" : "";
   return (
     <p className={`text-xs tabular-nums ${tone}`}>
       {rounded > 0 ? "▲" : rounded < 0 ? "▼" : ""} {Math.abs(rounded)}%
@@ -104,7 +104,7 @@ export function PercentDelta({
 export const moreDetailsClass = buttonVariants({
   variant: "ghost",
   size: "sm",
-  className: "text-primary",
+  className: "text-link",
 });
 
 export function newLost(value: number | null): string {

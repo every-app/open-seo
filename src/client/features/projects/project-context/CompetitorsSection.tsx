@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "@/client/components/icons";
 import type { ProjectContextUpdate } from "@/types/schemas/projectContext";
 import {
   ConfirmDeleteButton,
@@ -14,7 +14,9 @@ import {
 } from "./shared";
 
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
+
 export function CompetitorsSection({
   projectId,
   competitors,
@@ -73,13 +75,13 @@ export function CompetitorsSection({
       />
 
       {adding ? (
-        <div className={listClass}>
+        <Card className="overflow-hidden">
           <CompetitorForm
             pending={update.isPending}
             onCancel={() => setAdding(false)}
             onSave={(draft) => save(null, draft)}
           />
-        </div>
+        </Card>
       ) : null}
 
       {competitors.length === 0 ? (
@@ -90,68 +92,70 @@ export function CompetitorsSection({
           </EmptyState>
         )
       ) : (
-        <ul className={listClass}>
-          {competitors.map((competitor) =>
-            editingId === competitor.id ? (
-              <li key={competitor.id}>
-                <CompetitorForm
-                  initial={competitor}
-                  pending={update.isPending}
-                  onCancel={() => setEditingId(null)}
-                  onSave={(draft) => save(competitor.domain, draft)}
-                />
-              </li>
-            ) : (
-              <li
-                key={competitor.id}
-                className="flex items-start justify-between gap-3 p-3"
-              >
-                <div className="min-w-0 space-y-0.5">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="truncate text-sm font-medium">
-                      {competitor.domain}
-                    </span>
-                    {competitor.name ? (
-                      <span className="truncate text-xs text-muted-foreground">
-                        {competitor.name}
-                      </span>
-                    ) : null}
-                  </div>
-                  {competitor.notes ? (
-                    <p className="text-sm text-muted-foreground">
-                      {competitor.notes}
-                    </p>
-                  ) : null}
-                  <Provenance
-                    by={competitor.updatedBy}
-                    at={competitor.updatedAt}
-                  />
-                </div>
-                <RowActions>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    type="button"
-                    className="h-7 px-2.5"
-                    aria-label={`Edit ${competitor.domain}`}
-                    onClick={() => setEditingId(competitor.id)}
-                  >
-                    <Pencil className="size-3.5" />
-                  </Button>
-                  <ConfirmDeleteButton
-                    label={`Remove ${competitor.domain}`}
+        <Card className="overflow-hidden">
+          <ul className={listClass}>
+            {competitors.map((competitor) =>
+              editingId === competitor.id ? (
+                <li key={competitor.id}>
+                  <CompetitorForm
+                    initial={competitor}
                     pending={update.isPending}
-                    onConfirm={() =>
-                      update.mutate([
-                        { removeCompetitors: [competitor.domain] },
-                      ])
-                    }
+                    onCancel={() => setEditingId(null)}
+                    onSave={(draft) => save(competitor.domain, draft)}
                   />
-                </RowActions>
-              </li>
-            ),
-          )}
-        </ul>
+                </li>
+              ) : (
+                <li
+                  key={competitor.id}
+                  className="flex items-start justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="truncate text-sm font-medium">
+                        {competitor.domain}
+                      </span>
+                      {competitor.name ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {competitor.name}
+                        </span>
+                      ) : null}
+                    </div>
+                    {competitor.notes ? (
+                      <p className="text-sm text-muted-foreground">
+                        {competitor.notes}
+                      </p>
+                    ) : null}
+                    <Provenance
+                      by={competitor.updatedBy}
+                      at={competitor.updatedAt}
+                    />
+                  </div>
+                  <RowActions>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      className="h-7 px-2.5"
+                      aria-label={`Edit ${competitor.domain}`}
+                      onClick={() => setEditingId(competitor.id)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <ConfirmDeleteButton
+                      label={`Remove ${competitor.domain}`}
+                      pending={update.isPending}
+                      onConfirm={() =>
+                        update.mutate([
+                          { removeCompetitors: [competitor.domain] },
+                        ])
+                      }
+                    />
+                  </RowActions>
+                </li>
+              ),
+            )}
+          </ul>
+        </Card>
       )}
     </section>
   );
@@ -178,7 +182,7 @@ function CompetitorForm({
 
   return (
     <form
-      className="space-y-2 bg-muted/40 p-3"
+      className="space-y-2 px-4 py-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!draft.domain.trim() || pending) return;
@@ -195,7 +199,7 @@ function CompetitorForm({
           }
           placeholder="competitor.com"
           maxLength={255}
-          className="w-full h-8 text-sm"
+          className="h-8"
           aria-label="Competitor domain"
         />
         <Input
@@ -204,7 +208,7 @@ function CompetitorForm({
           onChange={(event) => setDraft({ ...draft, name: event.target.value })}
           placeholder="Name (optional)"
           maxLength={120}
-          className="w-full h-8 text-sm"
+          className="h-8"
           aria-label="Competitor name"
         />
       </div>
@@ -214,7 +218,7 @@ function CompetitorForm({
         onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
         placeholder="Why they matter — e.g. wins every comparison keyword (optional)"
         maxLength={500}
-        className="w-full h-8 text-sm"
+        className="h-8"
         aria-label="Competitor notes"
       />
       <FormActions

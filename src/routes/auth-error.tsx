@@ -33,7 +33,7 @@ function AuthErrorPage() {
         helperText={copy.description}
         footer={
           error ? (
-            <p className="font-mono text-xs text-muted-foreground/70">
+            <p className="font-mono text-xs text-muted-foreground">
               Code: {error}
             </p>
           ) : undefined

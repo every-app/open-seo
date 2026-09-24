@@ -1,4 +1,4 @@
-import { RotateCcw, SlidersHorizontal } from "lucide-react";
+import { RotateCcw, SlidersHorizontal } from "@/client/components/icons";
 import type { ReactNode } from "react";
 import type {
   PagesFilters,
@@ -7,8 +7,11 @@ import type {
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 import { NativeSelect } from "@/client/components/ui/native-select";
+import { Toggle } from "@/client/components/ui/toggle";
+
 export function PagesFilterBar({
   filters,
   onChange,
@@ -163,25 +166,19 @@ export function TableFilterToggle({
 }) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-2.5">
-      <Button
-        variant="ghost"
+      <Toggle
         size="sm"
-        className={`gap-1.5 ${showFilters ? "bg-secondary text-foreground" : ""}`}
-        onClick={onToggle}
+        className="gap-1.5"
+        pressed={showFilters}
+        onPressedChange={() => onToggle()}
         title="Toggle filters"
-        type="button"
       >
         <SlidersHorizontal className="size-3.5" />
         Filters
         {activeFilterCount > 0 ? (
-          <Badge
-            variant="primary"
-            className="px-2 text-[11px] border-0 text-primary-foreground"
-          >
-            {activeFilterCount}
-          </Badge>
+          <Badge variant="primary">{activeFilterCount}</Badge>
         ) : null}
-      </Button>
+      </Toggle>
       <span className="text-sm tabular-nums text-muted-foreground">
         {resultCount.toLocaleString()} of {totalCount.toLocaleString()}
       </span>
@@ -214,12 +211,7 @@ function FilterPanel({
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount} active
-            </Badge>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           ) : null}
         </div>
         <Button
@@ -253,12 +245,12 @@ function TextFilter({
   onChange: (value: string) => void;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <Input
-        className="w-full bg-card h-8 text-sm"
+        className="w-full h-8 text-sm"
         type={type}
         value={value}
         placeholder={placeholder}
@@ -282,27 +274,27 @@ function RangeFilter({
   onMaxChange: (value: string) => void;
 }) {
   return (
-    <div className="space-y-2 rounded-lg border border-border bg-card p-2.5">
+    <Card className="space-y-2 p-2.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <div className="grid grid-cols-2 gap-2">
         <Input
-          className="bg-card h-7 text-xs"
+          className="h-7 text-xs"
           type="number"
           value={min}
           placeholder="Min"
           onChange={(event) => onMinChange(event.target.value)}
         />
         <Input
-          className="bg-card h-7 text-xs"
+          className="h-7 text-xs"
           type="number"
           value={max}
           placeholder="Max"
           onChange={(event) => onMaxChange(event.target.value)}
         />
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -318,12 +310,12 @@ function SelectFilter<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <NativeSelect
-        className="w-full bg-card h-8 text-sm"
+        className="w-full h-8 text-sm"
         value={value}
         onChange={(event) => {
           const selected = options.find(

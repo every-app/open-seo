@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/client/components/icons";
 import { useState } from "react";
 import {
   resolveTagColor,
@@ -10,6 +10,8 @@ import type { SavedKeywordTagSummary } from "@/types/keywords";
 
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
+import { cn } from "@/client/lib/utils";
+
 export function ManageTagRow({
   tag,
   isBusy,
@@ -54,15 +56,22 @@ export function ManageTagRow({
           {TAG_COLOR_KEYS.map((key) => (
             <Button
               variant="ghost"
+              size="icon"
               key={key}
               aria-label={key}
-              className={`text-inherit size-5 rounded-full transition ${tagSwatchClass(key)} ${
-                color === key
-                  ? "ring-2 ring-offset-2 ring-offset-muted ring-foreground/40"
-                  : "hover:scale-110"
-              }`}
+              aria-pressed={color === key}
+              className="size-7 rounded-full"
               onClick={() => setColor(key)}
-            />
+            >
+              <span
+                className={cn(
+                  "size-4 rounded-full",
+                  tagSwatchClass(key),
+                  color === key &&
+                    "ring-2 ring-foreground/60 ring-offset-2 ring-offset-popover",
+                )}
+              />
+            </Button>
           ))}
         </div>
       </div>
@@ -70,7 +79,7 @@ export function ManageTagRow({
       <div className="flex items-center justify-between pt-1">
         <Button
           variant="link"
-          className="h-auto p-0 inline-flex items-center gap-1 text-xs text-destructive hover:underline disabled:opacity-50"
+          className="h-auto p-0 inline-flex items-center gap-1 text-xs text-negative hover:underline disabled:opacity-50"
           onClick={onDelete}
           disabled={isBusy}
         >
@@ -80,13 +89,15 @@ export function ManageTagRow({
         <div className="flex items-center gap-1.5">
           <Button
             variant="ghost"
-            className="h-auto rounded px-2 py-1 text-xs text-muted-foreground hover:bg-border"
+            size="sm"
+            className="h-7 px-2"
             onClick={onCancel}
           >
             Cancel
           </Button>
           <Button
-            className="h-auto rounded px-2 py-1 text-xs disabled:opacity-50"
+            size="sm"
+            className="h-7 px-2"
             disabled={!canSave}
             onClick={() =>
               onSave({

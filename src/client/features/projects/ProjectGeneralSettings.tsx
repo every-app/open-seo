@@ -16,8 +16,11 @@ import {
 import type { ProjectSummary } from "./types";
 
 import { Button } from "@/client/components/ui/button";
+import { Field, FieldDescription } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
 import { Spinner } from "@/client/components/ui/spinner";
+
 export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
   const projectsQuery = useQuery({
     queryKey: ["projects"],
@@ -45,6 +48,8 @@ export function ProjectGeneralSettings({ projectId }: { projectId: string }) {
 
 function GeneralSection({ project }: { project: ProjectSummary }) {
   const queryClient = useQueryClient();
+  const nameId = React.useId();
+  const domainId = React.useId();
   const [name, setName] = React.useState(project.name);
   const [domain, setDomain] = React.useState(project.domain ?? "");
   const [market, setMarket] = React.useState({
@@ -88,40 +93,40 @@ function GeneralSection({ project }: { project: ProjectSummary }) {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-muted-foreground/70">General</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">General</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">Name</span>
+        <Field>
+          <Label htmlFor={nameId}>Name</Label>
           <Input
+            id={nameId}
             type="text"
             value={name}
             onChange={(event) => setName(event.target.value)}
             maxLength={120}
-            className="w-full"
           />
-        </label>
+        </Field>
 
-        <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium">
-            Domain <span className="text-muted-foreground/70">(optional)</span>
-          </span>
+        <Field>
+          <Label htmlFor={domainId}>
+            Domain <span className="text-muted-foreground">(optional)</span>
+          </Label>
           <Input
+            id={domainId}
             type="text"
             value={domain}
             onChange={(event) => setDomain(event.target.value)}
             placeholder="example.com"
             maxLength={255}
-            className="w-full"
           />
-        </label>
+        </Field>
 
-        <div className="flex flex-col gap-1.5">
+        <Field>
           <ProjectMarketFields value={market} onChange={setMarket} />
-          <span className="text-xs text-muted-foreground/70">
+          <FieldDescription className="text-xs">
             Keyword, SERP, and domain data uses this country and language unless
             a call asks for a different one.
-          </span>
-        </div>
+          </FieldDescription>
+        </Field>
 
         <div className="flex justify-end">
           <Button
@@ -163,7 +168,7 @@ function DangerSection({
 
   return (
     <section className="space-y-3 border-t border-border pt-8">
-      <h2 className="text-sm font-medium text-muted-foreground/70">
+      <h2 className="text-sm font-medium text-muted-foreground">
         Archive project
       </h2>
 
@@ -207,7 +212,7 @@ function DangerSection({
             variant="outline"
             size="sm"
             type="button"
-            className="text-destructive shrink-0"
+            className="text-negative shrink-0"
             onClick={() => setConfirming(true)}
             disabled={!canArchive}
           >

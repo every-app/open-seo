@@ -1,13 +1,15 @@
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, Loader2 } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+
 export function RemoveSavedKeywordsError({ message }: { message: string }) {
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-      <AlertCircle className="mt-0.5 size-4 shrink-0" />
-      <span>{message}</span>
-    </div>
+    <Alert variant="destructive">
+      <AlertCircle className="size-4" />
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
   );
 }
 

@@ -1,8 +1,10 @@
-import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
 import { SAVED_KEYWORD_PAGE_SIZES } from "./savedKeywordsUtils";
 
 import { Button } from "@/client/components/ui/button";
 import { NativeSelect } from "@/client/components/ui/native-select";
+import { Spinner } from "@/client/components/ui/spinner";
+
 export function SavedKeywordsPagination({
   page,
   pageSize,
@@ -31,7 +33,7 @@ export function SavedKeywordsPagination({
           {start.toLocaleString()}-{end.toLocaleString()} of{" "}
           {totalCount.toLocaleString()}
         </span>
-        {isLoading ? <Loader2 className="size-3.5 animate-spin" /> : null}
+        {isLoading ? <Spinner size="sm" /> : null}
       </div>
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm text-muted-foreground">

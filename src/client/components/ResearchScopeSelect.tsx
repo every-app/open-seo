@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronDown } from "@/client/components/icons";
 import { Button } from "@/client/components/ui/button";
 import {
   DropdownMenu,
@@ -43,7 +43,7 @@ export function ResearchScopeSelect({
         render={
           <Button
             variant="outline"
-            className={`justify-between gap-2 rounded-md px-3 font-normal ${className}`}
+            className={`justify-between gap-2 px-3 font-normal ${className}`}
             aria-label={ariaLabel}
             disabled={disabledReason != null}
             title={disabledReason}

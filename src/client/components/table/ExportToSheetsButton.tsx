@@ -1,4 +1,4 @@
-import { Sheet } from "lucide-react";
+import { Sheet } from "@/client/components/icons";
 import { useState } from "react";
 import type { CsvValue } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";

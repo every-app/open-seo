@@ -5,7 +5,7 @@ import {
   ExternalLink,
   Globe,
   XCircle,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { MarkdownAnswer } from "@/client/features/ai-search/components/MarkdownAnswer";
 import {
   formatModelLabel,
@@ -20,6 +20,7 @@ import type {
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 type Props = {
   result: PromptExplorerResult;
 };
@@ -45,13 +46,9 @@ function ModelResultCard({
   modelResult: PromptExplorerModelResult;
   highlightBrand: string | null;
 }) {
-  const accent = getModelAccent(modelResult.model);
-
   if (modelResult.status === "error") {
     return (
-      <article
-        className={`overflow-hidden rounded-r-lg border border-border border-l-4 ${accent.border} bg-card`}
-      >
+      <Card role="article" className="overflow-hidden">
         <ModelHeader
           model={modelResult.model}
           modelName={null}
@@ -61,18 +58,16 @@ function ModelResultCard({
           highlightBrand={null}
           status="error"
         />
-        <div className="flex items-start gap-2 px-5 py-4 text-sm text-destructive">
+        <div className="flex items-start gap-2 px-5 py-4 text-sm text-negative">
           <AlertCircle className="mt-0.5 size-4 shrink-0" />
           <span>{modelResult.message}</span>
         </div>
-      </article>
+      </Card>
     );
   }
 
   return (
-    <article
-      className={`overflow-hidden rounded-r-lg border border-border border-l-4 ${accent.border} bg-card`}
-    >
+    <Card role="article" className="overflow-hidden">
       <ModelHeader
         model={modelResult.model}
         modelName={modelResult.modelName}
@@ -96,22 +91,23 @@ function ModelResultCard({
 
       {modelResult.fanOutQueries.length > 0 ? (
         <div className="border-t border-border px-5 py-3">
-          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+          <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
             Related queries the model considered
           </p>
           <div className="flex flex-wrap gap-1.5">
             {modelResult.fanOutQueries.map((query, index) => (
-              <span
+              <Badge
                 key={`${query}-${index}`}
-                className="rounded-full border border-border px-2.5 py-0.5 text-xs text-muted-foreground"
+                variant="outline"
+                className="h-auto py-0.5"
               >
                 {query}
-              </span>
+              </Badge>
             ))}
           </div>
         </div>
       ) : null}
-    </article>
+    </Card>
   );
 }
 
@@ -129,7 +125,7 @@ function CitationsList({
 
   return (
     <div className="border-t border-border bg-muted/30 px-5 py-3">
-      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+      <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         Cited sources ({citations.length})
       </p>
       <ul className="space-y-1.5">
@@ -144,7 +140,7 @@ function CitationsList({
               target="_blank"
               rel="noreferrer"
               className={`underline underline-offset-4 inline-flex items-start gap-1 ${
-                citation.matchedBrand ? "text-primary font-medium" : ""
+                citation.matchedBrand ? "text-link font-medium" : ""
               }`}
             >
               <span className="break-all">
@@ -153,9 +149,7 @@ function CitationsList({
               <ExternalLink className="mt-1 size-3 shrink-0" />
             </a>
             {citation.matchedBrand && highlightBrand ? (
-              <Badge variant="primary" className="px-2 text-[11px]">
-                {highlightBrand}
-              </Badge>
+              <Badge variant="primary">{highlightBrand}</Badge>
             ) : null}
           </li>
         ))}
@@ -164,7 +158,7 @@ function CitationsList({
         <Button
           variant="ghost"
           onClick={() => setExpanded((current) => !current)}
-          className="h-auto rounded-md px-0 hover:bg-transparent mt-1.5 text-xs text-muted-foreground/70 hover:text-foreground"
+          className="h-auto rounded-md px-0 hover:bg-transparent mt-1.5 text-xs text-muted-foreground hover:text-foreground"
         >
           {expanded ? "Show less" : `+${remaining} more`}
         </Button>
@@ -197,13 +191,9 @@ function ModelHeader({
         <span className={`size-2 rounded-full ${accent.dot}`} />
         <h3 className="text-sm font-semibold">{formatModelLabel(model)}</h3>
         {modelName ? (
-          <code className="text-xs text-muted-foreground/70">{modelName}</code>
+          <code className="text-xs text-muted-foreground">{modelName}</code>
         ) : null}
-        {status === "error" ? (
-          <Badge variant="destructive" className="px-2 text-[11px]">
-            Error
-          </Badge>
-        ) : null}
+        {status === "error" ? <Badge variant="destructive">Error</Badge> : null}
         <BrandMentionBadge
           mentioned={brandMentioned}
           highlightBrand={highlightBrand}
@@ -216,7 +206,7 @@ function ModelHeader({
         ) : null}
       </div>
       {tokens != null ? (
-        <span className="text-xs tabular-nums text-muted-foreground/70">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {tokens.toLocaleString()} tokens
         </span>
       ) : null}
@@ -234,16 +224,16 @@ function BrandMentionBadge({
   if (mentioned == null || !highlightBrand) return null;
   if (mentioned) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2 py-0.5 text-xs font-medium text-success">
+      <Badge variant="success">
         <CheckCircle2 className="size-3" />
         {highlightBrand}
-      </span>
+      </Badge>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+    <Badge variant="secondary">
       <XCircle className="size-3" />
       no {highlightBrand}
-    </span>
+    </Badge>
   );
 }

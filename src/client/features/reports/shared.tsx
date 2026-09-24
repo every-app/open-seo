@@ -1,6 +1,6 @@
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, X } from "lucide-react";
+import { Copy, ExternalLink } from "@/client/components/icons";
 import { toast } from "sonner";
 import { ConfirmDeleteModal } from "@/client/components/ConfirmDeleteModal";
 import { Modal } from "@/client/components/Modal";
@@ -17,6 +17,7 @@ import { sharePath } from "@/shared/report-share";
 import { Button, buttonVariants } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
 import { Switch } from "@/client/components/ui/switch";
+
 // Query keys for both reports pages. staleTime is 0 wherever these are used:
 // the pages exist to inspect what an agent just wrote, so the app-wide
 // five-minute staleTime would show a pre-save list as current.
@@ -155,25 +156,12 @@ export function ShareReportModal({
       labelledBy="share-report-title"
       maxWidth="max-w-lg"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          <h3 id="share-report-title" className="text-base font-semibold">
-            Share
-          </h3>
-          <p className="truncate text-sm text-muted-foreground">
-            {report.title}
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          type="button"
-          className="size-8 -mr-2 -mt-1"
-          aria-label="Close"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-        </Button>
+      {/* The Modal renders its own close button in the corner. */}
+      <div className="min-w-0 pr-6">
+        <h3 id="share-report-title" className="text-base font-semibold">
+          Share
+        </h3>
+        <p className="truncate text-sm text-muted-foreground">{report.title}</p>
       </div>
 
       <div className="rounded-lg border border-border">
@@ -203,7 +191,7 @@ export function ShareReportModal({
                 value={url}
                 aria-label="Share link"
                 onFocus={(event) => event.target.select()}
-                className="min-w-0 flex-1 basis-64 text-sm h-8 text-sm"
+                className="h-8 min-w-0 flex-1 basis-64 text-sm"
               />
               <div className="ml-auto flex items-stretch">
                 <a
@@ -213,9 +201,9 @@ export function ShareReportModal({
                   aria-label="Open link"
                   title="Open"
                   className={buttonVariants({
-                    variant: "ghost",
+                    variant: "outline",
                     size: "sm",
-                    className: "rounded-r-none border border-r-0 border-border",
+                    className: "rounded-r-none border-r-0",
                   })}
                 >
                   <ExternalLink className="size-4" />
@@ -231,7 +219,7 @@ export function ShareReportModal({
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               Shows the latest saved version. Hidden from search engines.
               {report.sharedAt
                 ? ` Link created ${formatRelativeTime(report.sharedAt)}.`
@@ -244,7 +232,7 @@ export function ShareReportModal({
       {/* Shown in place rather than as a toast: the message belongs next to
           the toggle that would not move. */}
       {mutation.isError ? (
-        <p className="text-sm text-destructive">
+        <p className="text-sm text-negative">
           {getStandardErrorMessage(mutation.error, "Failed to update sharing")}
         </p>
       ) : null}

@@ -1,4 +1,4 @@
-import { Monitor, Plus, Settings, Smartphone } from "lucide-react";
+import { Monitor, Plus, Settings, Smartphone } from "@/client/components/icons";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
@@ -10,6 +10,8 @@ import type {
 
 import { Button } from "@/client/components/ui/button";
 import { NativeSelect } from "@/client/components/ui/native-select";
+import { Separator } from "@/client/components/ui/separator";
+
 const COMPARE_PERIODS: ReadonlySet<string> = new Set([
   "1d",
   "7d",
@@ -97,7 +99,7 @@ export function RankTrackingDetailHeader({
           <option value="30d">vs last month</option>
           <option value="90d">vs 90 days ago</option>
         </NativeSelect>
-        <div className="hidden sm:block h-6 w-px bg-border" />
+        <Separator orientation="vertical" className="hidden h-6 sm:block" />
         <Button variant="outline" size="sm" className="gap-1" onClick={onEdit}>
           <Settings className="size-3.5" />
           Configure

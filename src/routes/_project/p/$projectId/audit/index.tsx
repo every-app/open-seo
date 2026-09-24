@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback } from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle } from "@/client/components/icons";
 import { useQuery } from "@tanstack/react-query";
 import {
   getAuditResults,
@@ -185,7 +185,7 @@ function AuditDetail({
                 have a workaround for this yet. Desktop crawlers run from your
                 own machine and usually get past it: try{" "}
                 <a
-                  className="underline underline-offset-4 text-primary"
+                  className="underline underline-offset-4 text-link"
                   href="https://github.com/PhialsBasement/LibreCrawl"
                   target="_blank"
                   rel="noreferrer"
@@ -194,7 +194,7 @@ function AuditDetail({
                 </a>{" "}
                 (free, open source) or{" "}
                 <a
-                  className="underline underline-offset-4 text-primary"
+                  className="underline underline-offset-4 text-link"
                   href="https://www.screamingfrog.co.uk/seo-spider/"
                   target="_blank"
                   rel="noreferrer"
@@ -208,7 +208,7 @@ function AuditDetail({
         )}
 
         {failedWithResults && (
-          <Alert className="border-warning/40 [&>svg]:text-warning">
+          <Alert className="[&>svg]:text-warning">
             <AlertCircle className="size-5" />
             <AlertDescription className="space-y-1">
               <p className="font-medium">
@@ -219,7 +219,7 @@ function AuditDetail({
                 The results below cover everything crawled before it stopped.
                 Run a new audit to try again, or email{" "}
                 <a
-                  className="underline underline-offset-4 text-primary"
+                  className="underline underline-offset-4 text-link"
                   href={`mailto:${SUPPORT_EMAIL}`}
                 >
                   {SUPPORT_EMAIL}
@@ -292,14 +292,16 @@ function ProgressCard({
   return (
     <div className="space-y-3">
       <Card>
-        <CardContent className="pt-6 gap-3">
+        <CardContent className="space-y-3 pt-6">
           <div className="flex items-center justify-between">
-            <h2 className="font-medium flex items-center gap-2">
-              <Loader2 className="size-4 animate-spin text-primary" />
-              {isLighthousePhase
-                ? "Running Lighthouse checks"
-                : "Crawling pages"}
-            </h2>
+            <div className="flex items-center gap-2">
+              <Spinner size="sm" />
+              <h2 className="font-medium">
+                {isLighthousePhase
+                  ? "Running Lighthouse checks"
+                  : "Crawling pages"}
+              </h2>
+            </div>
             <Badge variant="secondary" className="px-2 text-[11px]">
               {phaseLabel}
             </Badge>
@@ -327,11 +329,11 @@ function ProgressCard({
 
       {crawledUrls.length > 0 && (
         <Card>
-          <CardContent className="gap-2 p-4">
+          <CardContent className="space-y-2 p-4">
             <h3 className="text-sm font-medium text-muted-foreground">
               Crawled Pages ({crawledUrls.length})
             </h3>
-            <p className="text-xs text-muted-foreground/70">
+            <p className="text-xs text-muted-foreground">
               Updated {new Date(crawledUrls[0].crawledAt).toLocaleTimeString()}
             </p>
             <div className="max-h-[400px] overflow-y-auto -mx-1">
@@ -366,7 +368,7 @@ function ProgressRow({
 
   return (
     <div
-      className={`flex items-center justify-between gap-3 px-2 py-1.5 rounded text-sm ${
+      className={`flex items-center justify-between gap-3 rounded-sm px-2 py-1.5 text-sm ${
         index === 0
           ? "bg-primary/5 animate-in fade-in slide-in-from-top-1 duration-300"
           : ""
@@ -381,7 +383,7 @@ function ProgressRow({
       <div className="flex items-center gap-3 shrink-0">
         {entry.title && (
           <span
-            className="text-xs text-muted-foreground/70 truncate max-w-[260px] hidden md:block"
+            className="text-xs text-muted-foreground truncate max-w-[260px] hidden md:block"
             title={entry.title}
           >
             {entry.title}

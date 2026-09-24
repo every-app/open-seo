@@ -68,7 +68,7 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
             "flex-1 [&_input]:border-0 [&_input]:shadow-none [&_input]:rounded-none",
             "[&_input]:focus-visible:ring-0 [&_input]:focus-visible:shadow-none [&_input]:focus-visible:border-0",
             "[&_input]:h-full [&_input]:w-full [&_input]:bg-transparent",
-            "[&_input]:text-white/90 [&_input]:placeholder:text-white/40",
+            "[&_input]:text-white/90 [&_input]:placeholder:text-muted-foreground",
             disabled && "[&_input]:cursor-not-allowed",
           )}
         >

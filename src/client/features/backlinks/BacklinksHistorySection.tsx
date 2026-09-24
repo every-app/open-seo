@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, History, Link2, X } from "lucide-react";
+import { Clock, History, Link2, X } from "@/client/components/icons";
 import type { BacklinksSearchHistoryItem } from "@/client/hooks/useBacklinksSearchHistory";
 import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 import { toScopeSearchParam } from "@/shared/researchScope";
 
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 type Props = {
   projectId: string;
   history: BacklinksSearchHistoryItem[];
@@ -24,20 +25,20 @@ export function BacklinksHistorySection({
 
   if (history.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-border bg-card/70 p-6 text-center text-muted-foreground space-y-2">
+      <Card className="p-6 text-center text-muted-foreground space-y-2">
         <Link2 className="size-9 mx-auto opacity-35" />
         <p className="text-base font-medium text-foreground">
           Enter a domain or URL to get started
         </p>
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 md:p-6">
+    <Card className="p-5 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <History className="size-4 text-muted-foreground/70" />
+          <History className="size-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
             {history.length} recent search{history.length !== 1 ? "es" : ""}
           </span>
@@ -48,7 +49,7 @@ export function BacklinksHistorySection({
         {history.map((item) => (
           <div
             key={item.timestamp}
-            className="group flex items-center gap-2 rounded-lg border border-border bg-card p-2"
+            className="group flex items-center gap-2 rounded-xl border border-border p-2"
           >
             <Link
               to="/p/$projectId/backlinks"
@@ -63,9 +64,9 @@ export function BacklinksHistorySection({
                 order: undefined,
               })}
               replace
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-muted"
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-sm px-1 py-1 text-left transition-colors hover:bg-muted"
             >
-              <Clock className="size-4 text-muted-foreground/70 shrink-0" />
+              <Clock className="size-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
                 <p className="font-medium text-foreground truncate">
                   {item.target}
@@ -76,7 +77,7 @@ export function BacklinksHistorySection({
               </div>
             </Link>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-muted-foreground/70">
+              <span className="text-xs text-muted-foreground">
                 {new Date(item.timestamp).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
@@ -95,6 +96,6 @@ export function BacklinksHistorySection({
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

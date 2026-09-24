@@ -21,7 +21,9 @@ function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
     <TabsPrimitive.List
       className={cn(
-        "inline-flex h-11 items-center justify-center gap-1 rounded-full p-1",
+        // No fixed height: the list wraps its triggers, so the active pill sits
+        // with the same 4px inset on all four sides.
+        "inline-flex items-stretch justify-center gap-1 rounded-full p-1",
         "backdrop-blur-xl bg-white/[0.04]",
         "text-muted-foreground",
         className,
@@ -42,7 +44,7 @@ function TabsTrigger({
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-4 py-1.5 text-sm font-medium",
+        "relative inline-flex h-8 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-medium",
         "ring-offset-background transition-all",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
         "disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50",

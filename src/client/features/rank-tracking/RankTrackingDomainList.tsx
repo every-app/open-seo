@@ -10,7 +10,7 @@ import {
   Plus,
   ChevronRight,
   Search,
-} from "lucide-react";
+} from "@/client/components/icons";
 import {
   getRankTrackingConfigSummaries,
   updateRankTrackingConfig,
@@ -30,6 +30,7 @@ import {
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
+
 type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
 >[number];
@@ -86,8 +87,8 @@ export function RankTrackingDomainList({
   });
 
   return (
-    <Card>
-      <CardContent className="gap-0 p-0">
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <h2 className="text-sm font-semibold">Tracked Domains</h2>
           <Button size="sm" className="gap-1" onClick={onAddDomain}>
@@ -118,25 +119,25 @@ export function RankTrackingDomainList({
           ) : allSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-2">
               <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-muted">
-                <Globe className="size-5 text-muted-foreground/70" />
+                <Globe className="size-5 text-muted-foreground" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">
                 No tracked domains yet
               </p>
-              <p className="text-xs text-muted-foreground/70">
+              <p className="text-xs text-muted-foreground">
                 Add a domain to start monitoring keyword rankings over time.
               </p>
             </div>
           ) : filteredSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-3">
               <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-muted">
-                <Search className="size-5 text-muted-foreground/70" />
+                <Search className="size-5 text-muted-foreground" />
               </div>
               <div className="space-y-1">
                 <p className="text-sm font-medium text-muted-foreground">
                   No matching tracked domains
                 </p>
-                <p className="text-xs text-muted-foreground/70">
+                <p className="text-xs text-muted-foreground">
                   Try clearing search or adjusting filters.
                 </p>
               </div>
@@ -260,7 +261,7 @@ function DomainRow({
         variant="ghost"
         size="sm"
         type="button"
-        className="h-7 px-2.5 text-muted-foreground/70 hover:text-destructive relative z-10"
+        className="h-7 px-2.5 text-muted-foreground hover:text-negative relative z-10"
         title="Archive domain"
         onClick={(e) => {
           e.stopPropagation();
@@ -270,7 +271,7 @@ function DomainRow({
       >
         <Archive className="size-4" />
       </Button>
-      <ChevronRight className="size-4 shrink-0 text-muted-foreground/70 pointer-events-none" />
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground pointer-events-none" />
     </div>
   );
 }

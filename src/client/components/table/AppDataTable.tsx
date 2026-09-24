@@ -125,7 +125,7 @@ function SelectionCheckbox<TData>({
   );
 }
 
-// Row density for the Atelier Table: compact data grids use xs.
+// Row density for the Halo Table: compact data grids use xs.
 const DENSITY = {
   sm: "[&_td]:px-3 [&_td]:py-2 [&_th]:h-9",
   xs: "text-xs [&_td]:px-2 [&_td]:py-1.5 [&_th]:h-8 [&_th]:px-2",
@@ -247,7 +247,8 @@ function HeaderCell<TData>({
   return (
     <TableHead
       className={cn(
-        stickyHeader && "sticky top-0 z-10 bg-muted",
+        // Near-opaque, so scrolled rows don't show through the pinned header.
+        stickyHeader && "sticky top-0 z-10 bg-popover backdrop-blur-xl",
         meta?.headerClassName,
       )}
       style={fixedLayout ? { width: header.getSize() } : undefined}

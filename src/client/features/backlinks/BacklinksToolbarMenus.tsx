@@ -5,7 +5,7 @@ import {
   Gauge,
   MoreHorizontal,
   Sheet,
-} from "lucide-react";
+} from "@/client/components/icons";
 import type { CsvValue } from "@/client/lib/csv";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
@@ -71,7 +71,7 @@ export function BacklinksExportMenu({
           disabled={!canExport}
         >
           {isExportingSheets ? (
-            <Spinner size="sm" className="[&_svg]:size-3" />
+            <Spinner size="sm" />
           ) : (
             <Sheet className="size-4" />
           )}
@@ -127,7 +127,7 @@ export function BacklinksActionsMenu({
           title="Look up Ahrefs Domain Rating for each domain in the table"
         >
           {isLoadingRatings ? (
-            <Spinner size="sm" className="[&_svg]:size-3" />
+            <Spinner size="sm" />
           ) : (
             <Gauge className="size-4" />
           )}

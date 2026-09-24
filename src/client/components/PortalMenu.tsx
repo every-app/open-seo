@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { useState } from "react";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal } from "@/client/components/icons";
 import { Button, type ButtonProps } from "@/client/components/ui/button";
 import {
   DropdownMenu,
@@ -9,7 +9,7 @@ import {
 } from "@/client/components/ui/dropdown-menu";
 
 /**
- * Kebab actions menu on the Atelier DropdownMenu. The menu renders in a
+ * Kebab actions menu on the Halo DropdownMenu. The menu renders in a
  * portal, so overflow containers (scrollable tables, overflow-hidden cards)
  * can't clip it. Opens below the trigger, right-aligned.
  */

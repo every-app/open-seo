@@ -101,7 +101,7 @@ function IndexRedirect() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="flex flex-col items-center gap-3 max-w-xl">
-          <p className="text-destructive text-center">
+          <p className="text-negative text-center">
             {getStandardErrorMessage(
               error,
               "An unexpected error occurred. Please check server logs.",

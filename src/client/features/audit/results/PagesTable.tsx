@@ -4,7 +4,7 @@ import {
   type ColumnDef,
   type SortingState,
 } from "@tanstack/react-table";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink } from "@/client/components/icons";
 import {
   AppDataTable,
   useAppTable,
@@ -82,7 +82,7 @@ function hasAnalyzedContent(row: PageRow): boolean {
 }
 
 const EmptyCell = () => (
-  <span className="text-xs text-muted-foreground/70">-</span>
+  <span className="text-xs text-muted-foreground">-</span>
 );
 
 function buildPagesColumns({
@@ -102,7 +102,7 @@ function buildPagesColumns({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline underline-offset-4 text-primary inline-flex items-center gap-1 text-xs"
+            className="underline underline-offset-4 text-link inline-flex items-center gap-1 text-xs"
           >
             <span className="truncate">{displayPath(url, canonicalHost)}</span>
             <ExternalLink className="size-3 shrink-0" />
@@ -134,7 +134,7 @@ function buildPagesColumns({
         // Red only when the engine flagged it — a 200 that isn't an HTML
         // document (robots.txt, security.txt) legitimately has no title.
         return missingTitlePageIds.has(row.original.id) ? (
-          <span className="text-destructive text-xs">missing</span>
+          <span className="text-negative text-xs">missing</span>
         ) : (
           <EmptyCell />
         );

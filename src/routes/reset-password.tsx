@@ -16,7 +16,10 @@ import {
 import { z } from "zod";
 
 import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const resetPasswordSchema = z
   .object({
     password: z
@@ -178,7 +181,7 @@ function ResetPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-muted-foreground/70 hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Sign in
                   </Link>
@@ -192,10 +195,7 @@ function ResetPasswordPage() {
                       ? "/sign-in"
                       : `/sign-in?redirect=${encodeURIComponent(redirectTo)}`
                   }
-                  className={buttonVariants({
-                    variant: "secondary",
-                    className: "w-full",
-                  })}
+                  className={buttonVariants({ className: "w-full" })}
                 >
                   Continue to sign in
                 </a>
@@ -203,10 +203,7 @@ function ResetPasswordPage() {
                 <Link
                   to="/forgot-password"
                   search={getSignInSearch(redirectTo)}
-                  className={buttonVariants({
-                    variant: "secondary",
-                    className: "w-full",
-                  })}
+                  className={buttonVariants({ className: "w-full" })}
                 >
                   Request a new reset link
                 </Link>
@@ -223,10 +220,13 @@ function ResetPasswordPage() {
                       const error = getFieldError(field.state.meta.errors);
 
                       return (
-                        <div>
+                        <Field>
+                          <Label htmlFor="reset-password-new">
+                            New password
+                          </Label>
                           <Input
+                            id="reset-password-new"
                             type="password"
-                            className="w-full"
                             placeholder="New password..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -237,12 +237,8 @@ function ResetPasswordPage() {
                             maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                             required
                           />
-                          {error ? (
-                            <p className="mt-1 text-sm text-destructive">
-                              {error}
-                            </p>
-                          ) : null}
-                        </div>
+                          {error ? <FieldError>{error}</FieldError> : null}
+                        </Field>
                       );
                     }}
                   </form.Field>
@@ -252,10 +248,13 @@ function ResetPasswordPage() {
                       const error = getFieldError(field.state.meta.errors);
 
                       return (
-                        <div>
+                        <Field>
+                          <Label htmlFor="reset-password-confirm">
+                            Confirm new password
+                          </Label>
                           <Input
+                            id="reset-password-confirm"
                             type="password"
-                            className="w-full"
                             placeholder="Confirm new password..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -266,21 +265,17 @@ function ResetPasswordPage() {
                             maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                             required
                           />
-                          {error ? (
-                            <p className="mt-1 text-sm text-destructive">
-                              {error}
-                            </p>
-                          ) : null}
-                        </div>
+                          {error ? <FieldError>{error}</FieldError> : null}
+                        </Field>
                       );
                     }}
                   </form.Field>
 
                   {errorMessage ? (
-                    <p className="text-sm text-destructive">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
                   <Button
-                    variant="secondary"
+                    type="submit"
                     className="w-full"
                     disabled={isSubmitting}
                   >

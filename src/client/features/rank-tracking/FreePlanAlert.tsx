@@ -1,13 +1,14 @@
 import { Link } from "@tanstack/react-router";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/client/components/icons";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
+
 export function FreePlanAlert({ visible }: { visible: boolean }) {
   if (!visible) return null;
 
   return (
-    <Alert className="border-warning/40 [&>svg]:text-warning text-sm py-2">
+    <Alert className="[&>svg]:text-warning">
       <AlertTriangle className="size-4" />
       <AlertDescription>
         We only start to track keyword positions once you{" "}

@@ -1,7 +1,8 @@
-import { ArrowDown, ArrowUp } from "lucide-react";
+import { ArrowDown, ArrowUp } from "@/client/components/icons";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
 
 import { Button } from "@/client/components/ui/button";
+
 type SortableColumn = {
   getIsSorted: () => false | "asc" | "desc";
   getToggleSortingHandler: () => ((event: unknown) => void) | undefined;
@@ -22,7 +23,8 @@ export function SortableHeader({
   const content = (
     <Button
       variant="ghost"
-      className="h-auto rounded-md text-inherit px-0 hover:bg-transparent inline-flex items-center gap-1 font-medium transition-colors hover:text-foreground"
+      type="button"
+      className="h-auto gap-1 px-0 font-medium text-inherit hover:bg-transparent"
       onClick={column.getToggleSortingHandler()}
       aria-label={`Sort by ${label}`}
       aria-pressed={!!sorted}

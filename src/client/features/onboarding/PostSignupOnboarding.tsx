@@ -1,5 +1,5 @@
 import { OnboardingCard } from "./OnboardingCard";
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check } from "@/client/components/icons";
 import type { ReactNode } from "react";
 import { Fragment } from "react";
 import {
@@ -17,6 +17,8 @@ import { SearchConsoleOnboardingStep } from "@/client/features/onboarding/Search
 
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
+import { Toggle } from "@/client/components/ui/toggle";
+
 type PostSignupOnboardingProps = {
   step: number;
   answers: OnboardingAnswers;
@@ -122,7 +124,8 @@ export function PostSignupOnboarding({
               {step > 0 ? (
                 <Button
                   variant="ghost"
-                  className="rounded-md flex min-h-10 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                  size="sm"
+                  type="button"
                   onClick={onBack}
                 >
                   <ArrowLeft className="size-3.5" /> Back
@@ -138,7 +141,6 @@ export function PostSignupOnboarding({
                     variant="ghost"
                     size="sm"
                     type="button"
-                    className="text-muted-foreground"
                     onClick={onSkip}
                   >
                     Skip
@@ -215,12 +217,12 @@ function OnboardingChoiceGroup({
 
           return (
             <Fragment key={option}>
-              <Button
-                variant="ghost"
-                className={`justify-start whitespace-normal text-left font-normal text-inherit flex min-h-11 items-center gap-3 rounded-full border px-4 py-2.5 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-primary disabled:cursor-not-allowed disabled:opacity-35 ${selected ? "border-primary bg-primary/5 text-primary" : "border-border hover:bg-muted"}`}
-                aria-pressed={selected}
+              <Toggle
+                variant="outline"
+                className="h-auto min-h-11 justify-start gap-3 whitespace-normal px-4 py-2.5 text-left data-pressed:border-primary/60"
+                pressed={selected}
                 disabled={disabled}
-                onClick={() => onToggle(option)}
+                onPressedChange={() => onToggle(option)}
               >
                 <span
                   className={`flex size-4 shrink-0 items-center justify-center border ${multiple ? "rounded" : "rounded-full"} ${selected ? "border-primary bg-primary text-primary-foreground" : "border-foreground/30"}`}
@@ -230,10 +232,10 @@ function OnboardingChoiceGroup({
                 <span className="capitalize">
                   {ONBOARDING_OPTION_LABELS[option] ?? option}
                 </span>
-              </Button>
+              </Toggle>
 
               {showFollowUpHere && followUp ? (
-                <div className="w-full rounded-lg border border-border bg-muted/40 p-4">
+                <div className="w-full rounded-xl border border-border p-4">
                   <p className="text-sm text-muted-foreground">
                     {followUp.label}
                   </p>
@@ -243,23 +245,19 @@ function OnboardingChoiceGroup({
                         followUp.value === followUpOption;
 
                       return (
-                        <Button
-                          variant="ghost"
+                        <Toggle
+                          variant="outline"
+                          size="sm"
                           key={followUpOption}
-                          className={`h-auto text-inherit rounded-md border px-3 py-1.5 text-sm transition-colors ${
-                            followUpSelected
-                              ? "border-foreground bg-muted text-foreground"
-                              : "border-border text-muted-foreground hover:border-foreground/40 hover:bg-muted/60"
-                          }`}
-                          aria-pressed={followUpSelected}
-                          onClick={() =>
+                          pressed={followUpSelected}
+                          onPressedChange={() =>
                             followUp.onChange(
                               followUpSelected ? "" : followUpOption,
                             )
                           }
                         >
                           {followUpOption}
-                        </Button>
+                        </Toggle>
                       );
                     })}
                   </div>

@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { MessageSquare } from "lucide-react";
+import { MessageSquare } from "@/client/components/icons";
 import {
   HISTORY_ITEM_LINK_CLASS,
   SearchHistorySection,

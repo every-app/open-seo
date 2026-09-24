@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Copy, Loader2, Save } from "lucide-react";
+import { Copy, Loader2, Save } from "@/client/components/icons";
 import { toast } from "sonner";
 import {
   AppDataTable,
@@ -36,7 +36,13 @@ import {
 } from "@/types/schemas/search-performance";
 import { saveKeywords } from "@/serverFunctions/keywords";
 
+import {
+  StatCard,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
 import { TabsTrigger } from "@/client/components/ui/tabs";
+
 export type Tab = "striking" | "queries" | "pages";
 export type ExportTarget = "csv" | "sheets";
 
@@ -194,22 +200,24 @@ function TotalCard({
   deltaTitle: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-4">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+    <StatCard className="p-4">
+      <StatCardLabel className="text-xs uppercase tracking-wide">
         {label}
-      </div>
+      </StatCardLabel>
       <div className="mt-1 flex items-baseline gap-2">
-        <span className="text-2xl font-semibold">{value}</span>
+        <StatCardValue className="text-2xl font-semibold">
+          {value}
+        </StatCardValue>
         {delta ? (
           <span
-            className={`text-xs ${delta.improved ? "text-success" : "text-destructive"}`}
+            className={`text-xs ${delta.improved ? "text-success" : "text-negative"}`}
             title={deltaTitle}
           >
             {delta.text}
           </span>
         ) : null}
       </div>
-    </div>
+    </StatCard>
   );
 }
 

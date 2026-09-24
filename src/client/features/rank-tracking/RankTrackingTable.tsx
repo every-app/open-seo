@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Loader2, Sheet, Trash2 } from "lucide-react";
+import { FileDown, Loader2, Sheet, Trash2 } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import {
   AppDataTable,
@@ -28,6 +28,8 @@ import {
 import type { SelectionAnchor } from "@/client/components/table/tableSelection";
 
 import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+
 export function RankTrackingTable({
   totalCount,
   rows,
@@ -151,7 +153,7 @@ export function RankTrackingTable({
   if (resultsLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+        <Spinner />
       </div>
     );
   }

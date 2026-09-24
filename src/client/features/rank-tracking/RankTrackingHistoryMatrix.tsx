@@ -1,8 +1,8 @@
 import { useMemo } from "react";
-import { Loader2 } from "lucide-react";
 import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
 
+import { Spinner } from "@/client/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -11,6 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
+
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
  * on that date with its change vs the previous check. This is the pivoted
@@ -30,7 +31,7 @@ export function RankTrackingHistoryMatrix({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+        <Spinner />
       </div>
     );
   }
@@ -44,49 +45,47 @@ export function RankTrackingHistoryMatrix({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {/* Unconstrained keyword column absorbs the slack when only a few
-                check columns exist, so sparse history doesn't stretch oddly. */}
-            <TableHead className="sticky left-0 z-10 bg-card w-full">
-              Keyword
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {/* Unconstrained keyword column absorbs the slack when only a few
+              check columns exist, so sparse history doesn't stretch oddly. */}
+          <TableHead className="sticky left-0 z-10 w-full bg-popover">
+            Keyword
+          </TableHead>
+          {runs.map((r) => (
+            <TableHead
+              key={r.runId}
+              className="w-24 whitespace-nowrap text-right text-xs font-medium text-muted-foreground"
+            >
+              {formatDate(r.checkedAt)}
             </TableHead>
-            {runs.map((r) => (
-              <TableHead
-                key={r.runId}
-                className="w-24 whitespace-nowrap text-right text-xs font-medium text-muted-foreground"
-              >
-                {formatDate(r.checkedAt)}
-              </TableHead>
-            ))}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {keywords.map((kw) => {
-            const byRun = cellByKeyword.get(kw.trackingKeywordId);
-            return (
-              <TableRow key={kw.trackingKeywordId}>
-                <TableCell className="sticky left-0 z-10 bg-card whitespace-nowrap font-medium">
-                  {kw.keyword}
-                </TableCell>
-                {runs.map((r, i) => {
-                  const position = byRun?.get(r.runId) ?? null;
-                  const previous =
-                    i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
-                  return (
-                    <TableCell key={r.runId} className="text-right">
-                      <MatrixCell position={position} previous={previous} />
-                    </TableCell>
-                  );
-                })}
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {keywords.map((kw) => {
+          const byRun = cellByKeyword.get(kw.trackingKeywordId);
+          return (
+            <TableRow key={kw.trackingKeywordId}>
+              <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-popover font-medium">
+                {kw.keyword}
+              </TableCell>
+              {runs.map((r, i) => {
+                const position = byRun?.get(r.runId) ?? null;
+                const previous =
+                  i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
+                return (
+                  <TableCell key={r.runId} className="text-right">
+                    <MatrixCell position={position} previous={previous} />
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -98,7 +97,7 @@ function MatrixCell({
   previous: number | null | undefined;
 }) {
   if (position === null) {
-    return <span className="text-muted-foreground/70">—</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
   // Only show a change arrow when both checks ranked (no subtracting through a
   // null, matching the rest of the rank-tracking UI).

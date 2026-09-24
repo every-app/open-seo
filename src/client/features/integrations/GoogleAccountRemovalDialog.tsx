@@ -10,9 +10,12 @@ import { Button } from "@/client/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/client/components/ui/dialog";
+
 export function GoogleAccountRemovalDialog({
   provider,
   accountId,
@@ -71,21 +74,21 @@ export function GoogleAccountRemovalDialog({
       }}
     >
       <DialogContent aria-labelledby={titleId} className="max-w-md">
-        <DialogTitle id={titleId}>Remove Google account?</DialogTitle>
-        <p className="break-all text-sm font-medium">{label}</p>
-        <p className="text-sm text-muted-foreground">
-          This removes the account’s {name} connection from OpenSEO. You can
-          reconnect it anytime.
-        </p>
+        <DialogHeader>
+          <DialogTitle id={titleId}>Remove Google account?</DialogTitle>
+          <p className="break-all text-sm font-medium">{label}</p>
+          <DialogDescription>
+            This removes the account’s {name} connection from OpenSEO. You can
+            reconnect it anytime.
+          </DialogDescription>
+        </DialogHeader>
         {impact.isPending ? (
           <p role="status" className="text-sm text-muted-foreground">
             Checking connected projects…
           </p>
         ) : impact.isError ? (
           <div role="alert" className="text-sm">
-            <p className="text-destructive">
-              Couldn't check connected projects.
-            </p>
+            <p className="text-negative">Couldn't check connected projects.</p>
             <Button
               variant="ghost"
               size="sm"
@@ -106,11 +109,11 @@ export function GoogleAccountRemovalDialog({
           </p>
         )}
         {removal.isError ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p role="alert" className="text-sm text-negative">
             {getStandardErrorMessage(removal.error)}
           </p>
         ) : null}
-        <DialogFooter className="gap-2">
+        <DialogFooter className="gap-2 sm:space-x-0">
           <Button
             variant="ghost"
             size="sm"

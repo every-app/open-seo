@@ -5,7 +5,7 @@ import {
   type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table";
-import { Search } from "lucide-react";
+import { Search } from "@/client/components/icons";
 import { useMemo } from "react";
 import {
   AppDataTable,
@@ -154,7 +154,7 @@ function normalizeIntent(value: string | null): KeywordIntent {
 
 function TagList({ tags }: { tags: SavedKeywordRow["tags"] }) {
   if (tags.length === 0) {
-    return <span className="text-muted-foreground/70">-</span>;
+    return <span className="text-muted-foreground">-</span>;
   }
   return (
     <div className="flex flex-wrap gap-1">

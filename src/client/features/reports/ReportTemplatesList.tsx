@@ -1,4 +1,4 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/client/components/icons";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import type { ReportTemplate } from "@/types/schemas/report-templates";
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/client/components/ui/table";
 import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
+
 export function ReportTemplatesList({
   templates,
   onEdit,
@@ -31,57 +32,55 @@ export function ReportTemplatesList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead>Updated</TableHead>
-            <TableHead></TableHead>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Updated</TableHead>
+          <TableHead></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {templates.map((template) => (
+          <TableRow key={template.id}>
+            <TableCell className="font-medium">{template.name}</TableCell>
+            <TableCell className="max-w-[420px] text-muted-foreground">
+              {template.description}
+            </TableCell>
+            <TableCell className="whitespace-nowrap text-muted-foreground">
+              {formatRelativeTime(template.updatedAt)}
+            </TableCell>
+            <TableCell className="w-10 text-right">
+              <PortalMenu ariaLabel={`Actions for ${template.name}`}>
+                {(close) => (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        close();
+                        onEdit(template);
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-negative"
+                      onClick={() => {
+                        close();
+                        onDelete(template);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </PortalMenu>
+            </TableCell>
           </TableRow>
-        </TableHeader>
-        <TableBody>
-          {templates.map((template) => (
-            <TableRow key={template.id}>
-              <TableCell className="font-medium">{template.name}</TableCell>
-              <TableCell className="max-w-[420px] text-muted-foreground">
-                {template.description}
-              </TableCell>
-              <TableCell className="whitespace-nowrap text-muted-foreground">
-                {formatRelativeTime(template.updatedAt)}
-              </TableCell>
-              <TableCell className="w-10 text-right">
-                <PortalMenu ariaLabel={`Actions for ${template.name}`}>
-                  {(close) => (
-                    <>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          close();
-                          onEdit(template);
-                        }}
-                      >
-                        <Pencil className="size-3.5" />
-                        Edit
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        className="text-destructive"
-                        onClick={() => {
-                          close();
-                          onDelete(template);
-                        }}
-                      >
-                        <Trash2 className="size-3.5" />
-                        Delete
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </PortalMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

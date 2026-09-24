@@ -1,25 +1,22 @@
 import { Card, CardContent } from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
+import { StatCard } from "@/client/components/ui/stat-card";
 export function DomainOverviewLoadingState() {
   return (
     <div className="space-y-4" aria-busy>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <Skeleton className="h-3 w-36" />
-            <Skeleton className="h-8 w-44" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 space-y-2">
-            <Skeleton className="h-3 w-32" />
-            <Skeleton className="h-8 w-40" />
-          </CardContent>
-        </Card>
+        <StatCard className="space-y-2">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-9 w-44" />
+        </StatCard>
+        <StatCard className="space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-9 w-40" />
+        </StatCard>
       </div>
 
       <Card>
-        <CardContent className="pt-6 gap-3">
+        <CardContent className="flex flex-col pt-6 gap-3">
           <div className="flex items-center justify-between">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="h-8 w-60" />

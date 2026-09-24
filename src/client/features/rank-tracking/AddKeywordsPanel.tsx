@@ -4,7 +4,7 @@ import { useMutation } from "@tanstack/react-query";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
 import { MAX_TRACKED_KEYWORD_LENGTH } from "@/shared/rank-tracking";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 
 import { Button } from "@/client/components/ui/button";
 import { Textarea } from "@/client/components/ui/textarea";

@@ -1,4 +1,4 @@
-import { Loader2, Zap } from "lucide-react";
+import { Loader2, Zap } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import {
@@ -9,6 +9,7 @@ import {
 } from "@/shared/rank-tracking";
 
 import { Button } from "@/client/components/ui/button";
+
 export function CheckConfirmModal({
   keywordCount,
   devices,
@@ -53,13 +54,13 @@ export function CheckConfirmModal({
       </div>
 
       <Button
-        variant="ghost"
-        className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-4 rounded-xl border-2 border-border p-4 text-left transition-colors hover:border-primary hover:bg-primary/5"
+        variant="outline"
+        className="h-auto w-full justify-start gap-4 whitespace-normal p-4 text-left font-normal"
         onClick={onRunNow}
         disabled={isPending}
       >
         <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-          <Zap className="size-5 text-primary" />
+          <Zap className="size-5 text-link" />
         </div>
         <div className="flex-1">
           <p className="font-medium">Run Now</p>

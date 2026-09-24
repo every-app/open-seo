@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronRight, RotateCcw } from "lucide-react";
+import { Check, ChevronRight, RotateCcw } from "@/client/components/icons";
 import { toast } from "sonner";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -100,7 +100,7 @@ export function DashboardOnboarding({
               }}
               className={`h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-3 px-6 py-3.5 text-left transition-colors ${active ? "bg-accent/50" : "hover:bg-muted"}`}
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-primary">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-link">
                 <Icon className="size-4" />
               </span>
               <span className="min-w-0 flex-1">
@@ -110,7 +110,7 @@ export function DashboardOnboarding({
                 </span>
               </span>
               {item.id === "domain" && (
-                <span className="hidden text-xs text-primary sm:block">
+                <span className="hidden text-xs text-link sm:block">
                   Start here
                 </span>
               )}

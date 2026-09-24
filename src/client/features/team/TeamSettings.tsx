@@ -21,6 +21,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
+
 // The Organization tab of account settings: who has access to the active org.
 export function TeamSettings() {
   const { data: session } = useSession();
@@ -124,9 +125,7 @@ export function TeamSettings() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-medium text-muted-foreground/70">
-          Members
-        </h2>
+        <h2 className="text-sm font-medium text-muted-foreground">Members</h2>
         {canManageTeam ? (
           <Button size="sm" type="button" onClick={() => setIsInviteOpen(true)}>
             Invite teammate
@@ -143,44 +142,40 @@ export function TeamSettings() {
           <Spinner />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Member</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {members.map((member) => (
-                <MemberRow
-                  key={member.id}
-                  member={member}
-                  isSelf={member.userId === session?.user?.id}
-                  canManageTeam={canManageTeam}
-                  isOwner={isOwner}
-                  isRemoving={removeMemberMutation.isPending}
-                  onRemove={() => removeMemberMutation.mutate(member.id)}
-                />
-              ))}
-              {pendingInvitations.map((invitation) => (
-                <InvitationRow
-                  key={invitation.id}
-                  invitation={invitation}
-                  canManageTeam={canManageTeam}
-                  isResending={resendMutation.isPending}
-                  isCanceling={cancelInvitationMutation.isPending}
-                  onResend={() => resendMutation.mutate(invitation.email)}
-                  onCancel={() =>
-                    cancelInvitationMutation.mutate(invitation.id)
-                  }
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Member</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {members.map((member) => (
+              <MemberRow
+                key={member.id}
+                member={member}
+                isSelf={member.userId === session?.user?.id}
+                canManageTeam={canManageTeam}
+                isOwner={isOwner}
+                isRemoving={removeMemberMutation.isPending}
+                onRemove={() => removeMemberMutation.mutate(member.id)}
+              />
+            ))}
+            {pendingInvitations.map((invitation) => (
+              <InvitationRow
+                key={invitation.id}
+                invitation={invitation}
+                canManageTeam={canManageTeam}
+                isResending={resendMutation.isPending}
+                isCanceling={cancelInvitationMutation.isPending}
+                onResend={() => resendMutation.mutate(invitation.email)}
+                onCancel={() => cancelInvitationMutation.mutate(invitation.id)}
+              />
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {isInviteOpen ? (

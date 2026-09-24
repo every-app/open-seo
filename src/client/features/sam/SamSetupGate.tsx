@@ -1,8 +1,10 @@
 import { Link } from "@tanstack/react-router";
-import { ShieldAlert, Wrench } from "lucide-react";
+import { ShieldAlert, Wrench } from "@/client/components/icons";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+
 export function SamSetupGate({
   errorMessage,
   isRefetching,
@@ -14,7 +16,7 @@ export function SamSetupGate({
 }) {
   return (
     <section>
-      <div className="rounded-2xl border border-border bg-card p-6 md:p-7 space-y-5">
+      <Card className="space-y-5 p-6 md:p-7">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-warning/15 p-2.5 text-warning shrink-0">
             <Wrench className="size-5" />
@@ -27,10 +29,10 @@ export function SamSetupGate({
               <code>OPENROUTER_API_KEY</code> environment variable, restart
               OpenSEO, then confirm here.
             </div>
-            <div className="text-xs text-muted-foreground/70">
+            <div className="text-xs text-muted-foreground">
               Step-by-step instructions for every deployment are in the{" "}
               <Link
-                className="underline underline-offset-2 hover:text-muted-foreground"
+                className="underline underline-offset-2 hover:text-foreground"
                 to="/help/openrouter-api-key"
               >
                 OpenRouter API key setup guide
@@ -41,7 +43,7 @@ export function SamSetupGate({
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={onRetry} disabled={isRefetching}>
+          <Button type="button" onClick={onRetry} disabled={isRefetching}>
             {isRefetching ? "Confirming..." : "Confirm API Key"}
           </Button>
           <a
@@ -60,7 +62,7 @@ export function SamSetupGate({
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         ) : null}
-      </div>
+      </Card>
     </section>
   );
 }

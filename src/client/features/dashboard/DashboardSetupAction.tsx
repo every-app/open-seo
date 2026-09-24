@@ -65,7 +65,7 @@ export function DashboardSetupAction({
     return project ? (
       <WebsiteForm project={project} onComplete={onComplete} />
     ) : projects.isError ? (
-      <p role="alert" className="text-sm text-destructive">
+      <p role="alert" className="text-sm text-negative">
         {getStandardErrorMessage(projects.error)}
       </p>
     ) : (
@@ -289,7 +289,7 @@ function WebsiteForm({
               aria-invalid={field.state.meta.errors.length > 0}
             />
             {field.state.meta.errors.length > 0 && (
-              <span className="text-xs text-destructive">
+              <span className="text-xs text-negative">
                 {field.state.meta.errors.join(", ")}
               </span>
             )}

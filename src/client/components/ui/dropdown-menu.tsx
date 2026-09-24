@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Menu as MenuPrimitive } from "@base-ui/react/menu";
-import { Icon } from "@iconify/react";
+import { Check, ChevronRight } from "@/client/components/icons";
 
 import { cn } from "@/client/lib/utils";
 
@@ -28,7 +28,7 @@ function DropdownMenuSubTrigger({
       {...props}
     >
       {children}
-      <Icon icon="tabler:chevron-right" className="ml-auto h-4 w-4" />
+      <ChevronRight className="ml-auto h-4 w-4" />
     </MenuPrimitive.SubmenuTrigger>
   );
 }
@@ -151,7 +151,7 @@ function DropdownMenuCheckboxItem({
     >
       <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
         <MenuPrimitive.CheckboxItemIndicator>
-          <Icon icon="tabler:check" className="h-4 w-4" />
+          <Check className="h-4 w-4" />
         </MenuPrimitive.CheckboxItemIndicator>
       </span>
       {children}

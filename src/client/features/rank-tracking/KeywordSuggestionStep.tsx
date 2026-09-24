@@ -5,7 +5,7 @@ import {
   type RowSelectionState,
   type SortingState,
 } from "@tanstack/react-table";
-import { Loader2, AlertCircle, X } from "lucide-react";
+import { Loader2, AlertCircle } from "@/client/components/icons";
 import { toast } from "sonner";
 import { getDomainKeywordSuggestions } from "@/serverFunctions/domain";
 import { addTrackingKeywords } from "@/serverFunctions/rank-tracking";
@@ -23,6 +23,8 @@ import {
 } from "@/client/components/table/tableSelection";
 
 import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+
 type SuggestedKeyword = {
   keyword: string;
   position: number | null;
@@ -65,7 +67,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return pos != null ? (
         pos
       ) : (
-        <span className="text-muted-foreground/70">—</span>
+        <span className="text-muted-foreground">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -90,7 +92,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return vol != null ? (
         vol.toLocaleString()
       ) : (
-        <span className="text-muted-foreground/70">—</span>
+        <span className="text-muted-foreground">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -115,7 +117,7 @@ const baseColumns: ColumnDef<SuggestedKeyword>[] = [
       return traffic != null ? (
         Math.round(traffic).toLocaleString()
       ) : (
-        <span className="text-muted-foreground/70">—</span>
+        <span className="text-muted-foreground">—</span>
       );
     },
     sortingFn: (rowA, rowB) => {
@@ -228,23 +230,12 @@ export function KeywordSuggestionStep({
     }
   };
 
-  const sectionHeader = (title: string) => (
-    <div className="flex items-center justify-between">
-      <h2 id="keyword-suggestions-title" className="text-lg font-semibold">
-        {title}
-      </h2>
-      <Button variant="ghost" size="icon" className="size-8" onClick={onClose}>
-        <X className="size-4" />
-      </Button>
-    </div>
-  );
-
   if (!labsSupported) {
     return (
       <>
         {sectionHeader("Add keywords manually")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             Ranked-keyword suggestions aren't available for this country.
             Continue and add the keywords you want to track manually.
           </p>
@@ -262,8 +253,8 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("Finding your top keywords...")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <Loader2 className="size-8 animate-spin text-primary" />
-          <p className="text-xs text-muted-foreground/70">
+          <Spinner size="lg" />
+          <p className="text-xs text-muted-foreground">
             This usually takes a few seconds
           </p>
         </div>
@@ -277,8 +268,8 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("Couldn't fetch keywords")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <AlertCircle className="size-8 text-destructive" />
-          <p className="text-xs text-muted-foreground/70">
+          <AlertCircle className="size-8 text-negative" />
+          <p className="text-xs text-muted-foreground">
             You can skip this step and add keywords manually later.
           </p>
           <div className="flex gap-2 mt-2">
@@ -297,7 +288,7 @@ export function KeywordSuggestionStep({
       <>
         {sectionHeader("No rankings found")}
         <div className="flex flex-col items-center justify-center gap-3 py-16">
-          <p className="text-xs text-muted-foreground/70">
+          <p className="text-xs text-muted-foreground">
             We couldn't find any keywords {domain} currently ranks for. You can
             add keywords manually.
           </p>
@@ -323,10 +314,10 @@ export function KeywordSuggestionStep({
         table={table}
         density="xs"
         className="w-full"
-        wrapperClassName="overflow-y-auto max-h-[400px] border border-border rounded-lg"
+        wrapperClassName="max-h-[400px]"
         stickyHeader
         getRowProps={(row) => ({
-          className: "hover:bg-muted/50 cursor-pointer",
+          className: "cursor-pointer",
           onClick: (event) => {
             if (applyShiftRangeSelection(event, row, table, selectAnchorRef)) {
               return;
@@ -359,5 +350,15 @@ export function KeywordSuggestionStep({
         </div>
       </div>
     </div>
+  );
+}
+
+// The Modal renders its own close button in the corner, so the title keeps
+// clear of it.
+function sectionHeader(title: string) {
+  return (
+    <h2 id="keyword-suggestions-title" className="pr-6 text-lg font-semibold">
+      {title}
+    </h2>
   );
 }

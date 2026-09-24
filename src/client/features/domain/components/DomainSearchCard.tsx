@@ -1,5 +1,5 @@
 import type { FormEvent } from "react";
-import { AlertCircle, Search } from "lucide-react";
+import { AlertCircle, Search } from "@/client/components/icons";
 import { getFieldError, getFormError } from "@/client/lib/forms";
 import type { DomainOverviewControlsForm } from "@/client/features/domain/DomainOverviewPage";
 import { toSortMode } from "@/client/features/domain/utils";
@@ -9,6 +9,7 @@ import { LocationSelect } from "@/client/components/LocationSelect";
 import { ResearchScopeSelect } from "@/client/components/ResearchScopeSelect";
 import type { ResearchScope } from "@/shared/researchScope";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { NativeSelect } from "@/client/components/ui/native-select";
@@ -35,7 +36,7 @@ export function DomainSearchCard({
 }: Props) {
   return (
     <Card>
-      <CardContent className="pt-6 gap-4">
+      <CardContent className="flex flex-col pt-6 gap-4">
         <form
           className="flex flex-col gap-3 lg:flex-row lg:items-center"
           onSubmit={onSubmit}
@@ -132,7 +133,7 @@ export function DomainSearchCard({
             const domainError = getFieldError(field.state.meta.errors);
 
             return domainError ? (
-              <p id="domain-input-error" className="text-sm text-destructive">
+              <p id="domain-input-error" className="text-sm text-negative">
                 {domainError}
               </p>
             ) : null;
@@ -144,10 +145,10 @@ export function DomainSearchCard({
             const errorMessage = getFormError(submitError);
 
             return errorMessage ? (
-              <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive flex items-start gap-2">
-                <AlertCircle className="size-4 shrink-0 mt-0.5" />
-                <span>{errorMessage}</span>
-              </div>
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
             ) : null;
           }}
         </controlsForm.Subscribe>

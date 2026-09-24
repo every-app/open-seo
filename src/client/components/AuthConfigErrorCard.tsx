@@ -1,9 +1,15 @@
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "@/client/components/icons";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button, buttonVariants } from "@/client/components/ui/button";
-import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
+
 const CLOUDFLARE_SETUP_GUIDE_URL =
   "https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE.md#2-configure-authentication-and-secrets";
 
@@ -19,13 +25,14 @@ export function AuthConfigErrorCard({
   const isHostedMode = isHostedClientAuthMode();
 
   return (
-    <Card className="w-full max-w-2xl shadow-xl">
-      <CardContent className="pt-6 gap-4">
-        <CardTitle className="gap-2">
-          <ShieldAlert className="size-5 text-destructive" />
+    <Card className="w-full max-w-2xl">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <ShieldAlert className="size-5 text-negative" />
           Authentication setup required
         </CardTitle>
-
+      </CardHeader>
+      <CardContent className="space-y-4">
         <Alert variant="destructive">
           <AlertDescription>{message}</AlertDescription>
         </Alert>
@@ -48,7 +55,7 @@ export function AuthConfigErrorCard({
 
         <div className="flex flex-wrap items-center gap-2 justify-end">
           {onRetry ? (
-            <Button variant="ghost" size="sm" onClick={onRetry}>
+            <Button variant="ghost" size="sm" type="button" onClick={onRetry}>
               Try Again
             </Button>
           ) : null}

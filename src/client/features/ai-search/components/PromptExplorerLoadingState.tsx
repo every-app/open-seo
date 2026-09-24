@@ -1,3 +1,4 @@
+import { Card } from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
 type Props = {
   modelCount: number;
@@ -8,10 +9,7 @@ export function PromptExplorerLoadingState({ modelCount }: Props) {
   return (
     <div className="space-y-5" aria-busy>
       {Array.from({ length: count }).map((_, index) => (
-        <article
-          key={index}
-          className="overflow-hidden rounded-r-lg border border-border border-l-4 border-l-border bg-card"
-        >
+        <Card key={index} className="overflow-hidden">
           <header className="flex items-center justify-between border-b border-border bg-muted/40 px-5 py-3">
             <div className="flex items-center gap-2">
               <Skeleton className="size-2 rounded-full" />
@@ -26,7 +24,7 @@ export function PromptExplorerLoadingState({ modelCount }: Props) {
             <Skeleton className="h-3 w-10/12" />
             <Skeleton className="h-3 w-9/12" />
           </div>
-        </article>
+        </Card>
       ))}
     </div>
   );

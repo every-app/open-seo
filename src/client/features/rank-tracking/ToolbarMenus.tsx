@@ -15,7 +15,7 @@ import {
   Play,
   RefreshCw,
   Sheet,
-} from "lucide-react";
+} from "@/client/components/icons";
 
 function ToolbarMenu({
   label,

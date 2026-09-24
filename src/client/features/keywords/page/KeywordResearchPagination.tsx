@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
 import { useEffect, useMemo, useState } from "react";
 import type { KeywordResearchRow } from "@/types/keywords";
 

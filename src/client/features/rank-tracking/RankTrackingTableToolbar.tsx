@@ -1,10 +1,16 @@
-import { CalendarDays, Loader2, SlidersHorizontal, Table } from "lucide-react";
+import {
+  CalendarDays,
+  SlidersHorizontal,
+  Table,
+} from "@/client/components/icons";
 import { SegmentedToggle } from "@/client/components/SegmentedToggle";
 import { ExportMenu, MoreMenu } from "./ToolbarMenus";
 
 import { Badge } from "@/client/components/ui/badge";
 import { Progress } from "@/client/components/ui/progress";
-import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import { Toggle } from "@/client/components/ui/toggle";
+
 export function RankTrackingTableToolbar({
   showFilters,
   onToggleFilters,
@@ -71,28 +77,23 @@ export function RankTrackingTableToolbar({
         />
       )}
 
-      <Button
-        variant="ghost"
+      <Toggle
         size="sm"
-        className={`gap-1.5 ${showFilters ? "bg-secondary text-foreground" : ""}`}
-        onClick={onToggleFilters}
+        className="gap-1.5"
+        pressed={showFilters}
+        onPressedChange={() => onToggleFilters()}
         title="Toggle table filters"
       >
         <SlidersHorizontal className="size-3.5" />
         Filters
         {activeFilterCount > 0 && (
-          <Badge
-            variant="primary"
-            className="px-2 text-[11px] border-0 text-primary-foreground"
-          >
-            {activeFilterCount}
-          </Badge>
+          <Badge variant="primary">{activeFilterCount}</Badge>
         )}
-      </Button>
+      </Toggle>
 
       {isRunning && latestRun ? (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="size-3.5 animate-spin text-primary" />
+          <Spinner size="sm" />
           <span>
             {latestRun.status === "pending"
               ? "Preparing..."

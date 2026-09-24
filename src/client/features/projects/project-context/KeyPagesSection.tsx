@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus } from "@/client/components/icons";
 import {
   KEY_PAGE_ROLES,
   type KeyPageRole,
@@ -19,8 +19,10 @@ import {
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
 import { NativeSelect } from "@/client/components/ui/native-select";
+
 const ROLE_LABELS: Record<KeyPageRole, string> = {
   hub: "Hub page",
   spoke: "Supporting page",
@@ -87,13 +89,13 @@ export function KeyPagesSection({
       />
 
       {adding ? (
-        <div className={listClass}>
+        <Card className="overflow-hidden">
           <KeyPageForm
             pending={update.isPending}
             onCancel={() => setAdding(false)}
             onSave={(draft) => save(null, draft)}
           />
-        </div>
+        </Card>
       ) : null}
 
       {keyPages.length === 0 ? (
@@ -104,69 +106,68 @@ export function KeyPagesSection({
           </EmptyState>
         )
       ) : (
-        <ul className={listClass}>
-          {keyPages.map((page) =>
-            editingId === page.id ? (
-              <li key={page.id}>
-                <KeyPageForm
-                  initial={page}
-                  pending={update.isPending}
-                  onCancel={() => setEditingId(null)}
-                  onSave={(draft) => save(page.url, draft)}
-                />
-              </li>
-            ) : (
-              <li
-                key={page.id}
-                className="flex items-start justify-between gap-3 p-3"
-              >
-                <div className="min-w-0 space-y-0.5">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <span className="truncate text-sm font-medium">
-                      {page.url}
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className="px-2 text-[11px] shrink-0"
-                    >
-                      {ROLE_LABELS[page.role]}
-                    </Badge>
-                  </div>
-                  {page.topic ? (
-                    <p className="text-sm text-muted-foreground">
-                      Target: {page.topic}
-                    </p>
-                  ) : null}
-                  {page.notes ? (
-                    <p className="text-sm text-muted-foreground">
-                      {page.notes}
-                    </p>
-                  ) : null}
-                  <Provenance by={page.updatedBy} at={page.updatedAt} />
-                </div>
-                <RowActions>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    type="button"
-                    className="h-7 px-2.5"
-                    aria-label={`Edit ${page.url}`}
-                    onClick={() => setEditingId(page.id)}
-                  >
-                    <Pencil className="size-3.5" />
-                  </Button>
-                  <ConfirmDeleteButton
-                    label={`Remove ${page.url}`}
+        <Card className="overflow-hidden">
+          <ul className={listClass}>
+            {keyPages.map((page) =>
+              editingId === page.id ? (
+                <li key={page.id}>
+                  <KeyPageForm
+                    initial={page}
                     pending={update.isPending}
-                    onConfirm={() =>
-                      update.mutate([{ removeKeyPages: [page.url] }])
-                    }
+                    onCancel={() => setEditingId(null)}
+                    onSave={(draft) => save(page.url, draft)}
                   />
-                </RowActions>
-              </li>
-            ),
-          )}
-        </ul>
+                </li>
+              ) : (
+                <li
+                  key={page.id}
+                  className="flex items-start justify-between gap-3 px-4 py-3"
+                >
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex flex-wrap items-baseline gap-x-2">
+                      <span className="truncate text-sm font-medium">
+                        {page.url}
+                      </span>
+                      <Badge variant="secondary" className="shrink-0">
+                        {ROLE_LABELS[page.role]}
+                      </Badge>
+                    </div>
+                    {page.topic ? (
+                      <p className="text-sm text-muted-foreground">
+                        Target: {page.topic}
+                      </p>
+                    ) : null}
+                    {page.notes ? (
+                      <p className="text-sm text-muted-foreground">
+                        {page.notes}
+                      </p>
+                    ) : null}
+                    <Provenance by={page.updatedBy} at={page.updatedAt} />
+                  </div>
+                  <RowActions>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      type="button"
+                      className="h-7 px-2.5"
+                      aria-label={`Edit ${page.url}`}
+                      onClick={() => setEditingId(page.id)}
+                    >
+                      <Pencil className="size-3.5" />
+                    </Button>
+                    <ConfirmDeleteButton
+                      label={`Remove ${page.url}`}
+                      pending={update.isPending}
+                      onConfirm={() =>
+                        update.mutate([{ removeKeyPages: [page.url] }])
+                      }
+                    />
+                  </RowActions>
+                </li>
+              ),
+            )}
+          </ul>
+        </Card>
       )}
     </section>
   );
@@ -199,7 +200,7 @@ function KeyPageForm({
 
   return (
     <form
-      className="space-y-2 bg-muted/40 p-3"
+      className="space-y-2 px-4 py-3"
       onSubmit={(event) => {
         event.preventDefault();
         if (!draft.url.trim() || pending) return;
@@ -213,7 +214,7 @@ function KeyPageForm({
         onChange={(event) => setDraft({ ...draft, url: event.target.value })}
         placeholder="example.com/pricing"
         maxLength={2048}
-        className="w-full h-8 text-sm"
+        className="h-8"
         aria-label="Page URL"
       />
       <div className="grid gap-2 sm:grid-cols-2">
@@ -227,7 +228,7 @@ function KeyPageForm({
                 draft.role,
             })
           }
-          className="w-full h-8 text-sm"
+          className="h-8"
           aria-label="Page role"
         >
           {KEY_PAGE_ROLES.map((role) => (
@@ -244,7 +245,7 @@ function KeyPageForm({
           }
           placeholder="Target topic (optional)"
           maxLength={200}
-          className="w-full h-8 text-sm"
+          className="h-8"
           aria-label="Target topic"
         />
       </div>
@@ -254,7 +255,7 @@ function KeyPageForm({
         onChange={(event) => setDraft({ ...draft, notes: event.target.value })}
         placeholder="Notes (optional)"
         maxLength={500}
-        className="w-full h-8 text-sm"
+        className="h-8"
         aria-label="Page notes"
       />
       <FormActions

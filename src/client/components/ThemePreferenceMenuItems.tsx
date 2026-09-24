@@ -1,4 +1,4 @@
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "@/client/components/icons";
 import {
   DropdownMenuGroup,
   DropdownMenuLabel,

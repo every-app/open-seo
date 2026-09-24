@@ -46,7 +46,7 @@ function DomainPagesTableComponent({
             value={row.original.page}
             label={row.original.relativePath ?? row.original.page}
             baseDomain={domain}
-            className="link text-primary inline-flex items-center gap-1"
+            className="text-link underline-offset-4 hover:underline inline-flex items-center gap-1"
           />
         ),
         meta: {

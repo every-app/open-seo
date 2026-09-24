@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Copy, Download, Loader2 } from "lucide-react";
+import { Copy, Download } from "@/client/components/icons";
 import { reverse, sortBy } from "remeda";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -17,7 +17,9 @@ import {
   type TrendSeries,
 } from "./RankTrackingTrendChart";
 
+import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 import {
   Table,
   TableBody,
@@ -26,12 +28,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/client/components/ui/table";
+
 const DEVICE_STYLE: Record<
   "desktop" | "mobile",
   { label: string; color: string }
 > = {
-  desktop: { label: "Desktop", color: "#2563eb" },
-  mobile: { label: "Mobile", color: "#14b8a6" },
+  desktop: { label: "Desktop", color: "var(--chart-1)" },
+  mobile: { label: "Mobile", color: "var(--chart-3)" },
 };
 
 export interface KeywordTrendTarget {
@@ -170,7 +173,7 @@ export function KeywordTrendModal({
 
       {isLoading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+          <Spinner />
         </div>
       ) : maxPerDevice <= 1 ? (
         <EmptyState count={maxPerDevice} />
@@ -212,76 +215,75 @@ export function KeywordTrendModal({
             </Button>
           </div>
 
-          <div className="max-h-64 overflow-auto rounded-lg border border-border">
-            <Table>
-              <TableHeader className="sticky top-0 bg-card">
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  {devices.length > 1 && <TableHead>Device</TableHead>}
-                  <TableHead>Position</TableHead>
-                  <TableHead>Δ vs previous check</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {historyRows.map((r, idx) => {
-                  // No prior ranking to compare against (first check, or the
-                  // previous check was unranked): show the lone position as a
-                  // centered neutral pill so it doesn't look like a stray number
-                  // next to the "before → after" rows.
-                  const noPrevious =
-                    r.position !== null && r.previousPosition === null;
-                  return (
-                    <TableRow key={`${r.device}-${r.checkedAt}-${idx}`}>
-                      <TableCell className="whitespace-nowrap text-xs">
-                        {new Date(r.checkedAt).toLocaleDateString()}
+          <Table containerClassName="max-h-64">
+            <TableHeader className="sticky top-0 z-10 bg-popover backdrop-blur-xl">
+              <TableRow>
+                <TableHead>Date</TableHead>
+                {devices.length > 1 && <TableHead>Device</TableHead>}
+                <TableHead>Position</TableHead>
+                <TableHead>Δ vs previous check</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {historyRows.map((r, idx) => {
+                // No prior ranking to compare against (first check, or the
+                // previous check was unranked): show the lone position as a
+                // centered neutral pill so it doesn't look like a stray number
+                // next to the "before → after" rows.
+                const noPrevious =
+                  r.position !== null && r.previousPosition === null;
+                return (
+                  <TableRow key={`${r.device}-${r.checkedAt}-${idx}`}>
+                    <TableCell className="whitespace-nowrap text-xs">
+                      {new Date(r.checkedAt).toLocaleDateString()}
+                    </TableCell>
+                    {devices.length > 1 && (
+                      <TableCell className="text-xs">
+                        {DEVICE_STYLE[r.device].label}
                       </TableCell>
-                      {devices.length > 1 && (
-                        <TableCell className="text-xs">
-                          {DEVICE_STYLE[r.device].label}
-                        </TableCell>
+                    )}
+                    <TableCell>
+                      {r.position === null ? (
+                        <span className="text-muted-foreground text-xs">
+                          Not in top {serpDepth}
+                        </span>
+                      ) : (
+                        <span className="font-mono text-sm">{r.position}</span>
                       )}
-                      <TableCell>
-                        {r.position === null ? (
-                          <span className="text-muted-foreground/70 text-xs">
-                            Not in top {serpDepth}
+                    </TableCell>
+                    <TableCell>
+                      {noPrevious ? (
+                        // Invisible placeholders matching the "before → after"
+                        // layout so the lone pill lines up under the position
+                        // badge column instead of floating.
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="w-6" aria-hidden />
+                          <span aria-hidden className="opacity-0">
+                            →
                           </span>
-                        ) : (
-                          <span className="font-mono text-sm">
+                          <Badge
+                            variant="secondary"
+                            className="font-mono font-semibold"
+                          >
                             {r.position}
-                          </span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {noPrevious ? (
-                          // Invisible placeholders matching the "before → after"
-                          // layout so the lone pill lines up under the position
-                          // badge column instead of floating.
-                          <span className="inline-flex items-center gap-1.5">
-                            <span className="w-6" aria-hidden />
-                            <span aria-hidden className="opacity-0">
-                              →
-                            </span>
-                            <span className="font-mono rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">
-                              {r.position}
-                            </span>
-                          </span>
-                        ) : (
-                          <DeviceRankCell
-                            result={{
-                              position: r.position,
-                              previousPosition: r.previousPosition,
-                              rankingUrl: null,
-                              serpFeatures: [],
-                            }}
-                          />
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+                          </Badge>
+                        </span>
+                      ) : (
+                        <DeviceRankCell
+                          result={{
+                            position: r.position,
+                            previousPosition: r.previousPosition,
+                            rankingUrl: null,
+                            serpFeatures: [],
+                          }}
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         </>
       )}
 
@@ -316,7 +318,7 @@ function ChartTooltip({
   bottomBandKeys: Set<string>;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm space-y-0.5">
+    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_8px_24px_var(--trend-tooltip-shadow)] backdrop-blur-xl">
       <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",

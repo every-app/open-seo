@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Info, Loader2, X } from "lucide-react";
+import { Info, Loader2 } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import type { RankTrackingConfig } from "@/types/schemas/rank-tracking";
 import { domainField, normalizeDomain } from "@/types/schemas/domain";
@@ -24,8 +24,10 @@ import { useSaveConfigMutations } from "./useSaveConfigMutations";
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
 import { NativeSelect } from "@/client/components/ui/native-select";
-import { Field } from "@/client/components/ui/field";
+import { Field, FieldDescription } from "@/client/components/ui/field";
 import { Label } from "@/client/components/ui/label";
+import { Spinner } from "@/client/components/ui/spinner";
+
 type Props = {
   projectId: string;
   existingConfig?: RankTrackingConfig | null;
@@ -54,7 +56,7 @@ export function RankTrackingConfigModal({
           Add Domain
         </h2>
         <div className="flex min-h-40 items-center justify-center">
-          <Loader2 className="size-5 animate-spin text-muted-foreground/70" />
+          <Spinner />
         </div>
       </Modal>
     );
@@ -190,19 +192,10 @@ function RankTrackingConfigModalContent({
       onClose={onClose}
       labelledBy="rank-config-modal-title"
     >
-      <div className="flex items-center justify-between">
-        <h2 id="rank-config-modal-title" className="text-lg font-semibold">
-          {isEdit ? "Edit Domain Config" : "Add Domain"}
-        </h2>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-8"
-          onClick={onClose}
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
+      {/* The Modal renders its own close button in the corner. */}
+      <h2 id="rank-config-modal-title" className="pr-6 text-lg font-semibold">
+        {isEdit ? "Edit Domain Config" : "Add Domain"}
+      </h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field>
@@ -251,10 +244,10 @@ function RankTrackingConfigModalContent({
               </option>
             ))}
           </NativeSelect>
-          <div className="mt-1.5 text-xs text-muted-foreground/70">
+          <FieldDescription className="text-xs">
             Defaults to the country's language. Any language can be tracked in
             any country — pick the one your customers search in.
-          </div>
+          </FieldDescription>
         </Field>
 
         <Field>
@@ -277,12 +270,12 @@ function RankTrackingConfigModalContent({
             <option value="desktop">Desktop only</option>
             <option value="mobile">Mobile only</option>
           </NativeSelect>
-          <div className="mt-1.5 text-xs text-muted-foreground/70">
+          <FieldDescription className="text-xs">
             Most Google searches come from mobile, but select this based on your
             customer.
-          </div>
+          </FieldDescription>
           {devices === "both" && (
-            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-info">
+            <div className="flex items-start gap-1.5 text-xs text-info">
               <Info className="size-3.5 shrink-0 mt-0.5" />
               <span>
                 Tracking both devices uses 2x credits per keyword check
@@ -314,7 +307,7 @@ function RankTrackingConfigModalContent({
             <option value="manual">Manual only</option>
           </NativeSelect>
           {schedule === "daily" && (
-            <div className="mt-1.5 flex items-start gap-1.5 text-xs text-warning">
+            <div className="flex items-start gap-1.5 text-xs text-warning">
               <Info className="size-3.5 shrink-0 mt-0.5" />
               <span>Daily checks use 7x more credits than weekly</span>
             </div>
@@ -335,9 +328,9 @@ function RankTrackingConfigModalContent({
               </option>
             ))}
           </NativeSelect>
-          <div className="mt-1.5 text-xs text-muted-foreground/70">
+          <FieldDescription className="text-xs">
             10 pages is ~8x more expensive than 1 page
-          </div>
+          </FieldDescription>
         </Field>
 
         {(() => {

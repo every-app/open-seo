@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "@/client/components/icons";
 import {
   exportIssues,
   exportPages,
@@ -17,8 +17,17 @@ import {
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Card, CardContent } from "@/client/components/ui/card";
+import {
+  StatCard,
+  StatCardDescription,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { cn } from "@/client/lib/utils";
+
 type ResultsTab = "issues" | "pages" | "performance";
 
 export function ResultsView({
@@ -59,7 +68,7 @@ export function ResultsView({
           couldn't be audited. We don't have a workaround for this yet. Desktop
           crawlers run from your own machine and usually get past it: try{" "}
           <a
-            className="underline underline-offset-4 text-primary"
+            className="underline underline-offset-4 text-link"
             href="https://github.com/PhialsBasement/LibreCrawl"
             target="_blank"
             rel="noreferrer"
@@ -68,7 +77,7 @@ export function ResultsView({
           </a>{" "}
           (free, open source) or{" "}
           <a
-            className="underline underline-offset-4 text-primary"
+            className="underline underline-offset-4 text-link"
             href="https://www.screamingfrog.co.uk/seo-spider/"
             target="_blank"
             rel="noreferrer"
@@ -104,7 +113,7 @@ export function ResultsView({
       />
 
       <Card>
-        <CardContent className="pt-6 gap-3">
+        <CardContent className="space-y-3 pt-6">
           <ResultsHeader
             issueCount={issues.length}
             pageCount={pages.length}
@@ -156,13 +165,13 @@ function CrawlWarning({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-      <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" />
-      <p>
+    <Alert className="[&>svg]:text-warning">
+      <ShieldAlert className="size-4" />
+      <AlertDescription>
         <span className="font-medium">{headline}</span>{" "}
         <span className="text-muted-foreground">{children}</span>
-      </p>
-    </div>
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -350,7 +359,7 @@ function StatsStrip({
         label: "Lighthouse failures",
         value: String(lighthouseSummary.failed),
         valueClass:
-          lighthouseSummary.failed > 0 ? "text-destructive" : "text-success",
+          lighthouseSummary.failed > 0 ? "text-negative" : "text-success",
       },
     );
   }
@@ -361,23 +370,22 @@ function StatsStrip({
       : "grid-cols-2 md:grid-cols-4";
 
   return (
-    <div
-      className={`grid ${columnsClass} gap-px rounded-lg border border-border bg-border/70 overflow-hidden`}
-    >
+    <div className={`grid ${columnsClass} gap-3`}>
       {items.map((item) => (
-        <div key={item.label} className="bg-card px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wider text-muted-foreground/70">
+        <StatCard key={item.label} className="px-4 py-3">
+          <StatCardLabel className="text-[11px] uppercase tracking-wider">
             {item.label}
-          </p>
-          <p
-            className={`text-xl font-semibold mt-0.5 tabular-nums ${item.valueClass ?? ""}`}
+          </StatCardLabel>
+          <StatCardValue
+            className={cn(
+              "mt-0.5 text-xl font-semibold tabular-nums",
+              item.valueClass,
+            )}
           >
             {item.value}
-          </p>
-          {item.sub && (
-            <div className="text-xs text-muted-foreground mt-1">{item.sub}</div>
-          )}
-        </div>
+          </StatCardValue>
+          {item.sub && <StatCardDescription>{item.sub}</StatCardDescription>}
+        </StatCard>
       ))}
     </div>
   );
@@ -403,5 +411,5 @@ function scoreClass(score: number | null) {
   if (score == null) return "";
   if (score >= 90) return "text-success";
   if (score >= 50) return "text-warning";
-  return "text-destructive";
+  return "text-negative";
 }

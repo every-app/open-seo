@@ -1,5 +1,6 @@
-import { ChevronDown, Download, Loader2, X } from "lucide-react";
+import { ChevronDown, Download, Loader2, X } from "@/client/components/icons";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { Button, type ButtonProps } from "@/client/components/ui/button";
 import {
@@ -28,18 +29,22 @@ export function TableBulkActionBar({
     placement === "fixed"
       ? "pointer-events-none fixed inset-x-0 bottom-6 z-30 flex justify-center px-4"
       : "flex justify-center";
+  // The floating bar sits over table rows, so it takes the popover surface
+  // (near-opaque) rather than a translucent card. Action buttons inset by
+  // 4px use rounded-lg so their fills stay concentric with this rounded-xl.
   const toolbarClass =
     placement === "fixed"
-      ? "pointer-events-auto flex items-stretch overflow-visible rounded-xl border border-foreground/15 bg-border/85 shadow-2xl backdrop-blur"
-      : "flex items-stretch overflow-visible rounded-xl border border-foreground/15 bg-muted";
+      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_8px_32px_oklch(0_0_0/0.5)] backdrop-blur-3xl"
+      : "flex items-stretch rounded-xl border border-border bg-muted";
 
-  return (
+  const bar = (
     <div className={wrapperClass}>
       <div role="toolbar" aria-label="Bulk actions" className={toolbarClass}>
-        <div className="flex items-center gap-2 border-r border-foreground/10 px-3 py-2 text-sm">
+        <div className="flex items-center gap-2 border-r border-border px-3 py-2 text-sm">
           <Button
             variant="ghost"
             size="icon"
+            type="button"
             aria-label="Clear selection"
             className="-ml-1 size-6"
             onClick={onClear}
@@ -53,6 +58,14 @@ export function TableBulkActionBar({
       </div>
     </div>
   );
+
+  // A Halo Card has backdrop-filter, which makes it the containing block for
+  // position:fixed descendants; portalling to <body> keeps the floating bar
+  // pinned to the viewport instead of the card it is rendered from.
+  if (placement === "fixed" && typeof document !== "undefined") {
+    return createPortal(bar, document.body);
+  }
+  return bar;
 }
 
 export function TableBulkActionButton({
@@ -72,11 +85,12 @@ export function TableBulkActionButton({
     <Button
       variant="ghost"
       size="sm"
+      type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`my-1 gap-1.5 ${
+      className={`my-1 gap-1.5 rounded-lg ${
         variant === "danger"
-          ? "text-destructive hover:text-destructive"
+          ? "text-negative hover:text-negative"
           : "text-foreground"
       }`}
     >
@@ -105,8 +119,9 @@ export function TableBulkExportMenu({
           <Button
             variant="ghost"
             size="sm"
+            type="button"
             disabled={busy}
-            className="my-1 gap-1.5 text-foreground"
+            className="my-1 gap-1.5 rounded-lg text-foreground"
           />
         }
       >

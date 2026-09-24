@@ -1,4 +1,4 @@
-import { Copy, FileDown, Sheet, Tags, Trash2 } from "lucide-react";
+import { Copy, FileDown, Sheet, Tags, Trash2 } from "@/client/components/icons";
 import {
   TableBulkActionBar,
   TableBulkActionButton,

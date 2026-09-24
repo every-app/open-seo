@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Icon } from "@iconify/react";
+import { ChevronDown } from "@/client/components/icons";
 import { cn } from "@/client/lib/utils";
 
 // Halo NativeSelect: native <select> with translucent pill styling
@@ -44,7 +44,7 @@ const NativeSelect = React.forwardRef<HTMLSelectElement, NativeSelectProps>(
           className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-white/40"
           aria-hidden="true"
         >
-          <Icon icon="tabler:chevron-down" className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         </div>
       </div>
     );

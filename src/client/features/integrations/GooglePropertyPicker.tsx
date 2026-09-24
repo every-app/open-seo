@@ -6,11 +6,12 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus } from "@/client/components/icons";
 
 import { Button } from "@/client/components/ui/button";
 import { Spinner } from "@/client/components/ui/spinner";
 import { PropertySearchField } from "./PropertySearchField";
+
 type Selection = { accountId: string; propertyId: string };
 type Property = {
   id: string;
@@ -136,12 +137,13 @@ export function GooglePropertyPicker({
           {readOnly ? "Manage Google accounts" : "Choose property"}
         </p>
         <Button
-          variant="ghost"
+          variant="outline"
+          type="button"
           ref={trigger}
           aria-expanded={open}
           aria-controls={panelId}
           disabled={saving}
-          className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center justify-between gap-3 rounded-lg border border-border px-3.5 py-3 text-left text-sm hover:bg-muted/40 disabled:opacity-50"
+          className="h-auto w-full justify-between gap-3 whitespace-normal px-3.5 py-3 text-left font-normal"
           onClick={() => {
             setOpen(!open);
             setSearch("");
@@ -152,34 +154,34 @@ export function GooglePropertyPicker({
               {selected?.name ?? "Select a property…"}
             </span>
             {selectedAccount ? (
-              <span className="mt-0.5 block truncate text-xs text-muted-foreground/70">
+              <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                 {accountLabel(selectedAccount)}
               </span>
             ) : null}
           </span>
-          <ChevronDown className="size-4 shrink-0 text-muted-foreground/70" />
+          <ChevronDown className="size-4 shrink-0 text-muted-foreground" />
         </Button>
         {open ? (
           <div
             id={panelId}
             role="region"
             aria-label="Google properties"
-            className="mt-2 overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+            className="mt-2 overflow-hidden rounded-xl border border-border"
             onKeyDown={(event) => handlePropertyKeyDown(event, close)}
           >
             <PropertySearchField value={search} onChange={setSearch} />
             <div className="max-h-72 overflow-y-auto overscroll-contain p-1.5">
               {loading ? (
-                <p
+                <div
                   role="status"
                   className="flex items-center gap-2 p-3 text-sm text-muted-foreground"
                 >
-                  <Spinner size="sm" className="[&_svg]:size-3" />
+                  <Spinner size="sm" />
                   Loading properties…
-                </p>
+                </div>
               ) : error ? (
                 <div role="alert" className="p-3 text-sm">
-                  <p className="text-destructive">Couldn't load properties.</p>
+                  <p className="text-negative">Couldn't load properties.</p>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -207,7 +209,7 @@ export function GooglePropertyPicker({
                           variant="ghost"
                           size="sm"
                           type="button"
-                          className="h-7 px-2.5 shrink-0 text-destructive"
+                          className="h-7 px-2.5 shrink-0 text-negative"
                           disabled={saving}
                           onClick={() => setRemoving(account)}
                           aria-label={`Remove ${accountLabel(account)}`}
@@ -249,7 +251,7 @@ export function GooglePropertyPicker({
                           </Button>
                         </div>
                       ) : account.properties.length === 0 ? (
-                        <p className="px-2 pb-3 text-sm text-muted-foreground/70">
+                        <p className="px-2 pb-3 text-sm text-muted-foreground">
                           No properties available
                         </p>
                       ) : (
@@ -266,7 +268,7 @@ export function GooglePropertyPicker({
                               disabled={
                                 readOnly || !property.selectable || saving
                               }
-                              className={`h-auto justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center justify-between gap-3 rounded-md px-2 py-2.5 text-left text-sm hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary disabled:opacity-40 ${chosen ? "bg-muted" : ""}`}
+                              className={`h-auto w-full justify-between gap-3 whitespace-normal rounded-md px-2 py-2.5 text-left font-normal text-foreground ${chosen ? "bg-muted" : ""}`}
                               onClick={() => {
                                 onSelect({
                                   accountId: account.accountId,
@@ -280,7 +282,7 @@ export function GooglePropertyPicker({
                                   {property.name}
                                 </span>
                                 {property.detail ? (
-                                  <span className="mt-0.5 block text-xs text-muted-foreground/70">
+                                  <span className="mt-0.5 block text-xs text-muted-foreground">
                                     {property.detail}
                                   </span>
                                 ) : null}
@@ -300,7 +302,7 @@ export function GooglePropertyPicker({
                     </div>
                   ))}
                   {filtered.length === 0 ? (
-                    <p className="p-3 text-sm text-muted-foreground/70">
+                    <p className="p-3 text-sm text-muted-foreground">
                       {query
                         ? "No matching properties or accounts"
                         : "Add a Google account to find properties."}
@@ -312,16 +314,13 @@ export function GooglePropertyPicker({
             <div className="border-t border-border p-1.5">
               <Button
                 variant="ghost"
-                className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-2 rounded-md px-2 py-2.5 text-left text-sm font-medium hover:bg-muted"
+                type="button"
+                className="h-auto w-full justify-start gap-2 whitespace-normal rounded-md px-2 py-2.5 text-left font-medium text-foreground"
                 onClick={onReconnect}
                 disabled={saving || linking}
                 aria-busy={linking}
               >
-                {linking ? (
-                  <Spinner size="sm" className="[&_svg]:size-3" />
-                ) : (
-                  <Plus className="size-4" />
-                )}
+                {linking ? <Spinner size="sm" /> : <Plus className="size-4" />}
                 {linking ? "Opening Google…" : "Add Google account"}
               </Button>
             </div>

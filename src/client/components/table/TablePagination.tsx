@@ -1,8 +1,9 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
 
 import { Button } from "@/client/components/ui/button";
 import { NativeSelect } from "@/client/components/ui/native-select";
 import { Spinner } from "@/client/components/ui/spinner";
+
 type Props = {
   page: number;
   pageSize: number;
@@ -47,23 +48,26 @@ export function TablePagination({
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
         <span>{formatRange(page, pageSize, totalCount)}</span>
-        {isLoading ? <Spinner size="sm" className="[&_svg]:size-3" /> : null}
+        {isLoading ? <Spinner size="sm" /> : null}
       </div>
 
       <div className="flex items-center gap-6">
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <span className="whitespace-nowrap">Rows per page</span>
-          <NativeSelect
-            className="w-20 h-8 text-sm"
-            value={pageSize}
-            onChange={(event) => onPageSizeChange(Number(event.target.value))}
-          >
-            {pageSizes.map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </NativeSelect>
+          {/* NativeSelect's wrapper is full-width; this box sets its size. */}
+          <div className="w-20">
+            <NativeSelect
+              className="h-8"
+              value={pageSize}
+              onChange={(event) => onPageSizeChange(Number(event.target.value))}
+            >
+              {pageSizes.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
         </label>
 
         <div className="flex items-center gap-2">

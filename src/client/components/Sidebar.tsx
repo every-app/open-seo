@@ -13,7 +13,7 @@ import {
   Settings,
   User,
   X,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { organizationContextQueryOptions } from "@/client/features/team/organizationQueries";
 import { switchOrganization } from "@/serverFunctions/organization";
 import {
@@ -162,21 +162,25 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
 
       {projectId ? (
         // Atelier Tabs, the same control as the in-page tab strips.
-        <div className="px-3 pb-1">
+        <div className="px-3 pb-2 pt-3">
           <Tabs
             value={view}
             onValueChange={(value) =>
               value === "chat" ? openChat() : openBrowse()
             }
           >
-            <TabsList>
-              <TabsTrigger value="browse" className="gap-1.5">
-                <LayoutGrid className="size-4" />
-                Browse
+            <TabsList className="flex w-full">
+              <TabsTrigger value="browse" className="flex-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <LayoutGrid className="size-4" />
+                  Browse
+                </span>
               </TabsTrigger>
-              <TabsTrigger value="chat" className="gap-1.5">
-                <MessageCircle className="size-4" />
-                Chat
+              <TabsTrigger value="chat" className="flex-1">
+                <span className="inline-flex items-center gap-1.5">
+                  <MessageCircle className="size-4" />
+                  Chat
+                </span>
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -189,7 +193,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         <SidebarContent className="min-h-0">
           <nav aria-label="Project tools">
             {navGroups.map((group) => (
-              <SidebarGroup key={group.label}>
+              <SidebarGroup key={group.label} className="pt-3">
                 <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
                 {group.items.map((item) => {
                   const { icon, label, ...linkProps } = item;
@@ -310,7 +314,7 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  className="text-destructive"
+                  className="text-negative"
                   onClick={() => signOutAndRedirect()}
                 >
                   <LogOut className="size-4" />

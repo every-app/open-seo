@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createColumnHelper, type Table } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles } from "@/client/components/icons";
 import { AppDataTable } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
@@ -14,7 +14,7 @@ import {
 import { formatUrlForDisplay } from "@/client/components/table/url";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
-import { Badge } from "@/client/components/ui/badge";
+import { badgeVariants } from "@/client/components/ui/badge";
 import { Button, buttonVariants } from "@/client/components/ui/button";
 import {
   Tooltip,
@@ -110,14 +110,12 @@ function PageUrlCell({
           {row.domain ?? formatUrlForDisplay(row.url)}
         </span>
         {isOwn ? (
-          <Badge variant="primary" className="px-2 text-[11px] border-0">
-            You
-          </Badge>
+          <span className={badgeVariants({ variant: "primary" })}>You</span>
         ) : null}
-        <ExternalLink className="size-3 shrink-0 text-muted-foreground/70" />
+        <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
       </span>
       {path ? (
-        <span className="block truncate text-xs text-muted-foreground/70">
+        <span className="block truncate text-xs text-muted-foreground">
           {path}
         </span>
       ) : null}
@@ -142,7 +140,7 @@ function KeywordsCell({
   const [expanded, setExpanded] = useState(false);
 
   if (keywords.length === 0) {
-    return <span className="text-muted-foreground/70">—</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
 
   const visible = expanded ? keywords : keywords.slice(0, 3);
@@ -164,7 +162,7 @@ function KeywordsCell({
                 {keyword.question}
               </span>
               <span
-                className="shrink-0 tabular-nums text-muted-foreground/70"
+                className="shrink-0 tabular-nums text-muted-foreground"
                 title="Prompt volume in the fetched sample"
               >
                 {formatCount(keyword.aiSearchVolume)} vol.
@@ -177,7 +175,7 @@ function KeywordsCell({
         <Button
           variant="ghost"
           onClick={() => setExpanded((current) => !current)}
-          className="h-auto rounded-md px-0 hover:bg-transparent text-xs text-muted-foreground/70 hover:text-foreground"
+          className="h-auto rounded-md px-0 hover:bg-transparent text-xs text-muted-foreground hover:text-foreground"
         >
           {expanded ? "Show less" : `+${remaining} more`}
         </Button>
@@ -284,7 +282,7 @@ export function buildTopQueriesColumns({
         <>
           <p className="break-words font-medium">{row.original.question}</p>
           {row.original.brandsMentioned.length > 0 ? (
-            <p className="mt-0.5 text-xs text-muted-foreground/70">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Brands: {row.original.brandsMentioned.slice(0, 5).join(", ")}
             </p>
           ) : null}

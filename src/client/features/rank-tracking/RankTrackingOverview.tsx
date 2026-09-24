@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Area,
@@ -17,11 +16,18 @@ import {
   useChartWidth,
 } from "./RankTrackingTrendChart";
 
+import { Spinner } from "@/client/components/ui/spinner";
+
+// Best to worst: success, primary, warning, then muted for "not ranking".
 const BUCKETS = [
-  { key: "top3", label: "Top 3", color: "#16a34a" },
-  { key: "top4to10", label: "4–10", color: "#2563eb" },
-  { key: "top11to20", label: "11–20", color: "#f59e0b" },
-  { key: "notRanking", label: "Not in top 20", color: "#6b7280" },
+  { key: "top3", label: "Top 3", color: "var(--success)" },
+  { key: "top4to10", label: "4–10", color: "var(--chart-1)" },
+  { key: "top11to20", label: "11–20", color: "var(--warning)" },
+  {
+    key: "notRanking",
+    label: "Not in top 20",
+    color: "var(--muted-foreground)",
+  },
 ] as const;
 
 /** Narrowed recharts tooltip payload entry (typed `any` upstream). */
@@ -88,7 +94,7 @@ export function RankTrackingOverview({
 
         {trendLoading ? (
           <div className="flex items-center justify-center p-8">
-            <Loader2 className="size-4 animate-spin text-muted-foreground/70" />
+            <Spinner size="sm" />
           </div>
         ) : chartData.length <= 1 ? (
           <div className="rounded-lg border border-dashed border-border p-8 text-center text-xs text-muted-foreground">
@@ -111,8 +117,7 @@ export function RankTrackingOverview({
               >
                 <CartesianGrid
                   strokeDasharray="3 3"
-                  stroke="currentColor"
-                  opacity={0.1}
+                  stroke="var(--trend-grid-color)"
                   vertical={false}
                 />
                 <XAxis
@@ -121,14 +126,14 @@ export function RankTrackingOverview({
                   scale="time"
                   domain={["dataMin", "dataMax"]}
                   tickFormatter={formatDateTick}
-                  tick={{ fontSize: 10, fill: "#888" }}
+                  tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
                   tickLine={false}
                   axisLine={false}
                   minTickGap={32}
                 />
                 <YAxis
                   allowDecimals={false}
-                  tick={{ fontSize: 10, fill: "#888" }}
+                  tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
                   tickLine={false}
                   axisLine={false}
                   width={28}
@@ -151,7 +156,7 @@ export function RankTrackingOverview({
                     );
                     return <DistributionTooltip label={label} byKey={byKey} />;
                   }}
-                  cursor={{ stroke: "rgba(150,150,150,0.3)" }}
+                  cursor={{ stroke: "var(--trend-grid-color)" }}
                 />
                 {BUCKETS.map((b) => (
                   <Area
@@ -183,7 +188,7 @@ function DistributionTooltip({
   byKey: Map<string, number>;
 }) {
   return (
-    <div className="rounded-md border border-border bg-card px-3 py-2 shadow-sm space-y-0.5">
+    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_8px_24px_var(--trend-tooltip-shadow)] backdrop-blur-xl">
       <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",

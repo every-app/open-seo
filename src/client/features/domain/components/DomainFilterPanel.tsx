@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "@/client/components/icons";
 import {
   FilterNumberInput,
   FilterRangeGroup,
@@ -153,17 +153,10 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount} active
-            </Badge>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           ) : null}
           {meta.dirtyCount > 0 ? (
-            <Badge variant="warning" className="px-2 text-[11px] border-0">
-              {meta.dirtyCount} unapplied
-            </Badge>
+            <Badge variant="warning">{meta.dirtyCount} unapplied</Badge>
           ) : null}
         </div>
         <Button
@@ -213,7 +206,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
       {renderExtra ? renderExtra(draftFilters, handleValueChange) : null}
 
       {meta.overLimit ? (
-        <Alert className="border-warning/40 [&>svg]:text-warning py-2 text-xs">
+        <Alert className="border-warning/30 bg-warning/10 text-xs [&>svg]:text-warning">
           <AlertTriangle className="size-4 shrink-0" />
           <AlertDescription>
             Too many filter conditions ({meta.conditionCount} of {maxConditions}{" "}
@@ -222,7 +215,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
         </Alert>
       ) : null}
       <div className="flex items-center justify-between gap-2 pt-1">
-        <span className="text-xs text-muted-foreground/70 tabular-nums">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {meta.conditionCount} / {maxConditions} conditions
         </span>
         <div className="flex items-center gap-2">
@@ -247,14 +240,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
             }
           >
             Apply filters
-            {meta.isDirty ? (
-              <Badge
-                variant="secondary"
-                className="px-2 text-[11px] ml-1 border-0 bg-primary-foreground/20"
-              >
-                {meta.dirtyCount}
-              </Badge>
-            ) : null}
+            {meta.isDirty ? <Badge>{meta.dirtyCount}</Badge> : null}
           </Button>
         </div>
       </div>

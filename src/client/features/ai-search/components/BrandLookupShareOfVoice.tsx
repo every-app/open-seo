@@ -4,7 +4,9 @@ import {
 } from "@/client/features/ai-search/platformLabels";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
-import { Badge } from "@/client/components/ui/badge";
+import { Badge, badgeVariants } from "@/client/components/ui/badge";
+import { Card } from "@/client/components/ui/card";
+import { cn } from "@/client/lib/utils";
 import {
   Tooltip,
   TooltipContent,
@@ -34,7 +36,7 @@ export function BrandLookupShareOfVoice({
   );
 
   return (
-    <section className="flex h-full flex-col overflow-hidden rounded-xl border border-border bg-card">
+    <Card className="flex h-full flex-col overflow-hidden">
       <div className="flex items-baseline justify-between gap-2 border-b border-border px-4 py-3">
         <h3 className="flex items-center gap-2 text-sm font-semibold">
           Share of Voice
@@ -42,9 +44,11 @@ export function BrandLookupShareOfVoice({
             <Tooltip>
               <TooltipTrigger
                 render={
-                  <Badge
-                    variant="secondary"
-                    className="px-2 text-[11px] shrink-0 font-normal"
+                  <span
+                    className={cn(
+                      badgeVariants({ variant: "secondary" }),
+                      "shrink-0 font-normal",
+                    )}
                   />
                 }
               >
@@ -58,7 +62,7 @@ export function BrandLookupShareOfVoice({
           ) : null}
         </h3>
         {target ? (
-          <span className="text-xs text-muted-foreground/70">
+          <span className="text-xs text-muted-foreground">
             <span className="font-medium text-foreground">{target.label}</span>{" "}
             {target.sharePct == null
               ? "· no comparable data"
@@ -80,12 +84,12 @@ export function BrandLookupShareOfVoice({
 
       {/* Captions only the platforms actually summed — when one platform's
           cross_aggregated call failed, the leaderboard must not claim both. */}
-      <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground/70">
+      <p className="border-t border-border px-4 py-2 text-[11px] text-muted-foreground">
         Mentions share across{" "}
         {shareOfVoice.platforms.map(formatPlatformLabel).join(" and ")} · bars
         relative to the leader.
       </p>
-    </section>
+    </Card>
   );
 }
 
@@ -108,18 +112,12 @@ function LeaderboardRow({
         entry.isTarget ? "bg-primary/5" : ""
       }`}
     >
-      <span className="text-xs tabular-nums text-muted-foreground/70">
-        {rank}
-      </span>
+      <span className="text-xs tabular-nums text-muted-foreground">{rank}</span>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
           <span className="truncate text-sm">{entry.label}</span>
-          {entry.isTarget ? (
-            <Badge variant="primary" className="px-2 text-[11px] border-0">
-              You
-            </Badge>
-          ) : null}
-          <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground/70">
+          {entry.isTarget ? <Badge variant="primary">You</Badge> : null}
+          <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
             {/* Null mentions = "no data"; render a dash, not zero. */}
             {entry.mentions == null ? "—" : formatCount(entry.mentions)}
           </span>

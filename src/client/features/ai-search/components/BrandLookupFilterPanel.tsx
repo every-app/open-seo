@@ -1,4 +1,4 @@
-import { RotateCcw } from "lucide-react";
+import { RotateCcw } from "@/client/components/icons";
 import type { CitationTab } from "@/client/features/ai-search/brandLookupFilterTypes";
 import { formatPlatformLabel } from "@/client/features/ai-search/platformLabels";
 import type { BrandLookupFiltersState } from "@/client/features/ai-search/useBrandLookupFilters";
@@ -25,7 +25,7 @@ function FilterTextInput({
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
@@ -35,7 +35,7 @@ function FilterTextInput({
           handleChange: (v: string) => void;
         }) => (
           <Input
-            className="w-full bg-card h-8 text-sm"
+            className="w-full h-8 text-sm"
             placeholder={placeholder}
             value={field.state.value}
             onChange={(event) => field.handleChange(event.target.value)}
@@ -58,7 +58,7 @@ function FilterRangeInputs({
   maxName: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
+    <div className="space-y-1.5">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
@@ -86,7 +86,7 @@ function CompactRangeInput({
         handleChange: (v: string) => void;
       }) => (
         <Input
-          className="bg-card h-7 text-xs"
+          className="h-8 text-sm"
           placeholder={placeholder}
           type="number"
           value={field.state.value}
@@ -221,12 +221,7 @@ export function BrandLookupFilterPanel({
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine results</p>
           {current.activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {current.activeFilterCount} active
-            </Badge>
+            <Badge variant="primary">{current.activeFilterCount} active</Badge>
           ) : null}
         </div>
         <Button

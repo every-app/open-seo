@@ -1,4 +1,4 @@
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/client/components/icons";
 import { SafeExternalLink } from "@/client/components/SafeExternalLink";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";

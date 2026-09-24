@@ -7,7 +7,7 @@ import {
   getRankPositionMatrix,
   estimateRankCheckCost,
 } from "@/serverFunctions/rank-tracking";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "@/client/components/icons";
 import { useSession } from "@/lib/auth-client";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -43,6 +43,8 @@ import { useRankRunPolling } from "./useRankRunPolling";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+
 function deviceVisibility(
   devices: RankTrackingConfig["devices"],
   activeDevice: "desktop" | "mobile",
@@ -201,7 +203,7 @@ export function RankTrackingDomainDetail({
       </Button>
 
       {config.lastSkipReason === "insufficient_credits" && (
-        <Alert className="border-warning/40 [&>svg]:text-warning text-sm py-2">
+        <Alert className="[&>svg]:text-warning">
           <AlertTriangle className="size-4" />
           <AlertDescription>
             Last scheduled check was skipped due to insufficient credits. Top up
@@ -211,7 +213,7 @@ export function RankTrackingDomainDetail({
       )}
 
       {latestRun?.maybeStale && (
-        <Alert className="border-warning/40 [&>svg]:text-warning text-sm py-2">
+        <Alert className="[&>svg]:text-warning">
           <AlertTriangle className="size-4" />
           <AlertDescription>
             This run may be unresponsive and will be cleaned up automatically.
@@ -220,7 +222,7 @@ export function RankTrackingDomainDetail({
       )}
 
       {latestRun?.status === "failed" && !isRunning && (
-        <Alert variant="destructive" className="text-sm py-2">
+        <Alert variant="destructive">
           <AlertTriangle className="size-4" />
           <AlertDescription>
             <span className="font-medium">Last check failed.</span>{" "}
@@ -232,7 +234,7 @@ export function RankTrackingDomainDetail({
       <FreePlanAlert visible={isFreePlan} />
 
       {/* Results card */}
-      <div className="flex-1 flex flex-col min-w-0 border border-border rounded-xl bg-card overflow-hidden">
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Domain header */}
         <RankTrackingDetailHeader
           config={config}
@@ -351,7 +353,7 @@ export function RankTrackingDomainDetail({
             />
           )}
         </div>
-      </div>
+      </Card>
 
       {pendingCheck && (
         <CheckConfirmModal

@@ -184,7 +184,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{(value / 1000).toFixed(1)}s</span>
         ) : (
-          <span className="text-xs text-muted-foreground/70">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -196,7 +196,7 @@ function buildPerformanceColumns({
         return value != null ? (
           <span className="text-xs">{value.toFixed(3)}</span>
         ) : (
-          <span className="text-xs text-muted-foreground/70">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -208,7 +208,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-muted-foreground/70">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -220,7 +220,7 @@ function buildPerformanceColumns({
         return value ? (
           <span className="text-xs">{Math.round(value)}ms</span>
         ) : (
-          <span className="text-xs text-muted-foreground/70">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         );
       },
       sortingFn: nullableNumberSort,
@@ -239,7 +239,7 @@ function buildPerformanceColumns({
             View issues
           </Link>
         ) : (
-          <span className="text-xs text-muted-foreground/70">-</span>
+          <span className="text-xs text-muted-foreground">-</span>
         ),
     }),
   ];

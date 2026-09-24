@@ -15,6 +15,22 @@ import {
   formatTooltipValue,
 } from "./backlinksPageUtils";
 
+const AXIS_TICK = { fill: "var(--trend-axis-color)", fontSize: 11 };
+
+const TOOLTIP_CONTENT_STYLE = {
+  backgroundColor: "var(--trend-tooltip-bg)",
+  border: "1px solid var(--trend-tooltip-border)",
+  borderRadius: "10px",
+  boxShadow: "0 8px 24px var(--trend-tooltip-shadow)",
+  color: "var(--foreground)",
+};
+
+// Legend text defaults to the series colour, which is too dim to read on the
+// dark card; the swatch beside it already carries the colour.
+function renderLegendLabel(value: unknown) {
+  return <span className="text-foreground">{String(value)}</span>;
+}
+
 export function BacklinksTrendChart({
   data,
 }: {
@@ -41,31 +57,41 @@ export function BacklinksTrendChart({
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="currentColor"
-            opacity={0.12}
+            stroke="var(--trend-grid-color)"
           />
           <XAxis
             dataKey="date"
             tickFormatter={formatChartTick}
             minTickGap={24}
+            stroke="var(--trend-grid-color)"
+            tick={AXIS_TICK}
           />
-          <YAxis yAxisId="left" tickFormatter={formatAxisValue} width={60} />
+          <YAxis
+            yAxisId="left"
+            tickFormatter={formatAxisValue}
+            width={60}
+            stroke="var(--trend-grid-color)"
+            tick={AXIS_TICK}
+          />
           <YAxis
             yAxisId="right"
             orientation="right"
             tickFormatter={formatAxisValue}
             width={60}
+            stroke="var(--trend-grid-color)"
+            tick={AXIS_TICK}
           />
           <Tooltip
             formatter={formatTooltipValue}
             labelFormatter={formatChartLabel}
+            contentStyle={TOOLTIP_CONTENT_STYLE}
           />
-          <Legend />
+          <Legend formatter={renderLegendLabel} />
           <Line
             yAxisId="left"
             type="monotone"
             dataKey="backlinks"
-            stroke="#2563eb"
+            stroke="var(--chart-1)"
             strokeWidth={2}
             dot={false}
             name="Backlinks"
@@ -74,7 +100,7 @@ export function BacklinksTrendChart({
             yAxisId="right"
             type="monotone"
             dataKey="referringDomains"
-            stroke="#14b8a6"
+            stroke="var(--signature)"
             strokeWidth={2}
             dot={false}
             name="Referring domains"
@@ -111,24 +137,31 @@ export function BacklinksNewLostChart({
         >
           <CartesianGrid
             strokeDasharray="3 3"
-            stroke="currentColor"
-            opacity={0.12}
+            stroke="var(--trend-grid-color)"
           />
           <XAxis
             dataKey="date"
             tickFormatter={formatChartTick}
             minTickGap={24}
+            stroke="var(--trend-grid-color)"
+            tick={AXIS_TICK}
           />
-          <YAxis tickFormatter={formatAxisValue} width={60} />
+          <YAxis
+            tickFormatter={formatAxisValue}
+            width={60}
+            stroke="var(--trend-grid-color)"
+            tick={AXIS_TICK}
+          />
           <Tooltip
             formatter={formatTooltipValue}
             labelFormatter={formatChartLabel}
+            contentStyle={TOOLTIP_CONTENT_STYLE}
           />
-          <Legend />
+          <Legend formatter={renderLegendLabel} />
           <Line
             type="monotone"
             dataKey="lostBacklinks"
-            stroke="#ef4444"
+            stroke="var(--destructive)"
             strokeWidth={2}
             dot={false}
             name="Lost backlinks"
@@ -136,7 +169,7 @@ export function BacklinksNewLostChart({
           <Line
             type="monotone"
             dataKey="newBacklinks"
-            stroke="#16a34a"
+            stroke="var(--success)"
             strokeWidth={2}
             dot={false}
             name="New backlinks"

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { Check, ChevronDown, Search } from "@/client/components/icons";
 import { Button } from "@/client/components/ui/button";
 import { InputGroup } from "@/client/components/ui/input-group";
 import {
@@ -10,6 +10,7 @@ import {
 import { LOCATION_OPTIONS } from "@/shared/keyword-locations";
 
 import { Input } from "@/client/components/ui/input";
+
 type LocationOption = (typeof LOCATION_OPTIONS)[number];
 
 type Props = {
@@ -19,6 +20,9 @@ type Props = {
   options?: readonly LocationOption[];
   /** Width utilities for the wrapper/trigger. Defaults to full width. */
   className?: string;
+  /** Lets a Field's Label target the trigger. */
+  id?: string;
+  "aria-labelledby"?: string;
 };
 
 function matches(option: LocationOption, query: string): boolean {
@@ -39,6 +43,8 @@ export function LocationSelect({
   onChange,
   options = LOCATION_OPTIONS,
   className = "w-full",
+  id,
+  "aria-labelledby": ariaLabelledBy,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -100,10 +106,12 @@ export function LocationSelect({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger
+        id={id}
+        aria-labelledby={ariaLabelledBy}
         render={
           <Button
             variant="outline"
-            className={`justify-between gap-2 rounded-md px-3 font-normal ${className}`}
+            className={`justify-between gap-2 px-3 font-normal ${className}`}
             aria-haspopup="listbox"
           />
         }
@@ -145,7 +153,7 @@ export function LocationSelect({
                 <li key={option.code} role="option" aria-selected={isSelected}>
                   <Button
                     variant="ghost"
-                    className={`h-auto w-full justify-between rounded-md px-3 py-1.5 font-normal text-foreground ${
+                    className={`h-auto w-full justify-between px-3 py-1.5 font-normal text-foreground ${
                       index === activeIndex ? "bg-muted" : ""
                     }`}
                     onClick={() => select(option)}
@@ -155,7 +163,7 @@ export function LocationSelect({
                       {option.label}
                     </span>
                     {isSelected ? (
-                      <Check className="size-4 shrink-0 text-primary" />
+                      <Check className="size-4 shrink-0 text-link" />
                     ) : null}
                   </Button>
                 </li>

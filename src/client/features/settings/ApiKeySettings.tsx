@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "@/client/components/icons";
 import { useState, useId } from "react";
 import { toast } from "sonner";
 import { PortalMenu } from "@/client/components/PortalMenu";
@@ -22,11 +22,14 @@ import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/client/components/ui/dialog";
 import { Field } from "@/client/components/ui/field";
 import { Label } from "@/client/components/ui/label";
+
 // Better Auth rejects longer names with INVALID_NAME_LENGTH.
 const MAX_KEY_NAME_LENGTH = 32;
 
@@ -105,7 +108,7 @@ export function ApiKeySettings() {
 
   return (
     <section className="space-y-3">
-      <h2 className="text-sm font-medium text-muted-foreground/70">API keys</h2>
+      <h2 className="text-sm font-medium text-muted-foreground">API keys</h2>
       <div className="flex items-start justify-between gap-6">
         <div>
           <p className="text-sm">
@@ -117,7 +120,7 @@ export function ApiKeySettings() {
           </p>
           <p className="mt-1 text-sm">
             <a
-              className="underline underline-offset-4 text-primary"
+              className="underline underline-offset-4 text-link"
               href="https://openseo.so/docs/mcp"
               target="_blank"
               rel="noreferrer"
@@ -132,74 +135,70 @@ export function ApiKeySettings() {
       </div>
 
       {apiKeysQuery.isError ? (
-        <p className="text-sm text-destructive">
-          We couldn't load your API keys.
-        </p>
+        <p className="text-sm text-negative">We couldn't load your API keys.</p>
       ) : apiKeys.length > 0 ? (
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Key</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Last used</TableHead>
-                <TableHead className="w-10"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apiKeys.map((key) => (
-                <TableRow key={key.id} className="hover">
-                  <TableCell className="max-w-[220px] truncate font-medium">
-                    {key.name || "Unnamed key"}
-                  </TableCell>
-                  <TableCell
-                    className="font-mono text-xs text-muted-foreground"
-                    data-ph-mask
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Key</TableHead>
+              <TableHead>Created</TableHead>
+              <TableHead>Last used</TableHead>
+              <TableHead className="w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {apiKeys.map((key) => (
+              <TableRow key={key.id}>
+                <TableCell className="max-w-[220px] truncate font-medium">
+                  {key.name || "Unnamed key"}
+                </TableCell>
+                <TableCell
+                  className="font-mono text-xs text-muted-foreground"
+                  data-ph-mask
+                >
+                  {key.start || "oseo_"}…
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {key.createdAt.toLocaleDateString()}
+                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">
+                  {key.lastRequest
+                    ? key.lastRequest.toLocaleDateString()
+                    : "Never"}
+                </TableCell>
+                <TableCell>
+                  <PortalMenu
+                    ariaLabel={`Actions for ${key.name || "API key"}`}
                   >
-                    {key.start || "oseo_"}…
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {key.createdAt.toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {key.lastRequest
-                      ? key.lastRequest.toLocaleDateString()
-                      : "Never"}
-                  </TableCell>
-                  <TableCell>
-                    <PortalMenu
-                      ariaLabel={`Actions for ${key.name || "API key"}`}
-                    >
-                      {(close) => (
-                        <DropdownMenuItem
-                          className="text-destructive"
-                          disabled={
-                            revokeMutation.isPending &&
-                            revokeMutation.variables === key.id
+                    {(close) => (
+                      <DropdownMenuItem
+                        className="text-negative"
+                        disabled={
+                          revokeMutation.isPending &&
+                          revokeMutation.variables === key.id
+                        }
+                        onClick={() => {
+                          close();
+                          if (
+                            window.confirm(
+                              `Revoke "${key.name || "Unnamed key"}"? Clients using it will stop working.`,
+                            )
+                          ) {
+                            revokeMutation.mutate(key.id);
                           }
-                          onClick={() => {
-                            close();
-                            if (
-                              window.confirm(
-                                `Revoke "${key.name || "Unnamed key"}"? Clients using it will stop working.`,
-                              )
-                            ) {
-                              revokeMutation.mutate(key.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="size-3.5" />
-                          Revoke key
-                        </DropdownMenuItem>
-                      )}
-                    </PortalMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
+                        }}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Revoke key
+                      </DropdownMenuItem>
+                    )}
+                  </PortalMenu>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       ) : null}
 
       {isCreateOpen ? (
@@ -212,15 +211,17 @@ export function ApiKeySettings() {
           <DialogContent className="max-w-md">
             {createdKey ? (
               <>
-                <DialogTitle>Copy your new API key</DialogTitle>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  It won't be shown again. Send it as{" "}
-                  <span className="font-mono text-xs">
-                    Authorization: Bearer
-                  </span>{" "}
-                  to <span className="font-mono text-xs">{mcpUrl}</span>.
-                </p>
-                <div className="mt-4 flex items-center gap-2">
+                <DialogHeader>
+                  <DialogTitle>Copy your new API key</DialogTitle>
+                  <DialogDescription>
+                    It won't be shown again. Send it as{" "}
+                    <span className="font-mono text-xs">
+                      Authorization: Bearer
+                    </span>{" "}
+                    to <span className="font-mono text-xs">{mcpUrl}</span>.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex items-center gap-2">
                   <code
                     className="min-w-0 flex-1 overflow-x-auto rounded bg-muted px-2.5 py-2 font-mono text-xs"
                     data-ph-mask
@@ -233,7 +234,7 @@ export function ApiKeySettings() {
                     iconOnly
                   />
                 </div>
-                <DialogFooter className="mt-2">
+                <DialogFooter>
                   <Button size="sm" type="button" onClick={closeCreateModal}>
                     Done
                   </Button>
@@ -241,17 +242,17 @@ export function ApiKeySettings() {
               </>
             ) : (
               <form
+                className="space-y-4"
                 onSubmit={(event) => {
                   event.preventDefault();
                   if (name.trim()) createMutation.mutate(name.trim());
                 }}
               >
-                <h3 className="text-lg font-bold">Create API key</h3>
-                <Field className="mt-4">
+                <DialogTitle>Create API key</DialogTitle>
+                <Field>
                   <Label htmlFor={apiKeyNameId}>Name</Label>
                   <Input
                     id={apiKeyNameId}
-                    className="w-full h-8 text-sm"
                     placeholder="Claude Code on laptop"
                     value={name}
                     maxLength={MAX_KEY_NAME_LENGTH}
@@ -260,7 +261,7 @@ export function ApiKeySettings() {
                     autoFocus
                   />
                 </Field>
-                <DialogFooter className="mt-2">
+                <DialogFooter>
                   <Button
                     variant="ghost"
                     size="sm"

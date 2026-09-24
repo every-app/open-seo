@@ -8,11 +8,13 @@ import {
   Loader2,
   Pencil,
   Undo2,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { Markdown } from "@/client/components/Markdown";
 
+import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import { Textarea } from "@/client/components/ui/textarea";
+
 // Shared chat-message rendering. A chat supplies which tools are available and
 // how tool names become labels (resolveToolLabel) plus which message actions
 // its server supports (onUndo/onEdit); the UI itself lives here.
@@ -81,7 +83,7 @@ function CopyButton({ message }: { message: UIMessage }) {
       type="button"
       aria-label="Copy message"
       title="Copy"
-      className="size-7 text-muted-foreground/70 hover:text-foreground"
+      className="size-7"
       onClick={() => {
         void navigator.clipboard.writeText(messageText(message));
         setCopied(true);
@@ -119,7 +121,7 @@ function MessageActions({
           type="button"
           aria-label="Edit message"
           title="Edit and resend"
-          className="size-7 text-muted-foreground/70 hover:text-foreground"
+          className="size-7"
           onClick={onStartEdit}
         >
           <Pencil className="size-3.5" />
@@ -132,7 +134,7 @@ function MessageActions({
           type="button"
           aria-label="Undo from this message"
           title="Undo — remove this message and everything after it"
-          className="size-7 text-muted-foreground/70 hover:text-foreground"
+          className="size-7"
           onClick={onUndo}
         >
           <Undo2 className="size-3.5" />
@@ -161,8 +163,11 @@ function ReasoningBlock({
     <div className="text-muted-foreground">
       <Button
         variant="ghost"
+        size="sm"
+        type="button"
+        aria-expanded={expanded}
         onClick={() => setExpanded((open) => !open)}
-        className="h-auto rounded-md text-inherit px-0 hover:bg-transparent inline-flex items-center gap-1.5 text-xs hover:text-foreground"
+        className="h-auto gap-1.5 px-0 font-normal hover:bg-transparent"
       >
         {isStreaming ? (
           <Loader2 className="size-3 animate-spin" />
@@ -174,7 +179,7 @@ function ReasoningBlock({
         <span>{isStreaming ? "Thinking…" : "Thought process"}</span>
       </Button>
       {expanded ? (
-        <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-border pl-3 text-xs text-muted-foreground/70">
+        <div className="mt-1.5 whitespace-pre-wrap border-l-2 border-border pl-3 text-xs text-muted-foreground">
           {part.text}
         </div>
       ) : null}
@@ -205,12 +210,10 @@ function ToolBadge({
   const isError = state === "output-error" || (!isDone && !live);
   const isRunning = !isError && !isDone;
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
-        isError
-          ? "bg-destructive/10 text-destructive"
-          : "bg-muted text-muted-foreground"
-      }`}
+    <Badge
+      size="lg"
+      variant={isError ? "destructive" : "secondary"}
+      className="w-fit font-normal"
     >
       {isRunning ? (
         <Loader2 className="size-3 animate-spin" />
@@ -220,7 +223,7 @@ function ToolBadge({
         <Check className="size-3" />
       )}
       <span>{isRunning ? `${runningText}…` : doneText}</span>
-    </span>
+    </Badge>
   );
 }
 
@@ -263,7 +266,7 @@ export function ChatMessage({
       return (
         <div className="flex flex-col items-end gap-1.5 pl-8 sm:pl-16">
           <Textarea
-            className="w-full max-w-xl text-sm"
+            className="max-w-xl"
             rows={Math.min(6, Math.max(2, draft.split("\n").length))}
             value={draft}
             autoFocus
@@ -301,7 +304,7 @@ export function ChatMessage({
     return (
       <div className="group flex flex-col gap-1">
         <div className="flex justify-end pl-8 sm:pl-16">
-          <div className="rounded-xl rounded-br-sm bg-primary px-4 py-2.5 text-sm text-primary-foreground">
+          <div className="rounded-2xl rounded-br-md bg-primary/20 px-4 py-2.5 text-sm text-foreground">
             {message.parts.map((part, index) =>
               part.type === "text" ? (
                 <span key={index} className="whitespace-pre-wrap">

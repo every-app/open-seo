@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertCircle, TriangleAlert } from "lucide-react";
+import { AlertCircle, TriangleAlert } from "@/client/components/icons";
 import { toast } from "sonner";
 import {
   exportAuditLighthouseIssues,
@@ -96,7 +96,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
         />
 
         <Card>
-          <CardContent className="pt-6 gap-4">
+          <CardContent className="space-y-4 pt-6">
             {issuesQuery.isError ? (
               <Alert variant="destructive">
                 <AlertCircle className="size-4" />
@@ -105,7 +105,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
             ) : null}
 
             {showsLegacyPayloadNotice ? (
-              <Alert className="border-warning/40 [&>svg]:text-warning">
+              <Alert className="[&>svg]:text-warning">
                 <TriangleAlert className="size-4" />
                 <AlertDescription>
                   This Lighthouse run was stored before issue details were

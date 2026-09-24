@@ -14,7 +14,14 @@ import {
   type BillingUsageEvent,
 } from "@/serverFunctions/billing";
 
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
+
 const BILLING_USAGE_FEATURE_IDS: string[] = [
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
   AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
@@ -148,42 +155,44 @@ export function BillingFeatureBreakdown() {
   const total = rows.reduce((sum, row) => sum + row.usd, 0);
 
   return (
-    <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-      <div className="flex items-baseline justify-between gap-4">
-        <span className="font-semibold">Usage by feature</span>
-        <span className="text-xs text-muted-foreground/70">Last 30 days</span>
-      </div>
+    <Card>
+      <CardHeader className="flex-row items-baseline justify-between gap-4 space-y-0 p-5 pb-3">
+        <CardTitle className="text-base">Usage by feature</CardTitle>
+        <span className="text-xs text-muted-foreground">Last 30 days</span>
+      </CardHeader>
 
-      {eventsQuery.isLoading ? (
-        <div className="space-y-3">
-          {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-4 w-full" />
-          ))}
-        </div>
-      ) : rows.length === 0 ? (
-        <div className="text-sm text-muted-foreground/70">
-          No usage recorded yet
-        </div>
-      ) : (
-        <ul className="space-y-2.5">
-          {rows.map((row) => (
-            <li key={row.label} className="space-y-1">
-              <div className="flex items-baseline justify-between gap-4 text-sm">
-                <span>{row.label}</span>
-                <span className="tabular-nums text-muted-foreground">
-                  ${row.usd.toFixed(2)}
-                </span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-[#7c3aed]"
-                  style={{ width: `${(row.usd / total) * 100}%` }}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
+      <CardContent className="p-5 pt-0">
+        {eventsQuery.isLoading ? (
+          <div className="space-y-3">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-4 w-full" />
+            ))}
+          </div>
+        ) : rows.length === 0 ? (
+          <div className="text-sm text-muted-foreground">
+            No usage recorded yet
+          </div>
+        ) : (
+          <ul className="space-y-2.5">
+            {rows.map((row) => (
+              <li key={row.label} className="space-y-1">
+                <div className="flex items-baseline justify-between gap-4 text-sm">
+                  <span>{row.label}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    ${row.usd.toFixed(2)}
+                  </span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full rounded-full bg-primary/70"
+                    style={{ width: `${(row.usd / total) * 100}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }

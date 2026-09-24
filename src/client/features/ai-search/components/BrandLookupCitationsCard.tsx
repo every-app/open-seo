@@ -1,6 +1,11 @@
 import { useMemo, useState } from "react";
 import { type SortingState } from "@tanstack/react-table";
-import { ChevronDown, Download, Sheet, SlidersHorizontal } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  Sheet,
+  SlidersHorizontal,
+} from "@/client/components/icons";
 import { useAppTable } from "@/client/components/table/AppDataTable";
 import { exportTableToSheets } from "@/client/lib/exportToSheets";
 import {
@@ -34,6 +39,7 @@ import {
   DropdownMenuTrigger,
 } from "@/client/components/ui/dropdown-menu";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 const DEFAULT_PAGES_SORT: SortingState = [{ id: "capturedVolume", desc: true }];
 const DEFAULT_QUERIES_SORT: SortingState = [
@@ -164,7 +170,7 @@ export function CitationTabsCard({
     activePlatforms.length === 1 ? activePlatforms[0] : null;
 
   return (
-    <section className="overflow-hidden rounded-xl border border-border bg-card">
+    <Card className="overflow-hidden">
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <Tabs value={queriesActive ? "queries" : "pages"}>
           <TabsList className="w-fit">
@@ -223,12 +229,7 @@ export function CitationTabsCard({
           <SlidersHorizontal className="size-3.5" />
           Filters
           {currentFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {currentFilterCount}
-            </Badge>
+            <Badge variant="primary">{currentFilterCount}</Badge>
           ) : null}
         </Button>
       </div>
@@ -291,6 +292,6 @@ export function CitationTabsCard({
           }
         />
       )}
-    </section>
+    </Card>
   );
 }

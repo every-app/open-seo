@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "@/client/components/icons";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { DOMAIN_KEYWORDS_PAGE_SIZES } from "@/types/schemas/domain";
@@ -48,7 +48,7 @@ export function DomainKeywordsPagination({
     <div className="flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2 text-sm text-muted-foreground tabular-nums">
         <span>{formatRange(page, pageSize, totalCount)}</span>
-        {isLoading ? <Spinner size="sm" className="[&_svg]:size-3" /> : null}
+        {isLoading ? <Spinner size="sm" /> : null}
       </div>
 
       <div className="flex items-center gap-6">

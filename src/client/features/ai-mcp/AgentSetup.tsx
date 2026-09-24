@@ -1,10 +1,11 @@
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "@/client/components/icons";
 import { AgentList } from "./AgentList";
 import { AgentSetupPanel, AGENT_SETUP_DESCRIPTION } from "./AgentSetupPanel";
 import { getAgentSetupPrompt } from "./agentSetupPrompt";
 import { captureClientEvent } from "@/client/lib/posthog";
 
 import { Button } from "@/client/components/ui/button";
+
 export function AgentSetup({
   onComplete,
   onBack,
@@ -36,11 +37,7 @@ export function AgentSetup({
         onCopy={() => captureClientEvent("onboarding:setup_prompt_copy")}
       />
       <div className="mt-7 flex items-center justify-between gap-3 border-t border-border pt-5">
-        <Button
-          variant="ghost"
-          className="rounded-md flex min-h-10 items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-          onClick={onBack}
-        >
+        <Button variant="ghost" size="sm" type="button" onClick={onBack}>
           <ArrowLeft className="size-3.5" /> Back
         </Button>
         <Button

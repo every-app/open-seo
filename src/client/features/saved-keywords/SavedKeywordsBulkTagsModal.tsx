@@ -1,15 +1,20 @@
-import { Check, Loader2, Plus, Search, X } from "lucide-react";
+import { Check, Loader2, Plus, Search, X } from "@/client/components/icons";
 import { useMemo, useRef, useState } from "react";
 import { Modal } from "@/client/components/Modal";
 import { resolveTagColor, tagDotClass } from "@/shared/tag-colors";
 import type { SavedKeywordTag, SavedKeywordTagSummary } from "@/types/keywords";
 import { TagChip } from "./TagChip";
 
-import { Button } from "@/client/components/ui/button";
-import { Toggle } from "@/client/components/ui/toggle";
 import { Badge } from "@/client/components/ui/badge";
-import { InputGroup } from "@/client/components/ui/input-group";
+import { Button } from "@/client/components/ui/button";
+import { Checkbox } from "@/client/components/ui/checkbox";
 import { Input } from "@/client/components/ui/input";
+import { InputGroup } from "@/client/components/ui/input-group";
+import {
+  ToggleGroup,
+  ToggleGroupItem,
+} from "@/client/components/ui/toggle-group";
+
 type Mode = "add" | "remove";
 
 export function SavedKeywordsBulkTagsModal({
@@ -110,21 +115,31 @@ export function SavedKeywordsBulkTagsModal({
           </p>
         </div>
 
-        <div className="inline-flex rounded-md border border-border bg-muted/40 p-0.5 text-sm">
-          <SegmentButton
-            active={mode === "add"}
-            onClick={() => setMode("add")}
-            label="Add tags"
-            count={addNames.length}
-          />
-          <SegmentButton
-            active={mode === "remove"}
-            onClick={() => setMode("remove")}
-            label="Remove tags"
-            count={removeIds.length}
+        <ToggleGroup
+          size="sm"
+          value={[mode]}
+          onValueChange={(value) => {
+            const next = value[0];
+            if (next === "add" || next === "remove") setMode(next);
+          }}
+        >
+          <ToggleGroupItem value="add" className="gap-1.5">
+            Add tags
+            {addNames.length > 0 ? (
+              <Badge variant="primary">{addNames.length}</Badge>
+            ) : null}
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            value="remove"
+            className="gap-1.5"
             disabled={selectedRowTags.length === 0}
-          />
-        </div>
+          >
+            Remove tags
+            {removeIds.length > 0 ? (
+              <Badge variant="primary">{removeIds.length}</Badge>
+            ) : null}
+          </ToggleGroupItem>
+        </ToggleGroup>
 
         {mode === "add" ? (
           <div className="space-y-2">
@@ -160,7 +175,7 @@ export function SavedKeywordsBulkTagsModal({
               </div>
             ) : null}
 
-            <InputGroup prefix={<Search className="size-3.5 opacity-50" />}>
+            <InputGroup prefix={<Search className="size-3.5" />}>
               <Input
                 ref={inputRef}
                 value={query}
@@ -180,9 +195,9 @@ export function SavedKeywordsBulkTagsModal({
                 <Button
                   variant="ghost"
                   onClick={handleCreate}
-                  className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"
+                  className="h-auto w-full justify-start gap-2 whitespace-normal rounded-none px-3 py-2 text-left text-sm font-normal text-inherit"
                 >
-                  <Plus className="size-3.5 text-primary" />
+                  <Plus className="size-3.5 text-link" />
                   <span className="text-muted-foreground">Create</span>
                   <span className="font-medium">
                     &ldquo;{trimmedQuery}&rdquo;
@@ -202,29 +217,22 @@ export function SavedKeywordsBulkTagsModal({
                 const checked = normalizedAddSet.has(tag.normalizedName);
                 const color = resolveTagColor(tag);
                 return (
-                  <Button
-                    variant="ghost"
+                  <label
                     key={tag.id}
-                    onClick={() => handleToggleAdd(tag)}
-                    className="h-auto rounded-md justify-start whitespace-normal text-left font-normal text-inherit flex w-full items-center gap-2 px-3 py-1.5 text-left hover:bg-muted"
+                    className="flex w-full cursor-pointer items-center gap-2 px-3 py-1.5 transition-colors hover:bg-accent"
                   >
-                    <span
-                      className={`flex size-4 shrink-0 items-center justify-center rounded border ${
-                        checked
-                          ? "border-primary bg-primary text-primary-foreground"
-                          : "border-border"
-                      }`}
-                    >
-                      {checked ? <Check className="size-3" /> : null}
-                    </span>
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => handleToggleAdd(tag)}
+                    />
                     <span
                       className={`size-2 shrink-0 rounded-full ${tagDotClass(color)}`}
                     />
                     <span className="flex-1 truncate text-sm">{tag.name}</span>
-                    <span className="text-[11px] tabular-nums text-muted-foreground/70">
+                    <span className="text-[11px] tabular-nums text-muted-foreground">
                       {tag.keywordCount}
                     </span>
-                  </Button>
+                  </label>
                 );
               })}
             </div>
@@ -283,36 +291,5 @@ export function SavedKeywordsBulkTagsModal({
         </div>
       </div>
     </Modal>
-  );
-}
-
-function SegmentButton({
-  active,
-  onClick,
-  label,
-  count,
-  disabled,
-}: {
-  active: boolean;
-  onClick: () => void;
-  label: string;
-  count: number;
-  disabled?: boolean;
-}) {
-  return (
-    <Toggle
-      size="sm"
-      pressed={active}
-      onPressedChange={onClick}
-      disabled={disabled}
-      className="gap-1.5"
-    >
-      {label}
-      {count > 0 ? (
-        <Badge variant="primary" className="px-1.5 py-0 text-[10px]">
-          {count}
-        </Badge>
-      ) : null}
-    </Toggle>
   );
 }

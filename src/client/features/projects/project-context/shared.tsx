@@ -1,7 +1,7 @@
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "@/client/components/icons";
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { updateProjectContext } from "@/serverFunctions/projectContext";
@@ -12,6 +12,7 @@ import type {
 } from "@/types/schemas/projectContext";
 
 import { Button } from "@/client/components/ui/button";
+
 export type ProjectContextData = Awaited<ReturnType<typeof getProjectContext>>;
 export type ContextCompetitor = ProjectContextData["competitors"][number];
 export type ContextKeyPage = ProjectContextData["keyPages"][number];
@@ -57,7 +58,7 @@ const AUTHOR_LABELS: Record<ContextAuthor, string> = {
 
 export function Provenance({ by, at }: { by: ContextAuthor; at?: string }) {
   return (
-    <span className="text-xs text-muted-foreground/70">
+    <span className="text-xs text-muted-foreground">
       {at
         ? `Updated by ${AUTHOR_LABELS[by]} · ${formatRelativeTime(at)}`
         : `Added by ${AUTHOR_LABELS[by]}`}
@@ -77,12 +78,8 @@ export function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="space-y-0.5">
-        <h2 className="text-sm font-medium text-muted-foreground/70">
-          {title}
-        </h2>
-        {hint ? (
-          <p className="text-xs text-muted-foreground/70">{hint}</p>
-        ) : null}
+        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       </div>
       {action}
     </div>
@@ -98,8 +95,8 @@ export function EmptyState({ children }: { children: ReactNode }) {
   );
 }
 
-export const listClass =
-  "divide-y divide-border overflow-hidden rounded-lg border border-border";
+/** Row dividers for a list rendered inside `<Card className="overflow-hidden">`. */
+export const listClass = "divide-y divide-border";
 
 /** Row actions and footer buttons shared by the inline competitor/page forms. */
 export function RowActions({ children }: { children: ReactNode }) {
@@ -155,7 +152,7 @@ export function ConfirmDeleteButton({
       variant="ghost"
       size="sm"
       type="button"
-      className="h-7 px-2.5 text-destructive"
+      className="h-7 px-2.5 text-negative"
       aria-label={label}
       disabled={pending}
       onClick={() => setConfirming(true)}

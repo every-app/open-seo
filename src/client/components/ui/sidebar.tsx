@@ -122,7 +122,7 @@ const SidebarGroupLabel = React.forwardRef<
   <p
     ref={ref}
     className={cn(
-      "mb-1 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground/60",
+      "mb-1 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground",
       className,
     )}
     {...props}

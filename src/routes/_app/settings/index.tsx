@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Monitor, Moon, Sun } from "lucide-react";
+import { Monitor, Moon, Sun } from "@/client/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ApiKeySettings } from "@/client/features/settings/ApiKeySettings";
@@ -56,7 +56,7 @@ function PersonalSettings() {
   return (
     <div className="space-y-10">
       <section className="space-y-3">
-        <h2 className="text-sm font-medium text-muted-foreground/70">
+        <h2 className="text-sm font-medium text-muted-foreground">
           Appearance
         </h2>
         <div className="flex items-center justify-between gap-6">
@@ -93,7 +93,7 @@ function PersonalSettings() {
           <ApiKeySettings />
 
           <section className="space-y-3">
-            <h2 className="text-sm font-medium text-muted-foreground/70">
+            <h2 className="text-sm font-medium text-muted-foreground">
               Analytics
             </h2>
             <div className="flex items-start justify-between gap-6">
@@ -116,9 +116,7 @@ function PersonalSettings() {
         </>
       ) : (
         <section className="space-y-3">
-          <h2 className="text-sm font-medium text-muted-foreground/70">
-            About
-          </h2>
+          <h2 className="text-sm font-medium text-muted-foreground">About</h2>
           <div className="flex items-center justify-between gap-6">
             <span className="text-sm">Version</span>
             <span className="font-mono text-sm text-muted-foreground">

@@ -1,4 +1,7 @@
+import { Card } from "@/client/components/ui/card";
 import { Skeleton } from "@/client/components/ui/skeleton";
+import { StatCard } from "@/client/components/ui/stat-card";
+
 // Skeleton loading state for the Search Performance (GSC) page. Mirrors the
 // loaded layout — four totals cards over a tabbed table panel — so the shell
 // stays put and only the data fills in, matching the other pages' loaders
@@ -8,17 +11,14 @@ export function SearchPerformanceLoadingState() {
     <div className="space-y-4" aria-busy>
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="rounded-lg border border-border bg-card p-4 space-y-2"
-          >
+          <StatCard key={index} className="space-y-2 p-4">
             <Skeleton className="h-3 w-20" />
             <Skeleton className="h-7 w-24" />
-          </div>
+          </StatCard>
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <Card className="overflow-hidden">
         <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <Skeleton className="h-8 w-40" />
@@ -42,7 +42,7 @@ export function SearchPerformanceLoadingState() {
             </div>
           ))}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

@@ -70,7 +70,7 @@ export function PromptExplorerForm({
   return (
     <Card>
       <form onSubmit={onSubmit}>
-        <CardContent className="pt-6 gap-5">
+        <CardContent className="flex flex-col pt-6 gap-5">
           <div className="space-y-1.5">
             <label
               className="block text-sm font-medium"
@@ -93,7 +93,7 @@ export function PromptExplorerForm({
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>What your customers might ask AI.</span>
               <span
-                className={`tabular-nums ${promptOverLimit ? "font-medium text-destructive" : ""}`}
+                className={`tabular-nums ${promptOverLimit ? "font-medium text-negative" : ""}`}
               >
                 {promptCharCount}/{PROMPT_EXPLORER_MAX_PROMPT_LENGTH}
               </span>
@@ -182,7 +182,7 @@ export function PromptExplorerForm({
           </div>
 
           {validationError ? (
-            <p className="text-sm text-destructive">{validationError}</p>
+            <p className="text-sm text-negative">{validationError}</p>
           ) : null}
         </CardContent>
       </form>

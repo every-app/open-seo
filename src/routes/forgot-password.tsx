@@ -13,7 +13,10 @@ import { z } from "zod";
 
 import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
 import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
 });
@@ -93,7 +96,7 @@ function ForgotPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-muted-foreground/70 hover:text-foreground transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Back to sign in
                   </Link>
@@ -120,10 +123,11 @@ function ForgotPasswordPage() {
                       const error = getFieldError(field.state.meta.errors);
 
                       return (
-                        <div>
+                        <Field>
+                          <Label htmlFor="forgot-password-email">Email</Label>
                           <Input
+                            id="forgot-password-email"
                             type="email"
-                            className="w-full"
                             placeholder="Email address..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -133,21 +137,17 @@ function ForgotPasswordPage() {
                             disabled={!isHostedMode}
                             required
                           />
-                          {error ? (
-                            <p className="mt-1 text-sm text-destructive">
-                              {error}
-                            </p>
-                          ) : null}
-                        </div>
+                          {error ? <FieldError>{error}</FieldError> : null}
+                        </Field>
                       );
                     }}
                   </form.Field>
 
                   {errorMessage ? (
-                    <p className="text-sm text-destructive">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
                   <Button
-                    variant="secondary"
+                    type="submit"
                     className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >

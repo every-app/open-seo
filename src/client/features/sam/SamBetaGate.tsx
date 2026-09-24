@@ -1,7 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/client/components/icons";
 
 import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+
 /**
  * Shown on the chat route until the user opts into Sam. Sam is the OpenSEO
  * MCP plus skills wrapped in an in-app chat; the agents people already use
@@ -11,8 +13,8 @@ import { Button, buttonVariants } from "@/client/components/ui/button";
 export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="flex h-full items-center justify-center overflow-auto px-4 py-8 md:px-6">
-      <div className="w-full max-w-lg rounded-2xl border border-border bg-card p-6 md:p-8">
-        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <Card className="w-full max-w-lg p-6 md:p-8">
+        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-link">
           <Sparkles className="size-5" />
         </div>
         <h2 className="mt-4 text-xl font-semibold">Sam is in beta</h2>
@@ -33,7 +35,7 @@ export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
             Use Sam anyway
           </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

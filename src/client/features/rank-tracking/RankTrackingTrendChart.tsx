@@ -14,6 +14,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@/client/components/ui/toggle-group";
+
 export interface TrendSeries {
   /** key into each data row holding the position value (1 = best, serpDepth = bottom band) */
   dataKey: string;
@@ -66,7 +67,7 @@ export function RankTrendChart({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground/70">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
         <span>Google position (1 = best)</span>
         <span className="inline-flex items-center gap-1">
           Better <span aria-hidden>↑</span>
@@ -82,8 +83,7 @@ export function RankTrendChart({
           >
             <CartesianGrid
               strokeDasharray="3 3"
-              stroke="currentColor"
-              opacity={0.1}
+              stroke="var(--trend-grid-color)"
               vertical={false}
             />
             {/* Muted bottom band: not in top {serpDepth} */}
@@ -91,8 +91,8 @@ export function RankTrendChart({
               <ReferenceArea
                 y1={serpDepth - 0.5}
                 y2={serpDepth}
-                fill="currentColor"
-                fillOpacity={0.06}
+                fill="var(--muted-foreground)"
+                fillOpacity={0.08}
                 ifOverflow="extendDomain"
               />
             )}
@@ -102,7 +102,7 @@ export function RankTrendChart({
               scale="time"
               domain={["dataMin", "dataMax"]}
               tickFormatter={formatDateTick}
-              tick={{ fontSize: 10, fill: "#888" }}
+              tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
               tickLine={false}
               axisLine={false}
               minTickGap={32}
@@ -111,7 +111,7 @@ export function RankTrendChart({
               reversed
               domain={[1, serpDepth]}
               allowDecimals={false}
-              tick={{ fontSize: 10, fill: "#888" }}
+              tick={{ fontSize: 10, fill: "var(--trend-axis-color)" }}
               tickLine={false}
               axisLine={false}
               width={32}
@@ -132,7 +132,7 @@ export function RankTrendChart({
                 );
                 return renderTooltip(label, entries);
               }}
-              cursor={{ stroke: "rgba(150,150,150,0.3)" }}
+              cursor={{ stroke: "var(--trend-grid-color)" }}
             />
             {series.map((s) => (
               <Line

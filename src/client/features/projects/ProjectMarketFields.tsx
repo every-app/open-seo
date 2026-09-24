@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { LocationSelect } from "@/client/components/LocationSelect";
 import {
   getLanguageCode,
@@ -5,7 +6,10 @@ import {
 } from "@/client/features/keywords/locations";
 import type { ProjectMarket } from "@/client/features/projects/types";
 
+import { Field } from "@/client/components/ui/field";
+import { Label } from "@/client/components/ui/label";
 import { NativeSelect } from "@/client/components/ui/native-select";
+
 /**
  * The project's default market: country plus the language served for it.
  * Shared by project settings and onboarding so the pair — and the rule that
@@ -22,12 +26,21 @@ export function ProjectMarketFields({
   hideLanguageOnMobile?: boolean;
 }) {
   const languageOptions = getLanguageOptions(value.locationCode);
+  const countryId = useId();
+  const countryLabelId = useId();
+  const languageId = useId();
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <label className="flex flex-col gap-1.5 text-sm">
-        <span className="font-medium">Country</span>
+      <Field>
+        <Label id={countryLabelId} htmlFor={countryId}>
+          Country
+        </Label>
+        {/* Labelled by the label and the trigger itself, so the name carries
+            the selected country as well as "Country". */}
         <LocationSelect
+          id={countryId}
+          aria-labelledby={`${countryLabelId} ${countryId}`}
           value={value.locationCode}
           onChange={(locationCode) =>
             onChange({
@@ -36,12 +49,11 @@ export function ProjectMarketFields({
             })
           }
         />
-      </label>
-      <label
-        className={`${hideLanguageOnMobile ? "hidden sm:flex" : "flex"} flex-col gap-1.5 text-sm`}
-      >
-        <span className="font-medium">Language</span>
+      </Field>
+      <Field className={hideLanguageOnMobile ? "hidden sm:block" : undefined}>
+        <Label htmlFor={languageId}>Language</Label>
         <NativeSelect
+          id={languageId}
           value={value.languageCode}
           onChange={(event) =>
             onChange({ ...value, languageCode: event.target.value })
@@ -57,7 +69,7 @@ export function ProjectMarketFields({
             </option>
           ))}
         </NativeSelect>
-      </label>
+      </Field>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import {
   Plus,
   Search,
   Settings,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { getProjects } from "@/serverFunctions/projects";
 import { setLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
@@ -24,6 +24,7 @@ import {
 } from "@/client/components/ui/popover";
 
 import { Input } from "@/client/components/ui/input";
+
 // Below this many projects the plain list is faster to scan than a search box.
 const SEARCH_THRESHOLD = 8;
 
@@ -187,7 +188,10 @@ export function ProjectSwitcher({
       open={open}
       onOpenChange={(nextOpen) => (nextOpen ? openPanel() : closePanel())}
     >
-      <PopoverAnchor className="flex w-full items-stretch rounded-lg border border-border bg-card">
+      {/* A pill like the Browse/Chat tabs below it, so the stacked sidebar
+          controls share one shape. overflow-hidden clips the children's hover
+          fills to that shape; their focus rings are inset so the clip keeps them. */}
+      <PopoverAnchor className="flex w-full items-stretch overflow-hidden rounded-full border border-border bg-card">
         <PopoverTrigger
           render={
             <Button
@@ -196,7 +200,7 @@ export function ProjectSwitcher({
               aria-label="Switch project"
               aria-haspopup="listbox"
               onKeyDown={handleTriggerKeyDown}
-              className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex min-w-0 flex-1 items-center justify-between gap-2 rounded-l-lg px-3 py-1.5 text-left transition-colors hover:bg-muted"
+              className="h-auto min-w-0 flex-1 justify-between gap-2 whitespace-normal rounded-none py-1.5 pl-4 pr-3 text-left font-normal focus-visible:ring-inset"
             />
           }
         >
@@ -205,12 +209,12 @@ export function ProjectSwitcher({
               {activeProject?.name ?? "Select project"}
             </span>
             {activeProject?.domain ? (
-              <span className="truncate text-xs font-normal text-muted-foreground/70">
+              <span className="truncate text-xs font-normal text-muted-foreground">
                 {activeProject.domain}
               </span>
             ) : null}
           </span>
-          <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground/70" />
+          <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground" />
         </PopoverTrigger>
         {activeProject ? (
           <Link
@@ -226,7 +230,7 @@ export function ProjectSwitcher({
               variant: "ghost",
               size: "icon",
               className:
-                "h-auto rounded-l-none rounded-r-lg border-l border-border",
+                "h-auto w-11 rounded-none border-l border-border pr-1 focus-visible:ring-inset",
             })}
           >
             <Settings className="size-4" />
@@ -289,8 +293,10 @@ export function ProjectSwitcher({
                     onMouseEnter={
                       showSearch ? () => setHighlightIndex(index) : undefined
                     }
-                    className={`h-auto w-full justify-between rounded-md px-2 py-1.5 text-left text-foreground ${
-                      isActive ? "bg-accent" : isHighlighted ? "bg-muted" : ""
+                    className={`h-auto w-full justify-between px-2 py-1.5 text-left text-foreground ${
+                      // bg-muted, not bg-accent: the muted domain line keeps
+                      // AA contrast on it.
+                      isActive || isHighlighted ? "bg-muted" : ""
                     }`}
                   >
                     <span className="flex min-w-0 flex-1 flex-col">
@@ -302,7 +308,7 @@ export function ProjectSwitcher({
                       ) : null}
                     </span>
                     {isActive ? (
-                      <Check className="size-4 shrink-0 text-primary" />
+                      <Check className="size-4 shrink-0 text-link" />
                     ) : null}
                   </Button>
                 </li>
@@ -323,7 +329,7 @@ export function ProjectSwitcher({
         >
           <Button
             variant="ghost"
-            className="w-full justify-start rounded-md px-2"
+            className="w-full justify-start px-2"
             onClick={() => {
               closePanel();
               // Deliberately leave the mobile drawer open: the modal is
@@ -343,7 +349,7 @@ export function ProjectSwitcher({
             }}
             className={buttonVariants({
               variant: "ghost",
-              className: "w-full justify-start rounded-md px-2",
+              className: "w-full justify-start px-2",
             })}
           >
             <FolderCog className="size-4" />

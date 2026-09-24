@@ -1,7 +1,7 @@
 import { Link, createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCustomer } from "autumn-js/react";
 import { useEffect, useState } from "react";
-import { ArrowRight, Settings, User } from "lucide-react";
+import { ArrowRight, Settings, User } from "@/client/components/icons";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
@@ -17,7 +17,10 @@ import {
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
 
+import { AuthPageCard } from "@/client/features/auth/AuthPage";
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 import { Spinner } from "@/client/components/ui/spinner";
 import {
   DropdownMenu,
@@ -32,6 +35,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/client/components/ui/tooltip";
+
 const SUPPORT_EMAIL = "ben@openseo.so";
 
 const PLAN_FEATURES = [
@@ -148,52 +152,36 @@ function SubscribePage() {
 
   if (subscribeRouteState === "finalizing") {
     return (
-      <div className="w-full max-w-xs space-y-4 text-center">
-        <img
-          src="/transparent-logo.png"
-          alt="OpenSEO"
-          className="mx-auto size-10 rounded-lg"
-        />
-        <h1 className="text-xl font-semibold">
-          Finalizing your subscription&hellip;
-        </h1>
-        <Spinner />
-        <p className="text-sm text-muted-foreground">
-          This usually takes a few seconds.
-        </p>
-        <p className="text-xs text-muted-foreground/70">
-          Taking longer?{" "}
-          <a
-            className="underline underline-offset-4"
-            href={`mailto:${SUPPORT_EMAIL}`}
-          >
-            Email {SUPPORT_EMAIL}
-          </a>
-          .
-        </p>
-      </div>
+      <AuthPageCard
+        title="Finalizing your subscription…"
+        helperText="This usually takes a few seconds."
+      >
+        <div className="space-y-4 text-center">
+          <Spinner className="mx-auto" />
+          <p className="text-xs text-muted-foreground">
+            Taking longer?{" "}
+            <a
+              className="underline underline-offset-4"
+              href={`mailto:${SUPPORT_EMAIL}`}
+            >
+              Email {SUPPORT_EMAIL}
+            </a>
+            .
+          </p>
+        </div>
+      </AuthPageCard>
     );
   }
 
   if (subscribeRouteState === "error") {
     return (
-      <div className="w-full max-w-xs space-y-4">
-        <div className="text-center space-y-3">
-          <img
-            src="/transparent-logo.png"
-            alt="OpenSEO"
-            className="mx-auto size-10 rounded-lg"
-          />
-          <h1 className="text-xl font-semibold">Billing unavailable</h1>
-        </div>
-
-        <p className="text-sm text-center text-muted-foreground">
-          {getStandardErrorMessage(
-            customerQuery.error,
-            "We couldn't verify your billing status right now. Please try again.",
-          )}
-        </p>
-
+      <AuthPageCard
+        title="Billing unavailable"
+        helperText={getStandardErrorMessage(
+          customerQuery.error,
+          "We couldn't verify your billing status right now. Please try again.",
+        )}
+      >
         <Button
           variant="secondary"
           type="button"
@@ -204,7 +192,7 @@ function SubscribePage() {
         >
           Try again
         </Button>
-      </div>
+      </AuthPageCard>
     );
   }
 
@@ -257,7 +245,7 @@ function SubscribePage() {
         </p>
       </div>
 
-      <div className="rounded-lg border border-border p-5 space-y-4">
+      <Card className="space-y-4 p-5">
         <div className="flex items-baseline justify-between gap-4">
           <span className="font-semibold">Base Plan</span>
           <span className="text-lg font-semibold tabular-nums">$10/month</span>
@@ -269,7 +257,7 @@ function SubscribePage() {
               key={item}
               className="flex gap-2.5 text-sm text-muted-foreground"
             >
-              <span className="text-muted-foreground/70 mt-[2px] shrink-0">
+              <span className="shrink-0" aria-hidden="true">
                 &mdash;
               </span>
               {item}
@@ -292,11 +280,15 @@ function SubscribePage() {
           </li>
         </ul>
 
-        {error ? <p className="text-sm text-destructive">{error}</p> : null}
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
 
         {canManageBilling ? (
           <Button
-            variant="secondary"
+            type="button"
             className="w-full"
             disabled={isAttaching}
             onClick={() => void handleSubscribe()}
@@ -310,7 +302,7 @@ function SubscribePage() {
           </p>
         )}
 
-        <p className="text-center text-xs text-muted-foreground/70">
+        <p className="text-center text-xs text-muted-foreground">
           <Tooltip>
             <TooltipTrigger render={<span tabIndex={0} />}>
               <span className="cursor-help underline decoration-dotted">
@@ -321,7 +313,7 @@ function SubscribePage() {
           </Tooltip>
           . Cancel anytime. Powered by Stripe.
         </p>
-      </div>
+      </Card>
 
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
@@ -330,7 +322,8 @@ function SubscribePage() {
         {isUpgradeFlow ? (
           <Button
             variant="ghost"
-            className="h-auto rounded-md px-0 hover:bg-transparent inline-flex cursor-pointer items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            size="sm"
+            type="button"
             onClick={() => void navigate({ to: "/", replace: true })}
           >
             <ArrowRight className="size-3.5 rotate-180" />
@@ -378,10 +371,7 @@ function SubscribePageAccountMenu({ email }: { email: string | undefined }) {
             Settings
           </DropdownMenuItem>
           <ThemePreferenceMenuItems />
-          <DropdownMenuItem
-            className="text-destructive"
-            onClick={handleSignOut}
-          >
+          <DropdownMenuItem className="text-negative" onClick={handleSignOut}>
             Sign out
           </DropdownMenuItem>
         </DropdownMenuContent>

@@ -10,11 +10,14 @@ import { Input } from "@/client/components/ui/input";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
+  DialogHeader,
   DialogTitle,
 } from "@/client/components/ui/dialog";
 import { Field } from "@/client/components/ui/field";
 import { Label } from "@/client/components/ui/label";
+
 export function inviteErrorMessage(error: Error) {
   const code = getErrorCode(error);
   if (code === "RATE_LIMITED") {
@@ -63,23 +66,25 @@ export function InviteTeammateModal({
     >
       <DialogContent className="max-w-md">
         <form
+          className="space-y-4"
           onSubmit={(event) => {
             event.preventDefault();
             const trimmed = email.trim();
             if (trimmed) inviteMutation.mutate(trimmed);
           }}
         >
-          <DialogTitle>Invite a teammate</DialogTitle>
-          <p className="mt-2 text-sm text-muted-foreground">
-            They&rsquo;ll join as an Admin with full access to each project
-            except for billing. The invitation link expires in 7 days.
-          </p>
-          <Field className="mt-4">
+          <DialogHeader>
+            <DialogTitle>Invite a teammate</DialogTitle>
+            <DialogDescription>
+              They&rsquo;ll join as an Admin with full access to each project
+              except for billing. The invitation link expires in 7 days.
+            </DialogDescription>
+          </DialogHeader>
+          <Field>
             <Label htmlFor={inviteEmailId}>Email</Label>
             <Input
               id={inviteEmailId}
               type="email"
-              className="w-full h-8 text-sm"
               placeholder="teammate@company.com"
               value={email}
               onChange={(event) => setEmail(event.currentTarget.value)}
@@ -87,7 +92,7 @@ export function InviteTeammateModal({
               autoFocus
             />
           </Field>
-          <DialogFooter className="mt-2">
+          <DialogFooter>
             <Button variant="ghost" size="sm" type="button" onClick={onClose}>
               Cancel
             </Button>

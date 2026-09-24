@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { Search } from "lucide-react";
+import { Search } from "@/client/components/icons";
 import {
   createFormValidationErrors,
   getFieldError,
@@ -14,6 +14,7 @@ import {
 } from "@/shared/researchScope";
 import type { BacklinksSearchState } from "./backlinksPageTypes";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { InputGroup } from "@/client/components/ui/input-group";
@@ -81,7 +82,7 @@ export function BacklinksSearchCard({
 
   return (
     <Card>
-      <CardContent className="pt-6 gap-4">
+      <CardContent className="flex flex-col pt-6 gap-4">
         <form
           className="space-y-3"
           onSubmit={(event) => {
@@ -152,7 +153,7 @@ export function BacklinksSearchCard({
                 const targetError = getFieldError(field.state.meta.errors);
 
                 return targetError ? (
-                  <p className="text-sm text-destructive">{targetError}</p>
+                  <p className="text-sm text-negative">{targetError}</p>
                 ) : null;
               }}
             </form.Field>
@@ -162,7 +163,7 @@ export function BacklinksSearchCard({
                 const formError = getFormError(submitError);
 
                 return formError ? (
-                  <p className="text-sm text-destructive">{formError}</p>
+                  <p className="text-sm text-negative">{formError}</p>
                 ) : null;
               }}
             </form.Subscribe>
@@ -170,9 +171,9 @@ export function BacklinksSearchCard({
         </form>
 
         {errorMessage ? (
-          <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            {errorMessage}
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription>{errorMessage}</AlertDescription>
+          </Alert>
         ) : null}
       </CardContent>
     </Card>

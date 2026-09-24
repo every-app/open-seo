@@ -7,7 +7,7 @@ import {
   Save,
   Sheet,
   SlidersHorizontal,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { sortBy } from "remeda";
 import {
   downloadKeywordResearchCsv,
@@ -39,8 +39,15 @@ import {
   TableBulkExportMenu,
 } from "@/client/components/table/TableBulkActionBar";
 
+import { Alert } from "@/client/components/ui/alert";
 import { Badge } from "@/client/components/ui/badge";
 import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/client/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -104,8 +111,8 @@ function DesktopKeywordPanel({ controller }: Props) {
   return (
     <div className="order-2 xl:order-1 flex flex-col min-w-0 gap-2 xl:basis-3/5">
       {showApproximateMatchNotice ? (
-        <div
-          className="rounded-lg border border-warning/40 bg-warning/15 px-3 py-2 text-sm text-foreground"
+        <Alert
+          className="border-warning/30 bg-warning/10 px-3 py-2 text-sm"
           role="status"
         >
           No exact match for{" "}
@@ -117,7 +124,7 @@ function DesktopKeywordPanel({ controller }: Props) {
               Source: {lastResultSource} fallback.
             </span>
           ) : null}
-        </div>
+        </Alert>
       ) : null}
       {controller.overviewKeyword ? (
         <OverviewStats keyword={controller.overviewKeyword} />
@@ -174,7 +181,7 @@ function DesktopTableCard({ controller }: Props) {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-w-0 border border-border rounded-xl bg-card overflow-hidden">
+    <Card className="flex-1 flex flex-col min-w-0 overflow-hidden">
       <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border">
         <Button
           variant="ghost"
@@ -186,12 +193,7 @@ function DesktopTableCard({ controller }: Props) {
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
         </Button>
         <span className="text-sm text-muted-foreground">
@@ -284,7 +286,7 @@ function DesktopTableCard({ controller }: Props) {
           onPageSizeChange={setPageSize}
         />
       ) : null}
-    </div>
+    </Card>
   );
 }
 
@@ -297,12 +299,7 @@ function DesktopFilters({ controller }: Props) {
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <Badge
-              variant="primary"
-              className="px-2 text-[11px] border-0 text-primary-foreground"
-            >
-              {activeFilterCount} active
-            </Badge>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           ) : null}
         </div>
         <Button
@@ -368,30 +365,30 @@ function DesktopSerpPanel({ controller }: Props) {
   return (
     <div className="order-1 xl:order-2 flex flex-col min-w-0 gap-2 xl:basis-2/5 xl:overflow-y-auto">
       {overviewKeyword && overviewKeyword.trend.length > 0 ? (
-        <div className="shrink-0 overflow-hidden border border-border rounded-xl bg-card px-4 py-3">
+        <Card className="shrink-0 overflow-hidden px-4 py-3">
           <h4 className="text-sm font-semibold mb-1">
             Search Trends{" "}
-            <span className="font-normal text-muted-foreground/70">
+            <span className="font-normal text-muted-foreground">
               {trendRangeLabel}
             </span>
           </h4>
           <AreaTrendChart trend={overviewKeyword.trend} />
-        </div>
+        </Card>
       ) : null}
 
-      <div className="flex flex-col overflow-hidden border border-border rounded-xl bg-card">
-        <div className="shrink-0 px-4 py-3 border-b border-border">
-          <h3 className="text-sm font-semibold flex items-center gap-1.5">
+      <Card className="flex flex-col overflow-hidden">
+        <CardHeader className="shrink-0 px-4 py-3 border-b border-border">
+          <CardTitle className="text-sm font-semibold tracking-normal leading-normal flex items-center gap-1.5">
             <Globe className="size-3.5" />
             SERP Analysis
             {controller.activeSerpKeyword ? (
-              <span className="font-normal text-muted-foreground/70 truncate">
+              <span className="font-normal text-muted-foreground truncate">
                 : {controller.activeSerpKeyword}
               </span>
             ) : null}
-          </h3>
-        </div>
-        <div className="p-4">
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4">
           <SerpAnalysisCard
             items={controller.serpResults}
             keyword={controller.activeSerpKeyword}
@@ -405,8 +402,8 @@ function DesktopSerpPanel({ controller }: Props) {
             pageSize={controller.SERP_PAGE_SIZE}
             onPageChange={controller.setSerpPage}
           />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

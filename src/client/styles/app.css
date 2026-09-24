@@ -33,6 +33,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-info: var(--info);
+  --color-link: var(--link);
+  --color-negative: var(--negative);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -90,6 +92,12 @@
   --success: oklch(0.74 0.16 152);
   --warning: oklch(0.8 0.15 75);
   --info: oklch(0.7 0.13 245);
+  /* Text-only tints of primary and destructive: Halo tunes those two for
+     fills, and as small text on dark glass they miss WCAG AA. */
+  --scrollbar-thumb: oklch(1 0 0 / 0.16);
+  --scrollbar-thumb-hover: oklch(1 0 0 / 0.28);
+  --link: oklch(0.76 0.13 256);
+  --negative: oklch(0.74 0.16 25);
   --trend-grid-color: oklch(78% 0.01 255 / 0.22);
   --trend-axis-color: oklch(84% 0.01 255 / 0.62);
   --trend-fill-start-opacity: 0.24;
@@ -117,6 +125,27 @@
   ::selection {
     background-color: var(--primary);
     color: var(--primary-foreground);
+  }
+  /* Scrollbars are painted, never the OS default: thin, on a transparent
+     track, in the interface's own colours. Scrolling behaviour is native. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb) transparent;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: var(--scrollbar-thumb) content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
   }
 }
 
@@ -225,74 +254,6 @@ html[data-theme="dark"] .tag-chip-fuchsia {
 }
 
 /* Keyword difficulty score badges — muted/transparent style to match tag chips */
-.score-badge {
-  @apply ring-1 ring-inset;
-}
-
-.score-tier-na {
-  background-color: color-mix(in oklab, #94a3b8 12%, transparent);
-  color: #475569;
-  --tw-ring-color: color-mix(in oklab, #94a3b8 28%, transparent);
-}
-
-.score-tier-1 {
-  background-color: color-mix(in oklab, #10b981 15%, transparent);
-  color: #065f46;
-  --tw-ring-color: color-mix(in oklab, #10b981 30%, transparent);
-}
-
-.score-tier-2 {
-  background-color: color-mix(in oklab, #84cc16 15%, transparent);
-  color: #3f6212;
-  --tw-ring-color: color-mix(in oklab, #84cc16 30%, transparent);
-}
-
-.score-tier-3 {
-  background-color: color-mix(in oklab, #eab308 16%, transparent);
-  color: #854d0e;
-  --tw-ring-color: color-mix(in oklab, #eab308 32%, transparent);
-}
-
-.score-tier-4 {
-  background-color: color-mix(in oklab, #f97316 16%, transparent);
-  color: #9a3412;
-  --tw-ring-color: color-mix(in oklab, #f97316 32%, transparent);
-}
-
-.score-tier-5 {
-  background-color: color-mix(in oklab, #ef4444 15%, transparent);
-  color: #991b1b;
-  --tw-ring-color: color-mix(in oklab, #ef4444 30%, transparent);
-}
-
-.score-tier-6 {
-  background-color: color-mix(in oklab, #b91c1c 18%, transparent);
-  color: #7f1d1d;
-  --tw-ring-color: color-mix(in oklab, #b91c1c 32%, transparent);
-}
-
-html[data-theme="dark"] .score-tier-na {
-  color: #cbd5e1;
-}
-html[data-theme="dark"] .score-tier-1 {
-  color: #6ee7b7;
-}
-html[data-theme="dark"] .score-tier-2 {
-  color: #bef264;
-}
-html[data-theme="dark"] .score-tier-3 {
-  color: #fde047;
-}
-html[data-theme="dark"] .score-tier-4 {
-  color: #fdba74;
-}
-html[data-theme="dark"] .score-tier-5 {
-  color: #fca5a5;
-}
-html[data-theme="dark"] .score-tier-6 {
-  color: #fda4af;
-}
-
 html[data-theme="dark"] {
   --trend-grid-color: oklch(78% 0.01 255 / 0.22);
   --trend-axis-color: oklch(84% 0.01 255 / 0.62);
