@@ -51,10 +51,12 @@ export function KeywordResearchSearchBar({ controller }: Props) {
               return (
                 <label className="relative block w-full lg:flex-1 lg:min-w-0 lg:max-w-md">
                   <Search className="pointer-events-none absolute left-3.5 top-3 z-10 size-4 text-muted-foreground" />
+                  {/* One row sits in a line of 40px pill controls, so it takes
+                      their height and shape; extra keyword rows round off. */}
                   <Textarea
-                    className={`min-h-0 resize-none pl-10 leading-6 ${
-                      keywordError ? "border-destructive" : ""
-                    }`}
+                    className={`min-h-0 resize-none py-[7px] pl-10 leading-6 ${
+                      rows === 1 ? "rounded-full" : "rounded-2xl"
+                    } ${keywordError ? "border-destructive" : ""}`}
                     rows={rows}
                     placeholder="Enter a keyword"
                     value={field.state.value}
