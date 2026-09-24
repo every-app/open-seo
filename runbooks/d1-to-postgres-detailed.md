@@ -9,7 +9,7 @@ copies the data into a freshly-migrated Postgres database using
 `scripts/migrate-d1-to-postgres.ts`. For the condensed happy path see
 [d1-to-postgres-simple.md](./d1-to-postgres-simple.md).
 
-> **Scope:** this runbook is for the OpenSEO production deployment —
+> **Scope:** this runbook is for the SEOShark production deployment —
 > `pnpm deploy:postgres` is hardwired to alchemy stage `hosted-prod`, its domains, and
 > `.env.production`. The alchemy self-host path (non-`prod` stages) has no
 > Hyperdrive wiring, so Postgres is not currently available to self-hosters.

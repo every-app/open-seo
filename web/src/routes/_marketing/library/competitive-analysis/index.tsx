@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { competitiveAnalysisStrategies } from "@/lib/strategy-libraries";
+import { appLinks, brand } from "@/lib/brand";
 
 const PATH = "/library/competitive-analysis";
 
@@ -23,7 +24,7 @@ const faqs = [
   {
     question: "Is there a free competitor analysis tool?",
     answer:
-      "The reasoning half is free: read the SERPs you care about, read your competitors' pages, and check your own Search Console. The part that costs money is the ranked-keyword and backlink data on the competitor's side, which is why the big SEO suites run $100/month and up. OpenSEO is open source and free to start; the paid plan is $10/month and includes $10 of usage, with top-ups if you need more.",
+      `The reasoning half is free: read the SERPs you care about, read your competitors' pages, and check your own Search Console. The part that costs money is the ranked-keyword and backlink data on the competitor's side, which is why the big SEO suites run $100/month and up. ${brand.name} is free to start, and paid plans add usage credits for the data-backed steps.`,
   },
   {
     question: "How accurate are competitor traffic estimates?",
@@ -59,9 +60,9 @@ export const Route = createFileRoute(
     buildPageSeo({
       title: "SEO Competitor Analysis: The Strategy Library",
       description:
-        "Four competitive research strategies for finding who really ranks against you, measuring the gap honestly, and deciding what is worth taking. Each includes a workflow and an OpenSEO MCP prompt.",
+        `Four competitive research strategies for finding who really ranks against you, measuring the gap honestly, and deciding what is worth taking. Each includes a workflow and an ${brand.name} MCP prompt.`,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: CompetitiveAnalysisLibraryPage,
 });
@@ -88,7 +89,7 @@ function CompetitiveAnalysisLibraryPage() {
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
           Four competitive research strategies for finding who really ranks
           against you, measuring the gap honestly, and deciding what is worth
-          taking. Each one includes a workflow and a copy-paste OpenSEO MCP
+          taking. Each one includes a workflow and a copy-paste {brand.name} MCP
           prompt.
         </p>
       </header>
@@ -167,7 +168,7 @@ function CompetitiveAnalysisLibraryPage() {
           as facts and you will plan a quarter around a number nobody can spend.
         </p>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          You can run the data-backed parts of these workflows with OpenSEO's{" "}
+          You can run the data-backed parts of these workflows with {brand.name}'s{" "}
           <a
             href="/features/domain-overview"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
@@ -186,7 +187,7 @@ function CompetitiveAnalysisLibraryPage() {
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
-            OpenSEO MCP
+            {brand.name} MCP
           </a>
           , which lets a compatible AI assistant compare domains, pull ranked
           keywords, and read link profiles while it works through the workflow.
@@ -291,15 +292,15 @@ function CompetitiveAnalysisLibraryPage() {
             Run a competitor analysis with your own agent
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            Each strategy ends with a copy-paste MCP prompt. OpenSEO is open
-            source, free to try, and does not require a credit card.
+            Each strategy ends with a copy-paste MCP prompt. {brand.name} is free to
+            try.
           </p>
         </div>
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Start with OpenSEO
+          Start with {brand.name}
           <span aria-hidden="true" className="ml-2">
             &rarr;
           </span>

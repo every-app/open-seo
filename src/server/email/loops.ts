@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { env } from "cloudflare:workers";
 import {
   getContactNameParts,
@@ -68,7 +69,6 @@ async function sendLoopsTransactionalEmail({
   const errorPayload = await response.json().catch(() => null);
   console.error("Loops transactional email error:", {
     status: response.status,
-    email,
     transactionalId,
     errorPayload,
   });
@@ -101,7 +101,7 @@ export async function upsertHostedSignupContact({
     payload: {
       email,
       userId,
-      source: "openseo-signup",
+      source: brand.signupSource,
       userGroup: "app-user",
       ...getContactNameParts(name),
     },
@@ -122,7 +122,7 @@ export async function sendHostedVerificationEmail({
     email,
     transactionalId: config.verificationTemplateId,
     dataVariables: {
-      appName: "OpenSEO",
+      appName: brand.name,
       confirmationUrl,
     },
   });
@@ -150,7 +150,7 @@ export async function sendHostedInvitationEmail({
     email,
     transactionalId: templateId,
     dataVariables: {
-      appName: "OpenSEO",
+      appName: brand.name,
       inviteUrl,
       organizationName,
       inviterName,
@@ -172,7 +172,7 @@ export async function sendHostedPasswordResetEmail({
     email,
     transactionalId: config.passwordResetTemplateId,
     dataVariables: {
-      appName: "OpenSEO",
+      appName: brand.name,
       resetUrl,
     },
   });

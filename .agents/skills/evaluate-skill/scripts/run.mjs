@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Run fresh, isolated Codex sessions against a candidate skill on the local
-// OpenSEO backend. One session per --site, all in parallel. See ../SKILL.md.
+// SEOShark backend. One session per --site, all in parallel. See ../SKILL.md.
 //
 //   node .agents/skills/evaluate-skill/scripts/run.mjs \
 //     --skill seo-audit --site example.com --site holdout.example \
@@ -255,7 +255,7 @@ async function start(name, run) {
 
   const prompt = `Use the supplied .agents/skills/${skill}/SKILL.md and .agents/skills/seo-report/SKILL.md to work on https://${run.domain}. Read those exact local files. Produce a useful result with enough investigation to support your conclusions.
 
-Your only OpenSEO project is ${run.projectId}. Its local MCP endpoint is ${run.endpoint}. You are authorized to perform the research and save a completed report there. Do not access any other OpenSEO project or production app/connector. Do not read prior reports, evaluator materials, personal memories, or files outside this working folder. Use only these supplied skills; do not substitute a globally installed skill.
+Your only SEOShark project is ${run.projectId}. Its local MCP endpoint is ${run.endpoint}. You are authorized to perform the research and save a completed report there. Do not access any other SEOShark project or production app/connector. Do not read prior reports, evaluator materials, personal memories, or files outside this working folder. Use only these supplied skills; do not substitute a globally installed skill.
 
 The project's business brief is sufficient to start. Verify details from the website; if further business details are unavailable, state reasonable assumptions and continue without questions. First-party analytics are not connected. External public-web reading is allowed. Do not submit forms or alter the audited website.
 

@@ -5,6 +5,7 @@ import TermsAndConditionsContent, {
 } from "../../../content/legal/terms-and-conditions.md";
 import { LegalPage } from "@/components/legal-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 export const Route = createFileRoute("/_marketing/terms-and-conditions")({
   head: () =>
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_marketing/terms-and-conditions")({
       title: termsFrontmatter.title,
       description: termsFrontmatter.description,
       path: "/terms-and-conditions",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: TermsAndConditions,
 });

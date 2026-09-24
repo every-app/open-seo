@@ -6,12 +6,13 @@ import {
   type KeyboardEvent,
 } from "react";
 import { ArrowUp, Loader2, Square } from "lucide-react";
+import { brand } from "@/shared/brand";
 
 export function ChatComposer({
   busy,
   onSend,
   onStop,
-  placeholder = "Ask Sam about your strategy or OpenSEO…",
+  placeholder = `Ask Sam about your strategy or ${brand.name}…`,
 }: {
   busy: boolean;
   onSend: (text: string) => void;

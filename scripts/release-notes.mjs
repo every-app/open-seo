@@ -25,7 +25,7 @@ const { values } = parseArgs({
 
 if (values.help) {
   process.stdout.write(
-    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to latest semver tag.\n  --to <ref>       Ending git ref. Defaults to main for the public repo, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
+    `Usage: pnpm release:notes -- [options]\n\nOptions:\n  --from <tag>     Starting git tag. Defaults to latest semver tag.\n  --to <ref>       Ending git ref. Defaults to main when origin is bizztor/seoshark, otherwise HEAD.\n  --draft <tag>    Create a draft GitHub release for the provided tag.\n  --repo <owner/repo>  Override GitHub repo slug for compare links and draft release.\n  -h, --help       Show this help message.\n`,
   );
   process.exit(0);
 }
@@ -167,12 +167,12 @@ function getDefaultFromTag() {
 }
 
 function getPreferredRepo() {
-  return getRemoteRepo("public") ?? getRemoteRepo("origin");
+  return getRemoteRepo("origin");
 }
 
 /** @param {string | undefined} repo */
 function getDefaultToRef(repo) {
-  return repo === "every-app/open-seo" ? "main" : "HEAD";
+  return repo === "bizztor/seoshark" ? "main" : "HEAD";
 }
 
 /** @param {readonly string[]} rangeArgs */
@@ -291,7 +291,7 @@ if (values.draft) {
   const releaseTitle = tag.startsWith("v") ? tag : `v${tag}`;
   const tmpFile = path.join(
     os.tmpdir(),
-    `quick-eagle-release-notes-${Date.now()}.md`,
+    `seoshark-release-notes-${Date.now()}.md`,
   );
   writeFileSync(tmpFile, notes);
 

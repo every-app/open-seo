@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/gsc-programmatic-discovery.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/gsc-programmatic-discovery";
 
@@ -49,7 +50,7 @@ export const Route = createFileRoute(
       title: "Search Console Keyword Research: Striking-Distance Queries",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

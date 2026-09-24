@@ -1,15 +1,15 @@
 ---
-title: "Set up OpenSEO Agent Skills"
-description: "Add OpenSEO skill files to your AI agent after connecting OpenSEO MCP."
+title: "Set up SEOShark Agent Skills"
+description: "Add SEOShark skill files to your AI agent after connecting SEOShark MCP."
 ---
 
-OpenSEO Agent Skills are separate files from OpenSEO MCP.
+SEOShark Agent Skills are separate files from SEOShark MCP.
 
-On Claude Code, skip the steps below and use the [OpenSEO plugin](/docs/claude-code-plugin) instead — it installs MCP and every skill in one step. On Codex CLI, use the [OpenSEO plugin](/docs/codex-plugin) the same way.
+On Claude Code, skip the steps below and use the [SEOShark plugin](/docs/claude-code-plugin) instead — it installs MCP and every skill in one step. On Codex CLI, use the [SEOShark plugin](/docs/codex-plugin) the same way.
 
-First, [set up OpenSEO MCP](/docs/mcp). MCP gives your agent access to OpenSEO data.
+First, [set up SEOShark MCP](/docs/mcp). MCP gives your agent access to SEOShark data.
 
-Then add the OpenSEO `SKILL.md` files you want your agent to use. Each skill gives your agent one SEO workflow.
+Then add the SEOShark `SKILL.md` files you want your agent to use. Each skill gives your agent one SEO workflow.
 
 ## Choose an installation option
 
@@ -20,15 +20,15 @@ Pick the option that matches how you want to install the files.
 Use this if you want the installer to show the available skills and agents.
 
 ```bash
-npx skills add every-app/open-seo
+npx skills add bizztor/seoshark
 ```
 
-### Option 2: Install all OpenSEO skills
+### Option 2: Install all SEOShark skills
 
-Use this if you want every OpenSEO skill.
+Use this if you want every SEOShark skill.
 
 ```bash
-npx skills add every-app/open-seo --skill '*'
+npx skills add bizztor/seoshark --skill '*'
 ```
 
 ### Option 3: Install all skills for Claude Code only
@@ -36,7 +36,7 @@ npx skills add every-app/open-seo --skill '*'
 Use this if the skills should be available in Claude Code only.
 
 ```bash
-npx skills add every-app/open-seo --skill '*' --agent claude-code
+npx skills add bizztor/seoshark --skill '*' --agent claude-code
 ```
 
 ### Option 4: Install all skills for OpenAI Codex only
@@ -44,7 +44,7 @@ npx skills add every-app/open-seo --skill '*' --agent claude-code
 Use this if the skills should be available in Codex only.
 
 ```bash
-npx skills add every-app/open-seo --skill '*' --agent codex
+npx skills add bizztor/seoshark --skill '*' --agent codex
 ```
 
 ### Option 5: Copy the skill files manually
@@ -52,26 +52,26 @@ npx skills add every-app/open-seo --skill '*' --agent codex
 Use this if you prefer to copy files into your agent's skills folder.
 
 ```bash
-git clone https://github.com/every-app/open-seo.git
+git clone https://github.com/bizztor/seoshark.git
 
 # Codex
 mkdir -p ~/.codex/skills
-cp -R open-seo/plugins/openseo/skills/* ~/.codex/skills/
+cp -R seoshark/plugins/seoshark/skills/* ~/.codex/skills/
 
 # Claude Code
 mkdir -p ~/.claude/skills
-cp -R open-seo/plugins/openseo/skills/* ~/.claude/skills/
+cp -R seoshark/plugins/seoshark/skills/* ~/.claude/skills/
 ```
 
 You can also review the source skills on GitHub:
 
-- [OpenSEO Agent Skills on GitHub](https://github.com/every-app/open-seo/tree/main/.agents/skills)
+- [SEOShark Agent Skills on GitHub](https://github.com/bizztor/seoshark/tree/main/.agents/skills)
 
 Each skill page also links to its source `SKILL.md`.
 
 ## Update installed skills
 
-Use the [update prompt or commands for your installation method](/docs/agent-setup#update-your-skills). Update the OpenSEO plugin if it supplies your skills; otherwise use the installer you originally chose or update your manual copies.
+Use the [update prompt or commands for your installation method](/docs/agent-setup#update-your-skills). Update the SEOShark plugin if it supplies your skills; otherwise use the installer you originally chose or update your manual copies.
 
 ## Run a skill
 

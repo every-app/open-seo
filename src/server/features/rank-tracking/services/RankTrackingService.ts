@@ -1,4 +1,6 @@
 import { env } from "cloudflare:workers";
+import { normalizeDomain } from "@/types/schemas/domain";
+import { unique } from "remeda";
 import {
   customerHasPaidPlan,
   type BillingCustomerContext,
@@ -304,7 +306,7 @@ async function refreshKeywordMetrics(
     // lowercased, so ask in lowercase. A match-case keyword can sit next to
     // its lowercase twin; both then map to the same metrics row and the
     // request carries no duplicates.
-    keywords: [...new Set(keywords.map((kw) => kw.keyword.toLowerCase()))],
+    keywords: unique(keywords.map((kw) => kw.keyword.toLowerCase())),
     locationCode: config.locationCode,
     // Trackers can pair any SERP language with any country; the keyword-data
     // APIs only serve the country's own languages.
@@ -378,22 +380,6 @@ async function getValidatedConfig(configId: string, projectId: string) {
     throw new AppError("NOT_FOUND", "Rank tracking config not found");
   }
   return config;
-}
-
-function normalizeDomain(domain: string): string {
-  let d = domain.trim().toLowerCase();
-  // Strip protocol
-  d = d.replace(/^https?:\/\//, "");
-  // Strip path, query string, and fragment
-  d = d.replace(/[/?#].*$/, "");
-  // Strip trailing slash
-  d = d.replace(/\/+$/, "");
-  // Strip www. prefix
-  d = d.replace(/^www\./, "");
-  if (!d) {
-    throw new AppError("INTERNAL_ERROR", "Invalid domain");
-  }
-  return d;
 }
 
 type RunRow = NonNullable<

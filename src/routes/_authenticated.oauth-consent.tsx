@@ -3,6 +3,7 @@ import { Check, Database, KeyRound, User } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useSession } from "@/lib/auth-client";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { brand } from "@/shared/brand";
 
 export const Route = createFileRoute("/_authenticated/oauth-consent")({
   component: OAuthConsentPage,
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/oauth-consent")({
 const SCOPES = [
   {
     icon: Database,
-    label: "Read your OpenSEO data",
+    label: `Read your ${brand.name} data`,
     description: "Projects, keyword reports, and audit results.",
   },
   {
@@ -74,12 +75,12 @@ function OAuthConsentPage() {
       <div className="flex flex-col items-center text-center">
         <img
           src="/transparent-logo.png"
-          alt="OpenSEO"
+          alt={brand.name}
           className="size-10 rounded-lg"
         />
         <h1 className="mt-5 text-xl font-semibold">Authorize MCP access</h1>
         <p className="mt-2 text-sm text-base-content/70">
-          An MCP client is requesting access to your OpenSEO workspace.
+          An MCP client is requesting access to your {brand.name} workspace.
         </p>
       </div>
 

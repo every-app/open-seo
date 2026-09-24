@@ -93,7 +93,7 @@ export function DeleteReportModal({
 
 /**
  * The share toggle. The link is built from the browser's own origin, so the
- * same report shares correctly from app.openseo.so and from a self-hosted
+ * same report shares correctly from the hosted app origin and from a self-hosted
  * hostname without the server knowing either.
  */
 export function ShareReportModal({

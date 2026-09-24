@@ -53,6 +53,8 @@ export const audits = sqliteTable(
   (table) => [
     index("audits_project_id_idx").on(table.projectId),
     index("audits_started_by_user_id_idx").on(table.startedByUserId),
+    // Stale-audit reconciler sweep (status = running AND started_at < cutoff).
+    index("audits_status_started_at_idx").on(table.status, table.startedAt),
   ],
 );
 

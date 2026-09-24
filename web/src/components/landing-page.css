@@ -682,36 +682,3 @@
   background: var(--ink) !important;
 }
 
-/* ── Floating Discord pill (quiet messenger-style nod) ── */
-.itc-discord {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 40;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--ink);
-  color: #ffffff;
-  border-radius: 9999px;
-  padding: 12px 18px;
-  font-size: 14px;
-  font-weight: 500;
-  text-decoration: none;
-  transition: background-color 0.15s ease;
-}
-.itc-discord:hover {
-  background: #000000;
-}
-.itc-discord:focus-visible {
-  outline: 2px solid var(--ink);
-  outline-offset: 2px;
-}
-@media (max-width: 767px) {
-  .itc-discord span {
-    display: none;
-  }
-  .itc-discord {
-    padding: 12px;
-  }
-}

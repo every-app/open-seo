@@ -10,6 +10,7 @@ import {
   SUBSCRIBE_ROUTE,
   autumnSeoDataCreditsToUsd,
 } from "@/shared/billing";
+import { brand } from "@/shared/brand";
 
 export function FreePlanBanner() {
   const { data: session } = useSession();
@@ -58,7 +59,7 @@ export function FreePlanBanner() {
     return (
       <BannerShell variant="error">
         You&rsquo;ve used all your credits. {creditsActionLink} to continue
-        using OpenSEO.
+        using {brand.name}.
       </BannerShell>
     );
   }
@@ -67,7 +68,7 @@ export function FreePlanBanner() {
     return (
       <BannerShell variant="warning">
         You&rsquo;re running low on credits. {creditsActionLink} to keep using
-        OpenSEO.
+        {brand.name}.
       </BannerShell>
     );
   }
@@ -75,7 +76,7 @@ export function FreePlanBanner() {
   if (isFreePlan) {
     return (
       <BannerShell variant="info">
-        We hope you&rsquo;re enjoying OpenSEO!{" "}
+        We hope you&rsquo;re enjoying {brand.name}!{" "}
         <Link
           to={SUBSCRIBE_ROUTE}
           search={{ upgrade: true }}

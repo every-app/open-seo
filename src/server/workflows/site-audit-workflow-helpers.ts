@@ -1,10 +1,11 @@
+import { brand } from "@/shared/brand";
 import type { CrawledPageResult } from "@/server/lib/audit/types";
 import type { PageFetchClass } from "@/shared/audit-fetch-class";
 import { sha256Hex } from "@/server/lib/audit/ids";
 import { normalizeUrl } from "@/server/lib/audit/url-utils";
 import type { CrawlThrottle } from "@/server/lib/audit/crawl-throttle";
 
-const CRAWL_USER_AGENT = "OpenSEO-Audit/1.0";
+const CRAWL_USER_AGENT = brand.userAgent;
 const MAX_HTML_BYTES = 1024 * 1024;
 
 /**

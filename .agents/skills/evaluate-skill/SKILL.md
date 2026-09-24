@@ -1,6 +1,6 @@
 ---
 name: evaluate-skill
-description: "Test a candidate OpenSEO skill end to end by running fresh, isolated Codex sessions against the local backend and scoring the reports they save. Use when editing a product skill (seo-audit, keyword-research, ...) and you need evidence that the new instructions produce better output, not just a cleaner file."
+description: "Test a candidate SEOShark skill end to end by running fresh, isolated Codex sessions against the local backend and scoring the reports they save. Use when editing a product skill (seo-audit, keyword-research, ...) and you need evidence that the new instructions produce better output, not just a cleaner file."
 metadata:
   internal: true
 ---

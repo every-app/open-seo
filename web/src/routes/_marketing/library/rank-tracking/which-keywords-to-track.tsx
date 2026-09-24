@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { RANK_TRACKING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/rank-tracking/which-keywords-to-track";
 
@@ -28,7 +29,7 @@ const faqs = [
   {
     question: "Does it cost more to track more keywords?",
     answer:
-      "Yes, in proportion. In OpenSEO the cost of a check is the number of keywords times the number of devices times the depth of results inspected, and scheduled checks run through a cheaper queue than one-off live checks. The app shows an estimate before you add keywords or start a run. On the hosted app, rank checks need the $10/month plan, which includes $10 of credits.",
+      `Yes, in proportion. In ${brand.name} the cost of a check is the number of keywords times the number of devices times the depth of results inspected, and scheduled checks run through a cheaper queue than one-off live checks. The app shows an estimate before you add keywords or start a run. On the hosted app, rank checks use credits from a paid plan.`,
   },
   {
     question: "How often should I re-pick the keywords?",
@@ -55,7 +56,7 @@ export const Route = createFileRoute(
       title: "Which Keywords to Track, and How Many",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

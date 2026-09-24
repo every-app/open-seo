@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LandingPage } from "@/components/landing-page";
+import { brand } from "@/lib/brand";
 import { buildPageSeo } from "@/lib/seo";
 
-const homeTitle = "OpenSEO - Open Source SEO Platform";
+const homeTitle = `${brand.name} - ${brand.tagline}`;
 const homeDescription =
-  "OpenSEO is the open source alternative to Ahrefs and Semrush. Keyword research, backlinks, rank tracking, and site audits, billed by usage instead of a $100-plus monthly subscription. Self-host it free, or connect it to your AI agents over MCP.";
+  `${brand.name} is the modern alternative to Ahrefs and Semrush. Keyword research, backlinks, rank tracking, and site audits, billed by usage instead of a $100-plus monthly subscription. Connect it to your AI agents over MCP.`;
 
 export const Route = createFileRoute("/_marketing/")({
   head: () => {
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_marketing/")({
       title: homeTitle,
       description: homeDescription,
       path: "/",
-      imageAlt: "OpenSEO keyword research dashboard preview",
+      imageAlt: `${brand.name} keyword research dashboard preview`,
     });
 
     return {

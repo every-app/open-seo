@@ -3,6 +3,7 @@ import { KeywordDiscoveryTool } from "@/components/keyword-discovery-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 const TOOL = freeTools["keyword-generator"];
 export const Route = createFileRoute("/_marketing/keyword-generator")({
   head: () =>
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_marketing/keyword-generator")({
       description:
         "Start with a topic and find keyword ideas people search for. Compare estimated search volume and difficulty in your target country.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
       imageAlt: "Free Keyword Generator",
     }),
   component: Page,
@@ -57,7 +58,7 @@ const FAQS = [
   {
     question: "Is this free?",
     answer:
-      "Yes. You can get up to 20 keyword ideas without signup. Usage limits apply. The full OpenSEO workspace uses paid credits. Free trial credits are available to get started.",
+      `Yes. You can get up to 20 keyword ideas without signup. Usage limits apply. The full ${brand.name} workspace uses paid credits. Free trial credits are available to get started.`,
   },
 ];
 function Page() {
@@ -72,7 +73,7 @@ function Page() {
       faqs={FAQS}
       cta={{
         heading: "Choose your next content topic",
-        body: "Continue your research in OpenSEO and save keywords to your project. Start with free trial credits.",
+        body: `Continue your research in ${brand.name} and save keywords to your project. Start with free trial credits.`,
         featureLabel: "Explore keyword research",
       }}
     >

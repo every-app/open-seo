@@ -1,6 +1,7 @@
 import { Bot, FolderPlus, Globe, Search, Users } from "lucide-react";
 import type { DashboardActivation } from "@/server/features/dashboard/services/DashboardService";
 import type { DashboardSetupStep } from "@/types/schemas/dashboard";
+import { brand } from "@/shared/brand";
 
 export const setupSteps: {
   id: DashboardSetupStep;
@@ -30,7 +31,7 @@ export const setupSteps: {
   {
     id: "mcp",
     label: "Connect your AI agent",
-    detail: "Use OpenSEO inside Claude or your favorite agent.",
+    detail: `Use ${brand.name} inside Claude or your favorite agent.`,
     icon: Bot,
   },
   {

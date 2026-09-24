@@ -4,6 +4,7 @@ import { FIELD_CLASS, SubmitButton, ToolForm } from "@/lib/free-tools/form";
 import { formatCount, MetricGrid } from "@/lib/free-tools/metric-grid";
 import { UpsellCard } from "@/lib/free-tools/upsell-card";
 import { useToolRun } from "@/lib/free-tools/use-tool-run";
+import { brand } from "@/lib/brand";
 
 const TOOL = "spam-score-checker";
 
@@ -150,7 +151,7 @@ export function SpamScoreCheckerTool() {
           </p>
 
           <UpsellCard tool={TOOL} cta="Audit the whole profile">
-            The free check lists the 10 spammiest referring domains. OpenSEO
+            The free check lists the 10 spammiest referring domains. {brand.name}
             filters the full backlink profile by spam score so you can see how
             much of it is junk.
           </UpsellCard>

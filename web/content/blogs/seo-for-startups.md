@@ -1,7 +1,7 @@
 ---
 title: "SEO for Startups: A Founder’s Handbook"
 description: "A founder-focused handbook to SEO for startups: how to use search for market research, early rankings, and smarter growth without wasting time."
-author: "OpenSEO Team"
+author: "SEOShark Team"
 date: "2026-04-22"
 ---
 
@@ -9,7 +9,7 @@ If you've started a company, you've probably considered investing some time into
 
 SEO compounds as your brand builds its reputation. It can also help with market research before you have a website.
 
-If you want an agent to help, connect [OpenSEO MCP](/docs/mcp) first so it can use live keyword, SERP, domain, backlink, and saved keyword data. If you are not sure where to start, use the [SEO coach](/docs/skills/seo-coach). If you are setting up SEO for a new company or site, begin with [SEO project setup](/docs/skills/seo-project-setup).
+If you want an agent to help, connect [SEOShark MCP](/docs/mcp) first so it can use live keyword, SERP, domain, backlink, and saved keyword data. If you are not sure where to start, use the [SEO coach](/docs/skills/seo-coach). If you are setting up SEO for a new company or site, begin with [SEO project setup](/docs/skills/seo-project-setup).
 
 ## Table of Contents
 
@@ -50,19 +50,19 @@ SEO tools can help answer questions like:
 
 ## Market Research Techniques
 
-The screenshots below show what this data looks like in OpenSEO.
+The screenshots below show what this data looks like in SEOShark.
 
 ### Competitor Research
 
 Competitor research gives founders a fast read on market demand.
 
-With a tool like [OpenSEO](https://openseo.so/), you can enter a competitor's domain and see which keywords it ranks for, which pages are ranking, and where the estimated traffic seems to come from.
+With a tool like [SEOShark](https://seoshark.example/), you can enter a competitor's domain and see which keywords it ranks for, which pages are ranking, and where the estimated traffic seems to come from.
 
 That can shape your strategy. If a competitor gets traffic from a specific page type, buyers may care about that topic more than you realized. It can also reveal use cases, niches, or workflows that fit your product but do not show up in a few customer calls.
 
 For a focused workflow, use the [competitor analysis skill](/docs/skills/competitor-analysis). If you are still figuring out which domains matter, start with the broader [competitive landscape skill](/docs/skills/competitive-landscape).
 
-![OpenSEO domain overview showing top pages, keywords, and estimated traffic](/blog/seo-for-startups/domain-overview.png)
+![SEOShark domain overview showing top pages, keywords, and estimated traffic](/blog/seo-for-startups/domain-overview.png)
 
 ### Keyword Research
 
@@ -72,7 +72,7 @@ It also helps map a market. If you search a seed phrase like "best crm for," the
 
 For a repeatable workflow, use the [keyword research skill](/docs/skills/keyword-research). When you have a useful list of ideas, use the [keyword clustering skill](/docs/skills/keyword-clustering) to group them into page targets.
 
-![OpenSEO keyword research view showing related or suggested keywords for a seed term](/blog/seo-for-startups/keyword-research.png)
+![SEOShark keyword research view showing related or suggested keywords for a seed term](/blog/seo-for-startups/keyword-research.png)
 
 ### Backlink Analysis
 
@@ -82,7 +82,7 @@ When you look at who links to competitors, you start to see which publications, 
 
 Those links can tell you how attention moves through a market. To look at one domain right now, the [free backlink checker](/backlink-checker) shows its referring domains and strongest links without an account.
 
-![OpenSEO backlink analysis showing referring domains or top backlinks for a competitor](/blog/seo-for-startups/backlink-analysis.png)
+![SEOShark backlink analysis showing referring domains or top backlinks for a competitor](/blog/seo-for-startups/backlink-analysis.png)
 
 ## How can you improve your site's rankings?
 
@@ -142,7 +142,7 @@ The backlinks that tend to matter most are the ones that make sense for your bus
 
 The best way to get those links is to give people a real reason to talk about you. Publish a strong customer story, create original data, build a useful free tool, or get listed in the places your market trusts.
 
-For a focused outreach workflow, use the [link prospecting skill](/docs/skills/link-prospecting). If you want an AI agent to help with this work, [set up OpenSEO MCP](/docs/mcp) so it can use live OpenSEO data. If you are new to the process, start with [SEO coach](/docs/skills/seo-coach). For a fresh project, use [SEO project setup](/docs/skills/seo-project-setup) before jumping into research.
+For a focused outreach workflow, use the [link prospecting skill](/docs/skills/link-prospecting). If you want an AI agent to help with this work, [set up SEOShark MCP](/docs/mcp) so it can use live SEOShark data. If you are new to the process, start with [SEO coach](/docs/skills/seo-coach). For a fresh project, use [SEO project setup](/docs/skills/seo-project-setup) before jumping into research.
 
 ## A simple founder SEO priority list
 
@@ -152,7 +152,7 @@ When you're ready to start focusing on SEO, this is a good order:
 
 1. Make sure the product, positioning, and site messaging are clear
 2. Run [SEO project setup](/docs/skills/seo-project-setup) so goals, scope, and data sources are clear
-3. Set up [Google Search Console](https://search.google.com/search-console/about) and [OpenSEO MCP](/docs/mcp)
+3. Set up [Google Search Console](https://search.google.com/search-console/about) and [SEOShark MCP](/docs/mcp)
 4. Fix major crawl, indexation, and performance problems
 5. Identify the core searches that map to your product and customer pain points
 6. Build or improve the pages that deserve to rank
@@ -165,4 +165,4 @@ SEO is worth understanding as a founder because it shows what the market is aski
 
 Used well, it becomes both a research tool and a compounding distribution channel. Understand the customer, make useful pages, keep your site healthy, and give people a reason to talk about your company.
 
-If you want to explore this data yourself, [OpenSEO](https://openseo.so/) is an affordable SEO tool built by a founder for founders, without the usual bloat of tools made for SEO power users.
+If you want to explore this data yourself, [SEOShark](https://seoshark.example/) is an affordable SEO tool built for founders, without the usual bloat of tools made for SEO power users.

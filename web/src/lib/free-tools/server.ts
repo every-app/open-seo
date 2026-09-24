@@ -1,4 +1,5 @@
 import { env } from "cloudflare:workers";
+import { brand } from "@/lib/brand";
 import { z } from "zod";
 import { dataforseoCallsPerDay } from "@/lib/free-tools/spend";
 import type {
@@ -235,7 +236,7 @@ export async function chargeToolBudget(input: {
     const message =
       decision === "visitor"
         ? "You've hit today's free limit. Sign up for the full workspace."
-        : "This free tool has reached today's limit. Try again tomorrow, or sign up for OpenSEO to keep researching.";
+        : `This free tool has reached today's limit. Try again tomorrow, or sign up for ${brand.name} to keep researching.`;
     return jsonResponse({ error: message }, 429);
   } catch (err) {
     console.error(`Free tool budget unavailable (${input.tool}):`, err);
@@ -256,7 +257,7 @@ function cacheStore(): Cache {
 
 function cacheRequest(tool: string, key: string): Request {
   return new Request(
-    `https://openseo.so/api/${tool}/${encodeURIComponent(key)}`,
+    `${brand.marketingUrl}/api/${tool}/${encodeURIComponent(key)}`,
   );
 }
 

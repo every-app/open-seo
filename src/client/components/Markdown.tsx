@@ -11,7 +11,7 @@ type Props = {
 /**
  * Shared Markdown renderer with explicit per-element Tailwind classes.
  *
- * OpenSEO doesn't ship `@tailwindcss/typography`, so `prose` classes are
+ * The app doesn't ship `@tailwindcss/typography`, so `prose` classes are
  * no-ops — every block element is styled here instead. Tables use daisyUI's
  * `table table-sm` so model- and strategy-generated tables stay readable.
  *

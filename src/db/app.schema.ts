@@ -241,6 +241,12 @@ export const rankTrackingConfigs = sqliteTable(
       table.isActive,
       table.createdAt,
     ),
+    // Due-config sweep every 5 minutes (RankTrackingRepository.getDueConfigs).
+    index("rank_tracking_configs_due_idx").on(
+      table.isActive,
+      table.scheduleInterval,
+      table.nextCheckAt,
+    ),
     uniqueIndex("rank_tracking_configs_national_idx")
       .on(table.projectId, table.domain, table.locationCode)
       .where(sql`${table.locationName} IS NULL`),

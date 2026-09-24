@@ -1,12 +1,12 @@
 # Docker Self-Hosting
 
-Run OpenSEO locally with Docker.
+Run SEOShark locally with Docker.
 
-In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network.
+In Docker mode, SEOShark uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network.
 
 The default `compose.yaml` uses the published GHCR image:
 
-- `ghcr.io/every-app/open-seo:latest`
+- `ghcr.io/bizztor/seoshark:latest`
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ The default `compose.yaml` uses the published GHCR image:
 cp .env.example .env
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md), then start OpenSEO:
+Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](./DATAFORSEO_API_KEY.md), then start SEOShark:
 
 ```bash
 docker compose up -d
@@ -32,7 +32,7 @@ Optional env values:
 - `PORT` (defaults to `3001`)
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
-- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/bizztor/seoshark:latest`)
 - `OPENROUTER_API_KEY` (required for AI features such as SAM; see [OpenRouter](https://openrouter.ai/settings/keys))
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
@@ -45,7 +45,12 @@ You can also persist it in `.env`.
 
 ## Telemetry
 
-OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+> **This fork:** the heartbeat is disabled unless `selfHostTelemetry` in
+> `src/shared/brand.ts` points at your own PostHog project. Nothing is sent to
+> the upstream OpenSEO project. The rest of this section describes what is
+> collected when it is enabled.
+
+When enabled, SEOShark collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
 
 Heartbeats are triggered by requests to the app or MCP server. Requests to `/api/health`, including Docker's automatic health checks, do not trigger telemetry.
 
@@ -56,7 +61,7 @@ To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env
 Set `OPEN_SEO_IMAGE` in `.env` and restart:
 
 ```bash
-OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
+OPEN_SEO_IMAGE=ghcr.io/bizztor/seoshark:v1.2.3
 docker compose up -d
 ```
 
@@ -65,8 +70,8 @@ docker compose up -d
 If you are testing local code changes, build and run a local tag:
 
 ```bash
-docker build -f Dockerfile.selfhost -t open-seo:local .
-OPEN_SEO_IMAGE=open-seo:local docker compose up -d
+docker build -f Dockerfile.selfhost -t seoshark:local .
+OPEN_SEO_IMAGE=seoshark:local docker compose up -d
 ```
 
 ## Common commands

@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import {
@@ -6,8 +7,7 @@ import {
 } from "@/server/lib/runtime-env";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 
-const OPENROUTER_KEY_MISSING_MESSAGE =
-  "OPENROUTER_API_KEY is not set for this deployment yet. Add it to your environment, restart OpenSEO, then confirm here.";
+const OPENROUTER_KEY_MISSING_MESSAGE = `OPENROUTER_API_KEY is not set for this deployment yet. Add it to your environment, restart ${brand.name}, then confirm here.`;
 
 const projectScopedSchema = z.object({ projectId: z.string().min(1) });
 

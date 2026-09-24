@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { COMPETITIVE_ANALYSIS_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/competitive-analysis/keyword-gap-analysis";
 
@@ -17,7 +18,7 @@ export const Route = createFileRoute(
       title: "Keyword Gap Analysis: How to Run One That Works",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

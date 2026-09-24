@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { RANK_TRACKING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/rank-tracking/keyword-ranking-report";
 
@@ -31,7 +32,7 @@ const faqs = [
       "Name the keyword, the previous and current position, the URL, and what is now on the results page, then say what you are doing about it. If the position held and clicks fell, show the SERP feature that took the click. A drop with a cause and a plan is a normal report; a drop with neither is a problem.",
   },
   {
-    question: "Can OpenSEO generate a ranking report?",
+    question: `Can ${brand.name} generate a ranking report?`,
     answer:
       "It provides the pieces: tracked positions with previous positions and SERP features, Search Console clicks by page and query at no credit cost, and an MCP so an assistant can assemble the report from a prompt like the one above. It does not produce a composite score, on purpose.",
   },
@@ -55,7 +56,7 @@ export const Route = createFileRoute(
       title: "The Keyword Ranking Report Your CEO Will Read",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

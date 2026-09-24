@@ -13,6 +13,7 @@ import {
 import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
+import { brand } from "@/shared/brand";
 
 export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
@@ -76,7 +77,7 @@ function IndexRedirect() {
       return (
         <div className="flex items-center justify-center h-full p-4">
           <UnauthenticatedErrorCard
-            message="Please sign in to access your OpenSEO organization."
+            message={`Please sign in to access your ${brand.name} organization.`}
             onRetry={() => {
               void refetch();
             }}

@@ -19,11 +19,8 @@ import {
   isHostedServerAuthMode,
 } from "@/server/lib/runtime-env";
 import { getSetupIssueSummary } from "@/server/lib/setup-status";
+import { brand } from "@/shared/brand";
 import { isTelemetryOptOutValue } from "@/shared/selfhost-checks";
-
-const SELF_HOST_POSTHOG_KEY =
-  "phc_xaXj4vE4LikxfvR7q6EHemAYNBSZW4hQkqor7fpf8aGT";
-const SELF_HOST_POSTHOG_HOST = "https://us.i.posthog.com";
 
 const DAILY_HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 // During the first two hours after install, heartbeat every 5 minutes so the
@@ -124,6 +121,9 @@ function isNonProductionBuild() {
 }
 
 async function telemetryIsDisabled() {
+  // A white-label deployment has no PostHog project to report to unless the
+  // brand config points at one; never fall back to upstream's.
+  if (!brand.selfHostTelemetry) return true;
   if (await isHostedServerAuthMode()) return true;
   if (
     isTelemetryOptOutValue(
@@ -230,8 +230,10 @@ async function sendHeartbeat(
   installId: string,
   properties: HeartbeatProperties,
 ) {
-  const client = new PostHog(SELF_HOST_POSTHOG_KEY, {
-    host: SELF_HOST_POSTHOG_HOST,
+  const telemetry = brand.selfHostTelemetry;
+  if (!telemetry) return;
+  const client = new PostHog(telemetry.posthogKey, {
+    host: telemetry.host,
     flushAt: 1,
     flushInterval: 0,
     disableGeoip: true,

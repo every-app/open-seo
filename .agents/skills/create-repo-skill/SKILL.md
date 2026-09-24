@@ -9,7 +9,7 @@ metadata:
 
 ## The layout (invariants)
 
-- **`.agents/skills/<kebab-name>/SKILL.md` is the only canonical home for every skill** — public product skills (SEO workflows customers install) and internal repo skills (agent workflows like `merge-ready`, `papercuts`, this one) alike. Users install from this tree via `npx skills add every-app/open-seo`.
+- **`.agents/skills/<kebab-name>/SKILL.md` is the only canonical home for every skill** — public product skills (SEO workflows customers install) and internal repo skills (agent workflows like `merge-ready`, `papercuts`, this one) alike. Users install from this tree via `npx skills add bizztor/seoshark`.
 - **`.claude/skills/` contains only symlinks into `.agents/skills/`** — one per skill that Claude Code agents working in this repo should auto-load. Never copy files: `.agents/skills/` is prettier-ignored (vendored skills are hash-pinned) while `.claude/skills/` is not, so a copy gets reformatted on the `.claude` side and the trees drift — this happened to three skills before symlinks became the rule. `prettier --check .` does not descend into the symlinks, so a symlink stays byte-identical to its canonical source by construction.
 - **Vendored skills** (external origin) are hash-pinned in `skills-lock.json`. Never hand-edit a vendored skill's content; re-vendor with the `skills` CLI so the lock hash stays valid.
 - `.agents/skills/**` is part of the **review control plane** (see `AGENTS.md`): changes require explicit maintainer review via CODEOWNERS. Make the change on a branch and call it out in the PR — never treat skill edits as incidental.
@@ -41,12 +41,12 @@ metadata:
      - `web/content/docs/skills/meta.json` — nav entry
      - `src/routes/_app/ai.tsx` — `SKILL_NAMES`
      - `.agents/skills/seo-coach/SKILL.md` — one line in the "What each workflow does" roster
-     - `plugins/openseo/skills/<name>` — add the skill to the `skills` list in `scripts/sync-plugin-skills.mjs`, then run `pnpm sync-plugin-skills` (this directory holds real copies, not symlinks — the Claude Code and Codex plugins bundle from here, and Codex's installer silently skips symlinked files, so a symlink would ship a skill-less plugin). `pnpm ci:check` re-runs the sync and fails on drift, so a missed update here is caught, but the skill count and roster below are prose and aren't checked — update them by hand: both `plugins/openseo/*/plugin.json` `description` fields, the Codex manifest's `interface.longDescription`, and the skill lists in `web/content/docs/claude-code-plugin.md` and `web/content/docs/codex-plugin.md`
+     - `plugins/seoshark/skills/<name>` — add the skill to the `skills` list in `scripts/sync-plugin-skills.mjs`, then run `pnpm sync-plugin-skills` (this directory holds real copies, not symlinks — the Claude Code and Codex plugins bundle from here, and Codex's installer silently skips symlinked files, so a symlink would ship a skill-less plugin). `pnpm ci:check` re-runs the sync and fails on drift, so a missed update here is caught, but the skill count and roster below are prose and aren't checked — update them by hand: both `plugins/seoshark/*/plugin.json` `description` fields, the Codex manifest's `interface.longDescription`, and the skill lists in `web/content/docs/claude-code-plugin.md` and `web/content/docs/codex-plugin.md`
      - Optional: `web/src/lib/feature-pages.ts` and `web/content/docs/skills/setup.md` if it deserves marketing/setup placement
 
 3. If the skill references MCP tools, use exact tool names and keep them in sync with `src/server/mcp/server.ts` — the tool names in skills are load-bearing for agents following them. For public skills also check `src/server/features/sam/samChatTools.ts`: SAM's toolset is a curated subset, and a skill step that names a tool SAM lacks dead-ends in the in-app agent.
 
-4. `pnpm format:write` (covers the docs pages; `.agents/skills` itself is intentionally untouched), then commit. Skill prose follows `openseo-review-web-content` standards when public.
+4. `pnpm format:write` (covers the docs pages; `.agents/skills` itself is intentionally untouched), then commit. Skill prose follows `review-web-content` standards when public.
 
 ## Sync check (run when in doubt, and after any skill change)
 

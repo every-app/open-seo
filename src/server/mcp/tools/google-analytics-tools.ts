@@ -1,4 +1,5 @@
 /* eslint-disable max-lines -- all GA4 MCP tools are intentionally kept in one module */
+import { brand } from "@/shared/brand";
 import type { CallToolResult } from "@modelcontextprotocol/server";
 import { z } from "zod";
 import { Ga4MeasurementHealthService } from "@/server/features/ga4/services/Ga4MeasurementHealthService";
@@ -333,8 +334,7 @@ export const getGoogleAnalyticsOrganicLandingPagesTool = {
   name: "get_google_analytics_organic_landing_pages",
   config: {
     title: "Get Google Analytics organic landing pages",
-    description:
-      "Read organic-search landing page sessions, engagement, key events, transactions, and revenue from the project's connected GA4 property. Defaults to the last 28 complete property days. Read-only and uses no OpenSEO credits.",
+    description: `Read organic-search landing page sessions, engagement, key events, transactions, and revenue from the project's connected GA4 property. Defaults to the last 28 complete property days. Read-only and uses no ${brand.name} credits.`,
     inputSchema: landingPageInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -367,8 +367,7 @@ export const getGoogleAnalyticsPagePerformanceTool = {
   name: "get_google_analytics_page_performance",
   config: {
     title: "Get Google Analytics page performance",
-    description:
-      "Read page views, users, engagement duration, and key events from the connected GA4 property. Organic Search is the default; set channel to all to include every channel. Read-only and uses no OpenSEO credits.",
+    description: `Read page views, users, engagement duration, and key events from the connected GA4 property. Organic Search is the default; set channel to all to include every channel. Read-only and uses no ${brand.name} credits.`,
     inputSchema: pagePerformanceInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -404,8 +403,7 @@ export const getGoogleAnalyticsKeyEventsTool = {
   name: "get_google_analytics_key_events",
   config: {
     title: "Get Google Analytics key events",
-    description:
-      "Read active GA4 key events with counts and users by event or organic landing page. Previous-period comparison is available for the event breakdown. Read-only and uses no OpenSEO credits.",
+    description: `Read active GA4 key events with counts and users by event or organic landing page. Previous-period comparison is available for the event breakdown. Read-only and uses no ${brand.name} credits.`,
     inputSchema: keyEventsInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -435,8 +433,7 @@ export const getSearchOpportunitiesTool = {
   name: "get_search_opportunities",
   config: {
     title: "Get search opportunities",
-    description:
-      "Join Search Console pages ranking in positions 4–20 with GA4 organic landing-page outcomes, then score matched opportunities by demand, business value, and reachability. Unmatched pages remain visible and unscored. Read-only and uses no OpenSEO credits.",
+    description: `Join Search Console pages ranking in positions 4–20 with GA4 organic landing-page outcomes, then score matched opportunities by demand, business value, and reachability. Unmatched pages remain visible and unscored. Read-only and uses no ${brand.name} credits.`,
     inputSchema: opportunityInputSchema,
     outputSchema: opportunityOutputSchema,
     annotations: {
@@ -471,8 +468,7 @@ export const getGoogleAnalyticsOrganicOverviewTool = {
   name: "get_google_analytics_organic_overview",
   config: {
     title: "Get Google Analytics organic overview",
-    description:
-      "Answer whether organic traffic is improving with top-line sessions, users, engagement, key events, transactions, revenue, an equal-length previous-period comparison, and a daily or weekly trend. Read-only and uses no OpenSEO credits.",
+    description: `Answer whether organic traffic is improving with top-line sessions, users, engagement, key events, transactions, revenue, an equal-length previous-period comparison, and a daily or weekly trend. Read-only and uses no ${brand.name} credits.`,
     inputSchema: overviewInputSchema,
     outputSchema: overviewOutputSchema,
     annotations: {
@@ -509,8 +505,7 @@ export const getGoogleAnalyticsTrafficAcquisitionTool = {
   name: "get_google_analytics_traffic_acquisition",
   config: {
     title: "Get Google Analytics traffic acquisition",
-    description:
-      "Compare session acquisition by channel group, source/medium, or campaign, including sessions, users, engagement, key events, transactions, and revenue. Previous-period comparison is available for channel group; source/medium also reports attribution-quality diagnostics. Read-only and uses no OpenSEO credits.",
+    description: `Compare session acquisition by channel group, source/medium, or campaign, including sessions, users, engagement, key events, transactions, and revenue. Previous-period comparison is available for channel group; source/medium also reports attribution-quality diagnostics. Read-only and uses no ${brand.name} credits.`,
     inputSchema: trafficAcquisitionInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -546,8 +541,7 @@ export const getGoogleAnalyticsEcommercePerformanceTool = {
   name: "get_google_analytics_ecommerce_performance",
   config: {
     title: "Get Google Analytics ecommerce performance",
-    description:
-      "Read item views, add-to-cart units, purchases, and item revenue by item, or transactions and purchase revenue by landing page. Returns a detected, none, or unknown activity state; landing pages can be limited to those with transactions. Organic Search is the default. Read-only and uses no OpenSEO credits.",
+    description: `Read item views, add-to-cart units, purchases, and item revenue by item, or transactions and purchase revenue by landing page. Returns a detected, none, or unknown activity state; landing pages can be limited to those with transactions. Organic Search is the default. Read-only and uses no ${brand.name} credits.`,
     inputSchema: ecommerceInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -575,8 +569,7 @@ export const getGoogleAnalyticsSiteSearchTool = {
   name: "get_google_analytics_site_search",
   config: {
     title: "Get Google Analytics site search",
-    description:
-      "Read measured internal search terms with search events, users, sessions, engaged sessions, and engagement rate. Requires GA4 site-search measurement. Read-only and uses no OpenSEO credits.",
+    description: `Read measured internal search terms with search events, users, sessions, engaged sessions, and engagement rate. Requires GA4 site-search measurement. Read-only and uses no ${brand.name} credits.`,
     inputSchema: siteSearchInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -613,8 +606,7 @@ export const getGoogleAnalyticsAudienceBreakdownTool = {
   name: "get_google_analytics_audience_breakdown",
   config: {
     title: "Get Google Analytics audience breakdown",
-    description:
-      "Read device, country, or new-versus-returning users, sessions, engagement, and key events. Previous-period comparison is available for device and new-versus-returning breakdowns. No demographic or user-level dimensions. Read-only and uses no OpenSEO credits.",
+    description: `Read device, country, or new-versus-returning users, sessions, engagement, and key events. Previous-period comparison is available for device and new-versus-returning breakdowns. No demographic or user-level dimensions. Read-only and uses no ${brand.name} credits.`,
     inputSchema: audienceInputSchema,
     outputSchema: reportOutputSchema,
     annotations: {
@@ -643,8 +635,7 @@ export const getGoogleAnalyticsMeasurementHealthTool = {
   name: "get_google_analytics_measurement_health",
   config: {
     title: "Get Google Analytics measurement health",
-    description:
-      "Diagnose the connected property's data streams, web measurement IDs, enhanced-measurement settings, key events, and custom definitions. Read-only and uses no OpenSEO credits.",
+    description: `Diagnose the connected property's data streams, web measurement IDs, enhanced-measurement settings, key events, and custom definitions. Read-only and uses no ${brand.name} credits.`,
     inputSchema: measurementHealthInputSchema,
     outputSchema: measurementHealthOutputSchema,
     annotations: {

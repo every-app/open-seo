@@ -5,6 +5,7 @@ import {
   sharesEnabled,
 } from "@/server/features/reports/shareAccess";
 import { textResponse } from "@/shared/report-sandbox";
+import { brand } from "@/shared/brand";
 
 export async function handleReportSocialImage(
   token: string,
@@ -28,7 +29,7 @@ export async function handleReportSocialImage(
     return new Response(null, {
       status: 302,
       headers: {
-        Location: "https://openseo.so/social-card.jpg",
+        Location: brand.socialCardUrl,
         "Cache-Control": "no-store",
         "Referrer-Policy": "no-referrer",
         "X-Robots-Tag": "noindex, nofollow",

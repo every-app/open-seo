@@ -11,13 +11,13 @@ Almost every audit stops short of that. The crawler finds the problem, names it,
 
 Here is what the gap looks like on a real site. A crawl of unscriptedseo.com covered 318 pages and produced **1,180 issues**. Read as a number, that site is a disaster. Read by severity, it is not: 35 critical, 642 warning, 503 informational. All 35 critical rows are the same issue type, broken internal links. Thirty-two of them come from eleven hub pages pointing at the same four URLs that no longer exist.
 
-![OpenSEO site audit summary for unscriptedseo.com showing 318 pages crawled and 1,180 issues found, split into 35 critical, 642 warning and 503 info, with the Broken internal link group expanded to show its explanation, a How to fix instruction, and the affected URLs each listing its target URL and 404 status](/library/site-audit/audit-issue-how-to-fix-openseo.png)
+![SEOShark site audit summary for unscriptedseo.com showing 318 pages crawled and 1,180 issues found, split into 35 critical, 642 warning and 503 info, with the Broken internal link group expanded to show its explanation, a How to fix instruction, and the affected URLs each listing its target URL and 404 status](/library/site-audit/audit-issue-how-to-fix-seoshark.png)
 
 Restoring or redirecting four URLs clears most of the critical tier. The other 1,145 rows are real, and none of them are why that site is not ranking.
 
 ## Sort by severity before you read a single URL
 
-The audit engine assigns every issue one of three severities, and the split is deliberate rather than cosmetic. Of the 27 issue types OpenSEO checks, only four are critical: a crawler that got blocked, a 5xx server error, a broken internal link, and a missing title tag. Fourteen are warnings and nine are informational.
+The audit engine assigns every issue one of three severities, and the split is deliberate rather than cosmetic. Of the 27 issue types SEOShark checks, only four are critical: a crawler that got blocked, a 5xx server error, a broken internal link, and a missing title tag. Fourteen are warnings and nine are informational.
 
 That ratio tells you how to read any audit. If a report has 1,000 rows and no critical ones, the site has housekeeping to do and no emergency. If it has 12 critical rows, start there and ignore everything else until they are gone.
 
@@ -61,18 +61,18 @@ The practical version of this check is two columns in the pages report. If `fetc
 
 ## The workflow
 
-1. Crawl. The free plan covers 50 pages per crawl, which is enough for most brochure sites; larger crawls run to 10,000 pages on the $10/month plan.
+1. Crawl. The free plan covers 50 pages per crawl, which is enough for most brochure sites; larger crawls run to 10,000 pages on paid plans.
 2. Check `fetchClass` before anything else. If pages came back blocked, fix access and re-crawl. Everything downstream is wrong otherwise.
 3. Read the critical tier only. Fix it or schedule it.
 4. Group warnings by issue type and ask which template produced each group.
 5. Leave the informational tier in the export and attach it to the next content refresh.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-The whole loop runs through the [OpenSEO MCP](/docs/mcp), which means an agent can crawl, triage, and draft the tickets in one pass.
+The whole loop runs through the [SEOShark MCP](/docs/mcp), which means an agent can crawl, triage, and draft the tickets in one pass.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Run a site audit on [https://example.com] with a page budget of
    [200]. Poll until it finishes.
@@ -111,7 +111,7 @@ The second is priority against revenue. An audit ranks by severity, which is a p
 
 ### What is included in a technical SEO audit?
 
-At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. OpenSEO checks 27 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.
+At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. SEOShark checks 27 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.
 
 ### How often should you run a technical SEO audit?
 
@@ -127,4 +127,4 @@ Because most issue types are page-level and most sites are templated, so a singl
 
 ### Is there a free technical SEO audit tool?
 
-Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is the more reliable source for anything Google-specific. A crawler adds the on-page and internal-link picture that Search Console does not give you. OpenSEO is open source and free to start, with 50-page crawls on the free plan and 10,000-page crawls on the $10/month plan.
+Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is the more reliable source for anything Google-specific. A crawler adds the on-page and internal-link picture that Search Console does not give you. SEOShark is free to start, with 50-page crawls on the free plan and 10,000-page crawls on paid plans.

@@ -16,6 +16,7 @@ import {
   ExportDropdown,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
+import { brand } from "@/shared/brand";
 
 type ResultsTab = "issues" | "pages" | "performance";
 
@@ -89,7 +90,7 @@ export function ResultsView({
             ? "The requested cooldown exceeded the audit time limit, so some URLs were left unvisited. This report is incomplete. "
             : "Pages that returned 429 Too Many Requests could not be audited. "}
           Re-run the audit after the rate limit resets, or ask the site owner to
-          allow the "OpenSEO-Audit" crawler.
+          allow the {brand.name} audit crawler (user agent {brand.userAgent}).
         </CrawlWarning>
       )}
 

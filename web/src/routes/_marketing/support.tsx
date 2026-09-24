@@ -1,19 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { brand } from "@/lib/brand";
 import { buildPageSeo } from "@/lib/seo";
 
-const SUPPORT_EMAIL = "ben@openseo.so";
-const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
-const GITHUB_ISSUES_URL = "https://github.com/every-app/open-seo/issues";
+const GITHUB_ISSUES_URL = `${brand.githubUrl}/issues`;
 
 export const Route = createFileRoute("/_marketing/support")({
   head: () =>
     buildPageSeo({
       title: "Support",
-      description:
-        "Get help with OpenSEO, share feedback, or report an issue by email, Discord, or GitHub.",
+      description: `Get help with ${brand.name}, share feedback, or report an issue by email or GitHub.`,
       path: "/support",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: SupportPage,
 });
@@ -22,7 +20,7 @@ function SupportPage() {
   const [copied, setCopied] = useState(false);
 
   async function copyEmail() {
-    await navigator.clipboard.writeText(SUPPORT_EMAIL);
+    await navigator.clipboard.writeText(brand.supportEmail);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }
@@ -37,8 +35,8 @@ function SupportPage() {
           We want to hear from you
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-8 text-[var(--color-brand-muted)]">
-          We want to talk to you! We&apos;re super open to feedback and want to
-          learn how you work so we can make OpenSEO better.
+          We&apos;re open to feedback and want to learn how you work so we can
+          make {brand.name} better.
         </p>
       </header>
 
@@ -59,22 +57,24 @@ function SupportPage() {
             aria-live="polite"
             className="mt-auto inline-flex w-fit items-center gap-2 pt-6 text-sm font-medium text-neutral-950 transition-colors hover:text-[var(--color-brand-accent)]"
           >
-            <span className="font-mono text-xs">{SUPPORT_EMAIL}</span>
+            <span className="font-mono text-xs">{brand.supportEmail}</span>
             {copied ? <CheckIcon /> : <CopyIcon />}
             <span className="sr-only">{copied ? "Copied" : "Copy email"}</span>
           </button>
         </section>
 
-        <SupportCard
-          number="02"
-          title="Discord"
-          description="Ask for help, share ideas and learn from the community."
-          href={DISCORD_URL}
-          linkText="Join the Discord"
-        />
+        {brand.discordUrl ? (
+          <SupportCard
+            number="02"
+            title="Discord"
+            description="Ask for help, share ideas and learn from the community."
+            href={brand.discordUrl}
+            linkText="Join the Discord"
+          />
+        ) : null}
 
         <SupportCard
-          number="03"
+          number={brand.discordUrl ? "03" : "02"}
           title="GitHub Issues"
           description="Report bugs or request features on GitHub."
           href={GITHUB_ISSUES_URL}

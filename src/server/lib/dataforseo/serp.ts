@@ -1,5 +1,11 @@
 import { z } from "zod";
+import { unique } from "remeda";
 import { dataforseoGet, dataforseoPost } from "@/server/lib/dataforseo/core";
+
+// Live rank checks and task_post are billed per request. A 5xx does not prove
+// the provider skipped the charge (or, for task_post, skipped creating the
+// task), so these must never be replayed — see the same rule in business.ts.
+const NO_RETRY = { maxServerErrorRetries: 0 } as const;
 import { MAX_TASKS_PER_POST } from "@/server/lib/dataforseo/shared";
 import {
   assertOk,
@@ -144,7 +150,7 @@ function buildRankCheckResult(
       ? (organicMatch.rank_group ?? organicMatch.rank_absolute ?? null)
       : null,
     url: organicMatch?.url ?? null,
-    serpFeatures: [...new Set(items.map((item) => item.type).filter(Boolean))],
+    serpFeatures: unique(items.map((item) => item.type).filter(Boolean)),
   };
 }
 
@@ -175,6 +181,7 @@ export async function fetchRankCheckSerp(input: {
         ...stopCrawlOnTarget(input.targetDomain),
       },
     ],
+    NO_RETRY,
   );
 
   // "No Search Results" (40501) is valid for obscure/new keywords — treat as an
@@ -247,6 +254,7 @@ export async function postRankCheckTasks(input: {
       // DataForSEO task id back to our keyword without relying on order.
       tag: `${task.keywordId}:${task.device}`,
     })),
+    NO_RETRY,
   );
 
   if (!response || response.status_code !== 20000) {

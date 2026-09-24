@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { LINK_BUILDING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/link-building/backlink-audit";
 
@@ -26,7 +27,7 @@ const faqs = [
       "It is a sorting aid, not a verdict. A spam domain can carry a higher rank than a relevant small site. Use the score to order the list, then judge each link on whether the linking page is about the same thing as yours and whether a real site published it.",
   },
   {
-    question: "Does OpenSEO show broken backlinks?",
+    question: `Does ${brand.name} show broken backlinks?`,
     answer:
       "The overview reports broken backlinks and broken target pages. Profile rows include broken status, dofollow or nofollow, domain rank, spam score and first-seen date. The profile request used here returns live backlinks, so it cannot list lost links. The free backlink checker shows the summary and top 15 links without an account.",
   },
@@ -50,7 +51,7 @@ export const Route = createFileRoute(
       title: "The Backlink Audit: Sort by First Seen, Then by Relevance",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

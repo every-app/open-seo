@@ -7,18 +7,18 @@ technical-SEO rule: a missing `<title>`, a redirect loop, a page nothing links
 to, thin content. Point an SEO crawler at it and check what the crawler catches.
 
 It is also the end-to-end test fixture for the
-[OpenSEO](https://openseo.so) site audit. Every page lists the audit issues it
+[SEOShark](https://seoshark.example) site audit. Every page lists the audit issues it
 should trigger, and a harness runs the real audit engine against a running copy
 to check that it does.
 
-Maintained by the team behind [OpenSEO](https://openseo.so), an open-source SEO
-tool.
+Maintained by the team behind [SEOShark](https://seoshark.example), an SEO tool
+built on the open-source OpenSEO codebase.
 
 ---
 
 ## What's covered
 
-Every issue type in the OpenSEO audit engine is exercised by at least one page
+Every issue type in the SEOShark audit engine is exercised by at least one page
 (the harness enforces this). Pages are grouped by category:
 
 | Category                     | Pages                                                                                                         |
@@ -84,7 +84,7 @@ pnpm exec prettier --write "badseo/**/*.{ts,tsx,json,jsonc,md}"
 
 ## Run the end-to-end audit
 
-The harness drives the **real** OpenSEO crawl + issue-detection functions
+The harness drives the **real** SEOShark crawl + issue-detection functions
 (imported straight from `../src`) against a running badseo.dev, then asserts every
 fixture triggers exactly the issues it declares — and that the homepage,
 privacy policy, and support pages come back clean.

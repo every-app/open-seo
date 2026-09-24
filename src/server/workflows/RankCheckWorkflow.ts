@@ -5,7 +5,10 @@ import {
 } from "cloudflare:workers";
 import { NonRetryableError } from "cloudflare:workflows";
 import { withPgClient } from "@/db";
-import type { BillingCustomerContext } from "@/server/billing/subscription";
+import {
+  type BillingCustomerContext,
+  getUsageCreditsRemaining,
+} from "@/server/billing/subscription";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { failRunIfActive } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import {
@@ -17,11 +20,6 @@ import { pgStep } from "@/server/workflows/pgStep";
 import { createDataforseoClient } from "@/server/lib/dataforseo";
 import { captureServerEvent } from "@/server/lib/posthog";
 import { AppError } from "@/server/lib/errors";
-import { autumn } from "@/server/billing/autumn";
-import {
-  AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-  AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-} from "@/shared/billing";
 import {
   estimateRankCheckCredits,
   rankCheckCostApprovalError,
@@ -102,19 +100,12 @@ export async function prepareRankCheckKeywords(input: {
   // Scheduled checks go through the cheaper task queue, so estimate at queued
   // pricing — a live-price estimate would skip checks the user can afford.
   if (await isHostedServerAuthMode()) {
-    const [monthlyCheck, topupCheck] = await Promise.all([
-      autumn.check({
-        customerId: input.billingCustomer.organizationId,
-        featureId: AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
-      }),
-      autumn.check({
-        customerId: input.billingCustomer.organizationId,
-        featureId: AUTUMN_SEO_DATA_TOPUP_BALANCE_FEATURE_ID,
-      }),
-    ]);
-    const available =
-      (monthlyCheck.balance?.remaining ?? 0) +
-      (topupCheck.balance?.remaining ?? 0);
+    // The shared helper retries Autumn's occasional empty balance reads; a
+    // raw check here coerced them to 0 and failed paying orgs' runs.
+    const { monthlyRemaining, topupRemaining } = await getUsageCreditsRemaining(
+      input.billingCustomer.organizationId,
+    );
+    const available = monthlyRemaining + topupRemaining;
     if (available < costCredits) {
       throw new AppError(
         "INSUFFICIENT_CREDITS",
@@ -159,11 +150,8 @@ async function finalizeRankCheckRun(input: {
 
   // Snapshots were written incrementally by each batch step.
   // Count from DB to get the authoritative keyword count.
-  const snapshots = await RankTrackingRepository.getSnapshotsForRun(
-    input.runId,
-  );
-  const keywordsChecked = new Set(snapshots.map((s) => s.trackingKeywordId))
-    .size;
+  const keywordsChecked =
+    await RankTrackingRepository.countKeywordsCheckedForRun(input.runId);
 
   const keywordsTotal = run.keywordsTotal || keywordsChecked;
   const incompleteCount = keywordsTotal - keywordsChecked;

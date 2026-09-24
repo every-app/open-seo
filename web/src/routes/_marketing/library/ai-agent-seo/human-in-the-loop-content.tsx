@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { AI_AGENT_SEO_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/ai-agent-seo/human-in-the-loop-content";
 
@@ -29,10 +30,10 @@ const faqs = [
   {
     question: "How do I check an AI draft?",
     answer:
-      "Two passes. Fact: every number, quote and product claim traces to the brief or the source. Slop: remove the phrases and structures that mark machine writing, such as filler openers, false contrasts and stacked rhetorical questions. OpenSEO keeps a catalogue of both in its repository and runs it on every page.",
+      `Two passes. Fact: every number, quote and product claim traces to the brief or the source. Slop: remove the phrases and structures that mark machine writing, such as filler openers, false contrasts and stacked rhetorical questions. ${brand.name} keeps a catalogue of both in its repository and runs it on every page.`,
   },
   {
-    question: "Does OpenSEO write content?",
+    question: `Does ${brand.name} write content?`,
     answer:
       "No. The MCP pulls the data half of a brief: Search Console performance, keyword metrics, SERP results, competitors, audit findings. The assistant you connect writes from the brief you complete. The product's own pages follow the same loop and the review rules are public in its repository.",
   },
@@ -56,7 +57,7 @@ export const Route = createFileRoute(
       title: "Human in the Loop Content: the Brief Is the Job",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

@@ -27,7 +27,7 @@ import { Route as ApiDomainAgeCheckerRouteImport } from './routes/api/domain-age
 import { Route as ApiCompetitorKeywordFinderRouteImport } from './routes/api/competitor-keyword-finder'
 import { Route as ApiCompetitorAnalysisRouteImport } from './routes/api/competitor-analysis'
 import { Route as ApiBacklinkCheckRouteImport } from './routes/api/backlink-check'
-import { Route as MarketingWhyOpenseoRouteImport } from './routes/_marketing/why-openseo'
+import { Route as MarketingWhySeosharkRouteImport } from './routes/_marketing/why-seoshark'
 import { Route as MarketingWebsiteTrafficCheckerRouteImport } from './routes/_marketing/website-traffic-checker'
 import { Route as MarketingToolsRouteImport } from './routes/_marketing/tools'
 import { Route as MarketingTermsAndConditionsRouteImport } from './routes/_marketing/terms-and-conditions'
@@ -37,7 +37,6 @@ import { Route as MarketingSerpSimulatorRouteImport } from './routes/_marketing/
 import { Route as MarketingRoadmapRouteImport } from './routes/_marketing/roadmap'
 import { Route as MarketingPrivacyRouteImport } from './routes/_marketing/privacy'
 import { Route as MarketingPricingRouteImport } from './routes/_marketing/pricing'
-import { Route as MarketingOpenSourceSeoRouteImport } from './routes/_marketing/open-source-seo'
 import { Route as MarketingKeywordGeneratorRouteImport } from './routes/_marketing/keyword-generator'
 import { Route as MarketingGoogleSearchConsoleMcpRouteImport } from './routes/_marketing/google-search-console-mcp'
 import { Route as MarketingDomainAgeCheckerRouteImport } from './routes/_marketing/domain-age-checker'
@@ -181,9 +180,9 @@ const ApiBacklinkCheckRoute = ApiBacklinkCheckRouteImport.update({
   path: '/api/backlink-check',
   getParentRoute: () => rootRouteImport,
 } as any)
-const MarketingWhyOpenseoRoute = MarketingWhyOpenseoRouteImport.update({
-  id: '/why-openseo',
-  path: '/why-openseo',
+const MarketingWhySeosharkRoute = MarketingWhySeosharkRouteImport.update({
+  id: '/why-seoshark',
+  path: '/why-seoshark',
   getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingWebsiteTrafficCheckerRoute =
@@ -232,11 +231,6 @@ const MarketingPrivacyRoute = MarketingPrivacyRouteImport.update({
 const MarketingPricingRoute = MarketingPricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => MarketingRoute,
-} as any)
-const MarketingOpenSourceSeoRoute = MarketingOpenSourceSeoRouteImport.update({
-  id: '/open-source-seo',
-  path: '/open-source-seo',
   getParentRoute: () => MarketingRoute,
 } as any)
 const MarketingKeywordGeneratorRoute =
@@ -555,7 +549,6 @@ export interface FileRoutesByFullPath {
   '/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/keyword-generator': typeof MarketingKeywordGeneratorRoute
-  '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/privacy': typeof MarketingPrivacyRoute
   '/roadmap': typeof MarketingRoadmapRoute
@@ -565,7 +558,7 @@ export interface FileRoutesByFullPath {
   '/terms-and-conditions': typeof MarketingTermsAndConditionsRoute
   '/tools': typeof MarketingToolsRoute
   '/website-traffic-checker': typeof MarketingWebsiteTrafficCheckerRoute
-  '/why-openseo': typeof MarketingWhyOpenseoRoute
+  '/why-seoshark': typeof MarketingWhySeosharkRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/competitor-analysis': typeof ApiCompetitorAnalysisRoute
   '/api/competitor-keyword-finder': typeof ApiCompetitorKeywordFinderRoute
@@ -635,7 +628,6 @@ export interface FileRoutesByTo {
   '/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/keyword-generator': typeof MarketingKeywordGeneratorRoute
-  '/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/pricing': typeof MarketingPricingRoute
   '/privacy': typeof MarketingPrivacyRoute
   '/roadmap': typeof MarketingRoadmapRoute
@@ -645,7 +637,7 @@ export interface FileRoutesByTo {
   '/terms-and-conditions': typeof MarketingTermsAndConditionsRoute
   '/tools': typeof MarketingToolsRoute
   '/website-traffic-checker': typeof MarketingWebsiteTrafficCheckerRoute
-  '/why-openseo': typeof MarketingWhyOpenseoRoute
+  '/why-seoshark': typeof MarketingWhySeosharkRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/competitor-analysis': typeof ApiCompetitorAnalysisRoute
   '/api/competitor-keyword-finder': typeof ApiCompetitorKeywordFinderRoute
@@ -718,7 +710,6 @@ export interface FileRoutesById {
   '/_marketing/domain-age-checker': typeof MarketingDomainAgeCheckerRoute
   '/_marketing/google-search-console-mcp': typeof MarketingGoogleSearchConsoleMcpRoute
   '/_marketing/keyword-generator': typeof MarketingKeywordGeneratorRoute
-  '/_marketing/open-source-seo': typeof MarketingOpenSourceSeoRoute
   '/_marketing/pricing': typeof MarketingPricingRoute
   '/_marketing/privacy': typeof MarketingPrivacyRoute
   '/_marketing/roadmap': typeof MarketingRoadmapRoute
@@ -728,7 +719,7 @@ export interface FileRoutesById {
   '/_marketing/terms-and-conditions': typeof MarketingTermsAndConditionsRoute
   '/_marketing/tools': typeof MarketingToolsRoute
   '/_marketing/website-traffic-checker': typeof MarketingWebsiteTrafficCheckerRoute
-  '/_marketing/why-openseo': typeof MarketingWhyOpenseoRoute
+  '/_marketing/why-seoshark': typeof MarketingWhySeosharkRoute
   '/api/backlink-check': typeof ApiBacklinkCheckRoute
   '/api/competitor-analysis': typeof ApiCompetitorAnalysisRoute
   '/api/competitor-keyword-finder': typeof ApiCompetitorKeywordFinderRoute
@@ -802,7 +793,6 @@ export interface FileRouteTypes {
     | '/domain-age-checker'
     | '/google-search-console-mcp'
     | '/keyword-generator'
-    | '/open-source-seo'
     | '/pricing'
     | '/privacy'
     | '/roadmap'
@@ -812,7 +802,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/tools'
     | '/website-traffic-checker'
-    | '/why-openseo'
+    | '/why-seoshark'
     | '/api/backlink-check'
     | '/api/competitor-analysis'
     | '/api/competitor-keyword-finder'
@@ -882,7 +872,6 @@ export interface FileRouteTypes {
     | '/domain-age-checker'
     | '/google-search-console-mcp'
     | '/keyword-generator'
-    | '/open-source-seo'
     | '/pricing'
     | '/privacy'
     | '/roadmap'
@@ -892,7 +881,7 @@ export interface FileRouteTypes {
     | '/terms-and-conditions'
     | '/tools'
     | '/website-traffic-checker'
-    | '/why-openseo'
+    | '/why-seoshark'
     | '/api/backlink-check'
     | '/api/competitor-analysis'
     | '/api/competitor-keyword-finder'
@@ -964,7 +953,6 @@ export interface FileRouteTypes {
     | '/_marketing/domain-age-checker'
     | '/_marketing/google-search-console-mcp'
     | '/_marketing/keyword-generator'
-    | '/_marketing/open-source-seo'
     | '/_marketing/pricing'
     | '/_marketing/privacy'
     | '/_marketing/roadmap'
@@ -974,7 +962,7 @@ export interface FileRouteTypes {
     | '/_marketing/terms-and-conditions'
     | '/_marketing/tools'
     | '/_marketing/website-traffic-checker'
-    | '/_marketing/why-openseo'
+    | '/_marketing/why-seoshark'
     | '/api/backlink-check'
     | '/api/competitor-analysis'
     | '/api/competitor-keyword-finder'
@@ -1186,11 +1174,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiBacklinkCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_marketing/why-openseo': {
-      id: '/_marketing/why-openseo'
-      path: '/why-openseo'
-      fullPath: '/why-openseo'
-      preLoaderRoute: typeof MarketingWhyOpenseoRouteImport
+    '/_marketing/why-seoshark': {
+      id: '/_marketing/why-seoshark'
+      path: '/why-seoshark'
+      fullPath: '/why-seoshark'
+      preLoaderRoute: typeof MarketingWhySeosharkRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/website-traffic-checker': {
@@ -1254,13 +1242,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof MarketingPricingRouteImport
-      parentRoute: typeof MarketingRoute
-    }
-    '/_marketing/open-source-seo': {
-      id: '/_marketing/open-source-seo'
-      path: '/open-source-seo'
-      fullPath: '/open-source-seo'
-      preLoaderRoute: typeof MarketingOpenSourceSeoRouteImport
       parentRoute: typeof MarketingRoute
     }
     '/_marketing/keyword-generator': {
@@ -1631,7 +1612,6 @@ interface MarketingRouteChildren {
   MarketingDomainAgeCheckerRoute: typeof MarketingDomainAgeCheckerRoute
   MarketingGoogleSearchConsoleMcpRoute: typeof MarketingGoogleSearchConsoleMcpRoute
   MarketingKeywordGeneratorRoute: typeof MarketingKeywordGeneratorRoute
-  MarketingOpenSourceSeoRoute: typeof MarketingOpenSourceSeoRoute
   MarketingPricingRoute: typeof MarketingPricingRoute
   MarketingPrivacyRoute: typeof MarketingPrivacyRoute
   MarketingRoadmapRoute: typeof MarketingRoadmapRoute
@@ -1641,7 +1621,7 @@ interface MarketingRouteChildren {
   MarketingTermsAndConditionsRoute: typeof MarketingTermsAndConditionsRoute
   MarketingToolsRoute: typeof MarketingToolsRoute
   MarketingWebsiteTrafficCheckerRoute: typeof MarketingWebsiteTrafficCheckerRoute
-  MarketingWhyOpenseoRoute: typeof MarketingWhyOpenseoRoute
+  MarketingWhySeosharkRoute: typeof MarketingWhySeosharkRoute
   MarketingIndexRoute: typeof MarketingIndexRoute
   MarketingFeaturesAiBrandVisibilityRoute: typeof MarketingFeaturesAiBrandVisibilityRoute
   MarketingFeaturesAiSearchPromptsRoute: typeof MarketingFeaturesAiSearchPromptsRoute
@@ -1697,7 +1677,6 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingDomainAgeCheckerRoute: MarketingDomainAgeCheckerRoute,
   MarketingGoogleSearchConsoleMcpRoute: MarketingGoogleSearchConsoleMcpRoute,
   MarketingKeywordGeneratorRoute: MarketingKeywordGeneratorRoute,
-  MarketingOpenSourceSeoRoute: MarketingOpenSourceSeoRoute,
   MarketingPricingRoute: MarketingPricingRoute,
   MarketingPrivacyRoute: MarketingPrivacyRoute,
   MarketingRoadmapRoute: MarketingRoadmapRoute,
@@ -1707,7 +1686,7 @@ const MarketingRouteChildren: MarketingRouteChildren = {
   MarketingTermsAndConditionsRoute: MarketingTermsAndConditionsRoute,
   MarketingToolsRoute: MarketingToolsRoute,
   MarketingWebsiteTrafficCheckerRoute: MarketingWebsiteTrafficCheckerRoute,
-  MarketingWhyOpenseoRoute: MarketingWhyOpenseoRoute,
+  MarketingWhySeosharkRoute: MarketingWhySeosharkRoute,
   MarketingIndexRoute: MarketingIndexRoute,
   MarketingFeaturesAiBrandVisibilityRoute:
     MarketingFeaturesAiBrandVisibilityRoute,

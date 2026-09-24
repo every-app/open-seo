@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -40,8 +41,7 @@ export const listProjectsTool = {
   name: "list_projects",
   config: {
     title: "List projects",
-    description:
-      "Lists the user's projects. Uses no credits — does not call DataForSEO. Use this whenever you need a `projectId` for another OpenSEO tool. Returns an array of {id, name, domain, locationCode, languageCode}; pass the `id` value as `projectId`. locationCode/languageCode are the project's default market — tools fall back to them when a call omits location/language args. When the user belongs to several organizations, each project is labeled with its organization and organizationId (pass that to create_project).",
+    description: `Lists the user's projects. Uses no credits — does not call DataForSEO. Use this whenever you need a \`projectId\` for another ${brand.name} tool. Returns an array of {id, name, domain, locationCode, languageCode}; pass the \`id\` value as \`projectId\`. locationCode/languageCode are the project's default market — tools fall back to them when a call omits location/language args. When the user belongs to several organizations, each project is labeled with its organization and organizationId (pass that to create_project).`,
     inputSchema: {} as Record<string, never>,
     outputSchema: z.looseObject({
       projects: z.array(

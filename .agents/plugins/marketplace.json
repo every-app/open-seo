@@ -1,15 +1,15 @@
 {
-  "name": "openseo",
+  "name": "seoshark",
   "owner": {
-    "name": "OpenSEO",
-    "url": "https://openseo.so"
+    "name": "SEOShark",
+    "url": "https://seoshark.example"
   },
-  "description": "OpenSEO's official Codex plugin marketplace.",
+  "description": "SEOShark's official Codex plugin marketplace.",
   "plugins": [
     {
-      "name": "openseo",
-      "source": "./plugins/openseo",
-      "description": "Without good data, your agent gives generic advice. Keyword research, competitor research, backlinks, and site audits. All for $10/month.",
+      "name": "seoshark",
+      "source": "./plugins/seoshark",
+      "description": "Real SEO data for your agent: keyword research, competitor research, backlinks, rank tracking, and site audits.",
       "category": "Productivity"
     }
   ]

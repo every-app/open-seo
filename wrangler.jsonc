@@ -124,10 +124,11 @@
       "migrations_dir": "drizzle",
     },
   ],
-  // Postgres scale path (opt-in; D1 is the default). Hyperdrive is the ONLY way
-  // the app connects to Postgres — there is no direct-connection fallback. For
-  // local dev, `localConnectionString` is the throwaway Docker Postgres from
-  // docs/LOCAL_POSTGRES.md, and nothing connects to it unless
+  // Postgres path (opt-in; D1 is the default). The app connects through this
+  // Hyperdrive binding when it is present, otherwise through a direct
+  // DATABASE_URL (the Supabase pooler — docs/DATABASE_SUPABASE.md). For local
+  // dev against a Docker Postgres, `localConnectionString` is the throwaway
+  // instance from docs/LOCAL_POSTGRES.md; nothing connects to it unless
   // DATABASE_PROVIDER=postgres is set in .env.local.
   //
   // Kept commented out: the id lives in OpenSEO's account, and only local

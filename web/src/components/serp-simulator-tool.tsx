@@ -1,16 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import { trackTool } from "@/lib/free-tools/analytics";
 import { FIELD_CLASS, FieldLabel } from "@/lib/free-tools/form";
+import { brand } from "@/lib/brand";
 
 const TOOL = "serp-simulator";
 const DESKTOP_TITLE_WIDTH = 600;
 const TITLE_FONT = "20px Arial, sans-serif";
 
 const EXAMPLE = {
-  title: "Free SERP Simulator: Preview Your Google Snippet | OpenSEO",
+  title: `Free SERP Simulator: Preview Your Google Snippet | ${brand.name}`,
   description:
     "Preview your title and meta description on desktop and mobile. Check how your text fits before publishing. Free, no signup.",
-  url: "https://openseo.so/serp-simulator",
+  url: `${brand.marketingUrl}/serp-simulator`,
 };
 
 export function SerpSimulatorTool() {

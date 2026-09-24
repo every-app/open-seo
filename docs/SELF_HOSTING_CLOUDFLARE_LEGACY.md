@@ -9,7 +9,7 @@ Your repo was created by the deploy button and `wrangler.jsonc` holds your resou
 One-time setup:
 
 ```bash
-git remote add upstream https://github.com/every-app/open-seo.git
+git remote add upstream https://github.com/bizztor/seoshark.git
 ```
 
 Update steps:
@@ -43,7 +43,7 @@ pnpm exec wrangler secret put DATAFORSEO_API_KEY --name open-seo-audit
 
 1. Open Cloudflare Zero Trust.
 2. Go to Access -> Applications.
-3. Open your OpenSEO application.
+3. Open your SEOShark application.
 4. Edit the `Allow` policy.
 5. Add teammate emails (or your company email domain / group).
 6. Save.
@@ -62,7 +62,7 @@ Replace `open-seo` with your bucket name if you changed it.
 
 ## Troubleshooting
 
-**Login fails or OpenSEO doesn't load.** Re-check, on your Worker under `Settings`:
+**Login fails or SEOShark doesn't load.** Re-check, on your Worker under `Settings`:
 
 - `Domains & Routes`: `Cloudflare Access` is enabled for the `workers.dev` route.
 - `Variables & Secrets`: `TEAM_DOMAIN` (for example `https://your-team.cloudflareaccess.com`), `POLICY_AUD` (the Access application audience tag), and `DATAFORSEO_API_KEY` are set. The `open-seo-audit` worker needs `DATAFORSEO_API_KEY` too.

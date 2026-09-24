@@ -4,7 +4,7 @@
  * audit_pages, audit_issues, and stored Lighthouse results. Link edges live
  * in the per-audit scratchpad Durable Object, not here.
  */
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   audits,
@@ -349,22 +349,20 @@ async function getAuditsByProject(projectId: string) {
 // so usage must aggregate across every member — counting per starting user
 // would multiply the free ceiling by the member count.
 async function getAuditUsageForOrganization(organizationId: string) {
-  const rows = await db
+  const units = sql`coalesce(sum(${audits.pagesTotal} + ${audits.lighthouseTotal}), 0)`;
+  const running = sql`coalesce(sum(case when ${audits.status} = 'running' then 1 else 0 end), 0)`;
+  const [row] = await db
     .select({
-      status: audits.status,
-      pagesTotal: audits.pagesTotal,
-      lighthouseTotal: audits.lighthouseTotal,
+      capacityUnits: units.mapWith(Number),
+      runningCount: running.mapWith(Number),
     })
     .from(audits)
     .innerJoin(projects, eq(audits.projectId, projects.id))
     .where(eq(projects.organizationId, organizationId));
 
   return {
-    capacityUnits: rows.reduce(
-      (total, row) => total + row.pagesTotal + row.lighthouseTotal,
-      0,
-    ),
-    runningCount: rows.filter((row) => row.status === "running").length,
+    capacityUnits: row?.capacityUnits ?? 0,
+    runningCount: row?.runningCount ?? 0,
   };
 }
 

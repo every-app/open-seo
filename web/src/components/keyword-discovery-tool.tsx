@@ -14,6 +14,7 @@ import { formatCount } from "@/lib/free-tools/metric-grid";
 import { ToolTable } from "@/lib/free-tools/tool-table";
 import { UpsellCard } from "@/lib/free-tools/upsell-card";
 import { useToolRun } from "@/lib/free-tools/use-tool-run";
+import { brand } from "@/lib/brand";
 
 type Result =
   | { target: string; locationCode: number; keywords: RankedKeywordRow[] }
@@ -131,7 +132,7 @@ export function KeywordDiscoveryTool({
             </p>
           )}
           <UpsellCard tool={tool} cta="Continue keyword research">
-            Explore more keywords and save the ones worth pursuing in OpenSEO.
+            Explore more keywords and save the ones worth pursuing in {brand.name}.
           </UpsellCard>
         </section>
       ) : null}

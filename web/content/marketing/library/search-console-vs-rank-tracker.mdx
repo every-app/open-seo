@@ -39,9 +39,9 @@ A tracker puts these measurements together for each scheduled check:
 
 Here is what the difference looks like on a real tracker. The 25 keywords below were chosen because Search Console reported seoarcade.com at average positions between 2 and 20 for them. After one mobile check from the US, three had a position; the other 22 were not in the top 40 at all. The averages were true. The positions were not there.
 
-![OpenSEO rank tracker results for seoarcade.com after one mobile check: 25 tracked keywords sorted by position, three with a position, ranking URL and SERP features, the rest showing no position inside the top 40](/library/rank-tracking/rank-tracker-positions-openseo.png "Rank tracker results in OpenSEO")
+![SEOShark rank tracker results for seoarcade.com after one mobile check: 25 tracked keywords sorted by position, three with a position, ranking URL and SERP features, the rest showing no position inside the top 40](/library/rank-tracking/rank-tracker-positions-seoshark.png "Rank tracker results in SEOShark")
 
-The cost is that every one of those answers is a paid request. In OpenSEO, scheduled checks run through a queue that prices out at a fraction of a cent per keyword per device, so a 25-keyword weekly tracker costs about $0.25 a month; a one-off live check costs around three and a half times more per keyword. On the hosted app, rank checks need the $10 plan, which includes $10 of credits each month. Search Console reads in OpenSEO cost nothing at all.
+The cost is that every one of those answers is a paid request. In SEOShark, scheduled checks run through a queue that prices out at a fraction of a cent per keyword per device, so a 25-keyword weekly tracker costs about $0.25 a month; a one-off live check costs around three and a half times more per keyword. On the hosted app, rank checks use credits from a paid plan. Search Console reads in SEOShark cost nothing at all.
 
 ## When Search Console alone is enough
 
@@ -67,12 +67,12 @@ Four situations, and one of them is usually what tips it.
 
 The workable pattern is Search Console first and the tracker second. Search Console picks the keywords, because it knows which queries already show your site and how far down; [which keywords to track](/library/rank-tracking/which-keywords-to-track) is that process. The tracker then follows those terms with the precision Search Console lacks. Then Search Console comes back at the end, because clicks are the number the tracker cannot produce, and a report that shows positions moving without showing what the clicks did is half a report.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect Search Console to the project, then connect the [OpenSEO MCP](/docs/mcp). The first three steps use no credits.
+Connect Search Console to the project, then connect the [SEOShark MCP](/docs/mcp). The first three steps use no credits.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Pull Search Console performance for the last 28 days by query and
    device. Show me the 20 queries with the most impressions, with
@@ -120,6 +120,6 @@ It is Google's own count of where your result appeared, so the impressions and c
 
 Open Search Console, go to Performance, filter to the page or query you care about, and switch on the average position metric. Filter to a single device and country to make the number meaningful. That covers your own site; for a competitor's rankings you need a tool that fetches results, which costs money wherever you do it.
 
-### Does OpenSEO use credits to read Search Console?
+### Does SEOShark use credits to read Search Console?
 
-No. Search Console and URL inspection reads are free in OpenSEO, in the app and through the MCP. Rank tracking checks use credits because they fetch live results, and on the hosted app they require the $10/month plan, which includes $10 of credits.
+No. Search Console and URL inspection reads are free in SEOShark, in the app and through the MCP. Rank tracking checks use credits because they fetch live results, and on the hosted app they use credits from a paid plan.

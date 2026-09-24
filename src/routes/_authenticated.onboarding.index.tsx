@@ -1,4 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { clamp } from "remeda";
 import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -18,7 +19,7 @@ import { useSession } from "@/lib/auth-client";
 import { saveOnboardingAnswers } from "@/serverFunctions/onboarding";
 
 const clampStep = (step: number) =>
-  Math.min(Math.max(0, Math.trunc(step)), ONBOARDING_LAST_STEP);
+  clamp(Math.trunc(step), { min: 0, max: ONBOARDING_LAST_STEP });
 
 export const Route = createFileRoute("/_authenticated/onboarding/")({
   // The app renders inside ClientOnly, and this guard reads account-scoped data

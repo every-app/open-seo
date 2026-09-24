@@ -2,7 +2,7 @@
   "name": "badseo",
   "private": true,
   "type": "module",
-  "description": "badseo.dev — a deliberately broken website full of SEO mistakes, used as e2e test fixtures for the OpenSEO site audit.",
+  "description": "badseo.dev — a deliberately broken website full of SEO mistakes, used as e2e test fixtures for the SEOShark site audit.",
   "scripts": {
     "dev": "vite dev",
     "start": "vite dev",

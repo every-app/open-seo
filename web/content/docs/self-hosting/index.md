@@ -1,9 +1,9 @@
 ---
-title: "Self-Hosting OpenSEO"
-description: "Run OpenSEO yourself with Docker or Cloudflare, bring your own DataForSEO API key, and pay only for what you use."
+title: "Self-Hosting SEOShark"
+description: "Run SEOShark yourself with Docker or Cloudflare, bring your own DataForSEO API key, and pay only for what you use."
 ---
 
-OpenSEO is free and open source. Self-hosting means the app costs $0. You bring your own DataForSEO API key and pay DataForSEO directly for API usage.
+You can run SEOShark on your own infrastructure. You bring your own DataForSEO API key and pay DataForSEO directly for API usage.
 
 There are two self-hosting paths:
 
@@ -12,7 +12,7 @@ There are two self-hosting paths:
 
 ## DataForSEO API key setup
 
-OpenSEO uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data. DataForSEO is a paid third-party service unaffiliated with OpenSEO. You need an API key to connect OpenSEO to it.
+SEOShark uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data. DataForSEO is a paid third-party service unaffiliated with SEOShark. You need an API key to connect SEOShark to it.
 
 1. Go to [DataForSEO API Access](https://app.dataforseo.com/api-access?aff=255379).
 2. Click "Send by email" to get your credentials.
@@ -22,13 +22,13 @@ OpenSEO uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data.
    - Cloudflare: as a Worker secret in the dashboard
    - Local development: `.env.local`
 
-New DataForSEO accounts include $1 of free credit to test with, and the minimum top-up is $50. See [pricing](/pricing) for cost estimates. Self-hosted costs run slightly lower, since the hosted service adds a 28% fee on DataForSEO requests.
+New DataForSEO accounts include $1 of free credit to test with, and the minimum top-up is $50. Self-hosted deployments pay DataForSEO's list prices directly; the hosted app bills the same requests as usage credits (see [pricing](/pricing)).
 
 ## Optional features
 
 ### Google Search Console
 
-Search Console is optional and works in self-hosted deployments using your own Google OAuth client. It takes about 10 minutes of one-time setup. See the [Google Search Console guide on GitHub](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md).
+Search Console is optional and works in self-hosted deployments using your own Google OAuth client. It takes about 10 minutes of one-time setup. See the [Google Search Console guide on GitHub](https://github.com/bizztor/seoshark/blob/main/docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md).
 
 ### AI features (SAM)
 

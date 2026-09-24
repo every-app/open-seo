@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
 import { beginRankCheckRun } from "@/server/features/rank-tracking/services/rankCheckRunGuards";
 import { customerHasPaidPlan } from "@/server/billing/subscription";
@@ -173,7 +174,7 @@ export async function runScheduledRankChecks(env: Env) {
           projectId: config.projectId,
           billingCustomer: {
             userId: "system",
-            userEmail: "system@openseo.so",
+            userEmail: brand.systemEmail,
             organizationId: config.organizationId,
             projectId: config.projectId,
           },

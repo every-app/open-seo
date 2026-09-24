@@ -1,7 +1,7 @@
 /**
  * End-to-end audit harness for badseo.dev.
  *
- * This drives the REAL OpenSEO audit engine (the same crawl + issue-detection
+ * This drives the REAL SEOShark audit engine (the same crawl + issue-detection
  * functions the production Worker uses) against a running badseo.dev, then
  * checks that every fixture triggers exactly the audit issues it declares.
  *

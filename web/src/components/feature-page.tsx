@@ -1,3 +1,4 @@
+import { appLinks, brand } from "@/lib/brand";
 import type { FeaturePage } from "@/lib/feature-pages";
 
 type FeaturePageProps = {
@@ -19,10 +20,10 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
         </p>
         <div className="mt-5">
           <a
-            href="https://app.openseo.so/sign-up"
+            href={appLinks.signUp}
             className="inline-flex h-11 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            Try OpenSEO
+            Try {brand.name}
             <span aria-hidden="true" className="ml-2">
               &rarr;
             </span>
@@ -76,7 +77,10 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <div className="mt-12 grid gap-5 md:grid-cols-2">
         <ListSection title="Use cases" items={page.useCases} />
-        <ListSection title="Why OpenSEO" items={page.differentiators} />
+        <ListSection
+          title={`Why ${brand.name}`}
+          items={page.differentiators}
+        />
       </div>
 
       {page.guides ? <GuidesSection guides={page.guides} /> : null}
@@ -124,17 +128,17 @@ export function FeaturePageTemplate({ page }: FeaturePageProps) {
 
       <section className="mt-12 rounded-xl border border-[var(--color-border-subtle)] bg-white p-6 md:p-8">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          Try OpenSEO
+          Try {brand.name}
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-          The open source alternative to bloated, expensive, legacy SEO tools.
+          The modern alternative to bloated, expensive, legacy SEO tools.
         </p>
         <div className="mt-4">
           <a
-            href="https://app.openseo.so/sign-up"
+            href={appLinks.signUp}
             className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            Try OpenSEO
+            Try {brand.name}
             <span aria-hidden="true" className="ml-2">
               &rarr;
             </span>
@@ -158,7 +162,7 @@ function FeatureImage({ page }: FeaturePageProps) {
         className="aspect-[16/10] w-full rounded-lg border border-[#ebe4da] object-cover object-top"
       />
       <figcaption className="px-1 pt-2 text-[11px] text-[var(--color-brand-muted)]">
-        {page.eyebrow} in OpenSEO.
+        {page.eyebrow} in {brand.name}.
       </figcaption>
     </figure>
   );

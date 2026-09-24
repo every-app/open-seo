@@ -3,6 +3,7 @@ import { DomainAgeCheckerTool } from "@/components/domain-age-checker-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const TOOL = freeTools["domain-age-checker"];
 
@@ -13,8 +14,8 @@ export const Route = createFileRoute("/_marketing/domain-age-checker")({
       description:
         "Check when a domain was registered, how old it is, when it expires, and who the registrar is — up to 10 domains at once. No signup, no email.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free domain age checker",
+      titleSuffix: brand.name,
+      imageAlt: `${brand.name} free domain age checker`,
     }),
   component: DomainAgeCheckerPage,
 });
@@ -70,7 +71,7 @@ function DomainAgeCheckerPage() {
       faqs={FAQS}
       cta={{
         heading: "Check the domain's rankings and links",
-        body: "Look up the domain's ranking keywords and backlinks in OpenSEO. Start with free trial credits.",
+        body: `Look up the domain's ranking keywords and backlinks in ${brand.name}. Start with free trial credits.`,
         featureLabel: "Learn about Domain Overview",
       }}
     >

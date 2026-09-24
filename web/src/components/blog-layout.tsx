@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { brand } from "@/lib/brand";
 
 const navLinks = [
   { label: "Features", to: "/features" },
@@ -17,7 +18,7 @@ export function BlogLayout({ children }: { children: ReactNode }) {
             to="/"
             className="shrink-0 text-base font-semibold text-neutral-950 transition-opacity hover:opacity-80"
           >
-            OpenSEO
+            {brand.name}
           </Link>
 
           <nav
@@ -39,7 +40,7 @@ export function BlogLayout({ children }: { children: ReactNode }) {
               </Link>
             ))}
             <a
-              href="https://github.com/every-app/open-seo"
+              href={brand.githubUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="hidden shrink-0 transition-colors hover:text-neutral-950 sm:inline"

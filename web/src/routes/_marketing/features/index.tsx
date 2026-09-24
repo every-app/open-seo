@@ -2,9 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { featureGroups } from "@/lib/feature-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const featuresDescription =
-  "Explore OpenSEO's open-source SEO tools for AI-agent workflows, Google Search Console MCP, keyword research, rank tracking, backlinks, site audits, competitor analysis, and AI visibility.";
+  `Explore ${brand.name}'s SEO tools for AI-agent workflows, Google Search Console MCP, keyword research, rank tracking, backlinks, site audits, competitor analysis, and AI visibility.`;
 
 export const Route = createFileRoute("/_marketing/features/")({
   head: () =>
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_marketing/features/")({
       title: "Features",
       description: featuresDescription,
       path: "/features",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: FeaturesIndex,
 });
@@ -21,7 +22,7 @@ function FeaturesIndex() {
   return (
     <article className="mx-auto max-w-5xl">
       <p className="text-sm font-medium text-[var(--color-brand-accent)]">
-        Open-source SEO tools
+        SEO tools
       </p>
       <h1 className="mt-3 max-w-3xl text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-6xl">
         All the tools you need, in one workspace
@@ -39,19 +40,19 @@ function FeaturesIndex() {
             </h2>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
               Let supported MCP clients research keywords, SERPs, domains,
-              backlinks, and first-party Search Console data through OpenSEO.
+              backlinks, and first-party Search Console data through {brand.name}.
             </p>
           </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <FeatureCard href="/features/mcp">
               <p className="text-xs font-medium text-[var(--color-brand-accent)]">
-                OpenSEO MCP
+                {brand.name} MCP
               </p>
               <h3 className="mt-2 text-lg font-semibold text-neutral-950">
-                OpenSEO MCP
+                {brand.name} MCP
               </h3>
               <p className="mt-2 text-sm leading-6 text-[var(--color-brand-muted)]">
-                Connect Claude, Codex, and other agents to OpenSEO research
+                Connect Claude, Codex, and other agents to {brand.name} research
                 tools.
               </p>
               <p className="mt-4 text-sm font-medium text-neutral-950">

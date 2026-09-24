@@ -1,9 +1,9 @@
 ---
 title: "Cloudflare Self-Hosting"
-description: "Deploy OpenSEO to your own Cloudflare account for internet-facing, multi-device, or team use."
+description: "Deploy SEOShark to your own Cloudflare account for internet-facing, multi-device, or team use."
 ---
 
-Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan.
+Host SEOShark on Cloudflare for internet-facing self-hosting across multiple devices or with your team. One deploy command provisions everything, including the Cloudflare Access login gate. Works on Cloudflare's free plan.
 
 ## Prerequisites
 
@@ -11,22 +11,22 @@ Host OpenSEO on Cloudflare for internet-facing self-hosting across multiple devi
 - **A Cloudflare account with R2 enabled.** Activating R2 requires a payment method on file, even within its free tier — if you have never used R2, open `R2` in the Cloudflare dashboard once.
 - **A DataForSEO account** — see [DataForSEO API key setup](/docs/self-hosting#dataforseo-api-key-setup).
 
-## 1) Clone your OpenSEO repo
+## 1) Clone your SEOShark repo
 
-Fork `every-app/open-seo` on GitHub if you want a repo you control, then clone it locally:
+Fork the SEOShark repository on GitHub if you want a repo you control, then clone it locally:
 
 ```bash
-git clone https://github.com/YOUR_GITHUB_USER/open-seo.git
-cd open-seo
+git clone https://github.com/YOUR_GITHUB_USER/seoshark.git
+cd seoshark
 corepack enable
 pnpm install
 ```
 
-If you do not need a fork, clone the upstream repo instead:
+If you do not need a fork, clone the main repo instead:
 
 ```bash
-git clone https://github.com/every-app/open-seo.git
-cd open-seo
+git clone https://github.com/bizztor/seoshark.git
+cd seoshark
 corepack enable
 pnpm install
 ```
@@ -60,17 +60,17 @@ This provisions the D1 database, KV namespaces, and R2 bucket, applies the datab
 
 1. Open the Worker URL printed at the end of the deploy.
 2. Sign in with Cloudflare Access.
-3. OpenSEO should load after login.
+3. SEOShark should load after login.
 
 If login fails, re-check `ACCESS_ALLOWED_EMAILS` and redeploy.
 
 ## Connect the MCP server through Cloudflare Access
 
-Use the same Cloudflare Access application that protects your OpenSEO Worker. Managed OAuth is required for MCP clients and is not enabled by default.
+Use the same Cloudflare Access application that protects your SEOShark Worker. Managed OAuth is required for MCP clients and is not enabled by default.
 
 1. Open Cloudflare Zero Trust.
 2. Go to `Access controls` -> `Applications`.
-3. Find your OpenSEO application, then select `Edit`.
+3. Find your SEOShark application, then select `Edit`.
 4. Go to `Additional settings` -> `OAuth`.
 5. Turn on `Managed OAuth`.
 6. In `Managed OAuth settings`, allow the redirect URIs your MCP clients use:
@@ -85,11 +85,11 @@ MCP clients should connect to:
 https://YOUR_WORKER_HOSTNAME/mcp
 ```
 
-## Give teammates access to OpenSEO
+## Give teammates access to SEOShark
 
-Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Everyone allowed through shares one OpenSEO workspace.
+Add the teammate to `ACCESS_ALLOWED_EMAILS` in `.env.selfhost` and redeploy. Everyone allowed through shares one SEOShark workspace.
 
-## Updating to the latest OpenSEO version
+## Updating to the latest SEOShark version
 
 ```bash
 git pull        # or: git fetch upstream && git merge upstream/main, if you forked
@@ -99,5 +99,5 @@ pnpm deploy:selfhost --yes
 
 ## More guides on GitHub
 
-- [Operations](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): telemetry and other day-to-day tasks.
-- [Legacy deployments](https://github.com/every-app/open-seo/blob/main/docs/SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.
+- [Operations](https://github.com/bizztor/seoshark/blob/main/docs/SELF_HOSTING_CLOUDFLARE_OPERATIONS.md): telemetry and other day-to-day tasks.
+- [Legacy deployments](https://github.com/bizztor/seoshark/blob/main/docs/SELF_HOSTING_CLOUDFLARE_LEGACY.md): maintenance for installs created with the retired Deploy-button or manual Wrangler flows.

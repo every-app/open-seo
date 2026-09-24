@@ -26,13 +26,15 @@
       "invocation_logs": true,
     },
   },
+  // Placeholder hosts (RFC 2606). Set these to the real marketing domain
+  // before the first deploy; they must match `marketingUrl` in src/lib/brand.ts.
   "routes": [
     {
-      "pattern": "openseo.so",
+      "pattern": "seoshark.example",
       "custom_domain": true,
     },
     {
-      "pattern": "www.openseo.so",
+      "pattern": "www.seoshark.example",
       "custom_domain": true,
     },
   ],

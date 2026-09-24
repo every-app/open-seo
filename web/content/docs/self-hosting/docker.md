@@ -1,15 +1,15 @@
 ---
 title: "Docker Self-Hosting"
-description: "Run OpenSEO locally with Docker Compose using the published GHCR image."
+description: "Run SEOShark locally with Docker Compose using the published GHCR image."
 ---
 
-Run OpenSEO locally with Docker.
+Run SEOShark locally with Docker.
 
-In Docker mode, OpenSEO uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network. For internet-facing self-hosting, use [Cloudflare](/docs/self-hosting/cloudflare) instead.
+In Docker mode, SEOShark uses `AUTH_MODE=local_noauth` (no auth checks, local admin user `admin@localhost`). Only expose it behind your own auth-protected reverse proxy, tunnel, or private network. For internet-facing self-hosting, use [Cloudflare](/docs/self-hosting/cloudflare) instead.
 
 The default `compose.yaml` uses the published GHCR image:
 
-- `ghcr.io/every-app/open-seo:latest`
+- `ghcr.io/bizztor/seoshark:latest`
 
 ## Prerequisites
 
@@ -21,12 +21,12 @@ The default `compose.yaml` uses the published GHCR image:
 Clone the repo, then:
 
 ```bash
-git clone https://github.com/every-app/open-seo.git
-cd open-seo
+git clone https://github.com/bizztor/seoshark.git
+cd seoshark
 cp .env.example .env
 ```
 
-Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](/docs/self-hosting#dataforseo-api-key-setup), then start OpenSEO:
+Set `DATAFORSEO_API_KEY` in `.env` using the [DataForSEO setup guide](/docs/self-hosting#dataforseo-api-key-setup), then start SEOShark:
 
 ```bash
 docker compose up -d
@@ -39,7 +39,7 @@ Optional env values:
 - `PORT` (defaults to `3001`)
 - `ALLOWED_HOST` (single reverse-proxy hostname to allow in Vite preview)
 - `AUTH_MODE=local_noauth` (already set in compose)
-- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/every-app/open-seo:latest`)
+- `OPEN_SEO_IMAGE` (defaults to `ghcr.io/bizztor/seoshark:latest`)
 
 If you are putting Docker behind a reverse proxy or a temporary tunnel, remember that Docker self-hosting runs with app auth disabled. Only expose it behind your own auth-protected reverse proxy, tunnel, or private network, and add the public hostname before restarting:
 
@@ -51,18 +51,18 @@ You can also persist it in `.env`.
 
 ## Telemetry
 
-OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
+SEOShark collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. Telemetry also includes failed setup check names and statuses, never values or error messages. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
 
 Heartbeats are triggered by requests to the app or MCP server. Requests to `/api/health`, including Docker's automatic health checks, do not trigger telemetry.
 
-To disable it, set `OPENSEO_TELEMETRY_DISABLED=1` (or `DO_NOT_TRACK=1`) in `.env`, then run `docker compose up -d --force-recreate open-seo`.
+To disable it, set `DO_NOT_TRACK=1` in `.env`, then run `docker compose up -d --force-recreate`.
 
 ## Pin to a specific image tag
 
 Set `OPEN_SEO_IMAGE` in `.env` and restart:
 
 ```bash
-OPEN_SEO_IMAGE=ghcr.io/every-app/open-seo:v1.2.3
+OPEN_SEO_IMAGE=ghcr.io/bizztor/seoshark:v1.2.3
 docker compose up -d
 ```
 
@@ -71,8 +71,8 @@ docker compose up -d
 If you are testing local code changes, build and run a local tag:
 
 ```bash
-docker build -f Dockerfile.selfhost -t open-seo:local .
-OPEN_SEO_IMAGE=open-seo:local docker compose up -d
+docker build -f Dockerfile.selfhost -t seoshark:local .
+OPEN_SEO_IMAGE=seoshark:local docker compose up -d
 ```
 
 ## Common commands
@@ -80,7 +80,7 @@ OPEN_SEO_IMAGE=open-seo:local docker compose up -d
 Restart service after env changes:
 
 ```bash
-docker compose up -d open-seo
+docker compose up -d
 ```
 
 Pull latest published image and restart:
@@ -112,5 +112,5 @@ Check that `AUTH_MODE=local_noauth`, and that `DATAFORSEO_API_KEY` is the base64
 If you changed `.env`, recreate the container so Compose reapplies it:
 
 ```bash
-docker compose up -d --force-recreate open-seo
+docker compose up -d --force-recreate
 ```

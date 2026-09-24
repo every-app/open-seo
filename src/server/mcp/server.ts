@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import {
   type CallToolResult,
   McpServer,
@@ -148,15 +149,15 @@ function registerOpenSeoTool<Input extends ToolSchema>(
 export function createOpenSeoMcpServer(authProps: McpProps) {
   const server = new McpServer(
     {
-      name: "OpenSEO MCP",
-      title: "OpenSEO",
+      name: `${brand.name} MCP`,
+      title: brand.name,
       version: "0.0.12",
       description:
         "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
-      websiteUrl: "https://openseo.so",
+      websiteUrl: brand.marketingUrl,
       icons: [
         {
-          src: "https://openseo.so/android-chrome-512x512.png",
+          src: brand.iconUrl,
           mimeType: "image/png",
           sizes: ["512x512"],
         },
@@ -168,8 +169,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
       // use it to decide whether to open a subscriptions/listen stream.
       // Without the pre-declaration, registerTool defaults it to true.
       capabilities: { tools: { listChanged: false } },
-      instructions:
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
+      instructions: `${brand.name} research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.`,
     },
   );
 

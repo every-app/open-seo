@@ -35,7 +35,7 @@ His episode is [here](https://unscriptedseo.com/patrick-stox-on-building-in-the-
 
 Here is the first layer on a real tracker. Twenty-five keywords, mobile, checking the top 40 results, weekly. The estimate before it runs, from the app:
 
-![OpenSEO rank tracker cost estimate through the MCP for the seoarcade.com tracker: 25 keywords on mobile at depth 40, a live check and the queued weekly check priced separately, with the monthly recurring cost](/library/ai-agent-seo/mcp-rank-tracker-estimate-openseo.png "Rank tracker cost estimate through the OpenSEO MCP")
+![SEOShark rank tracker cost estimate through the MCP for the seoarcade.com tracker: 25 keywords on mobile at depth 40, a live check and the queued weekly check priced separately, with the monthly recurring cost](/library/ai-agent-seo/mcp-rank-tracker-estimate-seoshark.png "Rank tracker cost estimate through the SEOShark MCP")
 
 That is a schedule. Nobody prompts it. It runs on Monday and the results wait. The agent's job is Tuesday: read what changed and say so. The person's job was two weeks ago, choosing the 25. Choosing them is that decision; reading the [rank tracker](/features/rank-tracking) and writing three sentences is the agent's Tuesday.
 
@@ -59,11 +59,11 @@ Her episode is [on the Unscripted Small Business podcast](https://unscriptedsmal
 
 One more thing to know about the market: a lot of what is sold as an "SEO agent" is a schedule and a prompt in a wrapper. That is fine, as long as you know that is what you bought and a person still reads the output.
 
-## Putting the three layers on OpenSEO
+## Putting the three layers on SEOShark
 
 Map the product to the layers and the plan writes itself.
 
-| Layer    | In OpenSEO                                                                                                    | Who acts                             |
+| Layer    | In SEOShark                                                                                                    | Who acts                             |
 | -------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
 | Schedule | Rank tracker (daily, weekly, monthly), the connected Search Console property                                  | Nobody. It runs.                     |
 | Agent    | The MCP tools: read the tracker, read Search Console, bucket audit issues, pull competitors, draft the report | The assistant, with a person reading |
@@ -71,12 +71,12 @@ Map the product to the layers and the plan writes itself.
 
 The schedule layer costs credits per check and the app shows the price before you commit. The agent layer costs nothing for reads (Search Console, tracker results, audit results) and credits for research. The person layer costs the most, which is the reason to keep it small and to give it good inputs.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect the [OpenSEO MCP](/docs/mcp). This prompt sets up the schedule layer once and defines the agent's weekly job; the person's job is answering the questions in step 1.
+Connect the [SEOShark MCP](/docs/mcp). This prompt sets up the schedule layer once and defines the agent's weekly job; the person's job is answering the questions in step 1.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Ask me three questions and wait: which 20 to 40 keywords to
    track, which device, and what day of the week I read reports.
@@ -119,9 +119,9 @@ Automation runs the same job on a schedule with no model involved, like a weekly
 
 The data collection, yes: the tracker and Search Console pulls run on their own and use no credits to read. The draft, yes, with an agent and a saved prompt. The sentence that says what it means for the business should still be written or at least read by a person before it goes out.
 
-### How much does scheduled rank tracking cost in OpenSEO?
+### How much does scheduled rank tracking cost in SEOShark?
 
-The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app need the $10/month plan.
+The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app use credits from a paid plan.
 
 ### Should I automate content production?
 

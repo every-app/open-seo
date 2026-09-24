@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { tool, type Tool, type ToolSet } from "ai";
 import { z, type ZodRawShape } from "zod";
 import { withPgClient } from "@/db";
@@ -61,7 +62,7 @@ import {
 import { whoamiTool } from "@/server/mcp/tools/whoami";
 import { discoverSiteUrls, readPages, readSite } from "@/server/lib/scrape";
 import { capToolOutput } from "@/server/features/sam/samToolOutput";
-import openSeoFactSheet from "@/server/features/sam/openseo-fact-sheet.md?raw";
+import productFactSheetTemplate from "@/server/features/sam/product-fact-sheet.md?raw";
 
 // Enough pages for SAM to work out what a business does, sells, and positions
 // against on its own.
@@ -111,7 +112,16 @@ export function toModelOutput(result: CallToolResult): {
   return { summary, data };
 }
 
-// Adapt one OpenSEO tool into an AI SDK tool. The shared handler receives the
+// The fact sheet is brand-neutral markdown; fill its tokens once at module load.
+const productFactSheet = productFactSheetTemplate
+  .replaceAll("{{brandName}}", brand.name)
+  .replaceAll("{{marketingUrl}}", brand.marketingUrl)
+  .replaceAll("{{docsUrl}}", brand.docsUrl)
+  .replaceAll("{{pricingUrl}}", brand.pricingUrl)
+  .replaceAll("{{appUrl}}", brand.appUrl)
+  .replaceAll("{{supportEmail}}", brand.supportEmail);
+
+// Adapt one of our MCP tools into an AI SDK tool. The shared handler receives the
 // same explicit auth context as the MCP transport, and runs through the same
 // instrumentation wrapper, so project scoping, credit metering, and the
 // mcp:tool_call telemetry (source "in_app_agent", null clientId) all match the
@@ -300,7 +310,7 @@ function scrapeTools(projectDomain: string | null): ToolSet {
 
 /**
  * Builds SAM's tool surface as an AI SDK ToolSet: the full MCP toolset plus the
- * free site-reading tools. Every tool the OpenSEO MCP server exposes is
+ * free site-reading tools. Every tool our MCP server exposes is
  * available except the ones a project-bound chat can't use (list_projects,
  * create_project) and get_project_context (already a context block). Auth and
  * billing context are passed directly to the shared tool handlers. DataForSEO
@@ -353,10 +363,9 @@ export function buildSamMcpTools(
     // On-demand product reference (kept out of the system prompt: inlining it
     // made the agent narrate hosted/self-hosted framing at signed-in users).
     get_product_info: tool({
-      description:
-        "The OpenSEO fact sheet: what the product does, plans/pricing, credit costs, integrations, MCP setup. Call before answering questions about OpenSEO itself. Uses no credits.",
+      description: `The ${brand.name} fact sheet: what the product does, plans/pricing, credit costs, integrations, MCP setup. Call before answering questions about ${brand.name} itself. Uses no credits.`,
       inputSchema: z.object({}),
-      execute: () => Promise.resolve({ factSheet: openSeoFactSheet }),
+      execute: () => Promise.resolve({ factSheet: productFactSheet }),
     }),
     ...scrapeTools(project.domain),
     whoami: adaptTool(whoamiTool),

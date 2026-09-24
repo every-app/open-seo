@@ -1,17 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import { ContentIndex } from "@/components/content-index";
+import { brand } from "@/lib/brand";
 import { baseOptions } from "@/lib/layout.shared";
 import { getDocsPageTree, getDocsPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 
 const docsDescription =
-  "OpenSEO setup and reference docs for MCP, AI clients, and workflow configuration.";
+  `${brand.name} setup and reference docs for MCP, AI clients, and workflow configuration.`;
 
 export const Route = createFileRoute("/docs/")({
   head: () =>
     buildPageSeo({
-      title: "OpenSEO Docs",
+      title: `${brand.name} Docs`,
       description: docsDescription,
       path: "/docs",
     }),
@@ -29,7 +30,7 @@ function DocsIndex() {
     <DocsLayout tree={pageTree} {...baseOptions()}>
       <ContentIndex
         eyebrow="Docs"
-        title="OpenSEO Docs"
+        title={`${brand.name} Docs`}
         description={docsDescription}
         emptyLabel="No docs yet. Check back soon."
         items={pages}

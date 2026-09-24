@@ -6,7 +6,7 @@ Accepted (June 2026)
 
 ## Context
 
-Keyword research is the largest credit spend for OpenSEO users, and coverage
+Keyword research is the largest credit spend for SEOShark users, and coverage
 has a hard gap: DataForSEO Labs supports 94 countries, so a customer in
 Iceland (location 2352) cannot run keyword research at all.
 
@@ -89,7 +89,7 @@ USD × 1.28 markup × 1000):
   (~64 → ~32 credits per seed); the opt-in keeps the refinement available to
   users who want it, priced visibly.
 - The direct Google Ads API is rejected on policy, not effort — revisit only
-  if OpenSEO ships campaign management.
+  if SEOShark ships campaign management.
 
 ## Consequences
 

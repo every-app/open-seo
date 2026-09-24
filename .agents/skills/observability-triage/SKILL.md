@@ -1,6 +1,6 @@
 ---
 name: observability-triage
-description: Triage OpenSEO production errors in Cloudflare Workers Observability — verified query recipes, counting gotchas, and a known-noise filter list applied automatically. Use when asked to review Cloudflare logs/observability, count OOMs or worker errors, compare error rates between periods, or investigate a prod error spike.
+description: Triage SEOShark production errors in Cloudflare Workers Observability — verified query recipes, counting gotchas, and a known-noise filter list applied automatically. Use when asked to review Cloudflare logs/observability, count OOMs or worker errors, compare error rates between periods, or investigate a prod error spike.
 metadata:
   internal: true
 ---

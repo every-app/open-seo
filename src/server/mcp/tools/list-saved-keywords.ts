@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { z } from "zod";
 import { KeywordResearchService } from "@/server/features/keywords/services/KeywordResearchService";
 import { mcpResponse } from "@/server/mcp/formatters";
@@ -63,8 +64,7 @@ export const listSavedKeywordsTool = {
   name: "list_saved_keywords",
   config: {
     title: "List saved keywords",
-    description:
-      "Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Uses no credits — reads from OpenSEO's database, no DataForSEO call. Each row includes its saved-keyword ID for remove_saved_keywords. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.",
+    description: `Lists keywords saved to a project (with cached metrics like search volume, difficulty, CPC, and tags if available). Uses no credits — reads from ${brand.name}'s database, no DataForSEO call. Each row includes its saved-keyword ID for remove_saved_keywords. Use tag filters when the user asks for a saved segment; multiple tags match ANY tag.`,
     inputSchema,
     outputSchema: z.looseObject({
       rows: z.array(savedKeywordOutputSchema),

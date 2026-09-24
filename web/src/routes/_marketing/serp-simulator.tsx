@@ -3,6 +3,7 @@ import { SerpSimulatorTool } from "@/components/serp-simulator-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const TOOL = freeTools["serp-simulator"];
 
@@ -14,8 +15,8 @@ export const Route = createFileRoute("/_marketing/serp-simulator")({
       description:
         "Preview your title and meta description in desktop and mobile search results, with pixel measurements and approximate truncation. No signup, no email.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free SERP snippet simulator",
+      titleSuffix: brand.name,
+      imageAlt: `${brand.name} free SERP snippet simulator`,
     }),
   component: SerpSimulatorPage,
 });
@@ -71,7 +72,7 @@ function SerpSimulatorPage() {
       faqs={FAQS}
       cta={{
         heading: "Find every page that needs this",
-        body: "Find missing, duplicate, and long titles and descriptions with an OpenSEO site audit. Start with free trial credits.",
+        body: `Find missing, duplicate, and long titles and descriptions with an ${brand.name} site audit. Start with free trial credits.`,
         featureLabel: "Learn about Site Audit",
       }}
     >

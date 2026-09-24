@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { LINK_BUILDING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/link-building/referring-domains";
 
@@ -31,7 +32,7 @@ const faqs = [
       "The number of link hops between a site and the sites a search engine trusts most in a field. A link from a site that is itself cited by the industry's authorities is close to the seed and counts for more than a link from a high-scoring site in an unrelated field. You cannot see the seed list; you can judge whether a linking site is one your industry cites.",
   },
   {
-    question: "Does OpenSEO show referring domains?",
+    question: `Does ${brand.name} show referring domains?`,
     answer:
       "Yes. The backlinks overview reports the referring domain count and the top referring domains with their backlink count, rank, spam score and first-seen date, and the growth chart shows backlinks and referring domains over the last year. The free backlink checker shows the summary without an account.",
   },
@@ -55,7 +56,7 @@ export const Route = createFileRoute(
       title: "Referring Domains, Not Backlinks: the Count That Moves Rankings",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

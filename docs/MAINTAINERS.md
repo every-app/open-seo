@@ -4,7 +4,7 @@ This document covers maintainer-only workflow notes that do not belong in the pu
 
 ## Release updates
 
-GitHub Releases are the main user-facing update channel for OpenSEO.
+GitHub Releases are the main user-facing update channel for SEOShark.
 
 - Ask interested users to watch the repo and enable release notifications.
 - Do not treat stars as a contact list; GitHub does not expose a way to message stargazers directly.
@@ -27,9 +27,9 @@ pnpm release:notes -- --draft v0.0.2
 Supported inputs:
 
 - `--from <tag>`: start changelog generation from a specific tag
-- `--to <ref>`: end at a specific ref, default is `HEAD`
+- `--to <ref>`: end at a specific ref, default is `main` when `origin` is `bizztor/seoshark` and `HEAD` otherwise
 - `--draft <tag>`: create a GitHub draft release for that tag using the generated notes
-- `--repo <owner/repo>`: override the GitHub repo
+- `--repo <owner/repo>`: override the GitHub repo (defaults to the `origin` remote)
 - `--help`: show help
 
 The generator:
@@ -39,15 +39,18 @@ The generator:
 - groups the remaining changes into short user-facing sections
 - can create a draft GitHub release when `--draft` is provided
 
-Store finalized notes in `release-notes/` as versioned Markdown files such as `release-notes/v0.0.2.md`.
+Store finalized notes in `release-notes/` as versioned Markdown files such as `release-notes/v0.1.0.md`. The folder starts empty: release notes begin with this fork's first tagged release.
 
 Recommended release flow:
 
 ```sh
 pnpm -s release:notes
-# edit and save the final copy in release-notes/v0.0.2.md
-gh release create v0.0.2 --target main --title v0.0.2 --notes-file release-notes/v0.0.2.md
+# edit and save the final copy in release-notes/v0.1.0.md, bump package.json, open a "release: v0.1.0" PR
+# after merge:
+pnpm release:publish
 ```
+
+`pnpm release:publish` reads the version from `package.json` and publishes the matching `release-notes/v<version>.md` as a GitHub release on `bizztor/seoshark`. The `release-notes` skill in `.agents/skills/` walks through the whole flow.
 
 For now, prefer patch releases while the project is still in rapid early development unless there is a clear reason to cut a minor or major release.
 

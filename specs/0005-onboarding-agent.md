@@ -142,7 +142,7 @@ a paywall is exactly the bait-and-switch the UX audit warned against).
 Update the `seo-coach` skill (and `onboarding-checklist`) so the coach and the
 onboarding agent are one continuous experience: the coach reads Project Context
 via MCP, picks up where onboarding left off ("here's your strategy — let's work
-the backlog"), and can answer both SEO questions and OpenSEO product questions.
+the backlog"), and can answer both SEO questions and SEOShark product questions.
 The onboarding agent sets the backlog; the coach executes it.
 
 ## Open questions

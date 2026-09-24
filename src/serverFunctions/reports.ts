@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { omit } from "remeda";
+import { omit, unique } from "remeda";
 import { z } from "zod";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ReportService } from "@/server/features/reports/services/ReportService";
@@ -50,7 +50,7 @@ async function withDisplayNames(
   reports: ReportMetadata[],
   projectId: string,
 ): Promise<ReportListItem[]> {
-  const userIds = [...new Set(reports.map((report) => report.createdByUserId))];
+  const userIds = unique(reports.map((report) => report.createdByUserId));
   const [users, { templates }] = await Promise.all([
     AuthRepository.getHostedUserNames(userIds),
     ReportTemplateService.listReportTemplates(projectId),
@@ -99,7 +99,7 @@ export const getReport = createServerFn({ method: "POST" })
 /**
  * Mints (or returns) the report's public link. The token alone comes back —
  * the app builds `<origin>/s/<token>` client-side, so the same server works on
- * app.openseo.so and a self-hosted hostname without knowing either.
+ * the hosted app origin and a self-hosted hostname without knowing either.
  */
 export const shareReport = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)

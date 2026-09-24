@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { brand } from "@/shared/brand";
 
 export function OnboardingCard({
   step,
@@ -13,7 +14,7 @@ export function OnboardingCard({
     <div className="w-full max-w-xl py-8">
       <div className="flex items-center justify-center gap-2 text-sm font-semibold">
         <img src="/transparent-logo.png" alt="" className="size-7" />
-        OpenSEO
+        {brand.name}
       </div>
       <main className="mt-8 rounded-2xl border border-base-300 bg-base-100 p-6 shadow-sm md:mt-12 md:p-10">
         <div

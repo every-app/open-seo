@@ -10,7 +10,7 @@ routeTree.gen.ts
 .agents/skills/
 # real copies synced from .agents/skills/ via `pnpm sync-plugin-skills` — must
 # stay byte-identical to the canonical source, not reformatted
-plugins/openseo/skills/
+plugins/seoshark/skills/
 dist/
 drizzle/
 drizzle-pg/

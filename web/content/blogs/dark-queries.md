@@ -1,7 +1,7 @@
 ---
 title: "The Dark Query Problem: Why Search Console Hides Most of Your Searches"
 description: "Google shows you the clicks but hides the questions behind them. Here's how to triangulate the searches you can't see using data you already have."
-author: "Jeremy Rivera"
+author: "SEOShark Team"
 date: "2026-07-20"
 ---
 
@@ -9,14 +9,14 @@ Open any page report in Google Search Console. It will tell you, confidently, th
 
 Those are _dark queries_: real searches, from real people, that turned into real visits, and you have no idea what they were.
 
-You can't force Google to hand them over. But you can reconstruct most of them, and the data you need is already sitting in three tools you probably already use. If you want an agent to do the heavy lifting, connect [OpenSEO MCP](/docs/mcp) first so it can pull live keyword, ranking, SERP, and Search Console data. New to this? Start with the [SEO coach](/docs/skills/seo-coach).
+You can't force Google to hand them over. But you can reconstruct most of them, and the data you need is already sitting in three tools you probably already use. If you want an agent to do the heavy lifting, connect [SEOShark MCP](/docs/mcp) first so it can pull live keyword, ranking, SERP, and Search Console data. New to this? Start with the [SEO coach](/docs/skills/seo-coach).
 
 ## Table of Contents
 
 - [The 100-clicks, 14-queries problem](#the-100-clicks-14-queries-problem)
 - [Why the gap is getting worse, not better](#why-the-gap-is-getting-worse-not-better)
 - [The fix: triangulate three data sources](#the-fix-triangulate-three-data-sources)
-- [Do it with OpenSEO](#do-it-with-openseo)
+- [Do it with SEOShark](#do-it-with-seoshark)
 - [What to do Monday morning](#what-to-do-monday-morning)
 
 ## The 100-clicks, 14-queries problem
@@ -53,9 +53,9 @@ No single dataset can rebuild your dark queries. But you already hold three part
 
 Line those three up against a single URL and the shape of the missing 86% starts to emerge. If a page shows 100 clicks, ranks on page one for a cluster of twenty related terms, and Analytics confirms a wave of engaged organic sessions, you can reasonably _infer_ which unnamed queries are doing the work, even though Google never spelled them out. It isn't certainty. It's triangulation: a defensible suggestion instead of a finger in the air.
 
-## Do it with OpenSEO
+## Do it with SEOShark
 
-This is exactly the workflow the [OpenSEO MCP](/docs/mcp) was built for. Because the Google Search Console connection runs _through_ OpenSEO, you don't have to wire up a separate integration. Connect it once and query all three sources from the same agent.
+This is exactly the workflow the [SEOShark MCP](/docs/mcp) was built for. Because the Google Search Console connection runs _through_ SEOShark, you don't have to wire up a separate integration. Connect it once and query all three sources from the same agent.
 
 ### 1. Pull the honest positioning picture
 
@@ -63,7 +63,7 @@ Ask your agent to grab the Search Console performance for one URL and flag the c
 
 ### 2. Widen the keyword cluster
 
-Use OpenSEO's ranked-keywords and keyword-research tools to find every term the page could plausibly be catching, not just the fourteen Google admitted to. The [keyword research skill](/docs/skills/keyword-research) makes this repeatable.
+Use SEOShark's ranked-keywords and keyword-research tools to find every term the page could plausibly be catching, not just the fourteen Google admitted to. The [keyword research skill](/docs/skills/keyword-research) makes this repeatable.
 
 ### 3. Confirm against real traffic
 
@@ -97,7 +97,7 @@ account for the difference. Output as a document I can review.
 
 The output isn't a magic list of the exact hidden searches, that data genuinely doesn't exist on your side of Google's wall. What you get instead is a ranked, evidence-backed shortlist of what those dark queries almost certainly are, assembled from three sources that individually would have left you guessing. That's the difference between "I got a hundred clicks" and "here are the twelve topics actually pulling people to this page, and here's the one I should build the next article around."
 
-Expensive suites will happily charge you $100 to $200 a month and still hand you the same fourteen queries. The point of doing this in OpenSEO isn't a prettier dashboard, it's that the Search Console, ranking, and MCP pieces are already connected, cheap, and scriptable, so triangulation becomes a prompt instead of a project.
+Expensive suites will happily charge you $100 to $200 a month and still hand you the same fourteen queries. The point of doing this in SEOShark isn't a prettier dashboard, it's that the Search Console, ranking, and MCP pieces are already connected, cheap, and scriptable, so triangulation becomes a prompt instead of a project.
 
 ## What to do Monday morning
 
@@ -105,4 +105,4 @@ Pick your single most important page, the one you'd most hate to be guessing abo
 
 As Sonia's clients keep proving, the leads increasingly arrive from places nobody used to look. The SEOs who win the next few years won't be the ones with the most data. They'll be the ones who got good at reconstructing the data everyone else accepts as lost.
 
-If you want to explore this yourself, [OpenSEO](https://openseo.so/) is an affordable, open-source SEO tool that connects Search Console, ranking, and MCP data in one place, so you can start closing the dark-query gap today.
+If you want to explore this yourself, [SEOShark](https://seoshark.example/) is an affordable SEO tool that connects Search Console, ranking, and MCP data in one place, so you can start closing the dark-query gap today.

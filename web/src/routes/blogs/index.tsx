@@ -3,13 +3,14 @@ import { SiteFooter } from "@/components/site-footer";
 import { BlogLayout } from "@/components/blog-layout";
 import { getBlogPosts } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
-const blogIndexDescription = "SEO articles and guides from OpenSEO.";
+const blogIndexDescription = `SEO articles and guides from ${brand.name}.`;
 
 export const Route = createFileRoute("/blogs/")({
   head: () =>
     buildPageSeo({
-      title: "OpenSEO Blog",
+      title: `${brand.name} Blog`,
       description: blogIndexDescription,
       path: "/blogs",
     }),

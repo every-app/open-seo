@@ -41,7 +41,7 @@ Now the small-site case, from a crawl of seoarcade.com.
 
 The site runs a Q&A section. Every question has a page, and every individual answer to that question also gets its own permalink. Filtering the crawl to a single question about keyword forecasts returns **20 of the 867 crawled URLs**. Eight of those came back 200, all carrying the same title and between 824 and 1,127 words of overlapping text.
 
-![OpenSEO site audit pages tab filtered to one question slug, showing 20 of 867 crawled URLs, all sharing the title "How does my life change with keyword forecasts? -" with word counts between 824 and 1,127, four of them returning 429 and the rest returning 200](/library/site-audit/duplicate-answer-permalinks-openseo.png)
+![SEOShark site audit pages tab filtered to one question slug, showing 20 of 867 crawled URLs, all sharing the title "How does my life change with keyword forecasts? -" with word counts between 824 and 1,127, four of them returning 429 and the rest returning 200](/library/site-audit/duplicate-answer-permalinks-seoshark.png)
 
 Each of those eight sits in the sitemap and reports `isIndexable: true`. By any crawl-based definition this is index bloat, and the obvious move is to noindex the answer permalinks and ship it.
 
@@ -53,7 +53,7 @@ There was nothing to remove. The crawler found a mess and the index did not have
 
 ## Check before you cut
 
-This is the difference between the two cases, and it costs nothing to establish. Google's URL Inspection API costs nothing and uses no OpenSEO credits, and it answers the only question that matters: does Google know this URL exists, and if it does, which URL did it pick as canonical?
+This is the difference between the two cases, and it costs nothing to establish. Google's URL Inspection API costs nothing and uses no SEOShark credits, and it answers the only question that matters: does Google know this URL exists, and if it does, which URL did it pick as canonical?
 
 Four verdicts come back, and each implies a different action.
 
@@ -76,12 +76,12 @@ Removing a URL from a sitemap does not remove it from an RSS feed, an internal l
 4. Act on the verdicts, not the crawl. Unknown and duplicate URLs need a sitemap fix. Indexed-but-unwanted URLs need `noindex` or a 410.
 5. Re-inspect the same sample in 30 days. Index changes are slow and a re-check is the only way to know the change landed.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
 `get_audit_pages` gives you the crawl side and `inspect_urls` gives you Google's side, so an agent can join them in one pass. Both are free calls: they read stored audit state and Search Console rather than a paid data provider.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. From the most recent site audit, pull all crawled pages. Group
    them by exact title and show me every title used by more than
@@ -136,4 +136,4 @@ As many as there are distinct things worth ranking, which for most small busines
 
 ### Can a site audit tool find index bloat?
 
-Not directly, because every bloated page returns 200 and passes its per-page checks. What a crawler gives you is the raw material, repeated titles, thin word counts, and recurring URL patterns. Pair it with Search Console URL inspection to find out which of those URLs Google holds. OpenSEO does both: crawls up to 50 pages on the free plan and 10,000 on the $10/month plan, and runs URL inspection against your connected property at no credit cost.
+Not directly, because every bloated page returns 200 and passes its per-page checks. What a crawler gives you is the raw material, repeated titles, thin word counts, and recurring URL patterns. Pair it with Search Console URL inspection to find out which of those URLs Google holds. SEOShark does both: crawls up to 50 pages on the free plan and 10,000 on paid plans, and runs URL inspection against your connected property at no credit cost.

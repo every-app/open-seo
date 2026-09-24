@@ -1,6 +1,6 @@
-# Running OpenSEO on Postgres locally
+# Running SEOShark on Postgres locally
 
-OpenSEO runs on **Cloudflare D1 (SQLite) by default**. Postgres is an opt-in
+SEOShark runs on **Cloudflare D1 (SQLite) by default**. Postgres is an opt-in
 backend for installs that outgrow D1's storage ceiling. The application code is
 written once against a provider-aware `db` layer (see `src/db/`), so the only
 difference at runtime is the `DATABASE_PROVIDER` flag and a connection string.
@@ -62,16 +62,28 @@ provider flag there (not just in your shell):
 DATABASE_PROVIDER=postgres
 ```
 
-The connection string comes from the `HYPERDRIVE` binding. The `hyperdrive`
-block in `wrangler.jsonc` ships commented out, so uncomment it first. Miniflare then resolves the binding to its
-`localConnectionString`, which already points at the Docker container from
-step 1. (In deployed Workers the same binding resolves to real Hyperdrive —
-the app never connects to Postgres except through this binding.) If your local
-Postgres lives elsewhere, override without touching the config:
+The simplest way to supply the connection string is `DATABASE_URL` in the same
+file:
+
+```sh
+# .env.local
+DATABASE_PROVIDER=postgres
+DATABASE_URL=postgres://openseo:openseo@localhost:5433/openseo
+```
+
+Alternatively use the `HYPERDRIVE` binding, which mirrors how a Hyperdrive-
+backed Cloudflare deploy connects: uncomment the `hyperdrive` block in
+`wrangler.jsonc` and miniflare resolves the binding to its
+`localConnectionString` (already pointing at the container from step 1). The
+binding wins over `DATABASE_URL` when both are present. To point the binding
+elsewhere without touching the config:
 
 ```sh
 CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE=postgres://... pnpm dev
 ```
+
+For a managed database use Supabase instead of the Docker container — see
+[`DATABASE_SUPABASE.md`](./DATABASE_SUPABASE.md).
 
 Then start the dev server as usual:
 
@@ -83,8 +95,8 @@ To switch back to D1, remove that line (or set `DATABASE_PROVIDER=d1`) and
 restart.
 
 > `POSTGRES_DATABASE_URL` (step 2) is only read by Node-side tooling —
-> `drizzle-kit` and `scripts/migrate-d1-to-postgres.ts`. The app itself ignores
-> it.
+> `drizzle-kit` and `scripts/migrate-d1-to-postgres.ts` — and falls back to
+> `DATABASE_URL` when unset. The app itself ignores it.
 
 ## 4. Verify
 

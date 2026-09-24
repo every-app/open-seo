@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { markDubReferredOrganization } from "@/server/referrals/dub";
 import { slugify, toHex } from "./org-slug";
@@ -19,7 +20,7 @@ type HostedOrganizationCreator = (
 ) => Promise<{ id: string }>;
 
 function getDefaultHostedOrganizationName(user: HostedUser) {
-  const name = user.name?.trim() || user.email.split("@")[0] || "OpenSEO";
+  const name = user.name?.trim() || user.email.split("@")[0] || brand.name;
   return `${name}'s organization`;
 }
 

@@ -11,6 +11,7 @@ import {
   formatPreflightReport,
   runSelfhostPreflight,
 } from "../src/lib/selfhost-preflight";
+import { brand } from "../src/shared/brand";
 import { isTelemetryOptOutValue } from "../src/shared/selfhost-checks";
 import { version } from "../package.json";
 
@@ -54,7 +55,7 @@ async function sendPreflightFailedBeacon(failedChecks: string[]) {
 
 const result = runSelfhostPreflight(process.env);
 
-console.log("--- OpenSEO self-host preflight ---");
+console.log(`--- ${brand.name} self-host preflight ---`);
 console.log(formatPreflightReport(result));
 
 if (result.failed) {

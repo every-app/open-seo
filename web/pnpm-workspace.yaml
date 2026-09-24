@@ -1,6 +1,4 @@
 minimumReleaseAge: 11520
-minimumReleaseAgeExclude:
-  - "@every-app/*"
 
 # Security floors for transitive dependencies; keep compatible majors.
 overrides:

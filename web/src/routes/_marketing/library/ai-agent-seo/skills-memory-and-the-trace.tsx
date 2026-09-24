@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { AI_AGENT_SEO_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/ai-agent-seo/skills-memory-and-the-trace";
 
@@ -13,7 +14,7 @@ const faqs = [
   {
     question: "What is an agent skill?",
     answer:
-      "A file, usually SKILL.md, that tells an AI assistant how to do one job: which tools to call in what order, what to check, and what the output should look like. OpenSEO ships skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup, so the assistant runs each workflow the same way every time.",
+      `A file, usually SKILL.md, that tells an AI assistant how to do one job: which tools to call in what order, what to check, and what the output should look like. ${brand.name} ships skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup, so the assistant runs each workflow the same way every time.`,
   },
   {
     question:
@@ -24,7 +25,7 @@ const faqs = [
   {
     question: "How do I give an AI agent memory?",
     answer:
-      "A plain-text store it reads before it starts: markdown files of decisions, transcripts and rules, or a structured project context like OpenSEO's, which holds goal, positioning, competitors, key pages and a research log. Feedback written into that store becomes a rule; feedback given once in chat is forgotten.",
+      `A plain-text store it reads before it starts: markdown files of decisions, transcripts and rules, or a structured project context like ${brand.name}'s, which holds goal, positioning, competitors, key pages and a research log. Feedback written into that store becomes a rule; feedback given once in chat is forgotten.`,
   },
   {
     question: "How do I know if an AI SEO report is accurate?",
@@ -32,7 +33,7 @@ const faqs = [
       "Make the assistant log every tool call and cite the log line for every number. A figure with no tool call behind it came from the model rather than the data. Then read the whole thing, not the first five rows, and only trust it in a domain where you would spot a wrong answer yourself.",
   },
   {
-    question: "Does OpenSEO have project memory?",
+    question: `Does ${brand.name} have project memory?`,
     answer:
       "Yes. Each project holds a shared context: business overview, current goal, positioning, writing preferences, competitors, key pages and a research log. The MCP reads it with get_project_context and updates it with update_project_context, and the seo-project-setup skill fills it in on the first run.",
   },
@@ -56,7 +57,7 @@ export const Route = createFileRoute(
       title: "Skills, Memory and the Trace: Make the Good Run Repeatable",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

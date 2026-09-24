@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/long-tail-question-mining.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/long-tail-question-mining";
 
@@ -22,7 +23,7 @@ const faqs = [
   {
     question: "Is there a free long-tail keyword generator?",
     answer:
-      "Google gives you two: autocomplete and People Also Ask. Your Search Console is the third and best; it's your site's actual tail. OpenSEO connects your Search Console and expands what you find into full keyword lists. You can start for free; paid plans start at $10/month.",
+      `Google gives you two: autocomplete and People Also Ask. Your Search Console is the third and best; it's your site's actual tail. ${brand.name} connects your Search Console and expands what you find into full keyword lists. You can start for free; paid plans add usage credits.`,
   },
 ];
 
@@ -44,7 +45,7 @@ export const Route = createFileRoute(
       title: "What Are Long-Tail Keywords? How to Find and Use Them",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { RANK_TRACKING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/rank-tracking/search-console-vs-rank-tracker";
 
@@ -31,9 +32,9 @@ const faqs = [
       "Open Search Console, go to Performance, filter to the page or query you care about, and switch on the average position metric. Filter to a single device and country to make the number meaningful. That covers your own site; for a competitor's rankings you need a tool that fetches results, which costs money wherever you do it.",
   },
   {
-    question: "Does OpenSEO use credits to read Search Console?",
+    question: `Does ${brand.name} use credits to read Search Console?`,
     answer:
-      "No. Search Console and URL inspection reads are free in OpenSEO, in the app and through the MCP. Rank tracking checks use credits because they fetch live results, and on the hosted app they require the $10/month plan, which includes $10 of credits.",
+      `No. Search Console and URL inspection reads are free in ${brand.name}, in the app and through the MCP. Rank tracking checks use credits because they fetch live results, and on the hosted app they use credits from a paid plan.`,
   },
 ];
 
@@ -55,7 +56,7 @@ export const Route = createFileRoute(
       title: "Is Search Console a Rank Tracker? Where the Free Data Stops",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

@@ -3,6 +3,7 @@ import { BacklinkCheckerTool } from "@/components/backlink-checker-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const TOOL = freeTools["backlink-checker"];
 
@@ -16,8 +17,8 @@ export const Route = createFileRoute("/_marketing/backlink-checker")({
       description:
         "Check backlinks for any domain: referring domains, top backlinks, anchor text, and follow status. Instant results, no signup, no email.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free backlink checker",
+      titleSuffix: brand.name,
+      imageAlt: `${brand.name} free backlink checker`,
     }),
   component: BacklinkCheckerPage,
 });
@@ -26,12 +27,12 @@ const FAQS = [
   {
     question: "Where does the backlink data come from?",
     answer:
-      "Results come from DataForSEO's link index, the same data source that powers backlink research inside OpenSEO. The index is refreshed continuously, so counts can differ slightly from other tools that crawl the web on their own schedule.",
+      `Results come from DataForSEO's link index, the same data source that powers backlink research inside ${brand.name}. The index is refreshed continuously, so counts can differ slightly from other tools that crawl the web on their own schedule.`,
   },
   {
     question: "How many backlinks can I see for free?",
     answer:
-      "The free checker shows a domain's summary metrics and its top 15 backlinks, one per referring domain, ranked by domain strength. Sign up for OpenSEO to page through the full list, see referring domains and anchors, filter out spam, and export the data.",
+      `The free checker shows a domain's summary metrics and its top 15 backlinks, one per referring domain, ranked by domain strength. Sign up for ${brand.name} to page through the full list, see referring domains and anchors, filter out spam, and export the data.`,
   },
   {
     question: "Can I check a competitor's backlinks?",
@@ -75,7 +76,7 @@ function BacklinkCheckerPage() {
       faqs={FAQS}
       cta={{
         heading: "Explore more backlinks",
-        body: "Browse referring domains, review anchor text, and filter backlinks in OpenSEO. Start with free trial credits.",
+        body: `Browse referring domains, review anchor text, and filter backlinks in ${brand.name}. Start with free trial credits.`,
         featureLabel: "Learn about the Backlinks feature",
       }}
     >

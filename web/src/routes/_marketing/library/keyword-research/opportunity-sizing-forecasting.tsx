@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/opportunity-sizing-forecasting.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/opportunity-sizing-forecasting";
 
@@ -49,7 +50,7 @@ export const Route = createFileRoute(
       title: "SEO Forecasting: Size a Keyword Opportunity Before You Build",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

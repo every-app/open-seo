@@ -1,6 +1,6 @@
 ---
 name: maintain-greptile-rules
-description: Evaluate verified findings from merge-ready, Greptile, pull-request, CI, security, billing, and other code reviews, then promote durable review gaps into the version-controlled .greptile configuration. Use when a review uncovers a recurring or high-risk repository invariant that Greptile does not capture, when Greptile repeatedly produces a false positive, or when asked to audit or update OpenSEO's Greptile rules and context.
+description: Evaluate verified findings from merge-ready, Greptile, pull-request, CI, security, billing, and other code reviews, then promote durable review gaps into the version-controlled .greptile configuration. Use when a review uncovers a recurring or high-risk repository invariant that Greptile does not capture, when Greptile repeatedly produces a false positive, or when asked to audit or update SEOShark's Greptile rules and context.
 metadata:
   internal: true
 ---

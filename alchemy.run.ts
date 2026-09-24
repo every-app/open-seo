@@ -325,7 +325,7 @@ export default Alchemy.Stack(
       if (!authUrl) {
         return yield* Effect.die(
           new Error(
-            "Set BETTER_AUTH_URL (https://app.openseo.so) in .env.production.",
+            "Set BETTER_AUTH_URL (e.g. https://app.your-domain.com) in .env.production.",
           ),
         );
       }
@@ -420,10 +420,19 @@ export default Alchemy.Stack(
       },
     }).pipe(Alchemy.RemovalPolicy.retain(prod));
 
+    // Prod serves the real domains; the zone is inferred from the hostname.
+    // APP_DOMAINS (comma-separated) lists every custom domain; it defaults to
+    // the BETTER_AUTH_URL host so a single-domain deploy needs no extra var.
+    const appDomains = (yield* optionalVar("APP_DOMAINS"))
+      .split(",")
+      .map((domain) => domain.trim())
+      .filter(Boolean);
+    const prodDomains =
+      appDomains.length > 0 ? appDomains : [new URL(authUrl).hostname];
+
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
-      // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      domain: prod ? prodDomains : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under

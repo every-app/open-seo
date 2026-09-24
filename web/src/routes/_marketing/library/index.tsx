@@ -8,6 +8,7 @@ import {
   rankTrackingStrategies,
   siteAuditStrategies,
 } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library";
 const description =
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_marketing/library/")({
       title: "SEO Strategy Library",
       description,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: StrategyLibraryIndexPage,
 });

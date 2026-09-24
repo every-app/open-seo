@@ -5,6 +5,7 @@ import PrivacyContent, {
 } from "../../../content/legal/privacy.md";
 import { LegalPage } from "@/components/legal-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 export const Route = createFileRoute("/_marketing/privacy")({
   head: () =>
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_marketing/privacy")({
       title: privacyFrontmatter.title,
       description: privacyFrontmatter.description,
       path: "/privacy",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: Privacy,
 });

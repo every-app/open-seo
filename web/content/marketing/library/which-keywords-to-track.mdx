@@ -55,20 +55,20 @@ That is 20 to 40 rows, and every one of them means something to the person readi
 
 Search Console's query list carries junk, and it is worth knowing what it looks like so you do not track it. The same seoarcade.com pull included queries like `12371: multiple keyword serps report` and several that were the full text of an AI agent's prompt, complete with markdown headers. Those are tools and agents hitting Google, not people. They will show impressions and never a click. Leave them out.
 
-Also decide, per keyword, whether case matters. `OpenSEO` and `openseo` return the same results; `Apple` and `apple` may not. OpenSEO lowercases tracked keywords by default and tracks a cased keyword separately if you ask, which is right for brand names and wrong for almost everything else.
+Also decide, per keyword, whether case matters. `SEOShark` and `seoshark` return the same results; `Apple` and `apple` may not. SEOShark lowercases tracked keywords by default and tracks a cased keyword separately if you ask, which is right for brand names and wrong for almost everything else.
 
 ## Price the list before you add it
 
-OpenSEO estimates cost before any check runs. On the seoarcade.com tracker, 25 keywords, mobile only, checking the top 40 results, came back as 225 credits for a one-off live check and 63 credits per scheduled weekly check, which is 252 credits or about $0.25 a month. The $10 plan includes $10 of credits, so a list of this size uses under 3% of them. Doubling the depth to 100 results, adding desktop, or moving to daily checks each raise the cost in proportion, and the estimate updates before you commit.
+SEOShark estimates cost before any check runs. On the seoarcade.com tracker, 25 keywords, mobile only, checking the top 40 results, came back as 225 credits for a one-off live check and 63 credits per scheduled weekly check, which is 252 credits or about $0.25 a month. A list of this size uses a small fraction of a paid plan's monthly credits. Doubling the depth to 100 results, adding desktop, or moving to daily checks each raise the cost in proportion, and the estimate updates before you commit.
 
-![OpenSEO rank tracker configuration for seoarcade.com: United States, national targeting, mobile only, weekly, top 40 results, with the cost shown before saving as about $0.0025 per keyword per check and about $0.50 a month for 50 keywords](/library/rank-tracking/rank-tracker-cost-estimate-openseo.png "Rank tracker cost estimate in OpenSEO")
+![SEOShark rank tracker configuration for seoarcade.com: United States, national targeting, mobile only, weekly, top 40 results, with the cost shown before saving as about $0.0025 per keyword per check and about $0.50 a month for 50 keywords](/library/rank-tracking/rank-tracker-cost-estimate-seoshark.png "Rank tracker cost estimate in SEOShark")
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect Search Console to the project first, because the whole workflow reads from it, and connect the [OpenSEO MCP](/docs/mcp) so an agent can do the pull, the filter, and the add in one pass.
+Connect Search Console to the project first, because the whole workflow reads from it, and connect the [SEOShark MCP](/docs/mcp) so an agent can do the pull, the filter, and the add in one pass.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Pull Search Console performance for the last 3 months by query,
    all rows. Exclude queries containing the brand name, queries
@@ -116,7 +116,7 @@ A few. Brand terms belong in the tracker as an early-warning control, and a term
 
 ### Does it cost more to track more keywords?
 
-Yes, in proportion. In OpenSEO the cost of a check is the number of keywords times the number of devices times the depth of results inspected, and scheduled checks run through a cheaper queue than one-off live checks. The app shows an estimate before you add keywords or start a run. On the hosted app, rank checks need the $10/month plan, which includes $10 of credits.
+Yes, in proportion. In SEOShark the cost of a check is the number of keywords times the number of devices times the depth of results inspected, and scheduled checks run through a cheaper queue than one-off live checks. The app shows an estimate before you add keywords or start a run. On the hosted app, rank checks use credits from a paid plan.
 
 ### How often should I re-pick the keywords?
 

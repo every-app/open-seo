@@ -1,0 +1,2 @@
+CREATE INDEX `rank_tracking_configs_due_idx` ON `rank_tracking_configs` (`is_active`,`schedule_interval`,`next_check_at`);--> statement-breakpoint
+CREATE INDEX `audits_status_started_at_idx` ON `audits` (`status`,`started_at`);

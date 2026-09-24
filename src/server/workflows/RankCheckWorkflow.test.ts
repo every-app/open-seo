@@ -11,7 +11,7 @@ const mocks = vi.hoisted(() => ({
   getKeywordsForConfig: vi.fn(),
   updateRun: vi.fn(),
   updateConfig: vi.fn(),
-  getSnapshotsForRun: vi.fn(),
+  countKeywordsCheckedForRun: vi.fn(),
   autumnCheck: vi.fn(),
   createDataforseoClient: vi.fn(),
   runLiveCheck: vi.fn(),
@@ -179,7 +179,7 @@ describe("rank check finalization", () => {
         keyword: `keyword ${index}`,
       })),
     );
-    mocks.getSnapshotsForRun.mockResolvedValue([]);
+    mocks.countKeywordsCheckedForRun.mockResolvedValue(0);
     mocks.updateRun.mockResolvedValue(undefined);
     mocks.isHostedServerAuthMode.mockResolvedValue(true);
     mocks.autumnCheck.mockResolvedValue({ balance: { remaining: 1_000 } });

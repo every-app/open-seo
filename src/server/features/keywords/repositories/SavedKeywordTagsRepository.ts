@@ -1,4 +1,5 @@
 import { and, asc, count, eq, inArray, notInArray } from "drizzle-orm";
+import { unique } from "remeda";
 import { db } from "@/db";
 import { runBatch } from "@/db/runBatch";
 import {
@@ -26,7 +27,7 @@ async function getTagFilterIds(params: {
   const directTagIds = params.tagIds ?? [];
   const normalizedTags = normalizeSavedKeywordTags(params.tagNames);
   if (normalizedTags.length === 0) {
-    return { tagIds: [...new Set(directTagIds)], emptyTagNameMatch: false };
+    return { tagIds: unique(directTagIds), emptyTagNameMatch: false };
   }
 
   const rows = await db
@@ -43,7 +44,7 @@ async function getTagFilterIds(params: {
     );
 
   return {
-    tagIds: [...new Set([...directTagIds, ...rows.map((row) => row.id)])],
+    tagIds: unique([...directTagIds, ...rows.map((row) => row.id)]),
     emptyTagNameMatch: directTagIds.length === 0 && rows.length === 0,
   };
 }

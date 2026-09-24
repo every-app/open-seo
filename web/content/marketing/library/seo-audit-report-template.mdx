@@ -29,7 +29,7 @@ What was crawled, how many pages, on what date, and what was excluded. Then the 
 
 Only the issues that stop a page being reached, rendered, or understood. On a healthy site this is a short list, sometimes empty. Each row gets a URL, the specific detail, and the fix. Do not summarise this section. The client should be able to forward it to a developer without editing it.
 
-![OpenSEO site audit report for unscriptedseo.com grouped into CRITICAL, WARNING and INFO tiers, showing one critical issue type with 35 pages, nine warning types led by missing meta description on 279 pages, and five informational types, with an Export control above the list](/library/site-audit/audit-report-by-severity-openseo.png)
+![SEOShark site audit report for unscriptedseo.com grouped into CRITICAL, WARNING and INFO tiers, showing one critical issue type with 35 pages, nine warning types led by missing meta description on 279 pages, and five informational types, with an Export control above the list](/library/site-audit/audit-report-by-severity-seoshark.png)
 
 ### 3. Warnings, grouped by cause and not by URL
 
@@ -59,7 +59,7 @@ Two or three specific numbers, with the date you will read them and the date you
 
 The informational tier does not belong in the body of the report. Twenty-six long titles and 82 heading-order skips are real, and putting them in front of a decision-maker costs you the attention you need for the four things that matter. Export them, attach the file, and reference it in one line.
 
-The same goes for a composite score. Any tool that emits one number out of 100 creates a conversation about that number: the client asks why it is 62 rather than 80, you explain the weighting, and nobody discusses the broken links. OpenSEO does not compute a site health score at all. The only scores it stores are Lighthouse's own performance, SEO, accessibility, and best-practice numbers for the sampled pages, and those are worth reporting as what they are, a page-level measurement of ten pages, rather than promoting into a headline.
+The same goes for a composite score. Any tool that emits one number out of 100 creates a conversation about that number: the client asks why it is 62 rather than 80, you explain the weighting, and nobody discusses the broken links. SEOShark does not compute a site health score at all. The only scores it stores are Lighthouse's own performance, SEO, accessibility, and best-practice numbers for the sampled pages, and those are worth reporting as what they are, a page-level measurement of ten pages, rather than promoting into a headline.
 
 Chris Green of Torque Partnership makes the case for why report hygiene is not cosmetic, in the context of bot traffic corrupting analytics:
 
@@ -67,12 +67,12 @@ Chris Green of Torque Partnership makes the case for why report hygiene is not c
 
 A wrong number in an audit report travels the same route. It gets copied into a deck, the deck sets a budget, and the budget outlives everyone's memory of where the number came from. Chris's episode is [here](https://unscriptedseo.com/chris-green-do-googles-patents-still-hold-up-in-an-agentic-web/).
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
 The report structure above is a prompt. Because `get_audit_issues` returns a `how_to_fix` string on every issue, an agent can write section 2 verbatim rather than paraphrasing remediation advice it half-remembers.
 
 ```text
-Using the OpenSEO MCP on project [name], write me an SEO audit
+Using the SEOShark MCP on project [name], write me an SEO audit
 report for [client] from the most recent site audit.
 
 Structure it exactly like this:
@@ -132,4 +132,4 @@ Lead with the decision you want, not the evidence you gathered. Open with the pr
 
 ### Is there a free SEO audit report template?
 
-The structure on this page is the template, and it is more useful than a formatted document because it tells you what goes in each section and what to leave out. OpenSEO can produce every section from a real crawl using the prompt above; it is open source and free to start, with paid plans from $10/month for larger crawls.
+The structure on this page is the template, and it is more useful than a formatted document because it tells you what goes in each section and what to leave out. SEOShark can produce every section from a real crawl using the prompt above; it is free to start, and paid plans allow larger crawls.

@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { getBlogPost } from "@/lib/content.functions";
 import { blog } from "../../../.source/index";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 export const Route = createFileRoute("/blogs/$")({
   loader: async ({ params }: { params: { _splat?: string } }) => {
@@ -21,13 +22,13 @@ export const Route = createFileRoute("/blogs/$")({
     const data = loaderData as
       | { title?: string; description?: string; url?: string }
       | undefined;
-    const title = data?.title ?? "OpenSEO Blog";
+    const title = data?.title ?? `${brand.name} Blog`;
     const description = data?.description;
     return buildPageSeo({
       title,
       description,
       path: data?.url ?? "/blogs",
-      titleSuffix: "OpenSEO Blog",
+      titleSuffix: `${brand.name} Blog`,
       ogType: "article",
     });
   },

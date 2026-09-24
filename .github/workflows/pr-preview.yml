@@ -3,10 +3,10 @@ name: PR Preview
 # Alchemy preview stage per private-repo PR: deploy on open/update, destroy on
 # close (stage pr-<n>). Full model in docs/PREVIEW_DEPLOYMENTS.md.
 #
-# Public-mirror (every-app/open-seo) PRs NEVER deploy from CI — fork code must
+# Fork PRs NEVER deploy from CI — fork code must
 # not run with deploy secrets. Preview those locally from a worktree instead
-# (docs/PREVIEW_DEPLOYMENTS.md, "Public-mirror PRs"). The repository gate
-# below keeps the synced copy of this file inert on the mirror.
+# (docs/PREVIEW_DEPLOYMENTS.md, "Fork PRs"). The repository gate
+# below enforces this.
 #
 # Required repo secrets: CLOUDFLARE_API_TOKEN (Workers Scripts/KV/D1/R2/
 # Workflows write + Secrets Store read + Account Settings read — the last two
@@ -44,8 +44,10 @@ env:
 
 jobs:
   preview:
+    # Opt-in: set the PR_PREVIEWS_ENABLED repository variable to "true" once
+    # the CLOUDFLARE_* and ENV_PREVIEW secrets exist. Fork PRs never deploy.
     if: >-
-      github.repository == 'bensenescu/open-seo' &&
+      vars.PR_PREVIEWS_ENABLED == 'true' &&
       github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 20

@@ -8,14 +8,14 @@ Accepted. Shipped in PR #616 on top of reports (`specs/0012-dynamic-reports.md`)
 
 - A report gets a Share button with a "Public link" toggle. On, anyone with the link can open the report without signing in. Off, the link stops working. Sharing again mints a new link, so an old one never comes back.
 - The link always shows the latest saved version and is hidden from search engines.
-- The public page lives on the app domain and looks like a shared document: a slim bar with the title, "Made with OpenSEO", a Share button and a "Try OpenSEO" button, with the report filling the rest of the screen in the same sandboxed frame the in-app viewer uses.
+- The public page lives on the app domain and looks like a shared document: a slim bar with the title, "Made with SEOShark", a Share button and a "Try SEOShark" button, with the report filling the rest of the screen in the same sandboxed frame the in-app viewer uses.
 - Sharing is hosted-only. A self-hosted deployment sits behind Cloudflare Access or has no auth at all, and neither can serve a link to a reader who is not signed in, so the Share button is not rendered and the server refuses the mint.
 
 ## How it works
 
 **Data.** Two columns on `reports`: `share_token` (nullable, unique) and `shared_at`. The token is 192 random bits as 32 base64url characters, stored as-is; it is a capability, and revoking it means nulling it. Sharing mints, unsharing nulls, and content saves never touch either column.
 
-**Public page** at `/s/<token>`: a hand-written HTML document the worker serves, not a route in the app, with no auth guard, `noindex`, and Open Graph tags from the title and the summary's first line. The bar, the frame and the preview tags are all in the first response, and the page ships no JavaScript beyond the Share button's clipboard handler. The reader is usually someone who has never opened OpenSEO, and the app's root shell renders only on the client, so a page inside it would have cost them the whole app bundle before the frame existed. The summary is markdown and the preview does not try to render it: a stray `##` costs less than a stripper that eats the minus sign off a number.
+**Public page** at `/s/<token>`: a hand-written HTML document the worker serves, not a route in the app, with no auth guard, `noindex`, and Open Graph tags from the title and the summary's first line. The bar, the frame and the preview tags are all in the first response, and the page ships no JavaScript beyond the Share button's clipboard handler. The reader is usually someone who has never opened SEOShark, and the app's root shell renders only on the client, so a page inside it would have cost them the whole app bundle before the frame existed. The summary is markdown and the preview does not try to render it: a stray `##` costs less than a stripper that eats the minus sign off a number.
 
 **Raw endpoint** at `/s/<token>/raw` serves the stored HTML with the same sandbox policy as the in-app route, `frame-ancestors 'self'` and a noindex header. The raw document only renders inside the frame: a request whose fetch destination is not an iframe is redirected to the wrapped page, and a client that sends no destination header is served the document, since it cannot load the wrapper's frame either. A token of the wrong shape is answered before any query.
 

@@ -1,13 +1,13 @@
 # Request explicit maintainer review for review-control changes.
-/.github/ @bensenescu
-/.greptile/ @bensenescu
-/AGENTS.md @bensenescu
-/CLAUDE.md @bensenescu
-/.agents/skills/ @bensenescu
+/.github/ @bizztor
+/.greptile/ @bizztor
+/AGENTS.md @bizztor
+/CLAUDE.md @bizztor
+/.agents/skills/ @bizztor
 
 # Plugin distribution — these files define the MCP endpoint and skills
 # every plugin installer connects to; a silent change here ships to all
 # installed users on the next update.
-/plugins/ @bensenescu
-/.claude-plugin/ @bensenescu
-/.agents/plugins/ @bensenescu
+/plugins/ @bizztor
+/.claude-plugin/ @bizztor
+/.agents/plugins/ @bizztor

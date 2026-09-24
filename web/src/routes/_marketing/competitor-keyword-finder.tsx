@@ -3,6 +3,7 @@ import { KeywordDiscoveryTool } from "@/components/keyword-discovery-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 const TOOL = freeTools["competitor-keyword-finder"];
 export const Route = createFileRoute("/_marketing/competitor-keyword-finder")({
   head: () =>
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_marketing/competitor-keyword-finder")({
       description:
         "Find the keywords a competitor ranks for on Google, with search volumes, ranking positions, and the pages that rank. Enter a domain to get started.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
       imageAlt: "Free Competitor Keyword Finder",
     }),
   component: Page,
@@ -57,7 +58,7 @@ const FAQS = [
   {
     question: "Is this free?",
     answer:
-      "Yes. This tool returns up to 20 keywords without signup. Usage limits apply. The full OpenSEO workspace uses paid credits; free trial credits are available to get started.",
+      `Yes. This tool returns up to 20 keywords without signup. Usage limits apply. The full ${brand.name} workspace uses paid credits; free trial credits are available to get started.`,
   },
 ];
 function Page() {
@@ -72,7 +73,7 @@ function Page() {
       faqs={FAQS}
       cta={{
         heading: "Choose your next content topic",
-        body: "Continue your research in OpenSEO and save keywords to your project. Start with free trial credits.",
+        body: `Continue your research in ${brand.name} and save keywords to your project. Start with free trial credits.`,
         featureLabel: "Explore Domain Overview",
       }}
     >

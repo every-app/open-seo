@@ -3,6 +3,7 @@ import { useState } from "react";
 import { FIELD_CLASS, SubmitButton, ToolForm } from "@/lib/free-tools/form";
 import { UpsellCard } from "@/lib/free-tools/upsell-card";
 import { useToolRun } from "@/lib/free-tools/use-tool-run";
+import { brand } from "@/lib/brand";
 
 const TOOL = "domain-age-checker";
 const MAX_DOMAINS = 10;
@@ -140,7 +141,7 @@ export function DomainAgeCheckerTool() {
 
           <UpsellCard tool={TOOL} cta="See ranking keywords">
             Age alone says very little. What matters is whether the domain has
-            earned links and rankings in those years — OpenSEO shows both.
+            earned links and rankings in those years — {brand.name} shows both.
           </UpsellCard>
         </div>
       ) : null}

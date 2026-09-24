@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { ReportRepository } from "@/server/features/reports/repositories/ReportRepository";
 import { sharesEnabled } from "@/server/features/reports/shareAccess";
 import { AppError } from "@/server/lib/errors";
@@ -253,7 +254,7 @@ async function shareReport(params: ShareParams): Promise<ReportMetadata> {
   if (!(await sharesEnabled())) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "Sharing is only available on hosted OpenSEO.",
+      `Sharing is only available on hosted ${brand.name}.`,
     );
   }
 

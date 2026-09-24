@@ -16,6 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
+      "@/shared/brand": ["./src/lib/brand.ts"],
       "@/*": ["./src/*"],
       "fumadocs-mdx:collections/*": [".source/*"]
     },

@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { RANK_TRACKING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/rank-tracking/local-rank-tracking";
 
@@ -33,7 +34,7 @@ const faqs = [
       "Use the settings that match how you serve customers. An eligible storefront that also visits or delivers to customers can show both an address and a service area. If customers do not visit your address, hide it and list your service area.",
   },
   {
-    question: "Does OpenSEO do local rank tracking?",
+    question: `Does ${brand.name} do local rank tracking?`,
     answer:
       "Yes. The MCP local rank grid measures Business Profile positions in Maps. Scheduled rank trackers measure organic website rankings from a chosen location. Both use credits. On the hosted app, scheduled and live rank-tracker checks require the $10/month plan, which includes $10 of credits.",
   },
@@ -58,7 +59,7 @@ export const Route = createFileRoute(
         "Local Rank Tracking: Position Depends on Where the Searcher Stands",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

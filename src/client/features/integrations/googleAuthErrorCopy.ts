@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 /**
  * Plain-language copy for Google OAuth failures, shared by the connect-surface
  * inline alert (GoogleLinkErrorAlert) and the /auth-error fallback page.
@@ -31,8 +32,8 @@ export function googleAuthErrorCopy(
       return {
         title: "Google account already connected",
         description: providerLabel
-          ? `Sign in to the OpenSEO user that linked it, open the ${providerLabel} property picker, and choose Remove account beside the Google account. Then link it here.`
-          : "That Google account is already linked to a different OpenSEO user. Sign in with that user, or contact support for help.",
+          ? `Sign in to the ${brand.name} user that linked it, open the ${providerLabel} property picker, and choose Remove account beside the Google account. Then link it here.`
+          : `That Google account is already linked to a different ${brand.name} user. Sign in with that user, or contact support for help.`,
       };
     default:
       return {

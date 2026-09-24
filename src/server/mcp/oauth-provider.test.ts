@@ -4,6 +4,7 @@ import {
   type TokenExchangeCallbackOptions,
 } from "@cloudflare/workers-oauth-provider";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { brand } from "@/shared/brand";
 import { z } from "zod";
 import type { createOpenSeoOAuthProvider } from "./oauth-provider";
 
@@ -188,7 +189,7 @@ describe("OpenSEO OAuth provider configuration", () => {
     expect(mocks.options[0]?.resourceMetadata).toEqual({
       resource: "https://app.openseo.so/mcp",
       scopes_supported: ["mcp"],
-      resource_name: "OpenSEO MCP",
+      resource_name: `${brand.name} MCP`,
     });
     expect(mocks.options[0]?.scopesSupported).toEqual([
       "offline_access",

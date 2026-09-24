@@ -2,7 +2,6 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireProjectContext } from "@/serverFunctions/middleware";
 import {
   domainOverviewSchema,
-  domainKeywordSuggestionsSchema,
   domainKeywordsPageRequestSchema,
   domainPagesPageRequestSchema,
 } from "@/types/schemas/domain";
@@ -36,7 +35,8 @@ export const getDomainOverview = createServerFn({ method: "POST" })
 
 export const getDomainKeywordSuggestions = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
-  .validator(domainKeywordSuggestionsSchema)
+  // Same input contract as the overview call.
+  .validator(domainOverviewSchema)
   .handler(async ({ data, context }) =>
     DomainService.getSuggestedKeywords(
       {

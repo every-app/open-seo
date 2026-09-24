@@ -1,4 +1,4 @@
-import { and, count, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNotNull, isNull } from "drizzle-orm";
 import { db } from "@/db";
 import { projects } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
@@ -194,7 +194,7 @@ async function restoreProject(projectId: string, organizationId: string) {
 async function archiveProject(projectId: string, organizationId: string) {
   const [row] = await db
     .update(projects)
-    .set({ archivedAt: sql`(current_timestamp)` })
+    .set({ archivedAt: new Date().toISOString() })
     .where(
       and(
         eq(projects.id, projectId),

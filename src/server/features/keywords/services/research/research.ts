@@ -1,3 +1,5 @@
+import { waitUntil } from "cloudflare:workers";
+import { chunk } from "remeda";
 import { AppError } from "@/server/lib/errors";
 import type { BillingCustomerContext } from "@/server/billing/subscription";
 import type { CreditFeature } from "@/shared/billing-credit-features";
@@ -261,28 +263,41 @@ async function buildResearchCacheKey(
   });
 }
 
+// Metric persistence is best-effort and must not delay the response, but it
+// has to be registered with the runtime (waitUntil) or workerd cancels the
+// writes when the response ends. Upserts run in bounded groups rather than
+// one concurrent statement per row.
+const PERSIST_CONCURRENCY = 20;
+
 function persistRows(
   input: ResolvedResearchKeywordsInput,
   rows: EnrichedKeyword[],
 ) {
-  void Promise.all(
-    rows.map((row) =>
-      KeywordResearchRepository.upsertKeywordMetric({
-        projectId: input.projectId,
-        keyword: row.keyword,
-        locationCode: input.locationCode,
-        languageCode: input.languageCode,
-        searchVolume: row.searchVolume,
-        cpc: row.cpc,
-        competition: row.competition,
-        keywordDifficulty: row.keywordDifficulty,
-        intent: row.intent,
-        monthlySearchesJson: JSON.stringify(row.trend),
-      }),
-    ),
-  ).catch((error) => {
-    console.error("keywords.research.persist-metrics failed:", error);
-  });
+  const persist = async () => {
+    for (const group of chunk(rows, PERSIST_CONCURRENCY)) {
+      await Promise.all(
+        group.map((row) =>
+          KeywordResearchRepository.upsertKeywordMetric({
+            projectId: input.projectId,
+            keyword: row.keyword,
+            locationCode: input.locationCode,
+            languageCode: input.languageCode,
+            searchVolume: row.searchVolume,
+            cpc: row.cpc,
+            competition: row.competition,
+            keywordDifficulty: row.keywordDifficulty,
+            intent: row.intent,
+            monthlySearchesJson: JSON.stringify(row.trend),
+          }),
+        ),
+      );
+    }
+  };
+  waitUntil(
+    persist().catch((error) => {
+      console.error("keywords.research.persist-metrics failed:", error);
+    }),
+  );
 }
 
 export async function research(

@@ -1,0 +1,44 @@
+{
+  "name": "seoshark",
+  "version": "1.0.0",
+  "description": "Real SEO data for your agent: keyword research, competitor research, backlinks, rank tracking, and site audits.",
+  "author": {
+    "name": "SEOShark",
+    "url": "https://seoshark.example"
+  },
+  "homepage": "https://seoshark.example",
+  "repository": "https://github.com/bizztor/seoshark",
+  "license": "MIT",
+  "keywords": [
+    "seo",
+    "keyword-research",
+    "serp",
+    "site-audit",
+    "backlinks",
+    "search-console",
+    "rank-tracking",
+    "local-seo"
+  ],
+  "skills": "./skills/",
+  "mcpServers": {
+    "seoshark": {
+      "url": "https://app.seoshark.example/mcp"
+    }
+  },
+  "interface": {
+    "displayName": "SEOShark",
+    "shortDescription": "Real SEO data for your agent: keyword research, competitor research, backlinks, rank tracking, and site audits.",
+    "longDescription": "Real SEO data for your agent: keyword research, competitor research, backlinks, rank tracking, and site audits.",
+    "developerName": "SEOShark",
+    "category": "Productivity",
+    "capabilities": ["Interactive"],
+    "websiteURL": "https://seoshark.example",
+    "privacyPolicyURL": "https://seoshark.example/privacy",
+    "termsOfServiceURL": "https://seoshark.example/terms-and-conditions",
+    "defaultPrompt": [
+      "Research keywords for my site and shortlist the best opportunities.",
+      "Audit my site and give me a one-page report with a single next action.",
+      "Track my rankings for these keywords and summarize what changed."
+    ]
+  }
+}

@@ -21,6 +21,7 @@ import {
   HOSTED_PASSWORD_MIN_LENGTH,
 } from "@/lib/auth-options";
 import { z } from "zod";
+import { brand } from "@/shared/brand";
 
 const signUpSchema = z
   .object({
@@ -87,7 +88,7 @@ function SignUpPage() {
           redirect_to: redirectTo,
         });
         const resolvedName =
-          value.name.trim() || email.split("@")[0] || "OpenSEO User";
+          value.name.trim() || email.split("@")[0] || `${brand.name} User`;
         const verificationCallbackURL = new URL(
           "/verify-email",
           window.location.origin,
@@ -169,7 +170,7 @@ function SignUpPage() {
               <p className="text-sm leading-relaxed text-base-content/60">
                 By signing up, you agree to our{" "}
                 <a
-                  href="https://openseo.so/terms-and-conditions"
+                  href={brand.termsUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
@@ -178,7 +179,7 @@ function SignUpPage() {
                 </a>{" "}
                 and{" "}
                 <a
-                  href="https://openseo.so/privacy"
+                  href={brand.privacyUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"

@@ -14,8 +14,25 @@ const dbMocks = vi.hoisted(() => {
   return { insert, onConflictDoUpdate };
 });
 
+// The brand config ships without a PostHog project (white-label default); give
+// the module one so the sending path is exercised, with a switch for the test
+// that covers the default.
+const brandMocks = vi.hoisted(() => ({
+  selfHostTelemetry: {
+    posthogKey: "phc_test",
+    host: "https://posthog.test",
+  } as { posthogKey: string; host: string } | undefined,
+}));
+
 vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/db", () => ({ db: { insert: dbMocks.insert } }));
+vi.mock("@/shared/brand", () => ({
+  brand: {
+    get selfHostTelemetry() {
+      return brandMocks.selfHostTelemetry;
+    },
+  },
+}));
 
 type StoredState = {
   installId: string;
@@ -137,6 +154,10 @@ describe("maybeSendSelfHostHeartbeat", () => {
     vi.stubEnv("AUTH_MODE", "cloudflare_access");
     vi.stubEnv("OPENSEO_TELEMETRY_DISABLED", "");
     vi.stubEnv("DO_NOT_TRACK", "");
+    brandMocks.selfHostTelemetry = {
+      posthogKey: "phc_test",
+      host: "https://posthog.test",
+    };
   });
 
   afterEach(() => {
@@ -188,6 +209,18 @@ describe("maybeSendSelfHostHeartbeat", () => {
       expect(dbMocks.onConflictDoUpdate).toHaveBeenCalledTimes(sends ? 1 : 0);
     },
   );
+
+  it("does not send when the brand has no telemetry project", async () => {
+    brandMocks.selfHostTelemetry = undefined;
+    const harness = createHarness();
+
+    await runHeartbeat(harness);
+    await incrementSelfHostMcpToolCallCount();
+
+    expect(harness.claimHeartbeat).not.toHaveBeenCalled();
+    expect(harness.sendHeartbeat).not.toHaveBeenCalled();
+    expect(dbMocks.onConflictDoUpdate).not.toHaveBeenCalled();
+  });
 
   it("does not send in hosted mode", async () => {
     vi.stubEnv("AUTH_MODE", "hosted");

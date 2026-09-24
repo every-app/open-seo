@@ -1,4 +1,5 @@
 import { RankTrackingRepository } from "@/server/features/rank-tracking/repositories/RankTrackingRepository";
+import { unique } from "remeda";
 import type { rankTrackingKeywords } from "@/db/schema";
 import { AppError } from "@/server/lib/errors";
 import {
@@ -119,7 +120,7 @@ async function removeKeywords(
   keywordIds: string[],
 ) {
   await getValidatedConfig(configId, projectId);
-  const uniqueIds = [...new Set(keywordIds)];
+  const uniqueIds = unique(keywordIds);
   const removedIds = await RankTrackingRepository.removeKeywordsFromConfig(
     uniqueIds,
     configId,

@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { ReportTemplateService } from "@/server/features/reports/services/ReportTemplateService";
@@ -43,7 +44,7 @@ export const saveReportTemplate = createServerFn({ method: "POST" })
           description: data.description,
           instructions: data.instructions,
           // The client label for a template made in the app, not through MCP.
-          createdBy: "OpenSEO app",
+          createdBy: `${brand.name} app`,
           createdByUserId: context.userId,
         });
       return { ok: true as const, templateId, created };

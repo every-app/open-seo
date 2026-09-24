@@ -109,7 +109,12 @@ function withPrintScript(html: string): string {
  */
 export function reportDocumentResponse(
   html: string,
-  options: { print?: boolean; cacheControl: string; noindex?: boolean },
+  options: {
+    print?: boolean;
+    cacheControl: string;
+    noindex?: boolean;
+    vary?: string;
+  },
 ): Response {
   return new Response(options.print ? withPrintScript(html) : html, {
     status: 200,
@@ -125,6 +130,7 @@ export function reportDocumentResponse(
       "X-Content-Type-Options": "nosniff",
       ...(options.noindex ? { "X-Robots-Tag": "noindex, nofollow" } : {}),
       "Cache-Control": options.cacheControl,
+      ...(options.vary ? { Vary: options.vary } : {}),
     },
   });
 }

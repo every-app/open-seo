@@ -16,8 +16,8 @@ import {
   formatStartedAt,
   HttpStatusBadge,
   StatusBadge,
-  SUPPORT_EMAIL,
 } from "@/client/features/audit/shared";
+import { brand } from "@/shared/brand";
 
 export const Route = createFileRoute<"/_project/p/$projectId/audit/">(
   "/_project/p/$projectId/audit/",
@@ -210,9 +210,9 @@ function AuditDetail({
                 Run a new audit to try again, or email{" "}
                 <a
                   className="link link-primary"
-                  href={`mailto:${SUPPORT_EMAIL}`}
+                  href={`mailto:${brand.supportEmail}`}
                 >
-                  {SUPPORT_EMAIL}
+                  {brand.supportEmail}
                 </a>{" "}
                 if this keeps happening.
               </p>

@@ -3,6 +3,7 @@ import { SpamScoreCheckerTool } from "@/components/spam-score-checker-tool";
 import { ToolFrame } from "@/lib/free-tools/tool-frame";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const TOOL = freeTools["spam-score-checker"];
 
@@ -13,8 +14,8 @@ export const Route = createFileRoute("/_marketing/spam-score-checker")({
       description:
         "Check a domain's backlink spam score and see the spammiest links pointing at it. No signup, no email.",
       path: TOOL.path,
-      titleSuffix: "OpenSEO",
-      imageAlt: "OpenSEO free backlink spam score checker",
+      titleSuffix: brand.name,
+      imageAlt: `${brand.name} free backlink spam score checker`,
     }),
   component: SpamScoreCheckerPage,
 });
@@ -33,12 +34,12 @@ const FAQS = [
   {
     question: "How many links does the free check show?",
     answer:
-      "The 10 highest-spam referring domains, one link each. OpenSEO lets you filter the full backlink profile by spam score and see how much of the profile is affected.",
+      `The 10 highest-spam referring domains, one link each. ${brand.name} lets you filter the full backlink profile by spam score and see how much of the profile is affected.`,
   },
   {
     question: "Where does the data come from?",
     answer:
-      "DataForSEO's backlink index, cached for 24 hours per domain. It's the same data OpenSEO uses for backlink research.",
+      `DataForSEO's backlink index, cached for 24 hours per domain. It's the same data ${brand.name} uses for backlink research.`,
   },
 ];
 
@@ -70,7 +71,7 @@ function SpamScoreCheckerPage() {
       faqs={FAQS}
       cta={{
         heading: "Review more of the backlink profile",
-        body: "Filter backlinks by spam score, rank, and follow status in OpenSEO. Start with free trial credits.",
+        body: `Filter backlinks by spam score, rank, and follow status in ${brand.name}. Start with free trial credits.`,
         featureLabel: "Learn about Backlinks",
       }}
     >

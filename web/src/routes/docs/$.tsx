@@ -6,6 +6,7 @@ import { baseOptions } from "@/lib/layout.shared";
 import { getDocsPageTree, getDocsPost } from "@/lib/content.functions";
 import { buildPageSeo } from "@/lib/seo";
 import { docs } from "../../../.source/index";
+import { brand } from "@/lib/brand";
 
 export const Route = createFileRoute("/docs/$")({
   loader: async ({ params }: { params: { _splat?: string } }) => {
@@ -22,10 +23,10 @@ export const Route = createFileRoute("/docs/$")({
       | { title?: string; description?: string; url?: string }
       | undefined;
     return buildPageSeo({
-      title: data?.title ?? "OpenSEO Docs",
+      title: data?.title ?? `${brand.name} Docs`,
       description: data?.description,
       path: data?.url ?? "/docs",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     });
   },
   component: DocsPost,

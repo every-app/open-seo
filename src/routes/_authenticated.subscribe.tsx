@@ -16,8 +16,7 @@ import {
   AUTUMN_MANAGED_ACCESS_FEATURE_ID,
   AUTUMN_PAID_PLAN_ID,
 } from "@/shared/billing";
-
-const SUPPORT_EMAIL = "ben@openseo.so";
+import { brand } from "@/shared/brand";
 
 const PLAN_FEATURES = [
   "Keyword research, backlinks, rank tracking, and site audits",
@@ -136,7 +135,7 @@ function SubscribePage() {
       <div className="w-full max-w-xs space-y-4 text-center">
         <img
           src="/transparent-logo.png"
-          alt="OpenSEO"
+          alt={brand.name}
           className="mx-auto size-10 rounded-lg"
         />
         <h1 className="text-xl font-semibold">
@@ -148,8 +147,8 @@ function SubscribePage() {
         </p>
         <p className="text-xs text-base-content/50">
           Taking longer?{" "}
-          <a className="link" href={`mailto:${SUPPORT_EMAIL}`}>
-            Email {SUPPORT_EMAIL}
+          <a className="link" href={`mailto:${brand.supportEmail}`}>
+            Email {brand.supportEmail}
           </a>
           .
         </p>
@@ -163,7 +162,7 @@ function SubscribePage() {
         <div className="text-center space-y-3">
           <img
             src="/transparent-logo.png"
-            alt="OpenSEO"
+            alt={brand.name}
             className="mx-auto size-10 rounded-lg"
           />
           <h1 className="text-xl font-semibold">Billing unavailable</h1>
@@ -223,15 +222,15 @@ function SubscribePage() {
       <div className="text-center space-y-3">
         <img
           src="/transparent-logo.png"
-          alt="OpenSEO"
+          alt={brand.name}
           className="mx-auto size-10 rounded-lg"
         />
         <h1 className="text-xl font-semibold">
           {isUpgradeFlow
             ? "Upgrade your plan"
             : firstName
-              ? `Welcome to OpenSEO, ${firstName}!`
-              : "Welcome to OpenSEO!"}
+              ? `Welcome to ${brand.name}, ${firstName}!`
+              : `Welcome to ${brand.name}!`}
         </h1>
         <p className="text-sm text-base-content/60">
           SEO on your terms. All your SEO tools in one place at a fair price.
@@ -260,7 +259,7 @@ function SubscribePage() {
           <li className="-mt-1 pl-6 text-xs">
             <a
               className="text-base-content/60 underline decoration-base-content/40 decoration-dotted underline-offset-4 transition-colors hover:text-base-content"
-              href="https://openseo.so/pricing"
+              href={brand.pricingUrl}
               target="_blank"
               rel="noreferrer"
               onClick={() =>
@@ -293,7 +292,7 @@ function SubscribePage() {
         <p className="text-center text-xs text-base-content/50">
           <span
             className="tooltip before:max-w-60 before:whitespace-normal"
-            data-tip={`Not for you yet? Email ${SUPPORT_EMAIL} within 30 days of your charge and we'll refund your subscription.`}
+            data-tip={`Not for you yet? Email ${brand.supportEmail} within 30 days of your charge and we'll refund your subscription.`}
           >
             <span className="cursor-help underline decoration-dotted">
               30-day money-back guarantee
@@ -305,7 +304,7 @@ function SubscribePage() {
 
       <div className="text-center space-y-2">
         <p className="text-sm text-base-content/60">
-          Questions? Email {SUPPORT_EMAIL}.
+          Questions? Email {brand.supportEmail}.
         </p>
         {isUpgradeFlow ? (
           <button

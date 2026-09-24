@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/positioning-to-demand.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/positioning-to-demand";
 
@@ -44,7 +45,7 @@ export const Route = createFileRoute(
       title: "Does Your Positioning Have Search Demand Behind It?",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

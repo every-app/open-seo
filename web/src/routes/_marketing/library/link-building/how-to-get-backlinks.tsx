@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { LINK_BUILDING_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/link-building/how-to-get-backlinks";
 
@@ -31,7 +32,7 @@ const faqs = [
       "No. The sellers who email you produce links from casino and PBN domains that search engines ignore and that make your profile look manufactured. Practitioners on the podcast also warn that AI search systems may not forgive a manipulated profile the way Google eventually did.",
   },
   {
-    question: "How does OpenSEO help with link building?",
+    question: `How does ${brand.name} help with link building?`,
     answer:
       "The backlinks tool shows which of your pages attract links and from where, which is the starting point above. It shows the same for any competitor, so you can list the domains that link to them and not to you. Use the app’s Top Pages table to compare referring-domain counts by page; the MCP provides backlink summaries and individual backlink rows. The link-prospecting skill packages the competitor workflow.",
   },
@@ -56,7 +57,7 @@ export const Route = createFileRoute(
         "How to Get Backlinks: Start From the Pages That Already Earn Them",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

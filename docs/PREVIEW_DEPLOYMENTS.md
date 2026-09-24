@@ -1,6 +1,6 @@
 # Alchemy preview deployments
 
-OpenSEO preview stages use isolated Cloudflare resources and a shared,
+SEOShark preview stages use isolated Cloudflare resources and a shared,
 Alchemy-managed Cloudflare Access boundary.
 
 ## Security model
@@ -9,9 +9,9 @@ Alchemy-managed Cloudflare Access boundary.
   `open-seo-<stage>.<WORKERS_SUBDOMAIN>`.
 - One persistent Access application protects
   `open-seo-*.<WORKERS_SUBDOMAIN>` before any preview Worker exists.
-- Production uses the unsuffixed `open-seo` Worker on `app.openseo.so` and
-  `www.app.openseo.so`. It does not match the preview wildcard and is not
-  placed behind preview Access.
+- Production uses the unsuffixed `open-seo` Worker on the hosted app
+  hostname (`brand.appUrl`). It does not match the preview wildcard and is
+  not placed behind preview Access.
 - A separate persistent Alchemy stack manages the shared Access boundary. A
   failed preview deploy or teardown therefore cannot remove the gate protecting
   other previews.
@@ -114,9 +114,9 @@ deploys. State is shared through the Cloudflare state store, so CI runs and
 local machines see the same stages — a straggler can always be destroyed
 locally with `pnpm destroy:preview --stage pr-<n> --yes`.
 
-## Public-mirror PRs
+## Fork PRs
 
-External (every-app/open-seo) PRs never deploy from CI — fork code must not
+External (forked-repo) PRs never deploy from CI — fork code must not
 run with deploy secrets. Preview one locally instead: the fork's code only
 BUILDS, in a detached sibling worktree, and the deploy runs from this trusted
 checkout's alchemy stack against the fork's `dist/`. The fork's own deploy
@@ -127,12 +127,12 @@ building executes the fork's config code on your machine with `.env.preview`
 available.
 
 ```sh
-git fetch https://github.com/every-app/open-seo.git pull/<pr>/head
-git worktree add --detach ../open-seo-pub-<pr> FETCH_HEAD
-cp .env.preview ../open-seo-pub-<pr>/
-(cd ../open-seo-pub-<pr> && pnpm install --frozen-lockfile && pnpm exec vite build --mode preview)
-rm -rf dist && cp -R ../open-seo-pub-<pr>/dist dist
-git worktree remove --force ../open-seo-pub-<pr>
+git fetch https://github.com/bizztor/seoshark.git pull/<pr>/head
+git worktree add --detach ../seoshark-pub-<pr> FETCH_HEAD
+cp .env.preview ../seoshark-pub-<pr>/
+(cd ../seoshark-pub-<pr> && pnpm install --frozen-lockfile && pnpm exec vite build --mode preview)
+rm -rf dist && cp -R ../seoshark-pub-<pr>/dist dist
+git worktree remove --force ../seoshark-pub-<pr>
 pnpm alchemy deploy --env-file .env.preview --stage pub-<pr> --yes
 ```
 
@@ -205,5 +205,5 @@ gating the worker (`AUTH_MODE=cloudflare_access` +
 `ACCESS_ALLOWED_EMAILS`; `resolveSelfHostAccess` in alchemy.run.ts derives
 `TEAM_DOMAIN`/`POLICY_AUD`, or accepts them explicitly for a hand-managed
 application). The preview Access wildcard and PR workflow are
-OpenSEO-specific and not required. The walkthrough lives in
+specific to the hosted deployment and not required. The walkthrough lives in
 docs/SELF_HOSTING_CLOUDFLARE.md.

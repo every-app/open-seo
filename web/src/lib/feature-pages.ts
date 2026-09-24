@@ -1,4 +1,5 @@
 import { FEATURE_PAGE_SLUGS } from "@/lib/feature-page-slugs";
+import { brand } from "@/lib/brand";
 
 export type FeaturePage = {
   slug: string;
@@ -63,7 +64,7 @@ export const featurePages = {
       "free keyword research tool",
       "keyword research tools",
     ],
-    imageAlt: "OpenSEO keyword research dashboard",
+    imageAlt: `${brand.name} keyword research dashboard`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d77077d0-cdf4-4523-0c41-56a7b4861300/public",
     workflows: [
@@ -96,7 +97,7 @@ export const featurePages = {
       "Group keywords for articles, landing pages, and rank tracking.",
     ],
     differentiators: [
-      "Open-source SEO workflows you can self-host or run in the managed app.",
+      "SEO workflows you can run in the managed app or self-host.",
       "DataForSEO-backed metrics without locking the research process into a black box.",
       "MCP access so AI agents can research and save keywords for you.",
     ],
@@ -116,17 +117,17 @@ export const featurePages = {
     ],
     faqs: [
       {
-        question: "What is OpenSEO keyword research best for?",
+        question: `What is ${brand.name} keyword research best for?`,
         answer:
-          "OpenSEO is best for finding SEO keyword ideas, checking demand and difficulty, and turning those ideas into saved keywords you can revisit.",
+          `${brand.name} is best for finding SEO keyword ideas, checking demand and difficulty, and turning those ideas into saved keywords you can revisit.`,
       },
       {
-        question: "Can I use OpenSEO as a free keyword research tool?",
+        question: `Can I use ${brand.name} as a free keyword research tool?`,
         answer:
-          "Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. You can start OpenSEO for free; the paid plan is $10/month with usage credits included. It's also open source, so you can self-host with your own DataForSEO account.",
+          `Not unlimited: quality keyword data costs money everywhere, which is why the big SEO suites run $100/month and up. You can start ${brand.name} for free, and paid plans add usage credits. You can also self-host it with your own DataForSEO account.`,
       },
       {
-        question: "Does OpenSEO show live search results?",
+        question: `Does ${brand.name} show live search results?`,
         answer:
           "Yes. Keyword research can be paired with SERP inspection so you can see ranking pages alongside the metrics.",
       },
@@ -179,7 +180,7 @@ export const featurePages = {
       "free seo audit tool",
       "seo audit tools",
     ],
-    imageAlt: "OpenSEO site audit report",
+    imageAlt: `${brand.name} site audit report`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/53149e87-0027-4fa8-5d13-bcaab60c7100/public",
     workflows: [
@@ -229,17 +230,17 @@ export const featurePages = {
     ],
     faqs: [
       {
-        question: "What does the OpenSEO site audit tool check?",
+        question: `What does the ${brand.name} site audit tool check?`,
         answer:
           "Status codes, titles, meta descriptions, headings, indexability signals, image alt coverage, links, and response time for every crawled page. Enable Lighthouse and each page also gets performance, SEO, accessibility, and best-practice issues.",
       },
       {
-        question: "Is OpenSEO a free SEO audit tool?",
+        question: `Is ${brand.name} a free SEO audit tool?`,
         answer:
-          "For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan, starting at $10/month. OpenSEO is also open source and self-hostable.",
+          `For smaller sites, yes: the free plan includes site audits up to 50 pages per crawl. Larger crawls need a paid plan. ${brand.name} is also self-hostable.`,
       },
       {
-        question: "Who should use OpenSEO Site Audit?",
+        question: `Who should use ${brand.name} Site Audit?`,
         answer:
           "It is useful for founders, marketers, agencies, and developers who need a shared crawl report and optional Lighthouse issue export.",
       },
@@ -287,7 +288,7 @@ export const featurePages = {
       "referring domains",
       "link profile",
     ],
-    imageAlt: "OpenSEO backlinks report",
+    imageAlt: `${brand.name} backlinks report`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/d97206ed-bd64-447c-2b9e-1b9f07c5ec00/public",
     workflows: [
@@ -373,7 +374,7 @@ export const featurePages = {
           "Backlink analysis helps you understand which sites link to a domain or page, which links have stronger rank, spam, broken, lost, or nofollow signals, and where competitors are earning authority.",
       },
       {
-        question: "Can I check competitor backlinks in OpenSEO?",
+        question: `Can I check competitor backlinks in ${brand.name}?`,
         answer:
           "Yes. Enter any domain, yours or a competitor's, and pull its backlinks, referring domains, and top linked pages.",
       },
@@ -397,7 +398,7 @@ export const featurePages = {
       "competitor keyword analysis tool",
       "website traffic checker",
     ],
-    imageAlt: "OpenSEO domain overview",
+    imageAlt: `${brand.name} domain overview`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/189e22b8-fdf8-46b4-198c-e912beef2300/public",
     workflows: [
@@ -432,7 +433,7 @@ export const featurePages = {
     differentiators: [
       "Domain research connects directly to keyword, backlink, and rank tracking workflows.",
       "Built around ranking keywords, estimated traffic, and top pages for practical competitor research.",
-      "Open-source and self-hostable for teams that want control over their SEO stack.",
+      "Self-hostable for teams that want control over their SEO stack.",
     ],
     featuredLink: {
       title: "Free website traffic checker",
@@ -457,10 +458,10 @@ export const featurePages = {
       {
         question: "How does this compare to Semrush Domain Overview?",
         answer:
-          "OpenSEO covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. OpenSEO is open source, so you can self-host it, and the managed app is $10/month and includes usage credits.",
+          `${brand.name} covers the core of the same report (estimated traffic, organic keywords, top keywords, and top pages) without a triple-digit monthly seat. You can self-host it, or use the managed app with usage credits included in paid plans.`,
       },
       {
-        question: "Can OpenSEO help with competitor keyword analysis?",
+        question: `Can ${brand.name} help with competitor keyword analysis?`,
         answer:
           "Yes. Enter a competitor's domain and you get the keywords it ranks for and its top organic pages: the raw material for finding topics worth building or defending.",
       },
@@ -519,7 +520,7 @@ export const featurePages = {
       "keyword rank tracker",
       "google rank tracker",
     ],
-    imageAlt: "OpenSEO rank tracking table",
+    imageAlt: `${brand.name} rank tracking table`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/4a0f8508-1527-46a8-c91c-086456f21c00/public",
     workflows: [
@@ -554,7 +555,7 @@ export const featurePages = {
     differentiators: [
       "Rank tracking is part of the same workspace as discovery, audit, and competitor research.",
       "Optional desktop and mobile tracking helps teams avoid one-dimensional rank reports.",
-      "OpenSEO can expose ranking data to AI agents through MCP.",
+      `${brand.name} can expose ranking data to AI agents through MCP.`,
     ],
     featuredLink: {
       title: "Free competitor keyword finder",
@@ -577,7 +578,7 @@ export const featurePages = {
           "A rank tracker monitors where a domain appears for selected keywords over time so you can see whether SEO work is improving visibility.",
       },
       {
-        question: "Does OpenSEO track mobile and desktop rankings?",
+        question: `Does ${brand.name} track mobile and desktop rankings?`,
         answer:
           "Yes: mobile, desktop, or both. Each tracked domain is configured with the devices you want, and enabling both lets you compare them side by side.",
       },
@@ -635,7 +636,7 @@ export const featurePages = {
       "keyword list tool",
       "keyword planning",
     ],
-    imageAlt: "OpenSEO saved keywords list",
+    imageAlt: `${brand.name} saved keywords list`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/8938a529-b443-4d4f-9869-c972f3cef900/public",
     workflows: [
@@ -674,7 +675,7 @@ export const featurePages = {
     related: [
       { label: "Keyword Research", href: "/features/keyword-research" },
       { label: "Rank Tracking", href: "/features/rank-tracking" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
+      { label: `${brand.name} MCP`, href: "/features/mcp" },
     ],
     faqs: [
       {
@@ -707,7 +708,7 @@ export const featurePages = {
       "ai search visibility",
       "answer engine optimization",
     ],
-    imageAlt: "OpenSEO AI brand visibility report",
+    imageAlt: `${brand.name} AI brand visibility report`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/cde3e4f8-079f-4890-cb17-371087107400/public",
     workflows: [
@@ -741,12 +742,12 @@ export const featurePages = {
     differentiators: [
       "AI visibility sits beside classic SEO research instead of replacing it.",
       "The workflow focuses on concrete sources and mentions, not vague AI hype.",
-      "OpenSEO helps teams connect AI mention and citation research to concrete SEO planning.",
+      `${brand.name} helps teams connect AI mention and citation research to concrete SEO planning.`,
     ],
     related: [
       { label: "AI Search Prompts", href: "/features/ai-search-prompts" },
       { label: "Domain Overview", href: "/features/domain-overview" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
+      { label: `${brand.name} MCP`, href: "/features/mcp" },
     ],
     faqs: [
       {
@@ -757,7 +758,7 @@ export const featurePages = {
       {
         question: "How is AI visibility different from traditional SEO?",
         answer:
-          "Traditional SEO focuses on rankings and pages. OpenSEO's AI visibility workflow looks at mentions, cited pages, related prompts, and platform-level metrics from supported AI-search sources.",
+          `Traditional SEO focuses on rankings and pages. ${brand.name}'s AI visibility workflow looks at mentions, cited pages, related prompts, and platform-level metrics from supported AI-search sources.`,
       },
       {
         question: "Should AI visibility replace keyword research?",
@@ -779,7 +780,7 @@ export const featurePages = {
       "ai search prompts",
       "answer engine optimization tool",
     ],
-    imageAlt: "OpenSEO prompt explorer",
+    imageAlt: `${brand.name} prompt explorer`,
     imageSrc:
       "https://imagedelivery.net/ysLOa6bzFaM49Jxok-TAlw/9f3d38f2-aa97-417c-ca74-ae378654d700/public",
     workflows: [
@@ -812,13 +813,13 @@ export const featurePages = {
     ],
     differentiators: [
       "Prompt research lives in the same workspace as domain, keyword, and brand visibility workflows.",
-      "OpenSEO treats AI search as a research layer, not a replacement for SEO fundamentals.",
-      "OpenSEO MCP exposes keyword, SERP, domain, backlink, saved keyword, and rank-tracking tools to AI agents.",
+      `${brand.name} treats AI search as a research layer, not a replacement for SEO fundamentals.`,
+      `${brand.name} MCP exposes keyword, SERP, domain, backlink, saved keyword, and rank-tracking tools to AI agents.`,
     ],
     related: [
       { label: "AI Brand Visibility", href: "/features/ai-brand-visibility" },
       { label: "Keyword Research", href: "/features/keyword-research" },
-      { label: "OpenSEO MCP", href: "/features/mcp" },
+      { label: `${brand.name} MCP`, href: "/features/mcp" },
     ],
     faqs: [
       {

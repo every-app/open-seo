@@ -50,7 +50,7 @@ async function remove(input: AccountInput) {
   const { connections, grant, usage } = scope(input);
   // Atomic on D1 and Postgres: never leave a partial account removal.
   // Both deletes are scoped to the authenticated owner, including on retries
-  // after this Google identity has been linked to a different OpenSEO user.
+  // after this Google identity has been linked to a different app user.
   await runBatch((tx) => [
     tx.delete(connections).where(usage),
     tx.delete(account).where(grant),

@@ -280,7 +280,6 @@ async function syncHostedSignupContact(user: {
   } catch (error) {
     console.error("Failed to sync Loops profile after user creation:", {
       userId: user.id,
-      email: user.email,
       error,
     });
   }

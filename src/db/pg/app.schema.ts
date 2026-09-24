@@ -179,7 +179,7 @@ export const keywordMetrics = pgTable(
     keyword: text("keyword").notNull(),
     locationCode: integer("location_code").notNull(),
     languageCode: text("language_code").notNull().default("en"),
-    searchVolume: integer("search_volume"),
+    searchVolume: bigint("search_volume", { mode: "number" }),
     cpc: real("cpc"),
     competition: real("competition"),
     keywordDifficulty: integer("keyword_difficulty"),
@@ -243,6 +243,12 @@ export const rankTrackingConfigs = pgTable(
       table.isActive,
       table.createdAt,
     ),
+    // Due-config sweep every 5 minutes (RankTrackingRepository.getDueConfigs).
+    index("rank_tracking_configs_due_idx").on(
+      table.isActive,
+      table.scheduleInterval,
+      table.nextCheckAt,
+    ),
     uniqueIndex("rank_tracking_configs_national_idx")
       .on(table.projectId, table.domain, table.locationCode)
       .where(sql`${table.locationName} IS NULL`),
@@ -265,7 +271,7 @@ export const rankTrackingKeywords = pgTable(
     // keyword is stored and searched exactly as typed. Google can return a
     // different SERP for "Nodex" than for "nodex".
     matchCase: boolean("match_case").notNull().default(false),
-    searchVolume: integer("search_volume"),
+    searchVolume: bigint("search_volume", { mode: "number" }),
     keywordDifficulty: integer("keyword_difficulty"),
     cpc: real("cpc"),
     metricsFetchedAt: timestampColumn("metrics_fetched_at"),

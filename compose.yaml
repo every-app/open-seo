@@ -1,6 +1,6 @@
 services:
   open-seo:
-    image: ${OPEN_SEO_IMAGE:-ghcr.io/every-app/open-seo:latest}
+    image: ${OPEN_SEO_IMAGE:-ghcr.io/bizztor/seoshark:latest}
     restart: unless-stopped
     # Forward EVERY .env value into the container. The explicit `environment:`
     # list below still wins for the values it names — without this, any .env
@@ -19,6 +19,11 @@ services:
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-}
       - DO_NOT_TRACK=${DO_NOT_TRACK:-}
       - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: run on Postgres (e.g. Supabase) instead of the bundled
+      # SQLite. See docs/DATABASE_SUPABASE.md.
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER:-}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - POSTGRES_DATABASE_URL=${POSTGRES_DATABASE_URL:-}
       # Optional: AI features (the SAM agent). Without this the setup
       # gate in the app asks for the key, but nothing here would forward it.
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}

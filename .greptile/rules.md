@@ -1,8 +1,8 @@
-# OpenSEO review context
+# SEOShark review context
 
 ## Review posture
 
-OpenSEO receives external contributions, including untested coding-agent output. Treat changed behavior as untrusted until the relevant call path and tests support it.
+SEOShark receives external contributions, including untested coding-agent output. Treat changed behavior as untrusted until the relevant call path and tests support it.
 
 - Prioritize concrete correctness, security, authorization, billing, data-loss, portability, and user-facing regressions.
 - Scrutinize new dependencies and install scripts, CI permissions, external destinations, secret reads, authentication scopes, webhook and OAuth changes, billing bypasses, disabled tests, encoded or dynamic execution, and broad unrelated rewrites.
@@ -70,7 +70,7 @@ For MCP output that passes external SDK class instances through `structuredConte
 
 ### Deployment modes
 
-OpenSEO supports `hosted`, `cloudflare_access`, and `local_noauth` modes. `local_noauth` is an intentionally trusted local mode and is unsafe for public exposure; its lack of login is not automatically a vulnerability. Hosted mode uses Better Auth and organization-level Autumn billing. Self-hosted modes use the operator's provider key and intentionally bypass Autumn.
+SEOShark supports `hosted`, `cloudflare_access`, and `local_noauth` modes. `local_noauth` is an intentionally trusted local mode and is unsafe for public exposure; its lack of login is not automatically a vulnerability. Hosted mode uses Better Auth and organization-level Autumn billing. Self-hosted modes use the operator's provider key and intentionally bypass Autumn.
 
 ### Workspaces and fixtures
 

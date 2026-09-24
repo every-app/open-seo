@@ -6,7 +6,7 @@ Accepted
 
 ## Context
 
-In hosted mode, OpenSEO uses platform-managed DataForSEO credentials and bills each organization for actual provider usage.
+In hosted mode, SEOShark uses platform-managed DataForSEO credentials and bills each organization for actual provider usage.
 
 The low-level DataForSEO helpers can make live requests directly. If feature code imports them freely, it is easy to skip billing checks, forget usage tracking, or meter against estimated cost instead of the cost DataForSEO actually returned.
 

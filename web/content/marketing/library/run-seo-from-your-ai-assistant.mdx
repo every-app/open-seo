@@ -27,7 +27,7 @@ His episode is [here](https://unscriptedseo.com/episode-recap-malte-landwehr-of-
 
 ## The setup, once
 
-The [OpenSEO MCP](/docs/mcp) connects to Claude Code, Claude Desktop, Codex and Cursor. You add one server, sign in, and the assistant gains the tools: Search Console reads, keyword metrics, SERP results, domain and backlink data, rank tracking, site audit, local rank grids. Search Console and audit reads use no credits; research calls that hit a data provider do, and each tool says so before it runs.
+The [SEOShark MCP](/docs/mcp) connects to Claude Code, Claude Desktop, Codex and Cursor. You add one server, sign in, and the assistant gains the tools: Search Console reads, keyword metrics, SERP results, domain and backlink data, rank tracking, site audit, local rank grids. Search Console and audit reads use no credits; research calls that hit a data provider do, and each tool says so before it runs.
 
 Then install the [agent skills](/docs/skills/setup). A skill is a `SKILL.md` file that tells the assistant how to use the tools for one job, so you do not have to explain the workflow each time. There are skills for [keyword research](/docs/skills/keyword-research), [competitor analysis](/docs/skills/competitor-analysis), [site audit](/docs/skills/seo-audit), [local SEO](/docs/skills/local-seo) and [link prospecting](/docs/skills/link-prospecting), plus an [SEO coach](/docs/skills/seo-coach) that picks the workflow if you are not sure which you need.
 
@@ -53,7 +53,7 @@ None of the five needs a keyword typed by a human. All five need a human to read
 
 Here is the first prompt run against a real site through the MCP. The Search Console call returned the queries seoarcade.com ranked for over 28 days, and the top rows are what you would expect: the brand name, a few guest names, `seo for home services` at position 17 with 1,545 impressions.
 
-![A terminal session in Claude Code calling the OpenSEO MCP get_search_console_performance tool for seoarcade.com over 28 days: the top rows are the brand name and real queries with clicks, impressions and position, and then a query that is the full text of an AI prompt beginning "you are a keyword analysis bot at an adtech company", with 31 impressions at position 10.2](/library/ai-agent-seo/mcp-search-console-query-pull-openseo.png "Search Console through the OpenSEO MCP")
+![A terminal session in Claude Code calling the SEOShark MCP get_search_console_performance tool for seoarcade.com over 28 days: the top rows are the brand name and real queries with clicks, impressions and position, and then a query that is the full text of an AI prompt beginning "you are a keyword analysis bot at an adtech company", with 31 impressions at position 10.2](/library/ai-agent-seo/mcp-search-console-query-pull-seoshark.png "Search Console through the SEOShark MCP")
 
 Then there is a query with 31 impressions at position 10.2 whose text begins "you are a keyword analysis bot at an adtech company. your task is to analyze the provided keyword" and runs for two thousand characters. That is not a person. It is another company's AI agent, pasting its own system prompt into Google, and Google recorded the site as ranking for it.
 
@@ -63,12 +63,12 @@ An assistant that summarises the table will count that row. A person who reads i
 
 His episode is [on the Unscripted Small Business podcast](https://unscriptedsmallbusiness.com/mason-mccumber-on-ai-agents-agentic-workflows-building-smarter-business-systems-show-notes/). The data arrives faster than you could fetch it. The judgement about what it means did not get faster, and it is still yours. [What to automate and what to keep](/library/ai-agent-seo/what-to-automate) is about where that line goes.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect Search Console to the project and the [OpenSEO MCP](/docs/mcp) to your assistant. This prompt is the first of the five above, with the filter step the row above makes necessary.
+Connect Search Console to the project and the [SEOShark MCP](/docs/mcp) to your assistant. This prompt is the first of the five above, with the filter step the row above makes necessary.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Call get_project_context and tell me what the project already
    knows: goal, positioning, competitors, key pages. If it is empty,
@@ -104,13 +104,13 @@ MCP turns the assistant from a writer into an analyst with access. That is most 
 
 The Model Context Protocol, a standard that lets an AI assistant call external tools and receive data. An SEO MCP server gives the assistant Search Console, keyword, SERP, backlink, rank tracking and audit data inside the conversation, so it can fetch and analyse instead of only writing from what you paste.
 
-### Which AI assistants work with the OpenSEO MCP?
+### Which AI assistants work with the SEOShark MCP?
 
 Claude Code, Claude Desktop, Codex and Cursor, through one server configuration. The docs carry the setup for each. Agent skills, which are SKILL.md files describing SEO workflows, install alongside it.
 
 ### Does using the MCP cost credits?
 
-Search Console reads, URL inspection and audit reads use no credits. Calls that fetch from a data provider, such as keyword metrics, SERP results, domain and backlink data, and rank checks, use credits, and each tool states its cost before it runs. The hosted app includes credits with the $10 plan; self-hosted deployments pay their provider directly.
+Search Console reads, URL inspection and audit reads use no credits. Calls that fetch from a data provider, such as keyword metrics, SERP results, domain and backlink data, and rank checks, use credits, and each tool states its cost before it runs. The hosted app includes credits with paid plans; self-hosted deployments pay their provider directly.
 
 ### Can an AI agent do SEO on its own?
 

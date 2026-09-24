@@ -23,7 +23,7 @@ import mdx from "fumadocs-mdx/vite";
  */
 function requireTurnstileSiteKey(siteKey: string | undefined): Plugin {
   return {
-    name: "openseo:require-turnstile-site-key",
+    name: "seoshark:require-turnstile-site-key",
     apply: "build",
     buildStart() {
       if (process.env.VITE_REQUIRE_TURNSTILE !== "1") return;
@@ -37,7 +37,7 @@ function requireTurnstileSiteKey(siteKey: string | undefined): Plugin {
 
 // Vite checks both the file path and its raw-import ID against the allowlist.
 const publicPromptFiles = [
-  "../.agents/skills/setup-openseo/SKILL.md",
+  "../.agents/skills/setup-seoshark/SKILL.md",
   "../src/client/features/ai-mcp/agentUpdatePrompt.md",
 ].flatMap((relativePath) => {
   const file = fileURLToPath(new URL(relativePath, import.meta.url));
@@ -62,6 +62,19 @@ export default defineConfig(async ({ mode }) => {
     env.VITE_TURNSTILE_SITE_KEY ?? process.env.VITE_TURNSTILE_SITE_KEY;
 
   return {
+    resolve: {
+      alias: [
+        // The shared agent-setup prompt module lives in the application and
+        // reads its identity from `@/shared/brand`. The website mirrors those
+        // values in `src/lib/brand.ts`, so point that import there.
+        {
+          find: /^@\/shared\/brand$/,
+          replacement: fileURLToPath(
+            new URL("./src/lib/brand.ts", import.meta.url),
+          ),
+        },
+      ],
+    },
     server: {
       port: 4322,
       fs: {

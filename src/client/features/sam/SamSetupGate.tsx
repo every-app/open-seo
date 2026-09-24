@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ShieldAlert, Wrench } from "lucide-react";
+import { brand } from "@/shared/brand";
 
 export function SamSetupGate({
   errorMessage,
@@ -20,10 +21,10 @@ export function SamSetupGate({
           <div className="max-w-3xl space-y-1.5">
             <h2 className="text-xl font-semibold">Enable AI Features</h2>
             <div className="text-sm text-base-content/68">
-              SAM, OpenSEO's in-app AI agent, needs an OpenRouter API key.
+              SAM, {brand.name}'s in-app AI agent, needs an OpenRouter API key.
               Create a key on OpenRouter, set it as the{" "}
               <code>OPENROUTER_API_KEY</code> environment variable, restart
-              OpenSEO, then confirm here.
+              {brand.name}, then confirm here.
             </div>
             <div className="text-xs text-base-content/50">
               Step-by-step instructions for every deployment are in the{" "}

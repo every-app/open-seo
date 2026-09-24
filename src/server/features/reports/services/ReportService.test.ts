@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { brand } from "@/shared/brand";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
 import { formatCount } from "@/shared/format";
 import {
@@ -275,7 +276,7 @@ describe("sharing", () => {
     vi.mocked(isHostedServerAuthMode).mockResolvedValue(false);
 
     await expect(share()).rejects.toThrow(
-      "Sharing is only available on hosted OpenSEO.",
+      `Sharing is only available on hosted ${brand.name}.`,
     );
     expect(mocks.setShareToken).not.toHaveBeenCalled();
     expect(mocks.getReport).not.toHaveBeenCalled();

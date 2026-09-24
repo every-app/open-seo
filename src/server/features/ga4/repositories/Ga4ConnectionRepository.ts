@@ -45,7 +45,7 @@ async function upsert(input: {
           then coalesce(${input.connectedAccountEmail}, ${ga4Connections.connectedAccountEmail})
           else ${input.connectedAccountEmail}
         end`,
-        updatedAt: sql`(current_timestamp)`,
+        updatedAt: new Date().toISOString(),
       },
     })
     .returning();

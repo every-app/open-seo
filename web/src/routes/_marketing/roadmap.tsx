@@ -5,6 +5,7 @@ import RoadmapContent, {
   frontmatter as roadmapFrontmatter,
 } from "../../../content/marketing/roadmap.md";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 export const Route = createFileRoute("/_marketing/roadmap")({
   head: () =>
@@ -12,7 +13,7 @@ export const Route = createFileRoute("/_marketing/roadmap")({
       title: roadmapFrontmatter.title,
       description: roadmapFrontmatter.description,
       path: "/roadmap",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: Roadmap,
 });

@@ -8,6 +8,7 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getGscGrantStatus } from "@/serverFunctions/gsc";
 import { dismissGscNudge } from "@/serverFunctions/onboarding";
+import { brand } from "@/shared/brand";
 
 /**
  * One-time re-engagement prompt nudging users who finished onboarding *before*
@@ -106,8 +107,8 @@ export function GscReEngagementModal({
           New: Connect Google Search Console
         </h2>
         <p className="text-sm text-base-content/70">
-          Bring your real clicks, impressions, and rankings into OpenSEO and
-          query them from Claude or Codex over MCP. It never uses credits.
+          Bring your real clicks, impressions, and rankings into {brand.name}{" "}
+          and query them from Claude or Codex over MCP. It never uses credits.
         </p>
       </div>
 

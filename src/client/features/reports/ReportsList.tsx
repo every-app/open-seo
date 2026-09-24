@@ -5,6 +5,7 @@ import { formatCreatedBy } from "@/client/features/reports/shared";
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import type { ReportListItem } from "@/serverFunctions/reports";
 import { REPORT_APP_LIST_LIMIT } from "@/types/schemas/reports";
+import { brand } from "@/shared/brand";
 
 export function ReportsList({
   projectId,
@@ -18,8 +19,8 @@ export function ReportsList({
   if (reports.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-base-300 px-4 py-6 text-sm text-base-content/60">
-        No reports yet. Run an OpenSEO skill such as seo-audit from Claude Code
-        or Codex and the report will appear here.
+        No reports yet. Run one of the {brand.name} skills, such as seo-audit,
+        from Claude Code or Codex and the report will appear here.
       </p>
     );
   }

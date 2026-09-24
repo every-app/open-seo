@@ -1,6 +1,6 @@
 # DataForSEO API Key Setup
 
-OpenSEO uses [DataForSEO](https://dataforseo.com/?aff=255379) to fetch SEO data. It's a pay-as-you-go third-party service unaffiliated with OpenSEO. You need an API key to connect OpenSEO to it.
+SEOShark uses [DataForSEO](https://dataforseo.com) to fetch SEO data. It's a pay-as-you-go third-party service unaffiliated with SEOShark. You need an API key to connect SEOShark to it.
 
 New DataForSEO accounts include $1 of free credit to test with, and the minimum top-up is $50.
 

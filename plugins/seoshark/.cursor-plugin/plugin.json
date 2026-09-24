@@ -1,0 +1,25 @@
+{
+  "name": "seoshark",
+  "version": "1.0.0",
+  "description": "Real SEO data for your agent: keyword research, competitor research, backlinks, rank tracking, and site audits.",
+  "author": {
+    "name": "SEOShark",
+    "email": "support@seoshark.example"
+  },
+  "homepage": "https://seoshark.example",
+  "repository": "https://github.com/bizztor/seoshark",
+  "license": "MIT",
+  "keywords": [
+    "seo",
+    "keyword-research",
+    "site-audit",
+    "backlinks",
+    "search-console",
+    "rank-tracking",
+    "local-seo",
+    "competitor-research"
+  ],
+  "logo": "https://raw.githubusercontent.com/bizztor/seoshark/main/public/transparent-logo.png",
+  "skills": "skills",
+  "mcpServers": "mcp.json"
+}

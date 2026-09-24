@@ -9,7 +9,7 @@ Two things, and they pull in different directions. The first is to find out whic
 
 Here is what the newest links to seoarcade.com, a small SEO consultancy site, looked like on the day this was written, sorted by the date they were first seen:
 
-![OpenSEO backlinks table for seoarcade.com sorted by first seen: the three newest links come from a link seller, a PBN reseller and a casino domain with spam scores of 45, 60 and 70, followed by links from a marketing blog, a podcast recap and a related site with spam scores of 0 to 5](/library/link-building/backlink-profile-newest-links-openseo.png "Newest backlinks in OpenSEO")
+![SEOShark backlinks table for seoarcade.com sorted by first seen: the three newest links come from a link seller, a PBN reseller and a casino domain with spam scores of 45, 60 and 70, followed by links from a marketing blog, a podcast recap and a related site with spam scores of 0 to 5](/library/link-building/backlink-profile-newest-links-seoshark.png "Newest backlinks in SEOShark")
 
 The three newest are from a link seller, a "premium PBN network service" and a casino domain, with spam scores of 45, 60 and 70 and anchor text that is an advert for buying links. Nobody at the site asked for them. The three below are a marketing blog citing a resource guide, a related site linking a services page, and a podcast recap. Spam scores 0 to 5, anchor text that describes the page.
 
@@ -17,7 +17,7 @@ That is the whole audit in six rows. The junk arrives on its own and announces i
 
 ## The score is not the audit
 
-Every backlink tool carries an authority number for the linking domain. OpenSEO shows DataForSEO's domain rank alongside a spam score. They are useful for sorting. They are not the verdict.
+Every backlink tool carries an authority number for the linking domain. SEOShark shows DataForSEO's domain rank alongside a spam score. They are useful for sorting. They are not the verdict.
 
 Bradley Benner, who builds links for a living and tests what works on his own sites, is blunt about what he learned:
 
@@ -51,12 +51,12 @@ His episode is [here](https://unscriptedseo.com/jeremy-moser-it-was-always-just-
 
 Read the anchor and the surrounding text. Read what the linking page is about. Note whether your link is the only outbound link or one of two hundred. Twenty rows takes twenty minutes and tells you more than any composite.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect the [OpenSEO MCP](/docs/mcp). The overview costs about 50 credits for a domain and each page of 100 backlink rows about 30, so a full audit of a small site is a few hundred credits. The [link-prospecting](/docs/skills/link-prospecting) skill packages the outreach side of this.
+Connect the [SEOShark MCP](/docs/mcp). The overview costs about 50 credits for a domain and each page of 100 backlink rows about 30, so a full audit of a small site is a few hundred credits. The [link-prospecting](/docs/skills/link-prospecting) skill packages the outreach side of this.
 
 ```text
-Using the OpenSEO MCP on project [name], audit the backlinks for
+Using the SEOShark MCP on project [name], audit the backlinks for
 [domain]:
 
 1. Call get_backlinks_overview with scope "domain". Report backlinks,
@@ -103,6 +103,6 @@ A link from a page that exists only to sell or host links: link seller listings,
 
 It is a sorting aid, not a verdict. A spam domain can carry a higher rank than a relevant small site. Use the score to order the list, then judge each link on whether the linking page is about the same thing as yours and whether a real site published it.
 
-### Does OpenSEO show broken backlinks?
+### Does SEOShark show broken backlinks?
 
 The overview reports broken backlinks and broken target pages. Profile rows include broken status, dofollow or nofollow, domain rank, spam score and first-seen date. The profile request used here returns live backlinks, so it cannot list lost links. The free backlink checker shows the summary and top 15 links without an account.

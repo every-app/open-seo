@@ -67,9 +67,9 @@ Two checks, in order.
 
 **First, the fact pass.** Every number traces to a source in the brief. Every quote matches its transcript. Every product claim is true today, not last quarter. This is the check the model cannot run on itself, because it does not know which of its sentences it invented. On this site the rule is written into the review process: if a reader trusted every claim and opened the product right now, where would reality not match?
 
-**Second, the slop pass.** A list of the phrases and structures that mark a machine draft, applied to the text. OpenSEO keeps one in its repository and runs it on every page before it ships; the phrase catalogue is a few hundred entries and the structural one covers the rhythms, the false contrasts, the rhetorical questions the draft asks itself. Malte adds four measurements you can have the assistant compute against a set of your own human-written pages: perplexity, compression ratio, and Jaccard and cosine similarity between texts. A draft that scores far from the human set on any of them needs another pass. Here is what the rule and the catalogue look like in the source:
+**Second, the slop pass.** A list of the phrases and structures that mark a machine draft, applied to the text. SEOShark keeps one in its repository and runs it on every page before it ships; the phrase catalogue is a few hundred entries and the structural one covers the rhythms, the false contrasts, the rhetorical questions the draft asks itself. Malte adds four measurements you can have the assistant compute against a set of your own human-written pages: perplexity, compression ratio, and Jaccard and cosine similarity between texts. A draft that scores far from the human set on any of them needs another pass. Here is what the rule and the catalogue look like in the source:
 
-![The OpenSEO repository's agent skills directory listed in a terminal, with the deslop skill's reference files and the first entries of its phrases catalogue: filler openers, binary contrasts, and vocabulary the skill removes from every draft before it ships](/library/ai-agent-seo/deslop-skill-catalogue-openseo.png "The deslop skill in the OpenSEO repository")
+![The SEOShark repository's agent skills directory listed in a terminal, with the deslop skill's reference files and the first entries of its phrases catalogue: filler openers, binary contrasts, and vocabulary the skill removes from every draft before it ships](/library/ai-agent-seo/deslop-skill-catalogue-seoshark.png "The deslop skill in the SEOShark repository")
 
 Holly Homer, who runs organic and AI visibility at Digistore24, has a cheaper version of the second pass that works before you read a word:
 
@@ -85,12 +85,12 @@ His episode is [here](https://unscriptedseo.com/mike-montague-ai-iron-man-not-te
 
 His episode is [here](https://unscriptedseo.com/adrian-nikolov-organic-growth-engineering/).
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect the [OpenSEO MCP](/docs/mcp). This prompt makes the assistant assemble the brief's data half and then refuse to draft until the human half exists.
+Connect the [SEOShark MCP](/docs/mcp). This prompt makes the assistant assemble the brief's data half and then refuse to draft until the human half exists.
 
 ```text
-Using the OpenSEO MCP on project [name], prepare a brief for a page
+Using the SEOShark MCP on project [name], prepare a brief for a page
 about [topic]:
 
 1. Pull Search Console performance for the last 3 months by query,
@@ -135,8 +135,8 @@ A workflow where a person owns the two ends, briefing and editing, and a model d
 
 ### How do I check an AI draft?
 
-Two passes. Fact: every number, quote and product claim traces to the brief or the source. Slop: remove the phrases and structures that mark machine writing, such as filler openers, false contrasts and stacked rhetorical questions. OpenSEO keeps a catalogue of both in its repository and runs it on every page.
+Two passes. Fact: every number, quote and product claim traces to the brief or the source. Slop: remove the phrases and structures that mark machine writing, such as filler openers, false contrasts and stacked rhetorical questions. SEOShark keeps a catalogue of both in its repository and runs it on every page.
 
-### Does OpenSEO write content?
+### Does SEOShark write content?
 
 No. The MCP pulls the data half of a brief: Search Console performance, keyword metrics, SERP results, competitors, audit findings. The assistant you connect writes from the brief you complete. The product's own pages follow the same loop and the review rules are public in its repository.

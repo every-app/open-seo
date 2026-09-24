@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { requireOrgPermission } from "@/server/auth/org-gate";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
 import { ProjectService } from "@/server/features/projects/services/ProjectService";
@@ -102,8 +103,7 @@ export const createProjectTool = {
   name: "create_project",
   config: {
     title: "Create project",
-    description:
-      "Create a new project in the user's organization. Uses no credits — does not call DataForSEO. Provide a name, and optionally a domain and default market (locationCode/languageCode; a languageCode requires a locationCode). Returns the created {id, name, domain, locationCode, languageCode, url}; pass the returned `id` as `projectId` to other OpenSEO tools. Call list_projects first to avoid creating a duplicate.",
+    description: `Create a new project in the user's organization. Uses no credits — does not call DataForSEO. Provide a name, and optionally a domain and default market (locationCode/languageCode; a languageCode requires a locationCode). Returns the created {id, name, domain, locationCode, languageCode, url}; pass the returned \`id\` as \`projectId\` to other ${brand.name} tools. Call list_projects first to avoid creating a duplicate.`,
     inputSchema,
     outputSchema: z.looseObject({
       project: z

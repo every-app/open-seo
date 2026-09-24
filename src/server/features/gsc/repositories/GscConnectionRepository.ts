@@ -39,7 +39,7 @@ async function upsert(input: {
           then coalesce(${input.connectedAccountEmail}, ${gscConnections.connectedAccountEmail})
           else ${input.connectedAccountEmail}
         end`,
-        updatedAt: sql`(current_timestamp)`,
+        updatedAt: new Date().toISOString(),
       },
     })
     .returning();

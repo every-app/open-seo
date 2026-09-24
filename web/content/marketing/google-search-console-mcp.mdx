@@ -3,31 +3,31 @@ title: "Google Search Console MCP Server: No Google Cloud Setup"
 description: Connect Google Search Console to Claude, Cursor, or any MCP client — no Google Cloud project needed. Query clicks, impressions, CTR, position, and indexing.
 ---
 
-Most Google Search Console (GSC) MCP servers are open source, but they take a lot of effort to set up. You need to create a Google Cloud project, enable an API, build an OAuth client, download a `credentials.json`, then keep a local server running. OpenSEO handles the Google connection for you. You sign up, connect your property, and start asking.
+Most Google Search Console (GSC) MCP servers take a lot of effort to set up. You need to create a Google Cloud project, enable an API, build an OAuth client, download a `credentials.json`, then keep a local server running. SEOShark handles the Google connection for you. You sign up, connect your property, and start asking.
 
 ## Setup: no Google Cloud project
 
-1. Sign up for OpenSEO ($10/month).
+1. Sign up for SEOShark.
 2. Go through the onboarding. When prompted, click **Connect Search Console** and pick your property.
-3. Add the OpenSEO MCP endpoint to your client (steps below) and approve the OpenSEO login when prompted.
+3. Add the SEOShark MCP endpoint to your client (steps below) and approve the SEOShark login when prompted.
 
 The hosted MCP server URL is:
 
 ```txt
-https://app.openseo.so/mcp
+https://app.seoshark.example/mcp
 ```
 
 ### Claude Code
 
 ```bash
-claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
+claude mcp add --transport http --scope user seoshark https://app.seoshark.example/mcp
 ```
 
 ### Claude Desktop
 
 1. Open Customize → Connectors.
 2. Click **Add** (or **+**), then choose **Add custom connector**.
-3. Paste `https://app.openseo.so/mcp`.
+3. Paste `https://app.seoshark.example/mcp`.
 
 ### Cursor
 
@@ -37,8 +37,8 @@ claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
 ```json
 {
   "mcpServers": {
-    "openseo": {
-      "url": "https://app.openseo.so/mcp"
+    "seoshark": {
+      "url": "https://app.seoshark.example/mcp"
     }
   }
 }
@@ -47,10 +47,10 @@ claude mcp add --transport http --scope user openseo https://app.openseo.so/mcp
 ### Codex CLI
 
 ```bash
-codex mcp add openseo --url https://app.openseo.so/mcp
+codex mcp add seoshark --url https://app.seoshark.example/mcp
 ```
 
-Any other MCP client works the same way: add `https://app.openseo.so/mcp` as a remote server and sign in. Full setup and troubleshooting live in the [MCP docs](/docs/mcp).
+Any other MCP client works the same way: add `https://app.seoshark.example/mcp` as a remote server and sign in. Full setup and troubleshooting live in the [MCP docs](/docs/mcp).
 
 ### The DIY way (every other GSC MCP)
 
@@ -81,9 +81,9 @@ The agent can read and inspect. It cannot change anything in your account.
 
 ## What it costs
 
-The Search Console tools use zero credits — Google doesn't charge you to read your own data, so reading it through OpenSEO never burns usage. They're included with the OpenSEO plan ($10/month, which includes monthly usage credits for the research tools), alongside the credit-based tools (keyword research, rank tracking, backlinks) that run through the same MCP endpoint. If you'd rather not pay at all, OpenSEO is open source and free to self-host — see the FAQ below.
+The Search Console tools use zero credits — Google doesn't charge you to read your own data, so reading it through SEOShark never burns usage. They're included with your SEOShark plan, alongside the credit-based tools (keyword research, rank tracking, backlinks) that run through the same MCP endpoint. You can also self-host SEOShark — see the FAQ below.
 
-## OpenSEO vs. the alternatives
+## SEOShark vs. the alternatives
 
 <ComparisonTable />
 
@@ -91,19 +91,19 @@ The Search Console tools use zero credits — Google doesn't charge you to read 
 
 ### What does it cost?
 
-The Search Console MCP tools are included with the $10/month OpenSEO plan (which comes with a 30-day money-back guarantee) and use zero credits. OpenSEO's other tools (keyword research, rank tracking, backlinks) use the usage credits included with the plan, through the same endpoint. Self-hosting is free.
+The Search Console MCP tools are included with your SEOShark plan and use zero credits. SEOShark's other tools (keyword research, rank tracking, backlinks) use usage credits, through the same endpoint. See [pricing](/pricing).
 
-### Is it open source?
+### Can I self-host it?
 
-Yes. OpenSEO is open source, so you can self-host the whole thing for free, including the Search Console MCP. The one-click connection here uses OpenSEO's hosted Google app. If you self-host, you bring your own Google OAuth client, the same Cloud-console step the hosted version saves you. Hosted means no setup; self-hosted means full control.
+Yes. You can [self-host](/docs/self-hosting) SEOShark, including the Search Console MCP. The one-click connection here uses SEOShark's hosted Google app. If you self-host, you bring your own Google OAuth client, the same Cloud-console step the hosted version saves you. Hosted means no setup; self-hosted means full control.
 
 ### Is it read-only?
 
-Yes. OpenSEO requests read-only access (`webmasters.readonly`). Your agent can read performance data and inspect URLs, but it can't change your account.
+Yes. SEOShark requests read-only access (`webmasters.readonly`). Your agent can read performance data and inspect URLs, but it can't change your account.
 
 ### Which AI clients work?
 
-Any MCP client, including Claude Code, Claude Desktop, Cursor, Codex, and OpenClaw. Add the OpenSEO MCP endpoint and sign in.
+Any MCP client, including Claude Code, Claude Desktop, Cursor, Codex, and OpenClaw. Add the SEOShark MCP endpoint and sign in.
 
 ### How fresh is the data?
 

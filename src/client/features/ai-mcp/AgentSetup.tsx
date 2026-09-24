@@ -3,6 +3,7 @@ import { AgentList } from "./AgentList";
 import { AgentSetupPanel, AGENT_SETUP_DESCRIPTION } from "./AgentSetupPanel";
 import { getAgentSetupPrompt } from "./agentSetupPrompt";
 import { captureClientEvent } from "@/client/lib/posthog";
+import { brand } from "@/shared/brand";
 
 export function AgentSetup({
   onComplete,
@@ -14,9 +15,7 @@ export function AgentSetup({
   disabled?: boolean;
 }) {
   const prompt = getAgentSetupPrompt(
-    typeof window === "undefined"
-      ? "https://app.openseo.so"
-      : window.location.origin,
+    typeof window === "undefined" ? brand.appUrl : window.location.origin,
   );
 
   return (

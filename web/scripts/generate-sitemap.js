@@ -5,6 +5,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { FEATURE_PAGE_SLUGS } from "../src/lib/feature-page-slugs.js";
 import { FREE_TOOL_PATHS } from "../src/lib/free-tools/free-tool-paths.js";
+import { SITE_ORIGIN } from "../src/lib/site-origin.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -14,8 +15,7 @@ const BLOG_CONTENT_DIR = join(__dirname, "../content/blogs");
 const DOCS_CONTENT_DIR = join(__dirname, "../content/docs");
 const LIBRARY_ROUTES_DIR = join(__dirname, "../src/routes/_marketing/library");
 
-const DEFAULT_SITE_URL = "https://openseo.so";
-const SITE_URL = (process.env.SITE_URL ?? DEFAULT_SITE_URL).replace(/\/+$/, "");
+const SITE_URL = (process.env.SITE_URL ?? SITE_ORIGIN).replace(/\/+$/, "");
 
 const STATIC_PATHS = [
   "/",
@@ -27,9 +27,8 @@ const STATIC_PATHS = [
   "/features",
   "/features/mcp",
   "/tools",
-  "/open-source-seo",
   "/about",
-  "/why-openseo",
+  "/why-seoshark",
   "/google-search-console-mcp",
   "/roadmap",
   "/support",

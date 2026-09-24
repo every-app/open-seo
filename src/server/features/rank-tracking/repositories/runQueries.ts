@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, isNull } from "drizzle-orm";
+import { and, countDistinct, desc, eq, inArray, isNull } from "drizzle-orm";
 import type { InferInsertModel } from "drizzle-orm";
 import { db } from "@/db";
 import { rankCheckRuns, rankSnapshots } from "@/db/schema";
@@ -120,4 +120,14 @@ export async function insertSnapshots(
 
 export async function getSnapshotsForRun(runId: string) {
   return db.select().from(rankSnapshots).where(eq(rankSnapshots.runId, runId));
+}
+
+// Progress/finalize counter. Counting in SQL avoids re-reading every snapshot
+// row (url, serp features) on each collect round of a large run.
+export async function countKeywordsCheckedForRun(runId: string) {
+  const rows = await db
+    .select({ count: countDistinct(rankSnapshots.trackingKeywordId) })
+    .from(rankSnapshots)
+    .where(eq(rankSnapshots.runId, runId));
+  return rows[0]?.count ?? 0;
 }

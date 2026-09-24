@@ -1,11 +1,12 @@
-const DEFAULT_SITE_URL = "https://openseo.so";
+import { brand } from "@/lib/brand";
+
 const DEFAULT_SOCIAL_IMAGE_PATH = "/social-card.jpg";
-const DEFAULT_SOCIAL_IMAGE_ALT = "OpenSEO product preview";
+const DEFAULT_SOCIAL_IMAGE_ALT = `${brand.name} product preview`;
 
 export const SITE_URL = (
   process.env.SITE_URL ??
   process.env.VITE_SITE_URL ??
-  DEFAULT_SITE_URL
+  brand.marketingUrl
 ).replace(/\/+$/, "");
 
 export function toCanonicalPath(path: string): string {
@@ -59,7 +60,7 @@ export function buildPageSeo({
     meta: [
       { title: fullTitle },
       ...(description ? [{ name: "description", content: description }] : []),
-      { property: "og:site_name", content: "OpenSEO" },
+      { property: "og:site_name", content: brand.name },
       { property: "og:type", content: ogType },
       { property: "og:title", content: fullTitle },
       ...(description

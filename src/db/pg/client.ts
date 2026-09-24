@@ -2,10 +2,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import {
-  getDatabaseProvider,
-  getPostgresConnectionString,
-} from "@/db/provider";
+import { getDatabaseProvider, getPostgresConnection } from "@/db/provider";
 import { withQueryRetries } from "./retry";
 import * as schema from "./schema";
 
@@ -71,14 +68,20 @@ export async function withPgClient<T>(fn: () => Promise<T>): Promise<T> {
   if (pgClientStore.getStore()) {
     return fn();
   }
+  const connection = getPostgresConnection();
   const sql = withQueryRetries(
-    postgres(getPostgresConnectionString(), {
+    postgres(connection.connectionString, {
       max: 1,
       fetch_types: false,
       // Bound connect stalls (seconds) so the per-query retry in
       // withQueryRetries gets its turn within the request's lifetime instead
       // of hanging on postgres.js's 30s default during a failover.
       connect_timeout: 10,
+      // A direct URL is expected to be a transaction-mode pooler (Supabase's
+      // Supavisor on port 6543), which cannot hold named prepared statements
+      // across pooled backends. Hyperdrive supports them, so keep the default
+      // there.
+      prepare: connection.viaHyperdrive,
     }),
   );
   return pgClientStore.run({ sql, db: createPgDb(sql) }, fn);

@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { autumn } from "@/server/billing/autumn";
 import {
   AUTUMN_SEO_DATA_BALANCE_FEATURE_ID,
@@ -22,8 +23,7 @@ export const whoamiTool = {
   name: "whoami",
   config: {
     title: "Who am I",
-    description:
-      "Confirms the connected OpenSEO account, server mode, token scopes, and current credit balance when the user asks to check their account or connection. Uses no credits — does not call DataForSEO.",
+    description: `Confirms the connected ${brand.name} account, server mode, token scopes, and current credit balance when the user asks to check their account or connection. Uses no credits — does not call DataForSEO.`,
     inputSchema: {} as Record<string, never>,
     outputSchema: z.looseObject({
       userEmail: z.string(),

@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { AI_AGENT_SEO_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/ai-agent-seo/what-to-automate";
 
@@ -27,9 +28,9 @@ const faqs = [
       "The data collection, yes: the tracker and Search Console pulls run on their own and use no credits to read. The draft, yes, with an agent and a saved prompt. The sentence that says what it means for the business should still be written or at least read by a person before it goes out.",
   },
   {
-    question: "How much does scheduled rank tracking cost in OpenSEO?",
+    question: `How much does scheduled rank tracking cost in ${brand.name}?`,
     answer:
-      "The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app need the $10/month plan.",
+      "The app estimates before anything runs. As a reference, 25 keywords on mobile checking the top 40 results weekly comes to about $0.25 a month in credits; 100 keywords about a dollar. Scheduled checks go through a queue that is cheaper than one-off live checks. Rank checks on the hosted app use credits from a paid plan.",
   },
   {
     question: "Should I automate content production?",
@@ -56,7 +57,7 @@ export const Route = createFileRoute(
       title: "What to Automate and What to Keep: the Dispatcher Rule",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

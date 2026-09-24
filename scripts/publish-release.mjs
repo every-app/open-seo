@@ -44,7 +44,7 @@ const args = [
   "create",
   tag,
   "--repo",
-  "every-app/open-seo",
+  "bizztor/seoshark",
   "--title",
   tag,
   "--notes-file",

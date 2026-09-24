@@ -2,6 +2,7 @@ import { Link, createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { AuthPageCard, AuthPageShell } from "@/client/features/auth/AuthPage";
 import { googleAuthErrorCopy } from "@/client/features/integrations/googleAuthErrorCopy";
+import { brand } from "@/shared/brand";
 
 const authErrorSearchSchema = z.object({
   error: z.string().optional(),
@@ -39,7 +40,7 @@ function AuthErrorPage() {
         }
       >
         <Link to="/" className="btn btn-soft w-full">
-          Back to OpenSEO
+          Back to {brand.name}
         </Link>
       </AuthPageCard>
     </AuthPageShell>

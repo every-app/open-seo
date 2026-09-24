@@ -30,6 +30,9 @@ declare namespace Cloudflare {
     BETTER_AUTH_SECRET?: string;
     BETTER_AUTH_URL?: string;
     DATABASE_PROVIDER?: "d1" | "postgres";
+    // Direct Postgres URL (e.g. the Supabase pooler). Used when no HYPERDRIVE
+    // binding is present — see src/db/provider.ts.
+    DATABASE_URL?: string;
     HYPERDRIVE?: {
       connectionString: string;
     };

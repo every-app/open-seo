@@ -58,14 +58,6 @@ const domainSortModes = ["rank", "traffic", "volume", "score", "cpc"] as const;
 const domainSortOrders = ["asc", "desc"] as const;
 const domainTabs = ["keywords", "pages"] as const;
 
-export const domainKeywordSuggestionsSchema = z.object({
-  projectId: z.string().uuid(),
-  domain: z.string().min(1, "Domain is required").max(2048),
-  scope: researchScopeSchema.optional(),
-  locationCode: z.number().int().positive().optional(),
-  languageCode: z.string().min(2).max(8).optional(),
-});
-
 export const DOMAIN_KEYWORDS_PAGE_SIZES = [50, 100, 200] as const;
 export const DEFAULT_DOMAIN_KEYWORDS_PAGE_SIZE = 100;
 export const MAX_DATAFORSEO_FILTER_CONDITIONS = 8;

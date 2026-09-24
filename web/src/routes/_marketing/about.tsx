@@ -4,6 +4,7 @@ import { DocsBody } from "fumadocs-ui/page";
 import AboutContent, {
   frontmatter,
 } from "../../../content/marketing/about.mdx";
+import { appLinks, brand } from "@/lib/brand";
 import { buildPageSeo } from "@/lib/seo";
 
 export const Route = createFileRoute("/_marketing/about")({
@@ -19,27 +20,13 @@ export const Route = createFileRoute("/_marketing/about")({
 function AboutPage() {
   return (
     <article className="mx-auto max-w-3xl text-neutral-900">
-      <header className="mb-10 grid items-center gap-8 border-b border-[var(--color-border-subtle)] pb-10 sm:grid-cols-[1fr_13rem]">
-        <div>
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-6xl">
-            {frontmatter.title}
-          </h1>
-          <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
-            Hey, I'm Ben, the founder of OpenSEO.
-          </p>
-        </div>
-        <figure className="w-48 sm:w-full">
-          <img
-            src="/images/ben-founder.jpg"
-            alt="Ben, founder of OpenSEO"
-            width={1226}
-            height={1224}
-            className="h-auto w-full rounded-2xl"
-          />
-          <figcaption className="mt-3 text-sm text-[var(--color-brand-muted)]">
-            Ben · Founder, OpenSEO
-          </figcaption>
-        </figure>
+      <header className="mb-10 border-b border-[var(--color-border-subtle)] pb-10">
+        <h1 className="text-4xl font-semibold leading-tight tracking-tight text-neutral-950 md:text-6xl">
+          {frontmatter.title}
+        </h1>
+        <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
+          {frontmatter.description}
+        </p>
       </header>
 
       <DocsBody className="min-w-0 text-neutral-800 [&_a]:!text-neutral-950 [&_h2]:!text-neutral-950 [&_h2_a]:!no-underline [&_h3]:!text-neutral-950 [&_h3_a]:!no-underline [&_p]:!text-neutral-700 [&_p_a]:font-medium [&_p_a]:underline [&_p_a]:decoration-[var(--color-brand-accent)] [&_p_a]:underline-offset-4 [&_p_a:hover]:!text-neutral-700 [&_strong]:!text-neutral-950">
@@ -47,10 +34,10 @@ function AboutPage() {
       </DocsBody>
 
       <a
-        href="https://app.openseo.so/sign-up"
+        href={appLinks.signUp}
         className="mt-8 inline-flex h-11 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
       >
-        Try OpenSEO
+        Try {brand.name}
       </a>
     </article>
   );

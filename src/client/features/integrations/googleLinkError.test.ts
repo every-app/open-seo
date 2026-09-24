@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { googleAuthErrorCopy } from "./googleAuthErrorCopy";
+import { brand } from "@/shared/brand";
 
 const captureClientEvent = vi.hoisted(() => vi.fn());
 vi.mock("@/client/lib/posthog", () => ({ captureClientEvent }));
@@ -33,7 +34,7 @@ describe("Google link callback errors", () => {
     const copy = googleAuthErrorCopy(error!.code, "Search Console");
     expect(copy.title).toBe("Google account already connected");
     expect(copy.description).toContain(
-      "Sign in to the OpenSEO user that linked it",
+      `Sign in to the ${brand.name} user that linked it`,
     );
     expect(location.href).toBe(
       "https://app.example.com/p/project-a#connect-gsc",

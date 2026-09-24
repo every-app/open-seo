@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { keywordResearchStrategies } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research";
 
@@ -13,7 +14,7 @@ const faqs = [
   {
     question: "How do you do keyword research for free?",
     answer:
-      "The discovery half runs on sources you already have: customer conversations, Google's autocomplete and People Also Ask, and your Search Console. Quality SEO data costs money, which is why the big SEO suites run $100/month and up. You can start OpenSEO for free; the paid plan starts at $10/month and includes $10 of usage. If you need more, you can buy top-up credits.",
+      `The discovery half runs on sources you already have: customer conversations, Google's autocomplete and People Also Ask, and your Search Console. Quality SEO data costs money, which is why the big SEO suites run $100/month and up. You can start ${brand.name} for free; paid plans add usage credits for the data-backed steps.`,
   },
   {
     question: "Can you do keyword research without Google Keyword Planner?",
@@ -23,7 +24,7 @@ const faqs = [
   {
     question: "What are the 3 types of keywords?",
     answer:
-      "There is no universal set of three. OpenSEO uses four intent types: informational, navigational, commercial, and transactional. By shape, terms are often grouped as head, mid-tail, and long-tail.",
+      `There is no universal set of three. ${brand.name} uses four intent types: informational, navigational, commercial, and transactional. By shape, terms are often grouped as head, mid-tail, and long-tail.`,
   },
   {
     question: "How do you do keyword research for a blog?",
@@ -52,9 +53,9 @@ export const Route = createFileRoute("/_marketing/library/keyword-research/")({
     buildPageSeo({
       title: "How to Do Keyword Research: The Strategy Library",
       description:
-        "Eight demand-discovery strategies drawn from interviews with working SEOs, each with a workflow and an OpenSEO MCP prompt for its data-backed steps.",
+        `Eight demand-discovery strategies drawn from interviews with working SEOs, each with a workflow and an ${brand.name} MCP prompt for its data-backed steps.`,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: KeywordResearchLibraryPage,
 });
@@ -80,7 +81,7 @@ function KeywordResearchLibraryPage() {
         </h1>
         <p className="mt-5 text-lg leading-8 text-[var(--color-brand-muted)]">
           Eight demand-discovery strategies drawn from interviews with working
-          SEOs, each with a workflow and an OpenSEO MCP prompt for its
+          SEOs, each with a workflow and an {brand.name} MCP prompt for its
           data-backed steps.
         </p>
       </header>
@@ -163,10 +164,9 @@ function KeywordResearchLibraryPage() {
             href="/features/keyword-research"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
-            OpenSEO's keyword research
+            {brand.name}'s keyword research
           </a>{" "}
-          and your connected Search Console. OpenSEO is open source and
-          self-hostable, and its{" "}
+          and your connected Search Console. Its{" "}
           <a
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
@@ -175,9 +175,8 @@ function KeywordResearchLibraryPage() {
           </a>{" "}
           lets a compatible AI assistant query both sources while it works
           through the workflow. Quality SEO data is why the big suites run
-          $100/month and up; OpenSEO's paid plan starts at $10/month and includes
-          $10 of usage, with top-ups available if you need more. You can start
-          for free.
+          $100/month and up; {brand.name} is free to start, and paid plans add
+          usage credits for the data-backed steps.
         </p>
       </section>
 

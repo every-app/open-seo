@@ -257,11 +257,10 @@ async function collectQueuedRound(
       mapResultsToSnapshotRows(ctx.runId, completed),
     );
     // Progress for the UI; finalize recounts from the DB anyway.
-    const snapshots = await RankTrackingRepository.getSnapshotsForRun(
-      ctx.runId,
-    );
     await RankTrackingRepository.updateRun(ctx.runId, {
-      keywordsChecked: new Set(snapshots.map((s) => s.trackingKeywordId)).size,
+      keywordsChecked: await RankTrackingRepository.countKeywordsCheckedForRun(
+        ctx.runId,
+      ),
     });
   }
 

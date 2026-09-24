@@ -6,6 +6,7 @@ import Content, {
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
 import { SITE_AUDIT_LIBRARY } from "@/lib/strategy-libraries";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/site-audit/technical-seo-audit-checklist";
 
@@ -13,7 +14,7 @@ const faqs = [
   {
     question: "What is included in a technical SEO audit?",
     answer:
-      "At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. OpenSEO checks 27 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.",
+      `At minimum: crawlability and access, status codes, canonical and indexability signals, titles and meta descriptions, heading structure, internal linking including broken links and orphan pages, duplicate content, image alt coverage, and server response time. ${brand.name} checks 27 issue types across those areas and can optionally run Lighthouse on a sample of up to 10 pages for performance and accessibility findings.`,
   },
   {
     question: "How often should you run a technical SEO audit?",
@@ -34,7 +35,7 @@ const faqs = [
   {
     question: "Is there a free technical SEO audit tool?",
     answer:
-      "Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is the more reliable source for anything Google-specific. A crawler adds the on-page and internal-link picture that Search Console does not give you. OpenSEO is open source and free to start, with 50-page crawls on the free plan and 10,000-page crawls on the $10/month plan.",
+      `Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is the more reliable source for anything Google-specific. A crawler adds the on-page and internal-link picture that Search Console does not give you. ${brand.name} is free to start, with 50-page crawls on the free plan and 10,000-page crawls on paid plans.`,
   },
 ];
 
@@ -56,7 +57,7 @@ export const Route = createFileRoute(
       title: "The Technical SEO Audit Checklist That Ends in Fixes",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

@@ -3,11 +3,12 @@ import {
   agentUpdatePrompt,
   getAgentSetupPrompt,
 } from "../../../src/client/features/ai-mcp/agentSetupPrompt";
+import { brand } from "@/lib/brand";
 
 export function AgentPrompt({ kind }: { kind: "setup" | "update" }) {
   const prompt =
     kind === "setup"
-      ? getAgentSetupPrompt("https://app.openseo.so")
+      ? getAgentSetupPrompt(brand.appUrl)
       : agentUpdatePrompt;
 
   return (

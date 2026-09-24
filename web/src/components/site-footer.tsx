@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { brand } from "@/lib/brand";
 import { featureGroups } from "@/lib/feature-pages";
 import { freeToolList } from "@/lib/free-tools/tool-pages";
 
@@ -13,7 +14,7 @@ export function SiteFooter({ className }: { className?: string }) {
   return (
     <div className={className}>
       <Link to="/" className="text-sm font-semibold text-neutral-900">
-        OpenSEO
+        {brand.name}
       </Link>
 
       <div className="mt-6 grid grid-cols-2 gap-8 md:grid-cols-[repeat(auto-fit,minmax(9rem,1fr))]">
@@ -32,7 +33,7 @@ export function SiteFooter({ className }: { className?: string }) {
         <div>
           <p className="font-semibold text-neutral-900">AI agents</p>
           <div className="mt-2 flex flex-col gap-1.5">
-            <Link to="/features/mcp">OpenSEO MCP</Link>
+            <Link to="/features/mcp">{brand.name} MCP</Link>
             <Link to="/google-search-console-mcp">
               Google Search Console MCP
             </Link>
@@ -45,7 +46,6 @@ export function SiteFooter({ className }: { className?: string }) {
             <a href="/docs/mcp">MCP</a>
             <a href="/docs/skills">Skills</a>
             <Link to="/library">Strategy Library</Link>
-            <Link to="/open-source-seo">Why Open Source?</Link>
             <Link to="/blogs">Blog</Link>
             <a href="/docs">Docs</a>
           </div>
@@ -70,24 +70,22 @@ export function SiteFooter({ className }: { className?: string }) {
           <p className="font-semibold text-neutral-900">Company</p>
           <div className="mt-2 flex flex-col gap-1.5">
             <Link to="/about">About</Link>
-            <Link to="/why-openseo">Why OpenSEO</Link>
+            <Link to="/why-seoshark">Why {brand.name}</Link>
             <Link to="/support">Support</Link>
             <Link to="/roadmap">Roadmap</Link>
             <Link to="/pricing">Pricing</Link>
-            <a
-              href="https://github.com/every-app/open-seo"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <a href={brand.githubUrl} target="_blank" rel="noopener noreferrer">
               GitHub
             </a>
-            <a
-              href="https://discord.gg/c9uGs3cFXr"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Discord
-            </a>
+            {brand.discordUrl ? (
+              <a
+                href={brand.discordUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Discord
+              </a>
+            ) : null}
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms-and-conditions">Terms</Link>
           </div>

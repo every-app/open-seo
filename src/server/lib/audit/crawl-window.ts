@@ -1,4 +1,5 @@
 import type { CrawledPageResult } from "@/server/lib/audit/types";
+import { clamp } from "remeda";
 
 /**
  * Rolling fetch-concurrency window for the crawl. Unlike fixed batches, a
@@ -57,7 +58,7 @@ export function clampCrawlWindow(
   size: number,
   limits: CrawlWindowLimits,
 ): number {
-  return Math.min(Math.max(size, limits.min), limits.max);
+  return clamp(size, { min: limits.min, max: limits.max });
 }
 
 /**

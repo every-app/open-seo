@@ -1,3 +1,4 @@
+import { brand } from "@/shared/brand";
 import { waitUntil } from "cloudflare:workers";
 import {
   AuthorizationError,
@@ -414,7 +415,7 @@ function createProvider(appFetch: AppFetch, resource: string) {
     resourceMetadata: {
       resource,
       scopes_supported: [MCP_SCOPE],
-      resource_name: "OpenSEO MCP",
+      resource_name: `${brand.name} MCP`,
     },
     tokenExchangeCallback: ({ props, requestedScope }) => {
       if (!requestedScope.includes(MCP_SCOPE)) {

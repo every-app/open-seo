@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
+import { appLinks, brand } from "@/lib/brand";
 import { trackTool } from "@/lib/free-tools/analytics";
 import { type FreeTool, freeTools } from "@/lib/free-tools/tool-pages";
 import { buildBreadcrumbJsonLd, SITE_URL, toCanonicalUrl } from "@/lib/seo";
 
-const SIGNUP_URL = "https://app.openseo.so/sign-up";
+const SIGNUP_URL = appLinks.signUp;
 
 type ToolHighlight = { title: string; description: string };
 
@@ -101,7 +102,7 @@ export function ToolFrame({
             onClick={() => trackTool("tool_cta_click", tool.slug)}
             className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
-            Try OpenSEO
+            Try {brand.name}
             <span aria-hidden="true" className="ml-2">
               &rarr;
             </span>
@@ -187,7 +188,7 @@ function buildToolJsonLd(tool: FreeTool, faqs: ToolFaq[]) {
     {
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
-      name: `OpenSEO ${tool.name}`,
+      name: `${brand.name} ${tool.name}`,
       applicationCategory: "SEO",
       operatingSystem: "Web",
       url: toCanonicalUrl(tool.path),
@@ -199,7 +200,7 @@ function buildToolJsonLd(tool: FreeTool, faqs: ToolFaq[]) {
       },
       provider: {
         "@type": "Organization",
-        name: "OpenSEO",
+        name: brand.name,
         url: SITE_URL,
       },
     },

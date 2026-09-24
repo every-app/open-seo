@@ -15,6 +15,7 @@ import {
 } from "@/lib/free-tools/metric-grid";
 import { UpsellCard } from "@/lib/free-tools/upsell-card";
 import { useToolRun } from "@/lib/free-tools/use-tool-run";
+import { brand } from "@/lib/brand";
 
 const TOOL = "website-traffic-checker";
 
@@ -201,7 +202,7 @@ export function WebsiteTrafficCheckerTool() {
           ) : null}
           <UpsellCard tool={TOOL} cta="Explore more keywords and pages">
             The free checker shows the top 5 keywords and pages per domain.
-            OpenSEO lets you browse more keywords and pages, filter the results,
+            {brand.name} lets you browse more keywords and pages, filter the results,
             and save keywords for rank tracking.
           </UpsellCard>
         </div>

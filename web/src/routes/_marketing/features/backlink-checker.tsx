@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { FeaturePageTemplate } from "@/components/feature-page";
 import { featurePages } from "@/lib/feature-pages";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const page = featurePages.backlinks;
 
@@ -11,7 +12,7 @@ export const Route = createFileRoute("/_marketing/features/backlink-checker")({
       title: "Backlink Checker",
       description: page.description,
       path: "/features/backlink-checker",
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
       imageAlt: page.imageAlt,
     }),
   component: () => <FeaturePageTemplate page={page} />,

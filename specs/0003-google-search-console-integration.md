@@ -6,13 +6,13 @@ Accepted
 
 ## Context
 
-Users previously got Search Console data into OpenSEO by manually exporting CSVs. We want the agent to read a project's real first-party search data (clicks, impressions, CTR, position) directly. Google does not charge for this data, so it should not consume credits the way DataForSEO does.
+Users previously got Search Console data into SEOShark by manually exporting CSVs. We want the agent to read a project's real first-party search data (clicks, impressions, CTR, position) directly. Google does not charge for this data, so it should not consume credits the way DataForSEO does.
 
 ## Decision
 
 Add a native GSC connection plus two read-only MCP tools.
 
-**Auth (incremental OAuth grant).** Connecting requests a read-only Search Console scope through a dedicated Better Auth `genericOAuth` provider (`google-search-console`), separate from logging in with Google. `allowDifferentEmails` lets a user connect a Google account whose email differs from their OpenSEO login (an agency connecting a client). OAuth tokens are encrypted at rest.
+**Auth (incremental OAuth grant).** Connecting requests a read-only Search Console scope through a dedicated Better Auth `genericOAuth` provider (`google-search-console`), separate from logging in with Google. `allowDifferentEmails` lets a user connect a Google account whose email differs from their SEOShark login (an agency connecting a client). OAuth tokens are encrypted at rest.
 
 **Scoping.** A connection maps one verified property to one project (`gsc_connections`, unique per project). The connection belongs to the project/workspace; any member can query it, and requests run under the connecting member's grant. Property selection lives in the Integrations UI (account dropdown), not an MCP tool.
 
@@ -32,6 +32,6 @@ Leaning on Better Auth's incremental OAuth keeps token storage and refresh out o
 ## Consequences
 
 - The read-only scope is a Google "sensitive" scope: until the OAuth app clears verification, only test users can connect and their grant expires ~weekly.
-- "Connected by" surfaces the OpenSEO member who connected, not the Google account's email.
+- "Connected by" surfaces the SEOShark member who connected, not the Google account's email.
 - One property per project (re-selecting replaces it); no history or caching — every query hits Google live.
 - New GSC capabilities should extend `GscService` and the MCP tools, keeping reads free and project-scoped.

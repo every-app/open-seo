@@ -1,4 +1,5 @@
 import { ImageResponse } from "takumi-js/response";
+import { brand } from "@/shared/brand";
 import { domainField } from "@/types/schemas/domain";
 import logo from "../../../../public/android-chrome-192x192.png?inline";
 
@@ -26,7 +27,7 @@ export async function renderReportSocialImage(
       <div style={{ display: "flex", alignItems: "center", gap: 20 }}>
         <img src={logo} width={64} height={64} style={{ borderRadius: 14 }} />
         <div style={{ fontSize: 34, fontWeight: 600, letterSpacing: -1 }}>
-          OpenSEO
+          {brand.name}
         </div>
       </div>
       <div

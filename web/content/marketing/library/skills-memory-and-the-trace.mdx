@@ -21,9 +21,9 @@ His episode is [on the Unscripted Small Business podcast](https://unscriptedsmal
 
 ## 1. Save the workflow as a skill
 
-A skill is a file that tells the assistant how to do one job: what to pull, in what order, what to check, what the output looks like. OpenSEO ships a set of them for the SEO jobs the MCP supports, and they are the reason the same prompt produces the same shape of work on Monday and on Thursday:
+A skill is a file that tells the assistant how to do one job: what to pull, in what order, what to check, what the output looks like. SEOShark ships a set of them for the SEO jobs the MCP supports, and they are the reason the same prompt produces the same shape of work on Monday and on Thursday:
 
-![The OpenSEO agent skills listed in a terminal: competitive-landscape, competitor-analysis, keyword-clustering, keyword-research, link-prospecting, local-seo, seo-audit, seo-coach and seo-project-setup, each a SKILL.md file the assistant reads before doing that job](/library/ai-agent-seo/openseo-agent-skills-openseo.png "The OpenSEO agent skills")
+![The SEOShark agent skills listed in a terminal: competitive-landscape, competitor-analysis, keyword-clustering, keyword-research, link-prospecting, local-seo, seo-audit, seo-coach and seo-project-setup, each a SKILL.md file the assistant reads before doing that job](/library/ai-agent-seo/seoshark-agent-skills-seoshark.png "The SEOShark agent skills")
 
 Erika Braeger, manager of organic growth strategy at Tenspeed, builds them for her team and is precise about what they are for:
 
@@ -43,7 +43,7 @@ An agent forgets between conversations, and inside a long one. Mason's fix is a 
 
 > The way that we do it is we do it with Obsidian. Obsidian is a markdown platform that manages uh all of our files. So we make logs of transcripts. We make logs of every single thing that we're working on and that we're doing.
 
-Markdown, because every model reads it and every editor opens it. Logs of transcripts, decisions, what the client said, what you decided last month and why. OpenSEO's version is the project context: business overview, goal, positioning, competitors, key pages, and a research log so the assistant does not re-buy research it already bought. The [project setup](/docs/skills/seo-project-setup) skill fills it once; every other skill reads it.
+Markdown, because every model reads it and every editor opens it. Logs of transcripts, decisions, what the client said, what you decided last month and why. SEOShark's version is the project context: business overview, goal, positioning, competitors, key pages, and a research log so the assistant does not re-buy research it already bought. The [project setup](/docs/skills/seo-project-setup) skill fills it once; every other skill reads it.
 
 Holly Homer, who runs organic and AI visibility at Digistore24, describes the loop that memory makes possible:
 
@@ -97,12 +97,12 @@ And a practical limit Dan Kurtz hit that no amount of memory prevents:
 
 His episode is [here](https://unscriptedseo.com/dan-kurtz-bots-as-a-customer-segment-markdown-agentic-flywheel/). The agent can do anything to your site through an API. Your host may have opinions about how fast.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect the [OpenSEO MCP](/docs/mcp) and install the [skills](/docs/skills/setup). This prompt turns a one-off run into a repeatable one and produces the trace.
+Connect the [SEOShark MCP](/docs/mcp) and install the [skills](/docs/skills/setup). This prompt turns a one-off run into a repeatable one and produces the trace.
 
 ```text
-Using the OpenSEO MCP on project [name]:
+Using the SEOShark MCP on project [name]:
 
 1. Call get_project_context. If the goal, positioning, competitors or
    key pages are missing, run the seo-project-setup skill and ask me
@@ -134,7 +134,7 @@ The output of an agent run is one document. The skill, the memory and the trace 
 
 ### What is an agent skill?
 
-A file, usually SKILL.md, that tells an AI assistant how to do one job: which tools to call in what order, what to check, and what the output should look like. OpenSEO ships skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup, so the assistant runs each workflow the same way every time.
+A file, usually SKILL.md, that tells an AI assistant how to do one job: which tools to call in what order, what to check, and what the output should look like. SEOShark ships skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup, so the assistant runs each workflow the same way every time.
 
 ### Why does ChatGPT or Claude give different answers to the same prompt?
 
@@ -142,12 +142,12 @@ Because a blank chat is designed to vary; nothing constrains the route from prom
 
 ### How do I give an AI agent memory?
 
-A plain-text store it reads before it starts: markdown files of decisions, transcripts and rules, or a structured project context like OpenSEO's, which holds goal, positioning, competitors, key pages and a research log. Feedback written into that store becomes a rule; feedback given once in chat is forgotten.
+A plain-text store it reads before it starts: markdown files of decisions, transcripts and rules, or a structured project context like SEOShark's, which holds goal, positioning, competitors, key pages and a research log. Feedback written into that store becomes a rule; feedback given once in chat is forgotten.
 
 ### How do I know if an AI SEO report is accurate?
 
 Make the assistant log every tool call and cite the log line for every number. A figure with no tool call behind it came from the model rather than the data. Then read the whole thing, not the first five rows, and only trust it in a domain where you would spot a wrong answer yourself.
 
-### Does OpenSEO have project memory?
+### Does SEOShark have project memory?
 
 Yes. Each project holds a shared context: business overview, current goal, positioning, writing preferences, competitors, key pages and a research log. The MCP reads it with get_project_context and updates it with update_project_context, and the seo-project-setup skill fills it in on the first run.

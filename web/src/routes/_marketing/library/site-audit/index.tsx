@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { siteAuditStrategies } from "@/lib/strategy-libraries";
+import { appLinks, brand } from "@/lib/brand";
 
 const PATH = "/library/site-audit";
 
@@ -33,7 +34,7 @@ const faqs = [
   {
     question: "Is there a free SEO audit tool?",
     answer:
-      "Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is more reliable than any third-party estimate for anything Google-specific. A crawler adds the on-page and internal-link picture Search Console does not give you. OpenSEO is open source and free to start, with 50-page crawls on the free plan; the paid plan is $10/month and raises the limit to 10,000 pages per crawl.",
+      `Partly. Google Search Console reports coverage and indexing for your own verified property at no cost, and it is more reliable than any third-party estimate for anything Google-specific. A crawler adds the on-page and internal-link picture Search Console does not give you. ${brand.name} is free to start, with 50-page crawls on the free plan; paid plans raise the limit to 10,000 pages per crawl.`,
   },
 ];
 
@@ -57,9 +58,9 @@ export const Route = createFileRoute("/_marketing/library/site-audit/")({
     buildPageSeo({
       title: "Technical SEO Audit: The Strategy Library",
       description:
-        "Three site audit strategies for turning a crawl into scheduled work: triage by severity, report it so it gets approved, and decide what to delete. Each includes a workflow and an OpenSEO MCP prompt.",
+        `Three site audit strategies for turning a crawl into scheduled work: triage by severity, report it so it gets approved, and decide what to delete. Each includes a workflow and an ${brand.name} MCP prompt.`,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: SiteAuditLibraryPage,
 });
@@ -87,7 +88,7 @@ function SiteAuditLibraryPage() {
           Three strategies for turning a crawl into scheduled work: triage the
           findings by severity, write the report so it gets approved, and decide
           which pages should stop existing. Each one includes a workflow and a
-          copy-paste OpenSEO MCP prompt.
+          copy-paste {brand.name} MCP prompt.
         </p>
       </header>
 
@@ -154,7 +155,7 @@ function SiteAuditLibraryPage() {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          What the OpenSEO site audit checks
+          What the {brand.name} site audit checks
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           The crawler is robots.txt-aware and stays on the same origin. It
@@ -181,7 +182,7 @@ function SiteAuditLibraryPage() {
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
-            OpenSEO MCP
+            {brand.name} MCP
           </a>
           , which lets a compatible AI assistant start the crawl, poll it, read
           the issues with their fixes, and cross-check individual URLs against
@@ -268,15 +269,15 @@ function SiteAuditLibraryPage() {
             Run a site audit with your own agent
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            Each strategy ends with a copy-paste MCP prompt. OpenSEO is open
-            source, free to start, and does not require a credit card.
+            Each strategy ends with a copy-paste MCP prompt. {brand.name} is free to
+            start.
           </p>
         </div>
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Start with OpenSEO
+          Start with {brand.name}
           <span aria-hidden="true" className="ml-2">
             &rarr;
           </span>

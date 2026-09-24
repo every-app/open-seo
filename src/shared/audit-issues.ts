@@ -6,6 +6,8 @@
  * of these types by id.
  */
 
+import { brand } from "./brand";
+
 export type IssueSeverity = "critical" | "warning" | "info";
 
 interface AuditIssueDescriptor {
@@ -15,30 +17,31 @@ interface AuditIssueDescriptor {
   howToFix: string;
 }
 
+// The product token of the crawler user agent (the part before "/"), which site
+// owners allowlist in WAF and rate-limit rules.
+const CRAWLER_USER_AGENT_TOKEN = brand.userAgent.split("/")[0] || brand.name;
+
 export const AUDIT_ISSUE_TYPES = {
   "blocked-page": {
     severity: "critical",
     title: "Crawler was blocked",
     explanation:
       "The site returned a bot challenge or access denial (e.g. a Cloudflare challenge or a 403) instead of the page. We report this honestly rather than pretending the page is broken — but it means this page could not be audited, and other crawlers like search engines may face similar friction.",
-    howToFix:
-      'If you own this site, allowlist the "OpenSEO-Audit" user agent in your WAF/bot-protection settings (on Cloudflare: a WAF custom rule that skips bot protection when the user agent contains "OpenSEO-Audit"; on some free tiers you may need to relax bot protection). Then re-run the audit.',
+    howToFix: `If you own this site, allowlist the "${CRAWLER_USER_AGENT_TOKEN}" user agent in your WAF/bot-protection settings (on Cloudflare: a WAF custom rule that skips bot protection when the user agent contains "${CRAWLER_USER_AGENT_TOKEN}"; on some free tiers you may need to relax bot protection). Then re-run the audit.`,
   },
   "rate-limited-page": {
     severity: "warning",
     title: "Rate limited (429)",
     explanation:
       "The server answered 429 Too Many Requests, so this page could not be audited. The crawler waits before retrying when the site's cooldown fits within the audit time limit.",
-    howToFix:
-      'Raise the rate limit for crawlers, or allowlist the "OpenSEO-Audit" user agent in your rate-limiting rules (on Cloudflare: a rate-limiting rule exception matching that user agent). Then re-run the audit. Re-running with fewer pages also helps if the limit is strict.',
+    howToFix: `Raise the rate limit for crawlers, or allowlist the "${CRAWLER_USER_AGENT_TOKEN}" user agent in your rate-limiting rules (on Cloudflare: a rate-limiting rule exception matching that user agent). Then re-run the audit. Re-running with fewer pages also helps if the limit is strict.`,
   },
   "crawl-rate-limited": {
     severity: "warning",
     title: "Crawl stopped early: rate limit",
     explanation:
       "The site asked the crawler to wait longer than the audit time limit allowed. We stopped requesting pages. This report is incomplete; URLs we did not fetch are not recorded as broken or rate limited.",
-    howToFix:
-      "Re-run the audit after the site's rate limit resets, or ask the site owner to allow the OpenSEO-Audit crawler.",
+    howToFix: `Re-run the audit after the site's rate limit resets, or ask the site owner to allow the ${CRAWLER_USER_AGENT_TOKEN} crawler.`,
   },
   "server-error": {
     severity: "critical",

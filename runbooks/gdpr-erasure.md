@@ -1,6 +1,6 @@
 # GDPR user erasure
 
-`pnpm gdpr:erase-user` inventories and erases a hosted user's OpenSEO data. It
+`pnpm gdpr:erase-user` inventories and erases a hosted user's SEOShark data. It
 is Postgres-only and covers the application database, Cloudflare-bound state,
 Google grants, Loops, PostHog, Autumn, and the Stripe customer linked through
 Autumn.
@@ -29,7 +29,7 @@ Put these values in a secure, untracked environment file or secret manager:
 
 ```dotenv
 POSTGRES_DATABASE_URL=postgres://...
-BETTER_AUTH_URL=https://app.openseo.so
+BETTER_AUTH_URL=https://app.seoshark.example
 GDPR_ERASURE_SECRET=...
 
 LOOPS_API_KEY=...

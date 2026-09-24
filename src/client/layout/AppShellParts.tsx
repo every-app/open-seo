@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { AlertTriangle, ExternalLink } from "lucide-react";
 import { Sidebar } from "@/client/components/Sidebar";
 import { dataforseoHelpLinkOptions } from "@/client/navigation/items";
+import { brand } from "@/shared/brand";
 
 function SeoApiStatusBanners({
   shouldShowSeoApiWarning,
@@ -19,7 +20,7 @@ function SeoApiStatusBanners({
             <div className="alert alert-warning">
               <AlertTriangle className="size-4 shrink-0" />
               <span className="text-sm">
-                Setup needed: add your DataForSEO API key to use OpenSEO
+                Setup needed: add your DataForSEO API key to use {brand.name}
                 features. See the quick steps on the{" "}
                 <Link
                   {...dataforseoHelpLinkOptions}
@@ -119,7 +120,7 @@ const MissingSeoSetupModal = React.forwardRef<
               id="dataforseo-setup-description"
               className="text-sm text-base-content/75"
             >
-              Add your DataForSEO API key to start using OpenSEO.
+              Add your DataForSEO API key to start using {brand.name}.
             </p>
           </div>
         </div>

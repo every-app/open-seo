@@ -16,6 +16,7 @@ import {
 } from "@/lib/free-tools/metric-grid";
 import { UpsellCard } from "@/lib/free-tools/upsell-card";
 import { useToolRun } from "@/lib/free-tools/use-tool-run";
+import { brand } from "@/lib/brand";
 
 const TOOL = "competitor-analysis";
 
@@ -261,7 +262,7 @@ function AnalysisReport({ result }: { result: AnalysisResult }) {
         ) : (
           <>Try another country or competitor to explore more ranking data. </>
         )}
-        Browse more competitor keywords in OpenSEO, filter by search volume,
+        Browse more competitor keywords in {brand.name}, filter by search volume,
         difficulty, and ranking position, and save keywords for further
         research.
       </UpsellCard>

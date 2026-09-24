@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import { db } from "@/db";
 import { billingCustomerStatus } from "@/db/schema";
 import { autumn } from "@/server/billing/autumn";
@@ -32,7 +31,7 @@ async function upsertBillingCustomerStatus(
         paidPlanStatus: snapshot.paidPlanStatus,
         customerJson: snapshot.customerJson,
         syncedAt: snapshot.syncedAt,
-        updatedAt: sql`(current_timestamp)`,
+        updatedAt: new Date().toISOString(),
       },
     });
 }

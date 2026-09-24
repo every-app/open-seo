@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { aiAgentSeoStrategies } from "@/lib/strategy-libraries";
+import { appLinks, brand } from "@/lib/brand";
 
 const PATH = "/library/ai-agent-seo";
 
@@ -18,7 +19,7 @@ const faqs = [
   {
     question: "What is MCP and do I need it for SEO?",
     answer:
-      "The Model Context Protocol lets an AI assistant call external tools and receive data. Without it the assistant knows only what it was trained on and what you paste in. With an SEO MCP server connected, it reads first-party and research data directly. OpenSEO's connects to Claude Code, Claude Desktop, Codex and Cursor.",
+      `The Model Context Protocol lets an AI assistant call external tools and receive data. Without it the assistant knows only what it was trained on and what you paste in. With an SEO MCP server connected, it reads first-party and research data directly. ${brand.name}'s connects to Claude Code, Claude Desktop, Codex and Cursor.`,
   },
   {
     question: "Which SEO tasks should be automated and which should not?",
@@ -36,7 +37,7 @@ const faqs = [
       "Three habits: save the workflow as a skill file the assistant reads, give it a memory such as a project context it loads before each run, and have it log every tool call so each number in its output traces to a data source. A blank chat is the highest-variance way to use a model; these remove most of the variance.",
   },
   {
-    question: "What does the OpenSEO MCP give an agent?",
+    question: `What does the ${brand.name} MCP give an agent?`,
     answer:
       "Search Console performance and URL inspection at no credit cost, keyword metrics and research, live SERP results, domain and backlink data, rank tracking with cost estimates, site audits, local rank grids, and the project's shared context. Agent skills for keyword research, competitor analysis, site audit, local SEO, link prospecting, reporting and project setup install alongside it.",
   },
@@ -62,9 +63,9 @@ export const Route = createFileRoute("/_marketing/library/ai-agent-seo/")({
     buildPageSeo({
       title: "AI-Agent SEO: The Strategy Library",
       description:
-        "Four strategies for running SEO through an AI assistant: connect the MCP and run the first five prompts, decide what a schedule does and what stays with a person, keep the brief human, and make a good run repeatable with skills, memory and a trace. Each includes a workflow and an OpenSEO MCP prompt.",
+        `Four strategies for running SEO through an AI assistant: connect the MCP and run the first five prompts, decide what a schedule does and what stays with a person, keep the brief human, and make a good run repeatable with skills, memory and a trace. Each includes a workflow and an ${brand.name} MCP prompt.`,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: AiAgentSeoLibraryPage,
 });
@@ -93,7 +94,7 @@ function AiAgentSeoLibraryPage() {
           open and wants the SEO work to happen there: what to connect and the
           first five prompts, what a schedule does and what stays with a person,
           why the brief is the human&rsquo;s job, and how to make a good run
-          happen again. Every one is built on real runs through the OpenSEO MCP
+          happen again. Every one is built on real runs through the {brand.name} MCP
           and ends with a copy-paste prompt.
         </p>
       </header>
@@ -162,7 +163,7 @@ function AiAgentSeoLibraryPage() {
           you would expect: the agent is a fast driver with a short attention
           span, the person is the dispatcher, the brief is where the knowledge
           lives, and the run that cannot be repeated was not worth the tokens.
-          Every strategy is built on a real call through the OpenSEO MCP,
+          Every strategy is built on a real call through the {brand.name} MCP,
           including the one where the data came back with an AI agent&rsquo;s
           own prompt in it.
         </p>
@@ -170,7 +171,7 @@ function AiAgentSeoLibraryPage() {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          What the OpenSEO MCP gives an agent
+          What the {brand.name} MCP gives an agent
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           One server, connected to Claude Code, Claude Desktop, Codex or Cursor.
@@ -288,15 +289,15 @@ function AiAgentSeoLibraryPage() {
             Connect the MCP and run the first prompt
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            Each strategy ends with a copy-paste MCP prompt. OpenSEO is open
-            source, free to start, and does not require a credit card.
+            Each strategy ends with a copy-paste MCP prompt. {brand.name} is free to
+            start.
           </p>
         </div>
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Start with OpenSEO
+          Start with {brand.name}
           <span aria-hidden="true" className="ml-2">
             &rarr;
           </span>

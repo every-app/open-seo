@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { DocsBody } from "fumadocs-ui/page";
+import { appLinks, brand } from "@/lib/brand";
 import { buildBreadcrumbJsonLd } from "@/lib/seo";
 
 const KEYWORD_RESEARCH_LIBRARY = {
@@ -86,18 +87,18 @@ function LibrarySpokeCta({ library }: { library: LibraryRef }) {
   return (
     <section className="mt-14 rounded-xl border border-[var(--color-border-subtle)] bg-white p-6">
       <p className="text-xl font-semibold tracking-tight text-neutral-950">
-        Run this strategy in OpenSEO
+        Run this strategy in {brand.name}
       </p>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
-        Run the MCP prompt in this guide with OpenSEO. OpenSEO is open source,
-        free to try, and does not require a credit card.
+        Run the MCP prompt in this guide with {brand.name}. You can try it
+        before you subscribe.
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Start with OpenSEO
+          Start with {brand.name}
           <span className="ml-2" aria-hidden="true">
             &rarr;
           </span>

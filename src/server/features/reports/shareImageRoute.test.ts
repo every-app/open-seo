@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { brand } from "@/shared/brand";
 import { handleReportSocialImage } from "@/routes/s/$token/og[.]png";
 
 const mocks = vi.hoisted(() => ({
@@ -47,9 +48,7 @@ describe("report social image access", () => {
     mocks.renderReportSocialImage.mockRejectedValueOnce(error);
     const response = await handleReportSocialImage(TOKEN);
     expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      "https://openseo.so/social-card.jpg",
-    );
+    expect(response.headers.get("Location")).toBe(brand.socialCardUrl);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(response.headers.get("Referrer-Policy")).toBe("no-referrer");
     expect(log).toHaveBeenCalledWith(

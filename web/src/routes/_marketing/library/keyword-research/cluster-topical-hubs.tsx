@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/cluster-topical-hubs.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/cluster-topical-hubs";
 
@@ -12,12 +13,12 @@ const faqs = [
   {
     question: "What's the best keyword clustering tool?",
     answer:
-      "For SERP-overlap clustering at scale, paid tools exist, but for most sites, OpenSEO's research + an intent-grouping pass (the MCP prompt above) covers it. Judge tools by whether they cluster on SERP overlap; word-similarity clustering is a toy.",
+      `For SERP-overlap clustering at scale, paid tools exist, but for most sites, ${brand.name}'s research + an intent-grouping pass (the MCP prompt above) covers it. Judge tools by whether they cluster on SERP overlap; word-similarity clustering is a toy.`,
   },
   {
     question: "Is there a free keyword clustering tool?",
     answer:
-      "Not an unlimited one. The grouping step itself is free (the MCP prompt above does it), but it runs on researched keywords, and quality keyword data is the part that costs money everywhere. OpenSEO includes the clustering pass with research, so there's no separate clustering tool to buy; you can start for free, and paid plans start at $10/month.",
+      `Not an unlimited one. The grouping step itself is free (the MCP prompt above does it), but it runs on researched keywords, and quality keyword data is the part that costs money everywhere. ${brand.name} includes the clustering pass with research, so there's no separate clustering tool to buy; you can start for free, and paid plans add usage credits.`,
   },
   {
     question: "What is a keyword mapping template?",
@@ -45,7 +46,7 @@ export const Route = createFileRoute(
         "Keyword Clustering: Turn a Keyword List into Topical Hubs (and Fix Cannibalization)",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

@@ -1,22 +1,22 @@
 ---
-title: "Install the OpenSEO plugin for Claude Code"
-description: "Add OpenSEO MCP and Agent Skills to Claude Code with one marketplace and one install command."
+title: "Install the SEOShark plugin for Claude Code"
+description: "Add SEOShark MCP and Agent Skills to Claude Code with one marketplace and one install command."
 ---
 
-The OpenSEO plugin bundles OpenSEO MCP and all ten SEO Agent Skills into one install. This is the preferred way to set up OpenSEO in Claude Code.
+The SEOShark plugin bundles SEOShark MCP and all ten SEO Agent Skills into one install. This is the preferred way to set up SEOShark in Claude Code.
 
 ## Install
 
 Run these two commands in Claude Code:
 
 ```bash
-/plugin marketplace add every-app/open-seo
-/plugin install openseo@openseo
+/plugin marketplace add bizztor/seoshark
+/plugin install seoshark@seoshark
 ```
 
 If the install summary says `Run /reload-plugins to activate.`, run that command.
 
-Claude Code connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables ten skills:
+Claude Code connects SEOShark MCP at `https://app.seoshark.example/mcp` and enables ten skills:
 
 - SEO Project Setup
 - SEO Coach
@@ -31,35 +31,35 @@ Claude Code connects OpenSEO MCP at `https://app.openseo.so/mcp` and enables ten
 
 ## Finish the login
 
-Claude Code should prompt you to log in to OpenSEO right after install. If it doesn't, run `/mcp` and approve the OpenSEO connection from there.
+Claude Code should prompt you to log in to SEOShark right after install. If it doesn't, run `/mcp` and approve the SEOShark connection from there.
 
 ## Run a skill
 
 Plugin skills are namespaced by the plugin name:
 
 ```
-/openseo:seo-project-setup
-/openseo:seo-coach
-/openseo:seo-audit
-/openseo:keyword-research
-/openseo:keyword-clustering
-/openseo:competitive-landscape
-/openseo:competitor-analysis
-/openseo:local-seo
-/openseo:link-prospecting
+/seoshark:seo-project-setup
+/seoshark:seo-coach
+/seoshark:seo-audit
+/seoshark:keyword-research
+/seoshark:keyword-clustering
+/seoshark:competitive-landscape
+/seoshark:competitor-analysis
+/seoshark:local-seo
+/seoshark:link-prospecting
 ```
 
 ## Claude Desktop
 
-Claude Desktop doesn't support this plugin format — plugins are a Claude Code feature. For Claude Desktop, [add OpenSEO as an MCP connector](/docs/mcp#claude-desktop) instead.
+Claude Desktop doesn't support this plugin format — plugins are a Claude Code feature. For Claude Desktop, [add SEOShark as an MCP connector](/docs/mcp#claude-desktop) instead.
 
 ## Update
 
 Run inside Claude Code:
 
 ```text
-/plugin marketplace update openseo
-/plugin update openseo@openseo
+/plugin marketplace update seoshark
+/plugin update seoshark@seoshark
 /reload-plugins
 ```
 
@@ -70,21 +70,21 @@ For other installation methods, see [Agent setup and skill updates](/docs/agent-
 ## Remove
 
 ```text
-/plugin uninstall openseo@openseo
+/plugin uninstall seoshark@seoshark
 ```
 
 ## Troubleshooting
 
 To check what's actually installed, run `/plugin list` rather than bare `/plugin` — `/plugin` alone opens an interactive panel that doesn't show plain text.
 
-If `/reload-plugins` reports `0 skills`, that's normal, not a failure — its summary only counts a plugin's `commands/` directory, not `skills/`. Confirm the skills loaded by running one directly, for example `/openseo:seo-audit`.
+If `/reload-plugins` reports `0 skills`, that's normal, not a failure — its summary only counts a plugin's `commands/` directory, not `skills/`. Confirm the skills loaded by running one directly, for example `/seoshark:seo-audit`.
 
-If `/plugin uninstall openseo@openseo` reports "not installed in this project," you likely installed to a different scope than the one being checked (User, Project, or Local). Run `/plugin list` to see the actual scope, or sidestep the picker entirely with the shell form: `claude plugin uninstall openseo@openseo --scope user`.
+If `/plugin uninstall seoshark@seoshark` reports "not installed in this project," you likely installed to a different scope than the one being checked (User, Project, or Local). Run `/plugin list` to see the actual scope, or sidestep the picker entirely with the shell form: `claude plugin uninstall seoshark@seoshark --scope user`.
 
-If plugin skills don't appear, clear the plugin cache with `rm -rf ~/.claude/plugins/cache` — this clears every installed plugin's cache, not just OpenSEO's, so reinstall anything else you have after — then restart Claude Code and reinstall the plugin.
+If plugin skills don't appear, clear the plugin cache with `rm -rf ~/.claude/plugins/cache` — this clears every installed plugin's cache, not just SEOShark's, so reinstall anything else you have after — then restart Claude Code and reinstall the plugin.
 
-If the OpenSEO connection doesn't show as authenticated, run `/mcp`, select OpenSEO, and complete the login.
+If the SEOShark connection doesn't show as authenticated, run `/mcp`, select SEOShark, and complete the login.
 
 ## Other clients
 
-This plugin is for Claude Code. For Codex CLI, use the [OpenSEO plugin for Codex](/docs/codex-plugin) instead. For Cursor, Codex Desktop, Claude Desktop, or an API key setup, see [Set up OpenSEO MCP](/docs/mcp) and [Set up OpenSEO Agent Skills](/docs/skills/setup).
+This plugin is for Claude Code. For Codex CLI, use the [SEOShark plugin for Codex](/docs/codex-plugin) instead. For Cursor, Codex Desktop, Claude Desktop, or an API key setup, see [Set up SEOShark MCP](/docs/mcp) and [Set up SEOShark Agent Skills](/docs/skills/setup).

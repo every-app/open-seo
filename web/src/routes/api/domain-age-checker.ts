@@ -9,6 +9,7 @@ import {
   readCached,
   writeCached,
 } from "@/lib/free-tools/server";
+import { brand } from "@/lib/brand";
 import { freeTools } from "@/lib/free-tools/tool-pages";
 
 const TOOL = freeTools["domain-age-checker"];
@@ -150,8 +151,7 @@ async function lookupDomain(domain: string): Promise<DomainAgeRow> {
         Accept: "application/rdap+json",
         // rdap.org answers 403 to requests with no User-Agent, and the
         // Workers runtime doesn't set one.
-        "User-Agent":
-          "openseo-free-tools (+https://openseo.so/domain-age-checker)",
+        "User-Agent": `${brand.name} free tools (+${brand.marketingUrl}/domain-age-checker)`,
       },
       redirect: "follow",
       signal: AbortSignal.timeout(10_000),

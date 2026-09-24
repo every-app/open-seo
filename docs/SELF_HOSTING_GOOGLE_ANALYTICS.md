@@ -1,6 +1,6 @@
 # Self-hosted Google Analytics
 
-Connecting Google Analytics lets OpenSEO bind a GA4 property to a project. The
+Connecting Google Analytics lets SEOShark bind a GA4 property to a project. The
 connection is optional and read-only.
 
 ## What you'll need
@@ -8,7 +8,7 @@ connection is optional and read-only.
 - A Google account with access to the GA4 property.
 - A Google Cloud project with OAuth credentials.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `BETTER_AUTH_SECRET` set on
-  the OpenSEO deployment.
+  the SEOShark deployment.
 
 If Search Console is already connected, reuse the same Google Cloud project and
 OAuth client. GA4 still asks for a separate consent grant.
@@ -34,17 +34,17 @@ Open **APIs & Services → Credentials**, edit the Web application OAuth client,
 and add an authorized redirect URI matching the deployment origin plus
 `/api/ga4/oauth/callback`.
 
-| Deployment   | Redirect URI                                             |
-| ------------ | -------------------------------------------------------- |
-| Deployed     | `https://your-openseo-domain.com/api/ga4/oauth/callback` |
-| Local Docker | `http://localhost:3001/api/ga4/oauth/callback`           |
+| Deployment   | Redirect URI                                              |
+| ------------ | --------------------------------------------------------- |
+| Deployed     | `https://your-seoshark-domain.com/api/ga4/oauth/callback` |
+| Local Docker | `http://localhost:3001/api/ga4/oauth/callback`            |
 
 Keep the existing `/api/gsc/oauth/callback` URI if Search Console uses the same
 client.
 
 ## 4) Set environment variables
 
-Set these values and restart OpenSEO:
+Set these values and restart SEOShark:
 
 | Variable               | Value                                                     |
 | ---------------------- | --------------------------------------------------------- |
@@ -63,7 +63,7 @@ openssl rand -base64 32
 Open a project dashboard or **Project settings → Analytics**, click **Connect
 with Google**, approve read-only Analytics access, and choose a GA4 property.
 
-OpenSEO stores the OAuth tokens encrypted in Better Auth's account table. The
+SEOShark stores the OAuth tokens encrypted in Better Auth's account table. The
 project mapping stores only the selected property metadata and connector
 account. Disconnecting GA4 does not disconnect Search Console.
 

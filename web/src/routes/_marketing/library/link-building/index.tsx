@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { buildBreadcrumbJsonLd, buildPageSeo } from "@/lib/seo";
 import { linkBuildingStrategies } from "@/lib/strategy-libraries";
+import { appLinks, brand } from "@/lib/brand";
 
 const PATH = "/library/link-building";
 
@@ -26,7 +27,7 @@ const faqs = [
       "As many referring domains as the pages that outrank you have, from sites in the same field. The count of backlinks is a poor guide because a single site can supply hundreds of them. Check a competitor's profile for the referring domain number and the backlink gap analysis for the domains that link to them and not to you.",
   },
   {
-    question: "How does OpenSEO help with link building?",
+    question: `How does ${brand.name} help with link building?`,
     answer:
       "The backlinks tool shows any domain's backlinks, referring domains, top linked pages, anchor text, dofollow or nofollow, domain rank, spam score and broken status, with filters and export. A free backlink checker shows the summary without an account. The MCP provides backlink summaries and individual backlink rows; use the app for the Top Pages table. The link-prospecting skill packages the competitor workflow.",
   },
@@ -52,9 +53,9 @@ export const Route = createFileRoute("/_marketing/library/link-building/")({
     buildPageSeo({
       title: "Link Building: The Strategy Library",
       description:
-        "Three link building strategies from practitioners who build links for a living: audit a backlink profile without trusting the score, report referring domains instead of backlinks, and earn links from the pages that already get them. Each includes a workflow and an OpenSEO MCP prompt.",
+        `Three link building strategies from practitioners who build links for a living: audit a backlink profile without trusting the score, report referring domains instead of backlinks, and earn links from the pages that already get them. Each includes a workflow and an ${brand.name} MCP prompt.`,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
     }),
   component: LinkBuildingLibraryPage,
 });
@@ -83,7 +84,7 @@ function LinkBuildingLibraryPage() {
           authority without a link budget: how to read a backlink profile
           without trusting the score, which number to report, and where the next
           links come from. Each one is built on a real profile and includes a
-          copy-paste OpenSEO MCP prompt.
+          copy-paste {brand.name} MCP prompt.
         </p>
       </header>
 
@@ -150,7 +151,7 @@ function LinkBuildingLibraryPage() {
 
       <section className="mt-12">
         <h2 className="text-2xl font-semibold tracking-tight text-neutral-950">
-          What OpenSEO backlink analysis shows
+          What {brand.name} backlink analysis shows
         </h2>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--color-brand-muted)]">
           Enter any domain, yours or a competitor&rsquo;s, and the overview
@@ -189,7 +190,7 @@ function LinkBuildingLibraryPage() {
             href="/docs/mcp"
             className="font-medium text-neutral-950 underline decoration-[var(--color-brand-accent)] underline-offset-4"
           >
-            OpenSEO MCP
+            {brand.name} MCP
           </a>{" "}
           gives an AI assistant the overview and backlink rows, alongside Search
           Console and keyword data in one conversation. Use the app for the Top
@@ -275,15 +276,15 @@ function LinkBuildingLibraryPage() {
             Read your backlink profile with your own agent
           </h2>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--color-brand-muted)]">
-            Each strategy ends with a copy-paste MCP prompt. OpenSEO is open
-            source, free to start, and does not require a credit card.
+            Each strategy ends with a copy-paste MCP prompt. {brand.name} is free to
+            start.
           </p>
         </div>
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-11 shrink-0 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
-          Start with OpenSEO
+          Start with {brand.name}
           <span aria-hidden="true" className="ml-2">
             &rarr;
           </span>

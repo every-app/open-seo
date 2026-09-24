@@ -6,32 +6,21 @@ import GoogleSearchConsoleMcpContent, {
 } from "../../../content/marketing/google-search-console-mcp.mdx";
 import { ComparisonTable } from "@/components/comparison-table";
 import { buildPageSeo, SITE_URL, toCanonicalUrl } from "@/lib/seo";
+import { appLinks, brand } from "@/lib/brand";
 
 const PATH = "/google-search-console-mcp";
 
 const softwareApplicationLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  name: "OpenSEO Google Search Console MCP",
+  name: `${brand.name} Google Search Console MCP`,
   applicationCategory: "BusinessApplication",
   operatingSystem: "Web",
   url: toCanonicalUrl(PATH),
   description: frontmatter.description,
-  offers: {
-    "@type": "Offer",
-    price: "10.00",
-    priceCurrency: "USD",
-    priceSpecification: {
-      "@type": "UnitPriceSpecification",
-      price: "10.00",
-      priceCurrency: "USD",
-      billingDuration: 1,
-      unitCode: "MON",
-    },
-  },
   provider: {
     "@type": "Organization",
-    name: "OpenSEO",
+    name: `${brand.name}`,
     url: SITE_URL,
   },
 };
@@ -42,7 +31,7 @@ export const Route = createFileRoute("/_marketing/google-search-console-mcp")({
       title: "Google Search Console MCP Server: No Google Cloud Setup",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO",
+      titleSuffix: brand.name,
       ogType: "article",
     }),
   component: GoogleSearchConsoleMcpPage,
@@ -65,7 +54,7 @@ function GoogleSearchConsoleMcpPage() {
         ) : null}
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <a
-            href="https://app.openseo.so/sign-up"
+            href={appLinks.signUp}
             className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-5 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
           >
             Get started
@@ -75,8 +64,7 @@ function GoogleSearchConsoleMcpPage() {
           </a>
         </div>
         <p className="mt-3 text-xs text-neutral-500">
-          $10/month, 30-day money-back guarantee. Search Console tools never use
-          credits.
+          Search Console tools never use credits.
         </p>
       </header>
 
@@ -111,7 +99,7 @@ function GoogleSearchConsoleMcpCta() {
       </p>
       <div className="mt-5 flex flex-col gap-3 sm:flex-row">
         <a
-          href="https://app.openseo.so/sign-up"
+          href={appLinks.signUp}
           className="inline-flex h-10 items-center justify-center rounded-lg bg-neutral-950 px-4 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
         >
           Get started
@@ -120,28 +108,12 @@ function GoogleSearchConsoleMcpCta() {
           </span>
         </a>
         <a
-          href="https://github.com/every-app/open-seo"
-          target="_blank"
-          rel="noopener noreferrer"
+          href="/docs/mcp"
           className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[var(--color-border-subtle)] bg-white px-4 text-sm font-medium text-neutral-950 transition-colors hover:border-neutral-950"
         >
-          <GitHubIcon />
-          Star on GitHub
+          Read the MCP docs
         </a>
       </div>
     </section>
-  );
-}
-
-function GitHubIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="h-4 w-4"
-      viewBox="0 0 24 24"
-      fill="currentColor"
-    >
-      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.79-.26.79-.58v-2.23c-3.34.73-4.03-1.42-4.03-1.42-.55-1.39-1.33-1.76-1.33-1.76-1.09-.74.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.83 2.81 1.3 3.49.99.11-.77.42-1.3.76-1.6-2.66-.31-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23.96-.27 1.98-.4 3-.4s2.05.14 3 .4c2.29-1.55 3.3-1.23 3.3-1.23.65 1.65.24 2.87.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.62-5.48 5.92.43.37.82 1.1.82 2.22v3.29c0 .32.19.69.8.58A12.01 12.01 0 0 0 24 12c0-6.63-5.37-12-12-12z" />
-    </svg>
   );
 }

@@ -7,7 +7,7 @@ detail — what the script converts, the low-downtime delta sync, cutover and
 rollback — see
 [d1-to-postgres-detailed.md](./d1-to-postgres-detailed.md).
 
-> **Scope:** this runbook is for the OpenSEO production deployment —
+> **Scope:** this runbook is for the SEOShark production deployment —
 > `pnpm deploy:postgres` is hardwired to alchemy stage `hosted-prod`, its domains, and
 > `.env.production`. The alchemy self-host path (non-`prod` stages) has no
 > Hyperdrive wiring, so Postgres is not currently available to self-hosters.

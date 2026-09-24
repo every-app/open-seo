@@ -1,3 +1,5 @@
+import { brand } from "@/lib/brand";
+
 type Tone = "positive" | "negative" | "neutral";
 
 type Cell = {
@@ -12,7 +14,7 @@ type Column = {
 };
 
 const COLUMNS: Column[] = [
-  { name: "OpenSEO", highlight: true },
+  { name: brand.name, highlight: true },
   { name: "DIY open-source repos" },
   { name: "Data-pipeline tools" },
 ];
@@ -38,7 +40,7 @@ const ROWS: { label: string; cells: Cell[] }[] = [
     label: "Cost to run",
     cells: [
       {
-        text: "Included in the $10/mo plan, zero credits (free to self-host)",
+        text: "Included with your plan, zero credits",
         tone: "positive",
       },
       { text: "Free (your time + your own quota)" },

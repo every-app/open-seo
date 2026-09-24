@@ -72,7 +72,7 @@ async function handleSharedReportRequest(
   if (!report || report.archived) return notShared();
 
   // The document is only ever reachable inside the wrapper page's frame, so
-  // shared content always carries OpenSEO's chrome; there is no print mode
+  // shared content always carries the product's chrome; there is no print mode
   // here, because a cancelled print dialog would leave a bare report open
   // top-level on the app domain. Members print from the app. The redirect
   // needs the header to say the request is top-level: a client that sends no
@@ -80,9 +80,11 @@ async function handleSharedReportRequest(
   // otherwise be bounced to a page whose frame it cannot load either, so an
   // absent header is served the document.
   //
-  // The 200 is the only cacheable answer here, so the response never needs to
-  // vary on Sec-Fetch-Dest: the redirect path is a 302, served `no-store`, and
-  // a shared cache stores neither it nor the 404.
+  // The 200 is cached at the edge for 60s, so it must vary on Sec-Fetch-Dest:
+  // otherwise a top-level navigation right after a framed load would be served
+  // the bare document from cache instead of the bounce below. The redirect
+  // path is a 302 served `no-store`; a shared cache stores neither it nor the
+  // 404.
   const dest = request.headers.get("Sec-Fetch-Dest");
   if (dest !== null && dest !== "iframe") return bounceTo(sharePath(token));
 
@@ -115,6 +117,7 @@ async function handleSharedReportRequest(
   return reportDocumentResponse(html, {
     cacheControl: EDGE_CACHE_CONTROL,
     noindex: true,
+    vary: "Sec-Fetch-Dest",
   });
 }
 

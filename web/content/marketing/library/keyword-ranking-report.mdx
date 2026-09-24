@@ -21,7 +21,7 @@ Insights are what a tool gives you. A report is what you give someone who has to
 
 Open with the metric the business tracks, for the pages the tracker covers, against the previous period. Clicks from Search Console if that is what you have; leads or revenue on those pages if analytics is connected. One sentence: "Organic clicks on the twelve service pages we track were 1,240 this month, up from 980." That sentence is the report. Everything after it is support.
 
-![OpenSEO Search Console report for seoarcade.com, last 28 days against the previous period: clicks, impressions, click-through rate and average position with the change, then clicks, impressions, CTR and position by page](/library/rank-tracking/search-console-clicks-by-page-openseo.png "Search Console clicks by page in OpenSEO")
+![SEOShark Search Console report for seoarcade.com, last 28 days against the previous period: clicks, impressions, click-through rate and average position with the change, then clicks, impressions, CTR and position by page](/library/rank-tracking/search-console-clicks-by-page-seoshark.png "Search Console clicks by page in SEOShark")
 
 Do not open with average position across all tracked keywords. It is a mean of unrelated things, it moves when you add a keyword, and nobody outside SEO knows whether 11.4 is good.
 
@@ -34,7 +34,7 @@ Rankings come next, as counts rather than rows. Of the keywords tracked this per
 - how many dropped off page one
 - how many did not move
 
-Label the comparison period next to these counts. The OpenSEO MCP currently compares ranks against a seven-day baseline, falling back to the earliest available snapshot when history is sparse. In a monthly report, present this as the latest weekly movement alongside the monthly click totals. It is not a month-over-month ranking comparison.
+Label the comparison period next to these counts. The SEOShark MCP currently compares ranks against a seven-day baseline, falling back to the earliest available snapshot when history is sparse. In a monthly report, present this as the latest weekly movement alongside the monthly click totals. It is not a month-over-month ranking comparison.
 
 ### 3. The three rows that explain the number
 
@@ -70,12 +70,12 @@ Year-on-year comparisons need a warning label now. Google's results pages change
 
 And leave out any score you cannot explain in a sentence. A "visibility index" invites a conversation about how it is calculated instead of a conversation about what to do.
 
-## Run this with the OpenSEO MCP
+## Run this with the SEOShark MCP
 
-Connect Search Console to the project and the [OpenSEO MCP](/docs/mcp) to your assistant. The tracker read and the Search Console read use no credits, so the report itself is free to produce once the tracker has run.
+Connect Search Console to the project and the [SEOShark MCP](/docs/mcp) to your assistant. The tracker read and the Search Console read use no credits, so the report itself is free to produce once the tracker has run.
 
 ```text
-Using the OpenSEO MCP on project [name], write this month's ranking
+Using the SEOShark MCP on project [name], write this month's ranking
 report for [company].
 
 1. Call get_rank_tracker to list trackers, then read the relevant
@@ -132,6 +132,6 @@ Not across all keywords. It is a mean of unrelated queries, changes whenever the
 
 Name the keyword, the previous and current position, the URL, and what is now on the results page, then say what you are doing about it. If the position held and clicks fell, show the SERP feature that took the click. A drop with a cause and a plan is a normal report; a drop with neither is a problem.
 
-### Can OpenSEO generate a ranking report?
+### Can SEOShark generate a ranking report?
 
 It provides the pieces: tracked positions with previous positions and SERP features, Search Console clicks by page and query at no credit cost, and an MCP so an assistant can assemble the report from a prompt like the one above. It does not produce a composite score, on purpose.

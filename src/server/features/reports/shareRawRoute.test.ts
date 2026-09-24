@@ -80,6 +80,7 @@ describe("handleSharedReportRequest", () => {
       "x-content-type-options": "nosniff",
       "x-robots-tag": "noindex, nofollow",
       "cache-control": "public, max-age=0, s-maxage=60",
+      vary: "Sec-Fetch-Dest",
     });
   });
 

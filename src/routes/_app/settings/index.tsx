@@ -7,6 +7,7 @@ import { type ThemePreference, useThemePreference } from "@/client/lib/theme";
 import { authClient, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { version } from "../../../../package.json";
+import { brand } from "@/shared/brand";
 
 export const Route = createFileRoute("/_app/settings/")({
   component: PersonalSettings,
@@ -95,7 +96,7 @@ function PersonalSettings() {
             </h2>
             <div className="flex items-start justify-between gap-6">
               <div>
-                <p className="text-sm">Help improve OpenSEO</p>
+                <p className="text-sm">Help improve {brand.name}</p>
                 <p className="mt-1 text-sm text-base-content/60">
                   Share analytics and usage data.
                 </p>

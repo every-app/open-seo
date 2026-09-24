@@ -162,7 +162,7 @@ async function revokeGoogleAccount(
     body: new URLSearchParams({ token: accessToken }),
   });
   // Google uses invalid_token for an already-revoked token. Either response
-  // leaves OpenSEO without a live upstream grant once the local row is erased.
+  // leaves the app without a live upstream grant once the local row is erased.
   if (!response.ok && response.status !== 400) {
     throw new Error(
       `Google token revocation failed for ${account.providerId}/${account.accountId}: ${response.status}`,

@@ -5,6 +5,7 @@ import Content, {
 } from "../../../../../content/marketing/library/seed-from-conversation.mdx";
 import { LibrarySpokePage } from "@/components/library-page";
 import { buildPageSeo } from "@/lib/seo";
+import { brand } from "@/lib/brand";
 
 const PATH = "/library/keyword-research/seed-from-conversation";
 
@@ -12,7 +13,7 @@ const faqs = [
   {
     question: "How do I do keyword research for free?",
     answer:
-      "Conversations for seeds (this page), Google autocomplete + People Also Ask for expansion, Search Console for validation. OpenSEO validates and expands what those surface; you can start for free, and paid plans start at $10/month.",
+      `Conversations for seeds (this page), Google autocomplete + People Also Ask for expansion, Search Console for validation. ${brand.name} validates and expands what those surface; you can start for free, and paid plans add usage credits.`,
   },
   {
     question: "How do I find LSI keywords?",
@@ -45,7 +46,7 @@ export const Route = createFileRoute(
         "Seed Keywords from Customer Conversations (Keyword Research Without a Paid Tool)",
       description: frontmatter.description,
       path: PATH,
-      titleSuffix: "OpenSEO Library",
+      titleSuffix: `${brand.name} Library`,
       ogType: "article",
     }),
   component: () => (

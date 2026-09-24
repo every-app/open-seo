@@ -1,112 +1,30 @@
 ---
-title: "About OpenSEO"
-description: "Meet Ben, the founder of OpenSEO, and learn why he's building an open-source SEO tool for people working with AI."
+title: "About SEOShark"
+description: "SEOShark is an SEO platform built for people who work with AI agents: useful data, shared project context, and reports you can act on."
 ---
 
-## How OpenSEO started
+## What SEOShark is
 
-I started looking into SEO for another project I was working on. I was new to it, and the tools I tried felt overwhelming. I also wanted to work with the AI tools I was already using, but couldn't use them with SEO software the way I wanted.
+SEOShark is an SEO platform for business owners, marketers and agencies. It covers keyword research, competitor and backlink research, rank tracking, site audits and AI-search visibility, all on the same data source and connected to each other.
 
-Then I found [DataForSEO](https://dataforseo.com/), an API that provides much of the data you need for SEO research. I saw people building their own tools on top of it and wondered whether we could build something useful together.
+It is built for you and your AI agent to work together. Through [MCP](/docs/mcp), an agent such as Claude Code, Codex or Cursor can research live data, read what you have already saved about your business, and write its findings back to your project.
 
-I [asked the TechSEO community on Reddit](https://www.reddit.com/r/TechSEO/comments/1r7qifp/open_source_seo_tool_that_uses_your_own/) whether an open-source tool would be useful. People were interested, and they raised good questions about the data and what the tool would need to do. The following week, I [shared the first version of OpenSEO](https://www.reddit.com/r/TechSEO/comments/1rh9jn6/open_source_semrush_alternative_built_on/).
+## Built for how AI agents actually work
 
-## My background is in software engineering
+An AI agent needs access to the right tools and data to do useful SEO work. MCP makes that access possible; the design of the tools matters just as much.
 
-<div className="not-prose my-8 grid gap-5 sm:grid-cols-2">
-  <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-white p-6">
-    <a
-      href="https://www.northeastern.edu/"
-      className="flex h-24 items-center justify-center rounded-lg bg-neutral-950 px-4"
-    >
-      <img
-        src="/images/about/northeastern.svg"
-        alt="Northeastern University"
-        width="486"
-        height="180"
-        loading="lazy"
-        className="h-auto w-full max-w-52"
-      />
-    </a>
-    <p className="mt-5 leading-7">
-      I studied Computer Science at{" "}
-      <a href="https://www.northeastern.edu/">Northeastern University</a> in
-      Boston, Massachusetts. While I was there, I started my first business: a
-      Patreon-style platform for musicians.
-    </p>
-  </div>
-  <div className="rounded-2xl border border-[var(--color-border-subtle)] bg-white p-6">
-    <a
-      href="https://www.klaviyo.com/"
-      className="flex h-24 items-center justify-center rounded-lg bg-[#f5f1ec] px-4"
-    >
-      <img
-        src="/images/about/klaviyo.svg"
-        alt="Klaviyo"
-        width="581"
-        height="172"
-        loading="lazy"
-        className="h-auto w-36"
-      />
-    </a>
-    <p className="mt-5 leading-7">
-      After college, I spent three years working at{" "}
-      <a href="https://www.klaviyo.com/">Klaviyo</a>, an e-commerce email
-      marketing company. I was promoted to senior software engineer on the
-      application security team and learned from a lot of talented people.
-    </p>
-  </div>
-</div>
+Each tool is built around the task someone is trying to accomplish. Can the agent reach the capabilities it needs? Does the response include what it needs to make a decision, or bury it in data that is not relevant?
 
-## I've been building with AI since ChatGPT launched
-
-<div className="not-prose my-6 flex items-start gap-4">
-  <a
-    href="https://chatgpt.com/"
-    className="shrink-0 rounded-xl border border-[var(--color-border-subtle)] bg-white p-2"
-  >
-    <img
-      src="/images/about/chatgpt.webp"
-      alt="ChatGPT"
-      width="40"
-      height="40"
-      loading="lazy"
-      className="m-0 h-10 w-10"
-    />
-  </a>
-  <p className="m-0 leading-7">
-    I've been working with AI tools since{" "}
-    <a href="https://chatgpt.com/">ChatGPT</a> came out, and building with them
-    has shaped how I think software should work.
-  </p>
-</div>
-
-After Klaviyo, I spent a year at [Patrol](https://www.patrolapp.ai/), an accessibility startup, building an AI agent to find and fix accessibility problems on [Shopify](https://www.shopify.com/) stores.
-
-I came to SEO through that engineering background. Since starting OpenSEO, I've learned a lot by talking with customers, answering questions, and responding to feedback. Those conversations help me understand what matters to people doing this work every day and decide what to build next.
-
-## Building for how AI agents actually work
-
-An AI agent needs access to the right tools and data to do useful SEO work. [MCP](/docs/mcp), the connection that lets an agent use tools like OpenSEO, makes that access possible. The design of those tools matters just as much.
-
-When I'm building one, I think about the task someone is trying to accomplish. Can the agent access the capabilities it needs? Does the response include the information it needs to make a decision, or bury it in data that isn't relevant?
-
-That thinking also led to [shared project context](/docs/skills/seo-project-setup). You can save your business goals, audience, and writing preferences so your agent can read them in later sessions. Each new research task can build on what you've already told it about your business.
+That thinking also led to [shared project context](/docs/skills/seo-project-setup). You save your business goals, audience, competitors and writing preferences once, and your agent reads them in every later session. Each new research task builds on what you have already told it.
 
 ## Turning research into a report you can use
 
-I want you to finish a research task with a report you can return to and use.
+Research should end with a report you can return to and use.
 
-OpenSEO's agent skills guide research tasks toward a [saved report](/docs/skills/seo-report). A competitor analysis can explain what other sites are doing and recommend opportunities for your business. A site audit can organize the problems it finds and help you decide what to fix first. The report's content and layout can fit the question you're asking.
+SEOShark's [agent skills](/docs/skills) guide each workflow toward a [saved report](/docs/skills/seo-report). A competitor analysis explains what other sites are doing and recommends opportunities for your business. A site audit organizes the problems it finds and helps you decide what to fix first. The report's content and layout fit the question you are asking.
 
 You can open the report in your project, share it, and ask your agent to read it before starting the next task. That gives the work a home beyond the conversation where it happened.
 
-## Why I believe in open source
+## Talk to us
 
-I believe open source is the future of software. People should be able to inspect and change the tools their businesses depend on.
-
-With OpenSEO, you can read the code, adapt it to your workflow, contribute improvements, or self-host it. You can also use our hosted service. I want people to choose that service because it's useful, convenient, and fairly priced.
-
-That choice matters to how we build the company. We have to keep earning your business. You can read more about [why OpenSEO is open source](/open-source-seo) or [explore the code on GitHub](https://github.com/every-app/open-seo).
-
-OpenSEO is a product of Every App, Inc. If you have feedback or want to tell me what you're trying to do with SEO, [email me at ben@openseo.so](mailto:ben@openseo.so).
+If you have feedback or want to tell us what you are trying to do with SEO, [email us](mailto:support@seoshark.example) or visit the [support page](/support).

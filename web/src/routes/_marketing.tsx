@@ -7,47 +7,10 @@ import {
 import { useEffect, useState } from "react";
 import { NewsletterSignup } from "@/components/newsletter-signup";
 import { SiteFooter } from "@/components/site-footer";
+import { appLinks, brand } from "@/lib/brand";
 import { featureGroups } from "@/lib/feature-pages";
 
-const GITHUB_REPO = "every-app/open-seo";
-// Used if GitHub is unreachable at build time so the header never renders empty.
-const FALLBACK_STAR_COUNT = "2.1k";
-
-// Round to the nearest hundred and render in thousands, e.g. 3140 -> "3.1k".
-function formatStarCount(count: number): string {
-  if (count < 1000) return String(count);
-  return `${(Math.round(count / 100) / 10).toString()}k`;
-}
-
-async function fetchGithubStarCount(): Promise<string> {
-  try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        // GitHub rejects requests without a User-Agent.
-        "User-Agent": "openseo-landing",
-      },
-    });
-    if (!res.ok) return FALLBACK_STAR_COUNT;
-    const data = (await res.json()) as { stargazers_count?: number };
-    return typeof data.stargazers_count === "number"
-      ? formatStarCount(data.stargazers_count)
-      : FALLBACK_STAR_COUNT;
-  } catch {
-    return FALLBACK_STAR_COUNT;
-  }
-}
-
-// Memoized for the duration of a build so prerendering every marketing page
-// only hits GitHub once instead of once per page.
-let starCountPromise: Promise<string> | null = null;
-function loadGithubStarCount(): Promise<string> {
-  starCountPromise ??= fetchGithubStarCount();
-  return starCountPromise;
-}
-
-function getMobileNavItems(githubStarCount: string) {
-  return [
+const mobileNavItems = [
     {
       label: "Product",
       links: [
@@ -67,15 +30,9 @@ function getMobileNavItems(githubStarCount: string) {
     },
     {
       label: "Community",
-      links: [
-        {
-          label: `GitHub ${githubStarCount}`,
-          href: "https://github.com/every-app/open-seo",
-        },
-      ],
+      links: [{ label: "GitHub", href: brand.githubUrl }],
     },
   ];
-}
 
 function GitHubIcon({ size = 18 }: { size?: number }) {
   return (
@@ -123,20 +80,13 @@ function CloseIcon({ size = 28 }: { size?: number }) {
 }
 
 export const Route = createFileRoute("/_marketing")({
-  // Runs at prerender/SSR time, so the count is baked into the static HTML that
-  // Cloudflare serves from the edge — no per-viewer request for it.
-  loader: async () => ({ githubStarCount: await loadGithubStarCount() }),
-  // The value is fixed per build; never refetch it on client navigation.
-  staleTime: Infinity,
   component: MarketingLayout,
 });
 
 function MarketingLayout() {
-  const { githubStarCount } = Route.useLoaderData();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { pathname } = useLocation();
 
-  const mobileNavItems = getMobileNavItems(githubStarCount);
   // The home route owns the full viewport width (and its own footer/CTA band);
   // every other marketing page gets the shared marketing canvas and footer.
   const isHome = pathname === "/";
@@ -165,7 +115,7 @@ function MarketingLayout() {
               to="/"
               className="text-sm font-semibold hover:opacity-80 transition-opacity"
             >
-              OpenSEO
+              {brand.name}
             </Link>
 
             <div className="hidden items-center justify-center gap-5 md:flex">
@@ -190,18 +140,17 @@ function MarketingLayout() {
                 {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
               </button>
               <a
-                href="https://github.com/every-app/open-seo"
+                href={brand.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                aria-label={`GitHub, ${githubStarCount} stars`}
+                aria-label="GitHub"
                 className="hidden h-9 items-center gap-1.5 px-2 text-sm font-semibold text-neutral-600 transition-colors hover:text-neutral-900 md:inline-flex"
               >
                 <GitHubIcon size={16} />
                 <span>GitHub</span>
-                <span className="text-neutral-500">{githubStarCount}</span>
               </a>
               <a
-                href="https://app.openseo.so/sign-in"
+                href={appLinks.signIn}
                 className="hidden h-9 items-center rounded-full border border-[var(--color-border-subtle)] px-4 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-900 md:inline-flex"
               >
                 Sign in
@@ -213,14 +162,14 @@ function MarketingLayout() {
             <div className="absolute left-0 right-0 top-full z-30 mt-3 rounded-2xl border border-[var(--color-border-subtle)] bg-white p-3 shadow-xl shadow-neutral-900/10 md:hidden">
               <div className="grid grid-cols-2 gap-2">
                 <a
-                  href="https://app.openseo.so/sign-in"
+                  href={appLinks.signUp}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
                 >
-                  Try OpenSEO
+                  Try {brand.name}
                 </a>
                 <a
-                  href="https://app.openseo.so/sign-in"
+                  href={appLinks.signIn}
                   onClick={() => setMobileMenuOpen(false)}
                   className="flex h-11 items-center justify-center rounded-xl border border-[var(--color-border-subtle)] px-3 text-sm font-semibold text-neutral-800 transition-colors hover:border-neutral-900 hover:bg-[#f5f1ec]"
                 >
@@ -271,12 +220,12 @@ function ResourcesDropdown() {
     {
       label: "MCP",
       href: "/docs/mcp",
-      description: "Connect OpenSEO to AI clients.",
+      description: `Connect ${brand.name} to AI clients.`,
     },
     {
       label: "Skills",
       href: "/docs/skills",
-      description: "Focused OpenSEO workflows.",
+      description: `Focused ${brand.name} workflows.`,
     },
     {
       label: "Strategy Library",
@@ -382,7 +331,7 @@ function FeatureDropdown() {
                   className="block rounded-md p-2 transition-colors hover:bg-[#f5f1ec]"
                 >
                   <span className="text-sm font-semibold text-neutral-900">
-                    OpenSEO MCP
+                    {brand.name} MCP
                   </span>
                   <span className="mt-0.5 block text-xs leading-relaxed text-neutral-600">
                     Connect Claude, Codex, and agents.
