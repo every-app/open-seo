@@ -1,3 +1,11 @@
+allowBuilds:
+  '@mongodb-js/zstd': true
+  core-js: true
+  core-js-pure: true
+  esbuild: true
+  msgpackr-extract: true
+  node-liblzma: true
+  workerd: true
 minimumReleaseAge: 11520
 minimumReleaseAgeExclude:
   - "@every-app/*"
