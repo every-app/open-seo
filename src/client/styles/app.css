@@ -1,17 +1,17 @@
-@import url("https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&display=swap");
 @import "tailwindcss";
 
-/* The app picks its theme with data-theme (see client/lib/theme.ts). */
-@custom-variant dark (&:is([data-theme="openseo-dark"] *));
+/* The app sets the theme with a class and data-theme on <html>
+   (client/lib/theme.ts): "dark" or "light". */
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
 
 @theme {
   --container-8xl: 88rem;
   --font-sans:
-    "Instrument Sans", ui-sans-serif, system-ui, -apple-system,
-    BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    system-ui, -apple-system, BlinkMacSystemFont, ui-sans-serif, "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
-/* Atelier design-system tokens (Better Design registry: atelier/globals). */
+/* Halo design-system tokens (Better Design registry: halo/globals). */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -21,7 +21,6 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  --color-primary-hover: var(--primary-hover);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -30,12 +29,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-signature: var(--signature);
   --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
   --color-warning: var(--warning);
-  --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
-  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -44,132 +41,67 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --shadow-s: var(--shadow-s);
-  --shadow-m: var(--shadow-m);
-  --shadow-l: var(--shadow-l);
-  --shadow-inset: var(--shadow-inset);
-  --shadow-button: var(--shadow-button);
-  --shadow-button-hover: var(--shadow-button-hover);
-  --shadow-primary: var(--shadow-primary);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-xs: var(--radius-xs);
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
 }
 
+/* Halo is dark-first: dark is the default and the .dark theme. */
 :root,
-[data-theme="openseo"] {
-  color-scheme: light;
-  --background: oklch(0.9731 0.0036 91);
-  --foreground: oklch(0.245 0.0055 106);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.245 0.0055 106);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.245 0.0055 106);
-  --primary: oklch(0.44 0.08 158);
-  --primary-foreground: oklch(0.9821 0.0061 155);
-  --primary-hover: oklch(0.4 0.078 158);
-  --secondary: oklch(0.9572 0.0042 95);
-  --secondary-foreground: oklch(0.3253 0.0064 106);
-  --muted: oklch(0.9594 0.0035 95);
-  --muted-foreground: oklch(0.5174 0.0058 106);
-  --accent: oklch(0.9135 0.0608 156);
-  --accent-foreground: oklch(0.3702 0.0608 157);
-  --destructive: oklch(0.5478 0.1843 28);
-  --destructive-foreground: oklch(0.985 0.008 28);
-  --border: oklch(0.9183 0.004 95);
-  --input: oklch(0.9883 0.0022 95);
-  --ring: oklch(0.5642 0.0855 157);
-  --radius: 1rem;
+.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.18 0.004 286);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(1 0 0 / 0.06);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.24 0.004 286 / 0.9);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.62 0.2 256);
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(1 0 0 / 0.08);
+  --secondary-foreground: oklch(0.85 0 0);
+  --muted: oklch(1 0 0 / 0.05);
+  --muted-foreground: oklch(0.66 0.005 286);
+  --accent: oklch(1 0 0 / 0.08);
+  --accent-foreground: oklch(0.98 0 0);
+  --destructive: oklch(0.6 0.22 25);
+  --destructive-foreground: oklch(1 0 0);
+  --signature: oklch(0.72 0.19 52);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.06);
+  --ring: oklch(0.62 0.2 256);
+  --radius: 0.875rem;
+  --radius-xs: 0.375rem;
+  --radius-sm: 0.625rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.125rem;
+  --radius-2xl: 1.25rem;
   --chart-1: var(--primary);
-  --chart-2: oklch(0.87 0.0993 156);
-  --chart-3: oklch(0.6864 0.0455 152);
-  --chart-4: oklch(0.8585 0.0035 95);
-  --chart-5: oklch(0.4 0.006 106);
-  --shadow-s: 0 1px 2px oklch(0.2 0.01 110 / 0.06);
-  --shadow-m:
-    0 1px 2px oklch(0.2 0.01 110 / 0.05),
-    0 8px 24px -6px oklch(0.2 0.01 110 / 0.08);
-  --shadow-l:
-    0 2px 4px oklch(0.2 0.01 110 / 0.05),
-    0 24px 48px -12px oklch(0.2 0.01 110 / 0.12);
-  --shadow-inset: inset 0 1px 2px oklch(0.2 0.01 110 / 0.05);
-  --shadow-button:
-    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
-    0 3px 10px -2px oklch(0.25 0.05 156 / 0.1);
-  --shadow-button-hover:
-    inset 0 1px 0 oklch(1 0 0 / 0.2), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
-    0 5px 14px -2px oklch(0.25 0.05 156 / 0.12);
-  --shadow-primary:
-    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 1px 2px oklch(0.25 0.05 156 / 0.12),
-    0 3px 10px -2px oklch(0.25 0.05 156 / 0.1);
-  /* Status colours the app needs beyond Atelier's set (success, warning,
-     info). Atelier's Badge and Alert carry the same hues. */
-  --success: oklch(0.5 0.1 152);
-  --success-foreground: oklch(0.98 0.01 152);
-  --warning: oklch(0.72 0.14 75);
-  --warning-foreground: oklch(0.3 0.06 70);
-  --info: oklch(0.55 0.09 240);
-  --info-foreground: oklch(0.98 0.01 240);
-  --trend-grid-color: oklch(56% 0.01 255 / 0.28);
-  --trend-axis-color: oklch(42% 0.01 255 / 0.85);
-  --trend-fill-start-opacity: 0.32;
-  --trend-fill-end-opacity: 0.05;
-  --trend-tooltip-bg: oklch(99% 0.005 255 / 0.96);
-  --trend-tooltip-border: oklch(84% 0.01 255 / 0.7);
-  --trend-tooltip-shadow: oklch(0% 0 0 / 0.1);
+  --chart-2: oklch(from var(--primary) calc(l - 0.09) calc(c * 0.92) h);
+  --chart-3: oklch(from var(--primary) calc(l - 0.18) calc(c * 0.84) h);
+  --chart-4: oklch(from var(--primary) calc(l - 0.27) calc(c * 0.76) h);
+  --chart-5: oklch(from var(--primary) calc(l - 0.36) calc(c * 0.68) h);
+  /* Status colours the app needs beyond Halo's set. */
+  --success: oklch(0.74 0.16 152);
+  --warning: oklch(0.8 0.15 75);
+  --info: oklch(0.7 0.13 245);
+  --trend-grid-color: oklch(78% 0.01 255 / 0.22);
+  --trend-axis-color: oklch(84% 0.01 255 / 0.62);
+  --trend-fill-start-opacity: 0.24;
+  --trend-fill-end-opacity: 0.03;
+  --trend-tooltip-bg: oklch(24% 0.004 286 / 0.95);
+  --trend-tooltip-border: oklch(100% 0 0 / 0.12);
+  --trend-tooltip-shadow: oklch(0% 0 0 / 0.35);
 }
 
-/* Atelier ships light only; this dark set keeps its warm neutrals and green
-   hue so the app's existing dark-mode preference still works. */
-[data-theme="openseo-dark"] {
-  color-scheme: dark;
-  --background: oklch(0.19 0.006 100);
-  --foreground: oklch(0.94 0.006 95);
-  --card: oklch(0.225 0.006 100);
-  --card-foreground: oklch(0.94 0.006 95);
-  --popover: oklch(0.225 0.006 100);
-  --popover-foreground: oklch(0.94 0.006 95);
-  --primary: oklch(0.72 0.1 158);
-  --primary-foreground: oklch(0.2 0.03 158);
-  --primary-hover: oklch(0.76 0.1 158);
-  --secondary: oklch(0.27 0.006 100);
-  --secondary-foreground: oklch(0.9 0.006 95);
-  --muted: oklch(0.26 0.006 100);
-  --muted-foreground: oklch(0.72 0.008 95);
-  --accent: oklch(0.32 0.05 158);
-  --accent-foreground: oklch(0.9 0.05 156);
-  --destructive: oklch(0.68 0.17 28);
-  --destructive-foreground: oklch(0.2 0.03 28);
-  --border: oklch(0.31 0.006 100);
-  --input: oklch(0.25 0.006 100);
-  --ring: oklch(0.72 0.1 158);
-  --chart-2: oklch(0.5 0.08 156);
-  --chart-3: oklch(0.6 0.05 152);
-  --chart-4: oklch(0.4 0.006 95);
-  --chart-5: oklch(0.8 0.006 106);
-  --shadow-s: 0 1px 2px oklch(0 0 0 / 0.3);
-  --shadow-m: 0 1px 2px oklch(0 0 0 / 0.3), 0 8px 24px -6px oklch(0 0 0 / 0.4);
-  --shadow-l:
-    0 2px 4px oklch(0 0 0 / 0.3), 0 24px 48px -12px oklch(0 0 0 / 0.5);
-  --shadow-inset: inset 0 1px 2px oklch(0 0 0 / 0.3);
-  --shadow-button:
-    inset 0 1px 0 oklch(1 0 0 / 0.12), 0 1px 2px oklch(0 0 0 / 0.3);
-  --shadow-button-hover:
-    inset 0 1px 0 oklch(1 0 0 / 0.16), 0 2px 6px oklch(0 0 0 / 0.35);
-  --shadow-primary: var(--shadow-button);
-  --success: oklch(0.72 0.12 152);
-  --success-foreground: oklch(0.2 0.03 152);
-  --warning: oklch(0.8 0.12 82);
-  --warning-foreground: oklch(0.25 0.05 70);
-  --info: oklch(0.7 0.1 240);
-  --info-foreground: oklch(0.2 0.03 240);
-  --trend-tooltip-bg: oklch(25% 0.005 100 / 0.96);
-  --trend-tooltip-border: oklch(35% 0.005 100 / 0.7);
-}
+/* Halo's light theme lands in BD-895 under .light / [data-theme="light"].
+   Reinstall halo/globals from the registry then; until it exists, the light
+   preference renders with the dark tokens above. */
 
 @layer base {
   * {
@@ -177,6 +109,7 @@
   }
   html {
     letter-spacing: -0.01em;
+    scrollbar-gutter: stable;
   }
   body {
     @apply bg-background text-foreground antialiased;
@@ -266,28 +199,28 @@ select {
   --tw-ring-color: color-mix(in oklab, #d946ef 30%, transparent);
 }
 
-html[data-theme="openseo-dark"] .tag-chip-slate {
+html[data-theme="dark"] .tag-chip-slate {
   color: #cbd5e1;
 }
-html[data-theme="openseo-dark"] .tag-chip-rose {
+html[data-theme="dark"] .tag-chip-rose {
   color: #fda4af;
 }
-html[data-theme="openseo-dark"] .tag-chip-amber {
+html[data-theme="dark"] .tag-chip-amber {
   color: #fcd34d;
 }
-html[data-theme="openseo-dark"] .tag-chip-lime {
+html[data-theme="dark"] .tag-chip-lime {
   color: #d9f99d;
 }
-html[data-theme="openseo-dark"] .tag-chip-emerald {
+html[data-theme="dark"] .tag-chip-emerald {
   color: #6ee7b7;
 }
-html[data-theme="openseo-dark"] .tag-chip-sky {
+html[data-theme="dark"] .tag-chip-sky {
   color: #7dd3fc;
 }
-html[data-theme="openseo-dark"] .tag-chip-violet {
+html[data-theme="dark"] .tag-chip-violet {
   color: #c4b5fd;
 }
-html[data-theme="openseo-dark"] .tag-chip-fuchsia {
+html[data-theme="dark"] .tag-chip-fuchsia {
   color: #f5d0fe;
 }
 
@@ -338,29 +271,29 @@ html[data-theme="openseo-dark"] .tag-chip-fuchsia {
   --tw-ring-color: color-mix(in oklab, #b91c1c 32%, transparent);
 }
 
-html[data-theme="openseo-dark"] .score-tier-na {
+html[data-theme="dark"] .score-tier-na {
   color: #cbd5e1;
 }
-html[data-theme="openseo-dark"] .score-tier-1 {
+html[data-theme="dark"] .score-tier-1 {
   color: #6ee7b7;
 }
-html[data-theme="openseo-dark"] .score-tier-2 {
+html[data-theme="dark"] .score-tier-2 {
   color: #bef264;
 }
-html[data-theme="openseo-dark"] .score-tier-3 {
+html[data-theme="dark"] .score-tier-3 {
   color: #fde047;
 }
-html[data-theme="openseo-dark"] .score-tier-4 {
+html[data-theme="dark"] .score-tier-4 {
   color: #fdba74;
 }
-html[data-theme="openseo-dark"] .score-tier-5 {
+html[data-theme="dark"] .score-tier-5 {
   color: #fca5a5;
 }
-html[data-theme="openseo-dark"] .score-tier-6 {
+html[data-theme="dark"] .score-tier-6 {
   color: #fda4af;
 }
 
-html[data-theme="openseo-dark"] {
+html[data-theme="dark"] {
   --trend-grid-color: oklch(78% 0.01 255 / 0.22);
   --trend-axis-color: oklch(84% 0.01 255 / 0.62);
   --trend-fill-start-opacity: 0.24;

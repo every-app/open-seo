@@ -1,28 +1,29 @@
 import * as React from "react";
-
 import { cn } from "@/client/lib/utils";
 
-/*
- * Simple sidebar primitive — a vertical navigation column with header/footer/item slots.
- * Elevation: sibling of main content at --card level, with inset separators.
- */
+// Halo Sidebar: navigation sidebar component
+// Translucent surface with backdrop-blur, subtle white borders, pill-shaped toggles
 
-interface SidebarProps extends React.HTMLAttributes<HTMLElement> {
-  collapsible?: boolean;
+interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
+  collapsed?: boolean;
 }
 
-const Sidebar = React.forwardRef<HTMLElement, SidebarProps>(
-  ({ className, ...props }, ref) => (
-    <aside
+const Sidebar = React.forwardRef<HTMLDivElement, SidebarProps>(
+  ({ className, collapsed, children, ...props }, ref) => (
+    <div
       ref={ref}
+      data-collapsed={collapsed}
       className={cn(
-        "flex h-full w-64 flex-col",
-        "bg-card text-card-foreground border-r border-border",
-        "[box-shadow:var(--shadow-s)]",
+        "flex h-full flex-col",
+        "backdrop-blur-xl bg-white/[0.06] border-r border-white/10",
+        "transition-[width] duration-200",
+        collapsed ? "w-16" : "w-60",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+    </div>
   ),
 );
 Sidebar.displayName = "Sidebar";
@@ -34,7 +35,7 @@ const SidebarHeader = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "flex items-center gap-2 px-4 py-3 border-b border-border",
+      "flex h-14 items-center border-b border-white/10 px-4",
       className,
     )}
     {...props}
@@ -48,7 +49,7 @@ const SidebarContent = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex-1 overflow-y-auto p-2", className)}
+    className={cn("flex flex-1 flex-col gap-1 overflow-y-auto p-2", className)}
     {...props}
   />
 ));
@@ -60,11 +61,47 @@ const SidebarFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("px-4 py-3 border-t border-border", className)}
+    className={cn("border-t border-white/10 p-2", className)}
     {...props}
   />
 ));
 SidebarFooter.displayName = "SidebarFooter";
+
+interface SidebarItemProps extends React.HTMLAttributes<HTMLButtonElement> {
+  icon?: React.ReactNode;
+  label: string;
+  active?: boolean;
+  collapsed?: boolean;
+}
+
+// Exported so navigation links (router <Link>s) can take the item look
+// without nesting an anchor inside the item's <button>.
+function sidebarItemClassName(active?: boolean, className?: string) {
+  return cn(
+    "flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200",
+    active
+      ? "bg-white/[0.1] text-foreground shadow-[inset_0_0_8px_oklch(1_0_0/0.12)]"
+      : "text-muted-foreground hover:bg-white/[0.06] hover:text-foreground",
+    className,
+  );
+}
+
+const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
+  ({ className, icon, label, active, collapsed, ...props }, ref) => (
+    <button
+      ref={ref}
+      className={sidebarItemClassName(
+        active,
+        cn(collapsed && "justify-center px-2", className),
+      )}
+      {...props}
+    >
+      {icon && <span className="shrink-0 [&>svg]:h-4 [&>svg]:w-4">{icon}</span>}
+      {!collapsed && <span className="truncate">{label}</span>}
+    </button>
+  ),
+);
+SidebarItem.displayName = "SidebarItem";
 
 const SidebarGroup = React.forwardRef<
   HTMLDivElement,
@@ -72,20 +109,20 @@ const SidebarGroup = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col gap-0.5 py-2", className)}
+    className={cn("flex flex-col gap-0.5", className)}
     {...props}
   />
 ));
 SidebarGroup.displayName = "SidebarGroup";
 
 const SidebarGroupLabel = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <p
     ref={ref}
     className={cn(
-      "px-2 pb-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground",
+      "mb-1 px-3 text-xs font-medium uppercase tracking-wide text-muted-foreground/60",
       className,
     )}
     {...props}
@@ -93,50 +130,13 @@ const SidebarGroupLabel = React.forwardRef<
 ));
 SidebarGroupLabel.displayName = "SidebarGroupLabel";
 
-interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  active?: boolean;
-  icon?: React.ReactNode;
-}
-
-// Exported so navigation links (router <Link>s) can take the item look
-// without nesting an anchor inside the item's <button>.
-function sidebarItemClassName(active?: boolean, className?: string) {
-  return cn(
-    "flex items-center gap-2.5 w-full rounded-md px-2 py-1.5 text-sm text-left",
-    "transition-[background-color,color,box-shadow] duration-150",
-    "text-muted-foreground hover:bg-accent hover:text-foreground",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40",
-    active && "bg-accent text-foreground [box-shadow:var(--shadow-s)]",
-    className,
-  );
-}
-
-const SidebarItem = React.forwardRef<HTMLButtonElement, SidebarItemProps>(
-  ({ className, active, icon, children, ...props }, ref) => (
-    <button
-      ref={ref}
-      type="button"
-      className={sidebarItemClassName(active, className)}
-      {...props}
-    >
-      {icon && (
-        <span className="flex h-4 w-4 items-center justify-center shrink-0">
-          {icon}
-        </span>
-      )}
-      <span className="flex-1 truncate">{children}</span>
-    </button>
-  ),
-);
-SidebarItem.displayName = "SidebarItem";
-
 export {
   Sidebar,
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
   SidebarItem,
   sidebarItemClassName,
+  SidebarGroup,
+  SidebarGroupLabel,
 };

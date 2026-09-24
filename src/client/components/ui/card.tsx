@@ -1,32 +1,25 @@
 import * as React from "react";
+
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Card — a white panel floating just above the cream canvas:
- * hairline warm border, generous radius, one soft overhead shadow.
- * Interactive cards lift gently; nothing snaps or glows.
- */
+// Halo Card — translucent panel.
+// 20px corners, 6% white veil over the dark canvas, hairline rim, layered drop shadow.
 
-interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  interactive?: boolean;
-}
-
-const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, interactive, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn(
-        "rounded-xl bg-card text-card-foreground border border-border",
-        "[box-shadow:var(--shadow-s)]",
-        "transition-[box-shadow,border-color] duration-200",
-        interactive &&
-          "cursor-pointer hover:[box-shadow:var(--shadow-m)] hover:border-ring/20",
-        className,
-      )}
-      {...props}
-    />
-  ),
-);
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "rounded-2xl border border-white/10 text-card-foreground",
+      "backdrop-blur-[20px] backdrop-saturate-150 bg-zinc-900/80 supports-[backdrop-filter]:bg-white/[0.06]",
+      "shadow-[0_12px_40px_oklch(0_0_0/0.5),0_4px_12px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.06)]",
+      className,
+    )}
+    {...props}
+  />
+));
 Card.displayName = "Card";
 
 const CardHeader = React.forwardRef<
@@ -35,20 +28,20 @@ const CardHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex flex-col gap-1.5 p-6", className)}
+    className={cn("flex flex-col space-y-1.5 p-6", className)}
     {...props}
   />
 ));
 CardHeader.displayName = "CardHeader";
 
 const CardTitle = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <h3
     ref={ref}
     className={cn(
-      "text-base font-semibold text-foreground leading-snug tracking-tight",
+      "text-2xl font-semibold leading-none tracking-tight",
       className,
     )}
     {...props}
@@ -57,10 +50,10 @@ const CardTitle = React.forwardRef<
 CardTitle.displayName = "CardTitle";
 
 const CardDescription = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <div
+  <p
     ref={ref}
     className={cn("text-sm text-muted-foreground", className)}
     {...props}
@@ -72,7 +65,7 @@ const CardContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("px-6 pb-6", className)} {...props} />
+  <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
 ));
 CardContent.displayName = "CardContent";
 
@@ -82,7 +75,7 @@ const CardFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <div
     ref={ref}
-    className={cn("flex items-center gap-2 px-6 pb-6", className)}
+    className={cn("flex items-center p-6 pt-0", className)}
     {...props}
   />
 ));
@@ -91,8 +84,8 @@ CardFooter.displayName = "CardFooter";
 export {
   Card,
   CardHeader,
+  CardFooter,
   CardTitle,
   CardDescription,
   CardContent,
-  CardFooter,
 };

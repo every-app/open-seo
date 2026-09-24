@@ -25,7 +25,8 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/client/components/ui/dialog";
-import { Field, FieldLabel } from "@/client/components/ui/field";
+import { Field } from "@/client/components/ui/field";
+import { Label } from "@/client/components/ui/label";
 // Better Auth rejects longer names with INVALID_NAME_LENGTH.
 const MAX_KEY_NAME_LENGTH = 32;
 
@@ -247,7 +248,7 @@ export function ApiKeySettings() {
               >
                 <h3 className="text-lg font-bold">Create API key</h3>
                 <Field className="mt-4">
-                  <FieldLabel htmlFor={apiKeyNameId}>Name</FieldLabel>
+                  <Label htmlFor={apiKeyNameId}>Name</Label>
                   <Input
                     id={apiKeyNameId}
                     className="w-full h-8 text-sm"

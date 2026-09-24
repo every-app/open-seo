@@ -3,30 +3,41 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Badge — the reference's quiet chips: the pale mint "+82%" pill and
- * warm gray reference-number tags. Flat fills, hairline rings, full pills.
- */
+// Halo Badge — translucent pill
+// Small translucent surfaces with inset glow
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium " +
-    "ring-1 ring-inset transition-colors duration-150",
+  "inline-flex items-center justify-center rounded-full font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0",
   {
     variants: {
       variant: {
-        default: "bg-accent text-accent-foreground ring-accent-foreground/15",
-        primary: "bg-primary/10 text-primary ring-primary/25",
-        secondary: "bg-secondary text-secondary-foreground ring-border",
-        outline: "bg-transparent text-foreground ring-border",
-        success:
-          "bg-[oklch(0.93_0.05_152)] text-[oklch(0.4_0.08_152)] ring-[oklch(0.45_0.09_152)]/25",
-        warning:
-          "bg-[oklch(0.95_0.05_85)] text-[oklch(0.5_0.1_70)] ring-[oklch(0.55_0.12_75)]/25",
-        destructive: "bg-destructive/10 text-destructive ring-destructive/25",
+        default:
+          "backdrop-blur-xl bg-white/[0.08] text-foreground " +
+          "shadow-[inset_0_0_6px_oklch(1_0_0/0.1)]",
+        primary:
+          "backdrop-blur-xl bg-primary/20 text-primary " +
+          "shadow-[inset_0_0_6px_oklch(0.62_0.2_256/0.18)]",
+        signature:
+          "backdrop-blur-xl bg-signature/20 text-signature " +
+          "shadow-[inset_0_0_6px_oklch(0.72_0.19_52/0.2)]",
+        secondary: "bg-white/[0.05] text-secondary-foreground",
+        destructive: "bg-destructive/20 text-destructive",
+        "destructive-light": "bg-destructive/10 text-destructive",
+        success: "bg-emerald-500/20 text-emerald-400",
+        "success-light": "bg-emerald-500/10 text-emerald-400",
+        warning: "bg-orange-500/20 text-orange-400",
+        "warning-light": "bg-orange-500/10 text-orange-400",
+        outline: "border border-white/[0.15] text-foreground bg-transparent",
+      },
+      size: {
+        sm: "h-4 gap-1 px-1.5 text-[10px] uppercase tracking-wide",
+        default: "h-5 gap-1.5 px-2 text-xs",
+        lg: "h-6 gap-1.5 px-2.5 text-xs",
       },
     },
     defaultVariants: {
       variant: "default",
+      size: "default",
     },
   },
 );
@@ -36,15 +47,13 @@ export interface BadgeProps
     React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof badgeVariants> {}
 
-const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
-  ({ className, variant, ...props }, ref) => (
+function Badge({ className, variant, size, ...props }: BadgeProps) {
+  return (
     <div
-      ref={ref}
-      className={cn(badgeVariants({ variant }), className)}
+      className={cn(badgeVariants({ variant, size }), className)}
       {...props}
     />
-  ),
-);
-Badge.displayName = "Badge";
+  );
+}
 
 export { Badge, badgeVariants };

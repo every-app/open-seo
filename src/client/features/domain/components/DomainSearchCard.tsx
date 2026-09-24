@@ -12,11 +12,8 @@ import type { ResearchScope } from "@/shared/researchScope";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
 import { NativeSelect } from "@/client/components/ui/native-select";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
+import { Input } from "@/client/components/ui/input";
 type Props = {
   controlsForm: DomainOverviewControlsForm;
   isLoading: boolean;
@@ -49,12 +46,11 @@ export function DomainSearchCard({
 
               return (
                 <InputGroup
-                  className={`w-full lg:flex-1 lg:min-w-0 lg:max-w-md ${domainError ? "border-destructive" : ""}`}
+                  className="w-full lg:flex-1 lg:min-w-0 lg:max-w-md"
+                  error={Boolean(domainError)}
+                  prefix={<Search className="size-4 text-muted-foreground" />}
                 >
-                  <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-                    <Search className="size-4 text-muted-foreground" />
-                  </InputGroupAddon>
-                  <InputGroupInput
+                  <Input
                     placeholder="Enter a domain or URL"
                     value={field.state.value}
                     onChange={(event) => {

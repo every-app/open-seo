@@ -8,11 +8,8 @@ import { TagChip } from "./TagChip";
 import { Button } from "@/client/components/ui/button";
 import { Toggle } from "@/client/components/ui/toggle";
 import { Badge } from "@/client/components/ui/badge";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
+import { Input } from "@/client/components/ui/input";
 type Mode = "add" | "remove";
 
 export function SavedKeywordsBulkTagsModal({
@@ -163,11 +160,8 @@ export function SavedKeywordsBulkTagsModal({
               </div>
             ) : null}
 
-            <InputGroup>
-              <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-                <Search className="size-3.5 opacity-50" />
-              </InputGroupAddon>
-              <InputGroupInput
+            <InputGroup prefix={<Search className="size-3.5 opacity-50" />}>
+              <Input
                 ref={inputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}

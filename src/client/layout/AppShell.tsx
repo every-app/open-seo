@@ -9,6 +9,7 @@ import {
 } from "@/client/layout/AppShellParts";
 import { GscReEngagementModal } from "@/client/features/gsc/GscReEngagementModal";
 import { Sidebar } from "@/client/components/Sidebar";
+import { ThemeToggle } from "@/client/components/ThemeToggle";
 import { BILLING_ROUTE } from "@/shared/billing";
 import { getSeoApiKeyStatus } from "@/serverFunctions/config";
 import { getProjects } from "@/serverFunctions/projects";
@@ -169,6 +170,7 @@ function MobileTopBar({
       >
         OpenSEO
       </Link>
+      <ThemeToggle className="ml-auto size-8" />
     </div>
   );
 }

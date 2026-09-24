@@ -1,43 +1,13 @@
 import * as React from "react";
-
 import { cn } from "@/client/lib/utils";
 
-/*
- * Field — small composition primitive that groups a label, control, helper/error text.
- * Use inside forms when you want consistent spacing without react-hook-form.
- */
-
-interface FieldProps extends React.HTMLAttributes<HTMLDivElement> {}
-
-const Field = React.forwardRef<HTMLDivElement, FieldProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("flex flex-col gap-1.5", className)}
-      {...props}
-    />
-  ),
-);
-Field.displayName = "Field";
-
-const FieldLabel = React.forwardRef<
-  HTMLLabelElement,
-  React.LabelHTMLAttributes<HTMLLabelElement> & { required?: boolean }
->(({ className, children, required, ...props }, ref) => (
-  <label
-    ref={ref}
-    className={cn(
-      "text-sm font-medium leading-none text-foreground",
-      "peer-disabled:cursor-not-allowed peer-disabled:opacity-50",
-      className,
-    )}
-    {...props}
-  >
-    {children}
-    {required && <span className="ml-0.5 text-destructive">*</span>}
-  </label>
+const Field = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div ref={ref} className={cn("space-y-2", className)} {...props} />
 ));
-FieldLabel.displayName = "FieldLabel";
+Field.displayName = "Field";
 
 const FieldDescription = React.forwardRef<
   HTMLParagraphElement,
@@ -45,7 +15,7 @@ const FieldDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-xs text-muted-foreground leading-relaxed", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ));
@@ -57,10 +27,10 @@ const FieldError = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <p
     ref={ref}
-    className={cn("text-xs font-medium text-destructive", className)}
+    className={cn("text-sm font-medium text-destructive", className)}
     {...props}
   />
 ));
 FieldError.displayName = "FieldError";
 
-export { Field, FieldLabel, FieldDescription, FieldError };
+export { Field, FieldDescription, FieldError };

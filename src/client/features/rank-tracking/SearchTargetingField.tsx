@@ -2,8 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { SerpLocationCombobox } from "@/client/components/SerpLocationCombobox";
 import { prewarmSerpLocations } from "@/serverFunctions/serp-locations";
 
-import { Field, FieldLabel } from "@/client/components/ui/field";
+import { Field } from "@/client/components/ui/field";
 import { RadioGroup, RadioGroupItem } from "@/client/components/ui/radio-group";
+import { Label } from "@/client/components/ui/label";
 type TargetingMode = "national" | "local";
 
 export function SearchTargetingField({
@@ -32,7 +33,7 @@ export function SearchTargetingField({
   });
   return (
     <Field>
-      <FieldLabel>Search Targeting</FieldLabel>
+      <Label>Search Targeting</Label>
       <RadioGroup
         value={mode}
         onValueChange={(value) => {

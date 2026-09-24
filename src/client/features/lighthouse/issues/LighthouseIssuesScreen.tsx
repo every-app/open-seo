@@ -105,7 +105,7 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
             ) : null}
 
             {showsLegacyPayloadNotice ? (
-              <Alert variant="warning">
+              <Alert className="border-warning/40 [&>svg]:text-warning">
                 <TriangleAlert className="size-4" />
                 <AlertDescription>
                   This Lighthouse run was stored before issue details were

@@ -10,10 +10,7 @@ import { Alert, AlertDescription } from "@/client/components/ui/alert";
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/client/components/ui/card";
 import { Input } from "@/client/components/ui/input";
-import {
-  InputGroup,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import { Switch } from "@/client/components/ui/switch";
 type Props = {
   launchForm: ReturnType<typeof useLaunchController>["launchForm"];
@@ -44,9 +41,10 @@ export function LaunchFormCard({
 
               return (
                 <InputGroup
-                  className={`w-full lg:col-span-9 ${urlError ? "border-destructive" : ""}`}
+                  className="w-full lg:col-span-9"
+                  error={Boolean(urlError)}
                 >
-                  <InputGroupInput
+                  <Input
                     placeholder="https://example.com"
                     value={field.state.value}
                     onChange={(event) => {

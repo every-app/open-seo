@@ -4,60 +4,57 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Button: quiet-luxury pills on light ground.
- *   - default IS the signature: a deep forest-green pill, a faint top light
- *     caught on its upper rim, one soft green-tinted drop shadow. Hover
- *     deepens the green like ink soaking in; press settles it flat.
- *   - secondary: the warm gray chip from the reference toolbar (USD, 6 Months).
- *   - outline / ghost stay hairline and understated; nothing shouts.
- */
+// Halo Button — translucent controls.
+// default/primary: bright-blue vertical gradient, hairline white rim, soft drop shadow.
+// secondary/outline/ghost: translucent over the dark canvas.
 
 const buttonVariants = cva(
   [
-    "inline-flex items-center justify-center gap-2 whitespace-nowrap",
-    "text-sm font-medium leading-none",
-    "rounded-full cursor-pointer select-none",
-    "transition-[background-color,border-color,box-shadow,transform] duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-    "disabled:pointer-events-none disabled:opacity-50",
-    "active:translate-y-px active:[box-shadow:var(--shadow-s)]",
+    "relative inline-flex items-center justify-center gap-1.5 whitespace-nowrap",
+    "text-sm font-semibold tracking-tight leading-none",
+    "rounded-sm transition-all duration-200 ease-out",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+    "disabled:pointer-events-none disabled:opacity-40",
+    "active:scale-[0.98]",
+    "select-none",
   ].join(" "),
   {
     variants: {
       variant: {
-        // The hero treatment lives on `default` (showcase + templates render
-        // the primary CTA with no variant prop).
         default:
-          "bg-primary text-primary-foreground " +
-          "[box-shadow:var(--shadow-button)] " +
-          "hover:bg-primary-hover hover:[box-shadow:var(--shadow-button-hover)]",
+          "bg-gradient-to-t from-primary to-primary/85 text-primary-foreground " +
+          "border border-white/20 " +
+          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "hover:brightness-110",
         primary:
-          "bg-primary text-primary-foreground " +
-          "[box-shadow:var(--shadow-button)] " +
-          "hover:bg-primary-hover hover:[box-shadow:var(--shadow-button-hover)]",
+          "bg-gradient-to-t from-primary to-primary/85 text-primary-foreground " +
+          "border border-white/20 " +
+          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "hover:brightness-110",
         secondary:
-          "bg-secondary text-secondary-foreground border border-border " +
-          "[box-shadow:var(--shadow-s)] " +
-          "hover:bg-muted hover:border-ring/25",
+          "backdrop-blur-xl bg-white/[0.08] text-foreground " +
+          "border border-white/10 " +
+          "shadow-[inset_0_1px_0_oklch(1_0_0/0.08)] " +
+          "hover:bg-white/[0.12]",
         outline:
-          "bg-card text-foreground border border-border " +
-          "[box-shadow:var(--shadow-s)] " +
-          "hover:bg-secondary hover:border-ring/25",
+          "bg-transparent text-foreground " +
+          "border border-white/[0.15] " +
+          "hover:bg-white/[0.06] hover:border-white/[0.25]",
         ghost:
           "bg-transparent text-muted-foreground " +
-          "hover:bg-secondary hover:text-foreground",
+          "hover:bg-white/[0.06] hover:text-foreground",
         destructive:
-          "bg-destructive text-destructive-foreground " +
-          "[box-shadow:inset_0_1px_0_oklch(1_0_0/0.16),0_1px_2px_oklch(0.3_0.12_28/0.12),0_3px_10px_-2px_oklch(0.3_0.12_28/0.1)] " +
-          "hover:brightness-95",
+          "bg-gradient-to-t from-destructive to-destructive/85 text-destructive-foreground " +
+          "border border-white/15 " +
+          "shadow-[0_4px_6px_-1px_oklch(0_0_0/0.25)] " +
+          "hover:brightness-110",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
-        sm: "h-8 px-3.5 text-xs",
-        default: "h-9 px-5",
-        lg: "h-10 px-6",
-        icon: "h-9 w-9",
+        sm: "h-8 px-3 text-xs",
+        default: "h-10 px-4",
+        lg: "h-12 px-5 text-sm",
+        icon: "h-10 w-10",
       },
     },
     defaultVariants: {

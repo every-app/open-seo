@@ -174,7 +174,7 @@ function AuditDetail({
         )}
 
         {showSupportCta && (
-          <Alert variant={isFailed ? "destructive" : "warning"}>
+          <Alert variant={isFailed ? "destructive" : "default"}>
             <AlertCircle className="size-5" />
             <AlertTitle>
               Site audit couldn't fully crawl this website.
@@ -208,7 +208,7 @@ function AuditDetail({
         )}
 
         {failedWithResults && (
-          <Alert variant="warning">
+          <Alert className="border-warning/40 [&>svg]:text-warning">
             <AlertCircle className="size-5" />
             <AlertDescription className="space-y-1">
               <p className="font-medium">

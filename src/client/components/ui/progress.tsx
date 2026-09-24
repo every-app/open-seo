@@ -3,13 +3,6 @@ import { Progress as ProgressPrimitive } from "@base-ui/react/progress";
 
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Progress: a recessed near-white track filled by the primary green,
- * wearing the same soft button material as every other filled control.
- * The Base UI primitive computes the fill width itself, so the manual
- * translateX transform from the Radix version is gone.
- */
-
 const Progress = React.forwardRef<
   HTMLDivElement,
   Omit<ProgressPrimitive.Root.Props, "value"> & {
@@ -20,14 +13,15 @@ const Progress = React.forwardRef<
     ref={ref}
     value={value ?? null}
     className={cn(
-      "relative h-2 w-full overflow-hidden rounded-full border border-border",
-      "bg-input [box-shadow:var(--shadow-inset)]",
+      "relative h-2 w-full overflow-hidden rounded-full",
+      "backdrop-blur-xl bg-white/[0.08]",
+      "shadow-[inset_0_0_4px_oklch(1_0_0/0.06)]",
       className,
     )}
     {...props}
   >
     <ProgressPrimitive.Track className="h-full w-full">
-      <ProgressPrimitive.Indicator className="h-full w-full flex-1 bg-primary transition-all duration-300 [box-shadow:var(--shadow-primary)]" />
+      <ProgressPrimitive.Indicator className="h-full w-full flex-1 rounded-full bg-primary/70 shadow-[0_0_8px_oklch(0.62_0.2_256/0.3)] transition-all" />
     </ProgressPrimitive.Track>
   </ProgressPrimitive.Root>
 ));

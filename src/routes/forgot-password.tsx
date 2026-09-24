@@ -101,7 +101,7 @@ function ForgotPasswordPage() {
               }
             >
               {isSuccess ? (
-                <Alert variant="success">
+                <Alert className="border-success/40 [&>svg]:text-success">
                   <AlertDescription>
                     If an account exists for that email, you'll receive password
                     reset instructions shortly.

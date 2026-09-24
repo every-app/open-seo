@@ -15,28 +15,32 @@ const SheetOverlay = React.forwardRef<
   Omit<SheetPrimitive.Backdrop.Props, "className"> & { className?: string }
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Backdrop
-    ref={ref}
     className={cn(
-      "fixed inset-0 z-50 bg-black/70 backdrop-blur-sm",
-      "transition-opacity duration-150 data-starting-style:opacity-0 data-ending-style:opacity-0",
+      "fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-150 data-starting-style:opacity-0 data-ending-style:opacity-0",
       className,
     )}
     {...props}
+    ref={ref}
   />
 ));
 SheetOverlay.displayName = "SheetOverlay";
 
 const sheetVariants = cva(
-  "fixed z-50 gap-4 bg-popover text-popover-foreground p-6 [box-shadow:var(--shadow-l)] transition ease-in-out data-open:duration-500 data-closed:duration-300",
+  [
+    "fixed z-50 gap-4 px-8 py-6",
+    "backdrop-blur-3xl backdrop-saturate-200 bg-zinc-900/80 supports-[backdrop-filter]:bg-zinc-900/45 border-white/10",
+    "shadow-[0_8px_32px_oklch(0_0_0/0.5),inset_0_0_8px_oklch(1_0_0/0.06)]",
+    "transition ease-in-out data-open:duration-500 data-closed:duration-300",
+  ].join(" "),
   {
     variants: {
       side: {
-        top: "inset-x-0 top-0 border-b border-border data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
+        top: "inset-x-0 top-0 border-b rounded-b-2xl data-starting-style:-translate-y-full data-ending-style:-translate-y-full",
         bottom:
-          "inset-x-0 bottom-0 border-t border-border data-starting-style:translate-y-full data-ending-style:translate-y-full",
-        left: "inset-y-0 left-0 h-full w-3/4 border-r border-border data-starting-style:-translate-x-full data-ending-style:-translate-x-full sm:max-w-sm",
+          "inset-x-0 bottom-0 border-t rounded-t-2xl data-starting-style:translate-y-full data-ending-style:translate-y-full",
+        left: "inset-y-0 left-0 h-full w-3/4 border-r rounded-r-2xl sm:max-w-sm data-starting-style:-translate-x-full data-ending-style:-translate-x-full",
         right:
-          "inset-y-0 right-0 h-full w-3/4 border-l border-border data-starting-style:translate-x-full data-ending-style:translate-x-full sm:max-w-sm",
+          "inset-y-0 right-0 h-full w-3/4 border-l rounded-l-2xl sm:max-w-sm data-starting-style:translate-x-full data-ending-style:translate-x-full",
       },
     },
     defaultVariants: {
@@ -62,16 +66,8 @@ const SheetContent = React.forwardRef<HTMLDivElement, SheetContentProps>(
         {...props}
       >
         {children}
-        <SheetPrimitive.Close
-          className={cn(
-            "absolute right-4 top-4 rounded-md p-1 text-muted-foreground",
-            "transition-[background-color,color] duration-150",
-            "hover:bg-accent hover:text-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-ring/50",
-            "disabled:pointer-events-none",
-          )}
-        >
-          <Icon icon="ph:x" className="h-4 w-4" />
+        <SheetPrimitive.Close className="absolute right-4 top-4 rounded-full p-1 opacity-70 transition-all hover:opacity-100 hover:bg-white/[0.08] focus:outline-none focus:ring-2 focus:ring-ring disabled:pointer-events-none">
+          <Icon icon="tabler:x" className="h-4 w-4" />
           <span className="sr-only">Close</span>
         </SheetPrimitive.Close>
       </SheetPrimitive.Popup>
@@ -85,7 +81,10 @@ const SheetHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col space-y-2 text-left", className)}
+    className={cn(
+      "flex flex-col space-y-2 text-center sm:text-left",
+      className,
+    )}
     {...props}
   />
 );
@@ -97,7 +96,7 @@ const SheetFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:gap-2",
+      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
       className,
     )}
     {...props}
@@ -123,7 +122,7 @@ const SheetDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SheetPrimitive.Description
     ref={ref}
-    className={cn("text-sm text-muted-foreground leading-relaxed", className)}
+    className={cn("text-sm text-muted-foreground", className)}
     {...props}
   />
 ));

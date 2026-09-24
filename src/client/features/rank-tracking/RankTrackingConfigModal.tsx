@@ -24,7 +24,8 @@ import { useSaveConfigMutations } from "./useSaveConfigMutations";
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
 import { NativeSelect } from "@/client/components/ui/native-select";
-import { Field, FieldLabel } from "@/client/components/ui/field";
+import { Field } from "@/client/components/ui/field";
+import { Label } from "@/client/components/ui/label";
 type Props = {
   projectId: string;
   existingConfig?: RankTrackingConfig | null;
@@ -205,7 +206,7 @@ function RankTrackingConfigModalContent({
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <Field>
-          <FieldLabel>Target Domain</FieldLabel>
+          <Label>Target Domain</Label>
           <Input
             type="text"
             placeholder="example.com"
@@ -217,7 +218,7 @@ function RankTrackingConfigModalContent({
         </Field>
 
         <Field>
-          <FieldLabel>Country</FieldLabel>
+          <Label>Country</Label>
           <LocationSelect
             value={locationCode}
             onChange={(newLocationCode) => {
@@ -238,7 +239,7 @@ function RankTrackingConfigModalContent({
         />
 
         <Field>
-          <FieldLabel>Language</FieldLabel>
+          <Label>Language</Label>
           <NativeSelect
             className="w-full"
             value={languageCode}
@@ -257,7 +258,7 @@ function RankTrackingConfigModalContent({
         </Field>
 
         <Field>
-          <FieldLabel>Devices</FieldLabel>
+          <Label>Devices</Label>
           <NativeSelect
             className="w-full"
             value={devices}
@@ -291,7 +292,7 @@ function RankTrackingConfigModalContent({
         </Field>
 
         <Field>
-          <FieldLabel>Schedule</FieldLabel>
+          <Label>Schedule</Label>
           <NativeSelect
             className="w-full"
             value={schedule}
@@ -321,7 +322,7 @@ function RankTrackingConfigModalContent({
         </Field>
 
         <Field>
-          <FieldLabel>Search Depth</FieldLabel>
+          <Label>Search Depth</Label>
           <NativeSelect
             className="w-full"
             value={depthToPages(serpDepth)}

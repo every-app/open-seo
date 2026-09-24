@@ -6,7 +6,7 @@ import type { SavedKeywordsFilterForm } from "./useSavedKeywordsFilters";
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
 import { Input } from "@/client/components/ui/input";
-import { InputGroupInput } from "@/client/components/ui/input-group";
+
 export function SavedKeywordsFilterPanel({
   form,
   activeFilterCount,
@@ -192,7 +192,7 @@ function TermsTokenInput({
                   </Button>
                 </span>
               ))}
-              <InputGroupInput
+              <Input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
                 onKeyDown={handleKeyDown}

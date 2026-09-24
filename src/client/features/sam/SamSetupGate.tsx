@@ -55,7 +55,7 @@ export function SamSetupGate({
         </div>
 
         {errorMessage ? (
-          <Alert variant="warning">
+          <Alert className="border-warning/40 [&>svg]:text-warning">
             <ShieldAlert className="size-4 shrink-0" />
             <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>

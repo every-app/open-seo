@@ -18,16 +18,13 @@ import { TagChip } from "./TagChip";
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/client/components/ui/popover";
+import { Input } from "@/client/components/ui/input";
 export function SavedKeywordsTagFilter({
   availableTags,
   selectedTagIds,
@@ -179,11 +176,8 @@ function TagFilterPopover({
   return (
     <div className="overflow-hidden">
       <div className="border-b border-border p-2">
-        <InputGroup>
-          <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-            <Search className="size-3.5" />
-          </InputGroupAddon>
-          <InputGroupInput
+        <InputGroup prefix={<Search className="size-3.5" />}>
+          <Input
             autoFocus
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}

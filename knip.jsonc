@@ -41,6 +41,7 @@
   // full public API even where the app uses only part of it.
   "ignoreIssues": {
     "src/client/components/ui/**": ["exports", "types"],
+    "src/client/lib/motion.ts": ["exports"],
   },
   // Disable Drizzle plugin - it tries to load drizzle.config.ts which imports cloudflare:workers
   "drizzle": false,

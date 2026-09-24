@@ -23,6 +23,7 @@ import {
 import { ProjectSwitcher } from "@/client/features/projects/ProjectSwitcher";
 import { SamSidebarPanel } from "@/client/features/sam/SamSidebarPanel";
 import { ThemePreferenceMenuItems } from "@/client/components/ThemePreferenceMenuItems";
+import { ThemeToggle } from "@/client/components/ThemeToggle";
 import { signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { BILLING_ROUTE } from "@/shared/billing";
@@ -137,6 +138,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         >
           OpenSEO
         </Link>
+        <ThemeToggle className="ml-auto size-8" />
         {onClose ? (
           <Button
             variant="ghost"
@@ -252,13 +254,13 @@ function SidebarFooter({ onNavigate }: { onNavigate?: () => void }) {
           <DropdownMenuTrigger
             render={
               <SidebarItem
+                data-ph-mask
                 aria-label="Open account menu"
                 icon={<User className="size-4" />}
+                label={email}
               />
             }
-          >
-            <span data-ph-mask>{email}</span>
-          </DropdownMenuTrigger>
+          />
           <DropdownMenuContent side="top" align="start" className="w-56">
             {organizations.length > 1 ? (
               <>

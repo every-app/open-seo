@@ -4,53 +4,35 @@ import { Icon } from "@iconify/react";
 
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Checkbox: unchecked it is a quiet near-white well; checked it
- * becomes the primary button's material scaled down: the same deep green
- * fill, top-light rim and soft green drop (--shadow-primary).
- *
- * Base UI splits Radix's checked="indeterminate" into a separate boolean
- * `indeterminate` prop; the Root renders a <span>, so disabled styling
- * hangs off data-disabled instead of the :disabled pseudo-class.
- */
-
-// Base UI className can be a state function; the wrapper feeds it to cn(), so
-// narrow it to a plain string (same treatment as the other ported files).
-type WithClassName<P> = Omit<P, "className"> & { className?: string };
-
-const Checkbox = React.forwardRef<
-  HTMLSpanElement,
-  WithClassName<CheckboxPrimitive.Root.Props>
->(({ className, indeterminate, ...props }, ref) => (
-  <CheckboxPrimitive.Root
-    data-slot="checkbox"
-    ref={ref}
-    indeterminate={indeterminate}
-    className={cn(
-      "peer h-4 w-4 shrink-0 rounded-sm border border-border",
-      "bg-input [box-shadow:var(--shadow-inset)]",
-      "transition-[background-color,box-shadow,border-color] duration-150",
-      "hover:border-ring/35",
-      "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
-      "data-disabled:cursor-not-allowed data-disabled:opacity-50",
-      "data-checked:bg-primary data-checked:border-transparent data-checked:text-primary-foreground data-checked:[box-shadow:var(--shadow-primary)]",
-      "data-indeterminate:bg-primary data-indeterminate:border-transparent data-indeterminate:text-primary-foreground data-indeterminate:[box-shadow:var(--shadow-primary)]",
-      className,
-    )}
-    {...props}
-  >
-    <CheckboxPrimitive.Indicator
-      data-slot="checkbox-indicator"
-      className="size-full flex items-center justify-center text-current"
-    >
-      {indeterminate ? (
-        <Icon icon="ph:minus-bold" className="h-3 w-3" />
-      ) : (
-        <Icon icon="ph:check-bold" className="h-3 w-3" />
+function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props) {
+  return (
+    <CheckboxPrimitive.Root
+      data-slot="checkbox"
+      className={cn(
+        "peer h-5 w-5 shrink-0 rounded-xs",
+        "backdrop-blur-xl bg-white/[0.06]",
+        "border border-white/[0.15]",
+        "shadow-[inset_0_0_4px_oklch(1_0_0/0.06)]",
+        "transition-all duration-200",
+        "hover:border-white/[0.25] hover:bg-white/[0.1]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
+        "disabled:cursor-not-allowed disabled:opacity-50",
+        "data-checked:bg-gradient-to-t data-checked:from-primary data-checked:to-primary/85 data-checked:text-primary-foreground",
+        "data-checked:border-white/20",
+        "data-checked:shadow-[0_2px_4px_-1px_oklch(0_0_0/0.3),inset_0_1px_0_oklch(1_0_0/0.22)]",
+        className,
       )}
-    </CheckboxPrimitive.Indicator>
-  </CheckboxPrimitive.Root>
-));
+      {...props}
+    >
+      <CheckboxPrimitive.Indicator
+        data-slot="checkbox-indicator"
+        className={cn("flex items-center justify-center text-current")}
+      >
+        <Icon icon="tabler:check" className="size-full h-3.5 w-3.5" />
+      </CheckboxPrimitive.Indicator>
+    </CheckboxPrimitive.Root>
+  );
+}
 Checkbox.displayName = "Checkbox";
 
 export { Checkbox };

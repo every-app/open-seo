@@ -213,7 +213,7 @@ export function DomainFilterPanel<TValues extends FilterValues>({
       {renderExtra ? renderExtra(draftFilters, handleValueChange) : null}
 
       {meta.overLimit ? (
-        <Alert variant="warning" className="py-2 text-xs">
+        <Alert className="border-warning/40 [&>svg]:text-warning py-2 text-xs">
           <AlertTriangle className="size-4 shrink-0" />
           <AlertDescription>
             Too many filter conditions ({meta.conditionCount} of {maxConditions}{" "}

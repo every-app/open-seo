@@ -7,7 +7,7 @@ export function FreePlanAlert({ visible }: { visible: boolean }) {
   if (!visible) return null;
 
   return (
-    <Alert variant="warning" className="text-sm py-2">
+    <Alert className="border-warning/40 [&>svg]:text-warning text-sm py-2">
       <AlertTriangle className="size-4" />
       <AlertDescription>
         We only start to track keyword positions once you{" "}

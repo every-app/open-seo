@@ -15,11 +15,7 @@ import { setLastProjectId } from "@/client/lib/active-project";
 import { CreateProjectModal } from "@/client/features/projects/CreateProjectModal";
 import type { ProjectSummary } from "./types";
 import { Button, buttonVariants } from "@/client/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import {
   Popover,
   PopoverAnchor,
@@ -27,6 +23,7 @@ import {
   PopoverTrigger,
 } from "@/client/components/ui/popover";
 
+import { Input } from "@/client/components/ui/input";
 // Below this many projects the plain list is faster to scan than a search box.
 const SEARCH_THRESHOLD = 8;
 
@@ -244,11 +241,8 @@ export function ProjectSwitcher({
       >
         {showSearch ? (
           <div className="border-b border-border p-2">
-            <InputGroup>
-              <InputGroupAddon>
-                <Search className="size-3.5" />
-              </InputGroupAddon>
-              <InputGroupInput
+            <InputGroup prefix={<Search className="size-3.5" />}>
+              <Input
                 ref={searchInputRef}
                 type="text"
                 value={query}

@@ -1,11 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronDown, Search } from "lucide-react";
 import { Button } from "@/client/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import {
   Popover,
   PopoverContent,
@@ -13,6 +9,7 @@ import {
 } from "@/client/components/ui/popover";
 import { LOCATION_OPTIONS } from "@/shared/keyword-locations";
 
+import { Input } from "@/client/components/ui/input";
 type LocationOption = (typeof LOCATION_OPTIONS)[number];
 
 type Props = {
@@ -116,11 +113,8 @@ export function LocationSelect({
       </PopoverTrigger>
 
       <PopoverContent align="start" className="w-56 p-2">
-        <InputGroup>
-          <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-            <Search className="size-4" />
-          </InputGroupAddon>
-          <InputGroupInput
+        <InputGroup prefix={<Search className="size-4" />}>
+          <Input
             ref={inputRef}
             type="text"
             placeholder="Search countries"

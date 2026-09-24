@@ -13,7 +13,8 @@ import {
   DialogFooter,
   DialogTitle,
 } from "@/client/components/ui/dialog";
-import { Field, FieldLabel } from "@/client/components/ui/field";
+import { Field } from "@/client/components/ui/field";
+import { Label } from "@/client/components/ui/label";
 export function inviteErrorMessage(error: Error) {
   const code = getErrorCode(error);
   if (code === "RATE_LIMITED") {
@@ -74,7 +75,7 @@ export function InviteTeammateModal({
             except for billing. The invitation link expires in 7 days.
           </p>
           <Field className="mt-4">
-            <FieldLabel htmlFor={inviteEmailId}>Email</FieldLabel>
+            <Label htmlFor={inviteEmailId}>Email</Label>
             <Input
               id={inviteEmailId}
               type="email"

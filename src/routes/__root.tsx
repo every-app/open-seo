@@ -25,7 +25,7 @@ import { NotFound } from "@/client/components/NotFound";
 import appCss from "@/client/styles/app.css?url";
 import { useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
-import { Toaster } from "@/client/components/ui/sonner";
+import { SonnerToaster as Toaster } from "@/client/components/ui/sonner";
 import { queryClient } from "@/client/tanstack-db";
 import { getActiveOrganizationId } from "@/lib/auth-session";
 

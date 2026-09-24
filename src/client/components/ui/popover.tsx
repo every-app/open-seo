@@ -3,16 +3,16 @@ import { Popover as PopoverPrimitive } from "@base-ui/react/popover";
 
 import { cn } from "@/client/lib/utils";
 
-// Base UI has no Anchor part; PopoverAnchor registers its element via context
-// and PopoverContent feeds it to the Positioner's `anchor` prop.
-type PopoverAnchorContextValue = {
+type AnchorContextValue = {
   anchor: HTMLElement | null;
-  setAnchor: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
+  setAnchor: (node: HTMLElement | null) => void;
 };
+const PopoverAnchorContext = React.createContext<AnchorContextValue | null>(
+  null,
+);
 
-const PopoverAnchorContext =
-  React.createContext<PopoverAnchorContextValue | null>(null);
-
+// Root plus an optional anchor: PopoverAnchor lets the popup align to a wider
+// element than its trigger (a field group, a split button).
 function Popover(props: PopoverPrimitive.Root.Props) {
   const [anchor, setAnchor] = React.useState<HTMLElement | null>(null);
   const value = React.useMemo(() => ({ anchor, setAnchor }), [anchor]);
@@ -23,14 +23,11 @@ function Popover(props: PopoverPrimitive.Root.Props) {
   );
 }
 
-const PopoverTrigger = PopoverPrimitive.Trigger;
-
 const PopoverAnchor = React.forwardRef<
   HTMLDivElement,
-  React.ComponentPropsWithoutRef<"div">
+  React.HTMLAttributes<HTMLDivElement>
 >((props, ref) => {
-  const context = React.useContext(PopoverAnchorContext);
-  const setAnchor = context?.setAnchor;
+  const setAnchor = React.useContext(PopoverAnchorContext)?.setAnchor;
   const handleRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       setAnchor?.(node);
@@ -42,6 +39,7 @@ const PopoverAnchor = React.forwardRef<
   return <div ref={handleRef} {...props} />;
 });
 PopoverAnchor.displayName = "PopoverAnchor";
+const PopoverTrigger = PopoverPrimitive.Trigger;
 
 const PopoverContent = React.forwardRef<
   HTMLDivElement,
@@ -57,16 +55,16 @@ const PopoverContent = React.forwardRef<
       align = "center",
       alignOffset,
       side,
-      sideOffset = 6,
+      sideOffset = 4,
       ...props
     },
     ref,
   ) => {
-    const context = React.useContext(PopoverAnchorContext);
+    const anchor = React.useContext(PopoverAnchorContext)?.anchor ?? undefined;
     return (
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Positioner
-          anchor={context?.anchor ?? undefined}
+          anchor={anchor}
           align={align}
           alignOffset={alignOffset}
           side={side}
@@ -77,9 +75,10 @@ const PopoverContent = React.forwardRef<
             ref={ref}
             className={cn(
               "z-50 w-72 p-4",
-              "rounded-lg border border-border",
-              "bg-popover text-popover-foreground",
-              "[box-shadow:var(--shadow-l)]",
+              "rounded-xl border border-white/10",
+              "backdrop-blur-3xl backdrop-saturate-200 bg-zinc-900/80 supports-[backdrop-filter]:bg-zinc-900/45",
+              "text-popover-foreground",
+              "shadow-[0_8px_32px_oklch(0_0_0/0.5),inset_0_0_8px_oklch(1_0_0/0.06)]",
               "outline-none transition-[transform,translate,scale,opacity] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=top]:data-starting-style:translate-y-2",
               className,
             )}

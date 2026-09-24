@@ -16,11 +16,8 @@ import type { BacklinksSearchState } from "./backlinksPageTypes";
 
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
+import { Input } from "@/client/components/ui/input";
 type SearchDraft = Pick<BacklinksSearchState, "target" | "scope">;
 
 function getBacklinksValidationErrors(
@@ -100,12 +97,13 @@ export function BacklinksSearchCard({
 
                   return (
                     <InputGroup
-                      className={`flex-1 ${targetError ? "border-destructive" : ""}`}
-                    >
-                      <InputGroupAddon className="border-r-0 bg-transparent pr-0">
+                      className="flex-1"
+                      error={Boolean(targetError)}
+                      prefix={
                         <Search className="size-4 text-muted-foreground" />
-                      </InputGroupAddon>
-                      <InputGroupInput
+                      }
+                    >
+                      <Input
                         placeholder="Enter a domain or URL"
                         value={field.state.value}
                         onChange={(event) => {

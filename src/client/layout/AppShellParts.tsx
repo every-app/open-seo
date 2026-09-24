@@ -26,7 +26,7 @@ function SeoApiStatusBanners({
       {shouldShowSeoApiWarning ? (
         <div className="shrink-0 px-4 py-2.5 md:px-6">
           <div className="mx-auto max-w-7xl">
-            <Alert variant="warning">
+            <Alert className="border-warning/40 [&>svg]:text-warning">
               <AlertTriangle className="size-4 shrink-0" />
               <AlertDescription className="text-sm">
                 Setup needed: add your DataForSEO API key to use OpenSEO
@@ -47,7 +47,7 @@ function SeoApiStatusBanners({
       {seoApiKeyStatusError ? (
         <div className="shrink-0 px-4 py-2.5 md:px-6">
           <div className="mx-auto max-w-7xl">
-            <Alert variant="info">
+            <Alert className="[&>svg]:text-info">
               <AlertTriangle className="size-4 shrink-0" />
               <AlertDescription className="text-sm">
                 We could not verify your DataForSEO setup. If features are not

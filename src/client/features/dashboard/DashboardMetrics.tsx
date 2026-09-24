@@ -1,4 +1,9 @@
-import { StatCard } from "@/client/components/ui/stat-card";
+import {
+  StatCard,
+  StatCardDescription,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
 import type { getDashboardOverview } from "@/serverFunctions/dashboard";
 
 type DashboardOverview = Awaited<ReturnType<typeof getDashboardOverview>>;
@@ -53,13 +58,13 @@ export function DashboardMetrics({
       className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4"
     >
       {metrics.map((metric) => (
-        <StatCard
-          key={metric.label}
-          label={metric.label}
-          value={<span className="tabular-nums">{metric.value}</span>}
-          description={metric.description}
-          className="border border-border p-4 md:p-6"
-        />
+        <StatCard key={metric.label}>
+          <StatCardLabel>{metric.label}</StatCardLabel>
+          <StatCardValue className="tabular-nums">{metric.value}</StatCardValue>
+          {metric.description ? (
+            <StatCardDescription>{metric.description}</StatCardDescription>
+          ) : null}
+        </StatCard>
       ))}
     </section>
   );

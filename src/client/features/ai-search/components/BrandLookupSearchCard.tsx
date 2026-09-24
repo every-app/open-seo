@@ -8,11 +8,7 @@ import { BRAND_LOOKUP_MAX_INPUT_LENGTH } from "@/types/schemas/ai-search";
 
 import { Button } from "@/client/components/ui/button";
 import { Card, CardContent } from "@/client/components/ui/card";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import { Input } from "@/client/components/ui/input";
 type Props = {
   query: string;
@@ -74,12 +70,11 @@ export function BrandLookupSearchCard({
         <form onSubmit={onSubmit} className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
             <InputGroup
-              className={`flex-1 ${queryError ? "border-destructive" : ""}`}
+              className="flex-1"
+              error={Boolean(queryError)}
+              prefix={<Search className="size-4 text-muted-foreground" />}
             >
-              <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-                <Search className="size-4 text-muted-foreground" />
-              </InputGroupAddon>
-              <InputGroupInput
+              <Input
                 type="text"
                 placeholder="Enter a brand name or domain"
                 value={query}

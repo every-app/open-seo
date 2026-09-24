@@ -199,7 +199,7 @@ export function PagesTab({
   return (
     <>
       {filtersOverBudget ? (
-        <Alert variant="warning" className="mb-3">
+        <Alert className="border-warning/40 [&>svg]:text-warning mb-3">
           <AlertDescription>
             Saved filters exceed this scope&apos;s {maxConditions}-condition
             limit and were not applied. Open Filters to trim them.

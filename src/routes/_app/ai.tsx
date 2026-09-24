@@ -145,7 +145,10 @@ function AiPage() {
             </div>
 
             {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
-              <Alert variant="warning" className="mt-8 text-sm" role="alert">
+              <Alert
+                className="border-warning/40 [&>svg]:text-warning mt-8 text-sm"
+                role="alert"
+              >
                 <ShieldAlert className="size-4 shrink-0" />
                 <AlertDescription>
                   This instance is behind Cloudflare Access. MCP clients cannot

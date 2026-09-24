@@ -6,16 +6,13 @@ import type { SerpLocationResult } from "@/server/lib/dataforseo/serp-locations"
 
 import { Badge } from "@/client/components/ui/badge";
 import { Button } from "@/client/components/ui/button";
-import {
-  InputGroup,
-  InputGroupAddon,
-  InputGroupInput,
-} from "@/client/components/ui/input-group";
+import { InputGroup } from "@/client/components/ui/input-group";
 import {
   Popover,
   PopoverAnchor,
   PopoverContent,
 } from "@/client/components/ui/popover";
+import { Input } from "@/client/components/ui/input";
 type Props = {
   value: string | undefined;
   onChange: (locationName: string | undefined) => void;
@@ -153,15 +150,19 @@ export function SerpLocationCombobox({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverAnchor className="w-full">
-        <InputGroup className="w-full">
-          <InputGroupAddon className="border-r-0 bg-transparent pr-0">
-            {isLoading ? (
-              <Loader2 className="size-4 shrink-0 animate-spin" />
-            ) : (
-              <Search className="size-4 shrink-0" />
-            )}
-          </InputGroupAddon>
-          <InputGroupInput
+        <InputGroup
+          className="w-full"
+          prefix={
+            <>
+              {isLoading ? (
+                <Loader2 className="size-4 shrink-0 animate-spin" />
+              ) : (
+                <Search className="size-4 shrink-0" />
+              )}
+            </>
+          }
+        >
+          <Input
             type="text"
             placeholder={placeholder}
             aria-label={placeholder}

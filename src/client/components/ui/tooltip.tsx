@@ -1,14 +1,10 @@
-"use client";
-
 import * as React from "react";
 import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip";
 
 import { cn } from "@/client/lib/utils";
 
 const TooltipProvider = TooltipPrimitive.Provider;
-
 const Tooltip = TooltipPrimitive.Root;
-
 const TooltipTrigger = TooltipPrimitive.Trigger;
 
 const TooltipContent = React.forwardRef<
@@ -18,7 +14,7 @@ const TooltipContent = React.forwardRef<
       TooltipPrimitive.Positioner.Props,
       "align" | "alignOffset" | "side" | "sideOffset"
     >
->(({ className, align, alignOffset, side, sideOffset = 6, ...props }, ref) => (
+>(({ className, align, alignOffset, side, sideOffset = 4, ...props }, ref) => (
   <TooltipPrimitive.Portal>
     <TooltipPrimitive.Positioner
       align={align}
@@ -30,9 +26,11 @@ const TooltipContent = React.forwardRef<
       <TooltipPrimitive.Popup
         ref={ref}
         className={cn(
-          "z-50 overflow-hidden rounded-md px-2.5 py-1.5 text-xs",
-          "bg-popover text-popover-foreground border border-border",
-          "[box-shadow:var(--shadow-l)]",
+          "z-50 overflow-hidden px-3 py-1.5 text-sm",
+          "rounded-full border border-white/10",
+          "backdrop-blur-2xl bg-white/[0.1]",
+          "text-popover-foreground",
+          "shadow-[0_4px_16px_oklch(0_0_0/0.4),inset_0_0_6px_oklch(1_0_0/0.08)]",
           "transition-[transform,translate,scale,opacity] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=top]:data-starting-style:translate-y-2",
           className,
         )}

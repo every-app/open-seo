@@ -4,31 +4,29 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/client/lib/utils";
 
-/*
- * Atelier Toggle: an understated pill; pressed state settles into the pale
- * mint wash with deep green text, like the reference's quiet highlights.
- */
-
 const toggleVariants = cva(
   [
     "inline-flex items-center justify-center gap-2 rounded-full text-sm font-medium",
-    "transition-[background-color,color,box-shadow] duration-150",
-    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
+    "transition-all duration-200",
+    "hover:bg-white/[0.08] hover:text-foreground",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
     "disabled:pointer-events-none disabled:opacity-50",
-    "hover:bg-secondary hover:text-foreground",
-    "data-pressed:bg-accent data-pressed:text-accent-foreground",
+    "data-pressed:bg-white/[0.1] data-pressed:text-foreground",
+    "data-pressed:shadow-[inset_0_0_8px_oklch(1_0_0/0.12)]",
   ].join(" "),
   {
     variants: {
       variant: {
         default: "bg-transparent text-muted-foreground",
         outline:
-          "border border-border bg-card text-foreground [box-shadow:var(--shadow-s)] hover:bg-secondary data-pressed:border-accent-foreground/20",
+          "border border-white/10 bg-transparent text-muted-foreground " +
+          "hover:border-white/[0.2] " +
+          "data-pressed:border-white/[0.2]",
       },
       size: {
-        default: "h-9 px-3",
         sm: "h-8 px-2.5",
-        lg: "h-10 px-4",
+        default: "h-10 px-3",
+        lg: "h-11 px-5",
       },
     },
     defaultVariants: {
@@ -48,7 +46,6 @@ const Toggle = React.forwardRef<
     {...props}
   />
 ));
-
 Toggle.displayName = "Toggle";
 
 export { Toggle, toggleVariants };
