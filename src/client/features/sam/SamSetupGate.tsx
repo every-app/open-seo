@@ -42,12 +42,21 @@ export function SamSetupGate({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <Button type="button" onClick={onRetry} disabled={isRefetching}>
+        {/* Narrow screens stack the two actions at one full width. */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Button
+            type="button"
+            className="w-full sm:w-auto"
+            onClick={onRetry}
+            disabled={isRefetching}
+          >
             {isRefetching ? "Confirming..." : "Confirm API Key"}
           </Button>
           <a
-            className={buttonVariants({ variant: "outline" })}
+            className={buttonVariants({
+              variant: "outline",
+              className: "w-full sm:w-auto",
+            })}
             href="https://openrouter.ai/settings/keys"
             target="_blank"
             rel="noreferrer"
