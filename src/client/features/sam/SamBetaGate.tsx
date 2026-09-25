@@ -1,5 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Sparkles } from "lucide-react";
+import { Sparkles } from "@/client/components/icons";
+
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 
 /**
  * Shown on the chat route until the user opts into Sam. Sam is the OpenSEO
@@ -10,12 +13,12 @@ import { Sparkles } from "lucide-react";
 export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
   return (
     <div className="flex h-full items-center justify-center overflow-auto px-4 py-8 md:px-6">
-      <div className="w-full max-w-lg rounded-2xl border border-base-300 bg-base-100 p-6 md:p-8">
-        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+      <Card className="w-full max-w-lg p-6 md:p-8">
+        <div className="flex size-10 items-center justify-center rounded-full bg-primary/10 text-link">
           <Sparkles className="size-5" />
         </div>
         <h2 className="mt-4 text-xl font-semibold">Sam is in beta</h2>
-        <div className="mt-3 space-y-3 text-sm leading-relaxed text-base-content/70">
+        <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">
           <p>
             Sam is the OpenSEO MCP and skills wrapped in a chat window. The
             agent you already use, like Claude Code, ChatGPT, Grok Bot, or
@@ -25,14 +28,14 @@ export function SamBetaGate({ onContinue }: { onContinue: () => void }) {
           <p>You can still use Sam, but it is early and has rough edges.</p>
         </div>
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link to="/ai" className="btn btn-primary">
+          <Link to="/ai" className={buttonVariants()}>
             Set up your agent
           </Link>
-          <button type="button" className="btn btn-ghost" onClick={onContinue}>
+          <Button variant="ghost" type="button" onClick={onContinue}>
             Use Sam anyway
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

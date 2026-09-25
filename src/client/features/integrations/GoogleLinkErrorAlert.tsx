@@ -1,5 +1,5 @@
 import * as React from "react";
-import { X } from "lucide-react";
+import { X } from "@/client/components/icons";
 import { googleAuthErrorCopy } from "./googleAuthErrorCopy";
 import {
   clearGoogleLinkError,
@@ -7,6 +7,14 @@ import {
   reportGoogleLinkErrorOnce,
   type GoogleLinkProvider,
 } from "./googleLinkError";
+
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+} from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { cn } from "@/client/lib/utils";
 
 const PROVIDER_LABELS: Record<GoogleLinkProvider, string> = {
   gsc: "Search Console",
@@ -39,25 +47,29 @@ export function GoogleLinkErrorAlert({
   const copy = googleAuthErrorCopy(error.code, PROVIDER_LABELS[provider]);
 
   return (
-    <div
-      role="alert"
-      className={`flex items-start justify-between gap-3 rounded-lg border border-error/30 bg-error/10 p-3.5 text-sm ${className ?? ""}`}
+    <Alert
+      variant="destructive"
+      className={cn("flex items-start justify-between gap-3", className)}
     >
-      <div className="space-y-1">
-        <p className="font-semibold text-error">{copy.title}</p>
-        <p className="text-base-content/70">{copy.description}</p>
+      <div>
+        <AlertTitle className="font-semibold">{copy.title}</AlertTitle>
+        <AlertDescription className="text-muted-foreground">
+          {copy.description}
+        </AlertDescription>
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
         aria-label="Dismiss"
-        className="btn btn-ghost btn-xs shrink-0 px-1.5"
+        className="size-7 shrink-0"
         onClick={() => {
           setDismissed(true);
           clearGoogleLinkError();
         }}
       >
         <X className="size-3.5" />
-      </button>
-    </div>
+      </Button>
+    </Alert>
   );
 }

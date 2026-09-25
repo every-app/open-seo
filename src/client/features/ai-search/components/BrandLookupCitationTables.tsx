@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createColumnHelper, type Table } from "@tanstack/react-table";
 import { Link } from "@tanstack/react-router";
-import { ExternalLink, Sparkles } from "lucide-react";
+import { ExternalLink, Sparkles } from "@/client/components/icons";
 import { AppDataTable } from "@/client/components/table/AppDataTable";
 import { SortableHeader } from "@/client/components/table/SortableHeader";
 import { HeaderHelpLabel } from "@/client/features/keywords/components";
@@ -14,6 +14,13 @@ import {
 import { formatUrlForDisplay } from "@/client/components/table/url";
 import type { BrandLookupResult } from "@/types/schemas/ai-search";
 
+import { badgeVariants } from "@/client/components/ui/badge";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/client/components/ui/tooltip";
 type TopPageRow = BrandLookupResult["topPages"][number];
 type TopQueryRow = BrandLookupResult["topQueries"][number];
 type PlatformKey = TopPageRow["platform"];
@@ -43,7 +50,7 @@ const PLATFORM_HELP =
  */
 function PlatformCell({ platform }: { platform: PlatformKey }) {
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-base-content/70">
+    <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
       <span
         className={`size-1.5 rounded-full ${PLATFORM_DOT_CLASS[platform]}`}
       />
@@ -99,16 +106,16 @@ function PageUrlCell({
       className="group block max-w-xl"
     >
       <span className="inline-flex items-center gap-1.5">
-        <span className="font-medium text-base-content group-hover:underline">
+        <span className="font-medium text-foreground group-hover:underline">
           {row.domain ?? formatUrlForDisplay(row.url)}
         </span>
         {isOwn ? (
-          <span className="badge badge-primary badge-xs border-0">You</span>
+          <span className={badgeVariants({ variant: "primary" })}>You</span>
         ) : null}
-        <ExternalLink className="size-3 shrink-0 text-base-content/40" />
+        <ExternalLink className="size-3 shrink-0 text-muted-foreground" />
       </span>
       {path ? (
-        <span className="block truncate text-xs text-base-content/50">
+        <span className="block truncate text-xs text-muted-foreground">
           {path}
         </span>
       ) : null}
@@ -133,7 +140,7 @@ function KeywordsCell({
   const [expanded, setExpanded] = useState(false);
 
   if (keywords.length === 0) {
-    return <span className="text-base-content/40">—</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
 
   const visible = expanded ? keywords : keywords.slice(0, 3);
@@ -151,11 +158,11 @@ function KeywordsCell({
               className="group/kw inline-flex items-baseline gap-2 text-xs"
               title="Run this prompt in Prompt Explorer"
             >
-              <span className="text-base-content/80 group-hover/kw:underline">
+              <span className="text-foreground group-hover/kw:underline">
                 {keyword.question}
               </span>
               <span
-                className="shrink-0 tabular-nums text-base-content/40"
+                className="shrink-0 tabular-nums text-muted-foreground"
                 title="Prompt volume in the fetched sample"
               >
                 {formatCount(keyword.aiSearchVolume)} vol.
@@ -165,13 +172,13 @@ function KeywordsCell({
         ))}
       </ul>
       {keywords.length > 3 ? (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
           onClick={() => setExpanded((current) => !current)}
-          className="text-xs text-base-content/50 hover:text-base-content"
+          className="h-auto rounded-md px-0 hover:bg-transparent text-xs text-muted-foreground hover:text-foreground"
         >
           {expanded ? "Show less" : `+${remaining} more`}
-        </button>
+        </Button>
       ) : null}
     </div>
   );
@@ -275,7 +282,7 @@ export function buildTopQueriesColumns({
         <>
           <p className="break-words font-medium">{row.original.question}</p>
           {row.original.brandsMentioned.length > 0 ? (
-            <p className="mt-0.5 text-xs text-base-content/50">
+            <p className="mt-0.5 text-xs text-muted-foreground">
               Brands: {row.original.brandsMentioned.slice(0, 5).join(", ")}
             </p>
           ) : null}
@@ -315,20 +322,30 @@ export function buildTopQueriesColumns({
       header: () => <span className="sr-only">Actions</span>,
       meta: { cellClassName: "w-px whitespace-nowrap text-right align-top" },
       cell: ({ row }) => (
-        <span
-          className="tooltip tooltip-left opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
-          data-tip="Run this prompt in Prompt Explorer"
-        >
-          <Link
-            to="/p/$projectId/prompt-explorer"
-            params={{ projectId }}
-            search={{ q: row.original.question, hb: brand || undefined }}
-            className="btn btn-ghost btn-xs gap-1"
-            aria-label="Run this prompt in Prompt Explorer"
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span className="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100" />
+            }
           >
-            <Sparkles className="size-3.5" />
-          </Link>
-        </span>
+            <Link
+              to="/p/$projectId/prompt-explorer"
+              params={{ projectId }}
+              search={{ q: row.original.question, hb: brand || undefined }}
+              className={buttonVariants({
+                variant: "ghost",
+                size: "sm",
+                className: "h-7 px-2.5 gap-1",
+              })}
+              aria-label="Run this prompt in Prompt Explorer"
+            >
+              <Sparkles className="size-3.5" />
+            </Link>
+          </TooltipTrigger>
+          <TooltipContent side="left" className="max-w-64">
+            Run this prompt in Prompt Explorer
+          </TooltipContent>
+        </Tooltip>
       ),
     }),
   ];
@@ -343,7 +360,7 @@ export function TopPagesTable({
 }) {
   if (table.getRowModel().rows.length === 0) {
     return (
-      <p className="p-6 text-center text-sm text-base-content/60">
+      <p className="p-6 text-center text-sm text-muted-foreground">
         {emptyMessage}
       </p>
     );
@@ -361,7 +378,7 @@ export function TopQueriesTable({
 }) {
   if (table.getRowModel().rows.length === 0) {
     return (
-      <p className="p-6 text-center text-sm text-base-content/60">
+      <p className="p-6 text-center text-sm text-muted-foreground">
         {emptyMessage}
       </p>
     );
@@ -380,7 +397,7 @@ function BrandLookupTable<T>({
   return (
     <AppDataTable
       table={table}
-      getRowClassName={() => "group transition-colors hover:bg-base-200/40"}
+      getRowClassName={() => "group transition-colors hover:bg-muted/40"}
       getCellClassName={(_, columnId) =>
         cellClassName(
           columnId,

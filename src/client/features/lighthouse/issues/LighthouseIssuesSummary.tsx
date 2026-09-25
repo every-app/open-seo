@@ -24,16 +24,16 @@ export function LighthouseIssuesSummary({
         </div>
       ) : null}
       {metricItems.length > 0 ? (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 rounded-box border border-base-300 bg-base-200/25 px-4 py-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 rounded-xl border border-border bg-muted/25 px-4 py-3">
           {metricItems.map((metric) => (
             <div
               key={metric.label}
               className="flex items-baseline justify-between gap-2 py-1"
             >
-              <span className="text-xs text-base-content/50 uppercase tracking-wide">
+              <span className="text-xs text-muted-foreground uppercase tracking-wide">
                 {metric.label}
               </span>
-              <span className="text-sm font-semibold tabular-nums text-base-content">
+              <span className="text-sm font-semibold tabular-nums text-foreground">
                 {metric.value}
               </span>
             </div>
@@ -45,17 +45,17 @@ export function LighthouseIssuesSummary({
 }
 
 function scoreColor(score: number | null) {
-  if (score == null) return "text-base-content/40";
+  if (score == null) return "text-muted-foreground";
   if (score >= 90) return "text-success";
   if (score >= 50) return "text-warning";
-  return "text-error";
+  return "text-negative";
 }
 
 function scoreStrokeColor(score: number | null) {
-  if (score == null) return "stroke-base-content/20";
+  if (score == null) return "stroke-muted-foreground/70";
   if (score >= 90) return "stroke-success";
   if (score >= 50) return "stroke-warning";
-  return "stroke-error";
+  return "stroke-destructive";
 }
 
 function ScoreGauge({ label, score }: { label: string; score: number | null }) {
@@ -74,7 +74,7 @@ function ScoreGauge({ label, score }: { label: string; score: number | null }) {
             r={radius}
             fill="none"
             strokeWidth="4"
-            className="stroke-base-300/60"
+            className="stroke-border/60"
           />
           {score != null ? (
             <circle
@@ -95,7 +95,7 @@ function ScoreGauge({ label, score }: { label: string; score: number | null }) {
           {score ?? "-"}
         </span>
       </div>
-      <span className="text-[11px] text-base-content/55 text-center leading-tight">
+      <span className="text-[0.6875rem] text-muted-foreground text-center leading-tight">
         {label}
       </span>
     </div>

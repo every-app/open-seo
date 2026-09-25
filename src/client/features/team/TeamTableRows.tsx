@@ -1,6 +1,10 @@
-import { Send, Trash2 } from "lucide-react";
+import { Send, Trash2 } from "@/client/components/icons";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { hasOrgPermission } from "@/lib/org-permissions";
+
+import { Badge } from "@/client/components/ui/badge";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
+import { TableCell, TableRow } from "@/client/components/ui/table";
 
 const ROLE_LABELS: Record<string, string> = {
   owner: "Owner",
@@ -52,55 +56,51 @@ export function MemberRow({
   const canRemove = canManageTeam && !isSelf && (!memberIsOwner || isOwner);
 
   return (
-    <tr className="hover">
-      <td className="max-w-[280px]">
+    <TableRow>
+      <TableCell className="max-w-[17.5rem]">
         <p className="truncate font-medium" data-ph-mask>
           {member.user.name || member.user.email}
           {isSelf ? (
-            <span className="font-normal text-base-content/50"> (you)</span>
+            <span className="font-normal text-muted-foreground"> (you)</span>
           ) : null}
         </p>
-        <p className="truncate text-xs text-base-content/50" data-ph-mask>
+        <p className="truncate text-xs text-muted-foreground" data-ph-mask>
           {member.user.email}
         </p>
-      </td>
-      <td>
-        <span className="badge badge-ghost badge-sm">
-          {formatRole(member.role)}
-        </span>
-      </td>
-      <td className="text-xs text-base-content/70">Active</td>
-      <td>
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary">{formatRole(member.role)}</Badge>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">Active</TableCell>
+      <TableCell>
         {canRemove ? (
           <PortalMenu
             ariaLabel={`Actions for ${member.user.email}`}
             menuClassName="w-52"
           >
             {(close) => (
-              <li>
-                <button
-                  className="text-error"
-                  disabled={isRemoving}
-                  onClick={() => {
-                    close();
-                    if (
-                      window.confirm(
-                        `Remove ${member.user.email} from this organization? They lose access immediately.`,
-                      )
-                    ) {
-                      onRemove();
-                    }
-                  }}
-                >
-                  <Trash2 className="size-3.5" />
-                  Remove member
-                </button>
-              </li>
+              <DropdownMenuItem
+                className="text-negative"
+                disabled={isRemoving}
+                onClick={() => {
+                  close();
+                  if (
+                    window.confirm(
+                      `Remove ${member.user.email} from this organization? They lose access immediately.`,
+                    )
+                  ) {
+                    onRemove();
+                  }
+                }}
+              >
+                <Trash2 className="size-3.5" />
+                Remove member
+              </DropdownMenuItem>
             )}
           </PortalMenu>
         ) : null}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -120,22 +120,22 @@ export function InvitationRow({
   onCancel: () => void;
 }) {
   return (
-    <tr className="hover">
-      <td className="max-w-[280px]">
+    <TableRow>
+      <TableCell className="max-w-[17.5rem]">
         <p className="truncate font-medium" data-ph-mask>
           {invitation.email}
         </p>
-      </td>
-      <td>
-        <span className="badge badge-ghost badge-sm">
+      </TableCell>
+      <TableCell>
+        <Badge variant="secondary">
           {formatRole(invitation.role ?? "member")}
-        </span>
-      </td>
-      <td className="text-xs text-base-content/70">
+        </Badge>
+      </TableCell>
+      <TableCell className="text-xs text-muted-foreground">
         Invited &middot; expires{" "}
         {new Date(invitation.expiresAt).toLocaleDateString()}
-      </td>
-      <td>
+      </TableCell>
+      <TableCell>
         {canManageTeam ? (
           <PortalMenu
             ariaLabel={`Actions for the invitation to ${invitation.email}`}
@@ -143,36 +143,32 @@ export function InvitationRow({
           >
             {(close) => (
               <>
-                <li>
-                  <button
-                    disabled={isResending}
-                    onClick={() => {
-                      close();
-                      onResend();
-                    }}
-                  >
-                    <Send className="size-3.5" />
-                    Resend invitation
-                  </button>
-                </li>
-                <li>
-                  <button
-                    className="text-error"
-                    disabled={isCanceling}
-                    onClick={() => {
-                      close();
-                      onCancel();
-                    }}
-                  >
-                    <Trash2 className="size-3.5" />
-                    Cancel invitation
-                  </button>
-                </li>
+                <DropdownMenuItem
+                  disabled={isResending}
+                  onClick={() => {
+                    close();
+                    onResend();
+                  }}
+                >
+                  <Send className="size-3.5" />
+                  Resend invitation
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-negative"
+                  disabled={isCanceling}
+                  onClick={() => {
+                    close();
+                    onCancel();
+                  }}
+                >
+                  <Trash2 className="size-3.5" />
+                  Cancel invitation
+                </DropdownMenuItem>
               </>
             )}
           </PortalMenu>
         ) : null}
-      </td>
-    </tr>
+      </TableCell>
+    </TableRow>
   );
 }

@@ -22,6 +22,11 @@ import {
 } from "@/lib/auth-options";
 import { z } from "zod";
 
+import { Button } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const signUpSchema = z
   .object({
     name: z.string().trim(),
@@ -154,25 +159,25 @@ function SignUpPage() {
       footer={
         isHostedMode ? (
           showEmailForm ? (
-            <button
-              type="button"
-              className="text-sm text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+            <Button
+              variant="link"
+              className="h-auto p-0 text-sm text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
               onClick={() => {
                 setShowEmailForm(false);
                 google.clearError();
               }}
             >
               Back to signup
-            </button>
+            </Button>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm leading-relaxed text-base-content/60">
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 By signing up, you agree to our{" "}
                 <a
                   href="https://openseo.so/terms-and-conditions"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Terms
                 </a>{" "}
@@ -181,19 +186,19 @@ function SignUpPage() {
                   href="https://openseo.so/privacy"
                   target="_blank"
                   rel="noreferrer"
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Privacy Policy
                 </a>
                 .
               </p>
 
-              <p className="text-sm text-base-content/50">
+              <p className="text-sm text-muted-foreground">
                 Already have an account?{" "}
                 <Link
                   to="/sign-in"
                   search={getSignInSearch(redirectTo)}
-                  className="text-base-content underline underline-offset-2 hover:text-base-content/80 transition-colors"
+                  className="text-foreground underline underline-offset-2 hover:text-foreground transition-colors"
                 >
                   Sign in
                 </Link>
@@ -218,7 +223,7 @@ function SignUpPage() {
             }}
           />
           {google.error ? (
-            <p className="text-sm text-error">{google.error}</p>
+            <p className="text-sm text-negative">{google.error}</p>
           ) : null}
         </>
       ) : (
@@ -234,20 +239,22 @@ function SignUpPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-up-name">
+                    Name{" "}
+                    <span className="text-muted-foreground">(optional)</span>
+                  </Label>
+                  <Input
+                    id="sign-up-name"
                     type="text"
-                    className="input input-bordered w-full"
                     placeholder="Name (optional)..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
                     autoComplete="name"
                     disabled={!isHostedMode}
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -257,10 +264,11 @@ function SignUpPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-up-email">Email</Label>
+                  <Input
+                    id="sign-up-email"
                     type="email"
-                    className="input input-bordered w-full"
                     placeholder="Email address..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -268,10 +276,8 @@ function SignUpPage() {
                     disabled={!isHostedMode}
                     required
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -281,10 +287,11 @@ function SignUpPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-up-password">Password</Label>
+                  <Input
+                    id="sign-up-password"
                     type="password"
-                    className="input input-bordered w-full"
                     placeholder="Password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -294,10 +301,8 @@ function SignUpPage() {
                     minLength={HOSTED_PASSWORD_MIN_LENGTH}
                     maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -307,10 +312,13 @@ function SignUpPage() {
               const error = getFieldError(field.state.meta.errors);
 
               return (
-                <div>
-                  <input
+                <Field>
+                  <Label htmlFor="sign-up-confirm-password">
+                    Confirm password
+                  </Label>
+                  <Input
+                    id="sign-up-confirm-password"
                     type="password"
-                    className="input input-bordered w-full"
                     placeholder="Confirm password..."
                     value={field.state.value}
                     onChange={(event) => field.handleChange(event.target.value)}
@@ -320,10 +328,8 @@ function SignUpPage() {
                     minLength={HOSTED_PASSWORD_MIN_LENGTH}
                     maxLength={HOSTED_PASSWORD_MAX_LENGTH}
                   />
-                  {error ? (
-                    <p className="mt-1 text-sm text-error">{error}</p>
-                  ) : null}
-                </div>
+                  {error ? <FieldError>{error}</FieldError> : null}
+                </Field>
               );
             }}
           </form.Field>
@@ -346,10 +352,11 @@ function SignUpPage() {
               return (
                 <>
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={
                       !isHostedMode ||
                       isSubmitting ||
@@ -357,7 +364,7 @@ function SignUpPage() {
                     }
                   >
                     {isSubmitting ? "Creating account..." : "Create account"}
-                  </button>
+                  </Button>
                 </>
               );
             }}

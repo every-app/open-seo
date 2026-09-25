@@ -17,6 +17,16 @@ import {
   type MutableRefObject,
   type ReactNode,
 } from "react";
+import { Checkbox } from "@/client/components/ui/checkbox";
+import {
+  Table as TableRoot,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { cn } from "@/client/lib/utils";
 import {
   applyShiftRangeSelection,
   type SelectionAnchor,
@@ -68,11 +78,9 @@ export function makeSelectionColumn<TData>(
     size: 32,
     enableSorting: false,
     header: ({ table }) => (
-      <input
-        type="checkbox"
-        className="checkbox checkbox-xs [--radius-selector:0.25rem]"
+      <Checkbox
         checked={table.getIsAllRowsSelected()}
-        onChange={table.getToggleAllRowsSelectedHandler()}
+        onCheckedChange={(checked) => table.toggleAllRowsSelected(checked)}
         aria-label="Select all rows"
       />
     ),
@@ -93,9 +101,7 @@ function SelectionCheckbox<TData>({
 }) {
   const rangeHandledRef = useRef(false);
   return (
-    <input
-      type="checkbox"
-      className="checkbox checkbox-xs [--radius-selector:0.25rem]"
+    <Checkbox
       checked={row.getIsSelected()}
       aria-label="Select row"
       onClick={(event) => {
@@ -107,20 +113,28 @@ function SelectionCheckbox<TData>({
           anchorRef,
         );
       }}
-      onChange={(event) => {
+      onCheckedChange={(checked) => {
         if (rangeHandledRef.current) {
           rangeHandledRef.current = false;
           return;
         }
-        row.getToggleSelectedHandler()(event);
+        row.toggleSelected(checked);
       }}
     />
   );
 }
 
+// Row density for the Halo Table: compact data grids use xs.
+const DENSITY = {
+  sm: "[&_td]:px-3 [&_td]:py-2 [&_th]:h-9",
+  xs: "text-xs [&_td]:px-2 [&_td]:py-1.5 [&_th]:h-8 [&_th]:px-2",
+};
+
 export function AppDataTable<TData>({
   table,
-  className = "table table-sm",
+  className,
+  density = "sm",
+  striped,
   wrapperClassName = "overflow-x-auto",
   empty,
   isLoading,
@@ -133,6 +147,8 @@ export function AppDataTable<TData>({
 }: {
   table: Table<TData>;
   className?: string;
+  density?: keyof typeof DENSITY;
+  striped?: boolean;
   wrapperClassName?: string;
   empty?: ReactNode;
   isLoading?: boolean;
@@ -150,70 +166,70 @@ export function AppDataTable<TData>({
   if (table.getRowModel().rows.length === 0 && empty) return <>{empty}</>;
 
   return (
-    <div className={wrapperClassName}>
-      <table
-        className={className}
-        style={fixedLayout ? { tableLayout: "fixed" } : undefined}
-      >
-        {fixedLayout ? (
-          <colgroup>
-            {table.getVisibleLeafColumns().map((column) => (
-              <col key={column.id} style={{ width: column.getSize() }} />
-            ))}
-          </colgroup>
-        ) : null}
-        <thead>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <tr key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <HeaderCell
-                  key={header.id}
-                  header={header}
-                  fixedLayout={fixedLayout}
-                  stickyHeader={stickyHeader}
-                />
-              ))}
-            </tr>
+    <TableRoot
+      containerClassName={wrapperClassName}
+      className={cn(
+        DENSITY[density],
+        striped && "[&_tbody_tr:nth-child(even)]:bg-muted/40",
+        className,
+      )}
+      style={fixedLayout ? { tableLayout: "fixed" } : undefined}
+    >
+      {fixedLayout ? (
+        <colgroup>
+          {table.getVisibleLeafColumns().map((column) => (
+            <col key={column.id} style={{ width: column.getSize() }} />
           ))}
-        </thead>
-        <tbody>
-          {table.getRowModel().rows.map((row) => {
-            const rowProps = getRowProps?.(row);
-            return (
-              <tr
-                key={row.id}
-                onClick={rowProps?.onClick}
-                className={[getRowClassName?.(row), rowProps?.className]
-                  .filter(Boolean)
-                  .join(" ")}
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const metaClass = cell.column.columnDef.meta?.cellClassName;
-                  return (
-                    <td
-                      key={cell.id}
-                      className={[
-                        typeof metaClass === "function"
-                          ? metaClass(row)
-                          : metaClass,
-                        getCellClassName?.(row, cell.column.id),
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+        </colgroup>
+      ) : null}
+      <TableHeader>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <TableRow key={headerGroup.id}>
+            {headerGroup.headers.map((header) => (
+              <HeaderCell
+                key={header.id}
+                header={header}
+                fixedLayout={fixedLayout}
+                stickyHeader={stickyHeader}
+              />
+            ))}
+          </TableRow>
+        ))}
+      </TableHeader>
+      <TableBody>
+        {table.getRowModel().rows.map((row) => {
+          const rowProps = getRowProps?.(row);
+          return (
+            <TableRow
+              key={row.id}
+              onClick={rowProps?.onClick}
+              className={[getRowClassName?.(row), rowProps?.className]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              {row.getVisibleCells().map((cell) => {
+                const metaClass = cell.column.columnDef.meta?.cellClassName;
+                return (
+                  <TableCell
+                    key={cell.id}
+                    className={[
+                      typeof metaClass === "function"
+                        ? metaClass(row)
+                        : metaClass,
+                      getCellClassName?.(row, cell.column.id),
+                    ]
+                      .filter(Boolean)
+                      .join(" ")}
+                  >
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </TableRoot>
   );
 }
 
@@ -228,18 +244,17 @@ function HeaderCell<TData>({
 }) {
   const meta = header.column.columnDef.meta;
   return (
-    <th
-      className={[
-        stickyHeader ? "bg-base-200" : undefined,
+    <TableHead
+      className={cn(
+        // Near-opaque, so scrolled rows don't show through the pinned header.
+        stickyHeader && "sticky top-0 z-10 bg-popover backdrop-blur-xl",
         meta?.headerClassName,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+      )}
       style={fixedLayout ? { width: header.getSize() } : undefined}
     >
       {header.isPlaceholder
         ? null
         : flexRender(header.column.columnDef.header, header.getContext())}
-    </th>
+    </TableHead>
   );
 }

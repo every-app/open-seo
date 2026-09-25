@@ -1,4 +1,4 @@
-import { Copy, FileDown, Sheet, Tags, Trash2 } from "lucide-react";
+import { Copy, FileDown, Sheet, Tags, Trash2 } from "@/client/components/icons";
 import {
   TableBulkActionBar,
   TableBulkActionButton,
@@ -63,7 +63,7 @@ export function SavedKeywordsBulkActionBar({
             />
           </div>
 
-          <div className="flex items-center border-l border-base-content/10 px-1.5">
+          <div className="flex items-center border-l border-foreground/10 px-1.5">
             <TableBulkActionButton
               icon={<Trash2 className="size-3.5" />}
               onClick={onDelete}

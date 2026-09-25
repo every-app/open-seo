@@ -1,7 +1,16 @@
 import { useMemo } from "react";
-import { Loader2 } from "lucide-react";
 import { sort } from "remeda";
 import type { RankPositionMatrixCell } from "@/serverFunctions/rank-tracking";
+
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
 
 /**
  * "By date" view: keyword rows × recent check columns, each cell the position
@@ -22,61 +31,61 @@ export function RankTrackingHistoryMatrix({
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Loader2 className="size-5 animate-spin text-base-content/50" />
+        <Spinner />
       </div>
     );
   }
 
   if (runs.length === 0 || keywords.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-base-300 p-10 text-center text-sm text-base-content/55">
+      <div className="rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted-foreground">
         No history yet. Run a check to start building the timeline.
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-base-300">
-      <table className="table table-sm">
-        <thead>
-          <tr>
-            {/* Unconstrained keyword column absorbs the slack when only a few
-                check columns exist, so sparse history doesn't stretch oddly. */}
-            <th className="sticky left-0 z-10 bg-base-100 w-full">Keyword</th>
-            {runs.map((r) => (
-              <th
-                key={r.runId}
-                className="w-24 whitespace-nowrap text-right text-xs font-medium text-base-content/60"
-              >
-                {formatDate(r.checkedAt)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {keywords.map((kw) => {
-            const byRun = cellByKeyword.get(kw.trackingKeywordId);
-            return (
-              <tr key={kw.trackingKeywordId}>
-                <td className="sticky left-0 z-10 bg-base-100 whitespace-nowrap font-medium">
-                  {kw.keyword}
-                </td>
-                {runs.map((r, i) => {
-                  const position = byRun?.get(r.runId) ?? null;
-                  const previous =
-                    i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
-                  return (
-                    <td key={r.runId} className="text-right">
-                      <MatrixCell position={position} previous={previous} />
-                    </td>
-                  );
-                })}
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          {/* Unconstrained keyword column absorbs the slack when only a few
+              check columns exist, so sparse history doesn't stretch oddly. */}
+          <TableHead className="sticky left-0 z-10 w-full bg-popover">
+            Keyword
+          </TableHead>
+          {runs.map((r) => (
+            <TableHead
+              key={r.runId}
+              className="w-24 whitespace-nowrap text-right text-xs font-medium text-muted-foreground"
+            >
+              {formatDate(r.checkedAt)}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {keywords.map((kw) => {
+          const byRun = cellByKeyword.get(kw.trackingKeywordId);
+          return (
+            <TableRow key={kw.trackingKeywordId}>
+              <TableCell className="sticky left-0 z-10 whitespace-nowrap bg-popover font-medium">
+                {kw.keyword}
+              </TableCell>
+              {runs.map((r, i) => {
+                const position = byRun?.get(r.runId) ?? null;
+                const previous =
+                  i > 0 ? (byRun?.get(runs[i - 1].runId) ?? null) : undefined;
+                return (
+                  <TableCell key={r.runId} className="text-right">
+                    <MatrixCell position={position} previous={previous} />
+                  </TableCell>
+                );
+              })}
+            </TableRow>
+          );
+        })}
+      </TableBody>
+    </Table>
   );
 }
 
@@ -88,7 +97,7 @@ function MatrixCell({
   previous: number | null | undefined;
 }) {
   if (position === null) {
-    return <span className="text-base-content/30">—</span>;
+    return <span className="text-muted-foreground">—</span>;
   }
   // Only show a change arrow when both checks ranked (no subtracting through a
   // null, matching the rest of the rank-tracking UI).

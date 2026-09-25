@@ -6,6 +6,8 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { authClient, signOutAndRedirect, useSession } from "@/lib/auth-client";
 import { isHostedClientAuthMode } from "@/lib/auth-mode";
 
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
 export const Route = createFileRoute("/accept-invitation/$id")({
   beforeLoad: () => {
     if (!isHostedClientAuthMode()) {
@@ -38,7 +40,7 @@ function SignedOutInvitationCard({ invitationId }: { invitationId: string }) {
 
   return (
     <AuthPageCard title="You&rsquo;re invited">
-      <p className="text-sm text-base-content/70">
+      <p className="text-sm text-muted-foreground">
         You&rsquo;ve been invited to join an organization on OpenSEO. Sign in
         with the email address that received the invitation to accept it.
       </p>
@@ -46,14 +48,14 @@ function SignedOutInvitationCard({ invitationId }: { invitationId: string }) {
         <Link
           to="/sign-up"
           search={{ redirect }}
-          className="btn btn-soft w-full"
+          className={buttonVariants({ className: "w-full" })}
         >
           Create account
         </Link>
         <Link
           to="/sign-in"
           search={{ redirect }}
-          className="btn btn-ghost w-full"
+          className={buttonVariants({ variant: "ghost", className: "w-full" })}
         >
           Sign in
         </Link>
@@ -144,7 +146,7 @@ function InvitationCard({
     return (
       <AuthPageCard title="Checking invitation...">
         <div className="flex justify-center py-4">
-          <span className="loading loading-spinner loading-md" />
+          <Spinner />
         </div>
       </AuthPageCard>
     );
@@ -153,7 +155,7 @@ function InvitationCard({
   if (invitationQuery.isError) {
     return (
       <AuthPageCard title="Invitation unavailable">
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           This invitation may have expired, been canceled, or belong to a
           different email address. You&rsquo;re signed in as{" "}
           <span className="font-medium" data-ph-mask>
@@ -161,14 +163,15 @@ function InvitationCard({
           </span>
           .
         </p>
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           If the invitation was sent to another address, sign out and sign back
           in with that email. Otherwise ask your teammate to send a new invite.
         </p>
         <div className="space-y-2">
-          <button
+          <Button
+            variant="secondary"
             type="button"
-            className="btn btn-soft w-full"
+            className="w-full"
             onClick={() => {
               // Signs out, then lands on sign-in with a redirect back to this
               // invitation (staying signed in would bounce straight back here).
@@ -176,8 +179,14 @@ function InvitationCard({
             }}
           >
             Use a different account
-          </button>
-          <Link to="/" className="btn btn-ghost w-full">
+          </Button>
+          <Link
+            to="/"
+            className={buttonVariants({
+              variant: "ghost",
+              className: "w-full",
+            })}
+          >
             Go to dashboard
           </Link>
         </div>
@@ -188,14 +197,17 @@ function InvitationCard({
   if (declined) {
     return (
       <AuthPageCard title="Invitation declined">
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           You declined the invitation to join{" "}
           <span className="font-medium">
             {invitationQuery.data.organizationName}
           </span>
           .
         </p>
-        <Link to="/" className="btn btn-ghost w-full">
+        <Link
+          to="/"
+          className={buttonVariants({ variant: "ghost", className: "w-full" })}
+        >
           Go to dashboard
         </Link>
       </AuthPageCard>
@@ -204,7 +216,7 @@ function InvitationCard({
 
   return (
     <AuthPageCard title="Join organization">
-      <p className="text-sm text-base-content/70">
+      <p className="text-sm text-muted-foreground">
         <span className="font-medium" data-ph-mask>
           {invitationQuery.data.inviterEmail}
         </span>{" "}
@@ -214,24 +226,27 @@ function InvitationCard({
         </span>{" "}
         on OpenSEO.
       </p>
-      {actionError ? <p className="text-sm text-error">{actionError}</p> : null}
+      {actionError ? (
+        <p className="text-sm text-negative">{actionError}</p>
+      ) : null}
       <div className="space-y-2">
-        <button
+        <Button
           type="button"
-          className="btn btn-soft w-full"
+          className="w-full"
           disabled={isSubmitting}
           onClick={() => void handleAccept()}
         >
           {isSubmitting ? "Joining..." : "Accept invitation"}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
           type="button"
-          className="btn btn-ghost w-full"
+          className="w-full"
           disabled={isSubmitting}
           onClick={() => void handleDecline()}
         >
           Decline
-        </button>
+        </Button>
       </div>
     </AuthPageCard>
   );

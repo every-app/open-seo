@@ -6,7 +6,7 @@ import {
   Info,
   Sheet,
   TriangleAlert,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import type {
   CategoryTab,
@@ -20,6 +20,22 @@ import { LighthouseIssuesSummary } from "./LighthouseIssuesSummary";
 import { categoryLabel } from "./utils";
 import { categoryTabs } from "./types";
 
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import {
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "@/client/components/ui/dropdown-menu";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 export function LighthouseIssuesHeader({
   backLabel,
   onBack,
@@ -40,41 +56,41 @@ export function LighthouseIssuesHeader({
   return (
     <>
       <div className="flex items-center justify-between gap-3">
-        <button className="btn btn-ghost btn-sm px-2" onClick={onBack}>
+        <Button variant="ghost" size="sm" className="px-2" onClick={onBack}>
           &larr; Back to {backLabel}
-        </button>
-        <span className="text-xs text-base-content/60">
+        </Button>
+        <span className="text-xs text-muted-foreground">
           {scannedAt
             ? `Scanned ${new Date(scannedAt).toLocaleString()}`
             : "Reading latest issues..."}
         </span>
       </div>
 
-      <div className="card bg-base-100 border border-base-300">
-        <div className="card-body py-5 gap-4">
+      <Card>
+        <CardContent className="space-y-4 py-5">
           <div className="space-y-1">
             <h1 className="text-2xl font-semibold">Lighthouse Issues</h1>
-            <p className="text-sm text-base-content/70 break-all">
+            <p className="text-sm text-muted-foreground break-all">
               {finalUrl ?? "Loading URL..."}
             </p>
           </div>
           <LighthouseIssuesSummary scores={scores} metrics={metrics} />
           <div className="flex flex-wrap gap-2 text-xs">
-            <span className="badge border border-error/30 bg-error/10 text-error/80 gap-1">
+            <Badge variant="destructive" className="gap-1">
               <FileWarning className="size-3" />
               Critical {severityCounts.critical}
-            </span>
-            <span className="badge border border-warning/30 bg-warning/10 text-warning/80 gap-1">
+            </Badge>
+            <Badge variant="warning" className="gap-1">
               <TriangleAlert className="size-3" />
               Warning {severityCounts.warning}
-            </span>
-            <span className="badge border border-info/30 bg-info/10 text-info/80 gap-1">
+            </Badge>
+            <Badge variant="secondary" className="gap-1 text-info">
               <Info className="size-3" />
               Info {severityCounts.info}
-            </span>
+            </Badge>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -113,7 +129,7 @@ export function LighthouseIssuesToolbar({
   const categoryLabelLower = selectedCategoryLabel.toLowerCase();
 
   return (
-    <div className="sticky top-0 z-[2] -mx-2 px-2 py-2 bg-base-100/95 backdrop-blur-sm border-b border-base-300/60">
+    <div className="sticky top-0 z-[2] -mx-2 px-2 py-2 bg-popover backdrop-blur-xl border-b border-border">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <CategoryTabs
           category={category}
@@ -146,24 +162,20 @@ function CategoryTabs({
   onCategoryChange: (next: CategoryTab) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-4">
-      {categoryTabs.map((tab) => (
-        <button
-          key={tab}
-          className={`pb-2 border-b-2 text-sm font-medium transition-colors ${
-            category === tab
-              ? "border-primary text-base-content"
-              : "border-transparent text-base-content/60 hover:text-base-content"
-          }`}
-          onClick={() => onCategoryChange(tab)}
-        >
-          <span>{categoryLabel(tab)}</span>
-          <span className="ml-1 text-xs opacity-70">
-            ({categoryCounts[tab]})
-          </span>
-        </button>
-      ))}
-    </div>
+    <Tabs value={category}>
+      <TabsList className="flex-wrap">
+        {categoryTabs.map((tab) => (
+          <TabsTrigger
+            key={tab}
+            value={tab}
+            onClick={() => onCategoryChange(tab)}
+          >
+            <span>{categoryLabel(tab)}</span>
+            <span className="ml-1 text-xs">({categoryCounts[tab]})</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }
 
@@ -194,7 +206,9 @@ function ExportMenu({
   return (
     <PortalMenu
       ariaLabel="Export Lighthouse issues"
-      triggerClassName="btn btn-sm gap-1"
+      triggerVariant="outline"
+      triggerSize="sm"
+      triggerClassName="gap-1"
       triggerContent={
         <>
           <Download className="size-4" />
@@ -202,15 +216,13 @@ function ExportMenu({
           <ChevronDown className="size-3 opacity-60" />
         </>
       }
-      menuClassName="w-72 max-h-[min(30rem,70vh)] flex-nowrap overflow-y-auto"
+      menuClassName="w-72 max-h-[min(30rem,70vh)] overflow-y-auto"
     >
       {(close) => (
         <>
-          <li className="menu-title">
-            <span>Export to Sheets</span>
-          </li>
-          <li>
-            <button
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Export to Sheets</DropdownMenuLabel>
+            <DropdownMenuItem
               disabled={!visibleIssues.length}
               onClick={() => {
                 close();
@@ -219,10 +231,8 @@ function ExportMenu({
             >
               <Sheet className="size-4" />
               Open in Sheets — {categoryLabelLower}
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={!allIssues.length}
               onClick={() => {
                 close();
@@ -231,13 +241,11 @@ function ExportMenu({
             >
               <Sheet className="size-4" />
               Open in Sheets — all actionable
-            </button>
-          </li>
-          <li className="menu-title">
-            <span>Copy</span>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Copy</DropdownMenuLabel>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -249,10 +257,8 @@ function ExportMenu({
             >
               <Copy className="size-4" />
               Copy {categoryLabelLower} issues
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -261,10 +267,8 @@ function ExportMenu({
             >
               <Copy className="size-4" />
               Copy all actionable issues
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -273,13 +277,11 @@ function ExportMenu({
             >
               <Copy className="size-4" />
               Copy saved Lighthouse payload
-            </button>
-          </li>
-          <li className="menu-title">
-            <span>Download JSON</span>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Download JSON</DropdownMenuLabel>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -287,10 +289,8 @@ function ExportMenu({
               }}
             >
               Download {categoryLabelLower} issues
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -298,10 +298,8 @@ function ExportMenu({
               }}
             >
               Download all actionable issues
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={isBusy}
               onClick={() => {
                 close();
@@ -309,13 +307,11 @@ function ExportMenu({
               }}
             >
               Download saved Lighthouse payload
-            </button>
-          </li>
-          <li className="menu-title">
-            <span>Download CSV</span>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+          <DropdownMenuGroup>
+            <DropdownMenuLabel>Download CSV</DropdownMenuLabel>
+            <DropdownMenuItem
               disabled={!visibleIssues.length}
               onClick={() => {
                 close();
@@ -323,10 +319,8 @@ function ExportMenu({
               }}
             >
               Download {categoryLabelLower} issues
-            </button>
-          </li>
-          <li>
-            <button
+            </DropdownMenuItem>
+            <DropdownMenuItem
               disabled={!allIssues.length}
               onClick={() => {
                 close();
@@ -334,8 +328,8 @@ function ExportMenu({
               }}
             >
               Download all actionable issues
-            </button>
-          </li>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </>
       )}
     </PortalMenu>
@@ -352,17 +346,17 @@ export function LighthouseIssueList({
   emptyMessage?: string;
 }) {
   if (isLoading) {
-    return <p className="text-sm text-base-content/60">Loading issues...</p>;
+    return <p className="text-sm text-muted-foreground">Loading issues...</p>;
   }
   if (!issues.length) {
     return (
-      <p className="text-sm text-base-content/60">
+      <p className="text-sm text-muted-foreground">
         {emptyMessage ?? "No actionable issues for this category."}
       </p>
     );
   }
   return (
-    <table className="table table-sm w-full table-fixed">
+    <Table className="w-full table-fixed">
       <colgroup>
         <col className="w-8" />
         <col className="w-24" />
@@ -371,26 +365,28 @@ export function LighthouseIssueList({
         <col className="w-28 hidden md:table-column" />
         <col className="w-14" />
       </colgroup>
-      <thead>
-        <tr className="text-xs text-base-content/50 uppercase tracking-wide border-b border-base-300">
-          <th />
-          <th className="font-medium">Severity</th>
-          <th className="font-medium">Issue</th>
-          <th className="font-medium hidden sm:table-cell">Category</th>
-          <th className="font-medium hidden md:table-cell text-right">
+      <TableHeader>
+        <TableRow className="text-xs text-muted-foreground uppercase tracking-wide">
+          <TableHead />
+          <TableHead className="font-medium">Severity</TableHead>
+          <TableHead className="font-medium">Issue</TableHead>
+          <TableHead className="font-medium hidden sm:table-cell">
+            Category
+          </TableHead>
+          <TableHead className="font-medium hidden md:table-cell text-right">
             Impact
-          </th>
-          <th className="font-medium text-right">Score</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-base-300/60">
+          </TableHead>
+          <TableHead className="font-medium text-right">Score</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
         {issues.map((issue, issueIndex) => (
           <LighthouseIssueRow
             key={`${issue.category}-${issue.auditKey}-${issueIndex}`}
             issue={issue}
           />
         ))}
-      </tbody>
-    </table>
+      </TableBody>
+    </Table>
   );
 }

@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useMutation } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/client/components/icons";
 import { z } from "zod";
 import { Modal } from "@/client/components/Modal";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
@@ -9,6 +9,10 @@ import { captureClientEvent } from "@/client/lib/posthog";
 import { saveReportTemplate } from "@/serverFunctions/reportTemplates";
 import type { ReportTemplate } from "@/types/schemas/report-templates";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Input } from "@/client/components/ui/input";
+import { Textarea } from "@/client/components/ui/textarea";
 // One form for create and edit. Shape only, as at every other boundary: the
 // caps come back from the service with their copy and show in the alert.
 const formSchema = z.object({
@@ -95,9 +99,9 @@ export function ReportTemplateForm({
               label="Name"
               error={getFieldError(field.state.meta.errors)}
             >
-              <input
+              <Input
                 type="text"
-                className="input input-bordered w-full"
+                className="w-full"
                 placeholder="Monthly client check-in"
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
@@ -113,9 +117,9 @@ export function ReportTemplateForm({
               hint="One line saying when to use it. This is what an agent reads to decide."
               error={getFieldError(field.state.meta.errors)}
             >
-              <input
+              <Input
                 type="text"
-                className="input input-bordered w-full"
+                className="w-full"
                 placeholder="The monthly update we send retainer clients."
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
@@ -131,8 +135,8 @@ export function ReportTemplateForm({
               hint="Brand voice for the whole project lives in Context › Writing preferences."
               error={getFieldError(field.state.meta.errors)}
             >
-              <textarea
-                className="textarea textarea-bordered h-56 w-full font-mono text-xs leading-relaxed"
+              <Textarea
+                className="h-56 w-full font-mono text-xs leading-relaxed"
                 placeholder={INSTRUCTIONS_PLACEHOLDER}
                 value={field.state.value}
                 onChange={(event) => field.handleChange(event.target.value)}
@@ -142,29 +146,26 @@ export function ReportTemplateForm({
         </form.Field>
 
         {error ? (
-          <div className="alert alert-error">
-            <span className="text-sm">{error}</span>
-          </div>
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
+          </Alert>
         ) : null}
 
         <div className="flex justify-end gap-2">
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={onClose}
-          >
+          <Button variant="ghost" size="sm" type="button" onClick={onClose}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             type="submit"
-            className="btn btn-primary btn-sm gap-1"
+            className="gap-1"
             disabled={saveMutation.isPending}
           >
             {saveMutation.isPending ? (
               <Loader2 className="size-3 animate-spin" />
             ) : null}
             {template ? "Save changes" : "Create template"}
-          </button>
+          </Button>
         </div>
       </form>
     </Modal>
@@ -187,8 +188,8 @@ function Labelled({
     <label className="block space-y-1.5">
       <span className="block text-sm font-medium">{label}</span>
       {children}
-      {hint ? <p className="text-xs text-base-content/60">{hint}</p> : null}
-      {error ? <p className="text-sm text-error">{error}</p> : null}
+      {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
+      {error ? <p className="text-sm text-negative">{error}</p> : null}
     </label>
   );
 }

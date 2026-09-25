@@ -2,8 +2,9 @@ import * as React from "react";
 
 export type ThemePreference = "system" | "light" | "dark";
 
-const LIGHT_THEME_NAME = "openseo";
-const DARK_THEME_NAME = "openseo-dark";
+// Halo reads the theme from a class and from data-theme on <html>.
+const LIGHT_THEME_NAME = "light";
+const DARK_THEME_NAME = "dark";
 
 const THEME_STORAGE_KEY = "theme-preference";
 const THEME_CHANGE_EVENT = "theme-preference-change";
@@ -55,10 +56,11 @@ function applyThemePreference(themePreference: ThemePreference) {
     return;
   }
 
-  document.documentElement.setAttribute(
-    "data-theme",
-    resolveThemeName(themePreference),
-  );
+  const theme = resolveThemeName(themePreference);
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  root.classList.remove(LIGHT_THEME_NAME, DARK_THEME_NAME);
+  root.classList.add(theme);
 }
 
 function subscribeToThemePreference(onStoreChange: () => void) {
@@ -126,8 +128,9 @@ export const themePreferenceInitScript = `(() => {
     if (p === "light") t = ${JSON.stringify(LIGHT_THEME_NAME)};
     else if (p === "dark") t = ${JSON.stringify(DARK_THEME_NAME)};
     else t = window.matchMedia("(prefers-color-scheme: dark)").matches ? ${JSON.stringify(DARK_THEME_NAME)} : ${JSON.stringify(LIGHT_THEME_NAME)};
-    document.documentElement.setAttribute("data-theme", t);
   } catch {
-    document.documentElement.setAttribute("data-theme", ${JSON.stringify(LIGHT_THEME_NAME)});
+    t = ${JSON.stringify(DARK_THEME_NAME)};
   }
+  document.documentElement.setAttribute("data-theme", t);
+  document.documentElement.classList.add(t);
 })();`;

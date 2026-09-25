@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
 
+import { Input } from "@/client/components/ui/input";
 function FilterFieldLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold uppercase tracking-wide text-base-content/60">
+    <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </span>
   );
@@ -20,10 +21,10 @@ export function FilterTextInput({
   placeholder: string;
 }) {
   return (
-    <label className="form-control gap-1.5">
+    <label className="flex flex-col gap-1.5">
       <FilterFieldLabel>{label}</FilterFieldLabel>
-      <input
-        className="input input-bordered input-sm w-full bg-base-100"
+      <Input
+        className="w-full h-8 text-sm"
         placeholder={placeholder}
         value={value}
         onChange={(event) => onChange(event.target.value)}
@@ -44,8 +45,8 @@ export function FilterNumberInput({
   step?: string;
 }) {
   return (
-    <input
-      className="input input-bordered input-xs bg-base-100"
+    <Input
+      className="h-8 text-sm"
       type="text"
       inputMode="decimal"
       step={step}
@@ -64,7 +65,7 @@ export function FilterRangeGroup({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-base-300 bg-base-100 p-2.5 space-y-2">
+    <div className="space-y-1.5">
       <FilterFieldLabel>{title}</FilterFieldLabel>
       <div className="grid grid-cols-2 gap-2">{children}</div>
     </div>

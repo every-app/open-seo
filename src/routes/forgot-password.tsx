@@ -11,6 +11,12 @@ import { isHostedClientAuthMode } from "@/lib/auth-mode";
 import { getSignInSearch, normalizeAuthRedirect } from "@/lib/auth-redirect";
 import { z } from "zod";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Field, FieldError } from "@/client/components/ui/field";
+import { Input } from "@/client/components/ui/input";
+import { Label } from "@/client/components/ui/label";
+
 const forgotPasswordSchema = z.object({
   email: z.string().trim().email("Enter a valid email address."),
 });
@@ -90,7 +96,7 @@ function ForgotPasswordPage() {
                   <Link
                     to="/sign-in"
                     search={getSignInSearch(redirectTo)}
-                    className="text-base-content/50 hover:text-base-content transition-colors"
+                    className="text-muted-foreground hover:text-foreground transition-colors"
                   >
                     Back to sign in
                   </Link>
@@ -98,12 +104,12 @@ function ForgotPasswordPage() {
               }
             >
               {isSuccess ? (
-                <div className="alert alert-success">
-                  <span>
+                <Alert className="border-success/40 [&>svg]:text-success">
+                  <AlertDescription>
                     If an account exists for that email, you'll receive password
                     reset instructions shortly.
-                  </span>
-                </div>
+                  </AlertDescription>
+                </Alert>
               ) : (
                 <form
                   className="space-y-4"
@@ -117,10 +123,11 @@ function ForgotPasswordPage() {
                       const error = getFieldError(field.state.meta.errors);
 
                       return (
-                        <div>
-                          <input
+                        <Field>
+                          <Label htmlFor="forgot-password-email">Email</Label>
+                          <Input
+                            id="forgot-password-email"
                             type="email"
-                            className="input input-bordered w-full"
                             placeholder="Email address..."
                             value={field.state.value}
                             onChange={(event) =>
@@ -130,23 +137,22 @@ function ForgotPasswordPage() {
                             disabled={!isHostedMode}
                             required
                           />
-                          {error ? (
-                            <p className="mt-1 text-sm text-error">{error}</p>
-                          ) : null}
-                        </div>
+                          {error ? <FieldError>{error}</FieldError> : null}
+                        </Field>
                       );
                     }}
                   </form.Field>
 
                   {errorMessage ? (
-                    <p className="text-sm text-error">{errorMessage}</p>
+                    <FieldError>{errorMessage}</FieldError>
                   ) : null}
-                  <button
-                    className="btn btn-soft w-full"
+                  <Button
+                    type="submit"
+                    className="w-full"
                     disabled={!isHostedMode || isSubmitting}
                   >
                     {isSubmitting ? "Sending reset link..." : "Send reset link"}
-                  </button>
+                  </Button>
                 </form>
               )}
             </AuthPageCard>

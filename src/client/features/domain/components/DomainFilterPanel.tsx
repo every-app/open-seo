@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { AlertTriangle, RotateCcw } from "lucide-react";
+import { AlertTriangle, RotateCcw } from "@/client/components/icons";
 import {
   FilterNumberInput,
   FilterRangeGroup,
@@ -16,6 +16,10 @@ import {
   useDomainRenderDebug,
 } from "@/client/features/domain/domainDebug";
 import { MAX_DATAFORSEO_FILTER_CONDITIONS } from "@/types/schemas/domain";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Badge } from "@/client/components/ui/badge";
+import { Button } from "@/client/components/ui/button";
 
 type FilterValues = Record<string, string>;
 
@@ -143,32 +147,30 @@ export function DomainFilterPanel<TValues extends FilterValues>({
 
   return (
     <div
-      className="border-b border-base-300 bg-gradient-to-b from-base-100 to-base-200/30 px-4 py-3 space-y-3"
+      className="border-b border-border bg-gradient-to-b from-card to-muted/30 px-4 py-3 space-y-3"
       onKeyDown={handleKeyDown}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold">Refine table results</p>
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount} active
-            </span>
+            <Badge variant="primary">{activeFilterCount} active</Badge>
           ) : null}
           {meta.dirtyCount > 0 ? (
-            <span className="badge badge-xs badge-warning border-0">
-              {meta.dirtyCount} unapplied
-            </span>
+            <Badge variant="warning">{meta.dirtyCount} unapplied</Badge>
           ) : null}
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-xs btn-ghost gap-1"
+          className="h-7 px-2.5 gap-1"
           onClick={resetFilters}
           disabled={activeFilterCount === 0 && !meta.isDirty}
         >
           <RotateCcw className="size-3" />
           Clear all
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -205,30 +207,31 @@ export function DomainFilterPanel<TValues extends FilterValues>({
       {renderExtra ? renderExtra(draftFilters, handleValueChange) : null}
 
       {meta.overLimit ? (
-        <div className="alert alert-warning py-2 text-xs">
+        <Alert variant="warning" className="text-xs">
           <AlertTriangle className="size-4 shrink-0" />
-          <span>
+          <AlertDescription>
             Too many filter conditions ({meta.conditionCount} of {maxConditions}{" "}
             max). Remove some terms or ranges before applying.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
       <div className="flex items-center justify-between gap-2 pt-1">
-        <span className="text-xs text-base-content/50 tabular-nums">
+        <span className="text-xs text-muted-foreground tabular-nums">
           {meta.conditionCount} / {maxConditions} conditions
         </span>
         <div className="flex items-center gap-2">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
-            className="btn btn-sm btn-ghost"
             onClick={cancelFilterEdits}
             disabled={!meta.isDirty}
           >
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
+            size="sm"
             type="button"
-            className="btn btn-sm btn-primary"
             onClick={applyFilters}
             disabled={!meta.isDirty || meta.overLimit}
             title={
@@ -239,11 +242,11 @@ export function DomainFilterPanel<TValues extends FilterValues>({
           >
             Apply filters
             {meta.isDirty ? (
-              <span className="badge badge-xs ml-1 border-0 bg-primary-content/20">
+              <Badge className="bg-primary-foreground/20 text-primary-foreground">
                 {meta.dirtyCount}
-              </span>
+              </Badge>
             ) : null}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

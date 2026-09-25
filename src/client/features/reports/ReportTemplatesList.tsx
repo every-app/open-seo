@@ -1,7 +1,17 @@
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "@/client/components/icons";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import type { ReportTemplate } from "@/types/schemas/report-templates";
+
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+import { DropdownMenuItem } from "@/client/components/ui/dropdown-menu";
 
 export function ReportTemplatesList({
   templates,
@@ -14,7 +24,7 @@ export function ReportTemplatesList({
 }) {
   if (templates.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed border-base-300 px-4 py-6 text-sm text-base-content/60">
+      <p className="rounded-lg border border-dashed border-border px-4 py-6 text-sm text-muted-foreground">
         No templates yet. A template is a reusable brief for a kind of report:
         who it is for, which sections it has, how it sounds.
       </p>
@@ -22,61 +32,55 @@ export function ReportTemplatesList({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border border-base-300">
-      <table className="table table-sm">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Description</th>
-            <th>Updated</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {templates.map((template) => (
-            <tr key={template.id}>
-              <td className="font-medium">{template.name}</td>
-              <td className="max-w-[420px] text-base-content/70">
-                {template.description}
-              </td>
-              <td className="whitespace-nowrap text-base-content/70">
-                {formatRelativeTime(template.updatedAt)}
-              </td>
-              <td className="w-10 text-right">
-                <PortalMenu ariaLabel={`Actions for ${template.name}`}>
-                  {(close) => (
-                    <>
-                      <li>
-                        <button
-                          onClick={() => {
-                            close();
-                            onEdit(template);
-                          }}
-                        >
-                          <Pencil className="size-3.5" />
-                          Edit
-                        </button>
-                      </li>
-                      <li>
-                        <button
-                          className="text-error"
-                          onClick={() => {
-                            close();
-                            onDelete(template);
-                          }}
-                        >
-                          <Trash2 className="size-3.5" />
-                          Delete
-                        </button>
-                      </li>
-                    </>
-                  )}
-                </PortalMenu>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>Name</TableHead>
+          <TableHead>Description</TableHead>
+          <TableHead>Updated</TableHead>
+          <TableHead></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {templates.map((template) => (
+          <TableRow key={template.id}>
+            <TableCell className="font-medium">{template.name}</TableCell>
+            <TableCell className="max-w-[26.25rem] text-muted-foreground">
+              {template.description}
+            </TableCell>
+            <TableCell className="whitespace-nowrap text-muted-foreground">
+              {formatRelativeTime(template.updatedAt)}
+            </TableCell>
+            <TableCell className="w-10 text-right">
+              <PortalMenu ariaLabel={`Actions for ${template.name}`}>
+                {(close) => (
+                  <>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        close();
+                        onEdit(template);
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="text-negative"
+                      onClick={() => {
+                        close();
+                        onDelete(template);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </PortalMenu>
+            </TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
   );
 }

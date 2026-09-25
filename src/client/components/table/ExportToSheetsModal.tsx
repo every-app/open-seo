@@ -1,12 +1,15 @@
 import { useEffect } from "react";
 import { useLocation } from "@tanstack/react-router";
-import { Check, ExternalLink, X } from "lucide-react";
+import { Check, ExternalLink, X } from "@/client/components/icons";
 import { Modal } from "@/client/components/Modal";
 import {
   closeExportToSheetsModal,
   openGoogleSheetsTab,
   useExportToSheetsModalState,
 } from "@/client/lib/exportToSheets";
+
+import { Button } from "@/client/components/ui/button";
+import { DialogDescription, DialogTitle } from "@/client/components/ui/dialog";
 
 export function ExportToSheetsModal() {
   const state = useExportToSheetsModalState();
@@ -35,36 +38,39 @@ export function ExportToSheetsModal() {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="inline-flex size-8 items-center justify-center rounded-full bg-success/15 text-success">
+          <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-success/15 text-success">
             <Check className="size-4" />
           </span>
-          <h3 id="export-to-sheets-title" className="text-base font-semibold">
+          <DialogTitle id="export-to-sheets-title" className="text-base">
             Copied {rowCount} row{rowCount === 1 ? "" : "s"} to your clipboard
-          </h3>
+          </DialogTitle>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           type="button"
-          className="btn btn-ghost btn-xs btn-square"
+          className="size-6 shrink-0"
           onClick={closeExportToSheetsModal}
           aria-label="Close"
         >
           <X className="size-4" />
-        </button>
+        </Button>
       </div>
 
-      <p className="text-sm text-base-content/75">
+      <DialogDescription>
         Open a new Google Sheet and paste to fill it.
-      </p>
+      </DialogDescription>
 
       <div className="flex justify-end">
-        <button
+        <Button
+          size="sm"
           type="button"
-          className="btn btn-primary btn-sm gap-1.5"
+          className="gap-1.5"
           onClick={handleOpenSheet}
         >
           Open new Google Sheet
           <ExternalLink className="size-3.5" />
-        </button>
+        </Button>
       </div>
     </Modal>
   );

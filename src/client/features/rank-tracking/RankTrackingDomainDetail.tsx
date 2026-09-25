@@ -7,7 +7,7 @@ import {
   getRankPositionMatrix,
   estimateRankCheckCost,
 } from "@/serverFunctions/rank-tracking";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft } from "@/client/components/icons";
 import { useSession } from "@/lib/auth-client";
 import { getCustomerPlanStatus } from "@/client/features/billing/plan-detection";
 import { captureClientEvent } from "@/client/lib/posthog";
@@ -40,6 +40,10 @@ import { CheckConfirmModal } from "./CheckConfirmModal";
 import { useMetricsRefresh } from "./useMetricsRefresh";
 import { useRankCheckTrigger } from "./useRankCheckTrigger";
 import { useRankRunPolling } from "./useRankRunPolling";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 
 function deviceVisibility(
   devices: RankTrackingConfig["devices"],
@@ -188,47 +192,49 @@ export function RankTrackingDomainDetail({
 
   return (
     <div className="space-y-3">
-      <button
-        className="btn btn-ghost btn-xs gap-1 -ml-2 text-base-content/60"
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 px-2.5 gap-1 -ml-2 text-muted-foreground"
         onClick={onBack}
       >
         <ArrowLeft className="size-3" />
         Back to domains
-      </button>
+      </Button>
 
       {config.lastSkipReason === "insufficient_credits" && (
-        <div className="alert alert-warning text-sm py-2">
+        <Alert variant="warning">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             Last scheduled check was skipped due to insufficient credits. Top up
             your balance to resume automatic tracking.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {latestRun?.maybeStale && (
-        <div className="alert alert-warning text-sm py-2">
+        <Alert variant="warning">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             This run may be unresponsive and will be cleaned up automatically.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       {latestRun?.status === "failed" && !isRunning && (
-        <div className="alert alert-error text-sm py-2">
+        <Alert variant="destructive">
           <AlertTriangle className="size-4" />
-          <span>
+          <AlertDescription>
             <span className="font-medium">Last check failed.</span>{" "}
             {latestRun.errorMessage}
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       )}
 
       <FreePlanAlert visible={isFreePlan} />
 
       {/* Results card */}
-      <div className="flex-1 flex flex-col min-w-0 border border-base-300 rounded-xl bg-base-100 overflow-hidden">
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {/* Domain header */}
         <RankTrackingDetailHeader
           config={config}
@@ -347,7 +353,7 @@ export function RankTrackingDomainDetail({
             />
           )}
         </div>
-      </div>
+      </Card>
 
       {pendingCheck && (
         <CheckConfirmModal

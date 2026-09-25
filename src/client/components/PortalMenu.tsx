@@ -1,96 +1,55 @@
 import type { ReactNode } from "react";
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { MoreHorizontal } from "lucide-react";
+import { useState } from "react";
+import { MoreHorizontal } from "@/client/components/icons";
+import { Button, type ButtonProps } from "@/client/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
 /**
- * Kebab actions menu rendered through a portal in fixed position, so it can't
- * be clipped by overflow containers (scrollable tables, overflow-hidden
- * cards). Opens below the trigger, right-aligned. Closes on outside click,
- * Escape, scroll, and resize.
+ * Kebab actions menu on the Halo DropdownMenu. The menu renders in a
+ * portal, so overflow containers (scrollable tables, overflow-hidden cards)
+ * can't clip it. Opens below the trigger, right-aligned.
  */
 export function PortalMenu({
   ariaLabel,
-  triggerClassName = "btn btn-ghost btn-xs btn-square",
+  triggerVariant = "ghost",
+  triggerSize = "icon",
+  triggerClassName = "size-7",
   triggerContent = <MoreHorizontal className="size-3.5" />,
   menuClassName = "w-40",
   children,
 }: {
   ariaLabel: string;
+  triggerVariant?: ButtonProps["variant"];
+  triggerSize?: ButtonProps["size"];
   triggerClassName?: string;
   triggerContent?: ReactNode;
   menuClassName?: string;
-  /** Menu <li> items; call `close` before running an item's action. */
+  /** DropdownMenuItem children; `close` dismisses the menu. */
   children: (close: () => void) => ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const buttonRef = useRef<HTMLButtonElement | null>(null);
-  const menuRef = useRef<HTMLUListElement | null>(null);
-  const [position, setPosition] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const closeOnOutsideClick = (event: MouseEvent) => {
-      const target = event.target;
-      if (
-        target instanceof Node &&
-        (buttonRef.current?.contains(target) ||
-          menuRef.current?.contains(target))
-      ) {
-        return;
-      }
-      setIsOpen(false);
-    };
-    const close = () => setIsOpen(false);
-    const closeOnScroll = (event: Event) => {
-      // Scrolling inside the menu itself shouldn't dismiss it.
-      const target = event.target;
-      if (target instanceof Node && menuRef.current?.contains(target)) return;
-      setIsOpen(false);
-    };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false);
-    };
-    document.addEventListener("mousedown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    window.addEventListener("scroll", closeOnScroll, true);
-    window.addEventListener("resize", close);
-    return () => {
-      document.removeEventListener("mousedown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-      window.removeEventListener("scroll", closeOnScroll, true);
-      window.removeEventListener("resize", close);
-    };
-  }, [isOpen]);
 
   return (
-    <>
-      <button
-        ref={buttonRef}
-        type="button"
-        className={triggerClassName}
-        aria-label={ariaLabel}
-        aria-expanded={isOpen}
-        onClick={() => {
-          const rect = buttonRef.current?.getBoundingClientRect();
-          if (rect) setPosition({ top: rect.bottom + 4, left: rect.right });
-          setIsOpen((open) => !open);
-        }}
+    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant={triggerVariant}
+            size={triggerSize}
+            className={triggerClassName}
+            aria-label={ariaLabel}
+          />
+        }
       >
         {triggerContent}
-      </button>
-      {isOpen && typeof document !== "undefined"
-        ? createPortal(
-            <ul
-              ref={menuRef}
-              className={`menu fixed z-[1000] -translate-x-full rounded-box border border-base-300 bg-base-100 p-2 shadow-lg ${menuClassName}`}
-              style={{ top: position.top, left: position.left }}
-            >
-              {children(() => setIsOpen(false))}
-            </ul>,
-            document.body,
-          )
-        : null}
-    </>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className={menuClassName}>
+        {children(() => setIsOpen(false))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

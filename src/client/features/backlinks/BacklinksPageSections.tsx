@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "@/client/components/icons";
 import type { OnChangeFn, SortingState } from "@tanstack/react-table";
 import { BacklinksFilterPanel } from "./BacklinksFilterPanel";
 import { BacklinksTable } from "./BacklinksTable";
@@ -29,6 +29,12 @@ import {
   type ResearchScope,
 } from "@/shared/researchScope";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Badge } from "@/client/components/ui/badge";
+import { Skeleton } from "@/client/components/ui/skeleton";
+import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
 const BACKLINKS_RESULTS_TABS: Array<{
   tab: BacklinksSearchState["tab"];
   label: string;
@@ -110,24 +116,25 @@ export function BacklinksResultsCard({
   }, [domainRatings, ratableDomains, loadRatings]);
 
   return (
-    <div className="border border-base-300 rounded-xl bg-base-100 overflow-hidden">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-base-300">
+    <Card className="overflow-hidden">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 px-4 py-3 border-b border-border">
         <div className="space-y-2">
-          <div role="tablist" className="tabs tabs-border w-fit">
-            {BACKLINKS_RESULTS_TABS.filter(
-              // Referring domains can't be filtered to a path prefix.
-              ({ tab }) => !(scope === "subfolder" && tab === "domains"),
-            ).map(({ label, tab }) => (
-              <TabLink
-                key={tab}
-                activeTab={activeTab}
-                label={label}
-                onSelect={onTabChange}
-                tab={tab}
-              />
-            ))}
-          </div>
-          <p className="max-w-xl text-sm text-base-content/60">
+          <Tabs value={activeTab}>
+            <TabsList className="w-fit">
+              {BACKLINKS_RESULTS_TABS.filter(
+                // Referring domains can't be filtered to a path prefix.
+                ({ tab }) => !(scope === "subfolder" && tab === "domains"),
+              ).map(({ label, tab }) => (
+                <TabLink
+                  key={tab}
+                  label={label}
+                  onSelect={onTabChange}
+                  tab={tab}
+                />
+              ))}
+            </TabsList>
+          </Tabs>
+          <p className="max-w-xl text-sm text-muted-foreground">
             {TAB_DESCRIPTIONS[activeTab]}
           </p>
         </div>
@@ -149,47 +156,39 @@ export function BacklinksResultsCard({
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-base-300">
-        <button
-          className={`btn btn-ghost btn-sm gap-1.5 ${filters.showFilters ? "btn-active" : ""}`}
+      <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`gap-1.5 ${filters.showFilters ? "bg-secondary text-foreground" : ""}`}
           onClick={() => filters.setShowFilters((current) => !current)}
           title="Toggle table filters"
         >
           <SlidersHorizontal className="size-3.5" />
           Filters
           {activeFilterCount > 0 ? (
-            <span className="badge badge-xs badge-primary border-0 text-primary-content">
-              {activeFilterCount}
-            </span>
+            <Badge variant="primary">{activeFilterCount}</Badge>
           ) : null}
-        </button>
+        </Button>
         {activeTab === "backlinks" ? (
-          <div
-            role="tablist"
-            aria-label="Backlinks view"
-            className="ml-auto tabs tabs-border tabs-xs w-fit"
-          >
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view !== "all"}
-              className={`tab ${view !== "all" ? "tab-active" : ""}`}
-              title="Show each referring domain's strongest link; expand a row for the rest"
-              onClick={() => onViewChange(undefined)}
-            >
-              One per domain
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={view === "all"}
-              className={`tab ${view === "all" ? "tab-active" : ""}`}
-              title="List every individual backlink"
-              onClick={() => onViewChange("all")}
-            >
-              All links
-            </button>
-          </div>
+          <Tabs value={view === "all" ? "all" : "domain"} className="ml-auto">
+            <TabsList className="ml-auto" aria-label="Backlinks view">
+              <TabsTrigger
+                value={"domain"}
+                title="Show each referring domain's strongest link; expand a row for the rest"
+                onClick={() => onViewChange(undefined)}
+              >
+                One per domain
+              </TabsTrigger>
+              <TabsTrigger
+                value={"all"}
+                title="List every individual backlink"
+                onClick={() => onViewChange("all")}
+              >
+                All links
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         ) : null}
       </div>
 
@@ -212,9 +211,9 @@ export function BacklinksResultsCard({
 
       <div className="p-4">
         {tabErrorMessage ? (
-          <div className="alert alert-error mb-3">
-            <span>{tabErrorMessage}</span>
-          </div>
+          <Alert variant="destructive" className="mb-3">
+            <AlertDescription>{tabErrorMessage}</AlertDescription>
+          </Alert>
         ) : null}
         {isTabLoading && !tabErrorMessage ? (
           <TabLoadingState label={TAB_LOADING_LABELS[activeTab]} />
@@ -260,7 +259,7 @@ export function BacklinksResultsCard({
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
       />
-    </div>
+    </Card>
   );
 }
 
@@ -283,38 +282,28 @@ function collectRatableDomains(tabRows: BacklinksTabRows): string[] {
 }
 
 function TabLink({
-  activeTab,
   label,
   onSelect,
   tab,
 }: {
-  activeTab: BacklinksSearchState["tab"];
   label: string;
   onSelect: (tab: BacklinksSearchState["tab"]) => void;
   tab: BacklinksSearchState["tab"];
 }) {
-  const isActive = activeTab === tab;
-
   return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={isActive}
-      className={`tab ${isActive ? "tab-active" : ""}`}
-      onClick={() => onSelect(tab)}
-    >
+    <TabsTrigger value={tab} onClick={() => onSelect(tab)}>
       {label}
-    </button>
+    </TabsTrigger>
   );
 }
 
 function TabLoadingState({ label }: { label: string }) {
   return (
     <div className="space-y-3 py-2">
-      <p className="text-sm text-base-content/60">{label}...</p>
-      <div className="skeleton h-10 w-full" />
-      <div className="skeleton h-10 w-full" />
-      <div className="skeleton h-10 w-full" />
+      <p className="text-sm text-muted-foreground">{label}...</p>
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-10 w-full" />
     </div>
   );
 }

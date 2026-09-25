@@ -6,7 +6,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { Download, Loader2, Sheet } from "lucide-react";
+import { Download, Sheet } from "@/client/components/icons";
 import { toast } from "sonner";
 import { TableExportMenu } from "@/client/components/table/TableBulkActionBar";
 import { TablePagination } from "@/client/components/table/TablePagination";
@@ -37,6 +37,12 @@ import {
   type SearchPerformanceDevice,
   type SearchPerformanceTableDimension,
 } from "@/types/schemas/search-performance";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Card } from "@/client/components/ui/card";
+import { NativeSelect } from "@/client/components/ui/native-select";
+import { Spinner } from "@/client/components/ui/spinner";
+import { Tabs, TabsList } from "@/client/components/ui/tabs";
 
 const RANGE_LABELS: Record<SearchPerformanceDateRange, string> = {
   last_7_days: "Last 7 days",
@@ -194,7 +200,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold">Search Performance</h1>
-            <p className="text-sm text-base-content/70">
+            <p className="text-sm text-muted-foreground">
               See your site&apos;s clicks, impressions, CTR, and position from
               Google Search Console.
             </p>
@@ -203,7 +209,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
             <Link
               to="/p/$projectId/settings/integrations"
               params={{ projectId }}
-              className="link link-hover shrink-0 self-start text-sm font-medium text-base-content/60 transition-colors hover:text-base-content sm:mt-1"
+              className="underline-offset-4 no-underline hover:underline shrink-0 self-start text-sm font-medium text-muted-foreground transition-colors hover:text-foreground sm:mt-1"
             >
               Change property
             </Link>
@@ -213,11 +219,11 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         {reportQuery.isPending ? (
           <SearchPerformanceLoadingState />
         ) : reportQuery.isError ? (
-          <div className="alert alert-error">
-            <span className="text-sm">
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">
               {getStandardErrorMessage(reportQuery.error)}
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
         ) : !report?.connected ? (
           <div className="max-w-2xl">
             <SearchConsoleConnectionCard projectId={projectId} />
@@ -225,31 +231,33 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
         ) : (
           <>
             <TotalsCards report={report} />
-            <div className="overflow-hidden rounded-xl border border-base-300 bg-base-100">
-              <div className="flex flex-col gap-3 border-b border-base-300 px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
-                <div role="tablist" className="tabs tabs-border w-fit">
-                  <TabButton
-                    active={tab === "striking"}
-                    onClick={() => setTab("striking")}
-                    label={`Striking distance (${report.strikingDistance.length})`}
-                  />
-                  <TabButton
-                    active={tab === "queries"}
-                    onClick={() => setTab("queries")}
-                    label="Queries"
-                  />
-                  <TabButton
-                    active={tab === "pages"}
-                    onClick={() => setTab("pages")}
-                    label="Pages"
-                  />
-                </div>
+            <Card className="overflow-hidden">
+              <div className="flex flex-col gap-3 border-b border-border px-4 py-3 lg:flex-row lg:items-center lg:justify-between">
+                <Tabs value={tab}>
+                  <TabsList className="w-fit">
+                    <TabButton
+                      value="striking"
+                      onClick={() => setTab("striking")}
+                      label={`Striking distance (${report.strikingDistance.length})`}
+                    />
+                    <TabButton
+                      value="queries"
+                      onClick={() => setTab("queries")}
+                      label="Queries"
+                    />
+                    <TabButton
+                      value="pages"
+                      onClick={() => setTab("pages")}
+                      label="Pages"
+                    />
+                  </TabsList>
+                </Tabs>
                 <div className="flex flex-wrap items-center gap-2">
                   {reportQuery.isFetching && !reportQuery.isPending ? (
-                    <Loader2 className="size-4 animate-spin text-base-content/40" />
+                    <Spinner size="sm" />
                   ) : null}
-                  <select
-                    className="select select-bordered select-sm w-36"
+                  <NativeSelect
+                    className="w-36 h-8 text-sm"
                     value={device}
                     onChange={(event) => {
                       setDevice(
@@ -264,9 +272,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                         {option.label}
                       </option>
                     ))}
-                  </select>
-                  <select
-                    className="select select-bordered select-sm w-36"
+                  </NativeSelect>
+                  <NativeSelect
+                    className="w-36 h-8 text-sm"
                     value={country}
                     onChange={(event) => setCountry(event.target.value)}
                     aria-label="Country filter"
@@ -277,9 +285,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                         {row.key.toUpperCase()}
                       </option>
                     ))}
-                  </select>
-                  <select
-                    className="select select-bordered select-sm w-36"
+                  </NativeSelect>
+                  <NativeSelect
+                    className="w-36 h-8 text-sm"
                     value={range}
                     onChange={(event) => {
                       if (isDateRange(event.target.value)) {
@@ -293,9 +301,9 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                         {option.label}
                       </option>
                     ))}
-                  </select>
+                  </NativeSelect>
                   <TableExportMenu
-                    buttonClassName="btn btn-ghost btn-sm gap-1"
+                    buttonVariant="ghost"
                     actions={[
                       {
                         label: "Export to Sheets",
@@ -318,16 +326,16 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   rows={report.strikingDistance}
                 />
               ) : tableQuery.isPending ? (
-                <div className="flex items-center gap-2 p-8 text-sm text-base-content/60">
-                  <Loader2 className="size-4 animate-spin" /> Loading…
+                <div className="flex items-center gap-2 p-8 text-sm text-muted-foreground">
+                  <Spinner size="sm" /> Loading…
                 </div>
               ) : tableQuery.isError ? (
                 <div className="p-4">
-                  <div className="alert alert-error">
-                    <span className="text-sm">
+                  <Alert variant="destructive">
+                    <AlertDescription className="text-sm">
                       {getStandardErrorMessage(tableQuery.error)}
-                    </span>
-                  </div>
+                    </AlertDescription>
+                  </Alert>
                 </div>
               ) : (
                 <>
@@ -349,7 +357,7 @@ export function SearchPerformancePage({ projectId }: { projectId: string }) {
                   />
                 </>
               )}
-            </div>
+            </Card>
           </>
         )}
       </div>

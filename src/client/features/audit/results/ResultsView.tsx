@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from "react";
-import { ShieldAlert } from "lucide-react";
+import { ShieldAlert } from "@/client/components/icons";
 import {
   exportIssues,
   exportPages,
@@ -16,6 +16,17 @@ import {
   ExportDropdown,
   PerformanceTable,
 } from "@/client/features/audit/results/ResultsTables";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Card, CardContent } from "@/client/components/ui/card";
+import {
+  StatCard,
+  StatCardDescription,
+  StatCardLabel,
+  StatCardValue,
+} from "@/client/components/ui/stat-card";
+import { Tabs, TabsList, TabsTrigger } from "@/client/components/ui/tabs";
+import { cn } from "@/client/lib/utils";
 
 type ResultsTab = "issues" | "pages" | "performance";
 
@@ -57,7 +68,7 @@ export function ResultsView({
           couldn't be audited. We don't have a workaround for this yet. Desktop
           crawlers run from your own machine and usually get past it: try{" "}
           <a
-            className="link link-primary"
+            className="underline underline-offset-4 text-link"
             href="https://github.com/PhialsBasement/LibreCrawl"
             target="_blank"
             rel="noreferrer"
@@ -66,7 +77,7 @@ export function ResultsView({
           </a>{" "}
           (free, open source) or{" "}
           <a
-            className="link link-primary"
+            className="underline underline-offset-4 text-link"
             href="https://www.screamingfrog.co.uk/seo-spider/"
             target="_blank"
             rel="noreferrer"
@@ -101,8 +112,8 @@ export function ResultsView({
         lighthouseSummary={stats.lighthouseSummary}
       />
 
-      <div className="card bg-base-100 border border-base-300">
-        <div className="card-body gap-3">
+      <Card>
+        <CardContent className="space-y-3 pt-6">
           <ResultsHeader
             issueCount={issues.length}
             pageCount={pages.length}
@@ -139,8 +150,8 @@ export function ResultsView({
               pages={pages}
             />
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
@@ -154,13 +165,13 @@ function CrawlWarning({
   children: ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 px-4 py-3 text-sm">
-      <ShieldAlert className="mt-0.5 size-4 shrink-0 text-warning" />
-      <p>
+    <Alert variant="warning">
+      <ShieldAlert className="size-4" />
+      <AlertDescription>
         <span className="font-medium">{headline}</span>{" "}
-        <span className="text-base-content/70">{children}</span>
-      </p>
-    </div>
+        <span className="text-muted-foreground">{children}</span>
+      </AlertDescription>
+    </Alert>
   );
 }
 
@@ -240,24 +251,21 @@ function ResultsHeader({
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-      <div role="tablist" className="tabs tabs-border w-fit">
-        {tabs.map(({ label, tab }) => {
-          const isActive = activeTab === tab;
-
-          return (
-            <button
-              key={tab}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              className={`tab ${isActive ? "tab-active" : ""}`}
-              onClick={() => onTabChange(tab)}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={activeTab}>
+        <TabsList className="w-fit">
+          {tabs.map(({ label, tab }) => {
+            return (
+              <TabsTrigger
+                key={tab}
+                value={tab}
+                onClick={() => onTabChange(tab)}
+              >
+                {label}
+              </TabsTrigger>
+            );
+          })}
+        </TabsList>
+      </Tabs>
 
       <ExportDropdown onExport={onExport} />
     </div>
@@ -305,11 +313,14 @@ function StatsStrip({
       valueClass: issues.length === 0 ? "text-success" : "",
       sub: issues.length > 0 && (
         <span className="flex items-center gap-2.5">
-          <SeverityCount count={severityCounts.critical} dotClass="bg-error" />
+          <SeverityCount
+            count={severityCounts.critical}
+            dotClass="bg-destructive"
+          />
           <SeverityCount count={severityCounts.warning} dotClass="bg-warning" />
           <SeverityCount
             count={severityCounts.info}
-            dotClass="bg-base-content/30"
+            dotClass="bg-foreground/30"
           />
         </span>
       ),
@@ -348,7 +359,7 @@ function StatsStrip({
         label: "Lighthouse failures",
         value: String(lighthouseSummary.failed),
         valueClass:
-          lighthouseSummary.failed > 0 ? "text-error" : "text-success",
+          lighthouseSummary.failed > 0 ? "text-negative" : "text-success",
       },
     );
   }
@@ -359,23 +370,22 @@ function StatsStrip({
       : "grid-cols-2 md:grid-cols-4";
 
   return (
-    <div
-      className={`grid ${columnsClass} gap-px rounded-lg border border-base-300 bg-base-300/70 overflow-hidden`}
-    >
+    <div className={`grid ${columnsClass} gap-3`}>
       {items.map((item) => (
-        <div key={item.label} className="bg-base-100 px-4 py-3">
-          <p className="text-[11px] uppercase tracking-wider text-base-content/50">
+        <StatCard key={item.label} className="px-4 py-3">
+          <StatCardLabel className="text-[0.6875rem] uppercase tracking-wider">
             {item.label}
-          </p>
-          <p
-            className={`text-xl font-semibold mt-0.5 tabular-nums ${item.valueClass ?? ""}`}
+          </StatCardLabel>
+          <StatCardValue
+            className={cn(
+              "mt-0.5 text-xl font-semibold tabular-nums",
+              item.valueClass,
+            )}
           >
             {item.value}
-          </p>
-          {item.sub && (
-            <div className="text-xs text-base-content/60 mt-1">{item.sub}</div>
-          )}
-        </div>
+          </StatCardValue>
+          {item.sub && <StatCardDescription>{item.sub}</StatCardDescription>}
+        </StatCard>
       ))}
     </div>
   );
@@ -401,5 +411,5 @@ function scoreClass(score: number | null) {
   if (score == null) return "";
   if (score >= 90) return "text-success";
   if (score >= 50) return "text-warning";
-  return "text-error";
+  return "text-negative";
 }

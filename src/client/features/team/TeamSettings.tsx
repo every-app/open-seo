@@ -12,6 +12,16 @@ import { authClient, useSession } from "@/lib/auth-client";
 import { hasOrgPermission } from "@/lib/org-permissions";
 import { getTeam, sendTeamInvitation } from "@/serverFunctions/organization";
 
+import { Button } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/client/components/ui/table";
+
 // The Organization tab of account settings: who has access to the active org.
 export function TeamSettings() {
   const { data: session } = useSession();
@@ -97,16 +107,17 @@ export function TeamSettings() {
   if (teamQuery.isError) {
     return (
       <div className="space-y-3">
-        <p className="text-sm text-base-content/70">
+        <p className="text-sm text-muted-foreground">
           We couldn&rsquo;t load your team right now.
         </p>
-        <button
+        <Button
+          variant="secondary"
+          size="sm"
           type="button"
-          className="btn btn-soft btn-sm"
           onClick={() => void teamQuery.refetch()}
         >
           Try again
-        </button>
+        </Button>
       </div>
     );
   }
@@ -114,65 +125,57 @@ export function TeamSettings() {
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-4">
-        <h2 className="text-sm font-medium text-base-content/50">Members</h2>
+        <h2 className="text-sm font-medium text-muted-foreground">Members</h2>
         {canManageTeam ? (
-          <button
-            type="button"
-            className="btn btn-primary btn-sm"
-            onClick={() => setIsInviteOpen(true)}
-          >
+          <Button size="sm" type="button" onClick={() => setIsInviteOpen(true)}>
             Invite teammate
-          </button>
+          </Button>
         ) : null}
       </div>
-      <p className="text-sm text-base-content/60">
+      <p className="text-sm text-muted-foreground">
         Teammates join as Admins. Admins have full access to each project except
         for billing.
       </p>
 
       {teamQuery.isPending ? (
         <div className="flex justify-center py-6">
-          <span className="loading loading-spinner loading-md" />
+          <Spinner />
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-base-300">
-          <table className="table table-sm">
-            <thead>
-              <tr>
-                <th>Member</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th className="w-10"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((member) => (
-                <MemberRow
-                  key={member.id}
-                  member={member}
-                  isSelf={member.userId === session?.user?.id}
-                  canManageTeam={canManageTeam}
-                  isOwner={isOwner}
-                  isRemoving={removeMemberMutation.isPending}
-                  onRemove={() => removeMemberMutation.mutate(member.id)}
-                />
-              ))}
-              {pendingInvitations.map((invitation) => (
-                <InvitationRow
-                  key={invitation.id}
-                  invitation={invitation}
-                  canManageTeam={canManageTeam}
-                  isResending={resendMutation.isPending}
-                  isCanceling={cancelInvitationMutation.isPending}
-                  onResend={() => resendMutation.mutate(invitation.email)}
-                  onCancel={() =>
-                    cancelInvitationMutation.mutate(invitation.id)
-                  }
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Member</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {members.map((member) => (
+              <MemberRow
+                key={member.id}
+                member={member}
+                isSelf={member.userId === session?.user?.id}
+                canManageTeam={canManageTeam}
+                isOwner={isOwner}
+                isRemoving={removeMemberMutation.isPending}
+                onRemove={() => removeMemberMutation.mutate(member.id)}
+              />
+            ))}
+            {pendingInvitations.map((invitation) => (
+              <InvitationRow
+                key={invitation.id}
+                invitation={invitation}
+                canManageTeam={canManageTeam}
+                isResending={resendMutation.isPending}
+                isCanceling={cancelInvitationMutation.isPending}
+                onResend={() => resendMutation.mutate(invitation.email)}
+                onCancel={() => cancelInvitationMutation.mutate(invitation.id)}
+              />
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       {isInviteOpen ? (

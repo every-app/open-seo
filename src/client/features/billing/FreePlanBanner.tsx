@@ -11,6 +11,8 @@ import {
   autumnSeoDataCreditsToUsd,
 } from "@/shared/billing";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+
 export function FreePlanBanner() {
   const { data: session } = useSession();
   const customerQuery = useCustomer({
@@ -44,12 +46,15 @@ export function FreePlanBanner() {
     <Link
       to={SUBSCRIBE_ROUTE}
       search={{ upgrade: true }}
-      className="link link-primary font-medium"
+      className="underline underline-offset-4 text-link font-medium"
     >
       Upgrade your plan
     </Link>
   ) : (
-    <Link to={BILLING_ROUTE} className="link link-primary font-medium">
+    <Link
+      to={BILLING_ROUTE}
+      className="underline underline-offset-4 text-link font-medium"
+    >
       Buy more credits
     </Link>
   );
@@ -79,12 +84,15 @@ export function FreePlanBanner() {
         <Link
           to={SUBSCRIBE_ROUTE}
           search={{ upgrade: true }}
-          className="link link-primary font-medium"
+          className="underline underline-offset-4 text-link font-medium"
         >
           Upgrade anytime
         </Link>{" "}
         or{" "}
-        <Link to="/support" className="link link-primary font-medium">
+        <Link
+          to="/support"
+          className="underline underline-offset-4 text-link font-medium"
+        >
           reach out with questions
         </Link>
         .
@@ -102,19 +110,12 @@ function BannerShell({
   variant: "info" | "warning" | "error";
   children: React.ReactNode;
 }) {
-  const alertClass =
-    variant === "error"
-      ? "alert-error"
-      : variant === "warning"
-        ? "alert-warning"
-        : "alert-info";
-
   return (
     <div className="shrink-0 px-4 py-2.5 md:px-6">
       <div className="mx-auto max-w-7xl">
-        <div className={`alert text-sm ${alertClass}`}>
-          <span>{children}</span>
-        </div>
+        <Alert variant={variant === "error" ? "destructive" : variant}>
+          <AlertDescription>{children}</AlertDescription>
+        </Alert>
       </div>
     </div>
   );

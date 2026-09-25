@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight } from "@/client/components/icons";
 import { sort } from "remeda";
 import {
   getIssueDescriptor,
@@ -8,20 +8,22 @@ import {
 } from "@/shared/audit-issues";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 
+import { Button } from "@/client/components/ui/button";
+
 type AuditIssueRow = AuditResultsData["issues"][number];
 
 const MAX_RENDERED_URLS = 100;
 
 const SEVERITY_DOT: Record<IssueSeverity, string> = {
-  critical: "bg-error",
+  critical: "bg-destructive",
   warning: "bg-warning",
-  info: "bg-base-content/30",
+  info: "bg-foreground/30",
 };
 
 const SEVERITY_RULE: Record<IssueSeverity, string> = {
-  critical: "border-l-error/60",
+  critical: "border-l-destructive/60",
   warning: "border-l-warning/60",
-  info: "border-l-base-content/20",
+  info: "border-l-foreground/20",
 };
 
 const SEVERITY_LABEL: Record<IssueSeverity, string> = {
@@ -93,7 +95,7 @@ export function IssuesView({ issues }: { issues: AuditIssueRow[] }) {
 
   if (issues.length === 0) {
     return (
-      <div className="py-10 text-center text-base-content/60">
+      <div className="py-10 text-center text-muted-foreground">
         <p className="font-medium">No issues recorded for this audit.</p>
         <p className="text-sm mt-1">
           Either the site is in great shape, or this audit ran before issue
@@ -104,7 +106,7 @@ export function IssuesView({ issues }: { issues: AuditIssueRow[] }) {
   }
 
   return (
-    <div className="border border-base-300 rounded-lg overflow-hidden">
+    <div className="border border-border rounded-lg overflow-hidden">
       {sections.map((section) => (
         <IssueSection key={section.severity} section={section} />
       ))}
@@ -123,19 +125,19 @@ function IssueSection({
   );
 
   return (
-    <div className="border-t border-base-300 first:border-t-0">
-      <div className="flex items-center gap-2 bg-base-200/60 px-4 py-1.5 border-b border-base-300/60">
+    <div className="border-t border-border first:border-t-0">
+      <div className="flex items-center gap-2 bg-muted/60 px-4 py-1.5 border-b border-border/60">
         <span
           className={`size-1.5 rounded-full ${SEVERITY_DOT[section.severity]}`}
         />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
           {SEVERITY_LABEL[section.severity]}
         </span>
-        <span className="text-[11px] tabular-nums text-base-content/40">
+        <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
           {issueCount}
         </span>
       </div>
-      <div className="divide-y divide-base-300/60">
+      <div className="divide-y divide-border/60">
         {section.groups.map((group) => (
           <IssueRow key={group.issueType} group={group} />
         ))}
@@ -151,13 +153,13 @@ function IssueRow({ group }: { group: IssueGroup }) {
     <div
       className={
         open
-          ? `border-l-2 ${SEVERITY_RULE[group.severity]} bg-base-200/20`
+          ? `border-l-2 ${SEVERITY_RULE[group.severity]} bg-muted/20`
           : "border-l-2 border-l-transparent"
       }
     >
-      <button
-        type="button"
-        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-base-200/40 transition-colors"
+      <Button
+        variant="ghost"
+        className="h-auto w-full justify-start gap-3 whitespace-normal rounded-none px-4 py-2.5 text-left font-normal text-inherit"
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
       >
@@ -167,27 +169,27 @@ function IssueRow({ group }: { group: IssueGroup }) {
         <span className="text-sm font-medium flex-1 min-w-0 truncate">
           {group.title}
         </span>
-        <span className="text-xs tabular-nums text-base-content/50 shrink-0">
+        <span className="text-xs tabular-nums text-muted-foreground shrink-0">
           {group.issues.length} {group.issues.length === 1 ? "page" : "pages"}
         </span>
         <ChevronRight
-          className={`size-4 shrink-0 text-base-content/40 transition-transform ${
+          className={`size-4 shrink-0 text-muted-foreground transition-transform ${
             open ? "rotate-90" : ""
           }`}
         />
-      </button>
+      </Button>
 
       {open && (
         <div className="pl-9 pr-4 pb-4 pt-0.5 space-y-3">
           {group.explanation && (
-            <p className="text-sm text-base-content/70 max-w-prose">
+            <p className="text-sm text-muted-foreground max-w-prose">
               {group.explanation}
             </p>
           )}
           {group.howToFix && (
             <p className="text-sm max-w-prose">
               <span className="font-medium">How to fix: </span>
-              <span className="text-base-content/80">{group.howToFix}</span>
+              <span className="text-foreground">{group.howToFix}</span>
             </p>
           )}
           <AffectedUrlList issues={group.issues} />
@@ -202,14 +204,14 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
   const remaining = issues.length - rendered.length;
 
   return (
-    <div className="max-h-[320px] overflow-y-auto rounded border border-base-300/60 bg-base-100">
+    <div className="max-h-[20rem] overflow-y-auto rounded-md border border-border bg-muted/40">
       {rendered.map((issue) => (
         <div
           key={issue.id}
-          className="px-3 py-1.5 text-sm flex flex-col gap-0.5 border-b border-base-300/50 last:border-b-0"
+          className="px-3 py-1.5 text-sm flex flex-col gap-0.5 border-b border-border/50 last:border-b-0"
         >
           <a
-            className="link link-hover text-base-content/80 truncate"
+            className="underline-offset-4 no-underline hover:underline text-foreground truncate"
             href={issue.pageUrl}
             target="_blank"
             rel="noreferrer"
@@ -221,7 +223,7 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
         </div>
       ))}
       {remaining > 0 && (
-        <div className="px-3 py-2 text-xs text-base-content/50">
+        <div className="px-3 py-2 text-xs text-muted-foreground">
           …and {remaining} more — export the issues CSV for the full list.
         </div>
       )}
@@ -259,7 +261,7 @@ function IssueDetails({ detailsJson }: { detailsJson: string | null }) {
   if (entries.length === 0) return null;
 
   return (
-    <span className="text-xs text-base-content/50 truncate">
+    <span className="text-xs text-muted-foreground truncate">
       {entries
         .map(([key, value]) => {
           const rendered = Array.isArray(value)

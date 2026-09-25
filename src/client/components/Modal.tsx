@@ -1,5 +1,10 @@
-import { useEffect, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { Dialog, DialogContent } from "@/client/components/ui/dialog";
 
+// Callers mount the modal to open it and unmount it to close it, so the
+// Dialog is always open here. Escape routes to onClose; the backdrop does not
+// dismiss, and callers render their own close actions. Without onClose the
+// dialog cannot be dismissed.
 export function Modal({
   maxWidth = "max-w-sm",
   children,
@@ -11,29 +16,21 @@ export function Modal({
   onClose?: () => void;
   labelledBy?: string;
 }) {
-  useEffect(() => {
-    if (!onClose) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
-      event.preventDefault();
-      onClose();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [onClose]);
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div
-        role="dialog"
-        aria-modal="true"
+    <Dialog
+      open
+      disablePointerDismissal
+      onOpenChange={(open) => {
+        if (!open) onClose?.();
+      }}
+    >
+      <DialogContent
         aria-labelledby={labelledBy}
-        className={`card bg-base-100 border border-base-300 w-full ${maxWidth} max-h-full shadow-xl`}
+        showClose={false}
+        className={`max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] overflow-y-auto ${maxWidth}`}
       >
-        <div className="card-body gap-4 overflow-y-auto">{children}</div>
-      </div>
-    </div>
+        {children}
+      </DialogContent>
+    </Dialog>
   );
 }

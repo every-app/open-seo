@@ -1,7 +1,7 @@
 import { formatRelativeTime } from "@/client/lib/relative-time";
 import { useState, type ReactNode } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Trash2 } from "lucide-react";
+import { Trash2 } from "@/client/components/icons";
 import { toast } from "sonner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import { updateProjectContext } from "@/serverFunctions/projectContext";
@@ -10,6 +10,8 @@ import type {
   ContextAuthor,
   ProjectContextUpdate,
 } from "@/types/schemas/projectContext";
+
+import { Button } from "@/client/components/ui/button";
 
 export type ProjectContextData = Awaited<ReturnType<typeof getProjectContext>>;
 export type ContextCompetitor = ProjectContextData["competitors"][number];
@@ -56,7 +58,7 @@ const AUTHOR_LABELS: Record<ContextAuthor, string> = {
 
 export function Provenance({ by, at }: { by: ContextAuthor; at?: string }) {
   return (
-    <span className="text-xs text-base-content/40">
+    <span className="text-xs text-muted-foreground">
       {at
         ? `Updated by ${AUTHOR_LABELS[by]} · ${formatRelativeTime(at)}`
         : `Added by ${AUTHOR_LABELS[by]}`}
@@ -76,8 +78,8 @@ export function SectionHeader({
   return (
     <div className="flex items-start justify-between gap-3">
       <div className="space-y-0.5">
-        <h2 className="text-sm font-medium text-base-content/50">{title}</h2>
-        {hint ? <p className="text-xs text-base-content/50">{hint}</p> : null}
+        <h2 className="text-sm font-medium text-muted-foreground">{title}</h2>
+        {hint ? <p className="text-xs text-muted-foreground">{hint}</p> : null}
       </div>
       {action}
     </div>
@@ -87,14 +89,14 @@ export function SectionHeader({
 /** Muted panel used when a list has nothing in it yet. */
 export function EmptyState({ children }: { children: ReactNode }) {
   return (
-    <p className="rounded-lg border border-dashed border-base-300 px-4 py-3 text-sm text-base-content/60">
+    <p className="rounded-lg border border-dashed border-border px-4 py-3 text-sm text-muted-foreground">
       {children}
     </p>
   );
 }
 
-export const listClass =
-  "divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300";
+/** Row dividers for a list rendered inside `<Card className="overflow-hidden">`. */
+export const listClass = "divide-y divide-border";
 
 /** Row actions and footer buttons shared by the inline competitor/page forms. */
 export function RowActions({ children }: { children: ReactNode }) {
@@ -119,9 +121,11 @@ export function ConfirmDeleteButton({
   if (confirming) {
     return (
       <>
-        <button
+        <Button
+          variant="destructive"
+          size="sm"
           type="button"
-          className="btn btn-error btn-xs"
+          className="h-7 px-2.5"
           disabled={pending}
           onClick={() => {
             setConfirming(false);
@@ -129,28 +133,32 @@ export function ConfirmDeleteButton({
           }}
         >
           Remove
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
           type="button"
-          className="btn btn-ghost btn-xs"
+          className="h-7 px-2.5"
           onClick={() => setConfirming(false)}
         >
           Cancel
-        </button>
+        </Button>
       </>
     );
   }
 
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       type="button"
-      className="btn btn-ghost btn-xs text-error"
+      className="h-7 px-2.5 text-negative"
       aria-label={label}
       disabled={pending}
       onClick={() => setConfirming(true)}
     >
       <Trash2 className="size-3.5" />
-    </button>
+    </Button>
   );
 }
 
@@ -165,21 +173,24 @@ export function FormActions({
 }) {
   return (
     <div className="flex justify-end gap-2">
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         type="button"
-        className="btn btn-ghost btn-xs"
+        className="h-7 px-2.5"
         onClick={onCancel}
         disabled={pending}
       >
         Cancel
-      </button>
-      <button
+      </Button>
+      <Button
+        size="sm"
         type="submit"
-        className="btn btn-primary btn-xs"
+        className="h-7 px-2.5"
         disabled={disabled || pending}
       >
         Save
-      </button>
+      </Button>
     </div>
   );
 }

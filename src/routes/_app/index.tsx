@@ -14,6 +14,7 @@ import { AuthConfigErrorCard } from "@/client/components/AuthConfigErrorCard";
 import { UnauthenticatedErrorCard } from "@/client/components/UnauthenticatedErrorCard";
 import { SUBSCRIBE_ROUTE } from "@/shared/billing";
 
+import { Spinner } from "@/client/components/ui/spinner";
 export const Route = createFileRoute("/_app/")({
   component: IndexRedirect,
 });
@@ -89,7 +90,7 @@ function IndexRedirect() {
       return (
         <div className="flex items-center justify-center h-full p-4">
           <div className="flex flex-col items-center gap-3 max-w-xl text-center">
-            <p className="text-base-content/80">
+            <p className="text-foreground">
               Redirecting you to billing so you can start a hosted subscription.
             </p>
           </div>
@@ -100,7 +101,7 @@ function IndexRedirect() {
     return (
       <div className="flex items-center justify-center h-full p-4">
         <div className="flex flex-col items-center gap-3 max-w-xl">
-          <p className="text-error text-center">
+          <p className="text-negative text-center">
             {getStandardErrorMessage(
               error,
               "An unexpected error occurred. Please check server logs.",
@@ -113,7 +114,7 @@ function IndexRedirect() {
 
   return (
     <div className="flex items-center justify-center h-full">
-      <span className="loading loading-spinner loading-md" />
+      <Spinner />
     </div>
   );
 }

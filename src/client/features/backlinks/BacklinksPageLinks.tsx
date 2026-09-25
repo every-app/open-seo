@@ -14,7 +14,7 @@ export function BacklinksSourceLink({
     <SafeExternalLink
       url={url}
       label={truncateMiddle(extractUrlPath(url), maxLength)}
-      className={`link link-hover break-all inline-flex items-center gap-1 ${muted ? "text-xs text-base-content/55" : "text-sm"}`}
+      className={`underline-offset-4 hover:underline break-all inline-flex items-center gap-1 ${muted ? "text-xs text-muted-foreground" : "text-sm"}`}
     />
   );
 }

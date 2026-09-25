@@ -1,5 +1,14 @@
-import { ChevronDown, Download, Loader2, X } from "lucide-react";
+import { ChevronDown, Download, Loader2, X } from "@/client/components/icons";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
+
+import { Button, type ButtonProps } from "@/client/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/client/components/ui/dropdown-menu";
 
 export function TableBulkActionBar({
   selectedCount,
@@ -20,30 +29,43 @@ export function TableBulkActionBar({
     placement === "fixed"
       ? "pointer-events-none fixed inset-x-0 bottom-6 z-30 flex justify-center px-4"
       : "flex justify-center";
+  // The floating bar sits over table rows, so it takes the popover surface
+  // (near-opaque) rather than a translucent card. Action buttons inset by
+  // 0.25rem use rounded-lg so their fills stay concentric with this rounded-xl.
   const toolbarClass =
     placement === "fixed"
-      ? "pointer-events-auto flex items-stretch overflow-visible rounded-xl border border-base-content/15 bg-base-300/85 shadow-2xl backdrop-blur"
-      : "flex items-stretch overflow-visible rounded-xl border border-base-content/15 bg-base-200";
+      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_0.5rem_2rem_color-mix(in_oklch,var(--shade)_50%,transparent)] backdrop-blur-3xl"
+      : "flex items-stretch rounded-xl border border-border bg-muted";
 
-  return (
+  const bar = (
     <div className={wrapperClass}>
       <div role="toolbar" aria-label="Bulk actions" className={toolbarClass}>
-        <div className="flex items-center gap-2 border-r border-base-content/10 px-3 py-2 text-sm">
-          <button
+        <div className="flex items-center gap-2 border-r border-border px-3 py-2 text-sm">
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
             aria-label="Clear selection"
-            className="-ml-1 rounded p-1 text-base-content/55 hover:bg-base-content/10 hover:text-base-content"
+            className="-ml-1 size-6"
             onClick={onClear}
           >
             <X className="size-3.5" />
-          </button>
+          </Button>
           <span className="font-medium tabular-nums">{selectedCount}</span>
-          <span className="text-base-content/60">{selectedLabel}</span>
+          <span className="text-muted-foreground">{selectedLabel}</span>
         </div>
         {actions}
       </div>
     </div>
   );
+
+  // A Halo Card has backdrop-filter, which makes it the containing block for
+  // position:fixed descendants; portalling to <body> keeps the floating bar
+  // pinned to the viewport instead of the card it is rendered from.
+  if (placement === "fixed" && typeof document !== "undefined") {
+    return createPortal(bar, document.body);
+  }
+  return bar;
 }
 
 export function TableBulkActionButton({
@@ -59,21 +81,22 @@ export function TableBulkActionButton({
   disabled?: boolean;
   variant?: "default" | "danger";
 }) {
-  const color =
-    variant === "danger"
-      ? "text-error hover:bg-error/10"
-      : "text-base-content/85 hover:bg-base-content/10";
-
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="sm"
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm disabled:opacity-50 ${color}`}
+      className={`my-1 gap-1.5 rounded-lg ${
+        variant === "danger"
+          ? "text-negative hover:text-negative"
+          : "text-foreground"
+      }`}
     >
       {icon}
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -90,13 +113,17 @@ export function TableBulkExportMenu({
   busy?: boolean;
 }) {
   return (
-    <div className="dropdown dropdown-top dropdown-end">
-      <button
-        type="button"
-        tabIndex={0}
-        disabled={busy}
-        aria-haspopup="menu"
-        className="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-base-content/85 hover:bg-base-content/10 disabled:opacity-50"
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="sm"
+            type="button"
+            disabled={busy}
+            className="my-1 gap-1.5 rounded-lg text-foreground"
+          />
+        }
       >
         {busy ? (
           <Loader2 className="size-3.5 animate-spin" />
@@ -105,33 +132,27 @@ export function TableBulkExportMenu({
         )}
         Export
         <ChevronDown className="size-3 opacity-60" />
-      </button>
-      <ul
-        tabIndex={0}
-        role="menu"
-        className="dropdown-content menu z-10 mb-2 w-52 rounded-box border border-base-300 bg-base-100 p-2 shadow-lg"
-      >
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" side="top" className="w-52">
         {actions.map((action, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={action.onClick}
-              disabled={busy || action.disabled}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          </li>
+          <DropdownMenuItem
+            key={index}
+            onClick={action.onClick}
+            disabled={busy || action.disabled}
+          >
+            {action.icon}
+            {action.label}
+          </DropdownMenuItem>
         ))}
-      </ul>
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
 export function TableExportMenu({
   actions,
-  buttonClassName = "btn btn-sm gap-1",
-  menuClassName = "dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56",
+  buttonVariant = "outline",
+  menuClassName = "w-56",
 }: {
   actions: Array<{
     label: ReactNode;
@@ -139,30 +160,30 @@ export function TableExportMenu({
     onClick: () => void;
     disabled?: boolean;
   }>;
-  buttonClassName?: string;
+  buttonVariant?: ButtonProps["variant"];
   menuClassName?: string;
 }) {
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className={buttonClassName}>
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={<Button variant={buttonVariant} size="sm" className="gap-1" />}
+      >
         <Download className="size-4" />
         Export
         <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul tabIndex={0} className={menuClassName}>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className={menuClassName}>
         {actions.map((action, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={action.onClick}
-              disabled={action.disabled}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          </li>
+          <DropdownMenuItem
+            key={index}
+            onClick={action.onClick}
+            disabled={action.disabled}
+          >
+            {action.icon}
+            {action.label}
+          </DropdownMenuItem>
         ))}
-      </ul>
-    </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

@@ -1,5 +1,10 @@
 import { useCallback, useMemo, useState } from "react";
-import { Copy, Download, FileSpreadsheet, Sheet } from "lucide-react";
+import {
+  Copy,
+  Download,
+  FileSpreadsheet,
+  Sheet,
+} from "@/client/components/icons";
 import { toast } from "sonner";
 import { DomainKeywordsPagination } from "@/client/features/domain/components/DomainKeywordsPagination";
 import { DomainFilterPanel } from "@/client/features/domain/components/DomainFilterPanel";
@@ -37,6 +42,7 @@ import {
   type ResearchScope,
 } from "@/shared/researchScope";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
 type SearchUpdate = Partial<DomainSearchParams>;
 
 const EMPTY_PAGES_ROWS: PageRow[] = [];
@@ -198,12 +204,12 @@ export function PagesTab({
   return (
     <>
       {filtersOverBudget ? (
-        <div className="alert alert-warning mb-3">
-          <span>
+        <Alert variant="warning" className="mx-4 my-3 w-auto">
+          <AlertDescription>
             Saved filters exceed this scope&apos;s {maxConditions}-condition
             limit and were not applied. Open Filters to trim them.
-          </span>
-        </div>
+          </AlertDescription>
+        </Alert>
       ) : null}
 
       <DomainTableTabSurface

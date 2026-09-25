@@ -1,4 +1,4 @@
-import { Loader2 } from "lucide-react";
+import { Spinner } from "@/client/components/ui/spinner";
 
 export function SavedKeywordsStatus({
   totalCount,
@@ -8,12 +8,12 @@ export function SavedKeywordsStatus({
   isFetching: boolean;
 }) {
   return (
-    <div className="flex items-center gap-2 px-1 text-xs text-base-content/60">
+    <div className="flex items-center gap-2 px-1 text-xs text-muted-foreground">
       <span>
         {totalCount.toLocaleString()} saved keyword
         {totalCount === 1 ? "" : "s"}
       </span>
-      {isFetching ? <Loader2 className="size-3 animate-spin" /> : null}
+      {isFetching ? <Spinner size="sm" /> : null}
     </div>
   );
 }

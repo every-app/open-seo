@@ -11,7 +11,7 @@ import {
   Minimize2,
   MoreHorizontal,
   Trash2,
-} from "lucide-react";
+} from "@/client/components/icons";
 import { z } from "zod";
 import { PortalMenu } from "@/client/components/PortalMenu";
 import { ReportViewer } from "@/client/features/reports/ReportViewer";
@@ -30,6 +30,14 @@ import {
 } from "@/client/lib/error-messages";
 import { captureClientEvent } from "@/client/lib/posthog";
 import { getReport } from "@/serverFunctions/reports";
+
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Button, buttonVariants } from "@/client/components/ui/button";
+import { Spinner } from "@/client/components/ui/spinner";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/client/components/ui/dropdown-menu";
 
 // Expand lives in the URL, not in state, so a refresh (or a link someone
 // pasted) comes back expanded.
@@ -117,7 +125,7 @@ function ReportDetailPage() {
   if (reportQuery.isPending) {
     return (
       <div className="flex justify-center py-10">
-        <span className="loading loading-spinner loading-md" />
+        <Spinner />
       </div>
     );
   }
@@ -126,8 +134,8 @@ function ReportDetailPage() {
     return (
       <div className="px-4 py-6 md:px-6">
         <div className="mx-auto max-w-3xl space-y-4">
-          <div className="alert alert-error">
-            <span className="text-sm">
+          <Alert variant="destructive">
+            <AlertDescription className="text-sm">
               {/* A deleted report and another project's report are the
                   same answer on purpose, so ids cannot be probed. */}
               {getErrorCode(reportQuery.error) === "NOT_FOUND"
@@ -136,12 +144,12 @@ function ReportDetailPage() {
                     reportQuery.error,
                     "Failed to load the report",
                   )}
-            </span>
-          </div>
+            </AlertDescription>
+          </Alert>
           <Link
             to="/p/$projectId/reports"
             params={{ projectId }}
-            className="btn btn-ghost btn-sm"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
           >
             &larr; Back to reports
           </Link>
@@ -162,24 +170,26 @@ function ReportDetailPage() {
 
   if (full) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-base-100">
-        <div className="flex items-center justify-between gap-3 border-b border-base-300 px-4 py-2">
+      <div className="fixed inset-0 z-50 flex flex-col bg-background">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2">
           <span className="truncate text-sm font-medium">{report.title}</span>
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             type="button"
             ref={exitRef}
-            className="btn btn-ghost btn-sm gap-1.5"
+            className="gap-1.5"
             onClick={() => setExpanded(false)}
           >
             <Minimize2 className="size-4" />
             Exit
-          </button>
+          </Button>
         </div>
         <div className="min-h-0 flex-1 p-2">
           <ReportViewer
             src={`/r/${report.id}`}
             title={report.title}
-            className="h-full w-full bg-base-100"
+            className="h-full w-full bg-card"
           />
         </div>
       </div>
@@ -192,7 +202,7 @@ function ReportDetailPage() {
         <Link
           to="/p/$projectId/reports"
           params={{ projectId }}
-          className="inline-flex items-center gap-1 text-sm text-base-content/60 transition-colors hover:text-base-content"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <ChevronLeft className="size-4" />
           Reports
@@ -202,17 +212,17 @@ function ReportDetailPage() {
             <h1 className="text-2xl font-semibold">{report.title}</h1>
             <dl className="mt-1.5 flex flex-wrap items-baseline gap-x-6 gap-y-1 text-sm">
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-base-content/50">Created by</dt>
+                <dt className="text-muted-foreground">Created by</dt>
                 <dd>{formatCreatedBy(report)}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-base-content/50">Type</dt>
+                <dt className="text-muted-foreground">Type</dt>
                 {/* As in the list's Type column: the template name when the
                     report followed one, else the skill, else an em dash. */}
                 <dd>{report.templateName ?? report.skill ?? "—"}</dd>
               </div>
               <div className="flex items-baseline gap-1.5">
-                <dt className="text-base-content/50">Updated</dt>
+                <dt className="text-muted-foreground">Updated</dt>
                 <dd title={new Date(report.updatedAt).toLocaleString()}>
                   {formatRelativeTime(report.updatedAt)}
                 </dd>
@@ -226,9 +236,10 @@ function ReportDetailPage() {
                 icon carries the state: a globe once a public link is live, a
                 lock while only members can open it. */}
             {hosted ? (
-              <button
+              <Button
+                size="sm"
                 type="button"
-                className="btn btn-primary btn-sm gap-1.5"
+                className="gap-1.5"
                 onClick={() => setShowShare(true)}
               >
                 {report.shareToken ? (
@@ -237,20 +248,21 @@ function ReportDetailPage() {
                   <Lock className="size-4" />
                 )}
                 Share
-              </button>
+              </Button>
             ) : (
-              <button
+              <Button
+                size="sm"
                 type="button"
-                className="btn btn-primary btn-sm gap-1.5"
+                className="gap-1.5"
                 onClick={exportPdf}
               >
                 <FileDown className="size-4" />
                 Export
-              </button>
+              </Button>
             )}
             <PortalMenu
               ariaLabel="Report actions"
-              triggerClassName="btn btn-ghost btn-sm btn-square"
+              triggerClassName="size-8"
               triggerContent={<MoreHorizontal className="size-4" />}
               menuClassName="w-52"
             >
@@ -258,35 +270,28 @@ function ReportDetailPage() {
                 <>
                   {hosted ? (
                     <>
-                      <li>
-                        <button
-                          onClick={() => {
-                            close();
-                            exportPdf();
-                          }}
-                        >
-                          <FileDown className="size-4" />
-                          Export
-                        </button>
-                      </li>
-                      <li
-                        role="separator"
-                        className="mx-1 my-1 h-px bg-base-300"
-                      />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          close();
+                          exportPdf();
+                        }}
+                      >
+                        <FileDown className="size-4" />
+                        Export
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
                     </>
                   ) : null}
-                  <li>
-                    <button
-                      className="text-error"
-                      onClick={() => {
-                        close();
-                        setShowDelete(true);
-                      }}
-                    >
-                      <Trash2 className="size-4" />
-                      Delete
-                    </button>
-                  </li>
+                  <DropdownMenuItem
+                    className="text-negative"
+                    onClick={() => {
+                      close();
+                      setShowDelete(true);
+                    }}
+                  >
+                    <Trash2 className="size-4" />
+                    Delete
+                  </DropdownMenuItem>
                 </>
               )}
             </PortalMenu>
@@ -300,21 +305,27 @@ function ReportDetailPage() {
             iframe instead of being injected into it. Placed before the iframe
             so keyboard focus reaches them without tabbing through the report;
             inset from the edge so they clear a classic scrollbar. */}
-        <div className="absolute top-1 right-5 flex items-center gap-0.5 rounded-md border border-base-300 bg-base-100/95 p-0.5 shadow-sm backdrop-blur">
-          <button
+        <div className="absolute top-1 right-5 flex items-center gap-0.5 rounded-md border border-border bg-popover p-0.5 shadow-sm backdrop-blur-xl">
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
-            className="btn btn-ghost btn-sm btn-square"
+            className="size-8"
             aria-label="Full screen"
             title="Full screen"
             onClick={() => setExpanded(true)}
           >
             <Maximize2 className="size-4" />
-          </button>
+          </Button>
           <a
             href={`/r/${report.id}`}
             target="_blank"
             rel="noreferrer"
-            className="btn btn-ghost btn-sm btn-square"
+            className={buttonVariants({
+              variant: "ghost",
+              size: "icon",
+              className: "size-8",
+            })}
             aria-label="Open in new tab"
             title="Open in new tab"
           >

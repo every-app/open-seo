@@ -10,7 +10,7 @@ import {
   Plus,
   ChevronRight,
   Search,
-} from "lucide-react";
+} from "@/client/components/icons";
 import {
   getRankTrackingConfigSummaries,
   updateRankTrackingConfig,
@@ -26,6 +26,10 @@ import {
   getDomainListFilterOptions,
   type DomainListFilters,
 } from "./RankTrackingFilters";
+
+import { Button } from "@/client/components/ui/button";
+import { Card, CardContent } from "@/client/components/ui/card";
+import { Skeleton } from "@/client/components/ui/skeleton";
 
 type ConfigSummary = Awaited<
   ReturnType<typeof getRankTrackingConfigSummaries>
@@ -83,17 +87,14 @@ export function RankTrackingDomainList({
   });
 
   return (
-    <div className="card bg-base-100 border border-base-300">
-      <div className="card-body gap-0 p-0">
+    <Card className="overflow-hidden">
+      <CardContent className="p-0">
         <div className="flex items-center justify-between px-5 pt-4 pb-3">
           <h2 className="text-sm font-semibold">Tracked Domains</h2>
-          <button
-            className="btn btn-primary btn-sm gap-1"
-            onClick={onAddDomain}
-          >
+          <Button size="sm" className="gap-1" onClick={onAddDomain}>
             <Plus className="size-3.5" />
             Add Domain
-          </button>
+          </Button>
         </div>
         {(allSummaries.length >= FILTER_BAR_MIN_DOMAINS ||
           activeFilterCount > 0) && (
@@ -105,48 +106,50 @@ export function RankTrackingDomainList({
             onReset={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
           />
         )}
-        <div className="divide-y divide-base-300 border-t border-base-300">
+        <div className="divide-y divide-border border-t border-border">
           {isPending ? (
             <div className="space-y-4 px-5 py-4" aria-busy>
               {Array.from({ length: 3 }).map((_, index) => (
                 <div key={index} className="space-y-2">
-                  <div className="skeleton h-4 w-48" />
-                  <div className="skeleton h-3 w-72" />
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-72" />
                 </div>
               ))}
             </div>
           ) : allSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-2">
-              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
-                <Globe className="size-5 text-base-content/40" />
+              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-muted">
+                <Globe className="size-5 text-muted-foreground" />
               </div>
-              <p className="text-sm font-medium text-base-content/70">
+              <p className="text-sm font-medium text-muted-foreground">
                 No tracked domains yet
               </p>
-              <p className="text-xs text-base-content/40">
+              <p className="text-xs text-muted-foreground">
                 Add a domain to start monitoring keyword rankings over time.
               </p>
             </div>
           ) : filteredSummaries.length === 0 ? (
             <div className="px-5 py-10 text-center space-y-3">
-              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-base-200">
-                <Search className="size-5 text-base-content/40" />
+              <div className="mx-auto flex size-10 items-center justify-center rounded-xl bg-muted">
+                <Search className="size-5 text-muted-foreground" />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-base-content/70">
+                <p className="text-sm font-medium text-muted-foreground">
                   No matching tracked domains
                 </p>
-                <p className="text-xs text-base-content/40">
+                <p className="text-xs text-muted-foreground">
                   Try clearing search or adjusting filters.
                 </p>
               </div>
-              <button
-                className="btn btn-ghost btn-xs"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2.5"
                 onClick={() => setFilters(EMPTY_DOMAIN_LIST_FILTERS)}
                 disabled={activeFilterCount === 0}
               >
                 Clear filters
-              </button>
+              </Button>
             </div>
           ) : (
             filteredSummaries.map((summary) => (
@@ -159,7 +162,7 @@ export function RankTrackingDomainList({
             ))
           )}
         </div>
-      </div>
+      </CardContent>
 
       {archiveTarget && (
         <Modal
@@ -169,29 +172,32 @@ export function RankTrackingDomainList({
           <h3 id="archive-domain-title" className="text-lg font-semibold">
             Archive {archiveTarget.domain}?
           </h3>
-          <p className="text-sm text-base-content/70">
+          <p className="text-sm text-muted-foreground">
             Scheduled checks will stop and this domain will be hidden from the
             list. Ranking history is preserved.
           </p>
           <div className="flex justify-end gap-2">
-            <button
-              className="btn btn-ghost btn-sm"
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setArchiveTarget(null)}
             >
               Cancel
-            </button>
-            <button
-              className="btn btn-error btn-sm gap-1"
+            </Button>
+            <Button
+              variant="destructive"
+              size="sm"
+              className="gap-1"
               onClick={() => archiveMutation.mutate(archiveTarget.id)}
               disabled={archiveMutation.isPending}
             >
               <Archive className="size-3.5" />
               Archive
-            </button>
+            </Button>
           </div>
         </Modal>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -205,7 +211,7 @@ function DomainRow({
   onArchive: () => void;
 }) {
   return (
-    <div className="relative flex w-full items-center gap-4 px-5 py-3.5 transition-colors hover:bg-base-200/50">
+    <div className="relative flex w-full items-center gap-4 px-5 py-3.5 transition-colors hover:bg-muted/50">
       <Link
         to="/p/$projectId/rank-tracking/$configId"
         params={{ projectId, configId: summary.id }}
@@ -214,7 +220,7 @@ function DomainRow({
       />
       <div className="min-w-0 flex-1 pointer-events-none">
         <p className="font-medium truncate">{summary.domain}</p>
-        <p className="text-xs text-base-content/60">
+        <p className="text-xs text-muted-foreground">
           {summary.locationName
             ? formatLocationLabel(summary.locationName, 2)
             : (LOCATIONS[summary.locationCode] ?? "US")}{" "}
@@ -244,16 +250,18 @@ function DomainRow({
       <div className="hidden sm:flex items-center gap-6 text-sm pointer-events-none">
         {summary.keywordCount > 0 && (
           <div className="text-center">
-            <p className="text-xs uppercase tracking-wide text-base-content/60">
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">
               Keywords
             </p>
             <p className="font-mono font-medium">{summary.keywordCount}</p>
           </div>
         )}
       </div>
-      <button
+      <Button
+        variant="ghost"
+        size="sm"
         type="button"
-        className="btn btn-ghost btn-xs text-base-content/40 hover:text-error relative z-10"
+        className="h-7 px-2.5 text-muted-foreground hover:text-negative relative z-10"
         title="Archive domain"
         onClick={(e) => {
           e.stopPropagation();
@@ -262,8 +270,8 @@ function DomainRow({
         }}
       >
         <Archive className="size-4" />
-      </button>
-      <ChevronRight className="size-4 shrink-0 text-base-content/40 pointer-events-none" />
+      </Button>
+      <ChevronRight className="size-4 shrink-0 text-muted-foreground pointer-events-none" />
     </div>
   );
 }

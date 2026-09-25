@@ -26,7 +26,7 @@ function ProjectIntegrationsRoute() {
       {/* The ids are the targets old #search-console / #google-analytics deep
           links are redirected to from the settings index. */}
       <section id="search-console" className="scroll-mt-6 space-y-3">
-        <h2 className="text-sm font-medium text-base-content/50">
+        <h2 className="text-sm font-medium text-muted-foreground">
           Search Console
         </h2>
         <SearchConsoleConnectionCard projectId={projectId} />
@@ -36,7 +36,7 @@ function ProjectIntegrationsRoute() {
         <GoogleAnalyticsConnectionCard
           projectId={projectId}
           heading={
-            <h2 className="text-sm font-medium text-base-content/50">
+            <h2 className="text-sm font-medium text-muted-foreground">
               Analytics
             </h2>
           }

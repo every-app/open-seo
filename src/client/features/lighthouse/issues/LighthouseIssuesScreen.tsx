@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { AlertCircle, TriangleAlert } from "lucide-react";
+import { AlertCircle, TriangleAlert } from "@/client/components/icons";
 import { toast } from "sonner";
 import {
   exportAuditLighthouseIssues,
@@ -17,6 +17,8 @@ import {
 } from "./LighthouseIssuesParts";
 import { categoryTabs } from "./types";
 
+import { Alert, AlertDescription } from "@/client/components/ui/alert";
+import { Card, CardContent } from "@/client/components/ui/card";
 type LighthouseIssuesScreenProps = {
   projectId: string;
   resultId: string;
@@ -93,24 +95,24 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
           severityCounts={severityCounts}
         />
 
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body gap-4">
+        <Card>
+          <CardContent className="space-y-4 pt-6">
             {issuesQuery.isError ? (
-              <div className="alert alert-error">
+              <Alert variant="destructive">
                 <AlertCircle className="size-4" />
-                <span>{issuesErrorMessage}</span>
-              </div>
+                <AlertDescription>{issuesErrorMessage}</AlertDescription>
+              </Alert>
             ) : null}
 
             {showsLegacyPayloadNotice ? (
-              <div className="alert alert-warning">
+              <Alert variant="warning">
                 <TriangleAlert className="size-4" />
-                <span>
+                <AlertDescription>
                   This Lighthouse run was stored before issue details were
                   preserved. Re-run the audit to see category counts and issue
                   cards.
-                </span>
-              </div>
+                </AlertDescription>
+              </Alert>
             ) : null}
 
             <LighthouseIssuesToolbar
@@ -135,8 +137,8 @@ export function LighthouseIssuesScreen(props: LighthouseIssuesScreenProps) {
               isLoading={issuesQuery.isLoading}
               emptyMessage={emptyMessage}
             />
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

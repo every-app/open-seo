@@ -1,6 +1,9 @@
-import { Check, Copy } from "lucide-react";
+import { Check, Copy } from "@/client/components/icons";
 import { useState } from "react";
 import { toast } from "sonner";
+
+import { Button } from "@/client/components/ui/button";
+import { cn } from "@/client/lib/utils";
 
 export function CopyButton({
   value,
@@ -9,6 +12,7 @@ export function CopyButton({
   iconOnly = false,
   primary = false,
   onCopy,
+  className,
 }: {
   value: string;
   successMessage: string;
@@ -16,6 +20,7 @@ export function CopyButton({
   iconOnly?: boolean;
   primary?: boolean;
   onCopy?: () => void;
+  className?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -37,30 +42,28 @@ export function CopyButton({
 
   if (iconOnly) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={handleCopy}
         aria-label={label}
-        className="flex size-7 items-center justify-center rounded-md text-base-content/60 transition-colors hover:bg-base-200 hover:text-base-content"
+        className={cn("size-7", className)}
       >
         {copied ? (
           <Check className="size-3.5 text-success" />
         ) : (
           <Copy className="size-3.5" />
         )}
-      </button>
+      </Button>
     );
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant={primary ? "default" : "outline"}
+      size={primary ? "default" : "sm"}
       onClick={handleCopy}
-      className={
-        primary
-          ? "btn btn-primary"
-          : "inline-flex items-center gap-1.5 rounded-md border border-base-300 bg-base-100 px-2 py-1 text-xs font-medium text-base-content/70 transition-colors hover:bg-base-300/50 hover:text-base-content"
-      }
+      className={cn(!primary && "h-7 gap-1.5 px-2 text-xs", className)}
     >
       {copied ? (
         <Check className="size-3 text-success" />
@@ -68,6 +71,6 @@ export function CopyButton({
         <Copy className="size-3" />
       )}
       {copied ? "Copied" : label}
-    </button>
+    </Button>
   );
 }

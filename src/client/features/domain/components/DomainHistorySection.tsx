@@ -1,8 +1,10 @@
-import { Clock, History, X } from "lucide-react";
-import { Globe } from "lucide-react";
+import { Clock, History, X } from "@/client/components/icons";
+import { Globe } from "@/client/components/icons";
 import type { DomainHistoryItem } from "@/client/features/domain/types";
 import { RESEARCH_SCOPE_LABELS } from "@/shared/researchScope";
 
+import { Button } from "@/client/components/ui/button";
+import { Card } from "@/client/components/ui/card";
 type Props = {
   history: DomainHistoryItem[];
   historyLoaded: boolean;
@@ -22,21 +24,21 @@ export function DomainHistorySection({
 
   if (history.length === 0) {
     return (
-      <section className="rounded-2xl border border-dashed border-base-300 bg-base-100/70 p-6 text-center text-base-content/55 space-y-2">
+      <Card className="p-6 text-center text-muted-foreground space-y-2">
         <Globe className="size-9 mx-auto opacity-35" />
-        <p className="text-base font-medium text-base-content/80">
+        <p className="text-base font-medium text-foreground">
           Enter a domain to get started
         </p>
-      </section>
+      </Card>
     );
   }
 
   return (
-    <section className="rounded-2xl border border-base-300 bg-base-100 p-5 md:p-6">
+    <Card className="p-5 md:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <History className="size-4 text-base-content/45" />
-          <span className="text-sm text-base-content/60">
+          <History className="size-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">
             {history.length} recent search{history.length !== 1 ? "es" : ""}
           </span>
         </div>
@@ -46,41 +48,43 @@ export function DomainHistorySection({
         {history.map((item) => (
           <div
             key={item.timestamp}
-            className="group flex items-center gap-2 rounded-lg border border-base-300 bg-base-100 p-2"
+            className="group flex items-center gap-2 rounded-xl border border-border p-2"
           >
-            <button
-              type="button"
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-1 py-1 text-left transition-colors hover:bg-base-200"
+            <Button
+              variant="ghost"
+              className="h-auto justify-start whitespace-normal text-left font-normal text-inherit flex min-w-0 flex-1 items-center gap-3 px-1 py-1 transition-colors hover:bg-muted"
               onClick={() => onSelectHistoryItem(item)}
             >
-              <Clock className="size-4 text-base-content/40 shrink-0" />
+              <Clock className="size-4 text-muted-foreground shrink-0" />
               <div className="min-w-0">
-                <p className="font-medium text-base-content truncate">
+                <p className="font-medium text-foreground truncate">
                   {item.domain}
                 </p>
-                <p className="text-sm text-base-content/60 truncate">
+                <p className="text-sm text-muted-foreground truncate">
                   {RESEARCH_SCOPE_LABELS[item.scope]}
                 </p>
               </div>
-            </button>
+            </Button>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs text-base-content/40">
+              <span className="text-xs text-muted-foreground">
                 {new Date(item.timestamp).toLocaleDateString(undefined, {
                   month: "short",
                   day: "numeric",
                 })}
               </span>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 type="button"
-                className="btn btn-ghost btn-xs opacity-0 group-hover:opacity-100 p-1"
+                className="h-7 px-2.5 opacity-0 group-hover:opacity-100 p-1"
                 onClick={() => onRemoveHistoryItem(item.timestamp)}
               >
                 <X className="size-3" />
-              </button>
+              </Button>
             </div>
           </div>
         ))}
       </div>
-    </section>
+    </Card>
   );
 }

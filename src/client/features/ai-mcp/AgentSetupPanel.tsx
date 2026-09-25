@@ -1,4 +1,4 @@
-import { Package } from "lucide-react";
+import { Package } from "@/client/components/icons";
 import { CopyButton } from "./SetupControls";
 
 export const AGENT_SETUP_DESCRIPTION =
@@ -13,34 +13,33 @@ export function AgentSetupPanel({
 }) {
   return (
     <>
-      <div className="rounded-xl border border-base-300 bg-base-200/25 p-5">
+      <div className="rounded-xl border border-border p-5">
         <div className="mb-5 flex items-center gap-3">
-          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-base-300 bg-base-100">
-            <Package className="size-5 text-base-content/70" />
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-card">
+            <Package className="size-5 text-muted-foreground" />
           </span>
           <div>
             <p className="text-sm font-medium">OpenSEO plugin</p>
-            <p className="mt-1 text-xs text-base-content/55">
+            <p className="mt-1 text-xs text-muted-foreground">
               MCP connection + SEO skills
             </p>
           </div>
         </div>
-        <div className="[&>button]:h-11 [&>button]:w-full [&>button]:gap-2 [&>button]:text-sm">
-          <CopyButton
-            primary
-            value={prompt}
-            label="Copy setup prompt"
-            successMessage="Setup prompt copied"
-            onCopy={onCopy}
-          />
-        </div>
+        <CopyButton
+          primary
+          value={prompt}
+          label="Copy setup prompt"
+          successMessage="Setup prompt copied"
+          onCopy={onCopy}
+          className="h-11 w-full gap-2"
+        />
       </div>
       <div className="mt-4 text-center">
         <a
           href="https://openseo.so/docs/agent-setup"
           target="_blank"
           rel="noreferrer"
-          className="text-xs text-base-content/60 underline decoration-base-content/25 underline-offset-4 hover:text-base-content"
+          className="text-xs text-muted-foreground underline decoration-muted-foreground/70 underline-offset-4 hover:text-foreground"
         >
           Manual setup
         </a>
