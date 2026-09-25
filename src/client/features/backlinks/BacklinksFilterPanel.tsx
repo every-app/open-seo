@@ -190,7 +190,7 @@ function BacklinksToggleControls({
   return (
     <div className="flex flex-wrap items-center gap-4">
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
           Link Type
         </p>
         <div className="flex items-center gap-1">
@@ -218,7 +218,7 @@ function BacklinksToggleControls({
       </div>
 
       <div className="space-y-1.5">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
           Visibility
         </p>
         <div className="flex items-center gap-3">

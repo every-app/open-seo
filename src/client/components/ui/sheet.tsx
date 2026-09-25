@@ -29,7 +29,7 @@ const sheetVariants = cva(
   [
     "fixed z-50 gap-4 px-8 py-6",
     "backdrop-blur-3xl backdrop-saturate-200 bg-popover supports-[backdrop-filter]:bg-popover/50 border-border",
-    "shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+    "shadow-[0_0.5rem_2rem_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_6%,transparent)]",
     "transition ease-in-out data-open:duration-500 data-closed:duration-300",
   ].join(" "),
   {

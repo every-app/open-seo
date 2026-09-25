@@ -49,7 +49,7 @@ export function ReportsList({
         <TableBody>
           {reports.map((report) => (
             <TableRow key={report.id}>
-              <TableCell className="max-w-[420px]">
+              <TableCell className="max-w-[26.25rem]">
                 <Link
                   to="/p/$projectId/reports/$reportId"
                   params={{ projectId, reportId: report.id }}

@@ -139,7 +139,7 @@ function TermsTokenInput({
         >
           <Icon className="size-2.5" />
         </span>
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
           {label}
         </p>
       </div>
@@ -228,7 +228,7 @@ function FilterRangeInputs({
 }) {
   return (
     <Card className="space-y-2 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">

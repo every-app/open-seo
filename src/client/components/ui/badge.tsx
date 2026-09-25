@@ -15,13 +15,13 @@ const badgeVariants = cva(
         // their own 20% tint miss WCAG AA in both themes.
         default:
           "backdrop-blur-xl bg-foreground/[0.08] text-foreground " +
-          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--halo)_10%,transparent)]",
+          "shadow-[inset_0_0_0.375rem_color-mix(in_oklch,var(--halo)_10%,transparent)]",
         primary:
           "backdrop-blur-xl bg-primary/20 text-link " +
-          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--primary)_18%,transparent)]",
+          "shadow-[inset_0_0_0.375rem_color-mix(in_oklch,var(--primary)_18%,transparent)]",
         signature:
           "backdrop-blur-xl bg-signature/20 text-signature " +
-          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--signature)_20%,transparent)]",
+          "shadow-[inset_0_0_0.375rem_color-mix(in_oklch,var(--signature)_20%,transparent)]",
         secondary: "bg-foreground/[0.05] text-secondary-foreground",
         destructive: "bg-destructive/20 text-negative",
         "destructive-light": "bg-destructive/10 text-negative",
@@ -33,7 +33,7 @@ const badgeVariants = cva(
           "border border-foreground/[0.15] text-foreground bg-transparent",
       },
       size: {
-        sm: "h-4 gap-1 px-1.5 text-[10px] uppercase tracking-wide",
+        sm: "h-4 gap-1 px-1.5 text-[0.625rem] uppercase tracking-wide",
         default: "h-5 gap-1.5 px-2 text-xs",
         lg: "h-6 gap-1.5 px-2.5 text-xs",
       },

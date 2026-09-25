@@ -7,10 +7,10 @@ const alertVariants = cva(
   [
     "relative w-full rounded-xl p-4",
     "backdrop-blur-xl border border-border",
-    "shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
-    // The icon centres on the first 20px text line (16px padding + 2px), so a
+    "shadow-[inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+    // The icon centres on the first 1.25rem text line (1rem padding + 0.125rem), so a
     // one-line alert sits centred in its box; the text is not nudged.
-    "[&>svg~*]:pl-7 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[18px] [&>svg]:text-foreground",
+    "[&>svg~*]:pl-7 [&>svg]:absolute [&>svg]:left-4 [&>svg]:top-[1.125rem] [&>svg]:text-foreground",
   ].join(" "),
   {
     variants: {

@@ -373,7 +373,7 @@ function StatsStrip({
     <div className={`grid ${columnsClass} gap-3`}>
       {items.map((item) => (
         <StatCard key={item.label} className="px-4 py-3">
-          <StatCardLabel className="text-[11px] uppercase tracking-wider">
+          <StatCardLabel className="text-[0.6875rem] uppercase tracking-wider">
             {item.label}
           </StatCardLabel>
           <StatCardValue

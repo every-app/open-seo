@@ -67,7 +67,7 @@ export function RankTrendChart({
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between text-[0.6875rem] text-muted-foreground">
         <span>Google position (1 = best)</span>
         <span className="inline-flex items-center gap-1">
           Better <span aria-hidden>↑</span>

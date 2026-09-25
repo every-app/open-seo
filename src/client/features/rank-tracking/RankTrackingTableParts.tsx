@@ -45,7 +45,7 @@ export function SerpFeatureTags({ features }: { features: string[] }) {
         <Badge
           variant="secondary"
           key={f}
-          className="cursor-help gap-0.5 px-2 text-[11px]"
+          className="cursor-help gap-0.5 px-2 text-[0.6875rem]"
           title={FEATURE_TOOLTIPS[f] ?? f}
         >
           {f === "ai_overview" && <Sparkles className="size-2.5" />}

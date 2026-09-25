@@ -150,7 +150,7 @@ export function ApiKeySettings() {
           <TableBody>
             {apiKeys.map((key) => (
               <TableRow key={key.id}>
-                <TableCell className="max-w-[220px] truncate font-medium">
+                <TableCell className="max-w-[13.75rem] truncate font-medium">
                   {key.name || "Unnamed key"}
                 </TableCell>
                 <TableCell

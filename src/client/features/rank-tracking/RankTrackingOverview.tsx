@@ -78,7 +78,7 @@ export function RankTrackingOverview({
           {BUCKETS.map((b) => (
             <span
               key={b.key}
-              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground"
+              className="inline-flex items-center gap-1 text-[0.6875rem] text-muted-foreground"
             >
               <span
                 className="size-2 rounded-sm"
@@ -185,7 +185,7 @@ function DistributionTooltip({
   byKey: Map<string, number>;
 }) {
   return (
-    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_8px_24px_var(--trend-tooltip-shadow)] backdrop-blur-xl">
+    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_0.5rem_1.5rem_var(--trend-tooltip-shadow)] backdrop-blur-xl">
       <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",

@@ -16,7 +16,7 @@ export function FloatingTooltip({
     <span
       id={id}
       role="tooltip"
-      className="pointer-events-none fixed z-[1000] w-max max-w-64 -translate-x-1/2 -translate-y-full rounded-xl border border-border bg-popover px-2.5 py-2 text-[11px] font-normal normal-case leading-snug text-popover-foreground shadow-md backdrop-blur-2xl"
+      className="pointer-events-none fixed z-[1000] w-max max-w-64 -translate-x-1/2 -translate-y-full rounded-xl border border-border bg-popover px-2.5 py-2 text-[0.6875rem] font-normal normal-case leading-snug text-popover-foreground shadow-md backdrop-blur-2xl"
       style={{ left: position.left, top: position.top }}
     >
       {children}

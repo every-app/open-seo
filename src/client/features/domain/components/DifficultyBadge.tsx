@@ -6,7 +6,7 @@ export function DifficultyBadge({ value }: { value: number | null }) {
   return (
     <Badge
       className={cn(
-        "size-6 px-0 text-[10px] font-semibold tabular-nums ring-1 ring-inset",
+        "size-6 px-0 text-[0.625rem] font-semibold tabular-nums ring-1 ring-inset",
         scoreTierClass(value),
       )}
     >

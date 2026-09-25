@@ -12,7 +12,7 @@ const toggleVariants = cva(
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-0",
     "disabled:pointer-events-none disabled:opacity-50",
     "data-pressed:bg-foreground/[0.1] data-pressed:text-foreground",
-    "data-pressed:shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_12%,transparent)]",
+    "data-pressed:shadow-[inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_12%,transparent)]",
   ].join(" "),
   {
     variants: {

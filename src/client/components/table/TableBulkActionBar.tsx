@@ -31,10 +31,10 @@ export function TableBulkActionBar({
       : "flex justify-center";
   // The floating bar sits over table rows, so it takes the popover surface
   // (near-opaque) rather than a translucent card. Action buttons inset by
-  // 4px use rounded-lg so their fills stay concentric with this rounded-xl.
+  // 0.25rem use rounded-lg so their fills stay concentric with this rounded-xl.
   const toolbarClass =
     placement === "fixed"
-      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent)] backdrop-blur-3xl"
+      ? "pointer-events-auto flex items-stretch rounded-xl border border-border bg-popover shadow-[0_0.5rem_2rem_color-mix(in_oklch,var(--shade)_50%,transparent)] backdrop-blur-3xl"
       : "flex items-stretch rounded-xl border border-border bg-muted";
 
   const bar = (

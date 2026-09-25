@@ -45,7 +45,7 @@ function ToolbarMenu({
         {label}
         {label && <ChevronDown className="size-3.5 opacity-60" />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-[230px]">
+      <DropdownMenuContent align="end" className="min-w-[14.375rem]">
         {children}
       </DropdownMenuContent>
     </DropdownMenu>

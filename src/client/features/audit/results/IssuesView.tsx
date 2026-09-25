@@ -130,10 +130,10 @@ function IssueSection({
         <span
           className={`size-1.5 rounded-full ${SEVERITY_DOT[section.severity]}`}
         />
-        <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+        <span className="text-[0.6875rem] font-semibold uppercase tracking-wider text-muted-foreground">
           {SEVERITY_LABEL[section.severity]}
         </span>
-        <span className="text-[11px] tabular-nums text-muted-foreground">
+        <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
           {issueCount}
         </span>
       </div>
@@ -204,7 +204,7 @@ function AffectedUrlList({ issues }: { issues: AuditIssueRow[] }) {
   const remaining = issues.length - rendered.length;
 
   return (
-    <div className="max-h-[320px] overflow-y-auto rounded-md border border-border bg-muted/40">
+    <div className="max-h-[20rem] overflow-y-auto rounded-md border border-border bg-muted/40">
       {rendered.map((issue) => (
         <div
           key={issue.id}

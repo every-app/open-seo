@@ -314,7 +314,7 @@ export function KeywordSuggestionStep({
         table={table}
         density="xs"
         className="w-full"
-        wrapperClassName="max-h-[400px]"
+        wrapperClassName="max-h-[25rem]"
         stickyHeader
         getRowProps={(row) => ({
           className: "cursor-pointer",

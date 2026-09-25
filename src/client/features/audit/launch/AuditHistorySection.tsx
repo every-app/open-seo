@@ -62,7 +62,7 @@ export function AuditHistorySection({
                   <TableCell className="text-xs text-muted-foreground">
                     {formatDate(audit.startedAt)}
                   </TableCell>
-                  <TableCell className="max-w-[220px] truncate">
+                  <TableCell className="max-w-[13.75rem] truncate">
                     {audit.startUrl}
                   </TableCell>
                   <TableCell>
@@ -73,7 +73,10 @@ export function AuditHistorySection({
                   </TableCell>
                   <TableCell>
                     {audit.ranLighthouse ? (
-                      <Badge variant="secondary" className="px-2 text-[11px]">
+                      <Badge
+                        variant="secondary"
+                        className="px-2 text-[0.6875rem]"
+                      >
                         Yes
                       </Badge>
                     ) : null}

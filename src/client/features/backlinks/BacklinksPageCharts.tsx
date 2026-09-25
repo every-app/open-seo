@@ -19,9 +19,9 @@ const AXIS_TICK = { fill: "var(--trend-axis-color)", fontSize: 11 };
 
 const TOOLTIP_CONTENT_STYLE = {
   backgroundColor: "var(--trend-tooltip-bg)",
-  border: "1px solid var(--trend-tooltip-border)",
-  borderRadius: "10px",
-  boxShadow: "0 8px 24px var(--trend-tooltip-shadow)",
+  border: "0.0625rem solid var(--trend-tooltip-border)",
+  borderRadius: "0.625rem",
+  boxShadow: "0 0.5rem 1.5rem var(--trend-tooltip-shadow)",
   color: "var(--foreground)",
 };
 

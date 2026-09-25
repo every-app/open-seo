@@ -49,7 +49,7 @@ export function FilterPanel({
       </div>
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Include
           </p>
           <Input
@@ -60,7 +60,7 @@ export function FilterPanel({
           />
         </div>
         <div className="space-y-1.5">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Exclude
           </p>
           <Input
@@ -134,7 +134,7 @@ export function DomainListFilterBar({
     <div className="border-t border-border px-5 py-3">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end">
         <label className="flex flex-1 flex-col gap-1.5">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Search
           </span>
           <Input
@@ -147,7 +147,7 @@ export function DomainListFilterBar({
           />
         </label>
         <label className="flex flex-col gap-1.5 lg:w-44">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Device
           </span>
           <NativeSelect
@@ -174,7 +174,7 @@ export function DomainListFilterBar({
           </NativeSelect>
         </label>
         <label className="flex flex-col gap-1.5 lg:w-52">
-          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
             Country
           </span>
           <NativeSelect
@@ -224,7 +224,7 @@ function RangeFilter({
 }) {
   return (
     <Card className="space-y-2 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">

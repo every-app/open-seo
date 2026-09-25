@@ -246,7 +246,7 @@ function TextFilter({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <Input
@@ -275,7 +275,7 @@ function RangeFilter({
 }) {
   return (
     <Card className="space-y-2 p-2.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -311,7 +311,7 @@ function SelectFilter<T extends string>({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <NativeSelect

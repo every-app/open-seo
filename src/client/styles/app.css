@@ -184,15 +184,15 @@
     scrollbar-color: var(--scrollbar-thumb) transparent;
   }
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 0.5rem;
+    height: 0.5rem;
   }
   ::-webkit-scrollbar-track {
     background: transparent;
   }
   ::-webkit-scrollbar-thumb {
-    border: 2px solid transparent;
-    border-radius: 9999px;
+    border: 0.125rem solid transparent;
+    border-radius: 624.9375rem;
     background: var(--scrollbar-thumb) content-box;
   }
   ::-webkit-scrollbar-thumb:hover {

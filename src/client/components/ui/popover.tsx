@@ -76,7 +76,7 @@ const PopoverContent = React.forwardRef<
             "rounded-xl border border-border",
             "backdrop-blur-3xl backdrop-saturate-200 bg-popover supports-[backdrop-filter]:bg-popover/50",
             "text-popover-foreground",
-            "shadow-[0_8px_32px_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_8px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+            "shadow-[0_0.5rem_2rem_color-mix(in_oklch,var(--shade)_50%,transparent),inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_6%,transparent)]",
             "outline-none transition-[transform,translate,scale,opacity] duration-150 data-starting-style:opacity-0 data-starting-style:scale-95 data-ending-style:opacity-0 data-ending-style:scale-95 data-[side=bottom]:data-starting-style:-translate-y-2 data-[side=left]:data-starting-style:translate-x-2 data-[side=right]:data-starting-style:-translate-x-2 data-[side=top]:data-starting-style:translate-y-2",
             className,
           )}

@@ -34,13 +34,13 @@ const InputGroup = React.forwardRef<HTMLDivElement, InputGroupProps>(
         className={cn(
           "flex w-full items-stretch overflow-hidden",
           "rounded-full border border-border backdrop-blur-xl bg-foreground/[0.06]",
-          "shadow-[inset_0_0_6px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+          "shadow-[inset_0_0_0.375rem_color-mix(in_oklch,var(--halo)_6%,transparent)]",
           "transition duration-200 ease-out",
-          "focus-within:shadow-[inset_0_0_6px_color-mix(in_oklch,var(--halo)_6%,transparent),0_0_0_3px_color-mix(in_oklch,var(--primary)_20%,transparent)] focus-within:border-primary/50",
+          "focus-within:shadow-[inset_0_0_0.375rem_color-mix(in_oklch,var(--halo)_6%,transparent),0_0_0_0.1875rem_color-mix(in_oklch,var(--primary)_20%,transparent)] focus-within:border-primary/50",
           "hover:bg-foreground/[0.08] hover:border-foreground/[0.15]",
           error && [
             "border-destructive",
-            "focus-within:border-destructive focus-within:shadow-[0_0_0_3px_color-mix(in_oklch,var(--destructive)_12%,transparent)]",
+            "focus-within:border-destructive focus-within:shadow-[0_0_0_0.1875rem_color-mix(in_oklch,var(--destructive)_12%,transparent)]",
           ],
           disabled && "cursor-not-allowed opacity-70",
           size === "sm" && "rounded-2xl",

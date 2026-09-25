@@ -57,7 +57,7 @@ export function MemberRow({
 
   return (
     <TableRow>
-      <TableCell className="max-w-[280px]">
+      <TableCell className="max-w-[17.5rem]">
         <p className="truncate font-medium" data-ph-mask>
           {member.user.name || member.user.email}
           {isSelf ? (
@@ -121,7 +121,7 @@ export function InvitationRow({
 }) {
   return (
     <TableRow>
-      <TableCell className="max-w-[280px]">
+      <TableCell className="max-w-[17.5rem]">
         <p className="truncate font-medium" data-ph-mask>
           {invitation.email}
         </p>

@@ -318,7 +318,7 @@ function ChartTooltip({
   bottomBandKeys: Set<string>;
 }) {
   return (
-    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_8px_24px_var(--trend-tooltip-shadow)] backdrop-blur-xl">
+    <div className="space-y-0.5 rounded-md border border-[var(--trend-tooltip-border)] bg-[var(--trend-tooltip-bg)] px-3 py-2 shadow-[0_0.5rem_1.5rem_var(--trend-tooltip-shadow)] backdrop-blur-xl">
       <p className="text-xs text-muted-foreground">
         {new Date(label).toLocaleDateString("en-US", {
           month: "short",

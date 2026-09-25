@@ -302,7 +302,7 @@ function ProgressCard({
                   : "Crawling pages"}
               </h2>
             </div>
-            <Badge variant="secondary" className="px-2 text-[11px]">
+            <Badge variant="secondary" className="px-2 text-[0.6875rem]">
               {phaseLabel}
             </Badge>
           </div>
@@ -383,7 +383,7 @@ function ProgressRow({
       <div className="flex items-center gap-3 shrink-0">
         {entry.title && (
           <span
-            className="text-xs text-muted-foreground truncate max-w-[260px] hidden md:block"
+            className="text-xs text-muted-foreground truncate max-w-[16.25rem] hidden md:block"
             title={entry.title}
           >
             {entry.title}

@@ -137,7 +137,7 @@ function makeKeywordColumn(
         {row.original.matchCase && (
           <Badge
             variant="secondary"
-            className="cursor-help px-2 text-[11px]"
+            className="cursor-help px-2 text-[0.6875rem]"
             title="Tracked exactly as typed, not lowercased"
           >
             Aa

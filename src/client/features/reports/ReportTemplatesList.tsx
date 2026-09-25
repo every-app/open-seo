@@ -45,7 +45,7 @@ export function ReportTemplatesList({
         {templates.map((template) => (
           <TableRow key={template.id}>
             <TableCell className="font-medium">{template.name}</TableCell>
-            <TableCell className="max-w-[420px] text-muted-foreground">
+            <TableCell className="max-w-[26.25rem] text-muted-foreground">
               {template.description}
             </TableCell>
             <TableCell className="whitespace-nowrap text-muted-foreground">

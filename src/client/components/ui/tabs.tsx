@@ -22,10 +22,10 @@ function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
     <TabsPrimitive.List
       className={cn(
         // No fixed height: the list wraps its triggers, so the active pill sits
-        // with the same 4px inset on all four sides. Narrow screens wrap the
-        // triggers onto a second row, so every tab stays visible; a 20px
+        // with the same 0.25rem inset on all four sides. Narrow screens wrap the
+        // triggers onto a second row, so every tab stays visible; a 1.25rem
         // radius is a pill on one row and a rounded box on two.
-        "inline-flex max-w-full flex-wrap items-stretch justify-start gap-1 rounded-[20px] p-1",
+        "inline-flex max-w-full flex-wrap items-stretch justify-start gap-1 rounded-[1.25rem] p-1",
         "backdrop-blur-xl bg-foreground/[0.04]",
         "text-muted-foreground",
         className,
@@ -59,7 +59,7 @@ function TabsTrigger({
           {state.active && (
             <motion.div
               layoutId={`tabs-indicator-${uid}`}
-              className="absolute inset-0 rounded-full bg-foreground/[0.1] shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_12%,transparent)]"
+              className="absolute inset-0 rounded-full bg-foreground/[0.1] shadow-[inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_12%,transparent)]"
               transition={springInteraction}
             />
           )}

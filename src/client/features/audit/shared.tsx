@@ -39,7 +39,7 @@ export function formatStartedAt(dateStr: string): string {
 export function StatusBadge({ status }: { status: string }) {
   if (status === "running") {
     return (
-      <Badge variant="default" className="px-2 text-[11px] gap-1">
+      <Badge variant="default" className="px-2 text-[0.6875rem] gap-1">
         <Loader2 className="size-3 animate-spin" /> Running
       </Badge>
     );
@@ -47,14 +47,14 @@ export function StatusBadge({ status }: { status: string }) {
 
   if (status === "completed") {
     return (
-      <Badge variant="success" className="px-2 text-[11px] gap-1">
+      <Badge variant="success" className="px-2 text-[0.6875rem] gap-1">
         <CheckCircle className="size-3" /> Done
       </Badge>
     );
   }
 
   return (
-    <Badge variant="destructive" className="px-2 text-[11px] gap-1">
+    <Badge variant="destructive" className="px-2 text-[0.6875rem] gap-1">
       <AlertCircle className="size-3" /> Failed
     </Badge>
   );
@@ -63,26 +63,26 @@ export function StatusBadge({ status }: { status: string }) {
 export function HttpStatusBadge({ code }: { code: number | null }) {
   if (!code)
     return (
-      <Badge variant="secondary" className="px-2 text-[11px]">
+      <Badge variant="secondary" className="px-2 text-[0.6875rem]">
         -
       </Badge>
     );
   if (code >= 200 && code < 300) {
     return (
-      <Badge variant="success" className="px-2 text-[11px]">
+      <Badge variant="success" className="px-2 text-[0.6875rem]">
         {code}
       </Badge>
     );
   }
   if (code >= 300 && code < 400) {
     return (
-      <Badge variant="warning" className="px-2 text-[11px]">
+      <Badge variant="warning" className="px-2 text-[0.6875rem]">
         {code}
       </Badge>
     );
   }
   return (
-    <Badge variant="destructive" className="px-2 text-[11px]">
+    <Badge variant="destructive" className="px-2 text-[0.6875rem]">
       {code}
     </Badge>
   );

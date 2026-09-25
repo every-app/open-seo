@@ -26,7 +26,7 @@ function FilterTextInput({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {label}
       </span>
       <form.Field name={name}>
@@ -59,7 +59,7 @@ function FilterRangeInputs({
 }) {
   return (
     <div className="rounded-lg border border-border bg-card p-2.5 space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         {title}
       </p>
       <div className="grid grid-cols-2 gap-2">
@@ -100,7 +100,7 @@ function CompactRangeInput({
 function PlatformToggle({ form }: { form: AnyForm }) {
   return (
     <div className="space-y-1.5">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <p className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
         Platform
       </p>
       <form.Field name="platform">

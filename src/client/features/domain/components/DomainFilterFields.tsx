@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Input } from "@/client/components/ui/input";
 function FilterFieldLabel({ children }: { children: ReactNode }) {
   return (
-    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+    <span className="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted-foreground">
       {children}
     </span>
   );

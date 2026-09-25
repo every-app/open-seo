@@ -16,7 +16,7 @@ export {
 
 export function OverviewStats({ keyword }: { keyword: KeywordResearchRow }) {
   return (
-    <Card className="shrink-0 px-4 py-2.5 flex items-center gap-4 min-h-[48px]">
+    <Card className="shrink-0 px-4 py-2.5 flex items-center gap-4 min-h-[3rem]">
       <div className="flex items-center gap-2 min-w-0 shrink-0">
         <span className="font-bold text-base truncate max-w-[240px] capitalize">
           {keyword.keyword}

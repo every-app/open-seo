@@ -25,7 +25,7 @@ export function CardShell({
       <div className="border-t border-border p-5">
         {children}
         {stamp ? (
-          <p className="mt-4 text-[11px] text-muted-foreground">{stamp}</p>
+          <p className="mt-4 text-[0.6875rem] text-muted-foreground">{stamp}</p>
         ) : null}
       </div>
     </Card>

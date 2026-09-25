@@ -95,7 +95,7 @@ function ScoreGauge({ label, score }: { label: string; score: number | null }) {
           {score ?? "-"}
         </span>
       </div>
-      <span className="text-[11px] text-muted-foreground text-center leading-tight">
+      <span className="text-[0.6875rem] text-muted-foreground text-center leading-tight">
         {label}
       </span>
     </div>

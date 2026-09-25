@@ -154,7 +154,7 @@ function MobileTopBar({
   return (
     <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-2 py-1 md:hidden">
       <div className="flex items-center gap-1">
-        {/* 44px hit areas: this bar is the touch layout. */}
+        {/* 2.75rem hit areas: this bar is the touch layout. */}
         <Button
           variant="ghost"
           size="icon"

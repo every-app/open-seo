@@ -31,7 +31,7 @@ export function LighthouseIssueRow({ issue }: { issue: LighthouseIssue }) {
         <TableCell className="py-3 pl-0 pr-3">
           <Badge
             variant={SEVERITY_BADGE[issue.severity].variant}
-            className={`gap-1 px-2 text-[11px] ${SEVERITY_BADGE[issue.severity].className}`}
+            className={`gap-1 px-2 text-[0.6875rem] ${SEVERITY_BADGE[issue.severity].className}`}
           >
             {severityIcon(issue.severity)}
             {issue.severity}

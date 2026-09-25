@@ -26,17 +26,17 @@ const buttonVariants = cva(
         default:
           "bg-gradient-to-t from-primary-strong to-primary-strong/85 text-primary-foreground " +
           "border border-primary-foreground/20 " +
-          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "shadow-[0_0.25rem_0.375rem_-0.0625rem_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_0.0625rem_0_oklch(1_0_0/0.18)] " +
           "hover:brightness-110",
         primary:
           "bg-gradient-to-t from-primary-strong to-primary-strong/85 text-primary-foreground " +
           "border border-primary-foreground/20 " +
-          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_1px_0_oklch(1_0_0/0.18)] " +
+          "shadow-[0_0.25rem_0.375rem_-0.0625rem_color-mix(in_oklch,var(--shade)_25%,transparent),inset_0_0.0625rem_0_oklch(1_0_0/0.18)] " +
           "hover:brightness-110",
         secondary:
           "backdrop-blur-xl bg-foreground/[0.08] text-foreground " +
           "border border-border " +
-          "shadow-[inset_0_1px_0_oklch(1_0_0/0.08)] " +
+          "shadow-[inset_0_0.0625rem_0_oklch(1_0_0/0.08)] " +
           "hover:bg-foreground/[0.12]",
         outline:
           "bg-transparent text-foreground " +
@@ -48,7 +48,7 @@ const buttonVariants = cva(
         destructive:
           "bg-gradient-to-t from-destructive-strong to-destructive-strong/85 text-destructive-foreground " +
           "border border-destructive-foreground/15 " +
-          "shadow-[0_4px_6px_-1px_color-mix(in_oklch,var(--shade)_25%,transparent)] " +
+          "shadow-[0_0.25rem_0.375rem_-0.0625rem_color-mix(in_oklch,var(--shade)_25%,transparent)] " +
           "hover:brightness-110",
         link: "text-link underline-offset-4 hover:underline",
       },

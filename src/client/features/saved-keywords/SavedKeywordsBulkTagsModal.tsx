@@ -229,7 +229,7 @@ export function SavedKeywordsBulkTagsModal({
                       className={`size-2 shrink-0 rounded-full ${tagDotClass(color)}`}
                     />
                     <span className="flex-1 truncate text-sm">{tag.name}</span>
-                    <span className="text-[11px] tabular-nums text-muted-foreground">
+                    <span className="text-[0.6875rem] tabular-nums text-muted-foreground">
                       {tag.keywordCount}
                     </span>
                   </label>

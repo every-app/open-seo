@@ -84,7 +84,7 @@ function sidebarItemClassName(
   return cn(
     "flex w-full items-center gap-2.5 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200",
     active
-      ? "bg-foreground/[0.1] text-foreground shadow-[inset_0_0_8px_color-mix(in_oklch,var(--halo)_12%,transparent)]"
+      ? "bg-foreground/[0.1] text-foreground shadow-[inset_0_0_0.5rem_color-mix(in_oklch,var(--halo)_12%,transparent)]"
       : "text-muted-foreground hover:bg-foreground/[0.06] hover:text-foreground",
     collapsed && "justify-center px-2",
     className,

@@ -55,7 +55,7 @@ header{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-betw
 h1{margin:0;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .meta{margin:0;font-size:12px;color:var(--muted)}
 .actions{display:flex;flex-shrink:0;align-items:center;gap:8px}
-.btn{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 14px;border:1px solid transparent;border-radius:9999px;font:inherit;font-weight:600;color:inherit;background:transparent;cursor:pointer;text-decoration:none}
+.btn{display:inline-flex;align-items:center;gap:0.375rem;height:2rem;padding:0 0.875rem;border:0.0625rem solid transparent;border-radius:624.9375rem;font:inherit;font-weight:600;color:inherit;background:transparent;cursor:pointer;text-decoration:none}
 .btn:hover{background:var(--ghost-hover)}
 .btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-text)}
 .btn.primary:hover{filter:brightness(.92)}

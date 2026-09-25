@@ -15,13 +15,13 @@ const Progress = React.forwardRef<
     className={cn(
       "relative h-2 w-full overflow-hidden rounded-full",
       "backdrop-blur-xl bg-foreground/[0.08]",
-      "shadow-[inset_0_0_4px_color-mix(in_oklch,var(--halo)_6%,transparent)]",
+      "shadow-[inset_0_0_0.25rem_color-mix(in_oklch,var(--halo)_6%,transparent)]",
       className,
     )}
     {...props}
   >
     <ProgressPrimitive.Track className="h-full w-full">
-      <ProgressPrimitive.Indicator className="h-full w-full flex-1 rounded-full bg-primary/70 shadow-[0_0_8px_color-mix(in_oklch,var(--primary)_30%,transparent)] transition-all" />
+      <ProgressPrimitive.Indicator className="h-full w-full flex-1 rounded-full bg-primary/70 shadow-[0_0_0.5rem_color-mix(in_oklch,var(--primary)_30%,transparent)] transition-all" />
     </ProgressPrimitive.Track>
   </ProgressPrimitive.Root>
 ));

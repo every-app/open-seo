@@ -3,7 +3,7 @@ import * as React from "react";
 import { cn } from "@/client/lib/utils";
 
 // Halo Card — translucent panel.
-// 20px corners, 6% white veil over the dark canvas, hairline rim, layered drop shadow.
+// 1.25rem corners, 6% white veil over the dark canvas, hairline rim, layered drop shadow.
 
 const Card = React.forwardRef<
   HTMLDivElement,
@@ -13,8 +13,8 @@ const Card = React.forwardRef<
     ref={ref}
     className={cn(
       "rounded-2xl border border-border text-card-foreground",
-      "backdrop-blur-[20px] backdrop-saturate-150 bg-popover supports-[backdrop-filter]:bg-card",
-      "shadow-[0_12px_40px_color-mix(in_oklch,var(--shade)_50%,transparent),0_4px_12px_color-mix(in_oklch,var(--shade)_30%,transparent),inset_0_1px_0_oklch(1_0_0/0.06)]",
+      "backdrop-blur-[1.25rem] backdrop-saturate-150 bg-popover supports-[backdrop-filter]:bg-card",
+      "shadow-[0_0.75rem_2.5rem_color-mix(in_oklch,var(--shade)_50%,transparent),0_0.25rem_0.75rem_color-mix(in_oklch,var(--shade)_30%,transparent),inset_0_0.0625rem_0_oklch(1_0_0/0.06)]",
       className,
     )}
     {...props}
