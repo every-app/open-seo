@@ -235,7 +235,7 @@ export function analyzeHtml(
 
   const rawText = (sawBody ? bodyParts : fallbackParts).join("");
   const bodyText = rawText.replace(/\s+/g, " ").trim();
-  const wordCount = bodyText ? bodyText.split(/\s+/).length : 0;
+  const wordCount = countWords(bodyText);
 
   return {
     url: pageUrl,
@@ -258,4 +258,25 @@ export function analyzeHtml(
     hasStructuredData,
     hreflangTags,
   };
+}
+
+// Scripts written without spaces between words. Whitespace splitting counts a
+// whole paragraph in these as one word, so they go through Intl.Segmenter.
+const UNSPACED_SCRIPT =
+  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Thai}\p{Script=Lao}\p{Script=Khmer}\p{Script=Myanmar}]/u;
+const wordSegmenter = new Intl.Segmenter(undefined, { granularity: "word" });
+
+function countWords(text: string): number {
+  if (!text) return 0;
+  let count = 0;
+  for (const token of text.split(/\s+/)) {
+    if (!UNSPACED_SCRIPT.test(token)) {
+      count += 1;
+      continue;
+    }
+    for (const segment of wordSegmenter.segment(token)) {
+      if (segment.isWordLike) count += 1;
+    }
+  }
+  return count;
 }

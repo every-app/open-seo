@@ -1,10 +1,11 @@
 import { useMemo, type ReactNode } from "react";
-import { ShieldAlert } from "lucide-react";
+import { FileDown, ShieldAlert } from "lucide-react";
 import {
   exportIssues,
   exportPages,
   exportPerformance,
 } from "@/client/features/audit/results/export";
+import { downloadAuditHtmlReport } from "@/client/features/audit/results/htmlReport";
 import type { AuditResultsData } from "@/client/features/audit/results/types";
 import { isLighthouseFailure } from "@/client/features/audit/results/AuditResultsTableFilterLogic";
 import {
@@ -110,6 +111,7 @@ export function ResultsView({
             hasPerformanceTab={hasPerformanceTab}
             activeTab={activeTab}
             onTabChange={onTabChange}
+            onDownloadReport={() => downloadAuditHtmlReport(data)}
             onExport={(format) => {
               if (activeTab === "performance") {
                 exportPerformance(lighthouse, pages, format);
@@ -215,6 +217,7 @@ function ResultsHeader({
   hasPerformanceTab,
   activeTab,
   onTabChange,
+  onDownloadReport,
   onExport,
 }: {
   issueCount: number;
@@ -223,6 +226,7 @@ function ResultsHeader({
   hasPerformanceTab: boolean;
   activeTab: string;
   onTabChange: (tab: ResultsTab) => void;
+  onDownloadReport: () => void;
   onExport: (format: "csv" | "json" | "sheets") => void;
 }) {
   const tabs: Array<{ tab: ResultsTab; label: string }> = [
@@ -259,7 +263,17 @@ function ResultsHeader({
         })}
       </div>
 
-      <ExportDropdown onExport={onExport} />
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          className="btn btn-sm btn-ghost gap-1"
+          onClick={onDownloadReport}
+        >
+          <FileDown className="size-4" />
+          HTML report
+        </button>
+        <ExportDropdown onExport={onExport} />
+      </div>
     </div>
   );
 }
