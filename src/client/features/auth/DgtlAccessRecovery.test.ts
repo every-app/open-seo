@@ -12,7 +12,8 @@ describe("DGTL access recovery", () => {
         error: new Error("DGTL_LINK_REQUIRED"),
       }),
     );
-    expect(html).toContain("Connecting to your DGTL account");
+    expect(html).toContain('aria-label="Opening your dashboard"');
+    expect(html).not.toContain("Connecting to your DGTL account");
     expect(html).not.toContain("Link DGTL account");
     expect(html).not.toContain("<input");
   });

@@ -29,13 +29,13 @@ export function createBaseAuthConfig(options?: {
       before: createAuthMiddleware(async (ctx) => {
         if (
           dgtlSsoProvider &&
-          ctx.path === "/unlink-account" &&
+          (ctx.path === "/unlink-account" || ctx.path === "/oauth2/link") &&
           unlinkAccountBodySchema.safeParse(ctx.body).data?.providerId ===
             "dgtl-sso"
         ) {
           throw new APIError("FORBIDDEN", {
             message:
-              "Contact your DGTL administrator to change your linked identity.",
+              "DGTL identity is managed by central sign-in. Contact your administrator for account migration.",
           });
         }
       }),

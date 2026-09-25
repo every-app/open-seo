@@ -32,15 +32,30 @@ export function DgtlSsoRedirect({
     void start();
   }, [signedOut, start]);
 
+  // The handoff runs automatically. Do not interpose a second login screen;
+  // keep a non-interactive, accessible loading indicator until navigation.
+  if (!signedOut && !error) {
+    return (
+      <main
+        className="grid min-h-dvh place-items-center"
+        role="status"
+        aria-label="Opening your dashboard"
+      >
+        <span
+          className="loading loading-spinner loading-md"
+          aria-hidden="true"
+        />
+      </main>
+    );
+  }
+
   return (
     <main className="grid min-h-dvh place-items-center p-6">
       <div className="space-y-4 text-center" role="status" aria-live="polite">
         <p>
           {signedOut
             ? "You are signed out of SEO."
-            : error
-              ? "Unable to connect to DGTL. Please try again."
-              : "Connecting to your DGTL account…"}
+            : "Unable to open your dashboard. Please try again."}
         </p>
         {error ? (
           <button className="btn btn-primary" onClick={() => void start()}>

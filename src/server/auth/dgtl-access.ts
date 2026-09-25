@@ -15,7 +15,10 @@ export async function requireDgtlSeoAccess(userId: string): Promise<void> {
   const accounts = await AuthRepository.getDgtlAccount(userId);
   if (!accounts.length && env.DGTL_SSO_REQUIRED !== "true") return;
   if (!accounts.length) throw new AppError("DGTL_LINK_REQUIRED");
-  if (accounts.length !== 1) throw new AppError("FORBIDDEN");
+  if (accounts.length !== 1) {
+    console.warn("DGTL access check: multiple_linked_identities");
+    throw new AppError("FORBIDDEN");
+  }
   let accessToken: string | undefined;
   try {
     // Better Auth decrypts stored tokens and refreshes expired OAuth tokens.

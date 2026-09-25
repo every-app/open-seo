@@ -1,5 +1,21 @@
 # DGTL single sign-on: auth hub → SEO (then CMS, HR, CRM)
 
+## Secure dashboard handoff repair (2026-09-25)
+
+SSO remains enabled. The pending SSO-removal changes were abandoned; do not
+remove the Worker SSO credentials. Successful handoffs display only an accessible
+loading indicator, not a second login or “Connecting” screen.
+
+The reported access denial was caused by multiple central subjects attached to
+one SEO account. Two subjects were confirmed missing from Supabase and their
+SEO login records were retired (provider renamed), not deleted. The verified
+current subject and all projects were preserved. Central entitlement and local
+organization/project checks remain enforced. An account-create hook rejects
+additional central links; manual central linking and unlinking remain blocked.
+Future central account recreation requires a verified migration, not guessing
+which identity to trust. The request-time check still fails closed if conflicting
+links exist.
+
 ## Current account-matching policy (2026-09-23)
 
 This supersedes the manual-only linking rollout described below. At the

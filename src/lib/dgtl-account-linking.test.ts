@@ -16,6 +16,15 @@ vi.mock("cloudflare:workers", () => ({
 }));
 
 describe("verified DGTL account matching", () => {
+  it.each(["/oauth2/link", "/unlink-account"])(
+    "blocks manual DGTL identity changes at %s",
+    async (path) => {
+      const hook = createBaseAuthConfig().hooks.before;
+      await expect(
+        hook({ path, body: { providerId: "dgtl-sso" } } as never),
+      ).rejects.toMatchObject({ status: "FORBIDDEN" });
+    },
+  );
   it("disables password authentication in mandatory central-login mode", () => {
     expect(createBaseAuthConfig().emailAndPassword.enabled).toBe(false);
   });

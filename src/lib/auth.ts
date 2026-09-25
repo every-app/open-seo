@@ -22,6 +22,7 @@ import {
 import { resolveSignInHostedOrganization } from "@/server/auth/default-hosted-organization";
 import { onInvitationAccepted } from "@/server/auth/invited-member";
 import { AuthRepository } from "@/server/auth/repositories/AuthRepository";
+import { ensureSingleDgtlIdentity } from "@/server/auth/dgtl-identity";
 import { captureDubReferralSignup } from "@/server/referrals/dub";
 import {
   sendHostedPasswordResetEmail,
@@ -220,6 +221,14 @@ function createAuth() {
       tanstackStartCookies(),
     ],
     databaseHooks: {
+      account: {
+        create: {
+          before: async (account) => {
+            await ensureSingleDgtlIdentity(account);
+            return { data: account };
+          },
+        },
+      },
       user: {
         create: {
           // Hosted only: keep cheap mass-signups off the free plan by rejecting
