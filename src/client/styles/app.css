@@ -2,6 +2,7 @@
 
 @theme {
   --container-8xl: 88rem;
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 :root {
@@ -25,25 +26,26 @@
   default: true;
   prefersdark: false;
   color-scheme: light;
-  --color-base-100: oklch(100% 0 0);
-  --color-base-200: oklch(97% 0 0);
-  --color-base-300: oklch(92% 0 0);
-  --color-base-content: oklch(20% 0 0);
-  --color-primary: oklch(50% 0.12 262);
+  /* DGTL design guide v1: neutral operational SEO dialect. */
+  --color-base-100: #ffffff;
+  --color-base-200: #fafaf8;
+  --color-base-300: #e5e1da;
+  --color-base-content: #1a1a2e;
+  --color-primary: #2d6a4f;
   --color-primary-content: oklch(100% 0 0);
-  --color-secondary: oklch(55% 0.15 145);
+  --color-secondary: #15321f;
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(50% 0.12 262);
+  --color-accent: #7a5a16;
   --color-accent-content: oklch(100% 0 0);
-  --color-neutral: oklch(25% 0 0);
+  --color-neutral: #15321f;
   --color-neutral-content: oklch(100% 0 0);
-  --color-info: oklch(70% 0.15 230);
+  --color-info: #0c447c;
   --color-info-content: oklch(100% 0 0);
-  --color-success: oklch(65% 0.18 145);
+  --color-success: #214f3b;
   --color-success-content: oklch(100% 0 0);
-  --color-warning: oklch(80% 0.15 80);
+  --color-warning: #7a5a16;
   --color-warning-content: oklch(100% 0 0);
-  --color-error: oklch(65% 0.2 25);
+  --color-error: #8a2d2d;
   --color-error-content: oklch(100% 0 0);
   --radius-selector: 0.5rem;
   --radius-field: 0.5rem;
@@ -60,16 +62,16 @@
   name: "openseo-dark";
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(18% 0 0);
-  --color-base-200: oklch(12% 0 0);
-  --color-base-300: oklch(27% 0 0);
-  --color-base-content: oklch(92% 0 0);
-  --color-primary: oklch(66% 0.12 262);
-  --color-primary-content: oklch(100% 0 0);
+  --color-base-100: #202b25;
+  --color-base-200: #162019;
+  --color-base-300: #45534a;
+  --color-base-content: #f3f1e9;
+  --color-primary: #a3d5b3;
+  --color-primary-content: #15321f;
   --color-secondary: oklch(60% 0.15 145);
   --color-secondary-content: oklch(100% 0 0);
-  --color-accent: oklch(66% 0.12 262);
-  --color-accent-content: oklch(100% 0 0);
+  --color-accent: #e4ce9d;
+  --color-accent-content: #302714;
   --color-neutral: oklch(85% 0 0);
   --color-neutral-content: oklch(20% 0 0);
   --color-info: oklch(70% 0.15 230);
@@ -369,4 +371,54 @@ html[data-theme="openseo-dark"] .alert-success {
 
 html[data-theme="openseo-dark"] .alert-error {
   @apply border-error/60 bg-error/20;
+}
+
+/* DGTL Bawa Earth v1 UI adapter; no auth or data behavior is changed.
+   Dark surfaces are an SEO-specific extension; theme preference is preserved. */
+body { font-family: var(--font-sans); line-height: 1.55; }
+.dgtl-sidebar { border-inline-end: 1px solid var(--color-base-300); }
+.dgtl-masthead { background: #15321f; color: #fff; border-bottom: 3px solid #c4a35a; }
+.dgtl-brand-mark { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid #c4a35a; border-radius: 8px; color: #e4ce9d; }
+:is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #1a1a2e;
+}
+.input:focus-visible, .textarea:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 5px #1a1a2e;
+}
+.btn { min-height: 44px; }
+.btn-circle, .btn-square { min-width: 44px; }
+.input, .select { min-height: 44px; }
+.tab { min-height: 44px; }
+/* Readable forms and consistent shared workbench surfaces across SEO tools. */
+.card, .modal-box { border-radius: 12px; }
+.modal-box { max-height: calc(100dvh - 32px); }
+.input, .select, .textarea, .btn { border-radius: 8px; }
+.btn-circle { border-radius: 999px; }
+.table { font-size: 14px; }
+.table :is(th, td) { padding-block: 12px; }
+.table thead { color: var(--color-base-content); }
+.dgtl-overview :is(.text-base-content\/40, .text-base-content\/45, .text-base-content\/50, .text-base-content\/55, .text-base-content\/65) {
+  color: color-mix(in srgb, var(--color-base-content) 78%, var(--color-base-100));
+}
+.dgtl-overview .text-xs { font-size: 13px; }
+html[data-theme="openseo-dark"] :is(.input, .select, .textarea) { border-color: #a2aca4; }
+html[data-theme="openseo-dark"] :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline-color: #15321f;
+  box-shadow: 0 0 0 5px #e4ce9d;
+}
+html[data-theme="openseo"] :is(.input, .select, .textarea) { border-color: #807a6f; }
+html[data-theme="openseo"] .btn:not(.btn-primary, .btn-error, .btn-neutral, .btn-ghost, .btn-soft) { --btn-border: #807a6f; }
+html[data-theme="openseo"] .alert-warning { color: #7a5a16; background: #faeeda; border-color: #7a5a16; }
+html[data-theme="openseo"] .alert-info { color: #0c447c; background: #e6f1fb; border-color: #0c447c; }
+html[data-theme="openseo"] .alert-success { color: #214f3b; background: #eaf3de; border-color: #214f3b; }
+html[data-theme="openseo"] .alert-error { color: #8a2d2d; background: #f7e7e5; border-color: #8a2d2d; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+}
+@media (forced-colors: active) {
+  :is(button, a, input, select, textarea, summary, [tabindex]):focus-visible { outline: 2px solid Highlight; box-shadow: none; }
 }

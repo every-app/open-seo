@@ -17,7 +17,7 @@ const overviewMetrics = [
     change: "+8.4%",
     note: "Across tracked keywords",
     icon: Eye,
-    accent: "text-emerald-300 bg-emerald-400/10",
+    accent: "text-primary bg-primary/10",
   },
   {
     label: "Organic traffic",
@@ -25,7 +25,7 @@ const overviewMetrics = [
     change: "+12.7%",
     note: "Estimated monthly visits",
     icon: TrendingUp,
-    accent: "text-cyan-300 bg-cyan-400/10",
+    accent: "text-info bg-info/10",
   },
   {
     label: "Ranking keywords",
@@ -33,7 +33,7 @@ const overviewMetrics = [
     change: "+96",
     note: "300 keywords in top 10",
     icon: Search,
-    accent: "text-indigo-300 bg-indigo-400/10",
+    accent: "text-primary bg-primary/10",
   },
   {
     label: "Site health",
@@ -41,13 +41,13 @@ const overviewMetrics = [
     change: "+4",
     note: "7 technical issues open",
     icon: Gauge,
-    accent: "text-amber-300 bg-amber-400/10",
+    accent: "text-warning bg-warning/10",
   },
 ] as const;
 
 export function DgtlOverview({ projectId }: { projectId: string }) {
   return (
-    <div className="space-y-5">
+    <div className="dgtl-overview space-y-6">
       <OverviewHero />
       <OverviewMetrics />
       <GrowthPanels />
@@ -59,35 +59,34 @@ export function DgtlOverview({ projectId }: { projectId: string }) {
 
 function OverviewHero() {
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-emerald-400/15 bg-[#09110f] p-6 text-white shadow-2xl shadow-emerald-950/20 sm:p-7">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_88%_10%,rgba(52,211,153,.20),transparent_28%),radial-gradient(circle_at_20%_100%,rgba(34,211,238,.10),transparent_35%)]" />
+    <section className="dgtl-overview-header border-b border-base-300 pb-6">
       <div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-end">
         <div>
           <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-xs font-medium text-emerald-200">
-              <Activity className="size-3.5" /> DGTL performance command center
+            <span className="inline-flex items-center gap-2 text-sm font-medium text-primary">
+              <Activity className="size-4" aria-hidden="true" /> SEO workspace
             </span>
-            <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs text-white/55">
-              Demo data
+            <span className="badge badge-outline text-sm">
+              Sample report · not live data
             </span>
           </div>
-          <h1 className="max-w-2xl text-3xl font-semibold tracking-[-0.035em] sm:text-4xl">
-            Your search growth, clearly connected.
+          <h1 className="max-w-2xl text-[28px] font-semibold leading-tight tracking-tight">
+            Search performance overview
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-white/55">
-            A single view of visibility, traffic, rankings, site quality, links,
-            and visitor behavior for this client website.
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-base-content/75">
+            Explore the sample report, then connect your website’s data using
+            the workspace setup below.
           </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <p className="text-xs text-white/40">Overall growth score</p>
-            <p className="text-3xl font-semibold tabular-nums text-emerald-300">
-              84<span className="text-sm text-white/35">/100</span>
+            <p className="text-sm text-base-content/75">Sample growth score</p>
+            <p className="text-3xl font-semibold tabular-nums text-primary">
+              84<span className="text-sm text-base-content/75">/100</span>
             </p>
           </div>
-          <div className="grid size-12 place-items-center rounded-2xl bg-emerald-400 text-black">
-            <Sparkles className="size-5" />
+          <div className="grid size-12 place-items-center rounded-lg bg-primary/10 text-primary">
+            <Sparkles className="size-5" aria-hidden="true" />
           </div>
         </div>
       </div>
@@ -102,10 +101,10 @@ function OverviewMetrics() {
         ({ label, value, change, note, icon: Icon, accent }) => (
           <article
             key={label}
-            className="group rounded-2xl border border-base-300/80 bg-base-100 p-5 shadow-sm transition-transform hover:-translate-y-0.5"
+            className="rounded-xl border border-base-300 bg-base-100 p-5"
           >
             <div className="flex items-center justify-between gap-3">
-              <span className="text-sm text-base-content/55">{label}</span>
+              <span className="text-sm text-base-content/75">{label}</span>
               <span
                 className={`grid size-9 place-items-center rounded-xl ${accent}`}
               >
@@ -120,7 +119,7 @@ function OverviewMetrics() {
                 {change}
               </span>
             </div>
-            <p className="mt-2 text-xs text-base-content/45">{note}</p>
+            <p className="mt-2 text-sm text-base-content/75">{note}</p>
           </article>
         ),
       )}
@@ -130,11 +129,10 @@ function OverviewMetrics() {
 
 function DemoDataNotice() {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm text-base-content/65">
+    <div className="flex items-center gap-3 rounded-xl border border-base-300 bg-base-100 px-4 py-3 text-sm text-base-content/80">
       <BarChart3 className="size-5 shrink-0 text-primary" />
-      All figures in the DGTL overview are demonstration data. Connected
-      DataForSEO, GA4, Search Console, audit, and Clarity sources will replace
-      them.
+      This overview contains sample figures, not measurements for your website.
+      Review your connected data in the relevant tools and integration panels.
     </div>
   );
 }

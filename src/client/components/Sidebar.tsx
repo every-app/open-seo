@@ -42,7 +42,7 @@ interface SidebarProps {
 }
 
 const navItemBaseClass =
-  "relative flex items-center gap-2.5 rounded-md px-3 py-1.5 text-sm text-base-content/70";
+  "relative flex min-h-11 items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-base-content/80";
 
 // Hover uses a lighter tint than the active background (bg-base-300/50) so a
 // hovered item next to the active one stays visually distinct instead of
@@ -130,13 +130,14 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-60 flex-col bg-base-200">
-      <div className="flex items-center justify-between px-4 pb-2 pt-3">
+    <div className="dgtl-sidebar flex h-full w-60 flex-col bg-base-200">
+      <div className="dgtl-masthead flex min-h-16 items-center justify-between px-4 py-3">
         <Link
           to="/"
           onClick={onNavigate}
-          className="text-base font-semibold text-base-content"
+          className="flex min-h-11 items-center gap-3 text-base font-semibold"
         >
+          <span className="dgtl-brand-mark" aria-hidden="true">D</span>
           DGTL SEO
         </Link>
         {onClose ? (
@@ -185,7 +186,7 @@ export function Sidebar({ projectId, onNavigate, onClose }: SidebarProps) {
         <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
           {navGroups.map((group) => (
             <div key={group.label} className="mb-1">
-              <div className="px-3 pb-1 pt-3 text-xs font-semibold uppercase tracking-wider text-base-content/40">
+              <div className="px-3 pb-2 pt-4 text-xs font-semibold text-base-content/70">
                 {group.label}
               </div>
               {group.items.map((item) => {
