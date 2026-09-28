@@ -26,6 +26,33 @@ MCP clients should connect to:
 https://YOUR_WORKER_HOSTNAME/mcp
 ```
 
+## Connect scripts and automations with a service token
+
+Cron jobs, n8n workflows, and other scripts can't complete a browser login.
+Give them a Cloudflare Access service token instead:
+
+1. In Cloudflare Zero Trust, go to `Access controls` -> `Service credentials`
+   -> `Service Tokens` and create a token. Copy its Client ID and Client Secret.
+2. Edit your OpenSEO Access application and add a policy with the `Service
+Auth` action that includes that service token.
+3. Set `ACCESS_SERVICE_TOKEN_CLIENT_IDS` to the token's Client ID (for example
+   `abc123.access`) and redeploy. Separate several tokens with commas.
+
+The script then calls OpenSEO, including the MCP server, with two headers:
+
+```bash
+curl https://YOUR_WORKER_HOSTNAME/mcp \
+  -H "CF-Access-Client-Id: $CLIENT_ID" \
+  -H "CF-Access-Client-Secret: $CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json, text/event-stream" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}'
+```
+
+Each listed token works in the shared workspace as its own user. A service
+token that passes the Access policy but is not listed in
+`ACCESS_SERVICE_TOKEN_CLIENT_IDS` is rejected.
+
 ## Telemetry
 
 OpenSEO collects anonymized telemetry for core usage events: heartbeats with aggregate counts (installs, users, projects, feature usage) tied to a random install ID, sent every 5 minutes during the first two hours after install, then at most once daily. No URLs, keywords, prompts, emails, or IP-derived location are collected, and idle installs send nothing.
