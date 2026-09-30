@@ -25,6 +25,9 @@ declare namespace Cloudflare {
     BYPASS_EMAIL_VERIFICATION?: string;
     TEAM_DOMAIN?: string;
     POLICY_AUD?: string;
+    // Comma-separated Cloudflare Access service token Client IDs allowed to
+    // call OpenSEO (MCP, scripts) without a user login. cloudflare_access only.
+    ACCESS_SERVICE_TOKEN_CLIENT_IDS?: string;
     POSTHOG_PUBLIC_KEY?: string;
     POSTHOG_HOST?: string;
     BETTER_AUTH_SECRET?: string;

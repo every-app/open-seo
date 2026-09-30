@@ -90,9 +90,49 @@ export async function resolveCloudflareAccessContext(
   const userId = typeof payload.sub === "string" ? payload.sub : null;
   const userEmail = typeof payload.email === "string" ? payload.email : null;
 
-  if (!userId || !userEmail) {
-    throw new AppError("UNAUTHENTICATED");
+  if (userId && userEmail) {
+    return resolveSharedWorkspaceContext(userId, userEmail);
   }
 
-  return resolveSharedWorkspaceContext(userId, userEmail);
+  const serviceToken = resolveServiceTokenIdentity(
+    payload,
+    env.ACCESS_SERVICE_TOKEN_CLIENT_IDS,
+  );
+  if (serviceToken) {
+    return resolveSharedWorkspaceContext(
+      serviceToken.userId,
+      serviceToken.userEmail,
+    );
+  }
+
+  throw new AppError("UNAUTHENTICATED");
+}
+
+// A request authenticated with an Access service token (cron jobs, n8n,
+// scripts) carries no user: `sub` is "" and there is no `email`, only the
+// token's Client ID in `common_name`. Passing the Access policy is not enough
+// on its own — the Client ID must also be listed in
+// ACCESS_SERVICE_TOKEN_CLIENT_IDS, so adding a service token to a shared
+// Access policy never silently grants OpenSEO access. Each listed token acts
+// as its own user in the shared workspace.
+function resolveServiceTokenIdentity(
+  payload: JWTPayload,
+  allowedClientIds: string | undefined,
+): { userId: string; userEmail: string } | null {
+  const clientId =
+    typeof payload.common_name === "string" ? payload.common_name.trim() : "";
+  if (!clientId) return null;
+
+  const allowed = (allowedClientIds ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+  if (!allowed.includes(clientId)) return null;
+
+  return {
+    userId: `access-service-token:${clientId}`,
+    // Placeholder address on the reserved .invalid TLD: the user table needs
+    // an email, and this one can never be delivered to.
+    userEmail: `${clientId}@service-token.invalid`,
+  };
 }
