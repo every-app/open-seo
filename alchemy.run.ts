@@ -13,6 +13,7 @@ import {
   HOSTED_PROD_STAGE,
   readWorkersSubdomain,
   requireAllowedEmails,
+  SELF_HOST_STAGE,
   workerName,
 } from "./alchemy.access.ts";
 
@@ -170,11 +171,16 @@ const accessScopeHint =
  * application whose allow-policy comes from ACCESS_ALLOWED_EMAILS. Explicit
  * env values always win, so a hand-managed Access application keeps
  * working — set both TEAM_DOMAIN and POLICY_AUD and nothing here provisions.
+ *
+ * The application is created for `customDomain` when one is set: Cloudflare
+ * Access gates hostnames, not Workers, so the hostname the deployment serves
+ * is the only one worth gating.
  */
 const resolveSelfHostAccess = (
   stage: string,
   provision: boolean,
   workersSubdomain: string,
+  customDomain: string | undefined,
 ) =>
   Effect.gen(function* () {
     let teamDomain = yield* optionalVar("TEAM_DOMAIN");
@@ -249,7 +255,7 @@ const resolveSelfHostAccess = (
         applicationId: "SelfHostAccess",
         policyName: `open-seo ${stage} self-host users`,
         applicationName: `open-seo ${stage}`,
-        domain: `${workerName(stage)}.${subdomain}`,
+        domain: customDomain ?? `${workerName(stage)}.${subdomain}`,
         emails: allowedEmails,
       });
       policyAud = application.aud;
@@ -315,6 +321,13 @@ export default Alchemy.Stack(
     );
     const databaseProvider = yield* optionalVar("DATABASE_PROVIDER");
     const workersSubdomain = yield* readWorkersSubdomain({ required: false });
+    // Optional hostname the self-hosted deployment serves instead of its
+    // workers.dev URL. The zone must already exist in the account (alchemy
+    // infers it from the name). Previews ignore it — see SELF_HOST_STAGE.
+    const customDomain =
+      stage === SELF_HOST_STAGE
+        ? (yield* optionalVar("SELFHOST_DOMAIN")) || undefined
+        : undefined;
 
     // Auth needs an absolute BETTER_AUTH_URL. Prod sets it explicitly;
     // previews always derive it from the deterministic worker name — a wrong
@@ -338,6 +351,9 @@ export default Alchemy.Stack(
           ),
         );
       }
+    } else if (customDomain) {
+      // Also the canonical MCP OAuth resource: clients register against it.
+      authUrl = `https://${customDomain}`;
     } else if (workersSubdomain) {
       authUrl = `https://${workerName(stage)}.${workersSubdomain}`;
     } else if (authMode === "hosted") {
@@ -356,6 +372,7 @@ export default Alchemy.Stack(
       stage,
       authMode === "cloudflare_access" && !prod,
       workersSubdomain,
+      customDomain,
     );
 
     // Created once and bound into BOTH workers — they share the same
@@ -422,8 +439,18 @@ export default Alchemy.Stack(
 
     const app = yield* Cloudflare.Worker("open-seo", {
       name: workerName(stage),
-      // Prod serves the real domains; the zone is inferred from the hostname.
-      domain: prod ? ["app.openseo.so", "www.app.openseo.so"] : undefined,
+      // Prod serves the real domains. A self-host stage either takes the
+      // SELFHOST_DOMAIN hostname or keeps its workers.dev one; alchemy infers
+      // the zone from the hostname, so the zone must already exist.
+      domain: prod
+        ? ["app.openseo.so", "www.app.openseo.so"]
+        : customDomain
+          ? [customDomain]
+          : undefined,
+      // A custom domain replaces the workers.dev URL rather than adding to
+      // it: Access gates one hostname, and a second, ungated hostname would
+      // only serve the fail-closed auth error.
+      url: customDomain ? false : undefined,
       // Prebuilt worker from `vite build` (@cloudflare/vite-plugin). The entry
       // exports the DO + WorkflowEntrypoint classes (re-exported by
       // src/server.ts), which `bundle: false` requires. Sibling chunks under
