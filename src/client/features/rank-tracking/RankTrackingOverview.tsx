@@ -11,6 +11,7 @@ import {
 } from "recharts";
 import type { TooltipContentProps } from "recharts";
 import { getRankConfigTrend } from "@/serverFunctions/rank-tracking";
+import { parseTimestamp } from "./utils";
 import {
   formatDateTick,
   TrendRangeToggle,
@@ -52,7 +53,7 @@ export function RankTrackingOverview({
   const chartData = useMemo(
     () =>
       (trend ?? []).map((p) => ({
-        checkedAt: new Date(p.checkedAt).getTime(),
+        checkedAt: new Date(parseTimestamp(String(p.checkedAt))).getTime(),
         top3: p.top3,
         top4to10: p.top4to10,
         top11to20: p.top11to20,
@@ -185,7 +186,7 @@ function DistributionTooltip({
   return (
     <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
       <p className="text-xs text-base-content/60">
-        {new Date(label).toLocaleDateString("en-US", {
+        {new Date(parseTimestamp(String(label))).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric",

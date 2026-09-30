@@ -18,6 +18,7 @@ import {
 import { devicesLabel, scheduleLabel } from "@/shared/rank-tracking";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 import { Modal } from "@/client/components/Modal";
+import { parseTimestamp } from "./utils";
 import {
   applyDomainListFilters,
   countActiveDomainListFilters,
@@ -224,7 +225,7 @@ function DomainRow({
             <>
               {" "}
               &middot; Last:{" "}
-              {new Date(summary.lastRunCompletedAt).toLocaleDateString()}
+              {new Date(parseTimestamp(String(summary.lastRunCompletedAt))).toLocaleDateString()}
             </>
           )}
         </p>

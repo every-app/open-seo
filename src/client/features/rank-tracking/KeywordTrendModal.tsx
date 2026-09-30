@@ -11,6 +11,7 @@ import type { RankKeywordHistoryPoint } from "@/serverFunctions/rank-tracking";
 import { LOCATIONS } from "@/client/features/keywords/locations";
 import { formatLocationLabel } from "@/shared/keyword-locations";
 import { csvChange, DeviceRankCell } from "./RankTrackingTableParts";
+import { parseTimestamp } from "./utils";
 import {
   RankTrendChart,
   TrendRangeToggle,
@@ -105,7 +106,7 @@ export function KeywordTrendModal({
     const keys = new Set<string>();
     for (const p of points) {
       if (p.position === null) {
-        keys.add(`${new Date(p.checkedAt).getTime()}:${p.device}`);
+        keys.add(`${new Date(parseTimestamp(String(p.checkedAt))).getTime()}:${p.device}`);
       }
     }
     return keys;
@@ -115,7 +116,7 @@ export function KeywordTrendModal({
 
   const exportRows = () =>
     historyRows.map((r) => [
-      new Date(r.checkedAt).toISOString(),
+      new Date(parseTimestamp(String(r.checkedAt))).toISOString(),
       DEVICE_STYLE[r.device].label,
       r.position ?? "",
       csvChange(r.position, r.previousPosition),
@@ -217,7 +218,7 @@ export function KeywordTrendModal({
                   return (
                     <tr key={`${r.device}-${r.checkedAt}-${idx}`}>
                       <td className="whitespace-nowrap text-xs">
-                        {new Date(r.checkedAt).toLocaleDateString()}
+                        {new Date(parseTimestamp(String(r.checkedAt))).toLocaleDateString()}
                       </td>
                       {devices.length > 1 && (
                         <td className="text-xs">
@@ -302,7 +303,7 @@ function ChartTooltip({
   return (
     <div className="rounded-md border border-base-300 bg-base-100 px-3 py-2 shadow-sm space-y-0.5">
       <p className="text-xs text-base-content/60">
-        {new Date(label).toLocaleDateString("en-US", {
+        {new Date(parseTimestamp(String(label))).toLocaleDateString("en-US", {
           month: "short",
           day: "numeric",
           year: "numeric",
@@ -359,7 +360,7 @@ function buildChartData(
 ): ChartRow[] {
   const byTime = new Map<number, ChartRow>();
   for (const p of points) {
-    const ts = new Date(p.checkedAt).getTime();
+    const ts = new Date(parseTimestamp(String(p.checkedAt))).getTime();
     const row = byTime.get(ts) ?? { checkedAt: ts };
     row[p.device] = p.position === null ? serpDepth : p.position;
     byTime.set(ts, row);
