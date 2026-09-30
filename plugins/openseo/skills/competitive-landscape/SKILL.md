@@ -25,7 +25,7 @@ The project-context tools are free and shared with the app and other agents.
 1. Call `get_project_context` first and ground the market read in it — the saved competitors are the starting roster, and the business and positioning decide who counts as a competitor.
 2. This skill needs competitors. If none are saved, run a minimal inline setup: ask the user who they compete with, or infer a shortlist from `find_serp_competitors` and the site and confirm it, write it back with `update_project_context` (`addCompetitors`), then continue the landscape work. Never front-load the full interview; suggest `seo-project-setup` at the end for the rest.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
-4. On finish, write back what is durable with `update_project_context` — every confirmed competitor via `addCompetitors` with a short note on why they matter, plus `removeCompetitors` for entries you added that turned out irrelevant (leave rows the user added alone) — and append a research log entry: `{ appendResearchLog: { summary: "Competitive landscape: <market/query set>. Verdict: <conclusion>" } }`.
+4. On finish, write back what is durable with `update_project_context` — every confirmed competitor via `addCompetitors` with a short note on why they matter, plus `removeCompetitors` for entries you added that turned out irrelevant (leave rows the user added alone) — and append a research log entry: `{ updates: [{ appendResearchLog: { summary: "Competitive landscape: <market/query set>. Verdict: <conclusion>" } }] }`.
 
 ## Deliver as a report
 

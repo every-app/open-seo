@@ -43,7 +43,7 @@ The project-context tools are free and shared with the app and other agents.
 1. Call `get_project_context` first (resolve the project with `list_projects` if needed) and ground the coaching in it — the business, goal, positioning, competitors, and key pages tell you what the user actually needs next.
 2. This skill requires no section. Read whatever is there, and let the `missingSections` list shape the recommendation: empty context usually means the next step is `seo-project-setup`. Never front-load the full interview.
 3. Before spending credits, check the research log. If the same research ran within the last 30 days, reuse that result and say so instead of re-buying it.
-4. On finish, write back what is durable — anything the user tells you about the business, goal, or positioning, via `update_project_context` — and append a research log entry when a session spends credits: `{ appendResearchLog: { summary: "<what>: <inputs>. Verdict: <conclusion>" } }`.
+4. On finish, write back what is durable — anything the user tells you about the business, goal, or positioning, via `update_project_context` — and append a research log entry when a session spends credits: `{ updates: [{ appendResearchLog: { summary: "<what>: <inputs>. Verdict: <conclusion>" } }] }`.
 
 ## First response
 

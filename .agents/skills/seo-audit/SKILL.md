@@ -16,7 +16,7 @@ Use this when asked for an SEO audit or review of a domain, especially for a sha
 - Domain to audit and `projectId` (`list_projects`; if no project matches, `create_project`).
 - Call `get_project_context` first. This skill needs `business_overview`. If it is empty, infer what the business does from the site, confirm it with the user in one question, write it back with `update_project_context`, and continue. Suggest `seo-project-setup` at the end for the rest; never front-load the full interview.
 - Reuse research-log results under 30 days old for discovery. A ranking claim that drives a recommendation still needs a live check made during this audit.
-- On finish, write back what is durable with `update_project_context` (a corrected `business_overview`, the pages the report names via `addKeyPages`) and append `{ appendResearchLog: { summary: "Site audit: <domain>. Verdict: <conclusion>" } }`.
+- On finish, write back what is durable with `update_project_context` (a corrected `business_overview`, the pages the report names via `addKeyPages`) and append `{ updates: [{ appendResearchLog: { summary: "Site audit: <domain>. Verdict: <conclusion>" } }] }`.
 
 Deliver through the `seo-report` skill, saving with `skill: "seo-audit"`. If that skill is unavailable, say so and stop before writing HTML.
 
