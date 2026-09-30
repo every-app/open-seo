@@ -231,6 +231,9 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   ])(request, env, ctx);
 }
 
+/** Stands in for the OAuth client id the hosted flow would have issued. */
+export const SELF_HOSTED_MCP_CLIENT_ID = "self-hosted";
+
 export async function handleSelfHostedOpenSeoMcpRequest(
   request: Request,
   authMode: "cloudflare_access" | "local_noauth",
@@ -252,6 +255,13 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     organizationId: identity.organizationId,
     baseUrl: getPublicOrigin(request),
     userAgent: request.headers.get("user-agent") ?? undefined,
+    // Self-hosted has no OAuth flow, so nothing ever mints a real client id.
+    // Activation reads that id to tell an external MCP client apart from a
+    // first-party caller, and SAM reaches the tools in-process rather than
+    // over this transport — so every request arriving here is external by
+    // construction. Without a stand-in, "Connect your AI agent" stays
+    // outstanding on the dashboard no matter how many tool calls succeed.
+    clientId: SELF_HOSTED_MCP_CLIENT_ID,
   });
 
   return createRequestHandler(props)(request, env, ctx);

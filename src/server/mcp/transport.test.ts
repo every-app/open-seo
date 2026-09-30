@@ -166,6 +166,9 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
         userEmail: "admin@localhost",
         organizationId: "delegated-local-admin",
         baseUrl: "https://open-seo.test",
+        // Self-hosted mints no OAuth client id, and activation reads that id
+        // to tell an external MCP client from a first-party caller.
+        clientId: "self-hosted",
       },
     });
     // Self-hosted must not pin Origins to the request's own Host — the
@@ -196,6 +199,9 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
         userEmail: "person@example.com",
         organizationId: "delegated-cloudflare-user",
         baseUrl: "https://open-seo.test",
+        // Self-hosted mints no OAuth client id, and activation reads that id
+        // to tell an external MCP client from a first-party caller.
+        clientId: "self-hosted",
       },
     });
   });
