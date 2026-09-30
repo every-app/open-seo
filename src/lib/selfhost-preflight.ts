@@ -129,7 +129,7 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
       name: "DATAFORSEO_API_KEY",
       level: "warn",
       message:
-        "Not set — all SEO data features will be unavailable until it is. It is the base64 of your DataForSEO login:password (NOT the dashboard API key). See docs/DATAFORSEO_API_KEY.md.",
+        "Not set — DataForSEO-backed keyword, rank, backlink, business, and AI visibility data is unavailable. The crawler, Search Console, and a configured local Lighthouse runner still work. See docs/DATAFORSEO_API_KEY.md if you want DataForSEO data.",
     });
     return;
   }

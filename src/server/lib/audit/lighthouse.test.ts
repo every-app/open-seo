@@ -1,9 +1,23 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 const createDataforseoClientMock = vi.hoisted(() => vi.fn());
+const fetchLocalLighthouseMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@/server/lib/dataforseo", () => ({
   createDataforseoClient: createDataforseoClientMock,
+}));
+
+vi.mock("@/server/lib/localLighthouse", () => ({
+  fetchLocalLighthouse: fetchLocalLighthouseMock,
+}));
+
+vi.mock("@/server/lib/runtime-env", () => ({
+  isHostedServerAuthMode: vi.fn(async () => false),
+  getOptionalEnvValue: vi.fn(async (name: string) => {
+    if (name === "DATAFORSEO_API_KEY") return "configured";
+    if (name === "LOCAL_LIGHTHOUSE_URL") return "http://lighthouse-runner:4181";
+    return undefined;
+  }),
 }));
 
 vi.mock("@/server/lib/r2", () => ({
@@ -105,5 +119,44 @@ describe("fetchLighthouseResult", () => {
 
     expect(live).toHaveBeenCalledOnce();
     expect(fetched.result.errorMessage).toBe("temporary failure");
+  });
+
+  it("uses its own runner when a self-hosted instance has no DataForSEO key", async () => {
+    const { getOptionalEnvValue } = await import("@/server/lib/runtime-env");
+    vi.mocked(getOptionalEnvValue).mockImplementation(async (name: string) =>
+      name === "LOCAL_LIGHTHOUSE_URL"
+        ? "http://lighthouse-runner:4181"
+        : undefined,
+    );
+    fetchLocalLighthouseMock.mockResolvedValueOnce({
+      scores: {
+        performance: 82,
+        accessibility: 95,
+        "best-practices": 91,
+        seo: 100,
+      },
+      metrics: {
+        largestContentfulPaint: { numericValue: 1700 },
+        cumulativeLayoutShift: { numericValue: 0.02 },
+        interactionToNextPaint: { numericValue: null },
+        serverResponseTime: { numericValue: 190 },
+      },
+    });
+
+    const fetched = await fetchLighthouseResult(
+      "https://example.com/",
+      "page-1",
+      "mobile",
+      billingCustomer,
+    );
+
+    expect(fetchLocalLighthouseMock).toHaveBeenCalledWith({
+      url: "https://example.com/",
+      strategy: "mobile",
+      runnerUrl: "http://lighthouse-runner:4181",
+    });
+    expect(createDataforseoClientMock).not.toHaveBeenCalled();
+    expect(fetched.result.performanceScore).toBe(82);
+    expect(fetched.result.lcpMs).toBe(1700);
   });
 });
