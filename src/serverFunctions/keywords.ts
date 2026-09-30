@@ -123,13 +123,16 @@ export const refreshSavedKeywordMetrics = createServerFn({ method: "POST" })
 export const getSerpAnalysis = createServerFn({ method: "POST" })
   .middleware(requireProjectContext)
   .validator(serpAnalysisSchema)
-  .handler(async ({ data, context }) =>
-    KeywordResearchService.getSerpAnalysis(
-      {
-        ...data,
-        ...resolveMarket(data, context.project),
-        projectId: context.projectId,
-      },
-      context,
-    ),
-  );
+  .handler(async ({ data, context }) => {
+    const input = {
+      ...data,
+      ...resolveMarket(data, context.project),
+      projectId: context.projectId,
+    };
+    if (shouldUseKeywordE2eFixtures()) {
+      const fixtures = await getKeywordE2eFixtures();
+      return fixtures.getSerpAnalysisFixture(input);
+    }
+
+    return KeywordResearchService.getSerpAnalysis(input, context);
+  });
