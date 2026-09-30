@@ -8,6 +8,7 @@ import {
   GscCard,
 } from "@/client/features/dashboard/DashboardCards";
 import { Ga4Card } from "@/client/features/dashboard/Ga4Card";
+import { LocalServicesCard } from "@/client/features/dashboard/LocalServicesCard";
 import { WorkspaceMergeBanner } from "@/client/features/dashboard/WorkspaceMergeBanner";
 import { getStandardErrorMessage } from "@/client/lib/error-messages";
 import {
@@ -101,6 +102,15 @@ export function DashboardPage({ projectId }: { projectId: string }) {
             key: "ga4",
             hasData: ga4Connected,
             node: <Ga4Card projectId={projectId} connected={ga4Connected} />,
+          },
+        ]
+      : []),
+    ...(activation.googleAds.connected
+      ? [
+          {
+            key: "local-services",
+            hasData: true,
+            node: <LocalServicesCard projectId={projectId} />,
           },
         ]
       : []),

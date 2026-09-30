@@ -183,6 +183,13 @@
       "when": 1789455137276,
       "tag": "0025_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1790005999370,
+      "tag": "0026_google_ads_connections",
+      "breakpoints": true
     }
   ]
 }

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   createSelfHostedGoogleAuthorizationUrl,
   GA4_INTEGRATION,
+  GOOGLE_ADS_INTEGRATION,
   GSC_INTEGRATION,
   handleSelfHostedGoogleOAuthCallback,
   type SelfHostedGoogleOAuthIntegration,
@@ -100,7 +101,7 @@ describe("self-hosted Google OAuth providers", () => {
     vi.useRealTimers();
   });
 
-  it("keeps GSC and GA4 callback paths and scopes isolated", async () => {
+  it("keeps GSC, GA4, and Google Ads callback paths and scopes isolated", async () => {
     const common = { user, callbackURL, publicOrigin };
     const gscUrl = new URL(
       await createSelfHostedGoogleAuthorizationUrl({
@@ -114,6 +115,12 @@ describe("self-hosted Google OAuth providers", () => {
         ...common,
       }),
     );
+    const gadsUrl = new URL(
+      await createSelfHostedGoogleAuthorizationUrl({
+        integration: GOOGLE_ADS_INTEGRATION,
+        ...common,
+      }),
+    );
 
     expect(gscUrl.searchParams.get("redirect_uri")).toBe(
       `${publicOrigin}/api/gsc/oauth/callback`,
@@ -121,9 +128,16 @@ describe("self-hosted Google OAuth providers", () => {
     expect(ga4Url.searchParams.get("redirect_uri")).toBe(
       `${publicOrigin}/api/ga4/oauth/callback`,
     );
+    expect(gadsUrl.searchParams.get("redirect_uri")).toBe(
+      `${publicOrigin}/api/gads/oauth/callback`,
+    );
     expect(gscUrl.searchParams.get("scope")).toContain("webmasters.readonly");
     expect(ga4Url.searchParams.get("scope")).toContain("analytics.readonly");
+    expect(gadsUrl.searchParams.get("scope")).toContain("auth/adwords");
     expect(gscUrl.searchParams.get("state")).not.toBe(
+      ga4Url.searchParams.get("state"),
+    );
+    expect(gadsUrl.searchParams.get("state")).not.toBe(
       ga4Url.searchParams.get("state"),
     );
   });
