@@ -66,3 +66,40 @@ export function GoogleAnalyticsLogo({
     </svg>
   );
 }
+
+export function GoogleAdsLogo({
+  className,
+  ...props
+}: SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      className={className}
+      {...props}
+      aria-hidden="true"
+      focusable="false"
+    >
+      <rect
+        x="10.4"
+        y="2.4"
+        width="5.6"
+        height="16.4"
+        rx="2.8"
+        transform="rotate(30 13.2 10.6)"
+        fill="#4285F4"
+      />
+      <rect
+        x="8"
+        y="2.4"
+        width="5.6"
+        height="16.4"
+        rx="2.8"
+        transform="rotate(-30 10.8 10.6)"
+        fill="#FBBC04"
+      />
+      <circle cx="5.2" cy="18.4" r="2.8" fill="#34A853" />
+    </svg>
+  );
+}
