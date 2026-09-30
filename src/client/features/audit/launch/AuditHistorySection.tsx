@@ -87,7 +87,7 @@ function HistoryActions({
   onDelete: (auditId: string) => void;
 }) {
   return (
-    <div className="flex items-center justify-end gap-2 transition-opacity md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+    <div className="flex items-center justify-end gap-2 transition-opacity [@media(hover:hover)]:md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
       <Link
         to="/p/$projectId/audit"
         params={{ projectId }}
