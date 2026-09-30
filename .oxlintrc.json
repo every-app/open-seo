@@ -12,7 +12,8 @@
     "web",
     "src/routeTree.gen.ts",
     "worker-configuration.d.ts",
-    "scripts"
+    "scripts",
+    "selfhost/lighthouse-runner"
   ],
   "rules": {
     "react/react-in-jsx-scope": "off",

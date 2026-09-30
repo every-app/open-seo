@@ -14,10 +14,6 @@ export const aiDiscoverabilityInputSchema = z.object({
   url: z.string().trim().min(1).max(2048),
 });
 
-export type AiDiscoverabilityResult = Awaited<
-  ReturnType<typeof checkAiDiscoverability>
->;
-
 const crawlers = [
   { name: "ChatGPT Search", userAgent: "OAI-SearchBot" },
   { name: "Google AI Overviews / AI Mode", userAgent: "Googlebot" },

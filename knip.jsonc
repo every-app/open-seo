@@ -29,6 +29,8 @@
     "**/*.{js,mjs,ts,tsx}",
     "!src/routeTree.gen.ts",
     "!web/**",
+    // Standalone optional Docker service with its own package manifest
+    "!selfhost/lighthouse-runner/**",
     // Alchemy state/bundle artifacts (gitignored)
     "!.alchemy/**",
     "!badseo/**",
