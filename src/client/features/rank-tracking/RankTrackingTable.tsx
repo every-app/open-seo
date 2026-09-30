@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Loader2, Sheet, Trash2 } from "lucide-react";
+import { FileDown, Loader2, Play, Sheet, Trash2 } from "lucide-react";
 import { Modal } from "@/client/components/Modal";
 import {
   AppDataTable,
@@ -40,6 +40,9 @@ export function RankTrackingTable({
   locationCode,
   locationName,
   serpDepth,
+  onCheckNow,
+  checkBusy = false,
+  checkDisabled = false,
 }: {
   totalCount: number;
   rows: RankTrackingRow[];
@@ -53,6 +56,9 @@ export function RankTrackingTable({
   locationCode: number;
   locationName?: string | null;
   serpDepth: number;
+  onCheckNow?: () => void;
+  checkBusy?: boolean;
+  checkDisabled?: boolean;
 }) {
   const queryClient = useQueryClient();
   const [showConfirm, setShowConfirm] = useState(false);
@@ -157,10 +163,32 @@ export function RankTrackingTable({
 
   if (rows.length === 0) {
     return (
-      <div className="rounded-xl border border-dashed border-base-300 p-10 text-center text-sm text-base-content/55">
-        {totalCount === 0
-          ? 'No rank data yet. Click "Check Now" to run your first check.'
-          : "No keywords match your search."}
+      <div className="rounded-xl border border-dashed border-base-300 p-10 text-center text-sm text-base-content/55 space-y-4">
+        {totalCount === 0 ? (
+          <>
+            <p>
+              No rank data yet. Click &quot;Check Now&quot; to run your first
+              check.
+            </p>
+            {onCheckNow && !checkDisabled && (
+              <button
+                type="button"
+                className="btn btn-primary btn-sm gap-1.5"
+                onClick={onCheckNow}
+                disabled={checkBusy}
+              >
+                {checkBusy ? (
+                  <Loader2 className="size-3.5 animate-spin" />
+                ) : (
+                  <Play className="size-3.5" />
+                )}
+                {checkBusy ? "Running..." : "Check Now"}
+              </button>
+            )}
+          </>
+        ) : (
+          <p>No keywords match your search.</p>
+        )}
       </div>
     );
   }
