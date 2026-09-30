@@ -1,6 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { readFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
@@ -38,42 +36,42 @@ describe("preview Access verification", () => {
     { responses: Array<string>(8).fill("503 "), status: 1, retries: 8 },
     { responses: Array<string>(8).fill("000 "), status: 1, retries: 8 },
   ])("handles $responses", ({ responses, status, retries }) => {
-    const directory = mkdtempSync(join(tmpdir(), "preview-access-"));
-    try {
-      const responseFile = join(directory, "responses");
-      writeFileSync(responseFile, responses.join("\n") + "\n");
-      const result = spawnSync(
-        "bash",
-        [
-          "-c",
-          // A shared file descriptor advances even inside curl's command substitution.
-          `exec 3< "$PREVIEW_RESPONSES"
+    const result = spawnSync(
+      "bash",
+      [
+        "-c",
+        // The responses arrive on stdin rather than in a temp file. A path had
+        // to survive the trip into Bash, and a Windows one does not: Git Bash
+        // reads `exec 3< "C:\\...\\responses"` with the backslashes as escapes
+        // and exits before the first iteration, so every case failed on a
+        // Windows checkout with status 1 and no `attempt` lines (#329).
+        // Duplicating fd 0 keeps the property the file version was here for:
+        // one shared descriptor that advances even inside curl's command
+        // substitution.
+        `exec 3<&0
 curl() { local response; IFS= read -r response <&3 || response="000 "; printf '%s\\n' "$response"; }
 sleep() { :; }
 ${script}`,
-        ],
-        {
-          encoding: "utf8",
-          timeout: 5000,
-          env: {
-            ...process.env,
-            PREVIEW_URL: "https://preview.example.invalid",
-            STAGE: "test",
-            PREVIEW_RESPONSES: responseFile,
-          },
+      ],
+      {
+        encoding: "utf8",
+        timeout: 5000,
+        input: responses.join("\n") + "\n",
+        env: {
+          ...process.env,
+          PREVIEW_URL: "https://preview.example.invalid",
+          STAGE: "test",
         },
-      );
+      },
+    );
 
-      expect(result.error).toBeUndefined();
-      expect(result.status).toBe(status);
-      expect(result.stdout.match(/attempt \d:/g) ?? []).toHaveLength(retries);
-      if (retries === 8) {
-        expect(result.stdout).toContain("Could not verify");
-        expect(result.stdout).not.toContain("preview is public");
-        expect(result.stdout).not.toContain("still sits behind");
-      }
-    } finally {
-      rmSync(directory, { recursive: true, force: true });
+    expect(result.error).toBeUndefined();
+    expect(result.status).toBe(status);
+    expect(result.stdout.match(/attempt \d:/g) ?? []).toHaveLength(retries);
+    if (retries === 8) {
+      expect(result.stdout).toContain("Could not verify");
+      expect(result.stdout).not.toContain("preview is public");
+      expect(result.stdout).not.toContain("still sits behind");
     }
   });
 });
