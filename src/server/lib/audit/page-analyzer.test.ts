@@ -207,6 +207,20 @@ describe("analyzeHtml parity with the DOM reference", () => {
   });
 });
 
+describe("analyzeHtml word count", () => {
+  it("counts words in scripts written without spaces", () => {
+    const sentence = "我们提供实时船舶追踪服务，覆盖全球港口和航线。";
+    const analysis = analyzeHtml(
+      `<body><p>${sentence.repeat(30)}</p></body>`,
+      "https://example.com/zh/about",
+      200,
+      100,
+    );
+    // Whitespace splitting sees this as a single word.
+    expect(analysis.wordCount).toBeGreaterThan(150);
+  });
+});
+
 describe("analyzeHtml extraction caps", () => {
   it("caps links and images per page", () => {
     const links = Array.from(
