@@ -20,6 +20,20 @@ Managed OAuth is required for MCP clients and is not enabled by default.
      and log in but expose no tools.
 7. Save.
 
+> **Re-enable this after every deploy.** `pnpm deploy:selfhost` reconciles the
+> Access application and Cloudflare clears `Managed OAuth` in the process, so an
+> otherwise routine version update silently breaks MCP authentication. The
+> deploy prints a reminder when it detects that it cleared the setting. The
+> symptom, if you miss it, is an MCP client failing with
+> `Unexpected content type: text/html` — that "HTML" is the Access login page.
+> To check the current state without opening the dashboard:
+>
+> ```bash
+> curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+>   "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/access/apps" \
+>   | jq '.result[] | {domain, oauth: .oauth_configuration.enabled}'
+> ```
+
 MCP clients should connect to:
 
 ```text
