@@ -1,5 +1,5 @@
 import { ChevronDown, Download, Loader2, X } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
 export function TableBulkActionBar({
   selectedCount,
@@ -131,7 +131,7 @@ export function TableBulkExportMenu({
 export function TableExportMenu({
   actions,
   buttonClassName = "btn btn-sm gap-1",
-  menuClassName = "dropdown-content z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56",
+  menuClassName = "z-10 menu p-2 shadow-lg bg-base-100 border border-base-300 rounded-box w-56",
 }: {
   actions: Array<{
     label: ReactNode;
@@ -142,27 +142,118 @@ export function TableExportMenu({
   buttonClassName?: string;
   menuClassName?: string;
 }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const closeOnOutsidePointer = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !containerRef.current?.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    };
+    const closeOnOutsideFocus = (event: FocusEvent) => {
+      if (
+        event.target instanceof Node &&
+        !containerRef.current?.contains(event.target)
+      ) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsidePointer);
+    document.addEventListener("keydown", closeOnEscape);
+    document.addEventListener("focusin", closeOnOutsideFocus);
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsidePointer);
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("focusin", closeOnOutsideFocus);
+    };
+  }, [isOpen]);
+
   return (
-    <div className="dropdown dropdown-end">
-      <div tabIndex={0} role="button" className={buttonClassName}>
+    <div ref={containerRef} className="relative">
+      <button
+        ref={triggerRef}
+        type="button"
+        className={buttonClassName}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? menuId : undefined}
+        onClick={() => setIsOpen((open) => !open)}
+        onKeyDown={(event) => {
+          if (event.key !== "ArrowDown") return;
+          event.preventDefault();
+          setIsOpen(true);
+          requestAnimationFrame(() => {
+            containerRef.current
+              ?.querySelector<HTMLButtonElement>("ul button:not(:disabled)")
+              ?.focus();
+          });
+        }}
+      >
         <Download className="size-4" />
         Export
         <ChevronDown className="size-3 opacity-60" />
-      </div>
-      <ul tabIndex={0} className={menuClassName}>
-        {actions.map((action, index) => (
-          <li key={index}>
-            <button
-              type="button"
-              onClick={action.onClick}
-              disabled={action.disabled}
-            >
-              {action.icon}
-              {action.label}
-            </button>
-          </li>
-        ))}
-      </ul>
+      </button>
+      {isOpen ? (
+        <ul
+          id={menuId}
+          role="menu"
+          className={`${menuClassName} absolute top-full right-0 mt-2`}
+          onKeyDown={(event) => {
+            if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) {
+              return;
+            }
+            event.preventDefault();
+            const items = Array.from(
+              event.currentTarget.querySelectorAll<HTMLButtonElement>(
+                "button:not(:disabled)",
+              ),
+            );
+            const current = items.findIndex(
+              (item) => item === document.activeElement,
+            );
+            const next =
+              event.key === "Home"
+                ? 0
+                : event.key === "End"
+                  ? items.length - 1
+                  : event.key === "ArrowDown"
+                    ? (current + 1) % items.length
+                    : (current - 1 + items.length) % items.length;
+            items[next]?.focus();
+          }}
+        >
+          {actions.map((action, index) => (
+            <li key={index} role="none">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setIsOpen(false);
+                  action.onClick();
+                }}
+                disabled={action.disabled}
+              >
+                {action.icon}
+                {action.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
